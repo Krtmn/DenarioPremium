@@ -1,0 +1,74 @@
+<ion-modal [keepContentsMounted]="true" id="clienteSelectModal" trigger="clienteSelect" [isOpen]="isModalOpen"
+    willPresent="onModalOpen()">
+    <ng-template>
+        <div>
+            <ion-header :translucent="false">
+                <ion-toolbar class="{{ colorModulo }}">
+                    <!-- <ion-title class="{{ colorModulo }}"> -->
+                    <ion-grid>
+                        <ion-row>
+                            <ion-col size="1" size-sm="1" size-xs="2">
+                                <a>
+                                    <!-- <a routerLink="/visitas"> -->
+                                    <img (click)="closeModal()" class="fechaAtras" alt=""
+                                        src="../../../assets/images/flecha-blanca.png" />
+                                </a>
+                            </ion-col>
+                            <ion-col size="12" size-sm="6" size-xs="6">
+                                <h1 class="tituloModulos">{{ nombreModulo }}</h1>
+                            </ion-col>
+
+                        </ion-row>
+                    </ion-grid>
+                </ion-toolbar>
+            </ion-header>
+            <ion-grid>
+                <ion-row>
+                    <ion-buttons slot="end">
+                        <ion-button (click)="closeModal()">CERRAR</ion-button>
+                    </ion-buttons>
+                </ion-row>
+                <ion-row>
+                    <ion-col>
+                        <ion-searchbar class="lupamorada" show-clear-button="always" search-icon="search-circle"
+                            clear-icon="trash-bin" placeholder="Clientes..."
+                            (ionInput)="handleInput($event)"></ion-searchbar>
+                    </ion-col>
+                </ion-row>
+            </ion-grid>
+        </div>
+        <ion-content>
+
+            <ion-list *ngFor="let client of clientes;" button detail="false" (click)="selectClient(client)">
+                <div
+                    *ngIf="searchText === '' || client.coClient.toLowerCase().includes(searchText) || client.lbClient.toLowerCase().includes(searchText)">
+                    <div class="product-structure-title listaProductos">
+                        <ion-item button detail="false" class="listaItems">
+                            <ion-label>
+                                <p>{{ client.lbClient }}</p>
+                                <p>{{this.tags.get('CLI_CODIGO')}}: {{ client.coClient}}</p>
+                                <p [ngStyle]="{color: client.saldo1 >0 ? 'Red' : 'Blue' }">
+                                    {{this.tags.get('CLI_SALDO')}} {{client.coCurrency}}: {{formatNum(client.saldo1)}}
+                                </p>
+                                <p [ngStyle]="{color: client.saldo1 >0 ? 'Red' : 'Blue' }"
+                                    *ngIf="client.multimoneda === 'true'? true:false">
+                                    {{this.tags.get('CLI_SALDO')}} {{oppositeCoCurrency(client.coCurrency)}}:
+                                    {{formatNum(client.saldo2)}}
+                                </p>
+                            </ion-label>
+                            <ion-note slot="end">
+                                <ion-icon class="icon-List" name="chevron-forward-outline"></ion-icon>
+                            </ion-note>
+                        </ion-item>
+                    </div>
+
+                </div>
+            </ion-list>
+
+            <!-- alerta de cambio de cliente-->
+            <ion-alert id="alertClientChange" [isOpen]="clientChangeOpen" header={{headerConfirm}}
+                message={{mensajeClientChange}} [buttons]="buttonsClientChange"
+                (didDismiss)="setClientChangeOpen(false)"></ion-alert>
+        </ion-content>
+    </ng-template>
+</ion-modal>

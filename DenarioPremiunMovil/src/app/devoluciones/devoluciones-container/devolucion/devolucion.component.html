@@ -1,0 +1,45 @@
+<div class="cobroComponent">
+  <ion-segment value="default" [(ngModel)]="segment">
+      <ion-segment-button value="default" (click)="onChangeTab(segment)">
+          <ion-label>{{this.devolucionTags.get('DEV_GENERAL_TAB')}}</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="productos" [disabled]="!returnValid" (click)="onChangeTab(segment)">
+          <ion-label>{{this.devolucionTags.get('DEV_PRODUCTOS_TAB')}}</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="adjuntos" [disabled]="!returnValid" (click)="onChangeTab(segment)">
+          <ion-label>{{this.devolucionTags.get('DEV_ADJUNTOS_TAB')}}</ion-label>
+      </ion-segment-button>
+  </ion-segment>
+</div>
+
+
+
+  <div [ngSwitch]="segment">
+    <ion-grid>
+      <ion-row>
+              <ion-col size="8" size-md="8" offset-md="2" size-sm="12" size-xs="12">
+          <!-- Pestana General-->
+          <ion-card *ngSwitchCase="'default'">
+            <ion-card-content>
+                <devolucion-general [generalTags]="devolucionTags"></devolucion-general>
+            </ion-card-content>
+          </ion-card>
+
+          <!-- Pestana productos-->
+          <ion-card *ngSwitchCase="'productos'">
+            <ion-card-content>
+              <productos-tab
+                [botonAgregar]="botonAgregar"
+                [devolucion]="devolucion"></productos-tab>
+            </ion-card-content>
+          </ion-card>
+          <!-- Pestana Adjuntos -->
+          <ion-card *ngSwitchCase="'adjuntos'">
+              <ion-card-content>
+                  <app-adjunto #selectorAdjunto></app-adjunto>
+              </ion-card-content>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </div>

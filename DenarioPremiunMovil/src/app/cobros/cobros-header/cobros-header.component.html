@@ -1,0 +1,54 @@
+<ion-header :translucent="false">
+    <ion-toolbar class="fondoVerde">
+        <!--         <ion-title class="fondoVerde">
+ --> <ion-grid>
+            <ion-row>
+                <ion-col size="1" size-sm="1" size-xs="2">
+                    <a (click)="goBack()">
+                        <img class="fechaAtras" alt="" src="../../../assets/images/flecha-blanca.png" />
+                    </a>
+                </ion-col>
+                <!-- COBRO -->
+                <ion-col size="8" size-sm="8" size-sm="9" size-xs="6" *ngIf="this.collectService.coTypeModule == '4'">
+                    <h1 class="tituloModulosIva25 tituloModulos">{{this.collectService.titleModule}}</h1>
+                </ion-col>
+                <ion-col size="8" size-sm="8" size-sm="9" size-xs="6" *ngIf="this.collectService.coTypeModule != '4'">
+                    <h1 class="tituloModulos">{{this.collectService.titleModule}}</h1>
+                </ion-col>
+
+                <ion-col size="1" size-md="1" size-sm="1" size-xs="2" offset-sm="1" offset-xs="2"
+                    *ngIf="!this.collectService.showHeaderButtons">
+                    <img class="fechaAtras" alt="" src="../../../assets/images/cobrosNuevoBlanco.svg" />
+                </ion-col>
+                <ion-col size="1" size-sm="1" size-xs="2" *ngIf="this.collectService.showHeaderButtons">
+                    <ion-button class="imagenGuardar" (click)="sendOrSave(false)"
+                        [disabled]="this.collectService.disableSendButton" expand="block" fill="clear">
+                    </ion-button>
+                </ion-col>
+                <ion-col size="1" size-sm="1" size-xs="2" *ngIf="this.collectService.showHeaderButtons">
+                    <ion-button class="imagenEnviar" (click)="sendCollect()"
+                        [disabled]="this.collectService.cannotSendCollection" expand="block" fill="clear">
+                    </ion-button>
+                </ion-col>
+            </ion-row>
+        </ion-grid>
+        <!-- </ion-title> -->
+    </ion-toolbar>
+</ion-header>
+
+<!-- alerta de salvar o salir-->
+<ion-alert id="alertSaveOrExit" [isOpen]="this.collectService.saveOrExitOpen"
+    header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}" [buttons]="buttonsSalvar"
+    (didDismiss)="setsaveOrExitOpen(false)"></ion-alert>
+
+<!-- alerta de envio-->
+<ion-alert [isOpen]="alertMessageOpen" header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}"
+    message={{this.collectService.mensaje}} [buttons]="alertButtons" (didDismiss)="setResult($event)"></ion-alert>
+
+<!-- alerta de envio-->
+<ion-alert [isOpen]="alertMessageOpenSend" header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}"
+    message={{this.collectService.mensaje}} [buttons]="alertButtonsSend"
+    (didDismiss)="setResultSend($event)"></ion-alert>
+
+
+<app-message></app-message>

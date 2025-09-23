@@ -1,0 +1,70 @@
+<div class="client-list">
+
+    <div class="client-card">
+        <ion-grid>
+            <ion-row>
+                <ion-col>
+                    <ion-searchbar class="lupamorada" show-clear-button="always" search-icon="search-circle"
+                        clear-icon="trash-bin"
+                        placeholder="{{this.clientLogic.clientTags.get('CLI_PLACEHOLDER')}}" [debounce]="1000"
+                        (ionInput)="handleInput($event)">
+                    </ion-searchbar>
+                </ion-col>
+            </ion-row>
+            <ion-row>
+                <ion-col size="12" size-sm="12" size-xs="12" *ngIf="this.enterpriseServ.esMultiempresa()">
+                    <ion-label>{{this.clientLogic.clientTags.get('CLI_EMPRESA')}}:</ion-label>
+                    <div class="listado-enterprise-selector ion-text-center">
+                        <ion-select class="ion-text-center always-flip"
+                            [(ngModel)]="this.clientLogic.empresaSeleccionada" (ionChange)="onChangeEnterprise()" interface="popover" labelPlacement="stacked">
+                            <ion-select-option *ngFor="let emp of this.clientLogic.listaEmpresa" [value]="emp">{{
+                                emp.lbEnterprise }}
+                            </ion-select-option>
+                        </ion-select>
+                    </div>
+                </ion-col>
+
+                <ion-col class="" size="12" size-sm="12" size-xs="12">
+                    <ion-list *ngFor="let client of this.clientLogic.clients ;index as i" button detail="false"
+                        (click)="clientLogic.goToClient(client.idClient)">
+                        <div
+                            *ngIf="searchText === '' || client.coClient.toLowerCase().includes(searchText) || client.lbClient.toLowerCase().includes(searchText)">
+                            <div class="product-structure-title listaProductos">
+                                <ion-item button detail="false" class="listaItems">
+                                    <ion-label>
+                                        <p>{{ client.lbClient }}</p>
+                                        <p>{{this.clientLogic.clientTags.get('CLI_CODIGO')}}: {{ client.coClient}}
+                                        </p>
+                                        <p [ngStyle]="{color: client.saldo1 >0 ? 'Red' : 'Blue' }">
+                                            {{this.clientLogic.clientTags.get('CLI_SALDO')}} {{client.coCurrency}}:
+                                            {{formatNumber(client.saldo1)}}
+                                        </p>
+                                        <p [ngStyle]="{color: client.saldo1 >0 ? 'Red' : 'Blue' }"
+                                            *ngIf="client.multimoneda === 'true'? true:false">
+                                            {{this.clientLogic.clientTags.get('CLI_SALDO')}}
+                                            {{oppositeCoCurrency(client.coCurrency)}}:{{formatNumber(client.saldo2)}}
+                                        </p>
+                                        <!-- <p>
+                                        {{client.editable}}
+                                    </p> -->
+                                    </ion-label>
+                                    <ion-note slot="end">
+                                        <ion-icon class="icon-List-Client" name="chevron-forward-outline"></ion-icon>
+                                    </ion-note>
+                                </ion-item>
+                            </div>
+                        </div>
+                    </ion-list>
+                </ion-col>
+                <ion-col class="" size="12" size-sm="12" size-xs="12">
+                    <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)">
+                        <ion-infinite-scroll-content
+                            loadingText="{{this.clientLogic.clientTags.get('DENARIO_SCROLL_TEXT')}}"
+                            loadingSpinner="bubbles"></ion-infinite-scroll-content>
+                    </ion-infinite-scroll>
+                </ion-col>
+
+            </ion-row>
+        </ion-grid>
+    </div>
+</div>

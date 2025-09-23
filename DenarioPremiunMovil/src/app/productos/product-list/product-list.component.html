@@ -1,0 +1,33 @@
+<div class="listado-product-structures">
+
+  <!--  Listado clickeable de productos  -->
+  <div class="product-card" *ngIf="!selectedProduct">
+    <ion-list class="espacioListasProductos" *ngFor="let product of productList | slice: startPro:endPro; index as i"
+      (click)="onShowProductDetail(product)">
+      <div class="product-structure-title"
+        *ngIf="searchText === '' || product.coProduct.toLowerCase().includes(searchText.toLowerCase()) || product.naProduct.toLowerCase().includes(searchText.toLowerCase())">
+        <!-- <ion-item button detail="true" *ngIf="i<10*indice"> -->
+        <ion-item button detail="false">
+          <ion-label fixed class="fixedLabel contenedorImgMargin">
+            <img class="productImage" alt="" loading="lazy" [src]="product.images" />
+          </ion-label>
+          <ion-label class="textList espaciotextoListaProduc">
+            <p class="espacioentrelineas">{{ product.naProduct }}</p>
+            <p class="espacioentrelineas">{{this.productTags.get('PROD_COD_PROD')}}: {{ product.coProduct }}</p>
+            <p class="espacioentrelineas">{{this.productTags.get('PROD_PRICE_PROD')}}: {{ formatNumber(product.price) }} {{ product.coCurrency }}</p>
+            <p *ngIf="product.priceOpposite" class="espacioentrelineas">{{this.productTags.get('PROD_PRICE_PROD')}}: 
+              {{ formatNumber(product.priceOpposite) }} {{product.coCurrencyOpposite }} </p>
+            <p class="espacioentrelineas"> {{this.productTags.get('PROD_STOCK_PROD')}}: {{ product.stock > 0 ?
+              product.stock :
+              0 }} {{this.productTags.get('PROD_POINTS_PROD')}}: {{ product.points }}</p>
+          </ion-label>
+          <ion-note slot="end"><ion-icon class="icon-List2" name="chevron-forward-outline"></ion-icon></ion-note>
+        </ion-item>
+      </div>
+    </ion-list>
+    <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)">
+      <ion-infinite-scroll-content loadingText="Por favor espere..." loadingSpinner="bubbles"></ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+  </div>
+
+</div>

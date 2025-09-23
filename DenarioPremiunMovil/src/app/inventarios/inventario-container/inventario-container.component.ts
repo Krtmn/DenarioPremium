@@ -1,0 +1,102 @@
+import { Component, Input, OnInit, inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { ClientStocks } from 'src/app/modelos/tables/client-stocks';
+import { InventariosLogicService } from 'src/app/services/inventarios/inventarios-logic.service';
+import { DateServiceService } from 'src/app/services/dates/date-service.service';
+import { GeolocationService } from 'src/app/services/geolocation/geolocation.service';
+
+@Component({
+    selector: 'app-inventario-container',
+    templateUrl: './inventario-container.component.html',
+    styleUrls: ['./inventario-container.component.scss'],
+    standalone: false
+})
+export class InventarioContainerComponent implements OnInit {
+
+  public inventariosLogicService = inject(InventariosLogicService);
+  public router = inject(Router);
+  public dateServ = inject(DateServiceService);
+  private geoLoc = inject(GeolocationService);
+
+  public subs: any;
+
+  constructor() { }
+
+  ngOnInit() {
+    this.backRouteService();
+    this.inventariosLogicService.userMustActivateGPS = this.inventariosLogicService.globalConfig.get('userMustActivateGPS') === 'true';
+  }
+
+
+  ngOnDestroy() {
+    this.subs.unsubscribe();
+  }
+
+
+  backRouteService() {
+    this.subs = this.inventariosLogicService.backRoute.subscribe((data: string) => {
+      console.log("estoy aca", data)
+      if (this.inventariosLogicService.typeStocksComponent) {
+        this.inventariosLogicService.onShowProductStructures()
+        this.inventariosLogicService.typeStocksComponent = false;
+        this.inventariosLogicService.showHeaderButtonsFunction(true);
+        this.inventariosLogicService.inventarioComp = true;
+      } else if (this.inventariosLogicService.inventarioComp) {
+        this.inventariosLogicService.isEdit = false;
+        this.inventariosLogicService.inventarioComp = false;
+        this.inventariosLogicService.inventarioList = false;
+        this.inventariosLogicService.containerComp = true;
+        this.inventariosLogicService.showHeaderButtonsFunction(false);
+        this.inventariosLogicService.newClientStock = {} as ClientStocks;
+        this.router.navigate(['inventarios']);
+      } else if (this.inventariosLogicService.inventarioList) {
+        this.inventariosLogicService.isEdit = false;
+        this.inventariosLogicService.inventarioComp = false;
+        this.inventariosLogicService.inventarioList = false;
+        this.inventariosLogicService.containerComp = true;
+        this.inventariosLogicService.showHeaderButtonsFunction(false);
+        this.inventariosLogicService.newClientStock = {} as ClientStocks;
+        this.router.navigate(['inventarios']);
+      } else if (this.inventariosLogicService.containerComp) {
+        this.inventariosLogicService.isEdit = false;
+        this.inventariosLogicService.newClientStock = {} as ClientStocks;
+        this.router.navigate(['home']);
+      }
+
+    });
+  }
+
+  newStockButton(){
+    if(this.inventariosLogicService.userMustActivateGPS){
+      this.geoLoc.getCurrentPosition().then(xy => {
+        if(xy.length > 0){
+          this.inventariosLogicService.newClientStock.coordenada = xy;
+          this.newClientStock();
+        }
+      })
+    }else{
+      this.newClientStock();
+    }
+  }
+
+  newClientStock() {
+    this.inventariosLogicService.hideTab = true;
+    this.inventariosLogicService.newClientStock.daClientStock = this.dateServ.hoyISOFullTime();
+    this.inventariosLogicService.inventarioComp = true;
+    this.inventariosLogicService.containerComp = false;
+    this.inventariosLogicService.inventarioList = false;
+    this.inventariosLogicService.showHeaderButtonsFunction(true);
+    this.inventariosLogicService.initClientStockDetails();
+  }
+
+  findClientStock() {
+    this.inventariosLogicService.inventarioComp = false;
+    this.inventariosLogicService.containerComp = false;
+
+    this.inventariosLogicService.inventarioList = true;
+
+    this.inventariosLogicService.showHeaderButtonsFunction(false);
+
+  }
+
+}

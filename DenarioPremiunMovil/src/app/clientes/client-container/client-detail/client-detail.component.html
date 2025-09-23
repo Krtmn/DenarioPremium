@@ -1,0 +1,183 @@
+<div class="client-detail">
+    <ion-segment value="default" [(ngModel)]="this.clientLogic.segment" scrollable>
+        <ion-segment-button value="default">
+            <ion-label class="textTab">{{clientLogic.clientTags.get("CLI_DETAIL_TAB_DETALLE")}}</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="docVentas" [disabled]="client == null" *ngIf="!clientLogic.user.transportista">
+            <ion-label class="textTab">{{clientLogic.clientTags.get("CLI_DETAIL_TAB_DOCUMENTO_VENTA")}}</ion-label>
+        </ion-segment-button>
+    </ion-segment>
+    <div [ngSwitch]="this.clientLogic.segment">
+        <ion-card *ngSwitchCase="'default'">
+            <ion-grid [fixed]="true" class="tablaInfoclients">
+                <ion-row>
+                    <ion-col size="4"
+                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_EMPRESA")}}:</ion-col>
+                    <ion-col>{{client.lblEnterprise}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_NOMBRE")}}:</ion-col>
+                    <ion-col>{{client.lbClient}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CODIGO")}}:</ion-col>
+                    <ion-col>{{client.coClient}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col size="4"
+                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_LISTA_PRECIO")}}:</ion-col>
+                    <ion-col>{{client.naPriceList}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col size="4" class="titulosBold">{{tagRif}}:</ion-col>
+                    <ion-col>{{client.nuRif}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col size="4"
+                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CONTACTO")}}:</ion-col>
+                    <ion-col>{{client.naResponsible}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_EMAIL")}}:</ion-col>
+                    <ion-col size="8">{{client.naEmail}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col size="4"
+                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_TELEFONO")}}:</ion-col>
+                    <ion-col>{{client.nuPhone}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
+                        {{client.coCurrency}}:</ion-col>
+                    <ion-col
+                        [ngStyle]="{color: client.saldo1 >0 ? 'Red' : 'Blue' }">{{formatNumber(client.saldo1)}}</ion-col>
+                </ion-row>
+                <ion-row *ngIf="multiCurrency">
+                    <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
+                        {{oppositeCoCurrency(client.coCurrency)}}:</ion-col>
+                    <ion-col
+                        [ngStyle]="{color: client.saldo1 >0 ? 'Red' : 'Blue' }">{{formatNumber(client.saldo2)}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col size="4"
+                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO")}}:</ion-col>
+                    <ion-col>{{client.nuCreditLimit}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col size="4"
+                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CONDICION_PAGO")}}:</ion-col>
+                    <ion-col>{{client.coPaymentCondition}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col size="4"
+                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_DIRECCION")}}:</ion-col>
+                    <ion-col>{{client.txAddress}}</ion-col>
+                </ion-row>
+                <!--     <ion-row>
+                    <ion-col size="4" class="titulosBold">EDITABLE:</ion-col>
+                    <ion-col>{{client.editable}}</ion-col>
+                </ion-row> -->
+                <ion-row *ngIf="client.editable == 'true'">
+                    <ion-col size="4"
+                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_COORDENADA")}}:</ion-col>
+                    <ion-col>{{client.coordenada}}
+                        <ion-button *ngIf="coordenada" class="botonAddVerde" size="small"
+                            (click)="viewCoordenada(true,  client)">
+                            <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
+                        </ion-button>
+                        <ion-button *ngIf="!coordenada" class="botonAddVerde" size="small"
+                            (click)="viewCoordenada(false,client)">
+                            <ion-icon slot="icon-only" name="add"></ion-icon>
+                        </ion-button>
+
+                    </ion-col>
+                </ion-row>
+                <ion-row *ngIf="client.editable == 'false'">
+                    <ion-col size="4"
+                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_COORDENADA")}}:</ion-col>
+                    <ion-col>{{client.coordenada}}
+                        <ion-button *ngIf="coordenada" class="botonAddVerde" size="small"
+                            (click)="viewCoordenada(true, client)">
+                            <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
+                        </ion-button>
+                        <!-- <a (click)="viewCoordenada(true, client)">
+                            <ion-icon *ngIf="coordenada" src="../../../assets/icon/search-circle-outline.svg"></ion-icon>
+                        </a> -->
+                    </ion-col>
+                </ion-row>
+            </ion-grid>
+        </ion-card>
+        <ion-card *ngSwitchCase="'docVentas'">
+            <ion-grid class="tablaInfoClientes tablaDocVentasGrip" *ngIf="document.length > 0">
+                <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
+                    <ion-col size="4" class="titulosBold col borderSuperiorIzquierdo" size="4"></ion-col>
+                    <ion-col size="4"
+                        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_TIPO")}}</ion-col>
+                    <ion-col size="4"
+                        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_NUMERO_DOCUMENTO")}}</ion-col>
+                    <ion-col size="4"
+                        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_MONEDA_DOC")}}</ion-col>
+                    <ion-col size="4"
+                        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_DIAS_VENCIMIENTO")}}</ion-col>
+                    <ion-col size="4" *ngIf="multiCurrency"
+                        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_TASA")}}</ion-col>
+                    <ion-col size="4" class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_MONTO")}} {{
+                        localCurrency }}</ion-col>
+                    <ion-col size="4" *ngIf="multiCurrency"
+                        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_MONTO")}} {{ hardCurrency
+                        }}</ion-col>
+                    <ion-col size="4" class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}} {{
+                        localCurrency }}</ion-col>
+                    <ion-col size="4" *ngIf="multiCurrency"
+                        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
+                        {{ hardCurrency }}</ion-col>
+                    <ion-col size="4"
+                        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_FECHA_DOCUMENTO")}}</ion-col>
+                    <ion-col size="4"
+                        class="titulosBold col borderSuperiorDerecho">{{clientLogic.clientTags.get("CLI_DETAIL_FECHA_VENCIMIENTO")}}</ion-col>
+                </ion-row>
+                <ion-row *ngFor="let documento of document;index as i" class="tablaDocumentosVenta tablaDocVentas row">
+                    <ion-col size="4" class="ion-text-center col borderInferiorIzquierdo">
+                        <ion-button (click)="openDoc(documento.idDocument, i)" expand="block" class="botonAddVerde"
+                            size="small">
+                            <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
+                            <!-- {{clientLogic.clientTags.get("CLI_DOC_SALE_BUTTON_VIEW")}} -->
+                        </ion-button>
+
+                        <!-- <a (click)="openDoc(documento.idDocument, i)">
+                            <ion-icon src=" ../../../assets/icon/search-circle-outline.svg"></ion-icon>Ver
+                        </a> -->
+                    </ion-col>
+                    <ion-col size="4" class="ion-text-center col"
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.coDocumentSaleType}}</ion-col>
+                    <ion-col size="4" class="ion-text-center col"
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.coDocument}}</ion-col>
+                    <ion-col size="4" class="ion-text-center col"
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.coCurrency}}</ion-col>
+                    <ion-col size="4" class="ion-text-center col"
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">
+                        {{getDaDueDate(documento.daDueDate)}}</ion-col>
+                    <ion-col size="4" class="ion-text-center col"
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }" *ngIf="multiCurrency"> {{
+                        formatNumber(documento.nuValueLocal) }}</ion-col>
+                    <ion-col size="4" class="ion-text-center col"
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{toLocalCurrency(documento.nuAmountTotal,
+                        documento)}}</ion-col>
+                    <ion-col size="4" class="ion-text-center col"
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }"
+                        *ngIf="multiCurrency">{{toHardCurrency(documento.nuAmountTotal, documento)}}</ion-col>
+                    <ion-col size="4" class="ion-text-center col"
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{toLocalCurrency(documento.nuBalance,
+                        documento)}}</ion-col>
+                    <ion-col size="4" class="ion-text-center col borderInferiorDerecho"
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }"
+                        *ngIf="multiCurrency">{{toHardCurrency(documento.nuBalance, documento)}}</ion-col>
+                    <ion-col size="4" class="ion-text-center col"
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.daDocument}}</ion-col>
+                    <ion-col size="4" class="ion-text-center col"
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.daDueDate}}</ion-col>
+                </ion-row>
+            </ion-grid>
+        </ion-card>
+    </div>
+</div>

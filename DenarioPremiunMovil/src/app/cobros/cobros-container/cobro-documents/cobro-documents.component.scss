@@ -1,0 +1,106 @@
+$colorVerde: #59b02d;
+$colorVerdeRegistrar: #7dc60f;
+$colorAmarillo: #daab19;
+$colorGris: #666666;
+$colorLila: #430197;
+$fondoVerde: #59b02d;
+$fondoAmarillo: #daab19;
+$fondoLila: #430197;
+
+.tablaInfoClientes ion-col {
+    // border: 1px solid #000000;
+    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.fondoVerde {
+  background: #59b02d !important; /* Usa tu color verde corporativo */
+  --background: #59b02d !important;
+  color: #fff !important;
+}
+
+
+.col {
+  border: solid 1px $colorLila;
+  border-bottom-style: none;
+  border-right-style: none;
+}
+
+.col:last-child {
+  border-right: solid 1px $colorLila;
+}
+
+.row:last-child .col {
+  border-bottom: solid 1px $colorLila;
+}
+
+
+
+.tablaDocumentosVenta ion-col {
+    border: 1px solid $colorLila;
+    flex-wrap: nowrap;
+    overflow: auto;
+    white-space: nowrap;
+}
+
+.titulodepositos{
+  font-size: 18px;
+  color: $colorLila;
+  text-align: center;
+}
+
+.cabecera .col {
+  background-color:$colorLila;
+  color: #ffffff;
+}
+
+
+.tablaDocVentas {
+    flex-wrap: nowrap;
+}
+
+.tablaDocVentasGrip {
+    flex-wrap: nowrap;
+    overflow-x: scroll !important;
+    overflow-y: hidden;
+    color: #000000;
+}
+.tablaDocVentasGrip {
+    flex-wrap: nowrap;
+    overflow-x: scroll !important;
+    overflow-y: hidden;
+    color: #000000;
+}
+
+
+
+.popover {
+    --width: 100% !important;
+    --offset-x: 0% !important;
+    ;
+    --offset-y: 72% !important;
+    ;
+}
+
+.inp-write {
+    --border-color: #e60c0c;
+}
+
+.good {
+    --border-color: #0ce642;
+}
+
+ion-checkbox {
+  --size: 15px;
+  --checkbox-background-checked: #59b02d;
+}
+
+ion-checkbox::part(container) {
+  // border-radius: 6px;
+  border: 2px solid #59b02d;
+}
+
+.padding0{
+  padding: 0!important;
+}

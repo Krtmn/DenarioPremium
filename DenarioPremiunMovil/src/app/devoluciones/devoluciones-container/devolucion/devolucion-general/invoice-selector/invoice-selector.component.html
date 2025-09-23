@@ -1,0 +1,54 @@
+<ion-modal [keepContentsMounted]="true" id="clienteSelectModal" trigger="invoiceSelect" [isOpen]="isModalOpen"
+  willPresent="onModalOpen()">
+  <ng-template>
+    <div>
+      <ion-header :translucent="false">
+        <ion-toolbar class="fondoAmarillo">
+          <ion-grid>
+            <ion-row>
+              <ion-col size="2" size-sm="2" size-xs="2">
+                <a>
+                  <!-- <a routerLink="/visitas"> -->
+                  <img (click)="closeModal()" class="fechaAtras" alt=""
+                    src="../../../assets/images/flecha-blanca.png" />
+                </a>
+              </ion-col>
+              <ion-col size="8" size-sm="8" size-sm="9" size-xs="6">
+                <h1 class="tituloModulos">{{ nombreModulo }}</h1>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </ion-toolbar>
+      </ion-header>
+      <ion-grid>
+        <ion-row>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeModal()">CERRAR</ion-button>
+          </ion-buttons>
+        </ion-row>
+        <ion-row>
+          <ion-col>
+            <ion-searchbar class="lupamorada" show-clear-button="always" search-icon="search-circle"
+              clear-icon="trash-bin" placeholder="Facturas..." (ionInput)="handleInput($event)">
+            </ion-searchbar>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </div>
+    <ion-content>
+      <ion-list *ngFor="let invoice of returnLogic.invoices;" button detail="false" (click)="selectInvoice(invoice)">
+        <div *ngIf="searchText === '' || invoice.coInvoice.toLowerCase().includes(searchText)">
+          <div class="product-structure-title listaProductos">
+            <ion-item button detail="false" class="listaItems">
+              <ion-label>
+                <p>{{returnLogic.tags.get('DEV_DOC')}}: {{ invoice.coInvoice}}</p>
+                <p>{{returnLogic.tags.get('DEV_FECHA_DEV')}}: {{ invoice.daInvoice | date: "dd/MM/yyyy" }}</p>
+              </ion-label>
+              <ion-note slot="end"><ion-icon class="icon-List" name="chevron-forward-outline"></ion-icon></ion-note>
+            </ion-item>
+          </div>
+        </div>
+      </ion-list>
+    </ion-content>
+  </ng-template>
+</ion-modal>

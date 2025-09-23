@@ -1,0 +1,47 @@
+<div class="letrasnegras">
+  <ion-grid>
+    <ion-row>
+      <ion-col size="12" size-sm="12" size-xs="12">
+        <h2 class="titulodepositos">{{this.depositService.depositTags.get('DEP_COB_DEP')}}</h2>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+
+
+  <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
+    <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
+      <ion-col class="titulosBold col borderSuperiorIzquierdo" size="6">{{this.depositService.depositTags.get('DEP_CLIENTE')}} </ion-col>
+      <ion-col class="titulosBold col" size="6">{{this.depositService.depositTags.get('DEP_FECHA_COB')}} </ion-col>
+      <ion-col class="titulosBold col" size="6">{{this.depositService.depositTags.get('DEP_CODIGO_COB')}} </ion-col>
+      <ion-col class="titulosBold col" size="6">{{this.depositService.depositTags.get('DEP_MONTO_DEPOSITO')}} </ion-col>
+      <ion-col class="titulosBold col borderSuperiorDerecho" size="6">{{this.depositService.depositTags.get('DEP_MONTO_COBRO')}} </ion-col>
+    </ion-row>
+
+    <ion-row *ngFor="let cobrosDetails of this.depositService.cobrosDetails;index as i"
+      class="tabladocumentSalesVenta tablaDocVentas row">
+      <ion-col *ngIf="cobrosDetails.isSelected" size="6" class="ion-text-center col borderInferiorIzquierdo">{{cobrosDetails.lb_client}}</ion-col>
+      <ion-col *ngIf="cobrosDetails.isSelected" size="6" class="ion-text-center col">{{cobrosDetails.da_collection}}</ion-col>
+      <ion-col *ngIf="cobrosDetails.isSelected" size="6" class="ion-text-center col">{{cobrosDetails.co_collection}}</ion-col>
+      <ion-col *ngIf="cobrosDetails.isSelected" size="6" class="ion-text-center col">{{cobrosDetails.nu_amount_final}}
+      </ion-col>
+      <ion-col *ngIf="cobrosDetails.isSelected" size="6" class="ion-text-center col borderInferiorDerecho">{{cobrosDetails.nu_amount_final}}
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
+    <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
+      <ion-col class="titulosBold col " size="10" offset-xs="1">{{this.depositService.depositTags.get('DEP_MONTO_TOTAL_DEP')}} </ion-col>
+    </ion-row>
+
+    <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
+      <ion-col size="10" offset-xs="1" class="ion-text-center col">
+        {{this.depositService.deposit.nuAmountDoc}} {{this.depositService.deposit.coCurrency}}
+        <br>
+        {{this.depositService.deposit.nuAmountDocConversion}} {{this.depositService.currencyConversion.coCurrency}}
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+</div>

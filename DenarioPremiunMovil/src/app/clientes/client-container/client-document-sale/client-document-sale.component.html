@@ -1,0 +1,46 @@
+<div class="client-document-sale">
+    <ion-card>
+        <ion-card-header>
+            <ion-card-title><img class="tituloDocVenta" alt="" src="../../../assets/images/docventa-cliente.png" /></ion-card-title>
+        </ion-card-header>
+
+        <ion-card-content>
+            <ion-grid [fixed]="true" class="tableClientDocumentSale">
+                <!-- <ion-label> Documento Venta Cliente</ion-label> -->
+                <ion-row>
+                    <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">{{this.clientLogic.clientTags.get('CLI_DOC_SALE_CODOC_SALE_TYPE')}}:</ion-col>
+                    <ion-col class="ion-align-items-start" size="8" size-sm="8" size-xs="8">{{this.clientLogic.documentSaleSelect.coDocumentSaleType}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">{{this.clientLogic.clientTags.get('CLI_DOC_SALE_CODOC')}}:</ion-col>
+                    <ion-col class="ion-align-items-start" size="8" size-sm="8" size-xs="8">{{this.clientLogic.documentSaleSelect.coDocument}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">{{this.clientLogic.clientTags.get('CLI_DOC_SALE_NUDOC')}}:</ion-col>
+                    <ion-col class="ion-align-items-start" size="8" size-sm="8" size-xs="8">{{this.clientLogic.documentSaleSelect.nuDocument}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">{{this.clientLogic.clientTags.get('CLI_DOC_SALE_DADOC')}}:</ion-col>
+                    <ion-col class="ion-align-items-start" size="8" size-sm="8" size-xs="8">{{this.clientLogic.documentSaleSelect.daDocument}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">{{this.clientLogic.clientTags.get('CLI_DOC_SALE_DADUEDATE')}}:</ion-col>
+                    <ion-col class="ion-align-items-start" size="8" size-sm="8" size-xs="8">{{this.clientLogic.documentSaleSelect.daDueDate}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">{{this.clientLogic.clientTags.get('CLI_DOC_SALE_NUAMOUNTTOTAL')}}:</ion-col>
+                    <ion-col class="ion-align-items-start" size="8" size-sm="8" size-xs="8">{{formatNumber(this.clientLogic.documentSaleSelect.nuAmountTotal)}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">{{this.clientLogic.clientTags.get('CLI_DOC_SALE_NUBALANCE')}}:</ion-col>
+                    <ion-col class="ion-align-items-start" size="8" size-sm="8" size-xs="8">{{formatNumber(this.clientLogic.documentSaleSelect.nuBalance)}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">{{this.clientLogic.clientTags.get('CLI_DOC_SALE_TXCOMMENT')}}:</ion-col>
+                    <ion-col class="ion-align-items-start" size="8" size-sm="8" size-xs="8">{{this.clientLogic.documentSaleSelect.txComment}}</ion-col>
+                </ion-row>
+            </ion-grid>
+        </ion-card-content>
+    </ion-card>
+
+</div>

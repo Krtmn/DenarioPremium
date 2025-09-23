@@ -1,0 +1,73 @@
+<div class="listado-product-structures" *ngIf="productStructures">
+
+  <ion-button *ngIf="devolucion" fill="outline" size="small" class="colorBorderBuscar" shape="round" (click)="onReturnProductTab()">
+    {{this.productsTabTags.get('PROD_VOLVER')}}
+    <ion-icon class="colorIconBuscar" slot="start" name="arrow-back-circle-sharp"></ion-icon>
+  </ion-button>
+
+  <ion-grid>
+    <ion-row>
+      <ion-col class="" size="{{ buttonSize }}" size-sm="{{ buttonSize }}" size-xs="{{ buttonSize }}">
+      <!-- boton favoritos -->
+        <ion-button (click)="onFavoriteProductSelected()" expand="block" size="small" class="botonAddVerdePedidos">
+            <ion-icon slot="start" name="heart"></ion-icon>
+            <!-- <ion-label> -->
+            {{favoriteButtonLabel}}
+          <!-- </ion-label> -->
+        </ion-button>
+      </ion-col>
+      <ion-col class="" size="{{ buttonSize }}" size-sm="{{ buttonSize }}" size-xs="{{ buttonSize }}">
+      <!--[featuredProducts] boton destacados -->
+        <ion-button (click)="onFeaturedProductSelected()" size="small" expand="block" class="botonAddVerdePedidos">
+            <ion-icon slot="start" name="star"></ion-icon>
+            <!-- <ion-label> -->
+            {{featuredButtonLabel}}
+          <!-- </ion-label> -->
+        </ion-button>
+      </ion-col>
+       <ion-col class="" size="2" size-sm="2" size-xs="2" *ngIf="pedido"> 
+      <!--[Pedidos] boton de carrito -->
+        <ion-button (click)="onCartSelected()" size="small" expand="block" class="botonAddVerdePedidos">
+            <ion-icon slot="icon-only" name="cart-outline"></ion-icon>
+        </ion-button>
+      </ion-col> 
+
+      <ion-col class="" size="12" size-sm="12" size-xs="12">
+        <!--  Un Selector de tipos de estrucutras, por defecto el nivel mas bajo -->
+        <div class="listado-tps-selector ion-text-center">
+          <ion-select [(ngModel)]="tpsSeleccionada" (ionChange)="onTypeProductStructureChanged($event)"
+            *ngIf="productStructures" class="ion-text-center" interface="popover" labelPlacement="stacked">
+            <ion-select-option *ngFor="let tps of typeProductStructureList" [value]="tps">{{ tps.naTypeProductStructure
+              }}</ion-select-option>
+          </ion-select>
+        </div>
+      </ion-col>
+
+      <!--  Listado clickeable de estructuras que dependen de los selectores anteriores -->
+      <ion-col class="margin-top-List" size="12" size-sm="12" size-xs="12">
+        <div class="product-structure-card">
+          <ion-list *ngFor="let ps of productStructureList; index as i" (click)="onProductStructureSelected(ps)"
+            lines="full">
+            <div class="product-structure-title listaProductos">
+              <!-- <ion-item button detail="true" *ngIf="i<10*indice"> -->
+              <ion-item button detail="false" class="listaItems">
+                <ion-label class="heightList">
+                  <h3 class="font-ListProduct">{{ ps.naProductStructure }} </h3>
+                </ion-label>
+                <ion-note slot="end"><ion-icon class="icon-List"
+                    name="chevron-forward-outline"></ion-icon></ion-note>
+
+                <ion-badge>{{ ps.quProducts }}</ion-badge>
+              </ion-item>
+
+            </div>
+          </ion-list>
+        </div>
+      </ion-col>
+      <!-- <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)">
+          <ion-infinite-scroll-content loadingText="Por favor espere..." loadingSpinner="bubbles"></ion-infinite-scroll-content>
+        </ion-infinite-scroll> -->
+
+    </ion-row>
+  </ion-grid>
+</div>

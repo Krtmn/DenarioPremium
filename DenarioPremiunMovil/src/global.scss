@@ -1,0 +1,834 @@
+/*
+ * App Global CSS
+ * ----------------------------------------------------------------------------
+ * Put style rules here that you want to apply globally. These styles are for
+ * the entire app and not just one component. Additionally, this file can be
+ * used as an entry point to import other CSS/Sass files to be included in the
+ * output CSS.
+ * For more information on global stylesheets, visit the documentation:
+ * https://ionicframework.com/docs/layout/global-stylesheets
+ */
+
+
+/* Core CSS required for Ionic components to work properly */
+
+@import "@ionic/angular/css/core.css";
+
+/* Basic CSS for apps built with Ionic */
+
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import '@ionic/angular/css/display.css';
+
+/* Optional CSS utils that can be commented out */
+
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+@import "@ionic/angular/css/text-transformation.css";
+@import "@ionic/angular/css/flex-utils.css";
+$colorVerde: #59b02d;
+$colorVerdeRegistrar: #7dc60f;
+$colorAmarillo: #daab19;
+$colorGris: #666666;
+$colorLila: #430197;
+$fondoVerde: #59b02d;
+$fondoAmarillo: #daab19;
+$fondoLila: #430197;
+$fondoLogin: url("/assets/images/home-denario.jpg");
+
+.fondo {
+    background-image: $fondoLogin;
+    background-size: 100% 101%;
+    background-repeat: no-repeat;
+    height: 100%;
+    position: absolute;
+    padding-top: 20%;
+}
+
+.fondo2 {
+    //background-image: $fondoLogin;
+    background-size: 100% 101%;
+    background-repeat: no-repeat;
+    height: 100%;
+    position: absolute;
+    padding-top: 20%;
+}
+
+ion-segment {
+    --height: 40px;
+    height: 40px;
+}
+
+.ios ion-segment-button {
+    --height: 40px;
+    --margin-bottom: 0px;
+    --margin-top: 0px;
+    --padding-top: 0px;
+    --padding-bottom: 0px;
+    --color: #000000;
+    top: 0px;
+
+    ion-label {
+        margin-top: 6px;
+        margin-bottom: 6px;
+    }
+}
+
+.md ion-segment-button {
+    --height: 40px;
+    --margin-bottom: 0px;
+    --margin-top: 0px;
+    --padding-top: 0px;
+    --padding-bottom: 0px;
+    --color: #000000;
+    top: 0px;
+
+    ion-label {
+        margin-top: 0px;
+        margin-bottom: 6px;
+    }
+}
+
+ion-fab-button {
+  --background:#430197;
+}
+
+
+
+.segment-button-checked.md::part(native) {
+    color: #000000;
+}
+
+ion-select::part(icon) {
+    content: url('/assets/images/flecha-down.svg');
+    color: $colorLila;
+    filter: invert(12%) sepia(82%) saturate(6980%) hue-rotate(269deg) brightness(59%) contrast(113%);
+    width: 20px;
+    height: 19px;
+    position: absolute;
+    right: 10px;
+    top: 9px;
+}
+
+.textTab {
+    // color: $colorLila;
+    font-weight: bold;
+    text-transform: capitalize;
+}
+
+ion-segment-button::part(indicator-background) {
+    --background: $colorLila;
+}
+
+ion-select::part(label),
+ion-select::part(text) {
+    text-align: center !important;
+    margin: 0 auto !important;
+    display: block;
+    position: absolute;
+    left: 10%;
+    font-size: 12px;
+    right: 10%;
+}
+
+ion-select {
+    --placeholder-opacity: 1;
+    --justify-content: center;
+    width: 100%;
+}
+
+ion-select {
+    // height: 40px;
+    min-height: 40px;
+}
+
+.titulosBold {
+    font-weight: bold;
+}
+
+.titulosDetallesProductos {
+    padding-top: 12px;
+}
+
+.tituloDetalleProductos {
+    padding-top: 20px;
+    color: $colorLila;
+    font-weight: bold;
+}
+
+.letrasnegras {
+    color: #000000;
+}
+
+.etiquetaDetalleProducto {
+    width: 40px;
+}
+
+.listado-clientes-selector,
+.listado-enterprise-selector,
+.listado-tps-selector {
+    text-align: center !important;
+    border: 1px solid #9c9c9c;
+    border-radius: 25px;
+    font-weight: bold;
+    height: 30px;
+    width: 100%;
+    margin-bottom: 2px;
+}
+
+.listado-price-list,
+.select-style {
+    text-align: center !important;
+    border: 1px solid #9c9c9c;
+    border-radius: 25px;
+    font-weight: bold;
+    height: 30px;
+    width: 100%;
+    margin-bottom: 2px;
+}
+
+.listado-enterprise-selector .select-ico,
+.listado-tps-selector .select-icon,
+.listado-clientes-selector .select-ico,
+.listado-price-list .select-ico,
+.select-style .select-ico {
+    display: none !important;
+}
+
+.marginSearch {
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+.icon-List {
+    font-size: 15px;
+    margin-top: -9px;
+    background: $colorLila;
+    color: #fff;
+    border-radius: 25px;
+    padding: 3px;
+    margin-right: -11px;
+}
+
+.icon-List2 {
+    font-size: 15px;
+    margin-top: 4px;
+    background: $colorLila;
+    color: #fff;
+    border-radius: 25px;
+    padding: 3px;
+    margin-right: -11px;
+}
+
+.icon-List-Client {
+    font-size: 15px;
+    margin-top: 5px;
+    background: $colorLila;
+    color: #fff;
+    border-radius: 25px;
+    padding: 3px;
+    margin-right: -11px;
+}
+
+.tituloDetails {
+    font-weight: bold;
+    color: #000;
+}
+
+.colorBorderBuscar {
+    --color: #000;
+    text-transform: uppercase;
+}
+
+.colorIconBuscar {
+    color: $colorLila !important;
+}
+
+.numberProduct {
+    position: absolute;
+    right: 40px;
+    border: 1px solid #430197;
+    padding: 3px;
+    border-radius: 25px;
+    /* color: #fff; */
+    font-weight: bold;
+    top: 11px;
+}
+
+.item-detail-icon {
+    background: red !important;
+}
+
+.borderInput .searchbar-input {
+    border-radius: 25px;
+    height: 44px;
+    font-weight: 400;
+}
+
+ion-title {
+    padding: 0;
+}
+
+.fondoVerde {
+    background: $fondoVerde;
+}
+
+.fondoLila {
+    background: $fondoLila;
+}
+
+.fondoAmarillo {
+    background: $fondoAmarillo;
+}
+
+.tituloModulos {
+    color: #ffffff;
+    font-weight: bold;
+    font-family: sans-serif;
+    margin: 0px;
+    font-size: 26px;
+    padding-top: 7px;
+    text-transform: capitalize !important;
+}
+
+.ios .tituloModulos {
+    padding-top: 10px!important;
+}
+
+.tituloModulos2 {
+    color: #ffffff;
+    font-weight: bold;
+    font-family: sans-serif;
+    margin: 0px;
+    font-size: 25px;
+    padding-top: 7px;
+    text-transform: capitalize !important;
+}
+
+.logoHome {
+    margin-top: 40px;
+    margin-bottom: 30px;
+}
+
+.colorVerde {
+    color: $colorVerde
+}
+
+.colorAmarillo {
+    color: $colorAmarillo
+}
+
+.colorLila {
+    color: $colorLila
+}
+
+.colorGris {
+    color: $colorGris
+}
+
+#container {
+    overflow: auto;
+}
+
+.footer {
+    box-shadow: none;
+}
+
+.logoHomee {
+    box-shadow: none !important;
+    padding-top: 3% !important;
+    margin-bottom: 5%;
+
+    .logoHome2 {
+        width: 40vw;
+        display: block;
+        margin: 0 auto;
+    }
+}
+
+.input-highlight {
+    height: 0px !important;
+}
+
+.logoHomee {
+    box-shadow: none !important;
+    padding-top: 3% !important;
+}
+
+.logoHome2 {
+    width: 40vw;
+    display: block;
+    margin: 0 auto;
+}
+
+.btnBorder {
+    border-radius: 30px;
+}
+
+.nombreModulos {
+    margin-top: 5px;
+    margin-bottom: 0;
+}
+
+.logo {
+    width: 90%;
+    margin-top: 8vh;
+    margin-bottom: 5vh;
+}
+
+
+
+.contenedorLogin {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+
+    input {
+        padding-left: 10px !important;
+    }
+}
+
+.listaProductos .item-detail-icon {
+    background: #430197 !important;
+}
+
+.list-md {
+    padding: 0px !important;
+}
+
+.list-md-lines-full .item-lines-default {
+    --min-height: 20px;
+}
+
+.iconosHeader {
+    width: 70%;
+    display: block;
+    margin: 0 auto;
+    margin-top: 3px;
+}
+
+ion-searchbar.lupamorada {
+    --icon-color: #430197;
+    --color: #000;
+    --placeholder-color: #000;
+    --clear-button-color: #000;
+}
+
+.iconosavesend {
+    width: 80%;
+}
+
+.fechaAtras {
+    width: 90%;
+}
+
+ion-item-divider {
+    padding-left: 0 !important;
+
+    ion-segment-button {
+        font-size: 12px;
+    }
+}
+
+ion-badge {
+    background: $colorLila;
+    --color: white;
+}
+.ios ion-badge {
+    margin-right: 6px;
+    margin-top: -9px;
+}
+
+// .button-inner{
+//     --justify-content: left!important;
+//     justify-content: left!important;
+// }
+//
+// .button-inner {
+//     justify-content: left!important;
+// }
+// ion-button{
+//     --justify-content: left!important;
+//     justify-content: left!important;
+//     .button-inner{
+//         --justify-content: left!important;
+//         justify-content: left!important;
+//     }
+// }
+//
+// /* This is a valid syntax */
+// ion-button::part(native) {
+//     .button-inner{
+//         --justify-content: left!important;
+//         justify-content: left!important;
+//     }
+//     --justify-content: left!important;
+//     justify-content: left!important;
+// }
+//
+// /* This is not a valid syntax */
+// ion-button::part(native) .button-inner {
+//     --justify-content: left!important;
+//     justify-content: left!important;
+// }
+
+
+.listado-enterprise-selector .select-ico,
+.listado-tps-selector .select-icon {
+    display: none !important;
+}
+
+.pedidos .select-icon {
+    margin-top: 10px !important;
+}
+
+.imagenEnviar {
+    background-image: url("/assets/images/iconosmensaje.png");
+    background-size: 70%;
+    background-position: center;
+    background-repeat: no-repeat;
+    --background-hover: transparent;
+    --background-activated: transparent;
+    --background-focused: transparent;
+    --ripple-color: transparent;
+}
+.ios .imagenEnviar {
+    margin: 0;
+}
+.md .imagenEnviar {
+    background-image: url("/assets/images/iconosmensaje.png");
+    background-size: 60%;
+    background-position: center;
+    background-repeat: no-repeat;
+    --background-hover: transparent;
+    --background-activated: transparent;
+    --background-focused: transparent;
+    --ripple-color: transparent;
+}
+@media(min-width: 768px) {
+    .imagenEnviar {
+        background-size: 60% !important;
+    }
+
+    .imagenGuardar {
+        background-size: 60% !important;
+    }
+
+
+}
+@media(max-width: 768px) {
+  .tituloModulosIva25 {
+    font-size: 20px!important;
+    padding-top: 12px!important;
+}
+
+
+}
+
+@media(max-width: 540px) {
+    .campoObligatorio {
+        float: right;
+    }
+    .colorBorderBuscar {
+        font-size: 14px;
+    }
+
+}
+
+@media(min-width: 576px) and (max-width: 767px) {
+
+    // .imagenEnviar {
+    //     background-size: 40%!important;
+    // }
+    .contadorProductos {
+        margin-right: 0% !important;
+        margin-left: 0px !important;
+    }
+
+    .signPad canvas {
+        height: auto !important;
+        border: 1px dashed;
+        // margin: 10px 0px 10px 0px;
+        margin: 0 auto !important;
+        margin-top: 20px !important;
+        display: block;
+        width: auto !important;
+        margin-bottom: 0px;
+    }
+
+    .iconobuscar {
+        background-size: 5% !important;
+    }
+
+    // .imagenGuardar {
+    //     background-size: 40%!important;
+    // }
+    .tituloModulos {
+        // padding-top: 0px !important;
+        // font-size: 31px !important;
+    }
+
+
+    .colorInput {
+        height: 57px !important;
+    }
+
+}
+
+.imagenGuardar {
+    background-image: url("/assets/images/iconosguardarblanco.png");
+    background-size: 70%;
+    background-position: center;
+    background-repeat: no-repeat;
+    --background-hover: transparent;
+    --background-activated: transparent;
+    --background-focused: transparent;
+    --ripple-color: transparent;
+}
+.ios .imagenGuardar {
+    margin: 0;
+}
+.md .imagenGuardar {
+    background-image: url("/assets/images/iconosguardarblanco.png");
+    background-size: 60%;
+    background-position: center;
+    background-repeat: no-repeat;
+    --background-hover: transparent;
+    --background-activated: transparent;
+    --background-focused: transparent;
+    --ripple-color: transparent;
+}
+.imagenCopiar {
+    background-image: url("/assets/images/copy2.png");
+    background-size: 70%;
+    background-position: center;
+    background-repeat: no-repeat;
+    --background-hover: transparent;
+    --background-activated: transparent;
+    --background-focused: transparent;
+    --ripple-color: transparent;
+    margin:0;
+}
+
+.signPad canvas {
+    height: 30vh;
+    border: 1px dashed;
+    margin: 10px 0px 10px 0px;
+    width: 90%;
+    margin: 5%;
+    margin-bottom: 0px;
+}
+
+ion-label,
+ion-input {
+    font-weight: bold;
+    --placeholder-font-weight: bold;
+    --placeholder-color: #000;
+}
+
+ion-button.botonAddLila {
+    --background: #430197;
+    --background-hover: #430197;
+    --background-activated: #430197;
+    --background-focused: #430197;
+    letter-spacing: 2px;
+    font-weight: 400;
+}
+
+ion-button.botonAddAmarillo {
+    --background: #daab19;
+    --background-hover: #daab19;
+    --background-activated: #daab19;
+    --background-focused: #daab19;
+    letter-spacing: 2px;
+    font-weight: 400;
+}
+
+ion-button.botonAddVerde {
+    --background: #59b02d;
+    --background-hover: #59b02d;
+    --background-activated: #59b02d;
+    --background-focused: #59b02d;
+    letter-spacing: 2px;
+    font-weight: 400;
+}
+
+ion-button.botonAddVerdePedidos {
+    --background: #59b02d;
+    --background-hover: #59b02d;
+    --background-activated: #59b02d;
+    --background-focused: #59b02d;
+    // letter-spacing: 2px;
+    font-weight: 400;
+}
+
+ion-input.customInput {
+    // --padding-bottom: 16px!important;
+    --padding-end: 16px !important;
+    --padding-start: 16px !important;
+    --padding-top: 3px !important;
+}
+
+ion-accordion-group .accordionPedidos .ion-accordion-toggle-icon {
+    // font-size: 50px!important;
+    color: $colorLila !important;
+}
+
+.cobroComponent {
+    width: 100%;
+}
+
+.paddingTopStructure {
+    padding-top: 15px;
+}
+
+.listado-enterprise-selector ion-select::part(placeholder) {
+    text-align: center;
+    justify-content: center !important;
+    --justify-content: center !important;
+}
+
+ion-segment-button {
+    --color: #000000 !important;
+}
+
+
+
+.borderSuperiorIzquierdo {
+    border-radius: 10px 0px 0px 0px;
+}
+
+.borderSuperiorDerecho {
+    border-radius: 0px 10px 0px 0px;
+}
+
+.row:last-child .borderInferiorIzquierdo {
+    border-radius: 0px 0px 0px 10px;
+}
+
+.row:last-child .borderInferiorDerecho {
+    border-radius: 0px 0px 10px 0px;
+}
+
+ion-modal.fechasModal {
+  --width: fit-content;
+  --min-width: 250px;
+  --height: fit-content;
+  --border-radius: 6px;
+  --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
+}
+
+ion-modal.fechasModal h1 {
+  margin: 20px 20px 10px 20px;
+}
+
+ion-modal.fechasModal ion-icon {
+  margin-right: 6px;
+
+  width: 48px;
+  height: 48px;
+
+  padding: 4px 0;
+
+  color: #aaaaaa;
+}
+
+ion-modal.fechasModal .wrapper {
+  margin-bottom: 10px;
+}
+
+.letrasFechasButton{
+  font-size: 14px;
+}
+
+body.ios ion-segment {
+  --background: #fff !important;
+  background: #fff !important;
+}
+
+body.ios ion-segment-button {
+  --background: #fff !important;
+  --color: #000 !important;
+  color: #000 !important;
+  font-weight: 600 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border-bottom: 2px solid transparent !important;
+}
+
+.ios .sc-ion-input-ios-h{
+    border: 1px solid #9c9c9c;
+    padding: 5px!Important;
+    border-radius: 5px;
+}
+
+
+.ios ion-segment-button.ion-activated .textTab,
+.ios ion-segment-button.segment-button-checked .textTab{
+  color: #fff !important;
+}
+
+.ios ion-segment-button::part(indicator-background) {
+  background: $colorLila !important; /* O el color que prefieras para el seleccionado */
+}
+
+.ios ion-segment-button.ion-activated,
+.ios ion-segment-button.segment-button-checked {
+    background: $colorLila !important; /* O el color que prefieras para el seleccionado */
+    color: #fff !important;
+    color: #fff !important;
+}
+
+.md ion-segment-button.ion-activated,
+.md ion-segment-button.segment-button-checked {
+  background: $colorLila !important; /* O el color que prefieras para el seleccionado */
+  color: #fff !important;
+  color: #fff !important;
+}
+.md .segment-button-checked.md::part(native) {
+    color: #fff!important;
+}
+
+.md .segment-button-checked.md::part(native) {
+  margin-top: 0px!important;
+}
+
+.ios ion-header ion-toolbar:first-of-type {
+    padding-top: 0!important;
+}
+.ios ion-toolbar {
+    --padding-top: 30px!important;
+}
+.ios .fixedSelectProduct{
+  top: 190px!important;
+}
+.ios ion-select {
+min-height: 40px!important;
+}
+.contenedorModalActividades h1{
+    font-size: 18px;
+}
+
+html.ios ion-modal ion-toolbar, html.ios .modal-footer-moving ion-toolbar {
+padding-right: 0!important;
+padding-left: 0!important;
+}
+
+.ios ion-footer ion-toolbar {
+    --background: transparent!important;
+    background: transparent!important;
+  
+}
+
+body, html {
+  color-scheme: only light;
+  background: #fff !important;
+  color: #000 !important;
+}
+
+:root {
+  --ion-background-color: #fff;
+  --ion-text-color: #000;
+}

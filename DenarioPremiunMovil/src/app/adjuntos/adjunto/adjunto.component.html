@@ -1,0 +1,107 @@
+<div>
+  <ion-grid>
+    <ion-row>
+      <ion-col size="12" size-sm="12" size-xs="12">
+        <ion-accordion-group (ionChange)="onAccordionChange($event)">
+          <ion-accordion value='images' [disabled]="viewOnly && service.fotos.length < 1">
+            <ion-item slot="header" color="light">
+              <ion-label>{{ getTag('ADJ_ACORDEON_IMAGENES')}}</ion-label>
+            </ion-item>
+            <div slot="content">
+              <ion-grid>
+                <ion-row>
+                  <ion-col size="12" size-sm="12" size-xs="12">
+                    <ion-button expand="block" size="small" style="--background: {{colorBoton}}" (click)="buscarImg()"
+                      *ngIf="!viewOnly" [disabled]="disablePhotos">
+                      <ion-icon slot="start" name="search"></ion-icon>
+                      {{ getTag('ADJ_BUSCAR_FOTO') }}
+                    </ion-button>
+                  </ion-col>
+                  <ion-col size="12" size-sm="12" size-xs="12">
+                    <ion-button expand="block" size="small" style="--background: {{colorBoton}}" (click)="tomarImg()"
+                      *ngIf="!viewOnly" [disabled]="disablePhotos">
+                      <ion-icon slot="start" name="camera"></ion-icon>
+                      {{ getTag('ADJ_TOMAR_FOTO') }}
+                    </ion-button>
+                  </ion-col>
+                </ion-row>
+              </ion-grid>
+
+        <swiper-container
+  slides-per-view="1"
+  space-between="10"
+  pagination="true"
+  *ngIf="enableCarousel"
+  style="width: 100%;"
+>
+  <swiper-slide *ngFor="let item of getFotos(); let i = index">
+    <ion-grid>
+      <ion-row>
+        <ion-col size="2" size-md="1" size-lg="1" size-xs="2">
+          <ion-button color="danger" (click)="deleteImg(i)" *ngIf="!viewOnly">
+            <ion-icon name="trash"></ion-icon>
+          </ion-button>
+        </ion-col>
+        <ion-col size="10" size-md="11" size-lg="11" size-xs="10">
+          <ion-img class="sizeAdjFoto" [src]="getImgSrc(item)"></ion-img>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </swiper-slide>
+</swiper-container>
+      </div>
+      </ion-accordion>
+
+          <ion-accordion value="file" [disabled]="viewOnly && service.file == null">
+            <ion-item slot="header" color="light">
+              <ion-label>{{ getTag('ADJ_ACORDEON_ARCHIVO')}}</ion-label>
+            </ion-item>
+            <div slot="content" *ngIf="!viewOnly">
+              <div>
+                <ion-button expand="block" style="--background: {{colorBoton}}" (click)="buscarFile()"
+                  *ngIf="!viewOnly && service.file == null">
+                  <ion-icon slot="start" name="search"></ion-icon>
+                  {{ getTag('ADJ_SUBIR_ARCHIVO')}}
+                </ion-button>
+              </div>
+              <div *ngIf="service.file != null">
+                <ion-button color="danger" (click)="deleteFile()" *ngIf="!viewOnly"><ion-icon
+                    name="trash"></ion-icon></ion-button>
+                {{service.file.naFile}}
+
+              </div>
+            </div>
+            <div slot="content" *ngIf="viewOnly">
+              <div *ngIf="service.file != null">
+                {{service.file.naFile}}
+              </div>
+            </div>
+          </ion-accordion>
+      <ion-accordion value="sign" [disabled]="viewOnly && service.firma === '' " >
+        <ion-item slot="header" color="light">
+          <ion-label>{{ getTag('ADJ_ACORDEON_FIRMA')}}</ion-label>
+        </ion-item>
+        <!-- panel de firma -->
+
+        <div slot="content" *ngIf="!viewOnly">
+          <signature-pad id="signaturePad" class="signPad" [options]="signaturePadOptions" (onEnd)="drawComplete()" (onBegin)="drawStart()"></signature-pad>
+          <ion-grid>
+            <ion-row>
+              <ion-col size="12" size-md="12" size-lg="12" size-xs="12">
+                <ion-button expand="block" color="danger" (click)="drawClear()">{{ getTag('DENARIO_BOTON_BORRAR')}}</ion-button>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+
+        </div>
+        <div *ngIf="viewOnly && service.firma != '' " slot="content">
+          <ion-img class="sizeAdjFoto" [src]="getImgURL(service.firma)"></ion-img>
+        </div>
+
+      </ion-accordion>
+
+      </ion-accordion-group>
+    </ion-col>
+  </ion-row>
+</ion-grid>
+    <div>

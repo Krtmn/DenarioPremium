@@ -1,0 +1,53 @@
+<ion-header :translucent="false">
+    <ion-toolbar class="fondoLila">
+        <!-- <ion-title class="fondoLila"> -->
+        <ion-grid>
+            <ion-row>
+                <ion-col size="1" size-sm="1" size-xs="2">
+                    <a>
+                        <!-- <a (click)="goBack()"> -->
+                        <img routerLink="/home" class="fechaAtras" alt=""
+                            src="../../../assets/images/flecha-blanca.png" />
+                    </a>
+                </ion-col>
+                <ion-col size="8" size-sm="8" size-sm="9" size-xs="8">
+                    <h1 class="tituloModulos">
+                        {{ this.rolTransportista ? getTag('VIS_NOMBRE_MODULO_DESPACHOS') : getTag('VIS_NOMBRE_MODULO')
+                        }}
+                    </h1>
+                </ion-col>
+                <ion-col size="1" size-sm="1" size-xs="2">
+                    <img class="fechaAtras" alt="" src="../../../assets/images/visitasNuevoBlanco.svg" />
+                </ion-col>
+            </ion-row>
+        </ion-grid>
+        <!--         </ion-title>
+ --> </ion-toolbar>
+</ion-header>
+<ion-content>
+    <ion-grid>
+        <ion-row>
+            <ion-col size="8" size-md="8" offset-md="2" size-sm="12" size-xs="12">
+                <ion-button size="large" fill="outline" class="colorBorderBuscar" shape="round" expand="block"
+                    (click)="nuevaVisita()">
+                    <ion-icon slot="start" name="add"></ion-icon>
+                    <span style="margin-right: auto">
+                        {{ this.rolTransportista ? getTag('VIS_BOTON_NUEVA_DESPACHO') : getTag('VIS_BOTON_NUEVA') }}
+                    </span>
+
+                </ion-button>
+            </ion-col>
+            <ion-col size="8" size-md="8" offset-md="2" size-sm="12" size-xs="12">
+                <ion-button size="large" fill="outline" class="colorBorderBuscar" shape="round" expand="block"
+                    (click)="verVisita()">
+                    <ion-icon slot="start" name="search">
+                    </ion-icon>
+                    <span style="margin-right: auto">{{ getTag("VIS_BOTON_LISTA") }}
+                    </span>
+                </ion-button>
+            </ion-col>
+        </ion-row>
+    </ion-grid>
+
+    <app-message></app-message>
+</ion-content>

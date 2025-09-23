@@ -1,0 +1,19 @@
+{
+  "server": {
+    "androidScheme": "https"
+  },
+  "appId": "com.kiberno.denarioPremiumPro",
+  "appName": "Denario Premium Movil",
+  "webDir": "www",
+  "cordova": {
+    "preferences": {
+      "ScrollEnabled": "false",
+      "BackupWebStorage": "none",
+      "SplashMaintainAspectRatio": "true",
+      "FadeSplashScreenDuration": "300",
+      "SplashShowOnlyFirstTime": "false",
+      "SplashScreen": "screen",
+      "SplashScreenDelay": "3000"
+    }
+  }
+}

@@ -1,0 +1,49 @@
+<div class="listado-product-structures">
+
+  <ion-searchbar class="lupamorada" show-clear-button="always" search-icon="search-circle" clear-icon="trash-bin"
+    placeholder="{{this.tags.get('DEV_NOMBRE_MODULO')}}..." (ionInput)="handleInput($event)"></ion-searchbar>
+
+  <!--  Listado clickeable de productos  -->
+  <div class="product-card">
+    <ion-list class="espacioListasProductos" *ngFor="let return of this.returnLogic.itemReturns; index as i">
+      <div
+        *ngIf="searchText === '' || return.coClient.toLowerCase().includes(searchText) || return.naClient.toLowerCase().includes(searchText)">
+        <div class="product-structure-title">
+          <ion-item button detail="true">
+            <ion-label class="textList espaciotextoListaProduc"
+              (click)="onReturnSelected(return.coReturn, return.stReturn)">
+              <p class="espacioentrelineas">{{this.tags.get('DENARIO_DEV_NU_REF')}}: {{ return.idReturn }}</p>
+              <p class="espacioentrelineas">{{this.tags.get('DENARIO_DEV_CLIENT')}}: {{ return.coClient }} - {{
+                return.naClient }}</p>
+              <p class="espacioentrelineas">
+                <!-- Estatus: {{ getStatusOrderName(collect.stCollection, collect.idCollection!) }} -->
+                {{this.tags.get('DENARIO_DEV_STATUS')}}: {{ getStatusOrderName(return.stReturn, return.naStatus)}}
+
+              </p>
+             <!--  <p *ngIf="return.stReturn === 1" class="espacioentrelineas">{{this.tags.get('DENARIO_DEV_STATUS')}}:
+                {{this.tags.get('DENARIO_DEV_SAVED')}}</p>
+              <p *ngIf="return.stReturn === 2" class="espacioentrelineas">{{this.tags.get('DENARIO_DEV_STATUS')}}:
+                {{this.tags.get('DENARIO_DEV_TO_BE_SENDED')}}</p>
+              <p *ngIf="return.stReturn === 3" class="espacioentrelineas">{{this.tags.get('DENARIO_DEV_STATUS')}}:
+                {{this.tags.get('DENARIO_DEV_SENDED')}}</p> -->
+              <p class="espacioentrelineas">{{this.tags.get('DENARIO_DEV_DATE')}}: {{ return.daReturn | date:
+                "dd/MM/yyyy
+                hh:mm:ss" }}</p>
+            </ion-label>
+            <ion-button *ngIf="return.stReturn === 1" (click)="showAlertDelete(return, i)" color="danger"><ion-icon
+                slot="icon-only" name="trash"></ion-icon></ion-button>
+          </ion-item>
+        </div>
+      </div>
+    </ion-list>
+    <!-- <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)">
+      <ion-infinite-scroll-content loadingText="Por favor espere..." loadingSpinner="bubbles"></ion-infinite-scroll-content>
+    </ion-infinite-scroll> -->
+  </div>
+
+  <app-message></app-message>
+  <!-- alerta de confirmacion de eliminar -->
+  <ion-alert id="alertDeleteModal" [isOpen]='alertDelete' header={{headerDelete}} message={{mensajeDelete}}
+    [buttons]="buttonsDelete" (didDismiss)="setAlertDelete(false)"></ion-alert>
+
+</div>

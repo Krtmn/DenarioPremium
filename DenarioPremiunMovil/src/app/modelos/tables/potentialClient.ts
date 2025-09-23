@@ -1,0 +1,51 @@
+export class PotentialClient {
+    static potentialClientJson(obj: PotentialClient) {
+        return new PotentialClient(
+            obj['id'],
+            obj['idClient'],
+            obj['coClient'],
+            obj['idUser'],
+            obj['coUser'],
+            obj['naClient'],
+            obj['nuRif'],
+            obj['txAddress'],
+            obj['txAddressDispatch'],
+            obj['txClient'],
+            obj['naResponsible'],
+            obj['emClient'],
+            obj['nuPhone'],
+            obj['naWebSite'],
+            obj['daPotentialClient'],
+            obj['stPotentialClient'],
+            obj['idEnterprise'],
+            obj['coEnterprise'],
+            obj['coordenada'],
+            obj['nuAttachments'],
+            obj['hasAttachments'],
+        );
+    }
+
+    constructor(
+        public id: number,
+        public idClient: number,
+        public coClient: string,
+        public idUser: number,
+        public coUser: string,
+        public naClient: string,
+        public nuRif: string,
+        public txAddress: string,
+        public txAddressDispatch: string,
+        public txClient: string,
+        public naResponsible: string,
+        public emClient: string,
+        public nuPhone: string,
+        public naWebSite: string,
+        public daPotentialClient: string,
+        public stPotentialClient: number,
+        public idEnterprise: number,
+        public coEnterprise: string,
+        public coordenada: string = "",
+        public nuAttachments: number = 0,
+        public hasAttachments: boolean = false,
+    ) { }
+}

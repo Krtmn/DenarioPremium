@@ -1,0 +1,115 @@
+.colorInput {
+    // background-color: #efefef;
+    border: 1px solid #9c9c9c;
+    border-radius: 5px;
+    font-size: 16px;
+    padding-left: 60px!Important;
+    margin-bottom: 9px;
+    height: 50px;
+    border-radius: 30px;
+    .native-input {
+      max-width: 87%!important;
+    }
+
+}
+ion-checkbox {
+  --size: 20px;
+  --checkbox-background-checked: #6815ec;
+}
+
+ion-checkbox::part(container) {
+  border: 2px solid #6815ec;
+}
+
+.recordarUsuario{
+  font-weight: bold;
+}
+
+.imageninput{
+  width: 10%;
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  display: block;
+}
+
+.contenedorLogin{
+     // background-image: url('../../../assets/images/logoPremium.svg');
+}
+
+.input-highlight{
+  height: 0px!important;
+}
+
+.botonVerPassword{
+  float: right;
+  top: 22px;
+  height: 30px;
+  width: 40px;
+  right: 6px;
+  position: absolute;
+  z-index: 9999999;
+}
+
+.btnEnter {
+  --background: #ffc500;
+  --background-hover: #ffc500;
+  --background-activated: #ffc500;
+  --background-focused: #ffc500;
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+  height: 50px;
+  font-size: 18px !important;
+  text-transform: uppercase;
+  font-weight: bold;
+  color: #fff !important;
+  border-radius: 30px!important;
+  margin-top: 20px;
+}
+.button-native {
+  border-radius: 30px!important;
+}
+
+.btnCancelar {
+  --background: #8d8d8d;
+  --background-hover: #8d8d8d;
+  --background-activated: #8d8d8d;
+  --background-focused: #8d8d8d;
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+  height: 50px;
+  font-size: 18px !important;
+  text-transform: uppercase;
+  font-weight: bold;
+  color: #fff !important;
+  .button-native {
+    border-radius: 30px!important;
+  }
+}
+
+#enlaceLogin {
+    background: #ffc500;
+}
+
+#enlaceRegistro {
+    background: #7DC60F;
+}
+
+:host {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    .type-toggle {
+        padding-inline-start: 0.5rem;
+        .show-option,
+        .hide-option {
+            font-size: 1.2rem;
+            display: block;
+            // In case you want to use text instead of icons
+            &:not(ion-icon) {
+                text-transform: uppercase;
+                font-size: 1rem;
+            }
+        }
+    }
+}

@@ -1,0 +1,112 @@
+<ion-content padding>
+    <ion-accordion-group [multiple]="true">
+        <ion-accordion value="pedidos">
+            <ion-item slot="header" color="light">
+                <ion-label>Pedido</ion-label>
+            </ion-item>
+            <div class="ion-padding" slot="content">
+                <p>Este módulo está diseñado para la gestión de pedidos en linea. Mediante el dispositivo los ejecutivos de ventas pueden tomar los pedidos desde el mismo local de su cliente o también al llegar su departamento de ventas en tan sólo unos
+                    minutos.
+                </p>
+                <ion-accordion value="pedidos_1">
+                    <ion-item slot="header" color="light">
+                        <ion-label>Crear Nuevo Pedido</ion-label>
+                    </ion-item>
+                    <div class="ion-padding" slot="content">
+                        <p>Ingresar al módulo Pedidos seleccionando en el menú principal del Sistema. </p>
+
+                        <p>Pulsar la opción Nuevo Pedido. El sistema mostrará una pantalla titulada Nuevo Pedido y se apreciarán tres (3) pestañas diferentes: General, Pedido, Total. </p>
+
+                        <p> En la pestaña General el usuario debe completar los campos solicitados a continuación, para ello deberá pulsar sobre cada campo de texto para elegir los valores: Cliente, Condición de pago, Nº orden de compra, Persona responsable
+                            del pedido, Solicitud de despacho: Por Aprobar.</p>
+                        <p> En la pestaña Pedido se debe ingresar el pedido final de los productos, para ello se debe efectuar la búsqueda del producto y luego pulsar sobre el producto seleccionado e indicar la cantidad del producto en la unidad disponible.
+                        </p>
+                        <p>Si el producto se ofrece en varias unidades de venta al seleccionar un producto pulse sobre el botón desplegable de la unidad para elegir la unidad en la que desee pedir el producto.
+                        </p>
+                        <p> Si se manejan varias listas de precio para un producto al seleccionar un producto pulse sobre el botón desplegable de la lista para elegir la el precio en la que desee pedir el producto.</p>
+                        <p> La pestaña Total muestra el monto final del pedido y las cantidades pedidas por cada unidad de productos si aplica, podrá visualizar el detalle de cada ítem pedido pulsando sobre el producto que desee explorar.
+                        </p>
+                        <p> Luego de llenar la información el usuario debe pulsar el botón Guardar ubicado en la esquina superior derecha y luego pulsar el botón Enviar para registrarlo y enviarlo al sistema central.
+                        </p>
+
+                    </div>
+                </ion-accordion>
+                <ion-accordion value="pedidos_2">
+                    <ion-item slot="header" color="light">
+                        <ion-label>Modificar Pedido</ion-label>
+                    </ion-item>
+                    <div class="ion-padding" slot="content">
+                        <p>Para modificar un pedido el mismo debe tener estatus Guardado, si el pedido fue enviado al sistema central ya no podrá modificarse.</p>
+                        <p>Ingresar al módulo Pedidos seleccionando en el menú principal del Sistema.</p>
+                        <p>Pulsar la opción Buscar Pedido.</p>
+                        <p>El sistema mostrará una pantalla titulada Buscar Pedido y la lista de los pedidos que han sido cargados.
+                        </p>
+                        <p>Pulse sobre el pedido que desea modificar, automáticamente el sistema mostrará la pantalla del pedido seleccionado con las tres (3) pestañas: General, Pedido y Total.</p>
+                        <p>En la pestaña General podrá editar los valores que requiera, para ello pulse sobre cuadro de texto y efectúe la nueva selección para el campo correspondiente.</p>
+                        <p>En La pestaña Pedido se pueden editar o modificar el pedido, agregando o eliminado productos. Si requiere agregar nuevos productos, debe efectuar la búsqueda del producto y luego pulsar sobre el producto seleccionado e indicar
+                            la cantidad del producto en la unidad disponible. Si requiere eliminar productos, debe efectuar la búsqueda del producto, luego pulsar sobre el producto seleccionado y borrar el valor colocado en la cantidad pedida.
+                        </p>
+                        <p>La pestaña Total muestra el monto final del pedido y las cantidades pedidas por cada unidad de productos si aplica, podrá visualizar el detalle de cada ítem pedido pulsando sobre el producto que desee explorar.
+                        </p>
+                        <p>Luego de llenar la información el usuario debe pulsar el botón Guardar ubicado en la esquina superior derecha y luego pulsar el botón Enviar para registrarlo y enviarlo al sistema central.</p>
+                    </div>
+                </ion-accordion>
+                <ion-accordion value="pedidos_3">
+                    <ion-item slot="header" color="light">
+                        <ion-label>Consultar Pedidos</ion-label>
+                    </ion-item>
+                    <div class="ion-padding" slot="content">
+                        <p>Ingresar al módulo Pedidos seleccionando en el menú principal del Sistema.</p>
+                        <p>Pulsar la opción Buscar Pedido.</p>
+                        <p>El sistema mostrará una pantalla titulada Buscar Pedido y la lista de los pedidos que han sido cargados.
+                        </p>
+                        <p>Pulse sobre el pedido con estatus enviado que desea consultar, automáticamente el sistema mostrará la pantalla del pedido seleccionado con las tres (2) pestañas: General y Total. No se podrá modificar campos con el estatus enviado.</p>
+                        <p>Eliminar Pedido
+                        </p>
+                        <p>Ingresar al módulo Pedidos seleccionando en el menú principal del Sistema.</p>
+                        <p>Pulsar la opción Buscar Pedido.</p>
+                        <p>El sistema mostrará una pantalla titulada Buscar Pedido y la lista de los pedidos que han sido cargados.
+                        </p>
+                        <p>Pulse sobre la “X” ubicada al final del reglón del pedido que desea eliminar en el dispositivo.</p>
+                        <p>El sistema le solicitará una confirmación para eliminar el pedido, una vez confirmada la acción se actualizará la lista desapareciendo de ésta el pedido eliminado.</p>
+
+                    </div>
+                </ion-accordion>
+            </div>
+        </ion-accordion>
+
+        <ion-accordion value="clientes">
+            <ion-item slot="header" color="light">
+                <ion-label>Clientes</ion-label>
+            </ion-item>
+            <div class="ion-padding" slot="content">
+                <p>Seleccionar los parámetros para filtrar la búsqueda del cliente por: Nombre, Código o Zona.</p>
+                <p>Pulse sobre el cliente deseado para consultar el detalle del cliente.</p>
+                <p>El sistema mostrará dos pestañas: Cliente y Documentos de Venta en las cuales sólo puede realizar consultas de la información.</p>
+                <p>Para consultar documentos de ventas se debe pulsar sobre esta pestaña, el sistema desplegará los documentos.
+                </p>
+                <p>Para visualizar el detalle de un documento de venta, pulse sobre el botón Ver, automáticamente el sistema mostrará los siguientes campos: Tipo de documento, Código del documento, Fecha del documento, Fecha de Vencimiento, monto, saldo,
+                    entre otros datos.</p>
+            </div>
+        </ion-accordion>
+
+        <ion-accordion value="productos">
+            <ion-item slot="header" color="light">
+                <ion-label>Productos</ion-label>
+            </ion-item>
+            <div class="ion-padding" slot="content">
+                <p>Este módulo está diseñado para consultar los datos básicos de los productos en línea. Mediante el dispositivo los ejecutivos de ventas pueden consultar el nombre, las unidades de venta y la presentación de los productos. También permite
+                    ver el precio del producto, en las distintas listas en que se encuentre disponible, entre otros datos.
+                </p>
+                <p>1. Al ingresar, el sistema le permitirá efectuar búsquedas de productos, seleccionando una letra del panel izquierdo, se mostrará una lista de los productos cuyos nombres comiencen con la letra seleccionada.</p>
+                <p>2. También puede realizar exploraciones rápidas partiendo de la lista de productos mostrada, escribiendo las primeras letras del código o del nombre del producto en la opción: Búsqueda…</p>
+                <p>3. Para visualizar el detalle de un producto deberá:
+                    <br>3.1. Pulsar sobre el producto que desea consultar.
+                    <br>3.2. El sistema mostrará una nueva pantalla con la ficha del detalle indicando: Nombre, Código, Línea Producto, Unidad de Venta, Cantidad en Inventario (si aplica) y el precio según lista seleccionada.
+                </p>
+                <p>4. Si se manejan varias listas de precio para un producto podrá visualizar los distintos precios pulsando sobre el menú desplegable de la Lista y automáticamente el sistema cargará el precio correspondiente a la lista seleccionada.
+                </p>
+            </div>
+        </ion-accordion>
+    </ion-accordion-group>
+</ion-content>

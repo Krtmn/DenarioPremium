@@ -1,0 +1,20 @@
+.tablaInfoClientes ion-col {
+    border: 1px solid #000000;
+    display: block;
+}
+
+.tablaDocumentosVenta ion-col {
+    border: 1px solid #000000;
+    flex-wrap: nowrap;
+    overflow: auto;
+    white-space: nowrap;
+}
+
+.tablaDocVentas {
+  flex-wrap: nowrap;
+}
+.tablaDocVentasGrip {
+  flex-wrap: nowrap;
+  overflow-x: scroll!important;
+  overflow-y: hidden;
+}

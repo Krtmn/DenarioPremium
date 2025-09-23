@@ -1,0 +1,29 @@
+<app-pedidos-header></app-pedidos-header>
+<ion-content>
+  <ion-grid class="pedidos" *ngIf="pedidosComponent">
+    <ion-row>
+      <ion-col size="8" size-md="8" offset-md="2" size-sm="12" size-xs="12">
+        <ion-button (click)="nuevoPedido()" size="large" fill="outline" class="colorBorderBuscar" shape="round" expand="block">
+          <ion-icon slot="start" name="add"></ion-icon><span style="margin-right: auto">{{ getTag("PED_NUEVO_PEDIDO")}}</span>
+        </ion-button>
+      </ion-col>
+      <ion-col size="8" size-md="8" offset-md="2" size-sm="12" size-xs="12">
+        <ion-button (click)="buscarPedido()" size="large" fill="outline" class="colorBorderBuscar" shape="round" expand="block">
+          <ion-icon slot="start" name="add"></ion-icon>
+          <span style="margin-right: auto">{{ getTag("PED_BUSCAR_PEDIDO")}}</span>
+        </ion-button>
+      </ion-col>
+      <ion-col size="8" size-md="8" offset-md="2" size-sm="12" size-xs="12">
+        <ion-button (click)="copiarPedido()" size="large" fill="outline" class="colorBorderBuscar" shape="round" expand="block">
+          <ion-icon slot="start" name="add"></ion-icon>
+          <span style="margin-right: auto"> {{ getTag("PED_COPIAR_PEDIDO")}}</span>
+        </ion-button>
+      </ion-col>
+
+    </ion-row>
+  </ion-grid>
+
+
+
+    <app-message></app-message>
+</ion-content>

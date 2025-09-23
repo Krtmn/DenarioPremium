@@ -1,0 +1,92 @@
+<ion-grid>
+    <ion-row>
+        <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+
+            <div class="listado-enterprise-selector ion-text-center">
+                <!-- <ion-select [disabled]="!this.enterpriseServ.esMultiempresa()" [(ngModel)]="inventariosLogicService.empresaSeleccionada" (ionChange)="onEnterpriseSelect()" class="ion-text-center always-flip" toggleIcon="caret-down-sharp" interface="popover"> -->
+                <ion-select disabled="{{this.inventariosLogicService.disabledEnterprise}}"
+                    [(ngModel)]="this.inventariosLogicService.empresaSeleccionada" (ionChange)="onEnterpriseSelect()"
+                    class="ion-text-center always-flip" interface="popover">
+                    <ion-select-option *ngFor="let emp of inventariosLogicService.listaEmpresa" [value]="emp">{{
+                        emp.lbEnterprise }}
+                    </ion-select-option>
+                </ion-select>
+            </div>
+        </ion-col>
+
+        <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+            <div id="inputClient">
+                <ion-input label="{{this.inventariosLogicService.inventarioTags.get('INV_CLIENTE')}}:"
+                    label-placement="floating" fill="outline"
+                    value="{{ this.inventariosLogicService.cliente.lbClient }}" id="clienteSelect" color="primary"
+                    [disabled]="this.inventariosLogicService.inventarioSent"></ion-input>
+            </div>
+        </ion-col>
+        <!-- CLIENTE -->
+        <ion-col size="12" size-xs="12" size-sm="12" size-md="12" *ngIf="!this.inventariosLogicService.inventarioSent">
+            <!-- debe ir en el ion-card para que el trigger funcione -->
+            <app-cliente-selector #selectorCliente (clienteSeleccionado)="setClientfromSelector($event)"
+                *ngIf="!this.inventariosLogicService.inventarioSent"></app-cliente-selector>
+        </ion-col>
+        <!-- SUCURSAL -->
+        <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+            <div id="selectorSucursal" *ngIf="this.inventariosLogicService.selectedClient">
+                <ion-label>{{this.inventariosLogicService.inventarioTags.get('INV_SUCURSAL')}}</ion-label>
+                <div class="listado-enterprise-selector ion-text-center">
+                    <ion-select [(ngModel)]="inventariosLogicService.newClientStock.idAddressClient"
+                        class="ion-text-center always-flip" (ionChange)="onSucursalSelect()"
+                        [disabled]="this.inventariosLogicService.inventarioSent == true" labelPlacement="stacked">
+                        <ion-select-option *ngFor="let sucursal of inventariosLogicService.addressClient"
+                            [value]="sucursal.idAddress" [disabled]="this.inventariosLogicService.inventarioSent">
+                            {{sucursal.txAddress}}
+                        </ion-select-option>
+                    </ion-select>
+                </div>
+            </div>
+
+        </ion-col>
+        <ion-col size="12" size-xs="12" size-sm="12" size-md="12" *ngIf="inventariosLogicService.selectedClient">
+            <ion-item [disabled]="this.inventariosLogicService.inventarioSent">
+                <ion-label (click)="getFechaValor()">
+                    {{this.inventariosLogicService.inventarioTags.get('INV_FECHA')}}:
+                </ion-label>
+                <a>
+                    <ion-button (click)="setShowDateModal(true)" color="light" class="letrasFechasButton"
+                        disabled="true">
+                        {{ daClientStockFormatted() }}
+                    </ion-button>
+                </a>
+                <ion-modal [keepContentsMounted]="true" [isOpen]="showDateModal" (didDismiss)="setShowDateModal(false)"
+                    class="fechasModal">
+                    <ng-template>
+                        <ion-datetime [id]="daClientStock" presentation="date" [(ngModel)]="daClientStock"
+                            [showDefaultButtons]="true" (ngModelChange)="getFechaValor()" doneText="Aceptar"
+                            cancelText="Cancelar"></ion-datetime>
+                    </ng-template>
+                </ion-modal>
+            </ion-item>
+        </ion-col>
+
+        <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+            <div id="inputComentario" *ngIf="inventariosLogicService.selectedClient">
+                <ion-textarea label="{{this.inventariosLogicService.inventarioTags.get('INV_COMENTARIO')}}:"
+                    id="responsable" [(ngModel)]="txComment" #txCommentInput labelPlacement="floating" fill="outline"
+                    placeholder="{{this.inventariosLogicService.inventarioTags.get('INV_COMENTARIO')}}:" maxlength="120"
+                    (ngModelChange)="setTXComment()"></ion-textarea>
+            </div>
+        </ion-col>
+    </ion-row>
+    <!-- <ion-button (click)="print()"></ion-button> -->
+</ion-grid>
+
+<!-- alerta de envio-->
+<ion-alert [isOpen]="this.inventariosLogicService.alertMessageOpen"
+    header="{{this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')}}"
+    message={{this.inventariosLogicService.message}} [buttons]="alertButtons" (didDismiss)="setResult()"></ion-alert>
+<!-- alerta de envio-->
+<ion-alert [isOpen]="this.inventariosLogicService.alertMessage"
+    header="{{this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')}}"
+    message={{this.inventariosLogicService.message}} [buttons]="alertButtons2"
+    (didDismiss)="setResult2($event)"></ion-alert>
+
+<app-message></app-message>

@@ -1,0 +1,48 @@
+<ion-header :translucent="false">
+    <ion-toolbar class="fondoAmarillo">
+        <!-- <ion-title class="fondoAmarillo"> -->
+            <ion-grid>
+                <ion-row>
+                    <ion-col size="1" size-sm="1" size-xs="2">
+                        <a (click)="onBackClicked()">
+                            <img class="fechaAtras" alt="" src="../../../assets/images/flecha-blanca.png" />
+                        </a>
+                    </ion-col>
+                    <ion-col size="8" size-sm="8" size-sm="9" size-xs="6">
+                        <h1 class="tituloModulos">{{this.headerTags.get('DEV_NOMBRE_MODULO')}}</h1>
+                    </ion-col>
+                    <ion-col size="1" size-md="1" size-sm="1" size-xs="2" offset-sm="1" offset-xs="2" *ngIf="!showHeaderButtos">
+                        <img class="fechaAtras" alt="" src="../../../assets/images/devolucionesNuevoBlanco.svg" />
+                    </ion-col>
+                    <ion-col size="1" offset-md="1" size-md="1" size-sm="1" size-xs="2" *ngIf="showHeaderButtos">
+                      <ion-button class="imagenGuardar" (click)="saveSendNewReturn(false)" [disabled]="disableSendButton" expand="block" fill="clear">
+                        <!-- <ion-icon slot="icon-only" name="star"></ion-icon> -->
+                        <!-- <img class="fechaAtras" alt="" src=" ../../../assets/images/iconosguardarblanco.png" /> -->
+                      </ion-button>
+                        <!-- <ion-segment-button (click)="saveSendNewReturn(false)" [disabled]="disableSendButton">
+                            <img class="fechaAtras" alt="" src=" ../../../assets/images/iconosguardarblanco.png" />
+                        </ion-segment-button> -->
+                    </ion-col>
+                    <ion-col size="1" size-md="1" size-sm="1" size-xs="2" *ngIf="showHeaderButtos">
+                      <ion-button class="imagenEnviar" (click)="saveSendNewReturn(true)" [disabled]="cannotSendReturn" expand="block" fill="clear">
+                        <!-- <ion-icon slot="icon-only" name="star"></ion-icon> -->
+                        <!-- <img class="fechaAtras" alt="" src=" ../../../assets/images/iconosmensaje.png" /> -->
+                      </ion-button>
+                        <!-- <ion-segment-button (click)="saveSendNewReturn(true)" [disabled]="cannotSendReturn">
+                            <img class="fechaAtras" alt="" src=" ../../../assets/images/iconosmensaje.png" />
+                        </ion-segment-button> -->
+                    </ion-col>
+                </ion-row>
+            </ion-grid>
+       <!--  </ion-title> -->
+    </ion-toolbar>
+</ion-header>
+
+<!-- alerta de salvar o salir-->
+<ion-alert id="alertSaveOrExit" [isOpen]="saveOrExitOpen"
+    header="{{this.returnLogic.tags.get('DENARIO_DEV') ? this.returnLogic.tags.get('DENARIO_DEV') : 'Guardar y salir'}}"
+    [buttons]="buttonsSalvar" (didDismiss)="setsaveOrExitOpen(false)"></ion-alert>
+
+<!-- alerta de envio-->
+<ion-alert [isOpen]="alertMessageOpen" header={{header}} message={{mensaje}} [buttons]="alertButtons"
+    (didDismiss)="setResult($event)"></ion-alert>

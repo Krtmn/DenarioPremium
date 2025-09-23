@@ -1,0 +1,110 @@
+<!-- <ion-header [translucent]="true">
+    <ion-toolbar>
+      <ion-grid class="home">
+          <ion-row>
+            <ion-col size="4" size-sm="4" size-xs="10" offset-sm="4" offset-xs="1">
+                <img class="logoHome2" alt="" src="../../../assets/images/logoPremium.svg" />
+            </ion-col>
+          </ion-row>
+      </ion-grid>
+    </ion-toolbar>
+</ion-header> -->
+
+
+<ion-content [fullscreen]="true" class="ion-padding">
+<!-- <app-home-sidebar>   Descomentar para sidebar-->
+<!-- </app-home-sidebar> -->
+  <ion-grid class="home">
+    <ion-row>
+      <ion-col size="12" class="ion-text-center">
+        <img class="logo logoHome2" alt="" src="../../../assets/images/logoPremium.svg" />
+      </ion-col>
+    </ion-row>
+
+
+    <!-- Row para transportista: todos menos el id 10 -->
+    <ion-row *ngIf="user.transportista">
+      <ion-col size="6" *ngFor="let modulo of modulosTransportista">
+        <ng-container *ngIf="modulo.id !== 10">
+          <a class="ion-text-center" expand="block" (click)="goToModule(modulo)">
+            <img alt="" class="image-size" [src]="modulo.imgIcon" />
+            <p class="nombreModulos" [ngStyle]="{'color': modulo.letterColor}">{{modulo.name}}</p>
+          </a>
+        </ng-container>
+      </ion-col>
+    </ion-row>
+
+    <!-- Fila aparte, centrada, solo para el id 10 -->
+    <ion-row *ngIf="user.transportista">
+      <ion-col size="6" offset="3" *ngFor="let modulo of modulosTransportista">
+        <ng-container *ngIf="modulo.id === 10">
+          <a class="ion-text-center" expand="block" (click)="goToModule(modulo)">
+            <img alt="" class="image-size" [src]="modulo.imgIcon" />
+            <p class="nombreModulos" [ngStyle]="{'color': modulo.letterColor}">{{modulo.name}}</p>
+          </a>
+        </ng-container>
+      </ion-col>
+    </ion-row>
+
+    <!-- Iconos en filas de 3 -->
+    <ion-row *ngIf="!user.transportista">
+      <ng-container *ngFor="let row of [0,3,6,9]">
+        <ion-col size="4" *ngIf="modulos[row]">
+          <a class="ion-text-center" expand="block" (click)="goToModule(modulos[row])">
+            <img alt="" class="image-size" [src]="modulos[row].imgIcon" />
+            <p class="nombreModulos" [ngStyle]="{'color': modulos[row].letterColor}">{{modulos[row].name}}</p>
+          </a>
+        </ion-col>
+        <ion-col size="4" *ngIf="modulos[row+1]">
+          <a class="ion-text-center" expand="block" (click)="goToModule(modulos[row+1])">
+            <img alt="" class="image-size" [src]="modulos[row+1].imgIcon" />
+            <p class="nombreModulos" [ngStyle]="{'color': modulos[row+1].letterColor}">{{modulos[row+1].name}}</p>
+          </a>
+        </ion-col>
+        <ion-col size="4" *ngIf="modulos[row+2]">
+          <a class="ion-text-center" expand="block" (click)="goToModule(modulos[row+2])">
+            <img alt="" class="image-size" [src]="modulos[row+2].imgIcon" />
+            <p class="nombreModulos" [ngStyle]="{'color': modulos[row+2].letterColor}">{{modulos[row+2].name}}</p>
+          </a>
+        </ion-col>
+
+      </ng-container>
+    </ion-row>
+
+
+
+
+
+  </ion-grid>
+
+  <ion-alert [isOpen]="isAlertOpen" header="Denario Premium" [message]="mensaje" [buttons]="alertButtons"
+    (didDismiss)="setOpen(false)"></ion-alert>
+  <!-- <ion-button expand="block" routerLink="/login">Login</ion-button> -->
+  <ion-grid>
+    <ion-row>
+      <ion-col size="4" size-sm="4" size-xs="4" offset-sm="4" offset-xs="4">
+        <ion-button class="btnEnter ion-text-center" expand="block" fill="clear" color="tertiary" size="small"
+          routerLink="/login">Salir</ion-button>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+
+  <ion-footer class="footer footerhome ion-no-border">
+    <ion-toolbar>
+      <ion-col size="8" size-sm="10" size-xs="10" offset-xs="1">
+        <!-- <p style="text-align:center; color: #430197;margin: 5% 0 5px 0;"><a style="color: #430197;" href="#" id="Esp">Español</a> | <a style="color: #430197;" href="#" id="Eng">English</a></p> -->
+        <p align="center" style="font-size: 12px; font-weight: bold; margin: 0;">Copyright &copy; 2025. All
+          rights
+          reserved. <br /> POWERED BY <a href="http://www.kiberno.com/" style="color: #430197;">KIBERNO</a>
+        </p>
+      </ion-col>
+    </ion-toolbar>
+  </ion-footer>
+</ion-content>
+
+
+<app-message></app-message>
+<!-- alerta de envio-->
+<ion-alert [isOpen]="alertMessageOpenSend" header="Denario Premium" message="¿Desea Sincronizar?"
+  [buttons]="alertButtonsSincronice" (didDismiss)="setResult($event)"></ion-alert>

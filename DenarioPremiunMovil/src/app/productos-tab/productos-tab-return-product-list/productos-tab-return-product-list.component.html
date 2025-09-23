@@ -1,0 +1,33 @@
+<div class="listado-product-structures" *ngIf="showProductList">
+
+  <ion-button fill="outline" size="small" color="dark" class="colorBorderBuscar" shape="round"
+    (click)="this.returnLogic.validateReturn ? onShowProductList() : onShowProductStructures()">
+    {{this.productsTabTags.get('PROD_VOLVER')}}
+    <ion-icon class="colorIconBuscar" slot="start" name="arrow-back-circle-sharp" ></ion-icon>
+  </ion-button>
+
+  <!--  Listado clickeable de productos  -->
+  <div class="product-card">
+    <ion-list class="espacioListasProductos" *ngFor="let product of productList; index as i"
+      (click)="onSelectProductDev(product)">
+      <div class="product-structure-title"
+        *ngIf="searchText === '' || product.coProduct.toLowerCase().includes(searchText.toLowerCase()) || product.naProduct.toLowerCase().includes(searchText.toLowerCase())">
+        <!-- <ion-item button detail="true" *ngIf="i<10*indice"> -->
+        <ion-item button detail="false">
+          <ion-label fixed class="fixedLabel contenedorImgMargin">
+            <img class="productImage" alt="" loading="lazy" [src]="product.images" />
+          </ion-label>
+          <ion-label class="textList espaciotextoListaProduc">
+            <p class="espacioentrelineas">{{ product.naProduct }}</p>
+            <p class="espacioentrelineas">{{this.productsTabTags.get('PROD_COD_PROD')}}: {{ product.coProduct }}</p>
+          </ion-label>
+          <ion-note slot="end"><ion-icon class="icon-List2" name="chevron-forward-outline"></ion-icon></ion-note>
+        </ion-item>
+      </div>
+    </ion-list>
+    <!-- <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)">
+      <ion-infinite-scroll-content loadingText="Por favor espere..." loadingSpinner="bubbles"></ion-infinite-scroll-content>
+    </ion-infinite-scroll> -->
+  </div>
+
+</div>

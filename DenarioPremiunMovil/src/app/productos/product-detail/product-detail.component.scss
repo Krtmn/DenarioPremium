@@ -1,0 +1,37 @@
+.productDetailImage{
+  width: 100%;
+  height: auto;
+}
+
+.sizeImgProduct{
+  height: 30vh !important;
+  width: auto!important;
+  align-items: center;
+  margin: auto;
+  display: block;
+  margin-bottom: 30px;
+}
+
+swiper-container {
+  width: 100%;
+  height: 100%;
+}
+
+swiper-slide {
+  overflow: hidden;
+}
+
+.selectDetail ion-select {
+    min-height: 40px!important;
+}
+.selectDetail {
+    min-height: 40px!important;
+}
+.selectDetail .select-highlight {
+    display: none!important;
+}
+
+ion-select::part(label),
+ion-select::part(text) {
+  right: 20%!important;
+}

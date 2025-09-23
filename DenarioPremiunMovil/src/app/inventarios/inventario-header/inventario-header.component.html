@@ -1,0 +1,50 @@
+<ion-header :translucent="true">
+    <ion-toolbar class="fondoAmarillo">
+<!--         <ion-title class="fondoAmarillo">
+ -->            <ion-grid>
+                <ion-row>
+                    <ion-col size="1" size-sm="1" size-xs="2">
+                        <a (click)="onBackClicked()">
+                            <img class="fechaAtras" alt="" src="../../../assets/images/flecha-blanca.png" />
+                        </a>
+                    </ion-col>
+                    <ion-col size="9" size-sm="9" size-xs="6">
+                        <h1 class="tituloModulos">
+                            {{this.inventariosLogicService.inventarioTags.get('INV_NOMBRE_MODULO')}}</h1>
+                    </ion-col>
+
+                    <ion-col size="1" size-sm="1" size-xs="2" offset-sm="1" offset-xs="2"
+                        *ngIf="!this.inventariosLogicService.showHeaderButtons">
+                        <img class="" alt="" src=" ../../../assets/images/tomaInventarioNuevoBlanco.svg" />
+                    </ion-col>
+
+                    <ion-col size="1" size-sm="1" size-xs="2" *ngIf="this.inventariosLogicService.showHeaderButtons">
+                        <ion-button class="imagenGuardar" (click)="sendOrSave(false)"
+                            [disabled]="this.inventariosLogicService.disableSaveButton" expand="block" fill="clear">
+                        </ion-button>
+                    </ion-col>
+                    <ion-col size="1" size-sm="1" size-xs="2" *ngIf="this.inventariosLogicService.showHeaderButtons">
+                        <ion-button class="imagenEnviar" (click)="sendOrSave(true)"
+                            [disabled]="this.inventariosLogicService.cannotSendClientStock" expand="block" fill="clear">
+                        </ion-button>
+                    </ion-col>
+
+                </ion-row>
+            </ion-grid>
+<!--         </ion-title>
+ -->    </ion-toolbar>
+</ion-header>
+
+<!-- alerta de salvar o salir-->
+<ion-alert id="alertSaveOrExit" [isOpen]="saveOrExitOpen"
+    header="{{this.inventariosLogicService.inventarioTags.get('INV_MSJ_MODULO') ? this.inventariosLogicService.inventarioTags.get('INV_MSJ_MODULO') : 'Denario Inventarios'}}"
+    [buttons]="buttonsSalvar" (didDismiss)="setsaveOrExitOpen(false)"></ion-alert>
+
+<!-- alerta de envio-->
+<ion-alert [isOpen]="alertMessageOpenSend" header={{header}} message={{mensaje}} [buttons]="alertButtons"
+    (didDismiss)="setResult($event)"></ion-alert>
+<!-- alerta de guardar-->
+<ion-alert [isOpen]="alertMessageOpenSave" header={{header}} message={{mensaje}} [buttons]="alertButtons"
+    (didDismiss)="setResult($event)"></ion-alert>
+
+<app-message></app-message>

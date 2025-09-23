@@ -1,0 +1,70 @@
+<div class="listado-product-structures spaceListTop">
+  <ion-grid class="fixedSelectProduct">
+
+    <ion-row>
+      <ion-col class="" size="12" size-sm="12" size-xs="12">
+        <!--  Un Selector de empresa si no es multiempresa disabled -->
+        <div class="listado-enterprise-selector ion-text-center">
+          <ion-select [(ngModel)]="empresaSeleccionada" (ionChange)="onEnterpriseChanged($event)"
+            [disabled]="!multiempresa" class="ion-text-center always-flip" toggleIcon="caret-down-sharp"
+            interface="popover" labelPlacement="stacked">
+            <!-- <ion-select *ngIf="multiempresa" [(ngModel)]="empresaSeleccionada"> -->
+            <ion-select-option *ngFor="let emp of listaEmpresa" [value]="emp">
+              {{ emp.lbEnterprise }}
+            </ion-select-option>
+          </ion-select>
+        </div>
+      </ion-col>
+
+      <ion-col class="" size="12" size-sm="12" size-xs="12">
+        <!--  Un Selector de tipos de estrucutras, por defecto el nivel mas bajo -->
+        <div class="listado-tps-selector ion-text-center">
+          <ion-select [(ngModel)]="tpsSeleccionada" (ionChange)="onTypeProductStructureChanged($event)"
+            class="ion-text-center">
+            <!-- <ion-select *ngIf="multiempresa" [(ngModel)]="empresaSeleccionada"> -->
+            <ion-select-option *ngFor="let tps of typeProductStructureList" [value]="tps">{{ tps.naTypeProductStructure
+              }}</ion-select-option>
+          </ion-select>
+        </div>
+
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+
+  <ion-grid class="ListProduct">
+    <ion-row>
+      <ion-col class="margin-top-List" size="12" size-sm="12" size-xs="12">
+        <!--  Listado clickeable de estructuras que dependen de los selectores anteriores -->
+        <div class="product-structure-card">
+          <!-- <ion-item-divider></ion-item-divider> -->
+          <ion-list *ngFor="let ps of productStructureList; index as i" (click)="onProductStructureSelected(ps)"
+            lines="full">
+
+            <div class="product-structure-title listaProductos">
+              <!-- <ion-item button detail="true" *ngIf="i<10*indice"> -->
+              <ion-item button detail="false" class="listaItems">
+                <ion-label class="heightList">
+                  <!-- <p>{{ ps.naProductStructure }} <span class="numberProduct">{{ ps.quProducts }}</span> </p> -->
+                  <h3 class="font-ListProduct">{{ ps.naProductStructure }} </h3>
+                </ion-label>
+                <!-- <ion-note slot="end"><span class="numberProduct">{{ ps.quProducts }} </span><ion-icon class="icon-List"
+                    name="chevron-forward-outline"></ion-icon></ion-note> -->
+                <ion-note slot="end"><ion-icon class="icon-List"
+                    name="chevron-forward-outline"></ion-icon></ion-note>
+
+                <ion-badge>{{ ps.quProducts }}</ion-badge>
+
+
+              </ion-item>
+            </div>
+          </ion-list>
+          <!-- <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)">
+                      <ion-infinite-scroll-content loadingText="Por favor espere..." loadingSpinner="bubbles"></ion-infinite-scroll-content>
+                    </ion-infinite-scroll> -->
+        </div>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+</div>

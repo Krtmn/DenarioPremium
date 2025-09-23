@@ -1,0 +1,32 @@
+<ion-grid *ngIf="inventariosLogicService.containerComp">
+    <ion-row>
+        <ion-col size="8" size-md="8" offset-md="2" size-sm="12" size-xs="12">
+            <ion-button size="large" fill="outline" class="colorBorderBuscar" shape="round" expand="block"
+                (click)="newStockButton()">
+                <ion-icon slot="start" name="add"></ion-icon>
+                <span style="margin-right: auto">
+                    {{this.inventariosLogicService.inventarioTags.get('INV_NUEVO_INVENTARIO')}}
+                </span>
+            </ion-button>
+        </ion-col>
+        <ion-col size="8" size-md="8" offset-md="2" size-sm="12" size-xs="12">
+            <ion-button size="large" fill="outline" class="colorBorderBuscar" shape="round" expand="block"
+                (click)="findClientStock()">
+                <ion-icon slot="start" name="search"></ion-icon>
+                <span style="margin-right: auto">
+                    {{this.inventariosLogicService.inventarioTags.get('INV_BUSCAR_INVENTARIO')}}
+                </span>
+            </ion-button>
+        </ion-col>
+    </ion-row>
+</ion-grid>
+
+<!-- <ion-button routerLink="/login" shape="round" fill="outline" expand="full" class="borderColor">
+    <img class="boton" alt="" /> login
+</ion-button> -->
+
+<app-inventario *ngIf="inventariosLogicService.inventarioComp"
+    [inventarioTags]="inventariosLogicService.inventarioTags"></app-inventario>
+<app-inventario-list *ngIf="inventariosLogicService.inventarioList"
+    [inventarioTags]="inventariosLogicService.inventarioTags"></app-inventario-list>
+<app-inventario-type-stocks *ngIf="this.inventariosLogicService.typeStocksComponent"></app-inventario-type-stocks>

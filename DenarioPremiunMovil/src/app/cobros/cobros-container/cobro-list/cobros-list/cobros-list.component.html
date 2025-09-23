@@ -1,0 +1,58 @@
+<div class="collect-list">
+    <ion-searchbar class="lupamorada" show-clear-button="always" search-icon="search-circle" clear-icon="trash-bin"
+        placeholder="Cobros..." (ionInput)="handleInput($event)"></ion-searchbar>
+    <div class="collect-card">
+        <ion-row>
+            <ion-col class="" size="12" size-sm="12" size-xs="12">
+                <p *ngIf="valid">
+                    NO HAY COBROS
+                </p>
+                <ion-list *ngFor="let collect of collectService.itemListaCobros; index as i" button detail="false">
+                    <div
+                        *ngIf="searchText === '' || collect.co_client.toLowerCase().includes(searchText) || collect.lb_client.toLowerCase().includes(searchText)">
+                        <ion-item button detail="true">
+                            <ion-label (click)="onCollectSelect(collect.co_collection, i, collect.st_collection)">
+                                <p>
+                                    {{this.collectService.collectionTags.get('COB_CLIENTE')}}: {{ collect.co_client }} -
+                                    {{collect.lb_client}}
+                                </p>
+                                <p *ngIf="collect.id_collection !=0">
+                                    {{this.collectService.collectionTags.get('COB_NRO_REF')}}: {{collect.id_collection}}
+                                </p>
+                                <p>
+                                    <!-- Estatus: {{ getStatusOrderName(collect.stCollection, collect.idCollection!) }} -->
+                                    {{this.collectService.collectionTags.get('COB_DEV_STATUS')}}: {{
+                                    getStatusOrderName(collect.st_collection, collect.na_status)}}
+
+                                </p>
+                                <p>
+                                    {{this.collectService.collectionTags.get('COB_FECHA')}}:
+                                    {{collect.da_collection.replace('T', ' ') |
+                                    date:
+                                    "dd/MM/yyyy"}} {{getCoTypeName(collect.co_type)}}
+                                </p>
+
+
+                            </ion-label>
+                            <!-- <ion-note slot="end" *ngIf="collect.st_collection == 1">
+                                <ion-icon class="icon-List-Client" name="trash" (click)="deleteCollect(i)"></ion-icon>
+                            </ion-note> -->
+                            <ion-button *ngIf="collect.st_collection === 1" (click)="showAlertDelete(collect,i)"
+                                color="danger">
+                                <ion-icon slot="icon-only" name="trash"> </ion-icon>
+                            </ion-button>
+                        </ion-item>
+                    </div>
+                </ion-list>
+                <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)">
+                    <ion-infinite-scroll-content loadingText="Por favor espere..."
+                        loadingSpinner="bubbles"></ion-infinite-scroll-content>
+                </ion-infinite-scroll>
+            </ion-col>
+        </ion-row>
+    </div>
+</div>
+<app-message></app-message>
+
+<ion-alert id="alertDeleteModal" [isOpen]='alertDelete' header={{headerDelete}} message={{mensajeDelete}}
+    [buttons]="buttonsDelete" (didDismiss)="setAlertDelete(false)"></ion-alert>

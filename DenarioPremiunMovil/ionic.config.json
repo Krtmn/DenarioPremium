@@ -1,0 +1,8 @@
+{
+    "name": "Denario Premiun Movil",
+    "integrations": {
+        "capacitor": {},
+        "cordova": {}
+    },
+    "type": "angular"
+}

@@ -1,0 +1,11 @@
+<ion-alert id="alertOrig" [isOpen]="isAlertOpen" header="Denario" message={{mensaje}} [buttons]="alertButtons" (click)="goBack()" (didDismiss)="setOpen(false)"></ion-alert>
+
+<ion-alert id="alertNB" [isOpen]="isAlertNBOpen" header="Denario" message={{mensaje}} [buttons]="alertButtons" (click)="{}" (didDismiss)="setNBOpen(false)"></ion-alert>
+
+<ion-alert id="alertMessage" [isOpen]="alertMessageOpen" header={{header}} message={{mensaje}} [buttons]="alertButtons" (didDismiss)="setAlertMessage(false)"></ion-alert>
+
+<ion-alert id="alertMessage2" [isOpen]="alertMessageOpen2" header={{header}} message={{mensaje}} [buttons]="buttonsNuevos" (didDismiss)="setAlertMessage2(false)"></ion-alert>
+
+<ion-alert id="alertLogin" [isOpen]="alertMessageModule" header={{header}} message={{mensaje}} [buttons]="buttonsNuevosModules" (didDismiss)="setAlertMessageModule(false, '')"></ion-alert>
+
+<ion-alert id="alertCustomBtn" #alertCustomBtn [isOpen]="alertCustomBtnOpen" header={{header}} message={{mensaje}} [buttons]="buttonsCustom" (didDismiss)="setalertCustomBtnOpen(false)"></ion-alert>

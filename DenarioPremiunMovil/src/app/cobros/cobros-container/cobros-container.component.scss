@@ -1,0 +1,26 @@
+.colorBorderBuscar {
+  --border-color: #59b02d;
+  --background-activated: #59b02d;
+  
+}
+
+.boton {
+  width: 40px;
+}
+
+.fondoVerde {
+  --background: $colorVerde;
+
+  img {
+    width: 100%;
+  }
+}
+
+$colorVerde: #59b02d;
+$colorVerdeRegistrar: #7dc60f;
+$colorAmarillo: #daab19;
+$colorGris: #666666;
+$colorLila: #430197;
+$fondoVerde: #59b02d;
+$fondoAmarillo: #daab19;
+$fondoLila: #430197;

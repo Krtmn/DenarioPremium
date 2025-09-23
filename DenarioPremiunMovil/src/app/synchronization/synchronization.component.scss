@@ -1,0 +1,23 @@
+.tituloSincronizar{
+  font-size: 16px;
+  text-align: center;
+}
+
+.pleasewait{
+  text-align: center;
+  font-size: 16px;
+}
+
+.verticalAlign{
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+  width: 100%;
+}
+
+ion-spinner {
+   display: block;
+   margin: auto;
+ }

@@ -1,0 +1,39 @@
+<ion-modal [isOpen]="isOpen" (didDismiss)="close()">
+    <ng-template>
+        <ion-header :translucent="false">
+            <ion-toolbar class="fondoLila">
+                <ion-grid>
+                    <ion-row>
+                        <ion-col size="1" size-sm="1" size-xs="2">
+                            <a>
+                                <img (click)="close()" class="fechaAtras" alt=""
+                                    src="../../../assets/images/flecha-blanca.png" />
+                            </a>
+                        </ion-col>
+                        <ion-col size="8" size-sm="10" size-xs="8">
+                            <h1 class="tituloModulos">{{ getTag("VIS_NOMBRE_MODULO_DESPACHOS") }}</h1>
+                        </ion-col>
+                        <ion-col size="1" size-sm="1" size-xs="2">
+                            <img class="fechaAtras" alt="" src="../../../assets/images/visitasNuevoBlanco.svg" />
+                        </ion-col>
+                    </ion-row>
+                </ion-grid>
+            </ion-toolbar>
+        </ion-header>
+        <ion-content>
+            <h1 class="ion-text-center">{{getTag('VIS_GUIAS_DESPACHO') }}</h1>
+            <ion-list>
+                <ion-item *ngFor="let pdf of pdfList" (click)="openPdf(pdf)" [button]="true">
+                    <ion-icon color="warning" slot="start" name="document" size="large"></ion-icon>
+                    <ion-label>{{ pdf.split('/').pop() }}</ion-label>
+                    <ion-note slot="end">
+                        <ion-icon name="chevron-forward-outline"></ion-icon>
+                    </ion-note>
+                </ion-item>
+                <ion-item *ngIf="pdfList.length === 0">
+                    {{getTag('VIS_NO_GUIAS_DESPACHO') }}
+                </ion-item>
+            </ion-list>
+        </ion-content>
+    </ng-template>
+</ion-modal>

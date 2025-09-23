@@ -1,0 +1,78 @@
+<ion-header :translucent="false">
+  <ion-toolbar class="fondoLila">
+<!--     <ion-title class="fondoLila">
+ -->      <ion-grid>
+        <ion-row>
+          <ion-col size="1" size-sm="1" size-xs="2">
+            <img routerLink="/home" class="fechaAtras" alt="" src="../../../assets/images/iconosatras.png" />
+          </ion-col>
+          <ion-col size="10" size-sm="10" size-xs="8">
+            <h1 class="tituloModulos">{{this.tags.get('VND_VENDEDOR')}}</h1>
+          </ion-col>
+          <ion-col size="1" size-sm="1" size-xs="2">
+            <img class="fechaAtras" alt="" src="../../../assets/images/vendedoresNuevoBlanco.svg" />
+          </ion-col>
+
+        </ion-row>
+      </ion-grid>
+<!--     </ion-title>
+ -->  </ion-toolbar>
+</ion-header>
+<ion-content>
+  <ion-grid>
+    <ion-row >
+      <ion-col size="12" size-sm="12" size-xs="12">
+        <ion-accordion-group  *ngIf="empresas.length >= 1">
+          <ion-accordion *ngFor="let empresa of empresas">
+            <ion-item slot="header" color="light">
+              <ion-label >{{ empresa.lbEnterprise }}</ion-label>
+            </ion-item>
+            <div slot="content">
+              <ion-grid>
+                  <ion-row>
+                      <ion-col size="12" size-sm="12" size-xs="12">
+
+              <div *ngIf="!infoVendedores">
+                <div *ngFor="let info of userInfo">
+                <div *ngIf="showInfo(empresa,info)">
+
+                  <p> <span class="titulosBold">{{this.tags.get('VND_DIAS_HABILES')}}:</span> {{ info.diasHabiles }}</p>
+                  <p> <span class="titulosBold"> {{this.tags.get('VND_DIAS_TRANS')}}:</span> {{ info.diasTranscurridos }}</p>
+                  <p> <span class="titulosBold">{{this.tags.get('VND_DIAS_RESTAN')}}:</span> {{ info.diasRestantes }}</p>
+                  <p> <span class="titulosBold">{{this.tags.get('VND_CARTERA')}}:</span> {{ info.carteraClientes }}</p>
+                  <p> <span class="titulosBold">{{this.tags.get('VND_CLIENTES_ACTIVOS')}}:</span> {{ info.clientesActivados }}</p>
+                  <p> <span class="titulosBold">{{this.tags.get('VND_CLIENTES_NUEVOS')}}:</span> {{ info.clientesNuevos }}</p>
+                  <p> <span class="titulosBold">{{this.tags.get('VND_CLIENTES_NUEVOSACT')}}:</span> {{ info.clientesNuevosActivados }}</p>
+
+
+                  <div *ngIf="info.planesCuotaEmpresa">
+                    <div *ngFor="let plan of info.planesCuotaEmpresa">
+                      <div *ngIf="plan.id">
+                        <h3>{{this.tags.get('VND_TIPO_PLAN')}} {{ plan.naUnit }}</h3>
+                        <p>{{this.tags.get('VND_CUOTA_MES')}}: {{ plan.cuotaMes }} {{ plan.coUnit }} </p>
+                        <p>{{this.tags.get('VND_VENTA_REAL')}} {{ plan.ventaRealMes }} {{ plan.coUnit }}</p>
+                      </div>
+                    </div>
+
+                  </div>
+                </div> <!-- userInfo presente -->
+                </div> <!-- ngfor userInfo-->
+              </div> <!-- infoVendedores false-->
+              <div *ngIf="infoVendedores">
+                <div *ngIf="bdUserInfo">
+                <h3> {{ bdUserInfo.title }} </h3>
+                <div [innerHTML]="bdUserInfo.content"></div>
+              </div>
+              </div>
+            </ion-col>
+        </ion-row>
+    </ion-grid>
+            </div>
+          </ion-accordion>
+        </ion-accordion-group>
+      </ion-col>
+
+
+    </ion-row>
+  </ion-grid>
+</ion-content>

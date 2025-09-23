@@ -1,0 +1,58 @@
+.search-button, .structures-button{
+  font-size: 16px;
+}
+
+.fixedSearch{
+  position: fixed;
+  margin-bottom: 300px;
+  width: 100%;
+  z-index: 10;
+  background: #ffffff;
+}
+// productos
+.inputsSearch, .inputsSearch:focus {
+  height: 40px;
+  width: 100%;
+  position: relative;
+  padding: 6px;
+  border: 1px solid #430197;
+  border-radius: 25px;
+  outline: none;
+  padding-left: 40px;
+
+}
+
+.iconobuscar{
+  background-image: url("/assets/images/searchInput.svg");
+  // background-size: 100% 101%;
+  background-repeat: no-repeat;
+  background-position: 10px center;
+  background-size: 8%;
+}
+
+// ion-button {
+//   --border-color: #430197;
+//   --color: #430197;
+// }
+/*.input-fill-outline.has-focus
+{
+  border:solid 2px red;
+  border-radius: 30px;
+}*/
+.input-fill-outline.input-shape-round {
+  --border-color: blue;
+  --border-radius: 40px;
+
+}
+
+.buttonSearchProductos{
+  color: #fff;
+  background: #430197;
+  border-radius: 25px;
+  padding: 4px;
+  height: 24px;
+}
+
+.sizebutton{
+
+}

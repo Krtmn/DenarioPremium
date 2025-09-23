@@ -1,0 +1,6 @@
+export interface ProductUtil {
+  // ...otras propiedades...
+  images: string; // nombre de la imagen o base64
+  imgName?: string; // <-- agrega esta línea
+  // ...otras propiedades...
+}

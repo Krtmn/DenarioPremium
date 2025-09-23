@@ -1,0 +1,72 @@
+<ion-grid class="contenedormapa">
+    <ion-row>
+        <ion-col size="12" size-xs="12" size-sm="12" size-md="12" size-lg="12" class="ion-text-center">
+            <div>
+                <ion-label> {{this.clientLogic.coordenada.naClient}}</ion-label>
+            </div>
+        </ion-col>
+        <ion-col size="12" size-xs="12" size-sm="12" size-md="12" size-lg="12">
+            <div>
+                <div>
+                    <!--capacitor-google-map #mapClient></capacitor-google-map -->
+                    <google-map
+                    height='40vh'
+                    width="100%"
+                    [center]="mapCenter"
+                    (mapClick)="moveMap($event)"
+                    [options]="mapOptions">
+                    <map-marker [position]="redMarker"></map-marker>
+                    </google-map>
+                </div>
+            </div>
+        </ion-col>
+        <ion-col size="12" size-xs="12" size-sm="12" size-md="12" size-lg="12">
+            <div>
+                <!--  <ion-label>{{this.clientLogic.clientTags.get('CLI_LOCATION')}}:</ion-label>
+                <ion-item *ngIf="this.clientLogic.datos.client.editable === 'true'">
+                    <ion-input [clearInput]="true" color="primary"
+                        placeholder="{{this.clientLogic.clientTags.get('CLI_COORDENADA')}}"
+                        [(ngModel)]="selectedLocation" (ionChange)="setLocation($event)">
+                    </ion-input>
+                </ion-item> -->
+                <ion-accordion-group>
+                    <ion-accordion>
+                        <ion-item slot="header" color="light">
+                            <ion-label>
+                                {{this.clientLogic.clientTags.get('CLI_LOCATION')}}</ion-label>
+                        </ion-item>
+                        <div class="ion-padding" slot="content">
+                          <ion-grid>
+                              <ion-row>
+                                <ion-col size="12" size-sm="12" size-xs="12">
+                                <form [formGroup]="clientLocationForm">
+                                  <ion-col size="12" size-sm="12" size-xs="12" *ngIf="this.clientLogic.datos.client.editable === 'true'">
+                                        <ion-input label="Latitud:" label-placement="floating" fill="outline" placeholder="Ingrese latitud" formControlName="latitude" [(ngModel)]="selectedLatitude" (ionChange)="validateCoordinate(clientLocationForm)" type="number"></ion-input>
+                                  </ion-col>
+                                  <ion-col size="12" size-sm="12" size-xs="12" *ngIf="this.clientLogic.datos.client.editable === 'true'">
+                                        <ion-input label="Longitud:" label-placement="floating" fill="outline" placeholder="Ingrese longitud" formControlName="longitude" [(ngModel)]="selectedLogitude" (ionChange)="validateCoordinate(clientLocationForm)" type="number"></ion-input>
+                                  </ion-col>
+                                  <!-- ion-col size="12" size-sm="12" size-xs="12">
+                                        <ion-button shape="round" expand="full" class="borderColor" id="probando" [disabled]="!isValidCoordinate" (click)="setCoordenada($event)">
+                                            <img class="boton" alt="" /> {{this.clientLogic.clientTags.get('CLI_LOCATION_ACEPTAR')}}
+                                        </ion-button >
+                                    </ion-col-->
+                                </form>
+                            </ion-col>
+                          </ion-row>
+                      </ion-grid>
+                        </div>
+                    </ion-accordion>
+                </ion-accordion-group>
+
+            </div>
+        </ion-col>
+
+        <!--  <ion-button routerLink="/login" shape="round" fill="outline" expand="full" class="borderColor">
+            <img class="boton" alt="" /> login
+        </ion-button> -->
+        <!--   <ion-button (click)="asd()" id="probando"></ion-button> -->
+
+    </ion-row>
+</ion-grid>
+<app-message></app-message>

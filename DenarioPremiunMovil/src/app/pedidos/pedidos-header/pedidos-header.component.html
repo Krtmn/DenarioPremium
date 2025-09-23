@@ -1,0 +1,23 @@
+<ion-header :translucent="false">
+    <ion-toolbar class="fondoVerde">
+        <!-- <ion-title class="fondoVerde"> -->
+            <ion-grid>
+                <ion-row>
+                    <ion-col size="1" size="1" size-sm="1" size-xs="2">
+                        <a (click)="goBack()">
+                            <img class="fechaAtras" alt="" src="../../../assets/images/flecha-blanca.png" />
+                        </a>
+                    </ion-col>
+                    <ion-col size="10" size-sm="10" size-xs="8">
+                        <!-- <h1 class="tituloModulos">{{this.headerTags.get('CLI_NOMBRE_MODULO')}}</h1> -->
+                        <h1 class="tituloModulos">{{ getTag("PED_NOMBRE_MODULO")}}</h1>
+                    </ion-col>
+                    <!-- <ion-col size=" 1" size-sm="1" size-xs="2" *ngIf="showIconClient"> -->
+                    <ion-col size=" 1" size-sm="1" size-xs="2">
+                        <img class="fechaAtras" alt="" src="../../../assets/images/pedidosNuevoBlanco.svg" />
+                    </ion-col>
+                </ion-row>
+            </ion-grid>
+        <!-- </ion-title> -->
+    </ion-toolbar>
+</ion-header>

@@ -1,0 +1,36 @@
+<ion-grid *ngIf="clientLogic.clientContainerComponent">
+    <ion-row>
+        <ion-col size="12" size-sm="12" size-xs="12">
+            <ion-button *ngIf="clientLogic.clientContainerComponent" size="large" fill="outline"
+                class="colorBorderBuscar" shape="round" expand="block" (click)="clientList()">
+                <ion-icon slot="start" name="search"></ion-icon><span
+                    style="margin-right: auto">{{this.clientLogic.clientTags.get('CLI_HOME_LIST_CLIENT')}}</span></ion-button>
+        </ion-col>
+        <ion-col size="12" size-sm="12" size-xs="12">
+            <ion-button *ngIf="clientLogic.clientContainerComponent && !this.clientLogic.user.transportista" size="large"
+                fill="outline" class="colorBorderBuscar" shape="round" expand="block" (click)="newPotentialClient()">
+                <ion-icon slot="start" name="add"></ion-icon><span
+                    style="margin-right: auto">{{this.clientLogic.clientTags.get('CLI_HOME_NEW_POTENTIAL_CLIENT')}}</span></ion-button>
+        </ion-col>
+        <ion-col size="12" size-sm="12" size-xs="12">
+            <ion-button *ngIf="clientLogic.clientContainerComponent && !this.clientLogic.user.transportista" size="large"
+                fill="outline" class="colorBorderBuscar" shape="round" expand="block" (click)="findPotentialClient()">
+                <ion-icon slot="start" name="search"></ion-icon><span
+                    style="margin-right: auto">{{this.clientLogic.clientTags.get('CLI_HOME_FIND_POTENTIAL_CLIENT')}}</span></ion-button>
+        </ion-col>
+    </ion-row>
+</ion-grid>
+
+<app-client-list *ngIf="clientLogic.clientListComponent"></app-client-list>
+
+<app-client-detail *ngIf="clientLogic.clientDetailComponent"></app-client-detail>
+
+<app-client-document-sale *ngIf="clientLogic.clientDocumentSaleComponent"></app-client-document-sale>
+
+<app-client-potential-client *ngIf="clientLogic.clientPotentialClientComponent"></app-client-potential-client>
+
+<app-client-new-potential-client
+    *ngIf="clientLogic.clientNewPotentialClientComponent"></app-client-new-potential-client>
+
+<app-client-location *ngIf="clientLogic.clientLocationComponent"></app-client-location>
+<app-message></app-message>

@@ -1,0 +1,38 @@
+<productos-header [headerTags]="tags" 
+[showDetail]="showProductDetail"
+(onBackClicked)="onBackClicked($event)"></productos-header>
+
+<ion-content>
+  <productos-search 
+  *ngIf="!showProductDetail"
+  [searchTags]="tags"
+  [mostrarVolver]="showProducts"
+  (viewStructuresClicked)="viewStructures($event)"
+  (searchTextChanged)="setSearchText($event)"
+  [searchText]="searchText"
+  [showSearch]="showSearch"
+  [productStructureSelected]="psSelected"
+  ></productos-search>
+
+  <product-structures-list *ngIf="showProductStructures"
+  [empresaSeleccionada]="empresaSeleccionada"
+  [tpsSeleccionada]="tpsSeleccionada"  
+  (selectedProductStructureChanged)="onSelectedProductStructure($event)"
+  ></product-structures-list>
+
+  <product-list *ngIf="showProducts"
+  [productTags]="tags"
+  [empresaSeleccionada]="empresaSeleccionada"
+  [psSeleccionada]="psSeleccionada" 
+  (selectedProductChanged)="onSelectedProduct($event)"
+  [searchText]="searchText"></product-list>
+
+  <product-detail *ngIf="showProductDetail"
+    [productDetailTags]="tags"
+    [empresaSeleccionada]="empresaSeleccionada"
+    [pSeleccionado]="selectedProduct"></product-detail>
+</ion-content>
+
+
+
+

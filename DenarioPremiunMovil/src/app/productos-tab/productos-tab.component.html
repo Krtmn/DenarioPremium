@@ -1,0 +1,15 @@
+<ion-button *ngIf="botonAgregar" (click)="addProduct()" expand="block" class="botonAddAmarillo">
+    {{this.productsTabTags.get('ADD_PRODUCT')}}
+</ion-button>
+
+<productos-tab-search [showProductStructure]="showProductStructure" [empresaSeleccionada]="empresaSeleccionada" [productsTabTags]="productsTabTags" [pedido]="pedido"></productos-tab-search>
+
+<productos-tab-structure-list [showProductStructure]="showProductStructure" [empresaSeleccionada]="empresaSeleccionada" [productsTabTags]="productsTabTags" [devolucion]="devolucion" [pedido]="pedido"></productos-tab-structure-list>
+
+<productos-tab-return-product-list *ngIf="devolucion" [empresaSeleccionada]="empresaSeleccionada" [productsTabTags]="productsTabTags"></productos-tab-return-product-list>
+
+<productos-tab-order-product-list *ngIf="pedido" [empresaSeleccionada]="empresaSeleccionada" [productsTabTags]="productsTabTags" [pedido]="pedido"></productos-tab-order-product-list>
+
+<devolucion-product-list *ngIf="devolucion"></devolucion-product-list>
+
+<inventario-product-list *ngIf="inventario" [empresaSeleccionada]="empresaSeleccionada" [productsTabTags]="productsTabTags" [inventario]="inventario"></inventario-product-list>

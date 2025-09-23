@@ -1,0 +1,14 @@
+<ion-grid *ngIf="containerComp">
+    <ion-row>
+        <ion-col size="8" size-md="8" offset-md="2" size-sm="12" size-xs="12">
+          <ion-button size="large" fill="outline" class="colorBorderBuscar" shape="round" expand="block" (click)="newReturnButton()"><ion-icon slot="start" name="add"></ion-icon><span style="margin-right: auto">{{this.containerTags.get('DEV_NUEVA_DEVOLUCION')}}</span></ion-button>
+        </ion-col>
+        <ion-col size="8" size-md="8" offset-md="2" size-sm="12" size-xs="12">
+          <ion-button size="large" fill="outline" class="colorBorderBuscar" shape="round" expand="block" (click)="findReturn()"><ion-icon slot="start" name="search"></ion-icon><span style="margin-right: auto">{{this.containerTags.get('DEV_BUSCAR_DEVOLUCION')}}</span></ion-button>
+        </ion-col>
+    </ion-row>
+</ion-grid>
+
+<app-devolucion *ngIf="devolucionComp" [devolucionTags]="containerTags"></app-devolucion>
+
+<devolucion-list *ngIf="devolucionList" [devolucionTags]="containerTags"></devolucion-list>
