@@ -1,59 +1,50 @@
 @echo off
-REM filepath: createAPK.bat
-
-REM Verifica que se pase el nombre del APK como argumento
+REM 1. Validate input
 IF "%~1"=="" (
-    echo Uso: %0 NombreAPK
+    echo Usage: %0 ApkName
     exit /b 1
 )
 
-
-
-REM #!!!!!!!!OJO!!!!!!!!!!!!!!
-
-
-REM #ACTUALIZAR LAS RUTAS SEGUN SU SISTEMA OPERATIVO Y AMBIENTES
-
-
-REM #!!!!!!!!!!!!!!!!!!!!!!!!!
-
 SET "APK_NAME=%~1"
-SET "RUTA_ANDROID=%CD%\..\Repositorios\denarioPremiunAngular\DenarioPremiunMovil\android"
-SET "RUTA_KEYSTORE=%CD%\..\Repositorios\denarioPremiunAngular\DenarioPremiunMovil\android\app\my-denarioPremium-key.keystore"
-SET "KEYSTORE_PASS=Peace4us2025*"
-SET "RUTA_APK_RELEASE=%RUTA_ANDROID%\app\build\outputs\apk\release\app-release.apk"
-SET "RUTA_APK_FIRMADO=%CD%\..\Apks\%APK_NAME%\"
+SET "ROOT=%CD%\..\Repositorios\denarioPremiunAngular\DenarioPremiunMovil"
+SET "ANDROID_DIR=%ROOT%\android"
+SET "KEYSTORE=%ROOT%\android\app\my-denarioPremium-key.keystore"
+SET "KS_PASS=Peace4us2025*"
+SET "OUTPUT_DIR=%CD%\..\Apks\%APK_NAME%"
 
-REM Crea la carpeta de salida si no existe
-IF NOT EXIST "%RUTA_APK_FIRMADO%" (
-    mkdir "%RUTA_APK_FIRMADO%"
-)
+REM Prepare output folder
+IF NOT EXIST "%OUTPUT_DIR%" mkdir "%OUTPUT_DIR%"
 
-REM Compila el APK en modo release
-cd /d "%RUTA_ANDROID%"
+REM 2. Build web assets in production mode
+cd /d "%ROOT%"
+npm ci
+ionic build --prod
+
+REM 3. Sync assets into Android (Capacitor) or Cordova copy step
+npx cap sync android
+
+REM 4. Compile Android APK
+cd /d "%ANDROID_DIR%"
 call gradlew assembleRelease
 cd /d "%~dp0"
 
-REM Firma el APK
-apksigner sign --ks "%RUTA_KEYSTORE%" --ks-pass pass:%KEYSTORE_PASS% --out "%RUTA_APK_FIRMADO%%APK_NAME%.apk" "%RUTA_APK_RELEASE%"
+REM 5. Sign APK
+SET "UNSIGNED_APK=%ANDROID_DIR%\app\build\outputs\apk\release\app-release.apk"
+apksigner sign --ks "%KEYSTORE%" --ks-pass pass:%KS_PASS% --out "%OUTPUT_DIR%\%APK_NAME%.apk" "%UNSIGNED_APK%"
 
-REM Elimina el archivo .apk.idsig si existe
-IF EXIST "%RUTA_APK_FIRMADO%%APK_NAME%.apk.idsig" (
-    del "%RUTA_APK_FIRMADO%%APK_NAME%.apk.idsig"
-)
+REM 6. Clean up signature file and verify
+IF EXIST "%OUTPUT_DIR%\%APK_NAME%.apk.idsig" del "%OUTPUT_DIR%\%APK_NAME%.apk.idsig"
+apksigner verify "%OUTPUT_DIR%\%APK_NAME%.apk"
 
-REM Verifica la firma
-apksigner verify "%RUTA_APK_FIRMADO%%APK_NAME%.apk"
-
-REM Instala el APK si hay un dispositivo conectado
+REM 7. Install on connected device
 FOR /F "skip=1 tokens=1" %%D IN ('adb devices') DO (
     IF "%%D" NEQ "" (
-        echo Instalando APK en el dispositivo conectado...
-        adb install -r "%RUTA_APK_FIRMADO%%APK_NAME%.apk"
-        GOTO :fin
+        echo Installing APK on device...
+        adb install -r "%OUTPUT_DIR%\%APK_NAME%.apk"
+        GOTO fin
     )
 )
-echo No hay dispositivos conectados
+echo No devices connected
 
 :fin
 pause
