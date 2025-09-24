@@ -1,50 +1,51 @@
 @echo off
-REM 1. Validate input
-IF "%~1"=="" (
-    echo Usage: %0 ApkName
-    exit /b 1
+REM 1. Compilar la app para producción
+call npm run build -- --prod
+if %errorlevel% neq 0 (
+    echo Error en la compilación de Angular.
+    exit /b %errorlevel%
 )
 
-SET "APK_NAME=%~1"
-SET "ROOT=%CD%\..\Repositorios\denarioPremiunAngular\DenarioPremiunMovil"
-SET "ANDROID_DIR=%ROOT%\android"
-SET "KEYSTORE=%ROOT%\android\app\my-denarioPremium-key.keystore"
-SET "KS_PASS=Peace4us2025*"
-SET "OUTPUT_DIR=%CD%\..\Apks\%APK_NAME%"
-
-REM Prepare output folder
-IF NOT EXIST "%OUTPUT_DIR%" mkdir "%OUTPUT_DIR%"
-
-REM 2. Build web assets in production mode
-cd /d "%ROOT%"
-npm ci
-ionic build --prod
-
-REM 3. Sync assets into Android (Capacitor) or Cordova copy step
-npx cap sync android
-
-REM 4. Compile Android APK
-cd /d "%ANDROID_DIR%"
-call gradlew assembleRelease
-cd /d "%~dp0"
-
-REM 5. Sign APK
-SET "UNSIGNED_APK=%ANDROID_DIR%\app\build\outputs\apk\release\app-release.apk"
-apksigner sign --ks "%KEYSTORE%" --ks-pass pass:%KS_PASS% --out "%OUTPUT_DIR%\%APK_NAME%.apk" "%UNSIGNED_APK%"
-
-REM 6. Clean up signature file and verify
-IF EXIST "%OUTPUT_DIR%\%APK_NAME%.apk.idsig" del "%OUTPUT_DIR%\%APK_NAME%.apk.idsig"
-apksigner verify "%OUTPUT_DIR%\%APK_NAME%.apk"
-
-REM 7. Install on connected device
-FOR /F "skip=1 tokens=1" %%D IN ('adb devices') DO (
-    IF "%%D" NEQ "" (
-        echo Installing APK on device...
-        adb install -r "%OUTPUT_DIR%\%APK_NAME%.apk"
-        GOTO fin
-    )
+REM 2. Sincronizar cambios con Android
+call npx cap sync android
+if %errorlevel% neq 0 (
+    echo Error en la sincronización de Capacitor.
+    exit /b %errorlevel%
 )
-echo No devices connected
 
-:fin
+REM 3. Compilar el APK de Android
+cd android
+call .\gradlew assembleRelease
+if %errorlevel% neq 0 (
+    echo Error al compilar el APK.
+    exit /b %errorlevel%
+)
+cd ..
+
+REM 4. Firmar el APK
+set APK_PATH=android\app\build\outputs\apk\release\app-release-unsigned.apk
+set SIGNED_APK_PATH=android\app\build\outputs\apk\release\app-release-signed.apk
+set KEYSTORE_PATH=app\my-denarioPremium-key.keystore
+set ALIAS=denarioPremiumKey
+set OUTPUT_DIR=%USERPROFILE%\Documents
+
+REM Cambia la contraseña y el alias según tu configuración
+call jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore %KEYSTORE_PATH% -storepass Peace4us2025* %APK_PATH% %ALIAS%
+if %errorlevel% neq 0 (
+    echo Error al firmar el APK.
+    exit /b %errorlevel%
+)
+
+REM 5. (Opcional) Alinear el APK con zipalign (requiere Android SDK build-tools en el PATH)
+call zipalign -v 4 %APK_PATH% %SIGNED_APK_PATH%
+if %errorlevel% neq 0 (
+    echo Error al alinear el APK.
+    exit /b %errorlevel%
+)
+
+REM 6. Mover el APK firmado a la carpeta deseada
+if not exist "%OUTPUT_DIR%" mkdir "%OUTPUT_DIR%"
+move /Y %SIGNED_APK_PATH% "%OUTPUT_DIR%\app-release-signed.apk"
+
+echo Proceso completado. El APK firmado está en %OUTPUT_DIR%
 pause
