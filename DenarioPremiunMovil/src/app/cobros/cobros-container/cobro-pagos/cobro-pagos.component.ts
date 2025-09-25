@@ -148,6 +148,7 @@ export class CobroPagosComponent implements OnInit {
       case "ef": {
         this.collectService.collection.nuAmountFinal -= this.collectService.pagoEfectivo[index].monto;
         this.collectService.collection.nuAmountTotal -= this.collectService.pagoEfectivo[index].monto;
+        this.collectService.collection.nuDifference -= this.collectService.pagoEfectivo[index].monto
 
         this.collectService.collection.nuAmountFinalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountFinal, 0, this.collectService.collection.coCurrency);
         this.collectService.collection.nuAmountTotalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountTotal, 0, this.collectService.collection.coCurrency);
@@ -165,6 +166,7 @@ export class CobroPagosComponent implements OnInit {
       case "ch": {
         this.collectService.collection.nuAmountFinal -= this.collectService.pagoCheque[index].monto;
         this.collectService.collection.nuAmountTotal -= this.collectService.pagoCheque[index].monto;
+        this.collectService.collection.nuDifference -= this.collectService.pagoEfectivo[index].monto
 
         this.collectService.collection.nuAmountFinalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountFinal, 0, this.collectService.collection.coCurrency);
         this.collectService.collection.nuAmountTotalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountTotal, 0, this.collectService.collection.coCurrency);
@@ -182,6 +184,7 @@ export class CobroPagosComponent implements OnInit {
       case "de": {
         this.collectService.collection.nuAmountFinal -= this.collectService.pagoDeposito[index].monto;
         this.collectService.collection.nuAmountTotal -= this.collectService.pagoDeposito[index].monto;
+        this.collectService.collection.nuDifference -= this.collectService.pagoDeposito[index].monto
 
         this.collectService.collection.nuAmountFinalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountFinal, 0, this.collectService.collection.coCurrency);
         this.collectService.collection.nuAmountTotalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountTotal, 0, this.collectService.collection.coCurrency);
@@ -201,6 +204,7 @@ export class CobroPagosComponent implements OnInit {
       case "tr": {
         this.collectService.collection.nuAmountFinal -= this.collectService.pagoTransferencia[index].monto;
         this.collectService.collection.nuAmountTotal -= this.collectService.pagoTransferencia[index].monto;
+        this.collectService.collection.nuDifference -= this.collectService.pagoTransferencia[index].monto;
 
         this.collectService.collection.nuAmountFinalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountFinal, 0, this.collectService.collection.coCurrency);
         this.collectService.collection.nuAmountTotalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountTotal, 0, this.collectService.collection.coCurrency);
@@ -218,6 +222,7 @@ export class CobroPagosComponent implements OnInit {
       case "ot": {
         this.collectService.collection.nuAmountFinal -= this.collectService.pagoOtros[index].monto;
         this.collectService.collection.nuAmountTotal -= this.collectService.pagoOtros[index].monto;
+        this.collectService.collection.nuDifference -= this.collectService.pagoOtros[index].monto
 
         this.collectService.collection.nuAmountFinalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountFinal, 0, this.collectService.collection.coCurrency);
         this.collectService.collection.nuAmountTotalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountTotal, 0, this.collectService.collection.coCurrency);

@@ -188,8 +188,7 @@
                                 <ion-input label="{{this.collectService.collectionTags.get('COB_MONTO')}}" type="number"
                                     label-placement="floating" fill="outline" color="primary" [(ngModel)]="cheque.monto"
                                     value="{{cheque.monto}}" (ionChange)="setMonto(cheque.monto,ch, 'ch')"
-                                    class="customInput"
-                                    [ngClass]="{'inp-write': !cheque.monto}"></ion-input>
+                                    class="customInput" [ngClass]="{'inp-write': !cheque.monto}"></ion-input>
                             </ion-item>
                         </ion-col>
 
@@ -277,19 +276,19 @@
                         </ion-col>
                         <ion-col size="6" size-sm="12" size-xs="12">
                             <ion-item disabled="{{deposito.disabled}}">
-                                <ion-input label="{{this.collectService.collectionTags.get('COB_MONTO')}}" type="number"
+                                <ion-input label="{{this.collectService.collectionTags.get('COB_NRO_DEPOSITO')}}"
                                     label-placement="floating" fill="outline" color="primary"
-                                    [(ngModel)]="deposito.monto" value="{{deposito.monto}}"
-                                    (ionChange)="setMonto(deposito.monto,de, 'de')" class="customInput"
+                                    [(ngModel)]="deposito.numeroDeposito" value="{{deposito.numeroDeposito}}"
+                                    (ionBlur)="setNroTransanccion(deposito.numeroDeposito,de,'de')" class="customInput"
                                     [ngClass]="{'inp-write': !deposito.numeroDeposito}"></ion-input>
                             </ion-item>
                         </ion-col>
                         <ion-col size="6" size-sm="12" size-xs="12">
                             <ion-item disabled="{{deposito.disabled}}">
-                                <ion-input label="{{this.collectService.collectionTags.get('COB_NRO_DEPOSITO')}}"
+                                <ion-input label="{{this.collectService.collectionTags.get('COB_MONTO')}}" type="number"
                                     label-placement="floating" fill="outline" color="primary"
-                                    [(ngModel)]="deposito.numeroDeposito" value="{{deposito.numeroDeposito}}"
-                                    (ionBlur)="setNroTransanccion(deposito.numeroDeposito,de,'de')" class="customInput"
+                                    [(ngModel)]="deposito.monto" value="{{deposito.monto}}"
+                                    (ionChange)="setMonto(deposito.monto,de, 'de')" class="customInput"
                                     [ngClass]="{'inp-write': !deposito.numeroDeposito}"></ion-input>
                             </ion-item>
                         </ion-col>
@@ -408,8 +407,7 @@
                                 <ion-input label="{{this.collectService.collectionTags.get('COB_MONTO')}}" type="number"
                                     label-placement="floating" fill="outline" color="primary"
                                     [(ngModel)]="transferencia.monto" value="{{transferencia.monto}}"
-                                    (ionChange)="setMonto(transferencia.monto,tr, 'tr')"
-                                    class="customInput"
+                                    (ionChange)="setMonto(transferencia.monto,tr, 'tr')" class="customInput"
                                     [ngClass]="{'inp-write': !transferencia.monto}"></ion-input>
                             </ion-item>
                         </ion-col>
