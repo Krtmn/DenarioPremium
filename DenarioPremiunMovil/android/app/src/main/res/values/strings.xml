@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Denario Premium Movil</string>
+    <string name="title_activity_main">Denario Premium Movil</string>
+    <string name="package_name">com.kiberno.denarioPremiumPro</string>
+    <string name="custom_url_scheme">com.kiberno.denarioPremiumPro</string>
+</resources>
