@@ -179,7 +179,7 @@ export class DepositService {
         txComment: "",
         nuValueLocal: 0,
         idCurrency: 0,
-        stDeposit: 3,
+        stDeposit: 0,
         isEdit: true,
         isEditTotal: false,
         isSave: false,
@@ -345,8 +345,7 @@ export class DepositService {
   }
 
   getBankAccounts(dbServ: SQLiteObject, idEnterprise: number, coCurrency: string) {
-    this.database = dbServ
-    return this.database.executeSql('SELECT ' +
+    let selectStatement = 'SELECT ' +
       'bank_accounts.id_bank_account as idBankAccount,' +
       'bank_accounts.co_bank as coBank,' +
       'bank_accounts.id_bank as idBank,' +
@@ -358,11 +357,13 @@ export class DepositService {
       'bank_accounts.co_enterprise as coEnterprise,' +
       'bank_accounts.id_enterprise as idEnterprise,' +
       'banks.na_bank as nameBank ' +
-      'FROM bank_accounts, banks ' +
-      'WHERE bank_accounts.id_enterprise = ? ' +
+      'FROM bank_accounts, banks '  +
+      'WHERE bank_accounts.id_enterprise = ? '+
       'AND bank_accounts.co_currency = ? ' +
       'AND bank_accounts.co_bank = banks.co_bank ' +
-      'AND banks.id_enterprise = ?',
+      'AND banks.id_enterprise = ?';
+    this.database = dbServ;
+    return this.database.executeSql(selectStatement,
       [idEnterprise, coCurrency, idEnterprise]).then(data => {
         this.bankList = [] as BankAccount[];
         for (let i = 0; i < data.rows.length; i++) {
