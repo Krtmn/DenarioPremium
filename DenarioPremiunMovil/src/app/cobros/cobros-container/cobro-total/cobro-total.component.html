@@ -427,23 +427,23 @@
                         {{this.collectService.collectionTags.get('COB_FECHA_DOC')}}: {{retentionDetails.daVoucher}}
                     </ion-item>
 
-                    <ion-item >
-                        {{this.collectService.collectionTags.get('COB_MONTO_DOC')}}:
+                    <ion-item>
+                        {{this.collectService.collectionTags.get('COB_MONTO_DOC')}} {{this.collectService.collection.coCurrency}}:
                         {{this.currencyService.formatNumber(retentionDetails.nuBalanceDoc)}}
                     </ion-item>
-             
+
                     <ion-item>
-                        {{this.collectService.collectionTags.get('COB_IVA_AMOUNT')}}:
+                        {{this.collectService.collectionTags.get('COB_IVA_AMOUNT')}} {{this.collectService.collection.coCurrency}}:
                         {{this.currencyService.formatNumber(retentionDetails.nuAmountRetention)}}
                     </ion-item>
 
                     <ion-item>
-                        {{this.collectService.collectionTags.get('COB_ISLR_AMOUNT')}}:
+                        {{this.collectService.collectionTags.get('COB_ISLR_AMOUNT')}} {{this.collectService.collection.coCurrency}}:
                         {{this.currencyService.formatNumber(retentionDetails.nuAmountRetention2)}}
                     </ion-item>
 
                     <ion-item>
-                        {{this.collectService.collectionTags.get('COB_MONTO_TOTAL_RETENTION')}}:
+                        {{this.collectService.collectionTags.get('COB_MONTO_TOTAL_RETENTION')}} {{this.collectService.collection.coCurrency}}:
                         {{this.currencyService.formatNumber(retentionDetails.nuAmountPaid)}}
                     </ion-item>
 
@@ -513,11 +513,11 @@
 
                     <!-- //NUMERO RETENCION IVA -->
                     <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-                        <ion-input label="{{this.collectService.collectionTags.get('COB_IVA_RETENTION')}}"
+                        <ion-input
+                            label="{{this.collectService.collectionTags.get('COB_IVA_RETENTION')}} {{this.collectService.collection.coCurrency}}"
                             label-placement="floating" fill="outline"
-                            value="{{this.currencyService.formatNumber(this.collectService.retention.nuAmountRetention)}}"
-                            color="primary" type="number" [(ngModel)]="collectService.retention.nuAmountRetention"
-                            (ionChange)="validate()"
+                            value="{{this.collectService.retention.nuAmountRetention}}" color="primary" type="number"
+                            [(ngModel)]="collectService.retention.nuAmountRetention" (ionChange)="validate()"
                             [ngClass]="{'inp-write': !collectService.retention.nuAmountRetention}">
                         </ion-input>
                     </ion-col>
@@ -525,11 +525,11 @@
 
                     <!-- //NUMERO RETENCION ISLR -->
                     <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-                        <ion-input label="{{this.collectService.collectionTags.get('COB_ISLR_RETENTION')}}"
+                        <ion-input
+                            label="{{this.collectService.collectionTags.get('COB_ISLR_RETENTION')}} {{this.collectService.collection.coCurrency}}"
                             label-placement="floating" fill="outline"
-                            value="{{this.currencyService.formatNumber(this.collectService.retention.nuAmountRetention2)}}"
-                            color="primary" type="number" [(ngModel)]="collectService.retention.nuAmountRetention2"
-                            (ionChange)="validate()"
+                            value="{{this.collectService.retention.nuAmountRetention2}}" color="primary" type="number"
+                            [(ngModel)]="collectService.retention.nuAmountRetention2" (ionChange)="validate()"
                             [ngClass]="{'inp-write': !collectService.retention.nuAmountRetention2}">
                         </ion-input>
                     </ion-col>
@@ -537,7 +537,8 @@
 
                     <!-- //MONTO TOTAL RETENIDO -->
                     <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-                        <ion-input label="{{this.collectService.collectionTags.get('COB_MONTO_TOTAL_RETENTION')}}"
+                        <ion-input
+                            label="{{this.collectService.collectionTags.get('COB_MONTO_TOTAL_RETENTION')}} {{this.collectService.collection.coCurrency}}"
                             label-placement="floating" fill="outline"
                             value="{{this.currencyService.formatNumber(this.collectService.retention.nuAmountPaid)}}"
                             color="primary" [(ngModel)]="collectService.retention.nuAmountPaid" [readonly]="true"

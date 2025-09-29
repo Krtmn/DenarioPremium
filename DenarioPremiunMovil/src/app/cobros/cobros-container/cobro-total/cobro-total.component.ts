@@ -107,6 +107,7 @@ export class CobroTotalComponent implements OnInit {
   }
 
   validate() {
+    
     this.collectService.retention.nuAmountPaid =
       this.collectService.retention.nuAmountRetention + this.collectService.retention.nuAmountRetention2;
 
