@@ -115,6 +115,8 @@ export class CollectionDetail {
             obj['nuAmountRetention2'], //islr
             obj['nuAmountRetentionConversion'], //iva
             obj['nuAmountRetention2Conversion'], //islr		
+            obj['nuAmountRetentionIvaConversion'], //iva
+            obj['nuAmountRetentionIslrConversion'], //islr		
             obj['nuAmountPaid'],
             obj['nuAmountPaidConversion'],
             obj['nuAmountDiscount'],
@@ -147,6 +149,8 @@ export class CollectionDetail {
         public nuAmountRetention2: number = 0, //islr
         public nuAmountRetentionConversion: number = 0, //iva
         public nuAmountRetention2Conversion: number = 0, //islr		
+        public nuAmountRetentionIvaConversion: number = 0, //iva
+        public nuAmountRetentionIslrConversion: number = 0, //islr
         public nuAmountPaid: number = 0,
         public nuAmountPaidConversion: number = 0,
         public nuAmountDiscount: number = 0,

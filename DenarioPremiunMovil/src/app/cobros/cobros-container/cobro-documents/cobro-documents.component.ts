@@ -580,7 +580,9 @@ export class CobrosDocumentComponent implements OnInit {
       nuAmountRetention: 0, //iva
       nuAmountRetention2: 0, //islr
       nuAmountRetentionConversion: 0, //iva
-      nuAmountRetention2Conversion: 0, //islr		
+      nuAmountRetention2Conversion: 0, //islr
+      nuAmountRetentionIslrConversion: 0, //islr
+      nuAmountRetentionIvaConversion: 0, //iva
       nuAmountPaid: nuAmountBalance,
       nuAmountPaidConversion: nuAmountBalanceConversion,
       nuAmountDiscount: documentSale.nuAmountDiscount,

@@ -81,7 +81,9 @@ export class CobroTotalComponent implements OnInit {
         nuAmountRetention: this.collectService.retention.nuAmountRetention, //iva
         nuAmountRetention2: this.collectService.retention.nuAmountRetention2, //islr
         nuAmountRetentionConversion: this.collectService.convertirMonto(this.collectService.retention.nuAmountRetention, 0, this.collectService.collection.coCurrency),
+        nuAmountRetentionIvaConversion: this.collectService.convertirMonto(this.collectService.retention.nuAmountRetention, 0, this.collectService.collection.coCurrency),
         nuAmountRetention2Conversion: this.collectService.convertirMonto(this.collectService.retention.nuAmountRetention2, 0, this.collectService.collection.coCurrency),
+        nuAmountRetentionIslrConversion: this.collectService.convertirMonto(this.collectService.retention.nuAmountRetention2, 0, this.collectService.collection.coCurrency),
         nuAmountPaid: this.collectService.retention.nuAmountPaid,
         nuAmountPaidConversion: this.collectService.convertirMonto(this.collectService.retention.nuAmountPaid, 0, this.collectService.collection.coCurrency),
         nuAmountDiscount: 0,
