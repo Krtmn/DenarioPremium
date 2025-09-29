@@ -56,8 +56,8 @@ export class CobrosContainerComponent implements OnInit {
         this.collectService.showHeaderButtonsFunction(false);
         this.collectService.collectionIsSave = true;
         this.collectService.initCollect = true;
-        this.collectService.disableSendButton = true;
-        this.collectService.cannotSendCollection = true;
+        this.collectService.disableSavedButton = true;
+        this.collectService.disableSenddButton = true;
         this.collectService.showHeaderButtons = false;
         this.collectService.cobroComponent = false;
         this.collectService.cobrosComponent = true;

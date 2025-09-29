@@ -54,6 +54,14 @@ export class CobroTotalComponent implements OnInit {
 
   deleteRetention(index: number) {
     console.log(index);
+    const coDocument = this.collectService.collection.collectionDetails[index].coDocument;
+    // Buscar y deseleccionar en documentSales
+    const docSale = this.collectService.documentSales.find(d => d.coDocument == coDocument);
+    if (docSale) docSale.isSelected = false;
+    // Buscar y deseleccionar en documentSalesBackup
+    const docSaleBackup = this.collectService.documentSalesBackup.find(d => d.coDocument == coDocument);
+    if (docSaleBackup) docSaleBackup.isSelected = false;
+    // Eliminar el detalle
     this.collectService.collection.collectionDetails.splice(index, 1);
     if (this.collectService.collection.collectionDetails.length == 0)
       this.collectService.onCollectionValidToSend(false);
@@ -94,7 +102,8 @@ export class CobroTotalComponent implements OnInit {
       })
     }
     this.collectService.addRetention = false;
-    this.collectService.onCollectionValidToSend(true);
+    this.validate();
+    this.collectService.validateToSend();
   }
 
   validate() {

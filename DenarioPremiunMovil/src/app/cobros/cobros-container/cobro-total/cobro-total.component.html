@@ -427,16 +427,11 @@
                         {{this.collectService.collectionTags.get('COB_FECHA_DOC')}}: {{retentionDetails.daVoucher}}
                     </ion-item>
 
-                    <ion-item *ngIf="this.collectService.currencySelected.coCurrency == retentionDetails.coOriginal">
+                    <ion-item >
                         {{this.collectService.collectionTags.get('COB_MONTO_DOC')}}:
                         {{this.currencyService.formatNumber(retentionDetails.nuBalanceDoc)}}
                     </ion-item>
-
-                    <ion-item *ngIf="this.collectService.currencySelected.coCurrency != retentionDetails.coOriginal">
-                        {{this.collectService.collectionTags.get('COB_MONTO_DOC')}}:
-                        {{this.currencyService.formatNumber(retentionDetails.nuAmountDocConversion)}}
-                    </ion-item>
-
+             
                     <ion-item>
                         {{this.collectService.collectionTags.get('COB_IVA_AMOUNT')}}:
                         {{this.currencyService.formatNumber(retentionDetails.nuAmountRetention)}}

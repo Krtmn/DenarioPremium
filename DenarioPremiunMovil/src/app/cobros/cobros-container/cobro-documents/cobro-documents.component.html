@@ -295,17 +295,17 @@
                     <ion-toolbar class="fondoVerde">
                         <ion-grid>
                             <ion-row>
-                                 <ion-col size="1" size-sm="1" size-xs="2">
-                                        <a>
-                                            <img (click)="saveDocumentSale(false)" class="fechaAtras" alt=""
-                                                src="../../../assets/images/flecha-blanca.png" />
-                                        </a>
-                                    </ion-col>
-                                    <!-- COBRO -->
-                                    <ion-col size="8" size-sm="8" size-xs="10">
-                                        <h1 class="tituloModulos">
-                                            {{this.collectService.collectionTags.get('COB_DETALLE_DOCUMENTO')}}</h1>
-                                    </ion-col>
+                                <ion-col size="1" size-sm="1" size-xs="2">
+                                    <a>
+                                        <img (click)="saveDocumentSale(false)" class="fechaAtras" alt=""
+                                            src="../../../assets/images/flecha-blanca.png" />
+                                    </a>
+                                </ion-col>
+                                <!-- COBRO -->
+                                <ion-col size="8" size-sm="8" size-xs="10">
+                                    <h1 class="tituloModulos">
+                                        {{this.collectService.collectionTags.get('COB_DETALLE_DOCUMENTO')}}</h1>
+                                </ion-col>
                             </ion-row>
                         </ion-grid>
                     </ion-toolbar>
@@ -390,8 +390,9 @@
                                         *ngIf="this.collectService.multiCurrency">
                                         <ion-input
                                             label="{{this.collectService.collectionTags.get('COB_SALDO')}} {{this.collectService.currencyConversion.coCurrency}}"
-                                            label-placement="floating" fill="outline" value="{{this.saldoConversionView}}"
-                                            color="primary" [readonly]="true"></ion-input>
+                                            label-placement="floating" fill="outline"
+                                            value="{{this.saldoConversionView}}" color="primary"
+                                            [readonly]="true"></ion-input>
                                     </ion-col>
                                     <!-- SALDO CONVERSION -->
 
@@ -661,7 +662,13 @@
                                     label-placement="floating" fill="outline" color="primary" type="number"
                                     value="{{this.collectService.documentSaleOpen.nuVaucherRetention}}"
                                     [(ngModel)]="this.collectService.documentSaleOpen.nuVaucherRetention"
-                                    (ionChange)="validateNuVaucherRetention(true)"></ion-input>
+                                    (ionChange)="validateNuVaucherRetention(true)"
+                                    [ngClass]="{'inp-write': !this.collectService.documentSaleOpen.nuVaucherRetention}">
+                                </ion-input>
+                                <ion-label *ngIf="!this.collectService.documentSaleOpen.nuVaucherRetention"
+                                    color="danger" class="campoObligatorio">
+                                    {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}
+                                </ion-label>
                             </ion-col>
                             <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
                                 *ngIf="this.collectService.formatRetention != 'number'">
@@ -670,17 +677,15 @@
                                     label-placement="floating" fill="outline" color="primary" type="text"
                                     value="{{this.collectService.documentSaleOpen.nuVaucherRetention}}"
                                     [(ngModel)]="this.collectService.documentSaleOpen.nuVaucherRetention"
-                                    (ionChange)="validateNuVaucherRetention(true)"></ion-input>
+                                    (ionChange)="validateNuVaucherRetention(true)"
+                                    [ngClass]="{'inp-write': !this.collectService.documentSaleOpen.nuVaucherRetention}">
+                                </ion-input>
+                                <ion-label
+                                    *ngIf="!this.collectService.documentSaleOpen.nuVaucherRetention || this.collectService.documentSaleOpen.nuVaucherRetention.length === 0"
+                                    color="danger" class="campoObligatorio">
+                                    {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}
+                                </ion-label>
                             </ion-col>
-                            <!--  <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-                            <ion-input
-                                label="{{this.collectService.collectionTags.get('COB_NUMBER_COMPROBANTE_RETENTION')}}"
-                                label-placement="floating" fill="outline" color="primary"
-                                type="{{this.collectService.formatRetention}}"
-                                value="{{this.collectService.documentSaleOpen.nuVaucherRetention}}"
-                                [(ngModel)]="this.collectService.documentSaleOpen.nuVaucherRetention"
-                                (ionChange)="validateNuVaucherRetention()"></ion-input>
-                        </ion-col> -->
                             <!-- NRO COMPROBANTE RET -->
 
                             <!-- FECHA COMP RET -->
@@ -689,22 +694,14 @@
                                     [(ngModel)]="this.collectService.documentSaleOpen.daVoucher"
                                     value="this.collectService.documentSaleOpen.daVoucher" label-placement="floating"
                                     fill="outline" type="date_event" [id]="'inputCalendar'"
-                                    [ngClass]="{'inp-write': !this.collectService.validateDaVoucher}"
+                                    [ngClass]="{'inp-write': this.collectService.validateDaVoucher}"
                                     [disabled]="!this.collectService.validNuRetention">
                                 </ion-input>
-                                <ion-label *ngIf="!this.collectService.validateDaVoucher" color="danger"
+                                <ion-label *ngIf="!this.collectService.documentSaleOpen.daVoucher || this.collectService.documentSaleOpen.daVoucher.length === 0" color="danger"
                                     class="campoObligatorio">
                                     {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}
                                 </ion-label>
-                                <!-- <ion-item> -->
-                                <!-- <ion-label [id]="'prueba'" >{{this.collectService.collectionTags.get('COB_DAVOUCHER')}}</ion-label> -->
-                                <!--  <a>
-                                    <ion-datetime-button [datetime]="'prueba'"></ion-datetime-button>
-                                </a>
-                                <a>
-                                    <ion-icon slot="end"
-                                        src="../../../assets/icon/calendar-outline.svg"></ion-icon>
-                                </a> -->
+
 
                                 <ion-modal [keepContentsMounted]="true" [trigger]="'inputCalendar'"
                                     [initialBreakpoint]="0.65">

@@ -92,8 +92,8 @@ export class CollectionService {
   public haveRate: boolean = false;
   public initCollect: boolean = true;
   public showHeaderButtons: Boolean = false;
-  public disableSendButton: boolean = true;
-  public cannotSendCollection: boolean = true;
+  public disableSavedButton: boolean = true;
+  public disableSenddButton: boolean = true;
   public saveOrExitOpen = false;
   public alertMessageOpen: boolean = false;
   public alertMessageChangeCurrency: boolean = false;
@@ -985,16 +985,15 @@ export class CollectionService {
       //SI ERES RETENCION Y ESTAS ACA, LA RETENCION ES VALIDA
       if (this.collection.collectionDetails.length > 0) {
         //DEBO VALIDAR SI LOS DETAILS TIENEN MONTO DE RETENCION O IVA
-        let bandera = false;
-        for (var i = 0; i < this.collection.collectionDetails.length; i++) {
-          if (this.collection.collectionDetails[i].nuAmountRetention + this.collection.collectionDetails[i].nuAmountRetention2 > 0)
-            bandera = true;
-          else
-            bandera = false
-        }
 
-        if (bandera)
+        let sum = 0;
+        for (var i = 0; i < this.collection.collectionDetails.length; i++) {
+          sum = this.collection.collectionDetails[i].nuAmountRetention + this.collection.collectionDetails[i].nuAmountRetention2;
+        }
+        if (sum > 0)
           this.onCollectionValidToSend(true);
+        else
+          this.onCollectionValidToSend(false);
       }
 
     } else {
@@ -1138,8 +1137,8 @@ export class CollectionService {
           }
         }
       }
+      this.validateReferencePayment();
     }
-    this.validateReferencePayment();
   }
 
   validateReferencePayment() {

@@ -74,8 +74,8 @@ export class CobrosHeaderComponent implements OnInit {
           await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
           console.log(response);
           this.collectService.initCollect = true;
-          this.collectService.disableSendButton = true;
-          this.collectService.cannotSendCollection = true;
+          this.collectService.disableSavedButton = true;
+          this.collectService.disableSenddButton = true;
           this.collectService.showHeaderButtons = false;
           this.collectService.cobroComponent = false;
           this.collectService.collectValid = false;
@@ -136,11 +136,11 @@ export class CobrosHeaderComponent implements OnInit {
     });
 
     this.subscriberDisabled = this.collectService.collectValidToSave.subscribe((data: Boolean) => {
-      this.collectService.disableSendButton = !data;
+      this.collectService.disableSavedButton = !data;
     });
 
     this.subscriberToSend = this.collectService.collectValidToSend.subscribe((validToSend: Boolean) => {
-      this.collectService.cannotSendCollection = !validToSend;
+      this.collectService.disableSenddButton = !validToSend;
     });
   }
 
@@ -246,8 +246,8 @@ export class CobrosHeaderComponent implements OnInit {
         }
 
         this.collectService.initCollect = true;
-        this.collectService.disableSendButton = true;
-        this.collectService.cannotSendCollection = true;
+        this.collectService.disableSavedButton = true;
+        this.collectService.disableSenddButton = true;
         this.collectService.showHeaderButtons = false;
         this.collectService.cobroComponent = false;
         this.collectService.cobrosComponent = true;
