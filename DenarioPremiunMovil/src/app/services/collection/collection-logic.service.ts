@@ -1155,8 +1155,7 @@ export class CollectionService {
       // Todos los pagos tienen número de referencia o son efectivo
       if (this.collection.collectionPayments.length <= 0)
         this.onCollectionValidToSend(false);
-      else
-        this.onCollectionValidToSend(true);
+      // else no hacer nada para evitar recursión infinita
     }
   }
 

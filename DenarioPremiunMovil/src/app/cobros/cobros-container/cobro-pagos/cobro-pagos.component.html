@@ -183,14 +183,6 @@
                                 </ion-modal>
                             </ion-item>
                         </ion-col>
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item disabled="{{cheque.disabled}}">
-                                <ion-input label="{{this.collectService.collectionTags.get('COB_MONTO')}}" type="number"
-                                    label-placement="floating" fill="outline" color="primary" [(ngModel)]="cheque.monto"
-                                    value="{{cheque.monto}}" (ionChange)="setMonto(cheque.monto,ch, 'ch')"
-                                    class="customInput" [ngClass]="{'inp-write': !cheque.monto}"></ion-input>
-                            </ion-item>
-                        </ion-col>
 
                         <ion-col size="6" size-sm="12" size-xs="12">
                             <ion-item disabled="{{cheque.disabled}}">
@@ -229,6 +221,14 @@
                                     [(ngModel)]="cheque.numeroCheque" value="{{cheque.numeroCheque}}"
                                     (ionBlur)="setNroTransanccion(cheque.numeroCheque,ch,'ch')" class="customInput"
                                     [ngClass]="{'inp-write': !cheque.numeroCheque}"></ion-input>
+                            </ion-item>
+                        </ion-col>
+                        <ion-col size="6" size-sm="12" size-xs="12">
+                            <ion-item disabled="{{cheque.disabled}}">
+                                <ion-input label="{{this.collectService.collectionTags.get('COB_MONTO')}}" type="number"
+                                    label-placement="floating" fill="outline" color="primary" [(ngModel)]="cheque.monto"
+                                    value="{{cheque.monto}}" (ionChange)="setMonto(cheque.monto,ch, 'ch')"
+                                    class="customInput" [ngClass]="{'inp-write': !cheque.monto}"></ion-input>
                             </ion-item>
                         </ion-col>
                         <ion-col size="6" size-sm="12" size-xs="12">

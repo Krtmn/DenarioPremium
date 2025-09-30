@@ -136,11 +136,11 @@ export class CobrosHeaderComponent implements OnInit {
     });
 
     this.subscriberDisabled = this.collectService.collectValidToSave.subscribe((data: Boolean) => {
-      this.collectService.disableSavedButton = !data;
+      this.collectService.disableSavedButton = data ? false : true;
     });
 
     this.subscriberToSend = this.collectService.collectValidToSend.subscribe((validToSend: Boolean) => {
-      this.collectService.disableSenddButton = !validToSend;
+      this.collectService.disableSenddButton = validToSend ? false : true;
     });
   }
 
