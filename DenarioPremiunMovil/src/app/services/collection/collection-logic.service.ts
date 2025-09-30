@@ -3089,9 +3089,8 @@ export class CollectionService {
   async findCollect(dbServ: SQLiteObject) {
     this.listCollect = [] as Collection[];
     this.itemListaCobros = [] as ItemListaCobros[];
-
     const res = await dbServ.executeSql(
-      'SELECT c.* FROM collections c ORDER BY c.id_collection DESC', []
+      'SELECT c.* FROM collections c ORDER BY c.st_collection ASC, c.da_collection DESC', []
     );
 
     const promises: Promise<void>[] = [];

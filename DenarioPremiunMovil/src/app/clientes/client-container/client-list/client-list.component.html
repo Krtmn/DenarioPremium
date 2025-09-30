@@ -40,7 +40,7 @@
                                             {{formatNumber(client.saldo1)}}
                                         </p>
                                         <p [ngStyle]="{color: client.saldo1 >0 ? 'Red' : 'Blue' }"
-                                            *ngIf="client.multimoneda === 'true'? true:false">
+                                            *ngIf="this.clientLogic.multiCurrency === 'true'">
                                             {{this.clientLogic.clientTags.get('CLI_SALDO')}}
                                             {{oppositeCoCurrency(client.coCurrency)}}:{{formatNumber(client.saldo2)}}
                                         </p>

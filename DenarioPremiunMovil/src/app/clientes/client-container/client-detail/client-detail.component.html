@@ -52,7 +52,7 @@
                     <ion-col
                         [ngStyle]="{color: client.saldo1 >0 ? 'Red' : 'Blue' }">{{formatNumber(client.saldo1)}}</ion-col>
                 </ion-row>
-                <ion-row *ngIf="multiCurrency">
+                <ion-row *ngIf="this.clientLogic.multiCurrency == 'true'">
                     <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
                         {{oppositeCoCurrency(client.coCurrency)}}:</ion-col>
                     <ion-col
@@ -119,16 +119,16 @@
                         class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_MONEDA_DOC")}}</ion-col>
                     <ion-col size="4"
                         class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_DIAS_VENCIMIENTO")}}</ion-col>
-                    <ion-col size="4" *ngIf="multiCurrency"
+                    <ion-col size="4" *ngIf="this.clientLogic.multiCurrency == 'true'"
                         class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_TASA")}}</ion-col>
                     <ion-col size="4" class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_MONTO")}} {{
                         localCurrency }}</ion-col>
-                    <ion-col size="4" *ngIf="multiCurrency"
+                    <ion-col size="4" *ngIf="this.clientLogic.multiCurrency == 'true'"
                         class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_MONTO")}} {{ hardCurrency
                         }}</ion-col>
                     <ion-col size="4" class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}} {{
                         localCurrency }}</ion-col>
-                    <ion-col size="4" *ngIf="multiCurrency"
+                    <ion-col size="4" *ngIf="this.clientLogic.multiCurrency == 'true'"
                         class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
                         {{ hardCurrency }}</ion-col>
                     <ion-col size="4"
@@ -158,20 +158,20 @@
                         [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">
                         {{getDaDueDate(documento.daDueDate)}}</ion-col>
                     <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }" *ngIf="multiCurrency"> {{
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }" *ngIf="this.clientLogic.multiCurrency == 'true'"> {{
                         formatNumber(documento.nuValueLocal) }}</ion-col>
                     <ion-col size="4" class="ion-text-center col"
                         [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{toLocalCurrency(documento.nuAmountTotal,
                         documento)}}</ion-col>
                     <ion-col size="4" class="ion-text-center col"
                         [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }"
-                        *ngIf="multiCurrency">{{toHardCurrency(documento.nuAmountTotal, documento)}}</ion-col>
+                        *ngIf="this.clientLogic.multiCurrency == 'true'">{{toHardCurrency(documento.nuAmountTotal, documento)}}</ion-col>
                     <ion-col size="4" class="ion-text-center col"
                         [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{toLocalCurrency(documento.nuBalance,
                         documento)}}</ion-col>
                     <ion-col size="4" class="ion-text-center col borderInferiorDerecho"
                         [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }"
-                        *ngIf="multiCurrency">{{toHardCurrency(documento.nuBalance, documento)}}</ion-col>
+                        *ngIf="this.clientLogic.multiCurrency == 'true'">{{toHardCurrency(documento.nuBalance, documento)}}</ion-col>
                     <ion-col size="4" class="ion-text-center col"
                         [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.daDocument}}</ion-col>
                     <ion-col size="4" class="ion-text-center col"

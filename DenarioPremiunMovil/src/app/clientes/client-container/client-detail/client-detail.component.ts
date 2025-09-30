@@ -12,15 +12,15 @@ import { ClientLogicService } from 'src/app/services/clientes/client-logic.servi
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 
 @Component({
-    selector: 'app-client-detail',
-    templateUrl: './client-detail.component.html',
-    styleUrls: ['./client-detail.component.scss'],
-    standalone: false
+  selector: 'app-client-detail',
+  templateUrl: './client-detail.component.html',
+  styleUrls: ['./client-detail.component.scss'],
+  standalone: false
 })
 export class ClienteComponent implements OnInit {
 
   private globalConfig = inject(GlobalConfigService);
-  public clientLogic = inject(ClientLogicService);  
+  public clientLogic = inject(ClientLogicService);
   currencyService = inject(CurrencyService);
 
   public params!: any;
@@ -33,7 +33,7 @@ export class ClienteComponent implements OnInit {
   public coordenada: Boolean = false;
 
   public localCurrency = '';
-  public hardCurrency =  '';
+  public hardCurrency = '';
   public decimales = 2;
 
   constructor() {
@@ -44,46 +44,40 @@ export class ClienteComponent implements OnInit {
     //console.log(this.clientDetail);
     this.client = this.clientLogic.datos.client;
 
-    this.localCurrency = this.currencyService.localCurrency.coCurrency;
-    this.hardCurrency = this.currencyService.hardCurrency.coCurrency;
-    this.decimales = this.currencyService.precision;
+    if (this.clientLogic.multiCurrency == "true") {
+      if (this.currencyService.multimoneda) {
+        //arreglamos el saldo del cliente
+        //porque vergas saldo1 y saldo2 significan vainas distintas aqui y en la lista nunca sabre. 
+        // Asumo que estaban rascaos cuando lo escribieron...
+        let saldoCliente = 0, saldoOpuesto = 0;
 
-    if (this.currencyService.multimoneda) {
-      //arreglamos el saldo del cliente
-      //porque vergas saldo1 y saldo2 significan vainas distintas aqui y en la lista nunca sabre. 
-      // Asumo que estaban rascaos cuando lo escribieron...
-              let saldoCliente = 0, saldoOpuesto = 0;
+        if (this.client.coCurrency == this.clientLogic.localCurrency.coCurrency) {
+          saldoCliente = this.client.saldo1 + this.currencyService.toLocalCurrency(this.client.saldo2);
+          saldoOpuesto = this.currencyService.toHardCurrency(saldoCliente);
+        } else {
+          saldoCliente = this.client.saldo1 + this.currencyService.toHardCurrency(this.client.saldo2);
+          saldoOpuesto = this.currencyService.toLocalCurrency(saldoCliente);
+        }
+        this.client.saldo1 = saldoCliente;
+        this.client.saldo2 = saldoOpuesto;
+        saldoCliente = saldoOpuesto = 0;
 
-          if (this.client.coCurrency == this.clientLogic.localCurrency.coCurrency) {
-            saldoCliente = this.client.saldo1 + this.currencyService.toLocalCurrency(this.client.saldo2);
-            saldoOpuesto = this.currencyService.toHardCurrency(saldoCliente);
-          } else {
-            saldoCliente = this.client.saldo1 + this.currencyService.toHardCurrency(this.client.saldo2);
-            saldoOpuesto = this.currencyService.toLocalCurrency(saldoCliente);
-          }
-          this.client.saldo1 = saldoCliente;
-          this.client.saldo2 = saldoOpuesto;
-          saldoCliente = saldoOpuesto = 0;
-        
-      /* let saldoLocal = 0, saldoHard = 0;
-
-      saldoLocal = this.client.saldo1 + this.currencyService.toLocalCurrency(this.client.saldo2);
-      saldoHard = this.currencyService.toHardCurrency(saldoLocal);
-
-      this.client.saldo1 = saldoLocal;
-      this.client.saldo2 = saldoHard; */
-        
+      }
+    } else {
+      this.client.saldo1 = this.client.saldo1;;
     }
+
     if (this.client.coordenada != null)
       this.coordenada = true;
 
     this.document = this.clientLogic.datos.document;
-   
-    this.multiCurrency = this.globalConfig.get("multiCurrency") == "true" ? true : false;
+
     this.tagRif = this.globalConfig.get("tagRif")!;
 
     this.localCurrency = this.currencyService.localCurrency.coCurrency;
-    this.hardCurrency = this.currencyService.hardCurrency.coCurrency;
+    if (this.clientLogic.multiCurrency == "true")
+      this.hardCurrency = this.currencyService.hardCurrency.coCurrency;
+
     this.decimales = this.currencyService.precision;
 
   }
@@ -109,7 +103,7 @@ export class ClienteComponent implements OnInit {
   //Hacer estas conversiones en el servicio de moneda 
   //tomaria muchos queries a la bd, lo hacemos aca mejor.
   toLocalCurrency(hardAmount: number, doc: DocumentSale): string {
-    if(doc.coCurrency == this.localCurrency){
+    if (doc.coCurrency == this.localCurrency) {
       //si la moneda es la misma, no se convierte
       return this.formatNumber(hardAmount);
     }
@@ -117,7 +111,7 @@ export class ClienteComponent implements OnInit {
   }
 
   toHardCurrency(localAmount: number, doc: DocumentSale): string {
-    if(doc.coCurrency == this.hardCurrency){
+    if (doc.coCurrency == this.hardCurrency) {
       return this.formatNumber(localAmount);
     }
     return this.formatNumber(((localAmount * this.currencyService.currencyRelation) / doc.nuValueLocal));
@@ -137,7 +131,7 @@ export class ClienteComponent implements OnInit {
     return Math.round(((new Date()).getTime() - dateDoc) / 86400000);
   }
 
-    oppositeCoCurrency(coCurrency: string) {
+  oppositeCoCurrency(coCurrency: string) {
     return this.currencyService.oppositeCoCurrency(coCurrency);
   }
 }

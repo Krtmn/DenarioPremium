@@ -81,9 +81,10 @@ export class ClientLogicService {
   public user: any = {};
 
   public segment = 'default';
-
+  public multiCurrency: string = 'false';
 
   constructor() {
+    this.multiCurrency = this.globalConfig.get('multiCurrency');
 
     const userStr = localStorage.getItem("user");
     if (userStr) {
