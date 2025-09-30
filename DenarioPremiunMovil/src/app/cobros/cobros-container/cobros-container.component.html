@@ -10,7 +10,7 @@
         </ion-button>
       </ion-col>
 
-      <ion-col size="12" size-sm="12" size-xs="12">
+      <ion-col *ngIf="this.globalConfig.get('cobroPrepago') === 'true' ? true: false" size="12" size-sm="12" size-xs="12">
         <ion-button (click)="nuevoCobro(1)" size="large" fill="outline" class="colorBorderBuscar ion-text-start botonesLeft" shape="round"
           expand="block">
           <ion-icon slot="start" name="add"></ion-icon>
@@ -18,7 +18,7 @@
         </ion-button>
       </ion-col>
 
-      <ion-col *ngIf="this.globalConfig.get('retencion') === 'true' ? true: false" size="12" size-sm="12" size-xs="12">
+      <ion-col *ngIf="this.globalConfig.get('cobroRetencion') === 'true' ? true: false" size="12" size-sm="12" size-xs="12">
         <ion-button (click)="nuevoCobro(2)" size="large" fill="outline" class="colorBorderBuscar ion-text-start botonesLeft" shape="round"
           expand="block">
           <ion-icon slot="start" name="add"></ion-icon>
