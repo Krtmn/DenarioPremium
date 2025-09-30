@@ -570,6 +570,8 @@ export class CobrosDocumentComponent implements OnInit {
       }
       //}
     } else {
+      nuAmountTotal = documentSale.nuAmountTotal;
+      nuAmountBalance = documentSale.nuBalance;
       nuAmountBalanceConversion = 0;
       nuAmountTotalConversion = 0;
     }

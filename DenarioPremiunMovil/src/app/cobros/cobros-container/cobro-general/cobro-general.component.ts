@@ -243,8 +243,11 @@ export class CobrosGeneralComponent implements OnInit {
       this.collectService.enterpriseList = this.enterpriseServ.empresas;
       this.updateSelectedEnterprise(this.collectService.collection.idEnterprise);
       this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise).then(() => {
-        this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);
-        this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.collection.daRate);
+        if (this.collectService.historicoTasa) {
+          this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);
+          this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.collection.daRate);
+        }
+        
         this.collectService.getDocumentsSales(
           this.synchronizationServices.getDatabase(),
           this.collectService.collection.idClient,
@@ -528,7 +531,8 @@ export class CobrosGeneralComponent implements OnInit {
       this.collectService.client = {} as Client;
       this.collectService.nameClient = "";
       //luego de seleccionar empresa, buscamos las tasas    
-      this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);
+      if (this.collectService.historicoTasa)
+        this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);
 
 
       if (this.globalConfig.get("requiredComment") === 'false' ? true : false) {
@@ -585,7 +589,7 @@ export class CobrosGeneralComponent implements OnInit {
             }
 
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
-      this.collectService.collection.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise);
+              this.collectService.collection.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise);
           })
 
           if (this.collectService.requiredComment)
