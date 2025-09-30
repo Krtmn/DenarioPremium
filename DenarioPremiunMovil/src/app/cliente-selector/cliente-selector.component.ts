@@ -12,10 +12,10 @@ import { CollectionService } from '../services/collection/collection-logic.servi
 
 
 @Component({
-    selector: 'app-cliente-selector',
-    templateUrl: './cliente-selector.component.html',
-    styleUrls: ['./cliente-selector.component.scss'],
-    standalone: false
+  selector: 'app-cliente-selector',
+  templateUrl: './cliente-selector.component.html',
+  styleUrls: ['./cliente-selector.component.scss'],
+  standalone: false
 })
 export class ClienteSelectorComponent implements OnInit {
 
@@ -35,7 +35,7 @@ export class ClienteSelectorComponent implements OnInit {
   public searchText: string = '';
   public indice!: number;
   public clientChangeOpen = false;
-
+  public multimoneda: string = "";
   public cliente!: Client
 
   public isModalOpen: boolean = false;
@@ -69,8 +69,7 @@ export class ClienteSelectorComponent implements OnInit {
     this.colorModulo = this.service.colorModulo;
     this.nombreModulo = this.service.nombreModulo;
     this.clientes = this.service.clientes;
-
-
+    this.multimoneda = this.currencyService.multimoneda ? 'true' : 'false';
 
     //busco monedas
     this.currencyService.setup(this.dbServ.getDatabase()).then(() => {
@@ -108,25 +107,25 @@ export class ClienteSelectorComponent implements OnInit {
 
   }
   setSkin(nombreModulo: string, colorModulo: string) {
-   /*  switch (colorModulo) {
-      case "fondoVerde": {
-        colorModulo = "fondoVerde";
-        break;
-      }
+    /*  switch (colorModulo) {
+       case "fondoVerde": {
+         colorModulo = "fondoVerde";
+         break;
+       }
+ 
+       case "fondoAmarillo": {
+         colorModulo = "fondoAmarillo";
+         break;
+       }
+       case "COLOR_LILA": {
+         colorModulo = "fondoLila";
+         break;
+       }
+       default:
+         colorModulo = "fondoGris";
+         break;
+     } */
 
-      case "fondoAmarillo": {
-        colorModulo = "fondoAmarillo";
-        break;
-      }
-      case "COLOR_LILA": {
-        colorModulo = "fondoLila";
-        break;
-      }
-      default:
-        colorModulo = "fondoGris";
-        break;
-    } */
-    
     this.colorModulo = colorModulo;
     this.nombreModulo = nombreModulo;
 
