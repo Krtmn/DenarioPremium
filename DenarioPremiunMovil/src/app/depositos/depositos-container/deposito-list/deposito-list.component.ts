@@ -6,6 +6,7 @@ import { GeolocationService } from 'src/app/services/geolocation/geolocation.ser
 import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 import { ItemListaDepositos } from '../../item-lista-depositos';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
+import { MessageService } from 'src/app/services/messageService/message.service';
 
 
 @Component({
@@ -19,6 +20,7 @@ export class DepositoListComponent implements OnInit {
   public depositService = inject(DepositService)
   geoLoc = inject(GeolocationService);
   db = inject(SynchronizationDBService);
+  messageService = inject(MessageService);
 
   public indice = 0;
 
@@ -54,6 +56,7 @@ export class DepositoListComponent implements OnInit {
   }
 
   toOpenDeposit(coDeposit: string, index: number) {
+    this.messageService.showLoading();
     let stDeposit = this.depositService.listDeposits[index].stDeposit;
     if (this.depositService.userMustActivateGPS && stDeposit < 2) {
       //solo puede abrir depositos editables con gps activo
@@ -77,6 +80,8 @@ export class DepositoListComponent implements OnInit {
 
   openDeposit(coDeposit: string, index: number) {
     console.log("OPEN", coDeposit, index);
+    this.messageService.hideLoading();
+    //si el estado es por enviar o enviado entonces no se pueden editar cobros
     if (this.depositService.listDeposits[index].stDeposit >= 2) {
       //por enviar o enviado entones ocultamos la pestaña de cobros     
       this.depositService.hideDeposit = true;
@@ -99,6 +104,7 @@ export class DepositoListComponent implements OnInit {
       }
       this.depositService.getDepositCollect(this.db.getDatabase(), this.depositService.deposit.coDeposit).then(resp => {
         this.depositService.initOpenDeposit(this.db.getDatabase(),).then(r => {
+          this.depositService.dateDeposit = this.depositService.deposit.daDeposit;
           this.depositService.depositListComponent = false;
           this.depositService.depositNewComponent = true;
           this.depositService.showHeaderButtons = true;
@@ -138,9 +144,9 @@ export class DepositoListComponent implements OnInit {
   }
   getStatusOrderName(status: number, naStatus: string) {
     switch (status) {
-      case DELIVERY_STATUS_SAVED: return this.depositService.depositTagsDenario.get("DENARIO_DEV_SAVED")!;
-      case DELIVERY_STATUS_TO_SEND: return this.depositService.depositTagsDenario.get("DENARIO_DEV_TO_BE_SENDED")!;
-      case DELIVERY_STATUS_SENT: return this.depositService.depositTagsDenario.get("DENARIO_DEV_STATUS")!;
+      case DELIVERY_STATUS_SAVED: return this.depositService.depositTags.get("DEP_DEV_SAVED")!;
+      case DELIVERY_STATUS_TO_SEND: return this.depositService.depositTags.get("DEP_DEV_TO_BE_SENDED")!;
+      case DELIVERY_STATUS_SENT: return this.depositService.depositTags.get("DEP_DEV_SENDED")!;
       case 6: return naStatus!;
       default: return '';
     }

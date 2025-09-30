@@ -2303,8 +2303,18 @@ export class CollectionService {
       ).then(data => {
         console.log("COLLECTION INSERT", data);
 
-
-        if (collection.coType == '1') {
+        if (collection.coType == '0') {
+          return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
+            console.log("TERMINE DOCUMENT ST")
+            return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
+              return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, this.collection.coCollection).then(resp => {
+                this.documentSales = [] as DocumentSale[];
+                this.documentSalesBackup = [] as DocumentSale[];
+                return resp
+              })
+            });
+          });
+        } else if (collection.coType == '1') {
           //es ancitipo solo debo guardar el payment
           return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, this.collection.coCollection).then(resp => {
             return resp

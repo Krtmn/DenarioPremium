@@ -4,12 +4,13 @@ import { PendingTransaction } from '../modelos/tables/pendingTransactions';
 import { AutoSendService } from '../services/autoSend/auto-send.service';
 import { ServicesService } from '../services/services.service';
 import { SynchronizationDBService } from '../services/synchronization/synchronization-db.service';
+import { Deposit } from '../modelos/tables/deposit';
 
 @Component({
-    selector: 'app-depositos',
-    templateUrl: './depositos.component.html',
-    styleUrls: ['./depositos.component.scss'],
-    standalone: false
+  selector: 'app-depositos',
+  templateUrl: './depositos.component.html',
+  styleUrls: ['./depositos.component.scss'],
+  standalone: false
 })
 export class DepositosComponent implements OnInit {
 
@@ -51,7 +52,8 @@ export class DepositosComponent implements OnInit {
         this.depositService.depositListComponent = false;
         this.depositService.depositNewComponent = false;
         this.depositService.depositComponent = true;
-
+        this.depositService.depositValid = false;
+        this.depositService.deposit = {} as Deposit;
       }
     })
   }

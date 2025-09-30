@@ -4,17 +4,23 @@ import { DateServiceService } from 'src/app/services/dates/date-service.service'
 import { DepositService } from 'src/app/services/deposit/deposit.service';
 
 @Component({
-    selector: 'app-deposito-cobros',
-    templateUrl: './deposito-cobros.component.html',
-    styleUrls: ['./deposito-cobros.component.scss'],
-    standalone: false
+  selector: 'app-deposito-cobros',
+  templateUrl: './deposito-cobros.component.html',
+  styleUrls: ['./deposito-cobros.component.scss'],
+  standalone: false
 })
 export class DepositoCobrosComponent implements OnInit {
 
   public depositService = inject(DepositService);
   public dateServ = inject(DateServiceService);
 
-  constructor() { }
+
+  public multiCurrency: string = "";
+
+  constructor() {
+    this.multiCurrency = this.depositService.globalConfig.get("multiCurrency");
+
+  }
 
   ngOnInit() { }
 

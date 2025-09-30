@@ -684,7 +684,13 @@ INSERT INTO public.application_tags(
 	('DEP_DEV_STATUS', 'DEP', 'DEPOSITOS', 'ESP', 'Estatus'),
 	('DEP_DEV_STATUS', 'DEP', 'DEPOSITOS', 'ENG', 'Status'),
 	('DEP_DEV_DATE', 'DEP', 'DEPOSITOS', 'ESP', 'Fecha'),
-	('DEP_DEV_DATE', 'DEP', 'DEPOSITOS', 'ENG', 'Date Return');
+	('DEP_DEV_DATE', 'DEP', 'DEPOSITOS', 'ENG', 'Date Return'),
+	('DEP_DEV_SAVED', 'DEP', 'DEPOSITOS', 'ESP','Guardado'),
+	('DEP_DEV_SAVED', 'DEP', 'DEPOSITOS', 'ENG','Saved'),
+	('DEP_DEV_TO_BE_SENDED', 'DEP', 'DEPOSITOS', 'ESP','Por Enviar'),
+	('DEP_DEV_TO_BE_SENDED', 'DEP', 'DEPOSITOS', 'ENG','To be sended'),
+	('DEP_DEV_SENDED', 'DEP', 'DEPOSITOS', 'ESP','Enviado'),
+	('DEP_DEV_SENDED', 'DEP', 'DEPOSITOS', 'ENG','Sended');	
 	
 --	MENSAJES
 DELETE FROM public.application_tags where co_module = 'MSG';
@@ -737,4 +743,4 @@ INSERT INTO public.application_tags(
 	('DENARIO_MSG_GPS', 'DEN', 'DENARIO', 'ESP', 'Para poder grabar la ubicación, te recomendamos activar el servicio de localización en tu dispositivo'),
 	('DENARIO_ERR_GPS', 'DEN', 'DENARIO', 'ESP', 'Falló la ubicación. Revise GPS.'),
 	('DENARIO_SELEC_FECHA', 'DEN', 'DENARIO', 'ESP', 'Seleccione una fecha'),
-	('DENARIO_ERROR_SYNCRO', 'DEN', 'DENARIO', 'ESP', 'No hay conexión a internet, no se puede sincronizar');	
+	('DENARIO_ERROR_SYNCRO', 'DEN', 'DENARIO', 'ESP', 'No hay conexión a internet, no se puede sincronizar');

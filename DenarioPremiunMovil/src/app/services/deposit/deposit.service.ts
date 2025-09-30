@@ -152,7 +152,7 @@ export class DepositService {
 
   initServices(dbServ: SQLiteObject) {
     this.enterpriseServ.setup(dbServ).then(() => {
-      this.depositValid = false;
+      this.depositValid = true;
       this.enterpriseList = this.enterpriseServ.empresas;
       this.enterpriseSelected = this.enterpriseList[0];
       this.parteDecimal = Number(this.globalConfig.get('parteDecimal'));
@@ -721,7 +721,7 @@ export class DepositService {
       'st_deposit as stDeposit,' +
       'tx_comment as txComment,' +
       'nu_value_local as nuValueLocal,' +
-      'nu_amount_doc_conversion as nuAmountDoc, ' +
+      'nu_amount_doc as nuAmountDoc, ' +
       'coordenada as coordenada ' +
       'FROM deposits', []).then(async res => {
         let promises: Promise<void>[] = [];

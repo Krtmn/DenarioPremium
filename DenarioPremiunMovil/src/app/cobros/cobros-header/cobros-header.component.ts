@@ -180,7 +180,7 @@ export class CobrosHeaderComponent implements OnInit {
       this.collectService.collectionIsSave = false;
       this.collectService.cobroListComponent = false;
       this.collectService.cobrosComponent = true;
-    } else if (!this.collectService.collectionIsSave && this.collectService.collectValidTabs) {
+    } else if (!this.collectService.collectionIsSave && this.collectService.collectValidTabs && this.collectService.collection.stCollection != 3) {
       this.collectService.saveOrExitOpen = true;
     } else {
       this.collectService.collectValid = false;
