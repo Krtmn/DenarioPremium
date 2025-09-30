@@ -137,109 +137,46 @@ export class CobroPagosComponent implements OnInit {
   }
 
   deleteTipoPago(index: number, type: string) {
-
     if (this.collectService.disabledSelectCollectMethodDisabled)
       this.collectService.disabledSelectCollectMethodDisabled = false;
 
     this.collectService.lengthMethodPaid--;
-
     this.collectService.anticipoAutomatico = [];
-    switch (type) {
-      case "ef": {
-        this.collectService.collection.nuAmountFinal -= this.collectService.pagoEfectivo[index].monto;
-        this.collectService.collection.nuAmountTotal -= this.collectService.pagoEfectivo[index].monto;
-        this.collectService.collection.nuDifference -= this.collectService.pagoEfectivo[index].monto
 
-        this.collectService.collection.nuAmountFinalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountFinal, 0, this.collectService.collection.coCurrency);
-        this.collectService.collection.nuAmountTotalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountTotal, 0, this.collectService.collection.coCurrency);
+    // Diccionario para mapear tipo a arrays y propiedades
+    type TipoPagoKey = 'ef' | 'ch' | 'de' | 'tr' | 'ot';
+    const map: Record<TipoPagoKey, any[]> = {
+      ef: this.collectService.pagoEfectivo,
+      ch: this.collectService.pagoCheque,
+      de: this.collectService.pagoDeposito,
+      tr: this.collectService.pagoTransferencia,
+      ot: this.collectService.pagoOtros,
+    };
 
-        this.collectService.collection.collectionPayments!.splice(this.collectService.pagoEfectivo[index].posCollectionPayment, 1);
-        this.collectService.pagoEfectivo.splice(index, 1);
-        if (this.collectService.pagoEfectivo.length > 0)
-          this.collectService.validateToSend();
+    if (!['ef', 'ch', 'de', 'tr', 'ot'].includes(type)) return;
+    const pagoArray = map[type as TipoPagoKey];
+    if (!pagoArray) return;
 
-        if (this.collectService.collection.collectionPayments.length == 0)
-          this.collectService.onCollectionValidToSend(false);
-        break
-      }
+    const monto = pagoArray[index].monto;
+    this.collectService.collection.nuAmountFinal -= monto;
+    this.collectService.collection.nuAmountTotal -= monto;
+    this.collectService.collection.nuDifference -= monto;
 
-      case "ch": {
-        this.collectService.collection.nuAmountFinal -= this.collectService.pagoCheque[index].monto;
-        this.collectService.collection.nuAmountTotal -= this.collectService.pagoCheque[index].monto;
-        this.collectService.collection.nuDifference -= this.collectService.pagoEfectivo[index].monto
+    this.collectService.collection.nuAmountFinalConversion = this.collectService.convertirMonto(
+      this.collectService.collection.nuAmountFinal, 0, this.collectService.collection.coCurrency
+    );
+    this.collectService.collection.nuAmountTotalConversion = this.collectService.convertirMonto(
+      this.collectService.collection.nuAmountTotal, 0, this.collectService.collection.coCurrency
+    );
 
-        this.collectService.collection.nuAmountFinalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountFinal, 0, this.collectService.collection.coCurrency);
-        this.collectService.collection.nuAmountTotalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountTotal, 0, this.collectService.collection.coCurrency);
+    this.collectService.collection.collectionPayments!.splice(pagoArray[index].posCollectionPayment, 1);
+    pagoArray.splice(index, 1);
 
-        this.collectService.collection.collectionPayments!.splice(this.collectService.pagoCheque[index].posCollectionPayment, 1);
-        this.collectService.pagoCheque.splice(index, 1);
-        if (this.collectService.pagoCheque.length > 0)
-          this.collectService.validateToSend();
+    if (pagoArray.length > 0)
+      this.collectService.validateToSend();
 
-        if (this.collectService.collection.collectionPayments.length == 0)
-          this.collectService.onCollectionValidToSend(false);
-        break;
-      }
-
-      case "de": {
-        this.collectService.collection.nuAmountFinal -= this.collectService.pagoDeposito[index].monto;
-        this.collectService.collection.nuAmountTotal -= this.collectService.pagoDeposito[index].monto;
-        this.collectService.collection.nuDifference -= this.collectService.pagoDeposito[index].monto
-
-        this.collectService.collection.nuAmountFinalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountFinal, 0, this.collectService.collection.coCurrency);
-        this.collectService.collection.nuAmountTotalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountTotal, 0, this.collectService.collection.coCurrency);
-
-        this.collectService.collection.collectionPayments!.splice(this.collectService.pagoDeposito[index].posCollectionPayment, 1);
-        this.collectService.pagoDeposito.splice(index, 1);
-
-        if (this.collectService.pagoDeposito.length > 0)
-          this.collectService.validateToSend();
-
-        if (this.collectService.collection.collectionPayments.length == 0)
-          this.collectService.onCollectionValidToSend(false);
-
-        break
-      }
-
-      case "tr": {
-        this.collectService.collection.nuAmountFinal -= this.collectService.pagoTransferencia[index].monto;
-        this.collectService.collection.nuAmountTotal -= this.collectService.pagoTransferencia[index].monto;
-        this.collectService.collection.nuDifference -= this.collectService.pagoTransferencia[index].monto;
-
-        this.collectService.collection.nuAmountFinalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountFinal, 0, this.collectService.collection.coCurrency);
-        this.collectService.collection.nuAmountTotalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountTotal, 0, this.collectService.collection.coCurrency);
-
-        this.collectService.collection.collectionPayments!.splice(this.collectService.pagoTransferencia[index].posCollectionPayment, 1);
-        this.collectService.pagoTransferencia.splice(index, 1);
-        if (this.collectService.pagoTransferencia.length > 0)
-          this.collectService.validateToSend();
-
-        if (this.collectService.collection.collectionPayments.length == 0)
-          this.collectService.onCollectionValidToSend(false);
-        break;
-      }
-
-      case "ot": {
-        this.collectService.collection.nuAmountFinal -= this.collectService.pagoOtros[index].monto;
-        this.collectService.collection.nuAmountTotal -= this.collectService.pagoOtros[index].monto;
-        this.collectService.collection.nuDifference -= this.collectService.pagoOtros[index].monto
-
-        this.collectService.collection.nuAmountFinalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountFinal, 0, this.collectService.collection.coCurrency);
-        this.collectService.collection.nuAmountTotalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountTotal, 0, this.collectService.collection.coCurrency);
-
-        this.collectService.collection.collectionPayments!.splice(this.collectService.pagoOtros[index].posCollectionPayment, 1);
-        this.collectService.pagoOtros.splice(index, 1);
-        if (this.collectService.pagoOtros.length > 0)
-          this.collectService.validateToSend();
-
-        if (this.collectService.collection.collectionPayments.length == 0)
-          this.collectService.onCollectionValidToSend(false);
-
-        break;
-      }
-    }
-
-
+    if (this.collectService.collection.collectionPayments.length == 0)
+      this.collectService.onCollectionValidToSend(false);
   }
 
   getFecha(fecha: string, index: number, type: string) {

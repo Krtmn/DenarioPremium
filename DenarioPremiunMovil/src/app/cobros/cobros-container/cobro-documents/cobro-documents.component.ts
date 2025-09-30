@@ -302,7 +302,10 @@ export class CobrosDocumentComponent implements OnInit {
         isSave: this.collectService.documentSales[index].isSave,
       }
 
-      this.validateNuVaucherRetention(false);
+      if (this.collectService.retencion)
+        this.validateNuVaucherRetention(false);
+      else
+        this.collectService.validNuRetention = true;
 
       resolve(true);
     })
@@ -436,7 +439,11 @@ export class CobrosDocumentComponent implements OnInit {
         }, 300);
       }
     }
-    this.validateNuVaucherRetention(false);
+
+    if (this.collectService.retencion)
+      this.validateNuVaucherRetention(false);
+    else
+      this.collectService.validNuRetention = true;
 
   }
 
@@ -612,7 +619,6 @@ export class CobrosDocumentComponent implements OnInit {
 
   saveDocumentSale(action: Boolean) {
     let validate = false;
-
     if (this.collectService.validNuRetention) {
       if (action) {
         if (this.disabledSaveButton)
@@ -1315,7 +1321,9 @@ export class CobrosDocumentComponent implements OnInit {
     this.daVoucher = this.daVoucher.split("T")[0];
     this.collectService.documentSaleOpen.daVoucher = this.daVoucher;
     if (this.collectService.validNuRetention) {
-      if (this.collectService.documentSaleOpen.nuAmountRetention + this.collectService.documentSaleOpen.nuAmountRetention2 == 0) {
+      if (!this.collectService.retencion) {
+        this.disabledSaveButton = false;
+      } else if (this.collectService.documentSaleOpen.nuAmountRetention + this.collectService.documentSaleOpen.nuAmountRetention2 == 0) {
         this.disabledSaveButton = true;
       } else
         this.disabledSaveButton = false;

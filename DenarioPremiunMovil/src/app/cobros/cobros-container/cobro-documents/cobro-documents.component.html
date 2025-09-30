@@ -396,17 +396,6 @@
                                     </ion-col>
                                     <!-- SALDO CONVERSION -->
 
-                                    <!-- DIFERENCIA DEVOLUCION/FALTANTE -->
-                                    <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-                                        <ion-input
-                                            label="{{this.collectService.collectionTags.get('COB_DIF_DEVOLUCION_FALTANTE')}}"
-                                            label-placement="floating" fill="outline" value="" color="primary"
-                                            value="{{this.collectService.documentSaleOpen.nuAmountDiscount}}"
-                                            [(ngModel)]="this.collectService.documentSaleOpen.nuAmountDiscount"
-                                            type="number" (ionChange)="setAmountTotal()"></ion-input>
-                                    </ion-col>
-                                    <!-- DIFERENCIA DEVOLUCION/FALTANTE -->
-
                                     <!-- NRO COMPROBANTE RET -->
                                     <div *ngIf="this.collectService.retencion">
                                         <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
@@ -432,7 +421,6 @@
                                         </ion-col>
                                     </div>
                                     <!-- NRO COMPROBANTE RET -->
-
 
                                     <!-- FECHA COMP RET -->
                                     <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
@@ -480,6 +468,17 @@
 
                                     </ion-col>
                                     <!-- FECHA COMP RET  -->
+
+                                    <!-- DIFERENCIA DEVOLUCION/FALTANTE -->
+                                    <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                                        <ion-input
+                                            label="{{this.collectService.collectionTags.get('COB_DIF_DEVOLUCION_FALTANTE')}}"
+                                            label-placement="floating" fill="outline" value="" color="primary"
+                                            value="{{this.collectService.documentSaleOpen.nuAmountDiscount}}"
+                                            [(ngModel)]="this.collectService.documentSaleOpen.nuAmountDiscount"
+                                            type="number" (ionChange)="setAmountTotal()"></ion-input>
+                                    </ion-col>
+                                    <!-- DIFERENCIA DEVOLUCION/FALTANTE -->
 
                                     <!-- MONTO RET IVA-->
                                     <ion-col *ngIf="this.collectService.retencion" size="12" size-xs="12" size-sm="12"
@@ -697,8 +696,9 @@
                                     [ngClass]="{'inp-write': this.collectService.validateDaVoucher}"
                                     [disabled]="!this.collectService.validNuRetention">
                                 </ion-input>
-                                <ion-label *ngIf="!this.collectService.documentSaleOpen.daVoucher || this.collectService.documentSaleOpen.daVoucher.length === 0" color="danger"
-                                    class="campoObligatorio">
+                                <ion-label
+                                    *ngIf="!this.collectService.documentSaleOpen.daVoucher || this.collectService.documentSaleOpen.daVoucher.length === 0"
+                                    color="danger" class="campoObligatorio">
                                     {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}
                                 </ion-label>
 
