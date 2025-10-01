@@ -23,13 +23,13 @@ export class CurrencyService {
   public currencyRelation: any;
   public localValue: any;
 
-  public precision = Number.parseInt(this.globalConfig.get('parteDecimal'));
+  public precision: number = 0;
 
   constructor(
 
 
   ) {
-
+    this.precision = Number.parseInt(this.globalConfig.get('parteDecimal'));
 
   }
 
@@ -68,6 +68,7 @@ export class CurrencyService {
 
   formatNumber(input: number) {
     // Formatea un número a la moneda local y con la precisión correcta
+    this.precision = Number.parseInt(this.globalConfig.get('parteDecimal'));
     if (isNaN(input)) input = 0;
 
     // Validar precisión

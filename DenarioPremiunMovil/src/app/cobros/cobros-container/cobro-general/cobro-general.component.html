@@ -89,7 +89,7 @@
                     <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.rateSelected"
                         (ionChange)="onChangeRate($event)" disabled="{{this.collectService.isOpenCollect}}"
                         interface="popover" labelPlacement="stacked">
-                        <ion-select-option *ngFor="let rate of this.collectService.rateList" [value]="rate">{{rate}}
+                        <ion-select-option *ngFor="let rate of this.collectService.rateList" [value]="rate">{{this.currencyServices.formatNumber(rate)}}
                             {{this.collectService.localCurrency.coCurrency}}
                         </ion-select-option>
                     </ion-select>
@@ -101,7 +101,7 @@
                         {{this.collectService.collectionTags.get('COB_TASA')}}
                         {{this.collectService.localCurrency.coCurrency}}:
                     </ion-label>
-                    <ion-label>{{this.collectService.collection.nuValueLocal}}</ion-label>
+                    <ion-label>{{this.currencyServices.formatNumber(this.collectService.collection.nuValueLocal)}}</ion-label>
                 </ion-item>
                 <!--   <div class="listado-enterprise-selector ion-text-center">
                     <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.rateSelected"

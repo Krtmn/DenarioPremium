@@ -53,7 +53,7 @@ export class CobrosGeneralComponent implements OnInit {
   private enterpriseServ = inject(EnterpriseService);
   private globalConfig = inject(GlobalConfigService);
   private geoServ = inject(GeolocationService);
-  private currencyServices = inject(CurrencyService);
+  public currencyServices = inject(CurrencyService);
   private messageService = inject(MessageService);
   private clientService = inject(ClientesDatabaseServicesService);
   private adjuntoService = inject(AdjuntoService);

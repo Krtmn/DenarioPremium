@@ -1348,7 +1348,7 @@ export class CobrosDocumentComponent implements OnInit {
   }
 
   getTasaByAmount(amount: number, nuValueLocal: number) {
-    if (nuValueLocal == null) return this.formatNumber(0);
+    if (nuValueLocal == null) return this.formatNumber(amount);
     if (amount < 0) {
       this.collectService.calculateDifference = true;
       return this.formatNumber(nuValueLocal);

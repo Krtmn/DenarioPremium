@@ -186,7 +186,7 @@
                 [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }">
                 <!--                 {{formatNumber(this.collectService.getNuValueLocal(documentSale.nuValueLocal))}}
  --> <!-- <br> -->
-                {{getTasaByAmount(documentSale.nuAmountTotal, documentSale.nuValueLocal)}}
+                {{ getTasaByAmount(documentSale.nuAmountTotal, documentSale.nuValueLocal) }}
                 {{this.collectService.localCurrency.coCurrency}}
             </ion-col>
             <!-- SI LA MONEDA ES LOCAL -->
@@ -209,7 +209,7 @@
             <ion-col
                 *ngIf="this.collectService.multiCurrency && this.collectService.currencySelected.localCurrency.toString()== 'true' && documentSale.coCurrency == this.collectService.currencySelectedDocument.coCurrency"
                 size="6" class="ion-text-center col" [ngStyle]="{color: documentSale.nuBalance > 0 ? 'Red' : 'Blue' }">
-                {{formatNumber(this.collectService.convertirMonto(documentSale.nuAmountTotal,
+                {{formatNumber(this.collectService.convertirMonto(documentSale.nuBalance,
                 documentSale.nuValueLocal,documentSale.coCurrency))}}
                 {{this.collectService.collection.coCurrency}}
             </ion-col>
