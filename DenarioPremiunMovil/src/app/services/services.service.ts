@@ -48,7 +48,7 @@ export class ServicesService {
   //private WsUrl = "http://denarioazucar.ddns.net:8181/PremiumWS/services/";
 
   //romher 170 // 123456
-  private WsUrl = "http://190.121.225.172:8060/PremiumWS/services/";
+  //private WsUrl = "http://190.121.225.172:8060/PremiumWS/services/";
 
   //private WsUrl = "https://denario-mobile-dev.apps.kraftheinz.com/PremiumWS/services/";
 
@@ -58,8 +58,10 @@ export class ServicesService {
 
   //private WsUrl = "http://200.35.84.250:8085/PremiumWS/services/";
 
-  //private WsUrl = "http://soportepremium.ddns.net:9991/PremiumWS/services/";
+  private WsUrl = "http://soportepremium.ddns.net:9991/PremiumWS/services/";
 
+  //private WsUrl = "http://soportepremium.ddns.net:9993/PremiumWS/services/";
+  
   private name = "";
   private last = "";
   public tags = new Map<string, string>([]);
