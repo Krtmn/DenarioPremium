@@ -846,7 +846,7 @@ body, html {
 :host(.flex-layout) {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 78vh;
   min-height: 0;
 }
 
@@ -855,7 +855,7 @@ ion-grid, ion-row {
 }
 
 .product-structure-scroll {
-  height: calc(100vh - 270px); // Ajusta 270px según el alto real de lo fijo arriba (botones, selectores, etc)
+  height: calc(78vh - 270px); // Ajusta 270px según el alto real de lo fijo arriba (botones, selectores, etc)
   overflow-y: auto;
   min-height: 0;
 }
