@@ -64,3 +64,21 @@
   margin-top: 230px;
   z-index: 1;
 }
+
+
+/* :host {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; // O 100% si el padre ya tiene altura definida
+  min-height: 0;
+}
+
+ion-grid, ion-row {
+  flex-shrink: 0;
+}
+
+.product-structure-scroll {
+  height: calc(100vh - 270px); // Ajusta 270px según el alto real de lo fijo arriba (botones, selectores, etc)
+  overflow-y: auto;
+  min-height: 0;
+} */
