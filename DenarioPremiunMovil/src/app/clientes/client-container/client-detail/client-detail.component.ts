@@ -31,7 +31,7 @@ export class ClienteComponent implements OnInit {
   public multiCurrency!: Boolean;
   public tagRif: string = "";
   public coordenada: Boolean = false;
-
+  public nuCreditLimitConversion: string = "";
   public localCurrency = '';
   public hardCurrency = '';
   public decimales = 2;
@@ -54,9 +54,11 @@ export class ClienteComponent implements OnInit {
         if (this.client.coCurrency == this.clientLogic.localCurrency.coCurrency) {
           saldoCliente = this.client.saldo1 + this.currencyService.toLocalCurrency(this.client.saldo2);
           saldoOpuesto = this.currencyService.toHardCurrency(saldoCliente);
+          this.nuCreditLimitConversion = this.formatNumber(this.currencyService.toHardCurrency(this.client.nuCreditLimit));
         } else {
           saldoCliente = this.client.saldo1 + this.currencyService.toHardCurrency(this.client.saldo2);
           saldoOpuesto = this.currencyService.toLocalCurrency(saldoCliente);
+          this.nuCreditLimitConversion = this.formatNumber(this.currencyService.toLocalCurrency(this.client.nuCreditLimit));
         }
         this.client.saldo1 = saldoCliente;
         this.client.saldo2 = saldoOpuesto;

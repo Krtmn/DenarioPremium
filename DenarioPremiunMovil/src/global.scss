@@ -832,3 +832,13 @@ body, html {
   --ion-background-color: #fff;
   --ion-text-color: #000;
 }
+
+.sticky-searchbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fff;
+  /* Ajusta el color de fondo según tu tema */
+  padding-top: 8px;
+  padding-bottom: 8px;
+}

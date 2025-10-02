@@ -1,22 +1,20 @@
 <div class="client-list">
 
     <div class="client-card">
+        <div class="sticky-searchbar">
+            <ion-searchbar class="lupamorada" show-clear-button="always" search-icon="search-circle"
+                clear-icon="trash-bin" placeholder="{{this.clientLogic.clientTags.get('CLI_PLACEHOLDER')}}"
+                [debounce]="1000" (ionInput)="handleInput($event)">
+            </ion-searchbar>
+        </div>
         <ion-grid>
-            <ion-row>
-                <ion-col>
-                    <ion-searchbar class="lupamorada" show-clear-button="always" search-icon="search-circle"
-                        clear-icon="trash-bin"
-                        placeholder="{{this.clientLogic.clientTags.get('CLI_PLACEHOLDER')}}" [debounce]="1000"
-                        (ionInput)="handleInput($event)">
-                    </ion-searchbar>
-                </ion-col>
-            </ion-row>
             <ion-row>
                 <ion-col size="12" size-sm="12" size-xs="12" *ngIf="this.enterpriseServ.esMultiempresa()">
                     <ion-label>{{this.clientLogic.clientTags.get('CLI_EMPRESA')}}:</ion-label>
                     <div class="listado-enterprise-selector ion-text-center">
                         <ion-select class="ion-text-center always-flip"
-                            [(ngModel)]="this.clientLogic.empresaSeleccionada" (ionChange)="onChangeEnterprise()" interface="popover" labelPlacement="stacked">
+                            [(ngModel)]="this.clientLogic.empresaSeleccionada" (ionChange)="onChangeEnterprise()"
+                            interface="popover" labelPlacement="stacked">
                             <ion-select-option *ngFor="let emp of this.clientLogic.listaEmpresa" [value]="emp">{{
                                 emp.lbEnterprise }}
                             </ion-select-option>
