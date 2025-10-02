@@ -378,7 +378,7 @@ DELETE FROM public.application_tags WHERE co_module = 'INV';
 	INSERT INTO public.application_tags(
 	co_application_tag, co_module, na_module, co_language, tag)
 	VALUES 
-	('INV_NOMBRE_MODULO','INV','INVENTARIO','ESP','Inventario'),
+	('INV_NOMBRE_MODULO','INV','INVENTARIO','ESP','Inventarios'),
 	('INV_NUEVO_INVENTARIO','INV','INVENTARIO','ESP','INVENTARIO'),
 	('INV_BUSCAR_INVENTARIO','INV','INVENTARIO','ESP','BUSCAR'),
 	('INV_GENERAL_TAB','INV','INVENTARIO','ESP','General'),
@@ -655,7 +655,7 @@ DELETE FROM public.application_tags WHERE co_module = 'DEP';
 INSERT INTO public.application_tags(
 	co_application_tag, co_module, na_module, co_language, tag)
 	VALUES 
-	('DEP_NOMBRE_MODULO','DEP','DEPOSITOS','ESP','Depósito'),
+	('DEP_NOMBRE_MODULO','DEP','DEPOSITOS','ESP','Depósitos'),
 	('DEP_MODULE_NUEVO_DEPOSITO','DEP','DEPOSITOS','ESP','DEPÓSITO'),
 	('DEP_MODULE_BUSCAR','DEP','DEPOSITOS','ESP','BUSCAR'),
 	('DEP_PESTANA_GENERAL','DEP','DEPOSITOS','ESP','General'),
@@ -686,11 +686,11 @@ INSERT INTO public.application_tags(
 	('DEP_DEV_DATE', 'DEP', 'DEPOSITOS', 'ESP', 'Fecha'),
 	('DEP_DEV_DATE', 'DEP', 'DEPOSITOS', 'ENG', 'Date Return'),
 	('DEP_DEV_SAVED', 'DEP', 'DEPOSITOS', 'ESP','Guardado'),
-	('DEP_DEV_SAVED', 'DEP', 'DEPOSITOS', 'ENG','Saved'),
-	('DEP_DEV_TO_BE_SENDED', 'DEP', 'DEPOSITOS', 'ESP','Por Enviar'),
-	('DEP_DEV_TO_BE_SENDED', 'DEP', 'DEPOSITOS', 'ENG','To be sended'),
-	('DEP_DEV_SENDED', 'DEP', 'DEPOSITOS', 'ESP','Enviado'),
-	('DEP_DEV_SENDED', 'DEP', 'DEPOSITOS', 'ENG','Sended');	
+	('DENARIO_DEV_SAVED', 'DEN', 'DENARIO', 'ENG','Saved'),
+	('DENARIO_DEV_TO_BE_SENDED', 'DEN', 'DENARIO', 'ESP','Por Enviar'),
+	('DENARIO_DEV_TO_BE_SENDED', 'DEN', 'DENARIO', 'ENG','To be sended'),
+	('DENARIO_DEV_SENDED', 'DEN', 'DENARIO', 'ESP','Enviado'),
+	('DENARIO_DEV_SENDED', 'DEN', 'DENARIO', 'ENG','Sended');	
 	
 --	MENSAJES
 DELETE FROM public.application_tags where co_module = 'MSG';
