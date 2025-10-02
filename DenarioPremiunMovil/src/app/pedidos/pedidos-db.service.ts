@@ -418,28 +418,10 @@ export class PedidosDbService {
       "nu_details, nu_amount_total_product_discount, nu_amount_total_product_discount_conversion, id_distribution_channel, co_distribution_channel) " +
       "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
-    let detailQuery = "INSERT OR REPLACE INTO order_details (id_order_detail, co_order_detail, co_order, co_product, na_product, " +
-      "id_product, nu_price_base, nu_amount_total, co_warehouse, id_warehouse, qu_suggested, co_enterprise, id_enterprise, " +
-      "iva, nu_discount_total, co_discount, id_discount, co_price_list, id_price_list, posicion, nu_price_base_conversion, " +
-      "nu_discount_total_conversion, nu_amount_total_conversion) " +
-      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-
-    let unitQuery = "INSERT OR REPLACE INTO order_detail_units ( id_order_detail_unit, co_order_detail_unit, co_order_detail, " +
-      "co_product_unit, id_product_unit, qu_order, co_enterprise, id_enterprise, co_unit, qu_suggested ) " +
-      "VALUES (?,?,?,?,?,?,?,?,?,?)";
-
-    let dcQuery = "INSERT OR REPLACE INTO order_detail_discount ( id_order_detail_discount, co_order_detail_discount, " +
-      "co_order_detail, id_order_detail, id_discount, qu_discount, nu_price_final, co_enterprise, id_enterprise ) " +
-      "VALUES (?,?,?,?,?,?,?,?,?)";
-
     let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
 
     for (let o = 0; o < orders.length; o++) {
       const order = orders[o];
-      if (!order.orderDetails || order.orderDetails.length == 0) {
-        continue;
-      }
-
       //query de order
       queries.push([orderQuery, [order.idOrder, order.coOrder, order.coClient, order.idClient, order.daOrder, order.daCreated, order.naResponsible,
       order.idUser, order.idOrderCreator, order.inOrderReview, order.nuAmountTotal, order.nuAmountFinal, order.coCurrency,
@@ -449,65 +431,64 @@ export class PedidosDbService {
       order.nuValueLocal, order.nuAmountTotalConversion, order.nuAmountFinalConversion, order.procedencia, order.nuAmountTotalBaseConversion,
       order.nuAmountDiscountConversion, order.idOrderType, order.nuAttachments, order.hasAttachments, order.nuDetails,
       order.nuAmountTotalProductDiscount, order.nuAmountTotalProductDiscountConversion, order.idDistributionChannel, order.coDistributionChannel]]);
+    }
+    return db.sqlBatch(queries).then(() => { }).catch(error => { });
+  }
 
-      for (let i = 0; i < order.orderDetails.length; i++) {
-        const item = order.orderDetails[i];
-        //query de detail
-        queries.push([detailQuery, [item.idOrderDetail, item.coOrderDetail, item.coOrder, item.coProduct, item.naProduct, item.idProduct, item.nuPriceBase,
-        item.nuAmountTotal, item.coWarehouse, item.idWarehouse, item.quSuggested, item.coEnterprise, item.idEnterprise, item.iva,
-        item.nuDiscountTotal, item.coDiscount, item.idDiscount, item.coPriceList, item.idPriceList, item.posicion,
-        item.nuPriceBaseConversion, item.nuDiscountTotalConversion, item.nuAmountTotalConversion,]]);
+  saveOrderDetailBatch(db: SQLiteObject, orderDetails: OrderDetail[]) {
+    let detailQuery = "INSERT OR REPLACE INTO order_details (id_order_detail, co_order_detail, co_order, co_product, na_product, " +
+      "id_product, nu_price_base, nu_amount_total, co_warehouse, id_warehouse, qu_suggested, co_enterprise, id_enterprise, " +
+      "iva, nu_discount_total, co_discount, id_discount, co_price_list, id_price_list, posicion, nu_price_base_conversion, " +
+      "nu_discount_total_conversion, nu_amount_total_conversion) " +
+      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
-        //query de discount
-        if (item.orderDetailDiscount && item.idDiscount > 0) {
-          queries.push([dcQuery, [item.orderDetailDiscount[0].idOrderDetailDiscount, item.orderDetailDiscount[0].coOrderDetailDiscount, item.orderDetailDiscount[0].coOrderDetail, item.orderDetailDiscount[0].idOrderDetail,
-          item.orderDetailDiscount[0].idDiscount, item.orderDetailDiscount[0].quDiscount, item.orderDetailDiscount[0].nuPriceFinal,
-          item.orderDetailDiscount[0].coEnterprise, item.orderDetailDiscount[0].idEnterprise,]]);
-        }
+    let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
 
-
-        for (let j = 0; j < item.orderDetailUnit.length; j++) {
-          const unit = item.orderDetailUnit[j];
-
-          //query de unidad
-          queries.push([unitQuery, [unit.idOrderDetailUnit, unit.coOrderDetailUnit, unit.coOrderDetail, unit.coProductUnit,
-          unit.idProductUnit, unit.quOrder, unit.coEnterprise, unit.idEnterprise, unit.coUnit, unit.quSuggested,]]);
-
-        }
-
-      }
+    for (let o = 0; o < orderDetails.length; o++) {
+      const orderDetail = orderDetails[o];
+      queries.push([detailQuery, [orderDetail.idOrderDetail, orderDetail.coOrderDetail, orderDetail.coOrder, orderDetail.coProduct, orderDetail.naProduct,
+      orderDetail.idProduct, orderDetail.nuPriceBase, orderDetail.nuAmountTotal, orderDetail.coWarehouse, orderDetail.idWarehouse, orderDetail.quSuggested,
+      orderDetail.coEnterprise, orderDetail.idEnterprise, orderDetail.iva, orderDetail.nuDiscountTotal, orderDetail.coDiscount, orderDetail.idDiscount,
+      orderDetail.coPriceList, orderDetail.idPriceList, orderDetail.posicion, orderDetail.nuPriceBaseConversion, orderDetail.nuDiscountTotalConversion,
+      orderDetail.nuAmountTotalConversion]]);
     }
 
     return db.sqlBatch(queries).then(() => { }).catch(error => { });
-
   }
-  /*
-    getPedidos(db: SQLiteObject){
-  //SIN USAR. TRAE TODO EL HEADER DE TODOS LOS PEDIDOS.
-      
-      let query = "SELECT  id_order as idOrder, co_order as coOrder, co_client as coClient , id_client as idClient , da_order as daOrder, "+
-      "da_created as daCreated , na_responsible as naResponsible, id_user as idUser, id_order_creator as idOrderCreator, "+
-      "in_order_review as inOrderReview, nu_amount_total as nuAmountTotal, nu_amount_final as nuAmountFinal, co_currency as coCurrency, "+
-      "da_dispatch as daDispatch, tx_comment as txComment, nu_purchase as nuPurchase , co_enterprise as coEnterprise, co_user as coUser , "+
-      "co_payment_condition as coPaymentCondition, id_payment_condition as idPaymentCondition, id_enterprise as idEnterprise, "+
-      "co_address_client as coAddress, id_address_client as idAddress, nu_amount_discount as nuAmountDiscount, "+
-      "nu_amount_total_base as nuAmountTotalBase, st_order as stOrder, coordenada , nu_discount as nuDiscount, "+
-      "id_currency as idCurrency, id_currency_conversion as idCurrencyConversion, nu_value_local as nuValueLocal, "+
-      "nu_amount_total_conversion as nuAmountTotalConversion, nu_amount_final_conversion as nuAmountFinalConversion, "+
-      "procedencia , nu_amount_total_base_conversion as nuAmountTotalBaseConversion, nu_details as nuDetails, nu_amount_total_product_discount as nuAmountTotalProductDiscount, nu_amount_total_product_discount_conversion as nuAmountTotalProductDiscountConversion, "+
-      "nu_amount_discount_conversion as nuAmountDiscountConversion, id_order_type as idOrderType, nu_attachments as nuAttachments, has_attachments as hasAttachments "+
-      "FROM orders";
-  
-      return db.executeSql(query, []).then(data => {
-        let orders: Orders[] = [];
-        for (let i = 0; i < data.rows.length; i++) {
-          let item = data.rows.item(i);
-          orders.push(item);
-        }
-        return orders;
-      })
+
+  saveOrderDetailUnitBatch(db: SQLiteObject, orderDetailUnits: OrderDetailUnit[]) {
+    let unitQuery = "INSERT OR REPLACE INTO order_detail_units ( id_order_detail_unit, co_order_detail_unit, co_order_detail, " +
+      "co_product_unit, id_product_unit, qu_order, co_enterprise, id_enterprise, co_unit, qu_suggested ) " +
+      "VALUES (?,?,?,?,?,?,?,?,?,?)";
+    let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
+
+    for (let o = 0; o < orderDetailUnits.length; o++) {
+      const orderDetailUnit = orderDetailUnits[o];
+      queries.push([unitQuery, [orderDetailUnit.idOrderDetailUnit, orderDetailUnit.coOrderDetailUnit, orderDetailUnit.coOrderDetail,
+      orderDetailUnit.coProductUnit, orderDetailUnit.idProductUnit, orderDetailUnit.quOrder, orderDetailUnit.coEnterprise,
+      orderDetailUnit.idEnterprise, orderDetailUnit.coUnit, orderDetailUnit.quSuggested]]);
     }
-  */
+
+    return db.sqlBatch(queries).then(() => { }).catch(error => { });
+  }
+
+  saveOrderDetailDiscountBatch(db: SQLiteObject, orderDetailDiscounts: OrderDetailDiscount[]) {
+    let dcQuery = "INSERT OR REPLACE INTO order_detail_discount ( id_order_detail_discount, co_order_detail_discount, " +
+      "co_order_detail, id_order_detail, id_discount, qu_discount, nu_price_final, co_enterprise, id_enterprise ) " +
+      "VALUES (?,?,?,?,?,?,?,?,?)";
+    let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
+
+    for (let o = 0; o < orderDetailDiscounts.length; o++) {
+      const orderDetailDiscount = orderDetailDiscounts[o];
+      queries.push([dcQuery, [orderDetailDiscount.idOrderDetailDiscount, orderDetailDiscount.coOrderDetailDiscount,
+      orderDetailDiscount.coOrderDetail, orderDetailDiscount.idOrderDetail, orderDetailDiscount.idDiscount,
+      orderDetailDiscount.quDiscount, orderDetailDiscount.nuPriceFinal, orderDetailDiscount.coEnterprise,
+      orderDetailDiscount.idEnterprise]]);
+    }
+
+    return db.sqlBatch(queries).then(() => { }).catch(error => { });
+  }
+
   getPedido(db: SQLiteObject, coOrder: string) {
     //busca todos los documentos relacionados con el coOrder y los devuelve como un Orders
     //para Copiar/Ver

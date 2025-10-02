@@ -49,7 +49,10 @@ export interface TablesLastUpdate {
   collectionTableLastUpdate: string,
   returnTableLastUpdate:string,
   clientStockTableLastUpdate:string,
-  depositTableLastUpdate:string
+  depositTableLastUpdate:string,
+  orderDetailTableLastUpdate:string,
+  orderDetailUnitTableLastUpdate:string,
+  orderDetailDiscountTableLastUpdate:string,
   page: number
 
 }

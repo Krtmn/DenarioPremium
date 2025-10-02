@@ -11,6 +11,8 @@ import { MessageService } from '../services/messageService/message.service';
 import { HttpClient } from '@angular/common/http';
 import createTables from 'src/assets/database/createTables.json';
 import { ImageServicesService } from '../services/imageServices/image-services.service';
+import { OrderDetailDiscount } from '../modelos/orderDetailDiscount';
+import { OrderDetailUnit } from '../modelos/tables/orderDetailUnit';
 
 @Component({
   selector: 'app-synchronization',
@@ -174,7 +176,9 @@ export class SynchronizationComponent implements OnInit {
     returns: 'Devoluciones',
     client_stocks: 'Inventarios',
     deposits: 'Depositos',
-
+    orderDetails: 'Detalles de Pedido',
+    orderDetailsUnits: 'Unidades de Detalle de Pedido',
+    orderDetailDiscounts: 'Descuentos de Detalle de Pedido',
   };
 
   constructor(
@@ -525,6 +529,21 @@ export class SynchronizationComponent implements OnInit {
           }
           case 68: {
             this.tables.depositTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
+          case 69: {
+            this.tables.orderDetailTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
+          case 70: {
+            this.tables.orderDetailUnitTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
+          case 71: {
+            this.tables.orderDetailDiscountTableLastUpdate = result[i].last_update;
             this.tables.page = 0;
             break;
           }
@@ -1068,6 +1087,27 @@ export class SynchronizationComponent implements OnInit {
       batchFn: this.synchronizationServices.insertDepositBatch.bind(this.synchronizationServices),
       rowKey: 'depositTable',
       tableKey: 'depositTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
+    orderDetail: {
+      batchFn: this.synchronizationServices.insertOrderDetailBatch.bind(this.synchronizationServices),
+      rowKey: 'orderDetailTable',
+      tableKey: 'orderDetailTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
+    orderDetailUnit: {
+      batchFn: this.synchronizationServices.insertOrderDetailUnitBatch.bind(this.synchronizationServices),
+      rowKey: 'orderDetailUnitTable',
+      tableKey: 'orderDetailUnitTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
+    orderDetailDiscount: {
+      batchFn: this.synchronizationServices.insertOrderDetailDiscountBatch.bind(this.synchronizationServices),
+      rowKey: 'orderDetailDiscountTable',
+      tableKey: 'orderDetailDiscountTableLastUpdate',
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
     }

@@ -69,6 +69,9 @@ import { ReturnLogicService } from '../returns/return-logic.service';
 import { InventariosLogicService } from '../inventarios/inventarios-logic.service';
 import { DepositService } from '../deposit/deposit.service';
 import { ReturnDatabaseService } from '../returns/return-database.service';
+import { OrderDetail } from 'src/app/modelos/tables/orderDetail';
+import { OrderDetailUnit } from 'src/app/modelos/tables/orderDetailUnit';
+import { OrderDetailDiscount } from 'src/app/modelos/orderDetailDiscount';
 
 @Injectable({
   providedIn: 'root'
@@ -154,6 +157,9 @@ export class SynchronizationDBService {
       { "id": 66, "nameTable": "returnTable" },
       { "id": 67, "nameTable": "clientStockTable" },
       { "id": 68, "nameTable": "depositTable" },
+      { "id": 69, "nameTable": "orderDetailTable" },
+      { "id": 70, "nameTable": "orderDetailUnitTable" },
+      { "id": 71, "nameTable": "orderDetailDiscountTable" },
     ]
   }
 
@@ -1332,6 +1338,16 @@ export class SynchronizationDBService {
 
   insertOrderBatch(arr: Orders[]) {
     return this.pedidosService.saveOrderBatch(this.database, arr)
+  }
+
+  insertOrderDetailBatch(arr: OrderDetail[]) {
+    return this.pedidosService.saveOrderDetailBatch(this.database, arr)
+  }
+  insertOrderDetailUnitBatch(arr: OrderDetailUnit[]) {
+    return this.pedidosService.saveOrderDetailUnitBatch(this.database, arr)
+  }
+  insertOrderDetailDiscountBatch(arr: OrderDetailDiscount[]) {
+    return this.pedidosService.saveOrderDetailDiscountBatch(this.database, arr)
   }
   // En SynchronizationDBService
   insertCollectionBatch(arr: Collection[]) {
