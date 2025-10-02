@@ -7,7 +7,7 @@
     </ion-button>
 
     <!--  Listado clickeable de productos  -->
-    <div class="product-card">
+    <div class="product-card product-structure-scroll" >
         <ion-list *ngFor="let product of inventariosLogicService.newClientStock.productList; index as pro" (click)="onSelectProductInv(pro,product)">
             <!-- <productos-tab-search [showProductStructure]="showProductStructure" [empresaSeleccionada]="empresaSeleccionada" [productsTabTags]="productsTabTags"></productos-tab-search> -->
             <div class="product-structure-title" *ngIf="searchText === '' || product.coProduct.toLowerCase().includes(searchText.toLowerCase()) || product.naProduct.toLowerCase().includes(searchText.toLowerCase())">

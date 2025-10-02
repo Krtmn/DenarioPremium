@@ -66,10 +66,10 @@
 }
 
 
-/* :host {
+/* :host(.flex-layout) {
   display: flex;
   flex-direction: column;
-  height: 100vh; // O 100% si el padre ya tiene altura definida
+  height: 100vh;
   min-height: 0;
 }
 
