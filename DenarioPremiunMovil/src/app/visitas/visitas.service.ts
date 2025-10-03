@@ -322,30 +322,68 @@ export class VisitasService {
 
   getVisitList(today: string) {
 
-    var retrieveStatement = "SELECT id_visit as idVisit, co_visit as coVisit, " +
-      "st_visit as stVisit, da_visit as daVisit, " +
-      "coordenada, id_client as idClient, co_client as coClient, " +
-      "na_client as naClient, nu_sequence as nuSequence, id_user as idUser, " +
-      "co_user as coUser, co_enterprise as coEnterprise, id_enterprise as idEnterprise, " +
-      "da_real as daReal, da_initial as daInitial, id_address_client as idAddressClient, " +
-      "co_address_client as coAddressClient, " +
-      "has_attachments as hasAttachments, nu_attachments as nuAttachments, " +
-      "is_reassigned as isReassigned, tx_reassigned_motive as txReassignedMotive, da_reassign as daReassign " +
-      "FROM visits " +
-      "WHERE da_visit like ? " +
-      "ORDER BY nu_sequence ASC"
+    var retrieveReassignments = "SELECT * FROM visits WHERE is_reassigned = true AND da_reassign like ? ORDER BY nu_sequence ASC";
 
-    return this.dbServ.getDatabase().executeSql(retrieveStatement, [today]).then(data => {
+    var retrieveVisits = "SELECT * FROM visits WHERE da_visit like ? ORDER BY nu_sequence ASC";
+
+    return this.dbServ.getDatabase().executeSql(retrieveVisits, [today]).then(visitlist => {      
       //console.log(data);
       let visits: Visit[] = []
-      for (let i = 0; i < data.rows.length; i++) {
-        const item = data.rows.item(i);
-        item.isDispatched == "true" ? item.isDispatched = true : item.isDispatched = false;
-        visits.push(item);
-
+      if(this.rolTransportista){
+        //si es transportista, miro si hay reasignaciones para hoy y las meto en la lista
+       return this.dbServ.getDatabase().executeSql(retrieveReassignments, [today]).then(reasignaciones => {
+          for (let i = 0; i < reasignaciones.rows.length; i++) {
+            visits.push(this.visitDBtoObj(reasignaciones.rows.item(i)));
+          }
+          //se hace de esta forma para que las reasignaciones queden al principio de la lista      
+          for (let i = 0; i < visitlist.rows.length; i++) {
+            visits.push(this.visitDBtoObj(visitlist.rows.item(i)));
+          }
+          return visits;
+        });
+      }else{
+        //no es transportista, no miro reasignaciones
+        //for "duplicado" por funcion asincrona
+        for (let i = 0; i < visitlist.rows.length; i++) {
+            visits.push(this.visitDBtoObj(visitlist.rows.item(i)));
+          }
       }
       return visits;
     });
+  
+  }
+
+  visitDBtoObj(item : any) {
+    //traduzco el resultado de la bd al objeto visita
+      let v: Visit = {
+          idVisit: item.id_visit,
+          coVisit: item.co_visit,
+          stVisit: item.st_visit,
+          daVisit: item.da_visit,
+          coordenada: item.coordenada,
+          idClient: item.id_client,
+          coClient: item.co_client,
+          naClient: item.na_client,
+          nuSequence: item.nu_sequence,
+          idUser: item.id_user,
+          coUser: item.co_user,
+          coEnterprise: item.co_enterprise,
+          idEnterprise: item.id_enterprise,
+          visitDetails: [],
+          daInitial: item.da_initial,
+          daReal: item.da_real,
+          idAddressClient: item.id_address_client,
+          coAddressClient: item.co_address_client,
+          coordenadaSaved: item.coordenadaSaved,
+          hasAttachments: item.has_attachments,
+          nuAttachments: item.nu_attachments,
+          isReassigned: item.is_reassigned,
+          txReassignedMotive: item.tx_reassigned_motive,
+          daReassign: item.da_reassign,
+          noDispatchedMotive: item.no_dispatched_motive,
+          isDispatched: item.is_dispatched === "true" ? true : false,
+      }
+      return v;
   }
 
   getNuSequence(date: String) {
