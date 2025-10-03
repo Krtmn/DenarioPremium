@@ -822,6 +822,8 @@ export class VisitaComponent implements OnInit {
       isReassigned: this.visitServ.visit.isReassigned ? this.visitServ.visit.isReassigned : false,
       txReassignedMotive: this.visitServ.visit.txReassignedMotive,
       daReassign: this.visitServ.visit.daReassign,
+      isDispatched: this.visitServ.visit.isDispatched ? this.visitServ.visit.isDispatched : false,
+      noDispatchedMotive: this.visitServ.visit.noDispatchedMotive,
     }
     //console.log("visita antes de insert:");
     //console.log(visita);
@@ -1243,7 +1245,7 @@ export class VisitaComponent implements OnInit {
     this.visitServ.visit.isReassigned = true;
     this.visitServ.visit.daReassign = this.fechaReagendo;
     this.visitServ.visit.txReassignedMotive = this.motivoReagendo
-    this.saveVisit(false).then(() => {
+    this.saveVisit(true).then(() => {
       this.fechaReagendo = "";
       this.motivoReagendo = "";
       this.showReagendarModal = false;
