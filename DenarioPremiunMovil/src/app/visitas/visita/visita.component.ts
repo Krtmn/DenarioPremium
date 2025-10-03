@@ -1222,6 +1222,8 @@ export class VisitaComponent implements OnInit {
           text: this.getTag('DENARIO_BOTON_CANCELAR'),
           role: 'cancel',
           handler: () => {
+            this.fechaReagendo = "";
+            this.motivoReagendo = "";
             this.showReagendarModal = false;
           },
         },
@@ -1229,7 +1231,7 @@ export class VisitaComponent implements OnInit {
           text: this.getTag('DENARIO_BOTON_ACEPTAR'),
           role: 'confirm',
           handler: () => {
-           
+
             this.confirmarReagendar();
           },
         }
@@ -1242,8 +1244,10 @@ export class VisitaComponent implements OnInit {
     this.visitServ.visit.daReassign = this.fechaReagendo;
     this.visitServ.visit.txReassignedMotive = this.motivoReagendo
     this.saveVisit(true).then(() => {
+      this.fechaReagendo = "";
+      this.motivoReagendo = "";
       this.showReagendarModal = false;
-       this.router.navigate(['visitas']);
+      this.router.navigate(['visitas']);
     });
   }
 }
