@@ -127,7 +127,7 @@
 
       <!-- Boton Iniciar Visita -->
       <ion-col size="6" size-sm="12" size-xs="12" *ngIf="fromWeb">
-        <ion-button id="initVisit" class="botonAddLila" expand="block" [ngClass]="{'inp-write': initVisitRedLabel}"
+        <ion-button id="initVisit" class="botonAddVerde" expand="block" [ngClass]="{'inp-write': initVisitRedLabel}"
           *ngIf="!viewOnly" (click)="iniciarVisita()">
           {{ rolTransportista ? getTag('VIS_BOTON_INICIAR_DESPACHO') : getTag('VIS_BOTON_INICIAR') }}
         </ion-button>
@@ -138,8 +138,8 @@
 
       <!-- Boton Reagendar Despacho-->
       <ion-col size="6" size-sm="12" size-xs="12" *ngIf="fromWeb && rolTransportista">
-        <ion-button id="initVisit" class="botonAddLila" color="danger" expand="block"
-          [ngClass]="{'inp-write': initVisitRedLabel}" *ngIf="!viewOnly" (click)="reagendarVisita()">
+        <ion-button id="initVisit" class="botonAddLila" expand="block" [ngClass]="{'inp-write': initVisitRedLabel}"
+          *ngIf="!viewOnly" (click)="reagendarVisita()">
           REAGENDAR DESPACHO
         </ion-button>
       </ion-col>
@@ -352,26 +352,32 @@
       </ion-header>
       <ion-content>
         <ion-list>
+          <!-- <ion-label position="stacked" class="label-fecha">Seleccione fecha para reagendar</ion-label> -->
+          <h1>Seleccione fecha para reagendar</h1>
+          <ion-datetime class="full-width-datetime" [(ngModel)]="fechaReagendo" presentation="date"
+            [min]="this.visitServ.visit.daVisit" required>
+          </ion-datetime>
           <ion-item>
-            <ion-label position="stacked">Nueva Fecha</ion-label>
-            <ion-datetime [(ngModel)]="fechaReagendo" presentation="date" [min]="this.visitServ.visit.daVisit"
-              required></ion-datetime>
-          </ion-item>
-          <ion-item>
-            <ion-label position="stacked">Motivo</ion-label>
-            <ion-textarea [(ngModel)]="motivoReagendo" placeholder="Ingrese el motivo" required></ion-textarea>
+            <ion-input label="Motivo" [(ngModel)]="motivoReagendo" placeholder="Ingrese el motivo"
+              [ngClass]="{'input-rojo': !motivoReagendo, 'input-verde': motivoReagendo}" class="customInput"
+              label-placement="floating" fill="outline" color="primary" required>
+            </ion-input>
           </ion-item>
         </ion-list>
-        <ion-footer>
-          <ion-col size="6" size-sm="12" size-xs="12">
-            <ion-button class="botonAddLila" expand="block" color="danger" (click)="showReagendarModal = false">
-              Cancelar
-            </ion-button>
-            <ion-button class="botonAddLila" expand="block" [disabled]="!fechaReagendo || !motivoReagendo"
-              (click)="sendMessageConfirmReagenda()">
-              Confirmar
-            </ion-button>
-          </ion-col>
+        <ion-footer class="footer-separado">
+          <ion-row>
+            <ion-col size="6" size-sm="6" size-xs="6">
+              <ion-button expand="block" color="light" size="small" (click)="showReagendarModal = false">
+                Cancelar
+              </ion-button>
+            </ion-col>
+            <ion-col size="6" size-sm="6" size-xs="6">
+              <ion-button class="botonAddLila" size="small" expand="block"
+                [disabled]="!fechaReagendo || !motivoReagendo" (click)="sendMessageConfirmReagenda()">
+                Confirmar
+              </ion-button>
+            </ion-col>
+          </ion-row>
         </ion-footer>
       </ion-content>
     </ng-template>
