@@ -56,7 +56,7 @@
                 <ion-col size="4" class="titulosBold">{{this.collectService.collectionTags.get('COB_PAGO')}}
                     {{this.collectService.collection.coCurrency}}
                 </ion-col>
-                <ion-col>{{this.currencyService.formatNumber(this.collectService.collection.nuAmountFinal)}}</ion-col>
+                <ion-col>{{this.currencyService.formatNumber(this.collectService.montoTotalPagado)}}</ion-col>
             </ion-row>
 
             <ion-row *ngIf="this.collectService.multiCurrency">
@@ -64,7 +64,7 @@
                     {{this.collectService.currencyConversion.coCurrency}}
                 </ion-col>
                 <ion-col>{{this.currencyService.formatNumber(
-                    this.collectService.collection.nuAmountFinalConversion
+                    this.collectService.montoTotalPagadoConversion
                     )}}
                 </ion-col>
             </ion-row>
