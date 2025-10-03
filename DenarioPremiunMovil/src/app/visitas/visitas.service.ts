@@ -203,11 +203,13 @@ export class VisitasService {
     insertStatement = "INSERT OR REPLACE INTO visits(" +
       "co_visit, st_visit, da_visit, coordenada, id_client, co_client," +
       "na_client, nu_sequence, id_user, co_user, co_enterprise, id_enterprise, id_visit, " +
-      "da_real, da_initial, id_address_client, co_address_client, nu_attachments, has_attachments) " +
-      "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "da_real, da_initial, id_address_client, co_address_client, nu_attachments, has_attachments, " +
+      "is_reassigned, tx_reassigned_motive, da_reassign ) " +
+      "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
     params = [v.coVisit, v.stVisit, v.daVisit, v.coordenada, v.idClient, v.coClient,
     v.naClient, v.nuSequence, v.idUser, v.coUser, v.coEnterprise, v.idEnterprise, (this.editVisit ? v.idVisit : 0),
-    v.daReal, v.daInitial, v.idAddressClient, v.coAddressClient, v.nuAttachments, v.hasAttachments];
+    v.daReal, v.daInitial, v.idAddressClient, v.coAddressClient, v.nuAttachments, 
+    v.hasAttachments, v.isReassigned, v.txReassignedMotive, v.daReassign];
     //}
 
 
@@ -218,7 +220,8 @@ export class VisitasService {
       "co_user as coUser, co_enterprise as coEnterprise, id_enterprise as idEnterprise, " +
       "da_real as daReal, da_initial as daInitial, id_address_client as idAddressClient, " +
       "co_address_client as coAddressClient, " +
-      "has_attachments as hasAttachments, nu_attachments as nuAttachments " +
+      "has_attachments as hasAttachments, nu_attachments as nuAttachments, " +
+      "is_reassigned as isReassigned, tx_reassigned_motive as txReassignedMotive, da_reassign as daReassign " +
       "FROM visits WHERE co_visit = ?"
 
     return this.dbServ.getDatabase().executeSql(insertStatement, params).then(
@@ -289,7 +292,8 @@ export class VisitasService {
       "co_user as coUser, co_enterprise as coEnterprise, id_enterprise as idEnterprise, " +
       "da_real as daReal, da_initial as daInitial, id_address_client as idAddressClient, " +
       "co_address_client as coAddressClient, " +
-      "has_attachments as hasAttachments, nu_attachments as nuAttachments " +
+      "has_attachments as hasAttachments, nu_attachments as nuAttachments, " +
+      "is_reassigned as isReassigned, tx_reassigned_motive as txReassignedMotive, da_reassign as daReassign " +
       "FROM visits WHERE co_visit = ?"
 
     return this.dbServ.getDatabase().executeSql(retrieveStatement, [co]).then(result => {
@@ -325,7 +329,8 @@ export class VisitasService {
       "co_user as coUser, co_enterprise as coEnterprise, id_enterprise as idEnterprise, " +
       "da_real as daReal, da_initial as daInitial, id_address_client as idAddressClient, " +
       "co_address_client as coAddressClient, " +
-      "has_attachments as hasAttachments, nu_attachments as nuAttachments " +
+      "has_attachments as hasAttachments, nu_attachments as nuAttachments, " +
+      "is_reassigned as isReassigned, tx_reassigned_motive as txReassignedMotive, da_reassign as daReassign " +
       "FROM visits " +
       "WHERE da_visit like ? " +
       "ORDER BY nu_sequence ASC"

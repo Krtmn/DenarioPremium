@@ -819,7 +819,7 @@ export class VisitaComponent implements OnInit {
       coordenadaSaved: false, //este SIEMPRE es false.
       hasAttachments: this.adjuntoService.hasItems(),
       nuAttachments: this.adjuntoService.getNuAttachment(),
-      isReassigned: this.visitServ.visit.isReassigned,
+      isReassigned: this.visitServ.visit.isReassigned ? this.visitServ.visit.isReassigned : false,
       txReassignedMotive: this.visitServ.visit.txReassignedMotive,
       daReassign: this.visitServ.visit.daReassign,
     }
@@ -1243,7 +1243,7 @@ export class VisitaComponent implements OnInit {
     this.visitServ.visit.isReassigned = true;
     this.visitServ.visit.daReassign = this.fechaReagendo;
     this.visitServ.visit.txReassignedMotive = this.motivoReagendo
-    this.saveVisit(true).then(() => {
+    this.saveVisit(false).then(() => {
       this.fechaReagendo = "";
       this.motivoReagendo = "";
       this.showReagendarModal = false;
