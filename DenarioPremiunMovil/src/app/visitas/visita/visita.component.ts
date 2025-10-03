@@ -1245,6 +1245,7 @@ export class VisitaComponent implements OnInit {
     this.visitServ.visit.isReassigned = true;
     this.visitServ.visit.daReassign = this.fechaReagendo;
     this.visitServ.visit.txReassignedMotive = this.motivoReagendo
+    this.visitServ.visit.noDispatchedMotive = "Reasignado";
     this.enviarVisita().then(() => {
       this.fechaReagendo = "";
       this.motivoReagendo = "";
