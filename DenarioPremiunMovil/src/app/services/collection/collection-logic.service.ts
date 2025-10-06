@@ -3260,11 +3260,13 @@ export class CollectionService {
   }
 
   public toLocal(value: number): number {
-    return this.currencyService.toLocalCurrency(value);
+    return this.currencyService.toLocalCurrencyByNuValueLocal(value, this.documentSaleOpen.naType, this.collection.nuValueLocal);
   }
 
   public toHard(value: number): number {
-    return this.currencyService.toHardCurrency(value);
+
+    return this.currencyService.toHardCurrencyByNuValueLocal(value, this.documentSaleOpen.naType, this.collection.nuValueLocal);
+
   }
 
   public updateBalancesOnPartialPay(index: number) {
