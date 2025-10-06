@@ -25,6 +25,9 @@ export class Visit {
             obj['coordenadaSaved'],
             obj['hasAttachments'],
             obj['nuAttachments'],
+            obj['isReassigned'],
+            obj['txReassignedMotive'],
+            obj['daReassign'],
 
         );
     }
@@ -51,6 +54,9 @@ export class Visit {
         public coordenadaSaved: boolean = false,
         public hasAttachments: boolean,
         public nuAttachments: number,
+        public isReassigned: boolean = false,
+        public txReassignedMotive: string = '',
+        public daReassign: string = '',
 
 
     ) { }

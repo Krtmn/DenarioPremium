@@ -127,14 +127,21 @@
 
       <!-- Boton Iniciar Visita -->
       <ion-col size="6" size-sm="12" size-xs="12" *ngIf="fromWeb">
-        <ion-button id="initVisit" class="botonAddLila" expand="block" [ngClass]="{'inp-write': initVisitRedLabel}"
+        <ion-button id="initVisit" class="botonAddVerde" expand="block" [ngClass]="{'inp-write': initVisitRedLabel}"
           *ngIf="!viewOnly" (click)="iniciarVisita()">
-
           {{ rolTransportista ? getTag('VIS_BOTON_INICIAR_DESPACHO') : getTag('VIS_BOTON_INICIAR') }}
         </ion-button>
         <ion-label *ngIf="initVisitRedLabel" color="danger">
           {{ initVisitRedMsg }}
         </ion-label>
+      </ion-col>
+
+      <!-- Boton Reagendar Despacho-->
+      <ion-col size="6" size-sm="12" size-xs="12" *ngIf="fromWeb && rolTransportista">
+        <ion-button id="initVisit" class="botonAddLila" expand="block" [ngClass]="{'inp-write': initVisitRedLabel}"
+          *ngIf="!viewOnly" (click)="reagendarVisita()">
+          REAGENDAR DESPACHO
+        </ion-button>
       </ion-col>
 
     </ion-card>
@@ -202,8 +209,7 @@
                 <div class="listado-enterprise-selector ion-text-center">
 
                   <ion-select labelPlacement="stacked" interface="popover" [interfaceOptions]="popoverOptions"
-                    (ionChange)="onSelectMotive($event)" placeholder="Seleccione Motivo"
-                    [value]="motivoSeleccionado">
+                    (ionChange)="onSelectMotive($event)" placeholder="Seleccione Motivo" [value]="motivoSeleccionado">
                     <ion-select-option *ngFor="let mot of listaMotivosFiltrados" [value]="mot">{{ mot.naMotive
                       }}</ion-select-option>
                   </ion-select>
@@ -266,28 +272,28 @@
   <ion-modal id="mapModal" [isOpen]="clientLogic.clientLocationComponent" (willDismiss)="closeMapModal()">
     <ng-template id="mapTemplate">
       <ion-toolbar class="fondoLila">
-          <ion-grid>
-            <ion-row>
-              <ion-col size="1" size-sm="1" size-xs="2">
-                <a (click)="closeMapModal()">
-                  <img class="fechaAtras" alt="" src="../../../assets/images/flecha-blanca.png" />
-                </a>
-              </ion-col>
-              <ion-col size="9" size-sm="9" size-xs="6">
-                <h1 class="tituloModulos" *ngIf="!this.rolTransportista">{{this.getTag('VIS_NOMBRE_MODULO')}}</h1>
-                <h1 class="tituloModulos" *ngIf="this.rolTransportista">{{this.getTag('VIS_NOMBRE_MODULO_DESPACHOS')}}
-                </h1>
-              </ion-col>
-              <ion-col size="1" size-sm="1" size-xs="2" *ngIf="!viewOnly">
-              </ion-col>
-              <ion-col size="1" size-sm="1" size-xs="2" *ngIf="!viewOnly">
-                <ion-button class="imagenEnviar" (click)="saveLocationButton()"
-                  [disabled]="clientLogic.cannotSendClientCoordinate" expand="block" fill="clear">
-                </ion-button>
-              </ion-col>
+        <ion-grid>
+          <ion-row>
+            <ion-col size="1" size-sm="1" size-xs="2">
+              <a (click)="closeMapModal()">
+                <img class="fechaAtras" alt="" src="../../../assets/images/flecha-blanca.png" />
+              </a>
+            </ion-col>
+            <ion-col size="9" size-sm="9" size-xs="6">
+              <h1 class="tituloModulos" *ngIf="!this.rolTransportista">{{this.getTag('VIS_NOMBRE_MODULO')}}</h1>
+              <h1 class="tituloModulos" *ngIf="this.rolTransportista">{{this.getTag('VIS_NOMBRE_MODULO_DESPACHOS')}}
+              </h1>
+            </ion-col>
+            <ion-col size="1" size-sm="1" size-xs="2" *ngIf="!viewOnly">
+            </ion-col>
+            <ion-col size="1" size-sm="1" size-xs="2" *ngIf="!viewOnly">
+              <ion-button class="imagenEnviar" (click)="saveLocationButton()"
+                [disabled]="clientLogic.cannotSendClientCoordinate" expand="block" fill="clear">
+              </ion-button>
+            </ion-col>
 
-            </ion-row>
-          </ion-grid>
+          </ion-row>
+        </ion-grid>
       </ion-toolbar>
       <app-client-location *ngIf="clientLogic.clientLocationComponent"></app-client-location>
     </ng-template>
@@ -325,5 +331,56 @@
   <app-pdf-modal [isOpen]="visitServ.showPdfList" [pdfList]="visitServ.pdfList" [getTag]="getTag.bind(this)"
     [openPdf]="visitServ.openPdf.bind(visitServ)" [close]="visitServ.closePdfList.bind(visitServ)">
   </app-pdf-modal>
+
+  <ion-modal [isOpen]="showReagendarModal" (didDismiss)="showReagendarModal = false">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar class="fondoLila">
+          <ion-grid>
+            <ion-row>
+              <ion-col size="1" size-sm="1" size-xs="2">
+                <a (click)="showReagendarModal = false">
+                  <img class="fechaAtras" alt="" src="../../../assets/images/flecha-blanca.png" />
+                </a>
+              </ion-col>
+              <ion-col size="11" size-sm="11" size-xs="10">
+                <h1 class="tituloModulos">{{getTag('VIS_NOMBRE_MODULO_DESPACHOS')}}</h1>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content>
+        <ion-list>
+          <!-- <ion-label position="stacked" class="label-fecha">Seleccione fecha para reagendar</ion-label> -->
+          <h1>Seleccione fecha para reagendar</h1>
+          <ion-datetime class="full-width-datetime" [(ngModel)]="fechaReagendo" presentation="date"
+            [min]="this.visitServ.visit.daVisit" required>
+          </ion-datetime>
+          <ion-item>
+            <ion-input label="Motivo" [(ngModel)]="motivoReagendo" placeholder="Ingrese el motivo"
+              [ngClass]="{'input-rojo': !motivoReagendo, 'input-verde': motivoReagendo}" class="customInput"
+              label-placement="floating" fill="outline" color="primary" required>
+            </ion-input>
+          </ion-item>
+        </ion-list>
+        <ion-footer class="footer-separado">
+          <ion-row>
+            <ion-col size="6" size-sm="6" size-xs="6">
+              <ion-button expand="block" color="light" size="small" (click)="showReagendarModal = false">
+                Cancelar
+              </ion-button>
+            </ion-col>
+            <ion-col size="6" size-sm="6" size-xs="6">
+              <ion-button class="botonAddLila" size="small" expand="block"
+                [disabled]="!fechaReagendo || !motivoReagendo" (click)="sendMessageConfirmReagenda()">
+                Confirmar
+              </ion-button>
+            </ion-col>
+          </ion-row>
+        </ion-footer>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
 
 </ion-content>
