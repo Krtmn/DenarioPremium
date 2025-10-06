@@ -819,9 +819,11 @@ export class VisitaComponent implements OnInit {
       coordenadaSaved: false, //este SIEMPRE es false.
       hasAttachments: this.adjuntoService.hasItems(),
       nuAttachments: this.adjuntoService.getNuAttachment(),
-      isReassigned: this.visitServ.visit.isReassigned,
+      isReassigned: this.visitServ.visit.isReassigned ? this.visitServ.visit.isReassigned : false,
       txReassignedMotive: this.visitServ.visit.txReassignedMotive,
       daReassign: this.visitServ.visit.daReassign,
+      isDispatched: this.visitServ.visit.isDispatched ? this.visitServ.visit.isDispatched : false,
+      noDispatchedMotive: this.visitServ.visit.noDispatchedMotive,
     }
     //console.log("visita antes de insert:");
     //console.log(visita);
@@ -1243,11 +1245,12 @@ export class VisitaComponent implements OnInit {
     this.visitServ.visit.isReassigned = true;
     this.visitServ.visit.daReassign = this.fechaReagendo;
     this.visitServ.visit.txReassignedMotive = this.motivoReagendo
-    this.saveVisit(true).then(() => {
+    this.visitServ.visit.noDispatchedMotive = "Reasignado";
+    this.enviarVisita().then(() => {
       this.fechaReagendo = "";
       this.motivoReagendo = "";
       this.showReagendarModal = false;
-      this.router.navigate(['visitas']);
+      //this.router.navigate(['visitas']);
     });
   }
 }
