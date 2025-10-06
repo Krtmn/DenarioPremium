@@ -152,7 +152,7 @@ export class DepositService {
 
   initServices(dbServ: SQLiteObject) {
     this.enterpriseServ.setup(dbServ).then(() => {
-      this.depositValid = true;
+      this.depositValid = false;
       this.enterpriseList = this.enterpriseServ.empresas;
       this.enterpriseSelected = this.enterpriseList[0];
       this.parteDecimal = Number(this.globalConfig.get('parteDecimal'));
