@@ -119,7 +119,10 @@ export class SynchronizationComponent implements OnInit {
     65: 'collections',
     66: 'returns',
     67: 'client_stocks',
-    68: 'deposits'
+    68: 'deposits',
+    69: 'orderDetails',
+    70: 'orderDetailUnits',
+    71: 'orderDetailDiscounts'
   };
 
   /**
@@ -177,7 +180,7 @@ export class SynchronizationComponent implements OnInit {
     client_stocks: 'Inventarios',
     deposits: 'Depositos',
     orderDetails: 'Detalles de Pedido',
-    orderDetailsUnits: 'Unidades de Detalle de Pedido',
+    orderDetailUnits: 'Unidades de Detalle de Pedido',
     orderDetailDiscounts: 'Descuentos de Detalle de Pedido',
   };
 
@@ -1090,21 +1093,21 @@ export class SynchronizationComponent implements OnInit {
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
     },
-    orderDetail: {
+    orderDetails: {
       batchFn: this.synchronizationServices.insertOrderDetailBatch.bind(this.synchronizationServices),
       rowKey: 'orderDetailTable',
       tableKey: 'orderDetailTableLastUpdate',
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
     },
-    orderDetailUnit: {
+    orderDetailUnits: {
       batchFn: this.synchronizationServices.insertOrderDetailUnitBatch.bind(this.synchronizationServices),
       rowKey: 'orderDetailUnitTable',
       tableKey: 'orderDetailUnitTableLastUpdate',
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
     },
-    orderDetailDiscount: {
+    orderDetailDiscounts: {
       batchFn: this.synchronizationServices.insertOrderDetailDiscountBatch.bind(this.synchronizationServices),
       rowKey: 'orderDetailDiscountTable',
       tableKey: 'orderDetailDiscountTableLastUpdate',

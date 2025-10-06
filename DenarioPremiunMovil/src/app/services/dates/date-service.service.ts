@@ -132,7 +132,7 @@ export class DateServiceService {
     //compara dos fechas, devuelve true si la fecha es mayor o igual a la minima
     //min y date son strings ISO 8601 (yyyy-mm-dd hh:mm:ss)
     //console.log("compareDates: "+min+" > "+date+" = "+(min>date));
-    return min.substring(0,9) > date.substring(0,9);
+    return min.substring(0,10) <= date.substring(0,10);
   }
 
 

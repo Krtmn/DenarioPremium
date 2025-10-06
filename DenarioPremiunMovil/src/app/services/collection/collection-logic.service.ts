@@ -950,6 +950,13 @@ export class CollectionService {
 
     this.montoTotalPagado = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado));
 
+    if (this.collection.coCurrency == this.localCurrency.coCurrency) {
+      this.montoTotalPagadoConversion = this.currencyService.toHardCurrency(this.montoTotalPagado);
+    } else {
+
+      this.montoTotalPagadoConversion = this.currencyService.toLocalCurrency(this.montoTotalPagado)
+    }
+
     this.calculatePayment(type, index).then(response => {
 
       if (this.coTypeModule == "0") {
@@ -3253,11 +3260,13 @@ export class CollectionService {
   }
 
   public toLocal(value: number): number {
-    return this.currencyService.toLocalCurrency(value);
+    return this.currencyService.toLocalCurrencyByNuValueLocal(value, this.documentSaleOpen.naType, this.collection.nuValueLocal);
   }
 
   public toHard(value: number): number {
-    return this.currencyService.toHardCurrency(value);
+
+    return this.currencyService.toHardCurrencyByNuValueLocal(value, this.documentSaleOpen.naType, this.collection.nuValueLocal);
+
   }
 
   public updateBalancesOnPartialPay(index: number) {

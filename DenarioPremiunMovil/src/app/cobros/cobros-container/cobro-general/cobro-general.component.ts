@@ -863,6 +863,16 @@ export class CobrosGeneralComponent implements OnInit {
       this.input.setFocus();
   }
 
+  tagFecha(){
+    if(this.collectService.isAnticipo){
+      return this.collectService.collectionTags.get('COB_FECHA_ANTICIPO');
+    }
+    if(this.collectService.isRetention){
+      return this.collectService.collectionTags.get('COB_FECHA_RETENCION');
+    }
+    return this.collectService.collectionTags.get('COB_FECHA_COBRO');
+  }
+
   onChangeEnterprise() {
     console.log("asd");
     this.collectService.alertMessageChangeEnterprise = true;
