@@ -353,7 +353,10 @@ INSERT INTO public.application_tags(
 	('COB_TYPE_IGTF', 'COB', 'COBROS', 'ESP', 'IGTF'),
 	('COB_DEV_STATUS', 'COB', 'COBROS', 'ESP', 'Estatus'),
 	('COB_DEV_STATUS', 'COB', 'COBROS', 'ENG', 'Status'),
-	('COB_NRO_REF', 'COB', 'COBROS', 'ESP', 'Nro Ref');
+	('COB_NRO_REF', 'COB', 'COBROS', 'ESP', 'Nro Ref'),
+	('COB_NRO_REF', 'COB', 'COBROS', 'ENG', 'Ref No'),
+	('COB_FECHA_ANTICIPO', 'COB', 'COBROS', 'ESP', 'Fecha Anticipo'),
+	('COB_FECHA_RETENCION', 'COB', 'COBROS', 'ESP', 'Fecha Retención');
 		
 -- VENDEDORES
 DELETE FROM public.application_tags where co_module = 'VND';
@@ -685,12 +688,8 @@ INSERT INTO public.application_tags(
 	('DEP_DEV_STATUS', 'DEP', 'DEPOSITOS', 'ENG', 'Status'),
 	('DEP_DEV_DATE', 'DEP', 'DEPOSITOS', 'ESP', 'Fecha'),
 	('DEP_DEV_DATE', 'DEP', 'DEPOSITOS', 'ENG', 'Date Return'),
-	('DEP_DEV_SAVED', 'DEP', 'DEPOSITOS', 'ESP','Guardado'),
-	('DENARIO_DEV_SAVED', 'DEN', 'DENARIO', 'ENG','Saved'),
-	('DENARIO_DEV_TO_BE_SENDED', 'DEN', 'DENARIO', 'ESP','Por Enviar'),
-	('DENARIO_DEV_TO_BE_SENDED', 'DEN', 'DENARIO', 'ENG','To be sended'),
-	('DENARIO_DEV_SENDED', 'DEN', 'DENARIO', 'ESP','Enviado'),
-	('DENARIO_DEV_SENDED', 'DEN', 'DENARIO', 'ENG','Sended');	
+	('DEP_DEV_SAVED', 'DEP', 'DEPOSITOS', 'ESP','Guardado');
+
 	
 --	MENSAJES
 DELETE FROM public.application_tags where co_module = 'MSG';
