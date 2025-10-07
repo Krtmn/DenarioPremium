@@ -3260,11 +3260,13 @@ export class CollectionService {
   }
 
   public toLocal(value: number): number {
-    return this.currencyService.toLocalCurrency(value);
+    return this.currencyService.toLocalCurrencyByNuValueLocal(value, this.documentSaleOpen.naType, this.collection.nuValueLocal);
   }
 
   public toHard(value: number): number {
-    return this.currencyService.toHardCurrency(value);
+
+    return this.currencyService.toHardCurrencyByNuValueLocal(value, this.documentSaleOpen.naType, this.collection.nuValueLocal);
+
   }
 
   public updateBalancesOnPartialPay(index: number) {
@@ -3311,6 +3313,31 @@ export class CollectionService {
     this.documentSales[idx].isSave = true;
     this.documentSalesBackup[idx].inPaymentPartial = this.isPaymentPartial;
     this.documentSalesBackup[idx].isSave = true;
+
+    if (this.documentSales[idx].coCurrency == this.collection.coCurrency) {
+      this.documentSales[idx].nuAmountPaid = this.amountPaid;
+      this.documentSalesBackup[idx].nuAmountPaid = this.amountPaid;
+      this.documentSales[idx].nuAmountBase = this.amountPaid;
+      this.documentSalesBackup[idx].nuAmountBase = this.amountPaid;
+    } else {
+      if (this.currencySelected.localCurrency.toString() == "true") {
+        //convertir a hard
+
+        this.documentSales[idx].nuAmountPaid = this.amountPaid / this.collection.nuValueLocal;
+        this.documentSalesBackup[idx].nuAmountPaid = this.amountPaid / this.collection.nuValueLocal;
+        this.documentSales[idx].nuAmountBase = this.amountPaid / this.collection.nuValueLocal;
+        this.documentSalesBackup[idx].nuAmountBase = this.amountPaid / this.collection.nuValueLocal;
+      } else {
+        //convertir a local
+        this.documentSales[idx].nuAmountPaid = this.amountPaid * this.collection.nuValueLocal;
+        this.documentSalesBackup[idx].nuAmountPaid = this.amountPaid * this.collection.nuValueLocal;
+        this.documentSales[idx].nuAmountBase = this.amountPaid * this.collection.nuValueLocal;
+        this.documentSalesBackup[idx].nuAmountBase = this.amountPaid * this.collection.nuValueLocal;
+
+      }
+    }
+
+
     // this.documentSales[idx] = { ...open, inPaymentPartial: this.isPaymentPartial, isSave: true };`
     // this.documentSalesBackup[idx] = { ...open, inPaymentPartial: this.isPaymentPartial, isSave: true };`
 
@@ -3318,14 +3345,16 @@ export class CollectionService {
     const detail = this.collection.collectionDetails[detailIdx];
     if (detail) {
       detail.nuAmountDiscount = open.nuAmountDiscount;
-      detail.nuAmountPaid = this.amountPaid;
-      detail.nuAmountPaidConversion = this.amountPaidConversion;
+      detail.nuAmountPaid = this.amountPaid
+      detail.nuAmountPaidConversion = this.documentSalesBackup[idx].nuAmountPaid;
       detail.nuBalanceDoc = open.nuBalance;
+      detail.nuBalanceDocConversion = this.documentSalesBackup[idx].nuAmountPaid;
       detail.daVoucher = open.daVoucher;
       detail.nuAmountRetention = open.nuAmountRetention;
       detail.nuAmountRetention2 = open.nuAmountRetention2;
       detail.nuVoucherRetention = open.nuVaucherRetention;
       detail.nuValueLocal = open.nuValueLocal;
+
       // ...otros campos...
     }
   }

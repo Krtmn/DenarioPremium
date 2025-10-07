@@ -109,6 +109,10 @@ export class VisitaComponent implements OnInit {
   estadoDespacho: string = '';
   observacionDespacho: string = '';
   public rolTransportista: boolean = false;
+  showReagendarModal = false;
+  reagendarData: { fecha: string, motivo: string } | null = null;
+  motivoReagendo: string = '';
+  fechaReagendo: string = '';
 
   signatureSubscription: Subscription = this.adjuntoService.signatureChanged.subscribe(firma => {
     this.checkFirmaAndDisableSend();
@@ -155,11 +159,6 @@ export class VisitaComponent implements OnInit {
   public headerConfirm!: string;
   public mensajeConfirm!: string;
 
-
-
-
-
-
   @ViewChild(ClienteSelectorComponent)
   selectorCliente!: ClienteSelectorComponent;
   @ViewChild(AdjuntoComponent)
@@ -183,8 +182,6 @@ export class VisitaComponent implements OnInit {
   ) {
     this.clientLogic.clientLocationComponent = false;
 
-    
-
   }
 
   ngOnInit() {
@@ -196,10 +193,7 @@ export class VisitaComponent implements OnInit {
       this.multiempresa = this.enterpriseServ.esMultiempresa();
       this.enterpriseEnabled = this.visitServ.enterpriseEnabled;
       this.checkAddressClient = this.visitServ.checkAddressClient;
-
-    this.rolTransportista = this.visitServ.rolTransportista;
-
-
+      this.rolTransportista = this.visitServ.rolTransportista;
       this.listaActividades = this.visitServ.listaActividades;
       this.listaMotivos = this.visitServ.listaMotivos;
       this.listaEventos = [];
@@ -348,34 +342,36 @@ export class VisitaComponent implements OnInit {
     }
   }
 
+
+
   iniciarVisita() {
-    if(this.visitServ.userMustActivateGPS){
+    if (this.visitServ.userMustActivateGPS) {
       //en este caso no se puede continuar si no hay coordenadas
-    this.geoServ.getCurrentPosition().then(coords => {
-      if (coords.length > 0) {
-        this.setCoordinates(coords);
-        this.segment = 'actividades';
-      } else {
-        console.log("no hay coordenadas, locacion debe estar inactiva");
-        this.initialLock = true;
-        this.initVisitRedMsg = this.getTag("DENARIO_ERR_GPS");
-        this.initVisitRedLabel = true;
-      }
-    });
-  }else{
-    //si no es obligatorio, puede iniciar sin coords y se buscan en el fondo.
-    this.initialLock = false;
-    this.segment = 'actividades';
-    this.geoServ.getCurrentPosition().then(coords => {
-      if (coords.length > 0) {
-        this.setCoordinates(coords);
-      }
-    });
+      this.geoServ.getCurrentPosition().then(coords => {
+        if (coords.length > 0) {
+          this.setCoordinates(coords);
+          this.segment = 'actividades';
+        } else {
+          console.log("no hay coordenadas, locacion debe estar inactiva");
+          this.initialLock = true;
+          this.initVisitRedMsg = this.getTag("DENARIO_ERR_GPS");
+          this.initVisitRedLabel = true;
+        }
+      });
+    } else {
+      //si no es obligatorio, puede iniciar sin coords y se buscan en el fondo.
+      this.initialLock = false;
+      this.segment = 'actividades';
+      this.geoServ.getCurrentPosition().then(coords => {
+        if (coords.length > 0) {
+          this.setCoordinates(coords);
+        }
+      });
 
+    }
   }
-}
 
-  setCoordinates(coords: string){
+  setCoordinates(coords: string) {
     this.visitServ.coordenadas = coords
     this.fechaInitial = this.dateServ.hoyISOFullTime();
     console.log("iniciando visita: " + this.fechaInitial);
@@ -636,7 +632,7 @@ export class VisitaComponent implements OnInit {
       if (this.initialLock) {
         this.initVisitRedMsg = this.getTag("VIS_INIT_WARN");
         this.initVisitRedLabel = true;
-        
+
       }
       if (this.direccionCliente == null) {
         this.addressRedLabel = true;
@@ -822,7 +818,12 @@ export class VisitaComponent implements OnInit {
       visitDetails: [],
       coordenadaSaved: false, //este SIEMPRE es false.
       hasAttachments: this.adjuntoService.hasItems(),
-      nuAttachments: this.adjuntoService.getNuAttachment()
+      nuAttachments: this.adjuntoService.getNuAttachment(),
+      isReassigned: this.visitServ.visit.isReassigned ? this.visitServ.visit.isReassigned : false,
+      txReassignedMotive: this.visitServ.visit.txReassignedMotive,
+      daReassign: this.visitServ.visit.daReassign,
+      isDispatched: this.visitServ.visit.isDispatched ? this.visitServ.visit.isDispatched : false,
+      noDispatchedMotive: this.visitServ.visit.noDispatchedMotive,
     }
     //console.log("visita antes de insert:");
     //console.log(visita);
@@ -904,16 +905,16 @@ export class VisitaComponent implements OnInit {
 
       //revisamos que tengamos coordenadas
       if (this.visitServ.coordenadas.length <= 0) {
-      await this.message.showLoading().then( async () => {
-        await this.geoServ.getCurrentPosition().then(coords => {
-        if (coords.length > 0) {          
-          this.setCoordinates(coords);                   
-        }
-        this.message.hideLoading();
-      });
+        await this.message.showLoading().then(async () => {
+          await this.geoServ.getCurrentPosition().then(coords => {
+            if (coords.length > 0) {
+              this.setCoordinates(coords);
+            }
+            this.message.hideLoading();
+          });
 
-    });
-    }
+        });
+      }
       //ahora es el turno de las transacciones
 
       //la transaccion de la visita
@@ -1142,16 +1143,16 @@ export class VisitaComponent implements OnInit {
 
     }
 
-    if(!this.visitServ.coordenadas){
-      await this.message.showLoading().then( async () => {
+    if (!this.visitServ.coordenadas) {
+      await this.message.showLoading().then(async () => {
         await this.geoServ.getCurrentPosition().then(coords => {
-        if (coords.length > 0) {          
-          this.setCoordinates(coords);                   
-        }
-        this.message.hideLoading();
-      });
+          if (coords.length > 0) {
+            this.setCoordinates(coords);
+          }
+          this.message.hideLoading();
+        });
 
-    });
+      });
     }
 
     if (hasNoClientCoordinates) {
@@ -1205,4 +1206,51 @@ export class VisitaComponent implements OnInit {
 
   }
 
+  reagendarVisita() {
+    this.motivoReagendo = this.visitServ.visit.txReassignedMotive;
+    this.fechaReagendo = this.visitServ.visit.daReassign;
+    this.showReagendarModal = true;
+  }
+
+
+  sendMessageConfirmReagenda() {
+    this.message.alertCustomBtn(
+      {
+        header: this.getTag('DENARIO_HEADER_ALERTA'),
+        message: "Esta seguro de reagendar el Despacho?"
+      },
+      [
+        {
+          text: this.getTag('DENARIO_BOTON_CANCELAR'),
+          role: 'cancel',
+          handler: () => {
+            this.fechaReagendo = "";
+            this.motivoReagendo = "";
+            this.showReagendarModal = false;
+          },
+        },
+        {
+          text: this.getTag('DENARIO_BOTON_ACEPTAR'),
+          role: 'confirm',
+          handler: () => {
+
+            this.confirmarReagendar();
+          },
+        }
+      ]
+    );
+  }
+  confirmarReagendar() {
+    console.log("confirmar");
+    this.visitServ.visit.isReassigned = true;
+    this.visitServ.visit.daReassign = this.fechaReagendo;
+    this.visitServ.visit.txReassignedMotive = this.motivoReagendo
+    this.visitServ.visit.noDispatchedMotive = "Reasignado";
+    this.enviarVisita().then(() => {
+      this.fechaReagendo = "";
+      this.motivoReagendo = "";
+      this.showReagendarModal = false;
+      //this.router.navigate(['visitas']);
+    });
+  }
 }

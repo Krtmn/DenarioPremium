@@ -71,7 +71,7 @@ export class ClienteContainerComponent implements OnInit {
         this.clientLogic.saveOrExitOpen = false;
         this.clientLogic.clientLocationComponent = false;
         this.clientLogic.clienteNuevoBlancoImg = true;
-        this.clientLogic.clientListComponent = true;
+        this.clientLogic.clientDetailComponent = true;
       } else if (this.clientLogic.clientDocumentSaleComponent) {
         if(this.clientLogic.opendDocClick) {
           //aca tengo que ir directo a la pestaña de documentos, como lo hago???

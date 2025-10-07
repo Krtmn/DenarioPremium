@@ -1203,11 +1203,11 @@ export class PedidoComponent implements OnInit {
   }
 
   onDateDispatchChange() {
-    if (this.dateServ.compareDates(this.fechaMinima, this.fechaPedido)) {
+    if (this.dateServ.compareDates(this.fechaMinima, this.fechaDespacho)) {
       this.onChange();
       this.daDispatchChanged = true;
     } else {
-      this.fechaPedido = '';
+      this.fechaDespacho = this.dateServ.futureDaysISO(3);
     }
     this.openDaDispatchModal = false;
   }

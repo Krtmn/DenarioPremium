@@ -1105,7 +1105,7 @@ export class CobrosDocumentComponent implements OnInit {
           amountPaid = cs.amountPaid;
         } else {
           //moneda del documento es hard
-          amountPaid = this.collectService.toHard(cs.amountPaid);
+          amountPaid = cs.amountPaid / this.collectService.collection.nuValueLocal;
         }
       } else {
         //estoy ne moneda hard
@@ -1114,7 +1114,7 @@ export class CobrosDocumentComponent implements OnInit {
           amountPaid = cs.amountPaid;
         } else {
           //moneda del documento es local
-          amountPaid = this.collectService.toLocal(cs.amountPaid);
+          amountPaid = cs.amountPaid * this.collectService.collection.nuValueLocal;
         }
       }
 

@@ -6,47 +6,52 @@ $colorLila: #430197;
 $fondoVerde: #59b02d;
 $fondoAmarillo: #daab19;
 $fondoLila: #430197;
-.inp-write{
-  --border-color: #e60c0c!important;
+
+.inp-write {
+  --border-color: #e60c0c !important;
 }
 
 .inp-write2 {
   // border: 1px solid #e60c0c!important;
-  --border-color: #e60c0c!important;
-  border-color: #e60c0c!important;
-  border: 1px solid #e60c0c!important;
+  --border-color: #e60c0c !important;
+  border-color: #e60c0c !important;
+  border: 1px solid #e60c0c !important;
 }
 
 .fondoVerde {
-    background: $fondoVerde;
+  background: $fondoVerde;
 }
+
 .fondoLila {
-    --background: #430197;
+  --background: #430197;
 }
+
 .fondoAmarillo {
   background: $fondoAmarillo;
 }
 
 .tituloModulos {
-    color: #ffffff;
-    font-weight: bold;
-    font-family: sans-serif;
-    margin: 0px;
-    font-size: 26px;
-    padding-top: 7px;
-    text-transform: capitalize!important;
+  color: #ffffff;
+  font-weight: bold;
+  font-family: sans-serif;
+  margin: 0px;
+  font-size: 26px;
+  padding-top: 7px;
+  text-transform: capitalize !important;
 }
 
-.titulosnegrita{
+.titulosnegrita {
   font-weight: bold;
   font-size: 13px;
 }
 
-.TextActividades{
+.TextActividades {
   font-size: 12px;
 }
-.listado-enterprise-selector, .listado-tps-selector{
-  text-align: center!important;
+
+.listado-enterprise-selector,
+.listado-tps-selector {
+  text-align: center !important;
   border: 1px solid #9c9c9c;
   border-radius: 25px;
   font-weight: bold;
@@ -55,8 +60,9 @@ $fondoLila: #430197;
   margin-bottom: 2px;
 }
 
-.listado-enterprise-selector .select-ico, .listado-tps-selector .select-icon{
-  display: none!important;
+.listado-enterprise-selector .select-ico,
+.listado-tps-selector .select-icon {
+  display: none !important;
 }
 
 ion-select::part(icon) {
@@ -77,16 +83,50 @@ ion-modal#eventModal {
   --border-radius: 6px;
   --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
 }
-ion-modal#eventModal .contenedorModalActividades{
+
+ion-modal#eventModal .contenedorModalActividades {
   padding: 5%;
 }
+
 ion-modal#eventModal h1 {
   margin: 20px 20px 10px 20px;
 }
+
 ion-modal#eventModal .wrapper {
   margin-bottom: 10px;
 }
 
 .icon-List {
-    margin-top: 9px;
+  margin-top: 9px;
+}
+
+.input-rojo {
+  --highlight-color-focused: var(--ion-color-danger);
+  border: 1.5px solid var(--ion-color-danger) !important;
+  background: #fff5f5 !important;
+}
+
+.input-verde {
+  --highlight-color-focused: var(--ion-color-success);
+  border: 1.5px solid var(--ion-color-success) !important;
+  background: #f5fff5 !important;
+}
+
+.full-width-datetime {
+  width: 100%;
+  max-width: 100vw;
+  margin: 0;
+  padding: 0;
+  --background: #fff;
+}
+
+.label-fecha {
+  margin-left: 16px;
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.footer-separado {
+  margin-top: 24px; // Ajusta el valor según lo que necesites
 }
