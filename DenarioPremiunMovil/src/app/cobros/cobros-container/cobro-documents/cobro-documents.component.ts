@@ -762,8 +762,6 @@ export class CobrosDocumentComponent implements OnInit {
           console.log("el monto parcial no puede ser vacio")
         }
       } else {
-        //this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].nuAmountPaid = this.collectService.documentSaleOpen.nuAmountPaid;
-        //this.collectService.documentSalesBackup[this.collectService.indexDocumentSaleOpen].nuAmountPaid = this.collectService.documentSaleOpen.nuAmountPaid;
         validate = true;
       }
     } else {
@@ -825,33 +823,8 @@ export class CobrosDocumentComponent implements OnInit {
       this.collectService.amountPaidConversion = amountPaidConversion;
     }
 
-    /*  let amountPaid = 0;
-     if (currencySelected.localCurrency.toString() === 'true') {
-       if (currencySelectedDocument.localCurrency.toString() === 'true') {
-         amountPaid = Number(documentSalesBackup[indexDocumentSaleOpen].nuBalance - sumRetentions);
-       } else {
-         amountPaid = Number(this.collectService.toLocal(documentSalesBackup[indexDocumentSaleOpen].nuBalance) - sumRetentions);
- 
-       }
-     } else {
-       if (currencySelectedDocument.hardCurrency.toString() === 'true') {
-         amountPaid = Number(documentSalesBackup[indexDocumentSaleOpen].nuBalance - sumRetentions);
- 
-       } else {
-         amountPaid = Number(this.collectService.toHard(documentSalesBackup[indexDocumentSaleOpen].nuBalance) - sumRetentions);
- 
-       }
-     } */
-
-    /* let amountPaid = 0;
-    if (currencySelected.coCurrency === coCurrency) {
-      amountPaid = Number(documentSalesBackup[indexDocumentSaleOpen].nuBalance) - sumRetentions;
-    } else {
-      // No modificar ni usar this.saldo
-      const num = Number(documentSalesBackup[indexDocumentSaleOpen].nuBalance);
-      amountPaid = num - sumRetentions;
-    } */
-    this.collectService.amountPaid =  this.collectService.amountPaid - sumRetentions;
+    // --- Monto pagado ---
+    this.collectService.amountPaid = documentSaleOpen.nuBalance- sumRetentions;
 
     // --- Ajustes finales ---
     if (coTypeModule === '2') {
@@ -868,8 +841,6 @@ export class CobrosDocumentComponent implements OnInit {
         documentSaleOpen.coCurrency
       );
     }
-
-
 
     this.collectService.collection.collectionDetails[documentSaleOpen.positionCollecDetails]!.nuAmountPaid = documentSaleOpen.nuAmountPaid;
 
