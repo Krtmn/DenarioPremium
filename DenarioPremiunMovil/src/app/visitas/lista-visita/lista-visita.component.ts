@@ -85,8 +85,8 @@ export class ListaVisitaComponent implements OnInit {
     this.searchText = event.target.value.toLowerCase();
   }
 
-  statusColor(visit: Visit) {
-    if (visit.stVisit == VISIT_STATUS_NOT_VISITED) {
+  statusColor(stVisit: number) {
+    if (stVisit == VISIT_STATUS_NOT_VISITED) {
       return '#FF0000'
     } else {
       return '#000000'
@@ -123,27 +123,30 @@ export class ListaVisitaComponent implements OnInit {
     return this.service.getTag(tagName);
   }
 
-  getStatusVisitName(stVisit: number) {
+  getStatusVisitName(stVisit: number, isReassigned: boolean) {
+    if (isReassigned) {
+      return "Reagendado";
+    }
     switch (stVisit) {
       case VISIT_STATUS_NOT_VISITED:
         return "No Visitado";
-        break;
+        
 
       case VISIT_STATUS_TO_SEND:
         return "Por Enviar";
-        break;
+        
 
       case VISIT_STATUS_VISITED:
         return "Visitado";
-        break;
+        
 
       case VISIT_STATUS_SAVED:
         return "Guardado";
-        break;
+        
 
       default:
         return "";
-        break;
+        
     }
   }
 

@@ -763,8 +763,9 @@ export class SynchronizationDBService {
     let insertStatement = "INSERT OR REPLACE INTO visits(" +
       'id_visit, co_visit, st_visit, da_visit, coordenada, id_client, co_client,' +
       'na_client, nu_sequence, id_user, co_user, co_enterprise, id_enterprise, da_real,' +
-      'da_initial, id_address_client, co_address_client, nu_attachments, has_attachments) ' +
-      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+      'da_initial, id_address_client, co_address_client, nu_attachments, has_attachments,' +
+      'is_reassigned, tx_reassigned_motive, da_reassign) ' +
+      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
@@ -772,7 +773,7 @@ export class SynchronizationDBService {
         obj.idVisit, obj.coVisit, obj.stVisit, obj.daVisit, obj.coordenada, obj.idClient,
         obj.coClient, obj.naClient, obj.nuSequence, obj.idUser, obj.coUser, obj.coEnterprise,
         obj.idEnterprise, obj.daReal, obj.daInitial, obj.idAddressClient, obj.coAddressClient,
-        obj.nuAttachments, obj.hasAttachments
+        obj.nuAttachments, obj.hasAttachments, obj.isReassigned, obj.txReassignedMotive, obj.daReassign
       ]]);
     }
     return this.database.sqlBatch(statements).then(res => {
