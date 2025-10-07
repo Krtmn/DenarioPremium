@@ -1030,6 +1030,20 @@ export class CollectionService {
         if (this.collection.collectionPayments.length == 0) {
           this.onCollectionValidToSend(false);
         } else {
+
+          let validateCollectionPayments = this.collection.collectionPayments.every(payment =>
+            payment.coClientBankAccount &&
+            payment.coPaymentMethod &&
+            payment.nuAmountPartial !== undefined && payment.nuAmountPartial !== null &&
+            payment.nuPaymentDoc
+          );
+
+          if(!validateCollectionPayments) {
+            this.onCollectionValidToSend(false);
+            return;
+          }
+
+
           if (this.tolerancia0) {
             //TOLERANCIA0 TRUE PERMITO DIFERENCIA SE DEBEN VALIDAR LAS SIGUIENTES VARIABLES TipoTolerancia, RangoTolerancia, MonedaTolerancia
             if (this.TipoTolerancia == 0) {

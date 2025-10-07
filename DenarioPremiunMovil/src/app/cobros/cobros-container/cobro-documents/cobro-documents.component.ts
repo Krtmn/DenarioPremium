@@ -851,7 +851,7 @@ export class CobrosDocumentComponent implements OnInit {
       const num = Number(documentSalesBackup[indexDocumentSaleOpen].nuBalance);
       amountPaid = num - sumRetentions;
     } */
-    this.collectService.amountPaid = sumRetentions;
+    this.collectService.amountPaid =  this.collectService.amountPaid - sumRetentions;
 
     // --- Ajustes finales ---
     if (coTypeModule === '2') {
