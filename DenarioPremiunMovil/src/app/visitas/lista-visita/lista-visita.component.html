@@ -56,8 +56,8 @@
           <ion-text>{{ getTag("VIS_REF") }}{{ visit.idVisit }}</ion-text><br>
           <ion-text>{{ getTag("VIS_CLIENTE") }} {{ visit.naClient}}</ion-text><br>
           <ion-text>{{ getTag("VIS_STATUS") }}</ion-text>
-          <ion-text [ngStyle]="{'color': statusColor(visit)}">
-            {{ getStatusVisitName(visit.stVisit) }} </ion-text><br>
+          <ion-text [ngStyle]="{'color': statusColor(visit.stVisit)}">
+            {{ getStatusVisitName(visit.stVisit, visit.isReassigned) }} </ion-text><br>
           <ion-text>{{ getTag("VIS_FECHA") }}{{visit.daVisit.substring(0,10) }}</ion-text><br>
         </ion-label>
         <ion-button (click)="showAlertDelete(visit)" color="danger"
