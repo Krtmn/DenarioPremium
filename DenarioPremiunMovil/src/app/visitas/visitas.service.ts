@@ -285,20 +285,39 @@ export class VisitasService {
   }
 
   getVisit(co: string) {
-    var retrieveStatement = "SELECT id_visit as idVisit, co_visit as coVisit, " +
-      "st_visit as stVisit, da_visit as daVisit, " +
-      "coordenada, id_client as idClient, co_client as coClient, " +
-      "na_client as naClient, nu_sequence as nuSequence, id_user as idUser, " +
-      "co_user as coUser, co_enterprise as coEnterprise, id_enterprise as idEnterprise, " +
-      "da_real as daReal, da_initial as daInitial, id_address_client as idAddressClient, " +
-      "co_address_client as coAddressClient, " +
-      "has_attachments as hasAttachments, nu_attachments as nuAttachments, " +
-      "is_reassigned as isReassigned, tx_reassigned_motive as txReassignedMotive, da_reassign as daReassign " +
-      "FROM visits WHERE co_visit = ?"
+    var retrieveStatement = "SELECT * FROM visits WHERE co_visit = ?"
 
     return this.dbServ.getDatabase().executeSql(retrieveStatement, [co]).then(result => {
-
-      var visit: Visit = result.rows.item(0);
+      var item = result.rows.item(0);
+      console.log(item);
+      var visit: Visit = {
+        idVisit: item.id_visit,
+        coVisit: item.co_visit,
+        stVisit: item.st_visit,
+        daVisit: item.da_visit.replace("T", " ")+".0000",
+        coordenada: item.coordenada,
+        idClient: item.id_client,
+        coClient: item.co_client,
+        naClient: item.na_client,
+        nuSequence: item.nu_sequence,
+        idUser: item.id_user,
+        coUser: item.co_user,
+        coEnterprise: item.co_enterprise,
+        idEnterprise: item.id_enterprise,
+        visitDetails: [],
+        daInitial: item.da_initial,
+        daReal: item.da_real.replace("T", " ")+".0000",
+        idAddressClient: item.id_address_client,
+        coAddressClient: item.co_address_client,
+        coordenadaSaved: item.coordenadaSaved,
+        hasAttachments: item.has_attachments,
+        nuAttachments: item.nu_attachments,
+        isReassigned: item.is_reassigned,
+        txReassignedMotive: item.tx_reassigned_motive,
+        daReassign: item.da_reassign.replace("T", " ")+".0000",
+        noDispatchedMotive: item.no_dispatched_motive,
+        isDispatched: item.is_dispatched === "true" ? true : false,
+      };
       console.log(visit);
       return this.getIncidencesByVisit(visit.coVisit).then(inc => {
         visit.visitDetails = inc;
