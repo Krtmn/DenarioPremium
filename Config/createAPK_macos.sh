@@ -9,15 +9,15 @@ if [ -z "$1" ]; then
 fi
 
 # Configuración de rutas (ajusta según tu entorno)
-ANDROID_DIR="$HOME/Documents/Repositorios/DenarioPremiunMovil/DenarioPremiunMovil/android"
-PROJECT_DIR="$HOME/Documents/Repositorios/DenarioPremiunMovil/DenarioPremiunMovil"
-APK_PATH="$ANDROID_DIR/app/build/outputs/apk/release/app-release.apk"
-SIGNED_APK_PATH="$ANDROID_DIR/app/build/outputs/apk/release/app-release-signed-unaligned.apk"
-ALIGNED_APK_PATH="$ANDROID_DIR/app/build/outputs/apk/release/app-release-signed.apk"
-KEYSTORE_PATH="$ANDROID_DIR/app/my-denarioPremium-key.keystore"
+ANDROID_DIR="/Users/Kiberno/Documents/Repositorios/DenarioPremiumMovil/DenarioPremiunMovil/android"
+PROJECT_DIR="/Users/Kiberno/Documents/Repositorios/DenarioPremiumMovil/DenarioPremiunMovil"
+APK_PATH="/Users/Kiberno/Documents/Repositorios/DenarioPremiumMovil/DenarioPremiunMovil/android/app/build/outputs/apk/release/app-release.apk"
+SIGNED_APK_PATH="/Users/Kiberno/Documents/Repositorios/DenarioPremiumMovil/DenarioPremiunMovil/android/app/build/outputs/apk/release/app-release-signed-unaligned.apk"
+ALIGNED_APK_PATH="/Users/Kiberno/Documents/Repositorios/DenarioPremiumMovil/DenarioPremiunMovil/android/app/build/outputs/apk/release/app-release-signed.apk"
+KEYSTORE_PATH="/Users/Kiberno/Documents/Repositorios/DenarioPremiumMovil/DenarioPremiunMovil/android/app/my-denarioPremium-key.keystore"
 ALIAS="my-key-denariopremium"
 APK_NAME="$1"
-OUTPUT_DIR="$HOME/Documents/Apks/${APK_NAME}"
+OUTPUT_DIR="/Users/Kiberno/Documents/Apks/${APK_NAME}"
 
 # 1. Compilar la app para producción
 cd "$PROJECT_DIR"

@@ -24,7 +24,7 @@ export class ServicesService {
   //private WsUrl = 'http://soportepremium.ddns.net:9090/PremiumWS/services/';
 
   //Server Savia asanchez // 123456
-  //private WsUrl = "http://soportepremium.ddns.net:9995/PremiumWS/services/";
+  //rivate WsUrl = "http://soportepremium.ddns.net:9995/PremiumWS/services/";
 
   //NUTRINA andres nutac123
   //private WsUrl = "http://soportepremium.ddns.net:9993/PremiumWS/services/";
@@ -57,7 +57,8 @@ export class ServicesService {
   //private WsUrl = "http://denariodemo.ddns.net:8282/PremiumWS/services/";
 
   //private WsUrl = "http://200.35.84.250:8085/PremiumWS/services/";
-
+  
+  // diprocher pruebas QA
   private WsUrl = "http://soportepremium.ddns.net:9991/PremiumWS/services/";
 
   //private WsUrl = "http://soportepremium.ddns.net:9993/PremiumWS/services/";
