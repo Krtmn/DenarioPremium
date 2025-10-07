@@ -1032,13 +1032,12 @@ export class CollectionService {
         } else {
 
           let validateCollectionPayments = this.collection.collectionPayments.every(payment =>
-            payment.coClientBankAccount &&
             payment.coPaymentMethod &&
             payment.nuAmountPartial !== undefined && payment.nuAmountPartial !== null &&
             payment.nuPaymentDoc
           );
 
-          if(!validateCollectionPayments) {
+          if (!validateCollectionPayments) {
             this.onCollectionValidToSend(false);
             return;
           }
