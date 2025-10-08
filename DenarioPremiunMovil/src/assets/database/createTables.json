@@ -4,7 +4,7 @@
         "name": "address_clients",
         "table": "addressClients",
         "idName": "id_address",
-        "sql": "CREATE TABLE IF NOT EXISTS address_clients ( id_address INTEGER PRIMARY KEY, co_address VARCHAR(50), id_client INTEGER NOT NULL, id_address_type INTEGER, co_address_type VARCHAR(50), tx_address VARCHAR(150), nu_phone VARCHAR(50), na_responsible VARCHAR(80), co_enterprise_structure VARCHAR(80), id_enterprise_structure INTEGER, co_client VARCHAR(50), na_address VARCHAR(50), co_enterprise VARCHAR(50), id_enterprise INTEGER, coordenada VARCHAR(20), editable BOOLEAN);"
+        "sql": "CREATE TABLE IF NOT EXISTS address_clients ( id_address INTEGER PRIMARY KEY, co_address VARCHAR(50), id_client INTEGER NOT NULL, id_address_type INTEGER, co_address_type VARCHAR(50), tx_address VARCHAR(150), nu_phone VARCHAR(50), na_responsible VARCHAR(80), co_enterprise_structure VARCHAR(80), id_enterprise_structure INTEGER, co_client VARCHAR(50), na_address VARCHAR(50), co_enterprise VARCHAR(50), id_enterprise INTEGER, coordenada VARCHAR(20), editable BOOLEAN); CREATE INDEX IF NOT EXISTS idx_address_clients_id_client ON address_clients(id_client);"
     },
     {
         "id": 2,

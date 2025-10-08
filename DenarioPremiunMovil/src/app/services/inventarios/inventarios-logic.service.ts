@@ -173,11 +173,11 @@ export class InventariosLogicService {
     this.backRoute.next(route);
   }
 
-  getAllAddressByClient(dbServ: SQLiteObject, idClient: number, idEnterprise: number) {
-    let selectStatement = 'SELECT * FROM address_clients WHERE id_client = ? AND id_enterprise = ?';
-    var database = dbServ;
+  getAllAddressByClient(dbServ: SQLiteObject, idClient: number) {
+    let selectStatement = 'SELECT * FROM address_clients WHERE id_client = ?';
+    //var database = dbServ;
     let addressClient: AddresClient[] = [];
-    return database.executeSql(selectStatement, [idClient, idEnterprise]).then(result => {
+    return dbServ.executeSql(selectStatement, [idClient]).then(result => {
       if (result.rows.length > 0) {
         for (let i = 0; i < result.rows.length; i++) {
           addressClient.push({
