@@ -22,7 +22,8 @@ export class OrderUtil {
       obj['quDiscount'],
       obj['coCurrency'],
       obj['oppositeCoCurrency'],
-      obj['quStock'],
+      obj['quStock'], 
+      obj['quStockAux'],
       obj['nuAmountDiscount'],
       obj['idDiscount'],
       obj['iva'],
@@ -74,6 +75,7 @@ export class OrderUtil {
 	public oppositeCoCurrency: string,
 
 	public quStock: number,
+	public quStockAux: number,
 	public nuAmountDiscount: number,
 	public idDiscount: number,
 	public iva: number,

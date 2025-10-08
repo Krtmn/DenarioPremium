@@ -559,6 +559,7 @@ export class PedidosService {
           "coCurrency": coCurrency,
           "oppositeCoCurrency": this.currencyService.oppositeCoCurrency(coCurrency),
           "quStock": stockList[0].quStock,
+          "quStockAux": stockList[0].quStock,
           "nuAmountDiscount": 0,
           "idDiscount": 0,
           "iva": this.ivaList.length > 0 ? this.ivaList[0].priceIva : 0,

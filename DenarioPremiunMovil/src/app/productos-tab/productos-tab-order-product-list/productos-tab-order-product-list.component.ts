@@ -263,6 +263,9 @@ export class ProductosTabOrderProductListComponent  implements OnInit {
     }
 
     //hay que chequear inventario
+    if (this.orderServ.validStock) {
+      prod.quStock = prod.quStockAux - prod.quAmount;
+    }
     if(this.orderServ.validStock && (prod.quAmount > prod.quStock)){
       this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_INVENTARIO"));
       prod.quAmount = 0;
@@ -286,6 +289,9 @@ export class ProductosTabOrderProductListComponent  implements OnInit {
       return;
     }
     //hay que chequear inventario
+    if (this.orderServ.validStock) {
+      prod.quStock = prod.quStockAux - prod.quAmount;
+    }
     if(this.orderServ.validStock && (prod.quAmount > prod.quStock)){
       this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_INVENTARIO"));
       prod.quAmount = 0;
