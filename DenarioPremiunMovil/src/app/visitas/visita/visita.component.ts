@@ -814,7 +814,7 @@ export class VisitaComponent implements OnInit {
       coEnterprise: this.empresaSeleccionada.coEnterprise,
       idEnterprise: this.empresaSeleccionada.idEnterprise,
       daReal: willSend ? this.dateServ.hoyISOFullTime() : "", //solo se agrega daReal si se va a enviar
-      daInitial: this.fechaInitial,
+      daInitial: this.fechaInitial ? this.fechaInitial.replace("T"," ") : this.fechaInitial,
       idAddressClient: this.cliente.idAddressClients,
       coAddressClient: this.cliente.coAddressClients,
       visitDetails: [],
@@ -823,7 +823,7 @@ export class VisitaComponent implements OnInit {
       nuAttachments: this.adjuntoService.getNuAttachment(),
       isReassigned: this.visitServ.visit.isReassigned ? this.visitServ.visit.isReassigned : false,
       txReassignedMotive: this.visitServ.visit.txReassignedMotive,
-      daReassign: this.visitServ.visit.daReassign.replace("T"," "),
+      daReassign: this.visitServ.visit.daReassign ? this.visitServ.visit.daReassign.replace("T"," ") : this.visitServ.visit.daReassign,
       isDispatched: this.visitServ.visit.isDispatched ? this.visitServ.visit.isDispatched : false,
       noDispatchedMotive: this.visitServ.visit.noDispatchedMotive,
     }
