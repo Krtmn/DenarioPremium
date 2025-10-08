@@ -801,7 +801,9 @@ export class VisitaComponent implements OnInit {
       idVisit: idVisit,
       coVisit: coVisit,
       stVisit: stVisit,
-      daVisit: this.visitServ.visit.daVisit ? this.visitServ.visit.daVisit : this.fechaVisita,
+      daVisit: this.visitServ.visit.daVisit ?
+       this.visitServ.visit.daVisit.replace("T"," ") :
+       this.fechaVisita.replace("T"," "),
       coordenada: this.visitServ.coordenadas,
       idClient: this.cliente.idClient,
       coClient: this.cliente.coClient,
