@@ -796,7 +796,6 @@ export class VisitaComponent implements OnInit {
       idVisit = this.visitServ.visit.idVisit;
       coVisit = this.visitServ.visit.coVisit;
     }
-    //TODO: CAMPOS NUEVOS
     var visita: Visit = {
       idVisit: idVisit,
       coVisit: coVisit,
@@ -826,6 +825,7 @@ export class VisitaComponent implements OnInit {
       daReassign: this.visitServ.visit.daReassign ? this.visitServ.visit.daReassign.replace("T"," ") : this.visitServ.visit.daReassign,
       isDispatched: this.visitServ.visit.isDispatched ? this.visitServ.visit.isDispatched : false,
       noDispatchedMotive: this.visitServ.visit.noDispatchedMotive,
+      isVisited: this.visitServ.visit.isVisited ? this.visitServ.visit.isVisited : false,
     }
     //console.log("visita antes de insert:");
     //console.log(visita);
@@ -889,7 +889,7 @@ export class VisitaComponent implements OnInit {
 
   sendVisit() {
     if (this.cliente && this.listaEventos.length > 0) {
-      this.enviarVisita();
+      this.enviarVisita(true);
 
     } else {
       this.message.transaccionMsjModalNB(this.getTag("VIS_MENSAJE_AGREGUE_ACT"));
@@ -897,7 +897,8 @@ export class VisitaComponent implements OnInit {
 
   }
 
-  async enviarVisita() {
+  async enviarVisita(isVisited: boolean) {
+    this.visitServ.visit.isVisited = isVisited;
     await this.saveVisit(true).then(async saved => {
       //console.log("insertadas las incidencias");
       //var incidences = saved.incidencias;
@@ -1249,7 +1250,7 @@ export class VisitaComponent implements OnInit {
     this.visitServ.visit.daVisit = this.fechaReagendo;
     this.visitServ.visit.txReassignedMotive = this.motivoReagendo;
     this.visitServ.visit.noDispatchedMotive = "Reasignado";
-    this.enviarVisita().then(() => {
+    this.enviarVisita(false).then(() => {
       this.fechaReagendo = "";
       this.motivoReagendo = "";
       this.showReagendarModal = false;

@@ -63,6 +63,8 @@ export class Visit {
         public txReassignedMotive: string = '',
         public daReassign: string = '',
 
+        public isVisited: boolean = false,
+
 
     ) { }
 }

@@ -137,7 +137,7 @@
         "name": "visits",
         "table": "visits",
         "idName": "id_visit",
-        "sql": "CREATE TABLE IF NOT EXISTS visits ( id_visit INTEGER NOT NULL, co_visit VARCHAR(30) PRIMARY KEY, st_visit INTEGER NOt NULL, da_visit TIMESTAMP,  coordenada VARCHAR(80), id_client INTEGER, co_client VARCHAR(80), na_client VARCHAR(80), nu_sequence INTEGER, id_user INTEGER, co_user VARCHAR(80), co_enterprise VARCHAR(80), id_enterprise INTEGER, da_real TIMESTAMP, da_initial TIMESTAMP, id_address_client INTEGER, co_address_client VARCHAR(30), nu_attachments INTEGER, has_attachments BOOLEAN, is_dispatched BOOLEAN, no_dispatched_motive VARCHAR(200), is_reassigned BOOLEAN, tx_reassigned_motive VARCHAR(200), da_reassign TIMESTAMP);"
+        "sql": "CREATE TABLE IF NOT EXISTS visits ( id_visit INTEGER NOT NULL, co_visit VARCHAR(30) PRIMARY KEY, st_visit INTEGER NOt NULL, da_visit TIMESTAMP,  coordenada VARCHAR(80), id_client INTEGER, co_client VARCHAR(80), na_client VARCHAR(80), nu_sequence INTEGER, id_user INTEGER, co_user VARCHAR(80), co_enterprise VARCHAR(80), id_enterprise INTEGER, da_real TIMESTAMP, da_initial TIMESTAMP, id_address_client INTEGER, co_address_client VARCHAR(30), nu_attachments INTEGER, has_attachments BOOLEAN, is_dispatched BOOLEAN, no_dispatched_motive VARCHAR(200), is_reassigned BOOLEAN, tx_reassigned_motive VARCHAR(200), da_reassign TIMESTAMP, is_visited BOOLEAN);"
     },
     {
         "id": 34,
