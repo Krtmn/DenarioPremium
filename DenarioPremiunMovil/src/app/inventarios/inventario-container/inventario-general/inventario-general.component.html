@@ -29,8 +29,9 @@
                 *ngIf="!this.inventariosLogicService.inventarioSent"></app-cliente-selector>
         </ion-col>
         <!-- SUCURSAL -->
+        <div *ngIf="this.inventariosLogicService.selectedClient" >
         <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-            <div id="selectorSucursal" *ngIf="this.inventariosLogicService.selectedClient">
+            <div id="selectorSucursal" >
                 <ion-label>{{this.inventariosLogicService.inventarioTags.get('INV_SUCURSAL')}}</ion-label>
                 <div class="listado-enterprise-selector ion-text-center">
                     <ion-select [(ngModel)]="inventariosLogicService.newClientStock.idAddressClient"
@@ -45,7 +46,7 @@
             </div>
 
         </ion-col>
-        <ion-col size="12" size-xs="12" size-sm="12" size-md="12" *ngIf="inventariosLogicService.selectedClient">
+        <ion-col size="12" size-xs="12" size-sm="12" size-md="12" >
             <ion-item [disabled]="this.inventariosLogicService.inventarioSent">
                 <ion-label (click)="getFechaValor()">
                     {{this.inventariosLogicService.inventarioTags.get('INV_FECHA')}}:
@@ -68,13 +69,14 @@
         </ion-col>
 
         <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-            <div id="inputComentario" *ngIf="inventariosLogicService.selectedClient">
+            <div id="inputComentario" >
                 <ion-textarea label="{{this.inventariosLogicService.inventarioTags.get('INV_COMENTARIO')}}:"
                     id="responsable" [(ngModel)]="txComment" #txCommentInput labelPlacement="floating" fill="outline"
                     placeholder="{{this.inventariosLogicService.inventarioTags.get('INV_COMENTARIO')}}:" maxlength="120"
                     (ngModelChange)="setTXComment()"></ion-textarea>
             </div>
         </ion-col>
+        </div>
     </ion-row>
     <!-- <ion-button (click)="print()"></ion-button> -->
 </ion-grid>
