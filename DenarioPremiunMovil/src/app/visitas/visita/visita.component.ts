@@ -823,7 +823,7 @@ export class VisitaComponent implements OnInit {
       nuAttachments: this.adjuntoService.getNuAttachment(),
       isReassigned: this.visitServ.visit.isReassigned ? this.visitServ.visit.isReassigned : false,
       txReassignedMotive: this.visitServ.visit.txReassignedMotive,
-      daReassign: this.visitServ.visit.daReassign,
+      daReassign: this.visitServ.visit.daReassign.replace("T"," "),
       isDispatched: this.visitServ.visit.isDispatched ? this.visitServ.visit.isDispatched : false,
       noDispatchedMotive: this.visitServ.visit.noDispatchedMotive,
     }
