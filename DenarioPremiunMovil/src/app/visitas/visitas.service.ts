@@ -290,34 +290,7 @@ export class VisitasService {
     return this.dbServ.getDatabase().executeSql(retrieveStatement, [co]).then(result => {
       var item = result.rows.item(0);
       console.log(item);
-      var visit: Visit = {
-        idVisit: item.id_visit,
-        coVisit: item.co_visit,
-        stVisit: item.st_visit,
-        daVisit: item.da_visit.replace("T", " ")+".0000",
-        coordenada: item.coordenada,
-        idClient: item.id_client,
-        coClient: item.co_client,
-        naClient: item.na_client,
-        nuSequence: item.nu_sequence,
-        idUser: item.id_user,
-        coUser: item.co_user,
-        coEnterprise: item.co_enterprise,
-        idEnterprise: item.id_enterprise,
-        visitDetails: [],
-        daInitial: item.da_initial,
-        daReal: item.da_real.replace("T", " ")+".0000",
-        idAddressClient: item.id_address_client,
-        coAddressClient: item.co_address_client,
-        coordenadaSaved: item.coordenadaSaved,
-        hasAttachments: item.has_attachments,
-        nuAttachments: item.nu_attachments,
-        isReassigned: item.is_reassigned,
-        txReassignedMotive: item.tx_reassigned_motive,
-        daReassign: item.da_reassign.replace("T", " ")+".0000",
-        noDispatchedMotive: item.no_dispatched_motive,
-        isDispatched: item.is_dispatched === "true" ? true : false,
-      };
+      var visit = this.visitDBtoObj(item);
       console.log(visit);
       return this.getIncidencesByVisit(visit.coVisit).then(inc => {
         visit.visitDetails = inc;
@@ -393,7 +366,7 @@ export class VisitasService {
           coordenadaSaved: item.coordenadaSaved,
           hasAttachments: item.has_attachments,
           nuAttachments: item.nu_attachments,
-          isReassigned: item.is_reassigned,
+          isReassigned: item.is_reassigned === "true" ? true : false,
           txReassignedMotive: item.tx_reassigned_motive,
           daReassign: item.da_reassign,
           noDispatchedMotive: item.no_dispatched_motive,
