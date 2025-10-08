@@ -222,10 +222,10 @@ export class VisitaComponent implements OnInit {
           this.cliente = client;
           this.setClientfromSelector(this.cliente);
           if (this.rolTransportista)
-            this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
+            this.selectorCliente?.setup(this.empresaSeleccionada.idEnterprise,
               this.getTag("VIS_NOMBRE_MODULO_DESPACHOS"), "fondoLila", null, false);
           else
-            this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
+            this.selectorCliente?.setup(this.empresaSeleccionada.idEnterprise,
               this.getTag("VIS_NOMBRE_MODULO"), "fondoLila", null, false);
 
         });
