@@ -592,6 +592,9 @@ export class CollectionService {
       for (var j = 0; j < this.collection.collectionDetails.length; j++) {
         monto += this.collection.collectionDetails[j].nuBalanceDoc;
       }
+    } else if (this.collection.stCollection == 3) {
+      monto = this.collection.nuAmountTotal;
+      montoConversion = this.collection.nuAmountTotalConversion;
     } else {
       for (var j = 0; j < this.collection.collectionDetails.length; j++) {
         for (var i = 0; i < this.documentSales.length; i++) {
@@ -1032,13 +1035,12 @@ export class CollectionService {
         } else {
 
           let validateCollectionPayments = this.collection.collectionPayments.every(payment =>
-            payment.coClientBankAccount &&
             payment.coPaymentMethod &&
             payment.nuAmountPartial !== undefined && payment.nuAmountPartial !== null &&
             payment.nuPaymentDoc
           );
 
-          if(!validateCollectionPayments) {
+          if (!validateCollectionPayments) {
             this.onCollectionValidToSend(false);
             return;
           }
