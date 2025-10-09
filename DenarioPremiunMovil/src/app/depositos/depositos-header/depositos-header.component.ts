@@ -4,6 +4,8 @@ import { DepositService } from 'src/app/services/deposit/deposit.service';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { DELIVERY_STATUS_NEW, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_TO_SEND, DELIVERY_STATUS_SENT } from 'src/app/utils/appConstants';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
+import { Subscription } from 'rxjs';
+import { Platform } from '@ionic/angular';
 
 
 @Component({
@@ -72,6 +74,7 @@ export class DepositosHeaderComponent implements OnInit {
 
   constructor(
     private router: Router,
+    private platform: Platform,
   ) { }
 
   ngOnInit() {
@@ -88,6 +91,13 @@ export class DepositosHeaderComponent implements OnInit {
       this.depositService.disabledSendButton = !validToSend;
     });
 
+  }
+
+  ngOnDestroy() {
+    this.subscriberShow.unsubscribe();
+    this.subscriberDisabled.unsubscribe();
+    this.subscriberToSend.unsubscribe();
+    this.backButtonSubscription.unsubscribe();
   }
 
   setResultSend(ev: any) {
@@ -123,6 +133,11 @@ export class DepositosHeaderComponent implements OnInit {
     }
 
   }
+
+    backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
+      //console.log('backButton was called!');
+      this.goBack();
+    });
 
   buttonSave() {
 
