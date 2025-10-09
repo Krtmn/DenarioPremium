@@ -1,5 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Platform } from '@ionic/angular';
+import { Subscription } from 'rxjs';
 import { ServicesService } from 'src/app/services/services.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
@@ -20,8 +22,15 @@ export class ProductosHeaderComponent  implements OnInit {
 
   @Output()
   onBackClicked: EventEmitter<Boolean> = new EventEmitter<Boolean>();
+
+  backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
+    //console.log('backButton was called!');
+    this.showProductList();
+  });
   
-  constructor( ) {}
+  constructor( 
+    private platform: Platform,
+  ) {}
 
   ngOnInit() {
     //console.log('header' + this.headerTags);
