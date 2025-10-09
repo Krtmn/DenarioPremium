@@ -1,12 +1,13 @@
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ClientLocationService } from 'src/app/services/clientes/locationClient/client-location.service';
-import { Subject } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 
 import { ClientLogicService } from 'src/app/services/clientes/client-logic.service';
 import { PotentialClient } from 'src/app/modelos/tables/potentialClient';
 import { PotentialClientDatabaseServicesService } from 'src/app/services/clientes/potentialClient/potential-client-database-services.service';
 import { ServicesService } from 'src/app/services/services.service';
+import { Platform } from '@ionic/angular';
 
 @Component({
     selector: 'app-client-header',
@@ -98,7 +99,9 @@ export class ClientesHeaderComponent implements OnInit {
   ];
 
 
-  constructor() {
+  constructor(
+    private platform: Platform,
+  ) {
 
   }
 
@@ -124,6 +127,13 @@ export class ClientesHeaderComponent implements OnInit {
     this.subscriberToSend = this.clientLogic.stockValidToSend.subscribe((validToSend: Boolean) => {
       this.cannotSendClientStock = !validToSend;
     });
+  }
+
+  ngOnDestroy() {
+    this.subscriberShow.unsubscribe();
+    this.subscriberDisabled.unsubscribe();
+    this.subscriberToSend.unsubscribe();
+    this.backButtonSubscription.unsubscribe();
   }
 
 
@@ -194,6 +204,10 @@ export class ClientesHeaderComponent implements OnInit {
 
   }
 
+  backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
+    //console.log('backButton was called!');
+    this.goBack();
+  });
   saveSendNewPotentialCliente(salvarEnviar: Boolean) {
     this.clientLogic.saveOrExitOpen = false;
     this.clientLogic.newPotentialClientChanged = false;
