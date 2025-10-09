@@ -1,6 +1,8 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
+import { Platform } from '@ionic/angular';
+import { Subscription } from 'rxjs';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { PendingTransaction } from 'src/app/modelos/tables/pendingTransactions';
@@ -61,7 +63,9 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
   alertButtons: any;
   buttonsSalvar: any;
 
-  constructor() { }
+  constructor(
+    private platform: Platform,
+  ) { }
 
   ngOnInit() {
     this.textAlertButtonCancel = this.returnLogic.tags.get('DENARIO_BOTON_CANCELAR')! ? this.returnLogic.tags.get('DENARIO_BOTON_CANCELAR')! : "Cancelar";
@@ -126,7 +130,9 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
     this.subscriberShow.unsubscribe();
     this.subscriberDisabled.unsubscribe();
     this.subscriberToSend.unsubscribe();
+    this.backButtonSubscription.unsubscribe();
   }
+
 
   onBackClicked() {
     if (this.returnLogic.returnChanged) {
@@ -135,6 +141,11 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
       this.returnLogic.showBackRoute('devoluciones');
     }
   }
+
+    backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
+      //console.log('backButton was called!');
+      this.onBackClicked();
+    });
 
   saveSendNewReturn(send: Boolean) {
     this.returnLogic.newReturn.details = this.returnLogic.productList;
