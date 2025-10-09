@@ -1,6 +1,8 @@
 import { Component, EventEmitter, OnInit, Output, inject, Input } from '@angular/core';
 import { Router } from '@angular/router';
+import { Platform } from '@ionic/angular';
 import { setNonce } from 'ionicons/dist/types/stencil-public-runtime';
+import { Subscription } from 'rxjs';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { Collection } from 'src/app/modelos/tables/collection';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
@@ -110,6 +112,7 @@ export class CobrosHeaderComponent implements OnInit {
 
   constructor(
     private router: Router,
+    private platform: Platform,
   ) {
 
     // this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO')! == null ? "Cobros" : this.collectService.collectionTags.get('COB_NOMBRE_MODULO')!;
@@ -148,6 +151,7 @@ export class CobrosHeaderComponent implements OnInit {
     this.subscriberShow.unsubscribe();
     this.subscriberDisabled.unsubscribe();
     this.subscriberToSend.unsubscribe();
+     this.backButtonSubscription.unsubscribe();
   }
 
   resetValues() {
@@ -196,6 +200,11 @@ export class CobrosHeaderComponent implements OnInit {
       this.collectService.showBackRoute('cobros');
     }
   }
+
+    backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
+      //console.log('backButton was called!');
+      this.goBack();
+    });
 
   setsaveOrExitOpen(isOpen: boolean) {
     this.collectService.saveOrExitOpen = isOpen;
