@@ -159,7 +159,7 @@ export class InventarioGeneralComponent implements OnInit {
       this.enterpriseServ.setup(this.dbServ.getDatabase()).then(() => {
         this.inventariosLogicService.listaEmpresa = this.enterpriseServ.empresas;
         if (!this.inventariosLogicService.inventarioSent) {
-          this.selectorCliente.updateClientList(this.inventariosLogicService.listaEmpresa[0].idEnterprise);
+          //this.selectorCliente.updateClientList(this.inventariosLogicService.listaEmpresa[0].idEnterprise);
           //this.selectorCliente.setSkin(this.inventariosLogicService.inventarioTags.get('INV_NOMBRE_MODULO')!, "fondoAmarillo");
           this.selectorCliente.setup(this.inventariosLogicService.listaEmpresa[0].idEnterprise, "Inventarios", 'fondoAmarillo', null, false);
           /*  this.clientService.getClientById(this.inventariosLogicService.newClientStock.idClient).then(client => {
@@ -178,7 +178,7 @@ export class InventarioGeneralComponent implements OnInit {
           //ESTOY REALIZANDO UN INVENTARIO DESDE 0          
           this.inventariosLogicService.empresaSeleccionada = this.inventariosLogicService.listaEmpresa[0];
           this.geoServ.getCurrentPosition().then(coords => { this.coordenada = coords });
-          this.selectorCliente.updateClientList(this.inventariosLogicService.listaEmpresa[0].idEnterprise);
+          //this.selectorCliente.updateClientList(this.inventariosLogicService.listaEmpresa[0].idEnterprise);
           this.inventariosLogicService.onClientStockValid(false);
           this.message.hideLoading();
 
@@ -325,7 +325,7 @@ export class InventarioGeneralComponent implements OnInit {
           this.inventariosLogicService.clientStockValid = true;
           this.inventariosLogicService.nombreCliente = cliente.lbClient;
           this.inventariosLogicService.clientClientStock = this.inventariosLogicService.cliente;
-          this.selectorCliente.updateClientList(this.inventariosLogicService.empresaSeleccionada.idEnterprise);
+          //this.selectorCliente.updateClientList(this.inventariosLogicService.empresaSeleccionada.idEnterprise);
           this.inventariosLogicService.newClientStock.idClient = this.inventariosLogicService.cliente.idClient;
           this.inventariosLogicService.newClientStock.coClient = this.inventariosLogicService.cliente.coClient;
           this.inventariosLogicService.newClientStock.lbClient = this.inventariosLogicService.cliente.lbClient;
