@@ -502,8 +502,10 @@ export class VisitaComponent implements OnInit {
       } else if (
         !this.viewOnly &&
         this.direccionCliente.editable &&
-        (this.direccionCliente.coordenada === null || this.direccionCliente.coordenada.trim() === "" || this.direccionCliente.coordenada.trim() === "0,0")
-      ) {
+        (this.direccionCliente.coordenada === null 
+          || this.direccionCliente.coordenada.trim() === "" 
+          || this.direccionCliente.coordenada.trim() === "0,0"
+          || this.direccionCliente.coordenada.toLowerCase().trim() === "null")) {
         // Mensaje de coordenadas faltantes SOLO si no se mostró el anterior
         this.addressRedLabel = false; //quitamos borde rojo, si lo tenia
         this.message.alertCustomBtn(
