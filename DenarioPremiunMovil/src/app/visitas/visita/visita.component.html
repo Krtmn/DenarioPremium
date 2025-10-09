@@ -355,7 +355,7 @@
           <!-- <ion-label position="stacked" class="label-fecha">Seleccione fecha para reagendar</ion-label> -->
           <h1>Seleccione fecha para reagendar</h1>
           <ion-datetime class="full-width-datetime" [(ngModel)]="fechaReagendo" presentation="date"
-            [min]="this.visitServ.visit.daVisit" required>
+            [min]="fechaMinimaReagendo" required>
           </ion-datetime>
           <ion-item>
             <ion-input label="Motivo" [(ngModel)]="motivoReagendo" placeholder="Ingrese el motivo"
@@ -367,7 +367,7 @@
         <ion-footer class="footer-separado">
           <ion-row>
             <ion-col size="6" size-sm="6" size-xs="6">
-              <ion-button expand="block" color="light" size="small" (click)="showReagendarModal = false">
+              <ion-button expand="block" color="light" size="small" (click)="closeReagendarModal()">
                 Cancelar
               </ion-button>
             </ion-col>

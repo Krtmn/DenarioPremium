@@ -113,6 +113,7 @@ export class VisitaComponent implements OnInit {
   reagendarData: { fecha: string, motivo: string } | null = null;
   motivoReagendo: string = '';
   fechaReagendo: string = '';
+  fechaMinimaReagendo: string = '';
 
   signatureSubscription: Subscription = this.adjuntoService.signatureChanged.subscribe(firma => {
     this.checkFirmaAndDisableSend();
@@ -288,6 +289,15 @@ export class VisitaComponent implements OnInit {
 
         this.adjuntoService.setup(this.syncServ.getDatabase(), this.visitServ.signatureVisit, this.viewOnly, COLOR_LILA);
       }
+
+
+      const hoy = new Date();
+      hoy.setDate(hoy.getDate() + 1);
+      const yyyy = hoy.getFullYear();
+      const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+      const dd = String(hoy.getDate()).padStart(2, '0');
+      this.fechaMinimaReagendo = `${yyyy}-${mm}-${dd}`;
+      // ...resto de tu código...F
     });
 
     this.headerConfirm = this.getTag('DENARIO_HEADER_ALERTA');
@@ -341,7 +351,6 @@ export class VisitaComponent implements OnInit {
       this.signatureSubscription.unsubscribe();
     }
   }
-
 
 
   iniciarVisita() {
@@ -502,8 +511,8 @@ export class VisitaComponent implements OnInit {
       } else if (
         !this.viewOnly &&
         this.direccionCliente.editable &&
-        (this.direccionCliente.coordenada === null 
-          || this.direccionCliente.coordenada.trim() === "" 
+        (this.direccionCliente.coordenada === null
+          || this.direccionCliente.coordenada.trim() === ""
           || this.direccionCliente.coordenada.trim() === "0,0"
           || this.direccionCliente.coordenada.toLowerCase().trim() === "null")) {
         // Mensaje de coordenadas faltantes SOLO si no se mostró el anterior
@@ -803,8 +812,8 @@ export class VisitaComponent implements OnInit {
       coVisit: coVisit,
       stVisit: stVisit,
       daVisit: this.visitServ.visit.daVisit ?
-       this.visitServ.visit.daVisit.replace("T"," ") :
-       this.fechaVisita.replace("T"," "),
+        this.visitServ.visit.daVisit.replace("T", " ") :
+        this.fechaVisita.replace("T", " "),
       coordenada: this.visitServ.coordenadas,
       idClient: this.cliente.idClient,
       coClient: this.cliente.coClient,
@@ -815,7 +824,7 @@ export class VisitaComponent implements OnInit {
       coEnterprise: this.empresaSeleccionada.coEnterprise,
       idEnterprise: this.empresaSeleccionada.idEnterprise,
       daReal: willSend ? this.dateServ.hoyISOFullTime() : "", //solo se agrega daReal si se va a enviar
-      daInitial: this.fechaInitial ? this.fechaInitial.replace("T"," ") : this.fechaInitial,
+      daInitial: this.fechaInitial ? this.fechaInitial.replace("T", " ") : this.fechaInitial,
       idAddressClient: this.cliente.idAddressClients,
       coAddressClient: this.cliente.coAddressClients,
       visitDetails: [],
@@ -824,7 +833,7 @@ export class VisitaComponent implements OnInit {
       nuAttachments: this.adjuntoService.getNuAttachment(),
       isReassigned: this.visitServ.visit.isReassigned ? this.visitServ.visit.isReassigned : false,
       txReassignedMotive: this.visitServ.visit.txReassignedMotive,
-      daReassign: this.visitServ.visit.daReassign ? this.visitServ.visit.daReassign.replace("T"," ") : this.visitServ.visit.daReassign,
+      daReassign: this.visitServ.visit.daReassign ? this.visitServ.visit.daReassign.replace("T", " ") : this.visitServ.visit.daReassign,
       isDispatched: this.visitServ.visit.isDispatched ? this.visitServ.visit.isDispatched : false,
       noDispatchedMotive: this.visitServ.visit.noDispatchedMotive,
       isVisited: this.visitServ.visit.isVisited ? this.visitServ.visit.isVisited : false,
@@ -909,7 +918,8 @@ export class VisitaComponent implements OnInit {
       // console.log(incidences);
 
       //revisamos que tengamos coordenadas
-      if (this.visitServ.coordenadas.length <= 0) {
+        // Validar que this.visitServ.coordenadas no sea null ni undefined antes de acceder a length
+        if (!this.visitServ.coordenadas || this.visitServ.coordenadas.length <= 0) {
         await this.message.showLoading().then(async () => {
           await this.geoServ.getCurrentPosition().then(coords => {
             if (coords.length > 0) {
@@ -1215,6 +1225,34 @@ export class VisitaComponent implements OnInit {
     this.motivoReagendo = this.visitServ.visit.txReassignedMotive;
     this.fechaReagendo = this.visitServ.visit.daReassign;
     this.showReagendarModal = true;
+    if (this.visitServ.userMustActivateGPS) {
+      //en este caso no se puede continuar si no hay coordenadas
+      this.geoServ.getCurrentPosition().then(coords => {
+        if (coords.length > 0) {
+          this.setCoordinates(coords);
+          this.segment = 'actividades';
+          this.visitServ.coordenadas = coords;
+        } else {
+          console.log("no hay coordenadas, locacion debe estar inactiva");
+          this.initialLock = true;
+          this.initVisitRedMsg = this.getTag("DENARIO_ERR_GPS");
+          this.initVisitRedLabel = true;
+        }
+      });
+    } else {
+      //si no es obligatorio, puede iniciar sin coords y se buscan en el fondo.
+      this.initialLock = false;
+      this.segment = 'actividades';
+      this.geoServ.getCurrentPosition().then(coords => {
+        if (coords.length > 0) {
+          this.visitServ.coordenadas = coords;
+          this.setCoordinates(coords);
+        }
+      });
+
+    }
+
+
   }
 
 
@@ -1258,5 +1296,12 @@ export class VisitaComponent implements OnInit {
       this.showReagendarModal = false;
       //this.router.navigate(['visitas']);
     });
+  }
+
+  closeReagendarModal() {
+    this.fechaReagendo = "";
+    this.motivoReagendo = "";
+    this.showReagendarModal = false;
+    this.initialLock = true;
   }
 }
