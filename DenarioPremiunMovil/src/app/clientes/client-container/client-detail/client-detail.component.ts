@@ -47,7 +47,7 @@ export class ClienteComponent implements OnInit {
     if (this.clientLogic.multiCurrency == "true") {
       if (this.currencyService.multimoneda) {
         //arreglamos el saldo del cliente
-        //porque vergas saldo1 y saldo2 significan vainas distintas aqui y en la lista nunca sabre. 
+        //porque vergas saldo1 y saldo2 significan vainas distintas aqui y en la lista nunca sabré. 
         // Asumo que estaban rascaos cuando lo escribieron...
         let saldoCliente = 0, saldoOpuesto = 0;
 

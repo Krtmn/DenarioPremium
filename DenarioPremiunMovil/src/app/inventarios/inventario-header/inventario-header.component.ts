@@ -10,6 +10,8 @@ import { SynchronizationDBService } from 'src/app/services/synchronization/synch
 import { Router, ActivatedRoute, ParamMap } from '@angular/router';
 import { DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED } from 'src/app/utils/appConstants'
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
+import { Subscription } from 'rxjs';
+import { Platform } from '@ionic/angular';
 
 
 @Component({
@@ -48,9 +50,16 @@ export class InventarioHeaderComponent implements OnInit {
   public alertMessageOpenSend: Boolean = false;
   public alertMessageOpenSave: Boolean = false;
 
+  backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
+    //console.log('backButton was called!');
+    this.onBackClicked();
+  });
 
-
-  constructor(private router: Router) { }
+  constructor(private router: Router,
+    private platform: Platform,
+  ) {
+    
+   }
 
   ngOnInit() {
     this.textAlertButtonCancel = this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_CANCELAR')! ? this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_CANCELAR')! : "Cancelar";
@@ -113,6 +122,7 @@ export class InventarioHeaderComponent implements OnInit {
     this.subscriberShow.unsubscribe();
     this.subscriberDisabled.unsubscribe();
     this.subscriberToSend.unsubscribe();
+    this.backButtonSubscription.unsubscribe();
   }
 
 
