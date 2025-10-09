@@ -184,7 +184,10 @@ export class ClientLogicService {
 
     //DEBO VALIDAR SI EXISTE COORDENADAS, SI NO EXISTE COLOCAR LA COORDENADA DEL TELEFONO, SINO YA VEREMOS!
     this.coordenada = {} as Coordinate
-    if (client.coordenada == null || client.coordenada.trim() == "" || client.coordenada.trim() == "0,0") {
+    if (client.coordenada == null 
+    || client.coordenada.trim() == "" 
+    || client.coordenada.trim() == "0,0" 
+    || client.coordenada.toLowerCase().trim() === "null") {
       this.coordenada.lat = 0;
       this.coordenada.lng = 0;
     } else {

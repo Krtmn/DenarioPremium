@@ -102,6 +102,22 @@ export class ClienteComponent implements OnInit {
     this.clientLogic.viewCoordenada(client);
   }
 
+  hayCoordenada(coord: string){
+    if (coord == null || coord.trim() === "" ||
+     coord.toLowerCase().trim() === "null" || coord.trim() == "0,0"){
+      return false;
+    }      
+    return true;
+  }
+
+  //funcion que devuelve la coordenada si existe
+  getCoordenada(coord: string){
+    if (this.hayCoordenada(coord)){
+      return coord;
+    }
+    return "";
+  }
+
   //Hacer estas conversiones en el servicio de moneda 
   //tomaria muchos queries a la bd, lo hacemos aca mejor.
   toLocalCurrency(hardAmount: number, doc: DocumentSale): string {
