@@ -266,7 +266,7 @@ export class ProductosTabOrderProductListComponent  implements OnInit {
     if (this.orderServ.validStock) {
       prod.quStock = prod.quStockAux - prod.quAmount;
     }
-    if(this.orderServ.validStock && (prod.quAmount > prod.quStock)){
+    if(this.orderServ.validStock && (prod.quAmount > prod.quStockAux)){
       this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_INVENTARIO"));
       prod.quAmount = 0;
     }else{
@@ -292,7 +292,7 @@ export class ProductosTabOrderProductListComponent  implements OnInit {
     if (this.orderServ.validStock) {
       prod.quStock = prod.quStockAux - prod.quAmount;
     }
-    if(this.orderServ.validStock && (prod.quAmount > prod.quStock)){
+    if(this.orderServ.validStock && (prod.quAmount > prod.quStockAux)){
       this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_INVENTARIO"));
       prod.quAmount = 0;
     }else{
