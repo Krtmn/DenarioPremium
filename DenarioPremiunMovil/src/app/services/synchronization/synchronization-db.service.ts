@@ -191,9 +191,18 @@ export class SynchronizationDBService {
                   localStorage.setItem("createTables", "true");
                   resolve("true");
                 }
+               
               }).catch((error) => {
                 console.log(error, res[i].table)
               });
+              //si tiene indice lo crea
+              if(res[i].index && res[i].index.length>0){
+                this.database.executeSql(res[i].index, []).then(() => {
+                  console.log("Index created for table:", res[i].table);
+                }).catch((error) => {
+                  console.log(error, res[i].table);
+                });
+              }
             }
 
           });
