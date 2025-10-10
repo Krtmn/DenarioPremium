@@ -112,9 +112,12 @@ export class VisitasService {
     const userStr = localStorage.getItem("user");
     if (userStr) {
       try {
-        let userTransportista = JSON.parse(userStr);
-        if (userTransportista.transportista) {
-          this.rolTransportista = true;
+        let user = JSON.parse(userStr);
+        if (user.transportista) {
+          this.rolTransportista = user.transportista;
+        }else{
+          //puede ser undefined o similar
+          this.rolTransportista = false;
         }
       } catch (e) {
         this.rolTransportista = false;
