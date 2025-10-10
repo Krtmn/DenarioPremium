@@ -42,7 +42,7 @@ export class DateServiceService {
     //devuelve un string ISO 8601 que representa la fecha de hoy, a la medianoche
     //para usar con componentes ion-datetime
     var r = new Date();
-    r.setUTCHours(0, 0, 0, 0);
+    r.setHours(0, 0, 0, 0);
     return r.toISOString().substring(0, 19);//.replace("T"," ");
   }
   toISOString(input: string){
@@ -56,7 +56,7 @@ export class DateServiceService {
     //devuelve un string ISO 8601 que representa la fecha de hoy + days, a la medianoche
     //para usar con componentes ion-datetime
     var r = new Date();
-    r.setUTCHours(0, 0, 0, 0);
+    r.setHours(0, 0, 0, 0);
     r.setDate(r.getDate() + days);
     return r.toISOString().substring(0, 19);//.replace("T"," ");
   }
@@ -65,7 +65,7 @@ export class DateServiceService {
     //devuelve un string ISO 8601 que representa la fecha de hoy - days, a la medianoche
     //para usar con componentes ion-datetime
     var r = new Date();
-    r.setUTCHours(0, 0, 0, 0);
+    r.setHours(0, 0, 0, 0);
     r.setDate(r.getDate() - days);
     return r.toISOString().substring(0, 19);//.replace("T"," ");
   }
@@ -74,7 +74,7 @@ export class DateServiceService {
     //devuelve un string ISO 8601 que representa la fecha de hoy, a la medianoche
     //esta funcion remueve la hora
     var r = new Date();
-    r.setUTCHours(0,0,0,0);
+    r.setHours(0,0,0,0);
     return r.toISOString().substring(0,10);
   }
 
@@ -102,7 +102,7 @@ export class DateServiceService {
   toMidnight(input: string){
     //devuelve la misma fecha, pero a la media noche
     var r = this.dateFrom(input);
-    r.setUTCHours(0,0,0,0);
+    r.setHours(0,0,0,0);
     return r.toISOString().substring(0,19);
   }
 

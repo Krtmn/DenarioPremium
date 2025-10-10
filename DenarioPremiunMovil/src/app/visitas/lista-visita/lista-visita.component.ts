@@ -94,6 +94,7 @@ export class ListaVisitaComponent implements OnInit {
   }
 
   selectVisit(visit: Visit) {
+    this.message.showLoading();
     if (this.service.userMustActivateGPS) {
       this.geoLoc.getCurrentPosition().then(xy => {
         if (xy.length > 0) {
@@ -111,6 +112,7 @@ export class ListaVisitaComponent implements OnInit {
   goToVisita(visit: Visit) {
     this.service.getIncidencesByVisit(visit.coVisit).then(inc => {
       //busco incidencias en bd, porque la lista no las tiene.
+      this.message.hideLoading();
       visit.visitDetails = inc;
       this.service.visit = visit;
       this.service.editVisit = true;
