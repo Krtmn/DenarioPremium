@@ -51,6 +51,14 @@ export class PedidosListaComponent implements OnInit {
 
   async ngOnInit() {
     this.searchPlaceholder = this.getTag("PED_BUSQUEDA");
+    if (this.orderServ.userMustActivateGPS) {
+      this.orderServ.coordenadas = "";
+      this.geoLoc.getCurrentPosition().then(xy => {
+      if (xy.length > 0) {
+        this.orderServ.coordenadas = xy;
+      }
+      })
+    } 
   }
 
   ngOnDestroy() {
@@ -61,12 +69,16 @@ export class PedidosListaComponent implements OnInit {
     this.orderServ.pedidoModificable = (order.st_order == DELIVERY_STATUS_SAVED);
     if (this.orderServ.userMustActivateGPS &&
       (this.orderServ.pedidoModificable || this.orderServ.copiandoPedido)) {
-      this.geoLoc.getCurrentPosition().then(xy => {
-        if (xy.length > 0) {
-          this.orderServ.coordenadas = xy;
-          this.openOrder(order);
-        }
+        if (!this.orderServ.coordenadas || this.orderServ.coordenadas.length == 0) {
+          this.geoLoc.getCurrentPosition().then(xy => {
+            if (xy.length > 0) {
+              this.orderServ.coordenadas = xy;
+              this.openOrder(order);
+            }
       })
+    }else{
+      this.openOrder(order);
+    }
     } else {
       this.openOrder(order);
     }

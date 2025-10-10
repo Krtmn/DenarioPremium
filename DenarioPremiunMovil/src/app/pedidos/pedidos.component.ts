@@ -59,6 +59,14 @@ export class PedidosComponent {
       this.pedidoService.empresaSeleccionada = this.enterpriseServ.defaultEnterprise();
       //this.pedidoService.setup();
     });
+    if (this.pedidoService.userMustActivateGPS) {
+      this.pedidoService.coordenadas = "";
+      this.geoLoc.getCurrentPosition().then(xy => {
+      if (xy.length > 0) {
+        this.pedidoService.coordenadas = xy;
+      }
+      })
+    } 
   }
 
   getTag(tagName: string) {
@@ -74,12 +82,16 @@ export class PedidosComponent {
 
   nuevoPedido() {
     if (this.pedidoService.userMustActivateGPS) {
+      if (!this.pedidoService.coordenadas || this.pedidoService.coordenadas.length == 0) {
       this.geoLoc.getCurrentPosition().then(xy => {
         if (xy.length > 0) {
           this.pedidoService.coordenadas = xy;
           this.goToNuevoPedido();
         }
       })
+    }else{
+      this.goToNuevoPedido();
+    }
     } else {
       this.goToNuevoPedido();
     }
