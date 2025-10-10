@@ -71,7 +71,7 @@ export class VisitasComponent implements OnInit {
   nuevaVisita() {
     //console.log("Nueva visita!");
     this.message.showLoading().then(() => {
-      if (this.service.userMustActivateGPS) {
+      if (this.service.userMustActivateGPS ) {
         if(this.service.coordenadas &&this.service.coordenadas.length > 0){
             this.navigateToNuevaVisita();
         }else{

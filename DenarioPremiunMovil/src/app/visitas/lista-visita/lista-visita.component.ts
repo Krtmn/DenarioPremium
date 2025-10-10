@@ -104,7 +104,8 @@ export class ListaVisitaComponent implements OnInit {
 
   selectVisit(visit: Visit) {
     this.message.showLoading().then(() => {
-  if (this.service.userMustActivateGPS) {     
+  if (this.service.userMustActivateGPS &&
+     visit.stVisit === VISIT_STATUS_NOT_VISITED) {     
         if (this.service.coordenadas.length > 0) {
           this.goToVisita(visit);
         }else{
