@@ -15,6 +15,7 @@ export class GeolocationService {
   private posicion!: Position //la ultima posicion tomada
   tituloMensaje = '';
   contenidoMensaje = '';
+
  
 
   messageRecommend: MessageAlert = new MessageAlert(
@@ -82,12 +83,25 @@ export class GeolocationService {
 
   async getCurrentPosition(){
    // console.log("getCurrentPosition");
-    await  this.getGeoLocPermissions().then(p => { this.permiso = p})
+   var coords = '';
+   if( !this.permiso ){
+      await this.getGeoLocPermissions().then(p => { this.permiso = p});
+   }
     if(this.permiso){
-     // console.log("tenemos permiso de locacion");
+      if(this.posicion){
+        console.log("ya tenemos posicion");       
+      }else{
+          // console.log("tenemos permiso de locacion");
       this.posicion = await Geolocation.getCurrentPosition();
-      var coords = this.posicion.coords.latitude.toString() +","+ this.posicion.coords.longitude.toString()
+      //coords = this.posicion.coords.latitude.toString() +","+ this.posicion.coords.longitude.toString()
       //console.log("Coordenadas: "+coords);
+      //asynchronously wait for a minute, then reset coordinates
+      setTimeout(() => {
+        this.posicion = null!;
+        coords = '';
+      }, 60000);
+      }
+     coords = this.posicion.coords.latitude.toString() +","+ this.posicion.coords.longitude.toString();
       return coords;
     }else{
       //console.log("no tenemos permiso de locacion");
