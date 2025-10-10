@@ -137,13 +137,14 @@ export class ListaVisitaComponent implements OnInit {
   }
 
   getStatusVisitName(stVisit: number, isReassigned: boolean) {
-    if (isReassigned) {
-      return "Reagendado";
-    }
+
     switch (stVisit) {
       case VISIT_STATUS_NOT_VISITED:
-        return "No Visitado";
-        
+        if (isReassigned) {
+          return "Reagendado";
+        }else{
+          return "No Visitado";
+        }
 
       case VISIT_STATUS_TO_SEND:
         return "Por Enviar";
