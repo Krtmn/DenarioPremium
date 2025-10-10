@@ -318,12 +318,14 @@ export class VisitaComponent implements OnInit {
     if (!this.visitServ.userMustActivateGPS) {
       //si esta desactivado, se hace el chequeo suave de fondo. 
       //no bloqueamos si coords esta vacio
+      if (this.visitServ.coordenadas == "") {
       this.geoServ.getCurrentPosition().then(coords => {
         if (coords.length > 0) {
           this.visitServ.coordenadas = coords;
           this.disabledButtonViewRoute = false;
         }
       })
+    }
     } else {
       this.disabledButtonViewRoute = true;
     }

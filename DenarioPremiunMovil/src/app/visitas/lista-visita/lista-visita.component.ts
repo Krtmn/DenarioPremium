@@ -56,8 +56,17 @@ export class ListaVisitaComponent implements OnInit {
     this.refreshList();
     this.headerDelete = this.getTag('VIS_HEADER_MENSAJE');
     this.mensajeDelete = this.getTag('VIS_BORRAR_CONFIRMA');
-
+    this.service.coordenadas = "";
     this.rolTransportista = this.service.rolTransportista;
+    if (this.service.userMustActivateGPS) {
+      this.geoLoc.getCurrentPosition().then(xy => {
+    if (xy.length > 0) {
+      this.service.coordenadas = xy;      
+    }
+  })
+} else {
+
+}
   }
 
   ngOnDestroy() {
@@ -95,13 +104,15 @@ export class ListaVisitaComponent implements OnInit {
 
   selectVisit(visit: Visit) {
     this.message.showLoading();
-    if (this.service.userMustActivateGPS) {
-      this.geoLoc.getCurrentPosition().then(xy => {
-        if (xy.length > 0) {
-          this.service.coordenadas = xy;
+    if (this.service.userMustActivateGPS) {     
+        if (this.service.coordenadas.length > 0) {
           this.goToVisita(visit);
+        }else{
+          this.geoLoc.getCurrentPosition().then(coords => { 
+            this.service.coordenadas = coords;
+            this.goToVisita(visit);
+          });
         }
-      })
     } else {
       this.goToVisita(visit);
     }
