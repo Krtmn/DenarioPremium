@@ -118,6 +118,7 @@ export class InventarioGeneralComponent implements OnInit {
   constructor(private clientSelectorService: ClienteSelectorService) { }
 
   ngOnInit() {
+    this.message.hideLoading();
     this.inventariosLogicService.showProductList = false;
     if (this.inventariosLogicService.initInventario) {
       this.alertButtons[0].text = this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_ACEPTAR')!

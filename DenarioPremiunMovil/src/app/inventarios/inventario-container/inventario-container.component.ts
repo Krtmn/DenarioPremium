@@ -4,7 +4,7 @@ import { ClientStocks } from 'src/app/modelos/tables/client-stocks';
 import { InventariosLogicService } from 'src/app/services/inventarios/inventarios-logic.service';
 import { DateServiceService } from 'src/app/services/dates/date-service.service';
 import { GeolocationService } from 'src/app/services/geolocation/geolocation.service';
-
+import { MessageService } from 'src/app/services/messageService/message.service';
 @Component({
     selector: 'app-inventario-container',
     templateUrl: './inventario-container.component.html',
@@ -17,14 +17,23 @@ export class InventarioContainerComponent implements OnInit {
   public router = inject(Router);
   public dateServ = inject(DateServiceService);
   private geoLoc = inject(GeolocationService);
+  private message = inject(MessageService);
 
   public subs: any;
 
   constructor() { }
 
   ngOnInit() {
-    this.backRouteService();
     this.inventariosLogicService.userMustActivateGPS = this.inventariosLogicService.globalConfig.get('userMustActivateGPS') === 'true';
+        if(this.inventariosLogicService.userMustActivateGPS){
+      this.inventariosLogicService.newClientStock.coordenada = "";
+      this.geoLoc.getCurrentPosition().then(xy => {
+        if(xy.length > 0){
+          this.inventariosLogicService.newClientStock.coordenada = xy;
+        }
+      })
+      this.backRouteService();
+    }
   }
 
 
@@ -68,12 +77,19 @@ export class InventarioContainerComponent implements OnInit {
 
   newStockButton(){
     if(this.inventariosLogicService.userMustActivateGPS){
+      this.message.showLoading().then(() => {
+              if(!this.inventariosLogicService.newClientStock.coordenada || 
+        this.inventariosLogicService.newClientStock.coordenada.length < 1){
       this.geoLoc.getCurrentPosition().then(xy => {
         if(xy.length > 0){
           this.inventariosLogicService.newClientStock.coordenada = xy;
           this.newClientStock();
         }
       })
+    }else{
+      this.newClientStock();
+    }
+      });
     }else{
       this.newClientStock();
     }

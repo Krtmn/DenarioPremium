@@ -40,6 +40,15 @@ export class InventarioListComponent implements OnInit {
           this.valid = true;
       });
     })
+    if(this.inventariosLogicService.userMustActivateGPS){
+      this.inventariosLogicService.newClientStock.coordenada = "";
+      this.geoLoc.getCurrentPosition().then(xy => {
+        if(xy.length > 0){
+          this.inventariosLogicService.newClientStock.coordenada = xy;
+        }
+      })
+
+    }
 
   }
 
@@ -83,12 +92,17 @@ export class InventarioListComponent implements OnInit {
     //el pedido no es enviado?: saved = true;
     var saved = (this.listClientStock[index].stClientStock == 1);
     if (this.inventariosLogicService.userMustActivateGPS && saved) {
+      if(!this.inventariosLogicService.newClientStock.coordenada || 
+        this.inventariosLogicService.newClientStock.coordenada !== ""){
       this.geoLoc.getCurrentPosition().then(xy => {
         if (xy.length > 0) {
           this.inventariosLogicService.newClientStock.coordenada = xy;
           this.openClientStock(index);
         }
       })
+    }else{
+      this.openClientStock(index);
+    }    
     } else {
       this.openClientStock(index);
     }
