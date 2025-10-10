@@ -99,6 +99,7 @@ export class GeolocationService {
       setTimeout(() => {
         this.posicion = null!;
         coords = '';
+        this.permiso = false;
       }, 60000);
       }
      coords = this.posicion.coords.latitude.toString() +","+ this.posicion.coords.longitude.toString();
