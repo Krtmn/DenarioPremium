@@ -331,7 +331,7 @@ export class VisitaComponent implements OnInit {
     }
     this.clientLogic.getTags();
 
-
+  this.message.hideLoading();
 
   }
 

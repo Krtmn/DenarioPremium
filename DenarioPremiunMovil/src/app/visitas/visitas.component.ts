@@ -18,6 +18,7 @@ export class VisitasComponent implements OnInit {
   private service = inject(VisitasService);
   private router = inject(Router);  
   private geoLoc = inject(GeolocationService);
+  private message = inject(MessageService);
 
   public rolTransportista: boolean = false;
 
@@ -41,6 +42,14 @@ export class VisitasComponent implements OnInit {
         this.rolTransportista = false;
       }
     }
+    this.service.coordenadas = "";
+    if (this.service.userMustActivateGPS) {
+      this.geoLoc.getCurrentPosition().then(xy => {
+        if (xy.length > 0) {
+          this.service.coordenadas = xy;
+        }
+      })
+    }
   }
 
   ngOnInit() {
@@ -61,19 +70,29 @@ export class VisitasComponent implements OnInit {
 
   nuevaVisita() {
     //console.log("Nueva visita!");
-    if (this.service.userMustActivateGPS) {
-      this.geoLoc.getCurrentPosition().then(xy => {
-        if (xy.length > 0) {
-          this.service.coordenadas = xy;
-          this.service.editVisit = false;
-          this.router.navigate(['visita']);
-        }
-      })
-    } else {
-      this.service.editVisit = false;
-      this.router.navigate(['visita']);
-    }
+    this.message.showLoading().then(() => {
+      if (this.service.userMustActivateGPS) {
+        if(this.service.coordenadas.length > 0){
+            this.navigateToNuevaVisita();
+        }else{
+            this.geoLoc.getCurrentPosition().then(xy => {
+          if (xy.length > 0) {
+            this.service.coordenadas = xy;
+            this.navigateToNuevaVisita();
+          }
+        })
+        }      
+      } else {
+          this.navigateToNuevaVisita();
+      }
+    });
+    
 
+  }
+
+  navigateToNuevaVisita(){
+    this.service.editVisit = false;
+    this.router.navigate(['visita']);
   }
 
   verVisita() {
