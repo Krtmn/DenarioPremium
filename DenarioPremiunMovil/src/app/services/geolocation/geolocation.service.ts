@@ -80,19 +80,41 @@ export class GeolocationService {
 
   }
 
-  async getCurrentPosition(){
-   // console.log("getCurrentPosition");
-    await  this.getGeoLocPermissions().then(p => { this.permiso = p})
-    if(this.permiso){
-     // console.log("tenemos permiso de locacion");
-      this.posicion = await Geolocation.getCurrentPosition();
-      var coords = this.posicion.coords.latitude.toString() +","+ this.posicion.coords.longitude.toString()
-      //console.log("Coordenadas: "+coords);
-      return coords;
-    }else{
-      //console.log("no tenemos permiso de locacion");
+  private cachedCoords: string = "";
+  private lastFetchTime: number = 0;
+  private CACHE_DURATION_MS = 60000; // 1 minuto
+
+  async getCurrentPosition(): Promise<string> {
+    // Si la última ubicación es reciente, la devolvemos
+    const now = Date.now();
+    if (this.cachedCoords && (now - this.lastFetchTime < this.CACHE_DURATION_MS)) {
+      return this.cachedCoords;
+    }
+
+    // Verificamos permisos solo si no los tenemos
+    if (this.permiso === undefined || this.permiso === false) {
+      this.permiso = await this.getGeoLocPermissions();
+    }
+
+    if (this.permiso) {
+      try {
+        // Usamos Promise.race para limitar el tiempo de espera
+        const position = await Promise.race([
+          Geolocation.getCurrentPosition(),
+          new Promise((_, reject) => setTimeout(() => reject("timeout"), 5000)) // 5 segundos
+        ]);
+        const pos = position as Position;
+        const coords = pos.coords.latitude.toString() + "," + pos.coords.longitude.toString();
+        this.cachedCoords = coords;
+        this.lastFetchTime = now;
+        return coords;
+      } catch (e) {
+        // Si hay error o timeout, devolvemos la última ubicación si existe
+        return this.cachedCoords || "";
+      }
+    } else {
       return "";
-    }        
+    }
   }
 
 
