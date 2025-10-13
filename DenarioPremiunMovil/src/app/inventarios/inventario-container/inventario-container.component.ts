@@ -32,8 +32,9 @@ export class InventarioContainerComponent implements OnInit {
           this.inventariosLogicService.newClientStock.coordenada = xy;
         }
       })
-      this.backRouteService();
+      
     }
+    this.backRouteService();
   }
 
 

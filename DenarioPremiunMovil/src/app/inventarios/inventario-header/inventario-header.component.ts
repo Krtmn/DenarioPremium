@@ -49,11 +49,11 @@ export class InventarioHeaderComponent implements OnInit {
   public saveOrExitOpen = false;
   public alertMessageOpenSend: Boolean = false;
   public alertMessageOpenSave: Boolean = false;
-
-  backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
+ backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
     //console.log('backButton was called!');
     this.onBackClicked();
   });
+  
 
   constructor(private router: Router,
     private platform: Platform,
