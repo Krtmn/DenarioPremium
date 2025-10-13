@@ -824,7 +824,7 @@ export class CobrosDocumentComponent implements OnInit {
     }
 
     // --- Monto pagado ---
-    this.collectService.amountPaid = documentSaleOpen.nuBalance- sumRetentions;
+    this.collectService.amountPaid = documentSaleOpen.nuBalance - sumRetentions;
 
     // --- Ajustes finales ---
     if (coTypeModule === '2') {
@@ -987,10 +987,16 @@ export class CobrosDocumentComponent implements OnInit {
   }
 
   setPartialPay() {
-    this.collectService.documentSaleOpen.nuBalance = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.amountPaid));
-    this.collectService.documentSaleOpen.nuAmountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.amountPaid));
-    this.collectService.amountPaidDoc = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.amountPaidDoc));
-    this.validate();
+    if (this.collectService.amountPaid == null || this.collectService.amountPaid <= 0) {
+      this.disabledSaveButton = true;
+      this.collectService.amountPaid = 0;
+    } else if (this.collectService.amountPaid > 0) {
+      this.collectService.documentSaleOpen.nuBalance = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.amountPaid));
+      this.collectService.documentSaleOpen.nuAmountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.amountPaid));
+      this.collectService.amountPaidDoc = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.amountPaidDoc));
+      this.validate();
+    }
+
   }
 
   private isNullOrZero(value: any): boolean {

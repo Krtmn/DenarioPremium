@@ -532,14 +532,20 @@
                                     <!-- PAGO PARCIA / MONTO A PAGARL-->
                                     <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                                         <ion-input
-                                            label="{{this.collectService.collectionTags.get('COB_MONTO_PAGAR')}} {{this.collectService.collection.coCurrency}}"
-                                            label-placement="floating" fill="outline"
-                                            value="{{this.currencyService.formatNumber(collectService.amountPaidDoc)}}"
-                                            [(ngModel)]="this.collectService.amountPaid" (ionChange)="setPartialPay()"
-                                            color="primary" [readonly]="!this.collectService.isPaymentPartial"
-                                            type="number"
-                                            [ngClass]="{'inp-write': !this.collectService.amountPaymentPartial}">
+                                                label="{{this.collectService.collectionTags.get('COB_MONTO_PAGAR')}} {{this.collectService.collection.coCurrency}}"
+                                                label-placement="floating" fill="outline"
+                                                value="{{this.currencyService.formatNumber(collectService.amountPaidDoc)}}"
+                                                [(ngModel)]="this.collectService.amountPaid" (ionInput)="setPartialPay()"
+                                                color="primary" [readonly]="!this.collectService.isPaymentPartial"
+                                                type="number"
+                                                required
+                                                [ngClass]="{'inp-write': !this.collectService.amountPaymentPartial, 'input-rojo': !this.collectService.amountPaid}"
+                                                min="0"
+                                        >
                                         </ion-input>
+                                        <ion-label *ngIf="!this.collectService.amountPaid" color="danger" class="campoObligatorio">
+                                            Este campo es obligatorio
+                                        </ion-label>
                                     </ion-col>
                                     <!-- PAGO PARCIAL-->
                                     <ion-grid>
