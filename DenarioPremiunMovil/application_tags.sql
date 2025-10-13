@@ -88,7 +88,7 @@ INSERT INTO public.application_tags(
 	('PED_SALDO', 'PED', 'PEDIDOS', 'ESP', 'Saldo'),
 	('PED_CREDITO', 'PED', 'PEDIDOS', 'ESP', 'Crédito'),
 	('PED_DIRECCION', 'PED', 'PEDIDOS', 'ESP', 'Dirección'),
-	('PED_BUSQUEDA', 'PED', 'PEDIDOS', 'ESP', 'Busqueda...'),
+	('PED_BUSQUEDA', 'PED', 'PEDIDOS', 'ESP', 'Pedidos...'),
 	('PED_MINIMO', 'PED', 'PEDIDOS', 'ESP', 'Mínimo'),
 	('PED_MULTIPLO', 'PED', 'PEDIDOS', 'ESP', 'Múltiplo'),
 	('PED_CANTIDAD', 'PED', 'PEDIDOS', 'ESP', 'Cantidad'),

@@ -865,3 +865,10 @@ ion-grid, ion-row {
   overflow-y: auto;
   min-height: 0;
 }
+
+.scroll-lista-pedidos {
+  max-height: 80vh;      // Altura máxima relativa a la ventana
+  overflow-y: auto;      // Scroll vertical solo si es necesario
+  padding-bottom: 1em;   // Espacio inferior para evitar corte
+  width: 100%;           // Ocupa todo el ancho disponible
+}
