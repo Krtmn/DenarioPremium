@@ -7,10 +7,10 @@ import { GlobalConfigService } from 'src/app/services/globalConfig/global-config
 import { InventariosLogicService } from 'src/app/services/inventarios/inventarios-logic.service';
 
 @Component({
-    selector: 'app-inventario-type-stocks',
-    templateUrl: './inventario-type-stocks.component.html',
-    styleUrls: ['./inventario-type-stocks.component.scss'],
-    standalone: false
+  selector: 'app-inventario-type-stocks',
+  templateUrl: './inventario-type-stocks.component.html',
+  styleUrls: ['./inventario-type-stocks.component.scss'],
+  standalone: false
 })
 export class InventarioTypeStocksComponent implements OnInit {
 
@@ -19,11 +19,11 @@ export class InventarioTypeStocksComponent implements OnInit {
   public dateServ = inject(DateServiceService);
   public globalConfig = inject(GlobalConfigService);
 
-    @ViewChild('loteExhInput', { static: false })
-   loteExhInput: any;
+  @ViewChild('loteExhInput', { static: false })
+  loteExhInput: any;
 
-     @ViewChild('loteDepInput', { static: false })
-   loteDepInput: any;
+  @ViewChild('loteDepInput', { static: false })
+  loteDepInput: any;
 
 
   public typeStockMethod: string = "";
@@ -47,14 +47,14 @@ export class InventarioTypeStocksComponent implements OnInit {
     //ELIMINO TODOS LOS REGISTROS DE ESE PRODUCTO     
 
     let indexClientStockDetail = this.inventariosLogicService.productTypeStocksMap.get(this.inventariosLogicService.productSelected.idProduct)
-    if (this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!] != undefined){
+    if (this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!] != undefined) {
       if (this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits != undefined) {
         this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits.splice(indexType, 1);
       } else {
         this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits.splice(indexType, 1);
       }
       //si no quedan mas detailunits elimino el detail
-      if(this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits.length < 1){
+      if (this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits.length < 1) {
         this.inventariosLogicService.newClientStock.clientStockDetails.splice(indexClientStockDetail!, 1);
       }
     }
@@ -81,50 +81,12 @@ export class InventarioTypeStocksComponent implements OnInit {
 
   }
 
-  setCantidad(cantidad: any, idP: number, indexType: number, type: string) {
-    if (cantidad.target.value > 0) {
-      this.inventariosLogicService.typeStocks[indexType].validateCantidad = true;
-      this.inventariosLogicService.isEdit = true;
-      let indexClientStockDetail = this.inventariosLogicService.productTypeStocksMap.get(idP)
-      if (this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!] == undefined)
-        this.setNewDetail(cantidad.target.value, idP, indexType, type)
-      else {
-        console.log("YA EXISTE EL DETAIL")
-        //EXISTE EL DETAILUNIT????
-        let length = 0
-        for (var i = 0; i < this.inventariosLogicService.typeStocks.length; i++) {
-          if (this.inventariosLogicService.typeStocks[i].idProduct == idP) {
-            length++;
-          }
-        }
-        length--;
 
-        if (this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits[length] == undefined) {
-          //ES NUEVO DETAILUNIT, SE DEBE CREAR
-          this.setNewDetailUnit(cantidad.target.value, indexClientStockDetail!, indexType, type);
-        } else {
-          //EXISTEDETAILUNIT DEBO CAMBIAR SOLO LA CANTIDAD
-          //this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits[length].quStock = cantidad.target.value;
-          for (var i = 0; i < this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits.length; i++) {
-            if (this.inventariosLogicService.typeStocks[indexType].clientStockDetail[0].clientStockDetailUnits[0].coClientStockDetailUnit ==
-              this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits[i].coClientStockDetailUnit) {
-              this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits[i].quStock = Number(cantidad.target.value);
-            }
-          }
-        }
-        //this.setExistCantidad(cantidad.target.value, indexProduct, indexType, type);
-      }
 
-    } else {
-      //NO PUEDE COLOCAR CANTIDAD MENOR A 0
-      console.warn("CANTIDAD MENOR A 0 NO ES PERMITIDA");
-      this.inventariosLogicService.typeStocks[indexType].validateCantidad = false;
-    }
-  }
-
-  setNewDetail(cantidad: any, idP: number, indexType: number, type: string) {
+  setNewDetail(cantidad: any, idP: number, indexTypeStocks: number, type: string) {
     let indexDetail = this.inventariosLogicService.productTypeStocksMap.get(this.inventariosLogicService.productSelected.idProduct)
-
+    indexDetail = indexDetail == undefined ? 0 : indexDetail;
+    this.inventariosLogicService.productTypeStocksMap.set(idP, indexDetail);
     /* for (var i = 0; i < this.inventariosLogicService.typeStocks.length; i++) {
       if (this.inventariosLogicService.typeStocks[i].idProduct == this.inventariosLogicService.productSelected.idProduct) {
         this.inventariosLogicService.typeStocks[i].validateCantidad = true
@@ -147,7 +109,7 @@ export class InventarioTypeStocksComponent implements OnInit {
       clientStockDetail.isSave = true;
       clientStockDetail.clientStockDetailUnits = [] as ClientStocksDetailUnits[]
       this.inventariosLogicService.newClientStock.clientStockDetails.push(clientStockDetail);
-      this.inventariosLogicService.typeStocks[indexType!].clientStockDetail.push(clientStockDetail)
+      this.inventariosLogicService.typeStocks[indexTypeStocks!].clientStockDetail.push(clientStockDetail)
 
       let clientStockDetailUnits = {} as ClientStocksDetailUnits;
       clientStockDetailUnits.idClientStockDetailUnit = 0;
@@ -168,14 +130,14 @@ export class InventarioTypeStocksComponent implements OnInit {
       clientStockDetailUnits.isSave = true;
       clientStockDetailUnits.posicion = 0;
       clientStockDetailUnits.nuBatch = "";
-      clientStockDetailUnits.daExpiration = this.inventariosLogicService.typeStocks[indexType].fechaVencimiento;
+      clientStockDetailUnits.daExpiration = this.inventariosLogicService.typeStocks[indexTypeStocks].fechaVencimiento;
 
       let indexDetailUnit = this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits.length;
 
       if (indexDetailUnit < 0)
         indexDetailUnit = 0;
       /* if (this.inventariosLogicService.typeStocks[indexDetail!].clientStockDetail[0!].clientStockDetailUnits[asd1] == undefined) */
-      this.inventariosLogicService.typeStocks[indexType!].clientStockDetail[0!].clientStockDetailUnits.push(clientStockDetailUnits)
+      this.inventariosLogicService.typeStocks[indexTypeStocks!].clientStockDetail[0!].clientStockDetailUnits.push(clientStockDetailUnits)
 
       if (this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits[indexDetailUnit] == undefined)
         this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits.push(clientStockDetailUnits);
@@ -280,13 +242,14 @@ export class InventarioTypeStocksComponent implements OnInit {
         break;
       }
     }
+    this.setNewDetail(0, product.idProduct, index, typeStock)
   }
 
   setLote(lote: any, indexType: number, idP: number, type: string) {
     let indexDetail = this.inventariosLogicService.productTypeStocksMap.get(idP)
 
     lote.target.value = this.cleanString(lote.target.value);
-    for (var i = 0; i < this.inventariosLogicService.typeStocks.length; i++) {
+    /* for (var i = 0; i < this.inventariosLogicService.typeStocks.length; i++) {
       if (this.inventariosLogicService.typeStocks[i].idProduct == idP) {
         if (this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits == undefined) {
           this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits[indexType].nuBatch = lote.target.value;
@@ -302,11 +265,58 @@ export class InventarioTypeStocksComponent implements OnInit {
           }
         }
       }
-    }
+    } */
+    this.inventariosLogicService.typeStocks[indexType].validateLote = true;
+    this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits[indexType].nuBatch = lote.target.value;
 
     this.inventariosLogicService.onStockValidToSend(true);
     this.inventariosLogicService.onStockValidToSave(true);
     this.inventariosLogicService.isEdit = true;
+  }
+
+  setCantidad(cantidad: any, idP: number, indexType: number, type: string) {
+    if (cantidad.target.value > 0) {
+      this.inventariosLogicService.typeStocks[indexType].validateCantidad = true;
+      this.inventariosLogicService.isEdit = true;
+      let indexClientStockDetail = this.inventariosLogicService.productTypeStocksMap.get(idP)
+      indexClientStockDetail = indexClientStockDetail == undefined ? 0 : indexClientStockDetail;
+
+      //NO EXISTE EL DETAIL, SE DEBE CREAR
+      if (this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!] == undefined)
+        this.setNewDetail(cantidad.target.value, idP, indexType, type)
+      else {
+        console.log("YA EXISTE EL DETAIL")
+        //EXISTE EL DETAILUNIT????
+        let length = 0
+        for (var i = 0; i < this.inventariosLogicService.typeStocks.length; i++) {
+          if (this.inventariosLogicService.typeStocks[i].idProduct == idP) {
+            length++;
+          }
+        }
+        length--;
+
+        if (this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits[length] == undefined) {
+          //ES NUEVO DETAILUNIT, SE DEBE CREAR
+          this.setNewDetailUnit(cantidad.target.value, indexClientStockDetail!, indexType, type);
+        } else {
+          //EXISTEDETAILUNIT DEBO CAMBIAR SOLO LA CANTIDAD
+          /*  //this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits[length].quStock = cantidad.target.value;
+           for (var i = 0; i < this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits.length; i++) {
+             if (this.inventariosLogicService.typeStocks[indexType].clientStockDetail[0].clientStockDetailUnits[0].coClientStockDetailUnit ==
+               this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits[i].coClientStockDetailUnit) {
+               this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits[i].quStock = Number(cantidad.target.value);
+             }
+           } */
+          this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits[indexType].quStock = Number(cantidad.target.value);
+        }
+        //this.setExistCantidad(cantidad.target.value, indexProduct, indexType, type);
+      }
+
+    } else {
+      //NO PUEDE COLOCAR CANTIDAD MENOR A 0
+      console.warn("CANTIDAD MENOR A 0 NO ES PERMITIDA");
+      this.inventariosLogicService.typeStocks[indexType].validateCantidad = false;
+    }
   }
 
   getFechaValor(fecha: string, indexType: number, indexProduct: number, type: string) {
@@ -359,7 +369,7 @@ export class InventarioTypeStocksComponent implements OnInit {
   addInventarioMethod(e: any) {
     this.showEventModal = true;
     this.addClientStocktMethod(e.target.value.type,
-      this.inventariosLogicService.productSelected.idProduct,
+      this.inventariosLogicService.typeStocks.length == 0 ? 0 : this.inventariosLogicService.typeStocks.length,
       this.inventariosLogicService.productSelected)
     //this.addClientStocktMethod(e.target.value.type);
   }
@@ -375,7 +385,7 @@ export class InventarioTypeStocksComponent implements OnInit {
     /* return o1 && o2 ? o1.id === o2.id : o1 === o2; */
   }
 
-    cleanString(str: string): string {
+  cleanString(str: string): string {
     // Elimina espacios al principio y al final
     str = str.trim();
     // Elimina ;
@@ -389,11 +399,11 @@ export class InventarioTypeStocksComponent implements OnInit {
     return str;
   }
 
-  
+
   cleanLoteInput(input: string | null | undefined | number): string {
-    if (!input){
+    if (!input) {
       return '';
-    } 
+    }
     return this.cleanString(input.toString());
   }
 
