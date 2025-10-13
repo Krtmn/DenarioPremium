@@ -56,6 +56,15 @@ export class CobrosListComponent implements OnInit {
   constructor() { }
 
   ngOnInit() {
+     if (this.collectService.userMustActivateGPS) {
+      this.coordenada = '';
+      this.geoLoc.getCurrentPosition().then(xy => {
+        if (xy.length > 0) {
+          this.coordenada = xy;
+          
+        }
+      })
+    } 
     this.collectService.newCollect = false;
     this.headerDelete = this.collectService.collectionTags.get('COB_HEADER_MESSAGE')!;
     this.mensajeDelete = this.collectService.collectionTags.get('COB_CONFIRM_DELETE')!;
@@ -64,12 +73,16 @@ export class CobrosListComponent implements OnInit {
 
   onCollectSelect(coCollection: string, index: number, stCollection: number) {
     if (this.collectService.userMustActivateGPS && stCollection < 3) {
+      if(!this.coordenada && this.coordenada.length < 1){
       this.geoLoc.getCurrentPosition().then(xy => {
         if (xy.length > 0) {
           this.coordenada = xy;
           this.openCollect(coCollection, index);
         }
       })
+    } else {
+      this.openCollect(coCollection, index);
+    }
     } else {
       this.openCollect(coCollection, index);
     }

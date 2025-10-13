@@ -33,6 +33,15 @@ export class CobrosContainerComponent implements OnInit {
   constructor() { }
 
   ngOnInit() {
+    if (this.collectService.userMustActivateGPS) {
+      this.coordenada = '';
+      this.geoLoc.getCurrentPosition().then(xy => {
+        if (xy.length > 0) {
+          this.coordenada = xy;
+          
+        }
+      })
+    } 
     this.collectService.getTags(this.synchronizationServices.getDatabase(),);
     this.collectService.getTagsDenario(this.synchronizationServices.getDatabase(),);
     this.backRoute();
@@ -74,12 +83,16 @@ export class CobrosContainerComponent implements OnInit {
 
   nuevoCobro(type: number) {
     if (this.collectService.userMustActivateGPS) {
+      if(!this.coordenada && this.coordenada.length < 1){
       this.geoLoc.getCurrentPosition().then(xy => {
         if (xy.length > 0) {
           this.coordenada = xy;
           this.goToNuevoCobro(type);
         }
       })
+    }else{
+      this.goToNuevoCobro(type);
+    }
     } else {
       this.goToNuevoCobro(type);
     }
