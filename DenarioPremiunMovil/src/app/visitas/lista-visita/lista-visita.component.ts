@@ -103,22 +103,26 @@ export class ListaVisitaComponent implements OnInit {
   }
 
   selectVisit(visit: Visit) {
-    this.message.showLoading();
-    if (this.service.userMustActivateGPS) {     
+    this.message.showLoading().then(() => {
+  if (this.service.userMustActivateGPS &&
+     visit.stVisit === VISIT_STATUS_NOT_VISITED) {     
         if (this.service.coordenadas.length > 0) {
           this.goToVisita(visit);
         }else{
           this.geoLoc.getCurrentPosition().then(coords => { 
             this.service.coordenadas = coords;
+            if(this.service.coordenadas.length >0){
             this.goToVisita(visit);
+            }else{
+              this.message.hideLoading();
+            }
           });
-        }
+        }    
     } else {
       this.goToVisita(visit);
     }
-
-
-  }
+  });
+}
 
   goToVisita(visit: Visit) {
     this.service.getIncidencesByVisit(visit.coVisit).then(inc => {
