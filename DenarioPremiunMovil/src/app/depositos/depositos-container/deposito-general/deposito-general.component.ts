@@ -142,6 +142,7 @@ export class DepositoGeneralComponent implements OnInit {
       /* this.depositService.initOpenDeposit(); */
       this.depositService.bankList = [] as BankAccount[];
       this.depositService.bankSelected = {} as BankAccount;
+      this.depositService.getCurrencyConversion(this.depositService.currencySelected.coCurrency);
       this.depositService.updateBankAccounts(this.db.getDatabase()).then(result => {
         this.depositService.isSelectedBank = false;
         this.depositService.getBankAccounts(this.db.getDatabase(),this.depositService.deposit.idEnterprise,

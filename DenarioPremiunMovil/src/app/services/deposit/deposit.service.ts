@@ -357,8 +357,8 @@ export class DepositService {
       'bank_accounts.co_enterprise as coEnterprise,' +
       'bank_accounts.id_enterprise as idEnterprise,' +
       'banks.na_bank as nameBank ' +
-      'FROM bank_accounts, banks '  +
-      'WHERE bank_accounts.id_enterprise = ? '+
+      'FROM bank_accounts, banks ' +
+      'WHERE bank_accounts.id_enterprise = ? ' +
       'AND bank_accounts.co_currency = ? ' +
       'AND bank_accounts.co_bank = banks.co_bank ' +
       'AND banks.id_enterprise = ?';
@@ -782,4 +782,9 @@ export class DepositService {
       return Promise.resolve(false);
     })
   }
+
+  getCurrencyConversion(coCurrency: string) {
+    this.currencyConversion = this.currencyServices.getOppositeCurrency(coCurrency);
+  }
+
 }
