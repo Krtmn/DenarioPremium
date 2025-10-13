@@ -102,7 +102,7 @@ export class CobrosDocumentComponent implements OnInit {
   }
 
   getDocumentsSale(idClient: number, coCurrency: string, coCollection: string, idEnterprise: number) {
-    this.collectService.getAllDocuments(this.synchronizationServices.getDatabase(), idClient, coCurrency, coCollection, idEnterprise).then(response => {
+    this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), idClient, coCurrency, coCollection, idEnterprise).then(response => {
       if (this.collectService.documentSales.length > 0)
         this.collectService.documentsSaleComponent = true;
       else
@@ -1338,5 +1338,9 @@ export class CobrosDocumentComponent implements OnInit {
       this.collectService.calculateDifference = true;
       return this.formatNumber(this.collectService.getNuValueLocal());
     }
+  }
+
+  oppositeCoCurrency(coCurrency: string): string {
+    return this.currencyService.getOppositeCurrency(coCurrency)?.coCurrency ?? '';
   }
 }

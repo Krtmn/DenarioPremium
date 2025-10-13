@@ -568,7 +568,7 @@ export class CollectionService {
       this.haveRate = true;
 
       //si ya tengo la tasa correspondiente a la fecha, debo buscar los documentos
-      this.getDocumentsSales(dbServ, this.collection.idClient, this.collection.coCurrency, this.collection.coCollection, this.collection.idEnterprise);
+      this.getDocumentsSales(dbServ, this.collection.idClient, this.currencySelectedDocument.coCurrency, this.collection.coCollection, this.collection.idEnterprise);
 
       if (this.globalConfig.get('historicoTasa') === 'true' ? true : false) {
         this.historicoTasa = true;
@@ -594,7 +594,7 @@ export class CollectionService {
       }
 
       this.getDocumentsSales(dbServ,
-        this.collection.idClient, this.collection.coCurrency, this.collection.coCollection, this.collection.idEnterprise);
+        this.collection.idClient, this.currencySelectedDocument.coCurrency, this.collection.coCollection, this.collection.idEnterprise);
 
     }
   }
@@ -1258,8 +1258,13 @@ export class CollectionService {
 
     let selectStatement = ""
     let params: any[] = [];
+
+    this.documentSales = [] as DocumentSale[];
+    this.documentSalesBackup = [] as DocumentSale[];
+    this.mapDocumentsSales.clear();
+
     if (this.coTypeModule != "3") {
-      if (this.currencySelectedDocument == null) {
+      if (coCurrency == "" || coCurrency == "Moneda") {
         // Solo necesitas algunos parámetros
         params = [idClient, idEnterprise, coCollection];
         selectStatement = 'SELECT ' +
@@ -1284,23 +1289,13 @@ export class CollectionService {
       }
 
 
-      dbServ.executeSql(selectStatement, params).then(data => {
-
-
+      return dbServ.executeSql(selectStatement, params).then(data => {
         if (data.rows.length > 0) {
-          // Convierte data.rows a un array estándar
-          const rows = Array.from({ length: data.rows.length }, (_, i) => data.rows.item(i));
-          // Busca el primer elemento que cumpla la condición
-          const found = rows.find(row => row.co_currency === coCurrency);
-
-          if (found) {
-            this.documentsSaleComponent = true;
-            console.log('Moneda coincide:', found);
-          } else {
-            this.documentsSaleComponent = false;
-          }
-
+          this.documentsSaleComponent = true;
+        } else {
+          this.documentsSaleComponent = false;
         }
+        
         for (let i = 0; i < data.rows.length; i++) {
           if (this.mapDocumentsSales.get(data.rows.item(i).id_document) == undefined) {
 
@@ -1401,6 +1396,11 @@ export class CollectionService {
         if (this.historicPartialPayment) {
           this.findIsPaymentPartial(dbServ);
         }
+
+        return this.documentSales;
+      }).catch(e => {
+        //this.documentSales
+        return Promise.resolve(this.documentSales);
       })
     } else if (this.coTypeModule == "3") {
       selectStatement = "SELECT DISTINCT  d.* FROM document_sales d " +
@@ -1409,7 +1409,7 @@ export class CollectionService {
         "WHERE d.id_client = ? AND ds.st_document < 2 AND d.co_currency = ?  AND d.id_enterprise = ? " +
         "AND d.co_document_sale_type = 'IGTF' "
 
-      dbServ.executeSql(selectStatement,
+      return dbServ.executeSql(selectStatement,
         [idClient, coCurrency, idEnterprise]).then(data => {
           //[idClient, coCurrency, idEnterprise]).then(data => {
 
@@ -1504,8 +1504,13 @@ export class CollectionService {
           if (this.historicPartialPayment) {
             this.findIsPaymentPartial(dbServ);
           }
+          return this.documentSales;
+        }).catch(e => {
+          //this.documentSales
+          return Promise.resolve(this.documentSales);
         })
     }
+    return Promise.resolve([]);
   }
 
   findIsPaymentPartial(dbServ: SQLiteObject) {
@@ -1922,15 +1927,17 @@ export class CollectionService {
 
 
     let selectStatement = "";
-    if (this.coTypeModule == "3") {
+    let params: any[] = [];
+    if (coCurrency == 'Moneda') {
       selectStatement = 'SELECT ' +
         'd.* FROM document_sales d ' +
         'LEFT JOIN document_st ds ' +
         'ON d.co_document = ds.co_document ' +
-        'WHERE d.id_client = ? AND ds.st_document < 2 AND d.co_currency = ? AND d.id_enterprise = ? ' +
+        'WHERE d.id_client = ? AND ds.st_document < 2 AND d.id_enterprise = ? ' +
         'AND d.co_document_sale_type == "IGTF" ' +
         'OR d.co_document in (SELECT co_document ' +
         'FROM collection_details WHERE co_collection= ?);'
+      params = [idClient, idEnterprise, coCollection];
     } else {
       selectStatement = 'SELECT ' +
         'd.* FROM document_sales d ' +
@@ -1940,10 +1947,11 @@ export class CollectionService {
         'AND d.co_document_sale_type != "IGTF" ' +
         'OR d.co_document in (SELECT co_document ' +
         'FROM collection_details WHERE co_collection= ?);'
+      params = [idClient, coCurrency, idEnterprise, coCollection];
     }
 
     return dbServ.executeSql(selectStatement,
-      [idClient, coCurrency, idEnterprise, coCollection]).then(data => {
+      params).then(data => {
         if (data.rows.length == 0) {
           this.documentSales = [] as DocumentSale[];
           this.documentSalesBackup = [] as DocumentSale[];

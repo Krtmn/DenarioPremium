@@ -247,11 +247,11 @@ export class CobrosGeneralComponent implements OnInit {
           this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);
           this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.collection.daRate);
         }
-        
+
         this.collectService.getDocumentsSales(
           this.synchronizationServices.getDatabase(),
           this.collectService.collection.idClient,
-          this.collectService.collection.coCurrency,
+          this.collectService.currencySelectedDocument.coCurrency,
           this.collectService.collection.coCollection,
           this.collectService.collection.idEnterprise
         );
@@ -412,11 +412,11 @@ export class CobrosGeneralComponent implements OnInit {
 
           if (this.collectService.changeEnterprise) {
             this.collectService.changeEnterprise = false;
-            this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);
           } else {
             this.collectService.enterpriseSelected = this.collectService.enterpriseList[0];
-            this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);
           }
+          this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);
+
 
           let nameModule = "Cobros"
           switch (this.collectService.coTypeModule) {
@@ -463,7 +463,7 @@ export class CobrosGeneralComponent implements OnInit {
           if (this.collectService.historicoTasa)
             this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise);
           else
-            this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient, this.collectService.collection.coCurrency,
+            this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient, this.collectService.currencySelectedDocument.coCurrency,
               this.collectService.collection.coCollection, this.collectService.collection.idEnterprise);
           // }
 
@@ -589,7 +589,7 @@ export class CobrosGeneralComponent implements OnInit {
             }
 
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
-              this.collectService.collection.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise);
+               this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise);
           })
 
           if (this.collectService.requiredComment)
@@ -697,7 +697,7 @@ export class CobrosGeneralComponent implements OnInit {
         this.collectService.listBankAccounts = result;
         this.collectService.documentCurrency = event.target.value.coCurrency;
 
-        this.collectService.getAllDocuments(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient, this.collectService.documentCurrency,
+        this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,  this.collectService.currencySelectedDocument.coCurrency,
           this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(response => {
             if (this.collectService.documentSales.length > 0)
               this.collectService.documentsSaleComponent = true;
@@ -739,7 +739,7 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.collection.coCurrency = currency.coCurrency;
 
     this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
-      this.collectService.collection.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise);
+       this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise);
 
     this.collectService.loadPaymentMethods();
 
@@ -863,11 +863,11 @@ export class CobrosGeneralComponent implements OnInit {
       this.input.setFocus();
   }
 
-  tagFecha(){
-    if(this.collectService.isAnticipo){
+  tagFecha() {
+    if (this.collectService.isAnticipo) {
       return this.collectService.collectionTags.get('COB_FECHA_ANTICIPO');
     }
-    if(this.collectService.isRetention){
+    if (this.collectService.isRetention) {
       return this.collectService.collectionTags.get('COB_FECHA_RETENCION');
     }
     return this.collectService.collectionTags.get('COB_FECHA_COBRO');
