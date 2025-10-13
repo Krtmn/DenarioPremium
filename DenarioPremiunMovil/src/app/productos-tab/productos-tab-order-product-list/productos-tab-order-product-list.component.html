@@ -26,7 +26,7 @@
 
   <!--  Listado clickeable de productos  -->
 
-  <div class="product-card product-structure-scroll2 accordionProductos">
+  <div class="product-card product-structure-scroll accordionProductos">
     <ion-accordion-group expand="inset" [multiple]="false" #accordionGroup >
       <ion-accordion class="product-structure-title accordionPedidos" *ngFor="let product of orderUtilList; index as i"  [disabled]="!product.nuPrice || (!this.orderServ.stock0 && (product.quStock < 1))"
       (click)="onSelectProductPed(i, product);" toggleIcon="caret-down-circle" toggleIconSlot="end" [value]="product.coProduct">

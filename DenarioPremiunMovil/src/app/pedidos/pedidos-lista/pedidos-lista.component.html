@@ -20,11 +20,12 @@
 </ion-header>
 
 <ion-content>
-  <ion-toolbar>
-    <ion-searchbar show-clear-button="always" class="lupamorada" search-icon="search-circle" clear-icon="trash-bin"
+          <div class="sticky-searchbar">
+            <ion-searchbar show-clear-button="always" class="lupamorada" search-icon="search-circle" clear-icon="trash-bin"
       [placeholder]="searchPlaceholder" [debounce]="1000" (ionInput)="handleInput($event)">
     </ion-searchbar>
-  </ion-toolbar>
+        </div>
+ 
 
   <div class="scroll-lista-pedidos">
     <ion-list *ngFor="let order of orderServ.listaPedidos; index as i" button detail="false">
