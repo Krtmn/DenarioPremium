@@ -5,7 +5,6 @@
     </p>
 </div>
 
-
 <!-- LABEL PARA MOSTRAR MONEDA DEL DOCUMENTO-->
 <div *ngIf="this.collectService.multiCurrency">
     <ion-item>
@@ -14,7 +13,7 @@
         </ion-label>
         <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.currencySelectedDocument"
             (ionChange)="onChangeCurrencyDoc($event)" interface="popover" labelPlacement="stacked">
-            <ion-select-option *ngFor="let currency of this.collectService.currencyList"
+            <ion-select-option *ngFor="let currency of this.collectService.currencyListDocument"
                 [value]="currency">{{currency.coCurrency}}
             </ion-select-option>
         </ion-select>
@@ -45,10 +44,12 @@
         </ion-toggle>
     </ion-item>
 
-    <ion-grid class="tablaInfoClientes tablaDocVentasGrip" *ngIf="this.collectService.documentSalesBackup.length > 0">
+    <!-- currencySelectDocument == MONEDA-->
+    <ion-grid class="tablaInfoClientes tablaDocVentasGrip"
+        *ngIf="this.collectService.documentSalesBackup.length > 0  && this.collectService.currencySelectedDocument?.coCurrency == 'Moneda'">
         <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
             <ion-col class="titulosBold col borderSuperiorIzquierdo" size="2"
-                *ngIf="!this.collectService.retentionDocTypeCR"></ion-col>
+                *ngIf="this.collectService.retentionDocTypeCR"></ion-col>
             <ion-col class="titulosBold col"
                 size="3">{{this.collectService.collectionTags.get('COB_SELECCIONE')}}</ion-col>
 
@@ -138,12 +139,269 @@
         <ion-row *ngFor="let documentSale of this.collectService.documentSalesBackup;index as i"
             class="tabladocumentSalesVenta tablaDocVentas row">
             <ion-col size="2" class="ion-text-center col borderInferiorIzquierdo"
-                *ngIf="!this.collectService.retentionDocTypeCR && documentSale.coCurrency == this.collectService.currencySelectedDocument.coCurrency">
+                *ngIf="this.collectService.retentionDocTypeCR && documentSale.coCurrency == this.collectService.currencySelectedDocument.coCurrency">
                 <ion-button (click)="openDocumentSale(i, $event)" size="small" disabled="{{!documentSale.isSelected}}">
                     <!-- <ion-icon slot="icon-only" src=" ../../../assets/icon/search-circle-outline.svg"></ion-icon> -->
                     <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
                 </ion-button>
             </ion-col>
+
+            <ion-col size="3" class="ion-text-center col"
+                *ngIf="documentSale.coCurrency == this.collectService.currencySelectedDocument.coCurrency">
+                <ion-checkbox [(ngModel)]="documentSale.isSelected"
+                    (ionChange)="selectDocumentSale(documentSale,i,$event)">
+                </ion-checkbox>
+            </ion-col>
+
+
+            <ion-col size="2" class="ion-text-center col borderInferiorIzquierdo"
+                *ngIf="this.collectService.retentionDocTypeCR && this.collectService.currencySelectedDocument.coCurrency == 'Moneda'">
+                <ion-button (click)="openDocumentSale(i, $event)" size="small" disabled="{{!documentSale.isSelected}}">
+                    <!-- <ion-icon slot="icon-only" src=" ../../../assets/icon/search-circle-outline.svg"></ion-icon> -->
+                    <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
+                </ion-button>
+            </ion-col>
+
+            <ion-col size="3" class="ion-text-center col"
+                *ngIf="this.collectService.currencySelectedDocument.coCurrency == 'Moneda'">
+                <ion-checkbox [(ngModel)]="documentSale.isSelected"
+                    (ionChange)="selectDocumentSale(documentSale,i,$event)">
+                </ion-checkbox>
+            </ion-col>
+
+            <ion-col size="4" class="ion-text-center col borderInferiorIzquierdo"
+                *ngIf="this.collectService.historicPartialPayment && this.collectService.coTypeModule == '0' || this.collectService.coTypeModule == '4'">
+                <ion-button (click)="openPartialPayment(documentSale.coDocument)" size="small"
+                    disabled="{{!documentSale.inPaymentPartial}}">
+                    <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
+                </ion-button>
+            </ion-col>
+
+            <ion-col size="3" class="ion-text-center col"
+                [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }"
+                *ngIf="this.collectService.currencySelectedDocument.coCurrency == 'Moneda'">
+                {{documentSale.coDocumentSaleType}}
+            </ion-col>
+            <ion-col size="6" class="ion-text-center col"
+                [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }"
+                *ngIf="this.collectService.currencySelectedDocument.coCurrency == 'Moneda'">
+                {{documentSale.coDocument}}
+            </ion-col>
+            <ion-col size="6" class="ion-text-center col"
+                [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }"
+                *ngIf="this.collectService.currencySelectedDocument.coCurrency == 'Moneda'">
+                {{documentSale.coCurrency}}
+            </ion-col>
+            <ion-col size="6" class="ion-text-center col"
+                [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }"
+                *ngIf="this.collectService.currencySelectedDocument.coCurrency == 'Moneda'">
+                {{getDaDueDate(documentSale.daDueDate)}}
+            </ion-col>
+            <!--  SI SON MULTICURRENCY-->
+            <ion-col
+                *ngIf="this.collectService.multiCurrency && this.collectService.currencySelectedDocument.coCurrency == 'Moneda'"
+                size="6" class="ion-text-center col"
+                [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }">
+
+                {{ getTasaByAmount(documentSale.nuAmountTotal, documentSale.nuValueLocal) }}
+                {{this.collectService.localCurrency.coCurrency}}
+            </ion-col>
+            <!-- SI LA MONEDA ES LOCAL -->
+            <ion-col
+                *ngIf="this.collectService.multiCurrency && this.collectService.currencySelected.localCurrency.toString()== 'true' && this.collectService.currencySelectedDocument.coCurrency == 'Moneda'"
+                size="6" class="ion-text-center col"
+                [ngStyle]="{color: documentSale.nuAmountTotal > 0 ? 'Red' : 'Blue' }">
+                {{formatNumber((this.collectService.convertirMonto(documentSale.nuAmountTotal,
+                documentSale.nuValueLocal,
+                documentSale.coCurrency)))}}
+                {{this.collectService.collection.coCurrency}}
+            </ion-col>
+            <ion-col
+                *ngIf="this.collectService.multiCurrency && this.collectService.currencySelected.localCurrency.toString()== 'true' && this.collectService.currencySelectedDocument.coCurrency == 'Moneda'"
+                size="6" class="ion-text-center col"
+                [ngStyle]="{color: documentSale.nuAmountTotal > 0 ? 'Red' : 'Blue' }">
+                {{formatNumber((documentSale.nuAmountTotal))}}
+                {{documentSale.coCurrency}}
+            </ion-col>
+            <ion-col
+                *ngIf="this.collectService.multiCurrency && this.collectService.currencySelected.localCurrency.toString()== 'true' && this.collectService.currencySelectedDocument.coCurrency == 'Moneda'"
+                size="6" class="ion-text-center col" [ngStyle]="{color: documentSale.nuBalance > 0 ? 'Red' : 'Blue' }">
+                {{formatNumber(this.collectService.convertirMonto(documentSale.nuBalance,
+                documentSale.nuValueLocal,documentSale.coCurrency))}}
+                {{this.collectService.collection.coCurrency}}
+            </ion-col>
+            <ion-col
+                *ngIf="this.collectService.multiCurrency && this.collectService.currencySelected.localCurrency.toString()== 'true' && this.collectService.currencySelectedDocument.coCurrency == 'Moneda'"
+                size="6" class="ion-text-center col" [ngStyle]="{color: documentSale.nuBalance > 0 ? 'Red' : 'Blue' }">
+                {{formatNumber((documentSale.nuBalance))}}
+                {{documentSale.coCurrency}}
+            </ion-col>
+            <!--  FIN SI SON MULTICURRENCY-->
+
+            <!-- SI LA MONEDA SELECCIONADA ES HARD -->
+            <ion-col
+                *ngIf="this.collectService.multiCurrency && this.collectService.currencySelected.hardCurrency.toString() == 'true' && this.collectService.currencySelectedDocument.coCurrency == 'Moneda'"
+                size="6" class="ion-text-center col"
+                [ngStyle]="{color: documentSale.nuAmountTotal > 0 ? 'Red' : 'Blue' }">
+                {{formatNumber(documentSale.nuAmountTotal)}}
+                {{documentSale.coCurrency}}
+            </ion-col>
+            <ion-col
+                *ngIf="this.collectService.multiCurrency && this.collectService.currencySelected.hardCurrency.toString() == 'true' && this.collectService.currencySelectedDocument.coCurrency == 'Moneda'"
+                size="6" class="ion-text-center col"
+                [ngStyle]="{color: documentSale.nuAmountTotal > 0 ? 'Red' : 'Blue' }">
+                {{formatNumber(this.collectService.convertirMonto(documentSale.nuAmountTotal,
+                documentSale.nuValueLocal,documentSale.coCurrency))}}
+                <!-- <br> -->
+                {{this.collectService.currencyConversion.coCurrency}}
+            </ion-col>
+            <ion-col
+                *ngIf="this.collectService.multiCurrency && this.collectService.currencySelected.hardCurrency.toString() == 'true' && this.collectService.currencySelectedDocument.coCurrency == 'Moneda'"
+                size="6" class="ion-text-center col" [ngStyle]="{color: documentSale.nuBalance > 0 ? 'Red' : 'Blue' }">
+                {{formatNumber(documentSale.nuBalance)}}
+                {{documentSale.coCurrency}}
+            </ion-col>
+            <ion-col
+                *ngIf="this.collectService.multiCurrency && this.collectService.currencySelected.hardCurrency.toString() == 'true' && this.collectService.currencySelectedDocument.coCurrency == 'Moneda'"
+                size="6" class="ion-text-center col" [ngStyle]="{color: documentSale.nuBalance > 0 ? 'Red' : 'Blue' }">
+                {{formatNumber(this.collectService.convertirMonto(documentSale.nuBalance,
+                documentSale.nuValueLocal,documentSale.coCurrency))}}
+                <!-- <br> -->
+                {{this.collectService.currencyConversion.coCurrency}}
+            </ion-col>
+            <!--FIN SI LA MONEDA ES HARD -->
+
+            <!-- FIN MULTICURRENCY -->
+            <ion-col *ngIf="this.collectService.currencySelectedDocument.coCurrency == 'Moneda'" size=" 6"
+                class="ion-text-center col" [ngStyle]="{color: documentSale.nuAmountTotal > 0 ? 'Red' : 'Blue' }">
+                {{formatNumber(documentSale.nuAmountTotal)}}
+                <!-- {{Number(documentSale.nuAmountTotal)}} -->
+                <!-- <br> -->
+                {{documentSale.coCurrency}}
+            </ion-col>
+            <ion-col *ngIf="this.collectService.currencySelectedDocument.coCurrency == 'Moneda'" size=" 6"
+                class="ion-text-center col" [ngStyle]="{color: documentSale.nuBalance > 0 ? 'Red' : 'Blue' }">
+                {{formatNumber(documentSale.nuBalance)}}
+                {{documentSale.coCurrency}}
+            </ion-col>
+            <ion-col size="6" class="ion-text-center col"
+                [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }"
+                *ngIf="this.collectService.currencySelectedDocument.coCurrency == 'Moneda'">
+                {{documentSale.daDocument | date: "dd/MM/yyyy"}}
+            </ion-col>
+            <ion-col size="6" class="ion-text-center col borderInferiorDerecho"
+                [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }"
+                *ngIf="this.collectService.currencySelectedDocument.coCurrency == 'Moneda'">
+                {{documentSale.daDueDate | date: "dd/MM/yyyy"}}
+            </ion-col>
+
+
+        </ion-row>
+    </ion-grid>
+
+
+    <!-- currencySelectDocument == NORMAL-->
+    <ion-grid class="tablaInfoClientes tablaDocVentasGrip"
+        *ngIf="this.collectService.documentSalesBackup.length > 0  && this.collectService.currencySelectedDocument?.coCurrency != 'Moneda'">
+        <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
+            <ion-col class="titulosBold col borderSuperiorIzquierdo" size="2"
+                *ngIf="this.collectService.retentionDocTypeCR"></ion-col>
+            <ion-col class="titulosBold col"
+                size="3">{{this.collectService.collectionTags.get('COB_SELECCIONE')}}</ion-col>
+
+            <ion-col
+                *ngIf="this.collectService.historicPartialPayment && this.collectService.coTypeModule == '0' || this.collectService.coTypeModule == '4'"
+                class="titulosBold col" size="4">Pago
+                Parcial</ion-col>
+
+            <ion-col class="titulosBold col" size="3">{{this.collectService.collectionTags.get('COB_TIPO')}} </ion-col>
+            <ion-col class="titulosBold col" size="6">{{this.collectService.collectionTags.get('COB_NRO_DOCUMENTO')}}
+            </ion-col>
+            <ion-col class="titulosBold col" size="6">{{this.collectService.collectionTags.get('COB_MONEDA_DOCUMENTO')}}
+            </ion-col>
+            <ion-col class="titulosBold col" size="6">{{this.collectService.collectionTags.get('COB_DIAS_VENCIMIENTO')}}
+            </ion-col>
+
+            <ion-col *ngIf="this.collectService.multiCurrency" size="6"
+                class="titulosBold col">{{this.collectService.collectionTags.get('COB_TASA')}}
+            </ion-col>
+
+            <!-- si la moneda del doc es local, primero se muestran los montos en local,  -->
+            <ion-col
+                *ngIf="this.collectService.multiCurrency && this.collectService.currencySelected.localCurrency.toString()== 'true'"
+                size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_MONTO')}}
+                {{this.collectService.collection.coCurrency}}
+            </ion-col>
+
+            <ion-col
+                *ngIf="this.collectService.multiCurrency && this.collectService.currencySelected.localCurrency.toString()== 'true'"
+                size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_MONTO')}}
+                {{this.collectService.currencyConversion.coCurrency}}
+            </ion-col>
+
+            <ion-col
+                *ngIf="this.collectService.multiCurrency && this.collectService.currencySelected.localCurrency.toString()== 'true'"
+                size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_SALDO')}}
+                {{this.collectService.collection.coCurrency}}
+            </ion-col>
+
+            <ion-col
+                *ngIf="this.collectService.multiCurrency && this.collectService.currencySelected.localCurrency.toString()== 'true'"
+                size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_SALDO')}}
+                {{this.collectService.currencyConversion.coCurrency}}
+            </ion-col>
+            <!-- fin -->
+
+            <!-- si la moneda del doc es hard, primero se muestran los montos en hard,  -->
+            <ion-col
+                *ngIf="this.collectService.multiCurrency && this.collectService.currencySelected.hardCurrency.toString() == 'true'"
+                size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_MONTO')}}
+                {{this.collectService.collection.coCurrency}}
+            </ion-col>
+
+            <ion-col
+                *ngIf="this.collectService.multiCurrency && this.collectService.currencySelected.hardCurrency.toString() == 'true'"
+                size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_MONTO')}}
+                {{this.collectService.currencyConversion.coCurrency}}
+            </ion-col>
+
+            <ion-col
+                *ngIf="this.collectService.multiCurrency && this.collectService.currencySelected.hardCurrency.toString() == 'true'"
+                size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_SALDO')}}
+                {{this.collectService.collection.coCurrency}}
+            </ion-col>
+
+            <ion-col
+                *ngIf="this.collectService.multiCurrency && this.collectService.currencySelected.hardCurrency.toString() == 'true'"
+                size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_SALDO')}}
+                {{this.collectService.currencyConversion.coCurrency}}
+            </ion-col>
+            <!-- fin -->
+
+            <ion-col *ngIf="!this.collectService.multiCurrency" size="6"
+                class="titulosBold col">{{this.collectService.collectionTags.get('COB_MONTO')}}
+                {{this.collectService.localCurrency.coCurrency}}
+            </ion-col>
+            <ion-col *ngIf="!this.collectService.multiCurrency" size="6"
+                class="titulosBold col">{{this.collectService.collectionTags.get('COB_SALDO')}}
+                {{this.collectService.localCurrency.coCurrency}}
+            </ion-col>
+
+            <ion-col size="6"
+                class="titulosBold col">{{this.collectService.collectionTags.get('COB_FECHA_DOC')}}</ion-col>
+            <ion-col size="6"
+                class="titulosBold col borderSuperiorDerecho">{{this.collectService.collectionTags.get('COB_FECHA_VENCIMIENTO')}}</ion-col>
+        </ion-row>
+        <ion-row *ngFor="let documentSale of this.collectService.documentSalesBackup;index as i"
+            class="tabladocumentSalesVenta tablaDocVentas row">
+            <ion-col size="2" class="ion-text-center col borderInferiorIzquierdo"
+                *ngIf="this.collectService.retentionDocTypeCR && documentSale.coCurrency == this.collectService.currencySelectedDocument.coCurrency">
+                <ion-button (click)="openDocumentSale(i, $event)" size="small" disabled="{{!documentSale.isSelected}}">
+                    <!-- <ion-icon slot="icon-only" src=" ../../../assets/icon/search-circle-outline.svg"></ion-icon> -->
+                    <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
+                </ion-button>
+            </ion-col>
+
             <ion-col size="3" class="ion-text-center col"
                 *ngIf="documentSale.coCurrency == this.collectService.currencySelectedDocument.coCurrency">
                 <ion-checkbox [(ngModel)]="documentSale.isSelected"
@@ -280,7 +538,7 @@
                 *ngIf="documentSale.coCurrency == this.collectService.currencySelectedDocument.coCurrency">
                 {{documentSale.daDueDate | date: "dd/MM/yyyy"}}
             </ion-col>
-
+            <!-- currencySelectDocument == NORMAL-->
         </ion-row>
     </ion-grid>
 
@@ -532,18 +790,17 @@
                                     <!-- PAGO PARCIA / MONTO A PAGARL-->
                                     <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                                         <ion-input
-                                                label="{{this.collectService.collectionTags.get('COB_MONTO_PAGAR')}} {{this.collectService.collection.coCurrency}}"
-                                                label-placement="floating" fill="outline"
-                                                value="{{this.currencyService.formatNumber(collectService.amountPaidDoc)}}"
-                                                [(ngModel)]="this.collectService.amountPaid" (ionInput)="setPartialPay()"
-                                                color="primary" [readonly]="!this.collectService.isPaymentPartial"
-                                                type="number"
-                                                required
-                                                [ngClass]="{'inp-write': !this.collectService.amountPaymentPartial, 'input-rojo': !this.collectService.amountPaid}"
-                                                min="0"
-                                        >
+                                            label="{{this.collectService.collectionTags.get('COB_MONTO_PAGAR')}} {{this.collectService.collection.coCurrency}}"
+                                            label-placement="floating" fill="outline"
+                                            value="{{this.currencyService.formatNumber(collectService.amountPaidDoc)}}"
+                                            [(ngModel)]="this.collectService.amountPaid" (ionInput)="setPartialPay()"
+                                            color="primary" [readonly]="!this.collectService.isPaymentPartial"
+                                            type="number" required
+                                            [ngClass]="{'inp-write': !this.collectService.amountPaymentPartial, 'input-rojo': !this.collectService.amountPaid}"
+                                            min="0">
                                         </ion-input>
-                                        <ion-label *ngIf="!this.collectService.amountPaid" color="danger" class="campoObligatorio">
+                                        <ion-label *ngIf="!this.collectService.amountPaid" color="danger"
+                                            class="campoObligatorio">
                                             Este campo es obligatorio
                                         </ion-label>
                                     </ion-col>

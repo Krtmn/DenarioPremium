@@ -65,6 +65,7 @@ export class CollectionService {
   public localCurrency!: Currencies;
   public hardCurrency!: Currencies;
   public currencyList!: Currencies[];
+  public currencyListDocument!: Currencies[];
   public enterpriseList: Enterprise[] = [];
   public currencySelectedDocument!: Currencies;
   public documentSaleOpen!: DocumentSale;
@@ -407,7 +408,7 @@ export class CollectionService {
         if (this.collection.stCollection == 1) {
           if (this.currencyList[i].coCurrency == this.collection.coCurrency) {
             this.currencySelected = this.currencyList[i];
-            this.currencySelectedDocument = this.currencyList[i];
+            //this.currencySelectedDocument = this.currencyList[i];
 
             this.collection.idCurrency = this.currencyList[i].idCurrency;
             this.collection.coCurrency = this.currencyList[i].coCurrency;
@@ -416,29 +417,29 @@ export class CollectionService {
           if (this.collection.stCollection == 3) {
             if (this.currencyList[i].coCurrency == this.collection.coCurrency) {
               this.currencySelected = this.currencyList[i];
-              this.currencySelectedDocument = this.currencyList[i];
+              //this.currencySelectedDocument = this.currencyList[i];
               this.collection.idCurrency = this.currencyList[i].idCurrency;
               this.collection.coCurrency = this.currencyList[i].coCurrency;
-              if (this.currencySelectedDocument.coCurrency == this.localCurrency.coCurrency) {
-                this.isLocalCurrency = true;
-                this.isHardCurrency = false;
-              } else {
-                this.isHardCurrency = true;
-                this.isLocalCurrency = false;
-              }
+              /*   if (this.currencySelectedDocument.coCurrency == this.localCurrency.coCurrency) {
+                  this.isLocalCurrency = true;
+                  this.isHardCurrency = false;
+                } else {
+                  this.isHardCurrency = true;
+                  this.isLocalCurrency = false;
+                } */
             }
           } else if (this.currencyList[i].coCurrency == this.enterpriseSelected.coCurrencyDefault) {
             this.currencySelected = this.currencyList[i];
-            this.currencySelectedDocument = this.currencyList[i];
+            // this.currencySelectedDocument = this.currencyList[i];
             this.collection.idCurrency = this.currencyList[i].idCurrency;
             this.collection.coCurrency = this.currencyList[i].coCurrency;
-            if (this.currencySelectedDocument.coCurrency == this.localCurrency.coCurrency) {
-              this.isLocalCurrency = true;
-              this.isHardCurrency = false;
-            } else {
-              this.isHardCurrency = true;
-              this.isLocalCurrency = false;
-            }
+            /*  if (this.currencySelectedDocument.coCurrency == this.localCurrency.coCurrency) {
+               this.isLocalCurrency = true;
+               this.isHardCurrency = false;
+             } else {
+               this.isHardCurrency = true;
+               this.isLocalCurrency = false;
+             } */
           }
 
         }
@@ -475,11 +476,27 @@ export class CollectionService {
         if (this.currencyService.hardCurrency.coCurrency == this.MonedaTolerancia)
           this.MonedaToleranciaIsHard = true;
 
-
-
+      this.setCurrencyDocument();
       Promise.resolve(true);
-
     })
+  }
+
+  setCurrencyDocument() {
+    // Crea un objeto genérico de tipo Currencies
+    const genericCurrency = new Currencies(
+      0, // idCurrencyEnterprise
+      0, // idCurrency
+      'Moneda', // coCurrency
+      false, // localCurrency
+      false, // hardCurrency
+      '', // coEnterprise
+      0  // idEnterprise
+    );
+
+    // Asigna el array con el objeto genérico y luego el contenido real
+    this.currencyListDocument = [genericCurrency, ...this.currencyList];
+    // Después de cargar currencyListDocument:
+    this.currencySelectedDocument = genericCurrency;
   }
 
   setCurrencyConversion() {

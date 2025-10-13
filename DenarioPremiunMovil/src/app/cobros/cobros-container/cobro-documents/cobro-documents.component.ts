@@ -89,10 +89,15 @@ export class CobrosDocumentComponent implements OnInit {
 
   onChangeCurrencyDoc(event: any) {
     //debo llamar a getAllDocuments con la nueva moneda y refrescar todo
-    console.log("CAMBIE MONEDA DEL DOCUMENTO, DEBO BUSCAR DOCS CON LA NUEVA MONEDA", event.target.value.coCurrency);
+    let docCurrency = "";
+    if (event.target.value.coCurrency == "Moneda") {
+      this.collectService.documentCurrency = this.collectService.currencySelected.coCurrency
+    } else {
+      docCurrency = event.target.value.coCurrency;
+      this.collectService.documentCurrency = event.target.value.coCurrency;
+    }
 
-    this.collectService.documentCurrency = event.target.value.coCurrency;
-    this.getDocumentsSale(this.collectService.collection.idClient, this.collectService.documentCurrency,
+    this.getDocumentsSale(this.collectService.collection.idClient, docCurrency,
       this.collectService.collection.coCollection, this.collectService.collection.idEnterprise)
   }
 
@@ -908,21 +913,21 @@ export class CobrosDocumentComponent implements OnInit {
     this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention2Conversion = 0;
     this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountPaid = sumRetentions;
     /* this.collectService.collection.collectionDetails[documentSaleOpen.positionCollecDetails]!.nuAmountPaid = documentSaleOpen.nuAmountPaid;
-
+ 
     this.collectService.collection.collectionDetails[documentSaleOpen.positionCollecDetails]!.nuAmountPaidConversion
       = this.collectService.convertirMonto(documentSaleOpen.nuAmountPaid, this.collectService.collection.nuValueLocal, documentSaleOpen.coCurrency);
-
+ 
     this.collectService.documentSaleOpen.nuAmountPaid = this.collectService.amountPaid;
     this.collectService.documentSaleOpen.nuAmountDiscount = nuAmountDiscount;
     this.collectService.documentSaleOpen.nuAmountRetention = nuAmountRetention;
     this.collectService.documentSaleOpen.nuAmountRetention2 = nuAmountRetention2;
-
-
+ 
+ 
     this.collectService.documentSales[indexDocumentSaleOpen].nuAmountPaid = this.collectService.amountPaid;
     this.collectService.documentSales[indexDocumentSaleOpen].nuAmountDiscount = nuAmountDiscount;
     this.collectService.documentSales[indexDocumentSaleOpen].nuAmountRetention = nuAmountRetention;
     this.collectService.documentSales[indexDocumentSaleOpen].nuAmountRetention2 = nuAmountRetention2;
-
+ 
     this.collectService.documentSalesBackup[indexDocumentSaleOpen].nuAmountPaid = this.collectService.amountPaid;
     this.collectService.documentSalesBackup[indexDocumentSaleOpen].nuAmountDiscount = nuAmountDiscount;
     this.collectService.documentSalesBackup[indexDocumentSaleOpen].nuAmountRetention = nuAmountRetention;
