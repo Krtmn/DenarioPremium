@@ -1,28 +1,39 @@
-# Angular specific
-/dist/
-/out-tsc/
-/tmp/
-/coverage/
-/e2e/test-output/
-/.angular/
-.angular/
-
-# Node modules and dependency files
-/node_modules/
-/package-lock.json
-/yarn.lock
-
-# Environment files
-/.env
-
-# Angular CLI and build artefacts
-/.angular-cli.json
-/.ng/
-
-# TypeScript cache
-*.tsbuildinfo
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+package-lock.json
+.vscode/settings.json
+DenarioPremiunMovil/package-lock.json
+DenarioPremiunMovil/query
+DenarioPremiunMovil/android_backup/res/drawable/splash.png
+DenarioPremiunMovil/android_backup/res/drawable-land-hdpi/splash.png
+DenarioPremiunMovil/android_backup/res/drawable-land-mdpi/splash.png
+DenarioPremiunMovil/android_backup/res/drawable-land-xhdpi/splash.png
+DenarioPremiunMovil/android_backup/res/drawable-land-xxhdpi/splash.png
+DenarioPremiunMovil/android_backup/res/drawable-land-xxxhdpi/splash.png
+DenarioPremiunMovil/android_backup/res/drawable-port-hdpi/splash.png
+DenarioPremiunMovil/android_backup/res/drawable-port-mdpi/splash.png
+DenarioPremiunMovil/android_backup/res/drawable-port-xhdpi/splash.png
+DenarioPremiunMovil/android_backup/res/drawable-port-xxhdpi/splash.png
+DenarioPremiunMovil/android_backup/res/drawable-port-xxxhdpi/splash.png
+DenarioPremiunMovil/android_backup/res/drawable-v24/ic_launcher_foreground.xml
+DenarioPremiunMovil/android_backup/res/layout/activity_main.xml
+DenarioPremiunMovil/android_backup/res/mipmap-anydpi-v26/ic_launcher.xml
+DenarioPremiunMovil/android_backup/res/mipmap-anydpi-v26/ic_launcher_round.xml
+DenarioPremiunMovil/android_backup/res/mipmap-hdpi/ic_launcher.png
+DenarioPremiunMovil/android_backup/res/mipmap-hdpi/ic_launcher_foreground.png
+DenarioPremiunMovil/android_backup/res/mipmap-hdpi/ic_launcher_round.png
+DenarioPremiunMovil/android_backup/res/mipmap-mdpi/ic_launcher.png
+DenarioPremiunMovil/android_backup/res/mipmap-mdpi/ic_launcher_foreground.png
+DenarioPremiunMovil/android_backup/res/mipmap-mdpi/ic_launcher_round.png
+DenarioPremiunMovil/android_backup/res/mipmap-xhdpi/ic_launcher.png
+DenarioPremiunMovil/android_backup/res/mipmap-xhdpi/ic_launcher_foreground.png
+DenarioPremiunMovil/android_backup/res/mipmap-xhdpi/ic_launcher_round.png
+DenarioPremiunMovil/android_backup/res/mipmap-xxhdpi/ic_launcher.png
+DenarioPremiunMovil/android_backup/res/mipmap-xxhdpi/ic_launcher_foreground.png
+DenarioPremiunMovil/android_backup/res/mipmap-xxhdpi/ic_launcher_round.png
+DenarioPremiunMovil/android_backup/res/mipmap-xxxhdpi/ic_launcher.png
+DenarioPremiunMovil/android_backup/res/mipmap-xxxhdpi/ic_launcher_foreground.png
+DenarioPremiunMovil/android_backup/res/mipmap-xxxhdpi/ic_launcher_round.png
+DenarioPremiunMovil/android_backup/res/values/ic_launcher_background.xml
+DenarioPremiunMovil/android_backup/res/values/strings.xml
+DenarioPremiunMovil/android_backup/res/values/styles.xml
+DenarioPremiunMovil/android_backup/res/xml/config.xml
+DenarioPremiunMovil/android_backup/res/xml/file_paths.xml
