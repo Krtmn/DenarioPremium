@@ -1239,30 +1239,33 @@ export class CollectionService {
 
   getDocumentsSales(dbServ: SQLiteObject, idClient: number, coCurrency: string, coCollection: string, idEnterprise: number) {
 
-    /* this.documentSales = [] as DocumentSale[];
-    this.documentSalesBackup = [] as DocumentSale[]; */
-
-
     let selectStatement = ""
     let params: any[] = [];
     if (this.coTypeModule != "3") {
       if (this.currencySelectedDocument == null) {
         // Solo necesitas algunos parámetros
         params = [idClient, idEnterprise, coCollection];
+        selectStatement = 'SELECT ' +
+          'd.* FROM document_sales d ' +
+          'LEFT JOIN document_st ds ' +
+          'ON d.co_document = ds.co_document ' +
+          'WHERE d.id_client = ? AND ds.st_document < 2 AND d.id_enterprise = ? ' +
+          'AND d.co_document_sale_type != "IGTF" ' +
+          'OR d.co_document in (SELECT co_document ' +
+          'FROM collection_details WHERE co_collection= ?);'
       } else {
         // Necesitas todos los parámetros
         params = [idClient, coCurrency, idEnterprise, coCollection];
+        selectStatement = 'SELECT ' +
+          'd.* FROM document_sales d ' +
+          'LEFT JOIN document_st ds ' +
+          'ON d.co_document = ds.co_document ' +
+          'WHERE d.id_client = ? AND ds.st_document < 2 AND d.co_currency = ? AND d.id_enterprise = ? ' +
+          'AND d.co_document_sale_type != "IGTF" ' +
+          'OR d.co_document in (SELECT co_document ' +
+          'FROM collection_details WHERE co_collection= ?);'
       }
 
-
-      selectStatement = 'SELECT ' +
-        'd.* FROM document_sales d ' +
-        'LEFT JOIN document_st ds ' +
-        'ON d.co_document = ds.co_document ' +
-        'WHERE d.id_client = ? AND ds.st_document < 2 AND d.co_currency = ? AND d.id_enterprise = ? ' +
-        'AND d.co_document_sale_type != "IGTF" ' +
-        'OR d.co_document in (SELECT co_document ' +
-        'FROM collection_details WHERE co_collection= ?);'
 
       dbServ.executeSql(selectStatement, params).then(data => {
 
