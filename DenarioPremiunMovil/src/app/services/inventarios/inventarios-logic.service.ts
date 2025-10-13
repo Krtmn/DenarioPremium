@@ -62,6 +62,7 @@ export class InventariosLogicService {
   public alertMessage: Boolean = false;
   public disabledEnterprise: boolean = false;
   public userMustActivateGPS: boolean = false;
+  public expirationBatch: boolean = false;
 
 
   public enterpriseClientStock: Enterprise = {} as Enterprise;
@@ -166,6 +167,7 @@ export class InventariosLogicService {
     this.productTypeStocksMap = new Map<number, number>();
     this.typeStocks = [] as Inventarios[];
     this.disabledEnterprise = this.globalConfig.get('enterpriseEnabled') === 'true' ? false : true;
+    this.expirationBatch = this.globalConfig.get('expirationBatch') === 'true' ? true : false;
   }
 
   showBackRoute(route: string) {

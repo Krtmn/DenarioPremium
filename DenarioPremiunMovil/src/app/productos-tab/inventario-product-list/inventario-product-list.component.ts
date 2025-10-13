@@ -50,8 +50,6 @@ export class InventarioProductListComponent implements OnInit {
   public idProductStructureList: number[] = [];
   public coProductStructureListString: string = "";
 
-  public expirationBatch: Boolean = false;
-
   public cantidadSeleccionada!: Number;
   public loteSeleccionado!: string;
   public showProductStructure: Boolean = true;
@@ -68,7 +66,7 @@ export class InventarioProductListComponent implements OnInit {
     /* if (this.inventariosLogicService.initInventario) { */
 
     this.searchText = '';
-    this.expirationBatch = this.globalConfig.get('expirationBatch') === 'true' ? true : false;
+  
     console.log('Estoy en inventario');
     this.inventariosLogicService.productSelected = {} as ProductUtil
     this.psClicked = this.productService.productStructureCLicked.subscribe((data) => {
