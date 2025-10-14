@@ -562,8 +562,11 @@ export class CobrosGeneralComponent implements OnInit {
       if (this.collectService.collection.stCollection === 3) {
         this.collectService.rateSelected = this.collectService.collection.nuValueLocal;
         this.collectService.historicoTasa = true;
-      } else if (this.collectService.historicoTasa)
+      } else if (this.collectService.historicoTasa) {
+        this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise);
         this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual.split("T")[0]);
+      }
+
 
       //BUSCAMOS LAS CUENTAS DE BANCOS DEL CLIENTE
       this.collectService.getAllClientBankAccountByEnterprise(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise, this.collectService.collection.coClient).then((result: any[]) => {
