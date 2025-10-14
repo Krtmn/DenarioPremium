@@ -160,41 +160,60 @@ export class CobrosDocumentComponent implements OnInit {
     const nuValueLocalDoc = this.collectService.documentSalesBackup[index].nuValueLocal;
 
     backupBalance = this.collectService.documentSalesBackup[index].nuBalance;
-    this.saldo = "0";
-    this.saldoConversion = "0";
-    this.saldoView = "0";
-    if (this.collectService.currencySelected.localCurrency.toString() == 'true') {
-      if (this.collectService.currencySelectedDocument.localCurrency.toString() == 'true') {
-        this.saldo = this.currencyService.formatNumber(backupBalance);
-        this.saldoView = this.currencyService.formatNumber(this.collectService.documentSalesBackup[index].nuBalance);
-        //pasar de local a hard
-        this.saldoConversion = this.currencyService.formatNumber(await this.collectService.convertAmount(backupBalance, 'local', 'hard', coTypeDoc, nuValueLocalDoc));
-        this.saldoConversionView = this.currencyService.formatNumber(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuBalance, 'local', 'hard', coTypeDoc, nuValueLocalDoc));
-      } else {
-        this.saldo = this.currencyService.formatNumber(await this.collectService.convertAmount(backupBalance, 'hard', 'local', coTypeDoc, nuValueLocalDoc));
-        this.saldoConversion = this.currencyService.formatNumber(backupBalance);
-        this.saldoView = this.currencyService.formatNumber(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuBalance, 'hard', 'local', coTypeDoc, nuValueLocalDoc));
-        this.saldoConversionView = this.currencyService.formatNumber(this.collectService.documentSalesBackup[index].nuBalance);
-      }
-      console.log(this.saldo)
-      console.log(this.saldoConversion)
-      return true;
-    } else {
-      if (this.collectService.currencySelectedDocument.hardCurrency.toString() == 'true') {
-        this.saldo = this.currencyService.formatNumber(backupBalance);
-        this.saldoConversion = this.currencyService.formatNumber(await this.collectService.convertAmount(backupBalance, 'hard', 'local', coTypeDoc, nuValueLocalDoc));
-        this.saldoView = this.currencyService.formatNumber(this.collectService.documentSalesBackup[index].nuBalance);
-        this.saldoConversionView = this.currencyService.formatNumber(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuBalance, 'hard', 'local', coTypeDoc, nuValueLocalDoc));
-      } else {
-        this.saldo = this.currencyService.formatNumber(await this.collectService.convertAmount(backupBalance, 'local', 'hard', coTypeDoc, nuValueLocalDoc));          //PASAR DE HARD A LOCAL
-        this.saldoConversion = this.currencyService.formatNumber(backupBalance);
-        this.saldo = this.currencyService.formatNumber(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuBalance, 'local', 'hard', coTypeDoc, nuValueLocalDoc));          //PASAR DE HARD A LOCAL
-        this.saldoConversion = this.currencyService.formatNumber(this.collectService.documentSalesBackup[index].nuBalance);
-      }
-      console.log(this.saldo)
-      console.log(this.saldoConversion)
-      return true;
 
+    if (!this.collectService.documentSales[index].isSave) {
+      ``
+      this.saldo = "0";
+      this.saldoConversion = "0";
+      this.saldoView = "0";
+      this.saldoConversionView = "0";
+
+      if (this.collectService.currencySelected.localCurrency.toString() == 'true') {
+        if (this.collectService.documentSales[index].coCurrency == this.collectService.currencySelected.coCurrency) {
+          this.saldo = this.currencyService.formatNumber(backupBalance);
+          this.saldoView = this.currencyService.formatNumber(this.collectService.documentSalesBackup[index].nuBalance);
+          this.saldoConversion = this.currencyService.formatNumber(await this.collectService.convertAmount(backupBalance, 'local', 'hard', coTypeDoc, nuValueLocalDoc));
+          this.saldoConversionView = this.currencyService.formatNumber(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuBalance, 'local', 'hard', coTypeDoc, nuValueLocalDoc));
+        } else {
+          this.saldo = this.currencyService.formatNumber(await this.collectService.convertAmount(backupBalance, 'hard', 'local', coTypeDoc, nuValueLocalDoc));
+          this.saldoConversion = this.currencyService.formatNumber(backupBalance);
+          this.saldoView = this.currencyService.formatNumber(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuBalance, 'hard', 'local', coTypeDoc, nuValueLocalDoc));
+          this.saldoConversionView = this.currencyService.formatNumber(this.collectService.documentSalesBackup[index].nuBalance);
+        }
+        console.log(this.saldo);
+        console.log(this.saldoConversion);
+        console.log(this.saldoView);
+        console.log(this.saldoConversionView);
+        return true;
+      } else {
+        if (this.collectService.documentSales[index].coCurrency == this.collectService.currencySelected.coCurrency) {
+          this.saldo = this.currencyService.formatNumber(backupBalance);
+          this.saldoConversion = this.currencyService.formatNumber(await this.collectService.convertAmount(backupBalance, 'hard', 'local', coTypeDoc, nuValueLocalDoc));
+          this.saldoView = this.currencyService.formatNumber(this.collectService.documentSalesBackup[index].nuBalance);
+          this.saldoConversionView = this.currencyService.formatNumber(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuBalance, 'hard', 'local', coTypeDoc, nuValueLocalDoc));
+        } else {
+          this.saldo = this.currencyService.formatNumber(await this.collectService.convertAmount(backupBalance, 'local', 'hard', coTypeDoc, nuValueLocalDoc));          //PASAR DE HARD A LOCAL
+          this.saldoConversion = this.currencyService.formatNumber(backupBalance);
+          this.saldoView = this.currencyService.formatNumber(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuBalance, 'local', 'hard', coTypeDoc, nuValueLocalDoc));          //PASAR DE HARD A LOCAL
+          this.saldoConversionView = this.currencyService.formatNumber(this.collectService.documentSalesBackup[index].nuBalance);
+        }
+        console.log(this.saldo);
+        console.log(this.saldoConversion);
+        console.log(this.saldoView);
+        console.log(this.saldoConversionView);
+        return true;
+
+      }
+    } else {
+      console.log(this.saldo);
+      console.log(this.saldoConversion);
+      console.log(this.saldoView);
+      console.log(this.saldoConversionView);
+      this.saldo = this.collectService.documentSales[0].nuBalance.toString();
+      this.saldoConversion = this.collectService.convertirMonto(this.collectService.documentSales[index].nuBalance, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency).toString();
+      this.saldoView = this.currencyService.formatNumber(this.collectService.documentSales[index].nuBalance);
+      this.saldoConversionView = this.collectService.convertirMonto(this.collectService.documentSales[index].nuBalance, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency).toString();
+      return true;
     }
   }
 
@@ -204,7 +223,7 @@ export class CobrosDocumentComponent implements OnInit {
       const coTypeDoc = this.collectService.documentSalesBackup[index].coDocumentSaleType;
       const nuValueLocalDoc = this.collectService.documentSalesBackup[index].nuValueLocal;
 
-      let nuAmountBase, nuAmountDiscount, nuAmountTotal, nuAmountPaid, nuBalance, nuAmountTax, nuAmountRetention, nuAmountRetention2;
+      let nuAmountBase = 0, nuAmountDiscount = 0, nuAmountTotal = 0, nuAmountPaid = 0, nuBalance = 0, nuAmountTax = 0, nuAmountRetention = 0, nuAmountRetention2 = 0;
       this.collectService.ensureNumber(this.collectService.documentSales[index], 'nuAmountBase');
       this.collectService.ensureNumber(this.collectService.documentSales[index], 'nuAmountDiscount');
       this.collectService.ensureNumber(this.collectService.documentSales[index], 'nuAmountPaid');
@@ -212,21 +231,21 @@ export class CobrosDocumentComponent implements OnInit {
       this.collectService.documentSales[index].nuAmountDiscount == undefined ? 0 : this.collectService.documentSales[index].nuAmountDiscount;
       this.collectService.documentSales[index].nuAmountPaid == undefined ? 0 : this.collectService.documentSales[index].nuAmountPaid;
 
-      /* if (this.collectService.documentSales[index].isSave) {
+      if (this.collectService.documentSales[index].isSave) {
         nuAmountBase = this.collectService.documentSalesBackup[index].nuAmountBase;
         nuAmountDiscount = this.collectService.documentSalesBackup[index].nuAmountDiscount;
         nuAmountTotal = this.collectService.documentSalesBackup[index].nuAmountTotal;
-        nuAmountPaid = this.collectService.documentSalesBackup[index].nuBalance;
+        nuAmountPaid = this.collectService.documentSalesBackup[index].nuAmountPaid;
         nuBalance = this.collectService.documentSalesBackup[index].nuBalance;
         nuAmountTax = this.collectService.documentSales[index].nuAmountTax;
-      } else */ if (this.collectService.currencySelected.localCurrency.toString() == "true") {
+      } else if (this.collectService.currencySelected.localCurrency.toString() == "true") {
         //ESTOY EN MONEDA LOCAL
         if (this.collectService.currencySelected.coCurrency == this.collectService.documentSales[index].coCurrency) {
           //AMBAS SON LOCAL, NO HAY QUE CONVERTIR
           nuAmountBase = this.collectService.documentSalesBackup[index].nuAmountBase;
           nuAmountDiscount = this.collectService.documentSalesBackup[index].nuAmountDiscount;
           nuAmountTotal = this.collectService.documentSalesBackup[index].nuAmountTotal;
-          nuAmountPaid = this.collectService.documentSales[index].nuBalance;
+          nuAmountPaid = this.collectService.documentSalesBackup[index].nuAmountPaid;
           nuBalance = this.collectService.documentSalesBackup[index].nuBalance;
           nuAmountTax = this.collectService.documentSalesBackup[index].nuAmountTax;
           nuAmountRetention = this.collectService.documentSalesBackup[index].nuAmountRetention;
@@ -236,7 +255,7 @@ export class CobrosDocumentComponent implements OnInit {
           nuAmountBase = isNaN(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountBase, 'hard', 'local', coTypeDoc, nuValueLocalDoc)) ? 0 : await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountBase, 'hard', 'local', coTypeDoc, nuValueLocalDoc);
           nuAmountDiscount = isNaN(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountDiscount, 'hard', 'local', coTypeDoc, nuValueLocalDoc)) ? 0 : await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountDiscount, 'hard', 'local', coTypeDoc, nuValueLocalDoc);
           nuAmountTotal = isNaN(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountTotal, 'hard', 'local', coTypeDoc, nuValueLocalDoc)) ? 0 : await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountTotal, 'hard', 'local', coTypeDoc, nuValueLocalDoc);
-          nuAmountPaid = isNaN(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuBalance, 'hard', 'local', coTypeDoc, nuValueLocalDoc)) ? 0 : await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuBalance, 'hard', 'local', coTypeDoc, nuValueLocalDoc);
+          nuAmountPaid = isNaN(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountPaid, 'hard', 'local', coTypeDoc, nuValueLocalDoc)) ? 0 : await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountPaid, 'hard', 'local', coTypeDoc, nuValueLocalDoc);
           nuBalance = isNaN(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuBalance, 'hard', 'local', coTypeDoc, nuValueLocalDoc)) ? 0 : await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuBalance, 'hard', 'local', coTypeDoc, nuValueLocalDoc);
           nuAmountTax = isNaN(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountTax, 'hard', 'local', coTypeDoc, nuValueLocalDoc)) ? 0 : await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountTax, 'hard', 'local', coTypeDoc, nuValueLocalDoc);
           nuAmountRetention = isNaN(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountRetention, 'hard', 'local', coTypeDoc, nuValueLocalDoc)) ? 0 : await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountRetention, 'hard', 'local', coTypeDoc, nuValueLocalDoc);
@@ -250,23 +269,32 @@ export class CobrosDocumentComponent implements OnInit {
           nuAmountBase = this.collectService.documentSalesBackup[index].nuAmountBase;
           nuAmountDiscount = this.collectService.documentSalesBackup[index].nuAmountDiscount;
           nuAmountTotal = this.collectService.documentSalesBackup[index].nuAmountTotal;
-          nuAmountPaid = this.collectService.documentSalesBackup[index].nuBalance;
+          nuAmountPaid = this.collectService.documentSalesBackup[index].nuAmountPaid;
           nuBalance = this.collectService.documentSalesBackup[index].nuBalance;
-          nuAmountTax = this.collectService.documentSales[index].nuAmountTax;
-          nuAmountRetention = this.collectService.documentSales[index].nuAmountRetention;
-          nuAmountRetention2 = this.collectService.documentSales[index].nuAmountRetention2;
+          nuAmountTax = this.collectService.documentSalesBackup[index].nuAmountTax;
+          nuAmountRetention = this.collectService.documentSalesBackup[index].nuAmountRetention;
+          nuAmountRetention2 = this.collectService.documentSalesBackup[index].nuAmountRetention2;
         } else {
           //COVERTIR DE LOCAL A HARD
           nuAmountBase = isNaN(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountBase, 'local', 'hard', coTypeDoc, nuValueLocalDoc)) ? 0 : await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountBase, 'local', 'hard', coTypeDoc, nuValueLocalDoc);
           nuAmountDiscount = isNaN(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountDiscount, 'local', 'hard', coTypeDoc, nuValueLocalDoc)) ? 0 : await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountDiscount, 'local', 'hard', coTypeDoc, nuValueLocalDoc);
           nuAmountTotal = isNaN(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountTotal, 'local', 'hard', coTypeDoc, nuValueLocalDoc)) ? 0 : await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountTotal, 'local', 'hard', coTypeDoc, nuValueLocalDoc);
-          nuAmountPaid = isNaN(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuBalance, 'local', 'hard', coTypeDoc, nuValueLocalDoc)) ? 0 : await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuBalance, 'local', 'hard', coTypeDoc, nuValueLocalDoc);
+          nuAmountPaid = isNaN(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountPaid, 'local', 'hard', coTypeDoc, nuValueLocalDoc)) ? 0 : await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountPaid, 'local', 'hard', coTypeDoc, nuValueLocalDoc);
           nuBalance = isNaN(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuBalance, 'local', 'hard', coTypeDoc, nuValueLocalDoc)) ? 0 : await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuBalance, 'local', 'hard', coTypeDoc, nuValueLocalDoc);
           nuAmountTax = isNaN(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountTax, 'local', 'hard', coTypeDoc, nuValueLocalDoc)) ? 0 : await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountTax, 'local', 'hard', coTypeDoc, nuValueLocalDoc);
           nuAmountRetention = isNaN(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountRetention, 'local', 'hard', coTypeDoc, nuValueLocalDoc)) ? 0 : await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountRetention, 'local', 'hard', coTypeDoc, nuValueLocalDoc);
           nuAmountRetention2 = isNaN(await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountRetention2, 'local', 'hard', coTypeDoc, nuValueLocalDoc)) ? 0 : await this.collectService.convertAmount(this.collectService.documentSalesBackup[index].nuAmountRetention2, 'local', 'hard', coTypeDoc, nuValueLocalDoc);
         }
       }
+
+      /*  nuAmountBase = this.collectService.documentSalesBackup[index].nuAmountBase;
+       nuAmountDiscount = this.collectService.documentSalesBackup[index].nuAmountDiscount;
+       nuAmountTotal = this.collectService.documentSalesBackup[index].nuAmountTotal;
+       nuAmountPaid = this.collectService.documentSales[index].nuBalance;
+       nuBalance = this.collectService.documentSalesBackup[index].nuBalance;
+       nuAmountTax = this.collectService.documentSalesBackup[index].nuAmountTax;
+       nuAmountRetention = this.collectService.documentSalesBackup[index].nuAmountRetention;
+       nuAmountRetention2 = this.collectService.documentSalesBackup[index].nuAmountRetention2; */
 
 
       this.collectService.documentSaleOpen = {
@@ -281,7 +309,7 @@ export class CobrosDocumentComponent implements OnInit {
         nuAmountDiscount: this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(nuAmountDiscount)),
         nuAmountTax: this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(nuAmountTax)),
         nuAmountTotal: this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(nuAmountTotal)),
-        nuAmountPaid: this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(nuAmountPaid - (nuAmountDiscount + nuAmountRetention + nuAmountRetention2))),
+        nuAmountPaid: this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(nuAmountPaid - (nuAmountDiscount + nuAmountRetention! + nuAmountRetention2!))),
         nuBalance: this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(nuBalance)),
         coCurrency: this.collectService.documentSales[index].coCurrency,
         idCurrency: this.collectService.documentSales[index].idCurrency,
@@ -296,8 +324,8 @@ export class CobrosDocumentComponent implements OnInit {
         naType: this.collectService.documentSales[index].naType,
         isSelected: this.collectService.documentSales[index].isSelected,
         positionCollecDetails: this.collectService.documentSales[index].positionCollecDetails,
-        nuAmountRetention: nuAmountRetention,
-        nuAmountRetention2: nuAmountRetention2,
+        nuAmountRetention: Number(nuAmountRetention),
+        nuAmountRetention2: Number(nuAmountRetention2),
         daVoucher: this.collectService.documentSales[index].daVoucher,
         //daVoucher: this.daVoucher.split("T")[0],
         nuVaucherRetention: this.collectService.documentSales[index].nuVaucherRetention,
@@ -369,14 +397,16 @@ export class CobrosDocumentComponent implements OnInit {
         console.log(detail, "DETAIL DEL DOCUMENTO ABIERTO");
         console.log(this.collectService.collection.collectionDetails, "DETAIL DEL DOCUMENTO ABIERTO");
         console.log(this.collectService.documentSaleOpen, "DETAIL DEL DOCUMENTO ABIERTO");
-        if (detail && this.collectService.documentSaleOpen.inPaymentPartial) {
+        if (detail) {
+          /* if (detail && this.collectService.documentSaleOpen.inPaymentPartial) { */
           // ...acciones usando detail...
           this.collectService.documentSaleOpen.nuAmountRetention = detail.nuAmountRetention
           this.collectService.documentSaleOpen.nuAmountRetention2 = detail.nuAmountRetention2
           this.collectService.documentSaleOpen.daVoucher = detail.daVoucher!;
           this.collectService.documentSaleOpen.nuVaucherRetention = detail.nuVoucherRetention;
           this.collectService.documentSaleOpen.inPaymentPartial = detail.inPaymentPartial;
-          this.collectService.documentSaleOpen.nuBalance = detail.nuBalanceDoc - (detail.nuAmountRetention + detail.nuAmountRetention2);
+          this.collectService.documentSaleOpen.nuBalance = detail.nuBalanceDoc;
+          //this.collectService.documentSaleOpen.nuBalance = detail.nuBalanceDoc - (detail.nuAmountRetention + detail.nuAmountRetention2);
 
           this.collectService.nuBalance = this.collectService.documentSalesBackup[index].nuBalance;
         }
@@ -855,7 +885,7 @@ export class CobrosDocumentComponent implements OnInit {
     let amountPaidAux, nuAmountDiscountAux, nuAmountRetentionAux, nuAmountRetention2Aux;
     //en estas variables Aux, tengo el valor del cual es el documento. ( ESO CREO)
 
-    if (currencySelected.localCurrency.toString() === 'true') {
+    /* if (currencySelected.localCurrency.toString() === 'true') {
       if (currencySelectedDocument.localCurrency.toString() === 'true') {
         //cobro y documento estan en local
 
@@ -886,12 +916,16 @@ export class CobrosDocumentComponent implements OnInit {
         nuAmountRetentionAux = this.collectService.toLocal(nuAmountRetention);
         nuAmountRetention2Aux = this.collectService.toLocal(nuAmountRetention2);
       }
-    }
+    } */
 
     /* this.collectService.documentSaleOpen.nuAmountPaid = amountPaidAux;
     this.collectService.documentSaleOpen.nuAmountDiscount = nuAmountDiscountAux;
     this.collectService.documentSaleOpen.nuAmountRetention = nuAmountRetentionAux;
     this.collectService.documentSaleOpen.nuAmountRetention2 = nuAmountRetention2Aux; */
+    amountPaidAux = this.collectService.amountPaid;
+    nuAmountDiscountAux = nuAmountDiscount;
+    nuAmountRetentionAux = nuAmountRetention;
+    nuAmountRetention2Aux = nuAmountRetention2;
 
     this.collectService.documentSales[indexDocumentSaleOpen].nuAmountPaid = amountPaidAux;
     this.collectService.documentSales[indexDocumentSaleOpen].nuAmountDiscount = nuAmountDiscountAux;
@@ -912,26 +946,6 @@ export class CobrosDocumentComponent implements OnInit {
     this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention2 = nuAmountRetention2;
     this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention2Conversion = 0;
     this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountPaid = sumRetentions;
-    /* this.collectService.collection.collectionDetails[documentSaleOpen.positionCollecDetails]!.nuAmountPaid = documentSaleOpen.nuAmountPaid;
- 
-    this.collectService.collection.collectionDetails[documentSaleOpen.positionCollecDetails]!.nuAmountPaidConversion
-      = this.collectService.convertirMonto(documentSaleOpen.nuAmountPaid, this.collectService.collection.nuValueLocal, documentSaleOpen.coCurrency);
- 
-    this.collectService.documentSaleOpen.nuAmountPaid = this.collectService.amountPaid;
-    this.collectService.documentSaleOpen.nuAmountDiscount = nuAmountDiscount;
-    this.collectService.documentSaleOpen.nuAmountRetention = nuAmountRetention;
-    this.collectService.documentSaleOpen.nuAmountRetention2 = nuAmountRetention2;
- 
- 
-    this.collectService.documentSales[indexDocumentSaleOpen].nuAmountPaid = this.collectService.amountPaid;
-    this.collectService.documentSales[indexDocumentSaleOpen].nuAmountDiscount = nuAmountDiscount;
-    this.collectService.documentSales[indexDocumentSaleOpen].nuAmountRetention = nuAmountRetention;
-    this.collectService.documentSales[indexDocumentSaleOpen].nuAmountRetention2 = nuAmountRetention2;
- 
-    this.collectService.documentSalesBackup[indexDocumentSaleOpen].nuAmountPaid = this.collectService.amountPaid;
-    this.collectService.documentSalesBackup[indexDocumentSaleOpen].nuAmountDiscount = nuAmountDiscount;
-    this.collectService.documentSalesBackup[indexDocumentSaleOpen].nuAmountRetention = nuAmountRetention;
-    this.collectService.documentSalesBackup[indexDocumentSaleOpen].nuAmountRetention2 = nuAmountRetention2; */
 
     this.validate();
 

@@ -181,14 +181,8 @@
                 [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }">
                 {{documentSale.daDueDate | date: "dd/MM/yyyy"}}
             </ion-col>
-
-
         </ion-row>
     </ion-grid>
-
-
-
-
 
     <!-- MODAL SI ES COBROS  O IGTF-->
     <div *ngIf="this.collectService.coTypeModule != '2'">
@@ -215,8 +209,6 @@
                         </ion-grid>
                     </ion-toolbar>
                 </ion-header>
-
-
                 <ion-content>
                     <ion-grid class="contenedorModalActividades">
                         <ion-row>
@@ -333,24 +325,16 @@
                                             [(ngModel)]="this.collectService.documentSaleOpen.daVoucher"
                                             value="{{this.collectService.documentSaleOpen.daVoucher}}"
                                             label-placement="floating" fill="outline" type="date_event"
-                                            [id]="'inputCalendar'"
-                                            [ngClass]="{'inp-write': !this.collectService.validateDaVoucher}"
-                                            [disabled]="!this.collectService.validNuRetention">
+                                            [id]="'inputCalendar'" [ngClass]="{
+                                              'inp-write': this.collectService.validateDaVoucher,
+                                              'input-rojo': this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher
+                                            }" [disabled]="!this.collectService.validNuRetention">
                                         </ion-input>
-                                        <ion-label *ngIf="!this.collectService.validateDaVoucher" color="danger"
-                                            class="campoObligatorio">
+                                        <ion-label
+                                            *ngIf="this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher"
+                                            color="danger" class="campoObligatorio">
                                             {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}
                                         </ion-label>
-                                        <!-- <ion-item> -->
-                                        <!-- <ion-label [id]="'prueba'" >{{this.collectService.collectionTags.get('COB_DAVOUCHER')}}</ion-label> -->
-                                        <!--  <a>
-                                                <ion-datetime-button [datetime]="'prueba'"></ion-datetime-button>
-                                            </a>
-                                            <a>
-                                                <ion-icon slot="end"
-                                                    src="../../../assets/icon/calendar-outline.svg"></ion-icon>
-                                            </a> -->
-
                                         <ion-modal [keepContentsMounted]="true" [trigger]="'inputCalendar'"
                                             [initialBreakpoint]="0.65">
                                             <ng-template>
@@ -363,14 +347,6 @@
                                                     cancelText="{{this.collectService.collectionTagsDenario.get('DENARIO_BOTON_CANCELAR')}}"></ion-datetime>
                                             </ng-template>
                                         </ion-modal>
-
-                                        <!--  <ion-datetime [ngModelOptions]="{standalone: true}" locale="es-ES"
-                                                value="2024-01-17T00:00:00" [id]="daVoucher" presentation="date"
-                                                (ionChange)="setDavoucher()" [(ngModel)]="daVoucher"
-                                                [showDefaultButtons]="true">
-                                            </ion-datetime> -->
-                                        <!-- </ion-item> -->
-
                                     </ion-col>
                                     <!-- FECHA COMP RET  -->
 
@@ -393,7 +369,7 @@
                                             label-placement="floating" fill="outline" color="primary" type="number"
                                             value="{{this.collectService.documentSaleOpen.nuAmountRetention}}"
                                             [(ngModel)]="this.collectService.documentSaleOpen.nuAmountRetention"
-                                            (ionChange)="setAmountTotal()"
+                                            (ionInput)="setAmountTotal()"
                                             [disabled]="!this.collectService.validNuRetention"></ion-input>
                                     </ion-col>
                                     <!-- MONTO RET IVA--->
@@ -406,7 +382,7 @@
                                             label-placement="floating" fill="outline"
                                             value="{{this.collectService.documentSaleOpen.nuAmountRetention2}}"
                                             [(ngModel)]="this.collectService.documentSaleOpen.nuAmountRetention2"
-                                            color="primary" type="number" (ionChange)="setAmountTotal()"
+                                            color="primary" type="number" (ionInput)="setAmountTotal()"
                                             [disabled]="!this.collectService.validNuRetention"></ion-input>
 
                                     </ion-col>
@@ -602,12 +578,13 @@
                                 <ion-input label="{{this.collectService.collectionTags.get('COB_DAVOUCHER')}}:"
                                     [(ngModel)]="this.collectService.documentSaleOpen.daVoucher"
                                     value="this.collectService.documentSaleOpen.daVoucher" label-placement="floating"
-                                    fill="outline" type="date_event" [id]="'inputCalendar'"
-                                    [ngClass]="{'inp-write': this.collectService.validateDaVoucher}"
-                                    [disabled]="!this.collectService.validNuRetention">
+                                    fill="outline" type="date_event" [id]="'inputCalendar'" [ngClass]="{
+                                      'inp-write': this.collectService.validateDaVoucher,
+                                      'input-rojo': this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher
+                                    }" [disabled]="!this.collectService.validNuRetention">
                                 </ion-input>
                                 <ion-label
-                                    *ngIf="!this.collectService.documentSaleOpen.daVoucher || this.collectService.documentSaleOpen.daVoucher.length === 0"
+                                    *ngIf="this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher"
                                     color="danger" class="campoObligatorio">
                                     {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}
                                 </ion-label>
