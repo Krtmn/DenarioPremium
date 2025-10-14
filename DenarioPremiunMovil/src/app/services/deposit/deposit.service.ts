@@ -14,6 +14,7 @@ import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 import { CollectDeposit } from 'src/app/modelos/collect-deposit';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { ItemListaDepositos } from 'src/app/depositos/item-lista-depositos';
+import { DELIVERY_STATUS_NEW } from 'src/app/utils/appConstants';
 
 @Injectable({
   providedIn: 'root'
@@ -179,7 +180,7 @@ export class DepositService {
         txComment: "",
         nuValueLocal: 0,
         idCurrency: 0,
-        stDeposit: 0,
+        stDeposit: DELIVERY_STATUS_NEW,
         isEdit: true,
         isEditTotal: false,
         isSave: false,
@@ -289,7 +290,7 @@ export class DepositService {
       txComment: "",
       nuValueLocal: 0,
       idCurrency: 0,
-      stDeposit: 3,
+      stDeposit: 0,
       isEdit: true,
       isEditTotal: false,
       isSave: false,
