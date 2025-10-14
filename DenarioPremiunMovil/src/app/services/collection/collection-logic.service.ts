@@ -2181,7 +2181,7 @@ export class CollectionService {
       idDocumentSaleType: 4,
       coDocumentSaleType: "IGTF",
       daDocument: date.split(" ")[0],
-      daDueDate: date.split("")[0],
+      daDueDate: date.split(" ")[0],
       nuAmountBase: 0,
       nuAmountDiscount: 0,
       nuAmountTax: 0,
