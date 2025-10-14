@@ -142,10 +142,14 @@ export class InventarioHeaderComponent implements OnInit {
           validate = false
           break;
         }
-        if (!this.inventariosLogicService.typeStocks[i].validateLote){
-          validate = false;
-          break;
-        }      
+        if(this.inventariosLogicService.expirationBatch){
+          //si esta variable es false, no hay lote que validar.
+          if (!this.inventariosLogicService.typeStocks[i].validateLote){
+            validate = false;
+            break;
+          }  
+        }
+    
         
       }
       if (validate)
