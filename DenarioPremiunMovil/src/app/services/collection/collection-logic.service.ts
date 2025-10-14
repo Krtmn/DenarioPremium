@@ -507,8 +507,7 @@ export class CollectionService {
   }
 
   getTasasHistorico(dbServ: SQLiteObject, idEnterprise: number) {
-    this.getTasasHistoricoFunction(dbServ, idEnterprise).then((result) => {
-      this.conversionTypes = result;
+    return this.getTasasHistoricoFunction(dbServ, idEnterprise).then((result) => {
       /*       this.dateMayor = new Date(result[0].date_conversion);
             this.dateMenor = new Date(result[result.length - 1].date_conversion); */
       //this.dateServ.hoyISOFullTime();
@@ -544,6 +543,8 @@ export class CollectionService {
         this.dateRateVisual = this.collection.daRate + "T00:00:00";
       } else
         this.dateRateVisual = yearMayor + "-" + monthMayor + "-" + diaMayor + "T00:00:00";
+
+      return Promise.resolve(true);
     })
   }
 
@@ -1157,6 +1158,8 @@ export class CollectionService {
       // Todos los pagos tienen número de referencia o son efectivo
       if (this.collection.collectionPayments.length <= 0)
         this.onCollectionValidToSend(false);
+      else
+        this.onCollectionValidToSend(true);
       // else no hacer nada para evitar recursión infinita
     }
   }
@@ -1832,7 +1835,7 @@ export class CollectionService {
           const item = data.rows.item(i);
           conversionTypes.push(item);
         }
-        return conversionTypes;
+        return this.conversionTypes = conversionTypes
       })
   }
 
@@ -2170,15 +2173,15 @@ export class CollectionService {
   }
   createDocumentSaleIGTF(dbServ: SQLiteObject, collection: Collection) {
     let igtfDocument = [] as DocumentSale[];
-    let date = this.dateServ.hoyISO();
+    let date = this.dateServ.hoyISOFullTime();
     igtfDocument.push({
       idDocument: 0,
       idClient: collection.idClient,
       coClient: collection.coClient,
       idDocumentSaleType: 4,
       coDocumentSaleType: "IGTF",
-      daDocument: date.split("T")[0],
-      daDueDate: date.split("T")[0],
+      daDocument: date.split(" ")[0],
+      daDueDate: date.split("")[0],
       nuAmountBase: 0,
       nuAmountDiscount: 0,
       nuAmountTax: 0,
@@ -2189,7 +2192,7 @@ export class CollectionService {
       idCurrency: collection.idCurrency,
       nuDocument: "",
       txComment: "IGTF " + collection.nuAmountIgtf + " " + collection.coCollection,
-      coDocument: "IGTF-" + date.split("T")[0],
+      coDocument: "IGTF-" + date,
       coCollection: collection.coCollection,
       nuValueLocal: collection.nuValueLocal,
       stDocumentSale: 0,
