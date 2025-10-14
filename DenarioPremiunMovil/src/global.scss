@@ -56,9 +56,16 @@ $fondoLogin: url("/assets/images/home-denario.jpg");
     padding-top: 20%;
 }
 
-ion-segment {
+/* ion-segment {
     --height: 40px;
     height: 40px;
+} */
+
+ion-item-divider {
+    height: 40px;
+}
+.stickyTotal{
+    height: auto!important;
 }
 
 .ios ion-segment-button {
