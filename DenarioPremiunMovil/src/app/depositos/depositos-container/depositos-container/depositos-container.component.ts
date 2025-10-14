@@ -24,6 +24,12 @@ synchronizationServices = inject(SynchronizationDBService);
   constructor() { }
 
   ngOnInit() {
+    this.depositService.coordenadas = "";
+    if(this.depositService.userMustActivateGPS){
+      this.geoLoc.getCurrentPosition().then(xy => { 
+        this.depositService.coordenadas = xy;
+      })
+    }
 
     this.backRoute();
   }
@@ -54,11 +60,15 @@ synchronizationServices = inject(SynchronizationDBService);
 
   nuevoDeposito(){
   if(this.depositService.userMustActivateGPS){
-    //TRUE: si no hay coordenada no entra
-    this.geoLoc.getCurrentPosition().then(xy => { 
-      this.depositService.coordenadas = xy;
+        //TRUE: si no hay coordenada no entra
+    if(this.depositService.coordenadas && this.depositService.coordenadas.length>0){
       this.goToNuevoDeposito();
-    })
+    }else{
+      this.geoLoc.getCurrentPosition().then(xy => { 
+        this.depositService.coordenadas = xy;
+        this.goToNuevoDeposito();
+      })
+    }
   }else{
     //FALSE:  se permite entrar asi coordenadas esten vacias
     this.geoLoc.getCurrentPosition().then(xy => { 
