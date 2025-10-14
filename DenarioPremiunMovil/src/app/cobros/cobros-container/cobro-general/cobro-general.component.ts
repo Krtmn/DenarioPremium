@@ -473,10 +473,7 @@ export class CobrosGeneralComponent implements OnInit {
           if (this.collectService.historicoTasa)
             this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise)
               .then(() => {
-                this.collectService.getDateRate(
-                  this.synchronizationServices.getDatabase(),
-                  this.collectService.collection.daRate
-                );
+          
               });
           else
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient, this.collectService.currencySelectedDocument.coCurrency,
