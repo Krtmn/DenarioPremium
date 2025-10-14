@@ -53,19 +53,29 @@ export class DepositoListComponent implements OnInit {
   ngOnInit() {
     this.headerDelete = this.depositService.depositTags.get('DEP_HEADER_MESSAGE')!;
     this.mensajeDelete = "¿Desea eliminar el depósito seleccionado?";
+    this.depositService.coordenadas = "";
+    if(this.depositService.userMustActivateGPS){
+      this.geoLoc.getCurrentPosition().then(xy => { 
+        this.depositService.coordenadas = xy;
+      })
+    }
   }
 
   toOpenDeposit(coDeposit: string, index: number) {
-    this.messageService.showLoading();
-    let stDeposit = this.depositService.listDeposits[index].stDeposit;
+    this.messageService.showLoading().then(() => {
+      let stDeposit = this.depositService.listDeposits[index].stDeposit;
     if (this.depositService.userMustActivateGPS && stDeposit < 2) {
       //solo puede abrir depositos editables con gps activo
+      if (this.depositService.coordenadas &&this.depositService.coordenadas.length > 0) {
+        this.openDeposit(coDeposit, index);
+      }else{
       this.geoLoc.getCurrentPosition().then(xy => {
         if (xy.length > 0) {
           this.depositService.coordenadas = xy;
           this.openDeposit(coDeposit, index);
         }
       })
+      }
     } else {
       //se actualiza coordenadas si no estan vacias. 
       this.geoLoc.getCurrentPosition().then(xy => {
@@ -75,6 +85,8 @@ export class DepositoListComponent implements OnInit {
         this.openDeposit(coDeposit, index);
       })
     }
+    });
+    
   }
 
 

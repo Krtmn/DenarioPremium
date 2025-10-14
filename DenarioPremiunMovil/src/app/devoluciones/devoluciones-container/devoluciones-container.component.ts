@@ -58,7 +58,14 @@ export class DevolucionesContainerComponent implements OnInit, OnDestroy {
       this.devolucionList = false;
       this.returnLogic.showHeaderButtons(!this.returnLogic.returnSent);
     });
-
+    this.returnLogic.newReturn.coordenada = "";
+      if (this.returnLogic.userMustActivateGPS) {
+      this.geoLoc.getCurrentPosition().then(xy => {
+        if (xy.length > 0) {
+          this.returnLogic.newReturn.coordenada = xy;
+        }
+      })
+    } 
     
   }
 
@@ -69,13 +76,16 @@ export class DevolucionesContainerComponent implements OnInit, OnDestroy {
 
   newReturnButton(){
     if(this.returnLogic.userMustActivateGPS){
+      if(this.returnLogic.newReturn.coordenada && this.returnLogic.newReturn.coordenada.length > 0){
+        this.newReturn();
+      } else {
       this.geoLoc.getCurrentPosition().then(xy => {
         if(xy.length > 0){
           this.returnLogic.newReturn.coordenada = xy;
           this.newReturn();
         }
       })
-
+    }
     }else{
       this.newReturn();
     }

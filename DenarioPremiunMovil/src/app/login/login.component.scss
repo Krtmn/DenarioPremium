@@ -12,6 +12,12 @@
     }
 
 }
+.ios .colorInput {
+    height: 100%!important;
+    padding-top: 0px!important;
+    
+
+}
 ion-checkbox {
   --size: 20px;
   --checkbox-background-checked: #6815ec;
@@ -31,6 +37,10 @@ ion-checkbox::part(container) {
   left: 10px;
   top: 8px;
   display: block;
+}
+
+.ios .imageninput {
+  top: 13px;
 }
 
 .contenedorLogin{
