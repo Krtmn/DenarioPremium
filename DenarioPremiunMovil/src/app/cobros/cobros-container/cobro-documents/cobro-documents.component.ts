@@ -245,6 +245,8 @@ export class CobrosDocumentComponent implements OnInit {
         nuAmountPaid = this.collectService.documentSalesBackup[index].nuAmountPaid;
         nuBalance = this.collectService.documentSalesBackup[index].nuBalance;
         nuAmountTax = this.collectService.documentSales[index].nuAmountTax;
+        nuAmountRetention = this.collectService.documentSalesBackup[index].nuAmountRetention;
+        nuAmountRetention2 = this.collectService.documentSalesBackup[index].nuAmountRetention2;
       } else if (this.collectService.currencySelected.localCurrency.toString() == "true") {
         //ESTOY EN MONEDA LOCAL
         if (this.collectService.currencySelected.coCurrency == this.collectService.documentSales[index].coCurrency) {
