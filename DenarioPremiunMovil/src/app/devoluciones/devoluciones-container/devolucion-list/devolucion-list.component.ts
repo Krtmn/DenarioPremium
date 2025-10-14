@@ -40,6 +40,14 @@ export class DevolucionListComponent implements OnInit {
       this.returnLogic.getReturnList().then(() => {
         this.returnList = this.returnLogic.returnList;
       })
+      this.returnLogic.newReturn.coordenada = "";
+      if (this.returnLogic.userMustActivateGPS) {
+      this.geoLoc.getCurrentPosition().then(xy => {
+        if (xy.length > 0) {
+          this.returnLogic.newReturn.coordenada = xy;
+        }
+      })
+    } 
   }
 
   public buttonsDelete = [
@@ -61,12 +69,16 @@ export class DevolucionListComponent implements OnInit {
 
   onReturnSelected(coReturnSelected: string, stReturn: number) {
     if (this.returnLogic.userMustActivateGPS && stReturn === 1) {
+      if(this.returnLogic.newReturn.coordenada && this.returnLogic.newReturn.coordenada.length > 0){
+        this.returnLogic.findReturnSelected(coReturnSelected);
+      } else {
       this.geoLoc.getCurrentPosition().then(xy => {
         if (xy.length > 0) {
           this.returnLogic.newReturn.coordenada = xy;
           this.returnLogic.findReturnSelected(coReturnSelected);
         }
       })
+    }
     } else {
       this.returnLogic.findReturnSelected(coReturnSelected);
     }
