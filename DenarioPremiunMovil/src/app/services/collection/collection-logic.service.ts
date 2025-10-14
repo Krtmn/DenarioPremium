@@ -1278,7 +1278,8 @@ export class CollectionService {
           'WHERE d.id_client = ? AND ds.st_document < 2 AND d.id_enterprise = ? ' +
           'AND d.co_document_sale_type != "IGTF" ' +
           'OR d.co_document in (SELECT co_document ' +
-          'FROM collection_details WHERE co_collection= ?);'
+          'FROM collection_details WHERE co_collection= ?)' +
+          ' ORDER BY CASE WHEN d.co_currency = "' + this.enterpriseSelected.coCurrencyDefault + '" THEN 0 ELSE 1 END, d.co_currency';
       } else {
         // Necesitas todos los parámetros
         params = [idClient, coCurrency, idEnterprise, coCollection];
@@ -1940,7 +1941,7 @@ export class CollectionService {
         'WHERE d.id_client = ? AND ds.st_document < 2 AND d.id_enterprise = ? ' +
         'AND d.co_document_sale_type == "IGTF" ' +
         'OR d.co_document in (SELECT co_document ' +
-        'FROM collection_details WHERE co_collection= ?);'
+        'FROM collection_details WHERE co_collection= ? ORDER BY ds.co_currency = ' + this.enterpriseSelected.coCurrencyDefault + ');'
       params = [idClient, idEnterprise, coCollection];
     } else {
       selectStatement = 'SELECT ' +
@@ -3329,18 +3330,18 @@ export class CollectionService {
     const backup = this.documentSalesBackup[index];
 
     if (this.currencySelected.localCurrency.toString() === 'true') {
-      if (this.currencySelectedDocument.localCurrency.toString() === 'true') {
+      if (this.documentSalesBackup[index].coCurrency === this.currencySelected.coCurrency) {
         this.amountPaid = backup.nuBalance;
       } else {
         this.amountPaid = this.currencyService.toLocalCurrency(backup.nuBalance);
         //this.documentSales[index].nuBalance = this.currencyService.toLocalCurrency(backup.nuBalance);
       }
     } else {
-      if (this.currencySelectedDocument.hardCurrency.toString() === 'true') {
+      if (this.documentSalesBackup[index].coCurrency === this.currencySelected.coCurrency) {
         this.amountPaid = backup.nuBalance;
       } else {
         this.amountPaid = this.currencyService.toHardCurrency(backup.nuBalance);
-        // this.documentSales[index].nuBalance = this.currencyService.toHardCurrency(backup.nuBalance);
+        //this.documentSales[index].nuBalance = this.currencyService.toLocalCurrency(backup.nuBalance);
       }
     }
     this.amountPaid = this.cleanFormattedNumber(this.currencyService.formatNumber(this.amountPaid));

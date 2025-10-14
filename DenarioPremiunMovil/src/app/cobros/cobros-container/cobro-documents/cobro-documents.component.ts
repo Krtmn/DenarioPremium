@@ -421,9 +421,9 @@ export class CobrosDocumentComponent implements OnInit {
         /*   if (this.collectService.documentSaleOpen.isSave)
               this.collectService.amountPaid = this.collectService.documentSaleOpen.nuAmountPaid;
             else */
-        this.collectService.amountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.documentSaleOpen.nuBalance
-          - (this.collectService.documentSaleOpen.nuAmountDiscount + this.collectService.documentSaleOpen.nuAmountRetention + this.collectService.documentSaleOpen.nuAmountRetention2)));
-
+        /* this.collectService.amountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.documentSaleOpen.nuBalance
+          - (this.collectService.documentSaleOpen.nuAmountDiscount + this.collectService.documentSaleOpen.nuAmountRetention + this.collectService.documentSaleOpen.nuAmountRetention2))); */
+        this.collectService.amountPaid = this.collectService.documentSaleOpen.nuAmountPaid;
       }
       else
         this.collectService.amountPaidRetention =
