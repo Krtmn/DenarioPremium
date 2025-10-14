@@ -603,11 +603,10 @@ export class CollectionService {
     this.montoTotalPagar = 0;
     let monto = 0;
     let montoConversion = 0;
-    let montoDesc = 0;
 
     if (this.collection.stCollection == 1) {
       for (var j = 0; j < this.collection.collectionDetails.length; j++) {
-        monto += this.collection.collectionDetails[j].nuBalanceDoc;
+        monto += this.collection.collectionDetails[j].nuAmountPaid;
       }
     } else if (this.collection.stCollection == 3) {
       monto = this.collection.nuAmountTotal;
@@ -618,40 +617,6 @@ export class CollectionService {
           //for (var j = 0; j < this.collection.collectionDetails.length; j++) {
           if (this.documentSales[i].isSave) {
             if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
-              /*  monto += this.documentSalesBackup[i].nuAmountPaid;
-               montoConversion += await this.convertAmount(this.documentSalesBackup[i].nuAmountPaid, 'local', 'hard', this.documentSales[i].coDocumentSaleType, this.documentSales[i].nuValueLocal); */
-
-              /* if (this.currencySelected.localCurrency.toString() == "true") {
-                if (this.documentSales[i].coCurrency == this.localCurrency.coCurrency) {
-                  //montoDesc += this.documentSalesBackup[i].nuAmountDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
-                  monto += this.documentSalesBackup[i].nuAmountPaid - montoDesc;
-                  montoConversion += await this.convertAmount(
-                    this.documentSalesBackup[i].nuAmountPaid - montoDesc,
-                    'local', 'hard', this.documentSales[i].coDocumentSaleType, this.documentSales[i].nuValueLocal);
-                } else {
-                  //montoDesc += this.documentSalesBackup[i].nuAmountDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
-
-                  monto += await this.convertAmount(
-                    this.documentSalesBackup[i].nuAmountPaid - montoDesc, 'hard', 'local', this.documentSales[i].coDocumentSaleType, this.documentSales[i].nuValueLocal);
-                  montoConversion += this.documentSalesBackup[i].nuAmountPaid;
-                }
-              } else {
-                if (this.documentSales[i].coCurrency == this.hardCurrency.coCurrency) {
-                  //montoDesc += this.documentSalesBackup[i].nuAmountDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
-
-                  monto += this.documentSalesBackup[i].nuAmountPaid - montoDesc;
-                  montoConversion += await this.convertAmount(this.documentSalesBackup[i].nuAmountPaid - montoDesc,
-                    'hard', 'local', this.documentSales[i].coDocumentSaleType, this.documentSales[i].nuValueLocal);
-
-                } else {
-                  //montoDesc += this.documentSalesBackup[i].nuAmountDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
-
-                  monto += await this.convertAmount(this.documentSalesBackup[i].nuAmountPaid - montoDesc,
-                    'local', 'hard', this.documentSales[i].coDocumentSaleType, this.documentSales[i].nuValueLocal);
-                  montoConversion += this.documentSalesBackup[i].nuAmountPaid - montoDesc;
-
-                }
-              } */
 
               monto += this.documentSalesBackup[i].nuAmountPaid;
               montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuAmountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
@@ -662,37 +627,30 @@ export class CollectionService {
           } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
             if (this.collection.stCollection == 1 && this.collection.collectionDetails[j].isSave) {
               if (this.documentSales[i].isSelected) {
-                //montoDesc += this.documentSalesBackup[i].nuAmountDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
-                monto += this.documentSalesBackup[i].nuBalance - montoDesc;
+                monto += this.documentSalesBackup[i].nuBalance;
               }
             } else if (this.documentSales[i].isSelected) {
               if (this.documentSales[i].nuAmountRetention + this.documentSales[i].nuAmountRetention2 > 0) {
-                //montoDesc += this.documentSalesBackup[i].nuAmountDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
 
-                monto += this.documentSalesBackup[i].nuBalance - montoDesc;
+                monto += this.documentSalesBackup[i].nuBalance;
               } else if (this.documentSales[i].inPaymentPartial) {
-                //montoDesc += this.documentSalesBackup[i].nuAmountDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
-                monto += this.documentSalesBackup[i].nuBalance - montoDesc;
+                monto += this.documentSalesBackup[i].nuBalance;
               } else if (this.currencySelected.localCurrency.toString() == "true") {
                 if (this.documentSales[i].coCurrency == this.localCurrency.coCurrency) {
-                  //montoDesc += this.documentSalesBackup[i].nuAmountDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
-                  monto += this.documentSalesBackup[i].nuBalance - montoDesc;
-                  montoConversion += await this.convertAmount(this.documentSalesBackup[i].nuBalance - montoDesc, 'local', 'hard', this.documentSales[i].coDocumentSaleType, this.documentSales[i].nuValueLocal);
+                  monto += this.documentSalesBackup[i].nuBalance;
+                  montoConversion += await this.convertAmount(this.documentSalesBackup[i].nuBalance, 'local', 'hard', this.documentSales[i].coDocumentSaleType, this.documentSales[i].nuValueLocal);
                 } else {
-                  //montoDesc += this.documentSalesBackup[i].nuAmountDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
-                  monto += await this.convertAmount(this.documentSalesBackup[i].nuBalance - montoDesc, 'hard', 'local', this.documentSales[i].coDocumentSaleType, this.documentSales[i].nuValueLocal);
-                  montoConversion += this.documentSalesBackup[i].nuBalance - montoDesc;
+                  monto += await this.convertAmount(this.documentSalesBackup[i].nuBalance, 'hard', 'local', this.documentSales[i].coDocumentSaleType, this.documentSales[i].nuValueLocal);
+                  montoConversion += this.documentSalesBackup[i].nuBalance;
                 }
               } else {
                 if (this.documentSales[i].coCurrency == this.hardCurrency.coCurrency) {
-                  //montoDesc += this.documentSalesBackup[i].nuAmountDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
-                  monto += this.documentSalesBackup[i].nuBalance - montoDesc;
-                  montoConversion += await this.convertAmount(this.documentSalesBackup[i].nuBalance - montoDesc, 'hard', 'local', this.documentSales[i].coDocumentSaleType, this.documentSales[i].nuValueLocal);
+                  monto += this.documentSalesBackup[i].nuBalance;
+                  montoConversion += await this.convertAmount(this.documentSalesBackup[i].nuBalance, 'hard', 'local', this.documentSales[i].coDocumentSaleType, this.documentSales[i].nuValueLocal);
 
                 } else {
-                  //montoDesc += this.documentSalesBackup[i].nuAmountDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
-                  monto += await this.convertAmount(this.documentSalesBackup[i].nuBalance - montoDesc, 'local', 'hard', this.documentSales[i].coDocumentSaleType, this.documentSales[i].nuValueLocal);
-                  montoConversion += this.documentSalesBackup[i].nuBalance - montoDesc;
+                  monto += await this.convertAmount(this.documentSalesBackup[i].nuBalance, 'local', 'hard', this.documentSales[i].coDocumentSaleType, this.documentSales[i].nuValueLocal);
+                  montoConversion += this.documentSalesBackup[i].nuBalance;
 
                 }
               }
@@ -1373,8 +1331,9 @@ export class CollectionService {
                 if (data.rows.item(i).id_document == this.collection.collectionDetails[cd].idDocument) {
                   this.disabledSelectCollectMethodDisabled = false;
                   this.documentSales[i].isSelected = true;
-
                   this.documentSalesBackup[i].isSelected = true;
+                  this.documentSales[i].isSave = true;
+                  this.documentSalesBackup[i].isSave = true;
                   this.documentSalesBackup[i].daVoucher = this.collection.collectionDetails[cd].daVoucher!;
                   this.documentSalesBackup[i].nuAmountDiscount = this.collection.collectionDetails[cd].nuAmountDiscount;
                   this.documentSalesBackup[i].nuBalance = this.collection.collectionDetails[cd].nuBalanceDoc;
@@ -1408,112 +1367,126 @@ export class CollectionService {
         return Promise.resolve(this.documentSales);
       })
     } else if (this.coTypeModule == "3") {
-      selectStatement = "SELECT DISTINCT  d.* FROM document_sales d " +
-        "LEFT JOIN document_st ds " +
-        "ON d.co_document = ds.co_document " +
-        "WHERE d.id_client = ? AND ds.st_document < 2 AND d.co_currency = ?  AND d.id_enterprise = ? " +
-        "AND d.co_document_sale_type = 'IGTF' "
 
-      return dbServ.executeSql(selectStatement,
-        [idClient, coCurrency, idEnterprise]).then(data => {
-          //[idClient, coCurrency, idEnterprise]).then(data => {
+      if (coCurrency == "" || coCurrency == "Moneda") {
+        // Solo necesitas algunos parámetros
+        params = [idClient, idEnterprise];
+        selectStatement =
+          selectStatement = "SELECT DISTINCT  d.* FROM document_sales d " +
+          "LEFT JOIN document_st ds " +
+          "ON d.co_document = ds.co_document " +
+          "WHERE d.id_client = ? AND ds.st_document < 2 AND d.id_enterprise = ? " +
+          "AND d.co_document_sale_type = 'IGTF' "
+      } else {
+        // Necesitas todos los parámetros
+        params = [idClient, coCurrency, idEnterprise];
 
-          if (data.rows.length > 0) {
-            this.documentsSaleComponent = true;
-          }
+        selectStatement = "SELECT DISTINCT  d.* FROM document_sales d " +
+          "LEFT JOIN document_st ds " +
+          "ON d.co_document = ds.co_document " +
+          "WHERE d.id_client = ? AND ds.st_document < 2 AND d.co_currency = ?  AND d.id_enterprise = ? " +
+          "AND d.co_document_sale_type = 'IGTF' "
+      }
 
-          for (let i = 0; i < data.rows.length; i++) {
-            if (this.mapDocumentsSales.get(data.rows.item(i).id_document) == undefined) {
-              let documentSales = {} as DocumentSale;
-              let documentSalesBackup = {} as DocumentSale;
+      return dbServ.executeSql(selectStatement, params).then(data => {
+        //[idClient, coCurrency, idEnterprise]).then(data => {
 
-              documentSales.idDocument = data.rows.item(i).id_document;
-              documentSales.idClient = data.rows.item(i).id_client;
-              documentSales.coClient = data.rows.item(i).co_client;
-              documentSales.idDocumentSaleType = data.rows.item(i).id_document_sale_type;
-              documentSales.coDocumentSaleType = data.rows.item(i).co_document_sale_type;
-              documentSales.daDocument = data.rows.item(i).da_document;
-              documentSales.daDueDate = data.rows.item(i).da_due_date;
-              if (data.rows.item(i).na_amount_base === null || data.rows.item(i).na_amount_base === undefined) {
-                documentSales.nuAmountBase = 0;
-              } else {
-                documentSales.nuAmountBase = data.rows.item(i).na_amount_base;
-              }
+        if (data.rows.length > 0) {
+          this.documentsSaleComponent = true;
+        }
 
-              if (data.rows.item(i).nu_amount_discount === null || data.rows.item(i).nu_amount_discount === undefined) {
-                documentSales.nuAmountDiscount = 0;
-              } else {
-                documentSales.nuAmountDiscount = data.rows.item(i).nu_amount_discount;
-              }
+        for (let i = 0; i < data.rows.length; i++) {
+          if (this.mapDocumentsSales.get(data.rows.item(i).id_document) == undefined) {
+            let documentSales = {} as DocumentSale;
+            let documentSalesBackup = {} as DocumentSale;
 
-              if (data.rows.item(i).nu_amount_tax === null || data.rows.item(i).nu_amount_tax === undefined) {
-                documentSales.nuAmountTax = 0;
-              } else {
-                documentSales.nuAmountTax = data.rows.item(i).nu_amount_tax;
-              }
-              documentSales.nuAmountTotal = data.rows.item(i).nu_amount_total;
-              documentSales.nuAmountPaid = data.rows.item(i).nu_amount_paid;
-              documentSales.nuBalance = data.rows.item(i).nu_balance;
-              documentSales.coCurrency = data.rows.item(i).co_currency;
-              documentSales.idCurrency = data.rows.item(i).id_currency;
-              documentSales.nuDocument = data.rows.item(i).nu_document;
-              documentSales.txComment = data.rows.item(i).tx_comment;
-              documentSales.coDocument = data.rows.item(i).co_document;
-              documentSales.coCollection = data.rows.item(i).co_collection;
-              documentSales.nuValueLocal = data.rows.item(i).nu_value_local;
-              documentSales.stDocumentSale = data.rows.item(i).st_document_sale;
-              documentSales.coEnterprise = data.rows.item(i).co_enterprise;
-              documentSales.idEnterprise = data.rows.item(i).id_enterprise;
-              documentSales.naType = data.rows.item(i).naTypev;
-              documentSales.inPaymentPartial = false;
-              documentSales.isSelected = false;
-              documentSales.isSave = false;
-
-              if (!this.isOpenCollect) {
-                for (var cd = 0; cd < this.collection.collectionDetails.length; cd++) {
-                  if (data.rows.item(i).id_document == this.collection.collectionDetails[cd].idDocument) {
-                    documentSales.isSelected = true;
-                  }
-                }
-              } else {
-                documentSales.isSelected = false;
-              }
-
-
-
-              documentSales.positionCollecDetails = data.rows.item(i).positionCollecDetails;
-              documentSales.nuAmountRetention = data.rows.item(i).nuAmountRetention == undefined ? 0 : data.rows.item(i).nuAmountRetention;
-              documentSales.nuAmountRetention2 = data.rows.item(i).nuAmountRetention2 == undefined ? 0 : data.rows.item(i).nuAmountRetention2;
-              documentSales.daVoucher = data.rows.item(i).daVoucher == undefined ? "" : data.rows.item(i).daVoucher;
-              documentSales.nuVaucherRetention = data.rows.item(i).nuVaucherRetention == undefined ? 0 : data.rows.item(i).nuVaucherRetention;
-              documentSales.igtfAmount = data.rows.item(i).igtfAmount == undefined ? 0 : data.rows.item(i).igtfAmount;
-              documentSales.txConversion = data.rows.item(i).txConversion == undefined ? "" : data.rows.item(i).txConversion;
-
-
-              this.documentSales.push(documentSales);
-              //documentSalesBackup = { ...documentSales };
-              documentSalesBackup = Object.assign({}, documentSales);
-
-              this.documentSalesBackup.push(documentSalesBackup);
-
-              this.mapDocumentsSales.set(
-                data.rows.item(i).id_document, documentSales
-              )
-
-
-
-
+            documentSales.idDocument = data.rows.item(i).id_document;
+            documentSales.idClient = data.rows.item(i).id_client;
+            documentSales.coClient = data.rows.item(i).co_client;
+            documentSales.idDocumentSaleType = data.rows.item(i).id_document_sale_type;
+            documentSales.coDocumentSaleType = data.rows.item(i).co_document_sale_type;
+            documentSales.daDocument = data.rows.item(i).da_document;
+            documentSales.daDueDate = data.rows.item(i).da_due_date;
+            if (data.rows.item(i).na_amount_base === null || data.rows.item(i).na_amount_base === undefined) {
+              documentSales.nuAmountBase = 0;
+            } else {
+              documentSales.nuAmountBase = data.rows.item(i).na_amount_base;
             }
-          }
 
-          if (this.historicPartialPayment) {
-            this.findIsPaymentPartial(dbServ);
+            if (data.rows.item(i).nu_amount_discount === null || data.rows.item(i).nu_amount_discount === undefined) {
+              documentSales.nuAmountDiscount = 0;
+            } else {
+              documentSales.nuAmountDiscount = data.rows.item(i).nu_amount_discount;
+            }
+
+            if (data.rows.item(i).nu_amount_tax === null || data.rows.item(i).nu_amount_tax === undefined) {
+              documentSales.nuAmountTax = 0;
+            } else {
+              documentSales.nuAmountTax = data.rows.item(i).nu_amount_tax;
+            }
+            documentSales.nuAmountTotal = data.rows.item(i).nu_amount_total;
+            documentSales.nuAmountPaid = data.rows.item(i).nu_amount_paid;
+            documentSales.nuBalance = data.rows.item(i).nu_balance;
+            documentSales.coCurrency = data.rows.item(i).co_currency;
+            documentSales.idCurrency = data.rows.item(i).id_currency;
+            documentSales.nuDocument = data.rows.item(i).nu_document;
+            documentSales.txComment = data.rows.item(i).tx_comment;
+            documentSales.coDocument = data.rows.item(i).co_document;
+            documentSales.coCollection = data.rows.item(i).co_collection;
+            documentSales.nuValueLocal = data.rows.item(i).nu_value_local;
+            documentSales.stDocumentSale = data.rows.item(i).st_document_sale;
+            documentSales.coEnterprise = data.rows.item(i).co_enterprise;
+            documentSales.idEnterprise = data.rows.item(i).id_enterprise;
+            documentSales.naType = data.rows.item(i).naTypev;
+            documentSales.inPaymentPartial = false;
+            documentSales.isSelected = false;
+            documentSales.isSave = false;
+
+            if (!this.isOpenCollect) {
+              for (var cd = 0; cd < this.collection.collectionDetails.length; cd++) {
+                if (data.rows.item(i).id_document == this.collection.collectionDetails[cd].idDocument) {
+                  documentSales.isSelected = true;
+                }
+              }
+            } else {
+              documentSales.isSelected = false;
+            }
+
+
+
+            documentSales.positionCollecDetails = data.rows.item(i).positionCollecDetails;
+            documentSales.nuAmountRetention = data.rows.item(i).nuAmountRetention == undefined ? 0 : data.rows.item(i).nuAmountRetention;
+            documentSales.nuAmountRetention2 = data.rows.item(i).nuAmountRetention2 == undefined ? 0 : data.rows.item(i).nuAmountRetention2;
+            documentSales.daVoucher = data.rows.item(i).daVoucher == undefined ? "" : data.rows.item(i).daVoucher;
+            documentSales.nuVaucherRetention = data.rows.item(i).nuVaucherRetention == undefined ? 0 : data.rows.item(i).nuVaucherRetention;
+            documentSales.igtfAmount = data.rows.item(i).igtfAmount == undefined ? 0 : data.rows.item(i).igtfAmount;
+            documentSales.txConversion = data.rows.item(i).txConversion == undefined ? "" : data.rows.item(i).txConversion;
+
+
+            this.documentSales.push(documentSales);
+            //documentSalesBackup = { ...documentSales };
+            documentSalesBackup = Object.assign({}, documentSales);
+
+            this.documentSalesBackup.push(documentSalesBackup);
+
+            this.mapDocumentsSales.set(
+              data.rows.item(i).id_document, documentSales
+            )
+
+
+
+
           }
-          return this.documentSales;
-        }).catch(e => {
-          //this.documentSales
-          return Promise.resolve(this.documentSales);
-        })
+        }
+
+        if (this.historicPartialPayment) {
+          this.findIsPaymentPartial(dbServ);
+        }
+        return this.documentSales;
+      }).catch(e => {
+        //this.documentSales
+        return Promise.resolve(this.documentSales);
+      })
     }
     return Promise.resolve([]);
   }
@@ -2281,7 +2254,7 @@ export class CollectionService {
     })
   }
 
-  saveCollection(dbServ: SQLiteObject, collection: Collection,) {
+  saveCollection(dbServ: SQLiteObject, collection: Collection, action: Boolean) {
 
 
     return this.adjuntoService.getQuantityAdjuntos().then(number => {
@@ -2372,8 +2345,11 @@ export class CollectionService {
             console.log("TERMINE DOCUMENT ST")
             return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
               return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, this.collection.coCollection).then(resp => {
-                this.documentSales = [] as DocumentSale[];
-                this.documentSalesBackup = [] as DocumentSale[];
+                if (action) {
+                  this.documentSales = [] as DocumentSale[];
+                  this.documentSalesBackup = [] as DocumentSale[];
+                }
+
                 return resp
               })
             });
@@ -2388,8 +2364,10 @@ export class CollectionService {
           return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
             console.log("TERMINE DOCUMENT ST")
             return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
-              this.documentSales = [] as DocumentSale[];
-              this.documentSalesBackup = [] as DocumentSale[];
+              if (action) {
+                this.documentSales = [] as DocumentSale[];
+                this.documentSalesBackup = [] as DocumentSale[];
+              }
               return resp;
             });
 
@@ -3405,14 +3383,18 @@ export class CollectionService {
     // Copia a collectionDetails
     const detail = this.collection.collectionDetails[detailIdx];
     if (detail) {
-      detail.nuAmountDiscount = open.nuAmountDiscount;
+
       detail.nuAmountPaid = this.amountPaid
-      detail.nuAmountPaidConversion = this.documentSalesBackup[idx].nuAmountPaid;
+      detail.nuAmountPaidConversion = this.convertirMonto(this.amountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
       detail.nuBalanceDoc = open.nuBalance;
-      detail.nuBalanceDocConversion = this.documentSalesBackup[idx].nuAmountPaid;
+      detail.nuBalanceDocConversion = this.convertirMonto(open.nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
       detail.daVoucher = open.daVoucher;
+      detail.nuAmountDiscount = open.nuAmountDiscount;
+      detail.nuAmountDiscountConversion = this.convertirMonto(open.nuAmountDiscount, this.collection.nuValueLocal, this.collection.coCurrency);
       detail.nuAmountRetention = open.nuAmountRetention;
+      detail.nuAmountRetentionConversion = this.convertirMonto(open.nuAmountRetention, this.collection.nuValueLocal, this.collection.coCurrency);
       detail.nuAmountRetention2 = open.nuAmountRetention2;
+      detail.nuAmountRetention2Conversion = this.convertirMonto(open.nuAmountRetention2, this.collection.nuValueLocal, this.collection.coCurrency);
       detail.nuVoucherRetention = open.nuVaucherRetention;
       detail.nuValueLocal = open.nuValueLocal;
 

@@ -40,12 +40,7 @@ export class CobroTotalComponent implements OnInit {
     console.log(this.collectService.collection)
   }
 
-  send() {
-    this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection).then(response => {
-      console.log(response);
-      this.collectService.saveSendCollection(this.collectService.collection.coCollection);
-    })
-  }
+ 
 
   addRetencion() {
     this.collectService.addRetention = true;
@@ -109,7 +104,7 @@ export class CobroTotalComponent implements OnInit {
   }
 
   validate() {
-    
+
     this.collectService.retention.nuAmountPaid =
       this.collectService.retention.nuAmountRetention + this.collectService.retention.nuAmountRetention2;
 
