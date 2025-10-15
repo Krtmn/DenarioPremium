@@ -1,6 +1,6 @@
-<ion-item-divider sticky>
+<ion-item-divider class="segmentWidth" sticky>
   <div class="cobroComponent" sticky-below-view>
-    <ion-segment value="default" [(ngModel)]="segment" scrollable>
+    <ion-segment value="default" [(ngModel)]="segment" >
       <ion-segment-button value="default" (click)="onChangeTab('general')">
         <ion-label>{{this.depositService.depositTags.get('DEP_PESTANA_GENERAL')}}</ion-label>
       </ion-segment-button>
