@@ -2402,122 +2402,137 @@ export class CollectionService {
   }
 
   saveCollectionBatch(dbServ: SQLiteObject, collection: Collection[],) {
-    let insertCollection = "INSERT OR REPLACE INTO collections (" +
-      "id_collection," +
-      "co_collection," +
-      "co_original_collection," +
-      "id_client," +
-      "co_client, " +
-      "lb_client," +
-      "st_collection," +
-      "da_collection," +
-      "da_rate," +
-      "na_responsible," +
-      "id_enterprise," +
-      "co_enterprise," +
-      "id_currency," +
-      "co_currency," +
-      "co_type," +
-      "tx_comment," +
-      "coordenada," +
-      "nu_value_local," +
-      "nu_difference," +
-      "nu_difference_conversion," +
-      "tx_conversion," +
-      "nu_amount_total," +
-      "nu_amount_total_conversion," +
-      "nu_amount_igtf," +
-      "nu_amount_igtf_conversion," +
-      "nu_amount_final," +
-      "nu_amount_final_conversion," +
-      "nu_igtf," +
-      "hasIGTF," +
-      "nu_attachments," +
-      "has_attachments" +
-      ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    // ...existing code...
 
-    let inserStatementCollectionDetail = "INSERT OR REPLACE INTO collection_details(" +
-      "id_collection_detail," +
-      "co_collection," +
-      "co_document," +
-      "in_payment_partial," +
-      "nu_voucher_retention," +
-      "nu_amount_retention," +
-      "nu_amount_retention2," +
-      "nu_amount_paid," +
-      "nu_amount_paid_conversion," +
-      "nu_amount_discount," +
-      "nu_amount_discount_conversion," +
-      "nu_amount_doc," +
-      "nu_amount_doc_conversion," +
-      "da_document," +
-      "nu_balance_doc," +
-      "nu_balance_doc_conversion," +
-      "co_original," +
-      "co_type_doc," +
-      "id_document," +
-      "nu_amount_retention_iva_conversion," +
-      "nu_amount_retention_islr_conversion," +
-      "nu_amount_igtf," +
-      "nu_amount_igtf_conversion," +
-      "da_voucher" +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    const insertCollectionSQL = `
+  INSERT INTO collections (
+    id_collection,
+    co_collection,
+    co_original_collection,
+    id_client,
+    co_client,
+    lb_client,
+    st_collection,
+    da_collection,
+    da_rate,
+    na_responsible,
+    id_enterprise,
+    co_enterprise,
+    nu_amount_total,    
+    nu_amount_total_conversion,
+    id_currency,
+    co_currency,
+    co_type,
+    tx_comment,
+    coordenada,
+    nu_value_local,    
+    nu_difference,    
+    nu_difference_conversion,
+    tx_conversion,
+    nu_igtf,
+    nu_amount_igtf,
+    nu_amount_igtf_conversion,
+    nu_amount_final,
+    nu_amount_final_conversion,
+    hasIGTF,
+    nu_attachments,
+    has_attachments
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`;
+    // ...existing code...
 
-    let insertCollectionPayment = "INSERT OR REPLACE INTO collection_payments(" +
-      "id_collection_payment," +
-      "co_collection, " +
-      "id_collection_detail, " +
-      "co_payment_method, " +
-      "id_bank, " +
-      "nu_payment_doc, " +
-      "na_bank, " +
-      "co_client_bank_account, " +
-      "nu_client_bank_account, " +
-      "da_value, " +
-      "da_collection_payment, " +
-      "nu_collection_payment, " +
-      "nu_amount_partial, " +
-      "nu_amount_partial_conversion, " +
-      "co_type" +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    const insertCollectionDetailSQL = `
+  INSERT INTO collection_details (
+    id_collection_detail,
+    co_collection,
+    co_document,
+    in_payment_partial,
+    nu_voucher_retention,
+    nu_amount_retention,
+    nu_amount_retention2,
+    nu_amount_paid,
+    nu_amount_discount,
+    nu_amount_doc,
+    da_document,
+    nu_balance_doc,
+    co_original,
+    co_type_doc,
+    id_document,
+    nu_amount_doc_conversion,
+    nu_balance_doc_conversion,
+    nu_amount_retention_iva_conversion,
+    nu_amount_retention_islr_conversion,
+    nu_amount_discount_conversion,
+    nu_amount_paid_conversion,
+    nu_amount_igtf,
+    nu_amount_igtf_conversion,
+    da_voucher
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`;
+
+    // ...existing code...
+
+    const insertCollectionPaymentSQL = `
+  INSERT INTO collection_payments (
+    id_collection_payment,
+    co_collection,
+    id_collection_detail,
+    co_payment_method,
+    id_bank,
+    nu_payment_doc,
+    na_bank,
+    co_client_bank_account,
+    nu_client_bank_account,
+    da_value,
+    da_collection_payment,
+    nu_collection_payment,
+    nu_amount_partial,    
+    nu_amount_partial_conversion,
+    co_type
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`;
+
+    // ...existing code...
 
     let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
 
     for (var co = 0; co < collection.length; co++) {
       const collect = collection[co];
-      queries.push([insertCollection, [
-        collect.idCollection,
-        collect.coCollection,
-        collect.coOriginalCollection,
-        collect.idClient,
-        collect.coClient,
-        collect.lbClient,
-        collect.stCollection,
-        collect.daCollection,
-        collect.daRate,
-        collect.naResponsible,
-        collect.idEnterprise,
-        collect.coEnterprise,
-        collect.idCurrency,
-        collect.coCurrency,
-        collect.coType,
-        collect.txComment,
-        collect.coordenada,
-        collect.nuValueLocal,
-        collect.nuDifference,
-        collect.nuDifferenceConversion,
-        collect.txConversion,
-        collect.nuAmountTotal,
-        collect.nuAmountTotalConversion,
-        collect.nuAmountIgtf,
-        collect.nuAmountIgtfConversion,
-        collect.nuAmountFinal,
-        collect.nuAmountFinalConversion,
-        collect.nuIgtf,
-        collect.hasIGTF,
-        collect.nuAttachments,
-        collect.hasAttachments
-      ]]);
+      queries.push([insertCollectionSQL,
+        [
+          collect.idCollection,
+          collect.coCollection,
+          collect.coOriginalCollection,
+          collect.idClient,
+          collect.coClient,
+          collect.naClient,
+          collect.stCollection,
+          collect.daCollection,
+          collect.daRate,
+          collect.naResponsible,
+          collect.idEnterprise,
+          collect.coEnterprise,
+          collect.nuAmountTotal,
+          collect.nuAmountTotalConversion,
+          collect.idCurrency,
+          collect.coCurrency,
+          collect.coType,
+          collect.txComment,
+          collect.coordenada,
+          collect.nuValueLocal,
+          collect.nuDifference,
+          collect.nuDifferenceConversion,
+          collect.txConversion,
+          collect.nuIgtf,
+          collect.nuAmountIgtf,
+          collect.nuAmountIgtfConversion,
+          collect.nuAmountFinal,
+          collect.nuAmountFinalConversion,
+          collect.hasIGTF,
+          collect.nuAttachments,
+          collect.hasAttachments
+        ]
+      ]);
 
       for (var coDetail = 0; coDetail < collect.collectionDetails.length; coDetail++) {
         const collectionDetail = collection[co].collectionDetails[coDetail];
@@ -2526,52 +2541,56 @@ export class CollectionService {
           this.coDocumentToUpdate.push(collectionDetail.coDocument);
         }
 
-        queries.push([inserStatementCollectionDetail, [
-          collectionDetail.idCollectionDetail,
-          collectionDetail.coCollection,
-          collectionDetail.coDocument,
-          collectionDetail.inPaymentPartial,
-          collectionDetail.nuVoucherRetention,
-          collectionDetail.nuAmountRetention,
-          collectionDetail.nuAmountRetention2,
-          collectionDetail.nuAmountPaid,
-          collectionDetail.nuAmountPaidConversion,
-          collectionDetail.nuAmountDiscount,
-          collectionDetail.nuAmountDiscountConversion,
-          collectionDetail.nuAmountDoc,
-          collectionDetail.nuAmountDocConversion,
-          collectionDetail.daDocument,
-          collectionDetail.nuBalanceDoc,
-          collectionDetail.nuBalanceDocConversion,
-          collectionDetail.coOriginal,
-          collectionDetail.coTypeDoc,
-          collectionDetail.idDocument,
-          collectionDetail.nuAmountRetentionConversion,
-          collectionDetail.nuAmountRetention2Conversion,
-          collectionDetail.nuAmountIgtf,
-          collectionDetail.nuAmountIgtfConversion,
-          collectionDetail.daVoucher
-        ]]);
+        queries.push([insertCollectionDetailSQL,
+          [
+            collectionDetail.idCollectionDetail,
+            collectionDetail.coCollection,
+            collectionDetail.coDocument,
+            collectionDetail.inPaymentPartial,
+            collectionDetail.nuVoucherRetention,
+            collectionDetail.nuAmountRetention,
+            collectionDetail.nuAmountRetention2,
+            collectionDetail.nuAmountPaid,
+            collectionDetail.nuAmountPaidConversion, // <-- Debe ir después de nu_amount_paid
+            collectionDetail.nuAmountDiscount,
+            collectionDetail.nuAmountDiscountConversion, // <-- Debe ir después de nu_amount_discount
+            collectionDetail.nuAmountDoc,
+            collectionDetail.nuAmountDocConversion, // <-- Debe ir después de nu_amount_doc
+            collectionDetail.daDocument,
+            collectionDetail.nuBalanceDoc,
+            collectionDetail.nuBalanceDocConversion,
+            collectionDetail.coOriginal,
+            collectionDetail.coTypeDoc,
+            collectionDetail.idDocument,
+            collectionDetail.nuAmountRetentionConversion,
+            collectionDetail.nuAmountRetention2Conversion,
+            collectionDetail.nuAmountIgtf,
+            collectionDetail.nuAmountIgtfConversion,
+            collectionDetail.daVoucher
+          ]
+        ]);
 
         for (var coDetailPayment = 0; coDetailPayment < collect.collectionPayments.length; coDetailPayment++) {
           const collectionPayment = collect.collectionPayments[coDetailPayment];
-          queries.push([insertCollectionPayment, [
-            collectionPayment.idCollectionPayment,
-            collectionPayment.coCollection,
-            collectionPayment.idCollectionDetail,
-            collectionPayment.coPaymentMethod,
-            collectionPayment.idBank,
-            collectionPayment.nuPaymentDoc,
-            collectionPayment.naBank,
-            collectionPayment.coClientBankAccount,
-            collectionPayment.nuClientBankAccount,
-            collectionPayment.daValue,
-            collectionPayment.daCollectionPayment,
-            collectionPayment.nuCollectionPayment,
-            collectionPayment.nuAmountPartial,
-            collectionPayment.nuAmountPartialConversion,
-            collectionPayment.coType
-          ]]);
+          queries.push([insertCollectionPaymentSQL,
+            [
+              collectionPayment.idCollectionPayment,
+              collectionPayment.coCollection,
+              collectionPayment.idCollectionDetail,
+              collectionPayment.coPaymentMethod,
+              collectionPayment.idBank,
+              collectionPayment.nuPaymentDoc,
+              collectionPayment.naBank,
+              collectionPayment.coClientBankAccount,
+              collectionPayment.nuClientBankAccount,
+              collectionPayment.daValue,
+              collectionPayment.daCollectionPayment,
+              collectionPayment.nuCollectionPayment,
+              collectionPayment.nuAmountPartial,
+              collectionPayment.nuAmountPartialConversion,
+              collectionPayment.coType
+            ]
+          ]);
         }
       }
       /* if (this.coDocumentToUpdate.length > 0) {
@@ -2579,14 +2598,12 @@ export class CollectionService {
         this.updateDocuments(dbServ, this.coDocumentToUpdate);
       } */
     }
-    return dbServ.sqlBatch(queries).then(() => { }).catch(error => { });
-    /*  if (collection.hasIGTF) {
-       //SE DEBE CREAR UN DOCUMENTO DE VENTA TIPO IGTF
-       this.createDocumentSaleIGTF(collection);
-     } */
+    return dbServ.sqlBatch(queries).then(() => {
+      console.log('Batch insertado con éxito');
+    }).catch(error => {
 
-
-
+      console.log('Error al insertar en batch:', error);
+    });
   }
 
   saveCollectionDetail(dbServ: SQLiteObject, collectionDetail: CollectionDetail[], coCollection: string) {

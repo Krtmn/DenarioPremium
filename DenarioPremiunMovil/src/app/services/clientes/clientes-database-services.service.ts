@@ -80,6 +80,7 @@ export class ClientesDatabaseServicesService {
           idClient: data.rows.item(i).id_client,
           coClient: data.rows.item(i).co_client,
           lbClient: data.rows.item(i).lb_client,
+          naClient: data.rows.item(i).na_client,
           nuRif: data.rows.item(i).nu_rif,
           idChannel: data.rows.item(i).id_channel,
           idWarehouse: data.rows.item(i).id_warehouse,

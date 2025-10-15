@@ -382,7 +382,9 @@ export class DepositService {
     this.database = dbServ;
     let selectStatement = "SELECT DISTINCT(c.co_collection), c.*, cd.co_document, " +
       " (SELECT SUM(cp2.nu_amount_partial) FROM collection_payments cp2 WHERE cp2.co_collection =" +
-      " c.co_collection AND cp2.co_payment_method <> 'de' AND cp2.co_payment_method <> 'tr' AND cp2.co_payment_method <> 'ot') as total_deposit" +
+      " c.co_collection AND cp2.co_payment_method <> 'de' AND cp2.co_payment_method <> 'tr' AND cp2.co_payment_method <> 'ot') as total_deposit," +
+      " (SELECT SUM(cp2.nu_amount_partial_conversion) FROM collection_payments cp2 WHERE cp2.co_collection =" +
+      " c.co_collection AND cp2.co_payment_method <> 'de' AND cp2.co_payment_method <> 'tr' AND cp2.co_payment_method <> 'ot') as total_deposit_conversion" +
       " FROM collections c, collection_payments cp LEFT OUTER JOIN collection_details cd ON c.co_collection = cd.co_collection" +
       " WHERE c.co_currency = ? AND c.st_collection <> 0 AND c.co_collection = cp.co_collection AND cp.co_payment_method <> 'de'" +
       " AND cp.co_payment_method <> 'tr' AND cd.co_type_doc <> 'CR' and c.id_collection <> 0" +
