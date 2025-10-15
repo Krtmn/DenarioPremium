@@ -98,7 +98,7 @@
                 (click)="clientLogic.openClientLocationComponent()">{{ getTag("VIS_BOTON_MAPA") }}</ion-button>
             </ion-col> -->
 
-            <ion-col size="6" size-sm="12" size-xs="12" *ngIf="rolTransportista">
+            <ion-col size="6" size-sm="12" size-xs="12" >
               <ion-button id="eventSelect" class="botonAddLila" expand="block" expand="block"
                 [disabled]="disabledButtonViewRoute" (click)="openRouteInGoogleMaps()">
                 {{ getTag("VIS_SEE_ROUTE") }}
