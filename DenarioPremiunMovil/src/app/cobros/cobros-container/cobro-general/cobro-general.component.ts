@@ -227,7 +227,7 @@ export class CobrosGeneralComponent implements OnInit {
     if (this.collectService.historicoTasa)
       this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise)
         .then(() => {
-         
+
         });
     this.initializeCurrenciesAndRates();
     if (!this.collectService.igtfList?.length)
@@ -470,7 +470,7 @@ export class CobrosGeneralComponent implements OnInit {
           if (this.collectService.historicoTasa)
             this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise)
               .then(() => {
-          
+
               });
           else
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient, this.collectService.currencySelectedDocument.coCurrency,
@@ -607,7 +607,7 @@ export class CobrosGeneralComponent implements OnInit {
 
             if (this.collectService.collection.stCollection >= 2) {
               this.collectService.disabledInputClient = true;
-              this.collectService.enterpriseEnabled = true;
+              this.collectService.enterpriseEnabled = false;
               //this.collectService.collection.nuValueLocal = 80;
             }
 

@@ -673,7 +673,7 @@ INSERT INTO public.application_tags(
 	('DEP_PLACEHOLDER_LISTBANK','DEP','DEPOSITOS','ESP','Seleccione Banco...'),
 	('DEP_FECHA_DOC','DEP','DEPOSITOS','ESP','Fecha Doc'),
 	('DEP_SELECT_COB_DEP','DEP','DEPOSITOS','ESP','Seleccione los Cobros a depositar'),
-	('DEP_COB_DEP','DEP','DEPOSITOS','ESP','Cobros a depositados'),
+	('DEP_COB_DEP','DEP','DEPOSITOS','ESP','Cobros a depositar'),
 	('DEP_SELECCIONE','DEP','DEPOSITOS','ESP','Selec'),
 	('DEP_CLIENTE','DEP','DEPOSITOS','ESP','Cliente'),
 	('DEP_FECHA_COB','DEP','DEPOSITOS','ESP','Fecha Cob.'),

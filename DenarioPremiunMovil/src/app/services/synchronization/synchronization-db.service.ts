@@ -191,12 +191,12 @@ export class SynchronizationDBService {
                   localStorage.setItem("createTables", "true");
                   resolve("true");
                 }
-               
+
               }).catch((error) => {
                 console.log(error, res[i].table)
               });
               //si tiene indice lo crea
-              if(res[i].index && res[i].index.length>0){
+              if (res[i].index && res[i].index.length > 0) {
                 this.database.executeSql(res[i].index, []).then(() => {
                   console.log("Index created for table:", res[i].table);
                 }).catch((error) => {
@@ -388,17 +388,17 @@ export class SynchronizationDBService {
 
   insertClientBatch(arr: Client[]) {
     let insertStatement = 'INSERT OR REPLACE INTO clients(' +
-      'id_client,id_enterprise,co_enterprise,co_client,lb_client,' +
+      'id_client,id_enterprise,co_enterprise,co_client,lb_client,na_client,' +
       'nu_rif,id_channel,id_warehouse,id_head_quarter,id_list,' +
       'id_payment_condition,co_payment_condition,in_suspension,qu_discount,na_email,' +
       'nu_credit_limit,na_web_site,id_currency,co_currency,multimoneda,collection_iva' +
       ') ' +
-      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
     var statements = [];
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
       statements.push([insertStatement, [obj.idClient, obj.idEnterprise, obj.coEnterprise, obj.coClient,
-      obj.lbClient, obj.nuRif, obj.idChannel, obj.idWarehouse, obj.idHeadQuarter, obj.idList,
+      obj.lbClient, obj.naClient, obj.nuRif, obj.idChannel, obj.idWarehouse, obj.idHeadQuarter, obj.idList,
       obj.idPaymentCondition, obj.coPaymentCondition, obj.inSuspension, obj.quDiscount, obj.naEmail,
       obj.nuCreditLimit, obj.naWebSite, obj.idCurrency, obj.coCurrency, obj.multimoneda, obj.collectionIva]]);
     }
