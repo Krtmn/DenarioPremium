@@ -225,8 +225,10 @@ export class CobrosGeneralComponent implements OnInit {
     this.selectorCliente.updateClientList(this.collectService.enterpriseSelected.idEnterprise);
 
     if (this.collectService.historicoTasa)
-      this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise);
+      this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise)
+        .then(() => {
 
+        });
     this.initializeCurrenciesAndRates();
     if (!this.collectService.igtfList?.length)
       this.collectService.getIgtfList(this.synchronizationServices.getDatabase(),);
@@ -244,8 +246,13 @@ export class CobrosGeneralComponent implements OnInit {
       this.updateSelectedEnterprise(this.collectService.collection.idEnterprise);
       this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise).then(() => {
         if (this.collectService.historicoTasa) {
-          this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);
-          this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.collection.daRate);
+          this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise)
+            .then(() => {
+              this.collectService.getDateRate(
+                this.synchronizationServices.getDatabase(),
+                this.collectService.collection.daRate
+              );
+            });
         }
 
         this.collectService.getDocumentsSales(
@@ -461,7 +468,10 @@ export class CobrosGeneralComponent implements OnInit {
           //esta variable prende o apaga el calendario para seleccionar tasa
           // if (this.globalConfig.get("historicoTasa") === 'true' ? true : false) {
           if (this.collectService.historicoTasa)
-            this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise);
+            this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise)
+              .then(() => {
+
+              });
           else
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient, this.collectService.currencySelectedDocument.coCurrency,
               this.collectService.collection.coCollection, this.collectService.collection.idEnterprise);
@@ -532,8 +542,13 @@ export class CobrosGeneralComponent implements OnInit {
       this.collectService.nameClient = "";
       //luego de seleccionar empresa, buscamos las tasas    
       if (this.collectService.historicoTasa)
-        this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);
-
+        this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise)
+          .then(() => {
+            this.collectService.getDateRate(
+              this.synchronizationServices.getDatabase(),
+              this.collectService.collection.daRate
+            );
+          });
 
       if (this.globalConfig.get("requiredComment") === 'false' ? true : false) {
         /* this.collectService.onCollectionValid(true); */
@@ -562,8 +577,16 @@ export class CobrosGeneralComponent implements OnInit {
       if (this.collectService.collection.stCollection === 3) {
         this.collectService.rateSelected = this.collectService.collection.nuValueLocal;
         this.collectService.historicoTasa = true;
-      } else if (this.collectService.historicoTasa)
-        this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual.split("T")[0]);
+      } else if (this.collectService.historicoTasa) {
+        this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise)
+          .then(() => {
+            this.collectService.getDateRate(
+              this.synchronizationServices.getDatabase(),
+              this.collectService.dateRateVisual.split("T")[0]
+            );
+          });
+      }
+
 
       //BUSCAMOS LAS CUENTAS DE BANCOS DEL CLIENTE
       this.collectService.getAllClientBankAccountByEnterprise(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise, this.collectService.collection.coClient).then((result: any[]) => {
@@ -584,7 +607,7 @@ export class CobrosGeneralComponent implements OnInit {
 
             if (this.collectService.collection.stCollection >= 2) {
               this.collectService.disabledInputClient = true;
-              this.collectService.enterpriseEnabled = true;
+              this.collectService.enterpriseEnabled = false;
               //this.collectService.collection.nuValueLocal = 80;
             }
 

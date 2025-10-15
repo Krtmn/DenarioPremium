@@ -14,6 +14,7 @@ import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 import { CollectDeposit } from 'src/app/modelos/collect-deposit';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { ItemListaDepositos } from 'src/app/depositos/item-lista-depositos';
+import { DELIVERY_STATUS_NEW } from 'src/app/utils/appConstants';
 
 @Injectable({
   providedIn: 'root'
@@ -179,7 +180,7 @@ export class DepositService {
         txComment: "",
         nuValueLocal: 0,
         idCurrency: 0,
-        stDeposit: 0,
+        stDeposit: DELIVERY_STATUS_NEW,
         isEdit: true,
         isEditTotal: false,
         isSave: false,
@@ -289,7 +290,7 @@ export class DepositService {
       txComment: "",
       nuValueLocal: 0,
       idCurrency: 0,
-      stDeposit: 3,
+      stDeposit: 0,
       isEdit: true,
       isEditTotal: false,
       isSave: false,
@@ -381,7 +382,9 @@ export class DepositService {
     this.database = dbServ;
     let selectStatement = "SELECT DISTINCT(c.co_collection), c.*, cd.co_document, " +
       " (SELECT SUM(cp2.nu_amount_partial) FROM collection_payments cp2 WHERE cp2.co_collection =" +
-      " c.co_collection AND cp2.co_payment_method <> 'de' AND cp2.co_payment_method <> 'tr' AND cp2.co_payment_method <> 'ot') as total_deposit" +
+      " c.co_collection AND cp2.co_payment_method <> 'de' AND cp2.co_payment_method <> 'tr' AND cp2.co_payment_method <> 'ot') as total_deposit," +
+      " (SELECT SUM(cp2.nu_amount_partial_conversion) FROM collection_payments cp2 WHERE cp2.co_collection =" +
+      " c.co_collection AND cp2.co_payment_method <> 'de' AND cp2.co_payment_method <> 'tr' AND cp2.co_payment_method <> 'ot') as total_deposit_conversion" +
       " FROM collections c, collection_payments cp LEFT OUTER JOIN collection_details cd ON c.co_collection = cd.co_collection" +
       " WHERE c.co_currency = ? AND c.st_collection <> 0 AND c.co_collection = cp.co_collection AND cp.co_payment_method <> 'de'" +
       " AND cp.co_payment_method <> 'tr' AND cd.co_type_doc <> 'CR' and c.id_collection <> 0" +

@@ -72,7 +72,7 @@ export class CobrosHeaderComponent implements OnInit {
         this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
         this.alertMessageOpen = true;
         this.collectService.collection.stCollection = 1;
-        this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection).then(async response => {
+        this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, true).then(async response => {
           await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
           console.log(response);
           this.collectService.initCollect = true;
@@ -241,7 +241,7 @@ export class CobrosHeaderComponent implements OnInit {
     this.collectService.collectionIsSave = true;
     if (sendOrSave) {
       //envio
-      this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection).then(async response => {
+      this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection,sendOrSave).then(async response => {
         await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
         console.log(response);
         this.saveSendNewCollection(true, this.collectService.collection.coCollection);
@@ -266,7 +266,7 @@ export class CobrosHeaderComponent implements OnInit {
     } else {
       //salvo
       this.collectService.collection.stCollection = 1;
-      this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection).then(async response => {
+      this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection,sendOrSave).then(async response => {
         await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
         console.log(response);
         this.saveSendNewCollection(false, this.collectService.collection.coCollection);

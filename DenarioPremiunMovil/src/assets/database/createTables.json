@@ -6,7 +6,6 @@
         "idName": "id_address",
         "sql": "CREATE TABLE IF NOT EXISTS address_clients ( id_address INTEGER PRIMARY KEY, co_address VARCHAR(50), id_client INTEGER NOT NULL, id_address_type INTEGER, co_address_type VARCHAR(50), tx_address VARCHAR(150), nu_phone VARCHAR(50), na_responsible VARCHAR(80), co_enterprise_structure VARCHAR(80), id_enterprise_structure INTEGER, co_client VARCHAR(50), na_address VARCHAR(50), co_enterprise VARCHAR(50), id_enterprise INTEGER, coordenada VARCHAR(20), editable BOOLEAN);",
         "index": "CREATE INDEX IF NOT EXISTS idx_address_clients_id_client ON address_clients(id_client);"
-
     },
     {
         "id": 2,
@@ -20,7 +19,7 @@
         "name": "clients",
         "table": "clients",
         "idName": "id_client",
-        "sql": "CREATE TABLE IF NOT EXISTS clients ( id_client INTEGER PRIMARY KEY, co_client VARCHAR(30) NOT NULL, lb_client VARCHAR(80) NOT NULL, nu_rif VARCHAR(15), id_channel INTEGER, id_warehouse INTEGER, id_head_quarter INTEGER, id_list INTEGER, id_payment_condition INTEGER, co_payment_condition VARCHAR(30), in_suspension BOOLEAN DEFAULT false, qu_discount DECIMAL(10,5), na_email character varying(30), nu_credit_limit DECIMAL(10,5), na_web_site character varying(150), id_currency INTEGER, co_currency VARCHAR(30), multimoneda BOOLEAN DEFAULT false, co_enterprise VARCHAR(50), id_enterprise INTEGER NOT NULL, collection_iva BOOLEAN DEFAULT false);"
+        "sql": "CREATE TABLE IF NOT EXISTS clients ( id_client INTEGER PRIMARY KEY, co_client VARCHAR(30) NOT NULL, lb_client VARCHAR(80) NOT NULL, na_client TEXT, nu_rif VARCHAR(15), id_channel INTEGER, id_warehouse INTEGER, id_head_quarter INTEGER, id_list INTEGER, id_payment_condition INTEGER, co_payment_condition VARCHAR(30), in_suspension BOOLEAN DEFAULT false, qu_discount DECIMAL(10,5), na_email character varying(30), nu_credit_limit DECIMAL(10,5), na_web_site character varying(150), id_currency INTEGER, co_currency VARCHAR(30), multimoneda BOOLEAN DEFAULT false, co_enterprise VARCHAR(50), id_enterprise INTEGER NOT NULL, collection_iva BOOLEAN DEFAULT false);"
     },
     {
         "id": 5,

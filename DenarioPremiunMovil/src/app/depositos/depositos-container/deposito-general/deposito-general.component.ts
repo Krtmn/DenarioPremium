@@ -7,10 +7,10 @@ import { GeolocationService } from 'src/app/services/geolocation/geolocation.ser
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
 @Component({
-    selector: 'app-deposito-general',
-    templateUrl: './deposito-general.component.html',
-    styleUrls: ['./deposito-general.component.scss'],
-    standalone: false
+  selector: 'app-deposito-general',
+  templateUrl: './deposito-general.component.html',
+  styleUrls: ['./deposito-general.component.scss'],
+  standalone: false
 })
 export class DepositoGeneralComponent implements OnInit {
 
@@ -61,7 +61,7 @@ export class DepositoGeneralComponent implements OnInit {
         this.depositService.deposit.coordenada = coords
       }
 
-      if(this.depositService.deposit.stDeposit == 3){
+      if (this.depositService.deposit.stDeposit == 3) {
         this.depositService.disabledEnterprise = true;
         this.depositService.disabledCurrency = true;
       }
@@ -129,7 +129,7 @@ export class DepositoGeneralComponent implements OnInit {
     if (this.depositService.deposit.depositCollect.length > 0) {
       this.depositService.message = "Al cambiar la moneda se reiniciará el Depósito, ¿Desea reiniciar del Depósito?"
       this.alertMessageOpen = true;
-    } else{
+    } else {
       this.changeCurrency();
     }
   }
@@ -145,11 +145,11 @@ export class DepositoGeneralComponent implements OnInit {
       this.depositService.getCurrencyConversion(this.depositService.currencySelected.coCurrency);
       this.depositService.updateBankAccounts(this.db.getDatabase()).then(result => {
         this.depositService.isSelectedBank = false;
-        this.depositService.getBankAccounts(this.db.getDatabase(),this.depositService.deposit.idEnterprise,
+        this.depositService.getBankAccounts(this.db.getDatabase(), this.depositService.deposit.idEnterprise,
           this.depositService.currencySelected.coCurrency).then(resp => {
             //ya tengo todo para iniciar el deposito
-            this.depositService.getAllCollectsToDeposit(this.db.getDatabase(),this.depositService.deposit.coCurrency).then(resp1 => {
-              this.depositService.getAllCollectsAnticipoToDeposit(this.db.getDatabase(),this.depositService.deposit.coCurrency).then(resp2 => {
+            this.depositService.getAllCollectsToDeposit(this.db.getDatabase(), this.depositService.deposit.coCurrency).then(resp1 => {
+              this.depositService.getAllCollectsAnticipoToDeposit(this.db.getDatabase(), this.depositService.deposit.coCurrency).then(resp2 => {
                 console.log(resp1.length);
                 console.log(resp2.length);
               })
