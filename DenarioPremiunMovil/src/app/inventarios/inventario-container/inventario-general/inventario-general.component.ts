@@ -106,6 +106,7 @@ export class InventarioGeneralComponent implements OnInit {
     this.clientSelectorService.checkClient = true;
     this.inventariosLogicService.selectedClient = false;
     this.ngOnInit();
+    this.message.hideLoading();
   })
 
   AttachSubscription: Subscription = this.adjuntoService.AttachmentChanged.subscribe(() => {

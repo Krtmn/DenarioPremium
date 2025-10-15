@@ -380,15 +380,28 @@ export class DepositService {
 
   getAllCollectsToDeposit(dbServ: SQLiteObject, coCurrency: string) {
     this.database = dbServ;
-    let selectStatement = "SELECT DISTINCT(c.co_collection), c.*, cd.co_document, " +
-      " (SELECT SUM(cp2.nu_amount_partial) FROM collection_payments cp2 WHERE cp2.co_collection =" +
-      " c.co_collection AND cp2.co_payment_method <> 'de' AND cp2.co_payment_method <> 'tr' AND cp2.co_payment_method <> 'ot') as total_deposit," +
-      " (SELECT SUM(cp2.nu_amount_partial_conversion) FROM collection_payments cp2 WHERE cp2.co_collection =" +
-      " c.co_collection AND cp2.co_payment_method <> 'de' AND cp2.co_payment_method <> 'tr' AND cp2.co_payment_method <> 'ot') as total_deposit_conversion" +
-      " FROM collections c, collection_payments cp LEFT OUTER JOIN collection_details cd ON c.co_collection = cd.co_collection" +
-      " WHERE c.co_currency = ? AND c.st_collection <> 0 AND c.co_collection = cp.co_collection AND cp.co_payment_method <> 'de'" +
-      " AND cp.co_payment_method <> 'tr' AND cd.co_type_doc <> 'CR' and c.id_collection <> 0" +
-      " AND c.co_collection NOT IN (SELECT dc.co_collection FROM deposit_collects dc) GROUP BY c.co_collection";
+    /*  let selectStatement = "SELECT DISTINCT(c.co_collection), c.*, cd.co_document, " +
+       " (SELECT SUM(cp2.nu_amount_partial) FROM collection_payments cp2 WHERE cp2.co_collection =" +
+       " c.co_collection AND cp2.co_payment_method <> 'de' AND cp2.co_payment_method <> 'tr' AND cp2.co_payment_method <> 'ot') as total_deposit," +
+       " (SELECT SUM(cp2.nu_amount_partial_conversion) FROM collection_payments cp2 WHERE cp2.co_collection =" +
+       " c.co_collection AND cp2.co_payment_method <> 'de' AND cp2.co_payment_method <> 'tr' AND cp2.co_payment_method <> 'ot') as total_deposit_conversion" +
+       " FROM collections c, collection_payments cp LEFT OUTER JOIN collection_details cd ON c.co_collection = cd.co_collection" +
+       " WHERE c.co_currency = ? AND c.st_collection <> 0 AND c.co_collection = cp.co_collection AND cp.co_payment_method <> 'de'" +
+       " AND cp.co_payment_method <> 'tr' AND cd.co_type_doc <> 'CR' and c.id_collection <> 0" +
+       " AND c.co_collection NOT IN (SELECT dc.co_collection FROM deposit_collects dc) GROUP BY c.co_collection"; */
+
+    let selectStatement =
+      "SELECT DISTINCT(c.co_collection), c.*, cd.co_document, " +
+      " (SELECT SUM(cp2.nu_amount_partial) FROM collection_payments cp2 WHERE cp2.co_collection = c.co_collection AND cp2.co_payment_method <> 'de' AND cp2.co_payment_method <> 'tr' AND cp2.co_payment_method <> 'ot') AS total_deposit, " +
+      " (SELECT SUM(cp2.nu_amount_partial_conversion) FROM collection_payments cp2 WHERE cp2.co_collection = c.co_collection AND cp2.co_payment_method <> 'de' AND cp2.co_payment_method <> 'tr' AND cp2.co_payment_method <> 'ot') AS total_deposit_conversion " +
+      " FROM collections c " +
+      " JOIN collection_payments cp ON c.co_collection = cp.co_collection " +
+      " LEFT OUTER JOIN collection_details cd ON c.co_collection = cd.co_collection " + // <-- corregido aquí
+      " WHERE c.co_currency = ? AND c.st_collection <> 0 " +
+      " AND cp.co_payment_method <> 'de' AND cp.co_payment_method <> 'tr' " +
+      " AND cd.co_type_doc <> 'CR' AND c.id_collection <> 0 " +
+      " AND c.co_collection NOT IN (SELECT dc.co_collection FROM deposit_collects dc) " +
+      " GROUP BY c.co_collection";
 
     return this.database.executeSql(selectStatement,
       [coCurrency]).then(data => {
@@ -405,12 +418,33 @@ export class DepositService {
 
   getAllCollectsAnticipoToDeposit(dbServ: SQLiteObject, coCurrency: string) {
     this.database = dbServ
-    let selectStatement = "SELECT DISTINCT(c.co_collection), c.*, (SELECT SUM(cp2.nu_amount_partial) FROM collection_payments cp2 WHERE " +
+   /*  let selectStatement = "SELECT DISTINCT(c.co_collection), c.*, (SELECT SUM(cp2.nu_amount_partial) FROM collection_payments cp2 WHERE " +
       "cp2.co_collection = c.co_collection AND cp2.co_payment_method <> 'de' AND cp2.co_payment_method <> 'tr' AND cp2.co_payment_method <> 'ot') as total_deposit " +
       "FROM collections c, collection_payments cp " +
       "WHERE c.co_currency = ? AND c.st_collection <> 0 AND c.co_collection = cp.co_collection AND cp.co_payment_method <> 'de' " +
       "AND cp.co_payment_method <> 'tr' AND c.id_collection <> 0 AND c.co_type = '1' " +
-      "AND c.co_collection NOT IN (SELECT dc.co_collection FROM deposit_collects dc) GROUP BY c.co_collection";
+      "AND c.co_collection NOT IN (SELECT dc.co_collection FROM deposit_collects dc) GROUP BY c.co_collection"; */3
+
+    let selectStatement =
+      "SELECT c.co_collection, c.*, " +
+      "  (SELECT SUM(cp2.nu_amount_partial) " +
+      "   FROM collection_payments cp2 " +
+      "   WHERE cp2.co_collection = c.co_collection " +
+      "     AND cp2.co_payment_method NOT IN ('de', 'tr', 'ot')) AS total_deposit, " +
+      "  (SELECT SUM(cp2.nu_amount_partial_conversion) " +
+      "   FROM collection_payments cp2 " +
+      "   WHERE cp2.co_collection = c.co_collection " +
+      "     AND cp2.co_payment_method NOT IN ('de', 'tr', 'ot')) AS total_deposit_conversion " +
+      "FROM collections c " +
+      "INNER JOIN collection_payments cp ON c.co_collection = cp.co_collection " +
+      "WHERE c.co_currency = ? " +
+      "  AND c.st_collection <> 0 " +
+      "  AND cp.co_payment_method NOT IN ('de', 'tr') " +
+      "  AND c.id_collection <> 0 " +
+      "  AND c.co_type = '1' " +
+      "  AND c.co_collection NOT IN (SELECT dc.co_collection FROM deposit_collects dc) " +
+      "GROUP BY c.co_collection";
+
     return this.database.executeSql(selectStatement,
       [coCurrency]).then(data => {
         for (var i = 0; i < data.rows.length; i++) {
