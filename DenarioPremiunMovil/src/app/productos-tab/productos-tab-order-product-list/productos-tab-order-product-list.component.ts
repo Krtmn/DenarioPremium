@@ -71,6 +71,7 @@ export class ProductosTabOrderProductListComponent  implements OnInit {
   discountModal = false;
   productoModal!: OrderUtil;
 
+  disablePriceListSelector = false;
   
 
   constructor() { }
@@ -78,6 +79,7 @@ export class ProductosTabOrderProductListComponent  implements OnInit {
 
   ngOnInit() {
     console.log('Estoy en Pedido');
+    this.disablePriceListSelector = (!this.orderServ.userCanChangePriceListProduct);
     this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
       this.showProductList = true;
       this.productList = this.productService.productList;
