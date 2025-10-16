@@ -657,6 +657,7 @@ export class CollectionService {
     }
 
     this.collection.nuAmountPaid = this.montoTotalPagar;
+    this.collection.nuAmountPaidConversion = this.convertirMonto(this.montoTotalPagar, 0, this.collection.coCurrency);
     this.collection.nuAmountFinal = this.montoTotalPagar;
     this.collection.nuAmountFinalConversion = this.convertirMonto(this.collection.nuAmountFinal, 0, this.collection.coCurrency);
     this.collection.nuAmountTotal = this.montoTotalPagado;

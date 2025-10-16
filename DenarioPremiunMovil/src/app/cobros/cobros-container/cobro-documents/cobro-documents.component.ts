@@ -1,14 +1,11 @@
-import { Component, OnInit, inject, Input, ViewChild, ChangeDetectorRef } from '@angular/core';
-import { Collection, CollectionDetail, CollectionPayment } from 'src/app/modelos/tables/collection';
-import { Currencies } from 'src/app/modelos/tables/currencies';
-import { IgtfList } from 'src/app/modelos/tables/igtfList';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { CollectionPayment } from 'src/app/modelos/tables/collection';
 import { DocumentSale } from 'src/app/modelos/tables/documentSale';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { PagoCheque } from 'src/app/modelos/pago-cheque';
 import { DateServiceService } from 'src/app/services/dates/date-service.service';
-import { TiposPago } from 'src/app/modelos/tipos-pago';
 import { PagoEfectivo } from 'src/app/modelos/pago-efectivo';
 import { PagoDeposito } from 'src/app/modelos/pago-deposito';
 import { PagoTransferencia } from 'src/app/modelos/pago-transferencia';
