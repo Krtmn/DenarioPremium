@@ -1198,4 +1198,12 @@ export class CobrosDocumentComponent implements OnInit {
     return this.currencyService.getOppositeCurrency(coCurrency)?.coCurrency ?? '';
   }
 
+  onAmountPaidFocus(): void {
+    // Si el campo está en 0, limpiarlo para que el usuario pueda escribir sin que el 0 permanezca
+    if (this.collectService.amountPaid === 0 || this.collectService.amountPaid.toString() === '0') {
+      // No se puede asignar null a un número; asignamos 0 para mantener el tipo number.
+      this.collectService.amountPaid = 0;
+    }
+  }
+
 }

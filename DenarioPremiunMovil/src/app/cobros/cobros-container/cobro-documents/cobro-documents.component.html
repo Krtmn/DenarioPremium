@@ -411,11 +411,15 @@
                                 <ion-input
                                     label="{{this.collectService.collectionTags.get('COB_MONTO_PAGAR')}} {{this.collectService.collection.coCurrency}}"
                                     label-placement="floating" fill="outline"
-                                    value="{{this.currencyService.formatNumber(collectService.amountPaidDoc)}}"
-                                    [(ngModel)]="this.collectService.amountPaid" (ionInput)="setPartialPay()"
-                                    color="primary" [readonly]="!this.collectService.isPaymentPartial" type="number"
+                                    [value]="collectService.isPaymentPartial ? collectService.amountPaid : currencyService.formatNumber(collectService.amountPaidDoc)"
+                                    [(ngModel)]="collectService.amountPaid"
+                                    (ionInput)="setPartialPay()"
+                                    (ionFocus)="onAmountPaidFocus()"
+                                    color="primary"
+                                    [readonly]="!collectService.isPaymentPartial"
+                                    type="number"
                                     required
-                                    [ngClass]="{'inp-write': !this.collectService.amountPaymentPartial, 'input-rojo': !this.collectService.amountPaid}"
+                                    [ngClass]="{'inp-write': !collectService.amountPaymentPartial, 'input-rojo': !collectService.amountPaid}"
                                     min="0">
                                 </ion-input>
                                 <ion-label *ngIf="!this.collectService.amountPaid" color="danger"
