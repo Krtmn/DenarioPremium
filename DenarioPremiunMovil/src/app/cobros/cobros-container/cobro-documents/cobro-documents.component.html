@@ -212,7 +212,7 @@
                 <ion-content>
                     <ion-grid class="contenedorModalActividades">
                         <ion-row>
-                            <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                            <ion-col size="12" size-xs="12" size-sm="12" size-md="12" class="detailDoc-scroll">
                                 <ion-list [inset]="true">
                                     <!-- TIPO DOCUMENTO -->
                                     <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
@@ -410,7 +410,7 @@
                                     </ion-grid>
 
 
-                                    <!-- PAGO PARCIA / MONTO A PAGARL-->
+                                    <!-- PAGO PARCIAL / MONTO A PAGARL-->
                                     <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                                         <ion-input
                                             label="{{this.collectService.collectionTags.get('COB_MONTO_PAGAR')}} {{this.collectService.collection.coCurrency}}"
