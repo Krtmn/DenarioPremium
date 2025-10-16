@@ -219,16 +219,24 @@ export class CobrosDocumentComponent implements OnInit {
       this.collectService.documentSales[index].nuAmountDiscount == undefined ? 0 : this.collectService.documentSales[index].nuAmountDiscount;
       this.collectService.documentSales[index].nuAmountPaid == undefined ? 0 : this.collectService.documentSales[index].nuAmountPaid;
 
+      if (this.collectService.collection.stCollection == 1) {
+        let positionCollecDetails = this.collectService.documentSales[index].positionCollecDetails;
+        nuAmountDiscount = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountDiscount;
+        nuAmountPaid = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountPaid;
+        nuBalance = this.collectService.collection.collectionDetails[positionCollecDetails].nuBalanceDoc;
+        nuAmountRetention = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention;
+        nuAmountRetention2 = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention2;
+      } else {
+        nuAmountDiscount = this.collectService.documentSalesBackup[index].nuAmountDiscount;
+        nuAmountPaid = this.collectService.documentSalesBackup[index].nuAmountPaid;
+        nuBalance = this.collectService.documentSalesBackup[index].nuBalance;
+        nuAmountRetention = this.collectService.documentSalesBackup[index].nuAmountRetention;
+        nuAmountRetention2 = this.collectService.documentSalesBackup[index].nuAmountRetention2;
+      }
 
       nuAmountBase = this.collectService.documentSalesBackup[index].nuAmountBase;
-      nuAmountDiscount = this.collectService.documentSalesBackup[index].nuAmountDiscount;
       nuAmountTotal = this.collectService.documentSalesBackup[index].nuAmountTotal;
-      nuAmountPaid = this.collectService.documentSalesBackup[index].nuAmountPaid;
-      nuBalance = this.collectService.documentSalesBackup[index].nuBalance;
       nuAmountTax = this.collectService.documentSales[index].nuAmountTax;
-      nuAmountRetention = this.collectService.documentSalesBackup[index].nuAmountRetention;
-      nuAmountRetention2 = this.collectService.documentSalesBackup[index].nuAmountRetention2;
-
 
       this.collectService.documentSaleOpen = {
         idDocument: this.collectService.documentSalesBackup[index].idDocument,
@@ -372,8 +380,9 @@ export class CobrosDocumentComponent implements OnInit {
           = this.collectService.convertirMonto
             (this.collectService.documentSaleOpen.nuBalance * (this.collectService.igtfSelected.price / 100),
               this.collectService.documentSaleOpen.nuValueLocal, this.collectService.documentSaleOpen.coCurrency); */
-        this.collectService.documentSaleOpen.igtfAmount
-          = this.Number(this.collectService.documentSaleOpen.nuBalance * (this.collectService.igtfSelected.price / 100));
+        if (this.collectService.userCanSelectIGTF)
+          this.collectService.documentSaleOpen.igtfAmount
+            = this.Number(this.collectService.documentSaleOpen.nuBalance * (this.collectService.igtfSelected.price / 100));
 
       }
       this.collectService.indexDocumentSaleOpen = index;

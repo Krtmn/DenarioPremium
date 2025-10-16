@@ -603,7 +603,7 @@
                                     label-placement="floating" fill="outline" color="primary" type="number"
                                     value="{{this.collectService.documentSaleOpen.nuAmountRetention}}"
                                     [(ngModel)]="this.collectService.documentSaleOpen.nuAmountRetention"
-                                    (ionChange)="setAmountTotal()"
+                                    (ionInput)="setAmountTotal()"
                                     [disabled]="!this.collectService.validNuRetention"></ion-input>
                             </ion-col>
                             <!-- MONTO RET IVA--->
@@ -616,8 +616,7 @@
                                     label-placement="floating" fill="outline"
                                     value="{{this.collectService.documentSaleOpen.nuAmountRetention2}}"
                                     [(ngModel)]="this.collectService.documentSaleOpen.nuAmountRetention2"
-                                    color="primary" type="number" (ionChange)="setAmountTotal()"
-                                    (ionChange)="setAmountTotal()"
+                                    color="primary" type="number" (ionInput)="setAmountTotal()"
                                     [disabled]="!this.collectService.validNuRetention"></ion-input>
 
                             </ion-col>
@@ -629,7 +628,7 @@
                                     label="{{this.collectService.collectionTags.get('COB_MONTO_TOTAL_RETENTION')}}"
                                     label-placement="floating" fill="outline"
                                     value="{{this.currencyService.formatNumber(this.collectService.amountPaidRetention)}}"
-                                    [(ngModel)]="this.collectService.amountPaidRetention" (ionChange)="setAmountTotal()"
+                                    [(ngModel)]="this.collectService.amountPaidRetention"
                                     color="primary" [readonly]="true" type="number"
                                     [ngClass]="{'inp-write': !this.collectService.amountPaidRetention}">
                                 </ion-input>

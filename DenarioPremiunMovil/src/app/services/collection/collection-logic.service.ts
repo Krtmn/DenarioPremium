@@ -305,7 +305,15 @@ export class CollectionService {
     this.alertButtonsSend[1].text = this.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
     this.alertButtons[0].text = this.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
 
-
+    if (!this.userCanSelectIGTF) {
+      this.igtfSelected = {
+        idIgtf: 0,
+        naIgtf: '',
+        price: 0,
+        descripcion: '',
+        defaultIgtf: 'false'
+      } as IgtfList;
+    }
     return Promise.resolve(true);
   }
 
