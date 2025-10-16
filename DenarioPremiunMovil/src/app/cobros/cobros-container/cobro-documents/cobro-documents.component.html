@@ -94,7 +94,7 @@
             <ion-col *ngIf="this.collectService.multiCurrency" size="6"
                 class="titulosBold col borderSuperiorDerecho">{{this.collectService.collectionTags.get('COB_FECHA_VENCIMIENTO')}}</ion-col>
         </ion-row>
-        <ion-row *ngFor="let documentSale of this.collectService.documentSalesBackup;index as i"
+        <ion-row *ngFor="let documentSale of this.collectService.documentSalesView;index as i"
             class="tabladocumentSalesVenta tablaDocVentas row">
             <ion-col size="2" class="ion-text-center col borderInferiorIzquierdo"
                 *ngIf="this.collectService.retentionDocTypeCR">
@@ -249,16 +249,13 @@
                                     <!-- FECHA EMISION -->
 
                                     <!-- TASA-->
-                                    <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
-                                        *ngIf="this.collectService.historicoTasa">
-                                        <ion-input label="
-                                            {{this.collectService.collectionTags.get('COB_TASA')}}
-                                            {{this.collectService.localCurrency.coCurrency}}:"
+                                    <ion-col size="12" *ngIf="this.collectService.historicoTasa">
+                                        <ion-input
+                                            label="{{ this.collectService.collectionTags.get('COB_TASA') }} {{ this.collectService.localCurrency.coCurrency }}:"
                                             label-placement="floating" fill="outline"
-                                            value="{{this.currencyService.formatNumber(this.collectService.documentSaleOpen.nuValueLocal)}}"
-                                            color="primary"
-                                            [(ngModel)]="this.collectService.documentSaleOpen.nuValueLocal"
-                                            [readonly]="true"></ion-input>
+                                            [value]="currencyService.formatNumber(this.collectService.documentSaleOpen.nuValueLocal)"
+                                            color="primary" readonly>
+                                        </ion-input>
                                     </ion-col>
                                     <!-- TASA -->
 
@@ -267,9 +264,8 @@
                                         *ngIf="this.collectService.igtfSelected.price > 0 && this.globalConfig.get('userCanSelectIGTF') === 'true' ? true: false">
                                         <ion-input label="IGTF {{this.collectService.currencyConversion.coCurrency}}"
                                             label-placement="floating" fill="outline"
-                                            value="{{this.collectService.documentSaleOpen.igtfAmount}}" color="primary"
-                                            [(ngModel)]="this.collectService.documentSaleOpen.igtfAmount"
-                                            [readonly]="true"></ion-input>
+                                            [value]="currencyService.formatNumber(this.collectService.documentSaleOpen.igtfAmount)"
+                                            color="primary" readonly></ion-input>
                                     </ion-col>
                                     <!-- IGTF -->
 
@@ -278,7 +274,8 @@
                                         <ion-input
                                             label="{{this.collectService.collectionTags.get('COB_SALDO')}} {{this.collectService.collection.coCurrency}}"
                                             label-placement="floating" fill="outline" value="{{this.saldoView}}"
-                                            color="primary" [readonly]="true"></ion-input>
+                                            color="primary" readonly>
+                                        </ion-input>
                                     </ion-col>
                                     <!-- SALDO -->
 
@@ -288,8 +285,8 @@
                                         <ion-input
                                             label="{{this.collectService.collectionTags.get('COB_SALDO')}} {{this.collectService.currencyConversion.coCurrency}}"
                                             label-placement="floating" fill="outline"
-                                            value="{{this.saldoConversionView}}" color="primary"
-                                            [readonly]="true"></ion-input>
+                                            value="{{this.saldoConversionView}}" color="primary" readonly>
+                                        </ion-input>
                                     </ion-col>
                                     <!-- SALDO CONVERSION -->
 
@@ -410,7 +407,7 @@
                                     </ion-grid>
 
 
-                                    <!-- PAGO PARCIA / MONTO A PAGARL-->
+                                    <!-- PAGO PARCIAL / MONTO A PAGAR-->
                                     <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                                         <ion-input
                                             label="{{this.collectService.collectionTags.get('COB_MONTO_PAGAR')}} {{this.collectService.collection.coCurrency}}"
@@ -443,7 +440,6 @@
                                             </ion-col>
                                         </ion-row>
                                     </ion-grid>
-
                                 </ion-list>
                             </ion-col>
                         </ion-row>
@@ -464,25 +460,25 @@
             <ng-template>
                 <ion-header>
                     <ion-toolbar class="fondoVerde">
-                            <ion-grid>
-                                <ion-row>
-                                    <ion-col size="1" size-sm="1" size-xs="2">
-                                        <a>
-                                            <img (click)="saveDocumentSale(false)" class="fechaAtras" alt=""
-                                                src="../../../assets/images/flecha-blanca.png" />
-                                        </a>
-                                    </ion-col>
-                                    <!-- COBRO -->
-                                    <ion-col size="8" size-sm="8" size-xs="8">
-                                        <h1 class="tituloModulos">
-                                            {{this.collectService.collectionTags.get('COB_DETALLE_DOCUMENTO')}}</h1>
-                                    </ion-col>
-                                    <!-- <ion-col size="1" size-sm="1" size-xs="2" offset-xs="2"
+                        <ion-grid>
+                            <ion-row>
+                                <ion-col size="1" size-sm="1" size-xs="2">
+                                    <a>
+                                        <img (click)="saveDocumentSale(false)" class="fechaAtras" alt=""
+                                            src="../../../assets/images/flecha-blanca.png" />
+                                    </a>
+                                </ion-col>
+                                <!-- COBRO -->
+                                <ion-col size="8" size-sm="8" size-xs="8">
+                                    <h1 class="tituloModulos">
+                                        {{this.collectService.collectionTags.get('COB_DETALLE_DOCUMENTO')}}</h1>
+                                </ion-col>
+                                <!-- <ion-col size="1" size-sm="1" size-xs="2" offset-xs="2"
                                       *ngIf="!this.collectService.showHeaderButtons">
                                       <img class="fechaAtras" alt="" src="../../../assets/images/cobrosNuevoBlanco.svg" />
                                   </ion-col> -->
-                                </ion-row>
-                            </ion-grid>
+                            </ion-row>
+                        </ion-grid>
                     </ion-toolbar>
                 </ion-header>
                 <ion-content>
