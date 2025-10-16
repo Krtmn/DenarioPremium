@@ -619,47 +619,15 @@ export class CollectionService {
           //for (var j = 0; j < this.collection.collectionDetails.length; j++) {
           if (this.documentSales[i].isSave) {
             if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
-
               monto += this.documentSalesBackup[i].nuAmountPaid;
               montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuAmountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
-
-
             }
-
           } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
-            if (this.collection.stCollection == 1 && this.collection.collectionDetails[j].isSave) {
-              if (this.documentSales[i].isSelected) {
-                monto += this.documentSalesBackup[i].nuBalance;
-              }
-            } else if (this.documentSales[i].isSelected) {
-              if (this.documentSales[i].nuAmountRetention + this.documentSales[i].nuAmountRetention2 > 0) {
-
-                monto += this.documentSalesBackup[i].nuBalance;
-              } else if (this.documentSales[i].inPaymentPartial) {
-                monto += this.documentSalesBackup[i].nuBalance;
-              } else if (this.currencySelected.localCurrency.toString() == "true") {
-                if (this.documentSales[i].coCurrency == this.localCurrency.coCurrency) {
-                  monto += this.documentSalesBackup[i].nuBalance;
-                  montoConversion += await this.convertAmount(this.documentSalesBackup[i].nuBalance, 'local', 'hard', this.documentSales[i].coDocumentSaleType, this.documentSales[i].nuValueLocal);
-                } else {
-                  monto += await this.convertAmount(this.documentSalesBackup[i].nuBalance, 'hard', 'local', this.documentSales[i].coDocumentSaleType, this.documentSales[i].nuValueLocal);
-                  montoConversion += this.documentSalesBackup[i].nuBalance;
-                }
-              } else {
-                if (this.documentSales[i].coCurrency == this.hardCurrency.coCurrency) {
-                  monto += this.documentSalesBackup[i].nuBalance;
-                  montoConversion += await this.convertAmount(this.documentSalesBackup[i].nuBalance, 'hard', 'local', this.documentSales[i].coDocumentSaleType, this.documentSales[i].nuValueLocal);
-
-                } else {
-                  monto += await this.convertAmount(this.documentSalesBackup[i].nuBalance, 'local', 'hard', this.documentSales[i].coDocumentSaleType, this.documentSales[i].nuValueLocal);
-                  montoConversion += this.documentSalesBackup[i].nuBalance;
-
-                }
-              }
-            }
+            monto += this.documentSalesBackup[i].nuBalance;
+            montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
           }
-
         }
+
         if (this.userCanSelectIGTF) {
           if (this.igtfSelected.price > 0) {
             if (!this.separateIgtf) {
@@ -1630,11 +1598,88 @@ export class CollectionService {
           this.mapDocumentsSales.set(doc.idDocument, doc);
         }
       }
+
+      this.documentSalesBackup = JSON.parse(JSON.stringify(this.documentSales));
     } catch (err) {
       console.error('convertDocumentSales error:', err);
     }
   }
-  // ...existing code...
+
+  async convertDocumentSaleIndex(index: number) {
+    try {
+      if (!this.documentSales || this.documentSales.length === 0) return;
+      if (!this.collection || !this.collection.coCurrency) return;
+
+      // asegúrate de tener referencias a monedas
+      const local = this.localCurrency?.coCurrency ? this.localCurrency : this.currencyService.localCurrency;
+      const hard = this.hardCurrency?.coCurrency ? this.hardCurrency : this.currencyService.hardCurrency;
+      if (!local || !hard) return;
+
+      const collectionIsHard = this.collection.coCurrency === hard.coCurrency;
+      const collectionIsLocal = this.collection.coCurrency === local.coCurrency;
+
+      // nada que convertir si collection no es local ni hard
+      if (!collectionIsHard && !collectionIsLocal) return;
+
+      // recorrer documentos
+      const doc = this.documentSales[index];
+
+      // normalizar campos numéricos
+      this.ensureNumber(doc, 'nuAmountBase');
+      this.ensureNumber(doc, 'nuAmountDiscount');
+      this.ensureNumber(doc, 'nuAmountTax');
+      this.ensureNumber(doc, 'nuAmountTotal');
+      this.ensureNumber(doc, 'nuBalance');
+
+      const rateForDoc = (doc.nuValueLocal ?? this.collection.nuValueLocal) ?? 0;
+      const coTypeDoc = (doc.coDocumentSaleType ?? '').toString();
+
+      // collection hard, doc local -> convertir local -> hard
+      if (collectionIsHard && doc.coCurrency === local.coCurrency) {
+        doc.nuAmountBase = await this.convertAmount(doc.nuAmountBase, 'local', 'hard', coTypeDoc, rateForDoc);
+        doc.nuAmountDiscount = await this.convertAmount(doc.nuAmountDiscount, 'local', 'hard', coTypeDoc, rateForDoc);
+        doc.nuAmountTax = await this.convertAmount(doc.nuAmountTax, 'local', 'hard', coTypeDoc, rateForDoc);
+        doc.nuAmountTotal = await this.convertAmount(doc.nuAmountTotal, 'local', 'hard', coTypeDoc, rateForDoc);
+        doc.nuBalance = await this.convertAmount(doc.nuBalance, 'local', 'hard', coTypeDoc, rateForDoc);
+        // actualizar currency del doc al de la colección (opcional, si se requiere mostrar convertido como moneda de la colección)
+        // doc.coCurrency = this.collection.coCurrency;
+      }
+
+      // collection local, doc hard -> convertir hard -> local
+      if (collectionIsLocal && doc.coCurrency === hard.coCurrency) {
+        doc.nuAmountBase = await this.convertAmount(doc.nuAmountBase, 'hard', 'local', coTypeDoc, rateForDoc);
+        doc.nuAmountDiscount = await this.convertAmount(doc.nuAmountDiscount, 'hard', 'local', coTypeDoc, rateForDoc);
+        doc.nuAmountTax = await this.convertAmount(doc.nuAmountTax, 'hard', 'local', coTypeDoc, rateForDoc);
+        doc.nuAmountTotal = await this.convertAmount(doc.nuAmountTotal, 'hard', 'local', coTypeDoc, rateForDoc);
+        doc.nuBalance = await this.convertAmount(doc.nuBalance, 'hard', 'local', coTypeDoc, rateForDoc);
+        // doc.coCurrency = this.collection.coCurrency;
+      }
+
+      // Mantener backup sincronizado (busca por idDocument)
+      if (this.documentSalesBackup && this.documentSalesBackup.length > 0) {
+        const idxBackup = this.documentSalesBackup.findIndex(b => b.idDocument === doc.idDocument);
+        if (idxBackup >= 0) {
+          // copia profunda de los campos actualizados
+          this.documentSalesBackup[idxBackup] = Object.assign({}, this.documentSalesBackup[idxBackup], {
+            nuAmountBase: doc.nuAmountBase,
+            nuAmountDiscount: doc.nuAmountDiscount,
+            nuAmountTax: doc.nuAmountTax,
+            nuAmountTotal: doc.nuAmountTotal,
+            nuBalance: doc.nuBalance,
+            nuValueLocal: doc.nuValueLocal
+          });
+        }
+      }
+
+      // Actualizar mapDocumentsSales si existe entry
+      if (doc.idDocument != null && this.mapDocumentsSales.has(doc.idDocument)) {
+        this.mapDocumentsSales.set(doc.idDocument, doc);
+      }
+      this.documentSalesBackup[index] = JSON.parse(JSON.stringify(this.documentSales[index]));
+    } catch (err) {
+      console.error('convertDocumentSales error:', err);
+    }
+  }
 
   findIsPaymentPartial(dbServ: SQLiteObject) {
     const coDocuments = Array.from(this.mapDocumentsSales.values()).map(obj => obj.coDocument);
@@ -2032,6 +2077,9 @@ export class CollectionService {
 
         this.documentSalesBackup[index] = Object.assign({}, this.documentSales[index]);
         this.documentSalesBackup[index].positionCollecDetails = -1;
+
+        this.documentSalesView[index] = JSON.parse(JSON.stringify(this.documentSalesBackup[index]));
+        this.convertDocumentSaleIndex(index);
         return Promise.resolve(posicion);
       }).catch(e => {
         //this.documentSales
@@ -3469,22 +3517,7 @@ export class CollectionService {
   public updateBalancesOnPartialPay(index: number) {
     const backup = this.documentSalesBackup[index];
 
-    if (this.currencySelected.localCurrency.toString() === 'true') {
-      if (this.documentSalesBackup[index].coCurrency === this.currencySelected.coCurrency) {
-        this.amountPaid = backup.nuBalance;
-      } else {
-        this.amountPaid = this.currencyService.toLocalCurrency(backup.nuBalance);
-        //this.documentSales[index].nuBalance = this.currencyService.toLocalCurrency(backup.nuBalance);
-      }
-    } else {
-      if (this.documentSalesBackup[index].coCurrency === this.currencySelected.coCurrency) {
-        this.amountPaid = backup.nuBalance;
-      } else {
-        this.amountPaid = this.currencyService.toHardCurrency(backup.nuBalance);
-        //this.documentSales[index].nuBalance = this.currencyService.toLocalCurrency(backup.nuBalance);
-      }
-    }
-    this.amountPaid = this.cleanFormattedNumber(this.currencyService.formatNumber(this.amountPaid));
+    this.amountPaid = this.cleanFormattedNumber(this.currencyService.formatNumber(backup.nuBalance));
   }
 
   public isRetentionInvalid(nuAmountRetention: number, nuAmountRetention2: number, nuBalance: number): boolean {

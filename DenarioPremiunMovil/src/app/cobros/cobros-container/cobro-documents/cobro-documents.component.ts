@@ -434,6 +434,7 @@ export class CobrosDocumentComponent implements OnInit {
       this.collectService.disabledSelectCollectMethodDisabled = false;
       this.initCollectionDetail(documentSale, id);
     } else {
+      this.collectService.documentSales[id].isSelected = false;
       this.collectService.getDocumentById(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise,
         this.collectService.documentSales[id].idDocument, id, this.collectService.documentSales[id].positionCollecDetails).then(resp => {
 
@@ -851,33 +852,24 @@ export class CobrosDocumentComponent implements OnInit {
       return; // Early return, no más lógica abajo
     }
 
-    // Si NO está checked, restaurar balances y estados
-    this.collectService.getDocumentById(
-      this.synchronizationServices.getDatabase(),
-      this.collectService.collection.idEnterprise,
-      this.collectService.documentSaleOpen.idDocument,
-      this.collectService.indexDocumentSaleOpen,
-      this.collectService.documentSaleOpen.positionCollecDetails
-    ).then(resp => {
-      this.calculateSaldo(this.collectService.indexDocumentSaleOpen).then(() => {
-        let positionCollecDetails = resp;
-        this.calculateDocumentSaleOpen(this.collectService.indexDocumentSaleOpen).then(() => {
-          this.collectService.documentSaleOpen.positionCollecDetails = positionCollecDetails;
-          this.collectService.documentSaleOpen.isSelected = true;
-          this.collectService.documentSaleOpen.inPaymentPartial = false;
-          this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].isSelected = true;
-          this.collectService.documentSalesBackup[this.collectService.indexDocumentSaleOpen].isSelected = true;
-          this.disabledSaveButton = true;
+    this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].nuAmountPaid = this.collectService.amountPaid = this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].nuBalance;
+    this.collectService.documentSalesBackup[this.collectService.indexDocumentSaleOpen].nuAmountPaid = this.collectService.documentSalesBackup[this.collectService.indexDocumentSaleOpen].nuBalance; this.calculateSaldo(this.collectService.indexDocumentSaleOpen).then(() => {
+      let positionCollecDetails = this.collectService.indexDocumentSaleOpen;
+      this.calculateDocumentSaleOpen(this.collectService.indexDocumentSaleOpen).then(() => {
+        this.collectService.documentSaleOpen.positionCollecDetails = positionCollecDetails;
+        this.collectService.documentSaleOpen.isSelected = true;
+        this.collectService.documentSaleOpen.inPaymentPartial = false;
+        this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].isSelected = true;
+        this.collectService.documentSalesBackup[this.collectService.indexDocumentSaleOpen].isSelected = true;
+        this.disabledSaveButton = true;
 
-          // Usa el helper para actualizar balances
-          this.collectService.updateBalancesOnPartialPay(this.collectService.indexDocumentSaleOpen);
+        this.collectService.amountPaid = this.collectService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.documentSalesBackup[this.collectService.indexDocumentSaleOpen].nuBalance));
+        this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails]!.inPaymentPartial = false;
 
-          this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails]!.inPaymentPartial = false;
-
-          this.validate();
-        });
+        this.validate();
       });
     });
+
 
     this.collectService.amountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.amountPaid));
     this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].inPaymentPartial = event.target.checked;
