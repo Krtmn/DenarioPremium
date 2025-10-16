@@ -715,6 +715,7 @@ export class PedidoComponent implements OnInit {
             this.reset();
             this.orderServ.listaSeleccionada = pricelist;
             this.listaAnterior = pricelist;
+            this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == pricelist?.idList)
           }
         }
       ]
@@ -727,6 +728,7 @@ export class PedidoComponent implements OnInit {
     } else {
       //si no hay productos no hay peo, consolidamos el cambio.
       this.listaAnterior = this.orderServ.listaSeleccionada;
+      this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == this.orderServ.listaSeleccionada?.idList)
       this.orderServ.setChangesMade(true);
 
     }

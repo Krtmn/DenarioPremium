@@ -469,7 +469,7 @@ export class PedidosService {
         var priceLists: PriceList[] = [];
         var priceListSeleccionado: PriceList = {} as PriceList;
         if (this.userCanChangePriceList && this.userCanChangePriceListProduct)  {
-            priceLists = this.listaPricelist.filter(pl => (pl.idProduct == item.idProduct));           
+          priceLists = this.listaPricelist.filter(pl => (pl.idProduct == item.idProduct));           
         } else {
           priceLists = this.listaPriceListFiltrada.filter(pl => (pl.idProduct == item.idProduct));
         }
