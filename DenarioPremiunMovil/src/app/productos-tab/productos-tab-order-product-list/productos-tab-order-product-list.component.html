@@ -89,7 +89,7 @@
           </ion-col>
           <ion-col class="" size="12" size-sm="12" size-xs="12">
             <div class="listado-tps-selector ion-text-center">
-              <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked" [value]="product.idList" interface="popover" labelPlacement="stacked"
+              <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked" [value]="product.idList" [disabled]="disablePriceListSelector"
               [placeholder]="orderServ.getTag('PED_PLACEHOLDER_PRICELIST')+':'"  (ionChange)="onSelectPriceList($event, product)">
               <ion-select-option *ngFor="let price of product.listaList" [value]="price.idList">{{ price.naList }}</ion-select-option>
             </ion-select>

@@ -69,8 +69,13 @@ export class MessageService {
     return loading.present();
   }
 
-  hideLoading() {
-
+  async hideLoading() {
+    let topLoader = await this.loadingCtrl.getTop();
+    while (topLoader) {
+      await this.loadingCtrl.dismiss();
+      topLoader = await this.loadingCtrl.getTop();
+    }
+    /*
     this.loadingCtrl.getTop().then(v => {
       if (v) {
         this.loadingCtrl.dismiss();
@@ -80,6 +85,7 @@ export class MessageService {
       }
     }
     );
+    */
 
   }
   //saveOrExit: MessageSaveOrExit = {} as MessageSaveOrExit;
@@ -139,5 +145,5 @@ export class MessageService {
     //para cuando quedan mensajes abiertos ladilla
     this.dismissAllBtn.next(null);
   }
-  
+
 }

@@ -204,6 +204,7 @@ export class PedidosService {
   public signatureOrder!: boolean;
 
   public disableDaDispatch!: boolean;
+  public userCanChangePriceListProduct!: boolean;
 
   /*  ClientChangeSubscription: Subscription = this.clientSelectorService.ClientChanged.subscribe(client => {    
       this.reset();
@@ -313,8 +314,7 @@ export class PedidosService {
     this.conversionByPriceList = this.config.get("conversionByPriceList").toLowerCase() === 'true';
     this.quUnitDecimals = this.config.get("quUnitDecimals").toLowerCase() === 'true';
     this.totalUnit = this.config.get("totalUnit").toLowerCase() === 'true';
-    this.userCanChangePriceList = this.config.get("userCanChangePriceList").toLowerCase() === 'true';
-    this.showStock = this.config.get("showStock").toLowerCase() === 'true';
+    this.userCanChangePriceList = this.config.get("userCanChangePriceList").toLowerCase() === 'true';    
     this.stock0 = this.config.get("stock0").toLowerCase() === 'true';
     this.enterpriseEnabled = this.config.get("enterpriseEnabled").toLowerCase() === 'true';
     this.userCanChangeWarehouse = this.config.get("userCanChangeWarehouse").toLowerCase() === 'true';
@@ -341,6 +341,7 @@ export class PedidosService {
     this.checkAddressClient = this.config.get("checkAddressClient").toLowerCase() === "true";
     this.signatureOrder = this.config.get("signatureOrder").toLowerCase() === "true";
     this.disableDaDispatch = this.config.get("disableDaDispatch").toLowerCase() === "true";
+   
     //string
     this.codeTotalProductUnit = this.config.get("codeTotalProductUnit");
     this.nameProductLine = this.config.get("nameProductLine");
@@ -349,9 +350,17 @@ export class PedidosService {
     this.parteDecimal = +this.config.get('parteDecimal');
 
     //casos especiales
-    if (!this.validateWarehouses) {
+    if (this.validateWarehouses) {
+      this.showStock = this.config.get("showStock").toLowerCase() === 'true';
+    }else{
       //validateWarehouses oculta tambien el stock de los productos cuando es false.
       this.showStock = false;
+    }
+    if(this.userCanChangePriceList) {
+       this.userCanChangePriceListProduct = this.config.get("userCanChangePriceListProduct").toLowerCase() === "true";
+    }else{
+      //si el usuario no puede cambiar la lista de precios, tampoco podra cambiarla por producto
+      this.userCanChangePriceListProduct = false;
     }
 
   }
@@ -459,8 +468,8 @@ export class PedidosService {
         };
         var priceLists: PriceList[] = [];
         var priceListSeleccionado: PriceList = {} as PriceList;
-        if (this.userCanChangePriceList) {
-          priceLists = this.listaPricelist.filter(pl => (pl.idProduct == item.idProduct));
+        if (this.userCanChangePriceList && this.userCanChangePriceListProduct)  {
+            priceLists = this.listaPricelist.filter(pl => (pl.idProduct == item.idProduct));           
         } else {
           priceLists = this.listaPriceListFiltrada.filter(pl => (pl.idProduct == item.idProduct));
         }
