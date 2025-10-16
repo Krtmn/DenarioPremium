@@ -684,6 +684,7 @@ export class CobroPagosComponent implements OnInit {
       if (this.collectService.montoTotalPagado != this.collectService.montoTotalPagar) {
         this.collectService.mensaje = "Existe al menos un pago parcial, el monto pagado debe ser igual al monto a pagar";
         this.alertMessageOpen = true;
+        this.collectService.onCollectionValidToSend(false)
       }
   }
   checkCreateAutomatedPrepaid() {
