@@ -3487,14 +3487,14 @@ export class CollectionService {
 
     if (to === 'local') {
       // Si tu método es síncrono, puedes dejarlo así
-      return this.currencyService.toLocalCurrencyByNuValueLocal(value, coTypeDoc, tasa);
+      return this.currencyService.toLocalCurrencyByNuValueLocal(value,  tasa);
     } else {
       // Espera la llamada asíncrona
-      return this.currencyService.toHardCurrencyByNuValueLocal(value, coTypeDoc, tasa);
+      return this.currencyService.toHardCurrencyByNuValueLocal(value,  tasa);
     }
   }
 
-  public async toHardCurrencyByNuValueLocal(localAmount: number, coTypeDoc: string, nuValueLocal: number
+  public async toHardCurrencyByNuValueLocal(localAmount: number, nuValueLocal: number
   ): Promise<number> {
     // Si necesitas lógica asíncrona, usa await aquí
     if (nuValueLocal == null)
@@ -3514,12 +3514,12 @@ export class CollectionService {
   }
 
   public toLocal(value: number): number {
-    return this.currencyService.toLocalCurrencyByNuValueLocal(value, this.documentSaleOpen.naType, this.collection.nuValueLocal);
+    return this.currencyService.toLocalCurrencyByNuValueLocal(value, this.collection.nuValueLocal);
   }
 
   public toHard(value: number): number {
 
-    return this.currencyService.toHardCurrencyByNuValueLocal(value, this.documentSaleOpen.naType, this.collection.nuValueLocal);
+    return this.currencyService.toHardCurrencyByNuValueLocal(value, this.collection.nuValueLocal);
 
   }
 

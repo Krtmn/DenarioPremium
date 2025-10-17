@@ -775,11 +775,22 @@ export class PedidosService {
 
       //conversion
       if (this.currencyService.multimoneda) {
-        if (this.monedaSeleccionada.coCurrency === this.currencyService.hardCurrency.coCurrency) {
-          item.subtotalConv = this.currencyService.toLocalCurrency(item.subtotal);
-        } else {
-          item.subtotalConv = this.currencyService.toHardCurrency(item.subtotal);
+        if(this.pedidoModificable){
+          //pedido no enviado: hacemos la conversion actual
+          if (this.monedaSeleccionada.coCurrency === this.currencyService.hardCurrency.coCurrency) {
+            item.subtotalConv = this.currencyService.toLocalCurrency(item.subtotal);
+          } else {
+            item.subtotalConv = this.currencyService.toHardCurrency(item.subtotal);
+          }
+        }else{
+          //pedido enviado: mantenemos la conversion original
+          if (this.monedaSeleccionada.coCurrency === this.currencyService.hardCurrency.coCurrency) {
+            item.subtotalConv = this.currencyService.toLocalCurrencyByNuValueLocal(item.subtotal, this.order.nuValueLocal);
+          } else {
+            item.subtotalConv = this.currencyService.toHardCurrencyByNuValueLocal(item.subtotal, this.order.nuValueLocal);
+          }
         }
+
 
       } else {
         item.subtotalConv = 0;
@@ -820,7 +831,9 @@ export class PedidosService {
     }
 
     if (this.currencyService.multimoneda) {
-      if (this.monedaSeleccionada.coCurrency === this.currencyService.hardCurrency.coCurrency) {
+      if(this.pedidoModificable){
+        //pedido no enviado: hacemos la conversion actual
+        if (this.monedaSeleccionada.coCurrency === this.currencyService.hardCurrency.coCurrency) {
         //caso: pedido en moneda FUERTE
         this.totalPedidoConv = this.currencyService.toLocalCurrency(this.totalPedido);
         this.finalPedidoConv = this.currencyService.toLocalCurrency(this.finalPedido);
@@ -839,6 +852,30 @@ export class PedidosService {
         this.orderIVAConv = this.currencyService.toHardCurrency(this.orderIVA);
       }
 
+      }else{
+        //pedido enviado: mantenemos la conversion original
+        let nuValueLocal = this.order.nuValueLocal;
+         if (this.monedaSeleccionada.coCurrency === this.currencyService.hardCurrency.coCurrency) {
+        //caso: pedido en moneda FUERTE
+        this.totalPedidoConv = this.currencyService.toLocalCurrencyByNuValueLocal(this.totalPedido, nuValueLocal);
+        this.finalPedidoConv = this.currencyService.toLocalCurrencyByNuValueLocal(this.finalPedido, nuValueLocal);
+        this.totalDctoXProductoConv = this.currencyService.toLocalCurrencyByNuValueLocal(this.totalDctoXProducto, nuValueLocal);
+        this.totalBaseConv = this.currencyService.toLocalCurrencyByNuValueLocal(this.totalBase, nuValueLocal);
+        this.totalGlobalDcConv = this.currencyService.toLocalCurrencyByNuValueLocal(this.totalGlobalDc, nuValueLocal);
+        this.orderIVAConv = this.currencyService.toLocalCurrencyByNuValueLocal(this.orderIVA, nuValueLocal);
+
+      } else {
+        //caso pedido en moneda LOCAL
+        this.totalPedidoConv = this.currencyService.toHardCurrencyByNuValueLocal(this.totalPedido, nuValueLocal);
+        this.finalPedidoConv = this.currencyService.toHardCurrencyByNuValueLocal(this.finalPedido, nuValueLocal);
+        this.totalDctoXProductoConv = this.currencyService.toHardCurrencyByNuValueLocal(this.totalDctoXProducto, nuValueLocal);
+        this.totalBaseConv = this.currencyService.toHardCurrencyByNuValueLocal(this.totalBase, nuValueLocal);
+        this.totalGlobalDcConv = this.currencyService.toHardCurrencyByNuValueLocal(this.totalGlobalDc, nuValueLocal);
+        this.orderIVAConv = this.currencyService.toHardCurrencyByNuValueLocal(this.orderIVA, nuValueLocal);
+      }
+
+      }
+     
     }
 
 

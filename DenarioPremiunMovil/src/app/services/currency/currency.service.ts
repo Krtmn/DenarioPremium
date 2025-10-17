@@ -105,7 +105,7 @@ export class CurrencyService {
     return (localAmount * this.currencyRelation) / this.localValue;
   }
 
-  toLocalCurrencyByNuValueLocal(hardAmount: number, coTypeDoc: string, nuValueLocal: number): number {
+  toLocalCurrencyByNuValueLocal(hardAmount: number, nuValueLocal: number): number {
     if (nuValueLocal == null)
       return 0;
     else
@@ -117,7 +117,7 @@ export class CurrencyService {
  */
   }
 
-  toHardCurrencyByNuValueLocal(localAmount: number, coTypeDoc: string, nuValueLocal: number): number {
+  toHardCurrencyByNuValueLocal(localAmount: number, nuValueLocal: number): number {
     if (nuValueLocal == null)
       return 0;
     else
