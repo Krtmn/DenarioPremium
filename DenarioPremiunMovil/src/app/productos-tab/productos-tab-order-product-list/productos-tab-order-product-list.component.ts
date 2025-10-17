@@ -346,7 +346,7 @@ export class ProductosTabOrderProductListComponent  implements OnInit {
       //this.accordionGroup.value = undefined;
     }else{
     //const nativeEl = this.accordionGroup;
-    if (this.accordionGroup.value === prod.coProduct) {
+    if (this.accordionGroup.value !== prod.coProduct) {
     setTimeout(() => {
       this.quAmountInputs.toArray()[i].setFocus();
     },150);

@@ -29,9 +29,10 @@
   <div class="product-card product-structure-scroll accordionProductos">
     <ion-accordion-group expand="inset" [multiple]="false" #accordionGroup >
       <ion-accordion class="product-structure-title accordionPedidos" *ngFor="let product of orderUtilList; index as i"  [disabled]="!product.nuPrice || (!this.orderServ.stock0 && (product.quStock < 1))"
-      (click)="onSelectProductPed(i, product);" toggleIcon="caret-down-circle" toggleIconSlot="end" [value]="product.coProduct">
+       toggleIcon="caret-down-circle" toggleIconSlot="end" [value]="product.coProduct">
 <!-- PARTE VISIBLE -->
-        <ion-item detail="false" slot="header" *ngIf="searchText === '' || product.coProduct.toLowerCase().includes(searchText.toLowerCase()) || product.naProduct.toLowerCase().includes(searchText.toLowerCase())">
+        <ion-item detail="false" slot="header" (click)="onSelectProductPed(i, product);"
+         *ngIf="searchText === '' || product.coProduct.toLowerCase().includes(searchText.toLowerCase()) || product.naProduct.toLowerCase().includes(searchText.toLowerCase())">
           <!-- badge de cantidad -->
           <ion-badge slot="end" color="success" class="contadorProductos" *ngIf="product.quAmount > 0">
             {{product.totalEnUnidades}}
