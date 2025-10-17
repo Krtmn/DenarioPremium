@@ -94,7 +94,7 @@
             <ion-col *ngIf="this.collectService.multiCurrency" size="6"
                 class="titulosBold col borderSuperiorDerecho">{{this.collectService.collectionTags.get('COB_FECHA_VENCIMIENTO')}}</ion-col>
         </ion-row>
-        <ion-row *ngFor="let documentSale of this.collectService.documentSalesBackup;index as i"
+        <ion-row *ngFor="let documentSale of this.collectService.documentSalesView;index as i"
             class="tabladocumentSalesVenta tablaDocVentas row">
             <ion-col size="2" class="ion-text-center col borderInferiorIzquierdo"
                 *ngIf="this.collectService.retentionDocTypeCR">
@@ -412,13 +412,9 @@
                                     label="{{this.collectService.collectionTags.get('COB_MONTO_PAGAR')}} {{this.collectService.collection.coCurrency}}"
                                     label-placement="floating" fill="outline"
                                     [value]="collectService.isPaymentPartial ? collectService.amountPaid : currencyService.formatNumber(collectService.amountPaidDoc)"
-                                    [(ngModel)]="collectService.amountPaid"
-                                    (ionInput)="setPartialPay()"
-                                    (ionFocus)="onAmountPaidFocus()"
-                                    color="primary"
-                                    [readonly]="!collectService.isPaymentPartial"
-                                    type="number"
-                                    required
+                                    [(ngModel)]="collectService.amountPaid" (ionInput)="setPartialPay()"
+                                    (ionFocus)="onAmountPaidFocus()" color="primary"
+                                    [readonly]="!collectService.isPaymentPartial" type="number" required
                                     [ngClass]="{'inp-write': !collectService.amountPaymentPartial, 'input-rojo': !collectService.amountPaid}"
                                     min="0">
                                 </ion-input>
@@ -632,8 +628,8 @@
                                     label="{{this.collectService.collectionTags.get('COB_MONTO_TOTAL_RETENTION')}}"
                                     label-placement="floating" fill="outline"
                                     value="{{this.currencyService.formatNumber(this.collectService.amountPaidRetention)}}"
-                                    [(ngModel)]="this.collectService.amountPaidRetention"
-                                    color="primary" [readonly]="true" type="number"
+                                    [(ngModel)]="this.collectService.amountPaidRetention" color="primary"
+                                    [readonly]="true" type="number"
                                     [ngClass]="{'inp-write': !this.collectService.amountPaidRetention}">
                                 </ion-input>
                             </ion-col>
