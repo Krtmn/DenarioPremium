@@ -106,7 +106,6 @@ export class PedidosComponent {
 
   buscarPedido() {
     this.pedidoService.getListaPedidos().then(resp => {
-
       this.pedidoService.pedidoModificable = false;
       this.pedidoService.openOrder = true;
       this.pedidoService.copiandoPedido = false;
@@ -116,9 +115,11 @@ export class PedidosComponent {
   }
 
   copiarPedido() {
-    this.pedidoService.pedidoModificable = true;
-    this.pedidoService.openOrder = true;
-    this.pedidoService.copiandoPedido = true;
-    this.router.navigate(['pedidosLista']);
+    this.pedidoService.getListaPedidos().then(resp => {
+      this.pedidoService.pedidoModificable = true;
+      this.pedidoService.openOrder = true;
+      this.pedidoService.copiandoPedido = true;
+      this.router.navigate(['pedidosLista']);
+    });
   }
 }
