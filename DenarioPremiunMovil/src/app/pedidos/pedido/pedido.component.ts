@@ -524,9 +524,12 @@ export class PedidoComponent implements OnInit {
     //this.orderServ.copiandoPedido = false;
     this.orderServ.abrirPedido(pedido);
     this.ngOnInit();
-    
-    this.saveOrder(DELIVERY_STATUS_SAVED); // guardamos luego de abrir para que tenga todos los cambios
-    this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_AVISO_COPIADO"));
+    // guardamos luego de abrir para que tenga todos los cambios
+    this.saveOrder(DELIVERY_STATUS_SAVED).then(() => {
+      this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_AVISO_COPIADO"));
+      this.orderServ.setChangesMade(true);
+    });
+
   }
 
   sendButton() {
