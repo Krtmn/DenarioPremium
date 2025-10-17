@@ -92,7 +92,10 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
   getTypeProductStructures() {
     this.productStructureService.getTypeProductStructuresByIdEnterprise(this.dbServ.getDatabase(), this.empresaSeleccionada.idEnterprise).then(() => {
       this.typeProductStructureList = this.productStructureService.typeProductStructureList;
-      this.tpsSeleccionada = this.typeProductStructureList[0];
+      //this.tpsSeleccionada = this.typeProductStructureList[0];
+      if (!this.tpsSeleccionada && this.typeProductStructureList.length > 0) {
+        this.tpsSeleccionada = this.typeProductStructureList[0];
+      }
       this.getProductStructures();
     });
   }
@@ -134,6 +137,9 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
     });
   }
 
+    tpsCompare(a: TypeProductStructure, b: TypeProductStructure) {
+      return a && b ? a.idTypeProductStructure === b.idTypeProductStructure : a === b;
+    }
 
   onTypeProductStructureChanged(ev: any) {
     this.tpsSeleccionada = ev.target.value;
