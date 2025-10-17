@@ -123,6 +123,8 @@ export class PedidoComponent implements OnInit {
   saveOrExitOpen = false;
   parteDecimal = 2;
 
+  nuValueLocal = 0;
+
   @Output()
   goToNuevoPedido: EventEmitter<any> = new EventEmitter<any>();
 
@@ -215,16 +217,24 @@ export class PedidoComponent implements OnInit {
       //setup monedas
       this.currencyServ.setup(this.dbServ.getDatabase()).then(() => {
         this.multimoneda = this.currencyServ.multimoneda;
+        
         this.localCurrency = this.currencyServ.getLocalCurrency();
         if (this.orderServ.openOrder) {
           this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.orderServ.order.coCurrency);
+          if(this.orderServ.pedidoModificable) {
+            this.nuValueLocal = Number.parseFloat(this.currencyServ.getLocalValue());
+          }else{
+            this.nuValueLocal = this.orderServ.order.nuValueLocal;
+          }
         }
         else {
           this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
+          this.nuValueLocal = Number.parseFloat(this.currencyServ.getLocalValue());
         }
         if (this.multimoneda) {
           this.hardCurrency = this.currencyServ.getHardCurrency();
         }
+        
 
         if (this.orderServ.openOrder) {
           this.abrirPedido();
@@ -514,9 +524,8 @@ export class PedidoComponent implements OnInit {
     //this.orderServ.copiandoPedido = false;
     this.orderServ.abrirPedido(pedido);
     this.ngOnInit();
+    
     this.saveOrder(DELIVERY_STATUS_SAVED); // guardamos luego de abrir para que tenga todos los cambios
-
-
     this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_AVISO_COPIADO"));
   }
 

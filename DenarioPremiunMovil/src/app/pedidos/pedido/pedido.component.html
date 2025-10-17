@@ -123,8 +123,10 @@
                                         <div id="inputTasa" *ngIf="multimoneda">
                                             <ion-input [label]="orderServ.getTag('PED_TASA_CAMBIO')+':'"
                                                 label-placement="floating" fill="outline"
-                                                [value]="currencyServ.getLocalValue()" id="tasa" color="primary"
-                                                [disabled]="true"></ion-input>
+                                                [value]="nuValueLocal" id="tasa" color="primary"
+                                                [readonly]="true"></ion-input>
+
+                                       
                                         </div>
                                     </ion-col>
 
