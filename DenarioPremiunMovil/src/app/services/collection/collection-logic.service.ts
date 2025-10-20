@@ -2261,9 +2261,6 @@ export class CollectionService {
   }
 
   getAllClientBankAccountByEnterprise(dbServ: SQLiteObject, idEnterprise: number, coClient: string,) {
-
-
-    if (this.clientBankAccount) { }
     return dbServ.executeSql('SELECT * FROM client_bank_accounts, banks WHERE client_bank_accounts.id_enterprise = ? ' +
       'AND client_bank_accounts.co_bank = banks.co_bank AND client_bank_accounts.co_client = ?',
       [idEnterprise, coClient]).then(data => {

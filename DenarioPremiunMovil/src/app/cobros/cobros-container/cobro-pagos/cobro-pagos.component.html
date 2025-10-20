@@ -380,7 +380,8 @@
                         <ion-item>
                             <div class="listado-enterprise-selector ion-text-center">
                                 <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
-                                    class="ion-text-center always-flip" [(ngModel)]="transferencia.bancoReceptor"
+                                    class="ion-text-center always-flip"
+                                    [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoTransferencia[tr].posCollectionPayment] "
                                     (ionChange)="selectListBankAccount(tr, 'tr')" interface="alert"
                                     labelPlacement="stacked">
                                     <ion-select-option

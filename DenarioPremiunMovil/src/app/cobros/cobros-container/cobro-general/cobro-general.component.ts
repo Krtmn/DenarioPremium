@@ -306,7 +306,7 @@ export class CobrosGeneralComponent implements OnInit {
             type: "tr",
             anticipoPrepaid: payment.isAnticipoPrepaid,
             disabled: false,
-            bancoReceptor: new BancoReceptor(),
+            bancoReceptor: this.getBancoReceptor(payment.nuClientBankAccount),
             showDateModal: false,
           };
           const cuenta = bankAccounts.find(b => b.idBank == newPagoTransferencia.idBanco);
@@ -911,10 +911,34 @@ export class CobrosGeneralComponent implements OnInit {
       this.collectService.dateRate = this.collectService.collection.daCollection.substring(0, 19);
       this.collectService.dateRateVisual = this.collectService.collection.daCollection;
       return this.dateServ.formatShort(this.collectService.dateRateVisual);
-    } else return this.dateServ.formatShort(this.collectService.dateRateVisual);
+    } else {
+      this.collectService.dateRate = this.collectService.dateRate.split("T")[0];
+      return this.dateServ.formatShort(this.collectService.dateRateVisual);
+    }
   }
 
   printAllTransactionStatuses() {
     this.collectService.printAllTransactionStatuses(this.synchronizationServices.getDatabase())
+  }
+
+  getBancoReceptor(nuClientBankAccount: string): BancoReceptor {
+    const bancoReceptor = this.collectService.listBankAccounts.find(b => b.nuAccount == nuClientBankAccount);
+    if (bancoReceptor) {
+      return {
+        coAccount: bancoReceptor.coAccount,
+        coBank: bancoReceptor.coBank,
+        coCurrency: bancoReceptor.coCurrency,
+        coEnterprise: bancoReceptor.coEnterprise,
+        coType: bancoReceptor.coType,
+        idBank: bancoReceptor.idBank,
+        idBankAccount: bancoReceptor.idBankAccount,
+        idCurrency: bancoReceptor.idCurrency,
+        idEnterprise: bancoReceptor.idEnterprise,
+        nameBank: bancoReceptor.nameBank,
+        nuAccount: bancoReceptor.nuAccount,
+      }
+    } else {
+      return new BancoReceptor();
+    }
   }
 }

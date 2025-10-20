@@ -22,9 +22,9 @@ export class BancoReceptor {
         public coEnterprise: string = "",
         public coType: string = "",
         public idBank: number = 0,
-        public idBankAccount: string = "",
-        public idCurrency: string = "",
-        public idEnterprise: string = "",
+        public idBankAccount: number = 0,
+        public idCurrency: number = 0,
+        public idEnterprise: number = 0,
         public nameBank: string = "",
         public nuAccount: string = "",
     ) { }
