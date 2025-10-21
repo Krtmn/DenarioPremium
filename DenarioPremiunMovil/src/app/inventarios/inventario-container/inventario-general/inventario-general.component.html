@@ -29,7 +29,8 @@
                 *ngIf="!this.inventariosLogicService.inventarioSent"></app-cliente-selector>
         </ion-col>
         <!-- SUCURSAL -->
-        <div *ngIf="this.inventariosLogicService.selectedClient" >
+        <ion-grid *ngIf="this.inventariosLogicService.selectedClient" >
+            <ion-row>
         <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
             <div id="selectorSucursal" >
                 <ion-label>{{this.inventariosLogicService.inventarioTags.get('INV_SUCURSAL')}}</ion-label>
@@ -76,7 +77,8 @@
                     (ngModelChange)="setTXComment()"></ion-textarea>
             </div>
         </ion-col>
-        </div>
+        </ion-row>
+</ion-grid>
     </ion-row>
     <!-- <ion-button (click)="print()"></ion-button> -->
 </ion-grid>
