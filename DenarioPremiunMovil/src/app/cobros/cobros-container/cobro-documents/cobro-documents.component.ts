@@ -11,6 +11,8 @@ import { PagoDeposito } from 'src/app/modelos/pago-deposito';
 import { PagoTransferencia } from 'src/app/modelos/pago-transferencia';
 import { PagoOtros } from 'src/app/modelos/pago-otros';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
+import { Bank } from 'src/app/modelos/tables/bank';
+import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 
 @Component({
   selector: 'app-cobro-documents',
@@ -496,6 +498,9 @@ export class CobrosDocumentComponent implements OnInit {
         this.collectService.montoTotalPagarConversion = 0;
         this.collectService.montoTotalPagado = 0;
         this.collectService.montoTotalPagadoConversion = 0;
+
+        this.collectService.bankAccountSelected = [] as BankAccount[];
+
         this.collectService.onCollectionValidToSend(false);
       }
 

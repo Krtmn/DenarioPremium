@@ -615,9 +615,14 @@ export class CobrosGeneralComponent implements OnInit {
               this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise);
           })
 
-          if (this.collectService.requiredComment)
-            this.setFocus()
-
+          if (this.collectService.requiredComment) {
+            if (this.collectService.collection.txComment && this.collectService.collection.txComment.trim().length > 0) {
+              this.collectService.validComment = true;
+            } else {
+              this.collectService.validComment = false;
+              this.setFocus()
+            }
+          }
         })
 
       })
