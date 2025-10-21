@@ -1,46 +1,48 @@
-
 <div class="listado-product-structures" *ngIf="showProductList">
-<ion-header >
-  <ion-toolbar>
-    <ion-grid>
-  <ion-row>
-    <ion-col class="" size="4" size-sm="4" size-xs="4">
-    <!-- <ion-buttons slot="start"> -->
-      <ion-button fill="outline" class="colorBorderBuscar" size="small" shape="round" (click)="onShowProductStructures()">
-        {{this.productsTabTags.get('PROD_VOLVER')}}
-        <!-- <ion-icon slot="start" name="search-outline"></ion-icon> -->
-        <ion-icon class="colorIconBuscar" slot="start" name="arrow-back-circle-sharp"></ion-icon>
-      </ion-button>
-    <!-- </ion-buttons> -->
-    </ion-col>
-        <ion-col class="paddingTopStructure" size="8" size-sm="8" size-xs="7" offset-xs="1">      
-      <!-- <ion-title> -->
-        <ion-label>{{nameProductStructure}}</ion-label>
-      <!-- </ion-title> -->
-    </ion-col>
-  </ion-row>
-</ion-grid>
+  <ion-header>
+    <ion-toolbar>
+      <ion-grid>
+        <ion-row>
+          <ion-col class="" size="4" size-sm="4" size-xs="4">
+            <!-- <ion-buttons slot="start"> -->
+            <ion-button fill="outline" class="colorBorderBuscar" size="small" shape="round"
+              (click)="onShowProductStructures()">
+              {{this.productsTabTags.get('PROD_VOLVER')}}
+              <!-- <ion-icon slot="start" name="search-outline"></ion-icon> -->
+              <ion-icon class="colorIconBuscar" slot="start" name="arrow-back-circle-sharp"></ion-icon>
+            </ion-button>
+            <!-- </ion-buttons> -->
+          </ion-col>
+          <ion-col class="paddingTopStructure" size="8" size-sm="8" size-xs="7" offset-xs="1">
+            <!-- <ion-title> -->
+            <ion-label>{{nameProductStructure}}</ion-label>
+            <!-- </ion-title> -->
+          </ion-col>
+        </ion-row>
+      </ion-grid>
     </ion-toolbar>
-</ion-header>
+  </ion-header>
 
 
   <!--  Listado clickeable de productos  -->
 
-  <div class="product-card product-structure-scroll accordionProductos">
-    <ion-accordion-group expand="inset" [multiple]="false" #accordionGroup >
-      <ion-accordion class="product-structure-title accordionPedidos" *ngFor="let product of orderUtilList; index as i"  [disabled]="!product.nuPrice || (!this.orderServ.stock0 && (product.quStock < 1))"
-       toggleIcon="caret-down-circle" toggleIconSlot="end" [value]="product.coProduct">
-<!-- PARTE VISIBLE -->
+  <ion-content class="product-card product-structure-scroll accordionProductos">
+    <ion-accordion-group expand="inset" [multiple]="false" #accordionGroup>
+      <ion-accordion class="product-structure-title accordionPedidos" *ngFor="let product of orderUtilList; index as i"
+        [disabled]="!product.nuPrice || (!this.orderServ.stock0 && (product.quStock < 1))"
+        toggleIcon="caret-down-circle" toggleIconSlot="end" [value]="product.coProduct">
+        <!-- PARTE VISIBLE -->
         <ion-item detail="false" slot="header" (click)="onSelectProductPed(i, product);"
-         *ngIf="searchText === '' || product.coProduct.toLowerCase().includes(searchText.toLowerCase()) || product.naProduct.toLowerCase().includes(searchText.toLowerCase())">
+          *ngIf="searchText === '' || product.coProduct.toLowerCase().includes(searchText.toLowerCase()) || product.naProduct.toLowerCase().includes(searchText.toLowerCase())">
           <!-- badge de cantidad -->
           <ion-badge slot="end" color="success" class="contadorProductos" *ngIf="product.quAmount > 0">
             {{product.totalEnUnidades}}
           </ion-badge>
           <!-- Imagen de producto -->
           <ion-label fixed class="fixedLabel" *ngIf="orderServ.showProductImages">
-            <ion-img (click)="loadProductToModal(product)" loading="lazy" (ionError)="product.imagenProduct = orderServ.imgNoDisponible"
-             class="productImage" alt="" [src]="product.imagenProduct">
+            <ion-img (click)="loadProductToModal(product)" loading="lazy"
+              (ionError)="product.imagenProduct = orderServ.imgNoDisponible" class="productImage" alt=""
+              [src]="product.imagenProduct">
             </ion-img>
           </ion-label>
           <!-- Nombre, codigo, precio, stock, puntos, minimo, multiplo -->
@@ -49,13 +51,17 @@
             <p>{{this.productsTabTags.get('PROD_COD_PROD')}}: {{ product.coProduct }}</p>
             <p *ngIf="(product.txPacking) && (product.txPacking !== 'NULL')">{{ product.txPacking }}</p>
             <p *ngIf="(product.txDimension) && (product.txDimension) !== 'NULL' ">{{ product.txDimension }}</p>
-            <p>{{this.productsTabTags.get('PROD_PRICE_PROD')}}: {{ product.nuPrice ? formatNum(product.nuPrice) : 'N/A' }} {{
+            <p>{{this.productsTabTags.get('PROD_PRICE_PROD')}}: {{ product.nuPrice ? formatNum(product.nuPrice) : 'N/A'
+              }} {{
               product.coCurrency }} </p>
-            <p *ngIf="orderServ.showStock">{{this.productsTabTags.get('PROD_STOCK_PROD')}}: {{ product.quStock > 0 ? quStock(product) :
+            <p *ngIf="orderServ.showStock">{{this.productsTabTags.get('PROD_STOCK_PROD')}}: {{ product.quStock > 0 ?
+              quStock(product) :
               0 }}</p>
             <p>{{this.productsTabTags.get('PROD_POINTS_PROD')}}: {{ product.quPoints }}</p>
-            <p *ngIf="orderServ.productMinMul && product.quMinimum > 1">{{ orderServ.getTag("PED_MINIMO")}}: {{ product.quMinimum }}</p>
-            <p *ngIf="orderServ.productMinMul && product.quMultiple > 1">{{ orderServ.getTag("PED_MULTIPLO")}}: {{ product.quMultiple }}</p>
+            <p *ngIf="orderServ.productMinMul && product.quMinimum > 1">{{ orderServ.getTag("PED_MINIMO")}}: {{
+              product.quMinimum }}</p>
+            <p *ngIf="orderServ.productMinMul && product.quMultiple > 1">{{ orderServ.getTag("PED_MULTIPLO")}}: {{
+              product.quMultiple }}</p>
 
           </ion-label>
           <!-- <ion-note slot="end"><ion-icon class="icon-List2" name="chevron-forward-outline"></ion-icon></ion-note> -->
@@ -70,270 +76,307 @@
           </div>
           <ion-grid>
             <ion-row>
-          <ion-col class="" size="12" size-sm="12" size-xs="12">
-            <p>{{this.orderServ.getTag("PED_UNIDAD")}}: {{ getUnitName(product) }} </p>
-          </ion-col>
+              <ion-col class="" size="12" size-sm="12" size-xs="12">
+                <p>{{this.orderServ.getTag("PED_UNIDAD")}}: {{ getUnitName(product) }} </p>
+              </ion-col>
 
 
-          <!-- CANTIDAD -->
-          <ion-col class="" size="12" size-sm="12" size-xs="12">
-            <ion-input #quAmountInput type="number" [label]= "orderServ.getTag('PED_CANTIDAD')+':'" [(ngModel)]="product.quAmount" labelPlacement="floating"
-            fill="outline" [placeholder]="orderServ.getTag('PED_PLACEHOLDER_CANTIDAD')+':'"
-             [inputmode]=quInputMode (ionChange)="onProductQuantityChange(product)" (ionInput)="onProductQuantityInput(product)"
-             [clearOnEdit]="true">
-          </ion-input>
-          </ion-col>
+              <!-- CANTIDAD -->
+              <ion-col class="" size="12" size-sm="12" size-xs="12">
+                <ion-input #quAmountInput type="number" [label]="orderServ.getTag('PED_CANTIDAD')+':'"
+                  [(ngModel)]="product.quAmount" labelPlacement="floating" fill="outline"
+                  [placeholder]="orderServ.getTag('PED_PLACEHOLDER_CANTIDAD')+':'" [inputmode]=quInputMode
+                  (ionChange)="onProductQuantityChange(product)" (ionInput)="onProductQuantityInput(product)"
+                  [clearOnEdit]="true">
+                </ion-input>
+              </ion-col>
 
-          <!-- LISTA DE PRECIOS -->
-          <ion-col class="" size="12" size-sm="12" size-xs="12">
-            <ion-label>{{ orderServ.getTag("PED_LISTA_PRECIO")}}</ion-label>
-          </ion-col>
-          <ion-col class="" size="12" size-sm="12" size-xs="12">
-            <div class="listado-tps-selector ion-text-center">
-              <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked" [value]="product.idList" [disabled]="disablePriceListSelector"
-              [placeholder]="orderServ.getTag('PED_PLACEHOLDER_PRICELIST')+':'"  (ionChange)="onSelectPriceList($event, product)">
-              <ion-select-option *ngFor="let price of product.listaList" [value]="price.idList">{{ price.naList }}</ion-select-option>
-            </ion-select>
-            </div>
-          </ion-col>
-
-
-          <!-- UNIDAD -->
-          <ion-col class="" size="12" size-sm="12" size-xs="12">
-            <ion-label>{{ orderServ.getTag("PED_UNIDAD")}}</ion-label>
-          </ion-col>
-          <ion-col class="" size="12" size-sm="12" size-xs="12">
-            <div class="listado-tps-selector ion-text-center">
-              <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked" [value]="product.idUnit" interface="popover" labelPlacement="stacked"
-              [placeholder]="orderServ.getTag('PED_PLACEHOLDER_UNIDAD')+':'" (ionChange)="onSelectUnit($event, product)">
-                <ion-select-option *ngFor="let unit of product.unitList" [value]="unit.idUnit">{{ unit.naUnit }}</ion-select-option>
-              </ion-select>
-            </div>
-          </ion-col>
+              <!-- LISTA DE PRECIOS -->
+              <ion-col class="" size="12" size-sm="12" size-xs="12">
+                <ion-label>{{ orderServ.getTag("PED_LISTA_PRECIO")}}</ion-label>
+              </ion-col>
+              <ion-col class="" size="12" size-sm="12" size-xs="12">
+                <div class="listado-tps-selector ion-text-center">
+                  <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
+                    [value]="product.idList" [disabled]="disablePriceListSelector"
+                    [placeholder]="orderServ.getTag('PED_PLACEHOLDER_PRICELIST')+':'"
+                    (ionChange)="onSelectPriceList($event, product)">
+                    <ion-select-option *ngFor="let price of product.listaList" [value]="price.idList">{{ price.naList
+                      }}</ion-select-option>
+                  </ion-select>
+                </div>
+              </ion-col>
 
 
-          <!-- IVA -->
-          <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="orderServ.userCanSelectIVA">
-            <ion-label >{{ orderServ.getTag("PED_IVA")}}</ion-label>
-          </ion-col>
-          <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="orderServ.userCanSelectIVA">
-            <div class="listado-tps-selector ion-text-center">
-              <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked" [value]="product.iva" interface="popover" labelPlacement="stacked"
-              [placeholder]="orderServ.getTag('PED_PLACEHOLDER_IVA')+':'" (ionChange)="onSelectIVA($event, product)"
-               >
-                <ion-select-option *ngFor="let iva of ivaList" [value]="iva.priceIva">IVA - {{ iva.priceIva }}</ion-select-option>
-              </ion-select>
-            </div>
+              <!-- UNIDAD -->
+              <ion-col class="" size="12" size-sm="12" size-xs="12">
+                <ion-label>{{ orderServ.getTag("PED_UNIDAD")}}</ion-label>
+              </ion-col>
+              <ion-col class="" size="12" size-sm="12" size-xs="12">
+                <div class="listado-tps-selector ion-text-center">
+                  <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
+                    [value]="product.idUnit" interface="popover" labelPlacement="stacked"
+                    [placeholder]="orderServ.getTag('PED_PLACEHOLDER_UNIDAD')+':'"
+                    (ionChange)="onSelectUnit($event, product)">
+                    <ion-select-option *ngFor="let unit of product.unitList" [value]="unit.idUnit">{{ unit.naUnit
+                      }}</ion-select-option>
+                  </ion-select>
+                </div>
+              </ion-col>
 
-          </ion-col>
+
+              <!-- IVA -->
+              <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="orderServ.userCanSelectIVA">
+                <ion-label>{{ orderServ.getTag("PED_IVA")}}</ion-label>
+              </ion-col>
+              <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="orderServ.userCanSelectIVA">
+                <div class="listado-tps-selector ion-text-center">
+                  <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
+                    [value]="product.iva" interface="popover" labelPlacement="stacked"
+                    [placeholder]="orderServ.getTag('PED_PLACEHOLDER_IVA')+':'"
+                    (ionChange)="onSelectIVA($event, product)">
+                    <ion-select-option *ngFor="let iva of ivaList" [value]="iva.priceIva">IVA - {{ iva.priceIva
+                      }}</ion-select-option>
+                  </ion-select>
+                </div>
+
+              </ion-col>
 
 
-          <!-- DESCUENTO -->
-          <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="product.discountList.length > 1">
-              <ion-label>{{ orderServ.getTag("PED_DC")}}</ion-label>
-          </ion-col>
-          <ion-col class="" size="10" size-sm="10" size-xs="10" *ngIf="product.discountList.length > 1">
-            <div class="listado-tps-selector ion-text-center">
-              <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked" [value]="product.idDiscount"
-              [disabled]="!orderServ.userCanSelectProductDiscount" interface="popover" labelPlacement="stacked"
-              [placeholder]="orderServ.getTag('PED_PLACEHOLDER_DESCUENTO')+':'" (ionChange)="onSelectDiscount($event, product)">
-                <ion-select-option *ngFor="let dc of product.discountList"
-                [value]="dc.idDiscount">{{ getDiscountName(dc) }}</ion-select-option>
-              </ion-select>
-            </div>
+              <!-- DESCUENTO -->
+              <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="product.discountList.length > 1">
+                <ion-label>{{ orderServ.getTag("PED_DC")}}</ion-label>
+              </ion-col>
+              <ion-col class="" size="10" size-sm="10" size-xs="10" *ngIf="product.discountList.length > 1">
+                <div class="listado-tps-selector ion-text-center">
+                  <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
+                    [value]="product.idDiscount" [disabled]="!orderServ.userCanSelectProductDiscount"
+                    interface="popover" labelPlacement="stacked"
+                    [placeholder]="orderServ.getTag('PED_PLACEHOLDER_DESCUENTO')+':'"
+                    (ionChange)="onSelectDiscount($event, product)">
+                    <ion-select-option *ngFor="let dc of product.discountList" [value]="dc.idDiscount">{{
+                      getDiscountName(dc) }}</ion-select-option>
+                  </ion-select>
+                </div>
 
-          </ion-col>
-          <ion-col class="" size="2" size-sm="2" size-xs="2" *ngIf="product.discountList.length > 1">
-            <ion-button size="small" (click)="loadDiscount(product)">
-              <ion-icon name="information-circle-outline"></ion-icon>
-            </ion-button>
-          </ion-col>
-          <!-- ALMACEN -->
-          <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="orderServ.validateWarehouses">
-            <ion-label >{{ orderServ.getTag("PED_ALMACEN")}}</ion-label>
-          </ion-col>
-          <ion-col class="" size="12" size-sm="12" size-xs="12"*ngIf="orderServ.validateWarehouses">
-            <div class="listado-tps-selector ion-text-center" >
-              <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked" [value]="product.idWarehouse"
-                interface="popover" labelPlacement="stacked"
-               [placeholder]="orderServ.getTag('PED_PLACEHOLDER_ALMACEN')+':'" (ionChange)="onSelectWarehouse($event, product)"
-              [disabled]="!orderServ.userCanChangeWarehouse">
-                <ion-select-option *ngFor="let wh of warehouseList"
-                [value]="wh.idWarehouse">{{ wh.naWarehouse }}</ion-select-option>
-              </ion-select>
-            </div>
+              </ion-col>
+              <ion-col class="" size="2" size-sm="2" size-xs="2" *ngIf="product.discountList.length > 1">
+                <ion-button size="small" (click)="loadDiscount(product)">
+                  <ion-icon name="information-circle-outline"></ion-icon>
+                </ion-button>
+              </ion-col>
+              <!-- ALMACEN -->
+              <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="orderServ.validateWarehouses">
+                <ion-label>{{ orderServ.getTag("PED_ALMACEN")}}</ion-label>
+              </ion-col>
+              <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="orderServ.validateWarehouses">
+                <div class="listado-tps-selector ion-text-center">
+                  <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
+                    [value]="product.idWarehouse" interface="popover" labelPlacement="stacked"
+                    [placeholder]="orderServ.getTag('PED_PLACEHOLDER_ALMACEN')+':'"
+                    (ionChange)="onSelectWarehouse($event, product)" [disabled]="!orderServ.userCanChangeWarehouse">
+                    <ion-select-option *ngFor="let wh of warehouseList" [value]="wh.idWarehouse">{{ wh.naWarehouse
+                      }}</ion-select-option>
+                  </ion-select>
+                </div>
 
-          </ion-col>
-        </ion-row>
-      </ion-grid>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
 
         </div>
       </ion-accordion>
-      <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)" [disabled]="scrollDisable">
-        <ion-infinite-scroll-content [loadingText]='this.orderServ.getTag("DENARIO_SCROLL_TEXT")' loadingSpinner="bubbles"></ion-infinite-scroll-content>
-      </ion-infinite-scroll>
     </ion-accordion-group>
-  </div>
 
-<!-- modal de detalle de producto -->
-  <ion-modal [isOpen]="detailModal" (didDismiss)="showDetailModal(false)" >
+    <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)" [disabled]="scrollDisable">
+      <ion-infinite-scroll-content [loadingText]='this.orderServ.getTag("DENARIO_SCROLL_TEXT")'
+        loadingSpinner="bubbles"></ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+
+  </ion-content>
+  >
+
+  <!-- modal de detalle de producto -->
+  <ion-modal [isOpen]="detailModal" (didDismiss)="showDetailModal(false)">
     <ng-template>
-    <ion-toolbar>
-      <ion-title class="fondoVerde">
+      <ion-toolbar>
+        <ion-title class="fondoVerde">
           <ion-grid>
-              <ion-row>
-                  <ion-col size="1" size-sm="1" size-xs="2">
-                      <a (click)="showDetailModal(false)">
-                          <img class="fechaAtras" alt="" src="../../../assets/images/flecha-blanca.png" />
-                      </a>
-                  </ion-col>
-                  <ion-col size="11" size-sm="11" size-xs="10">
-                      <h1 class="tituloModulos"> {{ orderServ.getTag("PED_NOMBRE_MODULO")}} </h1>
-                  </ion-col>
-              </ion-row>
+            <ion-row>
+              <ion-col size="1" size-sm="1" size-xs="2">
+                <a (click)="showDetailModal(false)">
+                  <img class="fechaAtras" alt="" src="../../../assets/images/flecha-blanca.png" />
+                </a>
+              </ion-col>
+              <ion-col size="11" size-sm="11" size-xs="10">
+                <h1 class="tituloModulos"> {{ orderServ.getTag("PED_NOMBRE_MODULO")}} </h1>
+              </ion-col>
+            </ion-row>
           </ion-grid>
-      </ion-title>
-  </ion-toolbar>
+        </ion-title>
+      </ion-toolbar>
 
-  <ion-card>
-      <ion-card-content>
-  <ion-grid>
-      <ion-row>
-        <!-- IMAGEN DE PRODUCTO -->
-    <ion-col class="" size="12" size-sm="12" size-xs="12">
-      <ion-label *ngIf="orderServ.showProductImages">
-        <ion-img class="imgProductInvent" alt=""  loading="lazy" (ionError)="productoModal.imagenProduct = orderServ.imgNoDisponible"
-        [src]="productoModal.imagenProduct">
-        </ion-img>
-      </ion-label>
-    </ion-col>
-    <!-- NOMBRE, CODIGO, PRECIO, STOCK, PUNTOS, MINIMO, MULTIPLO -->
-    <ion-col class="" size="12" size-sm="12" size-xs="12">
-            <p class="titulosBold"><span class="titulosBold">{{ productoModal.naProduct }}</span></p>
-            <p><span class="titulosBold">{{this.productsTabTags.get('PROD_COD_PROD')}}:</span> {{ productoModal.coProduct }}</p>
-            <p><span class="titulosBold">{{this.productsTabTags.get('PROD_PRICE_PROD')}}:</span> {{ productoModal.nuPrice ? productoModal.nuPrice : 'N/A' }} {{
-              productoModal.coCurrency }}</p>
-          <p *ngIf="orderServ.showStock"><span class="titulosBold">{{this.productsTabTags.get('PROD_STOCK_PROD')}}:</span> {{ productoModal.quStock > 0 ? productoModal.quStock :
-            0 }}</p>
-            <p><span class="titulosBold">{{this.productsTabTags.get('PROD_POINTS_PROD')}}:</span> {{ productoModal.quPoints }}</p>
-            <p *ngIf="orderServ.productMinMul && productoModal.quMinimum > 1"><span class="titulosBold">{{ orderServ.getTag("PED_MINIMO")}}:</span> {{ productoModal.quMinimum }}</p>
-            <p *ngIf="orderServ.productMinMul && productoModal.quMultiple > 1"><span class="titulosBold">{{ orderServ.getTag("PED_MULTIPLO")}}:</span> {{ productoModal.quMultiple }}</p>
+      <ion-card>
+        <ion-card-content>
+          <ion-grid>
+            <ion-row>
+              <!-- IMAGEN DE PRODUCTO -->
+              <ion-col class="" size="12" size-sm="12" size-xs="12">
+                <ion-label *ngIf="orderServ.showProductImages">
+                  <ion-img class="imgProductInvent" alt="" loading="lazy"
+                    (ionError)="productoModal.imagenProduct = orderServ.imgNoDisponible"
+                    [src]="productoModal.imagenProduct">
+                  </ion-img>
+                </ion-label>
+              </ion-col>
+              <!-- NOMBRE, CODIGO, PRECIO, STOCK, PUNTOS, MINIMO, MULTIPLO -->
+              <ion-col class="" size="12" size-sm="12" size-xs="12">
+                <p class="titulosBold"><span class="titulosBold">{{ productoModal.naProduct }}</span></p>
+                <p><span class="titulosBold">{{this.productsTabTags.get('PROD_COD_PROD')}}:</span> {{
+                  productoModal.coProduct }}</p>
+                <p><span class="titulosBold">{{this.productsTabTags.get('PROD_PRICE_PROD')}}:</span> {{
+                  productoModal.nuPrice ? productoModal.nuPrice : 'N/A' }} {{
+                  productoModal.coCurrency }}</p>
+                <p *ngIf="orderServ.showStock"><span
+                    class="titulosBold">{{this.productsTabTags.get('PROD_STOCK_PROD')}}:</span> {{ productoModal.quStock
+                  > 0 ? productoModal.quStock :
+                  0 }}</p>
+                <p><span class="titulosBold">{{this.productsTabTags.get('PROD_POINTS_PROD')}}:</span> {{
+                  productoModal.quPoints }}</p>
+                <p *ngIf="orderServ.productMinMul && productoModal.quMinimum > 1"><span class="titulosBold">{{
+                    orderServ.getTag("PED_MINIMO")}}:</span> {{ productoModal.quMinimum }}</p>
+                <p *ngIf="orderServ.productMinMul && productoModal.quMultiple > 1"><span class="titulosBold">{{
+                    orderServ.getTag("PED_MULTIPLO")}}:</span> {{ productoModal.quMultiple }}</p>
 
-    </ion-col>
-  </ion-row>
-  </ion-grid>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
 
 
-<div slot="content">
+          <div slot="content">
 
-  <ion-grid>
-      <ion-row>
-  <ion-col size="12" size-sm="12" size-xs="12">
-        <p><span class="titulosBold">{{this.orderServ.getTag("PED_UNIDAD")}}:</span> {{ getUnitName(productoModal) }} </p>
-  </ion-col>
-  <!-- CANTIDAD DE PRODUCTO -->
-  <ion-col size="12" size-sm="12" size-xs="12">
-    <ion-input [label]= "orderServ.getTag('PED_CANTIDAD')+':'" [(ngModel)]="productoModal.quAmount" labelPlacement="floating"
-    fill="outline" [placeholder]="orderServ.getTag('PED_PLACEHOLDER_CANTIDAD')+':'"
-     [inputmode]=quInputMode (ionChange)="onProductQuantityChange(productoModal)"
-     (ionInput)="onProductQuantityInput(productoModal)"
-     [clearOnEdit]="true" ></ion-input>
-  </ion-col>
-  <!-- LISTA DE PRECIOS -->
-  <ion-col size="12" size-sm="12" size-xs="12">
-    <ion-label>{{ orderServ.getTag("PED_LISTA_PRECIO")}}</ion-label>
-  </ion-col>
-  <ion-col size="12" size-sm="12" size-xs="12">
-    <div class="listado-tps-selector ion-text-center">
-      <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked" [value]="productoModal.idList" interface="popover" labelPlacement="stacked"
-      [placeholder]="orderServ.getTag('PED_PLACEHOLDER_PRICELIST')+':'"  (ionChange)="onSelectPriceList($event, productoModal)">
-        <ion-select-option *ngFor="let price of productoModal.listaList" [value]="price.idList">{{ price.naList }}</ion-select-option>
-      </ion-select>
-    </div>
+            <ion-grid>
+              <ion-row>
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <p><span class="titulosBold">{{this.orderServ.getTag("PED_UNIDAD")}}:</span> {{
+                    getUnitName(productoModal) }} </p>
+                </ion-col>
+                <!-- CANTIDAD DE PRODUCTO -->
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <ion-input [label]="orderServ.getTag('PED_CANTIDAD')+':'" [(ngModel)]="productoModal.quAmount"
+                    labelPlacement="floating" fill="outline"
+                    [placeholder]="orderServ.getTag('PED_PLACEHOLDER_CANTIDAD')+':'" [inputmode]=quInputMode
+                    (ionChange)="onProductQuantityChange(productoModal)"
+                    (ionInput)="onProductQuantityInput(productoModal)" [clearOnEdit]="true"></ion-input>
+                </ion-col>
+                <!-- LISTA DE PRECIOS -->
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <ion-label>{{ orderServ.getTag("PED_LISTA_PRECIO")}}</ion-label>
+                </ion-col>
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <div class="listado-tps-selector ion-text-center">
+                    <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
+                      [value]="productoModal.idList" interface="popover" labelPlacement="stacked"
+                      [placeholder]="orderServ.getTag('PED_PLACEHOLDER_PRICELIST')+':'"
+                      (ionChange)="onSelectPriceList($event, productoModal)">
+                      <ion-select-option *ngFor="let price of productoModal.listaList" [value]="price.idList">{{
+                        price.naList }}</ion-select-option>
+                    </ion-select>
+                  </div>
 
-  </ion-col>
-  <!-- UNIDAD -->
-  <ion-col size="12" size-sm="12" size-xs="12">
-    <ion-label>{{ orderServ.getTag("PED_UNIDAD")}}</ion-label>
-  </ion-col>
-  <ion-col size="12" size-sm="12" size-xs="12">
-    <div class="listado-tps-selector ion-text-center">
-      <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked" [value]="productoModal.idUnit" interface="popover" labelPlacement="stacked"
-      [placeholder]="orderServ.getTag('PED_PLACEHOLDER_UNIDAD')+':'" (ionChange)="onSelectUnit($event, productoModal)">
-        <ion-select-option *ngFor="let unit of productoModal.unitList" [value]="unit.idUnit">{{ unit.naUnit }}</ion-select-option>
-      </ion-select>
-    </div>
-  </ion-col>
-  <!-- IVA -->
-  <ion-col size="12" size-sm="12" size-xs="12">
-    <ion-label *ngIf="orderServ.userCanSelectIVA">{{ orderServ.getTag("PED_IVA")}}</ion-label>
-  </ion-col>
-  <ion-col size="12" size-sm="12" size-xs="12">
-    <div class="listado-tps-selector ion-text-center">
-      <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked" [value]="productoModal.iva" interface="popover" labelPlacement="stacked"
-      [placeholder]="orderServ.getTag('PED_PLACEHOLDER_IVA')+':'" (ionChange)="onSelectIVA($event, productoModal)"
-       *ngIf="orderServ.userCanSelectIVA">
-        <ion-select-option *ngFor="let iva of ivaList" [value]="iva.idIvaList">IVA - {{ iva.priceIva }}</ion-select-option>
-      </ion-select>
-    </div>
+                </ion-col>
+                <!-- UNIDAD -->
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <ion-label>{{ orderServ.getTag("PED_UNIDAD")}}</ion-label>
+                </ion-col>
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <div class="listado-tps-selector ion-text-center">
+                    <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
+                      [value]="productoModal.idUnit" interface="popover" labelPlacement="stacked"
+                      [placeholder]="orderServ.getTag('PED_PLACEHOLDER_UNIDAD')+':'"
+                      (ionChange)="onSelectUnit($event, productoModal)">
+                      <ion-select-option *ngFor="let unit of productoModal.unitList" [value]="unit.idUnit">{{
+                        unit.naUnit }}</ion-select-option>
+                    </ion-select>
+                  </div>
+                </ion-col>
+                <!-- IVA -->
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <ion-label *ngIf="orderServ.userCanSelectIVA">{{ orderServ.getTag("PED_IVA")}}</ion-label>
+                </ion-col>
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <div class="listado-tps-selector ion-text-center">
+                    <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
+                      [value]="productoModal.iva" interface="popover" labelPlacement="stacked"
+                      [placeholder]="orderServ.getTag('PED_PLACEHOLDER_IVA')+':'"
+                      (ionChange)="onSelectIVA($event, productoModal)" *ngIf="orderServ.userCanSelectIVA">
+                      <ion-select-option *ngFor="let iva of ivaList" [value]="iva.idIvaList">IVA - {{ iva.priceIva
+                        }}</ion-select-option>
+                    </ion-select>
+                  </div>
 
-  </ion-col>
-  <!-- DESCUENTO -->
-  <ion-col size="12" size-sm="12" size-xs="12">
-    <ion-label>{{ orderServ.getTag("PED_DC")}}</ion-label>
-  </ion-col>
-  <ion-col size="12" size-sm="12" size-xs="12">
-    <div class="listado-tps-selector ion-text-center">
-      <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked" [value]="productoModal.idDiscount"
-      [disabled]="!orderServ.userCanSelectProductDiscount"
-      [placeholder]="orderServ.getTag('PED_PLACEHOLDER_DESCUENTO')+':'" (ionChange)="onSelectDiscount($event, productoModal)">
-        <ion-select-option *ngFor="let dc of productoModal.discountList"
-        [value]="dc.idDiscount">{{ dc.quDiscount }}</ion-select-option>
-      </ion-select>
-    </div>
+                </ion-col>
+                <!-- DESCUENTO -->
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <ion-label>{{ orderServ.getTag("PED_DC")}}</ion-label>
+                </ion-col>
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <div class="listado-tps-selector ion-text-center">
+                    <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
+                      [value]="productoModal.idDiscount" [disabled]="!orderServ.userCanSelectProductDiscount"
+                      [placeholder]="orderServ.getTag('PED_PLACEHOLDER_DESCUENTO')+':'"
+                      (ionChange)="onSelectDiscount($event, productoModal)">
+                      <ion-select-option *ngFor="let dc of productoModal.discountList" [value]="dc.idDiscount">{{
+                        dc.quDiscount }}</ion-select-option>
+                    </ion-select>
+                  </div>
 
-  </ion-col>
-  <!-- ALMACEN -->
-  <ion-col size="12" size-sm="12" size-xs="12">
-    <ion-label *ngIf="orderServ.validateWarehouses">{{ orderServ.getTag("PED_ALMACEN")}}</ion-label>
-  </ion-col>
-  <ion-col size="12" size-sm="12" size-xs="12">
-    <div class="listado-tps-selector ion-text-center">
-      <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked" [value]="productoModal.idWarehouse"
-       *ngIf="orderServ.validateWarehouses"
-       [placeholder]="orderServ.getTag('PED_PLACEHOLDER_ALMACEN')+':'" (ionChange)="onSelectWarehouse($event, productoModal)"
-      [disabled]="!orderServ.userCanChangeWarehouse">
-        <ion-select-option *ngFor="let wh of warehouseList"
-        [value]="wh.idWarehouse">{{ wh.naWarehouse }}</ion-select-option>
-      </ion-select>
-    </div>
+                </ion-col>
+                <!-- ALMACEN -->
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <ion-label *ngIf="orderServ.validateWarehouses">{{ orderServ.getTag("PED_ALMACEN")}}</ion-label>
+                </ion-col>
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <div class="listado-tps-selector ion-text-center">
+                    <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
+                      [value]="productoModal.idWarehouse" *ngIf="orderServ.validateWarehouses"
+                      [placeholder]="orderServ.getTag('PED_PLACEHOLDER_ALMACEN')+':'"
+                      (ionChange)="onSelectWarehouse($event, productoModal)"
+                      [disabled]="!orderServ.userCanChangeWarehouse">
+                      <ion-select-option *ngFor="let wh of warehouseList" [value]="wh.idWarehouse">{{ wh.naWarehouse
+                        }}</ion-select-option>
+                    </ion-select>
+                  </div>
 
-  </ion-col>
-  <ion-col size="12" size-sm="12" size-xs="12">
-    <ion-note slot="end"><ion-icon class="icon-List2" name="chevron-forward-outline"></ion-icon></ion-note>
-  </ion-col>
+                </ion-col>
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <ion-note slot="end"><ion-icon class="icon-List2"
+                      name="chevron-forward-outline"></ion-icon></ion-note>
+                </ion-col>
 
-</ion-row>
-</ion-grid>
-</div>
+              </ion-row>
+            </ion-grid>
+          </div>
 
-</ion-card-content>
-</ion-card>
+        </ion-card-content>
+      </ion-card>
 
-</ng-template>
-</ion-modal>
+    </ng-template>
+  </ion-modal>
 
-<!-- modal de lista de descuentos -->
-<ion-modal id="eventModal2" size="cover" class="listado-product-structures modalActividades" [isOpen]="discountModal" (didDismiss)="showDiscountModal(false)" >
-  <ng-template>
-    <h1 class="ion-text-center"> Descuentos </h1>
-    <ion-list>
-      <ion-item *ngFor="let dc of productoModal.discountList" >
-        <div *ngIf="dc.quDiscount > 0">
-          {{orderServ.getTag("PED_DC")}} {{dc.quDiscount }}% {{orderServ.getTag("PED_DESDE")}} {{dc.quVolIni}} {{dc.coUnit}}
-        </div>
-    </ion-item>
-    </ion-list>
-  </ng-template>
-</ion-modal>
+  <!-- modal de lista de descuentos -->
+  <ion-modal id="eventModal2" size="cover" class="listado-product-structures modalActividades" [isOpen]="discountModal"
+    (didDismiss)="showDiscountModal(false)">
+    <ng-template>
+      <h1 class="ion-text-center"> Descuentos </h1>
+      <ion-list>
+        <ion-item *ngFor="let dc of productoModal.discountList">
+          <div *ngIf="dc.quDiscount > 0">
+            {{orderServ.getTag("PED_DC")}} {{dc.quDiscount }}% {{orderServ.getTag("PED_DESDE")}} {{dc.quVolIni}}
+            {{dc.coUnit}}
+          </div>
+        </ion-item>
+      </ion-list>
+    </ng-template>
+  </ion-modal>
 </div>
