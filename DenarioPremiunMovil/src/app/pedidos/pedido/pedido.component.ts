@@ -204,9 +204,6 @@ export class PedidoComponent implements OnInit {
         this.empresaSeleccionada = this.enterpriseServ.defaultEnterprise();
         this.orderServ.empresaSeleccionada = this.empresaSeleccionada;
         this.orderServ.setup();
-        this.monedaSeleccionada = this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
-        this.onCurrencySelect();
-
         this.orderServ.cliente = { lbClient: this.orderServ.getTag("PED_PLACEHOLDER_CLIENTE") } as Client;
       }
 
@@ -1164,13 +1161,11 @@ export class PedidoComponent implements OnInit {
       });
        });
 
-       /*
-      //[multiCurrencyOrder] cambio de moneda por cliente 
+      //[multiCurrencyOrder] cambio de moneda
       if (this.orderServ.multiCurrencyOrder && !this.orderServ.openOrder) {
         this.monedaSeleccionada = this.currencyServ.getCurrency(cliente.coCurrency);
         this.onCurrencySelect();
       }
-        */
 
       //saldos si es pedido guardado/enviado
       if (this.orderServ.openOrder) {
