@@ -42,21 +42,14 @@ export class VendedoresComponent  implements OnInit {
   ngOnInit() {
     this.message.showLoading().then(()=>{
       this.getTags();  //buscamos los tags
-      this.infoVendedores = this.globalConfig.get("infoVendedores") === "true";
-      this.getEnterpriseInfo();
-      
-      //buscamos info de empresas / multiempresas
-      //chequeamos variable global infoVendedores    
+      this.infoVendedores = this.globalConfig.get("infoVendedores") === "true"; //chequeamos variable global infoVendedores   
+      this.getEnterpriseInfo(); //buscamos info de empresas / multiempresas      
 
       if(this.infoVendedores){
-
           this.getUserInfoBD();
-          this.message.hideLoading(); 
-
-       
+          this.message.hideLoading();       
       }else{
-        // metodo por defecto
-        
+        // metodo por defecto        
         this.getUserInfo();
       }
       
