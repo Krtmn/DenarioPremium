@@ -57,11 +57,11 @@ db = inject(SynchronizationDBService);
 
   onSearchClicked() {
     if(this.pedido){
-      this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(this.db.getDatabase(),this.searchText, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault, this.orderServ.listaSeleccionada.idList).then(() => {
+      this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(this.db.getDatabase(),this.searchText, this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency, this.orderServ.listaSeleccionada.idList).then(() => {
         this.productService.onProductTabSearchClicked();
       });
     }else{
-    this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),this.searchText, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault).then(() => {
+    this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),this.searchText, this.empresaSeleccionada.idEnterprise,this.orderServ.monedaSeleccionada.coCurrency).then(() => {
       this.productService.onProductTabSearchClicked();
     });
     }
