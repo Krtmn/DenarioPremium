@@ -93,9 +93,6 @@ export class CobroPagosComponent implements OnInit {
           newPagoCheque.fechaValor = this.dateServ.hoyISO();
         }
 
-        if (!this.collectService.clientBankAccount)
-          newPagoCheque.disabled = false;
-
         this.collectService.pagoCheque.push(newPagoCheque);
         break;
       }
@@ -173,6 +170,9 @@ export class CobroPagosComponent implements OnInit {
 
     this.collectService.bankAccountSelected.splice(pagoArray[index].posCollectionPayment, 1)
     pagoArray.splice(index, 1);
+    pagoArray.forEach((pago, i) => {
+      pago.posCollectionPayment -= 1;
+    });
 
     if (pagoArray.length > 0)
       this.collectService.validateToSend();
@@ -872,7 +872,7 @@ export class CobroPagosComponent implements OnInit {
 
         this.collectService.pagoTransferencia[index].disabled = false;
 
-       this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.coCollection! = this.collectService.collection.coCollection;
+        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.coCollection! = this.collectService.collection.coCollection;
         this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.coPaymentMethod = type;
         this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.idBank = this.collectService.pagoTransferencia[index].idBanco;
         this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.naBank = this.collectService.pagoTransferencia[index].nombreBanco;
