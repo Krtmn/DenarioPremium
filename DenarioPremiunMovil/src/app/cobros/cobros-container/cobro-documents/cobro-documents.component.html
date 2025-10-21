@@ -256,8 +256,7 @@
                                             {{this.collectService.localCurrency.coCurrency}}:"
                                             label-placement="floating" fill="outline"
                                             value="{{this.currencyService.formatNumber(this.collectService.documentSaleOpen.nuValueLocal)}}"
-                                            color="primary"
-                                            [(ngModel)]="this.collectService.documentSaleOpen.nuValueLocal"
+                                            color="primary" [(ngModel)]="this.collectService.collection.nuValueLocal"
                                             [readonly]="true"></ion-input>
                                     </ion-col>
                                     <!-- TASA -->
@@ -302,8 +301,7 @@
                                                 label-placement="floating" fill="outline" color="primary" type="number"
                                                 value="{{this.collectService.documentSaleOpen.nuVaucherRetention}}"
                                                 [(ngModel)]="this.collectService.documentSaleOpen.nuVaucherRetention"
-                                                (ionChange)="validateNuVaucherRetention(true)"
-                                                [disabled]="this.collectService.isPaymentPartial">
+                                                (ionChange)="validateNuVaucherRetention(true)">
                                             </ion-input>
                                         </ion-col>
                                         <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
@@ -358,8 +356,7 @@
                                             label-placement="floating" fill="outline" value="" color="primary"
                                             value="{{this.collectService.documentSaleOpen.nuAmountDiscount}}"
                                             [(ngModel)]="this.collectService.documentSaleOpen.nuAmountDiscount"
-                                            type="number" (ionInput)="setAmountTotal()"
-                                            [disabled]="this.collectService.isPaymentPartial"></ion-input>
+                                            type="number" (ionInput)="setAmountTotal()"></ion-input>
                                     </ion-col>
                                     <!-- DIFERENCIA DEVOLUCION/FALTANTE -->
 

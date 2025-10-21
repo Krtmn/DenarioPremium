@@ -3484,10 +3484,10 @@ export class CollectionService {
 
     if (to === 'local') {
       // Si tu método es síncrono, puedes dejarlo así
-      return this.currencyService.toLocalCurrencyByNuValueLocal(value,  tasa);
+      return this.currencyService.toLocalCurrencyByNuValueLocal(value, tasa);
     } else {
       // Espera la llamada asíncrona
-      return this.currencyService.toHardCurrencyByNuValueLocal(value,  tasa);
+      return this.currencyService.toHardCurrencyByNuValueLocal(value, tasa);
     }
   }
 
@@ -3536,6 +3536,38 @@ export class CollectionService {
     const original = { ...this.documentSalesBackup[index] };
     this.documentSaleOpen = { ...original };
     this.documentSales[index] = { ...original };
+    if (this.collection.stCollection == 1) {
+      const positionCollecDetails = this.documentSaleOpen.positionCollecDetails;
+      const nuAmountBase = this.collection.collectionDetails[positionCollecDetails].nuBalanceDoc,
+        nuAmountDiscount = this.collection.collectionDetails[positionCollecDetails].nuAmountDiscount,
+        nuAmountPaid = this.collection.collectionDetails[positionCollecDetails].nuAmountPaid,
+        nuAmountRetention = this.collection.collectionDetails[positionCollecDetails].nuAmountRetention,
+        nuAmountRetention2 = this.collection.collectionDetails[positionCollecDetails].nuAmountRetention2,
+        nuAmountTotal = this.collection.collectionDetails[positionCollecDetails].nuAmountDoc,
+        nuBalance = this.collection.collectionDetails[positionCollecDetails].nuBalanceDoc,
+        inPaymentPartial = this.collection.collectionDetails[positionCollecDetails].inPaymentPartial,
+        isSave = this.collection.collectionDetails[positionCollecDetails].isSave;
+
+      this.documentSales[index].nuAmountBase = nuAmountBase;
+      this.documentSalesBackup[index].nuAmountBase = nuAmountBase;
+      this.documentSales[index].nuAmountDiscount = nuAmountDiscount;
+      this.documentSalesBackup[index].nuAmountDiscount = nuAmountDiscount;
+      this.documentSales[index].nuAmountPaid = nuAmountPaid;
+      this.documentSalesBackup[index].nuAmountPaid = nuAmountPaid;
+      this.documentSales[index].nuAmountRetention = nuAmountRetention;
+      this.documentSalesBackup[index].nuAmountRetention = nuAmountRetention;
+      this.documentSales[index].nuAmountRetention2 = nuAmountRetention2;
+      this.documentSalesBackup[index].nuAmountRetention2 = nuAmountRetention2;
+      this.documentSales[index].nuAmountTotal = nuAmountTotal;
+      this.documentSalesBackup[index].nuAmountTotal = nuAmountTotal;
+      this.documentSales[index].nuBalance = nuBalance;
+      this.documentSalesBackup[index].nuBalance = nuBalance;
+      this.documentSales[index].inPaymentPartial = inPaymentPartial;
+      this.documentSalesBackup[index].inPaymentPartial = inPaymentPartial;
+      this.documentSales[index].isSave = isSave;
+      this.documentSalesBackup[index].isSave = isSave;
+
+    }
 
   }
 

@@ -11,7 +11,6 @@ import { PagoDeposito } from 'src/app/modelos/pago-deposito';
 import { PagoTransferencia } from 'src/app/modelos/pago-transferencia';
 import { PagoOtros } from 'src/app/modelos/pago-otros';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
-import { Bank } from 'src/app/modelos/tables/bank';
 import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 
 @Component({
@@ -213,7 +212,8 @@ export class CobrosDocumentComponent implements OnInit {
       const coTypeDoc = this.collectService.documentSalesBackup[index].coDocumentSaleType;
       const nuValueLocalDoc = this.collectService.documentSalesBackup[index].nuValueLocal;
 
-      let nuAmountBase = 0, nuAmountDiscount = 0, nuAmountTotal = 0, nuAmountPaid = 0, nuBalance = 0, nuAmountTax = 0, nuAmountRetention = 0, nuAmountRetention2 = 0;
+      let sumRetentions = 0, nuAmountBase = 0, nuAmountDiscount = 0, nuAmountTotal = 0, nuAmountPaid = 0, nuBalance = 0, nuAmountTax = 0, nuAmountRetention = 0, nuAmountRetention2 = 0;
+      let daVoucher = "", nuVaucherRetention = "";
       this.collectService.ensureNumber(this.collectService.documentSales[index], 'nuAmountBase');
       this.collectService.ensureNumber(this.collectService.documentSales[index], 'nuAmountDiscount');
       this.collectService.ensureNumber(this.collectService.documentSales[index], 'nuAmountPaid');
@@ -224,10 +224,28 @@ export class CobrosDocumentComponent implements OnInit {
       if (this.collectService.collection.stCollection == 1) {
         let positionCollecDetails = this.collectService.documentSales[index].positionCollecDetails;
         nuAmountDiscount = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountDiscount;
-        nuAmountPaid = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountPaid;
+
+        if (this.collectService.isPaymentPartial) {
+          nuAmountPaid = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountPaid;
+        } else {
+          sumRetentions = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountDiscount +
+            this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention +
+            this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention2;
+          nuAmountPaid = this.collectService.collection.collectionDetails[positionCollecDetails].nuBalanceDoc - sumRetentions;
+        }
+
         nuBalance = this.collectService.collection.collectionDetails[positionCollecDetails].nuBalanceDoc;
         nuAmountRetention = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention;
         nuAmountRetention2 = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention2;
+        daVoucher = this.collectService.collection.collectionDetails[positionCollecDetails].daVoucher!;
+        nuVaucherRetention = this.collectService.collection.collectionDetails[positionCollecDetails].nuVoucherRetention!;
+
+        if (this.collectService.retencion)
+          if (nuVaucherRetention.length > 0) {
+            this.collectService.validNuRetention = true;
+          } else
+            this.collectService.validNuRetention = false;
+
       } else {
         nuAmountDiscount = this.collectService.documentSalesBackup[index].nuAmountDiscount;
         nuAmountPaid = this.collectService.documentSalesBackup[index].nuAmountPaid;
@@ -269,19 +287,18 @@ export class CobrosDocumentComponent implements OnInit {
         positionCollecDetails: this.collectService.documentSales[index].positionCollecDetails,
         nuAmountRetention: Number(nuAmountRetention),
         nuAmountRetention2: Number(nuAmountRetention2),
-        daVoucher: this.collectService.documentSales[index].daVoucher,
-        //daVoucher: this.daVoucher.split("T")[0],
-        nuVaucherRetention: this.collectService.documentSales[index].nuVaucherRetention,
+        daVoucher: daVoucher,
+        nuVaucherRetention: nuVaucherRetention,
         igtfAmount: this.collectService.documentSales[index].igtfAmount,
         txConversion: this.collectService.documentSales[index].txConversion,
-        inPaymentPartial: this.collectService.documentSales[index].inPaymentPartial,
+        inPaymentPartial: this.collectService.isPaymentPartial,
         isSave: this.collectService.documentSales[index].isSave,
       }
 
       if (this.collectService.retencion)
-        this.validateNuVaucherRetention(false);
-      else
         this.collectService.validNuRetention = true;
+      else
+        this.collectService.validNuRetention = false;
 
       resolve(true);
     })
@@ -296,9 +313,11 @@ export class CobrosDocumentComponent implements OnInit {
       let daVoucherValue = "";
       if (this.collectService.documentSales[index].isSave) {
         const positionCollecDetails = this.collectService.documentSales[index].positionCollecDetails;
+        this.collectService.isPaymentPartial = this.collectService.collection.collectionDetails[positionCollecDetails].inPaymentPartial;
         this.collectService.nuBalance = this.collectService.collection.collectionDetails[positionCollecDetails].nuBalanceDoc;
         voucherRetentionValue = this.collectService.collection.collectionDetails[positionCollecDetails].nuVoucherRetention;
         daVoucherValue = this.collectService.collection.collectionDetails[positionCollecDetails].daVoucher!;
+        this.collectService.isPaymentPartial = this.collectService.collection.collectionDetails[positionCollecDetails].inPaymentPartial;
       } else {
         this.collectService.nuBalance = this.collectService.documentSales[index].nuBalance;
       }
@@ -765,9 +784,10 @@ export class CobrosDocumentComponent implements OnInit {
       this.collectService.amountPaidConversion = amountPaidConversion;
     }
 
-    // --- Monto pagado ---
-    this.collectService.amountPaid = documentSaleOpen.nuBalance - sumRetentions;
-
+    if (this.collectService.isPaymentPartial)
+      this.collectService.amountPaid = documentSaleOpen.nuAmountPaid;
+    else
+      this.collectService.amountPaid = documentSaleOpen.nuBalance - sumRetentions;
     // --- Ajustes finales ---
     if (coTypeModule === '2') {
       documentSaleOpen.nuAmountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(amountPaidRetention));
@@ -777,19 +797,10 @@ export class CobrosDocumentComponent implements OnInit {
     } else {
       this.collectService.amountPaidDoc = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.amountPaidDoc));
       this.collectService.amountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.amountPaid));
-      /*  documentSaleOpen.igtfAmount = this.collectService.convertirMonto(
-         documentSaleOpen.nuBalance * (igtfSelected.price / 100),
-         documentSaleOpen.nuValueLocal,
-         documentSaleOpen.coCurrency
-       ); */
       documentSaleOpen.igtfAmount = documentSaleOpen.nuBalance * (igtfSelected.price / 100)
     }
 
     this.collectService.collection.collectionDetails[documentSaleOpen.positionCollecDetails]!.nuAmountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.amountPaid));
-
-    /*  this.collectService.collection.collectionDetails[documentSaleOpen.positionCollecDetails]!.nuAmountPaidConversion
-       = Number(this.currencyService.formatNumber(this.collectService.convertirMonto(this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.amountPaid)),
-         this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency))); */
     this.collectService.collection.collectionDetails[documentSaleOpen.positionCollecDetails]!.nuAmountPaidConversion
       = this.collectService.amountPaid;
 
@@ -830,23 +841,14 @@ export class CobrosDocumentComponent implements OnInit {
 
     if (event.target.checked) {
       this.collectService.amountPaid = 0;
-      this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails]!.inPaymentPartial = true;
+      if (this.collectService.collection.stCollection != 1)
+        this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails]!.inPaymentPartial = true;
+
       this.disabledSaveButton = true;
       this.collectService.isChangePaymentPartial = false;
-      if (this.collectService.collection.stCollection == 1) {
 
-        this.collectService.documentSaleOpen.nuAmountDiscount = 0;
-        this.collectService.documentSaleOpen.nuAmountRetention = 0;
-        this.collectService.documentSaleOpen.nuAmountRetention2 = 0;
-        this.collectService.documentSaleOpen.daVoucher = "";
-        this.collectService.documentSaleOpen.nuVaucherRetention = "";
-      }
-
-
-      if (
-        this.collectService.historicPartialPayment &&
-        this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].inPaymentPartial
-      ) {
+      if (this.collectService.historicPartialPayment &&
+        this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].inPaymentPartial) {
         this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSJ_HAVE_PAYPARTIAL')!;
         this.alertMessageOpen2 = true;
       }
@@ -857,7 +859,16 @@ export class CobrosDocumentComponent implements OnInit {
       this.collectService.documentSaleOpen.nuAmountRetention = this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].nuAmountRetention;
       this.collectService.documentSaleOpen.nuAmountRetention2 = this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].nuAmountRetention2;
       this.collectService.documentSaleOpen.daVoucher = this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].daVoucher!;
-      this.collectService.amountPaid = this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].nuAmountPaid;
+      if (this.collectService.isPaymentPartial) {
+        this.collectService.amountPaid = this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].nuAmountPaid;
+      } else {
+        const sumRetentions = this.collectService.documentSaleOpen.nuAmountDiscount +
+          this.collectService.documentSaleOpen.nuAmountRetention +
+          this.collectService.documentSaleOpen.nuAmountRetention2;
+        this.collectService.amountPaid = this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].nuBalanceDoc - sumRetentions
+      }
+
+
       this.collectService.documentSaleOpen.nuVaucherRetention = this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].nuVoucherRetention;
 
     } else {
@@ -870,8 +881,7 @@ export class CobrosDocumentComponent implements OnInit {
 
     }
 
-    this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].nuAmountPaid = this.collectService.amountPaid = this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].nuBalance;
-    this.collectService.documentSalesBackup[this.collectService.indexDocumentSaleOpen].nuAmountPaid = this.collectService.documentSalesBackup[this.collectService.indexDocumentSaleOpen].nuBalance; this.calculateSaldo(this.collectService.indexDocumentSaleOpen).then(() => {
+    this.calculateSaldo(this.collectService.indexDocumentSaleOpen).then(() => {
       let positionCollecDetails = this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].positionCollecDetails;
       this.calculateDocumentSaleOpen(this.collectService.indexDocumentSaleOpen).then(() => {
         this.collectService.documentSaleOpen.positionCollecDetails = positionCollecDetails;
@@ -880,17 +890,17 @@ export class CobrosDocumentComponent implements OnInit {
         this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].isSelected = true;
         this.collectService.documentSalesBackup[this.collectService.indexDocumentSaleOpen].isSelected = true;
         this.disabledSaveButton = true;
-
-        this.collectService.amountPaid = this.collectService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.documentSalesBackup[this.collectService.indexDocumentSaleOpen].nuBalance));
-        this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails]!.inPaymentPartial = false;
-
+        
+        if (this.collectService.collection.stCollection != 1)
+          this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails]!.inPaymentPartial = false;
+       
         this.validate();
       });
     });
 
 
-    this.collectService.amountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.amountPaid));
-    this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].inPaymentPartial = event.target.checked;
+/*     this.collectService.amountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.amountPaid));
+ */    this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].inPaymentPartial = event.target.checked;
   }
 
   setPartialPay() {
