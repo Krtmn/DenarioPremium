@@ -64,9 +64,9 @@ export class ClienteContainerComponent implements OnInit {
         this.clientLogic.savePotentialClient = false;
         this.clientLogic.saveSendPotentialClient = false;
         this.clientLogic.clientNewPotentialClientComponent = false;
-        /* this.clientLogic.clientContainerComponent = true; */
+        this.clientLogic.clientContainerComponent = true; //home de clientes
         this.clientLogic.clienteNuevoBlancoImg = true;
-        this.clientLogic.clientPotentialClientComponent = true;
+        //this.clientLogic.clientPotentialClientComponent = true; //listado de clientes potenciales
       } else if (this.clientLogic.clientLocationComponent) {
         this.clientLogic.saveOrExitOpen = false;
         this.clientLogic.clientLocationComponent = false;
