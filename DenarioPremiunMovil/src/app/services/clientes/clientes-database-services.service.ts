@@ -168,7 +168,7 @@ export class ClientesDatabaseServicesService {
         var selectStatement = 'SELECT c.co_client as coClient, c.co_currency as coCurrency, c.co_enterprise as coEnterprise,' +
           'c.co_payment_condition as coPaymentCondition,c.id_channel as idChannel,c.id_client as idClient,c.id_currency as idCurrency,' +
           'c.id_enterprise as idEnterprise,c.id_head_quarter as idHeadQuarter,c.id_list as idList,c.id_payment_condition as idPaymentCondition,c.nu_credit_limit as nuCreditLimit,' +
-          'c.id_warehouse as idWarehouse,c.in_suspension as inSuspension,c.lb_client as lbClient,c.nu_rif as nuRif,c.multimoneda, c.na_email as naEmail,' +
+          'c.id_warehouse as idWarehouse,c.in_suspension as inSuspension,c.lb_client as lbClient,c.nu_rif as nuRif,c.multimoneda, c.na_email as naEmail, c.na_client as naClient, ' +
           '(SELECT na_responsible FROM address_clients WHERE id_client = ? LIMIT 1 ) naResponsible, ' +
           '(SELECT na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1 ) naPriceList,(SELECT nu_phone FROM address_clients WHERE id_client = ? LIMIT 1 ) nuPhone, ' +
           '(SELECT tx_address FROM address_clients WHERE id_client = ? LIMIT 1 ) txAddress, ' +
