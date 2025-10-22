@@ -6,7 +6,7 @@ import { ProductUtil } from 'src/app/modelos/ProductUtil';
 import { Imagenes } from 'src/app/modelos/imagenes';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { Product } from 'src/app/modelos/tables/product';
-import { ProductStructureCount } from 'src/app/modelos/tables/productStructureCount';
+import { ProductStructure } from 'src/app/modelos/tables/productStructure';
 import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { ProductStructureService } from 'src/app/services/productStructures/product-structure.service';
@@ -35,7 +35,7 @@ export class ProductListComponent implements OnInit {
   @Input()
   empresaSeleccionada!: Enterprise;
   @Input()
-  psSeleccionada!: ProductStructureCount;
+  psSeleccionada!: ProductStructure;
   @Input()
   searchText: string = '';
 

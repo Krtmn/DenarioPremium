@@ -1,5 +1,5 @@
 import { Enterprise } from "./tables/enterprise";
-import { ProductStructureCount } from "./tables/productStructureCount";
+import { ProductStructure } from "./tables/productStructure";
 import { TypeProductStructure } from "./tables/typeProductStructure";
 
 export class ProductStructureUtil {
@@ -7,6 +7,6 @@ export class ProductStructureUtil {
   constructor(
     public enterprise: Enterprise,
     public typeProductStructure: TypeProductStructure,
-    public productStructure: ProductStructureCount 
+    public productStructure: ProductStructure 
   ){}
 }

@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, Input, OnDestroy, OnInit, inject } from '@angular/core';
 import { ProductStructureUtil } from 'src/app/modelos/ProductStructureUtil';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
+import { ProductStructure } from 'src/app/modelos/tables/productStructure';
 import { ProductStructureCount } from 'src/app/modelos/tables/productStructureCount';
 import { TypeProductStructure } from 'src/app/modelos/tables/typeProductStructure';
 import { PedidosService } from 'src/app/pedidos/pedidos.service';
@@ -37,11 +38,11 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
 
   tpsSeleccionada!: TypeProductStructure;
   typeProductStructureList: TypeProductStructure[] = [];
-  psSeleccionada!: ProductStructureCount;
+  psSeleccionada!: ProductStructure;
   featuredButtonLabel = '';
   favoriteButtonLabel = '';
 
-  productStructureList: ProductStructureCount[] = [];
+  productStructureList: ProductStructure[] = [];
   productStructures: Boolean = false;
   buttonSize = 6;
   sub: any;
@@ -146,7 +147,7 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
     this.getProductStructures();
   }
 
-  onProductStructureSelected(productStructure: ProductStructureCount) {
+  onProductStructureSelected(productStructure: ProductStructure) {
     this.psSeleccionada = productStructure;
     this.productStructureService.nombreProductStructureSeleccionada = productStructure.naProductStructure;
 
