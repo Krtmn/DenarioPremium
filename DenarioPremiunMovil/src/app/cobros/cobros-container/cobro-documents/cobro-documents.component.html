@@ -353,10 +353,12 @@
                                     <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                                         <ion-input
                                             label="{{this.collectService.collectionTags.get('COB_DIF_DEVOLUCION_FALTANTE')}}"
-                                            label-placement="floating" fill="outline" value="" color="primary"
-                                            value="{{this.collectService.documentSaleOpen.nuAmountDiscount}}"
-                                            [(ngModel)]="this.collectService.documentSaleOpen.nuAmountDiscount"
-                                            type="number" (ionInput)="setAmountTotal()"></ion-input>
+                                            label-placement="floating" fill="outline" color="primary" type="text"
+                                            inputmode="numeric"
+                                            [value]="displayDiscount || formatFromCents(centsDiscount)"
+                                            (keydown)="onDiscountKeyDown($event)" (focus)="onDiscountFocus()"
+                                            (blur)="onDiscountBlur()">
+                                        </ion-input>
                                     </ion-col>
                                     <!-- DIFERENCIA DEVOLUCION/FALTANTE -->
 
@@ -365,11 +367,13 @@
                                         size-md="12">
                                         <ion-input
                                             label="{{this.collectService.collectionTags.get('COB_AMOUNT_RETENTION_IVA')}}"
-                                            label-placement="floating" fill="outline" color="primary" type="number"
-                                            value="{{this.collectService.documentSaleOpen.nuAmountRetention}}"
-                                            [(ngModel)]="this.collectService.documentSaleOpen.nuAmountRetention"
-                                            (ionInput)="setAmountTotal()"
-                                            [disabled]="!this.collectService.validNuRetention"></ion-input>
+                                            label-placement="floating" fill="outline" color="primary" type="text"
+                                            inputmode="numeric"
+                                            [value]="displayRetention || formatFromCents(centsRetention)"
+                                            (keydown)="onRetentionKeyDown($event)" (focus)="onRetentionFocus()"
+                                            (blur)="onRetentionBlur()"
+                                            [disabled]="!this.collectService.validNuRetention">
+                                        </ion-input>
                                     </ion-col>
                                     <!-- MONTO RET IVA--->
 
@@ -378,11 +382,13 @@
                                         size-md="12">
                                         <ion-input
                                             label="{{this.collectService.collectionTags.get('COB_AMOUNT_RETENTION_ISLR')}}"
-                                            label-placement="floating" fill="outline"
-                                            value="{{this.collectService.documentSaleOpen.nuAmountRetention2}}"
-                                            [(ngModel)]="this.collectService.documentSaleOpen.nuAmountRetention2"
-                                            color="primary" type="number" (ionInput)="setAmountTotal()"
-                                            [disabled]="!this.collectService.validNuRetention"></ion-input>
+                                            label-placement="floating" fill="outline" color="primary" type="text"
+                                            inputmode="numeric"
+                                            [value]="displayRetention2 || formatFromCents(centsRetention2)"
+                                            (keydown)="onRetention2KeyDown($event)" (focus)="onRetention2Focus()"
+                                            (blur)="onRetention2Blur()"
+                                            [disabled]="!this.collectService.validNuRetention">
+                                        </ion-input>
                                     </ion-col>
                                     <!-- MONTO RET ISLR--->
                                 </ion-list>
@@ -409,13 +415,13 @@
                             <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                                 <ion-input
                                     label="{{this.collectService.collectionTags.get('COB_MONTO_PAGAR')}} {{this.collectService.collection.coCurrency}}"
-                                    label-placement="floating" fill="outline"
-                                    [value]="collectService.isPaymentPartial ? collectService.amountPaid : currencyService.formatNumber(collectService.amountPaidDoc)"
-                                    [(ngModel)]="collectService.amountPaid" (ionInput)="setPartialPay()"
-                                    (ionFocus)="onAmountPaidFocus()" color="primary"
-                                    [readonly]="!collectService.isPaymentPartial" type="number" required
-                                    [ngClass]="{'inp-write': !collectService.amountPaymentPartial, 'input-rojo': !collectService.amountPaid}"
-                                    min="0">
+                                    label-placement="floating" fill="outline" color="primary" type="text" [value]="displayAmountPaid || (collectService.isPaymentPartial ?
+                                    formatFromCents(centsAmountPaid) :
+                                    currencyService.formatNumber(collectService.amountPaidDoc))" inputmode="numeric"
+                                    (keydown)="onAmountPaidKeyDown($event)" (focus)="onAmountPaidFocus()"
+                                    (blur)="onAmountPaidBlur()" [readonly]="!collectService.isPaymentPartial" required
+                                    class="customInput" [ngClass]="{'inp-write': !collectService.amountPaymentPartial, 'input-rojo':
+                                    !collectService.amountPaid}" min="0">
                                 </ion-input>
                                 <ion-label *ngIf="!this.collectService.amountPaid" color="danger"
                                     class="campoObligatorio">
@@ -423,21 +429,23 @@
                                 </ion-label>
                             </ion-col>
                             <!-- PAGO PARCIAL-->
-                            <ion-grid>
-                                <ion-row>
-                                    <ion-col class="" size="6" size-sm="6" size-xs="6">
-                                        <ion-button expand="block" size="small" color="light"
-                                            (click)="saveDocumentSale(false)">{{this.collectService.collectionTagsDenario.get('DENARIO_BOTON_CANCELAR')}}
-                                        </ion-button>
-                                    </ion-col>
-                                    <ion-col class="" size="6" size-sm="6" size-xs="6">
-                                        <ion-button expand="block" size="small" class="botonAddVerde"
-                                            (click)="saveDocumentSale(true)" [disabled]="disabledSaveButton">
-                                            {{this.collectService.collectionTagsDenario.get('DENARIO_BOTON_GUARDAR')}}
-                                        </ion-button>
-                                    </ion-col>
-                                </ion-row>
-                            </ion-grid>
+                            <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                                <ion-grid>
+                                    <ion-row>
+                                        <ion-col class="" size="6" size-sm="6" size-xs="6">
+                                            <ion-button expand="block" size="small" color="light"
+                                                (click)="saveDocumentSale(false)">{{this.collectService.collectionTagsDenario.get('DENARIO_BOTON_CANCELAR')}}
+                                            </ion-button>
+                                        </ion-col>
+                                        <ion-col class="" size="6" size-sm="6" size-xs="6">
+                                            <ion-button expand="block" size="small" class="botonAddVerde"
+                                                (click)="saveDocumentSale(true)" [disabled]="disabledSaveButton">
+                                                {{this.collectService.collectionTagsDenario.get('DENARIO_BOTON_GUARDAR')}}
+                                            </ion-button>
+                                        </ion-col>
+                                    </ion-row>
+                                </ion-grid>
+                            </ion-col>
                         </ion-row>
                     </ion-grid>
                 </ion-content>

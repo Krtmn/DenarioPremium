@@ -32,8 +32,13 @@ export class CobroPagosComponent implements OnInit {
   public alertMessageOpen: Boolean = false;
   public showEventModal: Boolean = false;
   public listBankAccount!: any;
-
-
+  // estado por uid
+  private centsMap: { [uid: string]: number } = {};
+  private displayMap: { [uid: string]: string } = {};
+  private __uidCounter = 0;
+  // debounce timers por uid para evitar ejecutar la validación mientras se escribe
+  private debounceTimers: { [uid: string]: any } = {};
+  private debounceDelay = 1500; // ms - ajustar si quieres más/menos espera
 
   public alertButtons = [
     /*  {
@@ -47,24 +52,11 @@ export class CobroPagosComponent implements OnInit {
   ];
 
   constructor() {
-
-    /* this.collectService.calculatePayment(); */
     if (isNaN(this.collectService.montoTotalPagar))
       this.collectService.montoTotalPagar = 0;
-
-
-    //this.loadTipoPago();
-
   }
 
   ngOnInit() {
-    /*    if (this.collectService.collection  .collectionPayments! != undefined)
-         if (this.collectService.collection  .collectionPayments!.length > 0)
-           if (this.collectService.collection  .collectionPayments![0].coType == "") {
-             delete this.collectService.collection  .collectionPayments![0];
-             this.collectService.collection  .collectionPayments!.length = 0;
-           } */
-
     this.alertButtons[0].text = this.collectService.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
   }
 
@@ -982,6 +974,124 @@ export class CobroPagosComponent implements OnInit {
     if (value) {
       this.collectService.pagoCheque[index].fecha = value.split('T')[0];
       this.getFecha(this.collectService.pagoCheque[index].fecha, index, 'ch');
+    }
+  }
+
+  // asigna/obtiene uid único al objeto depósito/efectivo/cheque
+  private getUid(obj: any): string {
+    if (!obj) return `u-${++this.__uidCounter}`;
+    if (!obj.__amountUid) {
+      Object.defineProperty(obj, '__amountUid', {
+        value: `u-${++this.__uidCounter}`,
+        enumerable: false,
+        configurable: true,
+        writable: false
+      });
+    }
+    return obj.__amountUid;
+  }
+
+  private formatFromCents(cents: number): string {
+    const sign = cents < 0 ? '-' : '';
+    const abs = Math.abs(cents);
+    const units = Math.floor(abs / 100);
+    const cent = (abs % 100).toString().padStart(2, '0');
+    const unitsStr = units.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return `${sign}${unitsStr},${cent}`;
+  }
+
+  private ensureInitFor(obj: any, deposito: any) {
+    const uid = this.getUid(obj);
+    if (this.centsMap[uid] === undefined) {
+      this.centsMap[uid] = Math.round((deposito?.monto || 0) * 100) || 0;
+      this.displayMap[uid] = this.formatFromCents(this.centsMap[uid]);
+    }
+    return uid;
+  }
+
+  // usado desde template para mostrar valor
+  getDisplay(obj: any, idx: number, type: string): string {
+    const uid = this.ensureInitFor(obj, obj);
+    return this.displayMap[uid] ?? '0,00';
+  }
+
+  onMontoFocus(deposito: any, index: number, type: string) {
+    const uid = this.ensureInitFor(deposito, deposito);
+    if (!this.centsMap[uid]) {
+      this.centsMap[uid] = 0;
+      this.displayMap[uid] = this.formatFromCents(0);
+    }
+  }
+
+  private updateAfterChange(uid: string, deposito: any, index?: number, type?: string) {
+    const cents = this.centsMap[uid] ?? 0;
+    deposito.monto = cents / 100;
+    this.displayMap[uid] = this.formatFromCents(cents);
+
+    // cancelar timer previo
+    if (this.debounceTimers[uid]) {
+      clearTimeout(this.debounceTimers[uid]);
+    }
+
+    // programar la ejecución final (setMonto / validaciones) después del debounce
+    this.debounceTimers[uid] = setTimeout(() => {
+      // llamar setMonto sólo cuando el usuario dejó de teclear
+      if (typeof (this as any).setMonto === 'function') {
+        try {
+          (this as any).setMonto(deposito.monto, index ?? 0, type ?? '');
+        } catch { /* swallow */ }
+      }
+      delete this.debounceTimers[uid];
+    }, this.debounceDelay);
+  }
+
+  // captura tecla: dígito añade como último céntimo; Backspace borra último
+  onMontoKeyDown(event: any, deposito: any, index: number, type: string) {
+    const key = event?.key;
+    const uid = this.ensureInitFor(deposito, deposito);
+
+    // permitir navegación básica
+    const allowed = ['Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter'];
+    if (allowed.includes(key)) return;
+
+    if (/^\d$/.test(key)) {
+      const digit = parseInt(key, 10);
+      this.centsMap[uid] = Math.min(999999999999, (this.centsMap[uid] ?? 0) * 10 + digit);
+      this.updateAfterChange(uid, deposito, index, type);
+      event.preventDefault();
+      return;
+    }
+
+    if (key === 'Backspace') {
+      this.centsMap[uid] = Math.floor((this.centsMap[uid] ?? 0) / 10);
+      this.updateAfterChange(uid, deposito, index, type);
+      event.preventDefault();
+      return;
+    }
+
+    // bloquear otras teclas
+    event.preventDefault();
+  }
+
+  onMontoBlur(deposito: any, index: number, type: string) {
+    const uid = this.ensureInitFor(deposito, deposito);
+
+    // si hay timer pendiente, ejecutarlo inmediatamente
+    if (this.debounceTimers[uid]) {
+      clearTimeout(this.debounceTimers[uid]);
+      if (typeof (this as any).setMonto === 'function') {
+        try {
+          (this as any).setMonto(deposito.monto, index, type);
+        } catch { }
+      }
+      delete this.debounceTimers[uid];
+    } else {
+      // no hay timer, pero aseguramos que el valor final se confirme
+      if (typeof (this as any).setMonto === 'function') {
+        try {
+          (this as any).setMonto(deposito.monto, index, type);
+        } catch { }
+      }
     }
   }
 }
