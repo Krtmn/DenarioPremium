@@ -1045,14 +1045,35 @@ export class CobroPagosComponent implements OnInit {
     }, this.debounceDelay);
   }
 
-  // captura tecla: dígito añade como último céntimo; Backspace borra último
-  onMontoKeyDown(event: any, deposito: any, index: number, type: string) {
+  public onMontoKeyDown(event: any, deposito: any, index: number, type: string) {
     const key = event?.key;
     const uid = this.ensureInitFor(deposito, deposito);
 
     // permitir navegación básica
     const allowed = ['Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter'];
     if (allowed.includes(key)) return;
+
+    // detectar elemento input y selección (cuando el usuario selecciona todo y borra)
+    const inputEl = event?.target as HTMLInputElement | null;
+    const selStart = inputEl?.selectionStart ?? null;
+    const selEnd = inputEl?.selectionEnd ?? null;
+    const hasSelection = selStart !== null && selEnd !== null && (selEnd - selStart) > 0;
+
+    // Si hay selección y borran (Backspace o Delete) -> limpiar a 0 e informar
+    if ((key === 'Backspace' || key === 'Delete') && hasSelection) {
+      this.centsMap[uid] = 0;
+      this.updateAfterChange(uid, deposito, index, type);
+      event.preventDefault();
+      return;
+    }
+
+    // tecla Delete sin selección -> comportarse similar a Backspace (borrar último dígito)
+    if (key === 'Delete') {
+      this.centsMap[uid] = Math.floor((this.centsMap[uid] ?? 0) / 10);
+      this.updateAfterChange(uid, deposito, index, type);
+      event.preventDefault();
+      return;
+    }
 
     if (/^\d$/.test(key)) {
       const digit = parseInt(key, 10);
