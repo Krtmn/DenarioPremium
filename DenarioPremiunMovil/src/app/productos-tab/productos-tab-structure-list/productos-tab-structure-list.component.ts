@@ -108,7 +108,7 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
       if (this.pedido && this.orderServ.userCanSelectChannel) {
         // [userCanSelectChannel] hay que filtrar por orderType
         let structs = this.orderServ.orderTypeProductStructure.filter((s) => s.idOrderType === this.orderServ.tipoOrden.idOrderType)
-        this.productStructureList = this.productStructureService.productStructureCountList.filter((ps) => structs.find((s) => s.coProductStructure === ps.coProductStructure));
+        this.productStructureList = this.productStructureService.productStructureList.filter((ps) => structs.find((s) => s.coProductStructure === ps.coProductStructure));
         /* quizas innecesario
         //filtramos los productStructures que corresponden al orderType
         let idProductStructureList: number[] = [];
@@ -118,7 +118,7 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
         */
       } else {
         //caso regular
-        this.productStructureList = this.productStructureService.productStructureCountList;
+        this.productStructureList = this.productStructureService.productStructureList;
       }
       this.productService.getFavoriteProductCount(this.dbServ.getDatabase(), this.empresaSeleccionada.idEnterprise).then(count => {
         let favname = this.orderServ.tags.get("PED_FAVORITO");

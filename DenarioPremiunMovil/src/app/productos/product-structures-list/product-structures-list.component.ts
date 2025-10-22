@@ -90,14 +90,14 @@ export class ProductStructuresListComponent  implements OnInit {
       }); 
     }else{
       this.typeProductStructureList = this.productStructureService.typeProductStructureList;
-      this.productStructureList = this.productStructureService.productStructureCountList;
+      this.productStructureList = this.productStructureService.productStructureList;
     }
     
   }
 
   getProductStructures(){
     this.productStructureService.getProductStructuresByIdTypeProductStructureAndIdEnterprise(this.dbServ.getDatabase(),this.tpsSeleccionada.idTypeProductStructure, this.empresaSeleccionada.idEnterprise).then(() => {
-      this.productStructureList = this.productStructureService.productStructureCountList;
+      this.productStructureList = this.productStructureService.productStructureList;
     });
   }
 

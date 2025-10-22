@@ -12,7 +12,7 @@ import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
 export class ProductStructureService {
 
 
-  public productStructureCountList: ProductStructure[] = [] 
+  public productStructureList: ProductStructure[] = [] 
   public typeProductStructureList: TypeProductStructure[] = [] 
   public idProductStructureList: number[] = [] 
   public coProductStructureListString: string = "";
@@ -58,12 +58,12 @@ export class ProductStructureService {
 
   getProductStructuresByIdTypeProductStructureAndIdEnterprise(dbServ:SQLiteObject,idTypeProductStructure: number, idEnterprise: number) {
     var database = dbServ
-    this.productStructureCountList = [];
+    this.productStructureList = [];
     
     var select = "SELECT * FROM product_structures WHERE id_type_product_structure = ? AND id_enterprise = ? ORDER BY na_product_structure ASC"
     return database.executeSql(select, [idTypeProductStructure, idEnterprise]).then( result =>{
         for (let i = 0; i < result.rows.length; i++) {
-        this.productStructureCountList.push({
+        this.productStructureList.push({
           //id: result.rows.item(i).id,
           idProductStructure: result.rows.item(i).id_product_structure,
           coProductStructure: result.rows.item(i).co_product_structure,
@@ -80,7 +80,7 @@ export class ProductStructureService {
         }
        // console.log(this.productStructureList);
     }).catch(e => {
-      this.productStructureCountList = [];
+      this.productStructureList = [];
       console.log("[ProductStructureService] Error al cargar estructuras.");
       console.log(e);
     })
