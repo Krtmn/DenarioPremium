@@ -871,6 +871,12 @@ ion-grid, ion-row {
   min-height: 0;
 }
 
+.pagos-scroll {
+  height: calc(100vh - 270px); // Ajusta 270px según el alto real de lo fijo arriba (botones, selectores, etc)
+  overflow-y: auto;
+  min-height: 0;
+}
+
 .product-devolucion-scroll {
   height: calc(100vh - 270px); // Ajusta 270px según el alto real de lo fijo arriba (botones, selectores, etc)
   overflow-y: auto;
