@@ -38,7 +38,7 @@ export class CobroPagosComponent implements OnInit {
   private __uidCounter = 0;
   // debounce timers por uid para evitar ejecutar la validación mientras se escribe
   private debounceTimers: { [uid: string]: any } = {};
-  private debounceDelay = 1500; // ms - ajustar si quieres más/menos espera
+  private debounceDelay = 800; // ms - ajustar si quieres más/menos espera
 
   public alertButtons = [
     /*  {
@@ -696,7 +696,7 @@ export class CobroPagosComponent implements OnInit {
     this.collectService.alertMessageOpen = false;
     switch (type) {
       case "ef": {
-        if (this.collectService.pagoEfectivo[index].monto > 0) {
+        if (this.collectService.pagoEfectivo[index].monto >= 0) {
           this.collectService.calcularMontos(type, index).then(resp => {
             if (this.collectService.createAutomatedPrepaid)
               this.checkCreateAutomatedPrepaid();
@@ -718,7 +718,7 @@ export class CobroPagosComponent implements OnInit {
           && this.collectService.pagoCheque[index].numeroCheque != "") {
           this.collectService.validateToSend();
         } */
-        if (this.collectService.pagoCheque[index].monto > 0) {
+        if (this.collectService.pagoCheque[index].monto >= 0) {
           this.collectService.calcularMontos(type, index).then(resp => {
             if (this.collectService.pagoCheque[index].fecha != ""
               && this.collectService.pagoCheque[index].fechaValor != ""
@@ -741,7 +741,7 @@ export class CobroPagosComponent implements OnInit {
           && this.collectService.pagoDeposito[index].numeroDeposito != "") {
           this.collectService.validateToSend();
         } */
-        if (this.collectService.pagoDeposito[index].monto > 0) {
+        if (this.collectService.pagoDeposito[index].monto >= 0) {
           this.collectService.calcularMontos(type, index).then(resp => {
             if (this.collectService.pagoDeposito[index].fecha != ""
               && this.collectService.pagoDeposito[index].nombreBanco != ""
@@ -764,7 +764,7 @@ export class CobroPagosComponent implements OnInit {
           this.collectService.validateToSend();
         } */
         if (this.collectService.clientBankAccount) {
-          if (this.collectService.pagoTransferencia[index].monto > 0) {
+          if (this.collectService.pagoTransferencia[index].monto >= 0) {
             this.collectService.calcularMontos(type, index).then(resp => {
               if (this.collectService.pagoTransferencia[index].fecha != ""
                 && this.collectService.pagoTransferencia[index].nombreBanco != ""
@@ -778,7 +778,7 @@ export class CobroPagosComponent implements OnInit {
             })
           }
         } else {
-          if (this.collectService.pagoTransferencia[index].monto > 0) {
+          if (this.collectService.pagoTransferencia[index].monto >= 0) {
             this.collectService.calcularMontos(type, index).then(resp => {
               if (this.collectService.pagoTransferencia[index].fecha != ""
                 && this.collectService.pagoTransferencia[index].nombreBanco != ""
@@ -796,7 +796,7 @@ export class CobroPagosComponent implements OnInit {
       }
 
       case "ot": {
-        if (this.collectService.pagoOtros[index].monto > 0) {
+        if (this.collectService.pagoOtros[index].monto >= 0) {
           this.collectService.calcularMontos(type, index).then(resp => {
             if (this.collectService.pagoOtros[index].nombre != "") {
               this.checkPaymentPartialPay();
