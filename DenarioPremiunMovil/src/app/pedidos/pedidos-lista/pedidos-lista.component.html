@@ -30,7 +30,7 @@
   <div class="scroll-lista-pedidos">
     <ion-list *ngFor="let order of orderServ.listaPedidos; index as i" button detail="false">
       <div
-        *ngIf="searchText === '' || order.co_order.toLowerCase().includes(searchText) || order.lb_client.toLowerCase().includes(searchText)">
+        *ngIf="searchText === '' || order.co_order.toLowerCase().includes(searchText) || order.lb_client.toLowerCase().includes(searchText) || order.id_order.toString().toLowerCase().includes(searchText)">
         <ion-item button detail="false">
           <ion-label (click)="selectOrder(order)">
             <p>{{ getTag("PED_NU_REF") }}: {{ order.id_order }}</p>

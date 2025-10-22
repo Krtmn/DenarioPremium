@@ -608,8 +608,9 @@ export class PedidosDbService {
 
   getListaPedidos(db: SQLiteObject) {
     // obtiene la lista de pedidos para mostrarlos en pedidos-lista (para copiar o ver);
-    let query = "SELECT id_order, co_order, orders.co_client as co_client, lb_client, st_order, da_order from orders " +
-      "JOIN clients WHERE orders.id_client = clients.id_client";
+    let query = "SELECT id_order, co_order, orders.co_client as co_client, clients.lb_client as lb_client, st_order, da_order " +
+      "FROM orders JOIN clients ON orders.id_client = clients.id_client " +
+      "ORDER BY st_order ASC, da_order DESC";
 
     return db.executeSql(query, []).then(async data => {
       let orders: ItemListaPedido[] = [];
