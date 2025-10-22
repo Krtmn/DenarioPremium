@@ -1008,16 +1008,16 @@ export class SynchronizationDBService {
   insertProductStructureBatch(arr: ProductStructure[]) {
     let insertStatement = "INSERT OR REPLACE INTO product_structures  (" +
       'id_product_structure,type,co_product_structure,na_product_structure,id_type_product_structure,co_type_product_structure,' +
-      'sco_product_structure,sna_product_structure,co_enterprise,id_enterprise' +
+      'sco_product_structure,sna_product_structure,co_enterprise,id_enterprise, qu_products' +
       ') ' +
-      'VALUES(?,?,?,?,?,?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?,?,?,?,?,?)'
 
     var statements = [];
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
       statements.push([insertStatement, [obj.idProductStructure, obj.type, obj.coProductStructure,
       obj.naProductStructure, obj.idTypeProductStructure, obj.coTypeProductStructure,
-      obj.scoProductStructure, obj.snaProductStructure, obj.coEnterprise, obj.idEnterprise]]);
+      obj.scoProductStructure, obj.snaProductStructure, obj.coEnterprise, obj.idEnterprise, obj.quProducts]]);
     }
 
     return this.database.sqlBatch(statements).then(res => {
