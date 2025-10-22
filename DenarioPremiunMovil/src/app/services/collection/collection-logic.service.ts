@@ -621,6 +621,7 @@ export class CollectionService {
     } else if (this.collection.stCollection == 3) {
       monto = this.collection.nuAmountTotal;
       montoConversion = this.collection.nuAmountTotalConversion;
+      return;
     } else {
       for (var j = 0; j < this.collection.collectionDetails.length; j++) {
         for (var i = 0; i < this.documentSales.length; i++) {
@@ -3605,6 +3606,7 @@ export class CollectionService {
       detail.nuAmountRetention2Conversion = this.convertirMonto(open.nuAmountRetention2, this.collection.nuValueLocal, this.collection.coCurrency);
       detail.nuVoucherRetention = open.nuVaucherRetention;
       detail.nuValueLocal = open.nuValueLocal;
+      detail.isSave = true;
 
       // ...otros campos...
     }

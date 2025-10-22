@@ -128,3 +128,40 @@ ion-button#eventSelect {
   margin-left: auto;
   margin-right: auto;
 }
+
+.amount-wrapper {
+  position: relative;
+  width: 100%;
+
+  .formatted {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 12px;
+    /* ajustar según padding del ion-item/ion-input */
+    right: 12px;
+    pointer-events: none;
+    color: #000;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .formatted.placeholder {
+    color: rgba(0, 0, 0, 0.35);
+  }
+
+  .raw-number {
+    width: 100%;
+    padding: 12px;
+    /* asegurar alineación con formatted */
+    border: none;
+    background: transparent;
+    color: transparent;
+    /* texto invisible: mostramos el formatted span */
+    caret-color: #000;
+    /* caret visible en color negro */
+    outline: none;
+    -webkit-appearance: none;
+  }
+}
