@@ -138,8 +138,8 @@ export class SynchronizationDBService {
       { "id": 44, "nameTable": "conversionTypeTable" },
       { "id": 46, "nameTable": "typeProductStructureTable" },
       { "id": 48, "nameTable": "productStructureTable" },
-      { "id": 50, "nameTable": "unitTable" },
-      { "id": 51, "nameTable": "productStructureCountTable" },
+      { "id": 50, "nameTable": "unitTable" },/* 
+      { "id": 51, "nameTable": "productStructureCountTable" }, */
       { "id": 52, "nameTable": "orderTypeTable" },
       { "id": 53, "nameTable": "userProductFavTable" },
       { "id": 54, "nameTable": "clientAvgProductTable" },
