@@ -79,6 +79,7 @@ export class ProductosTabOrderProductListComponent  implements OnInit {
 
   ngOnInit() {
     console.log('Estoy en Pedido');
+    this.ivaList = this.orderServ.ivaList;
     this.disablePriceListSelector = (!this.orderServ.userCanChangePriceListProduct);
     this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
       this.showProductList = true;
@@ -95,7 +96,7 @@ export class ProductosTabOrderProductListComponent  implements OnInit {
       if(this.showProductList){
         this.idProductStructureList = this.productStructureService.idProductStructureList;
         this.coProductStructureListString = this.productStructureService.coProductStructureListString;
-        this.ivaList = this.orderServ.ivaList;
+       // this.ivaList = this.orderServ.ivaList;
         this.warehouseList = this.orderServ.listaWarehouse;
         this.productService.getProductsByCoProductStructureAndIdEnterprisePaged(this.db.getDatabase(),
           this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency, 
@@ -116,7 +117,7 @@ export class ProductosTabOrderProductListComponent  implements OnInit {
         this.page = 0;
         this.idProductStructureList = this.productStructureService.idProductStructureList;
         this.coProductStructureListString = this.productStructureService.coProductStructureListString;
-        this.ivaList = this.orderServ.ivaList;
+        //this.ivaList = this.orderServ.ivaList;
         this.warehouseList = this.orderServ.listaWarehouse;
         //usamos featured product = true en lugar de la estrucutura
         this.productService.getFeaturedProducts(this.db.getDatabase(),
@@ -137,7 +138,7 @@ export class ProductosTabOrderProductListComponent  implements OnInit {
         this.page = 0;
         this.idProductStructureList = this.productStructureService.idProductStructureList;
         this.coProductStructureListString = this.productStructureService.coProductStructureListString;
-        this.ivaList = this.orderServ.ivaList;
+        
         this.warehouseList = this.orderServ.listaWarehouse;
         //buscamos en la tabla de favoritos
         this.productService.getFavoriteProducts(this.db.getDatabase(),

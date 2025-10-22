@@ -20,7 +20,7 @@ import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { Subscription } from 'rxjs';
 import { Location } from '@angular/common'
-import { COLOR_VERDE, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { COLOR_VERDE, DELIVERY_STATUS_NEW, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 import { ClienteSelectorService } from 'src/app/cliente-selector/cliente-selector.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
@@ -124,6 +124,7 @@ export class PedidoComponent implements OnInit {
   parteDecimal = 2;
 
   nuValueLocal = 0;
+  tasaCambio = '0';// la tasa que se muestra en el input
 
   @Output()
   goToNuevoPedido: EventEmitter<any> = new EventEmitter<any>();
@@ -204,6 +205,7 @@ export class PedidoComponent implements OnInit {
         this.empresaSeleccionada = this.enterpriseServ.defaultEnterprise();
         this.orderServ.empresaSeleccionada = this.empresaSeleccionada;
         this.orderServ.setup();
+        this.orderServ.order = this.createEmptyOrder(); //pedido vacio porque no puede ser null.
         this.orderServ.cliente = { lbClient: this.orderServ.getTag("PED_PLACEHOLDER_CLIENTE") } as Client;
       }
 
@@ -222,14 +224,18 @@ export class PedidoComponent implements OnInit {
         if (this.orderServ.openOrder) {
           this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.orderServ.order.coCurrency);
           if(this.orderServ.pedidoModificable) {
-            this.nuValueLocal = Number.parseFloat(this.currencyServ.getLocalValue());
+            this.tasaCambio = this.currencyServ.getLocalValue();
+            this.nuValueLocal = Number.parseFloat(this.tasaCambio);
           }else{
             this.nuValueLocal = this.orderServ.order.nuValueLocal;
+            this.tasaCambio = this.currencyServ.formatNumber(this.nuValueLocal);
+            
           }
         }
         else {
           this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
           this.nuValueLocal = Number.parseFloat(this.currencyServ.getLocalValue());
+          this.tasaCambio = this.currencyServ.getLocalValue();
         }
         if (this.multimoneda) {
           this.hardCurrency = this.currencyServ.getHardCurrency();
@@ -473,7 +479,9 @@ export class PedidoComponent implements OnInit {
 
   confirmSend() {
     if (this.orderServ.cliente.idClient != null && this.orderServ.carrito.length > 0) {
-      this.saveOrder(DELIVERY_STATUS_TO_SEND).then(order => {
+      this.orderServ.disableSendButton = true;
+      this.message.showLoading().then(() => {
+        this.saveOrder(DELIVERY_STATUS_TO_SEND).then(order => {
 
         var transactions: PendingTransaction[] = [];
         var tr: PendingTransaction = new PendingTransaction(
@@ -494,18 +502,18 @@ export class PedidoComponent implements OnInit {
         this.services.insertPendingTransactionBatch(this.dbServ.getDatabase(), transactions).then(() => {
           this.autoSend.ngOnInit();
         });
+        this.orderServ.disableSendButton = false;
+        this.message.hideLoading();
         this.router.navigate(['pedidos']);
-
-
-
+        });
       });
+      
     }
 
   }
 
   async saveOrder(stOrder: number) {
     let order = this.makeOrder(stOrder);
-
     await this.orderServ.deleteOrder(this.orderServ.coOrder); //borramos el pedido si este existe para evitar conflictos en BD
     await this.orderServ.saveOrder(order);
     await this.adjuntoService.savePhotos(this.dbServ.getDatabase(), order.coOrder, 'pedidos'); //guardamos adjuntos
@@ -1277,7 +1285,58 @@ export class PedidoComponent implements OnInit {
 
     return str;
   }
+createEmptyOrder(): Orders {
+    const empresa = this.orderServ.empresaSeleccionada ?? this.enterpriseServ.defaultEnterprise();
+    const moneda = this.orderServ.monedaSeleccionada ?? this.currencyServ.getLocalCurrency();
 
+    return {
+      idOrder: 0,
+      coOrder: this.dateServ.generateCO(0),
+      coClient: '',
+      idClient: 0,
+      daOrder: this.dateServ.hoyISOFullTime(),
+      daCreated: this.dateServ.hoyISOFullTime(),
+      naResponsible: '',
+      idUser: this.orderServ.getIdUser(),
+      idOrderCreator: this.orderServ.getIdUser(),
+      inOrderReview: false,
+      nuAmountTotal: 0,
+      nuAmountFinal: 0,
+      coCurrency: moneda.coCurrency,
+      daDispatch: null,
+      txComment: '',
+      nuPurchase: '',
+      coEnterprise: empresa.coEnterprise,
+      coUser: this.orderServ.getCoUser(),
+      coPaymentCondition: '',
+      idPaymentCondition: 0,
+      idEnterprise: empresa.idEnterprise,
+      coAddress: '',
+      idAddress: 0,
+      nuAmountDiscount: 0,
+      nuAmountTotalBase: 0,
+      stOrder: DELIVERY_STATUS_NEW,
+      coordenada: this.orderServ.coordenadas ?? '',
+      nuDiscount: 0,
+      idCurrency: moneda.idCurrency,
+      idCurrencyConversion: this.currencyServ.getOppositeCurrency(moneda.coCurrency).idCurrency,
+      nuValueLocal: this.currencyServ.localValue,
+      nuAmountTotalConversion: 0,
+      nuAmountFinalConversion: 0,
+      procedencia: "Denario",
+      nuAmountTotalBaseConversion: 0,
+      nuAmountDiscountConversion: 0,
+      idOrderType: this.tipoOrden?.idOrderType ?? 0,
+      orderDetails: [],
+      nuDetails: 0,
+      nuAmountTotalProductDiscount: 0,
+      nuAmountTotalProductDiscountConversion: 0,
+      hasAttachments: false,
+      nuAttachments: 0,
+      idDistributionChannel: null,
+      coDistributionChannel: null,
+    } as Orders;
+  }
   getNaPaymentCondition(coPaymentCondition: string) {
     let payCond = this.orderServ.listaPaymentCondition.find((pc) => pc.coPaymentCondition == coPaymentCondition);
 
