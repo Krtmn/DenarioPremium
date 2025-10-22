@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { SynchronizationDBService } from '../synchronization/synchronization-db.service';
 import { TypeProductStructure } from 'src/app/modelos/tables/typeProductStructure';
-import { ProductStructureCount } from 'src/app/modelos/tables/productStructureCount';
+import { ProductStructure } from 'src/app/modelos/tables/productStructure';
 import { Subject } from 'rxjs';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
 
@@ -12,7 +12,7 @@ import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
 export class ProductStructureService {
 
 
-  public productStructureCountList: ProductStructureCount[] = [] 
+  public productStructureList: ProductStructure[] = [] 
   public typeProductStructureList: TypeProductStructure[] = [] 
   public idProductStructureList: number[] = [] 
   public coProductStructureListString: string = "";
@@ -58,13 +58,13 @@ export class ProductStructureService {
 
   getProductStructuresByIdTypeProductStructureAndIdEnterprise(dbServ:SQLiteObject,idTypeProductStructure: number, idEnterprise: number) {
     var database = dbServ
-    this.productStructureCountList = [];
+    this.productStructureList = [];
     
-    var select = "SELECT * FROM product_structure_counts WHERE id_type_product_structure = ? AND id_enterprise = ? ORDER BY na_product_structure ASC"
+    var select = "SELECT * FROM product_structures WHERE id_type_product_structure = ? AND id_enterprise = ? ORDER BY na_product_structure ASC"
     return database.executeSql(select, [idTypeProductStructure, idEnterprise]).then( result =>{
         for (let i = 0; i < result.rows.length; i++) {
-        this.productStructureCountList.push({
-          id: result.rows.item(i).id,
+        this.productStructureList.push({
+          //id: result.rows.item(i).id,
           idProductStructure: result.rows.item(i).id_product_structure,
           coProductStructure: result.rows.item(i).co_product_structure,
           naProductStructure: result.rows.item(i).na_product_structure,
@@ -73,11 +73,14 @@ export class ProductStructureService {
           coTypeProductStructure: result.rows.item(i).co_type_product_structure,
           coEnterprise: result.rows.item(i).co_enterprise,
           idEnterprise: result.rows.item(i).id_enterprise,
+          scoProductStructure: result.rows.item(i).sco_product_structure,
+          snaProductStructure: result.rows.item(i).sna_product_structure,
+          type: result.rows.item(i).type,
         });
         }
        // console.log(this.productStructureList);
     }).catch(e => {
-      this.productStructureCountList = [];
+      this.productStructureList = [];
       console.log("[ProductStructureService] Error al cargar estructuras.");
       console.log(e);
     })

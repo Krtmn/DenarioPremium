@@ -2,7 +2,6 @@ import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular
 import { ProductStructureUtil } from 'src/app/modelos/ProductStructureUtil';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { ProductStructure } from 'src/app/modelos/tables/productStructure';
-import { ProductStructureCount } from 'src/app/modelos/tables/productStructureCount';
 import { TypeProductStructure } from 'src/app/modelos/tables/typeProductStructure';
 import { EnterpriseService } from 'src/app/services/enterprise/enterprise.service';
 import { ProductService } from 'src/app/services/products/product.service';
@@ -30,8 +29,8 @@ export class ProductStructuresListComponent  implements OnInit {
   tpsSeleccionada!: TypeProductStructure;
   typeProductStructureList: TypeProductStructure[] = [];
   
-  psSeleccionada!: ProductStructureCount;
-  productStructureList: ProductStructureCount[] = [];
+  psSeleccionada!: ProductStructure;
+  productStructureList: ProductStructure[] = [];
 
   @Output()
   selectedProductStructureChanged: EventEmitter<ProductStructureUtil> = new EventEmitter<ProductStructureUtil>();
@@ -70,7 +69,7 @@ export class ProductStructuresListComponent  implements OnInit {
     this.getProductStructures();
   }
 
-  onProductStructureSelected(productStructure: ProductStructureCount){
+  onProductStructureSelected(productStructure: ProductStructure){
     this.psSeleccionada = productStructure;
     let psu: ProductStructureUtil = new ProductStructureUtil(
       this.empresaSeleccionada,
@@ -91,14 +90,14 @@ export class ProductStructuresListComponent  implements OnInit {
       }); 
     }else{
       this.typeProductStructureList = this.productStructureService.typeProductStructureList;
-      this.productStructureList = this.productStructureService.productStructureCountList;
+      this.productStructureList = this.productStructureService.productStructureList;
     }
     
   }
 
   getProductStructures(){
     this.productStructureService.getProductStructuresByIdTypeProductStructureAndIdEnterprise(this.dbServ.getDatabase(),this.tpsSeleccionada.idTypeProductStructure, this.empresaSeleccionada.idEnterprise).then(() => {
-      this.productStructureList = this.productStructureService.productStructureCountList;
+      this.productStructureList = this.productStructureService.productStructureList;
     });
   }
 

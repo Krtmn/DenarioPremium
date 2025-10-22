@@ -7,7 +7,7 @@ import { Enterprise } from '../modelos/tables/enterprise';
 import { EnterpriseService } from '../services/enterprise/enterprise.service';
 import { ProductStructureUtil } from '../modelos/ProductStructureUtil';
 import { TypeProductStructure } from '../modelos/tables/typeProductStructure';
-import { ProductStructureCount } from '../modelos/tables/productStructureCount';
+import { ProductStructure} from '../modelos/tables/productStructure';
 import { ProductStructureService } from '../services/productStructures/product-structure.service';
 import { ProductListComponent } from './product-list/product-list.component';
 import { Product } from '../modelos/tables/product';
@@ -37,12 +37,12 @@ export class ProductosComponent {
   showProductStructures: Boolean = true;
   showSearch: Boolean = true;
   psSelected: Boolean = false;
-  productStructureList: ProductStructureCount[] = [];
+  productStructureList: ProductStructure[] = [];
   searchText: string = '';
 
   empresaSeleccionada!: Enterprise;
   tpsSeleccionada!: TypeProductStructure;
-  psSeleccionada!: ProductStructureCount;
+  psSeleccionada!: ProductStructure;
   selectedProduct!: ProductDetail;
   listaEmpresa: Enterprise[] = [];
   multiempresa: Boolean = false;
