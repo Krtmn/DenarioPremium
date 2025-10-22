@@ -215,7 +215,7 @@
         "name": "product_structures",
         "table": "productStructures",
         "idName": "id_product_structure",
-        "sql": "CREATE TABLE IF NOT EXISTS product_structures ( id_product_structure  INTEGER PRIMARY KEY, type VARCHAR(80), co_product_structure VARCHAR(80), na_product_structure VARCHAR(80), id_type_product_structure INTEGER, co_type_product_structure VARCHAR(80), sco_product_structure VARCHAR(80), sna_product_structure VARCHAR(80), co_enterprise VARCHAR(30), id_enterprise INTEGER);"
+        "sql": "CREATE TABLE IF NOT EXISTS product_structures ( id_product_structure  INTEGER PRIMARY KEY, type VARCHAR(80), co_product_structure VARCHAR(80), na_product_structure VARCHAR(80), id_type_product_structure INTEGER, co_type_product_structure VARCHAR(80), sco_product_structure VARCHAR(80), sna_product_structure VARCHAR(80), co_enterprise VARCHAR(30), id_enterprise INTEGER, qu_products NUMERIC );"
     },
     {
         "id": 50,
