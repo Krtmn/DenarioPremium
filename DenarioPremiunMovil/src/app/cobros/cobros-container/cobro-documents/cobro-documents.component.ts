@@ -196,10 +196,10 @@ export class CobrosDocumentComponent implements OnInit {
 
       if (this.collectService.collection.stCollection == 1) {
         let indexCollectionDetail = this.collectService.documentSales[index].positionCollecDetails;
-        newSaldo = this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDoc.toString();
-        newSaldoConversion = this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDocConversion.toString();
-        newSaldoView = this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDoc.toString();
-        newSaldoConversionView = this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDocConversion.toString();
+        newSaldo = this.currencyService.formatNumber(this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDoc);
+        newSaldoConversion = this.currencyService.formatNumber(this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDocConversion);
+        newSaldoView = this.currencyService.formatNumber(this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDoc);
+        newSaldoConversionView = this.currencyService.formatNumber(this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDocConversion);
         return commit();
       } else {
         newSaldo = this.currencyService.formatNumber(backupBalance);
@@ -210,10 +210,10 @@ export class CobrosDocumentComponent implements OnInit {
       }
     } else {
       let indexCollectionDetail = this.collectService.documentSales[index].positionCollecDetails;
-      newSaldo = this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDoc.toString();
-      newSaldoConversion = this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDocConversion.toString();
-      newSaldoView = this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDoc.toString();
-      newSaldoConversionView = this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDocConversion.toString();
+      newSaldo = this.currencyService.formatNumber(this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDoc);
+      newSaldoConversion = this.currencyService.formatNumber(this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDocConversion);
+      newSaldoView = this.currencyService.formatNumber(this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDoc);
+      newSaldoConversionView = this.currencyService.formatNumber(this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDocConversion);
       return commit();
     }
   }
