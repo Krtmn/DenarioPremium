@@ -505,7 +505,6 @@ export class PedidoComponent implements OnInit {
 
   async saveOrder(stOrder: number) {
     let order = this.makeOrder(stOrder);
-
     await this.orderServ.deleteOrder(this.orderServ.coOrder); //borramos el pedido si este existe para evitar conflictos en BD
     await this.orderServ.saveOrder(order);
     await this.adjuntoService.savePhotos(this.dbServ.getDatabase(), order.coOrder, 'pedidos'); //guardamos adjuntos
