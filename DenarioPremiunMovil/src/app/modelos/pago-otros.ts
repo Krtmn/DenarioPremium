@@ -16,7 +16,7 @@ export class PagoOtros {
         public monto: number = 0,
         public montoConversion: number = 0,
         public posCollectionPayment: number = 0,
-        public type = "de",
+        public type = "ot",
         public anticipoPrepaid: boolean = false,
         public disabled: boolean = true,
     ) { }

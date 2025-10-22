@@ -97,11 +97,12 @@
                         </ion-col>
                         <ion-col size="6" size-sm="12" size-xs="12">
                             <ion-item>
-                                <ion-input label="{{this.collectService.collectionTags.get('COB_LABEL_MONTO')}}:"
-                                    label-placement="floating" fill="outline" color="primary"
-                                    [(ngModel)]="efectivo.monto" value="{{efectivo.monto}}" type="number"
-                                    (ionChange)="setMonto(efectivo.monto,ef,'ef')"
-                                    [ngClass]="{'inp-write': !efectivo.monto}" class="customInput">
+                                <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}"
+                                    label-placement="floating" fill="outline" color="primary" type="text"
+                                    inputmode="numeric" [value]="getDisplay(efectivo, ef,'ef') || '0,00'"
+                                    (keydown)="onMontoKeyDown($event, efectivo, ef,'ef')"
+                                    (focus)="onMontoFocus(efectivo, ef,'ef')" (blur)="onMontoBlur(efectivo, ef,'ef')"
+                                    class="customInput" [ngClass]="{'inp-write': !efectivo.monto}">
                                 </ion-input>
                             </ion-item>
                         </ion-col>
@@ -224,10 +225,13 @@
                         </ion-col>
                         <ion-col size="6" size-sm="12" size-xs="12">
                             <ion-item disabled="{{cheque.disabled}}">
-                                <ion-input label="{{this.collectService.collectionTags.get('COB_MONTO')}}" type="number"
-                                    label-placement="floating" fill="outline" color="primary" [(ngModel)]="cheque.monto"
-                                    value="{{cheque.monto}}" (ionChange)="setMonto(cheque.monto,ch, 'ch')"
-                                    class="customInput" [ngClass]="{'inp-write': !cheque.monto}"></ion-input>
+                                <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}"
+                                    label-placement="floating" fill="outline" color="primary" type="text"
+                                    inputmode="numeric" [value]="getDisplay(cheque, ch, 'ch') || '0,00'"
+                                    (keydown)="onMontoKeyDown($event, cheque, ch, 'ch')"
+                                    (focus)="onMontoFocus(cheque, ch, 'ch')" (blur)="onMontoBlur(cheque, ch, 'ch')"
+                                    class="customInput" [ngClass]="{'inp-write': !cheque.monto}">
+                                </ion-input>
                             </ion-item>
                         </ion-col>
                         <ion-col size="6" size-sm="12" size-xs="12">
@@ -284,13 +288,16 @@
                         </ion-col>
                         <ion-col size="6" size-sm="12" size-xs="12">
                             <ion-item disabled="{{deposito.disabled}}">
-                                <ion-input label="{{this.collectService.collectionTags.get('COB_MONTO')}}" type="number"
-                                    label-placement="floating" fill="outline" color="primary"
-                                    [(ngModel)]="deposito.monto" value="{{deposito.monto}}"
-                                    (ionChange)="setMonto(deposito.monto,de, 'de')" class="customInput"
-                                    [ngClass]="{'inp-write': !deposito.numeroDeposito}"></ion-input>
+                                <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}"
+                                    label-placement="floating" fill="outline" color="primary" type="text"
+                                    inputmode="numeric" [value]="getDisplay(deposito, de,'de') || '0,00'"
+                                    (keydown)="onMontoKeyDown($event, deposito, de,'de')"
+                                    (focus)="onMontoFocus(deposito, de,'de')" (blur)="onMontoBlur(deposito, de,'de')"
+                                    class="customInput" [ngClass]="{'inp-write': !deposito.monto}">
+                                </ion-input>
                             </ion-item>
                         </ion-col>
+
                         <ion-col size="6" size-sm="12" size-xs="12">
                             <ion-item disabled="{{this.collectService.enableDate}}">
                                 <ion-label>{{this.collectService.collectionTags.get('COB_FECHA')}}</ion-label>
@@ -404,12 +411,16 @@
                             </ion-item>
                         </ion-col>
                         <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item disabled="{{transferencia.disabled}}">
-                                <ion-input label="{{this.collectService.collectionTags.get('COB_MONTO')}}" type="number"
-                                    label-placement="floating" fill="outline" color="primary"
-                                    [(ngModel)]="transferencia.monto" value="{{transferencia.monto}}"
-                                    (ionChange)="setMonto(transferencia.monto,tr, 'tr')" class="customInput"
-                                    [ngClass]="{'inp-write': !transferencia.monto}"></ion-input>
+
+                            <ion-item [disabled]="transferencia.disabled">
+                                <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}"
+                                    label-placement="floating" fill="outline" color="primary" type="text"
+                                    inputmode="numeric" [value]="getDisplay(transferencia, tr, 'tr') || '0,00'"
+                                    (keydown)="onMontoKeyDown($event, transferencia, tr, 'tr')"
+                                    (focus)="onMontoFocus(transferencia, tr, 'tr')"
+                                    (blur)="onMontoBlur(transferencia, tr, 'tr')" class="customInput"
+                                    [ngClass]="{'inp-write': !transferencia.monto}">
+                                </ion-input>
                             </ion-item>
                         </ion-col>
                         <ion-col size="6" size-sm="12" size-xs="12">
@@ -466,18 +477,21 @@
                     <div class="ion-padding" slot="content">
                         <ion-col size="6" size-sm="12" size-xs="12">
                             <ion-item>
-                                <ion-input label="{{this.collectService.collectionTags.get('COB_LABEL_MONTO')}}:"
-                                    label-placement="floating" fill="outline" color="primary" [(ngModel)]="otros.monto"
-                                    value="{{otros.monto}}" type="number" (ionChange)="setMonto(otros.monto,ot,'ot')"
-                                    [ngClass]="{'inp-write': !otros.monto}" class="customInput"></ion-input>
-                            </ion-item>
-                        </ion-col>
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item>
                                 <ion-input label="{{this.collectService.collectionTags.get('COB_OTROS_ESPECIFIQUE')}}:"
                                     label-placement="floating" fill="outline" color="primary" [(ngModel)]="otros.nombre"
                                     value="{{otros.nombre}}" (ionBlur)="setNroTransanccion(otros.nombre,ot,'ot')"
                                     [ngClass]="{'inp-write': !otros.nombre}" class="customInput"></ion-input>
+                            </ion-item>
+                        </ion-col>
+                        <ion-col size="6" size-sm="12" size-xs="12">
+                            <ion-item>
+                                <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}"
+                                    label-placement="floating" fill="outline" color="primary" type="text"
+                                    inputmode="numeric" [value]="getDisplay(otros, ot,'ot') || '0,00'"
+                                    (keydown)="onMontoKeyDown($event, otros, ot, 'ot')"
+                                    (focus)="onMontoFocus(otros, ot, 'ot')" (blur)="onMontoBlur(otros, ot, 'ot')"
+                                    class="customInput" [ngClass]="{'inp-write': !otros.monto}">
+                                </ion-input>
                             </ion-item>
                         </ion-col>
                         <ion-button color="danger" (click)="deleteTipoPago(ot,'ot')"><ion-icon
