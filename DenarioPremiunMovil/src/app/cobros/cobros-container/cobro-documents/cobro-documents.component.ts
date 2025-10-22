@@ -258,6 +258,10 @@ export class CobrosDocumentComponent implements OnInit {
           } else
             this.collectService.validNuRetention = false;
 
+        this.displayDiscount = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountDiscount.toString();
+        this.displayRetention = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention.toString();
+        this.displayRetention2 = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention2.toString();
+
       } else {
         let pos = this.collectService.documentSales[index].positionCollecDetails;
         if (this.collectService.documentSalesBackup[pos].isSave) {
@@ -813,6 +817,11 @@ export class CobrosDocumentComponent implements OnInit {
     this.collectService.collection.collectionDetails[documentSaleOpen.positionCollecDetails]!.nuAmountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.amountPaid));
     this.collectService.collection.collectionDetails[documentSaleOpen.positionCollecDetails]!.nuAmountPaidConversion
       = this.collectService.amountPaid;
+
+    this.displayAmountPaid = this.collectService.amountPaid.toString();
+
+    console.log(this.collectService.amountPaid, "AMOUNT PAID AL GUARDAR");
+    console.log(documentSaleOpen.nuAmountPaid, "DOCUMENTO ABIERTO AL GUARDAR");
 
     let amountPaidAux, nuAmountDiscountAux, nuAmountRetentionAux, nuAmountRetention2Aux;
     amountPaidAux = this.collectService.amountPaid;
