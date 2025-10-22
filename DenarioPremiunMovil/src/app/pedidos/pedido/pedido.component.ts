@@ -479,7 +479,9 @@ export class PedidoComponent implements OnInit {
 
   confirmSend() {
     if (this.orderServ.cliente.idClient != null && this.orderServ.carrito.length > 0) {
-      this.saveOrder(DELIVERY_STATUS_TO_SEND).then(order => {
+      this.orderServ.disableSendButton = true;
+      this.message.showLoading().then(() => {
+        this.saveOrder(DELIVERY_STATUS_TO_SEND).then(order => {
 
         var transactions: PendingTransaction[] = [];
         var tr: PendingTransaction = new PendingTransaction(
@@ -500,11 +502,12 @@ export class PedidoComponent implements OnInit {
         this.services.insertPendingTransactionBatch(this.dbServ.getDatabase(), transactions).then(() => {
           this.autoSend.ngOnInit();
         });
+        this.orderServ.disableSendButton = false;
+        this.message.hideLoading();
         this.router.navigate(['pedidos']);
-
-
-
+        });
       });
+      
     }
 
   }
