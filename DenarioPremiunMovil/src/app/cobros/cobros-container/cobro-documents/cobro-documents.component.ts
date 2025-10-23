@@ -166,19 +166,21 @@ export class CobrosDocumentComponent implements OnInit {
 
   async calculateSaldo(index: number) {
     let backupBalance = 0;
-    const coTypeDoc = this.collectService.documentSalesBackup[index].coDocumentSaleType;
-    const nuValueLocalDoc = this.collectService.documentSalesBackup[index].nuValueLocal;
+    const docBackup = this.collectService.documentSalesBackup[index];
+    const doc = this.collectService.documentSales[index];
 
-    backupBalance = this.collectService.documentSalesBackup[index].nuBalance;
+    const coTypeDoc = docBackup?.coDocumentSaleType;
+    const nuValueLocalDoc = docBackup?.nuValueLocal;
+
+    backupBalance = docBackup?.nuBalance ?? 0;
 
     // Local variables to avoid mutating component fields during execution
-    let newSaldo = this.saldo;
-    let newSaldoConversion = this.saldoConversion;
-    let newSaldoView = this.saldoView;
-    let newSaldoConversionView = this.saldoConversionView;
+    let newSaldo = "0";
+    let newSaldoConversion = "0";
+    let newSaldoView = "0";
+    let newSaldoConversionView = "0";
 
     const commit = () => {
-      // assign computed values to component fields only once before returning
       this.saldo = newSaldo;
       this.saldoConversion = newSaldoConversion;
       this.saldoView = newSaldoView;
@@ -186,34 +188,64 @@ export class CobrosDocumentComponent implements OnInit {
       return true;
     };
 
-    if (!this.collectService.documentSales[index].isSave) {
+    // Safeguard: ensure doc exists
+    if (!doc) return commit();
 
-      // initialize locals
-      newSaldo = "0";
-      newSaldoConversion = "0";
-      newSaldoView = "0";
-      newSaldoConversionView = "0";
+    // Helper to format a detail safely
+    const formatDetail = (detail: any, backupVal = 0) => {
+      const nuBalanceDoc = detail?.nuBalanceDoc ?? backupVal;
+      const nuBalanceDocConversion = detail?.nuBalanceDocConversion ?? backupVal;
+      const formattedBalance = this.currencyService.formatNumber(nuBalanceDoc);
+      const formattedConversion = this.currencyService.formatNumber(nuBalanceDocConversion);
+      return {
+        newSaldo: formattedBalance,
+        newSaldoConversion: formattedConversion,
+        newSaldoView: formattedBalance,
+        newSaldoConversionView: formattedConversion
+      };
+    };
 
+    if (!doc.isSave) {
       if (this.collectService.collection.stCollection == 1) {
-        let indexCollectionDetail = this.collectService.documentSales[index].positionCollecDetails;
-        newSaldo = this.currencyService.formatNumber(this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDoc);
-        newSaldoConversion = this.currencyService.formatNumber(this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDocConversion);
-        newSaldoView = this.currencyService.formatNumber(this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDoc);
-        newSaldoConversionView = this.currencyService.formatNumber(this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDocConversion);
+        const indexCollectionDetail = doc.positionCollecDetails;
+        const detail = this.collectService.collection.collectionDetails?.[indexCollectionDetail];
+        if (detail) {
+          ({ newSaldo, newSaldoConversion, newSaldoView, newSaldoConversionView } = formatDetail(detail));
+        } else {
+          // fallback to backup values
+          newSaldo = this.currencyService.formatNumber(backupBalance);
+          newSaldoView = this.currencyService.formatNumber(docBackup?.nuBalance ?? 0);
+          newSaldoConversion = this.currencyService.formatNumber(
+            this.collectService.convertirMonto(backupBalance, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency)
+          );
+          newSaldoConversionView = this.currencyService.formatNumber(
+            this.collectService.convertirMonto(docBackup?.nuBalance ?? 0, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency)
+          );
+        }
         return commit();
       } else {
         newSaldo = this.currencyService.formatNumber(backupBalance);
-        newSaldoView = this.currencyService.formatNumber(this.collectService.documentSalesBackup[index].nuBalance);
-        newSaldoConversion = this.currencyService.formatNumber(this.collectService.convertirMonto(backupBalance, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency));
-        newSaldoConversionView = this.currencyService.formatNumber(this.collectService.convertirMonto(this.collectService.documentSalesBackup[index].nuBalance, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency));
+        newSaldoView = this.currencyService.formatNumber(docBackup?.nuBalance ?? 0);
+        newSaldoConversion = this.currencyService.formatNumber(
+          this.collectService.convertirMonto(backupBalance, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency)
+        );
+        newSaldoConversionView = this.currencyService.formatNumber(
+          this.collectService.convertirMonto(docBackup?.nuBalance ?? 0, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency)
+        );
         return commit();
       }
     } else {
-      let indexCollectionDetail = this.collectService.documentSales[index].positionCollecDetails;
-      newSaldo = this.currencyService.formatNumber(this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDoc);
-      newSaldoConversion = this.currencyService.formatNumber(this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDocConversion);
-      newSaldoView = this.currencyService.formatNumber(this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDoc);
-      newSaldoConversionView = this.currencyService.formatNumber(this.collectService.collection.collectionDetails[indexCollectionDetail].nuBalanceDocConversion);
+      const indexCollectionDetail = doc.positionCollecDetails;
+      const detail = this.collectService.collection.collectionDetails?.[indexCollectionDetail];
+      if (detail) {
+        ({ newSaldo, newSaldoConversion, newSaldoView, newSaldoConversionView } = formatDetail(detail));
+      } else {
+        // If detail missing, keep zeros (safer than throwing)
+        newSaldo = this.currencyService.formatNumber(0);
+        newSaldoConversion = this.currencyService.formatNumber(0);
+        newSaldoView = this.currencyService.formatNumber(0);
+        newSaldoConversionView = this.currencyService.formatNumber(0);
+      }
       return commit();
     }
   }

@@ -38,7 +38,7 @@ export class CobroPagosComponent implements OnInit {
   private __uidCounter = 0;
   // debounce timers por uid para evitar ejecutar la validación mientras se escribe
   private debounceTimers: { [uid: string]: any } = {};
-  private debounceDelay = 1500; // ms - ajustar si quieres más/menos espera
+  private debounceDelay = 800; // ms - ajustar si quieres más/menos espera
 
   public alertButtons = [
     /*  {
@@ -696,7 +696,7 @@ export class CobroPagosComponent implements OnInit {
     this.collectService.alertMessageOpen = false;
     switch (type) {
       case "ef": {
-        if (this.collectService.pagoEfectivo[index].monto > 0) {
+        if (this.collectService.pagoEfectivo[index].monto >= 0) {
           this.collectService.calcularMontos(type, index).then(resp => {
             if (this.collectService.createAutomatedPrepaid)
               this.checkCreateAutomatedPrepaid();
@@ -718,7 +718,7 @@ export class CobroPagosComponent implements OnInit {
           && this.collectService.pagoCheque[index].numeroCheque != "") {
           this.collectService.validateToSend();
         } */
-        if (this.collectService.pagoCheque[index].monto > 0) {
+        if (this.collectService.pagoCheque[index].monto >= 0) {
           this.collectService.calcularMontos(type, index).then(resp => {
             if (this.collectService.pagoCheque[index].fecha != ""
               && this.collectService.pagoCheque[index].fechaValor != ""
@@ -741,7 +741,7 @@ export class CobroPagosComponent implements OnInit {
           && this.collectService.pagoDeposito[index].numeroDeposito != "") {
           this.collectService.validateToSend();
         } */
-        if (this.collectService.pagoDeposito[index].monto > 0) {
+        if (this.collectService.pagoDeposito[index].monto >= 0) {
           this.collectService.calcularMontos(type, index).then(resp => {
             if (this.collectService.pagoDeposito[index].fecha != ""
               && this.collectService.pagoDeposito[index].nombreBanco != ""
@@ -764,7 +764,7 @@ export class CobroPagosComponent implements OnInit {
           this.collectService.validateToSend();
         } */
         if (this.collectService.clientBankAccount) {
-          if (this.collectService.pagoTransferencia[index].monto > 0) {
+          if (this.collectService.pagoTransferencia[index].monto >= 0) {
             this.collectService.calcularMontos(type, index).then(resp => {
               if (this.collectService.pagoTransferencia[index].fecha != ""
                 && this.collectService.pagoTransferencia[index].nombreBanco != ""
@@ -778,7 +778,7 @@ export class CobroPagosComponent implements OnInit {
             })
           }
         } else {
-          if (this.collectService.pagoTransferencia[index].monto > 0) {
+          if (this.collectService.pagoTransferencia[index].monto >= 0) {
             this.collectService.calcularMontos(type, index).then(resp => {
               if (this.collectService.pagoTransferencia[index].fecha != ""
                 && this.collectService.pagoTransferencia[index].nombreBanco != ""
@@ -796,7 +796,7 @@ export class CobroPagosComponent implements OnInit {
       }
 
       case "ot": {
-        if (this.collectService.pagoOtros[index].monto > 0) {
+        if (this.collectService.pagoOtros[index].monto >= 0) {
           this.collectService.calcularMontos(type, index).then(resp => {
             if (this.collectService.pagoOtros[index].nombre != "") {
               this.checkPaymentPartialPay();
@@ -1045,14 +1045,35 @@ export class CobroPagosComponent implements OnInit {
     }, this.debounceDelay);
   }
 
-  // captura tecla: dígito añade como último céntimo; Backspace borra último
-  onMontoKeyDown(event: any, deposito: any, index: number, type: string) {
+  public onMontoKeyDown(event: any, deposito: any, index: number, type: string) {
     const key = event?.key;
     const uid = this.ensureInitFor(deposito, deposito);
 
     // permitir navegación básica
     const allowed = ['Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter'];
     if (allowed.includes(key)) return;
+
+    // detectar elemento input y selección (cuando el usuario selecciona todo y borra)
+    const inputEl = event?.target as HTMLInputElement | null;
+    const selStart = inputEl?.selectionStart ?? null;
+    const selEnd = inputEl?.selectionEnd ?? null;
+    const hasSelection = selStart !== null && selEnd !== null && (selEnd - selStart) > 0;
+
+    // Si hay selección y borran (Backspace o Delete) -> limpiar a 0 e informar
+    if ((key === 'Backspace' || key === 'Delete') && hasSelection) {
+      this.centsMap[uid] = 0;
+      this.updateAfterChange(uid, deposito, index, type);
+      event.preventDefault();
+      return;
+    }
+
+    // tecla Delete sin selección -> comportarse similar a Backspace (borrar último dígito)
+    if (key === 'Delete') {
+      this.centsMap[uid] = Math.floor((this.centsMap[uid] ?? 0) / 10);
+      this.updateAfterChange(uid, deposito, index, type);
+      event.preventDefault();
+      return;
+    }
 
     if (/^\d$/.test(key)) {
       const digit = parseInt(key, 10);

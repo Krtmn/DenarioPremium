@@ -919,24 +919,23 @@ export class CollectionService {
       this.montoTotalPagadoConversion = this.currencyService.toLocalCurrency(this.montoTotalPagado)
     }
 
-    this.calculatePayment(type, index).then(response => {
-
-      if (this.coTypeModule == "0") {
-        if (this.createAutomatedPrepaid) {
-          if (!this.recentOpenCollect) {
-            this.mensaje = this.collectionTags.get('COB_MSG_AUTOMATED_PREPAID')! + " " + this.currencyService.formatNumber(this.collection.nuDifference);
-            this.alertMessageOpen = true;
-          }
-
-
-          this.onCollectionValidToSend(true);
-        } else if (this.disabledSelectCollectMethodDisabled && this.collection.collectionDetails.length > 0) {
-          this.disabledSelectCollectMethodDisabled = false;
+    this.calculatePayment(type, index);
+    if (this.coTypeModule == "0") {
+      if (this.createAutomatedPrepaid) {
+        if (!this.recentOpenCollect) {
+          this.mensaje = this.collectionTags.get('COB_MSG_AUTOMATED_PREPAID')! + " " + this.currencyService.formatNumber(this.collection.nuDifference);
+          this.alertMessageOpen = true;
         }
-        if (this.recentOpenCollect)
-          this.recentOpenCollect = false;
+
+
+        this.onCollectionValidToSend(true);
+      } else if (this.disabledSelectCollectMethodDisabled && this.collection.collectionDetails.length > 0) {
+        this.disabledSelectCollectMethodDisabled = false;
       }
-    });
+      if (this.recentOpenCollect)
+        this.recentOpenCollect = false;
+    }
+
 
     return Promise.resolve(true);
   }
