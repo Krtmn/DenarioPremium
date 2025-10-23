@@ -96,14 +96,6 @@
                     this.collectService.collection.nuDifferenceConversion
                     )}}
                 </ion-col>
-
-                <!-- <ion-col *ngIf="this.collectService.calculateDifference"
-                    [ngStyle]="{color: this.collectService.collection.nuDifference >=0 ? 'Blue' : 'Red' }">
-                    {{this.currencyService.formatNumber((this.collectService.convertirMonto((this.collectService.collection.nuAmountFinal)
-                    ,this.collectService.collection.nuValueLocal,
-                    this.collectService.collection.coCurrency) - this.collectService.montoTotalPagarConversion -
-                    this.collectService.difference))}}
-                </ion-col> -->
                 <!-- CASO QUE TENGAMOS UN DOC CON SALDO NEGATIVO, Y CON TASAS DISTINTAS -->
             </ion-row>
             <!-- DIFERENCIA -->
@@ -428,22 +420,26 @@
                     </ion-item>
 
                     <ion-item>
-                        {{this.collectService.collectionTags.get('COB_MONTO_DOC')}} {{this.collectService.collection.coCurrency}}:
+                        {{this.collectService.collectionTags.get('COB_MONTO_DOC')}}
+                        {{this.collectService.collection.coCurrency}}:
                         {{this.currencyService.formatNumber(retentionDetails.nuBalanceDoc)}}
                     </ion-item>
 
                     <ion-item>
-                        {{this.collectService.collectionTags.get('COB_IVA_AMOUNT')}} {{this.collectService.collection.coCurrency}}:
+                        {{this.collectService.collectionTags.get('COB_IVA_AMOUNT')}}
+                        {{this.collectService.collection.coCurrency}}:
                         {{this.currencyService.formatNumber(retentionDetails.nuAmountRetention)}}
                     </ion-item>
 
                     <ion-item>
-                        {{this.collectService.collectionTags.get('COB_ISLR_AMOUNT')}} {{this.collectService.collection.coCurrency}}:
+                        {{this.collectService.collectionTags.get('COB_ISLR_AMOUNT')}}
+                        {{this.collectService.collection.coCurrency}}:
                         {{this.currencyService.formatNumber(retentionDetails.nuAmountRetention2)}}
                     </ion-item>
 
                     <ion-item>
-                        {{this.collectService.collectionTags.get('COB_MONTO_TOTAL_RETENTION')}} {{this.collectService.collection.coCurrency}}:
+                        {{this.collectService.collectionTags.get('COB_MONTO_TOTAL_RETENTION')}}
+                        {{this.collectService.collection.coCurrency}}:
                         {{this.currencyService.formatNumber(retentionDetails.nuAmountPaid)}}
                     </ion-item>
 
