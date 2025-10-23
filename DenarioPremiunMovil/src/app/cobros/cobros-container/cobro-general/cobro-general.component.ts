@@ -153,6 +153,8 @@ export class CobrosGeneralComponent implements OnInit {
       });
       this.collectService.changeEnterprise = false;
     });
+
+    this.collectService.validateReferencePayment();
   }
 
   private handleInitCollect() {
@@ -202,12 +204,6 @@ export class CobrosGeneralComponent implements OnInit {
     if (igtf) {
       this.collectService.igtfSelected = igtf;
     }
-  }
-
-  private async updateBankAccountsAndPayments(idEnterprise: number, coCurrency: string) {
-    this.collectService.listBankAccounts =
-      await this.collectService.getAllBankAccountsByEnterprise(this.synchronizationServices.getDatabase(), idEnterprise, coCurrency);
-    this.loadPayments();
   }
 
   async reset(client: Client) {
@@ -404,14 +400,9 @@ export class CobrosGeneralComponent implements OnInit {
 
 
       });
-      /* this.geoServ.getCurrentPosition().then(coords => { this.coordenadas = coords }); */
-
       this.enterpriseServ.setup(this.synchronizationServices.getDatabase()).then(() => {
-        //this.selectorCliente.setSkin("Cobros", "fondoVerde");
 
         this.collectService.enterpriseList = this.enterpriseServ.empresas;
-        //        this.collectService.getCurrencies(this.collectService.enterpriseSelected.idEnterprise);
-
         this.messageService.hideLoading();
 
         //ESTO ES PARA CUANDO CAMBIE DE PESTANAS, RECUPERAR LA INFORMACION YA COLOCADA
@@ -459,16 +450,6 @@ export class CobrosGeneralComponent implements OnInit {
           this.collectService.collection.coEnterprise = this.collectService.enterpriseList[0].coEnterprise;
           this.collectService.collection.coordenada = this.coordenadas;
 
-          let partes = this.dateCollect.split(/[\/,:]/); // Dividimos la cadena en partes usando "/", "," y ":" como separadores
-          //let fechaFormateada = `${partes[2]}-${partes[1]}-${partes[0]} ${partes[3]}:${partes[4]}:${partes[5].split(" ")[0]}`;
-
-          // this.collectService.collection.daCollection = `${partes[2].trim()}-${partes[0].trim()}-${partes[1].trim()} ${partes[3].trim()}:${partes[4].trim()}:${partes[5].split(" ")[0].trim()}`;
-
-          //this.collectService.collection.hasIGTF = this.globalConfig.get('igtfDefault') === "true" ? true : false;
-
-          //luego de seleccionar empresa, buscamos las tasas
-          //esta variable prende o apaga el calendario para seleccionar tasa
-          // if (this.globalConfig.get("historicoTasa") === 'true' ? true : false) {
           if (this.collectService.historicoTasa)
             this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise)
               .then(() => {
@@ -488,21 +469,8 @@ export class CobrosGeneralComponent implements OnInit {
 
 
 
-        } else {
-          //YA TENGO UN COBRO PERO CAMBIE DE PESTANA POR EJEMPLO     
-
-          /*  this.selectorCliente.updateClientList(this.collectService.enterpriseSelected.idEnterprise);
-           this.collectService.nameClient = this.client.lbClient;
-           this.collectService.rateSelected = this.collectService.collection.nuValueLocal;
-           //this.collectService.getDateRate(this.collectService.dateRate);
-           this.collectService.getDateRate(this.collectService.fechaMayor.split("T")[0]);
-           this.dateCollect = this.collectService.collection.daCollection;
-   
-           if (this.collectService.collection.txConversion != "") {
-             this.changeRate = true;
-           }
-           this.collectService.cobroValid = true; */
         }
+
         this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);
         if (this.collectService.changeClient) {
           this.collectService.alertMessageOpen = false;
@@ -523,8 +491,8 @@ export class CobrosGeneralComponent implements OnInit {
 
   setChangesMade(value: boolean) {
     //ESTA FUNCION SE USARA PARA CONTROLAR SI PUEDO ENVIAR O GUARDAR, CVER QUE HAGO ACA
-    /*  this.inventariosLogicService.onStockValidToSave(true);
-     this.inventariosLogicService.onStockValidToSend(true); */
+    this.collectService.onCollectionValidToSave(true);
+    this.collectService.onCollectionValidToSend(true);
   }
 
 
@@ -832,7 +800,7 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   onOpenCalendar() {
-    if (this.collectService.collection.stCollection != 3)
+    if (this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3)
       this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual.split("T")[0]);
   }
 
@@ -928,7 +896,7 @@ export class CobrosGeneralComponent implements OnInit {
     this.showDateRateModal = val;
   }
   bottonDateRateLabel() {
-    if (this.collectService.collection.stCollection == 3) {
+    if (this.collectService.collection.stCollection == 2 || this.collectService.collection.stCollection == 3) {
       return this.dateServ.formatShort(this.collectService.collection.daRate + "T00:00:00");
     } else if (this.collectService.collection.stCollection == 1) {
       return this.dateServ.formatShort(this.collectService.collection.daRate + "T00:00:00");

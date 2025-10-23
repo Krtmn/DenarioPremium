@@ -11,10 +11,10 @@ import { SynchronizationDBService } from 'src/app/services/synchronization/synch
 import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 
 @Component({
-    selector: 'app-cobros-list',
-    templateUrl: './cobros-list.component.html',
-    styleUrls: ['./cobros-list.component.scss'],
-    standalone: false
+  selector: 'app-cobros-list',
+  templateUrl: './cobros-list.component.html',
+  styleUrls: ['./cobros-list.component.scss'],
+  standalone: false
 })
 export class CobrosListComponent implements OnInit {
   //SERVICIOS
@@ -56,15 +56,15 @@ export class CobrosListComponent implements OnInit {
   constructor() { }
 
   ngOnInit() {
-     if (this.collectService.userMustActivateGPS) {
+    if (this.collectService.userMustActivateGPS) {
       this.coordenada = '';
       this.geoLoc.getCurrentPosition().then(xy => {
         if (xy.length > 0) {
           this.coordenada = xy;
-          
+
         }
       })
-    } 
+    }
     this.collectService.newCollect = false;
     this.headerDelete = this.collectService.collectionTags.get('COB_HEADER_MESSAGE')!;
     this.mensajeDelete = this.collectService.collectionTags.get('COB_CONFIRM_DELETE')!;
@@ -73,16 +73,16 @@ export class CobrosListComponent implements OnInit {
 
   onCollectSelect(coCollection: string, index: number, stCollection: number) {
     if (this.collectService.userMustActivateGPS && stCollection < 3) {
-      if(!this.coordenada && this.coordenada.length < 1){
-      this.geoLoc.getCurrentPosition().then(xy => {
-        if (xy.length > 0) {
-          this.coordenada = xy;
-          this.openCollect(coCollection, index);
-        }
-      })
-    } else {
-      this.openCollect(coCollection, index);
-    }
+      if (!this.coordenada && this.coordenada.length < 1) {
+        this.geoLoc.getCurrentPosition().then(xy => {
+          if (xy.length > 0) {
+            this.coordenada = xy;
+            this.openCollect(coCollection, index);
+          }
+        })
+      } else {
+        this.openCollect(coCollection, index);
+      }
     } else {
       this.openCollect(coCollection, index);
     }
@@ -106,12 +106,6 @@ export class CobrosListComponent implements OnInit {
         this.collectService.mapDocumentsSales.clear();
         this.collectService.coTypeModule = this.collectService.collection.coType.toString();
         this.collectService.cobroValid = true;
-
-        /*   if (this.collectService.collection.stCollection >= 2) {
-            this.collectService.disabledInputClient = true;
-            this.collectService.enterpriseEnabled = true;
-          } */
-
 
         switch (Number(this.collectService.collection.coType)) {
           case 0: {
@@ -167,7 +161,7 @@ export class CobrosListComponent implements OnInit {
         this.collectService.getCollectionDetails(this.synchronizationServices.getDatabase(), coCollection).then(collectionDetails => {
           this.collectService.collection.collectionDetails = collectionDetails;
           this.collectService.getCollectionPayments(this.synchronizationServices.getDatabase(), coCollection).then(collectionPayment => {
-            if (this.collectService.collection.stCollection == 3) {
+            if (this.collectService.collection.stCollection == 2 || this.collectService.collection.stCollection == 3) {
               this.collectService.hideDocuments = true;
               this.collectService.hidePayments = true;
             } else if (this.collectService.collection.stCollection == 6) {

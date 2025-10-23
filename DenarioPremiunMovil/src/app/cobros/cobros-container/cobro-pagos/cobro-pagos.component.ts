@@ -32,13 +32,13 @@ export class CobroPagosComponent implements OnInit {
   public alertMessageOpen: Boolean = false;
   public showEventModal: Boolean = false;
   public listBankAccount!: any;
-  // estado por uid
+
   private centsMap: { [uid: string]: number } = {};
   private displayMap: { [uid: string]: string } = {};
   private __uidCounter = 0;
-  // debounce timers por uid para evitar ejecutar la validación mientras se escribe
   private debounceTimers: { [uid: string]: any } = {};
-  private debounceDelay = 800; // ms - ajustar si quieres más/menos espera
+  private debounceDelay = 700;
+
 
   public alertButtons = [
     /*  {
@@ -976,6 +976,25 @@ export class CobroPagosComponent implements OnInit {
     }
   }
 
+  private getDecimals(): number {
+    const d = Number(this.collectService?.parteDecimal);
+    return Number.isInteger(d) && d >= 0 ? d : 2; // default 2 decimales
+  }
+
+  private getMultiplier(): number {
+    return Math.pow(10, this.getDecimals());
+  }
+
+  public formatFromMinorUnits(minorUnits: number): string {
+    const decimals = this.getDecimals();
+    const sign = minorUnits < 0 ? '-' : '';
+    const abs = Math.abs(minorUnits);
+    const units = Math.floor(abs / this.getMultiplier());
+    const fraction = (abs % this.getMultiplier()).toString().padStart(decimals, '0');
+    const unitsStr = units.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return `${sign}${unitsStr || '0'},${fraction}`;
+  }
+
   // asigna/obtiene uid único al objeto depósito/efectivo/cheque
   private getUid(obj: any): string {
     if (!obj) return `u-${++this.__uidCounter}`;
@@ -990,55 +1009,49 @@ export class CobroPagosComponent implements OnInit {
     return obj.__amountUid;
   }
 
-  private formatFromCents(cents: number): string {
+  public formatFromCents(cents: number): string {
     const sign = cents < 0 ? '-' : '';
     const abs = Math.abs(cents);
     const units = Math.floor(abs / 100);
     const cent = (abs % 100).toString().padStart(2, '0');
     const unitsStr = units.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    return `${sign}${unitsStr},${cent}`;
+    return `${sign}${unitsStr || '0'},${cent}`;
   }
 
-  private ensureInitFor(obj: any, deposito: any) {
-    const uid = this.getUid(obj);
+  private ensureInitFor(obj: any): string {
+    if (!obj) obj = {};
+    if (!obj.__amountUid) {
+      Object.defineProperty(obj, '__amountUid', {
+        value: `u-${++this.__uidCounter}`,
+        enumerable: false,
+        configurable: true,
+        writable: false
+      });
+    }
+    const uid = obj.__amountUid;
     if (this.centsMap[uid] === undefined) {
-      this.centsMap[uid] = Math.round((deposito?.monto || 0) * 100) || 0;
-      this.displayMap[uid] = this.formatFromCents(this.centsMap[uid]);
+      const base = Number(obj?.monto ?? obj?.monto ?? 0) || 0;
+      this.centsMap[uid] = Math.round(base * this.getMultiplier());
+      this.displayMap[uid] = this.formatFromMinorUnits(this.centsMap[uid]);
     }
     return uid;
   }
 
-  // usado desde template para mostrar valor
-  getDisplay(obj: any, idx: number, type: string): string {
-    const uid = this.ensureInitFor(obj, obj);
-    return this.displayMap[uid] ?? '0,00';
-  }
-
-  onMontoFocus(deposito: any, index: number, type: string) {
-    const uid = this.ensureInitFor(deposito, deposito);
-    if (!this.centsMap[uid]) {
-      this.centsMap[uid] = 0;
-      this.displayMap[uid] = this.formatFromCents(0);
-    }
+  public getDisplay(obj: any, idx?: number, type?: string): string {
+    const uid = this.ensureInitFor(obj);
+    return this.displayMap[uid] ?? this.formatFromMinorUnits(0);
   }
 
   private updateAfterChange(uid: string, deposito: any, index?: number, type?: string) {
-    const cents = this.centsMap[uid] ?? 0;
-    deposito.monto = cents / 100;
-    this.displayMap[uid] = this.formatFromCents(cents);
+    const minor = Math.max(0, this.centsMap[uid] ?? 0);
+    this.centsMap[uid] = minor;
+    deposito.monto = (minor / this.getMultiplier());
+    this.displayMap[uid] = this.formatFromMinorUnits(minor);
 
-    // cancelar timer previo
-    if (this.debounceTimers[uid]) {
-      clearTimeout(this.debounceTimers[uid]);
-    }
-
-    // programar la ejecución final (setMonto / validaciones) después del debounce
+    if (this.debounceTimers[uid]) clearTimeout(this.debounceTimers[uid]);
     this.debounceTimers[uid] = setTimeout(() => {
-      // llamar setMonto sólo cuando el usuario dejó de teclear
       if (typeof (this as any).setMonto === 'function') {
-        try {
-          (this as any).setMonto(deposito.monto, index ?? 0, type ?? '');
-        } catch { /* swallow */ }
+        try { (this as any).setMonto(deposito.monto, index ?? 0, type ?? ''); } catch { }
       }
       delete this.debounceTimers[uid];
     }, this.debounceDelay);
@@ -1046,19 +1059,16 @@ export class CobroPagosComponent implements OnInit {
 
   public onMontoKeyDown(event: any, deposito: any, index: number, type: string) {
     const key = event?.key;
-    const uid = this.ensureInitFor(deposito, deposito);
-
-    // permitir navegación básica
+    const uid = this.ensureInitFor(deposito);
     const allowed = ['Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter'];
     if (allowed.includes(key)) return;
 
-    // detectar elemento input y selección (cuando el usuario selecciona todo y borra)
     const inputEl = event?.target as HTMLInputElement | null;
     const selStart = inputEl?.selectionStart ?? null;
     const selEnd = inputEl?.selectionEnd ?? null;
     const hasSelection = selStart !== null && selEnd !== null && (selEnd - selStart) > 0;
 
-    // Si hay selección y borran (Backspace o Delete) -> limpiar a 0 e informar
+    // Si seleccionan todo y borran -> poner 0
     if ((key === 'Backspace' || key === 'Delete') && hasSelection) {
       this.centsMap[uid] = 0;
       this.updateAfterChange(uid, deposito, index, type);
@@ -1066,8 +1076,8 @@ export class CobroPagosComponent implements OnInit {
       return;
     }
 
-    // tecla Delete sin selección -> comportarse similar a Backspace (borrar último dígito)
     if (key === 'Delete') {
+      // borra último dígito (derecha)
       this.centsMap[uid] = Math.floor((this.centsMap[uid] ?? 0) / 10);
       this.updateAfterChange(uid, deposito, index, type);
       event.preventDefault();
@@ -1076,6 +1086,7 @@ export class CobroPagosComponent implements OnInit {
 
     if (/^\d$/.test(key)) {
       const digit = parseInt(key, 10);
+      // desplaza y añade dígito en unidades menores (funciona para cualquier parteDecimal)
       this.centsMap[uid] = Math.min(999999999999, (this.centsMap[uid] ?? 0) * 10 + digit);
       this.updateAfterChange(uid, deposito, index, type);
       event.preventDefault();
@@ -1089,29 +1100,34 @@ export class CobroPagosComponent implements OnInit {
       return;
     }
 
-    // bloquear otras teclas
     event.preventDefault();
   }
 
-  onMontoBlur(deposito: any, index: number, type: string) {
-    const uid = this.ensureInitFor(deposito, deposito);
+  public onMontoFocus(deposito: any, index: number, type: string) {
+    const uid = this.ensureInitFor(deposito);
+    if (this.centsMap[uid] === undefined) {
+      this.centsMap[uid] = 0;
+      this.displayMap[uid] = this.formatFromMinorUnits(0);
+    }
+  }
 
-    // si hay timer pendiente, ejecutarlo inmediatamente
+  public onMontoBlur(deposito: any, index: number, type: string) {
+    const uid = this.ensureInitFor(deposito);
+    // forzar ejecución inmediata del debounce si hay timer
     if (this.debounceTimers[uid]) {
       clearTimeout(this.debounceTimers[uid]);
       if (typeof (this as any).setMonto === 'function') {
-        try {
-          (this as any).setMonto(deposito.monto, index, type);
-        } catch { }
+        try { (this as any).setMonto(deposito.monto, index, type); } catch { }
       }
       delete this.debounceTimers[uid];
     } else {
-      // no hay timer, pero aseguramos que el valor final se confirme
       if (typeof (this as any).setMonto === 'function') {
-        try {
-          (this as any).setMonto(deposito.monto, index, type);
-        } catch { }
+        try { (this as any).setMonto(deposito.monto, index, type); } catch { }
       }
     }
+    // asegurar mínimo y formato final
+    const minor = Math.max(0, this.centsMap[uid] ?? 0);
+    this.centsMap[uid] = minor;
+    this.displayMap[uid] = this.formatFromMinorUnits(minor);
   }
 }
