@@ -127,7 +127,7 @@ export class CobrosGeneralComponent implements OnInit {
   private handleOpenCollect() {
     this.collectService.isOpenCollect = false;
     this.collectService.recentOpenCollect = true;
-    this.collectService.disabledCurrency = true;
+    //this.collectService.disabledCurrency = true;
     this.collectService.cobroValid = true;
 
     if (Number(this.collectService.collection.stCollection) > 1) {
@@ -261,7 +261,7 @@ export class CobrosGeneralComponent implements OnInit {
           }
         });
         this.updateSelectedCurrency(this.collectService.collection.idCurrency);
-        this.collectService.disabledCurrency = true;
+        //this.collectService.disabledCurrency = true;
         this.collectService.getIgtfList(this.synchronizationServices.getDatabase(),).then(() => {
           this.updateSelectedIgtf(this.collectService.collection.nuIgtf);
         });

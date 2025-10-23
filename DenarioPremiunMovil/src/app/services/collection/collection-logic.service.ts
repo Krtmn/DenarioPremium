@@ -458,7 +458,7 @@ export class CollectionService {
         //this.currencySelected = this.currencyServices.getLocalCurrency();
         //this.disabledCurrency = true
       } else
-        this.disabledCurrency = this.globalConfig.get('multiCurrency') === 'true' ? false : true;
+        this.disabledCurrency = !this.multiCurrency;
 
 
       if (this.currencyService.localCurrency.coCurrency == this.MonedaTolerancia)
