@@ -1,19 +1,17 @@
 import { Component, EventEmitter, OnInit, Output, inject, Input } from '@angular/core';
 import { Router } from '@angular/router';
 import { Platform } from '@ionic/angular';
-import { setNonce } from 'ionicons/dist/types/stencil-public-runtime';
 import { Subscription } from 'rxjs';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { Collection } from 'src/app/modelos/tables/collection';
-import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
 @Component({
-    selector: 'app-cobros-header',
-    templateUrl: './cobros-header.component.html',
-    styleUrls: ['./cobros-header.component.scss'],
-    standalone: false
+  selector: 'app-cobros-header',
+  templateUrl: './cobros-header.component.html',
+  styleUrls: ['./cobros-header.component.scss'],
+  standalone: false
 })
 export class CobrosHeaderComponent implements OnInit {
 
@@ -151,7 +149,7 @@ export class CobrosHeaderComponent implements OnInit {
     this.subscriberShow.unsubscribe();
     this.subscriberDisabled.unsubscribe();
     this.subscriberToSend.unsubscribe();
-     this.backButtonSubscription.unsubscribe();
+    this.backButtonSubscription.unsubscribe();
   }
 
   resetValues() {
@@ -184,7 +182,7 @@ export class CobrosHeaderComponent implements OnInit {
       this.collectService.collectionIsSave = false;
       this.collectService.cobroListComponent = false;
       this.collectService.cobrosComponent = true;
-    } else if (!this.collectService.collectionIsSave && this.collectService.collectValidTabs && this.collectService.collection.stCollection != 3) {
+    } else if (!this.collectService.collectionIsSave && this.collectService.collectValidTabs && this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3) {
       this.collectService.saveOrExitOpen = true;
     } else {
       this.collectService.collectValid = false;
@@ -201,10 +199,10 @@ export class CobrosHeaderComponent implements OnInit {
     }
   }
 
-    backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
-      //console.log('backButton was called!');
-      this.goBack();
-    });
+  backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
+    //console.log('backButton was called!');
+    this.goBack();
+  });
 
   setsaveOrExitOpen(isOpen: boolean) {
     this.collectService.saveOrExitOpen = isOpen;
@@ -241,7 +239,8 @@ export class CobrosHeaderComponent implements OnInit {
     this.collectService.collectionIsSave = true;
     if (sendOrSave) {
       //envio
-      this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection,sendOrSave).then(async response => {
+      this.collectService.collection.stCollection = 2;
+      this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(async response => {
         await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
         console.log(response);
         this.saveSendNewCollection(true, this.collectService.collection.coCollection);
@@ -266,7 +265,7 @@ export class CobrosHeaderComponent implements OnInit {
     } else {
       //salvo
       this.collectService.collection.stCollection = 1;
-      this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection,sendOrSave).then(async response => {
+      this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(async response => {
         await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
         console.log(response);
         this.saveSendNewCollection(false, this.collectService.collection.coCollection);
