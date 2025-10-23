@@ -15,10 +15,10 @@ import { Platform } from '@ionic/angular';
 
 
 @Component({
-    selector: 'app-inventario-header',
-    templateUrl: './inventario-header.component.html',
-    styleUrls: ['./inventario-header.component.scss'],
-    standalone: false
+  selector: 'app-inventario-header',
+  templateUrl: './inventario-header.component.html',
+  styleUrls: ['./inventario-header.component.scss'],
+  standalone: false
 })
 export class InventarioHeaderComponent implements OnInit {
 
@@ -49,17 +49,17 @@ export class InventarioHeaderComponent implements OnInit {
   public saveOrExitOpen = false;
   public alertMessageOpenSend: Boolean = false;
   public alertMessageOpenSave: Boolean = false;
- backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
+  backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
     //console.log('backButton was called!');
     this.onBackClicked();
   });
-  
+
 
   constructor(private router: Router,
     private platform: Platform,
   ) {
-    
-   }
+
+  }
 
   ngOnInit() {
     this.textAlertButtonCancel = this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_CANCELAR')! ? this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_CANCELAR')! : "Cancelar";
@@ -123,6 +123,7 @@ export class InventarioHeaderComponent implements OnInit {
     this.subscriberDisabled.unsubscribe();
     this.subscriberToSend.unsubscribe();
     this.backButtonSubscription.unsubscribe();
+    this.subscriberShow.unsubscribe()
   }
 
 
@@ -138,19 +139,19 @@ export class InventarioHeaderComponent implements OnInit {
     if (this.inventariosLogicService.typeStocksComponent) {
       let validate = true;
       for (var i = 0; i < this.inventariosLogicService.typeStocks.length; i++) {
-        if (!this.inventariosLogicService.typeStocks[i].validateCantidad){
+        if (!this.inventariosLogicService.typeStocks[i].validateCantidad) {
           validate = false
           break;
         }
-        if(this.inventariosLogicService.expirationBatch){
+        if (this.inventariosLogicService.expirationBatch) {
           //si esta variable es false, no hay lote que validar.
-          if (!this.inventariosLogicService.typeStocks[i].validateLote){
+          if (!this.inventariosLogicService.typeStocks[i].validateLote) {
             validate = false;
             break;
-          }  
+          }
         }
-    
-        
+
+
       }
       if (validate)
         this.inventariosLogicService.showBackRoute('inventarios');
@@ -169,76 +170,78 @@ export class InventarioHeaderComponent implements OnInit {
 
   saveSendNewReturn(send: Boolean, buttonBack: Boolean) {
 
-    let coClientStockDetailUnits = [];
+    this.messageService.showLoading().then(() => {
+      let coClientStockDetailUnits = [];
 
-    for (var i = 0; i < this.inventariosLogicService.newClientStock.clientStockDetails.length; i++) {
-      for (var j = 0; j < this.inventariosLogicService.newClientStock.clientStockDetails[i].clientStockDetailUnits.length; j++) {
-        coClientStockDetailUnits.push(
-          this.inventariosLogicService.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].coClientStockDetail
-        )
+      for (var i = 0; i < this.inventariosLogicService.newClientStock.clientStockDetails.length; i++) {
+        for (var j = 0; j < this.inventariosLogicService.newClientStock.clientStockDetails[i].clientStockDetailUnits.length; j++) {
+          coClientStockDetailUnits.push(
+            this.inventariosLogicService.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].coClientStockDetail
+          )
+        }
       }
-    }
 
-    this.inventariosLogicService.deleteClientStockDetailsUnits(this.synchronizationServices.getDatabase(),coClientStockDetailUnits).then(result => {
-      this.inventariosLogicService.deleteClientStockDetails(this.synchronizationServices.getDatabase(),this.inventariosLogicService.newClientStock.coClientStock).then(result => {
-        //SE GUARDARA CLIENTSTOCK    
-        this.inventariosLogicService.saveClientStock(this.synchronizationServices.getDatabase(),send).then(async (res) => {
-          this.inventariosLogicService.isEdit = false;
-          await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(),this.inventariosLogicService.newClientStock.coClientStock, "inventarios");
+      this.inventariosLogicService.deleteClientStockDetailsUnits(this.synchronizationServices.getDatabase(), coClientStockDetailUnits).then(result => {
+        this.inventariosLogicService.deleteClientStockDetails(this.synchronizationServices.getDatabase(), this.inventariosLogicService.newClientStock.coClientStock).then(result => {
+          //SE GUARDARA CLIENTSTOCK    
+          this.inventariosLogicService.saveClientStock(this.synchronizationServices.getDatabase(), send).then(async (res) => {
+            this.inventariosLogicService.isEdit = false;
+            await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.inventariosLogicService.newClientStock.coClientStock, "inventarios");
 
-          console.log(res);
-          if (send) {
-            //SE ENVIARA Y GUARDARA CLIENTSTOCK
-            let pendingTransaction = {} as PendingTransaction;
-            pendingTransaction.coTransaction = this.inventariosLogicService.newClientStock.coClientStock;
-            pendingTransaction.idTransaction = this.inventariosLogicService.newClientStock.idClientStock;
-            pendingTransaction.type = "clientStock";
-            if (localStorage.getItem("connected") == "true") {
-              this.messageAlert = new MessageAlert(
-                this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!,
-                this.inventariosLogicService.inventarioTags.get('INV_MSJ_SEND_TYPESTOCKS')!,
-              );
-              this.messageService.alertModal(this.messageAlert);
+            console.log(res);
+            if (send) {
+              //SE ENVIARA Y GUARDARA CLIENTSTOCK
+              let pendingTransaction = {} as PendingTransaction;
+              pendingTransaction.coTransaction = this.inventariosLogicService.newClientStock.coClientStock;
+              pendingTransaction.idTransaction = this.inventariosLogicService.newClientStock.idClientStock;
+              pendingTransaction.type = "clientStock";
+              if (localStorage.getItem("connected") == "true") {
+                this.messageAlert = new MessageAlert(
+                  this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!,
+                  this.inventariosLogicService.inventarioTags.get('INV_MSJ_SEND_TYPESTOCKS')!,
+                );
+                this.messageService.alertModal(this.messageAlert);
 
-           
-            } else {
-              this.messageAlert = new MessageAlert(
-                this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!,
-                this.inventariosLogicService.inventarioTags.get('INV_MSJ_ERROR_NOTSIGNAL')!,
 
-              );
-              this.messageService.alertModal(this.messageAlert);
-            }
+              } else {
+                this.messageAlert = new MessageAlert(
+                  this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!,
+                  this.inventariosLogicService.inventarioTags.get('INV_MSJ_ERROR_NOTSIGNAL')!,
 
-               this.services.insertPendingTransaction(this.synchronizationServices.getDatabase(), pendingTransaction).then(result => {
+                );
+                this.messageService.alertModal(this.messageAlert);
+              }
+
+              this.services.insertPendingTransaction(this.synchronizationServices.getDatabase(), pendingTransaction).then(result => {
                 if (result) {
                   this.autoSend.ngOnInit();
                   /* this.router.navigate(['inventarios']); */
                   this.inventariosLogicService.showBackRoute('inventarios');
+                  this.messageService.hideLoading();
                 }
               })
 
-          } else {
-            this.messageAlert = new MessageAlert(
-              this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!,
-              this.inventariosLogicService.inventarioTags.get('INV_MSJ_SAVETYPESTOCK')!,
+            } else {
+              this.messageAlert = new MessageAlert(
+                this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!,
+                this.inventariosLogicService.inventarioTags.get('INV_MSJ_SAVETYPESTOCK')!,
 
-            );
-            this.messageService.alertModal(this.messageAlert);
-            if (buttonBack) {
-              console.log("salvar y salir")
-              this.inventariosLogicService.showBackRoute('inventarios');
+              );
+              this.messageService.alertModal(this.messageAlert);
+              if (buttonBack) {
+                console.log("salvar y salir")
+                this.inventariosLogicService.showBackRoute('inventarios');               
 
+              }
+              this.messageService.hideLoading();
             }
-          }
+          })
         })
       })
-    })
+    });
+
   }
 
-  ngOnDestroyr() {
-    this.subscriberShow.unsubscribe()
-  }
 
   subscriber() {
     this.subscriberShow = this.inventariosLogicService.showButtons.subscribe((data: Boolean) => {
