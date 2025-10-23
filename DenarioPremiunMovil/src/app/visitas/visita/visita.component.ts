@@ -902,8 +902,10 @@ export class VisitaComponent implements OnInit {
 
   sendVisit() {
     if (this.cliente && this.listaEventos.length > 0) {
-      this.enviarVisita(true);
-
+      this.disableSendButton = true;
+      this.message.showLoading().then(() => {
+        this.enviarVisita(true);
+      });
     } else {
       this.message.transaccionMsjModalNB(this.getTag("VIS_MENSAJE_AGREGUE_ACT"));
     }
@@ -947,6 +949,7 @@ export class VisitaComponent implements OnInit {
 
         //finalizamos y regresamos a la pagina de visitas
         this.autoSend.ngOnInit();
+        this.message.hideLoading();
         this.router.navigate(['visitas']);
       });
 

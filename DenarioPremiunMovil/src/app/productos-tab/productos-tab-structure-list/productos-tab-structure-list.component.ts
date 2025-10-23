@@ -2,7 +2,6 @@ import { ChangeDetectorRef, Component, Input, OnDestroy, OnInit, inject } from '
 import { ProductStructureUtil } from 'src/app/modelos/ProductStructureUtil';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { ProductStructure } from 'src/app/modelos/tables/productStructure';
-import { ProductStructureCount } from 'src/app/modelos/tables/productStructureCount';
 import { TypeProductStructure } from 'src/app/modelos/tables/typeProductStructure';
 import { PedidosService } from 'src/app/pedidos/pedidos.service';
 import { ProductStructureService } from 'src/app/services/productStructures/product-structure.service';
