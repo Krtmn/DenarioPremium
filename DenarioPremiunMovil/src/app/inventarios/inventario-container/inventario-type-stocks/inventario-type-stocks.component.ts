@@ -249,23 +249,13 @@ export class InventarioTypeStocksComponent implements OnInit {
     let indexDetail = this.inventariosLogicService.productTypeStocksMap.get(idP)
 
     lote.target.value = this.cleanString(lote.target.value);
-    /* for (var i = 0; i < this.inventariosLogicService.typeStocks.length; i++) {
-      if (this.inventariosLogicService.typeStocks[i].idProduct == idP) {
-        if (this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits == undefined) {
-          this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits[indexType].nuBatch = lote.target.value;
-          this.inventariosLogicService.typeStocks[i].validateLote = true;
-        } else {
-          for (var j = 0; j < this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits.length; j++) {
-            if (this.inventariosLogicService.typeStocks[i].clientStockDetail[0].clientStockDetailUnits[0].coClientStockDetailUnit ==
-              this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits[j].coClientStockDetailUnit) {
-              this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits[j].nuBatch = lote.target.value;
-              this.inventariosLogicService.typeStocks[i].validateLote = true;
 
-            }
-          }
-        }
-      }
-    } */
+    if (lote.target.value.length === 0) {
+      this.inventariosLogicService.typeStocks[indexType].validateLote = false;
+      this.inventariosLogicService.onStockValidToSend(false);
+      this.inventariosLogicService.onStockValidToSave(false);
+      return;
+    }
     this.inventariosLogicService.typeStocks[indexType].validateLote = true;
     this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits[indexType].nuBatch = lote.target.value;
 
