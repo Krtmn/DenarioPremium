@@ -454,7 +454,7 @@ export class CollectionService {
 
       /* {{this.globalConfig.get('multiCurrency') === 'true' ? false: true}} && {{collectService.isIGTF}} */
       if (this.coTypeModule == "3") {
-        //4 es IGTF SOLO SE USA LA MONEDA LOCAL                
+        //4 es IGT SOLO SE USA LA MONEDA LOCAL                
         //this.currencySelected = this.currencyServices.getLocalCurrency();
         //this.disabledCurrency = true
       } else

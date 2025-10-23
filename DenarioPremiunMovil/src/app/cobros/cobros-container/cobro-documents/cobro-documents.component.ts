@@ -108,7 +108,7 @@ export class CobrosDocumentComponent implements OnInit {
     }
 
     this.getDocumentsSale(this.collectService.collection.idClient, docCurrency,
-      this.collectService.collection.coCollection, this.collectService.collection.idEnterprise)
+      this.collectService.collection.coCollection, this.collectService.collection.idEnterprise);
   }
 
   getDocumentsSale(idClient: number, coCurrency: string, coCollection: string, idEnterprise: number) {
@@ -117,6 +117,10 @@ export class CobrosDocumentComponent implements OnInit {
         this.collectService.documentsSaleComponent = true;
       else
         this.collectService.documentsSaleComponent = false;
+
+      if (this.collectService.historicPartialPayment) {
+        this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase());
+      }
     })
   }
 
