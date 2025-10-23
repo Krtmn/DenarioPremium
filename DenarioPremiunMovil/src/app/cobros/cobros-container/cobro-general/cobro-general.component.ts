@@ -141,6 +141,7 @@ export class CobrosGeneralComponent implements OnInit {
     this.clientService.getClientById(this.collectService.collection.idClient).then(client => {
       this.collectService.client = client;
       this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, "Cobros", 'fondoVerde', client, false);
+
       this.collectService.loadPaymentMethods();
       this.collectService.initLogicService();
       this.loadDataMaster();
@@ -258,7 +259,11 @@ export class CobrosGeneralComponent implements OnInit {
           this.collectService.currencySelectedDocument.coCurrency,
           this.collectService.collection.coCollection,
           this.collectService.collection.idEnterprise
-        );
+        ).then(() => {
+          if (this.collectService.historicPartialPayment) {
+            this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase());
+          }
+        });
         this.updateSelectedCurrency(this.collectService.collection.idCurrency);
         this.collectService.disabledCurrency = true;
         this.collectService.getIgtfList(this.synchronizationServices.getDatabase(),).then(() => {
@@ -471,7 +476,11 @@ export class CobrosGeneralComponent implements OnInit {
               });
           else
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient, this.collectService.currencySelectedDocument.coCurrency,
-              this.collectService.collection.coCollection, this.collectService.collection.idEnterprise);
+              this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
+                if (this.collectService.historicPartialPayment) {
+                  this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase());
+                }
+              });
           // }
 
           if (this.collectService.igtfList == null || this.collectService.igtfList.length == 0)
@@ -609,7 +618,11 @@ export class CobrosGeneralComponent implements OnInit {
             }
 
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
-              this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise);
+              this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
+                if (this.collectService.historicPartialPayment) {
+                  this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase());
+                }
+              });
           })
 
           if (this.collectService.requiredComment) {
@@ -724,6 +737,12 @@ export class CobrosGeneralComponent implements OnInit {
 
         this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient, this.collectService.currencySelectedDocument.coCurrency,
           this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(response => {
+
+
+            if (this.collectService.historicPartialPayment) {
+              this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase());
+            }
+
             if (this.collectService.documentSales.length > 0)
               this.collectService.documentsSaleComponent = true;
             else
@@ -764,7 +783,11 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.collection.coCurrency = currency.coCurrency;
     this.collectService.setCurrencyDocument();
     this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
-      this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise);
+      this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
+        if (this.collectService.historicPartialPayment) {
+          this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase());
+        }
+      });
 
     this.collectService.loadPaymentMethods();
 

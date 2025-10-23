@@ -570,8 +570,7 @@ export class CobroPagosComponent implements OnInit {
     }
 
     this.collectService.collection.nuAmountFinalConversion = this.collectService.convertirMonto(this.collectService.collection.nuAmountFinal, 0, this.collectService.collection.coCurrency);
-    this.collectService.collection.nuAmountTotal = this.collectService.convertirMonto(this.collectService.collection.nuAmountTotal, 0, this.collectService.collection.coCurrency);
-
+    this.collectService.collection.nuAmountTotal = this.collectService.collection.nuAmountTotal;
   }
 
   setNroTransanccion(nroTrans: string, index: number, type: string) {
