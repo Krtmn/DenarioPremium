@@ -168,7 +168,8 @@ export class NewPotentialClientComponent implements OnInit {
     if (this.idEnterprise!.errors == null && this.naClient.errors == null && this.nuRif!.errors == null && this.txAddress!.errors == null
       && this.txAddressDispatch!.errors == null && this.txClient!.errors == null
       && this.emClient!.errors == null && this.nuPhone!.errors == null) {
-      potencialClient.value.idEnterprise = this.clientLogic.empresaSeleccionada.idEnterprise;
+        this.messageService.showLoading().then(() => {
+                potencialClient.value.idEnterprise = this.clientLogic.empresaSeleccionada.idEnterprise;
       potencialClient.value.coEnterprise = this.clientLogic.empresaSeleccionada.coEnterprise;
       potencialClient.value.stPotentialClient = this.clientLogic.potentialClient.stPotentialClient;
       potencialClient.value.coClient = this.clientLogic.potentialClient.coClient;
@@ -223,8 +224,10 @@ export class NewPotentialClientComponent implements OnInit {
             this.clientLogic.clientContainerComponent = true;
           }
         }
-      });
-    } else {
+        this.messageService.hideLoading();
+      });    
+  });
+} else {
       this.newPotentialClient.markAllAsTouched();
     }
   }
