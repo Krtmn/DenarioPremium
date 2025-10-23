@@ -5,6 +5,7 @@ import { AutoSendService } from '../services/autoSend/auto-send.service';
 import { ServicesService } from '../services/services.service';
 import { SynchronizationDBService } from '../services/synchronization/synchronization-db.service';
 import { Deposit } from '../modelos/tables/deposit';
+import { MessageService } from '../services/messageService/message.service';
 
 @Component({
   selector: 'app-depositos',
@@ -18,6 +19,7 @@ export class DepositosComponent implements OnInit {
   public autoSend = inject(AutoSendService);
   public services = inject(ServicesService);
   public synchronizationServices = inject(SynchronizationDBService);
+  public messageService = inject(MessageService);
 
   public subs: any;
 
@@ -55,6 +57,7 @@ export class DepositosComponent implements OnInit {
         this.depositService.depositValid = false;
         this.depositService.deposit = {} as Deposit;
       }
+      this.messageService.hideLoading();
     })
   }
 

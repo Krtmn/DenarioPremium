@@ -6,6 +6,7 @@ import { DELIVERY_STATUS_NEW, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_TO_SEND, DE
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { Subscription } from 'rxjs';
 import { Platform } from '@ionic/angular';
+import { MessageService } from 'src/app/services/messageService/message.service';
 
 
 @Component({
@@ -24,6 +25,8 @@ export class DepositosHeaderComponent implements OnInit {
   public depositService = inject(DepositService);
   public adjuntoService = inject(AdjuntoService);
   public synchronizationServices = inject(SynchronizationDBService);
+
+  public messageService = inject(MessageService)
 
   public subscriberShow: any;
   public subscriberDisabled: any;
@@ -44,6 +47,7 @@ export class DepositosHeaderComponent implements OnInit {
           this.depositService.depositValid = false;
           this.depositService.message = this.depositService.depositTags.get('DEP_SAVE_MSG')!;
           setTimeout(() => {
+            this.messageService.hideLoading();
             this.depositService.showBackRoute('depositos');
           }, 100);
 
@@ -146,6 +150,7 @@ export class DepositosHeaderComponent implements OnInit {
       this.alertMessageOpenSave = true;
       this.depositService.disabledSaveButton = true;
       this.depositService.depositValid = false;
+      this.messageService.hideLoading();
     })
   }
 
@@ -155,20 +160,26 @@ export class DepositosHeaderComponent implements OnInit {
   }
 
   saveDeposit(): Promise<any> {
+    return this.messageService.showLoading().then(() => {
     this.depositService.deposit.stDeposit = DELIVERY_STATUS_SAVED;
-    return this.depositService.saveDeposit(this.synchronizationServices.getDatabase(),this.depositService.deposit).then(resp => {
-      console.log("DEPOSIT SAVE");
-      this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.depositService.deposit.coDeposit, "depositos");
-      return true;
+      return this.depositService.saveDeposit(this.synchronizationServices.getDatabase(),this.depositService.deposit).then(resp => {
+        console.log("DEPOSIT SAVE");
+        this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.depositService.deposit.coDeposit, "depositos");
+        return true;
+      });
     });
+
   }
 
   sendDeposit() {
-    this.depositService.deposit.stDeposit = DELIVERY_STATUS_TO_SEND;
-    this.depositService.saveDeposit(this.synchronizationServices.getDatabase(),this.depositService.deposit).then(resp => {
-      console.log("DEPOSIT SAVE READY TO SEND");
-      this.depositService.sendDeposit.next(this.depositService.deposit.coDeposit);
+    this.messageService.showLoading().then(() => {
+      this.depositService.deposit.stDeposit = DELIVERY_STATUS_TO_SEND;
+      this.depositService.saveDeposit(this.synchronizationServices.getDatabase(),this.depositService.deposit).then(resp => {
+        console.log("DEPOSIT SAVE READY TO SEND");
+        this.depositService.sendDeposit.next(this.depositService.deposit.coDeposit);
     })
+    });
+    
   }
 
 
