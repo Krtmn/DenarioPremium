@@ -239,7 +239,8 @@ export class ClientLocationComponent implements OnInit {
 
   saveLocation() {
     this.subs = this.locationService.salvarGuardarLocacion.subscribe(() => {
-      this.coordinateClient.idClient = this.clientLogic.coordenada.idClient;
+      this.messageService.showLoading().then(() => {
+              this.coordinateClient.idClient = this.clientLogic.coordenada.idClient;
       this.coordinateClient.idAddressClients = this.clientLogic.coordenada.idAddressClients;
       this.coordinateClient.coAddressClients = this.clientLogic.coordenada.coAddressClients;
       this.coordinateClient.idEnterprise = this.clientLogic.coordenada.idEnterprise;
@@ -268,11 +269,13 @@ export class ClientLocationComponent implements OnInit {
 
           this.services.insertPendingTransaction(this.synchronizationServices.getDatabase(), pendingTransaction).then(result => {
             if (result) {
-              this.autoSend.ngOnInit();
-              this.clientLogic.showBackRoute('clientLocationComponent');
+              this.autoSend.ngOnInit();              
+              this.clientLogic.showBackRoute('clientLocationComponent');              
             }
+            this.messageService.hideLoading();
           })
         } else {
+          this.messageService.hideLoading();
           /*
           this.messageAlert = new MessageAlert(
             "Denario Cliente",
@@ -283,6 +286,8 @@ export class ClientLocationComponent implements OnInit {
           //this.messageService.transaccionMsjModalNB("¡La nueva coordenada sera enviada al tener conexión de datos!");
         }
       });
+      });
+
     })
   }
   setCoordenada(coordenada: any) {

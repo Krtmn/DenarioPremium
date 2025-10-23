@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { Collection } from 'src/app/modelos/tables/collection';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
+import { MessageService } from 'src/app/services/messageService/message.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
 @Component({
@@ -22,6 +23,7 @@ export class CobrosHeaderComponent implements OnInit {
   public collectService = inject(CollectionService);
   public adjuntoService = inject(AdjuntoService);
   public synchronizationServices = inject(SynchronizationDBService);
+  public messageService = inject(MessageService);
 
 
   public textSave: String = '';
@@ -67,6 +69,7 @@ export class CobrosHeaderComponent implements OnInit {
       role: 'save',
       handler: () => {
         console.log('save and exit');
+        this.messageService.showLoading().then(() => {
         this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
         this.alertMessageOpen = true;
         this.collectService.collection.stCollection = 1;
@@ -82,8 +85,10 @@ export class CobrosHeaderComponent implements OnInit {
           this.collectService.collectionIsSave = false;
           this.collectService.cobrosComponent = true;
           this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO')!
-
+          this.messageService.hideLoading();
         })
+        });
+
       },
     },
     {
@@ -237,7 +242,8 @@ export class CobrosHeaderComponent implements OnInit {
 
   sendOrSave(sendOrSave: Boolean) {
     this.collectService.collectionIsSave = true;
-    if (sendOrSave) {
+    this.messageService.showLoading().then(() => {
+          if (sendOrSave) {
       //envio
       this.collectService.collection.stCollection = 2;
       this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(async response => {
@@ -260,6 +266,7 @@ export class CobrosHeaderComponent implements OnInit {
         this.collectService.cobroComponent = false;
         this.collectService.cobrosComponent = true;
         this.collectService.collectValid = false;
+        this.messageService.hideLoading();
 
       })
     } else {
@@ -294,8 +301,11 @@ export class CobrosHeaderComponent implements OnInit {
           }
         }
         this.alertMessageOpen = true;
+        this.messageService.hideLoading();
       })
     }
+    });
+
   }
 
   sendCollect() {
