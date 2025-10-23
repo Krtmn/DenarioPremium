@@ -1148,7 +1148,10 @@ export class VisitaComponent implements OnInit {
 
   async openRouteInGoogleMaps() {
     let hasNoClientCoordinates = false;
-    if (!this.cliente.coordenada) {
+    if (this.cliente.coordenada == null 
+    || this.cliente.coordenada.trim() == "" 
+    || this.cliente.coordenada.trim() == "0,0" 
+    || this.cliente.coordenada.toLowerCase().trim() === "null") {
       if (this.clientLogic.coordenada &&
         this.clientLogic.coordenada.lat !== 0 &&
         this.clientLogic.coordenada.lng !== 0) {
