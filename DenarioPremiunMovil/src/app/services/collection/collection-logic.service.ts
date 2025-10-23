@@ -621,6 +621,8 @@ export class CollectionService {
     } else if (this.collection.stCollection == 3) {
       monto = this.collection.nuAmountTotal;
       montoConversion = this.collection.nuAmountTotalConversion;
+      this.montoTotalPagar = monto;
+      this.montoTotalPagarConversion = montoConversion;
       return;
     } else {
       for (var j = 0; j < this.collection.collectionDetails.length; j++) {
@@ -681,9 +683,6 @@ export class CollectionService {
       this.montoTotalPagarConversion = this.cleanFormattedNumber(this.currencyService.formatNumber(montoConversion + this.montoIgtfConversion));
 
     }
-
-
-    //if (this.multiCurrency) {
 
     this.collection.nuDifferenceConversion = this.convertirMonto(this.collection.nuDifference, 0, this.collection.coCurrency);
     this.collection.nuAmountTotalConversion = this.convertirMonto(this.collection.nuAmountTotal, 0, this.collection.coCurrency);
@@ -1391,9 +1390,7 @@ export class CollectionService {
         // ...existing code...
 
 
-        if (this.historicPartialPayment) {
-          this.findIsPaymentPartial(dbServ);
-        }
+
 
         return this.documentSales;
       }).catch(e => {
@@ -1514,9 +1511,7 @@ export class CollectionService {
         }
         this.documentSalesView = this.documentSales.map(ds => ({ ...ds }));
         this.convertDocumentSales();
-        if (this.historicPartialPayment) {
-          this.findIsPaymentPartial(dbServ);
-        }
+
         return this.documentSales;
       }).catch(e => {
         //this.documentSales
@@ -1707,6 +1702,8 @@ export class CollectionService {
       this.documentSales.forEach(ds => docSalesMap.set(ds.idDocument, ds));
       const docSalesBackupMap = new Map<number, DocumentSale>();
       this.documentSalesBackup.forEach(ds => docSalesBackupMap.set(ds.idDocument, ds));
+      const docSalesViewMap = new Map<number, DocumentSale>();
+      this.documentSalesView.forEach(ds => docSalesViewMap.set(ds.idDocument, ds));
 
       for (let i = 0; i < data.rows.length; i++) {
         const idDoc = data.rows.item(i).id_document;
@@ -1720,11 +1717,15 @@ export class CollectionService {
         if (docSalesBackupMap.has(idDoc)) {
           docSalesBackupMap.get(idDoc)!.inPaymentPartial = isPartial;
         }
+        // Actualiza documentSalesBackup
+        if (docSalesViewMap.has(idDoc)) {
+          docSalesViewMap.get(idDoc)!.inPaymentPartial = isPartial;
+        }
         // Actualiza mapDocumentsSales
         if (this.mapDocumentsSales.has(idDoc)) {
           this.mapDocumentsSales.get(idDoc)!.inPaymentPartial = isPartial;
         }
-      }
+      }      
     }).catch(e => {
       console.error('Error en findIsPaymentPartial:', e);
       return Promise.resolve();
@@ -2093,139 +2094,6 @@ export class CollectionService {
       }).catch(e => {
         //this.documentSales
         return Promise.resolve(0);
-      })
-  }
-
-  setDocumentSale() {
-
-  }
-
-
-  getAllDocuments(dbServ: SQLiteObject, idClient: number, coCurrency: string, coCollection: string, idEnterprise: number) {
-    /* this.documentSales = [] as DocumentSale[];
-    this.documentSalesBackup = [] as DocumentSale[]; */
-
-
-    let selectStatement = "";
-    let params: any[] = [];
-    if (coCurrency == 'Moneda') {
-      selectStatement = 'SELECT ' +
-        'd.* FROM document_sales d ' +
-        'LEFT JOIN document_st ds ' +
-        'ON d.co_document = ds.co_document ' +
-        'WHERE d.id_client = ? AND ds.st_document < 2 AND d.id_enterprise = ? ' +
-        'AND d.co_document_sale_type == "IGTF" ' +
-        'OR d.co_document in (SELECT co_document ' +
-        'FROM collection_details WHERE co_collection= ? ORDER BY ds.co_currency = ' + this.enterpriseSelected.coCurrencyDefault + ');'
-      params = [idClient, idEnterprise, coCollection];
-    } else {
-      selectStatement = 'SELECT ' +
-        'd.* FROM document_sales d ' +
-        'LEFT JOIN document_st ds ' +
-        'ON d.co_document = ds.co_document ' +
-        'WHERE d.id_client = ? AND ds.st_document < 2 AND d.co_currency = ? AND d.id_enterprise = ? ' +
-        'AND d.co_document_sale_type != "IGTF" ' +
-        'OR d.co_document in (SELECT co_document ' +
-        'FROM collection_details WHERE co_collection= ?);'
-      params = [idClient, coCurrency, idEnterprise, coCollection];
-    }
-
-    return dbServ.executeSql(selectStatement,
-      params).then(data => {
-        if (data.rows.length == 0) {
-          this.documentSales = [] as DocumentSale[];
-          this.documentSalesBackup = [] as DocumentSale[];
-          this.mapDocumentsSales.clear()
-        } else
-          for (let i = 0; i < data.rows.length; i++) {
-            let documentSales = {} as DocumentSale;
-            let documentSalesBackup = {} as DocumentSale;
-            if (this.mapDocumentsSales.get(data.rows.item(i).id_document) == undefined) {
-              documentSales.idDocument = data.rows.item(i).id_document;
-              documentSales.idClient = data.rows.item(i).id_client;
-              documentSales.coClient = data.rows.item(i).co_client;
-              documentSales.idDocumentSaleType = data.rows.item(i).id_document_sale_type;
-              documentSales.coDocumentSaleType = data.rows.item(i).co_document_sale_type;
-              documentSales.daDocument = data.rows.item(i).da_document;
-              documentSales.daDueDate = data.rows.item(i).da_due_date;
-              if (data.rows.item(i).na_amount_base === null || data.rows.item(i).na_amount_base === undefined) {
-                documentSales.nuAmountBase = 0;
-              } else {
-                documentSales.nuAmountBase = data.rows.item(i).na_amount_base;
-              }
-
-              if (data.rows.item(i).nu_amount_discount === null || data.rows.item(i).nu_amount_discount === undefined) {
-                documentSales.nuAmountDiscount = 0;
-              } else {
-                documentSales.nuAmountDiscount = data.rows.item(i).nu_amount_discount;
-              }
-
-              if (data.rows.item(i).nu_amount_tax === null || data.rows.item(i).nu_amount_tax === undefined) {
-                documentSales.nuAmountTax = 0;
-              } else {
-                documentSales.nuAmountTax = data.rows.item(i).nu_amount_tax;
-              }
-              documentSales.nuAmountTotal = data.rows.item(i).nu_amount_total == undefined ? 0 : data.rows.item(i).nu_amount_total;
-              documentSales.nuBalance = data.rows.item(i).nu_balance == undefined ? 0 : data.rows.item(i).nu_balance;
-              documentSales.coCurrency = data.rows.item(i).co_currency;
-              documentSales.idCurrency = data.rows.item(i).id_currency;
-              documentSales.nuDocument = data.rows.item(i).nu_document;
-              documentSales.txComment = data.rows.item(i).tx_comment;
-              documentSales.coDocument = data.rows.item(i).co_document;
-              documentSales.coCollection = data.rows.item(i).co_collection;
-              documentSales.nuValueLocal = data.rows.item(i).nu_value_local;
-              documentSales.stDocumentSale = data.rows.item(i).st_document_sale;
-              documentSales.coEnterprise = data.rows.item(i).co_enterprise;
-              documentSales.idEnterprise = data.rows.item(i).id_enterprise;
-              documentSales.naType = data.rows.item(i).naType;
-              documentSales.inPaymentPartial = false;
-              documentSales.isSelected = false;
-              documentSales.isSave = false;
-
-
-              if (!this.isOpenCollect) {
-                for (var cd = 0; cd < this.collection.collectionDetails.length; cd++) {
-                  if (data.rows.item(i).id_document == this.collection.collectionDetails[cd].idDocument) {
-                    documentSales.isSelected = true;
-                  }
-
-                  /* else
-                    documentSales.isSelected = false; */
-                }
-              } else {
-                documentSales.isSelected = false;
-              }
-
-
-              documentSales.positionCollecDetails = data.rows.item(i).positionCollecDetails;
-              documentSales.nuAmountRetention = data.rows.item(i).nuAmountRetention == undefined ? 0 : data.rows.item(i).nuAmountRetention;
-              documentSales.nuAmountRetention2 = data.rows.item(i).nuAmountRetention2 == undefined ? 0 : data.rows.item(i).nuAmountRetention2;
-              documentSales.daVoucher = data.rows.item(i).daVoucher == undefined ? "" : data.rows.item(i).daVoucher;
-              documentSales.nuVaucherRetention = data.rows.item(i).nuVaucherRetention == undefined ? 0 : data.rows.item(i).nuVaucherRetention;
-              documentSales.igtfAmount = data.rows.item(i).igtfAmount == undefined ? 0 : data.rows.item(i).igtfAmount;
-              documentSales.txConversion = data.rows.item(i).txConversion == undefined ? "" : data.rows.item(i).txConversion;
-
-              this.documentSales.push(documentSales);
-              //documentSalesBackup = { ...documentSales };
-              documentSalesBackup = Object.assign({}, documentSales);
-
-              this.documentSalesBackup.push(documentSalesBackup);
-
-              this.mapDocumentsSales.set(
-                data.rows.item(i).id_document, documentSales
-              )
-
-            }
-
-          }
-
-        if (this.historicPartialPayment) {
-          this.findIsPaymentPartial(dbServ);
-        }
-        return this.documentSales
-      }).catch(e => {
-        //this.documentSales
-        return Promise.resolve(this.documentSales);
       })
   }
 
