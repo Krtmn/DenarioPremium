@@ -417,38 +417,21 @@ export class CollectionService {
         if (this.collection.stCollection == 1) {
           if (this.currencyList[i].coCurrency == this.collection.coCurrency) {
             this.currencySelected = this.currencyList[i];
-            //this.currencySelectedDocument = this.currencyList[i];
 
             this.collection.idCurrency = this.currencyList[i].idCurrency;
             this.collection.coCurrency = this.currencyList[i].coCurrency;
           }
         } else {
-          if (this.collection.stCollection == 3) {
+          if (this.collection.stCollection == 2 || this.collection.stCollection == 3) {
             if (this.currencyList[i].coCurrency == this.collection.coCurrency) {
               this.currencySelected = this.currencyList[i];
-              //this.currencySelectedDocument = this.currencyList[i];
               this.collection.idCurrency = this.currencyList[i].idCurrency;
               this.collection.coCurrency = this.currencyList[i].coCurrency;
-              /*   if (this.currencySelectedDocument.coCurrency == this.localCurrency.coCurrency) {
-                  this.isLocalCurrency = true;
-                  this.isHardCurrency = false;
-                } else {
-                  this.isHardCurrency = true;
-                  this.isLocalCurrency = false;
-                } */
             }
           } else if (this.currencyList[i].coCurrency == this.enterpriseSelected.coCurrencyDefault) {
             this.currencySelected = this.currencyList[i];
-            // this.currencySelectedDocument = this.currencyList[i];
             this.collection.idCurrency = this.currencyList[i].idCurrency;
             this.collection.coCurrency = this.currencyList[i].coCurrency;
-            /*  if (this.currencySelectedDocument.coCurrency == this.localCurrency.coCurrency) {
-               this.isLocalCurrency = true;
-               this.isHardCurrency = false;
-             } else {
-               this.isHardCurrency = true;
-               this.isLocalCurrency = false;
-             } */
           }
 
         }
@@ -617,8 +600,11 @@ export class CollectionService {
     if (this.collection.stCollection == 1) {
       for (var j = 0; j < this.collection.collectionDetails.length; j++) {
         monto += this.collection.collectionDetails[j].nuAmountPaid;
+        montoConversion += this.collection.collectionDetails[j].nuAmountPaidConversion;
+        this.montoTotalPagar = monto;
+        this.montoTotalPagarConversion = montoConversion;
       }
-    } else if (this.collection.stCollection == 3) {
+    } else if (this.collection.stCollection == 2 || this.collection.stCollection == 3) {
       monto = this.collection.nuAmountTotal;
       montoConversion = this.collection.nuAmountTotalConversion;
       this.montoTotalPagar = monto;
@@ -998,18 +984,6 @@ export class CollectionService {
           return;
         } else {
 
-          let validateCollectionPayments = this.collection.collectionPayments.every(payment =>
-            payment.coPaymentMethod &&
-            payment.nuAmountPartial !== undefined && payment.nuAmountPartial !== null &&
-            payment.nuPaymentDoc
-          );
-
-          if (!validateCollectionPayments) {
-            this.onCollectionValidToSend(false);
-            return;
-          }
-
-
           if (this.tolerancia0) {
             //TOLERANCIA0 TRUE PERMITO DIFERENCIA SE DEBEN VALIDAR LAS SIGUIENTES VARIABLES TipoTolerancia, RangoTolerancia, MonedaTolerancia
             if (this.TipoTolerancia == 0) {
@@ -1150,7 +1124,6 @@ export class CollectionService {
     }
   }
 
-  // ...existing code...
   validateReferencePayment() {
     // Si no hay colección o no hay pagos, no está válido para enviar
     if (!this.collection || !this.collection.collectionPayments || this.collection.collectionPayments.length <= 0) {
@@ -1164,20 +1137,34 @@ export class CollectionService {
       return amt == null || isNaN(Number(amt)) || Number(amt) === 0;
     });
     if (invalidAmount) {
-      // Hay al menos un pago con monto parcial inválido
       this.onCollectionValidToSend(false);
       return;
     }
 
     // Validar referencias en pagos que no son efectivo
-    const existePagoSinReferencia = this.collection.collectionPayments.some(
-      pago =>
-        pago.coType !== 'ef' && // Solo valida si NO es efectivo
-        (!pago.nuPaymentDoc || pago.nuPaymentDoc.toString().trim() === '')
-    );
+    const existePagoSinReferencia = this.collection.collectionPayments.some(pago => {
+      // algunos registros usan 'coType' y otros 'coPaymentMethod' para el tipo ('ef' = efectivo)
+      const payType = (pago.coType ?? pago.coPaymentMethod ?? '').toString().toLowerCase();
+
+      // Si es efectivo, no requerimos referencia
+      if (payType === 'ef') return false;
+
+      // Dependiendo del método, la referencia puede estar en distintos campos.
+      // Consideramos válidas cualquiera de estas si no están vacías:
+      const refs = [
+        pago.nuPaymentDoc,        // número de documento de pago
+        pago.nuCollectionPayment, // posible campo de recibo
+        pago.nuClientBankAccount,  // posible cuenta/recibo
+        pago.nuClientBankAccount   // repetido como alternativa en algunos sitios
+      ];
+
+      const hasRef = refs.some(r => r !== undefined && r !== null && String(r).trim() !== '');
+
+      // Si no hay referencia válida -> es un pago sin referencia
+      return !hasRef;
+    });
 
     if (existePagoSinReferencia) {
-      // Hay al menos un pago (no efectivo) sin número de referencia
       this.onCollectionValidToSend(false);
       return;
     }
@@ -1185,7 +1172,6 @@ export class CollectionService {
     // Todos los pagos tienen monto y, si corresponde, referencia -> válido
     this.onCollectionValidToSend(true);
   }
-  // ...existing code...
 
   cleanString(str: string): string {
     // Elimina espacios al principio y al final
@@ -1725,7 +1711,7 @@ export class CollectionService {
         if (this.mapDocumentsSales.has(idDoc)) {
           this.mapDocumentsSales.get(idDoc)!.inPaymentPartial = isPartial;
         }
-      }      
+      }
     }).catch(e => {
       console.error('Error en findIsPaymentPartial:', e);
       return Promise.resolve();
@@ -1821,7 +1807,7 @@ export class CollectionService {
       if (this.onChangeClient)
         this.cobroValid = true;
     }
-    if (this.collection.stCollection == 3)
+    if (this.collection.stCollection == 2 || this.collection.stCollection == 3)
       this.cobroValid = true;
 
     this.validCollection.next(valid);
