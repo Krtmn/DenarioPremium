@@ -15,10 +15,10 @@ import { Swiper } from 'swiper/types';
 
 
 @Component({
-    selector: 'app-adjunto',
-    templateUrl: './adjunto.component.html',
-    styleUrls: ['./adjunto.component.scss'],
-    standalone: false
+  selector: 'app-adjunto',
+  templateUrl: './adjunto.component.html',
+  styleUrls: ['./adjunto.component.scss'],
+  standalone: false
 })
 export class AdjuntoComponent implements OnInit {
   enableCarousel: boolean = false;
@@ -261,15 +261,18 @@ export class AdjuntoComponent implements OnInit {
   async buscarImg() {
     if (this.checkImgLimit()) {
       var remainingSlots = this.service.remainingFotos();
+      this.disablePhotos = true; //deshabilita el boton de buscar fotos mientras se procesan las fotos
 
-
-
+      //Buscamos las imagenes con el plugin
       const { photos } = await Camera.pickImages({
         limit: remainingSlots
-      })
+      }).catch(err => {
+        this.disablePhotos = false; //habilita el boton de buscar fotos en caso de error
+        return { photos: [] };      //Ej: usuario cancela la seleccion
+      });
 
       this.service.processingPhotos = photos.length; //actualiza la cantidad de fotos que se estan procesando actualmente
-      this.disablePhotos = true; //deshabilita el boton de buscar fotos mientras se procesan las fotos
+      
       //console.log(images);
 
 

@@ -35,7 +35,7 @@ export class AdjuntoService {
   public totalPhoto = 5 //cuando esto sea una variable de configuracion se cambiará
   public processingPhotos = 0; //cantidad de fotos que se estan procesando actualmente
 
-  weightLimit = 20; //limite de peso de archivos, en MB
+  weightLimit = 3; //limite de peso de archivos, en MB
 
   weightLimitExceeded = false; //flag que se levanta si un archivo excede weightLimit
 
@@ -112,8 +112,8 @@ export class AdjuntoService {
     if (img.path && img.path != '') {
       var file = await Filesystem.readFile(options);
       //console.log('PESO DE IMG: '+ this.getFileWeight(file.data as string) + " MB");
-
-      if (this.getFileWeight(file.data as string) > this.weightLimit) {
+      var peso = this.getFileWeight(file.data as string);
+      if (peso > this.weightLimit) {
         this.weightLimitExceeded = true;
       } else {
         var foto = new Foto(
