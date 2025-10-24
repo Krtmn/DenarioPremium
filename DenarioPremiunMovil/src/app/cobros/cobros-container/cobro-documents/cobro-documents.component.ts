@@ -251,131 +251,168 @@ export class CobrosDocumentComponent implements OnInit {
     }
   }
 
-  async calculateDocumentSaleOpen(index: number) {
-    return new Promise(async (resolve, reject) => {
+  async calculateDocumentSaleOpen(index: number): Promise<boolean> {
+    try {
+      const cs = this.collectService;
+      const cur = this.currencyService;
 
-      let sumRetentions = 0, nuAmountBase = 0, nuAmountDiscount = 0, nuAmountTotal = 0, nuAmountPaid = 0, nuBalance = 0, nuAmountTax = 0, nuAmountRetention = 0, nuAmountRetention2 = 0;
-      let daVoucher = "", nuVaucherRetention = "";
-      this.collectService.ensureNumber(this.collectService.documentSales[index], 'nuAmountBase');
-      this.collectService.ensureNumber(this.collectService.documentSales[index], 'nuAmountDiscount');
-      this.collectService.ensureNumber(this.collectService.documentSales[index], 'nuAmountPaid');
-      this.collectService.documentSales[index].nuAmountBase == undefined ? 0 : this.collectService.documentSales[index].nuAmountBase;
-      this.collectService.documentSales[index].nuAmountDiscount == undefined ? 0 : this.collectService.documentSales[index].nuAmountDiscount;
-      this.collectService.documentSales[index].nuAmountPaid == undefined ? 0 : this.collectService.documentSales[index].nuAmountPaid;
+      const doc = cs.documentSales?.[index];
+      const backup = cs.documentSalesBackup?.[index];
+      if (!doc || !backup) {
+        console.warn('calculateDocumentSaleOpen: documento o backup no encontrados, index=', index);
+        return false;
+      }
 
-      if (this.collectService.collection.stCollection == 1) {
-        let positionCollecDetails = this.collectService.documentSales[index].positionCollecDetails;
-        nuAmountDiscount = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountDiscount;
+      // Asegurar campos numéricos
+      cs.ensureNumber(doc, 'nuAmountBase');
+      cs.ensureNumber(doc, 'nuAmountDiscount');
+      cs.ensureNumber(doc, 'nuAmountPaid');
 
-        if (this.collectService.isPaymentPartial) {
-          nuAmountPaid = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountPaid;
+      // Valores por defecto
+      let nuAmountDiscount = 0;
+      let nuAmountPaid = 0;
+      let nuBalance = 0;
+      let nuAmountRetention = 0;
+      let nuAmountRetention2 = 0;
+      let daVoucher = '';
+      let nuVaucherRetention = '';
+
+      // Caso colección guardada (stCollection == 1)
+      if (cs.collection.stCollection === 1) {
+        const pos = doc.positionCollecDetails;
+        const detail = cs.collection.collectionDetails?.[pos];
+
+        if (detail) {
+          nuAmountDiscount = Number(detail.nuAmountDiscount ?? 0);
+          nuAmountRetention = Number(detail.nuAmountRetention ?? 0);
+          nuAmountRetention2 = Number(detail.nuAmountRetention2 ?? 0);
+
+          if (cs.isPaymentPartial) {
+            nuAmountPaid = Number(detail.nuAmountPaid ?? 0);
+          } else {
+            const sumRet = Number(detail.nuAmountDiscount ?? 0) + Number(detail.nuAmountRetention ?? 0) + Number(detail.nuAmountRetention2 ?? 0);
+            nuAmountPaid = Number(detail.nuBalanceDoc ?? 0) - sumRet;
+          }
+
+          nuBalance = Number(detail.nuBalanceDoc ?? 0);
+          daVoucher = detail.daVoucher ?? '';
+          nuVaucherRetention = detail.nuVoucherRetention ?? '';
         } else {
-          sumRetentions = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountDiscount +
-            this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention +
-            this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention2;
-          nuAmountPaid = this.collectService.collection.collectionDetails[positionCollecDetails].nuBalanceDoc - sumRetentions;
+          // Fallback si falta el detalle
+          nuAmountDiscount = Number(backup.nuAmountDiscount ?? 0);
+          nuAmountRetention = 0;
+          nuAmountRetention2 = 0;
+          nuBalance = Number(backup.nuBalance ?? 0);
+          nuAmountPaid = nuBalance;
         }
-
-        nuBalance = this.collectService.collection.collectionDetails[positionCollecDetails].nuBalanceDoc;
-        nuAmountRetention = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention;
-        nuAmountRetention2 = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention2;
-        daVoucher = this.collectService.collection.collectionDetails[positionCollecDetails].daVoucher!;
-        nuVaucherRetention = this.collectService.collection.collectionDetails[positionCollecDetails].nuVoucherRetention!;
-
-        if (this.collectService.retencion)
-          if (nuVaucherRetention.length > 0) {
-            this.collectService.validNuRetention = true;
-          } else
-            this.collectService.validNuRetention = false;
-
-        this.displayDiscount = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountDiscount.toString();
-        this.displayRetention = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention.toString();
-        this.displayRetention2 = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention2.toString();
-
       } else {
-        let pos = this.collectService.documentSales[index].positionCollecDetails;
-        if (this.collectService.documentSalesBackup[pos].isSave) {
-          nuAmountDiscount = this.collectService.collection.collectionDetails[index].nuAmountDiscount;
-          nuAmountRetention = this.collectService.collection.collectionDetails[index].nuAmountRetention;
-          nuAmountRetention2 = this.collectService.collection.collectionDetails[index].nuAmountRetention2;
-          daVoucher = this.collectService.collection.collectionDetails[index].daVoucher!;
-          if (this.collectService.isPaymentPartial)
-            nuAmountPaid = this.collectService.collection.collectionDetails[index].nuAmountPaid;
-          else
-            nuAmountPaid = this.collectService.collection.collectionDetails[index].nuBalanceDoc - (nuAmountDiscount + nuAmountRetention + nuAmountRetention2);
+        // stCollection != 1
+        const pos = doc.positionCollecDetails;
+        const saved = cs.documentSalesBackup?.[pos]?.isSave;
 
-          nuVaucherRetention = this.collectService.collection.collectionDetails[index].nuVoucherRetention;
-          nuBalance = this.collectService.collection.collectionDetails[index].nuBalanceDoc;
+        if (saved) {
+          const detail = cs.collection.collectionDetails?.[index];
+          if (detail) {
+            nuAmountDiscount = Number(detail.nuAmountDiscount ?? 0);
+            nuAmountRetention = Number(detail.nuAmountRetention ?? 0);
+            nuAmountRetention2 = Number(detail.nuAmountRetention2 ?? 0);
+            daVoucher = detail.daVoucher ?? '';
+            nuVaucherRetention = detail.nuVoucherRetention ?? '';
 
+            if (cs.isPaymentPartial) {
+              nuAmountPaid = Number(detail.nuAmountPaid ?? 0);
+            } else {
+              nuAmountPaid = Number(detail.nuBalanceDoc ?? 0) - (nuAmountDiscount + nuAmountRetention + nuAmountRetention2);
+            }
+
+            nuBalance = Number(detail.nuBalanceDoc ?? 0);
+          } else {
+            // Fallback seguro
+            nuAmountDiscount = Number(backup.nuAmountDiscount ?? 0);
+            nuBalance = Number(backup.nuBalance ?? 0);
+            nuAmountPaid = nuBalance;
+          }
         } else {
-          let sumRetentions = this.collectService.documentSaleOpen.nuAmountDiscount + this.collectService.documentSaleOpen.nuAmountRetention + this.collectService.documentSaleOpen.nuAmountRetention2;
-          nuAmountDiscount = this.collectService.documentSaleOpen.nuAmountDiscount;
-          nuBalance = this.collectService.documentSalesBackup[index].nuBalance;
-          nuAmountRetention = this.collectService.documentSaleOpen.nuAmountRetention;
-          nuAmountRetention2 = this.collectService.documentSaleOpen.nuAmountRetention2;
-          nuAmountPaid = this.collectService.documentSalesBackup[index].nuBalance - sumRetentions;
-          nuVaucherRetention = this.collectService.documentSaleOpen.nuVaucherRetention;
-          daVoucher = this.collectService.documentSaleOpen.daVoucher!;
+          // Documento no guardado anteriormente: usar documentSaleOpen / backup
+          const sumRet = Number(cs.documentSaleOpen?.nuAmountDiscount ?? 0) +
+            Number(cs.documentSaleOpen?.nuAmountRetention ?? 0) +
+            Number(cs.documentSaleOpen?.nuAmountRetention2 ?? 0);
+
+          nuAmountDiscount = Number(cs.documentSaleOpen?.nuAmountDiscount ?? 0);
+          nuAmountRetention = Number(cs.documentSaleOpen?.nuAmountRetention ?? 0);
+          nuAmountRetention2 = Number(cs.documentSaleOpen?.nuAmountRetention2 ?? 0);
+
+          nuBalance = Number(backup.nuBalance ?? 0);
+          nuAmountPaid = nuBalance - sumRet;
+
+          nuVaucherRetention = cs.documentSaleOpen?.nuVaucherRetention ?? '';
+          daVoucher = cs.documentSaleOpen?.daVoucher ?? '';
         }
       }
 
-      this.collectService.amountPaid = nuAmountPaid;
-      this.centsAmountPaid = Math.round((this.collectService.amountPaid ?? 0) * 100);
+      // Actualizar estados dependientes
+      cs.amountPaid = nuAmountPaid;
+      this.centsAmountPaid = Math.round((cs.amountPaid ?? 0) * 100);
       this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
-      this.displayDiscount = nuAmountDiscount.toString();
-      this.displayRetention = nuAmountRetention.toString();
-      this.displayRetention2 = nuAmountRetention2.toString();
 
-      nuAmountBase = this.collectService.documentSalesBackup[index].nuAmountBase;
-      nuAmountTotal = this.collectService.documentSalesBackup[index].nuAmountTotal;
-      nuAmountTax = this.collectService.documentSales[index].nuAmountTax;
+      this.displayDiscount = (nuAmountDiscount ?? 0).toString();
+      this.displayRetention = (nuAmountRetention ?? 0).toString();
+      this.displayRetention2 = (nuAmountRetention2 ?? 0).toString();
 
-      this.collectService.documentSaleOpen = {
-        idDocument: this.collectService.documentSalesBackup[index].idDocument,
-        idClient: this.collectService.documentSalesBackup[index].idClient,
-        coClient: this.collectService.documentSalesBackup[index].coClient,
-        idDocumentSaleType: this.collectService.documentSalesBackup[index].idDocumentSaleType,
-        coDocumentSaleType: this.collectService.documentSalesBackup[index].coDocumentSaleType,
-        daDocument: this.collectService.documentSalesBackup[index].daDocument,
-        daDueDate: this.collectService.documentSalesBackup[index].daDueDate,
-        nuAmountBase: this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(nuAmountBase)),
-        nuAmountDiscount: this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(nuAmountDiscount)),
-        nuAmountTax: this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(nuAmountTax)),
-        nuAmountTotal: this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(nuAmountTotal)),
-        nuAmountPaid: this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(nuAmountPaid)),
-        nuBalance: this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(nuBalance)),
-        coCurrency: this.collectService.documentSales[index].coCurrency,
-        idCurrency: this.collectService.documentSales[index].idCurrency,
-        nuDocument: this.collectService.documentSales[index].nuDocument,
-        txComment: this.collectService.documentSales[index].txComment,
-        coDocument: this.collectService.documentSales[index].coDocument,
-        coCollection: this.collectService.collection.coCollection,
-        nuValueLocal: this.collectService.collection.nuValueLocal,
-        stDocumentSale: this.collectService.documentSales[index].stDocumentSale,
-        coEnterprise: this.collectService.documentSales[index].coEnterprise,
-        idEnterprise: this.collectService.documentSales[index].idEnterprise,
-        naType: this.collectService.documentSales[index].naType,
-        isSelected: this.collectService.documentSales[index].isSelected,
-        positionCollecDetails: this.collectService.documentSales[index].positionCollecDetails,
+      const nuAmountBase = Number(backup.nuAmountBase ?? 0);
+      const nuAmountTotal = Number(backup.nuAmountTotal ?? 0);
+      const nuAmountTax = Number(doc.nuAmountTax ?? 0);
+
+      // Construir documentSaleOpen con limpieza/formato consistentes
+      cs.documentSaleOpen = {
+        idDocument: backup.idDocument,
+        idClient: backup.idClient,
+        coClient: backup.coClient,
+        idDocumentSaleType: backup.idDocumentSaleType,
+        coDocumentSaleType: backup.coDocumentSaleType,
+        daDocument: backup.daDocument,
+        daDueDate: backup.daDueDate,
+        nuAmountBase: cur.cleanFormattedNumber(cur.formatNumber(nuAmountBase)),
+        nuAmountDiscount: cur.cleanFormattedNumber(cur.formatNumber(nuAmountDiscount)),
+        nuAmountTax: cur.cleanFormattedNumber(cur.formatNumber(nuAmountTax)),
+        nuAmountTotal: cur.cleanFormattedNumber(cur.formatNumber(nuAmountTotal)),
+        nuAmountPaid: cur.cleanFormattedNumber(cur.formatNumber(nuAmountPaid)),
+        nuBalance: cur.cleanFormattedNumber(cur.formatNumber(nuBalance)),
+        coCurrency: doc.coCurrency,
+        idCurrency: doc.idCurrency,
+        nuDocument: doc.nuDocument,
+        txComment: doc.txComment,
+        coDocument: doc.coDocument,
+        coCollection: cs.collection.coCollection,
+        nuValueLocal: cs.collection.nuValueLocal,
+        stDocumentSale: doc.stDocumentSale,
+        coEnterprise: doc.coEnterprise,
+        idEnterprise: doc.idEnterprise,
+        naType: doc.naType,
+        isSelected: doc.isSelected,
+        positionCollecDetails: doc.positionCollecDetails,
         nuAmountRetention: Number(nuAmountRetention),
         nuAmountRetention2: Number(nuAmountRetention2),
         daVoucher: daVoucher,
         nuVaucherRetention: nuVaucherRetention,
-        igtfAmount: this.collectService.documentSales[index].igtfAmount,
-        txConversion: this.collectService.documentSales[index].txConversion,
-        inPaymentPartial: this.collectService.isPaymentPartial,
-        isSave: this.collectService.documentSales[index].isSave,
+        igtfAmount: doc.igtfAmount,
+        txConversion: doc.txConversion,
+        inPaymentPartial: cs.isPaymentPartial,
+        isSave: doc.isSave
+      };
+
+      // Validación de retención
+      if (cs.retencion) {
+        cs.validNuRetention = (nuVaucherRetention ?? '').toString().length > 0;
+      } else {
+        cs.validNuRetention = false;
       }
 
-      console.log(this.collectService.documentSaleOpen, "DOCUMENTO ABIERTO CALCULADO");
-
-      if (this.collectService.retencion)
-        this.collectService.validNuRetention = true;
-      else
-        this.collectService.validNuRetention = false;
-
-      resolve(true);
-    });
+      return true;
+    } catch (err) {
+      console.error('calculateDocumentSaleOpen error:', err);
+      return false;
+    }
   }
 
   async openDocumentSale(index: number, e: Event) {
