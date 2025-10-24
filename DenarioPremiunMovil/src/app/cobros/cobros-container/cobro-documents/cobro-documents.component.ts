@@ -322,6 +322,9 @@ export class CobrosDocumentComponent implements OnInit {
       this.collectService.amountPaid = nuAmountPaid;
       this.centsAmountPaid = Math.round((this.collectService.amountPaid ?? 0) * 100);
       this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
+      this.displayDiscount = nuAmountDiscount.toString();
+      this.displayRetention = nuAmountRetention.toString();
+      this.displayRetention2 = nuAmountRetention2.toString();
 
       nuAmountBase = this.collectService.documentSalesBackup[index].nuAmountBase;
       nuAmountTotal = this.collectService.documentSalesBackup[index].nuAmountTotal;
@@ -372,8 +375,7 @@ export class CobrosDocumentComponent implements OnInit {
         this.collectService.validNuRetention = false;
 
       resolve(true);
-    })
-
+    });
   }
 
   async openDocumentSale(index: number, e: Event) {

@@ -606,11 +606,11 @@
                                 size-md="12">
                                 <ion-input
                                     label="{{this.collectService.collectionTags.get('COB_AMOUNT_RETENTION_IVA')}}"
-                                    label-placement="floating" fill="outline" color="primary" type="number"
-                                    value="{{this.collectService.documentSaleOpen.nuAmountRetention}}"
-                                    [(ngModel)]="this.collectService.documentSaleOpen.nuAmountRetention"
-                                    (ionInput)="setAmountTotal()"
-                                    [disabled]="!this.collectService.validNuRetention"></ion-input>
+                                    label-placement="floating" fill="outline" color="primary" type="text"
+                                    inputmode="numeric" [value]="displayRetention || formatFromCents(centsRetention)"
+                                    (keydown)="onRetentionKeyDown($event)" (focus)="onRetentionFocus()"
+                                    (blur)="onRetentionBlur()" [disabled]="!this.collectService.validNuRetention">
+                                </ion-input>
                             </ion-col>
                             <!-- MONTO RET IVA--->
 
@@ -619,11 +619,11 @@
                                 size-md="12">
                                 <ion-input
                                     label="{{this.collectService.collectionTags.get('COB_AMOUNT_RETENTION_ISLR')}}"
-                                    label-placement="floating" fill="outline"
-                                    value="{{this.collectService.documentSaleOpen.nuAmountRetention2}}"
-                                    [(ngModel)]="this.collectService.documentSaleOpen.nuAmountRetention2"
-                                    color="primary" type="number" (ionInput)="setAmountTotal()"
-                                    [disabled]="!this.collectService.validNuRetention"></ion-input>
+                                    label-placement="floating" fill="outline" color="primary" type="text"
+                                    inputmode="numeric" [value]="displayRetention2 || formatFromCents(centsRetention2)"
+                                    (keydown)="onRetention2KeyDown($event)" (focus)="onRetention2Focus()"
+                                    (blur)="onRetention2Blur()" [disabled]="!this.collectService.validNuRetention">
+                                </ion-input>
 
                             </ion-col>
                             <!-- MONTO RET ISLR--->

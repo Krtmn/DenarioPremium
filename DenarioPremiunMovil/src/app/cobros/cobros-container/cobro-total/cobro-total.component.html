@@ -440,7 +440,8 @@
                     <ion-item>
                         {{this.collectService.collectionTags.get('COB_MONTO_TOTAL_RETENTION')}}
                         {{this.collectService.collection.coCurrency}}:
-                        {{this.currencyService.formatNumber(retentionDetails.nuAmountPaid)}}
+                        {{this.currencyService.formatNumber(retentionDetails.nuAmountRetention +
+                        retentionDetails.nuAmountRetention2)}}
                     </ion-item>
 
                     <ion-item *ngIf="this.collectService.collection.stCollection !== 3">
