@@ -238,7 +238,7 @@ export class AdjuntoComponent implements OnInit {
             ''
           );
           if (this.service.getFileWeight(p.base64String) > this.service.weightLimit) {
-            this.message.transaccionMsjModalNB("La Foto excede nuestro limite de 20 MB");
+            this.message.transaccionMsjModalNB("La Foto excede nuestro limite de " + this.service.weightLimit + " MB");
           } else {
             this.service.fotos.push(f);
             this.checkCarousel();
