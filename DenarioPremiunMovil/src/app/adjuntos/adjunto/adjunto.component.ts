@@ -232,18 +232,22 @@ export class AdjuntoComponent implements OnInit {
         quality: 100
       }).then(p => {
         if (p.base64String) {
+          var muyPesado = this.service.getFileWeight(p.base64String) > this.service.weightLimit
           var f = new Foto(
             ".jpg",
             p.base64String,
-            ''
+            '',
+            muyPesado
           );
-          if (this.service.getFileWeight(p.base64String) > this.service.weightLimit) {
-            this.message.transaccionMsjModalNB("La Foto excede nuestro limite de 20 MB");
+          if (muyPesado) {
+            this.message.transaccionMsjModalNB("La Foto excede nuestro limite de " + this.service.weightLimit + " MB");
+            this.service.weightLimitExceeded = true;
           } else {
-            this.service.fotos.push(f);
-            this.checkCarousel();
-            this.onAttachmentChanged();
+
           }
+          this.service.fotos.push(f);
+          this.checkCarousel();
+          this.onAttachmentChanged();
 
 
         }
@@ -285,7 +289,7 @@ export class AdjuntoComponent implements OnInit {
             this.disablePhotos = false; //habilita el boton de buscar fotos cuando se han procesado todas las fotos
             if (this.service.weightLimitExceeded) {
               this.message.transaccionMsjModalNB("Una o mas de las imagenes excede nuestro limite de " + this.service.weightLimit + " MB");
-              this.service.weightLimitExceeded = false;
+              //this.service.weightLimitExceeded = false;
             }
           }
 

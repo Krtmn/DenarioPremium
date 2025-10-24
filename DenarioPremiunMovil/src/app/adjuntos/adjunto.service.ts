@@ -37,7 +37,10 @@ export class AdjuntoService {
 
   weightLimit = 3; //limite de peso de archivos, en MB
 
-  weightLimitExceeded = false; //flag que se levanta si un archivo excede weightLimit
+  //flag que se levanta si un archivo excede weightLimit 
+  weightLimitExceeded = false;
+
+
 
   public moduleName: string = '';
 
@@ -62,6 +65,14 @@ export class AdjuntoService {
 
   deleteImg(pos: number) {
     this.fotos.splice(pos, 1);
+    this.weightLimitExceeded = false; //resetea el flag de limite de peso
+    for (let i = 0; i < this.fotos.length; i++) {
+      const f = this.fotos[i];
+      if (this.getFileWeight(f.data as string) > this.weightLimit) {
+        this.weightLimitExceeded = true;
+        break;
+      }
+    }
   }
 
   remainingFotos() {
@@ -92,7 +103,7 @@ export class AdjuntoService {
     return ((this.fotos.length > 0) || (this.firma != "") || (this.file != null))
   }
 
-  tieneFirma(){
+  tieneFirma() {
     return (this.firma != "");
   }
 
@@ -113,16 +124,19 @@ export class AdjuntoService {
       var file = await Filesystem.readFile(options);
       //console.log('PESO DE IMG: '+ this.getFileWeight(file.data as string) + " MB");
       var peso = this.getFileWeight(file.data as string);
-      if (peso > this.weightLimit) {
+      var muyPesado = peso > this.weightLimit
+      if (muyPesado) {
         this.weightLimitExceeded = true;
       } else {
-        var foto = new Foto(
+        //this.weightLimitExceeded = false;
+      }
+      var foto = new Foto(
           webpath[webpath.length - 1],
           file.data as string,
-          ""
+          "",
+          muyPesado
         )
         this.fotos.push(foto);
-      }
 
     }
 
@@ -380,7 +394,11 @@ export class AdjuntoService {
             directory: Directory.External,
           }).then(f => {
             file = f.data as string;
-            let foto = new Foto(item.naImage.split('.').pop() as string, file, item.naImage);
+            var muyPesado = this.getFileWeight(file) > this.weightLimit;
+            if(muyPesado) {
+              this.weightLimitExceeded = true;
+            }
+            let foto = new Foto(item.naImage.split('.').pop() as string, file, item.naImage, muyPesado);
             this.fotos.push(foto);
 
 
