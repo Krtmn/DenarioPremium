@@ -35,7 +35,7 @@ export class AdjuntoService {
   public totalPhoto = 5 //cuando esto sea una variable de configuracion se cambiará
   public processingPhotos = 0; //cantidad de fotos que se estan procesando actualmente
 
-  weightLimit = 20; //limite de peso de archivos, en MB
+  weightLimit = 26; //limite de peso de archivos, en MB
 
   weightLimitExceeded = false; //flag que se levanta si un archivo excede weightLimit
 
