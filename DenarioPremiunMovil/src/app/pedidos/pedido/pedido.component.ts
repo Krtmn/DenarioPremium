@@ -205,6 +205,7 @@ export class PedidoComponent implements OnInit {
         this.empresaSeleccionada = this.enterpriseServ.defaultEnterprise();
         this.orderServ.empresaSeleccionada = this.empresaSeleccionada;
         this.orderServ.setup();
+        this.orderServ.dctoGlobal = 0;
         this.orderServ.order = this.createEmptyOrder(); //pedido vacio porque no puede ser null.
         this.orderServ.cliente = { lbClient: this.orderServ.getTag("PED_PLACEHOLDER_CLIENTE") } as Client;
       }
@@ -352,7 +353,9 @@ export class PedidoComponent implements OnInit {
       idProducts.push(detail.idProduct);
       idPriceLists.push(detail.idPriceList);
     }
-
+    if(this.orderServ.userCanSelectGlobalDiscount) {
+      this.orderServ.dctoGlobal = this.orderServ.order.nuDiscount;
+    }
 
     this.orderServ.getOrderUtilsbyIdProductAndPricelists(idProducts, idPriceLists).then(utils => {
       //procedemos a modificar los orderUtil con la data anterior y los agregamos al carrito
