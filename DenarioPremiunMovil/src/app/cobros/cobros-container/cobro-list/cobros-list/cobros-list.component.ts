@@ -113,7 +113,7 @@ export class CobrosListComponent implements OnInit {
             this.collectService.isAnticipo = false;
             this.collectService.hideDocuments = false;
             this.collectService.hidePayments = false;
-            this.collectService.titleModule = 'Cobros';
+            this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO')!;
             break
           }
           case 1: {
@@ -122,7 +122,7 @@ export class CobrosListComponent implements OnInit {
             this.collectService.hideDocuments = true;
             this.collectService.hidePayments = false;
             this.collectService.disabledSelectCollectMethodDisabled = false;
-            this.collectService.titleModule = 'Anticipo';
+            this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO_ANTICIPO')!;
             break
           }
           case 2: {
@@ -131,7 +131,7 @@ export class CobrosListComponent implements OnInit {
             this.collectService.isAnticipo = false;
             this.collectService.hideDocuments = false;
             this.collectService.hidePayments = true;
-            this.collectService.titleModule = 'Retención'
+            this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO_RETENTION')!;
             break
           }
           case 3: {
@@ -139,8 +139,16 @@ export class CobrosListComponent implements OnInit {
             this.collectService.isAnticipo = false;
             this.collectService.hideDocuments = false;
             this.collectService.hidePayments = false;
-            this.collectService.titleModule = 'IGTF'
+            this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO_IGTF')!;
             break
+          }
+          case 4: {
+            console.log("ABRIR COBRO");
+            this.collectService.isAnticipo = false;
+            this.collectService.hideDocuments = false;
+            this.collectService.hidePayments = false;
+            this.collectService.disabledSelectCollectMethodDisabled = false;
+            this.collectService.titleModule = this.collectService.collectionTags.get('COB_MODULE_COBRO25')!;;
           }
         }
 
