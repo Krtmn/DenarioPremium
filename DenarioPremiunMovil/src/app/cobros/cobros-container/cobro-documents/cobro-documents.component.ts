@@ -695,6 +695,11 @@ export class CobrosDocumentComponent implements OnInit {
     this.collectService.documentSales[id].positionCollecDetails = this.collectService.collection.collectionDetails.length - 1;
     this.collectService.documentSalesBackup[id].positionCollecDetails = this.collectService.collection.collectionDetails.length - 1;
 
+
+    if (this.collectService.coTypeModule == "3") {
+      this.collectService.collection.coOriginalCollection = documentSale.coCollection;
+    }
+    
     this.collectService.calculatePayment("", 0);
     this.cdr.detectChanges();
 
