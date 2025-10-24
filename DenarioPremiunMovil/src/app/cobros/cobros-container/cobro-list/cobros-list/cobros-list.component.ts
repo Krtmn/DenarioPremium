@@ -113,7 +113,7 @@ export class CobrosListComponent implements OnInit {
             this.collectService.isAnticipo = false;
             this.collectService.hideDocuments = false;
             this.collectService.hidePayments = false;
-
+            this.collectService.titleModule = 'Cobros';
             break
           }
           case 1: {
@@ -122,6 +122,7 @@ export class CobrosListComponent implements OnInit {
             this.collectService.hideDocuments = true;
             this.collectService.hidePayments = false;
             this.collectService.disabledSelectCollectMethodDisabled = false;
+            this.collectService.titleModule = 'Anticipo';
             break
           }
           case 2: {
@@ -130,6 +131,7 @@ export class CobrosListComponent implements OnInit {
             this.collectService.isAnticipo = false;
             this.collectService.hideDocuments = false;
             this.collectService.hidePayments = true;
+            this.collectService.titleModule = 'Retención'
             break
           }
           case 3: {
@@ -137,6 +139,7 @@ export class CobrosListComponent implements OnInit {
             this.collectService.isAnticipo = false;
             this.collectService.hideDocuments = false;
             this.collectService.hidePayments = false;
+            this.collectService.titleModule = 'IGTF'
             break
           }
         }
