@@ -283,20 +283,21 @@ export class AdjuntoComponent implements OnInit {
           this.service.processingPhotos--; //disminuye la cantidad de fotos que se estan procesando actualmente
           if (this.service.processingPhotos <= 0) {
             this.disablePhotos = false; //habilita el boton de buscar fotos cuando se han procesado todas las fotos
+            if (this.service.weightLimitExceeded) {
+              this.message.transaccionMsjModalNB("Una o mas de las imagenes excede nuestro limite de " + this.service.weightLimit + " MB");
+              this.service.weightLimitExceeded = false;
+            }
           }
-        }
-        );
+
+        });
       }
 
-
-      if (this.service.weightLimitExceeded) {
-        this.message.transaccionMsjModalNB("Una o mas de las imagenes excede nuestro limite de 20 MB");
-        this.service.weightLimitExceeded = false;
-      }
 
       if (photos.length > 0) {
         this.onAttachmentChanged();
       }
+
+
 
     }
   }
@@ -323,7 +324,7 @@ export class AdjuntoComponent implements OnInit {
       //console.log(result);
       var file = result.files[0];
       if (this.service.getFileWeight(file.data as string) > this.service.weightLimit) {
-        this.message.transaccionMsjModalNB("El Archivo excede nuestro limite de 20 MB");
+        this.message.transaccionMsjModalNB("El Archivo excede nuestro limite de " + this.service.weightLimit + " MB");
       } else {
         this.service.file = new Archivo(
           file.mimeType,
