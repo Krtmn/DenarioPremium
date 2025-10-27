@@ -260,6 +260,7 @@ export class ClientesDatabaseServicesService {
           igtfAmount: 0,
           txConversion: 0,
           inPaymentPartial: false,
+          historicPaymentPartial: false,
           isSave: false,
         })
       }
