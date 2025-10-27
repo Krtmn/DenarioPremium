@@ -154,6 +154,14 @@ export class PedidoComponent implements OnInit {
     //console.log('backButton was called!');
     this.goBack();
   });
+  
+  attachmentChangedSubscription: Subscription = this.adjuntoService.AttachmentChanged.subscribe(() => {
+    this.orderServ.setChangesMade(true);
+  });
+
+  AttachLimitExceededSubscription: Subscription = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
+    this.orderServ.setChangesMade(false);
+  });
 
   constructor(
     private platform: Platform,
@@ -269,6 +277,8 @@ export class PedidoComponent implements OnInit {
   ngOnDestroy() {
     this.ClientChangeSubscription.unsubscribe();
     this.backButtonSubscription.unsubscribe();
+    this.attachmentChangedSubscription.unsubscribe();
+    this.AttachLimitExceededSubscription.unsubscribe();
   }
 
   reset() {
