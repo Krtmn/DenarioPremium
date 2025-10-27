@@ -45,6 +45,7 @@ export class AdjuntoService {
   public moduleName: string = '';
 
   AttachmentChanged = new Subject;
+  AttachmentWeightExceeded = new Subject;
   public config = inject(GlobalConfigService);
 
   public servicesServ = inject(ServicesService);

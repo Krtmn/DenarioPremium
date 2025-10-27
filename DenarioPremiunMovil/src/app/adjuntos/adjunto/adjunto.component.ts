@@ -128,7 +128,10 @@ export class AdjuntoComponent implements OnInit {
 
   onAttachmentChanged() {
     this.service.AttachmentChanged.next(null);
+    this.service.AttachmentWeightExceeded.next(this.service.weightLimitExceeded);
   }
+
+
 
 
   checkImgLimit() {
