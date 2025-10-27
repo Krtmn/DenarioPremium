@@ -253,11 +253,15 @@ export class CobrosDocumentComponent implements OnInit {
 
   async calculateDocumentSaleOpen(index: number): Promise<boolean> {
     try {
+
       const cs = this.collectService;
       const cur = this.currencyService;
 
       const doc = cs.documentSales?.[index];
       const backup = cs.documentSalesBackup?.[index];
+
+      this.collectService.isPaymentPartial = !!doc?.inPaymentPartial;
+      
       if (!doc || !backup) {
         console.warn('calculateDocumentSaleOpen: documento o backup no encontrados, index=', index);
         return false;
@@ -398,6 +402,7 @@ export class CobrosDocumentComponent implements OnInit {
         igtfAmount: doc.igtfAmount,
         txConversion: doc.txConversion,
         inPaymentPartial: cs.isPaymentPartial,
+        historicPaymentPartial: doc.historicPaymentPartial,
         isSave: doc.isSave
       };
 
@@ -427,7 +432,6 @@ export class CobrosDocumentComponent implements OnInit {
         this.collectService.nuBalance = this.collectService.collection.collectionDetails[positionCollecDetails].nuBalanceDoc;
         voucherRetentionValue = this.collectService.collection.collectionDetails[positionCollecDetails].nuVoucherRetention;
         daVoucherValue = this.collectService.collection.collectionDetails[positionCollecDetails].daVoucher!;
-        this.collectService.isPaymentPartial = this.collectService.collection.collectionDetails[positionCollecDetails].inPaymentPartial;
       } else {
         this.collectService.nuBalance = this.collectService.documentSales[index].nuBalance;
       }
@@ -695,6 +699,11 @@ export class CobrosDocumentComponent implements OnInit {
     this.collectService.documentSales[id].positionCollecDetails = this.collectService.collection.collectionDetails.length - 1;
     this.collectService.documentSalesBackup[id].positionCollecDetails = this.collectService.collection.collectionDetails.length - 1;
 
+
+    if (this.collectService.coTypeModule == "3") {
+      this.collectService.collection.coOriginalCollection = documentSale.coCollection;
+    }
+    
     this.collectService.calculatePayment("", 0);
     this.cdr.detectChanges();
 

@@ -11,10 +11,10 @@ import { SynchronizationDBService } from 'src/app/services/synchronization/synch
 import { ItemListaCobros } from '../item-lista-cobros';
 
 @Component({
-    selector: 'app-cobros-container',
-    templateUrl: './cobros-container.component.html',
-    styleUrls: ['./cobros-container.component.scss'],
-    standalone: false
+  selector: 'app-cobros-container',
+  templateUrl: './cobros-container.component.html',
+  styleUrls: ['./cobros-container.component.scss'],
+  standalone: false
 })
 export class CobrosContainerComponent implements OnInit {
 
@@ -38,10 +38,10 @@ export class CobrosContainerComponent implements OnInit {
       this.geoLoc.getCurrentPosition().then(xy => {
         if (xy.length > 0) {
           this.coordenada = xy;
-          
+
         }
       })
-    } 
+    }
     this.collectService.getTags(this.synchronizationServices.getDatabase(),);
     this.collectService.getTagsDenario(this.synchronizationServices.getDatabase(),);
     this.backRoute();
@@ -66,7 +66,7 @@ export class CobrosContainerComponent implements OnInit {
         this.collectService.collectionIsSave = true;
         this.collectService.initCollect = true;
         this.collectService.disableSavedButton = true;
-        this.collectService.disableSenddButton = true;
+        this.collectService.disableSendButton = true;
         this.collectService.showHeaderButtons = false;
         this.collectService.cobroComponent = false;
         this.collectService.cobrosComponent = true;
@@ -83,16 +83,16 @@ export class CobrosContainerComponent implements OnInit {
 
   nuevoCobro(type: number) {
     if (this.collectService.userMustActivateGPS) {
-      if(!this.coordenada && this.coordenada.length < 1){
-      this.geoLoc.getCurrentPosition().then(xy => {
-        if (xy.length > 0) {
-          this.coordenada = xy;
-          this.goToNuevoCobro(type);
-        }
-      })
-    }else{
-      this.goToNuevoCobro(type);
-    }
+      if (!this.coordenada && this.coordenada.length < 1) {
+        this.geoLoc.getCurrentPosition().then(xy => {
+          if (xy.length > 0) {
+            this.coordenada = xy;
+            this.goToNuevoCobro(type);
+          }
+        })
+      } else {
+        this.goToNuevoCobro(type);
+      }
     } else {
       this.goToNuevoCobro(type);
     }
@@ -133,9 +133,8 @@ export class CobrosContainerComponent implements OnInit {
           console.log("ANTICIPO")
           this.collectService.isOpenCollect = false;
           this.collectService.newCollect = true;
-          this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO_ANTICIPO')!;;
+          this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO_ANTICIPO')!;
           this.collectService.coTypeModule = "1";
-          //this.collectService.userCanSelectIGTF = false;
           this.collectService.showHeaderButtonsFunction(true)
           this.collectService.cobrosComponent = false;
           this.collectService.cobroComponent = true;
@@ -149,9 +148,8 @@ export class CobrosContainerComponent implements OnInit {
           console.log("RETENCION");
           this.collectService.isOpenCollect = false;
           this.collectService.newCollect = true;
-          this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO_RETENTION')!;;
+          this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO_RETENTION')!;
           this.collectService.coTypeModule = "2";
-          //this.collectService.userCanSelectIGTF = false;
           this.collectService.showHeaderButtonsFunction(true)
           this.collectService.cobrosComponent = false;
           this.collectService.cobroComponent = true;
