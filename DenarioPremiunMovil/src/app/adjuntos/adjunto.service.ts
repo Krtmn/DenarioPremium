@@ -35,7 +35,7 @@ export class AdjuntoService {
   public totalPhoto = 5 //cuando esto sea una variable de configuracion se cambiará
   public processingPhotos = 0; //cantidad de fotos que se estan procesando actualmente
 
-  weightLimit = 30; //limite de peso de archivos, en MB
+  imageWeightLimit = 30; //limite de peso de archivos, en MB
 
   //flag que se levanta si un archivo excede weightLimit 
   weightLimitExceeded = false;
@@ -59,8 +59,11 @@ export class AdjuntoService {
     this.signatureConfig = tieneFirma;
     this.viewOnly = viewOnly;
     this.colorBoton = colorBoton;
-    this.totalPhoto = Number.parseInt(this.config.get('quAttach'));
+    this.totalPhoto = +this.config.get('quAttach');
+    let weightLimit = this.config.get('imageWeightLimit');
+    this.imageWeightLimit = weightLimit.length > 0 ? +weightLimit : 30; //mientras se corren scripts de actualizacion
     //console.log('totalPhoto: '+this.totalPhoto);
+    //console.log('imageWeightLimit: '+this.imageWeightLimit);
   }
 
   deleteImg(pos: number) {
@@ -68,7 +71,7 @@ export class AdjuntoService {
     this.weightLimitExceeded = false; //resetea el flag de limite de peso
     for (let i = 0; i < this.fotos.length; i++) {
       const f = this.fotos[i];
-      if (this.getFileWeight(f.data as string) > this.weightLimit) {
+      if (this.getFileWeight(f.data as string) > this.imageWeightLimit) {
         this.weightLimitExceeded = true;
         break;
       }
@@ -124,19 +127,19 @@ export class AdjuntoService {
       var file = await Filesystem.readFile(options);
       //console.log('PESO DE IMG: '+ this.getFileWeight(file.data as string) + " MB");
       var peso = this.getFileWeight(file.data as string);
-      var muyPesado = peso > this.weightLimit
+      var muyPesado = peso > this.imageWeightLimit
       if (muyPesado) {
         this.weightLimitExceeded = true;
       } else {
         //this.weightLimitExceeded = false;
       }
       var foto = new Foto(
-          webpath[webpath.length - 1],
-          file.data as string,
-          "",
-          muyPesado
-        )
-        this.fotos.push(foto);
+        webpath[webpath.length - 1],
+        file.data as string,
+        "",
+        muyPesado
+      )
+      this.fotos.push(foto);
 
     }
 
@@ -394,8 +397,8 @@ export class AdjuntoService {
             directory: Directory.External,
           }).then(f => {
             file = f.data as string;
-            var muyPesado = this.getFileWeight(file) > this.weightLimit;
-            if(muyPesado) {
+            var muyPesado = this.getFileWeight(file) > this.imageWeightLimit;
+            if (muyPesado) {
               this.weightLimitExceeded = true;
             }
             let foto = new Foto(item.naImage.split('.').pop() as string, file, item.naImage, muyPesado);

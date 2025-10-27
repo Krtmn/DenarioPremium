@@ -232,7 +232,7 @@ export class AdjuntoComponent implements OnInit {
         quality: 100
       }).then(p => {
         if (p.base64String) {
-          var muyPesado = this.service.getFileWeight(p.base64String) > this.service.weightLimit
+          var muyPesado = this.service.getFileWeight(p.base64String) > this.service.imageWeightLimit
           var f = new Foto(
             ".jpg",
             p.base64String,
@@ -240,7 +240,7 @@ export class AdjuntoComponent implements OnInit {
             muyPesado
           );
           if (muyPesado) {
-            this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_FOTO")+ this.service.weightLimit + " MB");
+            this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_FOTO")+ this.service.imageWeightLimit + " MB");
             this.service.weightLimitExceeded = true;
           } else {
 
@@ -288,7 +288,7 @@ export class AdjuntoComponent implements OnInit {
           if (this.service.processingPhotos <= 0) {
             this.disablePhotos = false; //habilita el boton de buscar fotos cuando se han procesado todas las fotos
             if (this.service.weightLimitExceeded) {
-              this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_MULTIPLE")+ this.service.weightLimit + " MB");
+              this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_MULTIPLE")+ this.service.imageWeightLimit + " MB");
               //this.service.weightLimitExceeded = false;
             }
           }
@@ -327,8 +327,8 @@ export class AdjuntoComponent implements OnInit {
       });
       //console.log(result);
       var file = result.files[0];
-      if (this.service.getFileWeight(file.data as string) > this.service.weightLimit) {
-        this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_ARCHIVO")+ this.service.weightLimit + " MB");
+      if (this.service.getFileWeight(file.data as string) > this.service.imageWeightLimit) {
+        this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_ARCHIVO")+ this.service.imageWeightLimit + " MB");
       } else {
         this.service.file = new Archivo(
           file.mimeType,

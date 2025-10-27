@@ -30,6 +30,9 @@
               <swiper-container slides-per-view="1" space-between="10" pagination="true" *ngIf="enableCarousel"
                 style="width: 100%;">
                 <swiper-slide *ngFor="let item of getFotos(); let i = index">
+                  <ion-label *ngIf="item.weightLimitExceeded" color="danger">
+                    {{ getTag('ADJ_ELIMINE_IMAGEN') }}
+                  </ion-label>
                   <ion-grid>
                     <ion-row>
                       <ion-col size="2" size-md="1" size-lg="1" size-xs="2">
@@ -42,6 +45,7 @@
                       </ion-col>
                     </ion-row>
                   </ion-grid>
+
                 </swiper-slide>
               </swiper-container>
             </div>
