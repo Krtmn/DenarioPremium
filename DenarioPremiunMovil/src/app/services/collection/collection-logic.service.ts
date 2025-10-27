@@ -561,7 +561,12 @@ export class CollectionService {
       this.haveRate = true;
 
       //si ya tengo la tasa correspondiente a la fecha, debo buscar los documentos
-      this.getDocumentsSales(dbServ, this.collection.idClient, this.currencySelectedDocument.coCurrency, this.collection.coCollection, this.collection.idEnterprise);
+      // actualizar nuValueLocal en cada documentSales para reflejar la tasa actual de la colección
+      if (this.documentSales && this.documentSales.length > 0) {
+        this.documentSales.forEach(ds => ds.nuValueLocal = this.collection.nuValueLocal);
+        this.documentSalesBackup.forEach(ds => ds.nuValueLocal = this.collection.nuValueLocal);
+        this.documentSalesView.forEach(ds => ds.nuValueLocal = this.collection.nuValueLocal);
+      }
 
       if (this.globalConfig.get('historicoTasa') === 'true' ? true : false) {
         this.historicoTasa = true;
@@ -572,6 +577,8 @@ export class CollectionService {
         this.onCollectionValid(resp);
       })
 
+      this.calculatePayment('', 0);
+      
     } else {
       //no tengo tasa para ese dia
       if (this.collection.stCollection === 3) {
@@ -1697,19 +1704,19 @@ export class CollectionService {
 
         // Actualiza documentSales
         if (docSalesMap.has(idDoc)) {
-          docSalesMap.get(idDoc)!.inPaymentPartial = isPartial;
+          docSalesMap.get(idDoc)!.historicPaymentPartial = isPartial;
         }
         // Actualiza documentSalesBackup
         if (docSalesBackupMap.has(idDoc)) {
-          docSalesBackupMap.get(idDoc)!.inPaymentPartial = isPartial;
+          docSalesBackupMap.get(idDoc)!.historicPaymentPartial = isPartial;
         }
         // Actualiza documentSalesBackup
         if (docSalesViewMap.has(idDoc)) {
-          docSalesViewMap.get(idDoc)!.inPaymentPartial = isPartial;
+          docSalesViewMap.get(idDoc)!.historicPaymentPartial = isPartial;
         }
         // Actualiza mapDocumentsSales
         if (this.mapDocumentsSales.has(idDoc)) {
-          this.mapDocumentsSales.get(idDoc)!.inPaymentPartial = isPartial;
+          this.mapDocumentsSales.get(idDoc)!.historicPaymentPartial = isPartial;
         }
       }
     }).catch(e => {
@@ -2067,6 +2074,7 @@ export class CollectionService {
           igtfAmount: data.rows.item(0).igtfAmount == undefined ? 0 : this.documentSales[index].igtfAmount,
           txConversion: this.documentSales[index].txConversion,
           inPaymentPartial: this.documentSales[index].inPaymentPartial,
+          historicPaymentPartial: this.documentSales[index].historicPaymentPartial,
           isSelected: this.documentSales[index].isSelected,
           isSave: false,
         }
@@ -2258,6 +2266,7 @@ export class CollectionService {
       igtfAmount: 0,
       txConversion: 0,
       inPaymentPartial: false,
+      historicPaymentPartial: false,
       isSave: false
     });
 

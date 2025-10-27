@@ -35,6 +35,7 @@ export class DocumentSale {
             obj['igtfAmount'],
             obj['txConversion'],
             obj['inPaymentPartial'],
+            obj['historicPaymentPartial'],
             obj['isSave'],
         );
     }
@@ -73,6 +74,7 @@ export class DocumentSale {
         public igtfAmount = 0,
         public txConversion = 0,
         public inPaymentPartial: Boolean = false,
+        public historicPaymentPartial: Boolean = false,
         public isSave: Boolean = false,
     ) { }
 }

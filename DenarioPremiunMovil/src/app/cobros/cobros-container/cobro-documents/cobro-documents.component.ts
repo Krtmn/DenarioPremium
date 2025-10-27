@@ -398,6 +398,7 @@ export class CobrosDocumentComponent implements OnInit {
         igtfAmount: doc.igtfAmount,
         txConversion: doc.txConversion,
         inPaymentPartial: cs.isPaymentPartial,
+        historicPaymentPartial: doc.historicPaymentPartial,
         isSave: doc.isSave
       };
 

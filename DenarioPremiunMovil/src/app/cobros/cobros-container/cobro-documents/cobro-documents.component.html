@@ -113,7 +113,7 @@
             <ion-col size="4" class="ion-text-center col borderInferiorIzquierdo"
                 *ngIf="this.collectService.historicPartialPayment && this.collectService.coTypeModule == '0' || this.collectService.coTypeModule == '4'">
                 <ion-button (click)="openPartialPayment(documentSale.coDocument)" size="small"
-                    disabled="{{!documentSale.inPaymentPartial}}">
+                    disabled="{{!documentSale.historicPaymentPartial}}">
                     <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
                 </ion-button>
             </ion-col>

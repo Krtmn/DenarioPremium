@@ -37,7 +37,7 @@ export class CobroPagosComponent implements OnInit {
   private displayMap: { [uid: string]: string } = {};
   private __uidCounter = 0;
   private debounceTimers: { [uid: string]: any } = {};
-  private debounceDelay = 700;
+  private debounceDelay = 5000;
 
 
   public alertButtons = [

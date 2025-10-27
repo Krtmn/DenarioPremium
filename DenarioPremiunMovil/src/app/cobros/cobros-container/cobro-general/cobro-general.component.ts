@@ -796,7 +796,7 @@ export class CobrosGeneralComponent implements OnInit {
       this.collectService.onCollectionValid(resp);
     })
     this.collectService.rateSelected = this.collectService.collection.nuValueLocal = event.target.value;
-
+    this.collectService.calculatePayment("", 0);
   }
 
   onOpenCalendar() {
@@ -892,21 +892,54 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.mensaje = "Se ha detectado cambio de Empresa por lo que debera iniciar nuevamente la transacción.";
   }
 
-  setShowDateRateModal(val: boolean) {
-    this.showDateRateModal = val;
+  setShowDateRateModal(show: boolean) {
+    this.showDateRateModal = show;
+    if (!show) return;
+
+    const raw = this.collectService?.collection?.daRate ?? this.collectService?.dateRateVisual;
+    if (raw) {
+      const s = raw.toString();
+      const m = s.match(/^(\d{4}-\d{2}-\d{2})/); // extrae YYYY-MM-DD si está al inicio
+      if (m) {
+        this.collectService.dateRateVisual = m[1]; // "2025-10-24"
+      } else {
+        // fallback seguro: crea Date y toma YYYY-MM-DD (solo si no había formato reconocible)
+        const d = new Date(s.replace(' ', 'T'));
+        d.setHours(0, 0, 0, 0);
+        this.collectService.dateRateVisual = d.toISOString().substring(0, 10);
+      }
+    } else {
+      this.collectService.dateRateVisual = this.dateServ.onlyDateHoyISO();
+    }
   }
+
   bottonDateRateLabel() {
     if (this.collectService.collection.stCollection == 2 || this.collectService.collection.stCollection == 3) {
-      return this.dateServ.formatShort(this.collectService.collection.daRate + "T00:00:00");
+      // normalizar a formato con espacio en vez de 'T'
+      if (this.collectService.collection.daRate) {
+        this.collectService.dateRateVisual = this.collectService.collection.daRate.replace('T', ' ');
+      }
+      return this.dateServ.formatShort(this.collectService.dateRateVisual);
     } else if (this.collectService.collection.stCollection == 1) {
-      return this.dateServ.formatShort(this.collectService.collection.daRate + "T00:00:00");
+      if (this.collectService.collection.daRate) {
+        this.collectService.dateRateVisual = this.collectService.collection.daRate.replace('T', ' ');
+      }
+      return this.dateServ.formatShort(this.collectService.dateRateVisual);
+    } else if (this.collectService.collection.stCollection == 6) {
+      const raw = this.collectService.collection.daCollection || '';
+      this.collectService.dateRate = raw.substring(0, 19).replace('T', ' ');
+      this.collectService.dateRateVisual = raw.replace('T', ' ');
+      return this.dateServ.formatShort(this.collectService.dateRateVisual);
     } else {
-      this.collectService.dateRate = this.collectService.collection.daCollection.substring(0, 19);
-      this.collectService.dateRateVisual = this.collectService.collection.daCollection;
+      // si dateRateVisual contiene 'T' lo reemplazamos por espacio
+      if (this.collectService.dateRateVisual && this.collectService.dateRateVisual.indexOf('T') !== -1) {
+        this.collectService.dateRateVisual = this.collectService.dateRateVisual.replace('T', ' ');
+      }
+      this.collectService.dateRate = (this.collectService.dateRate || '').split("T")[0];
       return this.dateServ.formatShort(this.collectService.dateRateVisual);
     }
   }
-  
+
 
   printAllTransactionStatuses() {
     this.collectService.printAllTransactionStatuses(this.synchronizationServices.getDatabase())
