@@ -900,15 +900,13 @@ export class CobrosGeneralComponent implements OnInit {
       return this.dateServ.formatShort(this.collectService.collection.daRate + "T00:00:00");
     } else if (this.collectService.collection.stCollection == 1) {
       return this.dateServ.formatShort(this.collectService.collection.daRate + "T00:00:00");
-    } else if (this.collectService.collection.stCollection == 6) {
+    } else {
       this.collectService.dateRate = this.collectService.collection.daCollection.substring(0, 19);
       this.collectService.dateRateVisual = this.collectService.collection.daCollection;
       return this.dateServ.formatShort(this.collectService.dateRateVisual);
-    } else {
-      this.collectService.dateRate = this.collectService.dateRate.split("T")[0];
-      return this.dateServ.formatShort(this.collectService.dateRateVisual);
     }
   }
+  
 
   printAllTransactionStatuses() {
     this.collectService.printAllTransactionStatuses(this.synchronizationServices.getDatabase())
