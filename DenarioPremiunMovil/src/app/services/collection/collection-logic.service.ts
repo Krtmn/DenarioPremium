@@ -95,7 +95,7 @@ export class CollectionService {
   public initCollect: boolean = true;
   public showHeaderButtons: Boolean = false;
   public disableSavedButton: boolean = true;
-  public disableSenddButton: boolean = true;
+  public disableSendButton: boolean = true;
   public saveOrExitOpen = false;
   public alertMessageOpen: boolean = false;
   public alertMessageChangeCurrency: boolean = false;

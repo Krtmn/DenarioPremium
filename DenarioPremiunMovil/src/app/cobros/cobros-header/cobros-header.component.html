@@ -27,12 +27,11 @@
                 </ion-col>
                 <ion-col size="1" size-sm="1" size-xs="2" *ngIf="this.collectService.showHeaderButtons">
                     <ion-button class="imagenEnviar" (click)="sendCollect()"
-                        [disabled]="this.collectService.disableSenddButton" expand="block" fill="clear">
+                        [disabled]="this.collectService.disableSendButton" expand="block" fill="clear">
                     </ion-button>
                 </ion-col>
             </ion-row>
         </ion-grid>
-        <!-- </ion-title> -->
     </ion-toolbar>
 </ion-header>
 

@@ -37,7 +37,7 @@ export class CobroPagosComponent implements OnInit {
   private displayMap: { [uid: string]: string } = {};
   private __uidCounter = 0;
   private debounceTimers: { [uid: string]: any } = {};
-  private debounceDelay = 5000;
+  private debounceDelay = 1500;
 
 
   public alertButtons = [
@@ -492,6 +492,12 @@ export class CobroPagosComponent implements OnInit {
   }
 
   setMonto(monto: number, index: number, type: string) {
+    let change = false;
+    if (!this.collectService.disableSendButton) {
+      this.collectService.disableSendButton = true;
+      change = true;
+    }
+
     switch (type) {
       case "ef": {
         this.collectService.pagoEfectivo[index].monto = monto;
@@ -560,6 +566,10 @@ export class CobroPagosComponent implements OnInit {
         this.validatePayment("ot", index);
         break;
       }
+    }
+
+    if (change) {
+      this.collectService.disableSendButton = false;
     }
 
     this.collectService.collection.nuAmountFinal = 0;
@@ -1042,24 +1052,32 @@ export class CobroPagosComponent implements OnInit {
     return this.displayMap[uid] ?? this.formatFromMinorUnits(0);
   }
 
-  private updateAfterChange(uid: string, deposito: any, index?: number, type?: string) {
+  private updateAfterChange(uid: string, pago: any, index?: number, type?: string) {
     const minor = Math.max(0, this.centsMap[uid] ?? 0);
     this.centsMap[uid] = minor;
-    deposito.monto = (minor / this.getMultiplier());
+    pago.monto = (minor / this.getMultiplier());
     this.displayMap[uid] = this.formatFromMinorUnits(minor);
 
     if (this.debounceTimers[uid]) clearTimeout(this.debounceTimers[uid]);
     this.debounceTimers[uid] = setTimeout(() => {
       if (typeof (this as any).setMonto === 'function') {
-        try { (this as any).setMonto(deposito.monto, index ?? 0, type ?? ''); } catch { }
+        try { (this as any).setMonto(pago.monto, index ?? 0, type ?? ''); } catch { }
       }
       delete this.debounceTimers[uid];
     }, this.debounceDelay);
   }
 
-  public onMontoKeyDown(event: any, deposito: any, index: number, type: string) {
+  public onMontoKeyDown(event: any, pago: any, index: number, type: string) {
+
+
+    const hasPartial = !!(this.collectService.collection &&
+      Array.isArray(this.collectService.collection.collectionDetails) &&
+      this.collectService.collection.collectionDetails.some((cd: any) => cd && cd.inPaymentPartial === true));
+
+    this.debounceDelay = hasPartial ? 1500 : 0;
+
     const key = event?.key;
-    const uid = this.ensureInitFor(deposito);
+    const uid = this.ensureInitFor(pago);
     const allowed = ['Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter'];
     if (allowed.includes(key)) return;
 
@@ -1071,7 +1089,7 @@ export class CobroPagosComponent implements OnInit {
     // Si seleccionan todo y borran -> poner 0
     if ((key === 'Backspace' || key === 'Delete') && hasSelection) {
       this.centsMap[uid] = 0;
-      this.updateAfterChange(uid, deposito, index, type);
+      this.updateAfterChange(uid, pago, index, type);
       event.preventDefault();
       return;
     }
@@ -1079,7 +1097,7 @@ export class CobroPagosComponent implements OnInit {
     if (key === 'Delete') {
       // borra último dígito (derecha)
       this.centsMap[uid] = Math.floor((this.centsMap[uid] ?? 0) / 10);
-      this.updateAfterChange(uid, deposito, index, type);
+      this.updateAfterChange(uid, pago, index, type);
       event.preventDefault();
       return;
     }
@@ -1088,14 +1106,14 @@ export class CobroPagosComponent implements OnInit {
       const digit = parseInt(key, 10);
       // desplaza y añade dígito en unidades menores (funciona para cualquier parteDecimal)
       this.centsMap[uid] = Math.min(999999999999, (this.centsMap[uid] ?? 0) * 10 + digit);
-      this.updateAfterChange(uid, deposito, index, type);
+      this.updateAfterChange(uid, pago, index, type);
       event.preventDefault();
       return;
     }
 
     if (key === 'Backspace') {
       this.centsMap[uid] = Math.floor((this.centsMap[uid] ?? 0) / 10);
-      this.updateAfterChange(uid, deposito, index, type);
+      this.updateAfterChange(uid, pago, index, type);
       event.preventDefault();
       return;
     }
@@ -1103,26 +1121,26 @@ export class CobroPagosComponent implements OnInit {
     event.preventDefault();
   }
 
-  public onMontoFocus(deposito: any, index: number, type: string) {
-    const uid = this.ensureInitFor(deposito);
+  public onMontoFocus(pago: any, index: number, type: string) {
+    const uid = this.ensureInitFor(pago);
     if (this.centsMap[uid] === undefined) {
       this.centsMap[uid] = 0;
       this.displayMap[uid] = this.formatFromMinorUnits(0);
     }
   }
 
-  public onMontoBlur(deposito: any, index: number, type: string) {
-    const uid = this.ensureInitFor(deposito);
+  public onMontoBlur(pago: any, index: number, type: string) {
+    const uid = this.ensureInitFor(pago);
     // forzar ejecución inmediata del debounce si hay timer
     if (this.debounceTimers[uid]) {
       clearTimeout(this.debounceTimers[uid]);
       if (typeof (this as any).setMonto === 'function') {
-        try { (this as any).setMonto(deposito.monto, index, type); } catch { }
+        try { (this as any).setMonto(pago.monto, index, type); } catch { }
       }
       delete this.debounceTimers[uid];
     } else {
       if (typeof (this as any).setMonto === 'function') {
-        try { (this as any).setMonto(deposito.monto, index, type); } catch { }
+        try { (this as any).setMonto(pago.monto, index, type); } catch { }
       }
     }
     // asegurar mínimo y formato final

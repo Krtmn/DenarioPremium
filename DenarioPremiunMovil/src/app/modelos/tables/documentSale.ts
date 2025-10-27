@@ -65,7 +65,7 @@ export class DocumentSale {
         public coEnterprise: string = "",
         public idEnterprise: number = 0,
         public naType: string = "",
-        public isSelected: Boolean = false,
+        public isSelected: boolean = false,
         public positionCollecDetails: number = 0,
         public nuAmountRetention: number = 0,
         public nuAmountRetention2: number = 0,
@@ -73,8 +73,8 @@ export class DocumentSale {
         public nuVaucherRetention: string = "",
         public igtfAmount = 0,
         public txConversion = 0,
-        public inPaymentPartial: Boolean = false,
-        public historicPaymentPartial: Boolean = false,
-        public isSave: Boolean = false,
+        public inPaymentPartial: boolean = false,
+        public historicPaymentPartial: boolean = false,
+        public isSave: boolean = false,
     ) { }
 }
