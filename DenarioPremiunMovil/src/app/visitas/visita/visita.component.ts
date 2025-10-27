@@ -356,6 +356,7 @@ export class VisitaComponent implements OnInit {
     if (this.signatureSubscription) {
       this.signatureSubscription.unsubscribe();
     }
+    this.AttachLimitExceededSubscription.unsubscribe();
   }
 
 
