@@ -58,6 +58,7 @@ export class ReturnLogicService {
   returnList: ReturnList[] = [];
   unitsByProduct: Unit[] = [];
   invoices: Invoice[] = [];
+  //public invoiceAnterior: null | Invoice = null;
   itemReturns: ItemListaDevoluciones[] = [];
 
   messageAlert!: MessageAlert;
@@ -78,6 +79,7 @@ export class ReturnLogicService {
   productListCart = new Subject<ReturnDetail[]>;
   returnSelected = new Subject<Boolean>;
   productsByInvoice = new Subject<Boolean>;
+  invoiceChanged: Subject<Invoice> = new Subject<Invoice>();
 
   AttachSubscription: Subscription = this.adjuntoService.AttachmentChanged.subscribe(() => {
     this.setChange(true, true);
