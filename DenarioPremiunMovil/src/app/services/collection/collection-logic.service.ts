@@ -1752,7 +1752,7 @@ export class CollectionService {
             idCollection: data.rows.item(i).id_collection,
             daCollection: data.rows.item(i).da_collection,
             coCurrency: data.rows.item(i).co_currency,
-            nuAmountPaid: data.rows.item(i).nu_balance,
+            nuAmountPaid: data.rows.item(i).nu_amount_paid,
             nuBalanceDoc: data.rows.item(i).nu_balance_doc,
             coPaymentMethod: data.rows.item(i).co_payment_method,
             stCollection: status[data.rows.item(i).st_collection],
