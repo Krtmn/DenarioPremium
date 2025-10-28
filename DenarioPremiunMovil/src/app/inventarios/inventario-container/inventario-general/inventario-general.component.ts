@@ -109,16 +109,6 @@ export class InventarioGeneralComponent implements OnInit {
     this.message.hideLoading();
   })
 
-  AttachSubscription: Subscription = this.adjuntoService.AttachmentChanged.subscribe(() => {
-    this.inventariosLogicService.newClientStock.hasAttachments = this.adjuntoService.hasItems();
-    this.inventariosLogicService.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
-    
-  });
-
-  AttachWeightSubscription: Subscription = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
-    this.setChangesMade(false);
-  });
-
   constructor(private clientSelectorService: ClienteSelectorService) { }
 
   ngOnInit() {
@@ -139,13 +129,12 @@ export class InventarioGeneralComponent implements OnInit {
       this.inventariosLogicService.fechaMenor = this.dateServ.hoyISO();    */
       this.inventariosLogicService.newClientStock.hasAttachments = this.adjuntoService.hasItems();
       this.inventariosLogicService.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
-
     }
   }
 
+
+
   ngOnDestroy() {
-    this.AttachSubscription.unsubscribe();
-    this.AttachWeightSubscription.unsubscribe();
     this.ClientChangeSubscription.unsubscribe();
   }
 

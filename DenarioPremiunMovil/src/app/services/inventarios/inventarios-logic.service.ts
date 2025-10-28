@@ -98,8 +98,8 @@ export class InventariosLogicService {
 
   }
 
-  showHeaderButtonsFunction(headerButtos: Boolean) {
-    this.showButtons.next(headerButtos);
+  showHeaderButtonsFunction(headerButtons: Boolean) {
+    this.showButtons.next(headerButtons);
   }
 
   onStockValidToSave(valid: Boolean) {
@@ -121,8 +121,26 @@ export class InventariosLogicService {
     if(this.adjuntoService.weightLimitExceeded){
       this.onStockValidToSave(false);
       this.onStockValidToSend(false);
+    }else{
+      var valid = this.checkValidStockToSend();
+      this.onStockValidToSave(valid);
+      this.onStockValidToSend(valid);
+
     }
   }
+
+  checkValidStockToSend(){
+    for (const typeStock of this.typeStocks) {
+      if (!typeStock.validateCantidad) {
+        return false;
+      }
+      if(this.expirationBatch && !typeStock.validateLote){
+        return false;
+      }
+    };
+    return true;
+  }
+
 
 
   getTags(dbServ: SQLiteObject) {

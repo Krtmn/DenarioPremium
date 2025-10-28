@@ -264,7 +264,7 @@ export class InventarioTypeStocksComponent implements OnInit {
     this.inventariosLogicService.onStockValidToSend(true);
     this.inventariosLogicService.onStockValidToSave(true);
     this.inventariosLogicService.isEdit = true;
-    this.inventariosLogicService.checkImageWeightLimit();
+    
   }
 
   setCantidad(cantidad: any, idP: number, indexType: number, type: string) {
