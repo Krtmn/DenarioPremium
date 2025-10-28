@@ -52,7 +52,7 @@ export class AdjuntoService {
 
   constructor() { }
 
-  setup(dbServ: SQLiteObject, tieneFirma: boolean, viewOnly: boolean, colorBoton: string) {
+setup(dbServ: SQLiteObject, tieneFirma: boolean, viewOnly: boolean, colorBoton: string) {
     this.fotos = [];
     this.firma = "";
     this.file = null;
