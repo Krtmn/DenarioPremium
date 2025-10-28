@@ -117,6 +117,13 @@ export class InventariosLogicService {
     this.stockValid.next(valid);
   }
 
+  checkImageWeightLimit(){
+    if(this.adjuntoService.weightLimitExceeded){
+      this.onStockValidToSave(false);
+      this.onStockValidToSend(false);
+    }
+  }
+
 
   getTags(dbServ: SQLiteObject) {
     return this.services.getTags(dbServ, "INV", "ESP").then(result => {

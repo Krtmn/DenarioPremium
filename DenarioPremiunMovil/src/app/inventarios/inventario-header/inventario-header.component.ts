@@ -123,7 +123,7 @@ export class InventarioHeaderComponent implements OnInit {
     this.subscriberDisabled.unsubscribe();
     this.subscriberToSend.unsubscribe();
     this.backButtonSubscription.unsubscribe();
-    this.subscriberShow.unsubscribe()
+    this.subscriberShow.unsubscribe();
   }
 
 

@@ -112,9 +112,12 @@ export class InventarioGeneralComponent implements OnInit {
   AttachSubscription: Subscription = this.adjuntoService.AttachmentChanged.subscribe(() => {
     this.inventariosLogicService.newClientStock.hasAttachments = this.adjuntoService.hasItems();
     this.inventariosLogicService.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
-    this.setChangesMade(true);
+    
   });
 
+  AttachWeightSubscription: Subscription = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
+    this.setChangesMade(false);
+  });
 
   constructor(private clientSelectorService: ClienteSelectorService) { }
 
@@ -142,12 +145,14 @@ export class InventarioGeneralComponent implements OnInit {
 
   ngOnDestroy() {
     this.AttachSubscription.unsubscribe();
+    this.AttachWeightSubscription.unsubscribe();
+    this.ClientChangeSubscription.unsubscribe();
   }
 
   setChangesMade(value: boolean) {
     //ESTA FUNCION SE USARA PARA CONTROLAR SI PUEDO ENVIAR O GUARDAR, CVER QUE HAGO ACA
-    this.inventariosLogicService.onStockValidToSave(true);
-    this.inventariosLogicService.onStockValidToSend(true);
+    this.inventariosLogicService.onStockValidToSave(value);
+    this.inventariosLogicService.onStockValidToSend(value);
   }
 
   initInventario() {
