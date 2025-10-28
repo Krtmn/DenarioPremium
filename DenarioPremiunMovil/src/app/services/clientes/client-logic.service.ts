@@ -70,6 +70,7 @@ export class ClientLogicService {
 
   public cannotSavePotentialClient: Boolean = true;
   public cannotSendPotentialClient: Boolean = true;
+  public validPotentialClient: Boolean = false;
 
   public clienteNuevoBlancoImg: Boolean = true;//si hay algun cambio en el nuevo cliente potencial
   public newPotentialClientChanged: Boolean = false;//si hay algun cambio en el nuevo cliente potencial
@@ -120,8 +121,8 @@ export class ClientLogicService {
   }
 
 
-  showHeaderButtons(headerButtos: Boolean) {
-    this.showButtons.next(headerButtos);
+  showHeaderButtons(headerButtons: Boolean) {
+    this.showButtons.next(headerButtons);
   }
 
   showBackRoute(route: string) {

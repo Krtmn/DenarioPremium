@@ -8,6 +8,7 @@ import { PotentialClient } from 'src/app/modelos/tables/potentialClient';
 import { PotentialClientDatabaseServicesService } from 'src/app/services/clientes/potentialClient/potential-client-database-services.service';
 import { ServicesService } from 'src/app/services/services.service';
 import { Platform } from '@ionic/angular';
+import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 
 @Component({
     selector: 'app-client-header',
@@ -20,11 +21,15 @@ export class ClientesHeaderComponent implements OnInit {
   public router = inject(Router);
   public clientLogic = inject(ClientLogicService);
   public locationService = inject(ClientLocationService);
-  public potentialClientService = inject(PotentialClientDatabaseServicesService)
+  public potentialClientService = inject(PotentialClientDatabaseServicesService);
+  public adjuntoService = inject(AdjuntoService);
 
   public subscriberShow: any;
   public subscriberDisabled: any;
   public subscriberToSend: any;
+  public subscriberWeightLimitExceeded: any;
+
+  public AttachWeightSubscription: any;
   public showHeaderButtos: Boolean = false;
   public disableSendButton: Boolean = true;
   public cannotSendClientStock: Boolean = true;
@@ -127,6 +132,18 @@ export class ClientesHeaderComponent implements OnInit {
     this.subscriberToSend = this.clientLogic.stockValidToSend.subscribe((validToSend: Boolean) => {
       this.cannotSendClientStock = !validToSend;
     });
+
+    this.subscriberWeightLimitExceeded = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
+      this.clientLogic.cannotSavePotentialClient = true;
+      this.clientLogic.cannotSendPotentialClient = true;
+    });
+
+    this.AttachWeightSubscription = this.adjuntoService.AttachmentChanged.subscribe(() => {
+      var valid = this.clientLogic.validPotentialClient;
+      this.clientLogic.cannotSavePotentialClient = !valid;
+      this.clientLogic.cannotSendPotentialClient = !valid;
+  });
+
   }
 
   ngOnDestroy() {
@@ -134,6 +151,8 @@ export class ClientesHeaderComponent implements OnInit {
     this.subscriberDisabled.unsubscribe();
     this.subscriberToSend.unsubscribe();
     this.backButtonSubscription.unsubscribe();
+    this.subscriberWeightLimitExceeded.unsubscribe();
+    this.AttachWeightSubscription.unsubscribe();
   }
 
 
