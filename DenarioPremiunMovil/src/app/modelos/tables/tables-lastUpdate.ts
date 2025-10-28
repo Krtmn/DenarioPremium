@@ -53,6 +53,7 @@ export interface TablesLastUpdate {
   orderDetailTableLastUpdate:string,
   orderDetailUnitTableLastUpdate:string,
   orderDetailDiscountTableLastUpdate:string,
+  conversionTableLastUpdate:string,
   page: number
 
 }

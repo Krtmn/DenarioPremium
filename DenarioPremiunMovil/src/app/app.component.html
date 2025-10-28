@@ -1,3 +1,45 @@
 <ion-app>
   <ion-router-outlet></ion-router-outlet>
+  <!-- ...existing code... -->
+
+  <!-- FAB global (calculadora) -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed" class="global-calc-fab">
+    <ion-fab-button (click)="toggleCalculator()" aria-label="Abrir calculadora">
+      <ion-icon name="calculator-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
+  <div *ngIf="showCalculator" class="floating-calculator" role="dialog" aria-label="Calculadora">
+    <div class="calc-header">
+      <h3>Calculadora / Selector de Empresa</h3>
+    </div>
+
+    <ion-item>
+      <ion-label>Empresa</ion-label>
+      <ion-select [(ngModel)]="selectedCompanyId" (ionChange)="onCompanyChange($event)" interface="popover"
+        placeholder="Seleccione">
+        <ion-select-option *ngFor="let e of companies" [value]="e.id">{{ e.name }}</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <div class="company-info" *ngIf="selectedCompany">
+      <small>Empresa seleccionada: <strong>{{ selectedCompany.name }}</strong></small>
+    </div>
+
+    <ion-grid>
+      <ion-row>
+        <ion-col size="12" *ngFor="let idx of inputsIdx">
+          <ion-item>
+            <ion-label position="stacked">Input {{ idx + 1 }}</ion-label>
+            <ion-input [(ngModel)]="inputs[idx]" type="text" placeholder="Valor {{ idx + 1 }}"></ion-input>
+          </ion-item>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <div class="calc-actions">
+      <ion-button size="small" color="medium" (click)="toggleCalculator()">Cerrar</ion-button>
+    </div>
+  </div>
+
 </ion-app>

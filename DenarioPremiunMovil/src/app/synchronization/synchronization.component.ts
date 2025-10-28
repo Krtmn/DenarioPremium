@@ -182,6 +182,7 @@ export class SynchronizationComponent implements OnInit {
     orderDetails: 'Detalles de Pedido',
     orderDetailUnits: 'Unidades de Detalle de Pedido',
     orderDetailDiscounts: 'Descuentos de Detalle de Pedido',
+    conversion: 'Tasas de Conversión'
   };
 
   constructor(
@@ -550,6 +551,12 @@ export class SynchronizationComponent implements OnInit {
             this.tables.page = 0;
             break;
           }
+          case 72: {
+            this.tables.conversionTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
+
 
 
 
@@ -590,16 +597,9 @@ export class SynchronizationComponent implements OnInit {
           this.imageServices.getServerImageList().then(obs => {
             obs.subscribe({
               complete: () => {
-                /* if (this.imageServices.downloadFileList.length > 0) { */
-                // Navega primero
-                // a la página de inicio y luego descarga las imágenes
                 this.router.navigate(['home']).then(() => {
-                  //this.imageServices.download(this.imageServices.downloadFileList);
                   this.imageServices.downloadWithConcurrency(this.imageServices.downloadFileList);
                 });
-                /* } else {
-                  this.router.navigate(['home']);
-                } */
               }
             });
           });
@@ -625,13 +625,18 @@ export class SynchronizationComponent implements OnInit {
       if (
         (
           [56, 57, 58].includes(tableId) && this.globalConfig.get("validateReturn") !== "true"
-        ) ||
+        )
+        ||
         (
           [59, 60].includes(tableId) && this.globalConfig.get("userCanSelectChannel") !== "true"
         )
         ||
         (
           [61, 62, 63, 64, 65, 66, 67, 68].includes(tableId) && this.globalConfig.get("transactionHistory") !== "true"
+        )
+        ||
+        (
+          [72].includes(tableId) && this.globalConfig.get("conversionCalculator") !== "true"
         )
 
       ) {
@@ -1113,6 +1118,13 @@ export class SynchronizationComponent implements OnInit {
       tableKey: 'orderDetailDiscountTableLastUpdate',
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
+    },
+    conversion: {
+      batchFn: this.synchronizationServices.insertConversionBatch.bind(this.synchronizationServices),
+      rowKey: 'conversionTable',
+      tableKey: 'conversionTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
     }
     // ...agrega más si tienes más tablas...
   };
@@ -1142,11 +1154,6 @@ export class SynchronizationComponent implements OnInit {
   initProgress(progreso: number, buffer: number) {
     this.progress += progreso;
     this.buffer += buffer;
-
-    /* if (this.currentTableIndex > this.tableKeyOrder.length) {
-      this.progress = 0;
-      this.router.navigate(['home']);
-    } */
   }
 
   handleDeletedRows(deletedRowsIds: any, tableName: string, idField: string) {
