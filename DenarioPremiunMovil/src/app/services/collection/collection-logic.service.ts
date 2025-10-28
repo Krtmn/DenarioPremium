@@ -578,7 +578,7 @@ export class CollectionService {
       })
 
       this.calculatePayment('', 0);
-      
+
     } else {
       //no tengo tasa para ese dia
       if (this.collection.stCollection === 3) {
@@ -1678,7 +1678,7 @@ export class CollectionService {
     }
   }
 
-  findIsPaymentPartial(dbServ: SQLiteObject) {
+  findIsPaymentPartial(dbServ: SQLiteObject, idClient: number) {
     const coDocuments = Array.from(this.mapDocumentsSales.values()).map(obj => obj.coDocument);
     if (coDocuments.length === 0) return Promise.resolve();
 
@@ -1686,10 +1686,11 @@ export class CollectionService {
     SELECT code.id_document, code.in_payment_partial 
     FROM collection_details code 
     JOIN collection_payments copa ON code.co_collection = copa.co_collection 
+    JOIN collections co ON co.id_client = ?
     WHERE co_document IN ('${coDocuments.join("', '")}')
   `;
 
-    return dbServ.executeSql(selectStatement, []).then(data => {
+    return dbServ.executeSql(selectStatement, [idClient]).then(data => {
       // Crea un Map para acceso rápido por id_document
       const docSalesMap = new Map<number, DocumentSale>();
       this.documentSales.forEach(ds => docSalesMap.set(ds.idDocument, ds));
@@ -1751,7 +1752,7 @@ export class CollectionService {
             idCollection: data.rows.item(i).id_collection,
             daCollection: data.rows.item(i).da_collection,
             coCurrency: data.rows.item(i).co_currency,
-            nuAmountPaid: data.rows.item(i).nu_balance,
+            nuAmountPaid: data.rows.item(i).nu_amount_paid,
             nuBalanceDoc: data.rows.item(i).nu_balance_doc,
             coPaymentMethod: data.rows.item(i).co_payment_method,
             stCollection: status[data.rows.item(i).st_collection],

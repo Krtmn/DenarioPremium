@@ -257,7 +257,7 @@ export class CobrosGeneralComponent implements OnInit {
           this.collectService.collection.idEnterprise
         ).then(() => {
           if (this.collectService.historicPartialPayment) {
-            this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase());
+            this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(),this.collectService.collection.idClient);
           }
         });
         this.updateSelectedCurrency(this.collectService.collection.idCurrency);
@@ -459,7 +459,7 @@ export class CobrosGeneralComponent implements OnInit {
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient, this.collectService.currencySelectedDocument.coCurrency,
               this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
                 if (this.collectService.historicPartialPayment) {
-                  this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase());
+                  this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(),this.collectService.collection.idClient);
                 }
               });
           // }
@@ -588,7 +588,7 @@ export class CobrosGeneralComponent implements OnInit {
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
               this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
                 if (this.collectService.historicPartialPayment) {
-                  this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase());
+                  this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(),this.collectService.collection.idClient);
                 }
               });
           })
@@ -708,7 +708,7 @@ export class CobrosGeneralComponent implements OnInit {
 
 
             if (this.collectService.historicPartialPayment) {
-              this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase());
+              this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
             }
 
             if (this.collectService.documentSales.length > 0)
@@ -753,7 +753,7 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
       this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
         if (this.collectService.historicPartialPayment) {
-          this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase());
+          this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
         }
       });
 

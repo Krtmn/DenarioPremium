@@ -119,7 +119,8 @@ export class CobrosDocumentComponent implements OnInit {
         this.collectService.documentsSaleComponent = false;
 
       if (this.collectService.historicPartialPayment) {
-        this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase());
+        this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient).then(() => {
+        });
       }
     })
   }
@@ -261,7 +262,7 @@ export class CobrosDocumentComponent implements OnInit {
       const backup = cs.documentSalesBackup?.[index];
 
       this.collectService.isPaymentPartial = !!doc?.inPaymentPartial;
-      
+
       if (!doc || !backup) {
         console.warn('calculateDocumentSaleOpen: documento o backup no encontrados, index=', index);
         return false;
@@ -703,7 +704,7 @@ export class CobrosDocumentComponent implements OnInit {
     if (this.collectService.coTypeModule == "3") {
       this.collectService.collection.coOriginalCollection = documentSale.coCollection;
     }
-    
+
     this.collectService.calculatePayment("", 0);
     this.cdr.detectChanges();
 
