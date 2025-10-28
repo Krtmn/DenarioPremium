@@ -35,7 +35,7 @@ export class AdjuntoService {
   public totalPhoto = 5 //cuando esto sea una variable de configuracion se cambiará
   public processingPhotos = 0; //cantidad de fotos que se estan procesando actualmente
 
-  weightLimit = 30; //limite de peso de archivos, en MB
+  imageWeightLimit = 30; //limite de peso de archivos, en MB
 
   weightLimitExceeded = false; //flag que se levanta si un archivo excede weightLimit
 
@@ -48,7 +48,7 @@ export class AdjuntoService {
 
   constructor() { }
 
-  setup(dbServ: SQLiteObject, tieneFirma: boolean, viewOnly: boolean, colorBoton: string) {
+setup(dbServ: SQLiteObject, tieneFirma: boolean, viewOnly: boolean, colorBoton: string) {
     this.fotos = [];
     this.firma = "";
     this.file = null;
@@ -56,8 +56,11 @@ export class AdjuntoService {
     this.signatureConfig = tieneFirma;
     this.viewOnly = viewOnly;
     this.colorBoton = colorBoton;
-    this.totalPhoto = Number.parseInt(this.config.get('quAttach'));
+    this.totalPhoto = +this.config.get('quAttach');
+    let weightLimit = this.config.get('imageWeightLimit');
+    this.imageWeightLimit = weightLimit.length > 0 ? +weightLimit : 30; //mientras se corren scripts de actualizacion
     //console.log('totalPhoto: '+this.totalPhoto);
+    //console.log('imageWeightLimit: '+this.imageWeightLimit);
   }
 
   deleteImg(pos: number) {
@@ -113,7 +116,7 @@ export class AdjuntoService {
       var file = await Filesystem.readFile(options);
       //console.log('PESO DE IMG: '+ this.getFileWeight(file.data as string) + " MB");
       var peso = this.getFileWeight(file.data as string);
-      if (peso > this.weightLimit) {
+      if (peso > this.imageWeightLimit) {
         this.weightLimitExceeded = true;
       } else {
         var foto = new Foto(
