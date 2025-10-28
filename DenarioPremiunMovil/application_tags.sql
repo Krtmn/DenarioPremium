@@ -573,7 +573,9 @@ INSERT INTO public.application_tags(
 	('DEV_INVALID_QU_UNIT', 'DEV', 'DEVOLUCIONES', 'ESP','La cantidad a devolver debe estar entre 1 y'),
 	('DEV_INVALID_QU_UNIT', 'DEV', 'DEVOLUCIONES', 'ENG','Return quantity must be between 1 and '),
 	('DEV_COD_INVOICE', 'DEV', 'DEVOLUCIONES', 'ESP','Factura'),
-	('DEV_COD_INVOICE', 'DEV', 'DEVOLUCIONES', 'ENG','Invoice');
+	('DEV_COD_INVOICE', 'DEV', 'DEVOLUCIONES', 'ENG','Invoice'),
+	('DEV_HEADER_ALERTA', 'DEV', 'DEVOLUCIONES', 'ESP','¡Alerta!'),
+	('DEV_RESET_CONFIRMA', 'DEV', 'DEVOLUCIONES', 'ESP','Se ha detectado cambio de la factura por lo que debera iniciar nuevamente la devolución.');
 	
 	
 -- HOME
