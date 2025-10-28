@@ -1,5 +1,5 @@
 
-import { Component, Input, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit, inject } from '@angular/core';
 import { ProductUtil } from 'src/app/modelos/ProductUtil';
 import { Inventarios } from 'src/app/modelos/inventarios';
 import { ClientStocksDetailUnits, ClientStocksDetail, ClientStocks } from 'src/app/modelos/tables/client-stocks';
@@ -15,11 +15,13 @@ import { ProductService } from 'src/app/services/products/product.service';
 import { ServicesService } from 'src/app/services/services.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED } from 'src/app/utils/appConstants'
+import { Subscription } from 'rxjs/internal/Subscription';
+
 @Component({
-    selector: 'inventario-product-list',
-    templateUrl: './inventario-product-list.component.html',
-    styleUrls: ['./inventario-product-list.component.scss'],
-    standalone: false
+  selector: 'inventario-product-list',
+  templateUrl: './inventario-product-list.component.html',
+  styleUrls: ['./inventario-product-list.component.scss'],
+  standalone: false
 })
 export class InventarioProductListComponent implements OnInit {
 
@@ -55,18 +57,26 @@ export class InventarioProductListComponent implements OnInit {
   public showProductStructure: Boolean = true;
   public esconder: Boolean = false;
   public typeStockMethod: string = "";
-
+  public imagesMap: { [imgName: string]: string } = {};
   searchSub: any;
+  private subs = new Subscription();
 
-  constructor() {
+  constructor(
+    private cd: ChangeDetectorRef,
+  ) {
   }
 
   ngOnInit() {
 
-    /* if (this.inventariosLogicService.initInventario) { */
+    this.subs.add(
+      this.serviceImages.imageLoaded$.subscribe(({ imgName, imgSrc }) => {
+        this.imagesMap[imgName] = imgSrc;
+        this.cd.markForCheck();
+      })
+    );
 
     this.searchText = '';
-  
+
     console.log('Estoy en inventario');
     this.inventariosLogicService.productSelected = {} as ProductUtil
     this.psClicked = this.productService.productStructureCLicked.subscribe((data) => {
@@ -94,30 +104,30 @@ export class InventarioProductListComponent implements OnInit {
 
     this.featClicked = this.productService.featuredStructureClicked.subscribe((data) => {
       this.productService.getFeaturedProducts(this.db.getDatabase(),
-        this.empresaSeleccionada.idEnterprise, 
+        this.empresaSeleccionada.idEnterprise,
         this.empresaSeleccionada.coCurrencyDefault,
         this.globalConfig.get('userCanChangeWarehouse') === 'true',
         this.inventariosLogicService.cliente.idClient,
         this.inventariosLogicService.cliente.idList,
         0).then(() => {
-      this.inventariosLogicService.showProductList = data;
-      this.inventariosLogicService.newClientStock.productList = this.productService.productList;
+          this.inventariosLogicService.showProductList = data;
+          this.inventariosLogicService.newClientStock.productList = this.productService.productList;
         }
-      )
+        )
     });
 
     this.favClicked = this.productService.favoriteStructureClicked.subscribe((data) => {
       this.productService.getFavoriteProducts(this.db.getDatabase(),
-        this.empresaSeleccionada.idEnterprise, 
+        this.empresaSeleccionada.idEnterprise,
         this.empresaSeleccionada.coCurrencyDefault,
         this.globalConfig.get('userCanChangeWarehouse') === 'true',
         this.inventariosLogicService.cliente.idClient,
         this.inventariosLogicService.cliente.idList,
         0).then(() => {
-      this.inventariosLogicService.showProductList = true;
-      this.inventariosLogicService.newClientStock.productList = this.productService.productList;
+          this.inventariosLogicService.showProductList = true;
+          this.inventariosLogicService.newClientStock.productList = this.productService.productList;
         }
-      )
+        )
     });
     //}
   }
@@ -138,6 +148,7 @@ export class InventarioProductListComponent implements OnInit {
   onSelectProductInv(index: number, prod: ProductUtil) {
     this.inventariosLogicService.productSelected = prod;
     this.inventariosLogicService.productSelectedIndex = index;
+    this.inventariosLogicService.productSelected.images = this.serviceImages.getImgForProduct(prod.coProduct) ?? undefined;
     let newTypeStock = false;
     this.esconder = true;
     this.inventariosLogicService.typeExh = false;
@@ -192,7 +203,7 @@ export class InventarioProductListComponent implements OnInit {
             this.inventariosLogicService.typeDep = true; */
 
 
-        this.productService.getUnitsByIdProductOrderByCoPrimaryUnit(this.db.getDatabase(),prod.idProduct).then(() => {
+        this.productService.getUnitsByIdProductOrderByCoPrimaryUnit(this.db.getDatabase(), prod.idProduct).then(() => {
           this.inventariosLogicService.newClientStock.productList[index].productUnitList = this.productService.unitsByProduct;
           this.inventariosLogicService.unitSelected = this.productService.unitsByProduct[0];
           this.inventariosLogicService.showHeaderButtonsFunction(false);
@@ -202,7 +213,7 @@ export class InventarioProductListComponent implements OnInit {
           this.message.hideLoading();
         });
       } else {
-        this.productService.getUnitsByIdProductOrderByCoPrimaryUnit(this.db.getDatabase(),prod.idProduct).then(() => {
+        this.productService.getUnitsByIdProductOrderByCoPrimaryUnit(this.db.getDatabase(), prod.idProduct).then(() => {
 
           for (var i = 0; i < this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits.length; i++)
             if (this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits[i].ubicacion == 'exh')
@@ -232,5 +243,6 @@ export class InventarioProductListComponent implements OnInit {
     console.log(this.inventariosLogicService.newClientStock)
     //console.log(this.serviceImages.mapImages)
   }
+
 
 }

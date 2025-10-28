@@ -222,7 +222,7 @@ export class HomePage implements OnInit {
   }
 
   ngOnInit(): void {
-    this.imageServices.uploadPhotos();
+    //this.imageServices.uploadPhotos();
     console.log(this.services.tags)
 
     this.alertButtonsSincronice[0].text = "Cancelar"

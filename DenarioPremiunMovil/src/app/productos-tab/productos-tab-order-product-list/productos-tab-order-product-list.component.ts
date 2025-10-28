@@ -1,6 +1,6 @@
-import { Component, ElementRef, Input, OnInit, QueryList, Renderer2, ViewChild, ViewChildren, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, Input, OnInit, QueryList, Renderer2, ViewChild, ViewChildren, inject } from '@angular/core';
 import { InfiniteScrollCustomEvent, IonAccordionGroup, IonInput } from '@ionic/angular';
-import { Subject } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { ProductUtil } from 'src/app/modelos/ProductUtil';
 import { OrderUtil } from 'src/app/modelos/orderUtil';
 import { Discount } from 'src/app/modelos/tables/discount';
@@ -10,6 +10,7 @@ import { List } from 'src/app/modelos/tables/list';
 import { Warehouse } from 'src/app/modelos/tables/warehouse';
 import { PedidosService } from 'src/app/pedidos/pedidos.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
+import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { ProductStructureService } from 'src/app/services/productStructures/product-structure.service';
 import { ProductService } from 'src/app/services/products/product.service';
@@ -28,6 +29,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   public orderServ = inject(PedidosService);
   public currencyServ = inject(CurrencyService);
   db = inject(SynchronizationDBService);
+  imageServices = inject(ImageServicesService);
 
   @Input()
   devolucion: Boolean = false;
@@ -72,13 +74,27 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   productoModal!: OrderUtil;
 
   disablePriceListSelector = false;
+  public imagesMap: { [imgName: string]: string } = {};
+  private subs = new Subscription();
 
+  constructor(
 
-  constructor() { }
+    private cd: ChangeDetectorRef,
+  ) { }
 
 
   ngOnInit() {
     console.log('Estoy en Pedido');
+    this.subs.add(
+      this.imageServices.imageLoaded$.subscribe(({ imgName, imgSrc }) => {
+        this.imagesMap[imgName] = imgSrc;
+        this.cd.markForCheck();
+      })
+    );
+
+    // Reemite imágenes cacheadas (si existen)
+    this.imageServices.emitCachedImages();
+
     this.ivaList = this.orderServ.ivaList;
     this.disablePriceListSelector = (!this.orderServ.userCanChangePriceListProduct);
     this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
