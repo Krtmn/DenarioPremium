@@ -1,20 +1,23 @@
-import { Component, Input, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnDestroy, OnInit, inject } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { ProductUtil } from 'src/app/modelos/ProductUtil';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
+import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
 import { ProductStructureService } from 'src/app/services/productStructures/product-structure.service';
 import { ProductService } from 'src/app/services/products/product.service';
 import { ReturnLogicService } from 'src/app/services/returns/return-logic.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
 @Component({
-    selector: 'productos-tab-return-product-list',
-    templateUrl: './productos-tab-return-product-list.component.html',
-    styleUrls: ['./productos-tab-return-product-list.component.scss'],
-    standalone: false
+  selector: 'productos-tab-return-product-list',
+  templateUrl: './productos-tab-return-product-list.component.html',
+  styleUrls: ['./productos-tab-return-product-list.component.scss'],
+  standalone: false
 })
 export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy {
-
+  private subs = new Subscription();
+  imageServices = inject(ImageServicesService);
 
   productStructureService = inject(ProductStructureService);
   productService = inject(ProductService);
@@ -47,13 +50,18 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
   favClicked: any;
   searchSub: any;
   validateReturnSub: any;
-
-  constructor() { }
+  public imagesMap: { [imgName: string]: string } = {};
+  constructor(private cd: ChangeDetectorRef,) { }
 
 
   ngOnInit() {
     //Buscar si existen productos ya cargados cuando me cambio de pestaña sin salir de la devolucion
-
+    this.subs.add(
+      this.imageServices.imageLoaded$.subscribe(({ imgName, imgSrc }) => {
+        this.imagesMap[imgName] = imgSrc;
+        this.cd.markForCheck();
+      })
+    );
 
 
     console.log('Estoy en Devolucion');
@@ -81,21 +89,7 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
 
     this.featClicked = this.productService.featuredStructureClicked.subscribe((data) => {
       this.productService.getFeaturedProducts(this.db.getDatabase(),
-        this.empresaSeleccionada.idEnterprise, 
-        this.empresaSeleccionada.coCurrencyDefault,
-        this.globalConfig.get('userCanChangeWarehouse') === 'true',
-        this.returnLogic.clientReturn.idClient,
-        this.returnLogic.clientReturn.idList,
-        0).then(() => {
-            this.showProductList = true;
-      this.productList = this.productService.productList;
-        }
-      )
-    });
-
-    this.favClicked = this.productService.favoriteStructureClicked.subscribe((data) => {
-      this.productService.getFavoriteProducts(this.db.getDatabase(),
-        this.empresaSeleccionada.idEnterprise, 
+        this.empresaSeleccionada.idEnterprise,
         this.empresaSeleccionada.coCurrencyDefault,
         this.globalConfig.get('userCanChangeWarehouse') === 'true',
         this.returnLogic.clientReturn.idClient,
@@ -104,7 +98,21 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
           this.showProductList = true;
           this.productList = this.productService.productList;
         }
-      )
+        )
+    });
+
+    this.favClicked = this.productService.favoriteStructureClicked.subscribe((data) => {
+      this.productService.getFavoriteProducts(this.db.getDatabase(),
+        this.empresaSeleccionada.idEnterprise,
+        this.empresaSeleccionada.coCurrencyDefault,
+        this.globalConfig.get('userCanChangeWarehouse') === 'true',
+        this.returnLogic.clientReturn.idClient,
+        this.returnLogic.clientReturn.idList,
+        0).then(() => {
+          this.showProductList = true;
+          this.productList = this.productService.productList;
+        }
+        )
     });
   }
 
@@ -130,5 +138,4 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
     this.returnLogic.addProductDev(prod);
     this.productStructureService.onReturnProductTabClicked();
   }
-
 }
