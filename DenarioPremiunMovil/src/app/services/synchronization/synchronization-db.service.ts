@@ -72,7 +72,7 @@ import { ReturnDatabaseService } from '../returns/return-database.service';
 import { OrderDetail } from 'src/app/modelos/tables/orderDetail';
 import { OrderDetailUnit } from 'src/app/modelos/tables/orderDetailUnit';
 import { OrderDetailDiscount } from 'src/app/modelos/orderDetailDiscount';
-
+import { Conversion } from 'src/app/modelos/tables/conversion';
 @Injectable({
   providedIn: 'root'
 })
@@ -1397,24 +1397,20 @@ export class SynchronizationDBService {
     });
   }
 
-  insertConversionBatch(arr: { id_conversion: number; co_conversion: string; na_conversion: string; primary_currency?: boolean | number; id_enterprise?: number; }[]) {
+  insertConversionBatch(arr: Conversion[]) {
     var statements: any[] = [];
     let insertStatement = "INSERT OR REPLACE INTO conversion (id_conversion, co_conversion, na_conversion, primary_currency, id_enterprise) VALUES(?,?,?,?,?)";
 
     for (var i = 0; i < arr.length; i++) {
       const item = arr[i] || {} as any;
-      // Normalizar booleanos a 0/1 si vienen como true/false
-      const primary = (item.primary_currency === true || item.primary_currency === 1) ? 1 : 0;
-      const idEnterprise = (typeof item.id_enterprise === 'number') ? item.id_enterprise : null;
-
       statements.push([
         insertStatement,
         [
-          item.id_conversion ?? null,
-          item.co_conversion ?? null,
-          item.na_conversion ?? null,
-          primary,
-          idEnterprise
+          item.idConversion ?? null,
+          item.coConversion ?? null,
+          item.naConversion ?? null,
+          item.primaryCurrency ? 1 : 0,
+          item.idEnterprise ?? null
         ]
       ]);
     }

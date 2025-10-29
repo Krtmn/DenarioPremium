@@ -139,13 +139,15 @@ export class AppComponent {
     this.updateFabVisibility();
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => this.updateFabVisibility());
 
-    // Inicializar cálculos de la calculadora
-    this.recalcTotals();
+
 
     localStorage.setItem("connected", String(this.netWork.connected));
     localStorage.setItem("connectionType", String(this.netWork.connectionType));
     //this.loginService.imgHome = "../../../assets/images/logoPremium.svg"
     //this.loginService.imgHome = "../../../assets/images/ferrari.jpg"
+
+    // Inicializar cálculos de la calculadora
+    this.recalcTotals();
   }
 
   private updateFabVisibility(): void {
