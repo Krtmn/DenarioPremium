@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { App } from '@capacitor/app';
-import { NavController } from '@ionic/angular';
+import { NavController, Platform } from '@ionic/angular';
 import { COLOR_AMARILLO, COLOR_GRIS, COLOR_LILA, COLOR_VERDE } from '../utils/appConstants';
 import { CurrencyService } from '../services/currency/currency.service';
 import { CurrencyEnterprise } from '../modelos/tables/currencyEnterprise';
@@ -15,6 +15,7 @@ import { GlobalConfigService } from '../services/globalConfig/global-config.serv
 import { GeolocationService } from '../services/geolocation/geolocation.service';
 import { SynchronizationDBService } from '../services/synchronization/synchronization-db.service';
 import { SynchronizationComponent } from '../synchronization/synchronization.component';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-home',
@@ -53,6 +54,11 @@ export class HomePage implements OnInit {
   public fechaCreacion: string = "2000-01-01 00:00:00";
   public userMustActivateGPS: boolean = false;
 
+    backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(1, () => {
+      //console.log('backButton was called!');
+      //de aqui no te vas
+    });
+
 
   public id!: string;
   public alertMessageOpenSend: Boolean = false;
@@ -69,6 +75,7 @@ export class HomePage implements OnInit {
   ];
   constructor(
     private navController: NavController,
+    private platform: Platform,
   ) {
 
     const userStr = localStorage.getItem("user");
@@ -228,6 +235,11 @@ export class HomePage implements OnInit {
     this.alertButtonsSincronice[0].text = "Cancelar"
     this.alertButtonsSincronice[1].text = "Aceptar"
 
+  }
+
+  ngOnDestroy(): void {
+    // Unsubscribe from back button event
+    this.backButtonSubscription.unsubscribe();
   }
   async goToModule(module: any) {
 
