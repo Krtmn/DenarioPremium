@@ -5,6 +5,8 @@ import { LoginLogicService } from './services/login/login-logic.service';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Platform } from '@ionic/angular';
 import { ConversionService } from './services/conversion/conversion.service';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 
 
 
@@ -26,12 +28,27 @@ export class AppComponent {
   public showCalculator: boolean = false;
   public expression: string = '';
   public lastResult: string | number | null = null;
+  // Mostrar FAB sólo en rutas permitidas (por defecto, home)
+  public showFab: boolean = false;
+  // Inputs para el panel de calculadora/selector
+  public inputsIdx: number[] = [0, 1, 2];
+  public inputs: string[] = ['', '', ''];
+  public selectedCompanyId: string | null = null;
+  public companies: Array<{ id: string; name: string }> = [];
+  public selectedCompany: { id: string; name: string } | null = null;
 
 
   constructor(
-    private platform: Platform
+    private platform: Platform,
+    private router: Router
   ) {
 
+  }
+
+  onCompanyChange(event: any) {
+    const id = event?.detail?.value ?? event;
+    this.selectedCompanyId = id;
+    this.selectedCompany = this.companies.find(c => c.id === id) ?? null;
   }
 
   async ngOnInit() {
@@ -40,10 +57,26 @@ export class AppComponent {
     this.listenerNetwork()
     this.netWork = await Network.getStatus();
 
+    // Inicializar visibilidad del FAB y suscribirse a cambios de ruta
+    this.updateFabVisibility();
+    this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => this.updateFabVisibility());
+
     localStorage.setItem("connected", String(this.netWork.connected));
     localStorage.setItem("connectionType", String(this.netWork.connectionType));
     //this.loginService.imgHome = "../../../assets/images/logoPremium.svg"
     //this.loginService.imgHome = "../../../assets/images/ferrari.jpg"
+  }
+
+  private updateFabVisibility(): void {
+    try {
+      const url = (this.router && this.router.url) ? this.router.url.toLowerCase() : '';
+      // Mostrar FAB en todas las rutas por defecto, excepto las rutas de login o sincronización.
+      const denyTokens = ['login', 'synchronization'];
+      const isDenied = denyTokens.some(t => url.includes(t));
+      this.showFab = !isDenied;
+    } catch (e) {
+      this.showFab = false;
+    }
   }
 
   listenerNetwork() {
