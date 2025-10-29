@@ -20,7 +20,6 @@ export class AppComponent {
   public networkStatus!: any;
   public netWork!: any;
 
-
   public loginService = inject(LoginLogicService);
   public conversionService = inject(ConversionService);
 
@@ -37,6 +36,18 @@ export class AppComponent {
   public companies: Array<{ id: string; name: string }> = [];
   public selectedCompany: { id: string; name: string } | null = null;
 
+  // Campos financieros solicitados
+  public baseUsd: number = 0;
+  public calcularIva: boolean = false; // checkbox default false
+  public ivaUsd: number = 0;
+  public descuentoUsd: number = 0;
+  public totalIvaUsd: number = 0;
+  // Tasas (configurables) para calcular totales en moneda local/alternativa
+  public tasaBcvRate: number = 1;
+  public tasaParaleloRate: number = 1;
+  public totalTasaBcv: number = 0;
+  public totalTasaParaleloUsd: number = 0;
+
 
   constructor(
     private platform: Platform,
@@ -51,6 +62,73 @@ export class AppComponent {
     this.selectedCompany = this.companies.find(c => c.id === id) ?? null;
   }
 
+  // ...existing code...
+  public async loadEnterprises(): Promise<void> {
+    try {
+      const resp: any = await this.conversionService.getEnterprise();
+
+      // Si getEnterprise devolviera un Observable en lugar de Promise
+      if (resp && typeof resp.subscribe === 'function') {
+        resp.subscribe((data: any) => {
+          const arr = Array.isArray(data) ? data : (data && Array.isArray(data.data) ? data.data : []);
+          this.companies = arr.map((item: any) => {
+            const id = item.id ?? item.coEnterprise ?? item.co_enterprise ?? item.co ?? item.code ?? String(item);
+            const name = item.name ?? item.naEnterprise ?? item.na_enterprise ?? item.na ?? item.description ?? item.label ?? String(item);
+            return { id: String(id), name: String(name) };
+          }).filter((c: any) => c.id && c.name);
+        }, (err: any) => {
+          console.warn('[loadEnterprises] observable error', err);
+        });
+        return;
+      }
+
+      // Si getEnterprise devolviera Promise o un objeto con data[]
+      const list = Array.isArray(resp) ? resp : (resp && Array.isArray(resp.data) ? resp.data : []);
+      if (!list || list.length === 0) {
+        this.companies = [];
+        return;
+      }
+
+      this.companies = list.map((item: any) => {
+        const id = item.id ?? item.coEnterprise ?? item.co_enterprise ?? item.co ?? item.code ?? item.co_empresa ?? item.coCompany;
+        const name = item.name ?? item.naEnterprise ?? item.na_enterprise ?? item.na ?? item.description ?? item.label ?? item.naCompany ?? item.na_empresa;
+        return { id: String(id ?? ''), name: String(name ?? '') };
+      }).filter((c: any) => c.id && c.name);
+    } catch (err) {
+      console.warn('[loadEnterprises] failed to load enterprises', err);
+      this.companies = [];
+    }
+  }
+  // ...existing code...
+
+
+  public recalcTotals(): void {
+    this.conversionService.getTasaBCV(Number(this.selectedCompanyId)).then(rate => {
+      this.tasaBcvRate = rate;
+      this.conversionService.getTasaParalelo(Number(this.selectedCompanyId)).then(rate => {
+        this.tasaParaleloRate = rate;
+      });
+    });
+
+    try {
+      const base = Number(this.baseUsd) || 0;
+      const descuento = Number(this.descuentoUsd) || 0;
+
+      if (this.calcularIva) {
+        this.ivaUsd = Math.round((base * 0.16) * 100) / 100; // 16% IVA
+      } else {
+        this.ivaUsd = Number(this.ivaUsd) || 0;
+      }
+
+      this.descuentoUsd = base * 0.04; // 4% descuento
+      this.totalIvaUsd = this.ivaUsd - this.descuentoUsd;
+      this.totalTasaBcv = this.totalIvaUsd * this.tasaBcvRate;
+      this.totalTasaParaleloUsd = this.totalIvaUsd * this.tasaParaleloRate;
+    } catch (e) {
+      console.warn('[recalcTotals] error', e);
+    }
+  }
+
   async ngOnInit() {
     if (this.platform.is('ios'))
       StatusBar.hide();
@@ -60,6 +138,9 @@ export class AppComponent {
     // Inicializar visibilidad del FAB y suscribirse a cambios de ruta
     this.updateFabVisibility();
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => this.updateFabVisibility());
+
+    // Inicializar cálculos de la calculadora
+    this.recalcTotals();
 
     localStorage.setItem("connected", String(this.netWork.connected));
     localStorage.setItem("connectionType", String(this.netWork.connectionType));
@@ -91,7 +172,10 @@ export class AppComponent {
   // Toggle visible/invisible
   toggleCalculator() {
     this.showCalculator = !this.showCalculator;
-    if (!this.showCalculator) {
+    if (this.showCalculator) {
+
+      this.loadEnterprises();
+    } else {
       // Opcional: limpiar expresión al cerrar o conservarla
       // this.expression = '';
       // this.lastResult = null;

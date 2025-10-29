@@ -6,20 +6,22 @@
 
 /* estilo para el icono de la calculadora dentro del FAB */
 .global-calc-fab ion-fab-list ion-fab-button.calculator-btn ion-icon {
-  color: #ffffff; /* icono en blanco */
+  color: #ffffff;
+  /* icono en blanco */
 }
 
-/* calculadora flotante */
 .floating-calculator {
   position: fixed;
-  /* Centrado y ocupa la mitad de la pantalla */
-  top: 25vh;
-  left: 25vw;
-  width: 50vw;
-  height: 50vh;
+  /* Centrado y ocupa 3/4 de la pantalla */
+  top: 12.5vh;
+  /* (100 - 75) / 2 = 12.5 */
+  left: 12.5vw;
+  /* (100 - 75) / 2 = 12.5 */
+  width: 75vw;
+  height: 75vh;
   background: var(--ion-background-color, #ffffff);
   border-radius: 12px;
-  box-shadow: 0 6px 24px rgba(0,0,0,0.28);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28);
   padding: 12px;
   z-index: 99999;
   display: flex;
@@ -28,9 +30,22 @@
   overflow: auto;
 }
 
+/* adaptar en pantallas pequeñas */
+@media (max-width: 480px) {
+  .floating-calculator {
+    /* En pantallas pequeñas, ocupar un área grande pero usable */
+    top: 5vh;
+    left: 2.5vw;
+    width: 95vw;
+    height: 80vh;
+    right: auto;
+    bottom: auto;
+  }
+}
+
 .floating-calculator .calc-display {
   padding: 6px 8px;
-  border-bottom: 1px solid rgba(0,0,0,0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .calc-expression {
