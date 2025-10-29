@@ -166,7 +166,8 @@ export class ImageServicesService {
     const worker = async (imgName: string) => {
       let url = "";
       try {
-        url = this.services.getURLService() + "download?type=products&id=" + imgName.split(".")[0];
+        // centralize download URL construction
+        url = this.buildDownloadUrl(imgName);
       } catch {
         console.log("error", imgName);
         return;
@@ -329,6 +330,13 @@ export class ImageServicesService {
     return downloadedPath ?? 'assets/img/placeholder.png';
   }
 
+  // Centralized download URL builder for product images
+  private buildDownloadUrl(imgName: string): string {
+    // imgName expected like '12345.png' or '12345_1.png' -> id is segment before first '.'
+    const id = imgName.split('.')[0];
+    return this.services.getURLService() + 'download?type=products&id=' + id;
+  }
+
   private getLocalImagePath(imgName: string): string | null {
     const filePath = this.listFilesImages.find(name => name === imgName);
     if (filePath) {
@@ -366,8 +374,8 @@ export class ImageServicesService {
 
         // 4) si no se leyó desde disco, descargar y luego leer
         if (!readResultData) {
-          // url como en downloadWithConcurrency
-          let url = this.services.getURLService() + 'download?type=products&id=' + imgName.split('.')[0];
+          // use centralized URL builder (same as downloadWithConcurrency)
+          const url = this.buildDownloadUrl(imgName);
           try {
             const res = await Filesystem.downloadFile({ url, path: imgName, directory: Directory.Cache });
             // registrar en estructuras locales
