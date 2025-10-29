@@ -50,6 +50,8 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
   subscriberShow: any;
   subscriberDisabled: any;
   subscriberToSend: any;
+  subscriptionAttachmentChanged: any;
+  subscriptionAttachmentWeightExceeded: any;
   alertMessageOpen: Boolean = false;
   saveOrExitOpen = false;
   saveAndExitBtn!: string;
@@ -86,6 +88,16 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
     this.subscriberToSend = this.returnLogic.returnValidToSend.subscribe((validToSend: Boolean) => {
       this.cannotSendReturn = !validToSend;
     });
+
+    this.subscriptionAttachmentWeightExceeded = this.adjuntoServ.AttachmentWeightExceeded.subscribe(() => {
+      this.disableSendButton = true;
+      this.cannotSendReturn = true;
+    });
+
+    this.subscriptionAttachmentChanged = this.adjuntoService.AttachmentChanged.subscribe(() => {
+      //this.returnLogic.setChange(true, true); //dupe
+      this.returnLogic.updateSendButtonState();
+  });
 
     this.alertButtons = [
       {
@@ -131,6 +143,8 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
     this.subscriberDisabled.unsubscribe();
     this.subscriberToSend.unsubscribe();
     this.backButtonSubscription.unsubscribe();
+    this.subscriptionAttachmentWeightExceeded.unsubscribe();
+    this.subscriptionAttachmentChanged.unsubscribe();
   }
 
 
