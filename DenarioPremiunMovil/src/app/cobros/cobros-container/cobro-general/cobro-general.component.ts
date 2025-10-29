@@ -97,9 +97,7 @@ export class CobrosGeneralComponent implements OnInit {
         this.collectService.cobroValid = false;
         this.reset(client);
       }),
-      this.adjuntoService.AttachmentChanged.subscribe(() => {
-        this.setChangesMade(true);
-      })
+
     );
 
     this.initGeneralState();

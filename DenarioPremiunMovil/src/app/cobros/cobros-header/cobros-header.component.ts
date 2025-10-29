@@ -40,6 +40,8 @@ export class CobrosHeaderComponent implements OnInit {
   public subscriberShow: any;
   public subscriberDisabled: any;
   public subscriberToSend: any;
+  public subscriptionAttachmentChanged: any;
+  public subscriptionAttachmentWeightExceeded: any;
 
   public alertButtons = [
     /*  {
@@ -148,6 +150,16 @@ export class CobrosHeaderComponent implements OnInit {
     this.subscriberToSend = this.collectService.collectValidToSend.subscribe((validToSend: Boolean) => {
       this.collectService.disableSendButton = validToSend ? false : true;
     });
+
+    this.subscriptionAttachmentChanged = this.adjuntoService.AttachmentChanged.subscribe(() => {
+        //this.setChangesMade(true);
+        this.collectService.validateToSend();
+        this.collectService.disableSavedButton = this.collectService.disableSendButton;
+      });
+    this.subscriptionAttachmentWeightExceeded = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
+        this.collectService.disableSavedButton = true;
+        this.collectService.disableSendButton = true;
+      })
   }
 
   ngOnDestroy() {
@@ -155,6 +167,8 @@ export class CobrosHeaderComponent implements OnInit {
     this.subscriberDisabled.unsubscribe();
     this.subscriberToSend.unsubscribe();
     this.backButtonSubscription.unsubscribe();
+    this.subscriptionAttachmentChanged.unsubscribe();
+    this.subscriptionAttachmentWeightExceeded.unsubscribe();
   }
 
   resetValues() {
