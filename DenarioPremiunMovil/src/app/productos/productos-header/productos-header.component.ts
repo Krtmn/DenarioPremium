@@ -44,4 +44,8 @@ export class ProductosHeaderComponent  implements OnInit {
     this.onBackClicked.emit(true);
   }
 
+  ngOnDestroy() {
+    this.backButtonSubscription.unsubscribe();
+  }
+
 }
