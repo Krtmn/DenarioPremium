@@ -130,6 +130,9 @@ export class InventariosLogicService {
   }
 
   checkValidStockToSend(){
+    if(this.typeStocks.length == 0){
+      return false;
+    }
     for (const typeStock of this.typeStocks) {
       if (!typeStock.validateCantidad) {
         return false;
