@@ -92,9 +92,6 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       })
     );
 
-    // Reemite imágenes cacheadas (si existen)
-    this.imageServices.emitCachedImages();
-
     this.ivaList = this.orderServ.ivaList;
     this.disablePriceListSelector = (!this.orderServ.userCanChangePriceListProduct);
     this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
@@ -348,6 +345,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     }
   }
   onShowProductStructures() {
+    this.orderUtilList = [] as OrderUtil[];
     this.showProductList = false;
     this.productStructureService.onAddProductCLicked();
   }
