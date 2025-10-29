@@ -88,6 +88,7 @@ export class ClientesDatabaseServicesService {
           idList: data.rows.item(i).id_list,
           idPaymentCondition: data.rows.item(i).id_payment_condition,
           coPaymentCondition: data.rows.item(i).co_payment_condition,
+          naPaymentCondition: data.rows.item(i).na_payment_condition,
           inSuspension: data.rows.item(i).in_suspension,
           quDiscount: data.rows.item(i).qu_discount,
           naEmail: data.rows.item(i).na_email,
@@ -135,85 +136,252 @@ export class ClientesDatabaseServicesService {
 
     if (this.globalConfig.get("multiCurrency")) {
       if (this.globalConfig.get("conversionDocument")) {
-        var selectStatement = 'SELECT c.co_client as coClient, c.co_currency as coCurrency, c.co_enterprise as coEnterprise,' +
-          'c.co_payment_condition as coPaymentCondition,c.id_channel as idChannel,c.id_client as idClient,c.id_currency as idCurrency,' +
-          'c.id_enterprise as idEnterprise,c.id_head_quarter as idHeadQuarter,c.id_list as idList,c.id_payment_condition as idPaymentCondition,' +
-          'c.id_warehouse as idWarehouse,c.in_suspension as inSuspension,c.lb_client as lbClient,c.multimoneda, c.na_email as naEmail,' +
-          'c.na_web_site as naWebSite,c.nu_credit_limit as nuCreditLimit,c.nu_rif as nuRif,c.qu_discount as quDiscount, ' +
-          '(SELECT na_responsible FROM address_clients WHERE id_client = ? LIMIT 1 ) naResponsible, ' +
-          '(SELECT na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1 ) naPriceList,(SELECT nu_phone FROM address_clients WHERE id_client = ? LIMIT 1 ) nuPhone, ' +
-          '(SELECT tx_address FROM address_clients WHERE id_client = ? LIMIT 1 ) txAddress, ' +
-          '(SELECT na_channel FROM distribution_channels WHERE id_channel = c.id_channel LIMIT 1 ) channel, ' +
-          "(SELECT SUM(ds.nu_balance) from document_sales ds WHERE ds.id_client=? AND ds.co_currency =  '" + localStorage.getItem("localCurrency") + "') saldo1, " +
-          "(SELECT SUM(ds.nu_balance / ds.nu_value_local) from document_sales ds WHERE ds.id_client=? AND ds.co_currency =  '" + localStorage.getItem("localCurrency") + "') saldo1Conver, " +
-          "(SELECT SUM(ds.nu_balance) from document_sales ds WHERE ds.id_client=?  AND ds.co_currency = '" + localStorage.getItem("hardCurrency") + "') saldo2, " +
-          "(SELECT SUM(ds.nu_balance * ds.nu_value_local) from document_sales ds WHERE ds.id_client=?  AND ds.co_currency = '" + localStorage.getItem("hardCurrency") + "') saldo2Conver, " +
-          '(SELECT co_currency FROM document_sales ds WHERE ds.id_client=?) coCurrency,' +
-          '(SELECT coordenada FROM address_clients ac WHERE ac.id_client=c.id_client) coordenada, ' +
-          '(SELECT editable FROM address_clients ac WHERE ac.id_client=c.id_client) editable, ' +
-          '(SELECT id_address FROM address_clients ac WHERE ac.id_client=c.id_client) idAddressClients, ' +
-          '(SELECT co_address FROM address_clients ac WHERE ac.id_client=c.id_client) coAddressClients, ' +
-          '(SELECT e.lb_enterprise FROM enterprises e WHERE e.id_enterprise = c.id_enterprise LIMIT 1 ) lblEnterprise  FROM clients c WHERE id_client = ?';
+        const localCurrency = localStorage.getItem('localCurrency') || '';
+        const hardCurrency = localStorage.getItem('hardCurrency') || '';
 
+        const selectStatement = `
+  SELECT c.co_client AS coClient,
+         c.co_currency AS coCurrency,
+         c.co_enterprise AS coEnterprise,
+         c.co_payment_condition AS coPaymentCondition,
+         c.id_channel AS idChannel,
+         c.id_client AS idClient,
+         c.id_currency AS idCurrency,
+         c.id_enterprise AS idEnterprise,
+         c.id_head_quarter AS idHeadQuarter,
+         c.id_list AS idList,
+         c.id_payment_condition AS idPaymentCondition,
+         c.id_warehouse AS idWarehouse,
+         c.in_suspension AS inSuspension,
+         c.lb_client AS lbClient,
+         c.multimoneda,
+         c.na_email AS naEmail,
+         c.na_web_site AS naWebSite,
+         c.nu_credit_limit AS nuCreditLimit,
+         c.nu_rif AS nuRif,
+         c.qu_discount AS quDiscount,
 
-        return this.dbServ.getDatabase().executeSql(selectStatement, [idClient, idClient, idClient, idClient, idClient, idClient, idClient, idClient, idClient]).then(data => {
-          data.rows.item(0).saldo1 = data.rows.item(0).saldo1 == null ? 0 : data.rows.item(0).saldo1;
-          data.rows.item(0).saldo1Conver = data.rows.item(0).saldo1Conver == null ? 0 : data.rows.item(0).saldo1Conver;
-          data.rows.item(0).saldo2 = data.rows.item(0).saldo2 == null ? 0 : data.rows.item(0).saldo2;
-          data.rows.item(0).saldo2Conver = data.rows.item(0).saldo2Conver == null ? 0 : data.rows.item(0).saldo2Conver;
-          return data.rows.item(0);
-        })
+         (SELECT na_responsible FROM address_clients WHERE id_client = ? LIMIT 1) AS naResponsible,
+         (SELECT na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1) AS naPriceList,
+         (SELECT nu_phone FROM address_clients WHERE id_client = ? LIMIT 1) AS nuPhone,
+         (SELECT tx_address FROM address_clients WHERE id_client = ? LIMIT 1) AS txAddress,
+
+         (SELECT na_channel FROM distribution_channels WHERE id_channel = c.id_channel LIMIT 1) AS channel,
+
+         (SELECT SUM(ds.nu_balance) FROM document_sales ds
+            WHERE ds.id_client = ? AND ds.co_currency = ?) AS saldo1,
+         (SELECT SUM(ds.nu_balance / ds.nu_value_local) FROM document_sales ds
+            WHERE ds.id_client = ? AND ds.co_currency = ?) AS saldo1Conver,
+         (SELECT SUM(ds.nu_balance) FROM document_sales ds
+            WHERE ds.id_client = ? AND ds.co_currency = ?) AS saldo2,
+         (SELECT SUM(ds.nu_balance * ds.nu_value_local) FROM document_sales ds
+            WHERE ds.id_client = ? AND ds.co_currency = ?) AS saldo2Conver,
+
+         (SELECT co_currency FROM document_sales ds WHERE ds.id_client = ? LIMIT 1) AS coCurrency,
+
+         (SELECT ac.coordenada FROM address_clients ac WHERE ac.id_client = c.id_client LIMIT 1) AS coordenada,
+         (SELECT ac.editable FROM address_clients ac WHERE ac.id_client = c.id_client LIMIT 1) AS editable,
+         (SELECT id_address FROM address_clients ac WHERE ac.id_client = c.id_client LIMIT 1) AS idAddressClients,
+         (SELECT co_address FROM address_clients ac WHERE ac.id_client = c.id_client LIMIT 1) AS coAddressClients,
+
+         (SELECT e.lb_enterprise FROM enterprises e WHERE e.id_enterprise = c.id_enterprise LIMIT 1) AS lblEnterprise,
+
+         -- nueva: nombre de la condicion de pago
+         (SELECT pc.na_payment_condition FROM payment_conditions pc
+            WHERE pc.co_payment_condition = c.co_payment_condition LIMIT 1) AS na_payment_condition
+
+  FROM clients c
+  WHERE id_client = ?
+`;
+
+        // parámetros en el mismo orden de los '?' arriba:
+        // 1 naResponsible(idClient), 2 nuPhone(idClient), 3 txAddress(idClient),
+        // 4 saldo1.id_client, 5 saldo1.co_currency,
+        // 6 saldo1Conver.id_client, 7 saldo1Conver.co_currency,
+        // 8 saldo2.id_client, 9 saldo2.co_currency,
+        // 10 saldo2Conver.id_client, 11 saldo2Conver.co_currency,
+        // 12 coCurrency.id_client,
+        // 13 WHERE id_client = ?
+        const params = [
+          idClient,         // naResponsible
+          idClient,         // nuPhone
+          idClient,         // txAddress
+          idClient,         // saldo1.id_client
+          localCurrency,    // saldo1.co_currency
+          idClient,         // saldo1Conver.id_client
+          localCurrency,    // saldo1Conver.co_currency
+          idClient,         // saldo2.id_client
+          hardCurrency,     // saldo2.co_currency
+          idClient,         // saldo2Conver.id_client
+          hardCurrency,     // saldo2Conver.co_currency
+          idClient,         // coCurrency.id_client
+          idClient          // WHERE id_client = ?
+        ];
+
+        // Ejecuta la query con los parámetros:
+        return this.dbServ.getDatabase().executeSql(selectStatement, params).then(data => {
+          // ... tu mapeo existente ... añade la nueva propiedad si la quieres exponer:
+          // data.rows.item(i).na_payment_condition
+          // por ejemplo:
+          const row = data.rows.item(0);
+          row.saldo1 = row.saldo1 == null ? 0 : row.saldo1;
+          row.saldo1Conver = row.saldo1Conver == null ? 0 : row.saldo1Conver;
+          row.saldo2 = row.saldo2 == null ? 0 : row.saldo2;
+          row.saldo2Conver = row.saldo2Conver == null ? 0 : row.saldo2Conver;
+          return row;
+        });
 
       } else {
-        var selectStatement = 'SELECT c.co_client as coClient, c.co_currency as coCurrency, c.co_enterprise as coEnterprise,' +
-          'c.co_payment_condition as coPaymentCondition,c.id_channel as idChannel,c.id_client as idClient,c.id_currency as idCurrency,' +
-          'c.id_enterprise as idEnterprise,c.id_head_quarter as idHeadQuarter,c.id_list as idList,c.id_payment_condition as idPaymentCondition,c.nu_credit_limit as nuCreditLimit,' +
-          'c.id_warehouse as idWarehouse,c.in_suspension as inSuspension,c.lb_client as lbClient,c.nu_rif as nuRif,c.multimoneda, c.na_email as naEmail, c.na_client as naClient, ' +
-          '(SELECT na_responsible FROM address_clients WHERE id_client = ? LIMIT 1 ) naResponsible, ' +
-          '(SELECT na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1 ) naPriceList,(SELECT nu_phone FROM address_clients WHERE id_client = ? LIMIT 1 ) nuPhone, ' +
-          '(SELECT tx_address FROM address_clients WHERE id_client = ? LIMIT 1 ) txAddress, ' +
-          '(SELECT na_channel FROM distribution_channels WHERE id_channel = c.id_channel LIMIT 1 ) channel, ' +
-          '(SELECT SUM(ds.nu_balance) from document_sales ds WHERE ds.id_client=? AND ds.co_currency = c.co_currency) saldo1,' +
-          '(SELECT SUM(ds.nu_balance) from document_sales ds WHERE ds.id_client=?  AND ds.co_currency != c.co_currency) saldo2,' +
-          '(SELECT co_currency FROM document_sales ds WHERE ds.id_client=?) coCurrency,' +
-          '(SELECT coordenada FROM address_clients ac WHERE ac.id_client=c.id_client) coordenada, ' +
-          '(SELECT editable FROM address_clients ac WHERE ac.id_client=c.id_client) editable, ' +
-          '(SELECT id_address FROM address_clients ac WHERE ac.id_client=c.id_client) idAddressClients, ' +
-          '(SELECT co_address FROM address_clients ac WHERE ac.id_client=c.id_client) coAddressClients, ' +
-          '(SELECT e.lb_enterprise FROM enterprises e WHERE e.id_enterprise = c.id_enterprise LIMIT 1 ) lblEnterprise  FROM clients c WHERE id_client = ?';
+        // Replace the existing var selectStatement + executeSql(...) for the non-conversionDocument branch of getClientById with:
 
+        const selectStatement = `
+  SELECT
+    c.co_client AS coClient,
+    c.co_currency AS coCurrency,
+    c.co_enterprise AS coEnterprise,
+    c.co_payment_condition AS coPaymentCondition,
+    c.id_channel AS idChannel,
+    c.id_client AS idClient,
+    c.id_currency AS idCurrency,
+    c.id_enterprise AS idEnterprise,
+    c.id_head_quarter AS idHeadQuarter,
+    c.id_list AS idList,
+    c.id_payment_condition AS idPaymentCondition,
+    c.nu_credit_limit AS nuCreditLimit,
+    c.id_warehouse AS idWarehouse,
+    c.in_suspension AS inSuspension,
+    c.lb_client AS lbClient,
+    c.nu_rif AS nuRif,
+    c.multimoneda,
+    c.na_email AS naEmail,
+    c.na_client AS naClient,
+    c.qu_discount AS quDiscount,
 
-        return this.dbServ.getDatabase().executeSql(selectStatement, [idClient, idClient, idClient, idClient, idClient, idClient, idClient]).then(data => {
-          data.rows.item(0).saldo1 = data.rows.item(0).saldo1 == null ? 0 : data.rows.item(0).saldo1;
-          data.rows.item(0).saldo2 = data.rows.item(0).saldo2 == null ? 0 : data.rows.item(0).saldo2;
+    (SELECT na_responsible FROM address_clients WHERE id_client = ? LIMIT 1) AS naResponsible,
+    (SELECT na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1) AS naPriceList,
+    (SELECT nu_phone FROM address_clients WHERE id_client = ? LIMIT 1) AS nuPhone,
+    (SELECT tx_address FROM address_clients WHERE id_client = ? LIMIT 1) AS txAddress,
 
-          return data.rows.item(0);
-        })
+    (SELECT na_channel FROM distribution_channels WHERE id_channel = c.id_channel LIMIT 1) AS channel,
+
+    (SELECT SUM(ds.nu_balance) FROM document_sales ds WHERE ds.id_client = ? AND ds.co_currency = c.co_currency) AS saldo1,
+    (SELECT SUM(ds.nu_balance) FROM document_sales ds WHERE ds.id_client = ? AND ds.co_currency != c.co_currency) AS saldo2,
+    (SELECT co_currency FROM document_sales ds WHERE ds.id_client = ? LIMIT 1) AS coCurrency,
+
+    (SELECT ac.coordenada FROM address_clients ac WHERE ac.id_client = c.id_client LIMIT 1) AS coordenada,
+    (SELECT ac.editable FROM address_clients ac WHERE ac.id_client = c.id_client LIMIT 1) AS editable,
+    (SELECT id_address FROM address_clients ac WHERE ac.id_client = c.id_client LIMIT 1) AS idAddressClients,
+    (SELECT co_address FROM address_clients ac WHERE ac.id_client = c.id_client LIMIT 1) AS coAddressClients,
+
+    (SELECT e.lb_enterprise FROM enterprises e WHERE e.id_enterprise = c.id_enterprise LIMIT 1) AS lblEnterprise,
+
+    -- nombre de la condición de pago
+    (SELECT pc.na_payment_condition FROM payment_conditions pc
+       WHERE pc.co_payment_condition = c.co_payment_condition LIMIT 1) AS na_payment_condition
+
+  FROM clients c
+  WHERE c.id_client = ?
+`;
+
+        // parámetros (en el mismo orden que los '?' en la consulta)
+        const params = [
+          idClient, // naResponsible
+          idClient, // nuPhone
+          idClient, // txAddress
+          idClient, // saldo1.ds.id_client
+          idClient, // saldo2.ds.id_client
+          idClient, // coCurrency.ds.id_client
+          idClient  // WHERE c.id_client = ?
+        ];
+
+        return this.dbServ.getDatabase().executeSql(selectStatement, params).then(data => {
+          if (data.rows.length === 0) return null;
+          const row = data.rows.item(0);
+
+          // Normalizar saldos (igual que en la otra rama)
+          row.saldo1 = row.saldo1 == null ? 0 : row.saldo1;
+          row.saldo2 = row.saldo2 == null ? 0 : row.saldo2;
+
+          // Exponer la descripción de la condición de pago con camelCase
+          row.naPaymentCondition = row.na_payment_condition ?? null;
+
+          return row;
+        });
       }
     } else {
-      var selectStatement = 'SELECT c.co_client as coClient, c.co_currency as coCurrency, c.co_enterprise as coEnterprise,' +
-        'c.co_payment_condition as coPaymentCondition,c.id_channel as idChannel,c.id_client as idClient,c.id_currency as idCurrency,c.nu_credit_limit as nuCreditLimit,' +
-        'c.id_enterprise as idEnterprise,c.id_head_quarter as idHeadQuarter,c.id_list as idList,c.id_payment_condition as idPaymentCondition,' +
-        'c.id_warehouse as idWarehouse,c.in_suspension as inSuspension,c.lb_client as lbClient,c.nu_rif as nuRif,c.multimoneda, c.na_email as naEmail,' +
-        '(SELECT na_responsible FROM address_clients WHERE id_client = ? LIMIT 1 ) naResponsible, ' +
-        '(SELECT na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1 ) naPriceList,(SELECT nu_phone FROM address_clients WHERE id_client = ? LIMIT 1 ) nuPhone, ' +
-        '(SELECT tx_address FROM address_clients WHERE id_client = ? LIMIT 1 ) txAddress, ' +
-        '(SELECT na_channel FROM distribution_channels WHERE id_channel = c.id_channel LIMIT 1 ) channel, ' +
-        '(SELECT SUM(ds.nu_balance) from document_sales ds WHERE ds.id_client=?) saldo,' +
-        '(SELECT co_currency FROM document_sales ds WHERE ds.id_client=?) coCurrency,' +
-        '(SELECT coordenada FROM address_clients ac WHERE ac.id_client=c.id_client) coordenada, ' +
-        '(SELECT editable FROM address_clients ac WHERE ac.id_client=c.id_client) editable, ' +
-        '(SELECT id_address FROM address_clients ac WHERE ac.id_client=c.id_client) idAddressClients, ' +
-        '(SELECT co_address FROM address_clients ac WHERE ac.id_client=c.id_client) coAddressClients, ' +
-        '(SELECT e.lb_enterprise FROM enterprises e WHERE e.id_enterprise = c.id_enterprise LIMIT 1 ) lblEnterprise  FROM clients c WHERE id_client = ?';
-      console.log("en query: getClientById");
-      return this.dbServ.getDatabase().executeSql(selectStatement, [idClient, idClient, idClient, idClient, idClient, idClient]).then(data => {
-        /*   let lists = [];
-          for (let i = 0; i < data.rows.length; i++) {
-            lists.push(data.rows.item(i));
-          } */
-        return data.rows.item(0);
-      })
+      // Reemplaza el var selectStatement + executeSql(...) por lo siguiente:
+
+const selectStatement = `
+  SELECT
+    c.co_client AS coClient,
+    c.co_currency AS coCurrency,
+    c.co_enterprise AS coEnterprise,
+    c.co_payment_condition AS coPaymentCondition,
+    c.id_channel AS idChannel,
+    c.id_client AS idClient,
+    c.id_currency AS idCurrency,
+    c.id_enterprise AS idEnterprise,
+    c.id_head_quarter AS idHeadQuarter,
+    c.id_list AS idList,
+    c.id_payment_condition AS idPaymentCondition,
+    c.nu_credit_limit AS nuCreditLimit,
+    c.id_warehouse AS idWarehouse,
+    c.in_suspension AS inSuspension,
+    c.lb_client AS lbClient,
+    c.nu_rif AS nuRif,
+    c.multimoneda,
+    c.na_email AS naEmail,
+    c.na_client AS naClient,
+    c.qu_discount AS quDiscount,
+
+    (SELECT na_responsible FROM address_clients WHERE id_client = ? LIMIT 1) AS na_responsible,
+    (SELECT na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1) AS na_price_list,
+    (SELECT nu_phone FROM address_clients WHERE id_client = ? LIMIT 1) AS nu_phone,
+    (SELECT tx_address FROM address_clients WHERE id_client = ? LIMIT 1) AS tx_address,
+
+    (SELECT na_channel FROM distribution_channels WHERE id_channel = c.id_channel LIMIT 1) AS channel,
+
+    (SELECT SUM(ds.nu_balance) FROM document_sales ds WHERE ds.id_client = ? AND ds.co_currency = c.co_currency) AS saldo,
+    (SELECT co_currency FROM document_sales ds WHERE ds.id_client = ? LIMIT 1) AS coCurrency,
+
+    (SELECT ac.coordenada FROM address_clients ac WHERE ac.id_client = c.id_client LIMIT 1) AS coordenada,
+    (SELECT ac.editable FROM address_clients ac WHERE ac.id_client = c.id_client LIMIT 1) AS editable,
+    (SELECT id_address FROM address_clients ac WHERE ac.id_client = c.id_client LIMIT 1) AS idAddressClients,
+    (SELECT co_address FROM address_clients ac WHERE ac.id_client = c.id_client LIMIT 1) AS coAddressClients,
+
+    (SELECT e.lb_enterprise FROM enterprises e WHERE e.id_enterprise = c.id_enterprise LIMIT 1) AS lblEnterprise,
+
+    -- nombre de la condición de pago desde payment_conditions
+    (SELECT pc.na_payment_condition FROM payment_conditions pc
+       WHERE pc.co_payment_condition = c.co_payment_condition LIMIT 1) AS na_payment_condition
+
+  FROM clients c
+  WHERE c.id_client = ?
+`;
+
+// parámetros (orden de los '?' en la query)
+const params = [
+  idClient, // na_responsible
+  idClient, // nu_phone
+  idClient, // tx_address
+  idClient, // saldo (ds.id_client)
+  idClient, // coCurrency (ds.id_client)
+  idClient  // WHERE c.id_client = ?
+];
+
+return this.dbServ.getDatabase().executeSql(selectStatement, params).then(data => {
+  if (!data || data.rows.length === 0) return null;
+  const row = data.rows.item(0);
+
+  // Normalizaciones / alias y nueva propiedad camelCase
+  row.saldo = row.saldo == null ? 0 : row.saldo;
+  row.coCurrency = row.coCurrency ?? row.co_currency ?? null;
+  // Exponer la descripción de la condición de pago en camelCase
+  row.naPaymentCondition = row.na_payment_condition ?? null;
+  // También puedes mapear/aliasar otras columnas si tu código cliente usa nombres distintos
+
+  return row;
+});
     }
   }
 
