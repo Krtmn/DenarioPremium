@@ -59,6 +59,8 @@ export class ImageServicesService {
 
             this.downloadFileListPdf = resp.downloadFileListDispatch;
             this.removeFileListPdf = resp.removeFileListDispatch;
+            if (this.removeFileListPdf.length > 0)
+              this.deleteImages(this.removeFileListPdf);
             return resp
           } else
             return "";
@@ -99,6 +101,9 @@ export class ImageServicesService {
 
             this.downloadFileList = resp.downloadFileList;
             this.removeFileList = resp.removeFileList;
+            if (this.removeFileList.length > 0)
+              this.deleteImages(this.removeFileList);
+
             return resp
           } else
             return "";
@@ -217,103 +222,6 @@ export class ImageServicesService {
       });
     }
 
-    /*  setTimeout(() => {
-       this.uploadPhotos();
-     }, 0); */
-  }
-
-
-  async deleteImages(listImagesDelete: string[]) {
-    // Carga mapImages si está vacío (comportamiento conservado)
-    if (this.mapImages.size === 0 && localStorage.getItem("mapImages") != null) {
-      this.mapImages = new Map(JSON.parse(localStorage.getItem("mapImages")!));
-    }
-
-    if (!listImagesDelete || listImagesDelete.length === 0) {
-      return Promise.resolve();
-    }
-
-    const toDelete = new Set(listImagesDelete);
-
-    // Preparar promesas de borrado en disco
-    const fsDeletes: Promise<void>[] = [];
-
-    // Procesar cada filename a eliminar (evita bucles anidados)
-    for (const filename of toDelete) {
-      // borrar del filesystem (si no es db/ini)
-      const ext = filename.split('.').pop()?.toLowerCase();
-      if (ext && ext !== 'db' && ext !== 'ini') {
-        const p = Filesystem.deleteFile({
-          path: filename,
-          directory: Directory.Cache
-        }).catch(err => {
-          // Logueamos pero no abortamos todo el proceso
-          console.warn('[deleteImages] deleteFile error for', filename, err);
-        });
-        fsDeletes.push(p);
-      }
-
-      // Determinar key en mapImages (misma regla que en downloadWithConcurrency)
-      const base = filename.split('.')[0];
-      const key = base.split('_')[0];
-
-      // Actualizar mapImages: eliminar las rutas que coincidan con filename
-      if (this.mapImages.has(key)) {
-        const prev = this.mapImages.get(key) || [];
-        const updated = prev.filter(path => (path.split('/').pop() !== filename));
-        if (updated.length > 0) {
-          this.mapImages.set(key, updated);
-        } else {
-          this.mapImages.delete(key);
-        }
-      }
-
-      // Actualizar mapImagesFiles (base64) acorde a mapImages:
-      // Si ya no existe key en mapImages, remueve tambián de mapImagesFiles.
-      // Si sigue existiendo, intenta mantener la longitud sincronizada recortando si hace falta.
-      if (!this.mapImages.has(key)) {
-        if (this.mapImagesFiles.has(key)) {
-          this.mapImagesFiles.delete(key);
-        }
-      } else {
-        const updatedPaths = this.mapImages.get(key) || [];
-        if (this.mapImagesFiles.has(key)) {
-          const existingBase64 = this.mapImagesFiles.get(key) || [];
-          if (existingBase64.length > updatedPaths.length) {
-            this.mapImagesFiles.set(key, existingBase64.slice(0, updatedPaths.length));
-          }
-          // si existingBase64.length <= updatedPaths.length mantenemos tal cual
-        }
-      }
-
-      // Actualizar allFileList filtrando por filename (compara el segmento final de path)
-      this.allFileList = this.allFileList.filter(it => (it.path.split('/').pop() !== filename));
-    }
-
-    // Actualizar listFilesImages eliminando los borrados
-    this.listFilesImages = this.listFilesImages.filter(f => !toDelete.has(f));
-
-    // Persistir cambios en localStorage
-    try {
-      localStorage.setItem("listFilesImages", JSON.stringify(this.listFilesImages));
-      if (this.mapImages.size !== 0) {
-        localStorage.setItem("mapImages", JSON.stringify(Array.from(this.mapImages.entries())));
-      } else {
-        localStorage.removeItem("mapImages");
-      }
-      if (this.mapImagesFiles.size !== 0) {
-        localStorage.setItem("mapImagesFiles", JSON.stringify(Array.from(this.mapImagesFiles.entries())));
-      } else {
-        localStorage.removeItem("mapImagesFiles");
-      }
-    } catch (e) {
-      console.warn('[deleteImages] error saving to localStorage', e);
-    }
-
-    // Esperar a que terminen los borrados de disco
-    await Promise.all(fsDeletes);
-
-    return Promise.resolve();
   }
 
   async getImageUrl(imgName: string): Promise<string> {
@@ -425,32 +333,38 @@ export class ImageServicesService {
     return loadPromise;
   }
 
-  getImageObservable(imgName?: string): Observable<string | null> {
-    if (!imgName) return of(null);
+  getImageObservable(imgName?: string): Observable<string> {
+    const placeholder = '../../../assets/images/nodisponible.png';
+    // If no name provided, immediately return placeholder
+    if (!imgName) return of(placeholder);
+
+    // Fast path: if we already have the base64 in memory, return it
     if (this.mapImagesFilesByFilename.has(imgName)) {
       return of(this.mapImagesFilesByFilename.get(imgName)!);
     }
-    // Si ya existe subject, lo devolvemos
+
+    // If a subject already exists for this imgName, ensure load is started and
+    // map any null emissions to the placeholder.
     if (this.imageSubjects.has(imgName)) {
       const s = this.imageSubjects.get(imgName)!;
-      // kick off load si no hay nada en curso
       if (!this.pendingLoads.has(imgName)) {
-        this.getImageBase64(imgName).catch(() => {/* swallow, handled elsewhere */ });
+        this.getImageBase64(imgName).catch(() => { /* swallow, handled elsewhere */ });
       }
-      return s.asObservable();
+      return s.asObservable().pipe(map(v => v ?? placeholder));
     }
 
-    // crear subject, lanzar carga y devolver observable
+    // Create a subject (starts with null) and trigger a background load.
     const subject = new BehaviorSubject<string | null>(null);
     this.imageSubjects.set(imgName, subject);
 
-    // lanzar carga (getImageBase64 actualizará el subject cuando termine)
+    // Trigger the load; getImageBase64 will update the subject when ready.
     this.getImageBase64(imgName).catch(err => {
-      // en caso de error dejamos el subject con null (podrías setear un placeholder)
       console.warn('[getImageObservable] load failed for', imgName, err);
+      // leave subject at null; mapping below will convert to placeholder for subscribers
     });
 
-    return subject.asObservable();
+    // Always map null -> placeholder so this method returns Observable<string>
+    return subject.asObservable().pipe(map(v => v ?? placeholder));
   }
 
   // Helper para leer y normalizar el resultado de Filesystem.readFile a base64 string
@@ -597,4 +511,111 @@ export class ImageServicesService {
     // Si llegamos aquí, no hay imagen lista; retornar null (puede usarse placeholder en la UI)
     return '../../../assets/images/nodisponible.png';
   }
+
+  /**
+   * Delete images from disk and update all in-memory and persisted metadata.
+   * If listImagesDelete is omitted, uses this.removeFileList.
+   * Returns a summary of deleted and failed items.
+   */
+  public async deleteImages(listImagesDelete?: string[]): Promise<{ deleted: string[]; failed: { name: string; error: any }[] }> {
+    const input = (listImagesDelete && listImagesDelete.length > 0) ? listImagesDelete : (this.removeFileList || []);
+    const toDelete = Array.from(new Set(input)); // dedupe
+    const deleted: string[] = [];
+    const failed: { name: string; error: any }[] = [];
+
+    if (toDelete.length === 0) {
+      return { deleted, failed };
+    }
+
+    for (const filename of toDelete) {
+      try {
+        // Try deleting by filename first (same path used when downloading: path === filename)
+        try {
+          await Filesystem.deleteFile({ path: filename, directory: Directory.Cache });
+        } catch (e1) {
+          // Fallback: try to find an entry in allFileList and delete by stored path
+          const entry = this.allFileList.find(it => it.path && it.path.split('/').pop() === filename);
+          if (entry && entry.path) {
+            // Filesystem.deleteFile expects a relative path; if entry.path contains directories, pass the last segment or the full path depending on platform
+            let candidatePath = entry.path;
+            // strip file:// if present
+            if (candidatePath.startsWith('file://')) candidatePath = candidatePath.replace('file://', '');
+            try {
+              await Filesystem.deleteFile({ path: candidatePath, directory: Directory.Cache });
+            } catch {
+              // If still failing, try deleting by the filename relative to Cache (best-effort)
+              await Filesystem.deleteFile({ path: filename, directory: Directory.Cache });
+            }
+          } else {
+            // rethrow original to be handled by outer catch
+            throw e1;
+          }
+        }
+
+        // Update in-memory structures
+        // Keep a snapshot of previous paths for index reconciliation with mapImagesFiles
+        const productKey = filename.split('.')[0].split('_')[0];
+        const prevPaths = this.mapImages.get(productKey) ? [...this.mapImages.get(productKey)!] : [];
+
+        // Remove from listFilesImages
+        this.listFilesImages = this.listFilesImages.filter(n => n !== filename);
+
+        // Remove from mapImagesFilesByFilename (filename -> base64 cache)
+        this.mapImagesFilesByFilename.delete(filename);
+
+        // Remove from mapImages (productKey -> paths[])
+        if (this.mapImages.has(productKey)) {
+          const newPaths = this.mapImages.get(productKey)!.filter(p => p.split('/').pop() !== filename);
+          if (newPaths.length === 0) this.mapImages.delete(productKey);
+          else this.mapImages.set(productKey, newPaths);
+        }
+
+        // Reconcile mapImagesFiles (productKey -> base64[]) by removing entries whose indices correspond to removed paths
+        if (this.mapImagesFiles.has(productKey)) {
+          const base64Arr = [...this.mapImagesFiles.get(productKey)!];
+          const indicesToRemove: number[] = [];
+          for (let i = 0; i < prevPaths.length; i++) {
+            const p = prevPaths[i];
+            if (p && p.split('/').pop() === filename) indicesToRemove.push(i);
+          }
+          // Remove indices from highest to lowest to keep indexes valid
+          indicesToRemove.sort((a, b) => b - a).forEach(idx => {
+            if (idx >= 0 && idx < base64Arr.length) base64Arr.splice(idx, 1);
+          });
+          if (base64Arr.length === 0) this.mapImagesFiles.delete(productKey);
+          else this.mapImagesFiles.set(productKey, base64Arr);
+        }
+
+        // Remove from allFileList
+        this.allFileList = this.allFileList.filter(it => it.path.split('/').pop() !== filename && it.name !== filename.split('.')[0]);
+
+        // Notify subscribers: per-image subject and global imageLoaded$ with placeholder
+        const placeholder = '../../../assets/images/nodisponible.png';
+        const subj = this.imageSubjects.get(filename);
+        if (subj) {
+          // set to null so getImageObservable mapping will convert to placeholder
+          subj.next(null);
+        }
+        this.imageLoaded$.next({ imgName: filename, imgSrc: placeholder });
+
+        deleted.push(filename);
+      } catch (err) {
+        failed.push({ name: filename, error: err });
+        console.warn('[deleteImages] failed deleting', filename, err);
+      }
+    }
+
+    // Persist metadata once after processing all deletions
+    try {
+      localStorage.setItem('listFilesImages', JSON.stringify(this.listFilesImages));
+      if (this.mapImages.size !== 0) localStorage.setItem('mapImages', JSON.stringify(Array.from(this.mapImages.entries())));
+      if (this.mapImagesFiles.size !== 0) localStorage.setItem('mapImagesFiles', JSON.stringify(Array.from(this.mapImagesFiles.entries())));
+    } catch (e) {
+      console.warn('[deleteImages] failed persisting metadata', e);
+    }
+
+    return { deleted, failed };
+  }
+
+
 }

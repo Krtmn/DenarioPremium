@@ -602,8 +602,7 @@
                             <!-- FECHA COMP RET  -->
 
                             <!-- MONTO RET IVA-->
-                            <ion-col *ngIf="this.collectService.retencion" size="12" size-xs="12" size-sm="12"
-                                size-md="12">
+                            <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                                 <ion-input
                                     label="{{this.collectService.collectionTags.get('COB_AMOUNT_RETENTION_IVA')}}"
                                     label-placement="floating" fill="outline" color="primary" type="text"
@@ -615,8 +614,7 @@
                             <!-- MONTO RET IVA--->
 
                             <!-- MONTO RET ISLR-->
-                            <ion-col *ngIf="this.collectService.retencion" size="12" size-xs="12" size-sm="12"
-                                size-md="12">
+                            <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                                 <ion-input
                                     label="{{this.collectService.collectionTags.get('COB_AMOUNT_RETENTION_ISLR')}}"
                                     label-placement="floating" fill="outline" color="primary" type="text"
@@ -656,7 +654,6 @@
                                     </ion-col>
                                 </ion-row>
                             </ion-grid>
-
                         </ion-row>
                     </ion-grid>
                 </ion-content>
