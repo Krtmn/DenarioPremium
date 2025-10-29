@@ -273,8 +273,15 @@ export class ProductosTabOrderProductListComponent implements OnInit {
         this.orderServ.alCarrito(prod);
         return;
       } else {
-        this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_STOCK0"));
-        prod.quAmount = 0;
+        if (prod.quStockAux == prod.quAmount) {
+          //se llevo la cantidad justa. no hay problema
+          unit.quAmount = prod.quAmount;
+          this.orderServ.alCarrito(prod);
+        } else {
+          this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_STOCK0"));
+          prod.quAmount = 0;
+        }
+
       }
     }
 
