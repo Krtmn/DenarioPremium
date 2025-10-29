@@ -3,7 +3,7 @@
   <ion-button fill="outline" size="small" color="dark" class="colorBorderBuscar" shape="round"
     (click)="this.returnLogic.validateReturn ? onShowProductList() : onShowProductStructures()">
     {{this.productsTabTags.get('PROD_VOLVER')}}
-    <ion-icon class="colorIconBuscar" slot="start" name="arrow-back-circle-sharp" ></ion-icon>
+    <ion-icon class="colorIconBuscar" slot="start" name="arrow-back-circle-sharp"></ion-icon>
   </ion-button>
 
   <!--  Listado clickeable de productos  -->
@@ -15,7 +15,8 @@
         <!-- <ion-item button detail="true" *ngIf="i<10*indice"> -->
         <ion-item button detail="false">
           <ion-label fixed class="fixedLabel contenedorImgMargin">
-            <img class="productImage" alt="" loading="lazy" [src]="product.images" />
+            <img class="productImage" alt="" loading="lazy"
+              [src]="product.coProduct ? (imageServices.getImageObservable(product.coProduct) | async) : '../../../assets/images/nodisponible.png'" />
           </ion-label>
           <ion-label class="textList espaciotextoListaProduc">
             <p class="espacioentrelineas">{{ product.naProduct }}</p>

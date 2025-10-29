@@ -137,7 +137,17 @@ export class VisitaComponent implements OnInit {
     } else
       this.disabledButtonViewRoute = true;
     this.nombreCliente = client.lbClient;
-  })
+  });
+
+    backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
+    //console.log('backButton was called!');
+    if(this.showEventModal){
+      //cerramos el modal de eventos primero.
+      this.resetEventSelect();
+    }else{
+      this.goBack();
+    }
+  });
 
   viewOnly: boolean = false;// solo lectura, no se puede cambiar nada
   fromWeb: boolean = false; //viene desde la web, ciertas cosas no se pueden modificar
@@ -178,10 +188,6 @@ export class VisitaComponent implements OnInit {
     reference: "trigger",
 
   }
-  backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
-    //console.log('backButton was called!');
-    this.goBack();
-  });
 
   constructor(
   ) {

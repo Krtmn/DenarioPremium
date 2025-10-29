@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ChangeDetectorRef, inject } from '@angular/core';
 import { ServicesService } from '../services/services.service';
 import { UserInfoView } from '../modelos/tables/userInfoView';
 import { MessageService } from 'src/app/services/messageService/message.service';
@@ -8,7 +8,9 @@ import { UserInformation } from '../modelos/tables/userInformation';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite/ngx';
 import { Enterprise } from '../modelos/tables/enterprise';
 import { EnterpriseService } from '../services/enterprise/enterprise.service';
-import { IonAccordionGroup } from '@ionic/angular';
+import { IonAccordionGroup, Platform } from '@ionic/angular';
+import { Subscription } from 'rxjs';
+import { Router } from '@angular/router';
 
 
 @Component({
@@ -18,6 +20,7 @@ import { IonAccordionGroup } from '@ionic/angular';
     standalone: false
 })
 export class VendedoresComponent  implements OnInit {
+  router = inject(Router);
   observador!: any;
   userInfo!: UserInfoView[];
   infoVendedores: boolean = false;
@@ -35,9 +38,15 @@ export class VendedoresComponent  implements OnInit {
     private message: MessageService,
     private globalConfig: GlobalConfigService,    
     private enterpriseServ: EnterpriseService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private platform: Platform,
     ) {    
   }
+
+  backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
+      //console.log('backButton was called!');
+      this.router.navigate(['home']);
+    });
 
   ngOnInit() {
     this.message.showLoading().then(()=>{
@@ -136,5 +145,9 @@ export class VendedoresComponent  implements OnInit {
   showInfo(empresa: Enterprise, info: UserInfoView){
     return info.coEnterprise === empresa.coEnterprise;
 }
+
+  ngOnDestroy() {
+    this.backButtonSubscription.unsubscribe();
+  }
 
 }

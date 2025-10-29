@@ -433,9 +433,9 @@ DELETE FROM public.application_tags WHERE co_module = 'INV';
 	('INV_DEV_SAVED', 'INV', 'INVENTARIO', 'ESP','Guardado'),
 	('INV_DEV_SAVED', 'INV', 'INVENTARIO', 'ENG','Saved'),
 	('INV_DEV_TO_BE_SENDED', 'INV', 'INVENTARIO', 'ESP','Por Enviar'),
-	('INV_DEV_TO_BE_SENDED', 'INV', 'INVENTARIO', 'ENG','To be sended'),
+	('INV_DEV_TO_BE_SENDED', 'INV', 'INVENTARIO', 'ENG','To be sent'),
 	('INV_DEV_SENDED', 'INV', 'INVENTARIO', 'ESP','Enviado'),
-	('INV_DEV_SENDED', 'INV', 'INVENTARIO', 'ENG','Sended'),
+	('INV_DEV_SENDED', 'INV', 'INVENTARIO', 'ENG','Sent'),
 	('INV_DEV_STATUS', 'INV', 'INVENTARIO', 'ESP','Estatus'),
 	('INV_ADD_TYPE', 'INV', 'INVENTARIO', 'ESP','Agregar tipo de Inventario'),
 	('INV_ADD_TYPE', 'INV', 'INVENTARIO', 'ENG','Add Stock Type'),
@@ -573,7 +573,9 @@ INSERT INTO public.application_tags(
 	('DEV_INVALID_QU_UNIT', 'DEV', 'DEVOLUCIONES', 'ESP','La cantidad a devolver debe estar entre 1 y'),
 	('DEV_INVALID_QU_UNIT', 'DEV', 'DEVOLUCIONES', 'ENG','Return quantity must be between 1 and '),
 	('DEV_COD_INVOICE', 'DEV', 'DEVOLUCIONES', 'ESP','Factura'),
-	('DEV_COD_INVOICE', 'DEV', 'DEVOLUCIONES', 'ENG','Invoice');
+	('DEV_COD_INVOICE', 'DEV', 'DEVOLUCIONES', 'ENG','Invoice'),
+	('DEV_HEADER_ALERTA', 'DEV', 'DEVOLUCIONES', 'ESP','¡Alerta!'),
+	('DEV_RESET_CONFIRMA', 'DEV', 'DEVOLUCIONES', 'ESP','Se ha detectado cambio de la factura por lo que debera iniciar nuevamente la devolución.');
 	
 	
 -- HOME

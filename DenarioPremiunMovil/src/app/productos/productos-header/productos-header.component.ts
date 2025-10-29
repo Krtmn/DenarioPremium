@@ -19,13 +19,23 @@ export class ProductosHeaderComponent  implements OnInit {
   headerTags = new Map<string, string>([]);
   @Input()
   showDetail!: Boolean;
+  @Input()
+  showProductStructures!: Boolean;
+  @Input()
+  showProducts!: Boolean;
 
   @Output()
   onBackClicked: EventEmitter<Boolean> = new EventEmitter<Boolean>();
+  
+
 
   backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
     //console.log('backButton was called!');
-    this.showProductList();
+    if(this.showProductStructures){
+      this.navigateToHome();  
+    }else{
+      this.onBackClicked.emit(true);
+    }  
   });
   
   constructor( 
@@ -37,11 +47,17 @@ export class ProductosHeaderComponent  implements OnInit {
   }
 
   navigateToHome(){
-    this.router.navigate(['Home']);
+    this.router.navigate(['home']);
+    //
+    
   }
 
   showProductList(){
     this.onBackClicked.emit(true);
+  }
+
+  ngOnDestroy() {
+    this.backButtonSubscription.unsubscribe();
   }
 
 }

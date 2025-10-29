@@ -213,13 +213,12 @@ export class InventarioHeaderComponent implements OnInit {
               pendingTransaction.idTransaction = this.inventariosLogicService.newClientStock.idClientStock;
               pendingTransaction.type = "clientStock";
               if (localStorage.getItem("connected") == "true") {
+                /*
                 this.messageAlert = new MessageAlert(
                   this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!,
                   this.inventariosLogicService.inventarioTags.get('INV_MSJ_SEND_TYPESTOCKS')!,
                 );
-                this.messageService.alertModal(this.messageAlert);
-
-
+                this.messageService.alertModal(this.messageAlert);*/
               } else {
                 this.messageAlert = new MessageAlert(
                   this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!,

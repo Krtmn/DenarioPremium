@@ -59,12 +59,14 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
 
 
   clientChangeSubscription: any;
+  invoiceChangeSubscription: any;
 
 
   constructor() { }
 
   ngOnDestroy(): void {
     this.clientChangeSubscription.unsubscribe();
+    this.invoiceChangeSubscription.unsubscribe();
   }
 
   ngOnInit() {
@@ -118,7 +120,17 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
       this.cliente = client;
       this.nombreCliente = client.lbClient;
       this.reset();
-    })
+    });
+
+    this.invoiceChangeSubscription = this.returnLogic.invoiceChanged.subscribe(invoice => {
+      this.reset();
+      this.setInvoicefromSelector(invoice);
+      this.returnLogic.newReturn.coInvoice = invoice.coInvoice;
+      this.returnLogic.newReturn.idInvoice = invoice.idInvoice;
+      this.returnLogic.findInvoiceDetailUnits().then();
+      this.returnLogic.onReturnValid(true);
+      this.returnLogic.setChange(true, true);
+    });
   }
 
   reset() {
@@ -180,7 +192,7 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
       this.selectorService.checkClient = true;
     } else {
       this.bloquearFactura = false;
-      console.log("factrua vacio");
+      console.log("factura vacia");
     }
   }
 

@@ -9,13 +9,15 @@
         <!-- <ion-item button detail="true" *ngIf="i<10*indice"> -->
         <ion-item button detail="false">
           <ion-label fixed class="fixedLabel contenedorImgMargin">
-            <img class="productImage" alt="" loading="lazy" [src]="product.images" />
+            <img class="productImage" alt="" loading="lazy"
+              [src]="product.coProduct ? (imageServices.getImageObservable(product.coProduct) | async) : '../../../assets/images/nodisponible.png'" />
           </ion-label>
           <ion-label class="textList espaciotextoListaProduc">
             <p class="espacioentrelineas">{{ product.naProduct }}</p>
             <p class="espacioentrelineas">{{this.productTags.get('PROD_COD_PROD')}}: {{ product.coProduct }}</p>
-            <p class="espacioentrelineas">{{this.productTags.get('PROD_PRICE_PROD')}}: {{ formatNumber(product.price) }} {{ product.coCurrency }}</p>
-            <p *ngIf="product.priceOpposite" class="espacioentrelineas">{{this.productTags.get('PROD_PRICE_PROD')}}: 
+            <p class="espacioentrelineas">{{this.productTags.get('PROD_PRICE_PROD')}}: {{ formatNumber(product.price) }}
+              {{ product.coCurrency }}</p>
+            <p *ngIf="product.priceOpposite" class="espacioentrelineas">{{this.productTags.get('PROD_PRICE_PROD')}}:
               {{ formatNumber(product.priceOpposite) }} {{product.coCurrencyOpposite }} </p>
             <p class="espacioentrelineas"> {{this.productTags.get('PROD_STOCK_PROD')}}: {{ product.stock > 0 ?
               product.stock :
@@ -26,7 +28,8 @@
       </div>
     </ion-list>
     <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)">
-      <ion-infinite-scroll-content loadingText="Por favor espere..." loadingSpinner="bubbles"></ion-infinite-scroll-content>
+      <ion-infinite-scroll-content loadingText="Por favor espere..."
+        loadingSpinner="bubbles"></ion-infinite-scroll-content>
     </ion-infinite-scroll>
   </div>
 

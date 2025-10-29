@@ -1,4 +1,4 @@
-import { Component, DoCheck, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DoCheck, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, inject } from '@angular/core';
 import { InfiniteScrollCustomEvent, IonInfiniteScroll } from '@ionic/angular';
 import { Subject, Subscription } from 'rxjs';
 import { ProductDetail } from 'src/app/modelos/ProductDetail';
@@ -15,12 +15,14 @@ import { ServicesService } from 'src/app/services/services.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
 @Component({
-    selector: 'product-list',
-    templateUrl: './product-list.component.html',
-    styleUrls: ['./product-list.component.scss'],
-    standalone: false
+  selector: 'product-list',
+  templateUrl: './product-list.component.html',
+  styleUrls: ['./product-list.component.scss'],
+  standalone: false
 })
 export class ProductListComponent implements OnInit {
+
+  private subs = new Subscription();
 
   productService = inject(ProductService);
   productStructureService = inject(ProductStructureService);
@@ -28,7 +30,9 @@ export class ProductListComponent implements OnInit {
   db = inject(SynchronizationDBService);
   message = inject(MessageService);
   imageServices = inject(ImageServicesService);
- 
+
+  public imagesMap: { [imgName: string]: string } = {};
+
 
   @Input()
   productTags = new Map<string, string>([]);
@@ -56,9 +60,22 @@ export class ProductListComponent implements OnInit {
   @ViewChild(IonInfiniteScroll)
   infiniteScroll!: IonInfiniteScroll;
 
-  constructor() { }
+  constructor(
+    private cd: ChangeDetectorRef,
+  ) { }
 
   ngOnInit() {
+
+    this.subs.add(
+      this.imageServices.imageLoaded$.subscribe(({ imgName, imgSrc }) => {
+        this.imagesMap[imgName] = imgSrc;
+        this.cd.markForCheck();
+      })
+    );
+
+    // Reemite imágenes cacheadas (si existen)
+    this.imageServices.emitCachedImages();
+
     if (this.searchText) {
       if (this.productService.productList.length > 0) {
         this.productList = this.productService.productList;
@@ -82,23 +99,24 @@ export class ProductListComponent implements OnInit {
     this.searchText = data;
     if (this.searchText) {
       this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
-          this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.productService.empresaSeleccionada.coCurrencyDefault).then(() => {
-            this.productList = this.productService.productList;
-          });
-  }
-});
+        this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.productService.empresaSeleccionada.coCurrencyDefault).then(() => {
+          this.productList = this.productService.productList;
+        });
+    }
+  });
 
   ngOnDestroy(): void {
     this.searchSubscription.unsubscribe();
+    this.subs.unsubscribe();
   }
 
   onIonInfinite(ev: any) {
     setTimeout(() => {
       console.log("cargando...")
-      
+
       if (this.endPro >= this.productList.length) {
         this.infiniteScroll.disabled = true;
-      }else{
+      } else {
         this.endPro += this.qtyPro;
       }
 
@@ -109,7 +127,7 @@ export class ProductListComponent implements OnInit {
   onShowProductDetail(product: ProductUtil) {
     console.log('Muthen 1');
     this.selectedProduct = product;
-    this.productService.getProductDetailByIdProduct(this.db.getDatabase(),this.selectedProduct.idList, this.selectedProduct.idProduct, this.productService.empresaSeleccionada.coCurrencyDefault).then(() => {
+    this.productService.getProductDetailByIdProduct(this.db.getDatabase(), this.selectedProduct.idList, this.selectedProduct.idProduct, this.productService.empresaSeleccionada.coCurrencyDefault).then(() => {
       this.productDetail = this.productService.productDetail;
       this.selectedProductChanged.emit(this.productDetail);
     });

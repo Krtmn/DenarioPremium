@@ -44,8 +44,15 @@ export class DevolucionesComponent implements OnInit {
           result[i].coApplicationTag, result[i].tag
         )
       }
-      this.returnLogic.tags = this.tags;
-    })
+      this.services.getTags(this.db.getDatabase(), "DEN", "ESP").then(resultDen => {
+        for (var j = 0; j < resultDen.length; j++) {
+          this.tags.set(
+            resultDen[j].coApplicationTag, resultDen[j].tag
+          )
+        }
+        this.returnLogic.tags = this.tags;
+      });
+    });
     this.message.hideLoading();
   }
 
