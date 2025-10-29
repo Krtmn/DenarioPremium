@@ -790,6 +790,7 @@ body.ios ion-segment-button {
     background: $colorLila !important; /* O el color que prefieras para el seleccionado */
     color: #fff !important;
     color: #fff !important;
+    --color-checked: #430197 !important; 
 }
 
 .md ion-segment-button.ion-activated,
@@ -797,6 +798,7 @@ body.ios ion-segment-button {
   background: $colorLila !important; /* O el color que prefieras para el seleccionado */
   color: #fff !important;
   color: #fff !important;
+  --color-checked: #430197 !important;
 }
 .md .segment-button-checked.md::part(native) {
     color: #fff!important;
