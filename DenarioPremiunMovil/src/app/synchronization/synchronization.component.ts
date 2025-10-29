@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { NavController } from '@ionic/angular';
-import { of, Observable } from 'rxjs';
+import { NavController, Platform } from '@ionic/angular';
+import { of, Observable, Subscription } from 'rxjs';
 import { SynchronizationDBService } from '../services/synchronization/synchronization-db.service';
 import { ServicesService } from '../services/services.service';
 import { TablesLastUpdate } from '../modelos/tables/tables-lastUpdate';
@@ -52,6 +52,11 @@ export class SynchronizationComponent implements OnInit {
   public alertMessageOpenSend: Boolean = false;
   public currentTableIndex = 0; // Índice para recorrer las tablas a sincronizar
   public user: any = {};
+
+      backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(1, () => {
+        //console.log('backButton was called!');
+        //de aqui no te vas
+      });
 
   // Botones para alertas (puedes personalizar los textos)
   public alertButtons = [
@@ -187,7 +192,8 @@ export class SynchronizationComponent implements OnInit {
   constructor(
     private router: Router,
     private route: ActivatedRoute,
-    private http: HttpClient
+    private http: HttpClient,
+    private platform: Platform,
   ) {
     const userStr = localStorage.getItem("user");
     if (userStr) {
@@ -226,6 +232,13 @@ export class SynchronizationComponent implements OnInit {
         }
       }
     );
+  }
+
+  ngOnDestroy(): void {
+    // Unsubscribe from route params
+    //this.sub.unsubscribe(); // not fucking with this.
+    // Unsubscribe from back button event
+    this.backButtonSubscription.unsubscribe();
   }
 
   /**
