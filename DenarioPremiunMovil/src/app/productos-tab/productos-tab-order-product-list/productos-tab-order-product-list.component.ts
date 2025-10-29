@@ -92,9 +92,6 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       })
     );
 
-    // Reemite imágenes cacheadas (si existen)
-    this.imageServices.emitCachedImages();
-
     this.ivaList = this.orderServ.ivaList;
     this.disablePriceListSelector = (!this.orderServ.userCanChangePriceListProduct);
     this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
@@ -276,8 +273,15 @@ export class ProductosTabOrderProductListComponent implements OnInit {
         this.orderServ.alCarrito(prod);
         return;
       } else {
-        this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_STOCK0"));
-        prod.quAmount = 0;
+        if (prod.quStockAux == prod.quAmount) {
+          //se llevo la cantidad justa. no hay problema
+          unit.quAmount = prod.quAmount;
+          this.orderServ.alCarrito(prod);
+        } else {
+          this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_STOCK0"));
+          prod.quAmount = 0;
+        }
+
       }
     }
 
@@ -348,6 +352,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     }
   }
   onShowProductStructures() {
+    this.orderUtilList = [] as OrderUtil[];
     this.showProductList = false;
     this.productStructureService.onAddProductCLicked();
   }

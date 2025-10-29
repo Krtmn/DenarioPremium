@@ -29,7 +29,7 @@
   <ion-content class="product-card product-structure-scroll accordionProductos">
     <ion-accordion-group expand="inset" [multiple]="false" #accordionGroup>
       <ion-accordion class="product-structure-title accordionPedidos" *ngFor="let product of orderUtilList; index as i"
-        [disabled]="!product.nuPrice || (!this.orderServ.stock0 && (product.quStock < 1))"
+        [disabled]="!product.nuPrice || (!this.orderServ.stock0 && (product.quStockAux < 1))"
         toggleIcon="caret-down-circle" toggleIconSlot="end" [value]="product.coProduct">
         <!-- PARTE VISIBLE -->
         <ion-item detail="false" slot="header" (click)="onSelectProductPed(i, product);"
@@ -42,7 +42,7 @@
           <ion-label fixed class="fixedLabel" *ngIf="orderServ.showProductImages">
             <ion-img (click)="loadProductToModal(product)" loading="lazy"
               (ionError)="product.imagenProduct = orderServ.imgNoDisponible" class="productImage" alt=""
-              [src]="product.coProduct ? (imageServices.getImageObservable(product.coProduct) | async) : '../../../assets/images/nodisponible.png'">
+              [src]="product.coProduct ? (imageServices.getImgForProduct(product.coProduct)) : '../../../assets/images/nodisponible.png'">
             </ion-img>
           </ion-label>
           <!-- Nombre, codigo, precio, stock, puntos, minimo, multiplo -->
@@ -224,7 +224,7 @@
                   <ion-label *ngIf="orderServ.showProductImages">
                     <ion-img class="imgProductInvent" alt="" loading="lazy"
                       (ionError)="productoModal.imagenProduct = orderServ.imgNoDisponible"
-                      [src]="productoModal.coProduct ? (imageServices.getImageObservable(productoModal.coProduct) | async) : '../../../assets/images/nodisponible.png'">
+                      [src]="productoModal.coProduct ? (imageServices.getImgForProduct(productoModal.coProduct)) : '../../../assets/images/nodisponible.png'">
                     </ion-img>
                   </ion-label>
                 </ion-col>
