@@ -102,8 +102,16 @@ export class ProductosComponent {
   }
 
   onBackClicked(verListaProductos: Boolean) {
-    this.showProductDetail = false;
-    this.showProducts = true;
+    if(this.showProductDetail){
+      this.showProductDetail = false;
+      this.showProducts = true;
+      return;
+    }
+    if(this.showProducts){
+      this.showProducts = false;
+      this.showProductStructures = true;
+      return;
+    }
   }
 
   setSearchText(value: string) {
