@@ -3,24 +3,18 @@
   <!-- ...existing code... -->
 
   <!-- FAB global (botón principal + lista de opciones) -->
-  <ion-fab *ngIf="showFab" vertical="bottom" horizontal="end" slot="fixed" class="global-calc-fab">
-    <!-- Botón principal: al clickearlo, el FAB se desplegará mostrando las opciones -->
+  <!-- <ion-fab *ngIf="showFab" vertical="bottom" horizontal="end" slot="fixed" class="global-calc-fab">
     <ion-fab-button aria-label="Abrir opciones">
       <ion-icon name="chevron-up-outline"></ion-icon>
     </ion-fab-button>
 
-    <!-- Lista de opciones que aparece al desplegar el FAB. Añadir más botones aquí si es necesario. -->
     <ion-fab-list side="top">
       <ion-fab-button class="calculator-btn" (click)="toggleCalculator()" aria-label="Abrir calculadora">
         <ion-icon name="calculator-outline"></ion-icon>
       </ion-fab-button>
-      <!-- Ejemplo: botón adicional (descomentá/ajustá según tus necesidades)
-      <ion-fab-button (click)="otraAccion()" aria-label="Otra acción">
-      <ion-icon name="star"></ion-icon>syn
-      </ion-fab-button>
-      -->
+   
     </ion-fab-list>
-  </ion-fab>
+  </ion-fab> -->
 
   <ion-card *ngIf="showCalculator" class="floating-calculator" role="dialog" aria-label="Calculadora">
     <ion-card-header>

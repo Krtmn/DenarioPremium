@@ -73,6 +73,7 @@ export class AppComponent {
     this.netWork = await Network.getStatus();
 
     this.showFab = this.globalConfig.get('conversionCalculator') == 'true' ? true : false;
+    this.showFab = false;
     // Inicializar visibilidad del FAB y suscribirse a cambios de ruta
     this.updateFabVisibility();
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => this.updateFabVisibility());
