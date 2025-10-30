@@ -122,10 +122,10 @@ export class AppComponent {
 
       const descuentoPct = Number(this.descuentoPercent) || 0; // 0..100
       // descuento en USD = base * (descuentoPct / 100)
-      this.descuentoUSD = Math.round((base * (descuentoPct / 100)) * 100) / 100;
+      this.descuentoUSD = Math.round(base * (descuentoPct / 100));
 
       // Si el descuento iguala la base, anular IVA (mantener consistencia numérica)
-      if (this.descuentoUSD === base && base != 0) {
+      if (Number(this.descuentoUSDInput) === base && base != 0) {
         this.ivaPercent = 0;
         this.ivaUSDInput = this.formatCurrencyLocale(0);
         this.totalIVAUSD = 0;
