@@ -1,6 +1,6 @@
 import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core';
 import { Router, ActivatedRoute, ParamMap } from '@angular/router';
-
+import { ClientShareModalComponent } from '../client-share-modal/client-share-modal.component';
 import { SynchronizationDBService } from '../../../services/synchronization/synchronization-db.service';
 import { Client } from '../../../modelos/tables/client';
 import { ClientesDatabaseServicesService } from '../../../services/clientes/clientes-database-services.service';
@@ -35,6 +35,8 @@ export class ClienteComponent implements OnInit {
   public localCurrency = '';
   public hardCurrency = '';
   public decimales = 2;
+
+  public clientShareModalOpen: boolean = false;
 
   constructor() {
 
@@ -151,5 +153,9 @@ export class ClienteComponent implements OnInit {
 
   oppositeCoCurrency(coCurrency: string) {
     return this.currencyService.oppositeCoCurrency(coCurrency);
+  }
+
+  openShareModal(open: boolean) {
+    this.clientShareModalOpen = open;
   }
 }
