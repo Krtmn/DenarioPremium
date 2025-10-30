@@ -184,11 +184,13 @@ export class NewPotentialClientComponent implements OnInit {
           pendingTransaction.idTransaction = 0
           pendingTransaction.type = "potentialClient";
           if (localStorage.getItem("connected") == "true") {
+            /*
             this.messageAlert = new MessageAlert(
               "Denario Cliente",
               "¡Cliente potencial sera enviado!"
             );
             this.messageService.alertModal(this.messageAlert);
+            */
             this.services.insertPendingTransaction(this.synchronizationServices.getDatabase(), pendingTransaction).then(result => {
               if (result) {
                 this.autoSend.ngOnInit();
@@ -202,12 +204,14 @@ export class NewPotentialClientComponent implements OnInit {
             this.clientLogic.clientNewPotentialClientComponent = false;
             this.clientLogic.clientPotentialClientComponent = true;
             this.clientLogic.clienteNuevoBlancoImg = true;
+            /*
             this.messageAlert = new MessageAlert(
               "Denario Cliente",
               "¡Cliente potencial sera enviado al tener conexión de datos!"
             );
-            this.messageService.alertModal(this.messageAlert);
+            this.messageService.alertModal(this.messageAlert);*/
           }
+            
         } else {
           this.messageAlert = new MessageAlert(
             "Denario Cliente",
