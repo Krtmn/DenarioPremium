@@ -1,6 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite/ngx';
 import { SynchronizationDBService } from '../synchronization/synchronization-db.service';
+import { Enterprise } from 'src/app/modelos/tables/enterprise';
+import { EnterpriseService } from '../enterprise/enterprise.service';
 
 @Injectable({
   providedIn: 'root'
@@ -8,6 +10,9 @@ import { SynchronizationDBService } from '../synchronization/synchronization-db.
 export class ConversionService {
 
   public synchronizationServices = inject(SynchronizationDBService);
+  private enterpriseServ = inject(EnterpriseService);
+
+  public enterpriseList: Enterprise[] = [];
 
   constructor() {
   }
@@ -40,10 +45,10 @@ export class ConversionService {
   }
 
   getEnterprise() {
-    const dbServ = this.synchronizationServices.getDatabase();
-    let selectStatement = "SELECT * FROM enterprises";
-    return dbServ.executeSql(selectStatement, []).then(data => {
-      console.log('Empresa obtenida', data);
-    })
+    return this.enterpriseServ.setup(this.synchronizationServices.getDatabase()).then(() => {
+      this.enterpriseList = this.enterpriseServ.empresas;
+      return this.enterpriseList;
+    });
+
   }
 }

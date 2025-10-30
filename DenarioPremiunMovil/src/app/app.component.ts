@@ -7,6 +7,7 @@ import { Platform } from '@ionic/angular';
 import { ConversionService } from './services/conversion/conversion.service';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
+import { Enterprise } from './modelos/tables/enterprise';
 
 
 
@@ -32,13 +33,12 @@ export class AppComponent {
   // Inputs para el panel de calculadora/selector
   public inputsIdx: number[] = [0, 1, 2];
   public inputs: string[] = ['', '', ''];
-  public selectedCompanyId: string | null = null;
-  public companies: Array<{ id: string; name: string }> = [];
-  public selectedCompany: { id: string; name: string } | null = null;
+  public companies: Enterprise[] = [];
+  public selectedCompany: Enterprise | null = null;
 
   // Campos financieros solicitados
   public baseUsd: number = 0;
-  public calcularIva: boolean = false; // checkbox default false
+  public calcularIva: boolean = true; // checkbox default true
   public ivaUsd: number = 0;
   public descuentoUsd: number = 0;
   public totalIvaUsd: number = 0;
@@ -47,6 +47,9 @@ export class AppComponent {
   public tasaParaleloRate: number = 1;
   public totalTasaBcv: number = 0;
   public totalTasaParaleloUsd: number = 0;
+
+  // Nuevo binding auxiliar (string) para el input formateado
+  public baseUsdInput: string = '0,00'; // ahora con coma por defecto
 
 
   constructor(
@@ -58,61 +61,24 @@ export class AppComponent {
 
   onCompanyChange(event: any) {
     const id = event?.detail?.value ?? event;
-    this.selectedCompanyId = id;
-    this.selectedCompany = this.companies.find(c => c.id === id) ?? null;
+    this.selectedCompany = event?.detail?.selectedOption || null;
   }
 
   // ...existing code...
   public async loadEnterprises(): Promise<void> {
-    try {
-      const resp: any = await this.conversionService.getEnterprise();
-
-      // Si getEnterprise devolviera un Observable en lugar de Promise
-      if (resp && typeof resp.subscribe === 'function') {
-        resp.subscribe((data: any) => {
-          const arr = Array.isArray(data) ? data : (data && Array.isArray(data.data) ? data.data : []);
-          this.companies = arr.map((item: any) => {
-            const id = item.id ?? item.coEnterprise ?? item.co_enterprise ?? item.co ?? item.code ?? String(item);
-            const name = item.name ?? item.naEnterprise ?? item.na_enterprise ?? item.na ?? item.description ?? item.label ?? String(item);
-            return { id: String(id), name: String(name) };
-          }).filter((c: any) => c.id && c.name);
-        }, (err: any) => {
-          console.warn('[loadEnterprises] observable error', err);
-        });
-        return;
-      }
-
-      // Si getEnterprise devolviera Promise o un objeto con data[]
-      const list = Array.isArray(resp) ? resp : (resp && Array.isArray(resp.data) ? resp.data : []);
-      if (!list || list.length === 0) {
-        this.companies = [];
-        return;
-      }
-
-      this.companies = list.map((item: any) => {
-        const id = item.id ?? item.coEnterprise ?? item.co_enterprise ?? item.co ?? item.code ?? item.co_empresa ?? item.coCompany;
-        const name = item.name ?? item.naEnterprise ?? item.na_enterprise ?? item.na ?? item.description ?? item.label ?? item.naCompany ?? item.na_empresa;
-        return { id: String(id ?? ''), name: String(name ?? '') };
-      }).filter((c: any) => c.id && c.name);
-    } catch (err) {
-      console.warn('[loadEnterprises] failed to load enterprises', err);
-      this.companies = [];
-    }
+    this.conversionService.getEnterprise().then(companies => {
+      this.selectedCompany = companies[0];
+      this.companies = companies;
+    });
   }
-  // ...existing code...
+
 
 
   public recalcTotals(): void {
-    this.conversionService.getTasaBCV(Number(this.selectedCompanyId)).then(rate => {
-      this.tasaBcvRate = rate;
-      this.conversionService.getTasaParalelo(Number(this.selectedCompanyId)).then(rate => {
-        this.tasaParaleloRate = rate;
-      });
-    });
-
     try {
       const base = Number(this.baseUsd) || 0;
       const descuento = Number(this.descuentoUsd) || 0;
+      let total = 0;
 
       if (this.calcularIva) {
         this.ivaUsd = Math.round((base * 0.16) * 100) / 100; // 16% IVA
@@ -122,8 +88,9 @@ export class AppComponent {
 
       this.descuentoUsd = base * 0.04; // 4% descuento
       this.totalIvaUsd = this.ivaUsd - this.descuentoUsd;
-      this.totalTasaBcv = this.totalIvaUsd * this.tasaBcvRate;
-      this.totalTasaParaleloUsd = this.totalIvaUsd * this.tasaParaleloRate;
+      total = base + this.totalIvaUsd;
+      this.totalTasaBcv = total * this.tasaBcvRate;
+      this.totalTasaParaleloUsd = total * this.tasaParaleloRate;
     } catch (e) {
       console.warn('[recalcTotals] error', e);
     }
@@ -139,15 +106,59 @@ export class AppComponent {
     this.updateFabVisibility();
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => this.updateFabVisibility());
 
+    // Inicializar valores y formatear baseUsdInput
+    this.baseUsd = Number(this.baseUsd) || 0;
+    this.baseUsdInput = this.formatCurrencyLocale(this.baseUsd);
 
+    // Inicializar cálculos de la calculadora
+    this.recalcTotals();
 
     localStorage.setItem("connected", String(this.netWork.connected));
     localStorage.setItem("connectionType", String(this.netWork.connectionType));
     //this.loginService.imgHome = "../../../assets/images/logoPremium.svg"
     //this.loginService.imgHome = "../../../assets/images/ferrari.jpg"
+  }
 
-    // Inicializar cálculos de la calculadora
-    this.recalcTotals();
+  // Añadir este helper a la clase (formatea n -> "1.234,56")
+  private formatCurrencyLocale(value: number): string {
+    if (value == null || Number.isNaN(value)) return '0,00';
+    const negative = value < 0;
+    const abs = Math.abs(value);
+    const parts = abs.toFixed(2).split('.'); // ["1234","56"]
+    let intPart = parts[0];
+    const decPart = parts[1] ?? '00';
+    // Insertar puntos cada 3 dígitos desde la derecha
+    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return (negative ? '-' : '') + intPart + ',' + decPart;
+  }
+  // Reemplaza el onBaseInput por este (interpreta input como centavos, muestra con . y ,)
+  public onBaseInput(ev: any): void {
+    try {
+      // obtener valor (Ionic usa ev.detail.value)
+      const raw = ev?.detail?.value ?? ev?.target?.value ?? String(ev ?? '');
+      // extraer sólo dígitos (ignoramos puntos/comas/espacios)
+      const digits = String(raw).replace(/\D/g, '');
+
+      // si no hay dígitos, tratamos como 0
+      const normalized = digits === '' ? '0' : digits;
+
+      // interpretar como centavos: '1' -> 0.01, '123' -> 1.23, '12345' -> 123.45
+      const valueNumber = parseInt(normalized, 10) / 100;
+
+      // actualizar modelo numérico usado por recalcTotals
+      this.baseUsd = Number(valueNumber) || 0;
+
+      // actualizar la cadena mostrada con formato "1.234,56"
+      this.baseUsdInput = this.formatCurrencyLocale(this.baseUsd);
+
+      // recalcular totales con el nuevo valor numérico
+      this.recalcTotals();
+    } catch (err) {
+      console.warn('[onBaseInput] parse error', err);
+      this.baseUsd = 0;
+      this.baseUsdInput = '0,00';
+      this.recalcTotals();
+    }
   }
 
   private updateFabVisibility(): void {
@@ -177,6 +188,12 @@ export class AppComponent {
     if (this.showCalculator) {
 
       this.loadEnterprises();
+      this.conversionService.getTasaBCV(Number(this.selectedCompany?.idEnterprise)).then(rate => {
+        this.tasaBcvRate = rate;
+        this.conversionService.getTasaParalelo(Number(this.selectedCompany?.idEnterprise)).then(rate => {
+          this.tasaParaleloRate = rate;
+        });
+      });
     } else {
       // Opcional: limpiar expresión al cerrar o conservarla
       // this.expression = '';

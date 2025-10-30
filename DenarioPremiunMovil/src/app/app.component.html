@@ -24,27 +24,31 @@
 
   <div *ngIf="showCalculator" class="floating-calculator" role="dialog" aria-label="Calculadora">
     <div class="calc-header">
-      <h3>Calculadora / Selector de Empresa</h3>
+      <h3>Calculadora</h3>
     </div>
 
     <ion-item>
       <ion-label>Empresa</ion-label>
-      <ion-select [(ngModel)]="selectedCompanyId" (ionChange)="onCompanyChange($event)" interface="popover"
+      <ion-select [(ngModel)]="selectedCompany" (ionChange)="onCompanyChange($event)" interface="popover"
         placeholder="Seleccione">
-        <ion-select-option *ngFor="let e of companies" [value]="e.id">{{ e.name }}</ion-select-option>
+        <ion-select-option *ngFor="let e of companies" [value]="e">{{ e.lbEnterprise }}</ion-select-option>
       </ion-select>
+
     </ion-item>
 
-    <div class="company-info" *ngIf="selectedCompany">
-      <small>Empresa seleccionada: <strong>{{ selectedCompany.name }}</strong></small>
-    </div>
+    <!-- <div class="company-info" *ngIf="selectedCompany">
+      <small>Empresa seleccionada: <strong>{{ selectedCompany.lbEnterprise }}</strong></small>
+    </div> -->
 
     <ion-grid>
       <ion-row>
         <ion-col size="12">
           <ion-item>
             <ion-label position="stacked">Base USD</ion-label>
-            <ion-input type="number" [(ngModel)]="baseUsd" (ionChange)="recalcTotals()" placeholder="0.00"></ion-input>
+            <!-- usamos baseUsdInput (string) y manejamos ionInput para aplicar el comportamiento en centavos -->
+            <ion-input type="text" [(ngModel)]="baseUsdInput" (ionInput)="onBaseInput($event)" inputmode="numeric"
+              placeholder="0.00">
+            </ion-input>
           </ion-item>
         </ion-col>
 
@@ -55,11 +59,10 @@
           </ion-item>
         </ion-col>
 
-        <ion-col size="12">
+        <ion-col size="12" *ngIf="calcularIva">
           <ion-item>
             <ion-label position="stacked">IVA 16% USD</ion-label>
-            <ion-input type="number" [(ngModel)]="ivaUsd" [disabled]="calcularIva" (ionChange)="recalcTotals()"
-              placeholder="0.00" readonly></ion-input>
+            <ion-input type="number" [(ngModel)]="ivaUsd" placeholder="0.00" readonly></ion-input>
           </ion-item>
         </ion-col>
 
@@ -71,7 +74,7 @@
           </ion-item>
         </ion-col>
 
-        <ion-col size="12">
+        <ion-col size="12" *ngIf="calcularIva">
           <ion-item>
             <ion-label position="stacked">Total IVA USD</ion-label>
             <ion-input type="text" [value]="totalIvaUsd | number:'1.2-2'" readonly></ion-input>
@@ -95,7 +98,7 @@
     </ion-grid>
 
     <div class="calc-actions">
-      <ion-button size="small" color="medium" (click)="toggleCalculator()">Cerrar</ion-button>
+      <ion-button size="small" class="botonAddLila" (click)="toggleCalculator()">Cerrar</ion-button>
     </div>
   </div>
 
