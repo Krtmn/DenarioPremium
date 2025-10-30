@@ -1,3 +1,96 @@
-<p>
-  Marico el que lo lea
-</p>
+<ion-card class="cardInfoClientes cardDocVentas">
+
+   <ion-grid [fixed]="true" class="tablaInfoclients">
+                <ion-row>
+                    <ion-col size="4"
+                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_EMPRESA")}}:</ion-col>
+                    <ion-col>{{client.lblEnterprise}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_NOMBRE")}}:</ion-col>
+                    <ion-col>{{client.naClient}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CODIGO")}}:</ion-col>
+                    <ion-col>{{client.coClient}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col size="4"
+                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_LISTA_PRECIO")}}:</ion-col>
+                    <ion-col>{{client.naPriceList}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col size="4" class="titulosBold">{{tagRif}}:</ion-col>
+                    <ion-col>{{client.nuRif}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col size="4"
+                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CONTACTO")}}:</ion-col>
+                    <ion-col>{{client.naResponsible}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_EMAIL")}}:</ion-col>
+                    <ion-col size="8">{{client.naEmail}}</ion-col>
+                </ion-row>
+                <ion-row>
+                    <ion-col size="4"
+                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_TELEFONO")}}:</ion-col>
+                    <ion-col>{{client.nuPhone}}</ion-col>
+                </ion-row>               
+            </ion-grid>
+  <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
+    <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
+      <ion-col size="4" class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_TIPO")}}</ion-col>
+      <ion-col size="4" class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_NUMERO_DOCUMENTO")}}</ion-col>
+      <ion-col size="4" class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_MONEDA_DOC")}}</ion-col>
+      <ion-col size="4" class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_DIAS_VENCIMIENTO")}}</ion-col>
+      <ion-col size="4" *ngIf="this.clientLogic.multiCurrency == 'true'"
+        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_TASA")}}</ion-col>
+      <ion-col size="4" class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_MONTO")}} {{
+        localCurrency }}</ion-col>
+      <ion-col size="4" *ngIf="this.clientLogic.multiCurrency == 'true'"
+        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_MONTO")}} {{ hardCurrency
+        }}</ion-col>
+      <ion-col size="4" class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}} {{
+        localCurrency }}</ion-col>
+      <ion-col size="4" *ngIf="this.clientLogic.multiCurrency == 'true'"
+        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
+        {{ hardCurrency }}</ion-col>
+      <ion-col size="4" class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_FECHA_DOCUMENTO")}}</ion-col>
+      <ion-col size="4"
+        class="titulosBold col borderSuperiorDerecho">{{clientLogic.clientTags.get("CLI_DETAIL_FECHA_VENCIMIENTO")}}</ion-col>
+    </ion-row>
+    <ion-row *ngFor="let documento of document;index as i" class="tablaDocumentosVenta tablaDocVentas row">
+
+      <ion-col size="4" class="ion-text-center col"
+        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.coDocumentSaleType}}</ion-col>
+      <ion-col size="4" class="ion-text-center col"
+        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.coDocument}}</ion-col>
+      <ion-col size="4" class="ion-text-center col"
+        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.coCurrency}}</ion-col>
+      <ion-col size="4" class="ion-text-center col" [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">
+        {{getDaDueDate(documento.daDueDate)}}</ion-col>
+      <ion-col size="4" class="ion-text-center col" [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }"
+        *ngIf="this.clientLogic.multiCurrency == 'true'"> {{
+        formatNumber(documento.nuValueLocal) }}</ion-col>
+      <ion-col size="4" class="ion-text-center col"
+        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{toLocalCurrency(documento.nuAmountTotal,
+        documento)}}</ion-col>
+      <ion-col size="4" class="ion-text-center col" [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }"
+        *ngIf="this.clientLogic.multiCurrency == 'true'">{{toHardCurrency(documento.nuAmountTotal,
+        documento)}}</ion-col>
+      <ion-col size="4" class="ion-text-center col"
+        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{toLocalCurrency(documento.nuBalance,
+        documento)}}</ion-col>
+      <ion-col size="4" class="ion-text-center col borderInferiorDerecho"
+        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }"
+        *ngIf="this.clientLogic.multiCurrency == 'true'">{{toHardCurrency(documento.nuBalance,
+        documento)}}</ion-col>
+      <ion-col size="4" class="ion-text-center col"
+        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.daDocument}}</ion-col>
+      <ion-col size="4" class="ion-text-center col"
+        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.daDueDate}}</ion-col>
+    </ion-row>
+  </ion-grid>
+
+</ion-card>
