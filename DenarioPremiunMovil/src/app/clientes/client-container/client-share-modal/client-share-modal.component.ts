@@ -1,9 +1,10 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
 import { Client } from 'src/app/modelos/tables/client';
 import { DocumentSale } from 'src/app/modelos/tables/documentSale';
 import { ClientLogicService } from 'src/app/services/clientes/client-logic.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
+import { PdfCreatorService } from 'src/app/services/pdf-creator/pdf-creator.service';
 
 @Component({
   selector: 'app-client-share-modal',
@@ -15,6 +16,9 @@ export class ClientShareModalComponent  implements OnInit {
     public clientLogic = inject(ClientLogicService);
     public currencyService = inject(CurrencyService);
     private globalConfig = inject(GlobalConfigService);
+    private pdfCreator = inject(PdfCreatorService);
+
+     @ViewChild('invoiceContent', { static: false }) content!: ElementRef;
 
     public localCurrency = '';
     public hardCurrency = '';
@@ -59,6 +63,15 @@ export class ClientShareModalComponent  implements OnInit {
 
     oppositeCoCurrency(coCurrency: string) {
       return this.currencyService.oppositeCoCurrency(coCurrency);
+  }
+
+    async exportPdf() {
+    //const html = this.content.nativeElement.innerHTML;
+    const element = this.content.nativeElement as HTMLElement;
+    const doc = await this.pdfCreator.generateWithJsPDF(element);
+    const base64 = doc.output('datauristring');
+    const trimmed = base64.split(',')[1];
+    await this.pdfCreator.saveAndOpenPdf(trimmed, `invoice_${Date.now()}.pdf`);
   }
 
 }

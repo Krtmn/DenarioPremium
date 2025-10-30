@@ -1,5 +1,5 @@
+<div #invoiceContent>
 <ion-card class="cardInfoClientes cardDocVentas">
-
    <ion-grid [fixed]="true" class="tablaInfoclients">
                 <ion-row>
                     <ion-col size="4"
@@ -94,3 +94,7 @@
   </ion-grid>
 
 </ion-card>
+</div>
+<ion-button expand="full" class="botonGenerarPdf" (click)="exportPdf()">
+    GENERAR PDF
+</ion-button>
