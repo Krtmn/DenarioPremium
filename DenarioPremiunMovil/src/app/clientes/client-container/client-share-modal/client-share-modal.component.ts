@@ -47,14 +47,14 @@ export class ClientShareModalComponent  implements OnInit {
       //si la moneda es la misma, no se convierte
       return this.formatNumber(hardAmount);
     }
-    return this.formatNumber(((hardAmount * doc.nuValueLocal) / this.currencyService.currencyRelation));
+    return this.formatNumber(this.currencyService.toLocalCurrencyByNuValueLocal(hardAmount, doc.nuValueLocal));
   }
 
   toHardCurrency(localAmount: number, doc: DocumentSale): string {
     if (doc.coCurrency == this.hardCurrency) {
       return this.formatNumber(localAmount);
     }
-    return this.formatNumber(((localAmount * this.currencyService.currencyRelation) / doc.nuValueLocal));
+    return this.formatNumber(this.currencyService.toHardCurrencyByNuValueLocal(localAmount, doc.nuValueLocal));
   }
 
     oppositeCoCurrency(coCurrency: string) {
