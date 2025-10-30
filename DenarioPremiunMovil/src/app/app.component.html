@@ -55,9 +55,16 @@
           <ion-col size="12">
             <ion-item>
               <ion-label position="stacked">Base USD</ion-label>
-              <!-- usamos baseUsdInput (string) y manejamos ionInput para aplicar el comportamiento en centavos -->
-              <ion-input type="text" [(ngModel)]="baseUsdInput" (ionInput)="onBaseInput($event)" inputmode="numeric"
+              <ion-input type="text" [(ngModel)]="baseUSDInput" (ionInput)="onBaseInput($event)" inputmode="numeric"
                 placeholder="0.00">
+              </ion-input>
+            </ion-item>
+          </ion-col>
+          <ion-col size="12">
+            <ion-item>
+              <ion-label position="stacked">Porcentaje Descuento USD</ion-label>
+              <ion-input type="text" [(ngModel)]="descuentoUSDInput" (ionInput)="onDescuentoInput($event)"
+                inputmode="numeric" placeholder="0.00">
               </ion-input>
             </ion-item>
           </ion-col>
@@ -65,29 +72,33 @@
           <ion-col size="12">
             <ion-item>
               <ion-label>Calcular IVA 16%</ion-label>
-              <ion-checkbox slot="start" [(ngModel)]="calcularIva" (ionChange)="recalcTotals()"></ion-checkbox>
+              <ion-checkbox slot="start" [(ngModel)]="calcularIVA" (ionChange)="recalcTotals()"></ion-checkbox>
             </ion-item>
           </ion-col>
 
-          <ion-col size="12" *ngIf="calcularIva">
+          <ion-col size="12" *ngIf="calcularIVA">
             <ion-item>
-              <ion-label position="stacked">IVA 16% USD</ion-label>
-              <ion-input type="number" [(ngModel)]="ivaUsd" placeholder="0.00" readonly></ion-input>
+              <ion-label position="stacked">IVA % USD</ion-label>
+              <ion-input type="text" [(ngModel)]="ivaUSDInput" (ionInput)="onIVAInput($event)" inputmode="numeric"
+                placeholder="16,00" readonly>
+              </ion-input>
             </ion-item>
           </ion-col>
+
+
 
           <ion-col size="12">
             <ion-item>
               <ion-label position="stacked">Descuento USD</ion-label>
-              <ion-input type="number" [(ngModel)]="descuentoUsd" (ionChange)="recalcTotals()" placeholder="0.00"
+              <ion-input type="number" [(ngModel)]="descuentoUSD" (ionChange)="recalcTotals()" placeholder="0.00"
                 readonly></ion-input>
             </ion-item>
           </ion-col>
 
-          <ion-col size="12" *ngIf="calcularIva">
+          <ion-col size="12" *ngIf="calcularIVA">
             <ion-item>
               <ion-label position="stacked">Total IVA USD</ion-label>
-              <ion-input type="text" [value]="totalIvaUsd | number:'1.2-2'" readonly></ion-input>
+              <ion-input type="text" [value]="totalIVAUSD | number:'1.2-2'" readonly></ion-input>
             </ion-item>
           </ion-col>
 
@@ -101,14 +112,14 @@
           <ion-col size="12">
             <ion-item>
               <ion-label position="stacked">Total Tasa BCV</ion-label>
-              <ion-input type="text" [value]="totalTasaBcv | number:'1.2-2'" readonly></ion-input>
+              <ion-input type="text" [value]="totalTasaBCV | number:'1.2-2'" readonly></ion-input>
             </ion-item>
           </ion-col>
 
           <ion-col size="12">
             <ion-item>
               <ion-label position="stacked">Total Tasa Paralelo USD</ion-label>
-              <ion-input type="text" [value]="totalTasaParaleloUsd | number:'1.2-2'" readonly></ion-input>
+              <ion-input type="text" [value]="totalTasaParaleloUSD | number:'1.2-2'" readonly></ion-input>
             </ion-item>
           </ion-col>
         </ion-row>

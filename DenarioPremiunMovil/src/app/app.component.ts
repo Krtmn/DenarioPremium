@@ -37,20 +37,23 @@ export class AppComponent {
   public selectedCompany: Enterprise | null = null;
 
   // Campos financieros solicitados
-  public baseUsd: number = 0;
-  public calcularIva: boolean = true; // checkbox default true
-  public ivaUsd: number = 0;
-  public descuentoUsd: number = 0;
+  public baseUSD: number = 0;
+  public calcularIVA: boolean = true; // checkbox default true
+  public ivaUSDInput: string = '16,00'; // mostrado (porcentaje con coma)
+  public ivaPercent: number = 16;       // valor numérico 0..100 (porcentaje)
+  public descuentoUSD: number = 0;
   public totalUSD: number = 0;
-  public totalIvaUsd: number = 0;
+  public totalIVAUSD: number = 0;
+  public descuentoUSDInput: string = '0,00'; // input mostrado (porcentaje, con coma decimal)
+  public descuentoPercent: number = 0;       // valor numérico (0..100)
   // Tasas (configurables) para calcular totales en moneda local/alternativa
   public tasaBcvRate: number = 1;
   public tasaParaleloRate: number = 1;
-  public totalTasaBcv: number = 0;
-  public totalTasaParaleloUsd: number = 0;
+  public totalTasaBCV: number = 0;
+  public totalTasaParaleloUSD: number = 0;
 
   // Nuevo binding auxiliar (string) para el input formateado
-  public baseUsdInput: string = '0,00'; // ahora con coma por defecto
+  public baseUSDInput: string = '0,00'; // ahora con coma por defecto
 
 
   constructor(
@@ -58,6 +61,37 @@ export class AppComponent {
     private router: Router
   ) {
 
+  }
+
+  async ngOnInit() {
+    if (this.platform.is('ios'))
+      StatusBar.hide();
+    this.listenerNetwork()
+    this.netWork = await Network.getStatus();
+
+    // Inicializar visibilidad del FAB y suscribirse a cambios de ruta
+    this.updateFabVisibility();
+    this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => this.updateFabVisibility());
+
+    // Inicializar valores y formatear baseUSDInput
+    this.baseUSD = Number(this.baseUSD) || 0;
+    this.baseUSDInput = this.formatCurrencyLocale(this.baseUSD);
+
+    // Inicializa el descuento por defecto (0) y mostrar con mismo formateo que baseUSDInput
+    this.descuentoPercent = Number(this.descuentoPercent) || 0;
+    this.descuentoUSDInput = this.formatCurrencyLocale(this.descuentoPercent);
+
+    // Inicializa IVA por defecto (16%) y mostrar con mismo formateo
+    this.ivaPercent = Number(this.ivaPercent) || 16;
+    this.ivaUSDInput = this.formatCurrencyLocale(this.ivaPercent);
+
+    // Inicializar cálculos de la calculadora
+    this.recalcTotals();
+
+    localStorage.setItem("connected", String(this.netWork.connected));
+    localStorage.setItem("connectionType", String(this.netWork.connectionType));
+    //this.loginService.imgHome = "../../../assets/images/logoPremium.svg"
+    //this.loginService.imgHome = "../../../assets/images/ferrari.jpg"
   }
 
   onCompanyChange(event: any) {
@@ -73,52 +107,56 @@ export class AppComponent {
     });
   }
 
-
-
   public recalcTotals(): void {
     try {
-      const base = Number(this.baseUsd) || 0;
+      const base = Number(this.baseUSD) || 0;
 
-      if (this.calcularIva) {
-        this.ivaUsd = Math.round((base * 0.16) * 100) / 100; // 16% IVA
+      const ivaPct = Number(this.ivaPercent) || 0; // usa ivaPercent numérico
+
+      if (this.calcularIVA) {
+        // IVA en USD = base * (ivaPct / 100)
+        this.totalIVAUSD = Math.round((base * ivaPct / 100) * 100) / 100;
       } else {
-        this.ivaUsd = 0;
+        this.totalIVAUSD = 0;
       }
 
-      this.descuentoUsd = base * 0.04; // 4% descuento
-      this.totalIvaUsd = this.ivaUsd - this.descuentoUsd;
-      this.totalUSD = base + this.totalIvaUsd;
-      this.totalTasaBcv = this.totalUSD * this.tasaBcvRate;
-      this.totalTasaParaleloUsd = this.totalUSD * this.tasaParaleloRate;
+      const descuentoPct = Number(this.descuentoPercent) || 0; // 0..100
+      // descuento en USD = base * (descuentoPct / 100)
+      this.descuentoUSD = Math.round((base * (descuentoPct / 100)) * 100) / 100;
+
+      // Si el descuento iguala la base, anular IVA (mantener consistencia numérica)
+      if (this.descuentoUSD === base && base != 0) {
+        this.ivaPercent = 0;
+        this.ivaUSDInput = this.formatCurrencyLocale(0);
+        this.totalIVAUSD = 0;
+      }
+
+      // total USD con valores calculados (usar totalIVAUSD numérico)
+      this.totalUSD = Math.round((base + this.totalIVAUSD - this.descuentoUSD) * 100) / 100;
+
+      const total = base + this.totalIVAUSD - this.descuentoUSD;
+      // redondeos para presentar
+      this.totalTasaBCV = Math.round((total * this.tasaBcvRate) * 100) / 100;
+      this.totalTasaParaleloUSD = Math.round((total * this.tasaParaleloRate) * 100) / 100;
     } catch (e) {
       console.warn('[recalcTotals] error', e);
     }
   }
 
-  async ngOnInit() {
-    if (this.platform.is('ios'))
-      StatusBar.hide();
-    this.listenerNetwork()
-    this.netWork = await Network.getStatus();
-
-    // Inicializar visibilidad del FAB y suscribirse a cambios de ruta
-    this.updateFabVisibility();
-    this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => this.updateFabVisibility());
-
-    // Inicializar valores y formatear baseUsdInput
-    this.baseUsd = Number(this.baseUsd) || 0;
-    this.baseUsdInput = this.formatCurrencyLocale(this.baseUsd);
-
-    // Inicializar cálculos de la calculadora
-    this.recalcTotals();
-
-    localStorage.setItem("connected", String(this.netWork.connected));
-    localStorage.setItem("connectionType", String(this.netWork.connectionType));
-    //this.loginService.imgHome = "../../../assets/images/logoPremium.svg"
-    //this.loginService.imgHome = "../../../assets/images/ferrari.jpg"
+  // Formatea porcentaje para mostrar (coma decimal, 2 decimales), ej. 4 -> "4,00"
+  private formatPercentLocale(value: number): string {
+    if (value == null || Number.isNaN(value)) return '0,00';
+    const negative = value < 0;
+    const abs = Math.abs(value);
+    const dec = (Math.round(abs * 100) / 100).toFixed(2); // "4.00"
+    // Reemplazar punto decimal por coma
+    return (negative ? '-' : '') + dec.replace('.', ',');
   }
 
-  // Añadir este helper a la clase (formatea n -> "1.234,56")
+  /**
+   * Formatea un número para mostrarlo con punto miles y coma decimales.
+   * Ejemplos: 0 -> "0,00", 1234.5 -> "1.234,50"
+   */
   private formatCurrencyLocale(value: number): string {
     if (value == null || Number.isNaN(value)) return '0,00';
     const negative = value < 0;
@@ -130,6 +168,48 @@ export class AppComponent {
     intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     return (negative ? '-' : '') + intPart + ',' + decPart;
   }
+
+  /**
+   * Maneja la entrada del porcentaje de descuento en modo "centavos persistentes".
+   * Comportamiento: cada dígito que ingresas se añade como centavo:
+   *  - escribe "1"  => 0,01  (descuentoPercent = 0.01)
+   *  - sigue con "2" => 0,12  (descuentoPercent = 0.12)
+   *  - sigue con "3" => 1,23  (descuentoPercent = 1.23)
+   * El valor se clampa en 0..100 (si se pasan más dígitos y supera 100 se ajusta a 100).
+   */
+  public onDescuentoInput(ev: any): void {
+    try {
+      // obtener raw value del input (Ionic: ev.detail.value)
+      const raw = ev?.detail?.value ?? ev?.target?.value ?? String(ev ?? '');
+      // extraer sólo dígitos (quitamos cualquier punto/coma/espacio)
+      const digits = String(raw).replace(/\D/g, '');
+
+      // si no hay dígitos, tratamos como 0
+      const normalized = digits === '' ? '0' : digits;
+
+      // interpretar como centavos: '1' -> 0.01, '123' -> 1.23
+      let valueNumber = parseInt(normalized, 10) / 100;
+
+      // clamp entre 0 y 100 (porcentaje máximo)
+      if (!Number.isFinite(valueNumber) || Number.isNaN(valueNumber)) valueNumber = 0;
+      valueNumber = Math.max(0, Math.min(100.00, valueNumber));
+
+      // Actualizamos el porcentaje numérico y la cadena mostrada (mismo formateo que baseUSD)
+      this.descuentoPercent = valueNumber;
+      this.descuentoUSDInput = this.formatCurrencyLocale(this.descuentoPercent);
+
+      // Recalcular totales usando el nuevo porcentaje
+      this.recalcTotals();
+    } catch (err) {
+      console.warn('[onDescuentoInput] parse error', err);
+      this.descuentoPercent = 0;
+      this.descuentoUSDInput = this.formatCurrencyLocale(0);
+      this.recalcTotals();
+    }
+  }
+
+
+
   // Reemplaza el onBaseInput por este (interpreta input como centavos, muestra con . y ,)
   public onBaseInput(ev: any): void {
     try {
@@ -145,17 +225,17 @@ export class AppComponent {
       const valueNumber = parseInt(normalized, 10) / 100;
 
       // actualizar modelo numérico usado por recalcTotals
-      this.baseUsd = Number(valueNumber) || 0;
+      this.baseUSD = Number(valueNumber) || 0;
 
       // actualizar la cadena mostrada con formato "1.234,56"
-      this.baseUsdInput = this.formatCurrencyLocale(this.baseUsd);
+      this.baseUSDInput = this.formatCurrencyLocale(this.baseUSD);
 
       // recalcular totales con el nuevo valor numérico
       this.recalcTotals();
     } catch (err) {
       console.warn('[onBaseInput] parse error', err);
-      this.baseUsd = 0;
-      this.baseUsdInput = '0,00';
+      this.baseUSD = 0;
+      this.baseUSDInput = '0,00';
       this.recalcTotals();
     }
   }
@@ -246,6 +326,41 @@ export class AppComponent {
     } catch (e) {
       console.warn('Error calculando expresión', e);
       this.lastResult = 'Err';
+    }
+  }
+
+  /**
+ * Maneja la entrada del IVA en modo "centavos persistentes".
+ * Igual comportamiento que onDescuentoInput:
+ * - cada dígito se añade como centavo (1 -> 0,01 ; next 2 -> 0,12 ; next 3 -> 1,23 ...)
+ * - clamp 0..100
+ * - actualiza ivaPercent y muestra ivaUSDInput con formatCurrencyLocale
+ */
+  public onIVAInput(ev: any): void {
+    try {
+      const raw = ev?.detail?.value ?? ev?.target?.value ?? String(ev ?? '');
+      // extraer sólo dígitos (quitamos cualquier punto/coma/espacio)
+      const digits = String(raw).replace(/\D/g, '');
+      const normalized = digits === '' ? '0' : digits;
+
+      // interpretar como centavos: '1' -> 0.01, '123' -> 1.23
+      let valueNumber = parseInt(normalized, 10) / 100;
+
+      // clamp entre 0 y 100 (porcentaje máximo)
+      if (!Number.isFinite(valueNumber) || Number.isNaN(valueNumber)) valueNumber = 0;
+      valueNumber = Math.max(0, Math.min(100.00, valueNumber));
+
+      // actualizar porcentaje numérico y cadena mostrada (formato con puntos y coma)
+      this.ivaPercent = valueNumber;
+      this.ivaUSDInput = this.formatCurrencyLocale(this.ivaPercent);
+
+      // recalcular totales
+      this.recalcTotals();
+    } catch (err) {
+      console.warn('[onIVAInput] parse error', err);
+      this.ivaPercent = 0;
+      this.ivaUSDInput = this.formatCurrencyLocale(0);
+      this.recalcTotals();
     }
   }
 }
