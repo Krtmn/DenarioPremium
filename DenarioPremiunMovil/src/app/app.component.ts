@@ -8,6 +8,7 @@ import { ConversionService } from './services/conversion/conversion.service';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { Enterprise } from './modelos/tables/enterprise';
+import { GlobalConfigService } from './services/globalConfig/global-config.service';
 
 
 
@@ -23,6 +24,7 @@ export class AppComponent {
 
   public loginService = inject(LoginLogicService);
   public conversionService = inject(ConversionService);
+  public globalConfig = inject(GlobalConfigService);
 
   // Calculadora global
   public showCalculator: boolean = false;
@@ -64,11 +66,13 @@ export class AppComponent {
   }
 
   async ngOnInit() {
+    //conversionCalculator
     if (this.platform.is('ios'))
       StatusBar.hide();
     this.listenerNetwork()
     this.netWork = await Network.getStatus();
 
+    this.showFab = this.globalConfig.get('conversionCalculator') == 'true' ? true : false;
     // Inicializar visibilidad del FAB y suscribirse a cambios de ruta
     this.updateFabVisibility();
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => this.updateFabVisibility());

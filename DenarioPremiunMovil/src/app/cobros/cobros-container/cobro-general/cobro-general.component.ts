@@ -257,7 +257,7 @@ export class CobrosGeneralComponent implements OnInit {
           this.collectService.collection.idEnterprise
         ).then(() => {
           if (this.collectService.historicPartialPayment) {
-            this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(),this.collectService.collection.idClient);
+            this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
           }
         });
         this.updateSelectedCurrency(this.collectService.collection.idCurrency);
@@ -459,7 +459,7 @@ export class CobrosGeneralComponent implements OnInit {
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient, this.collectService.currencySelectedDocument.coCurrency,
               this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
                 if (this.collectService.historicPartialPayment) {
-                  this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(),this.collectService.collection.idClient);
+                  this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
                 }
               });
           // }
@@ -588,7 +588,7 @@ export class CobrosGeneralComponent implements OnInit {
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
               this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
                 if (this.collectService.historicPartialPayment) {
-                  this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(),this.collectService.collection.idClient);
+                  this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
                 }
               });
           })
@@ -788,15 +788,60 @@ export class CobrosGeneralComponent implements OnInit {
     return utcDay /* !== 0 && utcDay !== 6 */;
   };
 
-  onChangeRate(event: any) {
-    if (this.collectService.collection.nuValueLocal != event.target.value) {
-      this.changeRate = true;
+  // Ejemplo: cobro-general.component.ts
+  // Reemplaza/adapta tu onChangeRate para normalizar la fecha como "date-only" local.
+
+  onChangeRate(ev: any) {
+    // ev puede venir como evento (ev.detail.value) o directamente como el objeto seleccionado.
+    const selected = ev?.detail?.value ?? ev;
+    if (!selected) return;
+
+    // EJEMPLO: supondremos que el objeto 'rate' tiene una propiedad con la fecha,
+    // ajusta 'dateField' al nombre real (p.e. rate.dateRate, rate.nuDate, rate.dtRate, etc.)
+    const dateFieldCandidates = ['date', 'dateRate', 'dtRate', 'nuDate', 'rateDate'];
+    let raw = null;
+    for (const f of dateFieldCandidates) {
+      if (selected[f] != null) { raw = selected[f]; break; }
     }
-    this.collectService.unlockTabs().then((resp) => {
-      this.collectService.onCollectionValid(resp);
-    })
-    this.collectService.rateSelected = this.collectService.collection.nuValueLocal = event.target.value;
-    this.collectService.calculatePayment("", 0);
+    // si no encontrás en candidate fields, podrías usar selected directamente si es string/Date:
+    if (!raw) raw = selected;
+
+    let finalDate: Date | null = null;
+
+    if (typeof raw === 'string') {
+      // Si la cadena tiene formato YYYY-MM-DD o YYYY-MM-DDTHH:mm..., extraemos la parte de fecha
+      const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) {
+        const y = Number(m[1]), mo = Number(m[2]) - 1, d = Number(m[3]);
+        finalDate = new Date(y, mo, d); // crea fecha en zona local, sin desplazamiento
+      } else {
+        // Fallback: si no es YYYY-MM-DD, intentar Date y luego forzar date-only
+        const tmp = new Date(raw);
+        if (!isNaN(tmp.getTime())) {
+          finalDate = new Date(tmp.getFullYear(), tmp.getMonth(), tmp.getDate());
+        }
+      }
+    } else if (raw instanceof Date) {
+      finalDate = new Date(raw.getFullYear(), raw.getMonth(), raw.getDate());
+    } else if (typeof raw === 'number') {
+      // timestamp (ms)
+      const tmp = new Date(raw);
+      finalDate = new Date(tmp.getFullYear(), tmp.getMonth(), tmp.getDate());
+    }
+
+    if (finalDate) {
+      // Asignar a la variable que usa la vista / formato (ajusta nombres según tu componente)
+      // Convertir Date a string ISO antes de asignar (las propiedades esperan string)
+      this.dateCollect = finalDate.toISOString();
+      // Si usás el servicio:
+      this.collectService.dateRateVisual = finalDate.toISOString();
+      // Actualizar cualquier campo derivado (por ejemplo, obtener la tasa de esa fecha)
+      // this.collectService.getDateRate(..., finalDate) <-- si tu servicio espera fecha
+    } else {
+      console.warn('onChangeRate: no pude parsear la fecha del rate seleccionado', selected, raw);
+    }
+
+    // Mantener la lógica que necesites luego de cambiar la tasa...
   }
 
   onOpenCalendar() {

@@ -24,7 +24,8 @@
 
         <ion-col size="6" size-sm="12" size-xs="12" *ngIf="this.collectService.cobroValid">
             <ion-col size="6" size-sm="12" size-xs="12">
-                <ion-label *ngIf="this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3">
+                <ion-label
+                    *ngIf="this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3">
                     {{this.collectService.collectionTags.get('COB_MONEDA')}}:
                 </ion-label>
                 <div class="listado-enterprise-selector ion-text-center"
