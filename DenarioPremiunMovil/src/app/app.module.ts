@@ -100,6 +100,7 @@ import { GoogleMapsModule } from '@angular/google-maps'
 import { HistoryTransaction } from './services/historyTransaction/historyTransaction';
 import { FileOpener } from '@awesome-cordova-plugins/file-opener/ngx';
 import { VisitaPdfModalComponent } from './visitas/vista-pdfComponent/visitaPdfModal.component';
+import { ConversionService } from './services/conversion/conversion.service';
 //import { HomeSidebarComponent } from './home-sidebar/home-sidebar.component';
 
 
@@ -208,7 +209,9 @@ import { VisitaPdfModalComponent } from './visitas/vista-pdfComponent/visitaPdfM
       LoginLogicService,
       HistoryTransaction,
       FileOpener,
-      DepositService, provideHttpClient(withInterceptorsFromDi())]
+      DepositService,
+      ConversionService,
+    provideHttpClient(withInterceptorsFromDi())]
 })
 export class AppModule {
   constructor(private platform: Platform) {

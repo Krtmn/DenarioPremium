@@ -127,7 +127,8 @@ export class SynchronizationComponent implements OnInit {
     68: 'deposits',
     69: 'orderDetails',
     70: 'orderDetailUnits',
-    71: 'orderDetailDiscounts'
+    71: 'orderDetailDiscounts',
+    72: 'conversion'
   };
 
   /**
@@ -187,6 +188,7 @@ export class SynchronizationComponent implements OnInit {
     orderDetails: 'Detalles de Pedido',
     orderDetailUnits: 'Unidades de Detalle de Pedido',
     orderDetailDiscounts: 'Descuentos de Detalle de Pedido',
+    conversion: 'Tasas de Conversión'
   };
 
   constructor(
@@ -563,8 +565,11 @@ export class SynchronizationComponent implements OnInit {
             this.tables.page = 0;
             break;
           }
-
-
+          case 72: {
+            this.tables.conversionTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
 
           default: {
             //statements;
@@ -603,16 +608,9 @@ export class SynchronizationComponent implements OnInit {
           this.imageServices.getServerImageList().then(obs => {
             obs.subscribe({
               complete: () => {
-                /* if (this.imageServices.downloadFileList.length > 0) { */
-                // Navega primero
-                // a la página de inicio y luego descarga las imágenes
                 this.router.navigate(['home']).then(() => {
-                  //this.imageServices.download(this.imageServices.downloadFileList);
                   this.imageServices.downloadWithConcurrency(this.imageServices.downloadFileList);
                 });
-                /* } else {
-                  this.router.navigate(['home']);
-                } */
               }
             });
           });
@@ -633,21 +631,8 @@ export class SynchronizationComponent implements OnInit {
       const tableId = this.tableKeyOrder[this.currentTableIndex];
       const key = this.tableKeyMap[tableId];
 
-      // --- VALIDACIÓN ESPECIAL PARA LAS TABLAS 56, 57, 58, 59, 60 ---
-      // --- VALIDACIÓN ESPECIAL PARA LAS TABLAS 61 63 64 65 estas tablas no estan en todos los clientes ---
-      if (
-        (
-          [56, 57, 58].includes(tableId) && this.globalConfig.get("validateReturn") !== "true"
-        ) ||
-        (
-          [59, 60].includes(tableId) && this.globalConfig.get("userCanSelectChannel") !== "true"
-        )
-        ||
-        (
-          [61, 62, 63, 64, 65, 66, 67, 68].includes(tableId) && this.globalConfig.get("transactionHistory") !== "true"
-        )
-
-      ) {
+      // Validación centralizada y robusta de si debemos sincronizar esta tabla
+      if (!this.shouldSyncTable(tableId)) {
         // Si NO se debe sincronizar, simplemente avanza a la siguiente tabla
         this.currentTableIndex++;
         this.syncNextTable(table);
@@ -724,6 +709,40 @@ export class SynchronizationComponent implements OnInit {
     }).catch((error) => {
       console.log('no sincronice', error);
     });
+  }
+
+  // ...existing code...
+
+  /**
+   * Decide si una tabla debe sincronizarse, consultando la configuración global.
+   * Normaliza valores booleanos y strings "true"/"false".
+   */
+  private shouldSyncTable(tableId: number): boolean {
+    const cfgTrue = (key: string): boolean => {
+      const val: any = this.globalConfig.get(key);
+      if (typeof val === 'boolean') return val;
+      if (typeof val === 'string') return val.toLowerCase() === 'true';
+      return false; // por defecto consideramos deshabilitado si no está presente
+    };
+
+    // Validaciones por grupos de tablas (mismo comportamiento que tenías antes,
+    // pero centralizado y robusto frente a tipos).
+    if ([56, 57, 58].includes(tableId)) {
+      return cfgTrue('validateReturn');
+    }
+    if ([59, 60].includes(tableId)) {
+      return cfgTrue('userCanSelectChannel');
+    }
+    if ([61, 62, 63, 64, 65, 66, 67, 68].includes(tableId)) {
+      return cfgTrue('transactionHistory');
+    }
+    // LA VALIDACIÓN SOLICITADA: tabla 72 depende de conversionCalculator
+    if ([72].includes(tableId)) {
+      return cfgTrue('conversionCalculator');
+    }
+
+    // Para cualquier otra tabla, por defecto sincronizamos
+    return true;
   }
 
   /**
@@ -1126,6 +1145,13 @@ export class SynchronizationComponent implements OnInit {
       tableKey: 'orderDetailDiscountTableLastUpdate',
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
+    },
+    conversion: {
+      batchFn: this.synchronizationServices.insertConversionBatch.bind(this.synchronizationServices),
+      rowKey: 'conversionTable',
+      tableKey: 'conversionTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
     }
     // ...agrega más si tienes más tablas...
   };
@@ -1155,11 +1181,6 @@ export class SynchronizationComponent implements OnInit {
   initProgress(progreso: number, buffer: number) {
     this.progress += progreso;
     this.buffer += buffer;
-
-    /* if (this.currentTableIndex > this.tableKeyOrder.length) {
-      this.progress = 0;
-      this.router.navigate(['home']);
-    } */
   }
 
   handleDeletedRows(deletedRowsIds: any, tableName: string, idField: string) {
