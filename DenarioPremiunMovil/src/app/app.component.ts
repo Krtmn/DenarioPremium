@@ -41,6 +41,7 @@ export class AppComponent {
   public calcularIva: boolean = true; // checkbox default true
   public ivaUsd: number = 0;
   public descuentoUsd: number = 0;
+  public totalUSD: number = 0;
   public totalIvaUsd: number = 0;
   // Tasas (configurables) para calcular totales en moneda local/alternativa
   public tasaBcvRate: number = 1;
@@ -77,20 +78,18 @@ export class AppComponent {
   public recalcTotals(): void {
     try {
       const base = Number(this.baseUsd) || 0;
-      const descuento = Number(this.descuentoUsd) || 0;
-      let total = 0;
 
       if (this.calcularIva) {
         this.ivaUsd = Math.round((base * 0.16) * 100) / 100; // 16% IVA
       } else {
-        this.ivaUsd = Number(this.ivaUsd) || 0;
+        this.ivaUsd = 0;
       }
 
       this.descuentoUsd = base * 0.04; // 4% descuento
       this.totalIvaUsd = this.ivaUsd - this.descuentoUsd;
-      total = base + this.totalIvaUsd;
-      this.totalTasaBcv = total * this.tasaBcvRate;
-      this.totalTasaParaleloUsd = total * this.tasaParaleloRate;
+      this.totalUSD = base + this.totalIvaUsd;
+      this.totalTasaBcv = this.totalUSD * this.tasaBcvRate;
+      this.totalTasaParaleloUsd = this.totalUSD * this.tasaParaleloRate;
     } catch (e) {
       console.warn('[recalcTotals] error', e);
     }

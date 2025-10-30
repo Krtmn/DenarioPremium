@@ -22,84 +22,111 @@
     </ion-fab-list>
   </ion-fab>
 
-  <div *ngIf="showCalculator" class="floating-calculator" role="dialog" aria-label="Calculadora">
-    <div class="calc-header">
-      <h3>Calculadora</h3>
-    </div>
+  <ion-card *ngIf="showCalculator" class="floating-calculator" role="dialog" aria-label="Calculadora">
+    <ion-card-header>
+      <ion-card-title class="ion-text-center">Calculadora</ion-card-title>
+    </ion-card-header>
 
-    <ion-item>
-      <ion-label>Empresa</ion-label>
-      <ion-select [(ngModel)]="selectedCompany" (ionChange)="onCompanyChange($event)" interface="popover"
-        placeholder="Seleccione">
-        <ion-select-option *ngFor="let e of companies" [value]="e">{{ e.lbEnterprise }}</ion-select-option>
-      </ion-select>
+    <ion-card-content>
+      <ion-grid *ngIf="companies && companies.length > 1">
+        <ion-row>
+          <ion-col size="4">
+            <ion-item lines="none">
+              <ion-label>Empresa</ion-label>
+            </ion-item>
+          </ion-col>
+          <ion-col size="8">
+            <ion-select class="listado-enterprise-selector ion-text-center" [(ngModel)]="selectedCompany"
+              (ionChange)="onCompanyChange($event)" placeholder="Seleccione">
+              <ion-select-option *ngFor="let e of companies" [value]="e">{{ e.lbEnterprise }}</ion-select-option>
+            </ion-select>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
 
-    </ion-item>
 
-    <!-- <div class="company-info" *ngIf="selectedCompany">
+
+      <!-- <div class="company-info" *ngIf="selectedCompany">
       <small>Empresa seleccionada: <strong>{{ selectedCompany.lbEnterprise }}</strong></small>
     </div> -->
 
-    <ion-grid>
-      <ion-row>
-        <ion-col size="12">
-          <ion-item>
-            <ion-label position="stacked">Base USD</ion-label>
-            <!-- usamos baseUsdInput (string) y manejamos ionInput para aplicar el comportamiento en centavos -->
-            <ion-input type="text" [(ngModel)]="baseUsdInput" (ionInput)="onBaseInput($event)" inputmode="numeric"
-              placeholder="0.00">
-            </ion-input>
-          </ion-item>
-        </ion-col>
+      <ion-grid>
+        <ion-row>
+          <ion-col size="12">
+            <ion-item>
+              <ion-label position="stacked">Base USD</ion-label>
+              <!-- usamos baseUsdInput (string) y manejamos ionInput para aplicar el comportamiento en centavos -->
+              <ion-input type="text" [(ngModel)]="baseUsdInput" (ionInput)="onBaseInput($event)" inputmode="numeric"
+                placeholder="0.00">
+              </ion-input>
+            </ion-item>
+          </ion-col>
 
-        <ion-col size="12">
-          <ion-item>
-            <ion-label>Calcular IVA 16%</ion-label>
-            <ion-checkbox slot="start" [(ngModel)]="calcularIva" (ionChange)="recalcTotals()"></ion-checkbox>
-          </ion-item>
-        </ion-col>
+          <ion-col size="12">
+            <ion-item>
+              <ion-label>Calcular IVA 16%</ion-label>
+              <ion-checkbox slot="start" [(ngModel)]="calcularIva" (ionChange)="recalcTotals()"></ion-checkbox>
+            </ion-item>
+          </ion-col>
 
-        <ion-col size="12" *ngIf="calcularIva">
-          <ion-item>
-            <ion-label position="stacked">IVA 16% USD</ion-label>
-            <ion-input type="number" [(ngModel)]="ivaUsd" placeholder="0.00" readonly></ion-input>
-          </ion-item>
-        </ion-col>
+          <ion-col size="12" *ngIf="calcularIva">
+            <ion-item>
+              <ion-label position="stacked">IVA 16% USD</ion-label>
+              <ion-input type="number" [(ngModel)]="ivaUsd" placeholder="0.00" readonly></ion-input>
+            </ion-item>
+          </ion-col>
 
-        <ion-col size="12">
-          <ion-item>
-            <ion-label position="stacked">Descuento USD</ion-label>
-            <ion-input type="number" [(ngModel)]="descuentoUsd" (ionChange)="recalcTotals()" placeholder="0.00"
-              readonly></ion-input>
-          </ion-item>
-        </ion-col>
+          <ion-col size="12">
+            <ion-item>
+              <ion-label position="stacked">Descuento USD</ion-label>
+              <ion-input type="number" [(ngModel)]="descuentoUsd" (ionChange)="recalcTotals()" placeholder="0.00"
+                readonly></ion-input>
+            </ion-item>
+          </ion-col>
 
-        <ion-col size="12" *ngIf="calcularIva">
-          <ion-item>
-            <ion-label position="stacked">Total IVA USD</ion-label>
-            <ion-input type="text" [value]="totalIvaUsd | number:'1.2-2'" readonly></ion-input>
-          </ion-item>
-        </ion-col>
+          <ion-col size="12" *ngIf="calcularIva">
+            <ion-item>
+              <ion-label position="stacked">Total IVA USD</ion-label>
+              <ion-input type="text" [value]="totalIvaUsd | number:'1.2-2'" readonly></ion-input>
+            </ion-item>
+          </ion-col>
 
-        <ion-col size="12">
-          <ion-item>
-            <ion-label position="stacked">Total Tasa BCV</ion-label>
-            <ion-input type="text" [value]="totalTasaBcv | number:'1.2-2'" readonly></ion-input>
-          </ion-item>
-        </ion-col>
+          <ion-col size="12">
+            <ion-item>
+              <ion-label position="stacked">Total USD</ion-label>
+              <ion-input type="text" [value]="totalUSD | number:'1.2-2'" readonly></ion-input>
+            </ion-item>
+          </ion-col>
 
-        <ion-col size="12">
-          <ion-item>
-            <ion-label position="stacked">Total Tasa Paralelo USD</ion-label>
-            <ion-input type="text" [value]="totalTasaParaleloUsd | number:'1.2-2'" readonly></ion-input>
-          </ion-item>
-        </ion-col>
-      </ion-row>
-    </ion-grid>
+          <ion-col size="12">
+            <ion-item>
+              <ion-label position="stacked">Total Tasa BCV</ion-label>
+              <ion-input type="text" [value]="totalTasaBcv | number:'1.2-2'" readonly></ion-input>
+            </ion-item>
+          </ion-col>
 
-    <div class="calc-actions">
-      <ion-button size="small" class="botonAddLila" (click)="toggleCalculator()">Cerrar</ion-button>
-    </div>
-  </div>
+          <ion-col size="12">
+            <ion-item>
+              <ion-label position="stacked">Total Tasa Paralelo USD</ion-label>
+              <ion-input type="text" [value]="totalTasaParaleloUsd | number:'1.2-2'" readonly></ion-input>
+            </ion-item>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+
+
+      <ion-grid>
+        <ion-row>
+          <ion-col size="10" offset="1">
+            <div class="calc-actions">
+              <ion-button expand="block" class="botonAddLila" (click)="toggleCalculator()">Cerrar</ion-button>
+            </div>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+
+
+    </ion-card-content>
+  </ion-card>
 
 </ion-app>
