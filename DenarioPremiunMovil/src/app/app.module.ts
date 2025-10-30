@@ -42,6 +42,7 @@ import { ClientListComponent } from './clientes/client-container/client-list/cli
 import { ClientSearchComponent } from './clientes/client-search/client-search.component';
 import { ClientDocumentSaleComponent } from './clientes/client-container/client-document-sale/client-document-sale.component';
 import { ClientLocationComponent } from './clientes/client-container/client-location/client-location.component';
+import { ClientShareModalComponent } from './clientes/client-container/client-share-modal/client-share-modal.component';
 import { ClientLocationService } from './services/clientes/locationClient/client-location.service';
 import { PedidosHeaderComponent } from './pedidos/pedidos-header/pedidos-header.component';
 import { PedidoComponent } from './pedidos/pedido/pedido.component';
@@ -152,6 +153,7 @@ import { VisitaPdfModalComponent } from './visitas/vista-pdfComponent/visitaPdfM
     NewPotentialClientComponent,
     ClientDocumentSaleComponent,
     ClientLocationComponent,
+    ClientShareModalComponent,
     DevolucionesComponent,
     DevolucionesHeaderComponent,
     DevolucionesContainerComponent,
