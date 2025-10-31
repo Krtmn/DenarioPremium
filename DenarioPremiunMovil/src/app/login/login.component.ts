@@ -65,7 +65,7 @@ export class LoginComponent implements OnInit {
   async ngOnInit() {
     App.getInfo().then(async (res) => {
       //this.versionApp = res.version;
-      this.versionApp = "6.2.1"; //ESTE ES EL CAMPO QUE SE MUESTRA EN EL LOGIN DE LA APP
+      this.versionApp = "6.2.3"; //ESTE ES EL CAMPO QUE SE MUESTRA EN EL LOGIN DE LA APP
       //COLOCA EL PRIMER NUMERO DE VERSIONAPP EN VERSION PARA PODER SABER SI ES MAS NUEVA LA APP
       this.version = 8;
       console.log(res);
