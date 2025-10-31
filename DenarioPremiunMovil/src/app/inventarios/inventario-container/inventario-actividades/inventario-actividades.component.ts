@@ -14,6 +14,7 @@ import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { DELIVERY_STATUS_SENT } from 'src/app/utils/appConstants';
 import { Client } from 'src/app/modelos/tables/client';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
+import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 
 @Component({
     selector: 'app-inventario-actividades',
@@ -29,7 +30,8 @@ export class InventarioActividadesComponent implements OnInit {
   public globalConfig = inject(GlobalConfigService);
   public dateServ = inject(DateServiceService);
   public orderServ =  inject(PedidosService);
-  public dbServ = inject(SynchronizationDBService)
+  public dbServ = inject(SynchronizationDBService);
+  public adjuntoService = inject(AdjuntoService)
   public clientStocksTotal: ClientStockTotal[] = [];
   public router =  inject(Router);
 
@@ -136,6 +138,8 @@ export class InventarioActividadesComponent implements OnInit {
     var toSend =  false;
     if(this.inventariosLogicService.newClientStock.stClientStock != DELIVERY_STATUS_SENT){
       this.inventariosLogicService.saveClientStock(this.dbServ.getDatabase(),false);
+      this.adjuntoService.savePhotos(this.dbServ.getDatabase(), 
+      this.inventariosLogicService.newClientStock.coClientStock, "inventarios");
       toSend= true;
     }
 
