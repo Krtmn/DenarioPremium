@@ -289,6 +289,8 @@ export class PedidoComponent implements OnInit {
     //esta funcion toma un pedido guardado o enviado y lo pone para modificarlo o mostrarlo respectivamente
     //mini reset 
     this.orderServ.carrito = [];
+    //[groupByTotalByLines]
+    this.orderServ.carritoWithLines = [];
     this.orderServ.totalUnidad = [];
     this.monedaSeleccionada = this.orderServ.monedaSeleccionada;
 
