@@ -653,6 +653,44 @@ export class CobrosGeneralComponent implements OnInit {
 
   }
 
+
+  onChangeDateRate(event: any) {
+    /* if (this.collectService.collection.collectionDetails.length > 0 || this.collectService.collection.collectionPayments.length > 0) {
+      this.collectService.mensaje = "¿Seguro desea cambiar la fecha de la tasa? El cobro sera reiniciado!"
+      this.collectService.alertMessageChangeDateRate = true
+    } else {
+      
+      //this.collectService.collection.daRate = event.target.value;
+      this.onChangeCurrency(this.collectService.currencySelected);
+    } */
+    this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
+      this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
+        this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual);
+        if (this.collectService.historicPartialPayment) {
+          this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
+        }
+
+        this.collectService.setCurrencyConversion();
+        this.collectService.calculatePayment("", 0);
+
+      });
+
+
+
+
+
+
+  }
+
+  setChangeDateRate(event: any) {
+    this.collectService.alertMessageChangeDateRate = false;
+    if (event.detail.role === 'confirm') {
+      console.log("CAMBIAR DATERATE");
+      this.onChangeCurrency(this.collectService.currencySelected);
+    }
+  }
+
+
   onChangeCurrencyMsj(event: any) {
     if (this.collectService.collection.collectionDetails.length > 0 || this.collectService.collection.collectionPayments.length > 0) {
       this.currencySelected = event.target.value;
@@ -752,9 +790,12 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.setCurrencyDocument();
     this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
       this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
+        this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual);
         if (this.collectService.historicPartialPayment) {
           this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
         }
+
+
       });
 
     this.collectService.loadPaymentMethods();
@@ -845,8 +886,10 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   onOpenCalendar() {
-    if (this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3)
+    if (this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3) {
       this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual.split("T")[0]);
+      this.collectService.calculatePayment("", 0);
+    }
   }
 
   onChangeTxConversion(event: any) {

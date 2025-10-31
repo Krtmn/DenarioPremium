@@ -1,0 +1,100 @@
+/* ...existing styles ... */
+
+.global-calc-fab {
+    z-index: 9999;
+}
+
+/* estilo para el icono de la calculadora dentro del FAB */
+.global-calc-fab ion-fab-list ion-fab-button.calculator-btn ion-icon {
+    color: #ffffff;
+    /* icono en blanco */
+}
+
+/* Floating calculator: centered, 3/4 of viewport (75vw x 75vh) */
+.floating-calculator {
+    z-index: 10010;
+    color: var(--ion-text-color, #000);
+    flex-direction: column;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Encabezado y cabecera */
+.floating-calculator .calc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+/* Contenedor principal: hacer que el grid ocupe el espacio disponible */
+.floating-calculator ion-grid {
+    flex: 1 1 auto;
+}
+
+/* Info de empresa y acciones */
+.floating-calculator .company-info {
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: var(--ion-text-color, #333);
+}
+
+/* Centrar el botón de acciones dentro de la calculadora */
+.floating-calculator .calc-actions {
+    /* centra verticalmente dentro del contenedor */
+    margin-top: 12px;
+    /* separación si agregas más botones */
+}
+
+/* Botón de cerrar (adaptar si quieres estilo distinto) */
+.floating-calculator ion-button {
+    min-width: 72px;
+}
+
+/* Responsive: en pantallas muy pequeñas ocupar más espacio */
+@media (max-width: 600px) {
+    .floating-calculator {
+        height: 100vh;
+    }
+
+    .floating-calculator .calc-header h3 {
+        font-size: 1.05rem;
+        margin: 0;
+    }
+}
+
+ion-select {
+    --highlight-height: 0px !important;
+}
+
+/* filepath: src/app/calculator/calculator.component.scss */
+/* Estilos para campo requerido / inválido */
+ion-item.invalid {
+    border: 1px solid #f44336;
+    /* rojo */
+    border-radius: 6px;
+    padding: 4px;
+    /* para que no quede muy pegado */
+    /* Si quieres que el fondo destaque ligeramente:
+     background: rgba(244,67,54,0.03); */
+}
+
+/* Asegura que el ion-input no "rompa" el borde visual */
+ion-item.invalid ion-input::part(native) {
+    /* nada obligatorio aquí, solo en caso de querer ajustar el input nativo */
+}
+
+/* Mensaje de error visible debajo del campo */
+.error-text {
+    color: #f44336;
+    font-size: 0.85rem;
+    margin-top: 6px;
+    margin-left: 6px;
+}
+
+/* Asterisco requerido */
+.required-star {
+    color: #f44336;
+    margin-left: 4px;
+    font-weight: 600;
+}

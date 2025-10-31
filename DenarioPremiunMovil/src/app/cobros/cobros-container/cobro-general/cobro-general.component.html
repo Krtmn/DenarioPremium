@@ -157,7 +157,7 @@
     class="fechasModal">
     <ng-template>
         <ion-datetime [id]="dateRate" presentation="date" [(ngModel)]="this.collectService.dateRateVisual"
-            (ngModelChange)="this.collectService.getDateRate(this.synchronizationServices.getDatabase(),this.collectService.dateRateVisual)"
+            (ngModelChange)="onChangeDateRate($event)"
             [min]="this.collectService.fechaMenor" [max]="this.collectService.fechaMayor" [showDefaultButtons]="true"
             doneText="Aceptar" cancelText="Cancelar">
         </ion-datetime>
@@ -178,6 +178,9 @@
     header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}" message={{this.collectService.mensaje}}
     [buttons]="this.collectService.alertButtonsSend" (didDismiss)="setChangeCurrency($event)"></ion-alert>
 
+    <ion-alert [isOpen]="this.collectService.alertMessageChangeDateRate"
+    header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}" message={{this.collectService.mensaje}}
+    [buttons]="this.collectService.alertButtonsSend" (didDismiss)="setChangeDateRate($event)"></ion-alert>˝
 <!-- alerta de envio-->
 <ion-alert [isOpen]="this.collectService.alertMessageChangeEnterprise"
     header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}" message={{this.collectService.mensaje}}
