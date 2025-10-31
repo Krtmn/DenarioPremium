@@ -74,6 +74,8 @@
   </div>
 
 </div>
-<ion-button expand="full" class="botonGenerarPdf" (click)="exportPdf()">
-    GENERAR PDF
-</ion-button>
+    <ion-fab *ngIf="this.clientLogic.segment === 'docVentas'" slot="fixed" vertical="bottom" horizontal="end">
+        <ion-fab-button (click)="exportPdf()">
+            <ion-icon name="share-social-outline"></ion-icon>
+        </ion-fab-button>
+    </ion-fab>
