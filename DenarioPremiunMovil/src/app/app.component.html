@@ -1,5 +1,6 @@
 <ion-app>
   <ion-router-outlet></ion-router-outlet>
+  <app-calculator></app-calculator>
   <!-- ...existing code... -->
 
   <!-- FAB global (botón principal + lista de opciones) -->
@@ -12,9 +13,9 @@
       <ion-fab-button class="calculator-btn" (click)="toggleCalculator()" aria-label="Abrir calculadora">
         <ion-icon name="calculator-outline"></ion-icon>
       </ion-fab-button>
-   
+
     </ion-fab-list>
-  </ion-fab> -->
+  </ion-fab>
 
   <ion-card *ngIf="showCalculator" class="floating-calculator" role="dialog" aria-label="Calculadora">
     <ion-card-header>
@@ -37,12 +38,6 @@
           </ion-col>
         </ion-row>
       </ion-grid>
-
-
-
-      <!-- <div class="company-info" *ngIf="selectedCompany">
-      <small>Empresa seleccionada: <strong>{{ selectedCompany.lbEnterprise }}</strong></small>
-    </div> -->
 
       <ion-grid>
         <ion-row>
@@ -133,5 +128,5 @@
 
     </ion-card-content>
   </ion-card>
-
+ -->
 </ion-app>
