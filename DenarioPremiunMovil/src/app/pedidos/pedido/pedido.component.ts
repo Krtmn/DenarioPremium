@@ -361,6 +361,11 @@ export class PedidoComponent implements OnInit {
 
     this.orderServ.getOrderUtilsbyIdProductAndPricelists(idProducts, idPriceLists).then(utils => {
       //procedemos a modificar los orderUtil con la data anterior y los agregamos al carrito
+      if (utils.length < 1){
+        console.error("No se consiguieron los productos del pedido");
+        this.orderServ.disableSaveButton = true;
+        this.orderServ.disableSendButton = true;
+      }
       for (let i = 0; i < this.orderServ.order.orderDetails.length; i++) {
         const detail = this.orderServ.order.orderDetails[i];
         const item = utils.find((u) => u.idProduct == detail.idProduct)!;
