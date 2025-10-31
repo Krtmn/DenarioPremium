@@ -1,43 +1,43 @@
 <div #invoiceContent>
 
-   <ion-grid [fixed]="true" class="tablaInfoclients">
-                <ion-row>
-                    <ion-col size="4"
-                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_EMPRESA")}}:</ion-col>
-                    <ion-col>{{client.lblEnterprise}}</ion-col>
-                </ion-row>
-                <ion-row>
-                    <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_NOMBRE")}}:</ion-col>
-                    <ion-col>{{client.naClient}}</ion-col>
-                </ion-row>
-                <ion-row>
-                    <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CODIGO")}}:</ion-col>
-                    <ion-col>{{client.coClient}}</ion-col>
-                </ion-row>
-                <ion-row>
-                    <ion-col size="4"
-                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_LISTA_PRECIO")}}:</ion-col>
-                    <ion-col>{{client.naPriceList}}</ion-col>
-                </ion-row>
-                <ion-row>
-                    <ion-col size="4" class="titulosBold">{{tagRif}}:</ion-col>
-                    <ion-col>{{client.nuRif}}</ion-col>
-                </ion-row>
-                <ion-row>
-                    <ion-col size="4"
-                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CONTACTO")}}:</ion-col>
-                    <ion-col>{{client.naResponsible}}</ion-col>
-                </ion-row>
-                <ion-row>
-                    <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_EMAIL")}}:</ion-col>
-                    <ion-col size="8">{{client.naEmail}}</ion-col>
-                </ion-row>
-                <ion-row>
-                    <ion-col size="4"
-                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_TELEFONO")}}:</ion-col>
-                    <ion-col>{{client.nuPhone}}</ion-col>
-                </ion-row>               
-            </ion-grid>
+     <div class="tablaInfoClientes tablaInfoclients">
+    <table class="tabla-info-cliente" role="table" cellspacing="0" cellpadding="4">
+      <tbody>
+        <tr>
+          <td class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_EMPRESA")}}:</td>
+          <td>{{client.lblEnterprise}}</td>
+        </tr>
+        <tr>
+          <td class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_NOMBRE")}}:</td>
+          <td>{{client.naClient}}</td>
+        </tr>
+        <tr>
+          <td class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CODIGO")}}:</td>
+          <td>{{client.coClient}}</td>
+        </tr>
+        <tr>
+          <td class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_LISTA_PRECIO")}}:</td>
+          <td>{{client.naPriceList}}</td>
+        </tr>
+        <tr>
+          <td class="titulosBold">{{tagRif}}:</td>
+          <td>{{client.nuRif}}</td>
+        </tr>
+        <tr>
+          <td class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CONTACTO")}}:</td>
+          <td>{{client.naResponsible}}</td>
+        </tr>
+        <tr>
+          <td class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_EMAIL")}}:</td>
+          <td class="email-cell">{{client.naEmail}}</td>
+        </tr>
+        <tr>
+          <td class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_TELEFONO")}}:</td>
+          <td>{{client.nuPhone}}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
     <div class="tablaInfoClientes tablaDocVentasGrip">
     <table class="tabla-doc-ventas" role="table" cellspacing="0" cellpadding="4">
       <thead>
