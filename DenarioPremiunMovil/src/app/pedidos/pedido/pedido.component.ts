@@ -299,6 +299,8 @@ export class PedidoComponent implements OnInit {
     //esta funcion toma un pedido guardado o enviado y lo pone para modificarlo o mostrarlo respectivamente
     //mini reset 
     this.orderServ.carrito = [];
+    //[groupByTotalByLines]
+    this.orderServ.carritoWithLines = [];
     this.orderServ.totalUnidad = [];
     this.monedaSeleccionada = this.orderServ.monedaSeleccionada;
 
@@ -369,6 +371,11 @@ export class PedidoComponent implements OnInit {
 
     this.orderServ.getOrderUtilsbyIdProductAndPricelists(idProducts, idPriceLists).then(utils => {
       //procedemos a modificar los orderUtil con la data anterior y los agregamos al carrito
+      if (utils.length < 1){
+        console.error("No se consiguieron los productos del pedido");
+        this.orderServ.disableSaveButton = true;
+        this.orderServ.disableSendButton = true;
+      }
       for (let i = 0; i < this.orderServ.order.orderDetails.length; i++) {
         const detail = this.orderServ.order.orderDetails[i];
         const item = utils.find((u) => u.idProduct == detail.idProduct)!;

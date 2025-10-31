@@ -24,7 +24,8 @@
 
         <ion-col size="6" size-sm="12" size-xs="12" *ngIf="this.collectService.cobroValid">
             <ion-col size="6" size-sm="12" size-xs="12">
-                <ion-label *ngIf="this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3">
+                <ion-label
+                    *ngIf="this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3">
                     {{this.collectService.collectionTags.get('COB_MONEDA')}}:
                 </ion-label>
                 <div class="listado-enterprise-selector ion-text-center"
@@ -156,7 +157,7 @@
     class="fechasModal">
     <ng-template>
         <ion-datetime [id]="dateRate" presentation="date" [(ngModel)]="this.collectService.dateRateVisual"
-            (ngModelChange)="this.collectService.getDateRate(this.synchronizationServices.getDatabase(),this.collectService.dateRateVisual)"
+            (ngModelChange)="onChangeDateRate($event)"
             [min]="this.collectService.fechaMenor" [max]="this.collectService.fechaMayor" [showDefaultButtons]="true"
             doneText="Aceptar" cancelText="Cancelar">
         </ion-datetime>
@@ -177,6 +178,9 @@
     header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}" message={{this.collectService.mensaje}}
     [buttons]="this.collectService.alertButtonsSend" (didDismiss)="setChangeCurrency($event)"></ion-alert>
 
+    <ion-alert [isOpen]="this.collectService.alertMessageChangeDateRate"
+    header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}" message={{this.collectService.mensaje}}
+    [buttons]="this.collectService.alertButtonsSend" (didDismiss)="setChangeDateRate($event)"></ion-alert>˝
 <!-- alerta de envio-->
 <ion-alert [isOpen]="this.collectService.alertMessageChangeEnterprise"
     header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}" message={{this.collectService.mensaje}}
