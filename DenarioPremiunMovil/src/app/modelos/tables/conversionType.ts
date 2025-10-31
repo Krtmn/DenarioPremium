@@ -10,6 +10,7 @@ export class ConversionType {
           obj['dateConversion'],
           obj['coEnterprise'],
           obj['idEnterprise'],
+          obj['idConversion'],
         
       );
   }
@@ -23,6 +24,7 @@ export class ConversionType {
       public dateConversion: string,
       public coEnterprise: string,
       public idEnterprise: number,
+      public idConversion: number,
       
   ) { }
 }

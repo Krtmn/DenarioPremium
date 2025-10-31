@@ -902,3 +902,7 @@ ion-grid, ion-row {
   padding-bottom: 1em;   // Espacio inferior para evitar corte
   width: 100%;           // Ocupa todo el ancho disponible
 }
+
+ion-select {
+  --highlight-height: 0px!important;
+}

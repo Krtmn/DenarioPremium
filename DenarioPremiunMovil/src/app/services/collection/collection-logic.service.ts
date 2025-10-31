@@ -99,6 +99,7 @@ export class CollectionService {
   public saveOrExitOpen = false;
   public alertMessageOpen: boolean = false;
   public alertMessageChangeCurrency: boolean = false;
+  public alertMessageChangeDateRate: boolean = false;
   public isLocalCurrency: boolean = false;
   public isHardCurrency: boolean = false;
   public multiCurrency!: boolean;
@@ -562,22 +563,26 @@ export class CollectionService {
 
       //si ya tengo la tasa correspondiente a la fecha, debo buscar los documentos
       // actualizar nuValueLocal en cada documentSales para reflejar la tasa actual de la colección
-      if (this.documentSales && this.documentSales.length > 0) {
+      /* if (this.documentSales && this.documentSales.length > 0) {
         this.documentSales.forEach(ds => ds.nuValueLocal = this.collection.nuValueLocal);
         this.documentSalesBackup.forEach(ds => ds.nuValueLocal = this.collection.nuValueLocal);
         this.documentSalesView.forEach(ds => ds.nuValueLocal = this.collection.nuValueLocal);
-      }
+      } */
 
-      if (this.globalConfig.get('historicoTasa') === 'true' ? true : false) {
-        this.historicoTasa = true;
-      } else {
-        this.historicoTasa = false;
-      }
-      this.unlockTabs().then((resp) => {
-        this.onCollectionValid(resp);
-      })
+      this.getDocumentsSales(dbServ,
+        this.collection.idClient, this.currencySelectedDocument.coCurrency, this.collection.coCollection, this.collection.idEnterprise).then(() => {
+          if (this.globalConfig.get('historicoTasa') === 'true' ? true : false) {
+            this.historicoTasa = true;
+          } else {
+            this.historicoTasa = false;
+          }
+          this.unlockTabs().then((resp) => {
+            this.onCollectionValid(resp);
+          })
 
-      this.calculatePayment('', 0);
+          this.calculatePayment('', 0);
+        })
+
 
     } else {
       //no tengo tasa para ese dia
@@ -592,9 +597,6 @@ export class CollectionService {
           this.onCollectionValid(resp);
         })
       }
-
-      this.getDocumentsSales(dbServ,
-        this.collection.idClient, this.currencySelectedDocument.coCurrency, this.collection.coCollection, this.collection.idEnterprise);
 
     }
   }
@@ -1353,12 +1355,17 @@ export class CollectionService {
                   this.disabledSelectCollectMethodDisabled = false;
                   this.documentSales[i].isSelected = true;
                   this.documentSalesBackup[i].isSelected = true;
-                  this.documentSales[i].isSave = true;
-                  this.documentSalesBackup[i].isSave = true;
+                  this.documentSales[i].isSave = this.collection.collectionDetails[cd].isSave;
+                  this.documentSalesBackup[i].isSave = this.collection.collectionDetails[cd].isSave;
                   this.documentSalesBackup[i].daVoucher = this.collection.collectionDetails[cd].daVoucher!;
                   this.documentSalesBackup[i].nuAmountDiscount = this.collection.collectionDetails[cd].nuAmountDiscount;
-                  this.documentSalesBackup[i].nuBalance = this.collection.collectionDetails[cd].nuBalanceDoc;
-                  this.documentSalesBackup[i].nuAmountPaid = this.collection.collectionDetails[cd].nuAmountPaid;
+
+                  this.collection.collectionDetails[cd].nuBalanceDoc = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
+                  this.collection.collectionDetails[cd].nuBalanceDocConversion = this.documentSales[i].nuBalance;
+                  this.collection.collectionDetails[cd].nuAmountPaid = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
+                  this.collection.collectionDetails[cd].nuAmountPaidConversion = this.documentSales[i].nuBalance; 
+                  this.documentSalesBackup[i].nuBalance = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
+                  this.documentSalesBackup[i].nuAmountPaid = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
                   this.documentSalesBackup[i].nuAmountRetention = this.collection.collectionDetails[cd].nuAmountRetention;
                   this.documentSalesBackup[i].nuAmountRetention2 = this.collection.collectionDetails[cd].nuAmountRetention2;
                   this.documentSalesBackup[i].nuValueLocal = this.collection.collectionDetails[cd].nuValueLocal;
@@ -1475,8 +1482,6 @@ export class CollectionService {
             } else {
               documentSales.isSelected = false;
             }
-
-
 
             documentSales.positionCollecDetails = data.rows.item(i).positionCollecDetails;
             documentSales.nuAmountRetention = data.rows.item(i).nuAmountRetention == undefined ? 0 : data.rows.item(i).nuAmountRetention;

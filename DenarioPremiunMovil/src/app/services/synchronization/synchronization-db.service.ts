@@ -72,7 +72,7 @@ import { ReturnDatabaseService } from '../returns/return-database.service';
 import { OrderDetail } from 'src/app/modelos/tables/orderDetail';
 import { OrderDetailUnit } from 'src/app/modelos/tables/orderDetailUnit';
 import { OrderDetailDiscount } from 'src/app/modelos/orderDetailDiscount';
-
+import { Conversion } from 'src/app/modelos/tables/conversion';
 @Injectable({
   providedIn: 'root'
 })
@@ -160,6 +160,7 @@ export class SynchronizationDBService {
       { "id": 69, "nameTable": "orderDetailTable" },
       { "id": 70, "nameTable": "orderDetailUnitTable" },
       { "id": 71, "nameTable": "orderDetailDiscountTable" },
+      { "id": 72, "nameTable": "conversionTable" },
     ]
   }
 
@@ -963,16 +964,16 @@ export class SynchronizationDBService {
     var statements = [];
     let insertStatement = "INSERT OR REPLACE INTO conversion_types  (" +
       'id_conversion_type,co_conversion_type,co_currency_hard,co_currency_local,nu_value_local,' +
-      'date_conversion,co_enterprise,id_enterprise' +
+      'date_conversion,co_enterprise,id_enterprise, id_conversion' +
       ') ' +
-      'VALUES(?,?,?,?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?,?,?,?)'
 
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
       statements.push([insertStatement, [obj.idConversionType, obj.coConversionType, obj.coCurrencyHard,
       obj.coCurrencyLocal, obj.nuValueLocal,
-      obj.dateConversion, obj.coEnterprise, obj.idEnterprise]]);
+      obj.dateConversion, obj.coEnterprise, obj.idEnterprise, obj.idConversion]]);
     }
 
     return this.database.sqlBatch(statements).then(res => {
@@ -1383,8 +1384,6 @@ export class SynchronizationDBService {
       })
   }
 
-
-
   getStatusTranssacion(db: SQLiteObject, status: number, transaccionName: string) {
     let query = "SELECT o.id_order, st.na_status FROM transaction_statuses ts " +
       "JOIN orders o ON ts.id_transaction = o.id_order AND ts.co_transaction_type = ? " +
@@ -1395,6 +1394,31 @@ export class SynchronizationDBService {
       let naStatus: string = "";
       naStatus = data.rows.length > 0 ? data.rows.item(0).na_status : "";
       return naStatus;
+    });
+  }
+
+  insertConversionBatch(arr: Conversion[]) {
+    var statements: any[] = [];
+    let insertStatement = "INSERT OR REPLACE INTO conversion (id_conversion, co_conversion, na_conversion, primary_currency, id_enterprise) VALUES(?,?,?,?,?)";
+
+    for (var i = 0; i < arr.length; i++) {
+      const item = arr[i] || {} as any;
+      statements.push([
+        insertStatement,
+        [
+          item.idConversion ?? null,
+          item.coConversion ?? null,
+          item.naConversion ?? null,
+          item.primaryCurrency ? 1 : 0,
+          item.idEnterprise ?? null
+        ]
+      ]);
+    }
+
+    return this.database.sqlBatch(statements).then(res => {
+      // opcional: puedes agregar lógica adicional aquí si hace falta
+    }).catch(e => {
+      console.log('insertConversionBatch error', e);
     });
   }
 }

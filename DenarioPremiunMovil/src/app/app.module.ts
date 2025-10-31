@@ -100,6 +100,8 @@ import { GoogleMapsModule } from '@angular/google-maps'
 import { HistoryTransaction } from './services/historyTransaction/historyTransaction';
 import { FileOpener } from '@awesome-cordova-plugins/file-opener/ngx';
 import { VisitaPdfModalComponent } from './visitas/vista-pdfComponent/visitaPdfModal.component';
+import { ConversionService } from './services/conversion/conversion.service';
+import { CalculatorComponent } from './calculator/calculator.component';
 //import { HomeSidebarComponent } from './home-sidebar/home-sidebar.component';
 
 
@@ -197,18 +199,22 @@ import { VisitaPdfModalComponent } from './visitas/vista-pdfComponent/visitaPdfM
     RouterModule,
     SignaturePadModule,
     HammerModule,
-    GoogleMapsModule], providers: [{ provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
-      SQLite,
-      ServicesService,
-      ClientesDatabaseServicesService,
-      PotentialClientDatabaseServicesService,
-      MessageService,
-      ClientLocationService,
-      InventariosLogicService,
-      LoginLogicService,
-      HistoryTransaction,
-      FileOpener,
-      DepositService, provideHttpClient(withInterceptorsFromDi())]
+    GoogleMapsModule,
+    CalculatorComponent],
+  providers: [{ provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
+    SQLite,
+    ServicesService,
+    ClientesDatabaseServicesService,
+    PotentialClientDatabaseServicesService,
+    MessageService,
+    ClientLocationService,
+    InventariosLogicService,
+    LoginLogicService,
+    HistoryTransaction,
+    FileOpener,
+    DepositService,
+    ConversionService,
+  provideHttpClient(withInterceptorsFromDi())]
 })
 export class AppModule {
   constructor(private platform: Platform) {
