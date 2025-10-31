@@ -121,6 +121,7 @@ export class InventarioGeneralComponent implements OnInit {
   ngOnInit() {
     this.message.hideLoading();
     this.inventariosLogicService.showProductList = false;
+    this.viewOnly = this.inventariosLogicService.inventarioSent.valueOf();
     if (this.inventariosLogicService.initInventario) {
       this.alertButtons[0].text = this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
       this.alertButtons2[0].text = this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_CANCELAR')!
@@ -142,6 +143,7 @@ export class InventarioGeneralComponent implements OnInit {
 
   ngOnDestroy() {
     this.AttachSubscription.unsubscribe();
+    this.ClientChangeSubscription.unsubscribe();
   }
 
   setChangesMade(value: boolean) {
