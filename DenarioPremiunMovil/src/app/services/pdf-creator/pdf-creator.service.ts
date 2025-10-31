@@ -74,7 +74,7 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
       let renderScale = opts?.scale ?? 2; // start scale
   
       const doc = new jsPDF({
-        format: 'a4',
+        format: 'legal',
         unit: 'pt',
         orientation: opts?.orientation ?? 'landscape'
       });
