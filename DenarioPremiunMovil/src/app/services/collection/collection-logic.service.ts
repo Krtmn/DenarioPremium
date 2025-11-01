@@ -1105,18 +1105,46 @@ export class CollectionService {
                     } else {
                       this.onCollectionValidToSend(true);
                     }
+
                   }
                 }
               }
             } else {
               //EL TIPO DE TOLERANCIA ES POR RANGO, SE DEBE SACAR PORCENTAJE Y CALCULAR SI SE PUEDE ENVIAR O NO
-              let dif = Math.abs(this.montoTotalPagado) - Math.abs(this.montoTotalPagar);
-              let porcentaje = (Math.abs(this.montoTotalPagar * this.RangoTolerancia)) / 100;
-              if (dif <= porcentaje) {
-                this.onCollectionValidToSend(true);
+              const delta = Number(((Number(this.montoTotalPagado) || 0) - (Number(this.montoTotalPagar) || 0)).toFixed(this.parteDecimal));
+              const base = Math.abs(Number(this.montoTotalPagar) || 0);
+
+
+              // Si el monto a pagar es 0, exigir igualdad exacta
+              if (base === 0) {
+                if (Math.abs(delta) === 0) {
+                  this.onCollectionValidToSend(true);
+                } else {
+                  this.onCollectionValidToSend(false);
+                  return;
+                }
+              }
+
+              // RangoToleranciaPositiva y RangoToleranciaNegativa son porcentajes
+              const allowedPositive = (base * (Number(this.RangoToleranciaPositiva) || 0)) / 100;
+              const allowedNegative = (base * (Number(this.RangoToleranciaNegativa) || 0)) / 100;
+
+              if (delta >= 0) {
+                // Sobrepago: comparar contra rango positivo
+                if (delta <= allowedPositive) {
+                  this.onCollectionValidToSend(true);
+                } else {
+                  this.onCollectionValidToSend(false);
+                  return;
+                }
               } else {
-                this.onCollectionValidToSend(false);
-                return;
+                // Falta pago: comparar magnitud contra rango negativo
+                if (Math.abs(delta) <= allowedNegative) {
+                  this.onCollectionValidToSend(true);
+                } else {
+                  this.onCollectionValidToSend(false);
+                  return;
+                }
               }
             }
           } else {
@@ -1363,7 +1391,7 @@ export class CollectionService {
                   this.collection.collectionDetails[cd].nuBalanceDoc = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
                   this.collection.collectionDetails[cd].nuBalanceDocConversion = this.documentSales[i].nuBalance;
                   this.collection.collectionDetails[cd].nuAmountPaid = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
-                  this.collection.collectionDetails[cd].nuAmountPaidConversion = this.documentSales[i].nuBalance; 
+                  this.collection.collectionDetails[cd].nuAmountPaidConversion = this.documentSales[i].nuBalance;
                   this.documentSalesBackup[i].nuBalance = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
                   this.documentSalesBackup[i].nuAmountPaid = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
                   this.documentSalesBackup[i].nuAmountRetention = this.collection.collectionDetails[cd].nuAmountRetention;
