@@ -536,6 +536,7 @@
                             <!-- SALDO CONVERSION -->
 
                             <!-- NRO COMPROBANTE RET -->
+
                             <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
                                 *ngIf="this.collectService.formatRetention == 'number'">
                                 <ion-input
@@ -543,13 +544,8 @@
                                     label-placement="floating" fill="outline" color="primary" type="number"
                                     value="{{this.collectService.documentSaleOpen.nuVaucherRetention}}"
                                     [(ngModel)]="this.collectService.documentSaleOpen.nuVaucherRetention"
-                                    (ionChange)="validateNuVaucherRetention(true)"
-                                    [ngClass]="{'inp-write': !this.collectService.documentSaleOpen.nuVaucherRetention}">
+                                    (ionChange)="validateNuVaucherRetention(true)">
                                 </ion-input>
-                                <ion-label *ngIf="!this.collectService.documentSaleOpen.nuVaucherRetention"
-                                    color="danger" class="campoObligatorio">
-                                    {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}
-                                </ion-label>
                             </ion-col>
                             <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
                                 *ngIf="this.collectService.formatRetention != 'number'">
@@ -559,13 +555,8 @@
                                     value="{{this.collectService.documentSaleOpen.nuVaucherRetention}}"
                                     [(ngModel)]="this.collectService.documentSaleOpen.nuVaucherRetention"
                                     (ionChange)="validateNuVaucherRetention(true)"
-                                    [ngClass]="{'inp-write': !this.collectService.documentSaleOpen.nuVaucherRetention}">
+                                    [ngClass]="{'inp-write': this.collectService.validNuRetention}">
                                 </ion-input>
-                                <ion-label
-                                    *ngIf="!this.collectService.documentSaleOpen.nuVaucherRetention || this.collectService.documentSaleOpen.nuVaucherRetention.length === 0"
-                                    color="danger" class="campoObligatorio">
-                                    {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}
-                                </ion-label>
                             </ion-col>
                             <!-- NRO COMPROBANTE RET -->
 
