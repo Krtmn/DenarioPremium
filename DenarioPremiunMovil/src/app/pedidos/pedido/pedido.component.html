@@ -155,7 +155,7 @@
                                         <ion-label>{{ orderServ.getTag("PED_TIPO_PEDIDO")}}:</ion-label>
                                         <div class="listado-tps-selector ion-text-center" id="inputOrderType">
                                             <ion-select (ionChange)="onOrderTypeChange()" [(ngModel)]="tipoOrden"
-                                                [disabled]="orderServ.openOrder" interface="popover"
+                                                [disabled]="disableOrderTypeSelector()" interface="popover"
                                                 labelPlacement="stacked">
                                                 <ion-select-option *ngFor="let type of listaOrderTypes" [value]="type">
                                                     {{ type.naOrderType }}
