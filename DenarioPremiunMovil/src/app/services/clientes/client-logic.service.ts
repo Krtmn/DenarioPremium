@@ -39,6 +39,7 @@ export class ClientLogicService {
   public stockValidToSend = new Subject<Boolean>;
   public stockValid = new Subject<Boolean>;
   public backRoute = new Subject<string>;
+  public closeClientShareModal = new Subject<Boolean>();
 
   public hardCurrency!: CurrencyEnterprise;
   public localCurrency!: CurrencyEnterprise;
@@ -231,6 +232,10 @@ export class ClientLogicService {
 
   openClientLocationComponent() {
     this.clientLocationComponent = true;
+  }
+
+  closeClientShareModalFunction() {
+    this.closeClientShareModal.next(true);
   }
 
 }

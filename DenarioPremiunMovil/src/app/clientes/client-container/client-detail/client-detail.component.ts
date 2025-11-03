@@ -37,6 +37,7 @@ export class ClienteComponent implements OnInit {
   public decimales = 2;
 
   public clientShareModalOpen: boolean = false;
+  subjectClientShareModalOpen: any;
 
   constructor() {
 
@@ -84,6 +85,14 @@ export class ClienteComponent implements OnInit {
 
     this.decimales = this.currencyService.precision;
 
+    this.subjectClientShareModalOpen = this.clientLogic.closeClientShareModal.subscribe((open: Boolean) => {
+      this.clientShareModalOpen = false;
+    });
+
+  }
+
+  ngOnDestroy() {
+    this.subjectClientShareModalOpen.unsubscribe();
   }
 
   openDoc(idDocumento: number, index: number) {
