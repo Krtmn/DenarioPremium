@@ -20,6 +20,7 @@ export class ClientShareModalComponent implements OnInit {
   private globalConfig = inject(GlobalConfigService);
   private pdfCreator = inject(PdfCreatorService);
   private ngZone = inject(NgZone);
+  private message = this.clientLogic.message;
 
   @ViewChild('invoiceContent', { static: false }) content!: ElementRef;
 
@@ -94,7 +95,8 @@ export class ClientShareModalComponent implements OnInit {
 
   async exportPdf() {
     //const html = this.content.nativeElement.innerHTML;
-    const element = this.content.nativeElement as HTMLElement;
+    this.message.showLoading().then(async () => {
+      const element = this.content.nativeElement as HTMLElement;
     const doc = await this.pdfCreator.generateWithJsPDF(element, { scale: 1, layoutScale: 0.7 });
     const base64 = doc.output('datauristring');
     const trimmed = base64.split(',')[1];
@@ -102,20 +104,21 @@ export class ClientShareModalComponent implements OnInit {
     this.pdfCreator.savePdf(trimmed, filename).then(res => {
       console.log('PDF saved successfully:', filename);
       //this.pdfCreator.openPdf(res.uri);
+      //this.message.hideLoading();
       Share.share({
         url: res.uri,
       }).then(() => {
         console.log('PDF shared successfully');
-        this.deleteTempPdf(filename);
-        this.clientLogic.closeClientShareModalFunction();
+        this.finishShare(filename);
       }).catch(err => {
         console.error('Error sharing PDF:', err);
-        this.deleteTempPdf(filename);
-        this.clientLogic.closeClientShareModalFunction();
+        this.finishShare(filename);
       });
     }).catch(err => {
       console.error('Error saving PDF:', err);
     });
+    });
+    
 
   }
 
@@ -126,4 +129,11 @@ export class ClientShareModalComponent implements OnInit {
       console.error('Error deleting temporary PDF file:', delErr);
     });
   }
+
+  finishShare(filename: string) {
+    this.deleteTempPdf(filename);
+    this.clientLogic.closeClientShareModalFunction();
+    this.message.hideLoading();
+  }
+
   }
