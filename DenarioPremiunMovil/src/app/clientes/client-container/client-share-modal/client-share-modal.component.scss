@@ -8,3 +8,15 @@
 .col { /* column sizing can be tuned if needed */ }
 .cabecera th { font-weight: 700; } 
 
+.pdf-export-scale .tabla-doc-ventas {
+  font-size: 14px;      /* slightly bigger text for PDF */
+  line-height: 1.2;
+}
+.pdf-export-scale .tabla-info-cliente {
+  font-size: 14px;
+}
+.pdf-export-scale .tabla-doc-ventas th,
+.pdf-export-scale .tabla-doc-ventas td {
+  padding: 8px 10px;   /* slightly larger cells */
+  white-space: nowrap;
+}

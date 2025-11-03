@@ -70,14 +70,15 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
    *
    * Usage: pass the element reference (preferred) or HTML string.
    */  // ...existing code...
-    async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'portrait' | 'landscape', scale?: number }): Promise<jsPDF> {
-      let renderScale = opts?.scale ?? 2; // start scale
-  
-      const doc = new jsPDF({
-        format: 'legal',
-        unit: 'pt',
-        orientation: opts?.orientation ?? 'landscape'
-      });
+async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'portrait' | 'landscape', scale?: number, layoutScale?: number }): Promise<jsPDF> {
+  // renderScale (pixel density) used by html2canvas:
+  let renderScale = opts?.scale ?? 3;
+
+  const doc = new jsPDF({
+    format: 'letter',
+    unit: 'pt',
+    orientation: opts?.orientation ?? 'landscape'
+  });
   
       // prepare original element (wrap string if needed)
       let originalElement: HTMLElement;
@@ -93,29 +94,36 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
       }
   
       // clone & inline styles
-      const cloned = originalElement.cloneNode(true) as HTMLElement;
-      this.inlineAllComputedStyles(originalElement, cloned);
-  
-      // ensure clone lays out with natural height and page-width so html2canvas can capture full content
-      // compute width in px that corresponds to PDF page width
-      const pageWidthPt = doc.internal.pageSize.getWidth(); // pts
-      const ptToPx = 96 / 72; // approx px per pt
-      const pageWidthPx = Math.round(pageWidthPt * ptToPx);
-  
-      cloned.style.width = `${pageWidthPx}px`;
-      cloned.style.maxHeight = 'none';
-      cloned.style.overflow = 'visible';
-      cloned.style.boxSizing = 'border-box';
-  
-      // place the clone so it is rendered in the layout but not covering the UI
-      cloned.style.position = 'absolute';
-      cloned.style.left = '0';
-      cloned.style.top = '0';
-      cloned.style.zIndex = '99999';
-      cloned.style.visibility = 'visible';
-      cloned.style.pointerEvents = 'none';
-  
-      document.body.appendChild(cloned);
+        const cloned = originalElement.cloneNode(true) as HTMLElement;
+  this.inlineAllComputedStyles(originalElement, cloned);
+
+  // compute page width in CSS px
+  const pageWidthPt = doc.internal.pageSize.getWidth(); // pdf pts
+  const ptToPx = 96 / 72; // approx px per pt
+  const pageWidthPx = Math.round(pageWidthPt * ptToPx);
+
+  // layoutScale: scale the clone's layout width (default 1 = page width)
+  const layoutScale = typeof opts?.layoutScale === 'number' ? opts!.layoutScale : 1;
+  const targetCloneWidthPx = Math.round(pageWidthPx * layoutScale);
+
+  // set cloned layout width (this affects how table columns wrap/size)
+  cloned.style.width = `${targetCloneWidthPx}px`;
+  cloned.style.maxHeight = 'none';
+  cloned.style.overflow = 'visible';
+  cloned.style.boxSizing = 'border-box';
+
+  // Add a class to the clone so PDF-only CSS can be applied
+  cloned.classList.add('pdf-export-scale');
+
+  // place the clone in the document for rendering
+  cloned.style.position = 'absolute';
+  cloned.style.left = '0';
+  cloned.style.top = '0';
+  cloned.style.zIndex = '99999';
+  cloned.style.visibility = 'visible';
+  cloned.style.pointerEvents = 'none';
+
+  document.body.appendChild(cloned);
   
       // wait for fonts to be ready if possible
       if ((document as any).fonts && (document as any).fonts.ready) {

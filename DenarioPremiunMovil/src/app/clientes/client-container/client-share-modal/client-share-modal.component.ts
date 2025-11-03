@@ -68,7 +68,7 @@ export class ClientShareModalComponent  implements OnInit {
     async exportPdf() {
     //const html = this.content.nativeElement.innerHTML;
     const element = this.content.nativeElement as HTMLElement;
-    const doc = await this.pdfCreator.generateWithJsPDF(element);
+    const doc = await this.pdfCreator.generateWithJsPDF(element, { scale: 1, layoutScale: 0.7 });
     const base64 = doc.output('datauristring');
     const trimmed = base64.split(',')[1];
     await this.pdfCreator.saveAndOpenPdf(trimmed, `invoice_${Date.now()}.pdf`);
