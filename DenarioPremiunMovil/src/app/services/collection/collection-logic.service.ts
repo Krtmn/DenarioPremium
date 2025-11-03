@@ -1276,7 +1276,12 @@ export class CollectionService {
     this.mapDocumentsSales.clear();
 
     if (this.coTypeModule != "3") {
-      if (coCurrency == "" || coCurrency == "Moneda") {
+      if (this.coTypeModule == "2") {
+        //ERES RETENCION
+        params = [idClient, idEnterprise];
+        selectStatement = 'SELECT * FROM document_sales d WHERE d.id_client = ? AND d.id_enterprise = ? ';
+
+      } else if (coCurrency == "" || coCurrency == "Moneda") {
         // Solo necesitas algunos parámetros
         params = [idClient, idEnterprise, coCollection];
         selectStatement = 'SELECT ' +
