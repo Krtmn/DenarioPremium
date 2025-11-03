@@ -69,7 +69,7 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
    * (not only visible viewport) is captured. Returns a fully rendered jsPDF.
    *
    * Usage: pass the element reference (preferred) or HTML string.
-   */  // ...existing code...
+   */  
 async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'portrait' | 'landscape', scale?: number, layoutScale?: number }): Promise<jsPDF> {
   // renderScale (pixel density) used by html2canvas:
   let renderScale = opts?.scale ?? 3;
@@ -245,13 +245,24 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
       .catch(e => console.log('Error abriendo PDF', e));
   }
 
-    async saveAndOpenPdf(base64: string, fileName = 'document.pdf') {
+    async savePdf(base64: string, fileName = 'document.pdf') {
     const result = await Filesystem.writeFile({
       path: fileName,
       data: base64,
-      directory: Directory.Documents
+      directory: Directory.External
+    }).then(res => {return res}).catch(err => {
+      console.error('Error saving PDF file:', err);
+      throw err;
     });
-    await this.openPdf(result.uri);
+    return result;
+    //await this.openPdf(result.uri);
+  }
+
+  deletePdf(fileName: string) {
+    return Filesystem.deleteFile({
+      path: fileName,
+      directory: Directory.External
+    });
   }
 }
 
