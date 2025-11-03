@@ -1305,6 +1305,19 @@ export class PedidoComponent implements OnInit {
 
     return str;
   }
+
+  disableOrderTypeSelector() {
+    if (this.viewOnly) {
+      return true;
+    }
+    if (this.orderServ.openOrder) {
+      if(this.orderServ.userCanSelectChannel){
+        return true;
+      }
+      return !this.orderServ.pedidoModificable;
+    }  
+    return false;
+  }
 createEmptyOrder(): Orders {
     const empresa = this.orderServ.empresaSeleccionada ?? this.enterpriseServ.defaultEnterprise();
     const moneda = this.orderServ.monedaSeleccionada ?? this.currencyServ.getLocalCurrency();

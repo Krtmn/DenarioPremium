@@ -230,7 +230,7 @@ export class AutoSendService implements OnInit {
             "idEnterprise": pc[0].idEnterprise,
             "coordenada": pc[0].coordenada,
             "nuAttachments": pc[0].nuAttachments,
-            "hasAttachments": pc[0].hasAttachments == true ? true : false,
+            "hasAttachments": (String)(pc[0].hasAttachments).toLowerCase() === 'true' ? true : false,
           };
           this.sendTransaction(request, type, pc[0].coClient);
         })

@@ -155,7 +155,7 @@
                                         <ion-label>{{ orderServ.getTag("PED_TIPO_PEDIDO")}}:</ion-label>
                                         <div class="listado-tps-selector ion-text-center" id="inputOrderType">
                                             <ion-select (ionChange)="onOrderTypeChange()" [(ngModel)]="tipoOrden"
-                                                [disabled]="orderServ.openOrder" interface="popover"
+                                                [disabled]="disableOrderTypeSelector()" interface="popover"
                                                 labelPlacement="stacked">
                                                 <ion-select-option *ngFor="let type of listaOrderTypes" [value]="type">
                                                     {{ type.naOrderType }}
@@ -294,7 +294,7 @@
                                             <ion-select (ionChange)="onChange()" [(ngModel)]="paymentCondition"
                                                 interface="popover" labelPlacement="stacked"
                                                 [compareWith]="payCondCompare"
-                                                [disabled]="!orderServ.userCanChangePaymentConditions || orderServ.openOrder">
+                                                [disabled]="!orderServ.userCanChangePaymentConditions || !orderServ.pedidoModificable">
                                                 <ion-select-option *ngFor="let pc of orderServ.listaPaymentCondition"
                                                     [value]="pc">{{
                                                     pc.naPaymentCondition }}</ion-select-option>
@@ -306,7 +306,7 @@
                                     <ion-col size="12" size-sm="12" size-xs="12">
                                         <div id="inputinOrderReview">
                                             <ion-checkbox (ionChange)="onChange()" [(ngModel)]="inOrderReview"
-                                                [disabled]="orderServ.openOrder" id="inOrderReview"
+                                                [disabled]="!orderServ.pedidoModificable" id="inOrderReview"
                                                 labelPlacement="start">{{
                                                 orderServ.getTag("PED_X_APROBAR")}}:</ion-checkbox>
                                         </div>
