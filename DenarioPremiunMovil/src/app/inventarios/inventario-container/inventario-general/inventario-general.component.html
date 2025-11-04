@@ -3,10 +3,10 @@
         <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
 
             <div class="listado-enterprise-selector ion-text-center">
-                <!-- <ion-select [disabled]="!this.enterpriseServ.esMultiempresa()" [(ngModel)]="inventariosLogicService.empresaSeleccionada" (ionChange)="onEnterpriseSelect()" class="ion-text-center always-flip" toggleIcon="caret-down-sharp" > -->
+                <!-- <ion-select [disabled]="!this.enterpriseServ.esMultiempresa()" [(ngModel)]="inventariosLogicService.empresaSeleccionada" (ionChange)="onEnterpriseSelect()" class="ion-text-center always-flip" toggleIcon="caret-down-sharp" interface="popover"> -->
                 <ion-select disabled="{{this.inventariosLogicService.disabledEnterprise}}"
                     [(ngModel)]="this.inventariosLogicService.empresaSeleccionada" (ionChange)="onEnterpriseSelect()"
-                    class="ion-text-center always-flip" >
+                    class="ion-text-center always-flip" interface="popover">
                     <ion-select-option *ngFor="let emp of inventariosLogicService.listaEmpresa" [value]="emp">{{
                         emp.lbEnterprise }}
                     </ion-select-option>

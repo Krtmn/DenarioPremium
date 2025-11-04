@@ -5,7 +5,7 @@
             <div class="listado-enterprise-selector ion-text-center">
                 <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.enterpriseSelected"
                     [disabled]="!this.collectService.enterpriseEnabled" (ionChange)="onChangeEnterprise()"
-                    class="ion-text-center always-flip"  labelPlacement="stacked">
+                    class="ion-text-center always-flip" interface="popover" labelPlacement="stacked">
                     <ion-select-option *ngFor="let emp of this.collectService.enterpriseList" [value]="emp">{{
                         emp.lbEnterprise }}
                     </ion-select-option>
@@ -32,7 +32,7 @@
                     *ngIf="this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3">
                     <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.currencySelected"
                         (ionChange)="onChangeCurrencyMsj($event)" disabled="{{this.collectService.disabledCurrency}}"
-                         labelPlacement="stacked">
+                        interface="popover" labelPlacement="stacked">
                         <ion-select-option *ngFor="let currency of this.collectService.currencyList"
                             [value]="currency">{{currency.coCurrency}}
                         </ion-select-option>
@@ -74,7 +74,7 @@
                 <div class="listado-enterprise-selector ion-text-center">
                     <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.rateSelected"
                         (ionChange)="onChangeRate($event)" disabled="{{this.collectService.isOpenCollect}}"
-                         labelPlacement="stacked">
+                        interface="popover" labelPlacement="stacked">
                         <ion-select-option *ngFor="let rate of this.collectService.rateList"
                             [value]="rate">{{this.currencyServices.formatNumber(rate)}}
                             {{this.collectService.localCurrency.coCurrency}}

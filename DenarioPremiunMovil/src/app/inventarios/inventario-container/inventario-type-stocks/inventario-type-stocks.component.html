@@ -20,7 +20,7 @@
                             placeholder="{{this.inventariosLogicService.inventarioTags.get('INV_SELECTOR_PLACEHOLDER')}}"
                             class="ion-text-center always-flip"
                             (ionChange)="addClientStocktMethod($event, inventariosLogicService.productSelected.idProduct,inventariosLogicService.productSelected)"
-                             labelPlacement="stacked" >
+                            interface="popover" labelPlacement="stacked" >
                             <ion-select-option *ngFor="let tipoPago of inventariosLogicService.tiposPago"
                                 [value]="tipoPago">{{tipoPago.name}}</ion-select-option>
                         </ion-select>

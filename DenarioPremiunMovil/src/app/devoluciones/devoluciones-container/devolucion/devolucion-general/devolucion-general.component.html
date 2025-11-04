@@ -7,7 +7,7 @@
       <div class="listado-enterprise-selector ion-text-center">
         <ion-select disabled="{{!this.enterpriseServ.esMultiempresa()  || this.returnLogic.returnSent}}"
           [(ngModel)]="empresaSeleccionada" (ionChange)="onEnterpriseSelect()" class="ion-text-center always-flip"
-          toggleIcon="caret-down-sharp"  labelPlacement="stacked">
+          toggleIcon="caret-down-sharp" interface="popover" labelPlacement="stacked">
           <ion-select-option *ngFor="let emp of listaEmpresa" [value]="emp">{{ emp.lbEnterprise }}</ion-select-option>
         </ion-select>
       </div>
@@ -95,7 +95,7 @@
       <ion-label>{{this.generalTags.get('DEV_TIPO_DEV')}}</ion-label>
       <div class="listado-enterprise-selector ion-text-center">
         <ion-select disabled="{{ this.returnLogic.returnSent }}" [(ngModel)]="returnLogic.newReturn.idType"
-           class="ion-text-center always-flip"  labelPlacement="stacked">
+           class="ion-text-center always-flip" interface="popover" labelPlacement="stacked">
           <ion-select-option *ngFor="let tipoDev of returnLogic.returnTypes" [value]="tipoDev.idType">{{ tipoDev.naType
             }}</ion-select-option>
         </ion-select>
