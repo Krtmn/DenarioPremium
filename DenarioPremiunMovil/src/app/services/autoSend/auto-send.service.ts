@@ -480,11 +480,13 @@ export class AutoSendService implements OnInit {
         },
         error: (e) => {
           console.error(e);
+          /*
           this.messageAlert = new MessageAlert(
             "Denario Premium",
             "Ocurrio un error contacte a su proveedor de servicio"
           );
           this.messageService.alertModal(this.messageAlert);
+          */
         },
       });
     }
