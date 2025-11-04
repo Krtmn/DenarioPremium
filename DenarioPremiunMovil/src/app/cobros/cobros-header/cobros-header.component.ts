@@ -70,23 +70,23 @@ export class CobrosHeaderComponent implements OnInit {
       handler: () => {
         console.log('save and exit');
         this.messageService.showLoading().then(() => {
-        this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
-        this.alertMessageOpen = true;
-        this.collectService.collection.stCollection = 1;
-        this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, true).then(async response => {
-          await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
-          console.log(response);
-          this.collectService.initCollect = true;
-          this.collectService.disableSavedButton = true;
-          this.collectService.disableSendButton = true;
-          this.collectService.showHeaderButtons = false;
-          this.collectService.cobroComponent = false;
-          this.collectService.collectValid = false;
-          this.collectService.collectionIsSave = false;
-          this.collectService.cobrosComponent = true;
-          this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO')!
-          this.messageService.hideLoading();
-        })
+          this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
+          this.alertMessageOpen = true;
+          this.collectService.collection.stCollection = 1;
+          this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, true).then(async response => {
+            await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
+            console.log(response);
+            this.collectService.initCollect = true;
+            this.collectService.disableSavedButton = true;
+            this.collectService.disableSendButton = true;
+            this.collectService.showHeaderButtons = false;
+            this.collectService.cobroComponent = false;
+            this.collectService.collectValid = false;
+            this.collectService.collectionIsSave = false;
+            this.collectService.cobrosComponent = true;
+            this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO')!
+            this.messageService.hideLoading();
+          })
         });
 
       },
@@ -187,7 +187,7 @@ export class CobrosHeaderComponent implements OnInit {
       this.collectService.collectionIsSave = false;
       this.collectService.cobroListComponent = false;
       this.collectService.cobrosComponent = true;
-    } else if (!this.collectService.collectionIsSave && this.collectService.collectValidTabs && this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3) {
+    } else if (!this.collectService.collectionIsSave && this.collectService.collectValidTabs && this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3 && this.collectService.collection.stCollection != 6) {
       this.collectService.saveOrExitOpen = true;
     } else {
       this.collectService.collectValid = false;
@@ -243,67 +243,67 @@ export class CobrosHeaderComponent implements OnInit {
   sendOrSave(sendOrSave: Boolean) {
     this.collectService.collectionIsSave = true;
     this.messageService.showLoading().then(() => {
-          if (sendOrSave) {
-      //envio
-      this.collectService.collection.stCollection = 2;
-      this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(async response => {
-        await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
-        console.log(response);
-        this.saveSendNewCollection(true, this.collectService.collection.coCollection);
-        if (this.collectService.createAutomatedPrepaid) {
-          //DEBO CREAR EL ANTICIPO AUTOMATICO
-          this.collectService.createAnticipoCollection(this.synchronizationServices.getDatabase(), this.collectService.collection).then(resp => {
-            console.log(resp, " SE CREO ANTICIPO AUTOMATICO");
-            this.collectService.createAutomatedPrepaid = false;
-            this.collectService.anticipoAutomatico = [];
-          });
-        }
-
-        this.collectService.initCollect = true;
-        this.collectService.disableSavedButton = true;
-        this.collectService.disableSendButton = true;
-        this.collectService.showHeaderButtons = false;
-        this.collectService.cobroComponent = false;
-        this.collectService.cobrosComponent = true;
-        this.collectService.collectValid = false;
-        this.messageService.hideLoading();
-
-      })
-    } else {
-      //salvo
-      this.collectService.collection.stCollection = 1;
-      this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(async response => {
-        await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
-        console.log(response);
-        this.saveSendNewCollection(false, this.collectService.collection.coCollection);
-        switch (this.collectService.collection.coType) {
-          case "0": {
-            this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
-            break;
+      if (sendOrSave) {
+        //envio
+        this.collectService.collection.stCollection = 2;
+        this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(async response => {
+          await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
+          console.log(response);
+          this.saveSendNewCollection(true, this.collectService.collection.coCollection);
+          if (this.collectService.createAutomatedPrepaid) {
+            //DEBO CREAR EL ANTICIPO AUTOMATICO
+            this.collectService.createAnticipoCollection(this.synchronizationServices.getDatabase(), this.collectService.collection).then(resp => {
+              console.log(resp, " SE CREO ANTICIPO AUTOMATICO");
+              this.collectService.createAutomatedPrepaid = false;
+              this.collectService.anticipoAutomatico = [];
+            });
           }
 
-          case "1": {
-            this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_ANTICIPO_MSG')!;
-            break;
-          }
+          this.collectService.initCollect = true;
+          this.collectService.disableSavedButton = true;
+          this.collectService.disableSendButton = true;
+          this.collectService.showHeaderButtons = false;
+          this.collectService.cobroComponent = false;
+          this.collectService.cobrosComponent = true;
+          this.collectService.collectValid = false;
+          this.messageService.hideLoading();
 
-          case "2": {
-            this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_RETENTION_MSG')!;
-            break;
-          }
+        })
+      } else {
+        //salvo
+        this.collectService.collection.stCollection = 1;
+        this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(async response => {
+          await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
+          console.log(response);
+          this.saveSendNewCollection(false, this.collectService.collection.coCollection);
+          switch (this.collectService.collection.coType) {
+            case "0": {
+              this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
+              break;
+            }
 
-          case "3": {
-            this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_IGTF_MSG')!;
-            break;
+            case "1": {
+              this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_ANTICIPO_MSG')!;
+              break;
+            }
+
+            case "2": {
+              this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_RETENTION_MSG')!;
+              break;
+            }
+
+            case "3": {
+              this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_IGTF_MSG')!;
+              break;
+            }
+            default: {
+              this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
+            }
           }
-          default: {
-            this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
-          }
-        }
-        this.alertMessageOpen = true;
-        this.messageService.hideLoading();
-      })
-    }
+          this.alertMessageOpen = true;
+          this.messageService.hideLoading();
+        })
+      }
     });
 
   }

@@ -177,6 +177,9 @@ export class CobrosListComponent implements OnInit {
               this.collectService.hidePayments = true;
             } else if (this.collectService.collection.stCollection == 6) {
               this.collectService.showHeaderButtonsFunction(false);
+              this.collectService.hideDocuments = true
+              ;
+              this.collectService.hidePayments = true;
             } else
               this.collectService.showHeaderButtonsFunction(true);
 
