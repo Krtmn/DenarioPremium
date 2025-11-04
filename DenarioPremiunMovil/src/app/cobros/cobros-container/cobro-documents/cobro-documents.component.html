@@ -12,7 +12,7 @@
             {{this.collectService.collectionTags.get('COB_MONEDA')}} Documento:
         </ion-label>
         <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.currencySelectedDocument"
-            (ionChange)="onChangeCurrencyDoc($event)" interface="popover" labelPlacement="stacked">
+            (ionChange)="onChangeCurrencyDoc($event)" labelPlacement="stacked">
             <ion-select-option *ngFor="let currency of this.collectService.currencyListDocument"
                 [value]="currency">{{currency.coCurrency}}
             </ion-select-option>
@@ -28,7 +28,7 @@
             {{this.collectService.collectionTags.get('COB_IGTF_LABEL')}}
         </ion-label>
         <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.igtfSelected"
-            (ionChange)="onChangeIgtf($event)" interface="popover" labelPlacement="stacked">
+            (ionChange)="onChangeIgtf($event)" labelPlacement="stacked">
             <ion-select-option *ngFor="let igtf of this.collectService.igtfList" [value]="igtf">{{igtf.naIgtf}} -
                 {{igtf.price}}%
             </ion-select-option>
@@ -649,7 +649,7 @@
                     </ion-grid>
                 </ion-content>
             </ng-template>
-ç        </ion-modal>
+            ç </ion-modal>
     </div>
     <!-- MODAL SI RETENCION-->
 
