@@ -74,7 +74,7 @@
                                         <ion-select
                                             [disabled]="(!orderServ.enterpriseEnabled) || orderServ.openOrder || !this.enterpriseServ.esMultiempresa()"
                                             [(ngModel)]="empresaSeleccionada" (ionChange)="onEnterpriseSelect()"
-                                            interface="popover" labelPlacement="stacked">
+                                             labelPlacement="stacked">
                                             <ion-select-option *ngFor="let emp of listaEmpresa" [value]="emp">{{
                                                 emp.lbEnterprise }}</ion-select-option>
                                         </ion-select>
@@ -106,7 +106,7 @@
                                     <ion-col size="12" size-sm="12" size-xs="12">
                                         <ion-label>{{ orderServ.getTag("PED_MONEDA")}}:</ion-label>
                                         <div class="listado-tps-selector ion-text-center" id="inputCurrency">
-                                            <ion-select interface="popover" labelPlacement="stacked"
+                                            <ion-select  labelPlacement="stacked"
                                                 (ionChange)="onCurrencySelect()" id="currency"
                                                 [disabled]="disableCurrencySelector()" [(ngModel)]="monedaSeleccionada"
                                                 [compareWith]="currencyCompare">
@@ -155,7 +155,7 @@
                                         <ion-label>{{ orderServ.getTag("PED_TIPO_PEDIDO")}}:</ion-label>
                                         <div class="listado-tps-selector ion-text-center" id="inputOrderType">
                                             <ion-select (ionChange)="onOrderTypeChange()" [(ngModel)]="tipoOrden"
-                                                [disabled]="disableOrderTypeSelector()" interface="popover"
+                                                [disabled]="disableOrderTypeSelector()" 
                                                 labelPlacement="stacked">
                                                 <ion-select-option *ngFor="let type of listaOrderTypes" [value]="type">
                                                     {{ type.naOrderType }}
@@ -169,7 +169,7 @@
                                         <ion-label>{{ orderServ.getTag("PED_CANAL_DISTRIBUCION")}}:</ion-label>
                                         <div class="listado-tps-selector ion-text-center" id="inputDistChannel">
                                             <ion-select (ionChange)="onChange()" [(ngModel)]="distChannel"
-                                                [disabled]="orderServ.openOrder" interface="popover"
+                                                [disabled]="orderServ.openOrder" 
                                                 labelPlacement="stacked">
                                                 <ion-select-option *ngFor="let channel of listaDistributionChannel"
                                                     [value]="channel">
@@ -184,7 +184,7 @@
                                     <ion-col size="12" size-sm="12" size-xs="12">
                                         <ion-label>{{ orderServ.getTag("PED_LISTA_PRECIO")}}:</ion-label>
                                         <div class="listado-tps-selector ion-text-center" id="inputPriceList">
-                                            <ion-select (ionChange)="onPricelistSelect()" interface="popover"
+                                            <ion-select (ionChange)="onPricelistSelect()" 
                                                 labelPlacement="stacked" [(ngModel)]="orderServ.listaSeleccionada"
                                                 [compareWith]="listCompare"
                                                 [disabled]="!orderServ.userCanChangePriceList || orderServ.openOrder">
@@ -292,7 +292,7 @@
                                         <ion-label>{{ orderServ.getTag("PED_CONDICION_PAGO")}}:</ion-label>
                                         <div class="listado-tps-selector ion-text-center" id="inputPaymentCondition">
                                             <ion-select (ionChange)="onChange()" [(ngModel)]="paymentCondition"
-                                                interface="popover" labelPlacement="stacked"
+                                                 labelPlacement="stacked"
                                                 [compareWith]="payCondCompare"
                                                 [disabled]="!orderServ.userCanChangePaymentConditions || !orderServ.pedidoModificable">
                                                 <ion-select-option *ngFor="let pc of orderServ.listaPaymentCondition"

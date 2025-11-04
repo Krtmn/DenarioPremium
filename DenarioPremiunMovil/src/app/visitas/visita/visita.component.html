@@ -57,7 +57,7 @@
             <div class="listado-enterprise-selector ion-text-center">
               <ion-select [(ngModel)]="empresaSeleccionada" (ionChange)="onEnterpriseSelect()"
                 [disabled]="!multiempresa || !enterpriseEnabled || viewOnly || fromWeb"
-                class="ion-text-center always-flip" labelPlacement="stacked" interface="popover"
+                class="ion-text-center always-flip" labelPlacement="stacked" 
                 [interfaceOptions]="popoverOptions">
                 <ion-select-option *ngFor="let emp of listaEmpresa" [value]="emp">{{ emp.lbEnterprise
                   }}</ion-select-option>
@@ -193,7 +193,7 @@
 
                 <div class="listado-enterprise-selector ion-text-center">
 
-                  <ion-select class="ion-text-center always-flip" labelPlacement="stacked" interface="popover"
+                  <ion-select class="ion-text-center always-flip" labelPlacement="stacked" 
                     [interfaceOptions]="popoverOptions" (ionChange)="onSelectActivity($event)"
                     placeholder="Seleccione Actividad" [value]="actividadSeleccionada">
                     <ion-select-option *ngFor="let act of listaActividades" [value]="act">{{ act.naType
@@ -208,7 +208,7 @@
 
                 <div class="listado-enterprise-selector ion-text-center">
 
-                  <ion-select labelPlacement="stacked" interface="popover" [interfaceOptions]="popoverOptions"
+                  <ion-select labelPlacement="stacked"  [interfaceOptions]="popoverOptions"
                     (ionChange)="onSelectMotive($event)" placeholder="Seleccione Motivo" [value]="motivoSeleccionado">
                     <ion-select-option *ngFor="let mot of listaMotivosFiltrados" [value]="mot">{{ mot.naMotive
                       }}</ion-select-option>

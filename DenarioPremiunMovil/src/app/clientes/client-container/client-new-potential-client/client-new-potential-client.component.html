@@ -28,7 +28,7 @@
                                             <ion-select class="ion-text-center always-flip" [disabled]="this.clientLogic.disabledEnterprise == true ? true : false" 
                                             placeholder="{{this.clientLogic.clientTags.get('CLI_SELECTOR')}}" formControlName="idEnterprise" 
                                             (ionChange)="changeEnterprise(clientLogic.empresaSeleccionada)" [(ngModel)]="clientLogic.empresaSeleccionada.idEnterprise"
-                                            toggleIcon="caret-down-sharp" interface="popover" labelPlacement="stacked">
+                                            toggleIcon="caret-down-sharp"  labelPlacement="stacked">
                                                 <ion-select-option *ngFor="let enterprise of clientLogic.enterprises" [value]="enterprise.idEnterprise">{{enterprise.lbEnterprise}}</ion-select-option>
                                             </ion-select>
                                         </div>

@@ -97,7 +97,7 @@
               </ion-col>
               <ion-col class="" size="12" size-sm="12" size-xs="12">
                 <div class="listado-tps-selector ion-text-center">
-                  <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
+                  <ion-select labelPlacement="stacked"  labelPlacement="stacked"
                     [value]="product.idList" [disabled]="disablePriceListSelector"
                     [placeholder]="orderServ.getTag('PED_PLACEHOLDER_PRICELIST')+':'"
                     (ionChange)="onSelectPriceList($event, product)">
@@ -114,8 +114,8 @@
               </ion-col>
               <ion-col class="" size="12" size-sm="12" size-xs="12">
                 <div class="listado-tps-selector ion-text-center">
-                  <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
-                    [value]="product.idUnit" interface="popover" labelPlacement="stacked"
+                  <ion-select labelPlacement="stacked"  labelPlacement="stacked"
+                    [value]="product.idUnit"  labelPlacement="stacked"
                     [placeholder]="orderServ.getTag('PED_PLACEHOLDER_UNIDAD')+':'"
                     (ionChange)="onSelectUnit($event, product)">
                     <ion-select-option *ngFor="let unit of product.unitList" [value]="unit.idUnit">{{ unit.naUnit
@@ -131,8 +131,8 @@
               </ion-col>
               <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="orderServ.userCanSelectIVA">
                 <div class="listado-tps-selector ion-text-center">
-                  <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
-                    [value]="product.iva" interface="popover" labelPlacement="stacked"
+                  <ion-select labelPlacement="stacked"  labelPlacement="stacked"
+                    [value]="product.iva"  labelPlacement="stacked"
                     [placeholder]="orderServ.getTag('PED_PLACEHOLDER_IVA')+':'"
                     (ionChange)="onSelectIVA($event, product)">
                     <ion-select-option *ngFor="let iva of ivaList" [value]="iva.priceIva">IVA - {{ iva.priceIva
@@ -149,9 +149,9 @@
               </ion-col>
               <ion-col class="" size="10" size-sm="10" size-xs="10" *ngIf="product.discountList.length > 1">
                 <div class="listado-tps-selector ion-text-center">
-                  <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
+                  <ion-select labelPlacement="stacked"  labelPlacement="stacked"
                     [value]="product.idDiscount" [disabled]="!orderServ.userCanSelectProductDiscount"
-                    interface="popover" labelPlacement="stacked"
+                     labelPlacement="stacked"
                     [placeholder]="orderServ.getTag('PED_PLACEHOLDER_DESCUENTO')+':'"
                     (ionChange)="onSelectDiscount($event, product)">
                     <ion-select-option *ngFor="let dc of product.discountList" [value]="dc.idDiscount">{{
@@ -171,8 +171,8 @@
               </ion-col>
               <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="orderServ.validateWarehouses">
                 <div class="listado-tps-selector ion-text-center">
-                  <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
-                    [value]="product.idWarehouse" interface="popover" labelPlacement="stacked"
+                  <ion-select labelPlacement="stacked"  labelPlacement="stacked"
+                    [value]="product.idWarehouse"  labelPlacement="stacked"
                     [placeholder]="orderServ.getTag('PED_PLACEHOLDER_ALMACEN')+':'"
                     (ionChange)="onSelectWarehouse($event, product)" [disabled]="!orderServ.userCanChangeWarehouse">
                     <ion-select-option *ngFor="let wh of warehouseList" [value]="wh.idWarehouse">{{ wh.naWarehouse
@@ -275,8 +275,8 @@
                   </ion-col>
                   <ion-col size="12" size-sm="12" size-xs="12">
                     <div class="listado-tps-selector ion-text-center">
-                      <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
-                        [value]="productoModal.idList" interface="popover" labelPlacement="stacked"
+                      <ion-select labelPlacement="stacked"  labelPlacement="stacked"
+                        [value]="productoModal.idList"  labelPlacement="stacked"
                         [placeholder]="orderServ.getTag('PED_PLACEHOLDER_PRICELIST')+':'"
                         (ionChange)="onSelectPriceList($event, productoModal)">
                         <ion-select-option *ngFor="let price of productoModal.listaList" [value]="price.idList">{{
@@ -291,8 +291,8 @@
                   </ion-col>
                   <ion-col size="12" size-sm="12" size-xs="12">
                     <div class="listado-tps-selector ion-text-center">
-                      <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
-                        [value]="productoModal.idUnit" interface="popover" labelPlacement="stacked"
+                      <ion-select labelPlacement="stacked"  labelPlacement="stacked"
+                        [value]="productoModal.idUnit"  labelPlacement="stacked"
                         [placeholder]="orderServ.getTag('PED_PLACEHOLDER_UNIDAD')+':'"
                         (ionChange)="onSelectUnit($event, productoModal)">
                         <ion-select-option *ngFor="let unit of productoModal.unitList" [value]="unit.idUnit">{{
@@ -306,8 +306,8 @@
                   </ion-col>
                   <ion-col size="12" size-sm="12" size-xs="12" *ngIf="orderServ.userCanSelectIVA">
                     <div class="listado-tps-selector ion-text-center">
-                      <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
-                        [value]="productoModal.iva" interface="popover" labelPlacement="stacked"
+                      <ion-select labelPlacement="stacked"  labelPlacement="stacked"
+                        [value]="productoModal.iva"  labelPlacement="stacked"
                         [placeholder]="orderServ.getTag('PED_PLACEHOLDER_IVA')+':'"
                         (ionChange)="onSelectIVA($event, productoModal)" >
                         <ion-select-option *ngFor="let iva of ivaList" [value]="iva.idIvaList">IVA - {{ iva.priceIva
@@ -322,7 +322,7 @@
                   </ion-col>
                   <ion-col size="12" size-sm="12" size-xs="12">
                     <div class="listado-tps-selector ion-text-center">
-                      <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
+                      <ion-select labelPlacement="stacked"  labelPlacement="stacked"
                         [value]="productoModal.idDiscount" [disabled]="!orderServ.userCanSelectProductDiscount"
                         [placeholder]="orderServ.getTag('PED_PLACEHOLDER_DESCUENTO')+':'"
                         (ionChange)="onSelectDiscount($event, productoModal)">
@@ -338,7 +338,7 @@
                   </ion-col>
                   <ion-col size="12" size-sm="12" size-xs="12">
                     <div class="listado-tps-selector ion-text-center">
-                      <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
+                      <ion-select labelPlacement="stacked"  labelPlacement="stacked"
                         [value]="productoModal.idWarehouse" *ngIf="orderServ.validateWarehouses"
                         [placeholder]="orderServ.getTag('PED_PLACEHOLDER_ALMACEN')+':'"
                         (ionChange)="onSelectWarehouse($event, productoModal)"

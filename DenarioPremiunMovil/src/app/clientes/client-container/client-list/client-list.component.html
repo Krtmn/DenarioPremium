@@ -14,7 +14,7 @@
                     <div class="listado-enterprise-selector ion-text-center">
                         <ion-select class="ion-text-center always-flip"
                             [(ngModel)]="this.clientLogic.empresaSeleccionada" (ionChange)="onChangeEnterprise()"
-                            interface="popover" labelPlacement="stacked">
+                             labelPlacement="stacked">
                             <ion-select-option *ngFor="let emp of this.clientLogic.listaEmpresa" [value]="emp">{{
                                 emp.lbEnterprise }}
                             </ion-select-option>

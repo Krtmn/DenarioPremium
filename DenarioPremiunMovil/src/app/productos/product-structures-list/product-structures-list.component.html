@@ -7,7 +7,7 @@
         <div class="listado-enterprise-selector ion-text-center">
           <ion-select [(ngModel)]="empresaSeleccionada" (ionChange)="onEnterpriseChanged($event)"
             [disabled]="!multiempresa" class="ion-text-center always-flip" toggleIcon="caret-down-sharp"
-            interface="popover" labelPlacement="stacked">
+             labelPlacement="stacked">
             <!-- <ion-select *ngIf="multiempresa" [(ngModel)]="empresaSeleccionada"> -->
             <ion-select-option *ngFor="let emp of listaEmpresa" [value]="emp">
               {{ emp.lbEnterprise }}
