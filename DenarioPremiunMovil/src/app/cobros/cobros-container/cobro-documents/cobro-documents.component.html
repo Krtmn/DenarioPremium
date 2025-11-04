@@ -30,7 +30,7 @@
         <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.igtfSelected"
             (ionChange)="onChangeIgtf($event)" interface="popover" labelPlacement="stacked">
             <ion-select-option *ngFor="let igtf of this.collectService.igtfList" [value]="igtf">{{igtf.naIgtf}} -
-                {{igtf.descripcion}}
+                {{igtf.price}}%
             </ion-select-option>
         </ion-select>
     </ion-item>
@@ -649,7 +649,7 @@
                     </ion-grid>
                 </ion-content>
             </ng-template>
-        </ion-modal>
+ç        </ion-modal>
     </div>
     <!-- MODAL SI RETENCION-->
 

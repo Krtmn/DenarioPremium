@@ -17,8 +17,8 @@
   </ion-card-header>
 
   <ion-card-content>
-    <ion-grid *ngIf="companies && companies.length > 1">
-      <ion-row>
+    <ion-grid>
+      <ion-row *ngIf="companies && companies.length > 1">
         <ion-col size="4">
           <ion-item lines="none">
             <ion-label>Empresa</ion-label>
@@ -31,13 +31,21 @@
           </ion-select>
         </ion-col>
       </ion-row>
+      <ion-row>
+        <ion-col size="4">
+          <ion-item lines="none">
+            <ion-label>Tasas:</ion-label>
+          </ion-item>
+        </ion-col>
+        <ion-col size="8">
+          <ion-select class="listado-enterprise-selector ion-text-center" [(ngModel)]="selectedRates"
+            (ionChange)="onRatesChange($event)" placeholder="Seleccione la(s) tasas" [multiple]="true">
+            <ion-select-option *ngFor="let e of rates" [value]="e">{{ e.coConversion }} - {{ e.naConversion
+              }}</ion-select-option>
+          </ion-select>
+        </ion-col>
+      </ion-row>
     </ion-grid>
-
-
-
-    <!-- <div class="company-info" *ngIf="selectedCompany">
-      <small>Empresa seleccionada: <strong>{{ selectedCompany.lbEnterprise }}</strong></small>
-    </div> -->
 
     <ion-grid>
       <ion-row>
@@ -79,11 +87,9 @@
           </ion-item>
         </ion-col>
 
-
-
         <ion-col size="12">
           <ion-item>
-            <ion-label position="stacked">Descuento USD</ion-label>
+            <ion-label position="stacked">Descuento %</ion-label>
             <ion-input type="number" [(ngModel)]="descuentoUSD" (ionChange)="recalcTotals()" placeholder="0.00"
               readonly></ion-input>
           </ion-item>
@@ -92,30 +98,31 @@
         <ion-col size="12" *ngIf="calcularIVA">
           <ion-item>
             <ion-label position="stacked">Total IVA USD</ion-label>
-            <ion-input type="text" [value]="totalIVAUSD | number:'1.2-2'" readonly></ion-input>
+            <ion-input type="text" [value]="formatCurrencyLocale(totalIVAUSD)" readonly></ion-input>
           </ion-item>
         </ion-col>
 
         <ion-col size="12">
           <ion-item>
             <ion-label position="stacked">Total USD</ion-label>
-            <ion-input type="text" [value]="totalUSD | number:'1.2-2'" readonly></ion-input>
+            <ion-input type="text" [value]="formatCurrencyLocale(totalUSD)" readonly></ion-input>
           </ion-item>
         </ion-col>
 
-        <ion-col size="12">
+        <ion-col size="12" *ngFor="let r of selectedRates">
           <ion-item>
-            <ion-label position="stacked">Total Tasa BCV</ion-label>
-            <ion-input type="text" [value]="totalTasaBCV | number:'1.2-2'" readonly></ion-input>
+            <ion-label position="stacked">Total Tasa {{ r.coConversion }}:</ion-label>
+            <ion-input type="text" [value]="formatCurrencyLocale(computeConvertedTotal(r))" readonly></ion-input>
           </ion-item>
         </ion-col>
 
-        <ion-col size="12">
+        <!--  <ion-col size="12">
           <ion-item>
             <ion-label position="stacked">Total Tasa Paralelo USD</ion-label>
             <ion-input type="text" [value]="totalTasaParaleloUSD | number:'1.2-2'" readonly></ion-input>
           </ion-item>
-        </ion-col>
+        </ion-col> -->
+
       </ion-row>
     </ion-grid>
 
