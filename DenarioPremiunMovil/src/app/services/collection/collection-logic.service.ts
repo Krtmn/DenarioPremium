@@ -543,6 +543,9 @@ export class CollectionService {
 
   getDateRate(dbServ: SQLiteObject, fecha: string) {
 
+    if (this.collection.stCollection > 2)
+      return;
+
     this.dateRate = fecha;
     //LUEGO DE SELECCIONAR LA FECHA, HAY QUE BUSCAR LA TASA CORRESPONDE A LA FECHA
     this.rateList = [];
@@ -1267,6 +1270,9 @@ export class CollectionService {
 
   getDocumentsSales(dbServ: SQLiteObject, idClient: number, coCurrency: string, coCollection: string, idEnterprise: number) {
 
+    if (this.collection.stCollection > 2)
+      return Promise.resolve();
+
     let selectStatement = ""
     let params: any[] = [];
 
@@ -1388,10 +1394,14 @@ export class CollectionService {
                   this.documentSalesBackup[i].daVoucher = this.collection.collectionDetails[cd].daVoucher!;
                   this.documentSalesBackup[i].nuAmountDiscount = this.collection.collectionDetails[cd].nuAmountDiscount;
 
-                  this.collection.collectionDetails[cd].nuBalanceDoc = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
-                  this.collection.collectionDetails[cd].nuBalanceDocConversion = this.documentSales[i].nuBalance;
-                  this.collection.collectionDetails[cd].nuAmountPaid = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
-                  this.collection.collectionDetails[cd].nuAmountPaidConversion = this.documentSales[i].nuBalance;
+                  if (this.collection.stCollection != 1) {
+                    this.collection.collectionDetails[cd].nuBalanceDoc = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
+                    this.collection.collectionDetails[cd].nuBalanceDocConversion = this.documentSales[i].nuBalance;
+                    this.collection.collectionDetails[cd].nuAmountPaid = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
+                    this.collection.collectionDetails[cd].nuAmountPaidConversion = this.documentSales[i].nuBalance;
+
+                  }
+
                   this.documentSalesBackup[i].nuBalance = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
                   this.documentSalesBackup[i].nuAmountPaid = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
                   this.documentSalesBackup[i].nuAmountRetention = this.collection.collectionDetails[cd].nuAmountRetention;
