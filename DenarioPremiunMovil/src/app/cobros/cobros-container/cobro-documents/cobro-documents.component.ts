@@ -619,6 +619,8 @@ export class CobrosDocumentComponent implements OnInit {
         this.collectService.montoTotalPagarConversion = 0;
         this.collectService.montoTotalPagado = 0;
         this.collectService.montoTotalPagadoConversion = 0;
+        this.collectService.collection.nuDifference = 0;
+        this.collectService.collection.nuDifferenceConversion = 0;
 
         this.collectService.bankAccountSelected = [] as BankAccount[];
 
