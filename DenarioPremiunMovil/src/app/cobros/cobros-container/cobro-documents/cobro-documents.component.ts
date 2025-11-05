@@ -573,9 +573,10 @@ export class CobrosDocumentComponent implements OnInit {
       this.collectService.documentSales[indexDocumentSale].nuAmountRetention2 = 0;
       this.collectService.documentSales[indexDocumentSale].nuAmountDiscount = 0;
       this.collectService.documentSales[indexDocumentSale].isSelected = false;
+      this.collectService.documentSales[indexDocumentSale].isSave = false;
+      this.collectService.documentSalesView[indexDocumentSale].isSave = false;
 
       this.collectService.documentSalesBackup[indexDocumentSale] = JSON.parse(JSON.stringify(this.collectService.documentSales[indexDocumentSale]));
-
       let pos;
       pos = this.collectService.documentSales[indexDocumentSale].positionCollecDetails;
       console.log(pos);
@@ -618,6 +619,8 @@ export class CobrosDocumentComponent implements OnInit {
         this.collectService.montoTotalPagarConversion = 0;
         this.collectService.montoTotalPagado = 0;
         this.collectService.montoTotalPagadoConversion = 0;
+        this.collectService.collection.nuDifference = 0;
+        this.collectService.collection.nuDifferenceConversion = 0;
 
         this.collectService.bankAccountSelected = [] as BankAccount[];
 
