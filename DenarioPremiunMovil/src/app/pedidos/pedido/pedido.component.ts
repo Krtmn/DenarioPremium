@@ -125,6 +125,7 @@ export class PedidoComponent implements OnInit {
 
   nuValueLocal = 0;
   tasaCambio = '0';// la tasa que se muestra en el input
+  showConversion = false; //para mostrar la tasa y conversiones
 
   @Output()
   goToNuevoPedido: EventEmitter<any> = new EventEmitter<any>();
@@ -260,6 +261,7 @@ export class PedidoComponent implements OnInit {
 
     //config
     this.parteDecimal = this.orderServ.parteDecimal;
+    this.showConversion = this.multimoneda && !this.orderServ.showTransactionCurrency;
     if (!this.orderServ.userMustActivateGPS) {
       //chequeo suave de coordenadas si variable es false
       this.geoServ.getCurrentPosition().then(coords => { this.orderServ.coordenadas = coords });
