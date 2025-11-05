@@ -57,6 +57,7 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
 
     if (this.showProductStructure) {
       this.productStructures = true;
+      this.productService.showProductStructure = true;
       this.getTypeProductStructures();
     }
     this.sub = this.productStructureService.productStructures.subscribe((data) => {
@@ -68,10 +69,12 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
 
     this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
       this.productStructures = false;
+      this.productService.showProductStructure = false;
     });
 
     this.validateReturnSub = this.returnLogic.productsByInvoice.subscribe((data) => {
       this.productStructures = false;
+      this.productService.showProductStructure = false;
     });
 
 
