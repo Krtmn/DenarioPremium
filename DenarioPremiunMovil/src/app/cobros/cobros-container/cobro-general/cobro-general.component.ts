@@ -84,25 +84,51 @@ export class CobrosGeneralComponent implements OnInit {
   constructor(private clientSelectorService: ClienteSelectorService) { }
 
   ngOnInit() {
-    this.subscriptions.push(
-      this.clientSelectorService.ClientChanged.subscribe(client => {
-        this.collectService.client = client;
-        this.collectService.initCollect = true;
-        this.collectService.newClient = client;
-        this.collectService.changeClient = true;
-        this.collectService.onChangeClient = true;
-        this.collectService.client = this.collectService.newClient;
-        this.collectService.newClient = {} as Client;
-        this.setClientfromSelector(this.collectService.client);
-        this.collectService.cobroValid = false;
-        this.reset(client);
-      }),
-      this.adjuntoService.AttachmentChanged.subscribe(() => {
-        this.setChangesMade(true);
-      })
-    );
+    if (this.collectService.collection.stCollection == 2 || this.collectService.collection.stCollection == 3 || this.collectService.collection.stCollection == 6) {
+      //ES UN COBRO ENVIADO, NO DEBO HACER NADA, SOLO MOSTRAR LA DATA
+      this.setSendedCollection();
+    } else {
+      this.subscriptions.push(
+        this.clientSelectorService.ClientChanged.subscribe(client => {
+          this.collectService.client = client;
+          this.collectService.initCollect = true;
+          this.collectService.newClient = client;
+          this.collectService.changeClient = true;
+          this.collectService.onChangeClient = true;
+          this.collectService.client = this.collectService.newClient;
+          this.collectService.newClient = {} as Client;
+          this.setClientfromSelector(this.collectService.client);
+          this.collectService.cobroValid = false;
+          this.reset(client);
+        }),
+        this.adjuntoService.AttachmentChanged.subscribe(() => {
+          this.setChangesMade(true);
+        })
+      );
+      this.initGeneralState();
+    }
+  }
 
-    this.initGeneralState();
+  public setSendedCollection() {
+    this.collectService.initLogicService();
+    this.collectService.onCollectionValid(true);
+    this.collectService.cobroValid = true;
+    this.collectService.collectValidTabs = true;
+    this.collectService.enterpriseEnabled = false;
+    this.collectService.montoTotalPagar = this.collectService.collection.nuAmountFinal;
+    this.collectService.montoTotalPagarConversion = this.collectService.collection.nuAmountFinalConversion;
+    this.collectService.montoTotalPagado = this.collectService.collection.nuAmountTotal;
+    this.collectService.montoTotalPagadoConversion = this.collectService.collection.nuAmountTotalConversion;
+    this.initializeCurrenciesAndRates();
+    this.clientService.getClientById(this.collectService.collection.idClient).then(client => {
+      this.collectService.client = client;
+      this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", true, COLOR_VERDE);
+      this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, 'cobros');
+      this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, "Cobros", 'fondoVerde', client, false);
+      this.collectService.changeEnterprise = false;
+      this.collectService.getCurrencies(this.synchronizationServices.getDatabase(),
+        this.collectService.enterpriseSelected.idEnterprise);
+    });
   }
 
   private initGeneralState() {
