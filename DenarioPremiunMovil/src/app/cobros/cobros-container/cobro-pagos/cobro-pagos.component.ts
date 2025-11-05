@@ -60,23 +60,29 @@ export class CobroPagosComponent implements OnInit {
     this.alertButtons[0].text = this.collectService.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
   }
 
+  // ...existing code...
   addTipoPago(type: string) {
     this.collectService.lengthMethodPaid++;
     this.collectService.collection.collectionPayments[this.collectService.collection.collectionPayments.length] = new CollectionPayment;
     this.collectService.collection.collectionPayments[this.collectService.collection.collectionPayments.length - 1].coCollection = this.collectService.collection.coCollection;
     this.collectService.tiposPago.forEach(tp => tp.selected = false);
+
+    this.collectService.onCollectionValidToSend(false)
+    // Nuevo: referencia al pago creado (se asigna dentro del switch)
+    let newPago: any = null;
+
     switch (type) {
       case "ef": {
         let newPagoEfectivo: PagoEfectivo = new PagoEfectivo;
         newPagoEfectivo.posCollectionPayment = this.collectService.collection.collectionPayments!.length - 1;
         this.collectService.pagoEfectivo.push(newPagoEfectivo);
+        newPago = newPagoEfectivo;
         break
       }
 
       case "ch": {
         let newPagoCheque: PagoCheque = new PagoCheque;
         newPagoCheque.posCollectionPayment = this.collectService.collection.collectionPayments!.length - 1;
-
         if (this.collectService.validateCollectionDate) {
           newPagoCheque.fecha = this.collectService.dateRate + " 00:00:00";
           newPagoCheque.fechaValor = this.collectService.dateRate + " 00:00:00";
@@ -84,35 +90,34 @@ export class CobroPagosComponent implements OnInit {
           newPagoCheque.fecha = this.dateServ.hoyISO();
           newPagoCheque.fechaValor = this.dateServ.hoyISO();
         }
-
         this.collectService.pagoCheque.push(newPagoCheque);
+        newPago = newPagoCheque;
         break;
       }
 
       case "de": {
         let newPagoDeposito: PagoDeposito = new PagoDeposito;
         newPagoDeposito.posCollectionPayment = this.collectService.collection.collectionPayments!.length - 1;
-
         if (this.collectService.validateCollectionDate) {
           newPagoDeposito.fecha = this.collectService.dateRate + " 00:00:00";
         } else {
           newPagoDeposito.fecha = this.dateServ.hoyISO();
         }
         this.collectService.pagoDeposito.push(newPagoDeposito);
+        newPago = newPagoDeposito;
         break
       }
 
       case "tr": {
         let newPagoTransferencia: PagoTransferencia = new PagoTransferencia;
         newPagoTransferencia.posCollectionPayment = this.collectService.collection.collectionPayments!.length - 1;
-
         if (this.collectService.validateCollectionDate) {
           newPagoTransferencia.fecha = this.collectService.dateRate + " 00:00:00";
         } else {
           newPagoTransferencia.fecha = this.dateServ.hoyISO();
         }
-
         this.collectService.pagoTransferencia.push(newPagoTransferencia);
+        newPago = newPagoTransferencia;
         break;
       }
 
@@ -120,10 +125,32 @@ export class CobroPagosComponent implements OnInit {
         let newPagoOtros: PagoOtros = new PagoOtros;
         newPagoOtros.posCollectionPayment = this.collectService.collection.collectionPayments!.length - 1;
         this.collectService.pagoOtros.push(newPagoOtros);
+        newPago = newPagoOtros;
         break;
       }
     }
+
+    // --- Paso 2 corregido: obtener el cp (collectionPayment) recién añadido y asignar uid/inicializar mapas ---
+    const cpIndex = this.collectService.collection.collectionPayments.length - 1;
+    const cp = this.collectService.collection.collectionPayments[cpIndex] as any;
+
+    if (newPago) {
+      // genera/asegura uid en el objeto pago y recupera uid (usa getUid o ensureInitFor)
+      const uid = this.getUid(newPago);
+      // asigna mismo uid al collectionPayment (cp)
+      try {
+        if (!(cp as any).__amountUid) {
+          Object.defineProperty(cp, '__amountUid', { value: uid, enumerable: false, configurable: true, writable: false });
+        }
+      } catch {
+        (cp as any).__amountUid = uid;
+      }
+      // inicializa mapas inmediatamente (puedes usar ensureInitFor en vez de estas líneas)
+      this.centsMap[uid] = Math.round((newPago.monto ?? 0) * this.getMultiplier());
+      this.displayMap[uid] = this.formatFromMinorUnits(this.centsMap[uid]);
+    }
   }
+  // ...existing code...
 
   deleteTipoPago(index: number, type: string) {
     if (this.collectService.disabledSelectCollectMethodDisabled)
@@ -171,6 +198,12 @@ export class CobroPagosComponent implements OnInit {
 
     if (this.collectService.collection.collectionPayments.length == 0)
       this.collectService.onCollectionValidToSend(false);
+
+    const cpUid = (pagoArray[index] && this.collectService.collection.collectionPayments![pagoArray[index].posCollectionPayment] as any)?.__amountUid;
+    if (cpUid) {
+      delete this.centsMap[cpUid];
+      delete this.displayMap[cpUid];
+    }
   }
 
   getFecha(fecha: string, index: number, type: string) {
@@ -1005,20 +1038,6 @@ export class CobroPagosComponent implements OnInit {
     return `${sign}${unitsStr || '0'},${fraction}`;
   }
 
-  // asigna/obtiene uid único al objeto depósito/efectivo/cheque
-  private getUid(obj: any): string {
-    if (!obj) return `u-${++this.__uidCounter}`;
-    if (!obj.__amountUid) {
-      Object.defineProperty(obj, '__amountUid', {
-        value: `u-${++this.__uidCounter}`,
-        enumerable: false,
-        configurable: true,
-        writable: false
-      });
-    }
-    return obj.__amountUid;
-  }
-
   public formatFromCents(cents: number): string {
     const sign = cents < 0 ? '-' : '';
     const abs = Math.abs(cents);
@@ -1028,19 +1047,32 @@ export class CobroPagosComponent implements OnInit {
     return `${sign}${unitsStr || '0'},${cent}`;
   }
 
-  private ensureInitFor(obj: any): string {
-    if (!obj) obj = {};
+  // Añade este helper en la clase
+  private makeUid(): string {
+    // id corto basado en tiempo + random (colisiones prácticamente imposibles en UI)
+    return `u-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+
+  private getUid(obj: any): string {
+    if (!obj) {
+      // Si por alguna razón te pasan null, genera uno (pero idealmente no debería pasar)
+      return this.makeUid();
+    }
     if (!obj.__amountUid) {
       Object.defineProperty(obj, '__amountUid', {
-        value: `u-${++this.__uidCounter}`,
+        value: this.makeUid(),
         enumerable: false,
         configurable: true,
         writable: false
       });
     }
-    const uid = obj.__amountUid;
+    return obj.__amountUid;
+  }
+
+  private ensureInitFor(obj: any): string {
+    const uid = this.getUid(obj);
     if (this.centsMap[uid] === undefined) {
-      const base = Number(obj?.monto ?? obj?.monto ?? 0) || 0;
+      const base = Number(obj?.monto ?? 0) || 0;
       this.centsMap[uid] = Math.round(base * this.getMultiplier());
       this.displayMap[uid] = this.formatFromMinorUnits(this.centsMap[uid]);
     }
