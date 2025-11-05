@@ -959,6 +959,10 @@ export class CobrosDocumentComponent implements OnInit {
     }
 
     if (this.collectService.collection.stCollection == 1) {
+      this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].inPaymentPartial = false;
+      this.collectService.documentSalesBackup[this.collectService.indexDocumentSaleOpen].inPaymentPartial = false;
+      this.collectService.documentSalesView[this.collectService.indexDocumentSaleOpen].inPaymentPartial = false;
+      this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].inPaymentPartial = false;
       this.collectService.documentSaleOpen.nuAmountDiscount = this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].nuAmountDiscount;
       this.collectService.documentSaleOpen.nuAmountRetention = this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].nuAmountRetention;
       this.collectService.documentSaleOpen.nuAmountRetention2 = this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].nuAmountRetention2;
