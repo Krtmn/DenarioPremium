@@ -292,7 +292,7 @@ export class CobrosDocumentComponent implements OnInit {
           nuAmountRetention = Number(detail.nuAmountRetention ?? 0);
           nuAmountRetention2 = Number(detail.nuAmountRetention2 ?? 0);
 
-          if (cs.isPaymentPartial) {
+          if (detail.inPaymentPartial) {
             nuAmountPaid = Number(detail.nuAmountPaid ?? 0);
           } else {
             const sumRet = Number(detail.nuAmountDiscount ?? 0) + Number(detail.nuAmountRetention ?? 0) + Number(detail.nuAmountRetention2 ?? 0);
@@ -450,7 +450,6 @@ export class CobrosDocumentComponent implements OnInit {
 
       if (this.collectService.collection.stCollection == 1) {
         //este cobro fue guardado, se debe colocar los datos del documento como fueron guardados(si es q hubo alguna modificacion)
-
         const detail = this.collectService.collection.collectionDetails.find(
           d => d.coDocument == this.collectService.documentSaleOpen.coDocument && d.isSave
         );
@@ -463,6 +462,8 @@ export class CobrosDocumentComponent implements OnInit {
           this.collectService.documentSaleOpen.nuBalance = detail.nuBalanceDoc;
           this.collectService.documentSaleOpen.nuAmountDiscount = detail.nuAmountDiscount;
           this.collectService.nuBalance = this.collectService.documentSalesBackup[index].nuBalance;
+          this.collectService.isPaymentPartial = detail.inPaymentPartial;
+
         } else {
           this.collectService.nuBalance = this.collectService.documentSaleOpen.nuBalance;
         }
@@ -604,6 +605,7 @@ export class CobrosDocumentComponent implements OnInit {
       this.collectService.documentSalesBackup[indexDocumentSale].inPaymentPartial = false;
 
       if (this.collectService.collection.collectionDetails.length == 0) {
+
 
         this.collectService.haveDocumentSale = false;
         this.collectService.disabledSelectCollectMethodDisabled = true;
