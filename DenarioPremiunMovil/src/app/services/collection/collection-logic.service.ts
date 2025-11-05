@@ -605,6 +605,14 @@ export class CollectionService {
   }
 
   async calculatePayment(type: string, index: number) {
+    if (this.collection.collectionDetails.length == 0) {
+      this.montoTotalPagado = 0;
+      this.montoTotalPagadoConversion = 0;
+      this.montoTotalPagar = 0;
+      this.onCollectionValidToSend(false);
+      this.onCollectionValidToSave(true);
+      return;
+    }
     this.montoTotalPagar = 0;
     let monto = 0;
     let montoConversion = 0;
