@@ -150,7 +150,6 @@ export class CobroPagosComponent implements OnInit {
       this.displayMap[uid] = this.formatFromMinorUnits(this.centsMap[uid]);
     }
   }
-  // ...existing code...
 
   deleteTipoPago(index: number, type: string) {
     if (this.collectService.disabledSelectCollectMethodDisabled)
@@ -172,8 +171,14 @@ export class CobroPagosComponent implements OnInit {
     if (!['ef', 'ch', 'de', 'tr', 'ot'].includes(type)) return;
     const pagoArray = map[type as TipoPagoKey];
     if (!pagoArray) return;
+    if (!pagoArray[index]) return;
 
-    const monto = pagoArray[index].monto;
+    // Capturar el pago y su posición en collectionPayments ANTES de borrar
+    const removedPago = pagoArray[index];
+    const removedPos = removedPago.posCollectionPayment ?? index;
+    const monto = Number(removedPago.monto) || 0;
+
+    // Actualizar totales usando el monto del pago eliminado
     this.collectService.collection.nuAmountFinal -= monto;
     this.collectService.collection.nuAmountTotal -= monto;
     this.collectService.collection.nuDifference -= monto;
@@ -185,24 +190,50 @@ export class CobroPagosComponent implements OnInit {
       this.collectService.collection.nuAmountTotal, 0, this.collectService.collection.coCurrency
     );
 
-    this.collectService.collection.collectionPayments!.splice(pagoArray[index].posCollectionPayment, 1);
+    // Capturar uid del collectionPayment que vamos a eliminar (antes de hacer splice)
+    const removedCp = (this.collectService.collection.collectionPayments && this.collectService.collection.collectionPayments[removedPos]) as any | undefined;
+    const removedCpUid = removedCp?.__amountUid;
 
-    this.collectService.bankAccountSelected.splice(pagoArray[index].posCollectionPayment, 1)
+    // Eliminar collectionPayment y bankAccountSelected en la posición correcta
+    if (this.collectService.collection.collectionPayments && this.collectService.collection.collectionPayments.length > removedPos) {
+      this.collectService.collection.collectionPayments!.splice(removedPos, 1);
+    }
+    if (this.collectService.bankAccountSelected && this.collectService.bankAccountSelected.length > removedPos) {
+      this.collectService.bankAccountSelected.splice(removedPos, 1);
+    }
+
+    // Remover el pago del arreglo correspondiente
     pagoArray.splice(index, 1);
-    pagoArray.forEach((pago, i) => {
-      pago.posCollectionPayment -= 1;
+
+    // Reducir posCollectionPayment en 1 para TODOS los pagos cuya posCollectionPayment era mayor al eliminado
+    const allPagoArrays = [
+      this.collectService.pagoEfectivo,
+      this.collectService.pagoCheque,
+      this.collectService.pagoDeposito,
+      this.collectService.pagoTransferencia,
+      this.collectService.pagoOtros
+    ];
+    allPagoArrays.forEach(arr => {
+      if (Array.isArray(arr)) {
+        arr.forEach(p => {
+          if (p && typeof p.posCollectionPayment === 'number' && p.posCollectionPayment > removedPos) {
+            p.posCollectionPayment = p.posCollectionPayment - 1;
+          }
+        });
+      }
     });
 
-    if (pagoArray.length > 0)
+    // Revalidaciones
+    if (allPagoArrays.length > 0)
       this.collectService.validateToSend();
 
-    if (this.collectService.collection.collectionPayments.length == 0)
+    if (!this.collectService.collection.collectionPayments || this.collectService.collection.collectionPayments.length == 0)
       this.collectService.onCollectionValidToSend(false);
 
-    const cpUid = (pagoArray[index] && this.collectService.collection.collectionPayments![pagoArray[index].posCollectionPayment] as any)?.__amountUid;
-    if (cpUid) {
-      delete this.centsMap[cpUid];
-      delete this.displayMap[cpUid];
+    // Borrar mapas asociados al collectionPayment eliminado (si existían)
+    if (removedCpUid) {
+      delete this.centsMap[removedCpUid];
+      delete this.displayMap[removedCpUid];
     }
   }
 
