@@ -28,6 +28,7 @@ db = inject(SynchronizationDBService);
 
   searchText: string = '';
   productStructures: Boolean = false;
+  disabledSearchButton: Boolean = false;
 
   sub: any;
   //searchSub: any;
@@ -56,13 +57,16 @@ db = inject(SynchronizationDBService);
   }
 
   onSearchClicked() {
+    this.disabledSearchButton = true;
     if(this.pedido){
       this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(this.db.getDatabase(),this.searchText, this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency, this.orderServ.listaSeleccionada.idList).then(() => {
         this.productService.onProductTabSearchClicked();
+        this.disabledSearchButton = false;
       });
     }else{
     this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),this.searchText, this.empresaSeleccionada.idEnterprise,this.orderServ.monedaSeleccionada.coCurrency).then(() => {
       this.productService.onProductTabSearchClicked();
+      this.disabledSearchButton = false;
     });
     }
   }
