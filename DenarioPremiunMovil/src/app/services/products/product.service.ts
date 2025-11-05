@@ -42,6 +42,8 @@ export class ProductService {
 
   carritoButtonClicked = new Subject<Boolean>();
 
+  searchTextChanged = new Subject<string>();
+
   itemsXPagina = 20;
 
   constructor() { }

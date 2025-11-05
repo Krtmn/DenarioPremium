@@ -67,6 +67,8 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   favoritePSClicked!: any;
 
   carritoButtonClicked!: any;
+
+  searchTextChanged!: any;
   searchSub!: any;
 
   detailModal = false;
@@ -76,6 +78,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   disablePriceListSelector = false;
   public imagesMap: { [imgName: string]: string } = {};
   private subs = new Subscription();
+  
 
   constructor(
 
@@ -91,6 +94,10 @@ export class ProductosTabOrderProductListComponent implements OnInit {
         this.cd.markForCheck();
       })
     );
+
+    this.searchTextChanged = this.productService.searchTextChanged.subscribe((value) => {
+      this.searchText = value;
+    });
 
     this.ivaList = this.orderServ.ivaList;
     this.disablePriceListSelector = (!this.orderServ.userCanChangePriceListProduct);
@@ -259,6 +266,9 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.featuredPSClicked.unsubscribe();
     this.favoritePSClicked.unsubscribe();
     this.searchSub.unsubscribe();
+    this.carritoButtonClicked.unsubscribe();
+    this.searchTextChanged.unsubscribe();
+    this.subs.unsubscribe();
   }
 
   onProductQuantityChange(prod: OrderUtil) {
@@ -360,6 +370,10 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   onSelectProductDev() {
     console.log('Devolucion not implemented.');
   }
+
+    setSearchText(value: string) {
+      this.searchText = value;
+    }
 
   onSelectProductPed(i: number, prod: OrderUtil) {
 

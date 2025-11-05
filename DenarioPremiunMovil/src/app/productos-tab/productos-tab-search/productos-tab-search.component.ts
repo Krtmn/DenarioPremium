@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit, Output, inject } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, Output,EventEmitter, inject } from '@angular/core';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { PedidosService } from 'src/app/pedidos/pedidos.service';
 import { ProductStructureService } from 'src/app/services/productStructures/product-structure.service';
@@ -29,6 +29,7 @@ db = inject(SynchronizationDBService);
   searchText: string = '';
   productStructures: Boolean = false;
   disabledSearchButton: Boolean = false;
+  
 
   sub: any;
   //searchSub: any;
@@ -54,6 +55,10 @@ db = inject(SynchronizationDBService);
   ngOnDestroy(): void {
     this.sub.unsubscribe();
     //this.searchSub.unsubscribe();
+  }
+
+  onSearchTextChanged(){
+    this.productService.searchTextChanged.next(this.searchText);
   }
 
   onSearchClicked() {
