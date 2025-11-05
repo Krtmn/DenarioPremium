@@ -202,7 +202,16 @@ export class AutoSendService implements OnInit {
 
           })
           promesa.then((res) => {
-            this.sendTransaction(request, type, coTransaction);
+            let send = true;
+            if (coType == 1 && Object.keys(request.collection!.collectionPayments).length === 0)
+              send = false;
+            if (coType == 2 && Object.keys(request.collection!.collectionPayments).length === 0)
+              send = false;
+            if (coType == 0 || coType == 3 || coType == 4 && Object.keys(request.collection!.collectionPayments).length === 0 || Object.keys(request.collection!.collectionDetails).length === 0)
+              send = false;
+
+            if (send)
+              this.sendTransaction(request, type, coTransaction);
           });
         })
         break;
