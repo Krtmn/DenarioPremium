@@ -964,8 +964,6 @@ export class CollectionService {
           return;
         }
       }
-
-
     } else {
       //DEBO VALIDAR SI HAY ALGUN PAGO PARCIAL, EL MONTO DEBE PAGADO DEBE SER IGUAL AL MONTO A PAGAR
       for (var i = 0; i < this.collection.collectionDetails.length; i++) {
@@ -2360,7 +2358,7 @@ export class CollectionService {
     })
   }
 
-  saveCollection(dbServ: SQLiteObject, collection: Collection, action: Boolean) {
+  saveCollection(dbServ: SQLiteObject, collection: Collection, action: boolean) {
 
 
     return this.adjuntoService.getQuantityAdjuntos().then(number => {
@@ -2376,7 +2374,7 @@ export class CollectionService {
       this.collection.nuAmountFinal = this.montoTotalPagar;
       this.collection.nuAmountFinalConversion = this.convertirMonto(this.collection.nuAmountFinal, 0, this.collection.coCurrency);
 
-      let insertCollection = "INSERT OR REPLACE INTO collections (" +
+      const insertCollection = "INSERT OR REPLACE INTO collections (" +
         "id_collection," +
         "co_collection," +
         "co_original_collection," +
@@ -2446,7 +2444,8 @@ export class CollectionService {
       ).then(data => {
         console.log("COLLECTION INSERT", data);
 
-        if (collection.coType == '0') {
+        //cobro o igtf
+        if (collection.coType == '0' || collection.coType == '3') {
           return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
             console.log("TERMINE DOCUMENT ST")
             return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
@@ -2481,22 +2480,16 @@ export class CollectionService {
 
         } else {
           //es cobranza normal debo guardar el payment y el detalle
-          return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
-            console.log("TERMINE DOCUMENT ST")
-            return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
-              //this.documentSales = [] as DocumentSale[];
-              //this.documentSalesBackup = [] as DocumentSale[];
-              return resp;
-            });
-          });
-
+          /*  return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
+             console.log("TERMINE DOCUMENT ST")
+             return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
+               //this.documentSales = [] as DocumentSale[];
+               //this.documentSalesBackup = [] as DocumentSale[];
+               return resp;
+             });
+           }); */
+          return Promise.resolve();
         }
-
-
-        /* if (this.createAutomatedPrepaid)
-          this.createAnticipoCollection(collection, inserStatement); */
-
-
       }).catch(e => {
         return Promise.resolve(e);
       })
@@ -2719,7 +2712,7 @@ export class CollectionService {
     })
 
     let statementsCollectionDetails = [];
-    let inserStatementCollectionDetail = "INSERT OR REPLACE INTO collection_details(" +
+    const inserStatementCollectionDetail = "INSERT OR REPLACE INTO collection_details(" +
       "id_collection_detail," +
       "co_collection," +
       "co_document," +
@@ -2777,14 +2770,14 @@ export class CollectionService {
 
     return dbServ.sqlBatch(statementsCollectionDetails).then(res => {
       console.log("COLLECTION DETAILS INSERT", res);
-      if (this.collection.coType != "1" && this.collection.coType != "2") {
-        return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, coCollection).then(resp => {
-          return resp
-        })
-      } else {
-        return res
-      }
-
+      /*  if (this.collection.coType != "1" && this.collection.coType != "2") {
+         return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, coCollection).then(resp => {
+           return resp
+         })
+       } else {
+         return res
+       }
+  */
     }).catch(e => {
       console.log(e);
     })
@@ -2799,8 +2792,8 @@ export class CollectionService {
       console.log(e);
     })
 
-    let statementsCollectionPayment = [];
-    let insertStatement = "INSERT OR REPLACE INTO collection_payments(" +
+    const statementsCollectionPayment = [];
+    const insertStatement = "INSERT OR REPLACE INTO collection_payments(" +
       "id_collection_payment," +
       "co_collection, " +
       "id_collection_detail, " +
@@ -2977,8 +2970,11 @@ export class CollectionService {
   }
 
   updateDocumentSt(dbServ: SQLiteObject, documentSales: DocumentSale[]) {
+    if(documentSales.length == 0){
+      return Promise.resolve(true);
+    }
     if (documentSales[0].coDocumentSaleType == "IGTF") {
-      let updateStatement = "UPDATE document_st SET st_document = 2 WHERE co_document = ?"
+      const updateStatement = "UPDATE document_st SET st_document = 2 WHERE co_document = ?"
       return dbServ.executeSql(updateStatement,
         [documentSales[0].coDocument]
       ).then(data => {
@@ -2991,7 +2987,7 @@ export class CollectionService {
       /*     let insertStatement = 'INSERT OR REPLACE INTO document_st (' +
             'id_document,co_document,st_document' +
             ') VALUES (?,?,?)'; */
-      let updateStatement = "UPDATE document_st SET st_document = ? WHERE co_document = ?"
+      const updateStatement = "UPDATE document_st SET st_document = ? WHERE co_document = ?"
       for (var i = 0; i < documentSales.length; i++) {
         let stCollection = 0;
         if (documentSales[i].isSelected) {
@@ -2999,23 +2995,11 @@ export class CollectionService {
             stCollection = 0;
           else //if (this.sendCollection)
             stCollection = 2;
-          /* 
-                    stamentenDocumentSt.push([insertStatement, [
-                      documentSales[i].idDocument,
-                      documentSales[i].coDocument,
-                      stCollection
-                    ]]); */
-
           stamentenDocumentSt.push([updateStatement, [
             stCollection,
             documentSales[i].coDocument,
           ]]);
         } else {
-          /*  stamentenDocumentSt.push([insertStatement, [
-             documentSales[i].idDocument,
-             documentSales[i].coDocument,
-             0
-           ]]); */
           stamentenDocumentSt.push([updateStatement, [
             stCollection,
             documentSales[i].coDocument,

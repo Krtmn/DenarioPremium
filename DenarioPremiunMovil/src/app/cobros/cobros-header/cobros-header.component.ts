@@ -86,6 +86,7 @@ export class CobrosHeaderComponent implements OnInit {
             this.collectService.cobrosComponent = true;
             this.collectService.titleModule = this.collectService.collectionTags.get('COB_NOMBRE_MODULO')!
             this.messageService.hideLoading();
+
           })
         });
 
@@ -240,7 +241,7 @@ export class CobrosHeaderComponent implements OnInit {
 
   }
 
-  sendOrSave(sendOrSave: Boolean) {
+  sendOrSave(sendOrSave: boolean) {
     this.collectService.collectionIsSave = true;
     this.messageService.showLoading().then(() => {
       if (sendOrSave) {
@@ -266,6 +267,7 @@ export class CobrosHeaderComponent implements OnInit {
           this.collectService.cobroComponent = false;
           this.collectService.cobrosComponent = true;
           this.collectService.collectValid = false;
+          this.collectService.collectionIsSave = false;
           this.messageService.hideLoading();
 
         })
