@@ -18,6 +18,13 @@ LAUNCH_DIR="$ASSETS_DIR/LaunchImage.launchimage"
 
 mkdir -p "$APPICON_DIR" "$LAUNCH_DIR"
 
+# Generate a flattened PNG (no alpha) at given size
+gen_no_alpha() {
+  local size=$1
+  local out=$2
+  convert "$SRC" -resize ${size}x${size}^ -gravity center -extent ${size}x${size} -background white -alpha remove -strip "$out"
+}
+
 echo "Generating iOS app icons into: $APPICON_DIR"
 
 # App icon sizes (filename, width, height)
@@ -42,7 +49,17 @@ for entry in "${icons[@]}"; do
   read -r fname w h <<<"$entry"
   out="$APPICON_DIR/$fname"
   echo " - $fname -> ${w}x${h}"
-  sips -z "$h" "$w" "$SRC" --out "$out" >/dev/null
+  # Prefer ImageMagick (convert) to flatten and remove alpha channel for app icons
+  if command -v convert >/dev/null 2>&1; then
+    # use ImageMagick to resize and remove alpha (keeps background white)
+    gen_no_alpha "$w" "$out"
+  else
+    # fallback to sips (may preserve alpha). Warn the user about potential alpha issues for large icons
+    sips -z "$h" "$w" "$SRC" --out "$out" >/dev/null || true
+    if [[ "$fname" == "Icon-1024.png" || "$fname" == "AppIcon-512.png" || "$fname" == "AppIcon-512@2x.png" ]]; then
+      echo "WARNING: ImageMagick 'convert' not found — $fname may contain an alpha channel. Install ImageMagick (brew install imagemagick) and re-run this script to ensure app icons have no alpha."
+    fi
+  fi
 done
 
 echo "Generating launch/splash images into: $LAUNCH_DIR"
