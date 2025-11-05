@@ -2445,7 +2445,7 @@ export class CollectionService {
         console.log("COLLECTION INSERT", data);
 
         //cobro o igtf
-        if (collection.coType == '0' || collection.coType == '3'|| collection.coType == '4') {
+        if (collection.coType == '0' || collection.coType == '3' || collection.coType == '4') {
           return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
             console.log("TERMINE DOCUMENT ST")
             return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
@@ -2491,7 +2491,7 @@ export class CollectionService {
           return Promise.resolve();
         }
       }).catch(e => {
-        return Promise.resolve(e);
+        return Promise.reject(e);
       })
     })
 
@@ -2970,7 +2970,7 @@ export class CollectionService {
   }
 
   updateDocumentSt(dbServ: SQLiteObject, documentSales: DocumentSale[]) {
-    if(documentSales.length == 0){
+    if (documentSales.length == 0) {
       return Promise.resolve(true);
     }
     if (documentSales[0].coDocumentSaleType == "IGTF") {

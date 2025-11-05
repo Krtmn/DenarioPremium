@@ -202,7 +202,50 @@ export class AutoSendService implements OnInit {
 
           })
           promesa.then((res) => {
-            this.sendTransaction(request, type, coTransaction);
+            // --- Recomendado: normalizar coType como number ---
+            const coType = Number(request.collection?.coType);
+
+            // Asegurar arrays no nulos
+            const payments = request.collection?.collectionPayments ?? [];
+            const details = request.collection?.collectionDetails ?? [];
+
+            // Por defecto permitimos enviar, salvo que una de las reglas impida el envío
+            let send = true;
+
+            switch (coType) {
+              // coType 0, 3, 4 => ambos arrays NO deben estar vacíos
+              case 0:
+              case 3:
+              case 4:
+                if (payments.length === 0 || details.length === 0) {
+                  send = false;
+                }
+                break;
+
+              // coType 1 => collectionPayments NO debe estar vacío
+              case 1:
+                if (payments.length === 0) {
+                  send = false;
+                }
+                break;
+
+              // coType 2 => collectionDetails NO debe estar vacío
+              case 2:
+                if (details.length === 0) {
+                  send = false;
+                }
+                break;
+
+              default:
+                // Si aparece un coType desconocido, prevenir el envío por seguridad
+                send = false;
+                console.warn(`AutoSendService: coType desconocido (${coType}). Se cancela el envío por seguridad.`);
+                break;
+            }
+
+            if (send) {
+              this.sendTransaction(request, type, coTransaction);
+            }
           });
         })
         break;
