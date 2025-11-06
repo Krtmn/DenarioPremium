@@ -572,7 +572,7 @@ export class VisitaComponent implements OnInit {
         this.disabledButtonEvent = false;
     }
 
-
+    this.listaMotivosFiltrados = [];
     this.actividadSeleccionada = null;
     this.motivoSeleccionado = null;
     this.motiveLock = true;
