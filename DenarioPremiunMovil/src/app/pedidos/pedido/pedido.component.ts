@@ -221,7 +221,7 @@ export class PedidoComponent implements OnInit {
       //setup monedas
       this.currencyServ.setup(this.dbServ.getDatabase()).then(() => {
         this.multimoneda = this.currencyServ.multimoneda;
-        
+        this.showConversion = this.multimoneda && !this.orderServ.showTransactionCurrency;
         this.localCurrency = this.currencyServ.getLocalCurrency();
         if (this.orderServ.openOrder) {
           this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.orderServ.order.coCurrency);
@@ -261,7 +261,6 @@ export class PedidoComponent implements OnInit {
 
     //config
     this.parteDecimal = this.orderServ.parteDecimal;
-    this.showConversion = this.multimoneda && !this.orderServ.showTransactionCurrency;
     if (!this.orderServ.userMustActivateGPS) {
       //chequeo suave de coordenadas si variable es false
       this.geoServ.getCurrentPosition().then(coords => { this.orderServ.coordenadas = coords });

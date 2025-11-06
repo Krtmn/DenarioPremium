@@ -106,7 +106,7 @@ export class DateServiceService {
     //devuelve un string ISO 8601 que representa la fecha de hoy, a la medianoche
     //esta funcion remueve la hora
     var r = new Date();
-    r.setHours(0, 0, 0, 0);
+    //r.setHours(0, 0, 0, 0); //esto jode cuando se usa para comparar fechas en españa. yo tampoco se porqué.
     return r.toISOString().substring(0, 10);
   }
 
