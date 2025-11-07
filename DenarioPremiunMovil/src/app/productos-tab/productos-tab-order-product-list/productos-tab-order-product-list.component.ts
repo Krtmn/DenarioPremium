@@ -364,6 +364,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   onShowProductStructures() {
     this.orderUtilList = [] as OrderUtil[];
     this.showProductList = false;
+    this.productService.showProductStructure = true;
     this.productStructureService.onAddProductCLicked();
   }
 
