@@ -490,13 +490,19 @@ export class PedidosService {
             priceListSeleccionado = priceLists[0];
           }
         };
+        var price = 0;
         if (priceListSeleccionado) {
           item.coCurrency = priceListSeleccionado.coCurrency;
-          var price = this.conversionByPriceList ?
+          price = this.conversionByPriceList ?
             priceListSeleccionado.nuPrice : this.conversionCurrency(priceListSeleccionado.nuPrice, item.coCurrency);
-        }else{
-          var price = 0;
+        }else{          
           item.coCurrency = this.monedaSeleccionada.coCurrency;
+        }
+        if(this.multiCurrencyOrder){
+          item.coCurrencyOpposite = this.currencyService.oppositeCoCurrency(item.coCurrency);
+          item.priceOpposite = item.coCurrency === this.currencyService.getLocalCurrency().coCurrency ?
+              this.currencyService.toHardCurrency(item.price) :
+              this.currencyService.toLocalCurrency(item.price);
         }
         var idLists: Set<number> = new Set<number>();
         priceLists.forEach(pl => {
@@ -1090,12 +1096,12 @@ export class PedidosService {
             points: prod.points,
             txDescription: prod.tx_description,
             idList: prod.id_list,
-            price: prod.nu_price,
-            coCurrency: prod.co_currency,
-            priceOpposite: prod.co_currency === this.currencyService.getLocalCurrency ?
+            price: 0,//prod.nu_price,
+            coCurrency: '',//prod.co_currency,
+            priceOpposite: 0,/*prod.co_currency === this.currencyService.getLocalCurrency ?
               this.currencyService.toHardCurrency(prod.nu_price) :
-              this.currencyService.toLocalCurrency(prod.nu_price), // Precio en la moneda opuesta a la lista de precio
-            coCurrencyOpposite: this.currencyService.oppositeCoCurrency(prod.co_currency),
+              this.currencyService.toLocalCurrency(prod.nu_price), // Precio en la moneda opuesta a la lista de precio */
+            coCurrencyOpposite: '',//this.currencyService.oppositeCoCurrency(prod.co_currency),
             stock: prod.qu_stock,
             idEnterprise: prod.id_enterprise,
             coEnterprise: prod.co_enterprise,
@@ -1123,12 +1129,12 @@ export class PedidosService {
             points: prod.points,
             txDescription: prod.tx_description,
             idList: prod.id_list,
-            price: prod.nu_price,
-            coCurrency: prod.co_currency,
-            priceOpposite: prod.co_currency === this.currencyService.getLocalCurrency ?
+            price: 0,
+            coCurrency:'',
+            priceOpposite: 0,/*prod.co_currency === this.currencyService.getLocalCurrency ?
               this.currencyService.toHardCurrency(prod.nu_price) :
-              this.currencyService.toLocalCurrency(prod.nu_price), // Precio en la moneda opuesta a la lista de precio
-            coCurrencyOpposite: this.currencyService.oppositeCoCurrency(prod.co_currency),
+              this.currencyService.toLocalCurrency(prod.nu_price), // Precio en la moneda opuesta a la lista de precio*/
+            coCurrencyOpposite: '',//this.currencyService.oppositeCoCurrency(prod.co_currency),
             stock: prod.qu_stock,
             idEnterprise: prod.id_enterprise,
             coEnterprise: prod.co_enterprise,

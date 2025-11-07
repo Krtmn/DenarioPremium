@@ -637,18 +637,18 @@ export class PedidosDbService {
     if (conversionByPriceList) {
       var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, " +
         " (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + idList + " order by l.na_list limit 1) as id_list, " +
-        " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + idList + " order by l.na_list limit 1) as nu_price, " +
-        " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + idList + " order by l.na_list limit 1) as co_currency, " +
-        " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + idList + " order by l.na_list limit 1) as nu_price_opposite, " +
-        " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + idList + " order by l.na_list limit 1) as co_currency_opposite, " +
+        //" (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + idList + " order by l.na_list limit 1) as nu_price, " +
+        //" (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + idList + " order by l.na_list limit 1) as co_currency, " +
+        //" (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + idList + " order by l.na_list limit 1) as nu_price_opposite, " +
+        //" (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + idList + " order by l.na_list limit 1) as co_currency_opposite, " +
         " (select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p " +
         "WHERE p.id_product in ( " + idProducts.toString() + " ) AND p.id_enterprise = ? ORDER BY p.na_product ASC;"
     }
     else {
       var select = 'select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, ' +
         '(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = ' + idList + ' order by l.na_list limit 1) as id_list, ' +
-        '(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = ' + idList + '  order by l.na_list limit 1) as nu_price, ' +
-        '(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = ' + idList + '  order by l.na_list limit 1) as co_currency, ' +
+        //'(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = ' + idList + '  order by l.na_list limit 1) as nu_price, ' +
+        //'(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = ' + idList + '  order by l.na_list limit 1) as co_currency, ' +
         '(select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, ' +
         'p.id_enterprise, p.co_enterprise FROM products p WHERE p.id_product in ( ' + idProducts.toString() + ' ) AND p.id_enterprise = ? ORDER BY p.na_product ASC'
     }
@@ -661,18 +661,18 @@ export class PedidosDbService {
     if (conversionByPriceList) {
       var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, " +
         " (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_price_list in (" + idPriceLists + ") order by l.na_list limit 1) as id_list, " +
-        " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_price_list in (" + idPriceLists + ") order by l.na_list limit 1) as nu_price, " +
-        " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_price_list in (" + idPriceLists + ") order by l.na_list limit 1) as co_currency, " +
-        " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_price_list in (" + idPriceLists + ") order by l.na_list limit 1) as nu_price_opposite, " +
-        " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_price_list in (" + idPriceLists + ") order by l.na_list limit 1) as co_currency_opposite, " +
+        //" (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_price_list in (" + idPriceLists + ") order by l.na_list limit 1) as nu_price, " +
+        //" (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_price_list in (" + idPriceLists + ") order by l.na_list limit 1) as co_currency, " +
+        //" (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_price_list in (" + idPriceLists + ") order by l.na_list limit 1) as nu_price_opposite, " +
+        //" (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_price_list in (" + idPriceLists + ") order by l.na_list limit 1) as co_currency_opposite, " +
         " (select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p " +
         "WHERE p.id_product in ( " + idProducts.toString() + " ) AND p.id_enterprise = ? ORDER BY p.na_product ASC;"
     }
     else {
       var select = 'select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, ' +
         '(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_price_list in (' + idPriceLists + ') order by l.na_list limit 1) as id_list, ' +
-        '(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_price_list in (' + idPriceLists + ') order by l.na_list limit 1) as nu_price, ' +
-        '(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_price_list in (' + idPriceLists + ') order by l.na_list limit 1) as co_currency, ' +
+        //'(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_price_list in (' + idPriceLists + ') order by l.na_list limit 1) as nu_price, ' +
+        //'(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_price_list in (' + idPriceLists + ') order by l.na_list limit 1) as co_currency, ' +
         '(select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, ' +
         'p.id_enterprise, p.co_enterprise FROM products p WHERE p.id_product in ( ' + idProducts.toString() + ' ) AND p.id_enterprise = ? ORDER BY p.na_product ASC'
     }

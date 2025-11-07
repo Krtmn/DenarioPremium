@@ -265,11 +265,11 @@ export class ProductService {
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
       var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, " +
-        "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, " +
-        "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price, " +
-        "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency, " +
-        "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price_opposite, " +
-        "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency_opposite, ";
+        "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, " //+
+        //"(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price, " +
+        //"(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency, " +
+        //"(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price_opposite, " +
+        //"(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency_opposite, ";
       if (userCanChangeWarehouse) {
         select = select + " (select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, ";
       } else {
@@ -315,9 +315,9 @@ export class ProductService {
       })
     } else {
       var select = 'select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, ' +
-        '(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as id_list, ' +
-        '(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as nu_price, ' +
-        '(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as co_currency, ';
+        '(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as id_list, '// +
+        //'(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as nu_price, ' +
+        //'(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as co_currency, ';
       if (userCanChangeWarehouse) {
         select = select + " (select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, ";
       } else {
@@ -341,14 +341,14 @@ export class ProductService {
             points: item.points,
             txDescription: item.tx_description,
             idList: item.id_list,
-            price: item.nu_price,
-            coCurrency: item.co_currency,
-            priceOpposite: item.co_currency === this.currencyService.getLocalCurrency ?
+            price: 0,// item.nu_price,
+            coCurrency: "",//item.co_currency,
+            priceOpposite: 0,/* item.co_currency === this.currencyService.getLocalCurrency ?
               this.currencyService.toHardCurrency(item.nu_price) :
-              this.currencyService.toLocalCurrency(item.nu_price), // Precio en la moneda opuesta a la lista de precio
-            coCurrencyOpposite: item.co_currency === this.currencyService.getLocalCurrency ?
+              this.currencyService.toLocalCurrency(item.nu_price), // Precio en la moneda opuesta a la lista de precio*/
+            coCurrencyOpposite: "", /*item.co_currency === this.currencyService.getLocalCurrency ?
               this.currencyService.hardCurrency.coCurrency :
-              this.currencyService.localCurrency.coCurrency, // moneda opuesta a la lista de precio,
+              this.currencyService.localCurrency.coCurrency,*/ // moneda opuesta a la lista de precio,
             stock: item.qu_stock,
             idEnterprise: item.id_enterprise,
             coEnterprise: item.co_enterprise,
@@ -389,11 +389,11 @@ export class ProductService {
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
       var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, " +
-        "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as id_list, " +
-        "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price, " +
-        "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency, " +
-        "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price_opposite, " +
-        "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency_opposite, ";
+        "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as id_list, " //+
+        //"(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price, " +
+        //"(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency, " +
+        //"(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price_opposite, " +
+        //"(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency_opposite, ";
       if (userCanChangeWarehouse) {
         select = select + " (select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, ";
       } else {
@@ -438,9 +438,9 @@ export class ProductService {
       })
     } else {
       var select = 'select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, ' +
-        '(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as id_list, ' +
-        '(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as nu_price, ' +
-        '(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as co_currency, ';
+        '(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as id_list, ' //+
+        //'(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as nu_price, ' +
+        //'(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as co_currency, ';
       if (userCanChangeWarehouse) {
         select = select + " (select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, ";
       } else {
@@ -465,14 +465,14 @@ export class ProductService {
             points: result.rows.item(i).points,
             txDescription: result.rows.item(i).tx_description,
             idList: result.rows.item(i).id_list,
-            price: result.rows.item(i).nu_price,
-            coCurrency: result.rows.item(i).co_currency,
-            priceOpposite: result.rows.item(i).co_currency === this.currencyService.getLocalCurrency ?
+            price: 0, //result.rows.item(i).nu_price,
+            coCurrency: '',//result.rows.item(i).co_currency,
+            priceOpposite: 0,/*result.rows.item(i).co_currency === this.currencyService.getLocalCurrency ?
               this.currencyService.toHardCurrency(result.rows.item(i).nu_price) :
-              this.currencyService.toLocalCurrency(result.rows.item(i).nu_price), // Precio en la moneda opuesta a la lista de precio
-            coCurrencyOpposite: result.rows.item(i).co_currency === this.currencyService.getLocalCurrency ?
+              this.currencyService.toLocalCurrency(result.rows.item(i).nu_price), // Precio en la moneda opuesta a la lista de precio */
+            coCurrencyOpposite: '',/*result.rows.item(i).co_currency === this.currencyService.getLocalCurrency ?
               this.currencyService.hardCurrency.coCurrency :
-              this.currencyService.localCurrency.coCurrency, // moneda opuesta a la lista de precio,
+              this.currencyService.localCurrency.coCurrency, // moneda opuesta a la lista de precio,*/
             stock: result.rows.item(i).qu_stock,
             idEnterprise: result.rows.item(i).id_enterprise,
             coEnterprise: result.rows.item(i).co_enterprise,
