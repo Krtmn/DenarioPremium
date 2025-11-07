@@ -314,7 +314,7 @@ export class PedidosService {
     this.conversionByPriceList = this.config.get("conversionByPriceList").toLowerCase() === 'true';
     this.quUnitDecimals = this.config.get("quUnitDecimals").toLowerCase() === 'true';
     this.totalUnit = this.config.get("totalUnit").toLowerCase() === 'true';
-    this.userCanChangePriceList = this.config.get("userCanChangePriceList").toLowerCase() === 'true';    
+    this.userCanChangePriceList = this.config.get("userCanChangePriceList").toLowerCase() === 'true';
     this.stock0 = this.config.get("stock0").toLowerCase() === 'true';
     this.enterpriseEnabled = this.config.get("enterpriseEnabled").toLowerCase() === 'true';
     this.userCanChangeWarehouse = this.config.get("userCanChangeWarehouse").toLowerCase() === 'true';
@@ -341,7 +341,7 @@ export class PedidosService {
     this.checkAddressClient = this.config.get("checkAddressClient").toLowerCase() === "true";
     this.signatureOrder = this.config.get("signatureOrder").toLowerCase() === "true";
     this.disableDaDispatch = this.config.get("disableDaDispatch").toLowerCase() === "true";
-   
+
     //string
     this.codeTotalProductUnit = this.config.get("codeTotalProductUnit");
     this.nameProductLine = this.config.get("nameProductLine");
@@ -352,13 +352,13 @@ export class PedidosService {
     //casos especiales
     if (this.validateWarehouses) {
       this.showStock = this.config.get("showStock").toLowerCase() === 'true';
-    }else{
+    } else {
       //validateWarehouses oculta tambien el stock de los productos cuando es false.
       this.showStock = false;
     }
-    if(this.userCanChangePriceList) {
-       this.userCanChangePriceListProduct = this.config.get("userCanChangePriceListProduct").toLowerCase() === "true";
-    }else{
+    if (this.userCanChangePriceList) {
+      this.userCanChangePriceListProduct = this.config.get("userCanChangePriceListProduct").toLowerCase() === "true";
+    } else {
       //si el usuario no puede cambiar la lista de precios, tampoco podra cambiarla por producto
       this.userCanChangePriceListProduct = false;
     }
@@ -446,7 +446,7 @@ export class PedidosService {
       const item = productList[index];
       const coCurrency = this.conversionByPriceList ? item.coCurrency :
         this.monedaSeleccionada.coCurrency
-      const price = this.conversionByPriceList ? item.price : this.conversionCurrency(item.price, item.coCurrency);
+
       const sub = this.carrito.filter(p => p.idProduct == item.idProduct);
       if (sub.length > 0) {
         //si esta en el carrito, simplemente sustituimos
@@ -468,10 +468,14 @@ export class PedidosService {
         };
         var priceLists: PriceList[] = [];
         var priceListSeleccionado: PriceList = {} as PriceList;
-        if (this.userCanChangePriceList && this.userCanChangePriceListProduct)  {
-          priceLists = this.listaPricelist.filter(pl => (pl.idProduct == item.idProduct));           
+        if (this.userCanChangePriceList && this.userCanChangePriceListProduct) {
+          priceLists = this.listaPricelist.filter(pl => (pl.idProduct == item.idProduct));
         } else {
           priceLists = this.listaPriceListFiltrada.filter(pl => (pl.idProduct == item.idProduct));
+        }
+        if (this.conversionByPriceList) {
+          //solo se muestran las listas de precio de la moneda seleccionada
+          priceLists = priceLists.filter(pl => pl.coCurrency == this.monedaSeleccionada.coCurrency);
         }
         if (priceLists.length < 1) {
           if (this.hideProdWithoutPrice) {
@@ -481,11 +485,22 @@ export class PedidosService {
             continue;
           }
         } else {
-          priceListSeleccionado = priceLists[0];
+          priceListSeleccionado = priceLists.find(pl => pl.idList == this.listaSeleccionada.idList)!;
+          if (priceListSeleccionado == undefined) {
+            priceListSeleccionado = priceLists[0];
+          }
         };
+        if (priceListSeleccionado) {
+          item.coCurrency = priceListSeleccionado.coCurrency;
+          var price = this.conversionByPriceList ?
+            priceListSeleccionado.nuPrice : this.conversionCurrency(priceListSeleccionado.nuPrice, item.coCurrency);
+        }else{
+          var price = 0;
+          item.coCurrency = this.monedaSeleccionada.coCurrency;
+        }
         var idLists: Set<number> = new Set<number>();
-        priceLists.forEach(element => {
-          idLists.add(element.idList);
+        priceLists.forEach(pl => {
+          idLists.add(pl.idList);
         });
         const listList = this.listaList.filter(l => idLists.has(l.idList));
         if (listList.length < 1) {
@@ -592,7 +607,7 @@ export class PedidosService {
           "txDescription": item.txDescription,
           "listaList": listList,
           "quPoints": item.points,
-          "idList": this.listaSeleccionada.idList,
+          "idList": priceListSeleccionado.idList,
           "idInfo": index,
           "tienePrecio": price > 0,
           "favorito": false,
@@ -775,14 +790,14 @@ export class PedidosService {
 
       //conversion
       if (this.currencyService.multimoneda) {
-        if(this.pedidoModificable){
+        if (this.pedidoModificable) {
           //pedido no enviado: hacemos la conversion actual
           if (this.monedaSeleccionada.coCurrency === this.currencyService.hardCurrency.coCurrency) {
             item.subtotalConv = this.currencyService.toLocalCurrency(item.subtotal);
           } else {
             item.subtotalConv = this.currencyService.toHardCurrency(item.subtotal);
           }
-        }else{
+        } else {
           //pedido enviado: mantenemos la conversion original
           if (this.monedaSeleccionada.coCurrency === this.currencyService.hardCurrency.coCurrency) {
             item.subtotalConv = this.currencyService.toLocalCurrencyByNuValueLocal(item.subtotal, this.order.nuValueLocal);
@@ -831,51 +846,51 @@ export class PedidosService {
     }
 
     if (this.currencyService.multimoneda) {
-      if(this.pedidoModificable){
+      if (this.pedidoModificable) {
         //pedido no enviado: hacemos la conversion actual
         if (this.monedaSeleccionada.coCurrency === this.currencyService.hardCurrency.coCurrency) {
-        //caso: pedido en moneda FUERTE
-        this.totalPedidoConv = this.currencyService.toLocalCurrency(this.totalPedido);
-        this.finalPedidoConv = this.currencyService.toLocalCurrency(this.finalPedido);
-        this.totalDctoXProductoConv = this.currencyService.toLocalCurrency(this.totalDctoXProducto);
-        this.totalBaseConv = this.currencyService.toLocalCurrency(this.totalBase);
-        this.totalGlobalDcConv = this.currencyService.toLocalCurrency(this.totalGlobalDc);
-        this.orderIVAConv = this.currencyService.toLocalCurrency(this.orderIVA);
+          //caso: pedido en moneda FUERTE
+          this.totalPedidoConv = this.currencyService.toLocalCurrency(this.totalPedido);
+          this.finalPedidoConv = this.currencyService.toLocalCurrency(this.finalPedido);
+          this.totalDctoXProductoConv = this.currencyService.toLocalCurrency(this.totalDctoXProducto);
+          this.totalBaseConv = this.currencyService.toLocalCurrency(this.totalBase);
+          this.totalGlobalDcConv = this.currencyService.toLocalCurrency(this.totalGlobalDc);
+          this.orderIVAConv = this.currencyService.toLocalCurrency(this.orderIVA);
+
+        } else {
+          //caso pedido en moneda LOCAL
+          this.totalPedidoConv = this.currencyService.toHardCurrency(this.totalPedido);
+          this.finalPedidoConv = this.currencyService.toHardCurrency(this.finalPedido);
+          this.totalDctoXProductoConv = this.currencyService.toHardCurrency(this.totalDctoXProducto);
+          this.totalBaseConv = this.currencyService.toHardCurrency(this.totalBase);
+          this.totalGlobalDcConv = this.currencyService.toHardCurrency(this.totalGlobalDc);
+          this.orderIVAConv = this.currencyService.toHardCurrency(this.orderIVA);
+        }
 
       } else {
-        //caso pedido en moneda LOCAL
-        this.totalPedidoConv = this.currencyService.toHardCurrency(this.totalPedido);
-        this.finalPedidoConv = this.currencyService.toHardCurrency(this.finalPedido);
-        this.totalDctoXProductoConv = this.currencyService.toHardCurrency(this.totalDctoXProducto);
-        this.totalBaseConv = this.currencyService.toHardCurrency(this.totalBase);
-        this.totalGlobalDcConv = this.currencyService.toHardCurrency(this.totalGlobalDc);
-        this.orderIVAConv = this.currencyService.toHardCurrency(this.orderIVA);
-      }
-
-      }else{
         //pedido enviado: mantenemos la conversion original
         let nuValueLocal = this.order.nuValueLocal;
-         if (this.monedaSeleccionada.coCurrency === this.currencyService.hardCurrency.coCurrency) {
-        //caso: pedido en moneda FUERTE
-        this.totalPedidoConv = this.currencyService.toLocalCurrencyByNuValueLocal(this.totalPedido, nuValueLocal);
-        this.finalPedidoConv = this.currencyService.toLocalCurrencyByNuValueLocal(this.finalPedido, nuValueLocal);
-        this.totalDctoXProductoConv = this.currencyService.toLocalCurrencyByNuValueLocal(this.totalDctoXProducto, nuValueLocal);
-        this.totalBaseConv = this.currencyService.toLocalCurrencyByNuValueLocal(this.totalBase, nuValueLocal);
-        this.totalGlobalDcConv = this.currencyService.toLocalCurrencyByNuValueLocal(this.totalGlobalDc, nuValueLocal);
-        this.orderIVAConv = this.currencyService.toLocalCurrencyByNuValueLocal(this.orderIVA, nuValueLocal);
+        if (this.monedaSeleccionada.coCurrency === this.currencyService.hardCurrency.coCurrency) {
+          //caso: pedido en moneda FUERTE
+          this.totalPedidoConv = this.currencyService.toLocalCurrencyByNuValueLocal(this.totalPedido, nuValueLocal);
+          this.finalPedidoConv = this.currencyService.toLocalCurrencyByNuValueLocal(this.finalPedido, nuValueLocal);
+          this.totalDctoXProductoConv = this.currencyService.toLocalCurrencyByNuValueLocal(this.totalDctoXProducto, nuValueLocal);
+          this.totalBaseConv = this.currencyService.toLocalCurrencyByNuValueLocal(this.totalBase, nuValueLocal);
+          this.totalGlobalDcConv = this.currencyService.toLocalCurrencyByNuValueLocal(this.totalGlobalDc, nuValueLocal);
+          this.orderIVAConv = this.currencyService.toLocalCurrencyByNuValueLocal(this.orderIVA, nuValueLocal);
 
-      } else {
-        //caso pedido en moneda LOCAL
-        this.totalPedidoConv = this.currencyService.toHardCurrencyByNuValueLocal(this.totalPedido, nuValueLocal);
-        this.finalPedidoConv = this.currencyService.toHardCurrencyByNuValueLocal(this.finalPedido, nuValueLocal);
-        this.totalDctoXProductoConv = this.currencyService.toHardCurrencyByNuValueLocal(this.totalDctoXProducto, nuValueLocal);
-        this.totalBaseConv = this.currencyService.toHardCurrencyByNuValueLocal(this.totalBase, nuValueLocal);
-        this.totalGlobalDcConv = this.currencyService.toHardCurrencyByNuValueLocal(this.totalGlobalDc, nuValueLocal);
-        this.orderIVAConv = this.currencyService.toHardCurrencyByNuValueLocal(this.orderIVA, nuValueLocal);
+        } else {
+          //caso pedido en moneda LOCAL
+          this.totalPedidoConv = this.currencyService.toHardCurrencyByNuValueLocal(this.totalPedido, nuValueLocal);
+          this.finalPedidoConv = this.currencyService.toHardCurrencyByNuValueLocal(this.finalPedido, nuValueLocal);
+          this.totalDctoXProductoConv = this.currencyService.toHardCurrencyByNuValueLocal(this.totalDctoXProducto, nuValueLocal);
+          this.totalBaseConv = this.currencyService.toHardCurrencyByNuValueLocal(this.totalBase, nuValueLocal);
+          this.totalGlobalDcConv = this.currencyService.toHardCurrencyByNuValueLocal(this.totalGlobalDc, nuValueLocal);
+          this.orderIVAConv = this.currencyService.toHardCurrencyByNuValueLocal(this.orderIVA, nuValueLocal);
+        }
+
       }
 
-      }
-     
     }
 
 
@@ -888,6 +903,10 @@ export class PedidosService {
      * conversionByPriceList = false
      * 
      */
+    if (coCurrency == null || coCurrency.trim() == '') {
+      console.error("[conversionCurrency] Currency not specified");
+      return 0;
+    }
     let selectedCoCurrency = this.monedaSeleccionada.coCurrency;
     let localCurrency = this.currencyService.localCurrency.coCurrency;
     let hardCurrency = this.currencyService.hardCurrency.coCurrency;
@@ -1399,11 +1418,11 @@ export class PedidosService {
     }
   }
 
-/*   getStatusPedidos(idOrder: number) {
-    //trae los estados de pedidos que se pueden usar en la app
-    return this.historyTransaction.getStatusTransaction(this.database, 2, idOrder);
-
-  } */
+  /*   getStatusPedidos(idOrder: number) {
+      //trae los estados de pedidos que se pueden usar en la app
+      return this.historyTransaction.getStatusTransaction(this.database, 2, idOrder);
+  
+    } */
 
 
 
