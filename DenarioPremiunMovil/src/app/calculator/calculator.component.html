@@ -7,11 +7,11 @@
     <ion-fab-button class="calculator-btn" (click)="toggleCalculator()" aria-label="Abrir calculadora">
       <ion-icon name="calculator-outline"></ion-icon>
     </ion-fab-button>
-
   </ion-fab-list>
 </ion-fab>
 
 <ion-card *ngIf="showCalculator" class="floating-calculator" role="dialog" aria-label="Calculadora">
+
   <ion-card-header>
     <ion-card-title class="ion-text-center">Calculadora</ion-card-title>
   </ion-card-header>
@@ -21,7 +21,7 @@
       <ion-row *ngIf="companies && companies.length > 1">
         <ion-col size="4">
           <ion-item lines="none">
-            <ion-label>Empresa</ion-label>
+            <ion-label>Empresa:</ion-label>
           </ion-item>
         </ion-col>
         <ion-col size="8">
@@ -49,6 +49,7 @@
 
     <ion-grid>
       <ion-row>
+
         <ion-col size="12">
           <ion-item [class.invalid]="baseInvalid" lines="none">
             <ion-label position="stacked">Base USD <span class="required-star" aria-hidden="true">*</span></ion-label>
@@ -56,18 +57,25 @@
               inputmode="numeric" placeholder="0,00">
             </ion-input>
           </ion-item>
-
           <!-- Mensaje de validación -->
           <div *ngIf="baseInvalid" class="error-text" role="alert">
             La base es requerida: no puede ser 0,00.
           </div>
         </ion-col>
+
         <ion-col size="12">
           <ion-item>
             <ion-label position="stacked">Porcentaje Descuento USD</ion-label>
             <ion-input type="text" [(ngModel)]="descuentoUSDInput" (ionInput)="onDescuentoInput($event)"
               inputmode="numeric" placeholder="0.00">
             </ion-input>
+          </ion-item>
+        </ion-col>
+
+        <ion-col size="12" *ngFor="let r of selectedRatesValues">
+          <ion-item>
+            <ion-label position="stacked">Valor Tasa {{ r.value }}:</ion-label>
+            <ion-input type="text" [value]="r.value" readonly></ion-input>
           </ion-item>
         </ion-col>
 
@@ -116,16 +124,8 @@
           </ion-item>
         </ion-col>
 
-        <!--  <ion-col size="12">
-          <ion-item>
-            <ion-label position="stacked">Total Tasa Paralelo USD</ion-label>
-            <ion-input type="text" [value]="totalTasaParaleloUSD | number:'1.2-2'" readonly></ion-input>
-          </ion-item>
-        </ion-col> -->
-
       </ion-row>
     </ion-grid>
-
 
     <ion-grid>
       <ion-row>

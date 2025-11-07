@@ -139,7 +139,8 @@ export class CalculatorComponent implements OnInit {
 
   onCompanyChange(event: any) {
     const id = event?.detail?.value ?? event;
-    this.selectedCompany = event?.detail?.selectedOption || null;
+    this.selectedCompany = event?.detail?.value || null;
+    this.selectedRates = [];
   }
 
   public loadRates() {
@@ -190,12 +191,12 @@ export class CalculatorComponent implements OnInit {
 
     const promises = this.selectedRates.map(r => {
       const idConv = Number(r.idConversion);
-      return this.conversionService.getRate(idConv, idEnterprise)
-        .then(value => ({ idConversion: idConv, value: Number(value) }))
-        .catch(err => {
-          console.warn('Error cargando rate value for', idConv, err);
-          return { idConversion: idConv, value: 0 };
-        });
+      return this.conversionService.getRate(idConv, idEnterprise).then(value => {
+        return { idConversion: idConv, value: value.nuValueLocal };
+      }).catch(err => {
+        console.warn('Error cargando rate value for', idConv, err);
+        return { idConversion: idConv, value: 0 };
+      });
     });
 
     // Esperamos a todas las promesas y reasignamos selectedRatesValues (reemplaza lo anterior)

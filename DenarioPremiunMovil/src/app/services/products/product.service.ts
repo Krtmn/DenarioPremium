@@ -576,6 +576,7 @@ export class ProductService {
 
   getProductsSearchedByCoProductAndNaProductAndIdList(dbServ:SQLiteObject,searchText: string, idEnterprise: number, coCurrency: string, id_list: number) {
     var database = dbServ;
+    searchText = searchText.toLowerCase();
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
       var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as id_list, " +
