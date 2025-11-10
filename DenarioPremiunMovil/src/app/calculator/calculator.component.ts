@@ -140,10 +140,42 @@ export class CalculatorComponent implements OnInit {
   onCompanyChange(event: any) {
     const id = event?.detail?.value ?? event;
     this.selectedCompany = event?.detail?.value || null;
+
+    // Reset numeric state
+    this.baseUSD = 0;
+    this.baseUSDInput = this.formatCurrencyLocale(0);
+
+    this.descuentoUSD = 0;
+    this.descuentoUSDInput = this.formatCurrencyLocale(0);
+    this.descuentoPercent = 0;
+
+    // IVA: restablecer al valor por defecto (16) o ajustar según tu lógica
+    this.ivaPercent = 16;
+    this.ivaUSDInput = this.formatCurrencyLocale(this.ivaPercent);
+    this.totalIVAUSD = 0;
+
+    this.totalUSD = 0;
+
+    // Tasas y totales relacionados
+    this.tasaBcvRate = 1;
+    this.tasaParaleloRate = 1;
+    this.totalTasaBCV = 0;
+    this.totalTasaParaleloUSD = 0;
+
+    // Rates / selections
     this.selectedRates = [];
     this.rates = [];
     this.selectedRatesValues = [];
-    this.loadRates();
+
+    // Cargar rates y tasa BCV luego recalcular totales
+    this.loadRates().then(() => {
+      this.BCVRate().then(() => {
+        this.recalcTotals();
+      }).catch(() => this.recalcTotals());
+    }).catch(() => {
+      // asegurar recalculo aunque la carga falle
+      this.recalcTotals();
+    });
   }
 
   public loadRates() {
@@ -322,9 +354,7 @@ export class CalculatorComponent implements OnInit {
       this.recalcTotals();
     }
   }
-
-
-
+  
   // Reemplaza el onBaseInput por este (interpreta input como centavos, muestra con . y ,)
   public onBaseInput(ev: any): void {
     try {
