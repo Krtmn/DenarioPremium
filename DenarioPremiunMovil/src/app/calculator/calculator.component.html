@@ -52,7 +52,7 @@
 
         <ion-col size="12">
           <ion-item [class.invalid]="baseInvalid" lines="none">
-            <ion-label position="stacked">Base USD <span class="required-star" aria-hidden="true">*</span></ion-label>
+            <ion-label position="stacked">Base USD:<span class="required-star" aria-hidden="true">*</span></ion-label>
             <ion-input required type="text" [(ngModel)]="baseUSDInput" (ionInput)="onBaseInput($event)"
               inputmode="numeric" placeholder="0,00">
             </ion-input>
@@ -65,9 +65,18 @@
 
         <ion-col size="12">
           <ion-item>
-            <ion-label position="stacked">Porcentaje Descuento USD</ion-label>
+            <ion-label position="stacked">Porcentaje Descuento USD:</ion-label>
             <ion-input type="text" [(ngModel)]="descuentoUSDInput" (ionInput)="onDescuentoInput($event)"
               inputmode="numeric" placeholder="0.00">
+            </ion-input>
+          </ion-item>
+        </ion-col>
+
+        <ion-col size="12">
+          <ion-item>
+            <ion-label position="stacked">Valor Tasa BCV:</ion-label>
+            <ion-input type="text" [(ngModel)]="tasaBcvRate" inputmode="numeric"
+              placeholder="0.00" readonly>
             </ion-input>
           </ion-item>
         </ion-col>
@@ -81,23 +90,23 @@
 
         <ion-col size="12">
           <ion-item>
-            <ion-label>Calcular IVA 16%</ion-label>
+            <ion-label>Calcular IVA 16%:</ion-label>
             <ion-checkbox slot="start" [(ngModel)]="calcularIVA" (ionChange)="recalcTotals()"></ion-checkbox>
           </ion-item>
         </ion-col>
 
         <ion-col size="12" *ngIf="calcularIVA">
           <ion-item>
-            <ion-label position="stacked">IVA % USD</ion-label>
+            <ion-label position="stacked">IVA % USD:</ion-label>
             <ion-input type="text" [(ngModel)]="ivaUSDInput" (ionInput)="onIVAInput($event)" inputmode="numeric"
               placeholder="16,00" readonly>
             </ion-input>
           </ion-item>
         </ion-col>
 
-        <ion-col size="12">
+        <ion-col size="12" *ngIf="descuentoUSD > 0">
           <ion-item>
-            <ion-label position="stacked">Total Descuento USD</ion-label>
+            <ion-label position="stacked">Total Descuento USD:</ion-label>
             <ion-input type="number" [(ngModel)]="descuentoUSD" (ionChange)="recalcTotals()" placeholder="0.00"
               readonly></ion-input>
           </ion-item>
@@ -105,17 +114,25 @@
 
         <ion-col size="12" *ngIf="calcularIVA">
           <ion-item>
-            <ion-label position="stacked">Total IVA USD</ion-label>
+            <ion-label position="stacked">Total IVA USD:</ion-label>
             <ion-input type="text" [value]="formatCurrencyLocale(totalIVAUSD)" readonly></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <ion-col size="12" *ngIf="baseUSD > 0">
+          <ion-item>
+            <ion-label position="stacked">Total USD:</ion-label>
+            <ion-input type="text" [value]="formatCurrencyLocale(totalUSD)" readonly></ion-input>
           </ion-item>
         </ion-col>
 
         <ion-col size="12">
           <ion-item>
-            <ion-label position="stacked">Total USD</ion-label>
-            <ion-input type="text" [value]="formatCurrencyLocale(totalUSD)" readonly></ion-input>
+            <ion-label position="stacked">Total BCV:</ion-label>
+            <ion-input type="text" [value]="formatCurrencyLocale(totalTasaBCV)" readonly></ion-input>
           </ion-item>
         </ion-col>
+
 
         <ion-col size="12" *ngFor="let r of selectedRates">
           <ion-item>

@@ -141,6 +141,8 @@ export class CalculatorComponent implements OnInit {
     const id = event?.detail?.value ?? event;
     this.selectedCompany = event?.detail?.value || null;
     this.selectedRates = [];
+    this.rates = [];
+    this.selectedRatesValues = [];
     this.loadRates();
   }
 
