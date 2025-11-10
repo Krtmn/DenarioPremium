@@ -92,7 +92,24 @@ export class GeolocationService {
         console.log("ya tenemos posicion");       
       }else{
           // console.log("tenemos permiso de locacion");
-      this.posicion = await Geolocation.getCurrentPosition();
+        try {
+          this.posicion = await Geolocation.getCurrentPosition();
+        } catch (err: any) {
+          // Capacitor/Android bridge can return platform errors such as "location unavailable".
+          console.error('[GeolocationService] getCurrentPosition error:', err);
+          // Show a friendly message to the user depending on error
+          /* if (err && typeof err.message === 'string' && err.message.toLowerCase().includes('location services are not enabled')) {
+            this.message.alertCustomBtn(this.messageRecommend, this.buttonsOpenSettings);
+          } else if (err && typeof err.message === 'string' && err.message.toLowerCase().includes('location unavailable')) {
+            // generic message: ask user to check GPS and permissions
+            this.message.alertCustomBtn(this.messageRecommend, this.buttonsAppDetails);
+          } else {
+            this.message.alertCustomBtn(this.messageRecommend, this.buttonsAppDetails);
+          } */
+          // clear permiso so caller can attempt to re-request later
+          this.permiso = false;
+          return "";
+        }
       //coords = this.posicion.coords.latitude.toString() +","+ this.posicion.coords.longitude.toString()
       //console.log("Coordenadas: "+coords);
       //asynchronously wait for a minute, then reset coordinates

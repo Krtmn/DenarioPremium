@@ -155,6 +155,7 @@ export class InventarioActividadesComponent implements OnInit {
     };
     //ir a nuevo pedido 
     this.router.navigate(['pedido']);
+    this.inventariosLogicService.isEdit = false;
     this.inventariosLogicService.showHeaderButtonsFunction(false);
     this.inventariosLogicService.inventarioComp = false;
     this.inventariosLogicService.inventarioList = false;

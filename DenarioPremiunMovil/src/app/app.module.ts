@@ -193,7 +193,7 @@ import { CalculatorComponent } from './calculator/calculator.component';
     VisitaPdfModalComponent,
     MessageModule,
     BrowserModule,
-    IonicModule.forRoot(),
+  IonicModule.forRoot({ swipeBackEnabled: false }),
     AppRoutingModule,
     FormsModule,
     ReactiveFormsModule,

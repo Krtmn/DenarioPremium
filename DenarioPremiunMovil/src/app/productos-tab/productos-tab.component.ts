@@ -90,6 +90,7 @@ export class ProductosTabComponent implements OnInit, OnDestroy {
 
   addProduct() {
     this.botonAgregar = false;
+    this.productService.searchStructures = true;
     if (this.returnLogic.validateReturn) {
       this.returnLogic.findProductsByInvoice();
     }

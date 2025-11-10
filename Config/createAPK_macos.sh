@@ -1,3 +1,4 @@
+# ...existing code...
 #!/bin/bash
 # createAPK_mcos.sh - Script para compilar, firmar y exportar APK en macOS/Linux
 
@@ -9,15 +10,15 @@ if [ -z "$1" ]; then
 fi
 
 # Configuración de rutas (ajusta según tu entorno)
-ANDROID_DIR="/Users/Kiberno/Documents/Repositorios/DenarioPremiumMovil/DenarioPremiunMovil/android"
-PROJECT_DIR="/Users/Kiberno/Documents/Repositorios/DenarioPremiumMovil/DenarioPremiunMovil"
-APK_PATH="/Users/Kiberno/Documents/Repositorios/DenarioPremiumMovil/DenarioPremiunMovil/android/app/build/outputs/apk/release/app-release.apk"
-SIGNED_APK_PATH="/Users/Kiberno/Documents/Repositorios/DenarioPremiumMovil/DenarioPremiunMovil/android/app/build/outputs/apk/release/app-release-signed-unaligned.apk"
-ALIGNED_APK_PATH="/Users/Kiberno/Documents/Repositorios/DenarioPremiumMovil/DenarioPremiunMovil/android/app/build/outputs/apk/release/app-release-signed.apk"
-KEYSTORE_PATH="/Users/Kiberno/Documents/Repositorios/DenarioPremiumMovil/DenarioPremiunMovil/android/app/my-denarioPremium-key.keystore"
+ANDROID_DIR="/Users/luiscastillo/Documents/Repositorios/DenarioPremiunMovil/DenarioPremiunMovil/android"
+PROJECT_DIR="/Users/luiscastillo/Documents/Repositorios/DenarioPremiunMovil/DenarioPremiunMovil"
+APK_PATH="/Users/luiscastillo/Documents/Repositorios/DenarioPremiunMovil/DenarioPremiunMovil/android/app/build/outputs/apk/release/app-release.apk"
+SIGNED_APK_PATH="/Users/luiscastillo/Documents/Repositorios/DenarioPremiunMovil/DenarioPremiunMovil/android/app/build/outputs/apk/release/app-release-signed-unaligned.apk"
+ALIGNED_APK_PATH="/Users/luiscastillo/Documents/Repositorios/DenarioPremiunMovil/DenarioPremiunMovil/android/app/build/outputs/apk/release/app-release-signed.apk"
+KEYSTORE_PATH="/Users/luiscastillo/Documents/Repositorios/DenarioPremiunMovil/DenarioPremiunMovil/android/app/my-denarioPremium-key.keystore"
 ALIAS="my-key-denariopremium"
 APK_NAME="$1"
-OUTPUT_DIR="/Users/Kiberno/Documents/Apks/${APK_NAME}"
+OUTPUT_DIR="/Users/luiscastillo/Documents/Apks/${APK_NAME}"
 
 # 1. Compilar la app para producción
 cd "$PROJECT_DIR"
@@ -70,3 +71,4 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 adb install -r "$OUTPUT_DIR/$APK_NAME.apk" || echo "ERROR: No se pudo instalar el APK en el dispositivo. ¿Está conectado y con depuración USB activa?"
+# ...existing code...

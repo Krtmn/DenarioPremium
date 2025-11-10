@@ -84,6 +84,7 @@ export class CobrosGeneralComponent implements OnInit {
   constructor(private clientSelectorService: ClienteSelectorService) { }
 
   ngOnInit() {
+<<<<<<< HEAD
     this.subscriptions.push(
       this.clientSelectorService.ClientChanged.subscribe(client => {
         this.collectService.client = client;
@@ -99,8 +100,53 @@ export class CobrosGeneralComponent implements OnInit {
       }),
 
     );
+=======
+    if (this.collectService.collection.stCollection == 2 || this.collectService.collection.stCollection == 3 || this.collectService.collection.stCollection == 6) {
+      //ES UN COBRO ENVIADO, NO DEBO HACER NADA, SOLO MOSTRAR LA DATA
+      this.setSendedCollection();
+    } else {
+      this.subscriptions.push(
+        this.clientSelectorService.ClientChanged.subscribe(client => {
+          this.collectService.client = client;
+          this.collectService.initCollect = true;
+          this.collectService.newClient = client;
+          this.collectService.changeClient = true;
+          this.collectService.onChangeClient = true;
+          this.collectService.client = this.collectService.newClient;
+          this.collectService.newClient = {} as Client;
+          this.setClientfromSelector(this.collectService.client);
+          this.collectService.cobroValid = false;
+          this.reset(client);
+        }),
+        this.adjuntoService.AttachmentChanged.subscribe(() => {
+          this.setChangesMade(true);
+        })
+      );
+      this.initGeneralState();
+    }
+  }
+>>>>>>> main
 
-    this.initGeneralState();
+  public setSendedCollection() {
+    this.collectService.initLogicService();
+    this.collectService.onCollectionValid(true);
+    this.collectService.cobroValid = true;
+    this.collectService.collectValidTabs = true;
+    this.collectService.enterpriseEnabled = false;
+    this.collectService.montoTotalPagar = this.collectService.collection.nuAmountFinal;
+    this.collectService.montoTotalPagarConversion = this.collectService.collection.nuAmountFinalConversion;
+    this.collectService.montoTotalPagado = this.collectService.collection.nuAmountTotal;
+    this.collectService.montoTotalPagadoConversion = this.collectService.collection.nuAmountTotalConversion;
+    this.initializeCurrenciesAndRates();
+    this.clientService.getClientById(this.collectService.collection.idClient).then(client => {
+      this.collectService.client = client;
+      this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", true, COLOR_VERDE);
+      this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, 'cobros');
+      this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, "Cobros", 'fondoVerde', client, false);
+      this.collectService.changeEnterprise = false;
+      this.collectService.getCurrencies(this.synchronizationServices.getDatabase(),
+        this.collectService.enterpriseSelected.idEnterprise);
+    });
   }
 
   private initGeneralState() {
@@ -420,23 +466,23 @@ export class CobrosGeneralComponent implements OnInit {
           switch (this.collectService.coTypeModule) {
             case "0": {
               console.log("NUEVO COBRO");
-              nameModule = "Cobros"
+              nameModule =  this.collectService.collectionTags.get("COB_TYPE_COBRO")!
               break
             }
             case "1": {
               console.log("ANTICIPO")
-              nameModule = "Anticipo"
+              nameModule = this.collectService.collectionTags.get("COB_TYPE_ANTICIPO")!
               break
             }
             case "2": {
               console.log("RETENCION");
-              nameModule = "Retención"
+              nameModule = this.collectService.collectionTags.get("COB_TYPE_RETENCION")!
 
               break
             }
             case "3": {
               console.log("IGTF")
-              nameModule = "Igtf"
+              nameModule = this.collectService.collectionTags.get("COB_TYPE_IGTF")!
               break;
             }
           }
@@ -506,9 +552,6 @@ export class CobrosGeneralComponent implements OnInit {
 
     this.messageService.showLoading().then(() => {
       this.selectorCliente.updateClientList(this.collectService.enterpriseSelected.idEnterprise);
-      //this.collectService.resetCollection(this.collectService.collection).then(resp => {
-      //this.collectService.collection.idEnterprise = this.collectService.enterpriseSelected.idEnterprise;
-      //this.collectService.collection.coEnterprise = this.collectService.enterpriseSelected.coEnterprise;
       this.ngOnInit();
       this.collectService.client = {} as Client;
       this.collectService.nameClient = "";
@@ -518,7 +561,8 @@ export class CobrosGeneralComponent implements OnInit {
           .then(() => {
             this.collectService.getDateRate(
               this.synchronizationServices.getDatabase(),
-              this.collectService.collection.daRate
+              this.collectService.dateRateVisual.split("T")[0]
+
             );
           });
 

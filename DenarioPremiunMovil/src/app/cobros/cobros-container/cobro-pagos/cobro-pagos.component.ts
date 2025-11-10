@@ -1,4 +1,4 @@
-import { Input, inject } from '@angular/core';
+import { Input, inject, AfterViewInit } from '@angular/core';
 import { Component, OnInit } from '@angular/core';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
@@ -52,12 +52,33 @@ export class CobroPagosComponent implements OnInit {
   ];
 
   constructor() {
+    console.log('[CobroPagos] constructor start');
+    console.time('[CobroPagos] constructor');
     if (isNaN(this.collectService.montoTotalPagar))
       this.collectService.montoTotalPagar = 0;
+    console.timeEnd('[CobroPagos] constructor');
   }
 
   ngOnInit() {
     this.alertButtons[0].text = this.collectService.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
+  }
+
+   ngAfterViewInit(): void {
+    // Medición simple: tiempo desde creación del componente hasta template montado
+    try {
+      console.time('[CobroPagos] afterViewInit');
+      // end immediately to print time (this measures sync work up to this hook)
+      console.timeEnd('[CobroPagos] afterViewInit');
+      console.log('[CobroPagos] montoTotalPagar=', this.collectService.montoTotalPagar, 'items ef=', this.collectService.pagoEfectivo.length);
+    } catch (e) {
+      console.warn('[CobroPagos] afterViewInit warn', e);
+    }
+  }
+
+  // trackBy para evitar recrear nodos DOM innecesarios
+  trackByIndex(index: number, item: any) {
+    if (!item) return index;
+    return item.id ?? item.coCollection ?? item.__amountUid ?? index;
   }
 
   addTipoPago(type: string) {
@@ -65,54 +86,73 @@ export class CobroPagosComponent implements OnInit {
     this.collectService.collection.collectionPayments[this.collectService.collection.collectionPayments.length] = new CollectionPayment;
     this.collectService.collection.collectionPayments[this.collectService.collection.collectionPayments.length - 1].coCollection = this.collectService.collection.coCollection;
     this.collectService.tiposPago.forEach(tp => tp.selected = false);
+
+    // Normalize dateRate: if it's in 'YYYY-MM-DD' form, append ' 00:00:00'.
+    // If it's already 'YYYY-MM-DD HH:MM:SS' keep as-is.
+    const rawDateRate = (this.collectService.dateRate || '').toString().trim();
+    let daRate = rawDateRate;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(rawDateRate)) {
+      daRate = rawDateRate + ' 00:00:00';
+    } else if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(rawDateRate)) {
+      // already has time, keep as-is
+      daRate = rawDateRate;
+    } else {
+      // fallback: leave as raw value (could be empty or different format)
+      daRate = rawDateRate;
+    }
+
+    this.collectService.onCollectionValidToSend(false)
+    // Nuevo: referencia al pago creado (se asigna dentro del switch)
+    let newPago: any = null;
+
     switch (type) {
       case "ef": {
         let newPagoEfectivo: PagoEfectivo = new PagoEfectivo;
         newPagoEfectivo.posCollectionPayment = this.collectService.collection.collectionPayments!.length - 1;
         this.collectService.pagoEfectivo.push(newPagoEfectivo);
+        newPago = newPagoEfectivo;
         break
       }
 
       case "ch": {
         let newPagoCheque: PagoCheque = new PagoCheque;
         newPagoCheque.posCollectionPayment = this.collectService.collection.collectionPayments!.length - 1;
-
         if (this.collectService.validateCollectionDate) {
-          newPagoCheque.fecha = this.collectService.dateRate + " 00:00:00";
-          newPagoCheque.fechaValor = this.collectService.dateRate + " 00:00:00";
+          // use normalized daRate (may already include time)
+          newPagoCheque.fecha = daRate;
+          newPagoCheque.fechaValor = daRate;
         } else {
           newPagoCheque.fecha = this.dateServ.hoyISO();
           newPagoCheque.fechaValor = this.dateServ.hoyISO();
         }
-
         this.collectService.pagoCheque.push(newPagoCheque);
+        newPago = newPagoCheque;
         break;
       }
 
       case "de": {
         let newPagoDeposito: PagoDeposito = new PagoDeposito;
         newPagoDeposito.posCollectionPayment = this.collectService.collection.collectionPayments!.length - 1;
-
         if (this.collectService.validateCollectionDate) {
-          newPagoDeposito.fecha = this.collectService.dateRate + " 00:00:00";
+          newPagoDeposito.fecha = daRate;
         } else {
           newPagoDeposito.fecha = this.dateServ.hoyISO();
         }
         this.collectService.pagoDeposito.push(newPagoDeposito);
+        newPago = newPagoDeposito;
         break
       }
 
       case "tr": {
         let newPagoTransferencia: PagoTransferencia = new PagoTransferencia;
         newPagoTransferencia.posCollectionPayment = this.collectService.collection.collectionPayments!.length - 1;
-
         if (this.collectService.validateCollectionDate) {
-          newPagoTransferencia.fecha = this.collectService.dateRate + " 00:00:00";
+          newPagoTransferencia.fecha = daRate;
         } else {
           newPagoTransferencia.fecha = this.dateServ.hoyISO();
         }
-
         this.collectService.pagoTransferencia.push(newPagoTransferencia);
+        newPago = newPagoTransferencia;
         break;
       }
 
@@ -120,8 +160,29 @@ export class CobroPagosComponent implements OnInit {
         let newPagoOtros: PagoOtros = new PagoOtros;
         newPagoOtros.posCollectionPayment = this.collectService.collection.collectionPayments!.length - 1;
         this.collectService.pagoOtros.push(newPagoOtros);
+        newPago = newPagoOtros;
         break;
       }
+    }
+
+    // --- Paso 2 corregido: obtener el cp (collectionPayment) recién añadido y asignar uid/inicializar mapas ---
+    const cpIndex = this.collectService.collection.collectionPayments.length - 1;
+    const cp = this.collectService.collection.collectionPayments[cpIndex] as any;
+
+    if (newPago) {
+      // genera/asegura uid en el objeto pago y recupera uid (usa getUid o ensureInitFor)
+      const uid = this.getUid(newPago);
+      // asigna mismo uid al collectionPayment (cp)
+      try {
+        if (!(cp as any).__amountUid) {
+          Object.defineProperty(cp, '__amountUid', { value: uid, enumerable: false, configurable: true, writable: false });
+        }
+      } catch {
+        (cp as any).__amountUid = uid;
+      }
+      // inicializa mapas inmediatamente (puedes usar ensureInitFor en vez de estas líneas)
+      this.centsMap[uid] = Math.round((newPago.monto ?? 0) * this.getMultiplier());
+      this.displayMap[uid] = this.formatFromMinorUnits(this.centsMap[uid]);
     }
   }
 
@@ -145,8 +206,14 @@ export class CobroPagosComponent implements OnInit {
     if (!['ef', 'ch', 'de', 'tr', 'ot'].includes(type)) return;
     const pagoArray = map[type as TipoPagoKey];
     if (!pagoArray) return;
+    if (!pagoArray[index]) return;
 
-    const monto = pagoArray[index].monto;
+    // Capturar el pago y su posición en collectionPayments ANTES de borrar
+    const removedPago = pagoArray[index];
+    const removedPos = removedPago.posCollectionPayment ?? index;
+    const monto = Number(removedPago.monto) || 0;
+
+    // Actualizar totales usando el monto del pago eliminado
     this.collectService.collection.nuAmountFinal -= monto;
     this.collectService.collection.nuAmountTotal -= monto;
     this.collectService.collection.nuDifference -= monto;
@@ -158,19 +225,51 @@ export class CobroPagosComponent implements OnInit {
       this.collectService.collection.nuAmountTotal, 0, this.collectService.collection.coCurrency
     );
 
-    this.collectService.collection.collectionPayments!.splice(pagoArray[index].posCollectionPayment, 1);
+    // Capturar uid del collectionPayment que vamos a eliminar (antes de hacer splice)
+    const removedCp = (this.collectService.collection.collectionPayments && this.collectService.collection.collectionPayments[removedPos]) as any | undefined;
+    const removedCpUid = removedCp?.__amountUid;
 
-    this.collectService.bankAccountSelected.splice(pagoArray[index].posCollectionPayment, 1)
+    // Eliminar collectionPayment y bankAccountSelected en la posición correcta
+    if (this.collectService.collection.collectionPayments && this.collectService.collection.collectionPayments.length > removedPos) {
+      this.collectService.collection.collectionPayments!.splice(removedPos, 1);
+    }
+    if (this.collectService.bankAccountSelected && this.collectService.bankAccountSelected.length > removedPos) {
+      this.collectService.bankAccountSelected.splice(removedPos, 1);
+    }
+
+    // Remover el pago del arreglo correspondiente
     pagoArray.splice(index, 1);
-    pagoArray.forEach((pago, i) => {
-      pago.posCollectionPayment -= 1;
+
+    // Reducir posCollectionPayment en 1 para TODOS los pagos cuya posCollectionPayment era mayor al eliminado
+    const allPagoArrays = [
+      this.collectService.pagoEfectivo,
+      this.collectService.pagoCheque,
+      this.collectService.pagoDeposito,
+      this.collectService.pagoTransferencia,
+      this.collectService.pagoOtros
+    ];
+    allPagoArrays.forEach(arr => {
+      if (Array.isArray(arr)) {
+        arr.forEach(p => {
+          if (p && typeof p.posCollectionPayment === 'number' && p.posCollectionPayment > removedPos) {
+            p.posCollectionPayment = p.posCollectionPayment - 1;
+          }
+        });
+      }
     });
 
-    if (pagoArray.length > 0)
+    // Revalidaciones
+    if (allPagoArrays.length > 0)
       this.collectService.validateToSend();
 
-    if (this.collectService.collection.collectionPayments.length == 0)
+    if (!this.collectService.collection.collectionPayments || this.collectService.collection.collectionPayments.length == 0)
       this.collectService.onCollectionValidToSend(false);
+
+    // Borrar mapas asociados al collectionPayment eliminado (si existían)
+    if (removedCpUid) {
+      delete this.centsMap[removedCpUid];
+      delete this.displayMap[removedCpUid];
+    }
   }
 
   getFecha(fecha: string, index: number, type: string) {
@@ -1005,20 +1104,6 @@ export class CobroPagosComponent implements OnInit {
     return `${sign}${unitsStr || '0'},${fraction}`;
   }
 
-  // asigna/obtiene uid único al objeto depósito/efectivo/cheque
-  private getUid(obj: any): string {
-    if (!obj) return `u-${++this.__uidCounter}`;
-    if (!obj.__amountUid) {
-      Object.defineProperty(obj, '__amountUid', {
-        value: `u-${++this.__uidCounter}`,
-        enumerable: false,
-        configurable: true,
-        writable: false
-      });
-    }
-    return obj.__amountUid;
-  }
-
   public formatFromCents(cents: number): string {
     const sign = cents < 0 ? '-' : '';
     const abs = Math.abs(cents);
@@ -1028,19 +1113,32 @@ export class CobroPagosComponent implements OnInit {
     return `${sign}${unitsStr || '0'},${cent}`;
   }
 
-  private ensureInitFor(obj: any): string {
-    if (!obj) obj = {};
+  // Añade este helper en la clase
+  private makeUid(): string {
+    // id corto basado en tiempo + random (colisiones prácticamente imposibles en UI)
+    return `u-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+
+  private getUid(obj: any): string {
+    if (!obj) {
+      // Si por alguna razón te pasan null, genera uno (pero idealmente no debería pasar)
+      return this.makeUid();
+    }
     if (!obj.__amountUid) {
       Object.defineProperty(obj, '__amountUid', {
-        value: `u-${++this.__uidCounter}`,
+        value: this.makeUid(),
         enumerable: false,
         configurable: true,
         writable: false
       });
     }
-    const uid = obj.__amountUid;
+    return obj.__amountUid;
+  }
+
+  private ensureInitFor(obj: any): string {
+    const uid = this.getUid(obj);
     if (this.centsMap[uid] === undefined) {
-      const base = Number(obj?.monto ?? obj?.monto ?? 0) || 0;
+      const base = Number(obj?.monto ?? 0) || 0;
       this.centsMap[uid] = Math.round(base * this.getMultiplier());
       this.displayMap[uid] = this.formatFromMinorUnits(this.centsMap[uid]);
     }

@@ -292,7 +292,7 @@ export class CobrosDocumentComponent implements OnInit {
           nuAmountRetention = Number(detail.nuAmountRetention ?? 0);
           nuAmountRetention2 = Number(detail.nuAmountRetention2 ?? 0);
 
-          if (cs.isPaymentPartial) {
+          if (detail.inPaymentPartial) {
             nuAmountPaid = Number(detail.nuAmountPaid ?? 0);
           } else {
             const sumRet = Number(detail.nuAmountDiscount ?? 0) + Number(detail.nuAmountRetention ?? 0) + Number(detail.nuAmountRetention2 ?? 0);
@@ -450,7 +450,6 @@ export class CobrosDocumentComponent implements OnInit {
 
       if (this.collectService.collection.stCollection == 1) {
         //este cobro fue guardado, se debe colocar los datos del documento como fueron guardados(si es q hubo alguna modificacion)
-
         const detail = this.collectService.collection.collectionDetails.find(
           d => d.coDocument == this.collectService.documentSaleOpen.coDocument && d.isSave
         );
@@ -463,6 +462,8 @@ export class CobrosDocumentComponent implements OnInit {
           this.collectService.documentSaleOpen.nuBalance = detail.nuBalanceDoc;
           this.collectService.documentSaleOpen.nuAmountDiscount = detail.nuAmountDiscount;
           this.collectService.nuBalance = this.collectService.documentSalesBackup[index].nuBalance;
+          this.collectService.isPaymentPartial = detail.inPaymentPartial;
+
         } else {
           this.collectService.nuBalance = this.collectService.documentSaleOpen.nuBalance;
         }
@@ -573,9 +574,10 @@ export class CobrosDocumentComponent implements OnInit {
       this.collectService.documentSales[indexDocumentSale].nuAmountRetention2 = 0;
       this.collectService.documentSales[indexDocumentSale].nuAmountDiscount = 0;
       this.collectService.documentSales[indexDocumentSale].isSelected = false;
+      this.collectService.documentSales[indexDocumentSale].isSave = false;
+      this.collectService.documentSalesView[indexDocumentSale].isSave = false;
 
       this.collectService.documentSalesBackup[indexDocumentSale] = JSON.parse(JSON.stringify(this.collectService.documentSales[indexDocumentSale]));
-
       let pos;
       pos = this.collectService.documentSales[indexDocumentSale].positionCollecDetails;
       console.log(pos);
@@ -604,6 +606,7 @@ export class CobrosDocumentComponent implements OnInit {
 
       if (this.collectService.collection.collectionDetails.length == 0) {
 
+
         this.collectService.haveDocumentSale = false;
         this.collectService.disabledSelectCollectMethodDisabled = true;
 
@@ -618,6 +621,8 @@ export class CobrosDocumentComponent implements OnInit {
         this.collectService.montoTotalPagarConversion = 0;
         this.collectService.montoTotalPagado = 0;
         this.collectService.montoTotalPagadoConversion = 0;
+        this.collectService.collection.nuDifference = 0;
+        this.collectService.collection.nuDifferenceConversion = 0;
 
         this.collectService.bankAccountSelected = [] as BankAccount[];
 
@@ -954,6 +959,10 @@ export class CobrosDocumentComponent implements OnInit {
     }
 
     if (this.collectService.collection.stCollection == 1) {
+      this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].inPaymentPartial = false;
+      this.collectService.documentSalesBackup[this.collectService.indexDocumentSaleOpen].inPaymentPartial = false;
+      this.collectService.documentSalesView[this.collectService.indexDocumentSaleOpen].inPaymentPartial = false;
+      this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].inPaymentPartial = false;
       this.collectService.documentSaleOpen.nuAmountDiscount = this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].nuAmountDiscount;
       this.collectService.documentSaleOpen.nuAmountRetention = this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].nuAmountRetention;
       this.collectService.documentSaleOpen.nuAmountRetention2 = this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].nuAmountRetention2;
