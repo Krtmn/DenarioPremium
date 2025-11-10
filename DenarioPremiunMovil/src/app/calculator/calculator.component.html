@@ -74,7 +74,7 @@
 
         <ion-col size="12" *ngFor="let r of selectedRatesValues">
           <ion-item>
-            <ion-label position="stacked">Valor Tasa {{ r.value }}:</ion-label>
+            <ion-label position="stacked">Valor Tasa {{ r.naConversion }}:</ion-label>
             <ion-input type="text" [value]="r.value" readonly></ion-input>
           </ion-item>
         </ion-col>
@@ -97,7 +97,7 @@
 
         <ion-col size="12">
           <ion-item>
-            <ion-label position="stacked">Descuento %</ion-label>
+            <ion-label position="stacked">Total Descuento USD</ion-label>
             <ion-input type="number" [(ngModel)]="descuentoUSD" (ionChange)="recalcTotals()" placeholder="0.00"
               readonly></ion-input>
           </ion-item>
