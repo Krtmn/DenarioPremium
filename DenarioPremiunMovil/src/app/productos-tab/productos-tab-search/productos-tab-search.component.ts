@@ -69,6 +69,7 @@ db = inject(SynchronizationDBService);
   }
 
   onSearchClicked() {
+    this.productStructureService.nombreProductStructureSeleccionada = '';
     this.disabledSearchButton = true;
     if(this.pedido){
       if(this.productService.searchStructures){
