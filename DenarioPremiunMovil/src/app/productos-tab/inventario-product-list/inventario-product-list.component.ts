@@ -59,6 +59,7 @@ export class InventarioProductListComponent implements OnInit {
   public typeStockMethod: string = "";
   public imagesMap: { [imgName: string]: string } = {};
   searchSub: any;
+  searchTextChanged: any;
   private subs = new Subscription();
 
   constructor(
@@ -90,6 +91,10 @@ export class InventarioProductListComponent implements OnInit {
             /* this.inventariosLogicService.setVariablesMap(); */
           });
       }
+    });
+
+    this.searchTextChanged = this.productService.searchTextChanged.subscribe((value) => {
+      this.searchText = value;
     });
 
     this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
@@ -137,10 +142,14 @@ export class InventarioProductListComponent implements OnInit {
     this.psClicked.unsubscribe();
     this.featClicked.unsubscribe();
     this.favClicked.unsubscribe();
+    this.subs.unsubscribe();
+    this.searchTextChanged.unsubscribe();
   }
 
   onShowProductStructures() {
-    this.inventariosLogicService.onShowProductStructures()
+    this.inventariosLogicService.onShowProductStructures();
+    this.productService.onBackButtonClicked();
+    this.productService.searchStructures = true;
     /* this.inventariosLogicService.showProductList = false;
     this.productStructureService.onAddProductCLicked(); */
   }

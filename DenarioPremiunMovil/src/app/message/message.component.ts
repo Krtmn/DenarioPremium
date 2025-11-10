@@ -9,10 +9,10 @@ import { IonAlert } from '@ionic/angular';
 
 
 @Component({
-    selector: 'app-message',
-    templateUrl: './message.component.html',
-    styleUrls: ['./message.component.scss'],
-    standalone: false
+  selector: 'app-message',
+  templateUrl: './message.component.html',
+  styleUrls: ['./message.component.scss'],
+  standalone: false
 })
 export class MessageComponent implements OnInit, OnDestroy {
 
@@ -42,9 +42,9 @@ export class MessageComponent implements OnInit, OnDestroy {
   subAlertModalMsj: any;
   closeAlertModal: any
   subAlertModalMsj2: any;
-  closeAlertModal2:any;
+  closeAlertModal2: any;
   subConfirmSend: any;
-  closeConfirmSend:any;
+  closeConfirmSend: any;
   subSaveOrExitOpen: any;
   closeSaveOrExitOpen: any;
   subModalLoginModule: any;
@@ -54,7 +54,7 @@ export class MessageComponent implements OnInit, OnDestroy {
 
   closeModalCustom: any;
 
-  subDismissAll:any;
+  subDismissAll: any;
   private messageService = inject(MessageService)
   public loginLogic = inject(LoginLogicService)
 
@@ -75,95 +75,111 @@ export class MessageComponent implements OnInit, OnDestroy {
 
     //console.log("[MessageComponent] Subscribing...")
 
-      this.subTransaccionMsj = this.messageService.transaccionMsj.subscribe((data: string) => {
-        console.log(data);
-        this.mensaje = data;
-        this.setOpen(true);
-      })
+    this.subTransaccionMsj = this.messageService.transaccionMsj.subscribe((data: string) => {
+      console.log(data);
+      this.mensaje = data;
+      this.setOpen(true);
+    })
 
-      this.closeTransaction = this.messageService.closeTransactionSubject.subscribe(() => {
-        this.isAlertOpen = false;
-        //this.messageService.dismissAll();
-        
-      })
-    
+    this.closeTransaction = this.messageService.closeTransactionSubject.subscribe(() => {
+      this.isAlertOpen = false;
+      //this.messageService.dismissAll();
 
-      this.subTransaccionMsjNB = this.messageService.transaccionMsjNB.subscribe((data: string) => {
-        console.log(data);
-        this.mensaje = data;
-        this.setNBOpen(true);
-      })
-    
-      this.closeTransactionNB = this.messageService.closeTransactionNBSubject.subscribe(() => {
-        this.isAlertNBOpen = false;
-        //this.messageService.dismissAll();
-      })
+    })
 
 
-      this.subAlertModalMsj = this.messageService.alertModalMsj.subscribe((data: MessageAlert) => {
-        console.log(data);
-        this.header = data.header;
-        this.mensaje = data.message;
-        this.setAlertMessage(true);
-      })
-    
-      this.closeAlertModal = this.messageService.closeAlertModalSubject.subscribe((() => {
-        this.alertMessageOpen = false;
-        //this.messageService.dismissAll();
-      }))
+    this.subTransaccionMsjNB = this.messageService.transaccionMsjNB.subscribe((data: string) => {
+      console.log(data);
+      this.mensaje = data;
+      this.setNBOpen(true);
+    })
+
+    this.closeTransactionNB = this.messageService.closeTransactionNBSubject.subscribe(() => {
+      this.isAlertNBOpen = false;
+      //this.messageService.dismissAll();
+    })
 
 
-      this.subAlertModalMsj2 = this.messageService.alertModalMsj2.subscribe((data: MessageAlert) => {
-        console.log(data);
-        this.header = data.header;
-        this.mensaje = data.message;
-        this.setAlertMessage2(true);
-      })
+    this.subAlertModalMsj = this.messageService.alertModalMsj.subscribe((data: MessageAlert) => {
+      console.log(data);
+      this.header = data.header;
+      this.mensaje = data.message;
+      this.setAlertMessage(true);
+    })
 
-      this.closeAlertModal2 = this.messageService.closeAlertModal2Subject.subscribe(() => {
-        this.alertMessageOpen = false;
-        
-      })
-    
-      this.subDismissAll = this.messageService.dismissAllBtn.subscribe(() => {
-        this.dismissAll();
-      })
+    this.closeAlertModal = this.messageService.closeAlertModalSubject.subscribe((() => {
+      this.alertMessageOpen = false;
+      //this.messageService.dismissAll();
+    }))
 
 
+    this.subAlertModalMsj2 = this.messageService.alertModalMsj2.subscribe((data: MessageAlert) => {
+      console.log(data);
+      this.header = data.header;
+      this.mensaje = data.message;
+      this.setAlertMessage2(true);
+    })
 
-  this.subModalLoginModule =this.messageService.alertModalLoginModule.subscribe(([data, module]) => {
-    console.log(data);
-    this.header = data.header;
-    this.mensaje = data.message;
-    this.setAlertMessageModule(true, module);
-  });
+    this.closeAlertModal2 = this.messageService.closeAlertModal2Subject.subscribe(() => {
+      this.alertMessageOpen = false;
 
-  this.closeModalLogin = this.messageService.closeModalLoginSubject.subscribe(() =>{
-    this.alertMessageModule = false;
-    this.messageService.hideLoading();
-    //this.messageService.dismissAll();
-  });
+    })
 
-  this.subModalBtnCustom = this.messageService.customBtn.subscribe(([data, buttons]) => {
-    console.log(data);
-    this.header = data.header;
-    this.mensaje = data.message;
-    this.buttonsCustom = buttons;
-    this.setalertCustomBtnOpen(true);
+    this.subDismissAll = this.messageService.dismissAllBtn.subscribe(() => {
+      this.dismissAll();
+    })
 
-  });
 
-  this.closeModalCustom = this.messageService.closeModalCustomBtn.subscribe(() => {
-    this.alertCustomBtnOpen = false;
-    this.alertCustom.dismiss();
-    //this.messageService.dismissAll();    
-  })
-}
 
-  dismissAll(){
+    this.subModalLoginModule = this.messageService.alertModalLoginModule.subscribe(([data, module]) => {
+      console.log(data);
+      this.header = data.header;
+      this.mensaje = data.message;
+      this.setAlertMessageModule(true, module);
+    });
+
+    this.closeModalLogin = this.messageService.closeModalLoginSubject.subscribe(() => {
+      this.alertMessageModule = false;
+      this.messageService.hideLoading();
+      //this.messageService.dismissAll();
+    });
+
+    this.subModalBtnCustom = this.messageService.customBtn.subscribe(([data, buttons]) => {
+      console.log(data);
+      this.header = data.header;
+      this.mensaje = data.message;
+      this.buttonsCustom = buttons;
+      this.setalertCustomBtnOpen(true);
+
+    });
+
+    this.closeModalCustom = this.messageService.closeModalCustomBtn.subscribe(() => {
+      this.alertCustomBtnOpen = false;
+      // dismiss de forma segura (si el ViewChild existe y la alerta está montada)
+      this.safeDismiss(this.alertCustom);
+    })
+  }
+
+  private async safeDismiss(alert?: IonAlert | null) {
+    if (!alert) return;
+    try {
+      const dismissFn = (alert as any)?.dismiss;
+      if (typeof dismissFn === 'function') {
+        // small delay para dejar que Angular/Ionic complete cambios de estado
+        await new Promise(res => setTimeout(res, 40));
+        await dismissFn.call(alert).catch((e: any) => {
+          console.warn('[MessageComponent] alert.dismiss() rejected:', e);
+        });
+      }
+    } catch (e) {
+      console.warn('[MessageComponent] safeDismiss error:', e);
+    }
+  }
+
+  dismissAll() {
     //cierra todos los mensajes
     this.isAlertOpen = false;
-    this.isAlertNBOpen= false;
+    this.isAlertNBOpen = false;
     this.alertMessageOpen = false;
     this.alertMessageOpen2 = false;
     this.alertMessageModule = false;
@@ -190,9 +206,9 @@ export class MessageComponent implements OnInit, OnDestroy {
 
     this.closeModalCustom.unsubscribe();
     this.subModalBtnCustom.unsubscribe();
-    
+
     this.subDismissAll.unsubscribe();
-      
+
   }
 
   goBack(): void {
@@ -202,40 +218,40 @@ export class MessageComponent implements OnInit, OnDestroy {
 
   setOpen(isOpen: boolean) {
     this.isAlertOpen = isOpen;
-    if(!isOpen){this.messageService.closeTransaction();}
-    
+    if (!isOpen) { this.messageService.closeTransaction(); }
+
   }
 
   setNBOpen(isOpen: boolean) {
     this.isAlertNBOpen = isOpen;
-    if(!isOpen){this.messageService.closeTransactionNB();}
+    if (!isOpen) { this.messageService.closeTransactionNB(); }
   }
 
   setAlertMessage(isOpen: boolean) {
     this.alertMessageOpen = isOpen;
-    if(!isOpen){this.messageService.closeAlertModal()}
+    if (!isOpen) { this.messageService.closeAlertModal() }
   }
   setAlertMessage2(isOpen: boolean) {
     this.alertMessageOpen2 = isOpen;
-    if(!isOpen){this.messageService.closeAlertModal2()}    
-    
+    if (!isOpen) { this.messageService.closeAlertModal2() }
+
   }
   setAlertMessageModule(isOpen: boolean, module: string) {
     this.alertMessageModule = isOpen;
     this.moduleActive = module;
     console.log(module);
-    if(!isOpen){this.messageService.closeModalLogin()}
+    if (!isOpen) { this.messageService.closeModalLogin() }
   }
 
-  setalertCustomBtnOpen(value: boolean){
+  setalertCustomBtnOpen(value: boolean) {
     this.alertCustomBtnOpen = value;
-    if(!value){this.messageService.closeCustomBtn()}
+    if (!value) {
+      // notificar servicio para procesar cola, pero no forzar dismiss aquí
+      this.messageService.closeCustomBtn();
+      // intentar dismiss seguro por si quedó montada
+      this.safeDismiss(this.alertCustom);
+    }
   }
-
-
-
-
-
   public buttonsNuevos = [
     {
       text: 'Cancelar',
@@ -290,13 +306,8 @@ export class MessageComponent implements OnInit, OnDestroy {
       role: 'confirm',
       handler: () => {
         console.log('Alert confirmed');
-        
+
       },
     },
   ];
-
-
-  
-
-
 }

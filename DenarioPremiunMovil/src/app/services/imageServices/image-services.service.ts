@@ -171,55 +171,84 @@ export class ImageServicesService {
     const worker = async (imgName: string) => {
       let url = "";
       try {
-        // centralize download URL construction
         url = this.buildDownloadUrl(imgName);
       } catch {
-        console.log("error", imgName);
+        console.log("buildDownloadUrl error:", imgName);
         return;
       }
-      let date = new Date();
+      const date = Date.now();
       try {
-        const res = await Filesystem.downloadFile({
+        console.log('Downloading', url, '->', imgName);
+        const fileResult: any = await Filesystem.downloadFile({
           url: url,
           path: imgName,
           directory: Directory.Cache
         });
+
+        // Manejar distintas formas de respuesta (data / uri / path)
+        let imgSrc = '';
+        if (fileResult?.data) {
+          imgSrc = 'data:image/png;base64,' + fileResult.data;
+        } else if (fileResult?.uri) {
+          imgSrc = fileResult.uri;
+        } else if (fileResult?.path) {
+          imgSrc = fileResult.path;
+        } else {
+          console.warn('Filesystem.downloadFile returned no data for', imgName, fileResult);
+          return;
+        }
+
+        this.imageLoaded$.next({ imgName, imgSrc });
         this.allFileList.push({
           name: imgName.split(".")[0],
-          date: date.getTime(),
-          path: res.path!,
-          fechaCreacion: date.getTime().toString(),
+          date: date,
+          path: fileResult.path!,
+          fechaCreacion: date.toString(),
         });
         this.listFilesImages.push(imgName);
         let name = imgName.split(".")[0].split("_")[0];
         if (!this.mapImages.get(name))
-          this.mapImages.set(name, [res.path!]);
+          this.mapImages.set(name, [fileResult.path!]);
         else
-          this.mapImages.get(name)?.push(res.path!);
+          this.mapImages.get(name)?.push(fileResult.path!);
 
         localStorage.setItem("listFilesImages", JSON.stringify(this.listFilesImages));
         if (this.mapImages.size != 0)
           localStorage.setItem("mapImages", JSON.stringify(Array.from(this.mapImages.entries())));
 
         // Lee la imagen y emite el resultado para mostrarla en tiempo real
-        const fileResult = await Filesystem.readFile({
-          path: "file://" + res.path!,
+        const fileResultRead = await Filesystem.readFile({
+          path: "file://" + fileResult.path!,
         });
-        const base64 = 'data:image/png;base64,' + fileResult.data;
+        const base64 = 'data:image/png;base64,' + fileResultRead.data;
         this.imageLoaded$.next({ imgName, imgSrc: base64 });
       } catch (e) {
-        console.log(e);
+        console.error('Download error', imgName, url, e);
       }
     };
 
-    while (queue.length > 0 || running.length > 0) {
+    const schedule = () => {
       while (queue.length > 0 && running.length < concurrency) {
         const imgName = queue.shift()!;
-        running.push(worker(imgName));
+        let p: Promise<void>;
+        p = worker(imgName).finally(() => {
+          const idx = running.indexOf(p);
+          if (idx > -1) running.splice(idx, 1);
+        });
+        running.push(p);
       }
-      await Promise.race(running).then(() => {
-        running.splice(0, 1); // Elimina la promesa resuelta
-      });
+    };
+
+    schedule();
+    // Espera hasta que todo termine
+    while (running.length > 0 || queue.length > 0) {
+      if (running.length > 0) {
+        await Promise.race(running);
+      } else {
+        // si no hay en ejecución, inicializar más
+        schedule();
+      }
+      schedule();
     }
 
   }

@@ -67,6 +67,8 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   favoritePSClicked!: any;
 
   carritoButtonClicked!: any;
+
+  searchTextChanged!: any;
   searchSub!: any;
 
   detailModal = false;
@@ -76,6 +78,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   disablePriceListSelector = false;
   public imagesMap: { [imgName: string]: string } = {};
   private subs = new Subscription();
+  
 
   constructor(
 
@@ -92,10 +95,15 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       })
     );
 
+    this.searchTextChanged = this.productService.searchTextChanged.subscribe((value) => {
+      this.searchText = value;
+    });
+
     this.ivaList = this.orderServ.ivaList;
     this.disablePriceListSelector = (!this.orderServ.userCanChangePriceListProduct);
     this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
       this.showProductList = true;
+      this.nameProductStructure = '';
       this.productList = this.productService.productList;
       this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
     });
@@ -259,6 +267,9 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.featuredPSClicked.unsubscribe();
     this.favoritePSClicked.unsubscribe();
     this.searchSub.unsubscribe();
+    this.carritoButtonClicked.unsubscribe();
+    this.searchTextChanged.unsubscribe();
+    this.subs.unsubscribe();
   }
 
   onProductQuantityChange(prod: OrderUtil) {
@@ -354,12 +365,18 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   onShowProductStructures() {
     this.orderUtilList = [] as OrderUtil[];
     this.showProductList = false;
+    this.productService.searchStructures = true;
+    this.productService.onBackButtonClicked();
     this.productStructureService.onAddProductCLicked();
   }
 
   onSelectProductDev() {
     console.log('Devolucion not implemented.');
   }
+
+    setSearchText(value: string) {
+      this.searchText = value;
+    }
 
   onSelectProductPed(i: number, prod: OrderUtil) {
 

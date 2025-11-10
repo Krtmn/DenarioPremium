@@ -10,8 +10,6 @@ import { filter } from 'rxjs/operators';
 import { Enterprise } from './modelos/tables/enterprise';
 import { GlobalConfigService } from './services/globalConfig/global-config.service';
 
-
-
 @Component({
   selector: 'app-root',
   templateUrl: 'app.component.html',
@@ -24,37 +22,46 @@ export class AppComponent {
 
   public loginService = inject(LoginLogicService);
 
-
-
-
   constructor(
     private platform: Platform,
     private router: Router
-  ) {
-
-  }
+  ) {}
 
   async ngOnInit() {
-    //conversionCalculator
-    if (this.platform.is('ios'))
+    // ocultar StatusBar en iOS si aplica
+    if (this.platform.is('ios')) {
       StatusBar.hide();
-    this.listenerNetwork()
+    }
+
+    // registrar listener de red
+    this.listenerNetwork();
     this.netWork = await Network.getStatus();
-
-
-
     localStorage.setItem("connected", String(this.netWork.connected));
     localStorage.setItem("connectionType", String(this.netWork.connectionType));
-    //this.loginService.imgHome = "../../../assets/images/logoPremium.svg"
-    //this.loginService.imgHome = "../../../assets/images/ferrari.jpg"
+
+    // Bloquear el botón físico "back" a nivel global:
+    // usamos alta prioridad para sobreescribir comportamientos por defecto.
+    try {
+      // subscribeWithPriority está disponible en Ionic Platform
+      // pasamos un callback vacío para evitar la acción por defecto.
+      (this.platform as any).backButton.subscribeWithPriority(9999, () => {
+        // Intencionalmente vacío — bloquea el back físico en toda la app.
+      });
+    } catch (e) {
+      // Fallback si la plataforma no expone subscribeWithPriority
+      this.platform.backButton.subscribe(() => {
+        // Intencionalmente vacío
+      });
+    }
+
+    // Nota: si quieres permitir "back" en rutas concretas, revisa la sección "Alternativas"
   }
 
   listenerNetwork() {
     Network.addListener('networkStatusChange', status => {
-      //console.log('Network status changed', status);
       this.networkStatus = status;
       localStorage.setItem("connected", String(status.connected));
       localStorage.setItem("connectionType", String(status.connectionType));
-    })
+    });
   }
 }

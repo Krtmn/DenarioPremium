@@ -125,6 +125,7 @@ export class PedidoComponent implements OnInit {
 
   nuValueLocal = 0;
   tasaCambio = '0';// la tasa que se muestra en el input
+  showConversion = false; //para mostrar la tasa y conversiones
 
   @Output()
   goToNuevoPedido: EventEmitter<any> = new EventEmitter<any>();
@@ -228,7 +229,7 @@ export class PedidoComponent implements OnInit {
       //setup monedas
       this.currencyServ.setup(this.dbServ.getDatabase()).then(() => {
         this.multimoneda = this.currencyServ.multimoneda;
-        
+        this.showConversion = this.multimoneda && !this.orderServ.showTransactionCurrency;
         this.localCurrency = this.currencyServ.getLocalCurrency();
         if (this.orderServ.openOrder) {
           this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.orderServ.order.coCurrency);
