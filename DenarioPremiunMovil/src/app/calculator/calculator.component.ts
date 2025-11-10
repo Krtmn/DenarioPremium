@@ -38,7 +38,7 @@ export class CalculatorComponent implements OnInit {
   public selectedCompany: Enterprise | null = null;
   public rates: Conversion[] = [];
   public selectedRates: Conversion[] = [];
-  public selectedRatesValues: { idConversion: number; value: number }[] = [];
+  public selectedRatesValues: { idConversion: number; naConversion: string; value: number }[] = [];
 
   public baseUSD: number = 0;
   public calcularIVA: boolean = true; // checkbox default true
@@ -141,6 +141,7 @@ export class CalculatorComponent implements OnInit {
     const id = event?.detail?.value ?? event;
     this.selectedCompany = event?.detail?.value || null;
     this.selectedRates = [];
+    this.loadRates();
   }
 
   public loadRates() {
@@ -191,11 +192,12 @@ export class CalculatorComponent implements OnInit {
 
     const promises = this.selectedRates.map(r => {
       const idConv = Number(r.idConversion);
+      const naConv = r.naConversion;
       return this.conversionService.getRate(idConv, idEnterprise).then(value => {
-        return { idConversion: idConv, value: value.nuValueLocal };
+        return { idConversion: idConv, naConversion: naConv, value: value.nu_value_local };
       }).catch(err => {
         console.warn('Error cargando rate value for', idConv, err);
-        return { idConversion: idConv, value: 0 };
+        return { idConversion: idConv, naConversion: naConv, value: 0 };
       });
     });
 

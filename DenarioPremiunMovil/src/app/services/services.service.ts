@@ -17,8 +17,13 @@ import { PendingTransaction } from '../modelos/tables/pendingTransactions';
 })
 export class ServicesService {
   //private WsUrl = "http://soportepremium.ddns.net:8181/PremiumWS/services/";
-  //private WsUrl = "http://192.168.0.231:8282/PremiumWS/services/";
+  private WsUrl = "http://192.168.0.231:8282/PremiumWS/services/";
   //private WsUrl = "http://192.168.0.217:8080/PremiumWS/services/";
+
+  //private WsUrl = "http://denariodemo.ddns.net:8282/PremiumWS/services/"; 
+  
+  //KIBERNO
+  //private WsUrl = "http://190.52.107.151:8282/PremiumWS/services/";
 
   //DEMO
   //private WsUrl = 'http://soportepremium.ddns.net:9090/PremiumWS/services/';
@@ -29,7 +34,7 @@ export class ServicesService {
   //NUTRINA andres nutac123
   //private WsUrl = "http://soportepremium.ddns.net:9993/PremiumWS/services/";
 
-  //thermogrup
+  //nutrina
   //private WsUrl = 'http://soportepremium.ddns.net:8191/PremiumWS/services/';
 
   //  private WsUrl = "http://200.35.84.250:8085/PremiumWS/services/";
@@ -57,12 +62,15 @@ export class ServicesService {
   //private WsUrl = "http://denariodemo.ddns.net:8282/PremiumWS/services/";
 
   //private WsUrl = "http://200.35.84.250:8085/PremiumWS/services/";
-  
+
   // diprocher pruebas QA
-  private WsUrl = "http://soportepremium.ddns.net:9991/PremiumWS/services/";
+  //private WsUrl = "http://soportepremium.ddns.net:9991/PremiumWS/services/";
 
   //private WsUrl = "http://soportepremium.ddns.net:9993/PremiumWS/services/";
-  
+
+  //001 123456 Dist Mundo agricola
+  //private WsUrl = "http://soportepremium.ddns.net:9995/PremiumWS/services/";
+
   private name = "";
   private last = "";
   public tags = new Map<string, string>([]);

@@ -448,23 +448,23 @@ export class CobrosGeneralComponent implements OnInit {
           switch (this.collectService.coTypeModule) {
             case "0": {
               console.log("NUEVO COBRO");
-              nameModule = "Cobros"
+              nameModule =  this.collectService.collectionTags.get("COB_TYPE_COBRO")!
               break
             }
             case "1": {
               console.log("ANTICIPO")
-              nameModule = "Anticipo"
+              nameModule = this.collectService.collectionTags.get("COB_TYPE_ANTICIPO")!
               break
             }
             case "2": {
               console.log("RETENCION");
-              nameModule = "Retención"
+              nameModule = this.collectService.collectionTags.get("COB_TYPE_RETENCION")!
 
               break
             }
             case "3": {
               console.log("IGTF")
-              nameModule = "Igtf"
+              nameModule = this.collectService.collectionTags.get("COB_TYPE_IGTF")!
               break;
             }
           }
