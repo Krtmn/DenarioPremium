@@ -54,6 +54,8 @@ export interface TablesLastUpdate {
   orderDetailUnitTableLastUpdate:string,
   orderDetailDiscountTableLastUpdate:string,
   conversionTableLastUpdate:string,
+  moduleTableLastUpdate:string,
+  currencyModuleTableLastUpdate:string,
   page: number
 
 }

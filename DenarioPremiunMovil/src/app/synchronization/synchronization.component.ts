@@ -128,7 +128,9 @@ export class SynchronizationComponent implements OnInit {
     69: 'orderDetails',
     70: 'orderDetailUnits',
     71: 'orderDetailDiscounts',
-    72: 'conversion'
+    72: 'conversion',
+    73: 'modules',
+    74: 'currencyModules'
   };
 
   /**
@@ -188,7 +190,9 @@ export class SynchronizationComponent implements OnInit {
     orderDetails: 'Detalles de Pedido',
     orderDetailUnits: 'Unidades de Detalle de Pedido',
     orderDetailDiscounts: 'Descuentos de Detalle de Pedido',
-    conversion: 'Tasas de Conversión'
+    conversion: 'Tasas de Conversión',
+    modules: 'Módulos',
+    currencyModules: 'Monedas Módulos',
   };
 
   constructor(
@@ -570,6 +574,16 @@ export class SynchronizationComponent implements OnInit {
             this.tables.page = 0;
             break;
           }
+          case 73: {
+            this.tables.moduleTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
+          case 74: {
+            this.tables.currencyModuleTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
 
           default: {
             //statements;
@@ -739,6 +753,9 @@ export class SynchronizationComponent implements OnInit {
     // LA VALIDACIÓN SOLICITADA: tabla 72 depende de conversionCalculator
     if ([72].includes(tableId)) {
       return cfgTrue('conversionCalculator');
+    }
+     if ([73,74].includes(tableId)) {
+      return cfgTrue('currencyModule');
     }
 
     // Para cualquier otra tabla, por defecto sincronizamos
@@ -1150,6 +1167,20 @@ export class SynchronizationComponent implements OnInit {
       batchFn: this.synchronizationServices.insertConversionBatch.bind(this.synchronizationServices),
       rowKey: 'conversionTable',
       tableKey: 'conversionTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
+    modules: {
+      batchFn: this.synchronizationServices.insertModulesBatch.bind(this.synchronizationServices),
+      rowKey: 'moduleTable',
+      tableKey: 'moduleTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
+    currencyModules: {
+      batchFn: this.synchronizationServices.insertCurrencyModulesBatch.bind(this.synchronizationServices),
+      rowKey: 'currencyModuleTable',
+      tableKey: 'currencyModuleTableLastUpdate',
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
     }

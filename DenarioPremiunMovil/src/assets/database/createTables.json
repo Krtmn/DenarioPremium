@@ -294,12 +294,26 @@
         "idName": "id_transaction_status",
         "sql": "CREATE TABLE IF NOT EXISTS transaction_statuses ( id_transaction_status INTEGER, da_transaction_statuses TIMESTAMP, id_transaction_type INTEGER, co_transaction_type VARCHAR(10), co_transaction character VARCHAR(50), id_transaction INTEGER, id_status INTEGER, co_status character VARCHAR(10));"
     },
-     {
+    {
         "id": 72,
         "name": "conversion",
         "table": "conversion",
         "idName": "id_conversion",
         "sql": "CREATE TABLE IF NOT EXISTS conversion ( id_conversion INTEGER, co_conversion VARCHAR(80), na_conversion VARCHAR(80), primary_currency BOOLEAN DEFAULT 0, id_enterprise INTEGER);"
+    },
+     {
+        "id": 73,
+        "name": "modules",
+        "table": "modules",
+        "idName": "id_module",
+        "sql": "CREATE TABLE IF NOT EXISTS modules ( id_module INTEGER, co_module VARCHAR(80), na_module VARCHAR(80));"
+    },
+     {
+        "id": 74,
+        "name": "currency_modules",
+        "table": "currencyModules",
+        "idName": "id_currency_module",
+        "sql": "CREATE TABLE IF NOT EXISTS currency_modules ( id_currency_module INTEGER, id_module INTEGER, local_currency_default BOOLEAN DEFAULT 1, show_conversion BOOLEAN DEFAULT 1);"
     },
     {
         "id": 9999999,
