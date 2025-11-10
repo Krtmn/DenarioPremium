@@ -31,8 +31,9 @@ db = inject(SynchronizationDBService);
   disabledSearchButton: Boolean = false;
   
 
-  sub: any;
+  productStructuresSub: any;
   //searchSub: any;
+  backButtonSub: any;
 
   constructor() { }
 
@@ -41,8 +42,13 @@ db = inject(SynchronizationDBService);
       this.productStructures = true;
     }
 
-    this.sub = this.productStructureService.productStructures.subscribe((data) => {
+    this.productStructuresSub = this.productStructureService.productStructures.subscribe((data) => {
       this.productStructures = data;
+    });
+
+    this.backButtonSub = this.productService.backButtonClicked.subscribe((data) => {
+      this.searchText = '';
+      this.onSearchTextChanged();
     });
 
     /*
@@ -53,8 +59,9 @@ db = inject(SynchronizationDBService);
   }
 
   ngOnDestroy(): void {
-    this.sub.unsubscribe();
+    this.productStructuresSub.unsubscribe();
     //this.searchSub.unsubscribe();
+    this.backButtonSub.unsubscribe();
   }
 
   onSearchTextChanged(){

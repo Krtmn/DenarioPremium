@@ -37,7 +37,7 @@ export class ProductService {
   onSearchClicked = new Subject<Boolean>;
   productStructureCLicked = new Subject<Boolean>;
   featuredStructureClicked = new Subject<Boolean>;
-
+  backButtonClicked = new Subject<Boolean>;
   favoriteStructureClicked = new Subject<Boolean>;
 
   carritoButtonClicked = new Subject<Boolean>();
@@ -74,6 +74,9 @@ export class ProductService {
     this.carritoButtonClicked.next(true);
   }
 
+  onBackButtonClicked() {
+    this.backButtonClicked.next(true);
+  }
 
   getProductsByCoProductStructureAndIdEnterprise(dbServ:SQLiteObject, idProductStructures: number[], idEnterprise: number, coCurrency: string) {
     var database = dbServ;

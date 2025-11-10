@@ -365,6 +365,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.orderUtilList = [] as OrderUtil[];
     this.showProductList = false;
     this.productService.searchStructures = true;
+    this.productService.onBackButtonClicked();
     this.productStructureService.onAddProductCLicked();
   }
 
