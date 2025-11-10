@@ -92,7 +92,7 @@ setup(dbServ: SQLiteObject, tieneFirma: boolean, viewOnly: boolean, colorBoton: 
   }
 
   hasItems() {
-    return ((this.fotos.length > 0) || (this.firma != "") || (this.file != null))
+    return ((this.fotos.length > 0) || (this.file != null))
   }
 
   tieneFirma(){
