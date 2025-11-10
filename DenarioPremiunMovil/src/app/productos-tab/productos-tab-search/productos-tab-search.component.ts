@@ -71,27 +71,27 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
   onSearchClicked() {
     this.productStructureService.nombreProductStructureSeleccionada = '';
     this.disabledSearchButton = true;
-    if (this.pedido) {
-      if (this.productService.searchStructures) {
-        this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency, this.orderServ.listaSeleccionada.idList).then(() => {
-          this.productService.onProductTabSearchClicked();
-          this.disabledSearchButton = false;
-        });
+    if (this.productService.searchStructures) {
+      //Buscar en estructuras de producto
+      if (this.pedido) {
+          this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency, this.orderServ.listaSeleccionada.idList).then(() => {
+            this.productService.onProductTabSearchClicked();
+            this.disabledSearchButton = false;
+          });
       } else {
-        //Buscar en estructuras de producto?
-        this.disabledSearchButton = false;
+        this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
+          this.searchText,
+          this.empresaSeleccionada.idEnterprise,
+          this.empresaSeleccionada.coCurrencyDefault).then(() => {
+            this.productService.onProductTabSearchClicked();
+            this.disabledSearchButton = false;
+          });
       }
     } else {
-      if (this.productService.searchStructures) {
-        this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency).then(() => {
-          this.productService.onProductTabSearchClicked();
-          this.disabledSearchButton = false;
-        });
-      } else {
-        //Buscar en estructuras de producto?
-        this.disabledSearchButton = false;
-      }
+      //Buscar en estructuras de producto?
+      this.disabledSearchButton = false;
     }
+
   }
 
 }
