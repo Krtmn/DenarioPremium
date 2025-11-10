@@ -64,7 +64,7 @@ db = inject(SynchronizationDBService);
   onSearchClicked() {
     this.disabledSearchButton = true;
     if(this.pedido){
-      if(this.productService.showProductStructure){
+      if(this.productService.searchStructures){
       this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(this.db.getDatabase(),this.searchText, this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency, this.orderServ.listaSeleccionada.idList).then(() => {
         this.productService.onProductTabSearchClicked();
         this.disabledSearchButton = false;

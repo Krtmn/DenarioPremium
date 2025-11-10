@@ -43,7 +43,7 @@ export class ProductService {
   carritoButtonClicked = new Subject<Boolean>();
 
   searchTextChanged = new Subject<string>();
-  showProductStructure = false;
+  searchStructures = false; //flag para saber si se busca en todas las estructuras.
 
   itemsXPagina = 20;
 
