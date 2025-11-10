@@ -103,6 +103,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.disablePriceListSelector = (!this.orderServ.userCanChangePriceListProduct);
     this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
       this.showProductList = true;
+      this.nameProductStructure = '';
       this.productList = this.productService.productList;
       this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
     });
@@ -364,7 +365,8 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   onShowProductStructures() {
     this.orderUtilList = [] as OrderUtil[];
     this.showProductList = false;
-    this.productService.showProductStructure = true;
+    this.productService.searchStructures = true;
+    this.productService.onBackButtonClicked();
     this.productStructureService.onAddProductCLicked();
   }
 

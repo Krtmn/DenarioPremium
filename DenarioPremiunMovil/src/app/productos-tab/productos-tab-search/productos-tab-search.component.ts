@@ -31,8 +31,9 @@ db = inject(SynchronizationDBService);
   disabledSearchButton: Boolean = false;
   
 
-  sub: any;
+  productStructuresSub: any;
   //searchSub: any;
+  backButtonSub: any;
 
   constructor() { }
 
@@ -41,8 +42,13 @@ db = inject(SynchronizationDBService);
       this.productStructures = true;
     }
 
-    this.sub = this.productStructureService.productStructures.subscribe((data) => {
+    this.productStructuresSub = this.productStructureService.productStructures.subscribe((data) => {
       this.productStructures = data;
+    });
+
+    this.backButtonSub = this.productService.backButtonClicked.subscribe((data) => {
+      this.searchText = '';
+      this.onSearchTextChanged();
     });
 
     /*
@@ -53,8 +59,9 @@ db = inject(SynchronizationDBService);
   }
 
   ngOnDestroy(): void {
-    this.sub.unsubscribe();
+    this.productStructuresSub.unsubscribe();
     //this.searchSub.unsubscribe();
+    this.backButtonSub.unsubscribe();
   }
 
   onSearchTextChanged(){
@@ -62,9 +69,10 @@ db = inject(SynchronizationDBService);
   }
 
   onSearchClicked() {
+    this.productStructureService.nombreProductStructureSeleccionada = '';
     this.disabledSearchButton = true;
     if(this.pedido){
-      if(this.productService.showProductStructure){
+      if(this.productService.searchStructures){
       this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(this.db.getDatabase(),this.searchText, this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency, this.orderServ.listaSeleccionada.idList).then(() => {
         this.productService.onProductTabSearchClicked();
         this.disabledSearchButton = false;
