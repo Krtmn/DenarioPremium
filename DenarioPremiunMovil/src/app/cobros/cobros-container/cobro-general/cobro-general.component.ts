@@ -534,9 +534,6 @@ export class CobrosGeneralComponent implements OnInit {
 
     this.messageService.showLoading().then(() => {
       this.selectorCliente.updateClientList(this.collectService.enterpriseSelected.idEnterprise);
-      //this.collectService.resetCollection(this.collectService.collection).then(resp => {
-      //this.collectService.collection.idEnterprise = this.collectService.enterpriseSelected.idEnterprise;
-      //this.collectService.collection.coEnterprise = this.collectService.enterpriseSelected.coEnterprise;
       this.ngOnInit();
       this.collectService.client = {} as Client;
       this.collectService.nameClient = "";
@@ -546,7 +543,8 @@ export class CobrosGeneralComponent implements OnInit {
           .then(() => {
             this.collectService.getDateRate(
               this.synchronizationServices.getDatabase(),
-              this.collectService.collection.daRate
+              this.collectService.dateRateVisual.split("T")[0]
+
             );
           });
 
