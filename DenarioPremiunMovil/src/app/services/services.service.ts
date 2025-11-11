@@ -45,6 +45,18 @@ export class ServicesService {
   //charcuteria ventas01 // 123456
   //private WsUrl = "http://soportepremium.ddns.net:9998/PremiumWS/services/"
 
+  //El Eden Import
+ // private WsUrl = "http://ec2-3-129-33-188.us-east-2.compute.amazonaws.com:8081/PremiumWS/services/";
+
+   //Alimentos Cofivenca
+ //private WsUrl = "http://207.244.239.61:9091/PremiumWS/services/";
+
+   //Importadora4k
+ //private WsUrl = "http://38.51.157.214:9080/PremiumWS/services/";
+
+    //Alimentos Global MP
+ //private WsUrl = "http://3.224.206.209:8081/PremiumWS/services/";
+
 
   //mystic ggonzalez // 123456
   //private WsUrl = "http://soportepremium.ddns.net:9292/PremiumWS/services/";

@@ -14,7 +14,7 @@
             </ion-row>
 
             <ion-row
-                *ngIf="this.collectService.userCanSelectIGTF  && this.collectService.currencyHard && this.collectService.coTypeModule != '4' && this.collectService.igtfSelected.price > 0 && !this.collectService.separateIgtf">
+                *ngIf="this.collectService.showConversion && this.collectService.userCanSelectIGTF && this.collectService.currencyHard && this.collectService.coTypeModule != '4' && this.collectService.igtfSelected.price > 0 && !this.collectService.separateIgtf">
                 <ion-col size="4" class="titulosBold">{{this.collectService.collectionTags.get('COB_IGTF_LABEL')}}
                     {{this.collectService.currencyConversion.coCurrency}}</ion-col>
                 <ion-col>{{this.currencyService.formatNumber(this.collectService.convertirMonto(this.collectService.montoIgtf,this.collectService.collection.nuValueLocal,
@@ -32,7 +32,7 @@
                 <ion-col>{{this.currencyService.formatNumber(this.collectService.montoTotalPagar)}}</ion-col>
             </ion-row>
 
-            <ion-row *ngIf="this.collectService.multiCurrency">
+            <ion-row *ngIf="this.collectService.multiCurrency && this.collectService.showConversion">
                 <ion-col size="4"
                     class="titulosBold">{{this.collectService.collectionTags.get('COB_MONTO_TOTAL_PAGAR')}}
                     {{this.collectService.currencyConversion.coCurrency}}
@@ -43,7 +43,7 @@
             <!-- MONTO TOTAL -->
 
             <!-- TASA -->
-            <ion-row *ngIf="this.collectService.multiCurrency">
+            <ion-row *ngIf="this.collectService.multiCurrency && this.collectService.showConversion">
                 <ion-col size="4" class="titulosBold">{{this.collectService.collectionTags.get('COB_TASA')}}
                     {{this.collectService.currencyConversion.coCurrency}}
                 </ion-col>
@@ -59,7 +59,7 @@
                 <ion-col>{{this.currencyService.formatNumber(this.collectService.montoTotalPagado)}}</ion-col>
             </ion-row>
 
-            <ion-row *ngIf="this.collectService.multiCurrency">
+            <ion-row *ngIf="this.collectService.multiCurrency && this.collectService.showConversion">
                 <ion-col size="4" class="titulosBold">{{this.collectService.collectionTags.get('COB_PAGO')}}
                     {{this.collectService.currencyConversion.coCurrency}}
                 </ion-col>
@@ -83,7 +83,7 @@
                 </ion-col>
             </ion-row>
 
-            <ion-row *ngIf="this.collectService.multiCurrency">
+            <ion-row *ngIf="this.collectService.multiCurrency && this.collectService.showConversion">
                 <ion-col size="4" class="titulosBold">
                     {{this.collectService.collectionTags.get('COB_DIFERENCIA')}}
                     {{this.collectService.currencyConversion.coCurrency}}
@@ -159,7 +159,7 @@
                 <ion-label> {{this.collectService.collectionTags.get('COB_TOTAL_EFECTIVO')}}:
                     <p>{{this.collectService.collection.coCurrency}}
                         {{this.currencyService.formatNumber(this.collectService.totalEfectivo)}}</p>
-                    <p>
+                    <p *ngIf="this.collectService.showConversion">
                         {{this.collectService.currencyConversion.coCurrency}}
                         {{this.currencyService.formatNumber(this.collectService.convertirMonto(
                         this.collectService.totalEfectivo,0,this.collectService.collection.coCurrency))}}
@@ -176,7 +176,7 @@
                             {{this.currencyService.formatNumber(efectivo.monto)}}
                         </ion-label>
                     </ion-item>
-                    <ion-item *ngIf="this.collectService.multiCurrency">
+                    <ion-item *ngIf="this.collectService.multiCurrency && this.collectService.showConversion">
                         <ion-label>
                             {{this.collectService.collectionTags.get('COB_MONTO')}}
                             {{this.collectService.currencyConversion.coCurrency}}:
@@ -200,7 +200,7 @@
                 <ion-label> {{this.collectService.collectionTags.get('COB_TOTAL_CHEQUES')}}:
                     <p>{{this.collectService.collection.coCurrency}}
                         {{this.currencyService.formatNumber(this.collectService.totalCheque)}}</p>
-                    <p *ngIf="this.collectService.multiCurrency">
+                    <p *ngIf="this.collectService.multiCurrency && this.collectService.showConversion">
                         {{this.collectService.currencyConversion.coCurrency}}
                         {{this.currencyService.formatNumber(this.collectService.convertirMonto(this.collectService.totalCheque,0,this.collectService.collection.coCurrency))}}
                     </p>
@@ -225,7 +225,7 @@
                             {{this.currencyService.formatNumber(cheque.monto)}}</ion-label>
                     </ion-item>
 
-                    <ion-item *ngIf="this.collectService.multiCurrency">
+                    <ion-item *ngIf="this.collectService.multiCurrency && this.collectService.showConversion">
                         <ion-label>
                             {{this.collectService.collectionTags.get('COB_MONTO')}}
                             {{this.collectService.currencyConversion.coCurrency}}:
@@ -252,7 +252,7 @@
             <ion-item slot="header" color="light">
                 <ion-label> {{this.collectService.collectionTags.get('COB_TOTAL_DEPOSITOS')}}:
                     <p>{{this.collectService.collection.coCurrency}} {{this.collectService.totalDeposito}}</p>
-                    <p *ngIf="this.collectService.multiCurrency">
+                    <p *ngIf="this.collectService.multiCurrency && this.collectService.showConversion">
                         {{this.collectService.currencyConversion.coCurrency}}
                         {{this.currencyService.formatNumber(this.collectService.convertirMonto(this.collectService.totalDeposito,0,this.collectService.collection.coCurrency))}}
                     </p>
@@ -278,7 +278,7 @@
                             {{this.currencyService.formatNumber(deposito.monto)}} </ion-label>
                     </ion-item>
 
-                    <ion-item *ngIf="this.collectService.multiCurrency">
+                    <ion-item *ngIf="this.collectService.multiCurrency && this.collectService.showConversion">
                         <ion-label>
                             {{this.collectService.collectionTags.get('COB_MONTO')}}
                             {{this.collectService.currencyConversion.coCurrency}}:
@@ -301,7 +301,7 @@
                 <ion-label> {{this.collectService.collectionTags.get('COB_TOTAL_TRANSFERENCIAS')}}:
                     <p>{{this.collectService.collection.coCurrency}}
                         {{this.currencyService.formatNumber(this.collectService.totalTransferencia)}}</p>
-                    <p *ngIf="this.collectService.multiCurrency">
+                    <p *ngIf="this.collectService.multiCurrency && this.collectService.showConversion">
                         {{this.collectService.currencyConversion.coCurrency}}
                         {{this.currencyService.formatNumber(this.collectService.convertirMonto(this.collectService.totalTransferencia,0,this.collectService.collection.coCurrency))}}
                     </p>
@@ -328,7 +328,7 @@
                             {{this.currencyService.formatNumber(transferencia.monto)}}</ion-label>
                     </ion-item>
 
-                    <ion-item *ngIf="this.collectService.multiCurrency">
+                    <ion-item *ngIf="this.collectService.multiCurrency && this.collectService.showConversion">
                         <ion-label>
                             {{this.collectService.collectionTags.get('COB_MONTO')}}
                             {{this.collectService.currencyConversion.coCurrency}}:
@@ -351,7 +351,8 @@
                 <ion-label> {{this.collectService.collectionTags.get('COB_TOTAL_OTROS')}}:
                     <p>{{this.collectService.collection.coCurrency}}
                         {{this.currencyService.formatNumber(this.collectService.totalOtros)}}</p>
-                    <p *ngIf="this.collectService.multiCurrency">{{this.collectService.collection.coCurrencyConversion}}
+                    <p *ngIf="this.collectService.multiCurrency && this.collectService.showConversion">
+                        {{this.collectService.collection.coCurrencyConversion}}
                         {{this.currencyService.formatNumber(this.collectService.convertirMonto(this.collectService.totalOtros,0,this.collectService.collection.coCurrency))}}
                     </p>
                 </ion-label>
@@ -373,7 +374,7 @@
                             {{this.currencyService.formatNumber(otros.monto)}}
                         </ion-label>
                     </ion-item>
-                    <ion-item *ngIf="this.collectService.multiCurrency">
+                    <ion-item *ngIf="this.collectService.multiCurrency && this.collectService.showConversion">
                         <ion-label>
                             {{this.collectService.collectionTags.get('COB_MONTO')}}
                             {{this.collectService.currencyConversion.coCurrency}}:
