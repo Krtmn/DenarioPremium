@@ -89,7 +89,7 @@ export class CurrencyService {
     }).format(input);
   }
 
-  getCurrencyModule(coModule: string): CurrencyModules{
+  getCurrencyModule(coModule: string): CurrencyModules {
     //Obtiene la configuración de moneda para un modulo segun su coModule
     var cm = this.currencyModulesMap.get(coModule);
     if (cm) {
@@ -339,14 +339,15 @@ export class CurrencyService {
 
     })
   }
-getCurrencyModules(db: SQLiteObject) {
-    let query = "select * from currency_modules cm join modules m on m.id_module = cm.id_module";
+  
+  getCurrencyModules(db: SQLiteObject) {
+    const query = "SELECT * FROM currency_modules cm JOIN modules m ON m.id_module = cm.id_module";
     return db.executeSql(query, []).then(data => {
       let map: Map<string, CurrencyModules> = new Map<string, CurrencyModules>();
       for (let i = 0; i < data.rows.length; i++) {
-        var item = data.rows.item(i);
-        var cm: CurrencyModules = {
-          idCurrencyModule: item.id_currency_module,
+        let item = data.rows.item(i);
+        let cm: CurrencyModules = {
+          idCurrencyModules: item.id_currency_module,
           idModule: item.id_module,
           localCurrencyDefault: item.local_currency_default,
           showConversion: item.show_conversion,

@@ -166,6 +166,7 @@ export class CollectionService {
   public disabledSelectCollectMethodDisabled: boolean = true;
   public collectValidTabs: boolean = true;
   public calculateDifference: boolean = false;
+  public showConversion: boolean = true;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;
@@ -284,6 +285,7 @@ export class CollectionService {
     this.automatedPrepaid = this.globalConfig.get('automatedPrepaid') === 'true' ? true : false;
     this.RangoToleranciaNegativa = Number(this.globalConfig.get('RangoToleranciaNegativa'));
     this.RangoToleranciaPositiva = Number(this.globalConfig.get('RangoToleranciaPositiva'));
+    this.showConversion = this.currencyService.getCurrencyModule("cob").showConversion.toString() === "true" ? true : false;
 
     this.showNuevaCuenta = this.clientBankAccount === true ? true : false;
 
@@ -401,77 +403,205 @@ export class CollectionService {
     })
   }
 
+  // ...existing code...
+
   getCurrencies(dbServ: SQLiteObject, idEnterprise: number) {
+    // Trae las monedas de la empresa y normaliza la selección inicial.
     return this.getCurrenciesEnterprise(dbServ, idEnterprise).then((result) => {
-      this.currencyList = result;
+      // normalizar resultado
+      this.currencyList = Array.isArray(result) ? result : [];
 
-      for (var i = 0; i < this.currencyList.length; i++) {
+      // utilidad local para interpretar 'true' tanto si viene como boolean o string
+      const isTrue = (v: any) => v === true || String(v ?? '').toLowerCase() === 'true';
 
-        if (this.currencyList[i].localCurrency.toString() == "true") {
-          this.localCurrency = this.currencyList[i];
-        } else {
-          this.hardCurrency = this.currencyList[i];
+      // identificar moneda local/hard en la lista
+      const localCurrencyItem = this.currencyList.find(c => isTrue(c?.localCurrency));
+      const hardCurrencyItem = this.currencyList.find(c => isTrue(c?.hardCurrency));
+
+      // almacena referencias si existen (no asigna aún como selected)
+      if (localCurrencyItem) this.localCurrency = localCurrencyItem;
+      if (hardCurrencyItem) this.hardCurrency = hardCurrencyItem;
+
+      // Si no había marca explícita, dejamos placeholders (se completará en setCurrency)
+      if (!this.localCurrency && this.currencyList.length > 0) {
+        // no forzamos yet, lo resolverá setCurrency con su prioridad
+        this.localCurrency = this.currencyList[0];
+      }
+      if (!this.hardCurrency && this.currencyList.length > 1) {
+        this.hardCurrency = this.currencyList.find(c => c !== this.localCurrency) ?? this.currencyList[0];
+      }
+
+      // Delegamos la lógica de selección a setCurrency, que aplica prioridades y fallbacks.
+      return this.setCurrency();
+    });
+  }
+
+
+  /**
+   * Selecciona la moneda de la colección según estas reglas:
+   * - Si collection.stCollection != 0 -> usar collection.coCurrency (si existe en currencyList).
+   * - Si stCollection == 0:
+   *    - Si currencyModule activo -> usar la configuración del módulo (localCurrencyDefault):
+   *        - si true -> moneda marcada localCurrency === true
+   *        - si false -> moneda marcada hardCurrency === true
+   *    - Si currencyModule inactivo -> usar enterpriseSelected.coCurrencyDefault
+   *
+   * Siempre aplicar fallbacks seguros (enterprise default -> local flag -> first item).
+   */
+  setCurrency(): Promise<boolean> {
+    const isTrue = (v: any) => v === true || String(v ?? '').toLowerCase() === 'true';
+
+    // Seguridad: lista de monedas
+    if (!Array.isArray(this.currencyList) || this.currencyList.length === 0) {
+      console.warn('[CollectionService] setCurrency: currencyList vacía');
+      this.currencySelected = {} as Currencies;
+      this.localCurrency = this.localCurrency ?? ({} as Currencies);
+      this.hardCurrency = this.hardCurrency ?? ({} as Currencies);
+      return Promise.resolve(true);
+    }
+
+    const findByCo = (co?: string) => {
+      if (!co) return undefined;
+      return this.currencyList.find(c => ((c?.coCurrency ?? '').toString() === co.toString()));
+    };
+
+    const st = Number(this.collection?.stCollection ?? 0);
+    let chosen: Currencies | undefined;
+
+    // 1) Si la colección ya tiene estado distinto de 0 -> respetar collection.coCurrency
+    if (st !== 0) {
+      const co = (this.collection?.coCurrency ?? '').toString();
+      chosen = findByCo(co);
+      if (chosen) {
+        console.debug('[CollectionService] setCurrency: seleccionada por collection.coCurrency:', chosen.coCurrency);
+      } else {
+        console.warn('[CollectionService] setCurrency: collection.coCurrency no encontrada en currencyList:', co);
+        // fallback razonable: intentar enterprise default u otra heurística más abajo
+      }
+      // aplicar elección (si chosen undefined, applyChosenCurrency manejará fallback)
+      this.applyChosenCurrency(chosen);
+      return Promise.resolve(true);
+    }
+
+    // 2) st === 0 -> decidir según currencyModule o enterprise default
+    const currencyModuleEnabled = isTrue(this.globalConfig.get('currencyModule'));
+
+    if (currencyModuleEnabled) {
+      // Leer la configuración del módulo 'cob' (puede no contener coCurrency; usamos localCurrencyDefault)
+      let moduleCfg: any = null;
+      try {
+        if (this.currencyService && typeof this.currencyService.getCurrencyModule === 'function') {
+          moduleCfg = this.currencyService.getCurrencyModule('cob');
         }
+      } catch (err) {
+        console.warn('[CollectionService] setCurrency: error leyendo currency module config', err);
+        moduleCfg = null;
       }
 
-      for (var i = 0; i < this.currencyList.length; i++) {
-        if (this.collection.stCollection == 1) {
-          if (this.currencyList[i].coCurrency == this.collection.coCurrency) {
-            this.currencySelected = this.currencyList[i];
+      const localCurrencyDefault = isTrue(moduleCfg?.localCurrencyDefault);
 
-            this.collection.idCurrency = this.currencyList[i].idCurrency;
-            this.collection.coCurrency = this.currencyList[i].coCurrency;
-          }
-        } else {
-          if (this.collection.stCollection == 2 || this.collection.stCollection == 3) {
-            if (this.currencyList[i].coCurrency == this.collection.coCurrency) {
-              this.currencySelected = this.currencyList[i];
-              this.collection.idCurrency = this.currencyList[i].idCurrency;
-              this.collection.coCurrency = this.currencyList[i].coCurrency;
-            }
-          } else if (this.currencyList[i].coCurrency == this.enterpriseSelected.coCurrencyDefault) {
-            this.currencySelected = this.currencyList[i];
-            this.collection.idCurrency = this.currencyList[i].idCurrency;
-            this.collection.coCurrency = this.currencyList[i].coCurrency;
-          }
-
-        }
+      if (localCurrencyDefault) {
+        chosen = this.currencyList.find(c => isTrue(c?.localCurrency));
+        console.debug('[CollectionService] currencyModule activo: prefer localCurrency =>', chosen?.coCurrency);
+      } else {
+        chosen = this.currencyList.find(c => isTrue(c?.hardCurrency));
+        console.debug('[CollectionService] currencyModule activo: prefer hardCurrency =>', chosen?.coCurrency);
       }
 
-      if (this.currencySelected.localCurrency.toString() == 'true') {
-        this.currencyLocal = true;
-        this.currencyHard = false;
+      // Si no encontró por flag, fallback a enterprise default o primera moneda
+      if (!chosen) {
+        const enterpriseCo = (this.enterpriseSelected?.coCurrencyDefault ?? '').toString();
+        if (enterpriseCo) chosen = findByCo(enterpriseCo);
       }
 
-      if (this.currencySelected.hardCurrency.toString() == 'true') {
-        this.currencyHard = true;
-        this.currencyLocal = false;
+      if (!chosen) {
+        chosen = this.currencyList[0];
+        console.debug('[CollectionService] currencyModule: fallback a primera moneda =>', chosen.coCurrency);
       }
 
-      if (this.multiCurrency) {
-        this.setCurrencyConversion();
+      this.applyChosenCurrency(chosen);
+      return Promise.resolve(true);
+    }
+
+    // 3) currencyModule deshabilitado -> usar enterpriseSelected.coCurrencyDefault
+    const enterpriseDefaultCo = (this.enterpriseSelected?.coCurrencyDefault ?? '').toString();
+    if (enterpriseDefaultCo) {
+      chosen = findByCo(enterpriseDefaultCo);
+      if (chosen) {
+        console.debug('[CollectionService] currencyModule deshabilitado: selected by enterprise default:', chosen.coCurrency);
+        this.applyChosenCurrency(chosen);
+        return Promise.resolve(true);
+      } else {
+        console.warn('[CollectionService] enterpriseSelected.coCurrencyDefault no encontrada en currencyList:', enterpriseDefaultCo);
       }
+    }
 
+    // 4) Si seguimos sin moneda: intentar moneda marcada local
+    chosen = this.currencyList.find(c => isTrue(c?.localCurrency));
+    if (chosen) {
+      console.debug('[CollectionService] currencyModule deshabilitado: selected by localCurrency flag:', chosen.coCurrency);
+      this.applyChosenCurrency(chosen);
+      return Promise.resolve(true);
+    }
 
-      /* {{this.globalConfig.get('multiCurrency') === 'true' ? false: true}} && {{collectService.isIGTF}} */
-      if (this.coTypeModule == "3") {
-        //4 es IGT SOLO SE USA LA MONEDA LOCAL                
-        //this.currencySelected = this.currencyServices.getLocalCurrency();
-        //this.disabledCurrency = true
-      } else
-        this.disabledCurrency = !this.multiCurrency;
+    // 5) Último fallback: primera moneda
+    chosen = this.currencyList[0];
+    console.debug('[CollectionService] setCurrency: fallback final a primera moneda:', chosen.coCurrency);
+    this.applyChosenCurrency(chosen);
+    return Promise.resolve(true);
+  }
 
+  /**
+   * Aplica la moneda elegida: sincroniza collection, detecta local/hard si faltan,
+   * actualiza flags y dispara conversiones/documentos cuando corresponda.
+   */
+  private applyChosenCurrency(chosen?: Currencies) {
+    const isTrue = (v: any) => v === true || String(v ?? '').toLowerCase() === 'true';
 
-      if (this.currencyService.localCurrency.coCurrency == this.MonedaTolerancia)
-        this.MonedaToleranciaIsLocal = true;
+    // Garantizar un objeto válido
+    this.currencySelected = (chosen ?? (this.currencyList.length ? this.currencyList[0] : ({} as Currencies))) as Currencies;
 
-      if (this.multiCurrency)
-        if (this.currencyService.hardCurrency.coCurrency == this.MonedaTolerancia)
-          this.MonedaToleranciaIsHard = true;
+    // Asegurar referencias local/hard si aún no están establecidas
+    if (!this.localCurrency || !this.localCurrency.coCurrency) {
+      if (isTrue(this.currencySelected?.localCurrency)) {
+        this.localCurrency = this.currencySelected;
+      } else {
+        const detectedLocal = this.currencyList.find(c => isTrue(c?.localCurrency));
+        if (detectedLocal) this.localCurrency = detectedLocal;
+      }
+    }
 
+    if (!this.hardCurrency || !this.hardCurrency.coCurrency) {
+      const detectedHard = this.currencyList.find(c => isTrue(c?.hardCurrency) && c !== this.localCurrency);
+      if (detectedHard) this.hardCurrency = detectedHard;
+      else this.hardCurrency = this.currencyList.find(c => c !== this.localCurrency) ?? this.currencyList[0];
+    }
+
+    // Sincronizar colección con la moneda seleccionada
+    if (this.currencySelected && this.currencySelected.coCurrency) {
+      this.collection.idCurrency = this.currencySelected.idCurrency;
+      this.collection.coCurrency = this.currencySelected.coCurrency;
+    } else {
+      this.collection.idCurrency = this.collection.idCurrency ?? 0;
+      this.collection.coCurrency = this.collection.coCurrency ?? '';
+    }
+
+    // Flags para UI/uso posterior
+    this.currencyLocal = String(this.currencySelected?.localCurrency ?? '').toString() === 'true';
+    this.currencyHard = String(this.currencySelected?.hardCurrency ?? '').toString() === 'true';
+
+    // Configurar conversiones/documentos si procede
+    try {
+      if (this.multiCurrency) this.setCurrencyConversion();
+    } catch (err) {
+      console.warn('[CollectionService] setCurrencyConversion failed', err);
+    }
+
+    try {
       this.setCurrencyDocument();
-      Promise.resolve(true);
-    })
+    } catch (err) {
+      console.warn('[CollectionService] setCurrencyDocument failed', err);
+    }
   }
 
   setCurrencyDocument() {
@@ -1872,15 +2002,15 @@ export class CollectionService {
   }
 
   unlockTabs() {
-    let banderaMulticurrency = false;
+    let banderaMulticurrency = true;
     let banderaHistoricoTasa = true;
     let banderaChangeEnterprise = true;
     let banderaRequiredComment = true;
 
-    if (this.globalConfig.get('multiCurrency') === "false") {
-      banderaMulticurrency = true;
-    } else
-      banderaMulticurrency = true
+    /*     if (this.globalConfig.get('multiCurrency') === "false") {
+          banderaMulticurrency = false;
+        } else
+          banderaMulticurrency = true */
 
     if (this.globalConfig.get('historicoTasa') === "true" && !this.historicoTasa) {
       banderaHistoricoTasa = false;
@@ -1892,7 +2022,10 @@ export class CollectionService {
 
     if (this.globalConfig.get("requiredComment") === 'true' ? true : false) {
       if (this.collection.txComment.trim() == "") {
-        banderaRequiredComment = false;
+        if (this.collection.stCollection == 1)
+          banderaRequiredComment = true;
+        else
+          banderaRequiredComment = false;
       } else {
         banderaRequiredComment = true;
       }

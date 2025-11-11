@@ -53,10 +53,10 @@ export class SynchronizationComponent implements OnInit {
   public currentTableIndex = 0; // Índice para recorrer las tablas a sincronizar
   public user: any = {};
 
-      backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(1, () => {
-        //console.log('backButton was called!');
-        //de aqui no te vas
-      });
+  backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(1, () => {
+    //console.log('backButton was called!');
+    //de aqui no te vas
+  });
 
   // Botones para alertas (puedes personalizar los textos)
   public alertButtons = [
@@ -645,71 +645,81 @@ export class SynchronizationComponent implements OnInit {
       const tableId = this.tableKeyOrder[this.currentTableIndex];
       const key = this.tableKeyMap[tableId];
 
-      // Validación centralizada y robusta de si debemos sincronizar esta tabla
-      if (!this.shouldSyncTable(tableId)) {
-        // Si NO se debe sincronizar, simplemente avanza a la siguiente tabla
-        this.currentTableIndex++;
-        this.syncNextTable(table);
-        return;
-      }
-      // -------------------------------------------------------------
-
-      const rowKey = this.insertConfig[key].rowKey;
-      const tableLastUpdateKey = this.insertConfig[key].tableKey;
-
-      let tabla = {
-        [tableLastUpdateKey]: (this.tables as any)[tableLastUpdateKey],
-        page: table.page
-      };
-
-      // Muestra el nombre amigable de la tabla que se está sincronizando
-      this.synchronizationServices.tablaSincronizando = `- ${this.tableLabelMap[key] || key}`;
-
-      this.services.getSync(JSON.stringify(tabla)).subscribe({
-        next: (result) => {
-          const resTable = (result as any)[rowKey];
-          const sqlInfo = this.sqlTableMap[key];
-
-          // 1. Borra filas si corresponde
-          if (resTable.deletedRowsIds != null && sqlInfo) {
-            this.handleDeletedRows(resTable.deletedRowsIds, sqlInfo.table, sqlInfo.idName);
+      // -- Aquí esperamos el resultado de shouldSyncTable, sea síncrono o asíncrono --
+      Promise.resolve(this.shouldSyncTable(tableId))
+        .then((shouldSync) => {
+          if (!shouldSync) {
+            // Si NO se debe sincronizar, simplemente avanza a la siguiente tabla
+            this.currentTableIndex++;
+            this.syncNextTable(table);
+            return;
           }
 
-          // 2. Si no hay páginas, solo actualiza versión y avanza
-          if (resTable.numberOfPages == 0) {
-            this.synchronizationServices.updateVersionsTables(resTable.updateTime, Number(resTable.id)).then(() => {
-              this.initProgress(this.PROGRESS, this.BUFF);
+          // -------------------------------------------------------------
+          const rowKey = this.insertConfig[key].rowKey;
+          const tableLastUpdateKey = this.insertConfig[key].tableKey;
 
-              table.page = 0;
-              resolve(rowKey);
-            });
-          } else if (resTable.row != null) {
-            // 3. Si hay datos, inserta y sigue
-            this.insertTable(key, result).then(response => {
-              if (response) {
-                this.syncNextTable(response);
-              } else if (resTable.numberOfPages == resTable.page) {
+          let tabla = {
+            [tableLastUpdateKey]: (this.tables as any)[tableLastUpdateKey],
+            page: table.page
+          };
+
+          // Muestra el nombre amigable de la tabla que se está sincronizando
+          this.synchronizationServices.tablaSincronizando = `- ${this.tableLabelMap[key] || key}`;
+
+          this.services.getSync(JSON.stringify(tabla)).subscribe({
+            next: (result) => {
+              const resTable = (result as any)[rowKey];
+              const sqlInfo = this.sqlTableMap[key];
+
+              // 1. Borra filas si corresponde
+              if (resTable.deletedRowsIds != null && sqlInfo) {
+                this.handleDeletedRows(resTable.deletedRowsIds, sqlInfo.table, sqlInfo.idName);
+              }
+
+              // 2. Si no hay páginas, solo actualiza versión y avanza
+              if (resTable.numberOfPages == 0) {
                 this.synchronizationServices.updateVersionsTables(resTable.updateTime, Number(resTable.id)).then(() => {
+                  this.initProgress(this.PROGRESS, this.BUFF);
+
                   table.page = 0;
                   resolve(rowKey);
                 });
+              } else if (resTable.row != null) {
+                // 3. Si hay datos, inserta y sigue
+                this.insertTable(key, result).then(response => {
+                  if (response) {
+                    this.syncNextTable(response);
+                  } else if (resTable.numberOfPages == resTable.page) {
+                    this.synchronizationServices.updateVersionsTables(resTable.updateTime, Number(resTable.id)).then(() => {
+                      table.page = 0;
+                      resolve(rowKey);
+                    });
+                  }
+                });
+              } else {
+                // 4. Si no hay datos ni borrados, solo avanza
+                this.initProgress(this.PROGRESS, this.BUFF);
+                table.page = 0;
+                resolve(rowKey);
               }
-            });
-          } else {
-            // 4. Si no hay datos ni borrados, solo avanza
-            this.initProgress(this.PROGRESS, this.BUFF);
-            table.page = 0;
-            resolve(rowKey);
-          }
-        },
-        error: (e) => {
-          this.initProgress(this.PROGRESS, this.BUFF);
+            },
+            error: (e) => {
+              this.initProgress(this.PROGRESS, this.BUFF);
 
-          table.page = 0;
-          console.error(e);
-          resolve('error');
-        }
-      });
+              table.page = 0;
+              console.error(e);
+              resolve('error');
+            }
+          });
+        })
+        .catch((err) => {
+          // En caso de error evaluando shouldSyncTable, lo logueamos y saltamos la tabla
+          console.error('[sync] shouldSyncTable error for tableId', tableId, err);
+          this.currentTableIndex++;
+          this.syncNextTable(table);
+          return;
+        });
     });
 
     promesa.then((nextTable) => {
@@ -731,7 +741,7 @@ export class SynchronizationComponent implements OnInit {
    * Decide si una tabla debe sincronizarse, consultando la configuración global.
    * Normaliza valores booleanos y strings "true"/"false".
    */
-  private shouldSyncTable(tableId: number): boolean {
+  private shouldSyncTable(tableId: number): boolean | Promise<boolean> {
     const cfgTrue = (key: string): boolean => {
       const val: any = this.globalConfig.get(key);
       if (typeof val === 'boolean') return val;
@@ -754,8 +764,12 @@ export class SynchronizationComponent implements OnInit {
     if ([72].includes(tableId)) {
       return cfgTrue('conversionCalculator');
     }
-     if ([73,74].includes(tableId)) {
-      return cfgTrue('currencyModule');
+
+    // Usar la clave correcta (plural) consistente con insertConfig
+    if ([73, 74].includes(tableId)) {
+      const cfgKey = 'currencyModule';
+      console.debug(`[sync] shouldSyncTable: tableId=${tableId}, cfgKey=${cfgKey}, cfgValue=`, this.globalConfig.get(cfgKey));
+      return cfgTrue(cfgKey);
     }
 
     // Para cualquier otra tabla, por defecto sincronizamos

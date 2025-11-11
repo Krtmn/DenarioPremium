@@ -1453,7 +1453,7 @@ export class SynchronizationDBService {
       "VALUES(?,?,?,?)"
 
     for (var i = 0; i < arr.length; i++) {
-      statements.push([insertStatement, [arr[i].idCurrencyModule, arr[i].idModule, arr[i].localCurrencyDefault, arr[i].showConversion]])
+      statements.push([insertStatement, [arr[i].idCurrencyModules, arr[i].idModule, arr[i].localCurrencyDefault, arr[i].showConversion]])
     }
 
     return this.database.sqlBatch(statements).then(res => {
