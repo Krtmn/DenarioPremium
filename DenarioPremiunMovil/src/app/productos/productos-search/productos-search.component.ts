@@ -35,10 +35,10 @@ export class ProductosSearchComponent{
   }
 
   onSearchClicked(){
-    this.searchText = this.searchInputEL.nativeElement.value;
-    
-    this.searchTextChanged.emit(this.searchText);
+    this.searchText = this.searchInputEL.nativeElement.value;    
+    this.searchTextChanged.emit(this.searchText);    
     this.productoService.onProductSearch(this.searchText);
+
   }
 
   onReturnStructures(){

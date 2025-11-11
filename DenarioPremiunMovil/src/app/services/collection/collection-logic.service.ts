@@ -543,6 +543,9 @@ export class CollectionService {
 
   getDateRate(dbServ: SQLiteObject, fecha: string) {
 
+    if (this.collection.stCollection > 2)
+      return;
+
     this.dateRate = fecha;
     //LUEGO DE SELECCIONAR LA FECHA, HAY QUE BUSCAR LA TASA CORRESPONDE A LA FECHA
     this.rateList = [];
@@ -557,6 +560,7 @@ export class CollectionService {
         this.rateList.push(ct.nuValueLocal);
       }
     })
+
     if (this.rateList.length > 0) {
       this.rateSelected = this.collection.nuValueLocal = this.rateList[0];
       this.haveRate = true;
@@ -602,6 +606,14 @@ export class CollectionService {
   }
 
   async calculatePayment(type: string, index: number) {
+    if (this.collection.collectionDetails.length == 0) {
+      this.montoTotalPagado = 0;
+      this.montoTotalPagadoConversion = 0;
+      this.montoTotalPagar = 0;
+      this.onCollectionValidToSend(false);
+      this.onCollectionValidToSave(true);
+      return;
+    }
     this.montoTotalPagar = 0;
     let monto = 0;
     let montoConversion = 0;
@@ -961,8 +973,6 @@ export class CollectionService {
           return;
         }
       }
-
-
     } else {
       //DEBO VALIDAR SI HAY ALGUN PAGO PARCIAL, EL MONTO DEBE PAGADO DEBE SER IGUAL AL MONTO A PAGAR
       for (var i = 0; i < this.collection.collectionDetails.length; i++) {
@@ -1267,6 +1277,9 @@ export class CollectionService {
 
   getDocumentsSales(dbServ: SQLiteObject, idClient: number, coCurrency: string, coCollection: string, idEnterprise: number) {
 
+    if (this.collection.stCollection > 2)
+      return Promise.resolve();
+
     let selectStatement = ""
     let params: any[] = [];
 
@@ -1388,10 +1401,14 @@ export class CollectionService {
                   this.documentSalesBackup[i].daVoucher = this.collection.collectionDetails[cd].daVoucher!;
                   this.documentSalesBackup[i].nuAmountDiscount = this.collection.collectionDetails[cd].nuAmountDiscount;
 
-                  this.collection.collectionDetails[cd].nuBalanceDoc = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
-                  this.collection.collectionDetails[cd].nuBalanceDocConversion = this.documentSales[i].nuBalance;
-                  this.collection.collectionDetails[cd].nuAmountPaid = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
-                  this.collection.collectionDetails[cd].nuAmountPaidConversion = this.documentSales[i].nuBalance;
+                  if (this.collection.stCollection != 1) {
+                    this.collection.collectionDetails[cd].nuBalanceDoc = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
+                    this.collection.collectionDetails[cd].nuBalanceDocConversion = this.documentSales[i].nuBalance;
+                    this.collection.collectionDetails[cd].nuAmountPaid = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
+                    this.collection.collectionDetails[cd].nuAmountPaidConversion = this.documentSales[i].nuBalance;
+
+                  }
+
                   this.documentSalesBackup[i].nuBalance = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
                   this.documentSalesBackup[i].nuAmountPaid = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
                   this.documentSalesBackup[i].nuAmountRetention = this.collection.collectionDetails[cd].nuAmountRetention;
@@ -1887,60 +1904,6 @@ export class CollectionService {
     return Promise.resolve(banderaMulticurrency && banderaHistoricoTasa && banderaChangeEnterprise && banderaRequiredComment);
   }
 
-
-  resetCollection(collection: Collection) {
-    collection = {
-      idUser: Number(localStorage.getItem("idUser")),
-      coUser: localStorage.getItem("coUser")!,
-      idCollection: null,
-      coCollection: "",
-      coOriginalCollection: null,
-      daCollection: "",
-      daRate: "",
-      naResponsible: "",
-      idCurrency: 0,
-      idCurrencyConversion: 0,
-      coCurrency: "",
-      coCurrencyConversion: "",
-      coType: this.coTypeModule,
-      txComment: "",
-      lbClient: "",
-      naClient: "",
-      idClient: 0,
-      coClient: "",
-      idEnterprise: 0,
-      coEnterprise: "",
-      stCollection: 0,
-      isEdit: 0,
-      isEditTotal: 0,
-      isSave: 0,
-      nuValueLocal: 0,
-      //idConversionType: 0,
-      txConversion: "",
-      nuAmountTotal: 0,
-      nuAmountTotalConversion: 0,
-      nuAmountPaid: 0,
-      nuAmountPaidConversion: 0,
-      nuDifference: 0,
-      nuDifferenceConversion: 0,
-      nuIgtf: 0,
-      nuAmountIgtf: 0,
-      nuAmountFinal: 0,
-      nuAmountIgtfConversion: 0,
-      nuAmountFinalConversion: 0,
-      hasIGTF: false,
-      document: new DocumentSale,
-      coordenada: "",
-      //daVoucher: "",
-      nuAttachments: 0,
-      hasAttachments: false,
-      collectionDetails: [] as CollectionDetail[],
-      collectionPayments: [] as CollectionPayment[],
-    }
-    return Promise.resolve(collection);
-  }
-
-
   initCollection(collection: Collection) {
     this.pagoEfectivo = [] as PagoEfectivo[];
     this.pagoCheque = [] as PagoCheque[];
@@ -2350,7 +2313,7 @@ export class CollectionService {
     })
   }
 
-  saveCollection(dbServ: SQLiteObject, collection: Collection, action: Boolean) {
+  saveCollection(dbServ: SQLiteObject, collection: Collection, action: boolean) {
 
 
     return this.adjuntoService.getQuantityAdjuntos().then(number => {
@@ -2366,7 +2329,7 @@ export class CollectionService {
       this.collection.nuAmountFinal = this.montoTotalPagar;
       this.collection.nuAmountFinalConversion = this.convertirMonto(this.collection.nuAmountFinal, 0, this.collection.coCurrency);
 
-      let insertCollection = "INSERT OR REPLACE INTO collections (" +
+      const insertCollection = "INSERT OR REPLACE INTO collections (" +
         "id_collection," +
         "co_collection," +
         "co_original_collection," +
@@ -2436,7 +2399,8 @@ export class CollectionService {
       ).then(data => {
         console.log("COLLECTION INSERT", data);
 
-        if (collection.coType == '0') {
+        //cobro o igtf
+        if (collection.coType == '0' || collection.coType == '3' || collection.coType == '4') {
           return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
             console.log("TERMINE DOCUMENT ST")
             return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
@@ -2471,24 +2435,18 @@ export class CollectionService {
 
         } else {
           //es cobranza normal debo guardar el payment y el detalle
-          return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
-            console.log("TERMINE DOCUMENT ST")
-            return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
-              //this.documentSales = [] as DocumentSale[];
-              //this.documentSalesBackup = [] as DocumentSale[];
-              return resp;
-            });
-          });
-
+          /*  return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
+             console.log("TERMINE DOCUMENT ST")
+             return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
+               //this.documentSales = [] as DocumentSale[];
+               //this.documentSalesBackup = [] as DocumentSale[];
+               return resp;
+             });
+           }); */
+          return Promise.resolve();
         }
-
-
-        /* if (this.createAutomatedPrepaid)
-          this.createAnticipoCollection(collection, inserStatement); */
-
-
       }).catch(e => {
-        return Promise.resolve(e);
+        return Promise.reject(e);
       })
     })
 
@@ -2709,7 +2667,7 @@ export class CollectionService {
     })
 
     let statementsCollectionDetails = [];
-    let inserStatementCollectionDetail = "INSERT OR REPLACE INTO collection_details(" +
+    const inserStatementCollectionDetail = "INSERT OR REPLACE INTO collection_details(" +
       "id_collection_detail," +
       "co_collection," +
       "co_document," +
@@ -2767,14 +2725,14 @@ export class CollectionService {
 
     return dbServ.sqlBatch(statementsCollectionDetails).then(res => {
       console.log("COLLECTION DETAILS INSERT", res);
-      if (this.collection.coType != "1" && this.collection.coType != "2") {
-        return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, coCollection).then(resp => {
-          return resp
-        })
-      } else {
-        return res
-      }
-
+      /*  if (this.collection.coType != "1" && this.collection.coType != "2") {
+         return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, coCollection).then(resp => {
+           return resp
+         })
+       } else {
+         return res
+       }
+  */
     }).catch(e => {
       console.log(e);
     })
@@ -2789,8 +2747,8 @@ export class CollectionService {
       console.log(e);
     })
 
-    let statementsCollectionPayment = [];
-    let insertStatement = "INSERT OR REPLACE INTO collection_payments(" +
+    const statementsCollectionPayment = [];
+    const insertStatement = "INSERT OR REPLACE INTO collection_payments(" +
       "id_collection_payment," +
       "co_collection, " +
       "id_collection_detail, " +
@@ -2967,8 +2925,11 @@ export class CollectionService {
   }
 
   updateDocumentSt(dbServ: SQLiteObject, documentSales: DocumentSale[]) {
+    if (documentSales.length == 0) {
+      return Promise.resolve(true);
+    }
     if (documentSales[0].coDocumentSaleType == "IGTF") {
-      let updateStatement = "UPDATE document_st SET st_document = 2 WHERE co_document = ?"
+      const updateStatement = "UPDATE document_st SET st_document = 2 WHERE co_document = ?"
       return dbServ.executeSql(updateStatement,
         [documentSales[0].coDocument]
       ).then(data => {
@@ -2981,7 +2942,7 @@ export class CollectionService {
       /*     let insertStatement = 'INSERT OR REPLACE INTO document_st (' +
             'id_document,co_document,st_document' +
             ') VALUES (?,?,?)'; */
-      let updateStatement = "UPDATE document_st SET st_document = ? WHERE co_document = ?"
+      const updateStatement = "UPDATE document_st SET st_document = ? WHERE co_document = ?"
       for (var i = 0; i < documentSales.length; i++) {
         let stCollection = 0;
         if (documentSales[i].isSelected) {
@@ -2989,23 +2950,11 @@ export class CollectionService {
             stCollection = 0;
           else //if (this.sendCollection)
             stCollection = 2;
-          /* 
-                    stamentenDocumentSt.push([insertStatement, [
-                      documentSales[i].idDocument,
-                      documentSales[i].coDocument,
-                      stCollection
-                    ]]); */
-
           stamentenDocumentSt.push([updateStatement, [
             stCollection,
             documentSales[i].coDocument,
           ]]);
         } else {
-          /*  stamentenDocumentSt.push([insertStatement, [
-             documentSales[i].idDocument,
-             documentSales[i].coDocument,
-             0
-           ]]); */
           stamentenDocumentSt.push([updateStatement, [
             stCollection,
             documentSales[i].coDocument,
@@ -3242,74 +3191,91 @@ export class CollectionService {
   }
 
   async findCollect(dbServ: SQLiteObject) {
-    this.listCollect = [] as Collection[];
-    this.itemListaCobros = [] as ItemListaCobros[];
-    const res = await dbServ.executeSql(
-      'SELECT c.* FROM collections c ORDER BY c.st_collection ASC, c.da_collection DESC', []
-    );
+    try {
+      console.time('[findCollect] total');
+      const start = Date.now();
+      this.listCollect = [] as Collection[];
+      this.itemListaCobros = [] as ItemListaCobros[];
+      const res = await dbServ.executeSql(
+        'SELECT c.* FROM collections c ORDER BY c.st_collection ASC, c.da_collection DESC', []
+      );
 
-    const promises: Promise<void>[] = [];
+      const promises: Promise<void>[] = [];
 
-    for (let i = 0; i < res.rows.length; i++) {
-      let respCollect = {} as Collection;
-      respCollect.idCollection = res.rows.item(i).id_collection;
-      respCollect.coCollection = res.rows.item(i).co_collection;
-      respCollect.coOriginalCollection = res.rows.item(i).co_original_collection;
-      respCollect.daCollection = res.rows.item(i).da_collection;
-      respCollect.daRate = res.rows.item(i).da_rate;
-      respCollect.naResponsible = res.rows.item(i).na_responsible;
-      respCollect.coCurrency = res.rows.item(i).co_currency;
-      respCollect.coType = res.rows.item(i).co_type;
-      respCollect.txComment = res.rows.item(i).tx_comment;
-      respCollect.lbClient = res.rows.item(i).lb_client;
-      respCollect.idClient = res.rows.item(i).id_client;
-      respCollect.coClient = res.rows.item(i).co_client;
-      respCollect.idEnterprise = res.rows.item(i).id_enterprise;
-      respCollect.coEnterprise = res.rows.item(i).co_enterprise;
-      respCollect.stCollection = res.rows.item(i).st_collection;
-      respCollect.isEdit = 0;
-      respCollect.isEditTotal = 0;
-      respCollect.isSave = 1;
-      respCollect.nuValueLocal = res.rows.item(i).nu_value_local;
-      respCollect.idCurrency = res.rows.item(i).id_currency;
-      respCollect.txConversion = res.rows.item(i).tx_conversion;
-      respCollect.nuAmountTotal = res.rows.item(i).nu_amount_total;
-      respCollect.nuAmountTotalConversion = res.rows.item(i).nu_amount_total_conversion;
-      respCollect.nuDifference = res.rows.item(i).nu_difference;
-      respCollect.nuDifferenceConversion = res.rows.item(i).nu_difference_conversion;
-      respCollect.nuIgtf = res.rows.item(i).nu_igtf;
-      respCollect.nuAmountFinal = res.rows.item(i).nu_amount_final;
-      respCollect.nuAmountFinalConversion = res.rows.item(i).nu_amount_final_conversion;
-      respCollect.nuAmountIgtf = res.rows.item(i).nu_amount_igtf;
-      respCollect.nuAmountIgtfConversion = res.rows.item(i).nu_amount_igtf_conversion;
-      respCollect.nuAmountPaid = res.rows.item(i).nu_amount_paid;
-      respCollect.nuAmountPaidConversion = res.rows.item(i).nu_amount_paid_conversion;
-      respCollect.hasIGTF = res.rows.item(i).hasIGTF;
-      respCollect.document = {} as DocumentSale;
-      respCollect.coordenada = res.rows.item(i).coordenada;
-      this.listCollect.push(respCollect);
+      for (let i = 0; i < res.rows.length; i++) {
+        let respCollect = {} as Collection;
+        respCollect.idCollection = res.rows.item(i).id_collection;
+        respCollect.coCollection = res.rows.item(i).co_collection;
+        respCollect.coOriginalCollection = res.rows.item(i).co_original_collection;
+        respCollect.daCollection = res.rows.item(i).da_collection;
+        respCollect.daRate = res.rows.item(i).da_rate;
+        respCollect.naResponsible = res.rows.item(i).na_responsible;
+        respCollect.coCurrency = res.rows.item(i).co_currency;
+        respCollect.coType = res.rows.item(i).co_type;
+        respCollect.txComment = res.rows.item(i).tx_comment;
+        respCollect.lbClient = res.rows.item(i).lb_client;
+        respCollect.idClient = res.rows.item(i).id_client;
+        respCollect.coClient = res.rows.item(i).co_client;
+        respCollect.idEnterprise = res.rows.item(i).id_enterprise;
+        respCollect.coEnterprise = res.rows.item(i).co_enterprise;
+        respCollect.stCollection = res.rows.item(i).st_collection;
+        respCollect.isEdit = 0;
+        respCollect.isEditTotal = 0;
+        respCollect.isSave = 1;
+        respCollect.nuValueLocal = res.rows.item(i).nu_value_local;
+        respCollect.idCurrency = res.rows.item(i).id_currency;
+        respCollect.txConversion = res.rows.item(i).tx_conversion;
+        respCollect.nuAmountTotal = res.rows.item(i).nu_amount_total;
+        respCollect.nuAmountTotalConversion = res.rows.item(i).nu_amount_total_conversion;
+        respCollect.nuDifference = res.rows.item(i).nu_difference;
+        respCollect.nuDifferenceConversion = res.rows.item(i).nu_difference_conversion;
+        respCollect.nuIgtf = res.rows.item(i).nu_igtf;
+        respCollect.nuAmountFinal = res.rows.item(i).nu_amount_final;
+        respCollect.nuAmountFinalConversion = res.rows.item(i).nu_amount_final_conversion;
+        respCollect.nuAmountIgtf = res.rows.item(i).nu_amount_igtf;
+        respCollect.nuAmountIgtfConversion = res.rows.item(i).nu_amount_igtf_conversion;
+        respCollect.nuAmountPaid = res.rows.item(i).nu_amount_paid;
+        respCollect.nuAmountPaidConversion = res.rows.item(i).nu_amount_paid_conversion;
+        respCollect.hasIGTF = res.rows.item(i).hasIGTF;
+        respCollect.document = {} as DocumentSale;
+        respCollect.coordenada = res.rows.item(i).coordenada;
+        this.listCollect.push(respCollect);
 
-      let item = res.rows.item(i);
+        let item = res.rows.item(i);
 
-      // Agrega la promesa al array antes del then
-      const p = this.historyTransaction.getStatusTransaction(dbServ, 3, item.id_collection).then(status => {
-        let itemListaCobro = {} as ItemListaCobros;
-        itemListaCobro.id_collection = item.id_collection;
-        itemListaCobro.co_collection = item.co_collection;
-        itemListaCobro.co_client = item.co_client;
-        itemListaCobro.lb_client = item.lb_client;
-        itemListaCobro.st_collection = item.st_collection;
-        itemListaCobro.da_collection = item.da_collection;
-        itemListaCobro.na_status = status;
-        itemListaCobro.co_type = item.co_type;
+        // Agrega la promesa al array antes del then
+        const p = this.historyTransaction.getStatusTransaction(dbServ, 3, item.id_collection).then(status => {
+          let itemListaCobro = {} as ItemListaCobros;
+          itemListaCobro.id_collection = item.id_collection;
+          itemListaCobro.co_collection = item.co_collection;
+          itemListaCobro.co_client = item.co_client;
+          itemListaCobro.lb_client = item.lb_client;
+          itemListaCobro.st_collection = item.st_collection;
+          itemListaCobro.da_collection = item.da_collection;
+          itemListaCobro.na_status = status;
+          itemListaCobro.co_type = item.co_type;
 
-        this.itemListaCobros.push(itemListaCobro);
-      });
-      promises.push(p);
+          this.itemListaCobros.push(itemListaCobro);
+        }).catch(err => {
+          console.error('[findCollect] getStatusTransaction error for id:', item.id_collection, err);
+        });
+        promises.push(p);
+      }
+
+      const mid = Date.now();
+      console.log('[findCollect] queries prepared:', promises.length, 'rows:', res.rows.length, 'ms_prepare:', mid - start);
+
+      await Promise.all(promises);
+
+      const end = Date.now();
+      console.log('[findCollect] finished. total_ms:', end - start);
+      console.timeEnd('[findCollect] total');
+
+      return this.itemListaCobros;
+    } catch (err) {
+      console.error('[findCollect] error:', err);
+      return this.itemListaCobros;
     }
-
-    await Promise.all(promises);
-    return this.itemListaCobros;
   }
 
   //var updateStatement = 'UPDATE document_st SET st_document = 0 where co_document in (SELECT co_document FROM collection_detail where co_collection= ?)';

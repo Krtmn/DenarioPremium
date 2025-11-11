@@ -6,27 +6,26 @@
             </ion-segment-button>
 
             <!-- SI ES ANTICIPO OCULTO DOCUMENTOS -->
-            <ion-segment-button *ngIf="!this.collectService.hideDocuments" value="documentos" [disabled]="!this.collectService.collectValidTabs"
+            <ion-segment-button *ngIf="!this.collectService.hideDocuments" value="documentos" [disabled]="!collectValidTabsLocal"
                 (click)="onChangeTab(segment)">
                 <ion-label> {{this.collectService.collectionTags.get('COB_PESTANA_DOCUMENTOS')}}</ion-label>
             </ion-segment-button>
 
             <!-- SI ES RETENCION OCULTO PAGOS -->
-            <ion-segment-button *ngIf="!this.collectService.hidePayments" value="pagos" [disabled]="!this.collectService.collectValidTabs"
+            <ion-segment-button *ngIf="!this.collectService.hidePayments" value="pagos" [disabled]="!collectValidTabsLocal"
                 (click)="onChangeTab(segment)">
                 <ion-label>{{this.collectService.collectionTags.get('COB_PESTANA_PAGOS')}}</ion-label>
             </ion-segment-button>
 
-            <ion-segment-button value="total" [disabled]="!this.collectService.collectValidTabs" (click)="onChangeTab(segment)">
+            <ion-segment-button value="total" [disabled]="!collectValidTabsLocal" (click)="onChangeTab(segment)">
                 <ion-label>{{this.collectService.collectionTags.get('COB_PESTANA_TOTAL')}}</ion-label>
             </ion-segment-button>
-            <ion-segment-button value="adjuntos" [disabled]="!this.collectService.collectValidTabs" (click)="onChangeTab(segment)">
+            <ion-segment-button value="adjuntos" [disabled]="!collectValidTabsLocal" (click)="onChangeTab(segment)">
                 <ion-label>{{this.collectService.collectionTags.get('COB_PESTANA_ADJUNTOS')}}</ion-label>
             </ion-segment-button>
         </ion-segment>
     </div>
 </ion-item-divider>
-
 
 <div [ngSwitch]="segment">
     <!-- Pestana General-->

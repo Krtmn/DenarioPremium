@@ -49,7 +49,7 @@
                     </ion-col>
                     <ion-col class="" size="12" size-sm="12" size-xs="12">
                         <ion-list>
-                            <ion-item *ngFor="let tipoPago of this.collectService.tiposPago; index as type">
+                            <ion-item *ngFor="let tipoPago of this.collectService.tiposPago; index as type; trackBy: trackByIndex">
                                 <ion-checkbox slot="start" [checked]="tipoPago.selected"
                                     (ionChange)="onSelectTipoPago(tipoPago,type)"></ion-checkbox>
                                 <ion-label class="titulosBold">{{tipoPago.name}}</ion-label>
@@ -74,7 +74,7 @@
     <ion-col size="6" size-sm="12" size-xs="12" class="pagos-scroll">
         <ion-accordion-group>
             <!-- EFECTIVO -->
-            <ion-list *ngFor="let efectivo of this.collectService.pagoEfectivo; index as ef">
+            <ion-list *ngFor="let efectivo of this.collectService.pagoEfectivo; index as ef; trackBy: trackByIndex">
                 <ion-accordion
                     *ngIf="this.collectService.tipoPagoEfectivo && this.collectService.pagoEfectivo.length > 0"
                     [value]="'efectivo'+ef">
@@ -122,7 +122,7 @@
             <!-- EFECTIVO -->
 
             <!-- CHEQUE -->
-            <ion-list *ngFor="let cheque of collectService.pagoCheque; index as ch">
+            <ion-list *ngFor="let cheque of collectService.pagoCheque; index as ch; trackBy: trackByIndex">
                 <ion-accordion *ngIf="this.collectService.tipoPagoCheque && this.collectService.pagoCheque.length > 0"
                     [value]="'cheque'+ch">
                     <ion-item slot="header" color="light">
@@ -138,7 +138,7 @@
                                         class="ion-text-center always-flip" [(ngModel)]="cheque.nombreBanco"
                                         (ionChange)="selectBankAccount(ch,'ch')" interface="alert"
                                         labelPlacement="stacked">
-                                        <ion-select-option *ngFor="let bank of this.collectService.listBanks"
+                                        <ion-select-option *ngFor="let bank of this.collectService.listBanks; trackBy: trackByIndex"
                                             [value]="bank.coBank">{{ bank.naBank }}
                                         </ion-select-option>
                                     </ion-select>
@@ -252,7 +252,7 @@
             <!-- CHEQUE -->
 
             <!-- DEPOSITO -->
-            <ion-list *ngFor="let deposito of collectService.pagoDeposito; index as de">
+            <ion-list *ngFor="let deposito of collectService.pagoDeposito; index as de; trackBy: trackByIndex">
                 <ion-accordion *ngIf="this.collectService.tipoPagoDeposito  && collectService.pagoDeposito.length > 0"
                     [value]="'deposito'+de">
                     <ion-item slot="header" color="light">
@@ -269,7 +269,7 @@
                                         (ionChange)="selectBankAccount(de, 'de')" interface="alert"
                                         labelPlacement="stacked">
                                         <ion-select-option
-                                            *ngFor="let listBankAccount of this.collectService.listBankAccounts"
+                                            *ngFor="let listBankAccount of this.collectService.listBankAccounts; trackBy: trackByIndex"
                                             [value]="listBankAccount">{{ listBankAccount.nameBank }} -
                                             {{listBankAccount.nuAccount}}
                                         </ion-select-option>
@@ -344,7 +344,7 @@
             <!-- DEPOSITO -->
 
             <!-- TRANSFERENCIAS -->
-            <ion-list *ngFor="let transferencia of this.collectService.pagoTransferencia; index as tr">
+            <ion-list *ngFor="let transferencia of this.collectService.pagoTransferencia; index as tr; trackBy: trackByIndex">
                 <ion-accordion
                     *ngIf="this.collectService.tipoPagoTransferencia  && this.collectService.pagoTransferencia.length > 0"
                     [value]="'transferencia'+tr">
@@ -364,7 +364,7 @@
                                         class="ion-text-center always-flip" [(ngModel)]="transferencia.numeroCuenta"
                                         (ionChange)="selectBankAccount(tr,'tr')" interface="alert"
                                         labelPlacement="stacked">
-                                        <ion-select-option *ngFor="let bank of this.collectService.clientBankAccounts"
+                                        <ion-select-option *ngFor="let bank of this.collectService.clientBankAccounts; trackBy: trackByIndex"
                                             [value]="bank.coBank">{{ bank.naBank }} -
                                             {{bank.nuAccount}}
                                         </ion-select-option>
@@ -392,10 +392,10 @@
                                     (ionChange)="selectListBankAccount(tr, 'tr')" interface="alert"
                                     labelPlacement="stacked">
                                     <ion-select-option
-                                        *ngFor="let listBankAccount of this.collectService.listBankAccounts"
-                                        [value]="listBankAccount">{{ listBankAccount.nameBank }} -
-                                        {{listBankAccount.nuAccount}}
-                                    </ion-select-option>
+                                            *ngFor="let listBankAccount of this.collectService.listBankAccounts; trackBy: trackByIndex"
+                                            [value]="listBankAccount">{{ listBankAccount.nameBank }} -
+                                            {{listBankAccount.nuAccount}}
+                                        </ion-select-option>
                                 </ion-select>
                             </div>
 
@@ -469,7 +469,7 @@
             <!-- TRANSFERENCIAS -->
 
             <!-- OTROS -->
-            <ion-list *ngFor="let otros of this.collectService.pagoOtros; index as ot">
+            <ion-list *ngFor="let otros of this.collectService.pagoOtros; index as ot; trackBy: trackByIndex">
                 <ion-accordion *ngIf="this.collectService.pagoOtros && this.collectService.pagoOtros.length > 0"
                     value="otros">
                     <ion-item slot="header" color="light">

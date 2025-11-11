@@ -8,6 +8,7 @@ import { GlobalConfigService } from '../services/globalConfig/global-config.serv
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
+import { Conversion } from '../modelos/tables/conversion';
 
 @Component({
   selector: 'app-calculator',
@@ -35,8 +36,10 @@ export class CalculatorComponent implements OnInit {
   public inputs: string[] = ['', '', ''];
   public companies: Enterprise[] = [];
   public selectedCompany: Enterprise | null = null;
+  public rates: Conversion[] = [];
+  public selectedRates: Conversion[] = [];
+  public selectedRatesValues: { idConversion: number; naConversion: string; value: number }[] = [];
 
-  // Campos financieros solicitados
   public baseUSD: number = 0;
   public calcularIVA: boolean = true; // checkbox default true
   public ivaUSDInput: string = '16,00'; // mostrado (porcentaje con coma)
@@ -89,6 +92,28 @@ export class CalculatorComponent implements OnInit {
     this.sub?.unsubscribe();
   }
 
+
+  // Toggle visible/invisible
+  toggleCalculator() {
+    const conv = this.globalConfig.get('conversionCalculator');
+    const convEnabled = (typeof conv === 'boolean')
+      ? conv
+      : String(conv).toLowerCase() === 'true';
+    if (!convEnabled) return; // no abrir si la feature está desactivada
+
+    this.showCalculator = !this.showCalculator;
+    if (this.showCalculator) {
+      // cargar datos al abrir
+      this.loadEnterprises().then(() => {
+        this.loadRates().then(() => {
+          this.BCVRate().then(() => {
+            console.log('Calculator data loaded');
+          });
+        });
+      });
+    }
+  }
+
   private updateFabVisibility(): void {
     try {
       const url = (this.router && this.router.url) ? this.router.url.toLowerCase() : '';
@@ -114,15 +139,119 @@ export class CalculatorComponent implements OnInit {
 
   onCompanyChange(event: any) {
     const id = event?.detail?.value ?? event;
-    this.selectedCompany = event?.detail?.selectedOption || null;
+    this.selectedCompany = event?.detail?.value || null;
+
+    // Reset numeric state
+    this.baseUSD = 0;
+    this.baseUSDInput = this.formatCurrencyLocale(0);
+
+    this.descuentoUSD = 0;
+    this.descuentoUSDInput = this.formatCurrencyLocale(0);
+    this.descuentoPercent = 0;
+
+    // IVA: restablecer al valor por defecto (16) o ajustar según tu lógica
+    this.ivaPercent = 16;
+    this.ivaUSDInput = this.formatCurrencyLocale(this.ivaPercent);
+    this.totalIVAUSD = 0;
+
+    this.totalUSD = 0;
+
+    // Tasas y totales relacionados
+    this.tasaBcvRate = 1;
+    this.tasaParaleloRate = 1;
+    this.totalTasaBCV = 0;
+    this.totalTasaParaleloUSD = 0;
+
+    // Rates / selections
+    this.selectedRates = [];
+    this.rates = [];
+    this.selectedRatesValues = [];
+
+    // Cargar rates y tasa BCV luego recalcular totales
+    this.loadRates().then(() => {
+      this.BCVRate().then(() => {
+        this.recalcTotals();
+      }).catch(() => this.recalcTotals());
+    }).catch(() => {
+      // asegurar recalculo aunque la carga falle
+      this.recalcTotals();
+    });
   }
 
-  // ...existing code...
-  public async loadEnterprises(): Promise<void> {
-    this.conversionService.getEnterprise().then(companies => {
+  public loadRates() {
+    return this.conversionService.getRates(Number(this.selectedCompany?.idEnterprise)).then(rates => {
+      console.log('Rates loaded in calculator:', rates);
+      this.rates = rates;
+      return Promise.resolve(true);
+    });
+  }
+
+  public BCVRate() {
+    return this.conversionService.getTasaBCV(Number(this.selectedCompany?.idEnterprise)).then(rate => {
+      this.tasaBcvRate = rate;
+      return Promise.resolve(true);
+    });
+  }
+
+  public loadEnterprises() {
+    return this.conversionService.getEnterprise().then(companies => {
       this.selectedCompany = companies[0];
       this.companies = companies;
+      return Promise.resolve(true);
     });
+  }
+
+  public onRatesChange(event: any) {
+    // Ionic ion-select con multiple devuelve un array en event.detail.value
+    const val = event?.detail?.value ?? event;
+
+    if (Array.isArray(val)) {
+      this.selectedRates = val as Conversion[];
+    } else if (val) {
+      // si el control no está en modo multiple puede venir un único objeto
+      this.selectedRates = [val as Conversion];
+    } else {
+      this.selectedRates = [];
+    }
+
+    // Si no hay empresa seleccionada o no hay tasas seleccionadas, limpiamos valores
+    if (!this.selectedCompany || this.selectedRates.length === 0) {
+      this.selectedRatesValues = [];
+      console.log('Rates changed (selectedRates cleared):', this.selectedRates);
+      return;
+    }
+
+    // Convertimos cada tasa seleccionada a una promesa que obtiene su valor (nu_value_local)
+    const idEnterprise = Number(this.selectedCompany.idEnterprise);
+
+    const promises = this.selectedRates.map(r => {
+      const idConv = Number(r.idConversion);
+      const naConv = r.naConversion;
+      return this.conversionService.getRate(idConv, idEnterprise).then(value => {
+        return { idConversion: idConv, naConversion: naConv, value: value.nu_value_local };
+      }).catch(err => {
+        console.warn('Error cargando rate value for', idConv, err);
+        return { idConversion: idConv, naConversion: naConv, value: 0 };
+      });
+    });
+
+    // Esperamos a todas las promesas y reasignamos selectedRatesValues (reemplaza lo anterior)
+    Promise.all(promises).then(results => {
+      this.selectedRatesValues = results;
+      console.log('selectedRatesValues updated:', this.selectedRatesValues);
+    }).catch(err => {
+      console.warn('Error resolviendo rates promises', err);
+      // en fallo general, limpiamos para mantener consistencia
+      this.selectedRatesValues = [];
+    });
+
+    console.log('Rates changed (selectedRates):', this.selectedRates);
+  }
+
+  public computeRateTotal(rate: Conversion): number {
+    const total = Number(this.totalUSD) || 0;
+    const rateFactor = rate?.primaryCurrency ? Number(this.tasaBcvRate) || 1 : Number(this.tasaParaleloRate) || 1;
+    return Math.round((total * rateFactor + Number.EPSILON) * 100) / 100;
   }
 
   public recalcTotals(): void {
@@ -175,7 +304,7 @@ export class CalculatorComponent implements OnInit {
    * Formatea un número para mostrarlo con punto miles y coma decimales.
    * Ejemplos: 0 -> "0,00", 1234.5 -> "1.234,50"
    */
-  private formatCurrencyLocale(value: number): string {
+  public formatCurrencyLocale(value: number): string {
     if (value == null || Number.isNaN(value)) return '0,00';
     const negative = value < 0;
     const abs = Math.abs(value);
@@ -225,9 +354,7 @@ export class CalculatorComponent implements OnInit {
       this.recalcTotals();
     }
   }
-
-
-
+  
   // Reemplaza el onBaseInput por este (interpreta input como centavos, muestra con . y ,)
   public onBaseInput(ev: any): void {
     try {
@@ -255,26 +382,6 @@ export class CalculatorComponent implements OnInit {
       this.baseUSD = 0;
       this.baseUSDInput = '0,00';
       this.recalcTotals();
-    }
-  }
-  // Toggle visible/invisible
-  toggleCalculator() {
-    const conv = this.globalConfig.get('conversionCalculator');
-    const convEnabled = (typeof conv === 'boolean')
-      ? conv
-      : String(conv).toLowerCase() === 'true';
-    if (!convEnabled) return; // no abrir si la feature está desactivada
-
-    this.showCalculator = !this.showCalculator;
-    if (this.showCalculator) {
-      // cargar datos al abrir
-      this.loadEnterprises();
-      this.conversionService.getTasaBCV(Number(this.selectedCompany?.idEnterprise)).then(rate => {
-        this.tasaBcvRate = rate;
-        this.conversionService.getTasaParalelo(Number(this.selectedCompany?.idEnterprise)).then(rate => {
-          this.tasaParaleloRate = rate;
-        });
-      });
     }
   }
 
@@ -370,6 +477,28 @@ export class CalculatorComponent implements OnInit {
     // baseUSD mantiene el valor numérico usado para cálculos (actualizado por onBaseInput)
     const numeric = Number(this.baseUSD) || 0;
     return numeric === 0;
+  }
+
+  /**
+   * Devuelve el valor (nu_value_local) asociado a la tasa `rate`.
+   * Si ya lo cargamos en `selectedRatesValues` lo usamos, si no usamos
+   * como fallback la tasa global BCV / Paralelo según primaryCurrency.
+   */
+  public getSelectedRateValue(rate: Conversion): number {
+    const idConv = Number(rate?.idConversion);
+    const found = this.selectedRatesValues.find(s => Number(s.idConversion) === idConv);
+    if (found && Number.isFinite(found.value)) {
+      return Number(found.value);
+    }
+    // fallback: si la tasa es primaria (1) usar BCV, si no usar paralelo
+    return rate?.primaryCurrency ? Number(this.tasaBcvRate || 1) : Number(this.tasaParaleloRate || 1);
+  }
+
+  /** Total USD convertido usando el valor de la tasa seleccionada */
+  public computeConvertedTotal(rate: Conversion): number {
+    const total = Number(this.totalUSD) || 0;
+    const rateValue = this.getSelectedRateValue(rate) || 1;
+    return Math.round((total * rateValue + Number.EPSILON) * 100) / 100;
   }
 
 }

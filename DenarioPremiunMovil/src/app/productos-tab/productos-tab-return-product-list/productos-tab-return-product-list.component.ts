@@ -125,6 +125,8 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
   onShowProductStructures() {
     this.showProductList = false;
     this.productStructureService.onAddProductCLicked();
+    this.productService.onBackButtonClicked();
+    this.productService.searchStructures = true;
   }
 
   onShowProductList() {

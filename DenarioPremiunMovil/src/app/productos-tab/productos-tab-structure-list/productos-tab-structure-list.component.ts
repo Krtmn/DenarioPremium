@@ -57,6 +57,7 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
 
     if (this.showProductStructure) {
       this.productStructures = true;
+      this.productService.searchStructures = true;
       this.getTypeProductStructures();
     }
     this.sub = this.productStructureService.productStructures.subscribe((data) => {
@@ -68,10 +69,12 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
 
     this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
       this.productStructures = false;
+      //this.productService.searchStructures = false;
     });
 
     this.validateReturnSub = this.returnLogic.productsByInvoice.subscribe((data) => {
       this.productStructures = false;
+      this.productService.searchStructures = false;
     });
 
 
@@ -158,6 +161,7 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
     this.productStructureService.getLowestsProductStructuresByCoProductStructuresAndIdEnterprise(this.dbServ.getDatabase(), this.psSeleccionada.coProductStructure, this.psSeleccionada.idEnterprise).then(() => {
       this.productStructures = false;
       this.productService.onProductStructureCLicked();
+      this.productService.searchStructures = false;
       this.cdr.detectChanges();
     });
     this.cdr.detectChanges();

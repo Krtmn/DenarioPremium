@@ -1,4 +1,4 @@
-<div class="client-detail">
+<ion-content class="client-detail">
     <ion-segment value="default" [(ngModel)]="this.clientLogic.segment" scrollable>
         <ion-segment-button value="default">
             <ion-label class="textTab">{{clientLogic.clientTags.get("CLI_DETAIL_TAB_DETALLE")}}</ion-label>
@@ -186,6 +186,17 @@
                         [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.daDueDate}}</ion-col>
                 </ion-row>
             </ion-grid>
-        </ion-card>
+
+    </ion-card>
     </div>
-</div>
+    <ion-fab slot="fixed" vertical="bottom" horizontal="start">
+        <ion-fab-button (click)="openShareModal(true)">
+            <ion-icon name="share-social-outline"></ion-icon>
+        </ion-fab-button>
+    </ion-fab>
+    <ion-modal [isOpen]="clientShareModalOpen" (didDismiss)="openShareModal(false)">
+        <ng-template>
+            <app-client-share-modal></app-client-share-modal>
+        </ng-template>
+    </ion-modal>
+</ion-content>

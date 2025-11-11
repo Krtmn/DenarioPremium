@@ -6,6 +6,7 @@ export class Conversion {
             obj['naConversion'],
             obj['primaryCurrency'],
             obj['idEnterprise'],
+            obj['nuValueLocal']
 
         );
     }
@@ -16,6 +17,6 @@ export class Conversion {
         public naConversion: string,
         public primaryCurrency: string,
         public idEnterprise: number,
-
+        public nuValueLocal?: number
     ) { }
 }

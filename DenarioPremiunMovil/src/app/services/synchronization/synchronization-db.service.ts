@@ -73,6 +73,9 @@ import { OrderDetail } from 'src/app/modelos/tables/orderDetail';
 import { OrderDetailUnit } from 'src/app/modelos/tables/orderDetailUnit';
 import { OrderDetailDiscount } from 'src/app/modelos/orderDetailDiscount';
 import { Conversion } from 'src/app/modelos/tables/conversion';
+import { CurrencyModules } from '../../modelos/tables/currencyModules';
+import { Modules } from '../../modelos/tables/modules';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -161,6 +164,8 @@ export class SynchronizationDBService {
       { "id": 70, "nameTable": "orderDetailUnitTable" },
       { "id": 71, "nameTable": "orderDetailDiscountTable" },
       { "id": 72, "nameTable": "conversionTable" },
+      { "id": 73, "nameTable": "modules" },
+      { "id": 74, "nameTable": "currencyModules" },
     ]
   }
 
@@ -1421,4 +1426,42 @@ export class SynchronizationDBService {
       console.log('insertConversionBatch error', e);
     });
   }
+  insertModulesBatch(arr: Modules[]) {
+    var statements = [];
+    let insertStatement = "INSERT OR REPLACE INTO modules(" +
+      "id_module, co_module ,na_module" +
+      ") " +
+      "VALUES(?,?,?)"
+
+    for (var i = 0; i < arr.length; i++) {
+      statements.push([insertStatement, [arr[i].idModule, arr[i].coModule, arr[i].naModule]])
+    }
+
+    return this.database.sqlBatch(statements).then(res => {
+      console.log("insert currency_modules ready")
+      return res;
+    }).catch(e => {
+      console.log(e);
+    })
+  }
+
+  insertCurrencyModulesBatch(arr: CurrencyModules[]) {
+    var statements = [];
+    let insertStatement = "INSERT OR REPLACE INTO currency_modules(" +
+      "id_currency_module, id_module ,local_currency_default, show_conversion" +
+      ") " +
+      "VALUES(?,?,?,?)"
+
+    for (var i = 0; i < arr.length; i++) {
+      statements.push([insertStatement, [arr[i].idCurrencyModule, arr[i].idModule, arr[i].localCurrencyDefault, arr[i].showConversion]])
+    }
+
+    return this.database.sqlBatch(statements).then(res => {
+      console.log("insert modules ready")
+      return res;
+    }).catch(e => {
+      console.log(e);
+    })
+  }
+
 }

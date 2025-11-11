@@ -119,8 +119,8 @@
                                     </ion-col>
 
                                     <!-- ### TASA DE CAMBIO ### -->
-                                    <ion-col size="12" size-sm="12" size-xs="12">
-                                        <div id="inputTasa" *ngIf="multimoneda">
+                                    <ion-col size="12" size-sm="12" size-xs="12"  *ngIf="showConversion">
+                                        <div id="inputTasa">
                                             <ion-input [label]="orderServ.getTag('PED_TASA_CAMBIO')+':'"
                                                 label-placement="floating" fill="outline"
                                                 [value]="tasaCambio" id="tasa" color="primary"
@@ -396,7 +396,7 @@
                                             {{ formatNum(orderServ.totalBase) }}
                                         </ion-col>
                                         <ion-col size="12" size-sm="12" size-xs="12"
-                                            *ngIf="multimoneda && !orderServ.showTransactionCurrency">
+                                            *ngIf="showConversion">
                                             <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_BASE")}} {{
                                                 monedaOpuesta() }}:</span>
                                             {{ formatNum(orderServ.totalBaseConv) }}
@@ -409,7 +409,7 @@
                                             {{ formatNum(orderServ.totalGlobalDc) }}
                                         </ion-col>
                                         <ion-col size="12" size-sm="12" size-xs="12"
-                                            *ngIf="multimoneda && !orderServ.showTransactionCurrency &&  orderServ.userCanSelectGlobalDiscount">
+                                            *ngIf="showConversion &&  orderServ.userCanSelectGlobalDiscount">
                                             <span class="titulosBold">{{ orderServ.getTag("PED_GLOBAL_DC")}} {{
                                                 monedaOpuesta() }}:</span>
                                             {{formatNum(orderServ.totalGlobalDcConv) }}
@@ -421,7 +421,7 @@
                                             {{ formatNum(orderServ.totalDctoXProducto) }}
                                         </ion-col>
                                         <ion-col size="12" size-sm="12" size-xs="12"
-                                            *ngIf="multimoneda && !orderServ.showTransactionCurrency && (orderServ.totalDctoXProducto > 0)">
+                                            *ngIf="showConversion && (orderServ.totalDctoXProducto > 0)">
                                             <span class="titulosBold">{{ orderServ.getTag("PED_PRODUCT_DC")}} {{
                                                 monedaOpuesta() }}:</span>
                                             {{ formatNum(orderServ.totalDctoXProductoConv) }}
@@ -437,7 +437,7 @@
                                                         {{ formatNum(orderServ.orderIVA) }}
                                                     </ion-col>
                                                     <ion-col size="12" size-xs="12" class="paddingLefttotal"
-                                                        *ngIf="multimoneda && !orderServ.showTransactionCurrency">
+                                                        *ngIf="showConversion">
                                                         <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_IVA")}}
                                                             {{
                                                             monedaOpuesta() }}:</span>
@@ -453,13 +453,13 @@
                                             {{ formatNum(orderServ.totalPedido) }}
                                         </ion-col>
                                         <ion-col size="12" size-sm="12" size-xs="12"
-                                            *ngIf="multimoneda && !orderServ.showTransactionCurrency">
+                                            *ngIf="showConversion">
                                             <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_PEDIDO")}} {{
                                                 monedaOpuesta() }}:</span>
                                             {{ formatNum(orderServ.totalPedidoConv) }}
                                         </ion-col>
                                         <ion-col size="12" size-sm="12" size-xs="12"
-                                            *ngIf="multimoneda && !orderServ.showTransactionCurrency">
+                                            *ngIf="showConversion">
                                             <span class="titulosBold">{{ orderServ.getTag("PED_TASA")}}:</span>
                                             {{ nuValueLocal }} {{ localCurrency.coCurrency }} = {{
                                             currencyServ.currencyRelation }} {{ hardCurrency.coCurrency }}
@@ -501,7 +501,7 @@
 
                                             </ion-col>
                                             <ion-col size="12" size-xs="12"
-                                                *ngIf="multimoneda && !orderServ.showTransactionCurrency">
+                                                *ngIf="showConversion">
                                                 <span class="titulosBold">{{ orderServ.getTag("PED_TAB_TOTAL")}}
                                                     {{item.oppositeCoCurrency}}:</span>
                                                 {{formatNum(item.subtotalConv)}}
@@ -518,7 +518,7 @@
                                                 {{item.coCurrency}}:</span>
                                             {{formatNum(item.nuPrice)}}
                                         </ion-item>
-                                        <ion-item *ngIf="multimoneda && !orderServ.showTransactionCurrency">
+                                        <ion-item *ngIf="showConversion">
                                             <span class="titulosBold">{{ orderServ.getTag("PED_PRECIO_LISTA")}}
                                                 {{item.oppositeCoCurrency}}:</span>
                                             {{formatNum(item.oppositeNuPrice)}}
@@ -583,7 +583,7 @@
                                             <div>{{ orderServ.getTag("PED_TAB_TOTAL")}}
                                                 {{orderServ.monedaSeleccionada.coCurrency}}:
                                                 {{formatNum(struct.total)}}</div>
-                                            <div *ngIf="multimoneda && !orderServ.showTransactionCurrency">{{
+                                            <div *ngIf="showConversion">{{
                                                 orderServ.getTag("PED_TAB_TOTAL")}} {{monedaOpuesta()}}:
                                                 {{formatNum(struct.totalConversion)}}</div>
                                         </ion-label>
@@ -615,7 +615,7 @@
                                                             {{formatNum(item.subtotal)}}
 
                                                         </div>
-                                                        <div *ngIf="multimoneda && !orderServ.showTransactionCurrency">
+                                                        <div *ngIf="showConversion">
 
                                                             {{ orderServ.getTag("PED_TAB_TOTAL")}}
                                                             {{item.oppositeCoCurrency}}:
@@ -631,7 +631,7 @@
                                                             {{item.coCurrency}}: {{formatNum(item.nuPrice)}}
                                                         </ion-item>
                                                         <ion-item
-                                                            *ngIf="multimoneda && !orderServ.showTransactionCurrency">
+                                                            *ngIf="showConversion">
                                                             {{ orderServ.getTag("PED_PRECIO_LISTA")}}
                                                             {{item.oppositeCoCurrency}}:
                                                             {{formatNum(item.oppositeNuPrice)}}
@@ -766,7 +766,7 @@
 
                                         </ion-col>
                                         <ion-col size="12" size-sm="12" size-xs="12"
-                                            *ngIf="multimoneda && !orderServ.showTransactionCurrency">
+                                            *ngIf="showConversion">
 
                                             <span class="titulosBold">{{ orderServ.getTag("PED_CREDITO")}} {{
                                                 currencyServ.oppositeCoCurrency(orderServ.cliente.coCurrency) }}:</span>
