@@ -73,11 +73,11 @@ export class ConversionService {
   getRate(idConversion: number, idEnterprise: number) {
     const dbServ = this.synchronizationServices.getDatabase();
     let selectStatement = "SELECT ct.nu_value_local FROM conversion_types ct " +
-      "WHERE ct.id_enterprise = ?" /*  +
+      // "WHERE ct.id_enterprise = ?" +
       "WHERE ct.id_conversion = ? AND ct.id_enterprise = ? ORDER BY ct.date_conversion DESC LIMIT 1";
- */
-    /* return dbServ.executeSql(selectStatement, [idConversion, idEnterprise]).then(data => { */
-    return dbServ.executeSql(selectStatement, [idEnterprise]).then(data => {
+
+    return dbServ.executeSql(selectStatement, [idConversion, idEnterprise]).then(data => {
+      //return dbServ.executeSql(selectStatement, [idEnterprise]).then(data => {
       console.log('Tasa Paralelo obtenida', data);
       return data.rows.item(0)
     })

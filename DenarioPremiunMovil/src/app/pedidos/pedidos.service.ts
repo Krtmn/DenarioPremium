@@ -374,7 +374,9 @@ export class PedidosService {
   setChangesMade(value: boolean) {
     this.changesMade = value;
     if (value) {
-      var disable = !((this.cliente.idClient != null) && (this.carrito.length > 0))
+      var disable = !((this.cliente.idClient != null) &&
+       (this.carrito.length > 0) &&
+       (!this.adjuntoService.weightLimitExceeded));
       this.disableSaveButton = disable;
       this.disableSendButton = disable;
     } else {

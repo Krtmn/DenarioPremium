@@ -38,7 +38,7 @@ export class CalculatorComponent implements OnInit {
   public selectedCompany: Enterprise | null = null;
   public rates: Conversion[] = [];
   public selectedRates: Conversion[] = [];
-  public selectedRatesValues: { idConversion: number; value: number }[] = [];
+  public selectedRatesValues: { idConversion: number; naConversion: string; value: number }[] = [];
 
   public baseUSD: number = 0;
   public calcularIVA: boolean = true; // checkbox default true
@@ -140,7 +140,42 @@ export class CalculatorComponent implements OnInit {
   onCompanyChange(event: any) {
     const id = event?.detail?.value ?? event;
     this.selectedCompany = event?.detail?.value || null;
+
+    // Reset numeric state
+    this.baseUSD = 0;
+    this.baseUSDInput = this.formatCurrencyLocale(0);
+
+    this.descuentoUSD = 0;
+    this.descuentoUSDInput = this.formatCurrencyLocale(0);
+    this.descuentoPercent = 0;
+
+    // IVA: restablecer al valor por defecto (16) o ajustar según tu lógica
+    this.ivaPercent = 16;
+    this.ivaUSDInput = this.formatCurrencyLocale(this.ivaPercent);
+    this.totalIVAUSD = 0;
+
+    this.totalUSD = 0;
+
+    // Tasas y totales relacionados
+    this.tasaBcvRate = 1;
+    this.tasaParaleloRate = 1;
+    this.totalTasaBCV = 0;
+    this.totalTasaParaleloUSD = 0;
+
+    // Rates / selections
     this.selectedRates = [];
+    this.rates = [];
+    this.selectedRatesValues = [];
+
+    // Cargar rates y tasa BCV luego recalcular totales
+    this.loadRates().then(() => {
+      this.BCVRate().then(() => {
+        this.recalcTotals();
+      }).catch(() => this.recalcTotals());
+    }).catch(() => {
+      // asegurar recalculo aunque la carga falle
+      this.recalcTotals();
+    });
   }
 
   public loadRates() {
@@ -191,11 +226,12 @@ export class CalculatorComponent implements OnInit {
 
     const promises = this.selectedRates.map(r => {
       const idConv = Number(r.idConversion);
+      const naConv = r.naConversion;
       return this.conversionService.getRate(idConv, idEnterprise).then(value => {
-        return { idConversion: idConv, value: value.nuValueLocal };
+        return { idConversion: idConv, naConversion: naConv, value: value.nu_value_local };
       }).catch(err => {
         console.warn('Error cargando rate value for', idConv, err);
-        return { idConversion: idConv, value: 0 };
+        return { idConversion: idConv, naConversion: naConv, value: 0 };
       });
     });
 
@@ -318,9 +354,7 @@ export class CalculatorComponent implements OnInit {
       this.recalcTotals();
     }
   }
-
-
-
+  
   // Reemplaza el onBaseInput por este (interpreta input como centavos, muestra con . y ,)
   public onBaseInput(ev: any): void {
     try {

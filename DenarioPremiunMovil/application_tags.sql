@@ -721,7 +721,12 @@ INSERT INTO public.application_tags(
 	('ADJ_ACORDEON_IMAGENES', 'ADJ', 'ADJUNTOS', 'ESP','Imagenes'),
 	('ADJ_ACORDEON_FIRMA', 'ADJ', 'ADJUNTOS', 'ESP','Firma'),
 	('ADJ_ACORDEON_ARCHIVO', 'ADJ', 'ADJUNTOS', 'ESP','Archivo'),
+	('ADJ_EXCEDE_MULTIPLE', 'ADJ', 'ADJUNTOS', 'ESP','Una o más de las imágenes excede nuestro límite de '),
+	('ADJ_EXCEDE_FOTO', 'ADJ', 'ADJUNTOS', 'ESP','La Foto excede nuestro límite de '),
+	('ADJ_EXCEDE_ARCHIVO', 'ADJ', 'ADJUNTOS', 'ESP','El Archivo excede nuestro límite de '),
+	('ADJ_ELIMINE_IMAGEN', 'ADJ', 'ADJUNTOS', 'ESP','Esta Imagen excede el límite permitido, por favor elimínela para enviar la transacción'),
 	('ADJ_SUBIR_ARCHIVO', 'ADJ', 'ADJUNTOS', 'ESP','Subir Archivo');
+	
 
 --	COMUNES
 DELETE FROM public.application_tags WHERE co_module = 'DEN';

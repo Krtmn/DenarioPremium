@@ -155,9 +155,25 @@ export class MessageComponent implements OnInit, OnDestroy {
 
     this.closeModalCustom = this.messageService.closeModalCustomBtn.subscribe(() => {
       this.alertCustomBtnOpen = false;
-      this.alertCustom.dismiss();
-      //this.messageService.dismissAll();    
+      // dismiss de forma segura (si el ViewChild existe y la alerta está montada)
+      this.safeDismiss(this.alertCustom);
     })
+  }
+
+  private async safeDismiss(alert?: IonAlert | null) {
+    if (!alert) return;
+    try {
+      const dismissFn = (alert as any)?.dismiss;
+      if (typeof dismissFn === 'function') {
+        // small delay para dejar que Angular/Ionic complete cambios de estado
+        await new Promise(res => setTimeout(res, 40));
+        await dismissFn.call(alert).catch((e: any) => {
+          console.warn('[MessageComponent] alert.dismiss() rejected:', e);
+        });
+      }
+    } catch (e) {
+      console.warn('[MessageComponent] safeDismiss error:', e);
+    }
   }
 
   dismissAll() {
@@ -229,13 +245,13 @@ export class MessageComponent implements OnInit, OnDestroy {
 
   setalertCustomBtnOpen(value: boolean) {
     this.alertCustomBtnOpen = value;
-    if (!value) { this.messageService.closeCustomBtn() }
+    if (!value) {
+      // notificar servicio para procesar cola, pero no forzar dismiss aquí
+      this.messageService.closeCustomBtn();
+      // intentar dismiss seguro por si quedó montada
+      this.safeDismiss(this.alertCustom);
+    }
   }
-
-
-
-
-
   public buttonsNuevos = [
     {
       text: 'Cancelar',

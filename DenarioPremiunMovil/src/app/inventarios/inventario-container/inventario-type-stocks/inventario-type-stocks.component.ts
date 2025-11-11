@@ -148,6 +148,7 @@ export class InventarioTypeStocksComponent implements OnInit {
 
       }
     }
+    this.inventariosLogicService.checkImageWeightLimit();
   }
 
 
@@ -204,6 +205,7 @@ export class InventarioTypeStocksComponent implements OnInit {
       this.inventariosLogicService.onStockValidToSave(true);
 
     }
+    this.inventariosLogicService.checkImageWeightLimit();
   }
 
   addClientStocktMethod(typeStock: string, index: number, product: any) {
@@ -262,6 +264,7 @@ export class InventarioTypeStocksComponent implements OnInit {
     this.inventariosLogicService.onStockValidToSend(true);
     this.inventariosLogicService.onStockValidToSave(true);
     this.inventariosLogicService.isEdit = true;
+    
   }
 
   setCantidad(cantidad: any, idP: number, indexType: number, type: string) {

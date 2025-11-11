@@ -83,7 +83,6 @@ export class ReturnLogicService {
 
   AttachSubscription: Subscription = this.adjuntoService.AttachmentChanged.subscribe(() => {
     this.setChange(true, true);
-
   });
 
 
@@ -248,6 +247,23 @@ export class ReturnLogicService {
     })
   }
 
+    updateSendButtonState() {
+    let valid = true;
+    if (this.productList.length > 0) {
+      for (let index = 0; index < this.productList.length; index++) {
+        const element = this.productList[index];
+        if (!element.coDocument || !element.quProduct) {
+          valid = false;
+          break;
+        }
+      }
+    } else {
+      valid = false;
+    }
+    this.onReturnValidToSend(valid);
+    this.onReturnValidToSave(valid);
+    this.setChange(true, true);
+  }
   /*   getTags() {
       this.services.getTags(this.dbServ.getDatabase(), "DEV", "ESP").then(result => {
         for (var i = 0; i < result.length; i++) {

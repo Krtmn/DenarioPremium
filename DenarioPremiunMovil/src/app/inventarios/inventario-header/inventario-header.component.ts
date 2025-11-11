@@ -42,6 +42,8 @@ export class InventarioHeaderComponent implements OnInit {
   public subscriberShow: any;
   public subscriberDisabled: any;
   public subscriberToSend: any;
+  public AttachSubscription: any;
+  public AttachWeightSubscription: any;
   public textAlertButtonCancel: String = '';
   public textAlertButtonConfirm: String = '';
   public textSave: String = '';
@@ -78,6 +80,19 @@ export class InventarioHeaderComponent implements OnInit {
     this.subscriberToSend = this.inventariosLogicService.stockValidToSend.subscribe((validToSend: Boolean) => {
       this.inventariosLogicService.cannotSendClientStock = !validToSend;
     });
+
+    this.AttachSubscription = this.adjuntoService.AttachmentChanged.subscribe(() => {
+    this.inventariosLogicService.newClientStock.hasAttachments = this.adjuntoService.hasItems();
+    this.inventariosLogicService.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
+    var valid = this.inventariosLogicService.checkValidStockToSend();
+    this.inventariosLogicService.onStockValidToSave(valid);
+    this.inventariosLogicService.onStockValidToSend(valid);
+  });
+
+  this.AttachWeightSubscription = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
+    this.inventariosLogicService.onStockValidToSave(false);
+    this.inventariosLogicService.onStockValidToSend(false);
+  });
 
     this.alertButtons = [
       {
@@ -123,7 +138,9 @@ export class InventarioHeaderComponent implements OnInit {
     this.subscriberDisabled.unsubscribe();
     this.subscriberToSend.unsubscribe();
     this.backButtonSubscription.unsubscribe();
-    this.subscriberShow.unsubscribe()
+    this.subscriberShow.unsubscribe();
+    this.AttachSubscription.unsubscribe();
+    this.AttachWeightSubscription.unsubscribe();
   }
 
 

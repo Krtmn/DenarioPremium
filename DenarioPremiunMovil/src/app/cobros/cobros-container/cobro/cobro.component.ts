@@ -59,7 +59,22 @@ export class CobroComponent implements OnInit, OnDestroy {
   }
 
   onChangeTab(tab: string) {
-    /* lógica existente comentada */
+    try {
+      console.log('[onChangeTab] start ->', tab);
+      console.time('[onChangeTab] duration');
+    } catch (e) {
+      /* ignore console errors */
+    }
+
+    // Allow Angular to update the view, then measure end of tick
+    setTimeout(() => {
+      try {
+        console.timeEnd('[onChangeTab] duration');
+        console.log('[onChangeTab] current segment ->', this.segment);
+      } catch (e) {
+        /* ignore */
+      }
+    }, 0);
   }
 
   getDate() {

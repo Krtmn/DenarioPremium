@@ -1,0 +1,64 @@
+/* keep it simple and table-friendly for html2canvas */
+.tablaInfoClientes.tablaDocVentasGrip { width: 100%; overflow: visible; }
+.tabla-doc-ventas { width: 100%; border-collapse: collapse; font-family: inherit; font-size: 12px; }
+
+/* Header: purple background and white text */
+.tabla-doc-ventas thead tr {
+  background-color: #430197;
+}
+.tabla-doc-ventas thead th,
+.tabla-doc-ventas thead td {
+  color: #ffffff;
+  font-weight: 700;
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+
+/* body cells */
+.tabla-doc-ventas th, .tabla-doc-ventas td { padding: 6px 8px; text-align: left; white-space: nowrap; border-bottom: 1px solid rgba(0,0,0,0.06); }
+.tabla-doc-ventas .ion-text-center { text-align: center; }
+.titulosBold { font-weight: 600; }
+.cabecera th { font-weight: 700; }
+
+/* PDF-only scaled clone */
+.pdf-export-scale .tabla-doc-ventas {
+  font-size: 14px;      /* slightly bigger text for PDF */
+  line-height: 1.2;
+}
+.pdf-export-scale .tabla-info-cliente {
+  font-size: 14px;
+}
+.pdf-export-scale .tabla-doc-ventas th,
+.pdf-export-scale .tabla-doc-ventas td {
+  padding: 8px 10px;   /* slightly larger cells */
+  white-space: nowrap;
+}
+
+/* Ensure header style is applied to the PDF clone as well */
+.pdf-export-scale .tabla-doc-ventas thead tr {
+  background-color: #430197;
+}
+.pdf-export-scale .tabla-doc-ventas thead th,
+.pdf-export-scale .tabla-doc-ventas thead td {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* zebra striping for document rows */
+.tabla-doc-ventas tbody tr:nth-child(odd) {
+  background-color: #ffffff; /* white */
+}
+.tabla-doc-ventas tbody tr:nth-child(even) {
+  background-color: #8b9095; /* light gray - tweak if you want darker/lighter */
+}
+
+/* keep header clear / high-contrast (already set above with purple bg) */
+/* .tabla-doc-ventas thead tr, .tabla-doc-ventas thead th { background-color: transparent; } removed in favor of purple header */
+
+/* ensure PDF clone receives the same striping */
+.pdf-export-scale .tabla-doc-ventas tbody tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+.pdf-export-scale .tabla-doc-ventas tbody tr:nth-child(even) {
+  background-color: #8b9095;
+}

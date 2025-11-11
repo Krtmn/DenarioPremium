@@ -32,6 +32,9 @@ export class DepositosHeaderComponent implements OnInit {
   public subscriberDisabled: any;
   public subscriberToSend: any;
 
+  //public subscriptionWeightLimit: any;
+  //public subscriptionAttachmentChange: any;
+
   public alertMessageOpenSend: Boolean = false;
   public alertMessageOpenSave: Boolean = false;
 
@@ -95,6 +98,19 @@ export class DepositosHeaderComponent implements OnInit {
       this.depositService.disabledSendButton = !validToSend;
     });
 
+    /*
+    this.subscriptionAttachmentChange = this.adjuntoService.AttachmentChanged.subscribe(() => {
+      var disable = (this.depositService.deposit.depositCollect.length == 0);
+      this.depositService.disabledSendButton = disable;
+      this.depositService.disabledSaveButton = disable;
+    });
+
+    this.subscriptionWeightLimit = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
+      this.depositService.disabledSendButton = true;
+      this.depositService.disabledSaveButton = true;
+    });
+    */
+
   }
 
   ngOnDestroy() {
@@ -102,6 +118,8 @@ export class DepositosHeaderComponent implements OnInit {
     this.subscriberDisabled.unsubscribe();
     this.subscriberToSend.unsubscribe();
     this.backButtonSubscription.unsubscribe();
+    //this.subscriptionAttachmentChange.unsubscribe();
+    //this.subscriptionWeightLimit.unsubscribe();
   }
 
   setResultSend(ev: any) {

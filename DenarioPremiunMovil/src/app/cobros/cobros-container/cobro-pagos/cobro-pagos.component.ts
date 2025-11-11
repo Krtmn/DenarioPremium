@@ -1,4 +1,4 @@
-import { Input, inject } from '@angular/core';
+import { Input, inject, AfterViewInit } from '@angular/core';
 import { Component, OnInit } from '@angular/core';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
@@ -52,20 +52,54 @@ export class CobroPagosComponent implements OnInit {
   ];
 
   constructor() {
+    console.log('[CobroPagos] constructor start');
+    console.time('[CobroPagos] constructor');
     if (isNaN(this.collectService.montoTotalPagar))
       this.collectService.montoTotalPagar = 0;
+    console.timeEnd('[CobroPagos] constructor');
   }
 
   ngOnInit() {
     this.alertButtons[0].text = this.collectService.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
   }
 
-  // ...existing code...
+   ngAfterViewInit(): void {
+    // Medición simple: tiempo desde creación del componente hasta template montado
+    try {
+      console.time('[CobroPagos] afterViewInit');
+      // end immediately to print time (this measures sync work up to this hook)
+      console.timeEnd('[CobroPagos] afterViewInit');
+      console.log('[CobroPagos] montoTotalPagar=', this.collectService.montoTotalPagar, 'items ef=', this.collectService.pagoEfectivo.length);
+    } catch (e) {
+      console.warn('[CobroPagos] afterViewInit warn', e);
+    }
+  }
+
+  // trackBy para evitar recrear nodos DOM innecesarios
+  trackByIndex(index: number, item: any) {
+    if (!item) return index;
+    return item.id ?? item.coCollection ?? item.__amountUid ?? index;
+  }
+
   addTipoPago(type: string) {
     this.collectService.lengthMethodPaid++;
     this.collectService.collection.collectionPayments[this.collectService.collection.collectionPayments.length] = new CollectionPayment;
     this.collectService.collection.collectionPayments[this.collectService.collection.collectionPayments.length - 1].coCollection = this.collectService.collection.coCollection;
     this.collectService.tiposPago.forEach(tp => tp.selected = false);
+
+    // Normalize dateRate: if it's in 'YYYY-MM-DD' form, append ' 00:00:00'.
+    // If it's already 'YYYY-MM-DD HH:MM:SS' keep as-is.
+    const rawDateRate = (this.collectService.dateRate || '').toString().trim();
+    let daRate = rawDateRate;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(rawDateRate)) {
+      daRate = rawDateRate + ' 00:00:00';
+    } else if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(rawDateRate)) {
+      // already has time, keep as-is
+      daRate = rawDateRate;
+    } else {
+      // fallback: leave as raw value (could be empty or different format)
+      daRate = rawDateRate;
+    }
 
     this.collectService.onCollectionValidToSend(false)
     // Nuevo: referencia al pago creado (se asigna dentro del switch)
@@ -84,8 +118,9 @@ export class CobroPagosComponent implements OnInit {
         let newPagoCheque: PagoCheque = new PagoCheque;
         newPagoCheque.posCollectionPayment = this.collectService.collection.collectionPayments!.length - 1;
         if (this.collectService.validateCollectionDate) {
-          newPagoCheque.fecha = this.collectService.dateRate + " 00:00:00";
-          newPagoCheque.fechaValor = this.collectService.dateRate + " 00:00:00";
+          // use normalized daRate (may already include time)
+          newPagoCheque.fecha = daRate;
+          newPagoCheque.fechaValor = daRate;
         } else {
           newPagoCheque.fecha = this.dateServ.hoyISO();
           newPagoCheque.fechaValor = this.dateServ.hoyISO();
@@ -99,7 +134,7 @@ export class CobroPagosComponent implements OnInit {
         let newPagoDeposito: PagoDeposito = new PagoDeposito;
         newPagoDeposito.posCollectionPayment = this.collectService.collection.collectionPayments!.length - 1;
         if (this.collectService.validateCollectionDate) {
-          newPagoDeposito.fecha = this.collectService.dateRate + " 00:00:00";
+          newPagoDeposito.fecha = daRate;
         } else {
           newPagoDeposito.fecha = this.dateServ.hoyISO();
         }
@@ -112,7 +147,7 @@ export class CobroPagosComponent implements OnInit {
         let newPagoTransferencia: PagoTransferencia = new PagoTransferencia;
         newPagoTransferencia.posCollectionPayment = this.collectService.collection.collectionPayments!.length - 1;
         if (this.collectService.validateCollectionDate) {
-          newPagoTransferencia.fecha = this.collectService.dateRate + " 00:00:00";
+          newPagoTransferencia.fecha = daRate;
         } else {
           newPagoTransferencia.fecha = this.dateServ.hoyISO();
         }

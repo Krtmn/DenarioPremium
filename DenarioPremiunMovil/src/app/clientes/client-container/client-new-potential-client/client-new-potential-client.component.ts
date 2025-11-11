@@ -45,9 +45,6 @@ export class NewPotentialClientComponent implements OnInit {
 
   public config = inject(GlobalConfigService);
 
-  AttachSubscription: Subscription = this.adjuntoService.AttachmentChanged.subscribe(() => {
-    this.onChanges();
-  });
 
   @ViewChild('naClientInput', { static: false })
   naClientInput: any;
@@ -161,7 +158,7 @@ export class NewPotentialClientComponent implements OnInit {
   }
 
   ngOnDestroy() {
-    this.AttachSubscription.unsubscribe();
+   
   }
 
   async validatePotentialClient(potencialClient: FormGroup, saveSend: Boolean) {
@@ -255,11 +252,13 @@ export class NewPotentialClientComponent implements OnInit {
 
       this.clientLogic.cannotSavePotentialClient = false;
       this.clientLogic.cannotSendPotentialClient = false;
+      this.clientLogic.validPotentialClient = true;
       /* this.clientLogic.newPotentialClientChanged = true; */
       return Promise.resolve(true);
     } else {
       this.clientLogic.cannotSendPotentialClient = true;
       this.clientLogic.cannotSavePotentialClient = true;
+      this.clientLogic.validPotentialClient = false;
 
       /* this.clientLogic.newPotentialClientChanged = false; */
       return Promise.resolve(false);

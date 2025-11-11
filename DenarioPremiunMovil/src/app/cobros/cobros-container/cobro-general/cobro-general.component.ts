@@ -448,23 +448,23 @@ export class CobrosGeneralComponent implements OnInit {
           switch (this.collectService.coTypeModule) {
             case "0": {
               console.log("NUEVO COBRO");
-              nameModule = "Cobros"
+              nameModule =  this.collectService.collectionTags.get("COB_TYPE_COBRO")!
               break
             }
             case "1": {
               console.log("ANTICIPO")
-              nameModule = "Anticipo"
+              nameModule = this.collectService.collectionTags.get("COB_TYPE_ANTICIPO")!
               break
             }
             case "2": {
               console.log("RETENCION");
-              nameModule = "Retención"
+              nameModule = this.collectService.collectionTags.get("COB_TYPE_RETENCION")!
 
               break
             }
             case "3": {
               console.log("IGTF")
-              nameModule = "Igtf"
+              nameModule = this.collectService.collectionTags.get("COB_TYPE_IGTF")!
               break;
             }
           }
@@ -534,9 +534,6 @@ export class CobrosGeneralComponent implements OnInit {
 
     this.messageService.showLoading().then(() => {
       this.selectorCliente.updateClientList(this.collectService.enterpriseSelected.idEnterprise);
-      //this.collectService.resetCollection(this.collectService.collection).then(resp => {
-      //this.collectService.collection.idEnterprise = this.collectService.enterpriseSelected.idEnterprise;
-      //this.collectService.collection.coEnterprise = this.collectService.enterpriseSelected.coEnterprise;
       this.ngOnInit();
       this.collectService.client = {} as Client;
       this.collectService.nameClient = "";
@@ -546,7 +543,8 @@ export class CobrosGeneralComponent implements OnInit {
           .then(() => {
             this.collectService.getDateRate(
               this.synchronizationServices.getDatabase(),
-              this.collectService.collection.daRate
+              this.collectService.dateRateVisual.split("T")[0]
+
             );
           });
 

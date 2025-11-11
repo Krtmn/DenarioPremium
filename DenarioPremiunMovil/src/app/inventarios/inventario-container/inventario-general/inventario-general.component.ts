@@ -109,13 +109,6 @@ export class InventarioGeneralComponent implements OnInit {
     this.message.hideLoading();
   })
 
-  AttachSubscription: Subscription = this.adjuntoService.AttachmentChanged.subscribe(() => {
-    this.inventariosLogicService.newClientStock.hasAttachments = this.adjuntoService.hasItems();
-    this.inventariosLogicService.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
-    this.setChangesMade(true);
-  });
-
-
   constructor(private clientSelectorService: ClienteSelectorService) { }
 
   ngOnInit() {
@@ -137,19 +130,19 @@ export class InventarioGeneralComponent implements OnInit {
       this.inventariosLogicService.fechaMenor = this.dateServ.hoyISO();    */
       this.inventariosLogicService.newClientStock.hasAttachments = this.adjuntoService.hasItems();
       this.inventariosLogicService.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
-
     }
   }
 
+
+
   ngOnDestroy() {
-    this.AttachSubscription.unsubscribe();
     this.ClientChangeSubscription.unsubscribe();
   }
 
   setChangesMade(value: boolean) {
     //ESTA FUNCION SE USARA PARA CONTROLAR SI PUEDO ENVIAR O GUARDAR, CVER QUE HAGO ACA
-    this.inventariosLogicService.onStockValidToSave(true);
-    this.inventariosLogicService.onStockValidToSend(true);
+    this.inventariosLogicService.onStockValidToSave(value);
+    this.inventariosLogicService.onStockValidToSend(value);
   }
 
   initInventario() {

@@ -100,18 +100,53 @@ export class MessageService {
 
   }
   alertModal(msj: MessageAlert) {
-    this.alertModalMsj.next(msj);
-
+    // Encolar y procesar en serie
+    this.messageQueue.push({ type: 'alertModalMsj', payload: msj });
+    this.processQueue();
   }
+
   alertModal2(msj: MessageAlert) {
-    this.alertModalMsj2.next(msj);
+    this.messageQueue.push({ type: 'alertModalMsj2', payload: msj });
+    this.processQueue();
   }
 
   alertModalModule(msj: MessageAlert, module: string) {
-    this.alertModalLoginModule.next([msj, module]);
+    this.messageQueue.push({ type: 'alertModalLoginModule', payload: [msj, module] });
+    this.processQueue();
   }
+
   alertCustomBtn(msj: MessageAlert, btns: MessageButton[]) {
-    this.customBtn.next([msj, btns]);
+    this.messageQueue.push({ type: 'customBtn', payload: [msj, btns] });
+    this.processQueue();
+  }
+
+  private processQueue() {
+    if (this.showingMessage) return;
+    const item = this.messageQueue.shift();
+    if (!item) return;
+
+    this.showingMessage = true;
+
+    // Dispatch al Subject correspondiente
+    switch (item.type) {
+      case 'alertModalMsj':
+        this.alertModalMsj.next(item.payload);
+        break;
+      case 'alertModalMsj2':
+        this.alertModalMsj2.next(item.payload);
+        break;
+      case 'alertModalLoginModule':
+        this.alertModalLoginModule.next(item.payload);
+        break;
+      case 'customBtn':
+        this.customBtn.next(item.payload);
+        break;
+      default:
+        // si no coincide, limpiar flag para procesar siguiente
+        this.showingMessage = false;
+        setTimeout(() => this.processQueue(), 0);
+        break;
+    }
   }
 
   closeTransaction() {
@@ -122,9 +157,15 @@ export class MessageService {
   }
   closeAlertModal() {
     this.closeAlertModalSubject.next(null);
+    // Marcar como listo para siguiente y procesar cola
+    this.showingMessage = false;
+    // permitir que el cierre se complete en el DOM antes de disparar siguiente
+    setTimeout(() => this.processQueue(), 50);
   }
   closeAlertModal2() {
     this.closeAlertModal2Subject.next(null);
+    this.showingMessage = false;
+    setTimeout(() => this.processQueue(), 50);
   }
   /*   closeConfirmSend() {
       this.closeConfirmSendSubject.next(null);
@@ -134,10 +175,14 @@ export class MessageService {
     } */
   closeModalLogin() {
     this.closeModalLoginSubject.next(null);
+    this.showingMessage = false;
+    setTimeout(() => this.processQueue(), 50);
   }
 
   closeCustomBtn() {
     this.closeModalCustomBtn.next(null);
+    this.showingMessage = false;
+    setTimeout(() => this.processQueue(), 50);
   }
 
   dismissAll() {

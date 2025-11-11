@@ -39,6 +39,7 @@ export class ClientLogicService {
   public stockValidToSend = new Subject<Boolean>;
   public stockValid = new Subject<Boolean>;
   public backRoute = new Subject<string>;
+  public closeClientShareModal = new Subject<Boolean>();
 
   public hardCurrency!: CurrencyEnterprise;
   public localCurrency!: CurrencyEnterprise;
@@ -70,6 +71,7 @@ export class ClientLogicService {
 
   public cannotSavePotentialClient: Boolean = true;
   public cannotSendPotentialClient: Boolean = true;
+  public validPotentialClient: Boolean = false;
 
   public clienteNuevoBlancoImg: Boolean = true;//si hay algun cambio en el nuevo cliente potencial
   public newPotentialClientChanged: Boolean = false;//si hay algun cambio en el nuevo cliente potencial
@@ -120,8 +122,8 @@ export class ClientLogicService {
   }
 
 
-  showHeaderButtons(headerButtos: Boolean) {
-    this.showButtons.next(headerButtos);
+  showHeaderButtons(headerButtons: Boolean) {
+    this.showButtons.next(headerButtons);
   }
 
   showBackRoute(route: string) {
@@ -230,6 +232,10 @@ export class ClientLogicService {
 
   openClientLocationComponent() {
     this.clientLocationComponent = true;
+  }
+
+  closeClientShareModalFunction() {
+    this.closeClientShareModal.next(true);
   }
 
 }
