@@ -95,6 +95,7 @@ export class CurrencyService {
     if (cm) {
       return cm;
     } else {
+      console.warn("[CurrencyService] No se encontró el módulo de moneda: " + coModule);
       return new CurrencyModules(0, 0, true, false);
     }
   }
@@ -349,8 +350,8 @@ export class CurrencyService {
         let cm: CurrencyModules = {
           idCurrencyModules: item.id_currency_module,
           idModule: item.id_module,
-          localCurrencyDefault: item.local_currency_default,
-          showConversion: item.show_conversion,
+          localCurrencyDefault: item.local_currency_default.toLowerCase() === 'true',
+          showConversion: item.show_conversion.toLowerCase() === 'true',
         };
         map.set(item.co_module, cm);
       }
