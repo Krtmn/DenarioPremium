@@ -744,6 +744,7 @@ export class SynchronizationComponent implements OnInit {
   private shouldSyncTable(tableId: number): boolean | Promise<boolean> {
     const cfgTrue = (key: string): boolean => {
       const val: any = this.globalConfig.get(key);
+      if (typeof val === 'undefined' || val === null) return false;
       if (typeof val === 'boolean') return val;
       if (typeof val === 'string') return val.toLowerCase() === 'true';
       return false; // por defecto consideramos deshabilitado si no está presente
