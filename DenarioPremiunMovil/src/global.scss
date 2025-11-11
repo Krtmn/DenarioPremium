@@ -903,6 +903,12 @@ ion-grid, ion-row {
   width: 100%;           // Ocupa todo el ancho disponible
 }
 
+.scroll-calculadora {
+  height: calc(100vh - 270px); // Ajusta 270px según el alto real de lo fijo arriba (botones, selectores, etc)
+  overflow-y: auto;
+  min-height: 0;
+}
+ 
 ion-select {
   --highlight-height: 0px!important;
 }
