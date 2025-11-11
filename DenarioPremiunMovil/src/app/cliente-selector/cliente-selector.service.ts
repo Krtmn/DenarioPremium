@@ -14,7 +14,7 @@ export class ClienteSelectorService {
   public tags = new Map<string, string>([]);
   public db!: SQLiteObject;
   public clientes!: Client[];
-
+  moduleNames: Map<string,string> = new Map<string,string>();
   public clienteAnterior: null | Client = null;
   public checkClient = false;
 
@@ -35,11 +35,23 @@ export class ClienteSelectorService {
       }
 
     });
+    this.getModuleNames();
 
    }
 
    onCLientChanged(client: Client){
     //console.log("[Cliente-Selector] que mamadera de gallo es esa de cambiar cliente..... que va");
     this.ClientChanged.next(client);
+   }
+
+   getModuleNames(){
+    const selectStatement = 'Select * from modules';
+    return this.db.executeSql(selectStatement, []).then(result => {
+      this.moduleNames = new Map<string, string>();
+      for (let i = 0; i < result.rows.length; i++) {
+        this.moduleNames.set(result.rows.item(i).na_module, result.rows.item(i).co_module);
+      }      
+      return this.moduleNames;
+    });
    }
 }

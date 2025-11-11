@@ -347,7 +347,7 @@ INSERT INTO public.application_tags(
 	('COB_STATUS_SAVED', 'COB', 'COBROS', 'ENG','Saved'),
 	('COB_STATUS_TO_SEND', 'COB', 'COBROS', 'ESP', 'Por Enviar'),
 	('COB_STATUS_SENT', 'COB', 'COBROS', 'ESP', 'Enviado'),
-	('COB_TYPE_COBRO', 'COB', 'COBROS', 'ESP', 'Cobro'),
+	('COB_TYPE_COBRO', 'COB', 'COBROS', 'ESP', 'Cobros'),
 	('COB_TYPE_ANTICIPO', 'COB', 'COBROS', 'ESP', 'Anticipo'),
 	('COB_TYPE_RETENCION', 'COB', 'COBROS', 'ESP', 'Retencion'),
 	('COB_TYPE_IGTF', 'COB', 'COBROS', 'ESP', 'IGTF'),

@@ -35,13 +35,16 @@ export class ClienteSelectorComponent implements OnInit {
   public searchText: string = '';
   public indice!: number;
   public clientChangeOpen = false;
-  public multimoneda: string = "";
+  public multimoneda: boolean = false;
   public cliente!: Client
 
   public isModalOpen: boolean = false;
   public precision = this.currencyService.precision;
   private localCurrency!: CurrencyEnterprise;
   private hardCurrency!: CurrencyEnterprise;
+
+  private showConversion = false;
+  private localCurrencyDefault = true;
 
   public colorModulo: string = '';
 
@@ -69,7 +72,7 @@ export class ClienteSelectorComponent implements OnInit {
     this.colorModulo = this.service.colorModulo;
     this.nombreModulo = this.service.nombreModulo;
     this.clientes = this.service.clientes;
-    this.multimoneda = this.currencyService.multimoneda ? 'true' : 'false';
+    this.multimoneda = this.currencyService.multimoneda;
 
     //busco monedas
     this.currencyService.setup(this.dbServ.getDatabase()).then(() => {
@@ -102,30 +105,20 @@ export class ClienteSelectorComponent implements OnInit {
     this.updateClientList(idEnterprise);
     this.service.checkClient = checkClient;
     this.service.clienteAnterior = cliente;
-
+    var coModule = this.service.moduleNames.get(nombreModulo);
+    var currencyModule;
+    if(coModule){
+      currencyModule = this.currencyService.getCurrencyModule(coModule);
+    }
+    if(currencyModule){
+      this.showConversion = currencyModule.showConversion;
+      this.localCurrencyDefault = currencyModule.localCurrencyDefault;
+    }
+    
 
 
   }
   setSkin(nombreModulo: string, colorModulo: string) {
-    /*  switch (colorModulo) {
-       case "fondoVerde": {
-         colorModulo = "fondoVerde";
-         break;
-       }
- 
-       case "fondoAmarillo": {
-         colorModulo = "fondoAmarillo";
-         break;
-       }
-       case "COLOR_LILA": {
-         colorModulo = "fondoLila";
-         break;
-       }
-       default:
-         colorModulo = "fondoGris";
-         break;
-     } */
-
     this.colorModulo = colorModulo;
     this.nombreModulo = nombreModulo;
 
@@ -146,11 +139,6 @@ export class ClienteSelectorComponent implements OnInit {
             }
           }
         } else {
-          /*  for (var i = 0; i < result.length; i++) {
-             if (!result[i].collectionIva) {
-               this.clientes.push(result[i]);
-             }
-           } */
           this.clientes = result;
         }
 
