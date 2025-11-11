@@ -51,15 +51,15 @@
             <ion-col class="titulosBold col borderSuperiorIzquierdo" size="2"
                 *ngIf="this.collectService.retentionDocTypeCR"></ion-col>
             <ion-col class="titulosBold col"
-                size="3">{{this.collectService.collectionTags.get('COB_SELECCIONE')}}</ion-col>
+                size="2">{{this.collectService.collectionTags.get('COB_SELECCIONE')}}</ion-col>
 
             <ion-col
                 *ngIf="this.collectService.historicPartialPayment && this.collectService.coTypeModule == '0' || this.collectService.coTypeModule == '4'"
-                class="titulosBold col" size="4">Pago
+                class="titulosBold col" size="2">Pago<br>
                 Parcial</ion-col>
 
-            <ion-col class="titulosBold col" size="3">{{this.collectService.collectionTags.get('COB_TIPO')}} </ion-col>
-            <ion-col class="titulosBold col" size="6">{{this.collectService.collectionTags.get('COB_NRO_DOCUMENTO')}}
+            <ion-col class="titulosBold col" size="2">{{this.collectService.collectionTags.get('COB_TIPO')}} </ion-col>
+            <ion-col class="titulosBold col" size="4">{{this.collectService.collectionTags.get('COB_NRO_DOCUMENTO')}}
             </ion-col>
             <ion-col class="titulosBold col" size="6">{{this.collectService.collectionTags.get('COB_MONEDA_DOCUMENTO')}}
             </ion-col>
@@ -104,13 +104,13 @@
                 </ion-button>
             </ion-col>
 
-            <ion-col size="3" class="ion-text-center col">
+            <ion-col size="2" class="ion-text-center col">
                 <ion-checkbox [(ngModel)]="documentSale.isSelected"
                     (ionChange)="selectDocumentSale(documentSale,i,$event)">
                 </ion-checkbox>
             </ion-col>
 
-            <ion-col size="4" class="ion-text-center col"
+            <ion-col size="2" class="ion-text-center col"
                 *ngIf="this.collectService.historicPartialPayment && this.collectService.coTypeModule == '0' || this.collectService.coTypeModule == '4'">
                 <ion-button (click)="openPartialPayment(documentSale.coDocument)" size="small"
                     disabled="{{!documentSale.historicPaymentPartial}}">
@@ -118,11 +118,11 @@
                 </ion-button>
             </ion-col>
 
-            <ion-col size="3" class="ion-text-center col"
+            <ion-col size="2" class="ion-text-center col"
                 [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }">
                 {{documentSale.coDocumentSaleType}}
             </ion-col>
-            <ion-col size="6" class="ion-text-center col"
+            <ion-col size="4" class="ion-text-center col"
                 [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }">
                 {{documentSale.coDocument}}
             </ion-col>
