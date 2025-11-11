@@ -127,29 +127,40 @@ export class ProductService {
       return database.executeSql(select, [idEnterprise]).then(result => {
         this.productList = [];
         for (let i = 0; i < result.rows.length; i++) {
-          this.productList.push({
-            idProduct: result.rows.item(i).id_product,
-            coProduct: result.rows.item(i).co_product,
-            naProduct: result.rows.item(i).na_product,
-            points: result.rows.item(i).points,
-            txDescription: result.rows.item(i).tx_description,
-            idList: result.rows.item(i).id_list,
-            price: result.rows.item(i).nu_price,
-            coCurrency: result.rows.item(i).co_currency,
-            priceOpposite: result.rows.item(i).co_currency === this.currencyService.getLocalCurrency ?
-              this.currencyService.toHardCurrency(result.rows.item(i).nu_price) :
-              this.currencyService.toLocalCurrency(result.rows.item(i).nu_price), // Precio en la moneda opuesta a la lista de precio
-            coCurrencyOpposite: result.rows.item(i).co_currency === this.currencyService.getLocalCurrency ?
+          var item = result.rows.item(i);
+          var product = {
+            idProduct: item.id_product,
+            coProduct: item.co_product,
+            naProduct: item.na_product,
+            points: item.points,
+            txDescription: item.tx_description,
+            idList: item.id_list,
+            price: item.nu_price,
+            coCurrency: item.co_currency,
+            priceOpposite: item.co_currency === this.currencyService.getLocalCurrency ?
+              this.currencyService.toHardCurrency(item.nu_price) :
+              this.currencyService.toLocalCurrency(item.nu_price), // Precio en la moneda opuesta a la lista de precio
+            coCurrencyOpposite: item.co_currency === this.currencyService.getLocalCurrency ?
               this.currencyService.hardCurrency.coCurrency :
               this.currencyService.localCurrency.coCurrency, // moneda opuesta a la lista de precio,
-            stock: result.rows.item(i).qu_stock,
-            idEnterprise: result.rows.item(i).id_enterprise,
-            coEnterprise: result.rows.item(i).co_enterprise,
-            images: this.imageServices.mapImagesFiles.get(result.rows.item(i).co_product) === undefined ? '../../../assets/images/nodisponible.png' : this.imageServices.mapImagesFiles.get(result.rows.item(i).co_product)?.[0],
+            stock: item.qu_stock,
+            idEnterprise: item.id_enterprise,
+            coEnterprise: item.co_enterprise,
+            images: this.imageServices.mapImagesFiles.get(item.co_product) === undefined ? '../../../assets/images/nodisponible.png' : this.imageServices.mapImagesFiles.get(item.co_product)?.[0],
             typeStocks: undefined,
             productUnitList: undefined,
-            idProductStructure: result.rows.item(i).id_product_structure,
-          });
+            idProductStructure: item.id_product_structure,
+          };
+          if(coCurrency != product.coCurrency){
+            //intercambiamos precios y monedas
+            let tempPrice = product.price;
+            let tempCurrency = product.coCurrency;
+            product.price = product.priceOpposite? product.priceOpposite : 0;
+            product.coCurrency = product.coCurrencyOpposite;
+            product.priceOpposite = tempPrice;
+            product.coCurrencyOpposite = tempCurrency;
+          }
+          this.productList.push(product);
         }
       }).catch(e => {
         this.productList = [];
