@@ -6,6 +6,8 @@ import { Observable } from 'rxjs';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
 import { DateServiceService } from '../dates/date-service.service';
 //import { DateServiceService } from '../dates/date-service.service';
+import { CurrencyModules } from 'src/app/modelos/tables/currencyModules';
+
 
 
 
@@ -22,6 +24,7 @@ export class CurrencyService {
   public hardCurrency!: CurrencyEnterprise;
   public currencyRelation: any;
   public localValue: any;
+  public currencyModulesMap = new Map<string, CurrencyModules>();
 
   public precision: number = 0;
 
@@ -51,6 +54,9 @@ export class CurrencyService {
       if (check) {
         //console.log("[CurrencyService] Buscamos las variables en BD")
         this.queryLocalCurrency(db);
+        this.getCurrencyModules(db).then((map) => {
+          this.currencyModulesMap = map;
+        });
         if (this.multimoneda) {
           this.queryHardCurrency(db);
           this.queryCurrencyRelation(db);
@@ -81,6 +87,16 @@ export class CurrencyService {
       minimumFractionDigits: precision,
       maximumFractionDigits: precision
     }).format(input);
+  }
+
+  getCurrencyModule(coModule: string): CurrencyModules{
+    //Obtiene la configuración de moneda para un modulo segun su coModule
+    var cm = this.currencyModulesMap.get(coModule);
+    if (cm) {
+      return cm;
+    } else {
+      return new CurrencyModules(0, 0, true, false);
+    }
   }
 
   toOppositeCurrency(coCurrency: string, amount: number) {
@@ -323,4 +339,22 @@ export class CurrencyService {
 
     })
   }
+getCurrencyModules(db: SQLiteObject) {
+    let query = "select * from currency_modules cm join modules m on m.id_module = cm.id_module";
+    return db.executeSql(query, []).then(data => {
+      let map: Map<string, CurrencyModules> = new Map<string, CurrencyModules>();
+      for (let i = 0; i < data.rows.length; i++) {
+        var item = data.rows.item(i);
+        var cm: CurrencyModules = {
+          idCurrencyModule: item.id_currency_module,
+          idModule: item.id_module,
+          localCurrencyDefault: item.local_currency_default,
+          showConversion: item.show_conversion,
+        };
+        map.set(item.co_module, cm);
+      }
+      return map;
+    });
+  }
+
 }
