@@ -43,8 +43,8 @@ export class ClienteSelectorComponent implements OnInit {
   private localCurrency!: CurrencyEnterprise;
   private hardCurrency!: CurrencyEnterprise;
 
-  private showConversion = false;
-  private localCurrencyDefault = true;
+  public showConversion = false;
+  public localCurrencyDefault = true;
 
   public colorModulo: string = '';
 
@@ -161,6 +161,26 @@ export class ClienteSelectorComponent implements OnInit {
           }
           this.clientes[c].saldo1 = saldoCliente;
           this.clientes[c].saldo2 = saldoOpuesto;
+
+          if(this.localCurrencyDefault){
+            //la primera moneda es la local
+            if (this.clientes[c].coCurrency != this.localCurrency.coCurrency) {
+              //cambiamos la moneda del cliente
+              this.clientes[c].coCurrency = this.oppositeCoCurrency(this.clientes[c].coCurrency);
+              var tempSaldo = this.clientes[c].saldo1;
+              this.clientes[c].saldo1 = this.clientes[c].saldo2;
+              this.clientes[c].saldo2 = tempSaldo;
+            }
+          }else{
+            //la primera moneda es la dura
+            if (this.clientes[c].coCurrency != this.hardCurrency.coCurrency) {
+              //cambiamos la moneda del cliente
+              this.clientes[c].coCurrency = this.oppositeCoCurrency(this.clientes[c].coCurrency);
+              var tempSaldo = this.clientes[c].saldo1;
+              this.clientes[c].saldo1 = this.clientes[c].saldo2;
+              this.clientes[c].saldo2 = tempSaldo;
+            }
+          }
 
           saldoCliente = saldoOpuesto = 0;
         }
