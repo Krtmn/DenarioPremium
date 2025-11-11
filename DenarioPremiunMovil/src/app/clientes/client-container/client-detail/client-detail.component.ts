@@ -47,7 +47,7 @@ export class ClienteComponent implements OnInit {
     //console.log(this.clientDetail);
     this.client = this.clientLogic.datos.client;
 
-    if (this.clientLogic.multiCurrency == "true") {
+    if (this.clientLogic.multiCurrency) {
       if (this.currencyService.multimoneda) {
         //arreglamos el saldo del cliente
         //porque vergas saldo1 y saldo2 significan vainas distintas aqui y en la lista nunca sabré. 
@@ -80,7 +80,7 @@ export class ClienteComponent implements OnInit {
     this.tagRif = this.globalConfig.get("tagRif")!;
 
     this.localCurrency = this.currencyService.localCurrency.coCurrency;
-    if (this.clientLogic.multiCurrency == "true")
+    if (this.clientLogic.multiCurrency)
       this.hardCurrency = this.currencyService.hardCurrency.coCurrency;
 
     this.decimales = this.currencyService.precision;
@@ -113,17 +113,17 @@ export class ClienteComponent implements OnInit {
     this.clientLogic.viewCoordenada(client);
   }
 
-  hayCoordenada(coord: string){
+  hayCoordenada(coord: string) {
     if (coord == null || coord.trim() === "" ||
-     coord.toLowerCase().trim() === "null" || coord.trim() == "0,0"){
+      coord.toLowerCase().trim() === "null" || coord.trim() == "0,0") {
       return false;
-    }      
+    }
     return true;
   }
 
   //funcion que devuelve la coordenada si existe
-  getCoordenada(coord: string){
-    if (this.hayCoordenada(coord)){
+  getCoordenada(coord: string) {
+    if (this.hayCoordenada(coord)) {
       return coord;
     }
     return "";

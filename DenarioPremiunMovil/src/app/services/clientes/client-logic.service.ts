@@ -67,8 +67,6 @@ export class ClientLogicService {
   public disabledEnterprise: Boolean = false;
   public opendDocClick: Boolean = false;
   public openDocSales: Boolean = false;
-
-
   public cannotSavePotentialClient: Boolean = true;
   public cannotSendPotentialClient: Boolean = true;
   public validPotentialClient: Boolean = false;
@@ -80,13 +78,21 @@ export class ClientLogicService {
   public saveOrExitOpen = false;
   public clientLocationChanged: Boolean = false;
   public cannotSendClientCoordinate: Boolean = false;
+
+  public showConversion: boolean = true;
+  public multiCurrency: boolean = false;
+  public localCurrencyDefault: boolean = false;
   public user: any = {};
+  public currencyModule: any;
 
   public segment = 'default';
-  public multiCurrency: string = 'false';
+
 
   constructor() {
-    this.multiCurrency = this.globalConfig.get('multiCurrency');
+    this.multiCurrency = this.globalConfig.get('multiCurrency').toString() === "true" ? true : false;
+    this.currencyModule = this.currencyService.getCurrencyModule("cli");
+    this.localCurrencyDefault = this.currencyModule.localCurrencyDefault.toString() === 'true' ? true : false;
+    this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
 
     const userStr = localStorage.getItem("user");
     if (userStr) {
@@ -160,6 +166,23 @@ export class ClientLogicService {
       .then((result) => {
         this.clients = result;
         this.results = [...result];
+
+        // Recorre todos los clientes y loggea si la moneda es distinta a la moneda local
+        if (this.localCurrencyDefault) {
+          for (const c of this.clients) {
+            if (c.coCurrency !== this.localCurrency.coCurrency) {
+              c.coCurrency = this.localCurrency.coCurrency;
+              c.saldo1 = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, c.saldo1);
+            }
+          }
+        } else {
+          for (const c of this.clients) {
+            if (c.coCurrency !== this.hardCurrency.coCurrency) {
+              c.coCurrency = this.hardCurrency.coCurrency;
+              c.saldo1 = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.saldo1);
+            }
+          }
+        }
         return Promise.resolve(true)
       });
   }
@@ -169,8 +192,53 @@ export class ClientLogicService {
     this.clientesServices.getClientById(
       Number(idClient)).then((result) => {
         this.datos = {} as SelectedClient;
+        // Recorre todos los clientes y loggea si la moneda es distinta a la moneda local
+        if (this.localCurrencyDefault) {
+          if (result.coCurrency !== this.localCurrency.coCurrency) {
+            result.coCurrency = this.localCurrency.coCurrency;
+            result.saldo1 = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, result.saldo1);
+            result.nuCreditLimit = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, result.nuCreditLimit);
+          }
+
+        } else {
+          if (result.coCurrency !== this.hardCurrency.coCurrency) {
+            result.coCurrency = this.hardCurrency.coCurrency;
+            result.saldo1 = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, result.saldo1);
+            result.nuCreditLimit = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, result.nuCreditLimit);
+          }
+        }
+
         this.datos.client = result;
         this.clientesServices.getDocumentSaleByIdClient(Number(idClient)).then((result) => {
+          // Recorre todos los clientes y loggea si la moneda es distinta a la moneda local
+          if (this.localCurrencyDefault) {
+            for (const c of result) {
+              if (c.coCurrency !== this.localCurrency.coCurrency) {
+                c.coCurrency = this.localCurrency.coCurrency;
+                c.nuAmountPaid = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, c.nuAmountPaid);
+                c.nuAmountTotal = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, c.nuAmountTotal);
+                c.nuBalance = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, c.nuBalance);
+                c.nuAmountDiscount = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, c.nuAmountDiscount);
+                c.nuAmountRetention = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, c.nuAmountRetention);
+                c.nuAmountRetention2 = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, c.nuAmountRetention2);
+                c.nuAmountTax = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, c.nuAmountTax);
+              }
+            }
+          } else {
+            for (const c of result) {
+              if (c.coCurrency !== this.hardCurrency.coCurrency) {
+                c.coCurrency = this.hardCurrency.coCurrency;
+                c.nuAmountPaid = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuAmountPaid);
+                c.nuAmountTotal = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuAmountTotal);
+                c.nuBalance = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuBalance);
+                c.nuAmountDiscount = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuAmountDiscount);
+                c.nuAmountRetention = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuAmountRetention);
+                c.nuAmountRetention2 = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuAmountRetention2);
+                c.nuAmountTax = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuAmountTax);
+              }
+            }
+          }
+
           this.datos.document = result;
           this.clientDetailComponent = true;
           this.datos.document.forEach((doc) => {
@@ -186,10 +254,10 @@ export class ClientLogicService {
 
     //DEBO VALIDAR SI EXISTE COORDENADAS, SI NO EXISTE COLOCAR LA COORDENADA DEL TELEFONO, SINO YA VEREMOS!
     this.coordenada = {} as Coordinate
-    if (client.coordenada == null 
-    || client.coordenada.trim() == "" 
-    || client.coordenada.trim() == "0,0" 
-    || client.coordenada.toLowerCase().trim() === "null") {
+    if (client.coordenada == null
+      || client.coordenada.trim() == ""
+      || client.coordenada.trim() == "0,0"
+      || client.coordenada.toLowerCase().trim() === "null") {
       this.coordenada.lat = 0;
       this.coordenada.lng = 0;
     } else {
