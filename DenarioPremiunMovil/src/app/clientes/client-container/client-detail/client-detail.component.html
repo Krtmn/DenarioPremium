@@ -115,8 +115,8 @@
         <ion-card *ngSwitchCase="'docVentas'">
             <ion-grid class="tablaInfoClientes tablaDocVentasGrip" *ngIf="document.length > 0">
                 <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
-                    <ion-col size="4" class="titulosBold col borderSuperiorIzquierdo" size="4"></ion-col>
-                    <ion-col size="4"
+                    <ion-col size="2" class="titulosBold col borderSuperiorIzquierdo"></ion-col>
+                    <ion-col size="2"
                         class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_TIPO")}}</ion-col>
                     <ion-col size="4"
                         class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_NUMERO_DOCUMENTO")}}</ion-col>
@@ -142,7 +142,7 @@
                         class="titulosBold col borderSuperiorDerecho">{{clientLogic.clientTags.get("CLI_DETAIL_FECHA_VENCIMIENTO")}}</ion-col>
                 </ion-row>
                 <ion-row *ngFor="let documento of document;index as i" class="tablaDocumentosVenta tablaDocVentas row">
-                    <ion-col size="4" class="ion-text-center col borderInferiorIzquierdo">
+                    <ion-col size="2" class="ion-text-center col borderInferiorIzquierdo">
                         <ion-button (click)="openDoc(documento.idDocument, i)" expand="block" class="botonAddVerde"
                             size="small">
                             <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
@@ -153,7 +153,7 @@
                             <ion-icon src=" ../../../assets/icon/search-circle-outline.svg"></ion-icon>Ver
                         </a> -->
                     </ion-col>
-                    <ion-col size="4" class="ion-text-center col"
+                    <ion-col size="2" class="ion-text-center col"
                         [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.coDocumentSaleType}}</ion-col>
                     <ion-col size="4" class="ion-text-center col"
                         [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.coDocument}}</ion-col>

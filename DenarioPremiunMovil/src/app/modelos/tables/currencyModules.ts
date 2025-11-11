@@ -14,6 +14,6 @@ export class CurrencyModules {
         public idModule: number,
         public localCurrencyDefault: boolean,
         public showConversion: boolean,
-   
+
     ) { }
 }

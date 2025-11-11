@@ -51,47 +51,47 @@
             <ion-col class="titulosBold col borderSuperiorIzquierdo" size="2"
                 *ngIf="this.collectService.retentionDocTypeCR"></ion-col>
             <ion-col class="titulosBold col"
-                size="3">{{this.collectService.collectionTags.get('COB_SELECCIONE')}}</ion-col>
+                size="2">{{this.collectService.collectionTags.get('COB_SELECCIONE')}}</ion-col>
 
             <ion-col
                 *ngIf="this.collectService.historicPartialPayment && this.collectService.coTypeModule == '0' || this.collectService.coTypeModule == '4'"
-                class="titulosBold col" size="4">Pago
+                class="titulosBold col" size="2">Pago<br>
                 Parcial</ion-col>
 
-            <ion-col class="titulosBold col" size="3">{{this.collectService.collectionTags.get('COB_TIPO')}} </ion-col>
-            <ion-col class="titulosBold col" size="6">{{this.collectService.collectionTags.get('COB_NRO_DOCUMENTO')}}
+            <ion-col class="titulosBold col" size="2">{{this.collectService.collectionTags.get('COB_TIPO')}} </ion-col>
+            <ion-col class="titulosBold col" size="4">{{this.collectService.collectionTags.get('COB_NRO_DOCUMENTO')}}
             </ion-col>
             <ion-col class="titulosBold col" size="6">{{this.collectService.collectionTags.get('COB_MONEDA_DOCUMENTO')}}
             </ion-col>
             <ion-col class="titulosBold col" size="6">{{this.collectService.collectionTags.get('COB_DIAS_VENCIMIENTO')}}
             </ion-col>
 
-            <ion-col *ngIf="this.collectService.multiCurrency" size="6"
+            <ion-col *ngIf="this.collectService.multiCurrency && this.collectService.showConversion" size="6"
                 class="titulosBold col">{{this.collectService.collectionTags.get('COB_TASA')}}
             </ion-col>
 
             <!-- si la moneda del doc es local, primero se muestran los montos en local,  -->
-            <ion-col *ngIf="this.collectService.multiCurrency" size="6"
+            <ion-col  size="6"
                 class="titulosBold col">{{this.collectService.collectionTags.get('COB_MONTO')}}
             </ion-col>
 
-            <ion-col *ngIf="this.collectService.multiCurrency" size="6"
+            <ion-col *ngIf="this.collectService.multiCurrency && this.collectService.showConversion" size="6"
                 class="titulosBold col">{{this.collectService.collectionTags.get('COB_MONTO')}}
                 Conversión
             </ion-col>
 
-            <ion-col *ngIf="this.collectService.multiCurrency" size="6"
+            <ion-col  size="6"
                 class="titulosBold col">{{this.collectService.collectionTags.get('COB_SALDO')}}
             </ion-col>
 
-            <ion-col *ngIf="this.collectService.multiCurrency" size="6"
+            <ion-col *ngIf="this.collectService.multiCurrency && this.collectService.showConversion" size="6"
                 class="titulosBold col">{{this.collectService.collectionTags.get('COB_SALDO')}}
                 Conversión
             </ion-col>
 
-            <ion-col *ngIf="this.collectService.multiCurrency" size="6"
+            <ion-col  size="6"
                 class="titulosBold col">{{this.collectService.collectionTags.get('COB_FECHA_DOC')}}</ion-col>
-            <ion-col *ngIf="this.collectService.multiCurrency" size="6"
+            <ion-col size="6"
                 class="titulosBold col borderSuperiorDerecho">{{this.collectService.collectionTags.get('COB_FECHA_VENCIMIENTO')}}</ion-col>
         </ion-row>
         <ion-row *ngFor="let documentSale of this.collectService.documentSalesView;index as i"
@@ -104,13 +104,13 @@
                 </ion-button>
             </ion-col>
 
-            <ion-col size="3" class="ion-text-center col">
+            <ion-col size="2" class="ion-text-center col">
                 <ion-checkbox [(ngModel)]="documentSale.isSelected"
                     (ionChange)="selectDocumentSale(documentSale,i,$event)">
                 </ion-checkbox>
             </ion-col>
 
-            <ion-col size="4" class="ion-text-center col"
+            <ion-col size="2" class="ion-text-center col"
                 *ngIf="this.collectService.historicPartialPayment && this.collectService.coTypeModule == '0' || this.collectService.coTypeModule == '4'">
                 <ion-button (click)="openPartialPayment(documentSale.coDocument)" size="small"
                     disabled="{{!documentSale.historicPaymentPartial}}">
@@ -118,11 +118,11 @@
                 </ion-button>
             </ion-col>
 
-            <ion-col size="3" class="ion-text-center col"
+            <ion-col size="2" class="ion-text-center col"
                 [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }">
                 {{documentSale.coDocumentSaleType}}
             </ion-col>
-            <ion-col size="6" class="ion-text-center col"
+            <ion-col size="4" class="ion-text-center col"
                 [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }">
                 {{documentSale.coDocument}}
             </ion-col>
@@ -135,8 +135,8 @@
                 {{getDaDueDate(documentSale.daDueDate)}}
             </ion-col>
 
-            <ion-col *ngIf="this.collectService.multiCurrency" size="6" class="ion-text-center col"
-                [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }">
+            <ion-col *ngIf="this.collectService.multiCurrency && this.collectService.showConversion" size="6"
+                class="ion-text-center col" [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }">
 
                 {{ getTasaByAmount(documentSale.nuAmountTotal, documentSale.nuValueLocal) }}
                 {{this.collectService.localCurrency.coCurrency}}
@@ -149,8 +149,8 @@
                 {{documentSale.coCurrency}}
             </ion-col>
             <!-- Monto CONVERSION -->
-            <ion-col size="6" class="ion-text-center col" size="6" class="ion-text-center col"
-                [ngStyle]="{color: documentSale.nuAmountTotal > 0 ? 'Red' : 'Blue' }">
+            <ion-col size="6" *ngIf="this.collectService.showConversion" class="ion-text-center col" size="6"
+                class="ion-text-center col" [ngStyle]="{color: documentSale.nuAmountTotal > 0 ? 'Red' : 'Blue' }">
                 {{formatNumber(this.collectService.convertirMonto(documentSale.nuAmountTotal,
                 documentSale.nuValueLocal,documentSale.coCurrency))}}
                 {{oppositeCoCurrency(documentSale.coCurrency)}}
@@ -164,14 +164,12 @@
             </ion-col>
 
             <!-- SALDO CONVERSION -->
-            <ion-col size="6" class="ion-text-center col" size="6" class="ion-text-center col"
-                [ngStyle]="{color: documentSale.nuAmountTotal > 0 ? 'Red' : 'Blue' }">
+            <ion-col size="6" *ngIf="this.collectService.showConversion" class="ion-text-center col" size="6"
+                class="ion-text-center col" [ngStyle]="{color: documentSale.nuAmountTotal > 0 ? 'Red' : 'Blue' }">
                 {{formatNumber(this.collectService.convertirMonto(documentSale.nuBalance,
                 documentSale.nuValueLocal,documentSale.coCurrency))}}
                 {{oppositeCoCurrency(documentSale.coCurrency)}}
             </ion-col>
-
-
 
             <ion-col size="6" class="ion-text-center col"
                 [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }">
@@ -250,7 +248,7 @@
 
                                     <!-- TASA-->
                                     <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
-                                        *ngIf="this.collectService.historicoTasa">
+                                        *ngIf="this.collectService.historicoTasa && this.collectService.showConversion">
                                         <ion-input
                                             label="{{this.collectService.collectionTags.get('COB_TASA')}} {{this.collectService.localCurrency.coCurrency}}:"
                                             label-placement="floating" fill="outline" color="primary"
@@ -282,7 +280,7 @@
 
                                     <!-- SALDO CONVERSION-->
                                     <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
-                                        *ngIf="this.collectService.multiCurrency">
+                                        *ngIf="this.collectService.multiCurrency && this.collectService.showConversion">
                                         <ion-input
                                             label="{{this.collectService.collectionTags.get('COB_SALDO')}} {{this.collectService.currencyConversion.coCurrency}}"
                                             label-placement="floating" fill="outline"
@@ -527,7 +525,7 @@
 
                             <!-- SALDO CONVERSION-->
                             <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
-                                *ngIf="this.collectService.multiCurrency">
+                                *ngIf="this.collectService.multiCurrency && this.collectService.showConversion">
                                 <ion-input
                                     label="{{this.collectService.collectionTags.get('COB_SALDO')}} {{this.collectService.currencyConversion.coCurrency}}"
                                     label-placement="floating" fill="outline" value="{{this.saldoConversion}}"
