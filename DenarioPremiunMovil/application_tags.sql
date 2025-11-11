@@ -725,6 +725,7 @@ INSERT INTO public.application_tags(
 	('ADJ_EXCEDE_FOTO', 'ADJ', 'ADJUNTOS', 'ESP','La Foto excede nuestro límite de '),
 	('ADJ_EXCEDE_ARCHIVO', 'ADJ', 'ADJUNTOS', 'ESP','El Archivo excede nuestro límite de '),
 	('ADJ_ELIMINE_IMAGEN', 'ADJ', 'ADJUNTOS', 'ESP','Esta Imagen excede el límite permitido, por favor elimínela para enviar la transacción'),
+	('ADJ_ELIMINE_ARCHIVO', 'ADJ', 'ADJUNTOS', 'ESP','Este Archivo excede el límite permitido, por favor elimínelo para enviar la transacción'),
 	('ADJ_SUBIR_ARCHIVO', 'ADJ', 'ADJUNTOS', 'ESP','Subir Archivo');
 	
 

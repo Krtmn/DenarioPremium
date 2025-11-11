@@ -28,11 +28,7 @@ export class AdjuntoComponent implements OnInit {
 
   viewOnly: boolean = false;
   iHaveSignature: boolean = false;
-
   colorBoton = '';
-
-
-
 
   public message = inject(MessageService);
   public service = inject(AdjuntoService);
@@ -127,13 +123,13 @@ export class AdjuntoComponent implements OnInit {
   }
 
   onAttachmentChanged() {
-    
-    if (this.service.weightLimitExceeded){
+
+    if (this.service.weightLimitExceeded) {
       this.service.AttachmentWeightExceeded.next(null);
-    }else{
+    } else {
       this.service.AttachmentChanged.next(null);
     }
-    
+
   }
 
 
@@ -166,6 +162,7 @@ export class AdjuntoComponent implements OnInit {
 
   deleteFile() {
     this.service.file = null;
+    this.service.weightLimitExceeded = false;
     this.onAttachmentChanged();
 
   }
@@ -248,7 +245,7 @@ export class AdjuntoComponent implements OnInit {
             muyPesado
           );
           if (muyPesado) {
-            this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_FOTO")+ this.service.imageWeightLimit + " MB");
+            this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_FOTO") + this.service.imageWeightLimit + " MB");
             this.service.weightLimitExceeded = true;
           } else {
 
@@ -284,7 +281,7 @@ export class AdjuntoComponent implements OnInit {
       });
 
       this.service.processingPhotos = photos.length; //actualiza la cantidad de fotos que se estan procesando actualmente
-      
+
       //console.log(images);
 
 
@@ -296,7 +293,7 @@ export class AdjuntoComponent implements OnInit {
           if (this.service.processingPhotos <= 0) {
             this.disablePhotos = false; //habilita el boton de buscar fotos cuando se han procesado todas las fotos
             if (this.service.weightLimitExceeded) {
-              this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_MULTIPLE")+ this.service.imageWeightLimit + " MB");
+              this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_MULTIPLE") + this.service.imageWeightLimit + " MB");
               //this.service.weightLimitExceeded = false;
             }
           }
@@ -335,18 +332,22 @@ export class AdjuntoComponent implements OnInit {
       });
       //console.log(result);
       var file = result.files[0];
-      if (this.service.getFileWeight(file.data as string) > this.service.imageWeightLimit) {
-        this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_ARCHIVO")+ this.service.imageWeightLimit + " MB");
-      } else {
+      var muyPesado = this.service.getFileWeight(file.data as string) > this.service.imageWeightLimit;
+      if (muyPesado) {
+        this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_ARCHIVO") + this.service.imageWeightLimit + " MB");
+      }
         this.service.file = new Archivo(
           file.mimeType,
           file.data as string,
-          file.name as string
+          file.name as string,
+          muyPesado
         )
+
+        this.service.weightLimitExceeded = muyPesado;
         //console.log(this.service.file);
 
         this.onAttachmentChanged();
-      }
+      
 
 
     }
