@@ -15,6 +15,7 @@ import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { ProductService } from 'src/app/services/products/product.service';
 import { ProductPriceUtil } from 'src/app/modelos/ProductPriceUtil';
+import { CurrencyModules } from 'src/app/modelos/tables/currencyModules';
 
 register();
 
@@ -40,6 +41,8 @@ export class ProductDetailComponent implements OnInit {
 
   multiCurrency!: Boolean;
   conversionByPriceList!: Boolean;
+  localCurrencyDefault: Boolean = true;
+  showConversionInfo: Boolean = false;
   listSeleccionada!: List;
   lists: List[] = [];
   warehouseSeleccionado!: Warehouse;
@@ -55,6 +58,9 @@ export class ProductDetailComponent implements OnInit {
     /* this.getProductImages(); */
     this.multiCurrency = this.globalConfig.get("multiCurrency") == "true";
     this.conversionByPriceList = this.globalConfig.get("conversionByPriceList") == "true";
+    var currencyModule: CurrencyModules = this.currencyService.getCurrencyModule('pro');
+    this.showConversionInfo = currencyModule.showConversion;
+    this.localCurrencyDefault = currencyModule.localCurrencyDefault;
 
     this.priceListService.getListByIdProduct(this.pSeleccionado.idProduct).then(() => {
       this.lists = this.priceListService.productlists;
@@ -64,7 +70,8 @@ export class ProductDetailComponent implements OnInit {
       this.warehouses = this.stockService.productWarehouses;
       this.warehouseSeleccionado = this.warehouses[0];
     });
-    //console.log('pSeleccionado: ' + JSON.stringify(this.pSeleccionado));
+    this.checkReorderPrices();
+    console.log('pSeleccionado: ' + JSON.stringify(this.pSeleccionado));
   }
 
   onListChanged(idList: number) {
@@ -74,8 +81,36 @@ export class ProductDetailComponent implements OnInit {
       this.pSeleccionado.priceHard = this.priceListService.productPrice.priceOpposite;
       this.pSeleccionado.coCurrencyHard = this.priceListService.productPrice.coCurrencyOpposite;
       console.log('pSeleccionado.priceLocal: ' + this.pSeleccionado.priceLocal);
+      this.checkReorderPrices();
     });
   }
+
+  checkReorderPrices(){
+    if(this.localCurrencyDefault){
+      //la local es la por defecto
+     if(this.pSeleccionado.coCurrencyLocal != this.currencyService.getLocalCurrency().coCurrency){
+      //vino la dura como local
+        this.reorderPrices();
+      }
+    }else{
+      //la hard es la por defecto
+      if(this.pSeleccionado.coCurrencyLocal != this.currencyService.getHardCurrency().coCurrency){
+        //vino la local como hard
+        this.reorderPrices();
+      }
+    }
+  }
+
+  reorderPrices(){
+        let tempPrice = this.pSeleccionado.priceLocal;
+        let tempCurrency = this.pSeleccionado.coCurrencyLocal;
+        this.pSeleccionado.priceLocal = this.pSeleccionado.priceHard? this.pSeleccionado.priceHard : 0;
+        this.pSeleccionado.coCurrencyLocal = this.pSeleccionado.coCurrencyHard? 
+          this.pSeleccionado.coCurrencyHard : this.currencyService.getOppositeCurrency(tempCurrency).coCurrency;
+        this.pSeleccionado.priceHard = tempPrice;
+        this.pSeleccionado.coCurrencyHard = tempCurrency;
+    }
+  
 
   onWarehouseChanged(idWarehouse: number) {
     this.stockService.getStockByIdWarehousesAndIdProduct(idWarehouse, this.pSeleccionado.idProduct).then((data: number) => {
