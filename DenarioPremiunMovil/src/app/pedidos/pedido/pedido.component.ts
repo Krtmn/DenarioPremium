@@ -155,7 +155,7 @@ export class PedidoComponent implements OnInit {
     //console.log('backButton was called!');
     this.goBack();
   });
-  
+
   attachmentChangedSubscription: Subscription = this.adjuntoService.AttachmentChanged.subscribe(() => {
     this.orderServ.setChangesMade(true);
   });
@@ -229,28 +229,38 @@ export class PedidoComponent implements OnInit {
       //setup monedas
       this.currencyServ.setup(this.dbServ.getDatabase()).then(() => {
         this.multimoneda = this.currencyServ.multimoneda;
-        this.showConversion = this.multimoneda && !this.orderServ.showTransactionCurrency;
+        this.orderServ.currencyModule = this.currencyServ.getCurrencyModule('ped');
+        this.showConversion = this.multimoneda && this.orderServ.currencyModule.showConversion;
         this.localCurrency = this.currencyServ.getLocalCurrency();
         if (this.orderServ.openOrder) {
           this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.orderServ.order.coCurrency);
-          if(this.orderServ.pedidoModificable) {
+          if (this.orderServ.pedidoModificable) {
             this.tasaCambio = this.currencyServ.getLocalValue();
             this.nuValueLocal = Number.parseFloat(this.tasaCambio);
-          }else{
+          } else {
             this.nuValueLocal = this.orderServ.order.nuValueLocal;
             this.tasaCambio = this.currencyServ.formatNumber(this.nuValueLocal);
-            
+
           }
         }
         else {
-          this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
+          if (this.currencyServ.multimoneda) {
+            if (this.orderServ.currencyModule.localCurrencyDefault) {
+              this.orderServ.monedaSeleccionada = this.currencyServ.getLocalCurrency();
+            } else {
+              this.orderServ.monedaSeleccionada = this.currencyServ.getHardCurrency();
+            }
+          } else {
+            this.orderServ.monedaSeleccionada = this.currencyServ.getLocalCurrency();
+          }
+          //this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
           this.nuValueLocal = Number.parseFloat(this.currencyServ.getLocalValue());
           this.tasaCambio = this.currencyServ.getLocalValue();
         }
         if (this.multimoneda) {
           this.hardCurrency = this.currencyServ.getHardCurrency();
         }
-        
+
 
         if (this.orderServ.openOrder) {
           this.abrirPedido();
@@ -366,13 +376,13 @@ export class PedidoComponent implements OnInit {
       idProducts.push(detail.idProduct);
       idPriceLists.push(detail.idPriceList);
     }
-    if(this.orderServ.userCanSelectGlobalDiscount) {
+    if (this.orderServ.userCanSelectGlobalDiscount) {
       this.orderServ.dctoGlobal = this.orderServ.order.nuDiscount;
     }
 
     this.orderServ.getOrderUtilsbyIdProductAndPricelists(idProducts, idPriceLists).then(utils => {
       //procedemos a modificar los orderUtil con la data anterior y los agregamos al carrito
-      if (utils.length < 1){
+      if (utils.length < 1) {
         console.error("No se consiguieron los productos del pedido");
         this.orderServ.disableSaveButton = true;
         this.orderServ.disableSendButton = true;
@@ -504,31 +514,31 @@ export class PedidoComponent implements OnInit {
       this.message.showLoading().then(() => {
         this.saveOrder(DELIVERY_STATUS_TO_SEND).then(order => {
 
-        var transactions: PendingTransaction[] = [];
-        var tr: PendingTransaction = new PendingTransaction(
-          order.coOrder,
-          order.idOrder,
-          "order"
-        );
-        transactions.push(tr);
+          var transactions: PendingTransaction[] = [];
+          var tr: PendingTransaction = new PendingTransaction(
+            order.coOrder,
+            order.idOrder,
+            "order"
+          );
+          transactions.push(tr);
 
-        if (this.orderServ.coClientStockAEnviar.length > 1) {
-          //si venimos de inventario, enviamos el inventario tambien.
-          transactions.push({
-            coTransaction: this.orderServ.coClientStockAEnviar,
-            idTransaction: this.orderServ.idClientStockAEnviar,
-            type: "clientStock"
-          })
-        }
-        this.services.insertPendingTransactionBatch(this.dbServ.getDatabase(), transactions).then(() => {
-          this.autoSend.ngOnInit();
-        });
-        this.orderServ.disableSendButton = false;
-        this.message.hideLoading();
-        this.router.navigate(['pedidos']);
+          if (this.orderServ.coClientStockAEnviar.length > 1) {
+            //si venimos de inventario, enviamos el inventario tambien.
+            transactions.push({
+              coTransaction: this.orderServ.coClientStockAEnviar,
+              idTransaction: this.orderServ.idClientStockAEnviar,
+              type: "clientStock"
+            })
+          }
+          this.services.insertPendingTransactionBatch(this.dbServ.getDatabase(), transactions).then(() => {
+            this.autoSend.ngOnInit();
+          });
+          this.orderServ.disableSendButton = false;
+          this.message.hideLoading();
+          this.router.navigate(['pedidos']);
         });
       });
-      
+
     }
 
   }
@@ -1171,24 +1181,24 @@ export class PedidoComponent implements OnInit {
       }
       this.message.showLoading().then(() => {
         this.orderServ.getAddressClient(cliente.idClient).then(data => {
-        this.listaDirecciones = data;
+          this.listaDirecciones = data;
 
-        if(idAddressClients > 0){
-        let dir = data.find((dir) => dir.idAddress == idAddressClients);
-        if (dir != undefined) {
-          this.direccionCliente = dir;
+          if (idAddressClients > 0) {
+            let dir = data.find((dir) => dir.idAddress == idAddressClients);
+            if (dir != undefined) {
+              this.direccionCliente = dir;
 
-        } else {
-          this.direccionCliente = data[0];
-        }
-        }else{
-          this.direccionCliente = data[0];
-        }
-        this.direccionAnterior = this.direccionCliente;
-        this.segmentLock();
-        this.message.hideLoading();
+            } else {
+              this.direccionCliente = data[0];
+            }
+          } else {
+            this.direccionCliente = data[0];
+          }
+          this.direccionAnterior = this.direccionCliente;
+          this.segmentLock();
+          this.message.hideLoading();
+        });
       });
-       });
 
       //[multiCurrencyOrder] cambio de moneda
       if (this.orderServ.multiCurrencyOrder && !this.orderServ.openOrder) {
@@ -1312,14 +1322,14 @@ export class PedidoComponent implements OnInit {
       return true;
     }
     if (this.orderServ.openOrder) {
-      if(this.orderServ.userCanSelectChannel){
+      if (this.orderServ.userCanSelectChannel) {
         return true;
       }
       return !this.orderServ.pedidoModificable;
-    }  
+    }
     return false;
   }
-createEmptyOrder(): Orders {
+  createEmptyOrder(): Orders {
     const empresa = this.orderServ.empresaSeleccionada ?? this.enterpriseServ.defaultEnterprise();
     const moneda = this.orderServ.monedaSeleccionada ?? this.currencyServ.getLocalCurrency();
 

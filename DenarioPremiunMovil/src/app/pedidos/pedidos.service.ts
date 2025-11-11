@@ -45,6 +45,7 @@ import { OrderDetailUnit } from '../modelos/tables/orderDetailUnit';
 import { ClientAvgProduct } from '../modelos/tables/clientAvgProduct';
 import { ClientStocks } from '../modelos/tables/client-stocks';
 import { HistoryTransaction } from '../services/historyTransaction/historyTransaction';
+import { CurrencyModules } from '../modelos/tables/currencyModules';
 
 
 
@@ -121,6 +122,8 @@ export class PedidosService {
   public parentStructures: Map<number, string> = new Map();
   public cliente: Client = { lbClient: this.getTag("PED_PLACEHOLDER_CLIENTE") } as Client;
 
+  public currencyModule!: CurrencyModules;
+
   //Pedido Sugerido
   public desdeSugerencia = false; //vienes desde el boton de pedido sugerido (inventario)
   public datosPedidoSugerido: SugerenciaPedido = {
@@ -181,7 +184,7 @@ export class PedidosService {
   public showCreditLimit!: boolean;
   public validStock!: boolean;
   public userCanSelectProductDiscount!: boolean;
-  public showTransactionCurrency!: boolean;
+  //public showTransactionCurrency!: boolean;
   public validateNuOrder!: boolean;
   public userCanSelectIVA!: boolean;
   public selectOrderType!: boolean;
@@ -323,7 +326,7 @@ export class PedidosService {
     this.showCreditLimit = this.config.get("showCreditLimit").toLowerCase() === 'true';
     this.validStock = this.config.get("validStock").toLowerCase() === 'true';
     this.userCanSelectProductDiscount = this.config.get("userCanSelectProductDiscount").toLowerCase() === 'true';
-    this.showTransactionCurrency = this.config.get("showTransactionCurrency").toLowerCase() === 'true';
+    //this.showTransactionCurrency = this.config.get("showTransactionCurrency").toLowerCase() === 'true'; //eliminada, se usa currencyModule
     this.validateNuOrder = this.config.get("validateNuOrder").toLowerCase() === 'true';
     this.userCanSelectGlobalDiscount = this.config.get("userCanSelectGlobalDiscount").toLowerCase() === 'true';
     this.userCanSelectIVA = this.config.get("userCanSelectIVA").toLowerCase() === 'true';
