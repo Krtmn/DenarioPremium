@@ -256,7 +256,7 @@ export class CobrosHeaderComponent implements OnInit {
   }
 
   sendOrSave(sendOrSave: boolean) {
-    if (this.collectService.collection.coType = "2") {
+    if (this.collectService.collection.coType == "2") {
       //ES RETENCION, SE DEBE BUSCAR SI HAY ADJUNTOS, SI NO HAY, SE DEBE ENVIAR MSJ DE ALERTA Y
       //NO SE DEBE PERMITIR EL ENVIO HASTA QUE SE ADJUNTE AL MENOS UN DOCUMENTO
       if (!this.adjuntoService.hasItems()) {
@@ -265,7 +265,7 @@ export class CobrosHeaderComponent implements OnInit {
         return;
       }
     }
-    if (this.collectService.collection.coType = "0") {
+    if (this.collectService.collection.coType == "0") {
       //ES UN COBRO, SE DEBE BUSCAR EN TODOS LOS DETAILS SI HAY RETENCIONES, SI HAY RETENCIONES HAY QUE BUSCAR
       // SI HAY ADJUNTOS, SI NO HAY, SE DEBE ENVIAR MSJ DE ALERTA Y
       //NO SE DEBE PERMITIR EL ENVIO HASTA QUE SE ADJUNTE AL MENOS UN DOCUMENTO
