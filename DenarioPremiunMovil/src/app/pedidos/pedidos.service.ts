@@ -205,8 +205,8 @@ export class PedidosService {
   public orderTypeByEnterprise!: boolean;
   public checkAddressClient!: boolean;
   public signatureOrder!: boolean;
-
   public disableDaDispatch!: boolean;
+  public currencyModuleEnabled!: boolean;
   public userCanChangePriceListProduct!: boolean;
 
   /*  ClientChangeSubscription: Subscription = this.clientSelectorService.ClientChanged.subscribe(client => {    
@@ -344,7 +344,7 @@ export class PedidosService {
     this.checkAddressClient = this.config.get("checkAddressClient").toLowerCase() === "true";
     this.signatureOrder = this.config.get("signatureOrder").toLowerCase() === "true";
     this.disableDaDispatch = this.config.get("disableDaDispatch").toLowerCase() === "true";
-
+    this.currencyModuleEnabled = this.config.get("currencyModule").toLowerCase() === "true";
     //string
     this.codeTotalProductUnit = this.config.get("codeTotalProductUnit");
     this.nameProductLine = this.config.get("nameProductLine");
