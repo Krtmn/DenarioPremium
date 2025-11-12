@@ -9,6 +9,7 @@ import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { Product } from 'src/app/modelos/tables/product';
 import { ProductStructure } from 'src/app/modelos/tables/productStructure';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
+import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { ProductStructureService } from 'src/app/services/productStructures/product-structure.service';
@@ -34,6 +35,8 @@ export class ProductListComponent implements OnInit {
   imageServices = inject(ImageServicesService);
   currencyService = inject(CurrencyService);
 
+  config = inject(GlobalConfigService);
+
   public imagesMap: { [imgName: string]: string } = {};
 
 
@@ -56,6 +59,8 @@ export class ProductListComponent implements OnInit {
   selectedProduct!: ProductUtil;
   productDetail!: ProductDetail;
   productModule: Boolean = false;
+  currencyModuleEnabled: Boolean = false;
+  defaultCurrency: string = '';
   startPro: number = 0;
   endPro: number = 20;
   qtyPro: number = 20;
@@ -81,23 +86,24 @@ export class ProductListComponent implements OnInit {
 
     // Reemite imágenes cacheadas (si existen)
     this.imageServices.emitCachedImages();
-
+    this.currencyModuleEnabled = this.config.get("currencyModule").toLowerCase() === "true";
     var currencyModule: CurrencyModules = this.currencyService.getCurrencyModule('pro');
     this.showConversionInfo = currencyModule.showConversion;
     this.localCurrencyDefault = currencyModule.localCurrencyDefault;
-    var defaultCurrency = this.empresaSeleccionada.coCurrencyDefault;
-    if(currencyModule.idModule > 0 && this.localCurrencyDefault){
-      defaultCurrency = this.currencyService.getLocalCurrency().coCurrency;
-    }else{
-      defaultCurrency = this.currencyService.getHardCurrency().coCurrency;
+    this.defaultCurrency = this.productService.empresaSeleccionada.coCurrencyDefault;
+    if (this.currencyModuleEnabled) {
+      if (currencyModule.idModule > 0 && this.localCurrencyDefault) {
+        this.defaultCurrency = this.currencyService.getLocalCurrency().coCurrency;
+      } else {
+        this.defaultCurrency = this.currencyService.getHardCurrency().coCurrency;
+      }
     }
-
     if (this.searchText) {
       if (this.productService.productList.length > 0) {
         this.productList = this.productService.productList;
       } else {
         this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
-          this.searchText, this.productService.empresaSeleccionada.idEnterprise, defaultCurrency).then(() => {
+          this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency).then(() => {
             this.productList = this.productService.productList;
           });
       }
@@ -105,7 +111,7 @@ export class ProductListComponent implements OnInit {
       this.idProductStructureList = this.productStructureService.idProductStructureList;
       this.coProductStructureListString = this.productStructureService.coProductStructureListString;
       this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
-        this.idProductStructureList, this.empresaSeleccionada.idEnterprise, defaultCurrency).then(() => {
+        this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.defaultCurrency).then(() => {
           this.productList = this.productService.productList;
         });
     }
@@ -115,7 +121,7 @@ export class ProductListComponent implements OnInit {
     this.searchText = data;
     if (this.searchText) {
       this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
-        this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.productService.empresaSeleccionada.coCurrencyDefault).then(() => {
+        this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency).then(() => {
           this.productList = this.productService.productList;
         });
     }
@@ -143,7 +149,7 @@ export class ProductListComponent implements OnInit {
   onShowProductDetail(product: ProductUtil) {
     console.log('Muthen 1');
     this.selectedProduct = product;
-    this.productService.getProductDetailByIdProduct(this.db.getDatabase(), this.selectedProduct.idList, this.selectedProduct.idProduct, this.productService.empresaSeleccionada.coCurrencyDefault).then(() => {
+    this.productService.getProductDetailByIdProduct(this.db.getDatabase(), this.selectedProduct.idList, this.selectedProduct.idProduct, this.defaultCurrency).then(() => {
       this.productDetail = this.productService.productDetail;
       this.selectedProductChanged.emit(this.productDetail);
     });
