@@ -174,6 +174,11 @@ export class ClienteComponent implements OnInit {
   onChangeAddress($event: any) {
     this.selectedAddress = $event.detail.value;
     this.client.txAddress = this.selectedAddress.txAddress;
+    this.client.idAddressClients = this.selectedAddress.idAddress;
+    this.client.coAddressClients = this.selectedAddress.coAddress;
+    this.client.coordenada = this.selectedAddress.coordenada;
+    this.client.editable = this.selectedAddress.editable;
+    //console.log(this.selectedAddress);
   }
 
   addressCompare(o1: AddresClient, o2: AddresClient): boolean {

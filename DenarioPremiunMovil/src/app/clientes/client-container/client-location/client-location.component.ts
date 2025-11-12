@@ -41,6 +41,7 @@ export class ClientLocationComponent implements OnInit {
   public selectedLatitude!: number;
   public selectedLogitude!: number;
   public isValidCoordinate: Boolean = true;
+  public disableMap: Boolean = false;
 
   mapCenter: google.maps.LatLngLiteral = {lat: 10.48801, lng: -66.87919}; //por defecto ponemos caracas
   redMarker: google.maps.LatLngLiteral = {lat: 10.48801, lng: -66.87919};
@@ -57,6 +58,12 @@ export class ClientLocationComponent implements OnInit {
   public regexLongitude = new RegExp(/^-?([0-9]{1,2}|1[0-7][0-9]|180)\.{1}\d{1,30}/);
 
   moveMap(event: google.maps.MapMouseEvent) {
+    if (this.disableMap){
+      //si el mapa esta deshabilitado no hago nada
+      console.log("mapa deshabilitado");
+      this.clientLogic.clientLocationChanged = false;
+      return;
+    } 
     if (event.latLng !== null) {
       this.redMarker = event.latLng.toJSON();
       this.selectedLatitude = Number(this.redMarker.lat.toFixed(7));
@@ -153,7 +160,12 @@ export class ClientLocationComponent implements OnInit {
     this.clientLocationForm.markAllAsTouched();
     this.saveLocation();
     this.booleanMsj = false;
-    this.clientLogic.cannotSendClientCoordinate = false;
+    //this.clientLogic.cannotSendClientCoordinate = false;
+    this.disableMap = this.clientLogic.coordenada.editable ? false : true;
+    this.clientLogic.cannotSendClientCoordinate = this.disableMap;
+    if (this.disableMap){
+      this.clientLogic.clientLocationChanged = false;
+    }
 
 
     /*
