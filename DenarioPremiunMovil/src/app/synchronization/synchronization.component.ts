@@ -177,7 +177,7 @@ export class SynchronizationComponent implements OnInit {
     invoices: 'Facturas',
     invoice_details: 'Detalles de Factura',
     invoice_detail_units: 'Unidades de Detalle de Factura',
-    client_channel_order_types: 'Tipos de Pedido por Canal de Cliente',
+    client_channel_order_type: 'Tipos de Pedido por Canal de Cliente',
     order_type_product_structure: 'Tipo de Pedido por Estructura de Producto',
     transaction_types: 'Tipos de Transacción',
     statuses: 'Estados',

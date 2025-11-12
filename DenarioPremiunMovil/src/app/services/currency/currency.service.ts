@@ -37,6 +37,12 @@ export class CurrencyService {
   }
 
   setup(db: SQLiteObject): Promise<void> {
+    if (this.globalConfig.get("currencyModule") === "true") {
+      this.getCurrencyModules(db).then((map) => {
+        this.currencyModulesMap = map;
+      });
+    }
+
     if (this.hardCurrency != undefined && this.localCurrency != undefined) {
       return Promise.resolve();
     } else {
@@ -51,9 +57,7 @@ export class CurrencyService {
       } else {
         check = this.localCurrency == null;
       }
-      this.getCurrencyModules(db).then((map) => {
-        this.currencyModulesMap = map;
-      });
+
       if (check) {
         //console.log("[CurrencyService] Buscamos las variables en BD")
         this.queryLocalCurrency(db);
