@@ -301,19 +301,19 @@
         "idName": "id_conversion",
         "sql": "CREATE TABLE IF NOT EXISTS conversion ( id_conversion INTEGER, co_conversion VARCHAR(80), na_conversion VARCHAR(80), primary_currency BOOLEAN DEFAULT 0, id_enterprise INTEGER);"
     },
-     {
+    {
         "id": 73,
         "name": "modules",
         "table": "modules",
         "idName": "id_module",
         "sql": "CREATE TABLE IF NOT EXISTS modules ( id_module INTEGER, co_module VARCHAR(80), na_module VARCHAR(80));"
     },
-     {
+    {
         "id": 74,
         "name": "currency_modules",
         "table": "currencyModules",
         "idName": "id_currency_module",
-        "sql": "CREATE TABLE IF NOT EXISTS currency_modules ( id_currency_module INTEGER, id_module INTEGER, local_currency_default BOOLEAN DEFAULT 1, show_conversion BOOLEAN DEFAULT 1);"
+        "sql": "CREATE TABLE IF NOT EXISTS currency_modules ( id_currency_module INTEGER PRIMARY KEY, id_module INTEGER, local_currency_default BOOLEAN DEFAULT 1, show_conversion BOOLEAN DEFAULT 1);"
     },
     {
         "id": 9999999,
