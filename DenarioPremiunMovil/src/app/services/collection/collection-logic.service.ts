@@ -1096,9 +1096,9 @@ export class CollectionService {
         for (var i = 0; i < this.collection.collectionDetails.length; i++) {
           sum = this.collection.collectionDetails[i].nuAmountRetention + this.collection.collectionDetails[i].nuAmountRetention2;
         }
-        if (sum > 0)
+        if (sum > 0) {
           this.onCollectionValidToSend(true);
-        else {
+        } else {
           this.onCollectionValidToSend(false);
           return;
         }

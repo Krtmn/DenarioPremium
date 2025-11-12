@@ -153,14 +153,14 @@ export class CobrosHeaderComponent implements OnInit {
     });
 
     this.subscriptionAttachmentChanged = this.adjuntoService.AttachmentChanged.subscribe(() => {
-        //this.setChangesMade(true);
-        this.collectService.validateToSend();
-        this.collectService.disableSavedButton = this.collectService.disableSendButton;
-      });
+      //this.setChangesMade(true);
+      this.collectService.validateToSend();
+      this.collectService.disableSavedButton = this.collectService.disableSendButton;
+    });
     this.subscriptionAttachmentWeightExceeded = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
-        this.collectService.disableSavedButton = true;
-        this.collectService.disableSendButton = true;
-      })
+      this.collectService.disableSavedButton = true;
+      this.collectService.disableSendButton = true;
+    })
   }
 
   ngOnDestroy() {
@@ -256,6 +256,53 @@ export class CobrosHeaderComponent implements OnInit {
   }
 
   sendOrSave(sendOrSave: boolean) {
+    if (this.collectService.collection.coType = "2") {
+      //ES RETENCION, SE DEBE BUSCAR SI HAY ADJUNTOS, SI NO HAY, SE DEBE ENVIAR MSJ DE ALERTA Y
+      //NO SE DEBE PERMITIR EL ENVIO HASTA QUE SE ADJUNTE AL MENOS UN DOCUMENTO
+      if (!this.adjuntoService.hasItems()) {
+        //NO HAY ADJUNTOS
+        this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_RET_MSJ_RETENTION_NO_ATTACHMENTS')!);
+        return;
+      }
+    }
+
+    if (this.collectService.collection.coType = "0") {
+      //ES UN COBRO, SE DEBE BUSCAR EN TODOS LOS DETAILS SI HAY RETENCIONES, SI HAY RETENCIONES HAY QUE BUSCAR
+      // SI HAY ADJUNTOS, SI NO HAY, SE DEBE ENVIAR MSJ DE ALERTA Y
+      //NO SE DEBE PERMITIR EL ENVIO HASTA QUE SE ADJUNTE AL MENOS UN DOCUMENTO
+
+      /*  if (!this.adjuntoService.hasItems()) {
+         //NO HAY ADJUNTOS
+         this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_MSJ_RETENTION_NO_ATTACHMENTS')!);
+         return;
+       } */
+      try {
+        const details = this.collectService.collection?.collectionDetails;
+        const hasRetentions = Array.isArray(details) && details.some(d => {
+          const r1 = Number(d?.nuAmountRetention ?? 0);
+          const r2 = Number(d?.nuAmountRetention2 ?? 0);
+          return (r1 > 0) || (r2 > 0);
+        });
+
+        // Guardar resultado en el servicio para uso posterior y log para depuración
+        //this.collectService.isRetention = !!hasRetentions;
+        if (hasRetentions) {
+          console.log('CobrosHeader: Detected retention amounts in collectionDetails', {
+            collectionId: this.collectService.collection?.coCollection,
+            hasRetentions
+          });
+
+          if (!this.adjuntoService.hasItems()) {
+            //NO HAY ADJUNTOS
+            this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_MSJ_RETENTION_NO_ATTACHMENTS')!);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('CobrosHeader: error comprobando retenciones en collectionDetails', err);
+      }
+    }
+
     this.collectService.collectionIsSave = true;
     this.messageService.showLoading().then(() => {
       if (sendOrSave) {
@@ -325,11 +372,6 @@ export class CobrosHeaderComponent implements OnInit {
   }
 
   sendCollect() {
-    /* if (this.collectService.createAutomatedPrepaid) {
-      this.collectService.mensaje = "Se creará un prepago por el monto excedente.Se enviará un prepago junto al cobro. ¿Desea enviar el cobro?" // message
-    } else {
-      this.collectService.mensaje = "¿Desea enviar el Cobro?";
-    } */
     switch (this.collectService.collection.coType) {
       case "0": {
         this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_COLLECT_MSG')!;
