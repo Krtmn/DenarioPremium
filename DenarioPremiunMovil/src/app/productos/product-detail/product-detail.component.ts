@@ -41,8 +41,10 @@ export class ProductDetailComponent implements OnInit {
 
   multiCurrency!: Boolean;
   conversionByPriceList!: Boolean;
+  currencyModuleEnabled!: Boolean;
   localCurrencyDefault: Boolean = true;
-  showConversionInfo: Boolean = false;
+  showConversionInfo: Boolean = true;
+  enableCurrencySwitch: Boolean = false;//Por si aun no tienen currencyModule activado
   listSeleccionada!: List;
   lists: List[] = [];
   warehouseSeleccionado!: Warehouse;
@@ -57,10 +59,12 @@ export class ProductDetailComponent implements OnInit {
   ngOnInit() {
     /* this.getProductImages(); */
     this.multiCurrency = this.globalConfig.get("multiCurrency") == "true";
-    this.conversionByPriceList = this.globalConfig.get("conversionByPriceList") == "true";
+    this.conversionByPriceList = this.globalConfig.get("conversionByPriceList").toLowerCase() === "true";
+    this.currencyModuleEnabled = this.globalConfig.get("currencyModule").toLowerCase() === "true";
     var currencyModule: CurrencyModules = this.currencyService.getCurrencyModule('pro');
     this.showConversionInfo = currencyModule.showConversion;
     this.localCurrencyDefault = currencyModule.localCurrencyDefault;
+    this.enableCurrencySwitch = this.currencyModuleEnabled && currencyModule.idModule > 0;
 
     this.priceListService.getListByIdProduct(this.pSeleccionado.idProduct).then(() => {
       this.lists = this.priceListService.productlists;
@@ -71,7 +75,7 @@ export class ProductDetailComponent implements OnInit {
       this.warehouseSeleccionado = this.warehouses[0];
     });
     this.checkReorderPrices();
-    console.log('pSeleccionado: ' + JSON.stringify(this.pSeleccionado));
+    //console.log('pSeleccionado: ' + JSON.stringify(this.pSeleccionado));
   }
 
   onListChanged(idList: number) {
