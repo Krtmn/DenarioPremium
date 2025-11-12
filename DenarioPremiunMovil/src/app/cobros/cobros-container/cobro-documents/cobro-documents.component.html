@@ -71,8 +71,7 @@
             </ion-col>
 
             <!-- si la moneda del doc es local, primero se muestran los montos en local,  -->
-            <ion-col  size="6"
-                class="titulosBold col">{{this.collectService.collectionTags.get('COB_MONTO')}}
+            <ion-col size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_MONTO')}}
             </ion-col>
 
             <ion-col *ngIf="this.collectService.multiCurrency && this.collectService.showConversion" size="6"
@@ -80,8 +79,7 @@
                 Conversión
             </ion-col>
 
-            <ion-col  size="6"
-                class="titulosBold col">{{this.collectService.collectionTags.get('COB_SALDO')}}
+            <ion-col size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_SALDO')}}
             </ion-col>
 
             <ion-col *ngIf="this.collectService.multiCurrency && this.collectService.showConversion" size="6"
@@ -89,7 +87,7 @@
                 Conversión
             </ion-col>
 
-            <ion-col  size="6"
+            <ion-col size="6"
                 class="titulosBold col">{{this.collectService.collectionTags.get('COB_FECHA_DOC')}}</ion-col>
             <ion-col size="6"
                 class="titulosBold col borderSuperiorDerecho">{{this.collectService.collectionTags.get('COB_FECHA_VENCIMIENTO')}}</ion-col>

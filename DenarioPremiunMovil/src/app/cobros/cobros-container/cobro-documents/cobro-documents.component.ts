@@ -1202,6 +1202,14 @@ export class CobrosDocumentComponent implements OnInit {
   validateNuVaucherRetention(sendMessage: boolean) {
     //sizeRetention esta variable nos dira el tamaño aceptado de la retencion
     if (this.collectService.sizeRetention != 0) {
+      if (this.collectService.documentSaleOpen.nuVaucherRetention == "" || this.collectService.documentSaleOpen.nuVaucherRetention == null) {
+        this.disabledSaveButton = true;
+        this.collectService.validNuRetention = false;
+        this.collectService.documentSaleOpen.nuVaucherRetention = "";
+        this.collectService.documentSaleOpen.nuAmountRetention = 0;
+        this.collectService.documentSaleOpen.nuAmountRetention2 = 0;
+        return;
+      }
 
       if (this.collectService.formatRetention === "number") {
         //SOLO NUMERO
@@ -1239,13 +1247,10 @@ export class CobrosDocumentComponent implements OnInit {
               this.alertMessageOpen = true;
             this.collectService.validNuRetention = false;
           }
-
         } else {
           this.disabledSaveButton = false;
           this.collectService.validNuRetention = true;
         }
-
-
       } else {
         //alphanumeric
         if (this.collectService.documentSaleOpen.nuVaucherRetention.length != this.collectService.sizeRetention) {
