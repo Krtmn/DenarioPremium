@@ -24,7 +24,7 @@
             <ion-label>Empresa:</ion-label>
           </ion-item>
         </ion-col>
-        <ion-col size="8">
+        <ion-col size="8" *ngIf="companies && companies.length > 1">
           <ion-select class="listado-enterprise-selector ion-text-center" [(ngModel)]="selectedCompany"
             (ionChange)="onCompanyChange($event)" placeholder="Seleccione">
             <ion-select-option *ngFor="let e of companies" [value]="e">{{ e.lbEnterprise }}</ion-select-option>
@@ -37,7 +37,7 @@
             <ion-label>Tasas:</ion-label>
           </ion-item>
         </ion-col>
-        <ion-col size="8">
+        <ion-col size="8" *ngIf="rates && rates.length > 0">
           <ion-select class="listado-enterprise-selector ion-text-center" [(ngModel)]="selectedRates"
             (ionChange)="onRatesChange($event)" placeholder="Seleccione la(s) tasas" [multiple]="true">
             <ion-select-option *ngFor="let e of rates" [value]="e">{{ e.coConversion }} - {{ e.naConversion
