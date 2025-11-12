@@ -51,12 +51,12 @@ export class CurrencyService {
       } else {
         check = this.localCurrency == null;
       }
+      this.getCurrencyModules(db).then((map) => {
+        this.currencyModulesMap = map;
+      });
       if (check) {
         //console.log("[CurrencyService] Buscamos las variables en BD")
         this.queryLocalCurrency(db);
-        this.getCurrencyModules(db).then((map) => {
-          this.currencyModulesMap = map;
-        });
         if (this.multimoneda) {
           this.queryHardCurrency(db);
           this.queryCurrencyRelation(db);
@@ -340,7 +340,7 @@ export class CurrencyService {
 
     })
   }
-  
+
   getCurrencyModules(db: SQLiteObject) {
     const query = "SELECT * FROM currency_modules cm JOIN modules m ON m.id_module = cm.id_module";
     return db.executeSql(query, []).then(data => {
