@@ -100,7 +100,7 @@ export class CurrencyService {
       return cm;
     } else {
       console.warn("[CurrencyService] No se encontró el módulo de moneda: " + coModule);
-      return new CurrencyModules(0, 0, true, false);
+      return new CurrencyModules(0, 0, true, true); // Valor por defecto
     }
   }
 

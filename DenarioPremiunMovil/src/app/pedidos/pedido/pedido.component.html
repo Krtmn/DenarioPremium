@@ -292,8 +292,8 @@
                                         <ion-label>{{ orderServ.getTag("PED_CONDICION_PAGO")}}:</ion-label>
                                         <div class="listado-tps-selector ion-text-center" id="inputPaymentCondition">
                                             <ion-select (ionChange)="onChange()" [(ngModel)]="paymentCondition"
-                                                interface="popover" labelPlacement="stacked"
-                                                [compareWith]="payCondCompare"
+                                                interface="popover" [interfaceOptions]="paymentConditionInterfaceOptions"
+                                                [compareWith]="payCondCompare" labelPlacement="stacked"
                                                 [disabled]="!orderServ.userCanChangePaymentConditions || !orderServ.pedidoModificable">
                                                 <ion-select-option *ngFor="let pc of orderServ.listaPaymentCondition"
                                                     [value]="pc">{{
