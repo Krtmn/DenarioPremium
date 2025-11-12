@@ -73,7 +73,7 @@ export class Client {
         public saldo1Conver: number,
         public saldo2: number,
         public saldo2Conver: number,
-        public txAddress: number,
+        public txAddress: string,
         public coordenada: string,
         public editable: string,
         public idAddressClients: number,

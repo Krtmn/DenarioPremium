@@ -17,6 +17,7 @@ import { PotentialClient } from 'src/app/modelos/tables/potentialClient';
 
 import { Coordinate } from 'src/app/modelos/coordinate';
 import { DocumentSale } from 'src/app/modelos/tables/documentSale';
+import { AddresClient } from 'src/app/modelos/tables/addresClient';
 
 
 @Injectable({
@@ -56,6 +57,7 @@ export class ClientLogicService {
   public documentSaleSelect!: DocumentSale;
   public indice!: number;
   public coordenada!: Coordinate;
+  public listaDirecciones: AddresClient[] = [];
 
   public clientContainerComponent: Boolean = true;
   public clientListComponent: Boolean = false;
@@ -239,6 +241,7 @@ export class ClientLogicService {
             }
           }
 
+
           this.datos.document = result;
           this.clientDetailComponent = true;
           this.datos.document.forEach((doc) => {
@@ -246,6 +249,11 @@ export class ClientLogicService {
             doc.daDueDate = doc.daDueDate.split("-")[2] + "/" + doc.daDueDate.split("-")[1] + "/" + doc.daDueDate.split("-")[0];
           })
         });
+      });
+
+      this.listaDirecciones = [];
+      this.clientesServices.getAddressClientsByIdClient(Number(idClient)).then((result) => {
+        this.listaDirecciones = result;
       });
   }
 

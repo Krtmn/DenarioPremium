@@ -10,6 +10,7 @@ import { GlobalConfigService } from 'src/app/services/globalConfig/global-config
 import { Coordinate } from 'src/app/modelos/coordinate';
 import { ClientLogicService } from 'src/app/services/clientes/client-logic.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
+import { AddresClient } from 'src/app/modelos/tables/addresClient';
 
 @Component({
   selector: 'app-client-detail',
@@ -35,6 +36,7 @@ export class ClienteComponent implements OnInit {
   public localCurrency = '';
   public hardCurrency = '';
   public decimales = 2;
+  public selectedAddress!: AddresClient;
 
   public clientShareModalOpen: boolean = false;
   subjectClientShareModalOpen: any;
@@ -46,6 +48,7 @@ export class ClienteComponent implements OnInit {
   ngOnInit() {
     //console.log(this.clientDetail);
     this.client = this.clientLogic.datos.client;
+    this.selectedAddress = this.clientLogic.listaDirecciones.find(address => address.idAddress === this.client.idAddressClients)!;
 
     if (this.clientLogic.multiCurrency) {
       if (this.currencyService.multimoneda) {
@@ -166,5 +169,14 @@ export class ClienteComponent implements OnInit {
 
   openShareModal(open: boolean) {
     this.clientShareModalOpen = open;
+  }
+
+  onChangeAddress($event: any) {
+    this.selectedAddress = $event.detail.value;
+    this.client.txAddress = this.selectedAddress.txAddress;
+  }
+
+  addressCompare(o1: AddresClient, o2: AddresClient): boolean {
+    return o1 && o2 ? o1.idAddress === o2.idAddress : o1 === o2;
   }
 }

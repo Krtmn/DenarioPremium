@@ -4,6 +4,7 @@ import { SQLiteObject } from '@awesome-cordova-plugins/sqlite/ngx';
 import { GlobalConfigService } from '../globalConfig/global-config.service';
 import { DocumentSale } from '../../modelos/tables/documentSale';
 import { SynchronizationDBService } from '../synchronization/synchronization-db.service';
+import { AddresClient } from 'src/app/modelos/tables/addresClient';
 
 @Injectable({
   providedIn: 'root'
@@ -435,6 +436,39 @@ return this.dbServ.getDatabase().executeSql(selectStatement, params).then(data =
       return lists
     }).catch(e => {
       let lists: DocumentSale[] = [];
+      console.log(e);
+      return lists;
+    })
+  }
+
+  getAddressClientsByIdClient(idClient: number) {
+    let selectStatement = 'SELECT * FROM address_clients WHERE id_client = ?';
+
+    return this.dbServ.getDatabase().executeSql(selectStatement, [idClient]).then(data => {
+      let lists: AddresClient[] = [];
+      for (let i = 0; i < data.rows.length; i++) {
+        lists.push({
+          idAddress: data.rows.item(i).id_address,
+          coAddress: data.rows.item(i).co_address,
+          idClient: data.rows.item(i).id_client,
+          idAddressType: data.rows.item(i).id_address_type,
+          coAddressType: data.rows.item(i).co_address_type,
+          naAddress: data.rows.item(i).na_address,
+          txAddress: data.rows.item(i).tx_address,
+          nuPhone: data.rows.item(i).nu_phone,
+          naResponsible: data.rows.item(i).na_responsible,
+          coEnterpriseStructure: data.rows.item(i).co_enterprise_structure,
+          idEnterpriseStructure: data.rows.item(i).id_enterprise_structure,
+          coClient: data.rows.item(i).co_client,
+          coEnterprise: data.rows.item(i).co_enterprise,
+          idEnterprise: data.rows.item(i).id_enterprise,
+          coordenada: data.rows.item(i).coordenada,
+          editable: data.rows.item(i).editable == 1 ? true : false,          
+        })
+      }
+      return lists;
+    }).catch(e => {
+      let lists: AddresClient[] = [];
       console.log(e);
       return lists;
     })
