@@ -14,7 +14,7 @@ export class ClienteSelectorService {
   public tags = new Map<string, string>([]);
   public db!: SQLiteObject;
   public clientes!: Client[];
-  moduleNames: Map<string,string> = new Map<string,string>();
+  //moduleNames: Map<string,string> = new Map<string,string>();
   public clienteAnterior: null | Client = null;
   public checkClient = false;
 
@@ -35,7 +35,7 @@ export class ClienteSelectorService {
       }
 
     });
-    this.getModuleNames();
+    //this.getModuleNames();
 
    }
 
@@ -44,6 +44,7 @@ export class ClienteSelectorService {
     this.ClientChanged.next(client);
    }
 
+   /*
    getModuleNames(){
     const selectStatement = 'Select * from modules';
     return this.db.executeSql(selectStatement, []).then(result => {
@@ -54,4 +55,5 @@ export class ClienteSelectorService {
       return this.moduleNames;
     });
    }
+    */
 }

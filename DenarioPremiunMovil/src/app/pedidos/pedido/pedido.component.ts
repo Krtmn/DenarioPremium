@@ -198,7 +198,7 @@ export class PedidoComponent implements OnInit {
           this.setClientfromSelector(c);
           if (!this.viewOnly) {
             this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
-              "Pedidos", 'fondoVerde', c, true);
+              "Pedidos", 'fondoVerde', c, true, 'ped');
           }
         });
 
@@ -222,7 +222,7 @@ export class PedidoComponent implements OnInit {
       this.multiempresa = this.enterpriseServ.esMultiempresa();
       if (!this.viewOnly) {
         this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
-          "Pedidos", 'fondoVerde', null, false);
+          "Pedidos", 'fondoVerde', null, false, 'ped');
       }
 
 
@@ -230,7 +230,7 @@ export class PedidoComponent implements OnInit {
       this.currencyServ.setup(this.dbServ.getDatabase()).then(() => {
         this.multimoneda = this.currencyServ.multimoneda;
         this.orderServ.currencyModule = this.currencyServ.getCurrencyModule('ped');
-        if( this.orderServ.currencyModule.idModule > 0 ) {
+        if(this.orderServ.currencyModuleEnabled && this.orderServ.currencyModule.idModule > 0 ) {
         this.showConversion = this.multimoneda && this.orderServ.currencyModule.showConversion;
         }else{
           //probablemente no tienen el sistema nuevo.
@@ -250,7 +250,7 @@ export class PedidoComponent implements OnInit {
         }
         else {
           if (this.currencyServ.multimoneda) {
-            if( this.orderServ.currencyModule.idModule > 0){
+            if( this.orderServ.currencyModuleEnabled &&this.orderServ.currencyModule.idModule > 0){
               if (this.orderServ.currencyModule.localCurrencyDefault) {
                 this.orderServ.monedaSeleccionada = this.currencyServ.getLocalCurrency();
               } else {
