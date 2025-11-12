@@ -45,6 +45,7 @@ export class ClienteSelectorComponent implements OnInit {
 
   public showConversion = false;
   public localCurrencyDefault = true;
+  public currencySwitchEnabled = false; // si el usuario no tiene currencyModule, no reordenamos monedas.
 
   public colorModulo: string = '';
 
@@ -113,6 +114,9 @@ export class ClienteSelectorComponent implements OnInit {
     if(currencyModule){
       this.showConversion = currencyModule.showConversion;
       this.localCurrencyDefault = currencyModule.localCurrencyDefault;
+      if(currencyModule.idModule > 0){
+        this.currencySwitchEnabled = true;
+      }
     }
     
 
@@ -162,7 +166,7 @@ export class ClienteSelectorComponent implements OnInit {
           this.clientes[c].saldo1 = saldoCliente;
           this.clientes[c].saldo2 = saldoOpuesto;
 
-          if(this.localCurrencyDefault){
+          if(this.currencySwitchEnabled && this.localCurrencyDefault){
             //la primera moneda es la local
             if (this.clientes[c].coCurrency != this.localCurrency.coCurrency) {
               //cambiamos la moneda del cliente
