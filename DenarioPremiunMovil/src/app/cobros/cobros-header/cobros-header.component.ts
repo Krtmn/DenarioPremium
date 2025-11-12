@@ -265,7 +265,6 @@ export class CobrosHeaderComponent implements OnInit {
         return;
       }
     }
-
     if (this.collectService.collection.coType = "0") {
       //ES UN COBRO, SE DEBE BUSCAR EN TODOS LOS DETAILS SI HAY RETENCIONES, SI HAY RETENCIONES HAY QUE BUSCAR
       // SI HAY ADJUNTOS, SI NO HAY, SE DEBE ENVIAR MSJ DE ALERTA Y
