@@ -6,7 +6,7 @@ export interface Coordinate {
     idClient: number;
     idAddressClients: number,
     coAddressClients: string,
-    editable: string,
+    editable: boolean,
     idEnterprise: number,
     txComment: string,
     naClient: string,

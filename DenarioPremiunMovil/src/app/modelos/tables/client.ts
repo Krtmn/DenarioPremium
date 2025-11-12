@@ -75,7 +75,7 @@ export class Client {
         public saldo2Conver: number,
         public txAddress: string,
         public coordenada: string,
-        public editable: string,
+        public editable: boolean,
         public idAddressClients: number,
         public coAddressClients: string,
         public collectionIva: boolean,

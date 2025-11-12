@@ -94,7 +94,7 @@
                     <ion-col size="4" class="titulosBold">EDITABLE:</ion-col>
                     <ion-col>{{client.editable}}</ion-col>
                 </ion-row> -->
-                <ion-row *ngIf="client.editable == 'true'">
+                <ion-row *ngIf="client.editable">
                     <ion-col size="4"
                         class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_COORDENADA")}}:</ion-col>
                     <ion-col>{{getCoordenada(client.coordenada)}}
@@ -109,7 +109,7 @@
 
                     </ion-col>
                 </ion-row>
-                <ion-row *ngIf="client.editable == 'false'">
+                <ion-row *ngIf="!client.editable">
                     <ion-col size="4"
                         class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_COORDENADA")}}:</ion-col>
                     <ion-col>{{client.coordenada}}

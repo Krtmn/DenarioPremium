@@ -210,6 +210,8 @@ export class ClientLogicService {
           }
         }
 
+
+        result.editable = result.editable.toLowerCase() === 'true' ? true : false;
         this.datos.client = result;
         this.clientesServices.getDocumentSaleByIdClient(Number(idClient)).then((result) => {
           // Recorre todos los clientes y loggea si la moneda es distinta a la moneda local
