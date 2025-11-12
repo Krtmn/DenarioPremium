@@ -1390,4 +1390,10 @@ export class PedidoComponent implements OnInit {
       return '';
     }
   }
+
+  //para que se vean las opciones arriba del select
+  paymentConditionInterfaceOptions = {
+    side: 'top',
+    alignment: 'center'
+  }
 }
