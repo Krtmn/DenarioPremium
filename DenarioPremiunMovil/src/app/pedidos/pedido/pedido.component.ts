@@ -230,7 +230,12 @@ export class PedidoComponent implements OnInit {
       this.currencyServ.setup(this.dbServ.getDatabase()).then(() => {
         this.multimoneda = this.currencyServ.multimoneda;
         this.orderServ.currencyModule = this.currencyServ.getCurrencyModule('ped');
+        if( this.orderServ.currencyModule.idModule >0 ) {
         this.showConversion = this.multimoneda && this.orderServ.currencyModule.showConversion;
+        }else{
+          //probablemente no tienen el sistema nuevo.
+          this.showConversion = this.multimoneda && this.orderServ.showTransactionCurrency
+        }
         this.localCurrency = this.currencyServ.getLocalCurrency();
         if (this.orderServ.openOrder) {
           this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.orderServ.order.coCurrency);
@@ -245,10 +250,14 @@ export class PedidoComponent implements OnInit {
         }
         else {
           if (this.currencyServ.multimoneda) {
-            if (this.orderServ.currencyModule.localCurrencyDefault) {
-              this.orderServ.monedaSeleccionada = this.currencyServ.getLocalCurrency();
-            } else {
-              this.orderServ.monedaSeleccionada = this.currencyServ.getHardCurrency();
+            if( this.orderServ.currencyModule.idModule >0 ){
+              if (this.orderServ.currencyModule.localCurrencyDefault) {
+                this.orderServ.monedaSeleccionada = this.currencyServ.getLocalCurrency();
+              } else {
+                this.orderServ.monedaSeleccionada = this.currencyServ.getHardCurrency();
+              }
+            }else{
+              this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
             }
           } else {
             this.orderServ.monedaSeleccionada = this.currencyServ.getLocalCurrency();

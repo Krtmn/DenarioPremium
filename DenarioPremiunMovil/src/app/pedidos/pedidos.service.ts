@@ -184,7 +184,7 @@ export class PedidosService {
   public showCreditLimit!: boolean;
   public validStock!: boolean;
   public userCanSelectProductDiscount!: boolean;
-  //public showTransactionCurrency!: boolean;
+  public showTransactionCurrency!: boolean;
   public validateNuOrder!: boolean;
   public userCanSelectIVA!: boolean;
   public selectOrderType!: boolean;
@@ -326,7 +326,7 @@ export class PedidosService {
     this.showCreditLimit = this.config.get("showCreditLimit").toLowerCase() === 'true';
     this.validStock = this.config.get("validStock").toLowerCase() === 'true';
     this.userCanSelectProductDiscount = this.config.get("userCanSelectProductDiscount").toLowerCase() === 'true';
-    //this.showTransactionCurrency = this.config.get("showTransactionCurrency").toLowerCase() === 'true'; //eliminada, se usa currencyModule
+    this.showTransactionCurrency = this.config.get("showTransactionCurrency").toLowerCase() === 'true'; //eliminada, se usa currencyModule
     this.validateNuOrder = this.config.get("validateNuOrder").toLowerCase() === 'true';
     this.userCanSelectGlobalDiscount = this.config.get("userCanSelectGlobalDiscount").toLowerCase() === 'true';
     this.userCanSelectIVA = this.config.get("userCanSelectIVA").toLowerCase() === 'true';
