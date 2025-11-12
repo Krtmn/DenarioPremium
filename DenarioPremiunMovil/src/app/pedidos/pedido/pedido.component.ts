@@ -198,7 +198,7 @@ export class PedidoComponent implements OnInit {
           this.setClientfromSelector(c);
           if (!this.viewOnly) {
             this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
-              "Pedidos", 'fondoVerde', c, true);
+              "Pedidos", 'fondoVerde', c, true, 'ped');
           }
         });
 
@@ -222,7 +222,7 @@ export class PedidoComponent implements OnInit {
       this.multiempresa = this.enterpriseServ.esMultiempresa();
       if (!this.viewOnly) {
         this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
-          "Pedidos", 'fondoVerde', null, false);
+          "Pedidos", 'fondoVerde', null, false, 'ped');
       }
 
 

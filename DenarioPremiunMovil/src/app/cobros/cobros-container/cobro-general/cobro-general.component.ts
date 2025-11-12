@@ -124,7 +124,7 @@ export class CobrosGeneralComponent implements OnInit {
       this.collectService.client = client;
       this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", true, COLOR_VERDE);
       this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, 'cobros');
-      this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, "Cobros", 'fondoVerde', client, false);
+      this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, "Cobros", 'fondoVerde', client, false, 'cob');
       this.collectService.changeEnterprise = false;
       this.collectService.getCurrencies(this.synchronizationServices.getDatabase(),
         this.collectService.enterpriseSelected.idEnterprise);
@@ -166,7 +166,7 @@ export class CobrosGeneralComponent implements OnInit {
     this.dateCollect = this.collectService.collection.daCollection;
     this.clientService.getClientById(this.collectService.collection.idClient).then(client => {
       this.collectService.client = client;
-      this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, "Cobros", 'fondoVerde', client, false);
+      this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, "Cobros", 'fondoVerde', client, false, 'cob');
 
       this.collectService.loadPaymentMethods();
       this.collectService.initLogicService();
@@ -468,7 +468,7 @@ export class CobrosGeneralComponent implements OnInit {
               break;
             }
           }
-          this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, nameModule, 'fondoVerde', null, true);
+          this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, nameModule, 'fondoVerde', null, true, 'cob');
           this.selectorCliente.updateClientList(this.collectService.enterpriseSelected.idEnterprise);
 
           this.collectService.collection.coCollection = this.dateServ.generateCO(0);

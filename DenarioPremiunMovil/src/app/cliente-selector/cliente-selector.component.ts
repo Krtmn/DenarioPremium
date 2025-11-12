@@ -100,25 +100,21 @@ export class ClienteSelectorComponent implements OnInit {
   formatNum(num: number) {
     return this.currencyService.formatNumber(num);
   }
-  setup(idEnterprise: number, nombreModulo: string, colorModulo: string, cliente: null | Client, checkClient: boolean) {
+  setup(idEnterprise: number, nombreModulo: string, colorModulo: string, cliente: null | Client, checkClient: boolean, coModule: string) {
     //hace la configuracion inicial y habilita el chequeo de cambio de cliente
     this.setSkin(nombreModulo, colorModulo);
     this.updateClientList(idEnterprise);
     this.service.checkClient = checkClient;
     this.service.clienteAnterior = cliente;
-    var coModule = this.service.moduleNames.get(nombreModulo);
-    var currencyModule;
-    if(coModule){
-      currencyModule = this.currencyService.getCurrencyModule(coModule);
-    }
-    if(currencyModule){
+    var currencyModule = this.currencyService.getCurrencyModule(coModule);
+    if (currencyModule) {
       this.showConversion = currencyModule.showConversion;
       this.localCurrencyDefault = currencyModule.localCurrencyDefault;
-      if(currencyModule.idModule > 0){
+      if (currencyModule.idModule > 0) {
         this.currencySwitchEnabled = true;
       }
     }
-    
+
 
 
   }
@@ -166,7 +162,7 @@ export class ClienteSelectorComponent implements OnInit {
           this.clientes[c].saldo1 = saldoCliente;
           this.clientes[c].saldo2 = saldoOpuesto;
 
-          if(this.currencySwitchEnabled && this.localCurrencyDefault){
+          if (this.currencySwitchEnabled && this.localCurrencyDefault) {
             //la primera moneda es la local
             if (this.clientes[c].coCurrency != this.localCurrency.coCurrency) {
               //cambiamos la moneda del cliente
@@ -175,7 +171,7 @@ export class ClienteSelectorComponent implements OnInit {
               this.clientes[c].saldo1 = this.clientes[c].saldo2;
               this.clientes[c].saldo2 = tempSaldo;
             }
-          }else{
+          } else {
             //la primera moneda es la dura
             if (this.clientes[c].coCurrency != this.hardCurrency.coCurrency) {
               //cambiamos la moneda del cliente

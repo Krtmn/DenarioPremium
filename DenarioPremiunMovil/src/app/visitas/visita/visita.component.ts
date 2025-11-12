@@ -234,10 +234,10 @@ export class VisitaComponent implements OnInit {
           this.setClientfromSelector(this.cliente);
           if (this.rolTransportista)
             this.selectorCliente?.setup(this.empresaSeleccionada.idEnterprise,
-              this.getTag("VIS_NOMBRE_MODULO_DESPACHOS"), "fondoLila", null, false);
+              this.getTag("VIS_NOMBRE_MODULO_DESPACHOS"), "fondoLila", null, false, 'vis');
           else
             this.selectorCliente?.setup(this.empresaSeleccionada.idEnterprise,
-              this.getTag("VIS_NOMBRE_MODULO"), "fondoLila", null, false);
+              this.getTag("VIS_NOMBRE_MODULO"), "fondoLila", null, false, 'vis');
 
         });
         /*
@@ -292,10 +292,10 @@ export class VisitaComponent implements OnInit {
         this.fechaInitial = this.dateServ.hoyISOFullTime();
         if (this.rolTransportista)
           this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
-            this.getTag("VIS_NOMBRE_MODULO_DESPACHOS"), "fondoLila", null, false);
+            this.getTag("VIS_NOMBRE_MODULO_DESPACHOS"), "fondoLila", null, false, 'vis');
         else
           this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
-            this.getTag("VIS_NOMBRE_MODULO"), "fondoLila", null, false);
+            this.getTag("VIS_NOMBRE_MODULO"), "fondoLila", null, false, 'vis');
 
         this.adjuntoService.setup(this.syncServ.getDatabase(), this.visitServ.signatureVisit, this.viewOnly, COLOR_LILA);
       }
