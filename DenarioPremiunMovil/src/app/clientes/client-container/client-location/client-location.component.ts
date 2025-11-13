@@ -258,6 +258,7 @@ export class ClientLocationComponent implements OnInit {
       this.coordinateClient.idEnterprise = this.clientLogic.coordenada.idEnterprise;
       this.coordinateClient.txComment = "cambiando coordenada cliente";
 
+      this.clientLogic.datos.client.coordenada = this.selectedLatitude + "," + this.selectedLogitude;
       this.locationService.insertUserAddressClient(this.coordinateClient).then((result) => {
         console.log("se actualizo la coordenada");
         /*        this.messageAlert = new MessageAlert(
