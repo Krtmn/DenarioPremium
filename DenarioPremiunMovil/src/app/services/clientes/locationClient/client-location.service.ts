@@ -34,7 +34,7 @@ export class ClientLocationService {
     let coordenada = coordinates.lat + "," + coordinates.lng;
     coordinates.idUserAddressClient == undefined ? 0 : coordinates.idUserAddressClient;
 
-    this.updateLocation(coordenada, coordinates.idClient);
+    this.updateLocation(coordenada, coordinates.idAddressClients);
 
     let inserStatement = 'INSERT OR REPLACE INTO user_address_clients (' +
       'id_user_address_client, co_user_address_client,id_address_client, co_address_client,tx_comment, id_user,id_enterprise,coordenada' +
@@ -51,11 +51,11 @@ export class ClientLocationService {
     })
   }
 
-  updateLocation(coordenada: string, idClient: number) {
+  updateLocation(coordenada: string, idAddress: number) {
     let database = this.syncServ.getDatabase();
     return database.executeSql(
-      'UPDATE address_clients SET coordenada = ? WHERE id_client = ?',
-      [coordenada, idClient]
+      'UPDATE address_clients SET coordenada = ? WHERE id_address = ?',
+      [coordenada, idAddress]
     ).then(res => {
       return true;
     }).catch(e => {
