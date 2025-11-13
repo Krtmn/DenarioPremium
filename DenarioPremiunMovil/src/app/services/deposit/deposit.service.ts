@@ -334,25 +334,13 @@ export class DepositService {
       'FROM currency_enterprises WHERE id_enterprise = ?',
       [idEnterprise]).then(data => {
         this.currencyList = [] as Currencies[];
+        const isTrue = (v: any) => v === true || String(v ?? '').toLowerCase() === 'true';
+        const currencyModuleEnabled = isTrue(this.globalConfig.get('currencyModule'));
         for (let i = 0; i < data.rows.length; i++) {
           const item = data.rows.item(i);
           //currencies.push(item);
           this.currencyList.push(item);
-          const isTrue = (v: any) => v === true || String(v ?? '').toLowerCase() === 'true';
-          const currencyModuleEnabled = isTrue(this.globalConfig.get('currencyModule'));
-          if (currencyModuleEnabled) {
-            if (this.localCurrencyDefault) {
-              let currency = this.currencyList.find(c => ((c?.coCurrency ?? '').toString() === this.currencyServices.getLocalCurrency().coCurrency));
-              this.currencySelected = currency!;
-              this.deposit.idCurrency = currency!.idCurrency;
-              this.deposit.coCurrency = currency!.coCurrency;
-            } else {
-              let currency = this.currencyList.find(c => ((c?.coCurrency ?? '').toString() === this.currencyServices.getHardCurrency().coCurrency));
-              this.currencySelected = currency!;
-              this.deposit.idCurrency = currency!.idCurrency;
-              this.deposit.coCurrency = currency!.coCurrency;
-            }
-          } else {
+          if (!currencyModuleEnabled) {
             if (this.enterpriseSelected.coCurrencyDefault == item.coCurrency) {
               this.currencySelected = item;
               this.deposit.idCurrency = item.idCurrency;
@@ -360,6 +348,20 @@ export class DepositService {
             } else {
               this.currencyConversion = item;
             }
+          }
+        }
+
+        if (currencyModuleEnabled) {
+          if (this.localCurrencyDefault) {
+            let currency = this.currencyList.find(c => ((c?.coCurrency ?? '').toString() === this.currencyServices.getLocalCurrency().coCurrency));
+            this.currencySelected = currency!;
+            this.deposit.idCurrency = currency!.idCurrency;
+            this.deposit.coCurrency = currency!.coCurrency;
+          } else {
+            let currency = this.currencyList.find(c => ((c?.coCurrency ?? '').toString() === this.currencyServices.getHardCurrency().coCurrency));
+            this.currencySelected = currency!;
+            this.deposit.idCurrency = currency!.idCurrency;
+            this.deposit.coCurrency = currency!.coCurrency;
           }
         }
         return Promise.resolve(true);
@@ -400,7 +402,7 @@ export class DepositService {
         console.log(e);
       })
   }
-  
+
 
   getAllCollectsToDeposit(dbServ: SQLiteObject, coCurrency: string) {
     this.database = dbServ;
