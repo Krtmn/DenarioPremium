@@ -31,7 +31,6 @@ export class ClienteComponent implements OnInit {
   public idCliente!: number;
   public multiCurrency!: Boolean;
   public tagRif: string = "";
-  public coordenada: Boolean = false;
   public nuCreditLimitConversion: string = "";
   public localCurrency = '';
   public hardCurrency = '';
@@ -40,6 +39,7 @@ export class ClienteComponent implements OnInit {
 
   public clientShareModalOpen: boolean = false;
   subjectClientShareModalOpen: any;
+
 
   constructor() {
 
@@ -75,8 +75,6 @@ export class ClienteComponent implements OnInit {
       this.client.saldo1 = this.client.saldo1;;
     }
 
-    if (this.client.coordenada != null)
-      this.coordenada = true;
 
     this.document = this.clientLogic.datos.document;
 
@@ -172,13 +170,15 @@ export class ClienteComponent implements OnInit {
   }
 
   onChangeAddress($event: any) {
+    //cargamos la data de la direccion al cliente para usarla luego en modal de direcciones.
     this.selectedAddress = $event.detail.value;
     this.client.txAddress = this.selectedAddress.txAddress;
     this.client.idAddressClients = this.selectedAddress.idAddress;
     this.client.coAddressClients = this.selectedAddress.coAddress;
     this.client.coordenada = this.selectedAddress.coordenada;
     this.client.editable = this.selectedAddress.editable;
-    //console.log(this.selectedAddress);
+
+    //console.log(this.client.coordenada);
   }
 
   addressCompare(o1: AddresClient, o2: AddresClient): boolean {

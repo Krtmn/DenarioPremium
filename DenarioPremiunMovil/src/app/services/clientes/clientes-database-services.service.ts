@@ -447,23 +447,24 @@ return this.dbServ.getDatabase().executeSql(selectStatement, params).then(data =
     return this.dbServ.getDatabase().executeSql(selectStatement, [idClient]).then(data => {
       let lists: AddresClient[] = [];
       for (let i = 0; i < data.rows.length; i++) {
+        const item = data.rows.item(i);
         lists.push({
-          idAddress: data.rows.item(i).id_address,
-          coAddress: data.rows.item(i).co_address,
-          idClient: data.rows.item(i).id_client,
-          idAddressType: data.rows.item(i).id_address_type,
-          coAddressType: data.rows.item(i).co_address_type,
-          naAddress: data.rows.item(i).na_address,
-          txAddress: data.rows.item(i).tx_address,
-          nuPhone: data.rows.item(i).nu_phone,
-          naResponsible: data.rows.item(i).na_responsible,
-          coEnterpriseStructure: data.rows.item(i).co_enterprise_structure,
-          idEnterpriseStructure: data.rows.item(i).id_enterprise_structure,
-          coClient: data.rows.item(i).co_client,
-          coEnterprise: data.rows.item(i).co_enterprise,
-          idEnterprise: data.rows.item(i).id_enterprise,
-          coordenada: data.rows.item(i).coordenada,
-          editable: data.rows.item(i).editable == 1 ? true : false,          
+          idAddress: item.id_address,
+          coAddress: item.co_address,
+          idClient: item.id_client,
+          idAddressType: item.id_address_type,
+          coAddressType: item.co_address_type,
+          naAddress: item.na_address,
+          txAddress: item.tx_address,
+          nuPhone: item.nu_phone,
+          naResponsible: item.na_responsible,
+          coEnterpriseStructure: item.co_enterprise_structure,
+          idEnterpriseStructure: item.id_enterprise_structure,
+          coClient: item.co_client,
+          coEnterprise: item.co_enterprise,
+          idEnterprise: item.id_enterprise,
+          coordenada: item.coordenada,
+          editable: item.editable.toLowerCase() === 'true' ? true : false,          
         })
       }
       return lists;
