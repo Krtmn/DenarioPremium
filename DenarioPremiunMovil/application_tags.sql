@@ -356,8 +356,9 @@ INSERT INTO public.application_tags(
 	('COB_NRO_REF', 'COB', 'COBROS', 'ESP', 'Nro Ref'),
 	('COB_NRO_REF', 'COB', 'COBROS', 'ENG', 'Ref No'),
 	('COB_FECHA_ANTICIPO', 'COB', 'COBROS', 'ESP', 'Fecha Anticipo'),
-	('COB_FECHA_RETENCION', 'COB', 'COBROS', 'ESP', 'Fecha Retención');
-		
+	('COB_FECHA_RETENCION', 'COB', 'COBROS', 'ESP', 'Fecha Retención'),
+	('COB_MSJ_RETENTION_NO_ATTACHMENTS', 'COB', 'COBROS', 'ESP', 'Al menos a un documento se le agregaron retenciones, debe agregar al menos un adjunto para poder enviar el Cobro.'),
+	('COB_RET_MSJ_RETENTION_NO_ATTACHMENTS', 'COB', 'COBROS', 'ESP', 'Para poder enviar la Retención, debe agregar al menos un adjunto.');		
 -- VENDEDORES
 DELETE FROM public.application_tags where co_module = 'VND';
 
