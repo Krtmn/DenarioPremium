@@ -323,8 +323,9 @@
                   <ion-col size="12" size-sm="12" size-xs="12">
                     <div class="listado-tps-selector ion-text-center">
                       <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
-                        [value]="productoModal.idDiscount" [disabled]="!orderServ.userCanSelectProductDiscount"
+                        [(ngModel)]="productoModal.idDiscount" [disabled]="!orderServ.userCanSelectProductDiscount"
                         [placeholder]="orderServ.getTag('PED_PLACEHOLDER_DESCUENTO')+':'"
+                        [compareWith]="compareWithDiscount"
                         (ionChange)="onSelectDiscount($event, productoModal)">
                         <ion-select-option *ngFor="let dc of productoModal.discountList" [value]="dc.idDiscount">{{
                           dc.quDiscount }}</ion-select-option>
