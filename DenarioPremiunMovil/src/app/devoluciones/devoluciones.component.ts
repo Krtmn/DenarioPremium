@@ -34,6 +34,7 @@ export class DevolucionesComponent implements OnInit {
       this.getTagsCommon();  //buscamos los tags
     });
     this.returnLogic.validateReturn = this.globalConfig.get("validateReturn") == "true";
+    this.returnLogic.requeridedNroFactura = this.globalConfig.get("requeridedNroFactura") == "true";
     this.returnLogic.userMustActivateGPS = this.globalConfig.get("userMustActivateGPS") == "true";
   }
 

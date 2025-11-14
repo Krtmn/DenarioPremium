@@ -67,6 +67,7 @@ export class ReturnLogicService {
   returnSent: Boolean = false;
   returnChanged: Boolean = false;
   validateReturn: Boolean = false;
+  requeridedNroFactura: Boolean = false;
   userMustActivateGPS: Boolean = false;
   validateClient: boolean = false;
   bloquearFactura: boolean = true;

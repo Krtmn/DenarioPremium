@@ -14,10 +14,10 @@ import { ServicesService } from 'src/app/services/services.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
 @Component({
-    selector: 'devolucion-product-list',
-    templateUrl: './devolucion-product-list.component.html',
-    styleUrls: ['./devolucion-product-list.component.scss'],
-    standalone: false
+  selector: 'devolucion-product-list',
+  templateUrl: './devolucion-product-list.component.html',
+  styleUrls: ['./devolucion-product-list.component.scss'],
+  standalone: false
 })
 export class DevolucionProductListComponent implements OnInit, OnDestroy {
 
@@ -125,8 +125,14 @@ export class DevolucionProductListComponent implements OnInit, OnDestroy {
   }
 
   onCoDocumentTextChanged() {
+    let bandera = false
+    if (!this.returnLogic.requeridedNroFactura && !this.returnLogic.validateReturn) {
+      bandera = true;
+    }
     for (let index = 0; index < this.productList.length; index++) {
       const element = this.productList[index];
+      if (bandera)
+        element.coDocument = "0";
       if (!element.coDocument || !element.quProduct) {
         this.returnLogic.onReturnValidToSend(false);
         break;
@@ -143,10 +149,10 @@ export class DevolucionProductListComponent implements OnInit, OnDestroy {
     this.returnLogic.setChange(true, true);
   }
 
-  setShowDateModal(i:number, val: boolean) {
+  setShowDateModal(i: number, val: boolean) {
     this.productList[i].showDateModal = val;
   }
-  
+
   formatShort(date: string | null) {
     if (date != null) {
       return this.dateServ.formatShort(date);
@@ -171,7 +177,7 @@ export class DevolucionProductListComponent implements OnInit, OnDestroy {
     this.returnLogic.setChange(true, true);
   }
 
-    cleanString(str: string): string {
+  cleanString(str: string): string {
     // Elimina ;
     str = str.replace(/;/g, '');
     // Elimina comillas simples
@@ -183,11 +189,11 @@ export class DevolucionProductListComponent implements OnInit, OnDestroy {
     return str;
   }
 
-    cleanInput(input: string | null | undefined | number): string {
-      this.updateSendButtonState()
-    if (!input){
+  cleanInput(input: string | null | undefined | number): string {
+    this.updateSendButtonState()
+    if (!input) {
       return '';
-    } 
+    }
     return this.cleanString(input.toString());
   }
 

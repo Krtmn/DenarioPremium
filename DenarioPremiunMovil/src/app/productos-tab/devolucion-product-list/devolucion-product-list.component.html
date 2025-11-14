@@ -26,10 +26,10 @@
                         product.nuLote = cleanString(product.nuLote)"></ion-input>
                     </div>
                   </ion-col>
-                  <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                  <ion-col size="12" size-xs="12" size-sm="12" size-md="12" *ngIf="returnLogic.requeridedNroFactura">
                     <div id="inputDocument">
                       <!-- <ion-input formControlName="coDocument" label="{{this.tags.get('DEV_DOC')}}" -->
-                      <ion-input disabled="{{ this.returnLogic.returnSent || this.returnLogic.validateReturn }}"
+                      <ion-input disabled="{{ this.returnLogic.returnSent || !this.returnLogic.validateReturn || !this.returnLogic.requeridedNroFactura }}"
                         label="{{this.tags.get('DEV_DOC')}}" (input)="onCoDocumentTextChanged()" #inputCoDocument
                         label-placement="floating" fill="outline" [(ngModel)]="product.coDocument"
                         [ngClass]="{'inp-write': !product.coDocument}" value="{{ product.coDocument }}" maxlength="30"
