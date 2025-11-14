@@ -1066,8 +1066,10 @@ export class PedidoComponent implements OnInit {
       this.orderServ.empresaSeleccionada = this.empresaSeleccionada;
       this.orderServ.setup();
 
+      
       //Cliente
       this.orderServ.cliente = { lbClient: this.orderServ.getTag("PED_PLACEHOLDER_CLIENTE") } as Client;
+      this.segmentLock();
       this.selectorCliente.updateClientList(this.empresaSeleccionada.idEnterprise);
 
       //OrderType
