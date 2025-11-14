@@ -230,9 +230,9 @@ export class PedidoComponent implements OnInit {
       this.currencyServ.setup(this.dbServ.getDatabase()).then(() => {
         this.multimoneda = this.currencyServ.multimoneda;
         this.orderServ.currencyModule = this.currencyServ.getCurrencyModule('ped');
-        if(this.orderServ.currencyModuleEnabled && this.orderServ.currencyModule.idModule > 0 ) {
-        this.showConversion = this.multimoneda && this.orderServ.currencyModule.showConversion;
-        }else{
+        if (this.orderServ.currencyModuleEnabled && this.orderServ.currencyModule.idModule > 0) {
+          this.showConversion = this.multimoneda && this.orderServ.currencyModule.showConversion;
+        } else {
           //probablemente no tienen el sistema nuevo.
           this.showConversion = this.multimoneda && this.orderServ.showTransactionCurrency
         }
@@ -250,13 +250,13 @@ export class PedidoComponent implements OnInit {
         }
         else {
           if (this.currencyServ.multimoneda) {
-            if( this.orderServ.currencyModuleEnabled &&this.orderServ.currencyModule.idModule > 0){
+            if (this.orderServ.currencyModuleEnabled && this.orderServ.currencyModule.idModule > 0) {
               if (this.orderServ.currencyModule.localCurrencyDefault) {
                 this.orderServ.monedaSeleccionada = this.currencyServ.getLocalCurrency();
               } else {
                 this.orderServ.monedaSeleccionada = this.currencyServ.getHardCurrency();
               }
-            }else{
+            } else {
               this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
             }
           } else {
@@ -795,6 +795,10 @@ export class PedidoComponent implements OnInit {
   }
 
   disableCurrencySelector() {
+    if (this.orderServ.currencyModuleEnabled) {
+      return this.orderServ.disableCurrency
+    }
+
     if (!this.multimoneda) {
       return true;
     }
@@ -809,6 +813,7 @@ export class PedidoComponent implements OnInit {
     }
     return false;
   }
+
   onCurrencySelect() {
     this.multimoneda = false;
     this.changeDetector.detectChanges();
@@ -842,7 +847,6 @@ export class PedidoComponent implements OnInit {
           },
         },
       ];
-
 
       this.message.alertCustomBtn({
         header: this.orderServ.getTag("PED_NOMBRE_MODULO"),

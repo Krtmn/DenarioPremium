@@ -77,6 +77,7 @@ export class PedidosService {
   public empresaSeleccionada!: Enterprise;
   public monedaSeleccionada!: CurrencyEnterprise;
   public listaSeleccionada!: List;
+  public currencyModule!: CurrencyModules;
 
   imgNoDisponible = "../../../assets/images/nodisponible.png" //constante
 
@@ -122,7 +123,6 @@ export class PedidosService {
   public parentStructures: Map<number, string> = new Map();
   public cliente: Client = { lbClient: this.getTag("PED_PLACEHOLDER_CLIENTE") } as Client;
 
-  public currencyModule!: CurrencyModules;
 
   //Pedido Sugerido
   public desdeSugerencia = false; //vienes desde el boton de pedido sugerido (inventario)
@@ -208,6 +208,7 @@ export class PedidosService {
   public disableDaDispatch!: boolean;
   public currencyModuleEnabled!: boolean;
   public userCanChangePriceListProduct!: boolean;
+  public disableCurrency: boolean = true;
 
   /*  ClientChangeSubscription: Subscription = this.clientSelectorService.ClientChanged.subscribe(client => {    
       this.reset();
@@ -235,6 +236,13 @@ export class PedidosService {
     this.getConfig();
     if (this.monedaSeleccionada == null) {
       this.monedaSeleccionada = this.currencyService.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
+    }
+
+    if (this.currencyModuleEnabled) {
+      if (this.currencyModule.localCurrencyDefault)
+        this.monedaSeleccionada = this.currencyService.localCurrency;
+      else
+        this.monedaSeleccionada = this.currencyService.hardCurrency;
     }
 
     this.getOrderTypes(coEnterprise).then(data => { this.listaOrderTypes = data; });
@@ -352,6 +360,13 @@ export class PedidosService {
     //numerico
     this.parteDecimal = +this.config.get('parteDecimal');
 
+    //currencyModule
+    if (this.currencyModuleEnabled) {
+      this.currencyModule = this.currencyService.getCurrencyModule("ped");
+      this.disableCurrency = !this.currencyModule.currencySelector;
+    }
+
+
     //casos especiales
     if (this.validateWarehouses) {
       this.showStock = this.config.get("showStock").toLowerCase() === 'true';
@@ -378,8 +393,8 @@ export class PedidosService {
     this.changesMade = value;
     if (value) {
       var disable = !((this.cliente.idClient != null) &&
-       (this.carrito.length > 0) &&
-       (!this.adjuntoService.weightLimitExceeded));
+        (this.carrito.length > 0) &&
+        (!this.adjuntoService.weightLimitExceeded));
       this.disableSaveButton = disable;
       this.disableSendButton = disable;
     } else {
@@ -500,14 +515,14 @@ export class PedidosService {
           item.coCurrency = priceListSeleccionado.coCurrency;
           price = this.conversionByPriceList ?
             priceListSeleccionado.nuPrice : this.conversionCurrency(priceListSeleccionado.nuPrice, item.coCurrency);
-        }else{          
+        } else {
           item.coCurrency = this.monedaSeleccionada.coCurrency;
         }
-        if(this.multiCurrencyOrder){
+        if (this.multiCurrencyOrder) {
           item.coCurrencyOpposite = this.currencyService.oppositeCoCurrency(item.coCurrency);
           item.priceOpposite = item.coCurrency === this.currencyService.getLocalCurrency().coCurrency ?
-              this.currencyService.toHardCurrency(item.price) :
-              this.currencyService.toLocalCurrency(item.price);
+            this.currencyService.toHardCurrency(item.price) :
+            this.currencyService.toLocalCurrency(item.price);
         }
         var idLists: Set<number> = new Set<number>();
         priceLists.forEach(pl => {
@@ -1135,7 +1150,7 @@ export class PedidosService {
             txDescription: prod.tx_description,
             idList: prod.id_list,
             price: 0,
-            coCurrency:'',
+            coCurrency: '',
             priceOpposite: 0,/*prod.co_currency === this.currencyService.getLocalCurrency ?
               this.currencyService.toHardCurrency(prod.nu_price) :
               this.currencyService.toLocalCurrency(prod.nu_price), // Precio en la moneda opuesta a la lista de precio*/

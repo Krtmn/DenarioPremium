@@ -35,27 +35,27 @@
 </ion-header>
 
 <ion-content>
-  <ion-item-divider sticky>
-      <div class="cobroComponent" sticky-below-view>
-          <!-- SEGMENTOS -->
-          <ion-segment value="default" [(ngModel)]="segment" scrollable (click)="onTouchSegment()">
-              <ion-segment-button value="default">
-                  <ion-label>{{ orderServ.getTag("PED_TAB_GENERAL")}}</ion-label>
-              </ion-segment-button>
+    <ion-item-divider sticky>
+        <div class="cobroComponent" sticky-below-view>
+            <!-- SEGMENTOS -->
+            <ion-segment value="default" [(ngModel)]="segment" scrollable (click)="onTouchSegment()">
+                <ion-segment-button value="default">
+                    <ion-label>{{ orderServ.getTag("PED_TAB_GENERAL")}}</ion-label>
+                </ion-segment-button>
 
-              <ion-segment-button value="pedido" [disabled]="lockSegments" *ngIf="!viewOnly">
-                  <ion-label>{{ orderServ.getTag("PED_TAB_PEDIDO")}}</ion-label>
-              </ion-segment-button>
-              <ion-segment-button value="total" [disabled]="lockSegments">
-                  <ion-label>{{ orderServ.getTag("PED_TAB_TOTAL")}}</ion-label>
-              </ion-segment-button>
-              <ion-segment-button *ngIf="hideAdjunto" value="adjuntos" [disabled]="lockSegments">
-                  <ion-label>{{ orderServ.getTag("PED_TAB_ADJUNTO")}}</ion-label>
-              </ion-segment-button>
+                <ion-segment-button value="pedido" [disabled]="lockSegments" *ngIf="!viewOnly">
+                    <ion-label>{{ orderServ.getTag("PED_TAB_PEDIDO")}}</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="total" [disabled]="lockSegments">
+                    <ion-label>{{ orderServ.getTag("PED_TAB_TOTAL")}}</ion-label>
+                </ion-segment-button>
+                <ion-segment-button *ngIf="hideAdjunto" value="adjuntos" [disabled]="lockSegments">
+                    <ion-label>{{ orderServ.getTag("PED_TAB_ADJUNTO")}}</ion-label>
+                </ion-segment-button>
 
-          </ion-segment>
-      </div>
-  </ion-item-divider>
+            </ion-segment>
+        </div>
+    </ion-item-divider>
     <ion-grid>
         <ion-row>
 
@@ -64,262 +64,258 @@
                 size-xs="12">
                 <div [ngSwitch]="segment">
                     <!-- Pestana General-->
-                    
-                        <ion-card *ngSwitchCase="'default'">
-                            <ion-card-content>
-                                <!-- ### EMPRESA ### -->
+
+                    <ion-card *ngSwitchCase="'default'">
+                        <ion-card-content>
+                            <!-- ### EMPRESA ### -->
+                            <ion-col size="12" size-sm="12" size-xs="12">
+                                <ion-label>{{ orderServ.getTag("PED_EMPRESA")}}:</ion-label>
+                                <div class="listado-tps-selector ion-text-center">
+                                    <ion-select
+                                        [disabled]="(!orderServ.enterpriseEnabled) || orderServ.openOrder || !this.enterpriseServ.esMultiempresa()"
+                                        [(ngModel)]="empresaSeleccionada" (ionChange)="onEnterpriseSelect()"
+                                        interface="popover" labelPlacement="stacked">
+                                        <ion-select-option *ngFor="let emp of listaEmpresa" [value]="emp">{{
+                                            emp.lbEnterprise }}</ion-select-option>
+                                    </ion-select>
+                                </div>
+
+                            </ion-col>
+                            <!-- ### CLIENTE ### -->
+                            <ion-col size="12" size-sm="12" size-xs="12">
+                                <div id="inputClient">
+                                    <ion-input [label]="orderServ.getTag('PED_CLIENTE')+':'"
+                                        [ngClass]="{'inp-write': clientRedLabel}" label-placement="floating"
+                                        fill="outline" [disabled]="orderServ.openOrder"
+                                        value="{{ this.orderServ.cliente.lbClient }}" id="clienteSelect"
+                                        color="primary">
+                                    </ion-input>
+                                    <ion-label *ngIf="clientRedLabel" color="danger">
+                                        {{ orderServ.getTag('PED_CHECK_CLIENTE') }}
+                                    </ion-label>
+                                    <a *ngIf="this.orderServ.cliente.idClient != null"
+                                        (click)="modalInfoCliente(true)">{{
+                                        orderServ.getTag("PED_INFO_CLIENTE")}}</a>
+                                </div>
+                            </ion-col>
+
+
+                            <div *ngIf="hasClient">
+
+                                <!-- ### MONEDA ### -->
                                 <ion-col size="12" size-sm="12" size-xs="12">
-                                    <ion-label>{{ orderServ.getTag("PED_EMPRESA")}}:</ion-label>
-                                    <div class="listado-tps-selector ion-text-center">
-                                        <ion-select
-                                            [disabled]="(!orderServ.enterpriseEnabled) || orderServ.openOrder || !this.enterpriseServ.esMultiempresa()"
-                                            [(ngModel)]="empresaSeleccionada" (ionChange)="onEnterpriseSelect()"
-                                            interface="popover" labelPlacement="stacked">
-                                            <ion-select-option *ngFor="let emp of listaEmpresa" [value]="emp">{{
-                                                emp.lbEnterprise }}</ion-select-option>
+                                    <ion-label>{{ orderServ.getTag("PED_MONEDA")}}:</ion-label>
+                                    <div class="listado-tps-selector ion-text-center" id="inputCurrency">
+                                        <ion-select interface="popover" labelPlacement="stacked"
+                                            (ionChange)="onCurrencySelect()" id="currency"
+                                            [disabled]="disableCurrencySelector()" [(ngModel)]="monedaSeleccionada"
+                                            [compareWith]="currencyCompare">
+                                            <ion-select-option [value]="localCurrency">{{ localCurrency.coCurrency
+                                                }}</ion-select-option>
+                                            <ion-select-option [value]="hardCurrency">{{ hardCurrency.coCurrency
+                                                }}</ion-select-option>
                                         </ion-select>
                                     </div>
-
                                 </ion-col>
-                                <!-- ### CLIENTE ### -->
-                                <ion-col size="12" size-sm="12" size-xs="12">
-                                    <div id="inputClient">
-                                        <ion-input [label]="orderServ.getTag('PED_CLIENTE')+':'"
-                                            [ngClass]="{'inp-write': clientRedLabel}" label-placement="floating"
-                                            fill="outline" [disabled]="orderServ.openOrder"
-                                            value="{{ this.orderServ.cliente.lbClient }}" id="clienteSelect"
-                                            color="primary">
-                                        </ion-input>
-                                        <ion-label *ngIf="clientRedLabel" color="danger">
-                                            {{ orderServ.getTag('PED_CHECK_CLIENTE') }}
-                                        </ion-label>
-                                        <a *ngIf="this.orderServ.cliente.idClient != null"
-                                            (click)="modalInfoCliente(true)">{{
-                                            orderServ.getTag("PED_INFO_CLIENTE")}}</a>
+
+                                <!-- ### TASA DE CAMBIO ### -->
+                                <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
+                                    <div id="inputTasa">
+                                        <ion-input [label]="orderServ.getTag('PED_TASA_CAMBIO')+':'"
+                                            label-placement="floating" fill="outline" [value]="tasaCambio" id="tasa"
+                                            color="primary" [readonly]="true"></ion-input>
+
+
                                     </div>
                                 </ion-col>
 
 
-                                <div *ngIf="hasClient">
-
-                                    <!-- ### MONEDA ### -->
-                                    <ion-col size="12" size-sm="12" size-xs="12">
-                                        <ion-label>{{ orderServ.getTag("PED_MONEDA")}}:</ion-label>
-                                        <div class="listado-tps-selector ion-text-center" id="inputCurrency">
-                                            <ion-select interface="popover" labelPlacement="stacked"
-                                                (ionChange)="onCurrencySelect()" id="currency"
-                                                [disabled]="disableCurrencySelector()" [(ngModel)]="monedaSeleccionada"
-                                                [compareWith]="currencyCompare">
-                                                <ion-select-option [value]="localCurrency">{{ localCurrency.coCurrency
-                                                    }}</ion-select-option>
-                                                <ion-select-option [value]="hardCurrency">{{ hardCurrency.coCurrency
-                                                    }}</ion-select-option>
-                                            </ion-select>
-                                        </div>
-                                    </ion-col>
-
-                                    <!-- ### TASA DE CAMBIO ### -->
-                                    <ion-col size="12" size-sm="12" size-xs="12"  *ngIf="showConversion">
-                                        <div id="inputTasa">
-                                            <ion-input [label]="orderServ.getTag('PED_TASA_CAMBIO')+':'"
-                                                label-placement="floating" fill="outline"
-                                                [value]="tasaCambio" id="tasa" color="primary"
-                                                [readonly]="true"></ion-input>
-
-                                       
-                                        </div>
-                                    </ion-col>
+                                <!-- ### SUCURSAL ### -->
+                                <ion-col size="12" size-sm="12" size-xs="12">
+                                    <ion-label>{{ orderServ.getTag("PED_SUCURSAL")}}:</ion-label>
+                                    <div class="listado-tps-selector ion-text-center" id="inputAddress"
+                                        [ngClass]="{'inp-write2': addressRedLabel}">
+                                        <ion-select (ionChange)="onAddressChange()" [(ngModel)]="direccionCliente"
+                                            [disabled]=" (!orderServ.pedidoModificable) || (listaDirecciones.length < 1)"
+                                            labelPlacement="stacked">
+                                            <ion-select-option *ngFor="let dir of listaDirecciones" [value]="dir">{{
+                                                dir.txAddress
+                                                }}</ion-select-option>
+                                        </ion-select>
+                                        <ion-label *ngIf="addressRedLabel" color="danger" class="campoObligatorio">
+                                            {{ orderServ.getTag('DENARIO_CAMPO_OBLIGATORIO') }}
+                                        </ion-label>
+                                    </div>
+                                </ion-col>
 
 
-                                    <!-- ### SUCURSAL ### -->
-                                    <ion-col size="12" size-sm="12" size-xs="12">
-                                        <ion-label>{{ orderServ.getTag("PED_SUCURSAL")}}:</ion-label>
-                                        <div class="listado-tps-selector ion-text-center" id="inputAddress"
-                                            [ngClass]="{'inp-write2': addressRedLabel}">
-                                            <ion-select (ionChange)="onAddressChange()" [(ngModel)]="direccionCliente"
-                                                [disabled]=" (!orderServ.pedidoModificable) || (listaDirecciones.length < 1)"
-                                                labelPlacement="stacked">
-                                                <ion-select-option *ngFor="let dir of listaDirecciones" [value]="dir">{{
-                                                    dir.txAddress
-                                                    }}</ion-select-option>
-                                            </ion-select>
-                                            <ion-label *ngIf="addressRedLabel" color="danger" class="campoObligatorio">
-                                                {{ orderServ.getTag('DENARIO_CAMPO_OBLIGATORIO') }}
-                                            </ion-label>
-                                        </div>
-                                    </ion-col>
+                                <!-- ### TIPO DE PEDIDO ### -->
+                                <ion-col size="12" size-sm="12" size-xs="12" *ngIf="orderServ.selectOrderType">
+                                    <ion-label>{{ orderServ.getTag("PED_TIPO_PEDIDO")}}:</ion-label>
+                                    <div class="listado-tps-selector ion-text-center" id="inputOrderType">
+                                        <ion-select (ionChange)="onOrderTypeChange()" [(ngModel)]="tipoOrden"
+                                            [disabled]="disableOrderTypeSelector()" interface="popover"
+                                            labelPlacement="stacked">
+                                            <ion-select-option *ngFor="let type of listaOrderTypes" [value]="type">
+                                                {{ type.naOrderType }}
+                                            </ion-select-option>
+                                        </ion-select>
+                                    </div>
+                                </ion-col>
+
+                                <!-- ### CANAL DE DISTRIBUCION ### -->
+                                <ion-col size="12" size-sm="12" size-xs="12" *ngIf="orderServ.userCanSelectChannel">
+                                    <ion-label>{{ orderServ.getTag("PED_CANAL_DISTRIBUCION")}}:</ion-label>
+                                    <div class="listado-tps-selector ion-text-center" id="inputDistChannel">
+                                        <ion-select (ionChange)="onChange()" [(ngModel)]="distChannel"
+                                            [disabled]="orderServ.openOrder" interface="popover"
+                                            labelPlacement="stacked">
+                                            <ion-select-option *ngFor="let channel of listaDistributionChannel"
+                                                [value]="channel">
+                                                {{ channel.shortNaChannel }}
+                                            </ion-select-option>
+                                        </ion-select>
+                                    </div>
+                                </ion-col>
 
 
-                                    <!-- ### TIPO DE PEDIDO ### -->
-                                    <ion-col size="12" size-sm="12" size-xs="12" *ngIf="orderServ.selectOrderType">
-                                        <ion-label>{{ orderServ.getTag("PED_TIPO_PEDIDO")}}:</ion-label>
-                                        <div class="listado-tps-selector ion-text-center" id="inputOrderType">
-                                            <ion-select (ionChange)="onOrderTypeChange()" [(ngModel)]="tipoOrden"
-                                                [disabled]="disableOrderTypeSelector()" interface="popover"
-                                                labelPlacement="stacked">
-                                                <ion-select-option *ngFor="let type of listaOrderTypes" [value]="type">
-                                                    {{ type.naOrderType }}
-                                                </ion-select-option>
-                                            </ion-select>
-                                        </div>
-                                    </ion-col>
+                                <!-- ### LISTA DE PRECIOS ### -->
+                                <ion-col size="12" size-sm="12" size-xs="12">
+                                    <ion-label>{{ orderServ.getTag("PED_LISTA_PRECIO")}}:</ion-label>
+                                    <div class="listado-tps-selector ion-text-center" id="inputPriceList">
+                                        <ion-select (ionChange)="onPricelistSelect()" interface="popover"
+                                            labelPlacement="stacked" [(ngModel)]="orderServ.listaSeleccionada"
+                                            [compareWith]="listCompare"
+                                            [disabled]="!orderServ.userCanChangePriceList || orderServ.openOrder">
+                                            <ion-select-option *ngFor="let list of orderServ.listaList"
+                                                [value]="list">{{ list.naList }}
+                                            </ion-select-option>
+                                        </ion-select>
 
-                                    <!-- ### CANAL DE DISTRIBUCION ### -->
-                                    <ion-col size="12" size-sm="12" size-xs="12" *ngIf="orderServ.userCanSelectChannel">
-                                        <ion-label>{{ orderServ.getTag("PED_CANAL_DISTRIBUCION")}}:</ion-label>
-                                        <div class="listado-tps-selector ion-text-center" id="inputDistChannel">
-                                            <ion-select (ionChange)="onChange()" [(ngModel)]="distChannel"
-                                                [disabled]="orderServ.openOrder" interface="popover"
-                                                labelPlacement="stacked">
-                                                <ion-select-option *ngFor="let channel of listaDistributionChannel"
-                                                    [value]="channel">
-                                                    {{ channel.shortNaChannel }}
-                                                </ion-select-option>
-                                            </ion-select>
-                                        </div>
-                                    </ion-col>
+                                    </div>
+                                </ion-col>
 
+                                <!-- ### NUMERO DE ORDEN ### -->
+                                <ion-col size="12" size-sm="12" size-xs="12">
+                                    <div id="inputNuPurchase">
+                                        <ion-input [label]="orderServ.getTag('PED_NUMERO_ORDEN')+':'"
+                                            label-placement="floating" fill="outline" [(ngModel)]="nuPurchase"
+                                            id="nuPurchase" #nuPurchaseInput [ngClass]="{'inp-write': nuOrderRedLabel}"
+                                            (ionChange)="onNuOrderChange()" color="primary"
+                                            (ionInput)="onNuOrderInput()" [disabled]="!orderServ.pedidoModificable"
+                                            [required]="orderServ.validateNuOrder"></ion-input>
+                                        <ion-label *ngIf="nuOrderRedLabel" color="danger" class="campoObligatorio">
+                                            {{ orderServ.getTag('DENARIO_CAMPO_OBLIGATORIO') }}
+                                        </ion-label>
+                                    </div>
+                                </ion-col>
 
-                                    <!-- ### LISTA DE PRECIOS ### -->
-                                    <ion-col size="12" size-sm="12" size-xs="12">
-                                        <ion-label>{{ orderServ.getTag("PED_LISTA_PRECIO")}}:</ion-label>
-                                        <div class="listado-tps-selector ion-text-center" id="inputPriceList">
-                                            <ion-select (ionChange)="onPricelistSelect()" interface="popover"
-                                                labelPlacement="stacked" [(ngModel)]="orderServ.listaSeleccionada"
-                                                [compareWith]="listCompare"
-                                                [disabled]="!orderServ.userCanChangePriceList || orderServ.openOrder">
-                                                <ion-select-option *ngFor="let list of orderServ.listaList"
-                                                    [value]="list">{{ list.naList }}
-                                                </ion-select-option>
-                                            </ion-select>
+                                <!-- ### FECHA DE PEDIDO ### -->
+                                <ion-col size="12" size-sm="12" size-xs="12">
+                                    <div id="inputDaOrder">
+                                        <ion-label>{{ orderServ.getTag("PED_DA_ORDER")}}</ion-label><br>
+                                        <ion-button color="light" disabled="true">
+                                            {{ dateServ.formatComplete(this.fechaPedido) }}
+                                        </ion-button>
+                                    </div>
+                                </ion-col>
 
-                                        </div>
-                                    </ion-col>
+                                <!-- ### FECHA DE DESPACHO ### -->
+                                <ion-col size="12" size-sm="12" size-xs="12">
+                                    <!-- caso disableDaDispatch true -->
+                                    <div *ngIf="orderServ.disableDaDispatch">
+                                        <ion-label>{{ orderServ.getTag("PED_DA_DISPATCH")}}</ion-label><br>
+                                        <ion-button *ngIf="daDispatchChanged" [disabled]="!orderServ.pedidoModificable"
+                                            placeholder="holder" (click)="setOpenDaDispatchModal(true)" color="light">
+                                            {{ dateServ.formatShort(this.fechaDespacho) }}
+                                        </ion-button>
+                                        <ion-button color="light" *ngIf="!daDispatchChanged"
+                                            (click)="setOpenDaDispatchModal(true)" class="letrasFechasButton">
+                                            {{ orderServ.getTag('DENARIO_SELEC_FECHA')}}
+                                        </ion-button>
+                                    </div>
+                                    <div *ngIf="!orderServ.disableDaDispatch">
+                                        <!-- caso disableDaDispatch false -->
+                                        <ion-label>{{ orderServ.getTag("PED_DA_DISPATCH")}}</ion-label><br>
+                                        <ion-button [disabled]="!orderServ.pedidoModificable" placeholder="holder"
+                                            (click)="setOpenDaDispatchModal(true)" color="light"
+                                            class="letrasFechasButton">
+                                            {{ dateServ.formatShort(this.fechaDespacho) }}
+                                        </ion-button>
+                                    </div>
+                                </ion-col>
 
-                                    <!-- ### NUMERO DE ORDEN ### -->
-                                    <ion-col size="12" size-sm="12" size-xs="12">
-                                        <div id="inputNuPurchase">
-                                            <ion-input [label]="orderServ.getTag('PED_NUMERO_ORDEN')+':'"
-                                                label-placement="floating" fill="outline" [(ngModel)]="nuPurchase"
-                                                id="nuPurchase" #nuPurchaseInput
-                                                [ngClass]="{'inp-write': nuOrderRedLabel}"
-                                                (ionChange)="onNuOrderChange()" color="primary"
-                                                (ionInput)="onNuOrderInput()" [disabled]="!orderServ.pedidoModificable"
-                                                [required]="orderServ.validateNuOrder"></ion-input>
-                                            <ion-label *ngIf="nuOrderRedLabel" color="danger" class="campoObligatorio">
-                                                {{ orderServ.getTag('DENARIO_CAMPO_OBLIGATORIO') }}
-                                            </ion-label>
-                                        </div>
-                                    </ion-col>
+                                <!-- Modal de seleccionar fecha despacho -->
 
-                                    <!-- ### FECHA DE PEDIDO ### -->
-                                    <ion-col size="12" size-sm="12" size-xs="12">
-                                        <div id="inputDaOrder">
-                                            <ion-label>{{ orderServ.getTag("PED_DA_ORDER")}}</ion-label><br>
-                                            <ion-button color="light" disabled="true">
-                                                {{ dateServ.formatComplete(this.fechaPedido) }}
-                                            </ion-button>
-                                        </div>
-                                    </ion-col>
+                                <ion-modal class="fechasModal" [keepContentsMounted]="true"
+                                    [isOpen]="openDaDispatchModal" (didDismiss)="setOpenDaDispatchModal(false)">
+                                    <ng-template>
+                                        <ion-datetime id="datetime-despacho" presentation="date"
+                                            [(ngModel)]="fechaDespacho"
+                                            [formatOptions]="{ date: dateServ.dateFormatOptionsShort }"
+                                            min="{{fechaMinima}}" show-default-buttons="true"
+                                            (ionChange)="onDateDispatchChange()" (ionCancel)="onDateDispatchCancel()"
+                                            [doneText]="orderServ.getTag('DENARIO_BOTON_ACEPTAR')"
+                                            [cancelText]="orderServ.disableDaDispatch ? orderServ.getTag('DENARIO_BOTON_BORRAR') : orderServ.getTag('DENARIO_BOTON_CANCELAR')">
+                                        </ion-datetime>
+                                    </ng-template>
+                                </ion-modal>
 
-                                    <!-- ### FECHA DE DESPACHO ### -->
-                                    <ion-col size="12" size-sm="12" size-xs="12">
-                                        <!-- caso disableDaDispatch true -->
-                                        <div *ngIf="orderServ.disableDaDispatch">
-                                            <ion-label>{{ orderServ.getTag("PED_DA_DISPATCH")}}</ion-label><br>
-                                            <ion-button *ngIf="daDispatchChanged"
-                                                [disabled]="!orderServ.pedidoModificable" placeholder="holder"
-                                                (click)="setOpenDaDispatchModal(true)" color="light">
-                                                {{ dateServ.formatShort(this.fechaDespacho) }}
-                                            </ion-button>
-                                            <ion-button color="light" *ngIf="!daDispatchChanged"
-                                                (click)="setOpenDaDispatchModal(true)" class="letrasFechasButton">
-                                                {{ orderServ.getTag('DENARIO_SELEC_FECHA')}}
-                                            </ion-button>
-                                        </div>
-                                        <div *ngIf="!orderServ.disableDaDispatch">
-                                            <!-- caso disableDaDispatch false -->
-                                            <ion-label>{{ orderServ.getTag("PED_DA_DISPATCH")}}</ion-label><br>
-                                            <ion-button [disabled]="!orderServ.pedidoModificable" placeholder="holder"
-                                                (click)="setOpenDaDispatchModal(true)" color="light"
-                                                class="letrasFechasButton">
-                                                {{ dateServ.formatShort(this.fechaDespacho) }}
-                                            </ion-button>
-                                        </div>
-                                    </ion-col>
+                                <!-- ### RESPONSABLE ### -->
+                                <ion-col size="12" size-sm="12" size-xs="12">
+                                    <div id="inputNaResponsible">
+                                        <ion-input [label]="orderServ.getTag('PED_RESPONSABLE')+':'"
+                                            label-placement="floating" fill="outline" [(ngModel)]="naResponsible"
+                                            #naResponsibleInput id="naResponsible" (ionChange)="onChange()"
+                                            color="primary" (ionInput)="onNaResponsibleInput()"
+                                            [disabled]="!orderServ.pedidoModificable"></ion-input>
+                                    </div>
+                                </ion-col>
 
-                                    <!-- Modal de seleccionar fecha despacho -->
+                                <!-- ### COMENTARIO ### -->
+                                <ion-col size="12" size-sm="12" size-xs="12">
+                                    <div id="inputTxComment">
+                                        <ion-input [label]="orderServ.getTag('PED_COMENTARIO')+':'"
+                                            label-placement="floating" fill="outline" [(ngModel)]="txComment"
+                                            #txCommentInput id="txComment" (ionChange)="onChange()" color="primary"
+                                            (ionInput)="onTxCommentInput()"
+                                            [disabled]="!orderServ.pedidoModificable"></ion-input>
+                                    </div>
+                                </ion-col>
 
-                                    <ion-modal class="fechasModal" [keepContentsMounted]="true"
-                                        [isOpen]="openDaDispatchModal" (didDismiss)="setOpenDaDispatchModal(false)">
-                                        <ng-template>
-                                            <ion-datetime id="datetime-despacho" presentation="date"
-                                                [(ngModel)]="fechaDespacho"
-                                                [formatOptions]="{ date: dateServ.dateFormatOptionsShort }"
-                                                min="{{fechaMinima}}" show-default-buttons="true"
-                                                (ionChange)="onDateDispatchChange()"
-                                                (ionCancel)="onDateDispatchCancel()"
-                                                [doneText]="orderServ.getTag('DENARIO_BOTON_ACEPTAR')"
-                                                [cancelText]="orderServ.disableDaDispatch ? orderServ.getTag('DENARIO_BOTON_BORRAR') : orderServ.getTag('DENARIO_BOTON_CANCELAR')">
-                                            </ion-datetime>
-                                        </ng-template>
-                                    </ion-modal>
+                                <!-- ### CONDICION DE PAGO ###  -->
+                                <ion-col size="12" size-sm="12" size-xs="12">
+                                    <ion-label>{{ orderServ.getTag("PED_CONDICION_PAGO")}}:</ion-label>
+                                    <div class="listado-tps-selector ion-text-center" id="inputPaymentCondition">
+                                        <ion-select (ionChange)="onChange()" [(ngModel)]="paymentCondition"
+                                            interface="popover" [interfaceOptions]="paymentConditionInterfaceOptions"
+                                            [compareWith]="payCondCompare" labelPlacement="stacked"
+                                            [disabled]="!orderServ.userCanChangePaymentConditions || !orderServ.pedidoModificable">
+                                            <ion-select-option *ngFor="let pc of orderServ.listaPaymentCondition"
+                                                [value]="pc">{{
+                                                pc.naPaymentCondition }}</ion-select-option>
+                                        </ion-select>
+                                    </div>
+                                </ion-col>
 
-                                    <!-- ### RESPONSABLE ### -->
-                                    <ion-col size="12" size-sm="12" size-xs="12">
-                                        <div id="inputNaResponsible">
-                                            <ion-input [label]="orderServ.getTag('PED_RESPONSABLE')+':'"
-                                                label-placement="floating" fill="outline" [(ngModel)]="naResponsible"
-                                                #naResponsibleInput id="naResponsible" (ionChange)="onChange()"
-                                                color="primary" (ionInput)="onNaResponsibleInput()"
-                                                [disabled]="!orderServ.pedidoModificable"></ion-input>
-                                        </div>
-                                    </ion-col>
+                                <!-- ### POR APROBAR ### -->
+                                <ion-col size="12" size-sm="12" size-xs="12">
+                                    <div id="inputinOrderReview">
+                                        <ion-checkbox (ionChange)="onChange()" [(ngModel)]="inOrderReview"
+                                            [disabled]="!orderServ.pedidoModificable" id="inOrderReview"
+                                            labelPlacement="start">{{
+                                            orderServ.getTag("PED_X_APROBAR")}}:</ion-checkbox>
+                                    </div>
+                                </ion-col>
 
-                                    <!-- ### COMENTARIO ### -->
-                                    <ion-col size="12" size-sm="12" size-xs="12">
-                                        <div id="inputTxComment">
-                                            <ion-input [label]="orderServ.getTag('PED_COMENTARIO')+':'"
-                                                label-placement="floating" fill="outline" [(ngModel)]="txComment"
-                                                #txCommentInput id="txComment" (ionChange)="onChange()" color="primary"
-                                                (ionInput)="onTxCommentInput()"
-                                                [disabled]="!orderServ.pedidoModificable"></ion-input>
-                                        </div>
-                                    </ion-col>
+                            </div>
+                            <!-- SELECTOR CLIENTE -->
+                            <!-- debe ir en el ion-card para que el trigger funcione -->
+                            <app-cliente-selector #selectorCliente *ngIf="!viewOnly"
+                                (clienteSeleccionado)="setClientfromSelector($any($event))"></app-cliente-selector>
 
-                                    <!-- ### CONDICION DE PAGO ###  -->
-                                    <ion-col size="12" size-sm="12" size-xs="12">
-                                        <ion-label>{{ orderServ.getTag("PED_CONDICION_PAGO")}}:</ion-label>
-                                        <div class="listado-tps-selector ion-text-center" id="inputPaymentCondition">
-                                            <ion-select (ionChange)="onChange()" [(ngModel)]="paymentCondition"
-                                                interface="popover" [interfaceOptions]="paymentConditionInterfaceOptions"
-                                                [compareWith]="payCondCompare" labelPlacement="stacked"
-                                                [disabled]="!orderServ.userCanChangePaymentConditions || !orderServ.pedidoModificable">
-                                                <ion-select-option *ngFor="let pc of orderServ.listaPaymentCondition"
-                                                    [value]="pc">{{
-                                                    pc.naPaymentCondition }}</ion-select-option>
-                                            </ion-select>
-                                        </div>
-                                    </ion-col>
-
-                                    <!-- ### POR APROBAR ### -->
-                                    <ion-col size="12" size-sm="12" size-xs="12">
-                                        <div id="inputinOrderReview">
-                                            <ion-checkbox (ionChange)="onChange()" [(ngModel)]="inOrderReview"
-                                                [disabled]="!orderServ.pedidoModificable" id="inOrderReview"
-                                                labelPlacement="start">{{
-                                                orderServ.getTag("PED_X_APROBAR")}}:</ion-checkbox>
-                                        </div>
-                                    </ion-col>
-
-                                </div>
-                                <!-- SELECTOR CLIENTE -->
-                                <!-- debe ir en el ion-card para que el trigger funcione -->
-                                <app-cliente-selector #selectorCliente *ngIf="!viewOnly"
-                                    (clienteSeleccionado)="setClientfromSelector($any($event))"></app-cliente-selector>
-
-                            </ion-card-content>
-                        </ion-card>
+                        </ion-card-content>
+                    </ion-card>
                     <!-- Pestana Pedido -->
                     <ion-card *ngSwitchCase="'pedido'">
 
@@ -395,8 +391,7 @@
                                                 orderServ.monedaSeleccionada.coCurrency }}:</span>
                                             {{ formatNum(orderServ.totalBase) }}
                                         </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12"
-                                            *ngIf="showConversion">
+                                        <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
                                             <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_BASE")}} {{
                                                 monedaOpuesta() }}:</span>
                                             {{ formatNum(orderServ.totalBaseConv) }}
@@ -452,14 +447,12 @@
                                                 orderServ.monedaSeleccionada.coCurrency }}:</span>
                                             {{ formatNum(orderServ.totalPedido) }}
                                         </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12"
-                                            *ngIf="showConversion">
+                                        <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
                                             <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_PEDIDO")}} {{
                                                 monedaOpuesta() }}:</span>
                                             {{ formatNum(orderServ.totalPedidoConv) }}
                                         </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12"
-                                            *ngIf="showConversion">
+                                        <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
                                             <span class="titulosBold">{{ orderServ.getTag("PED_TASA")}}:</span>
                                             {{ nuValueLocal }} {{ localCurrency.coCurrency }} = {{
                                             currencyServ.currencyRelation }} {{ hardCurrency.coCurrency }}
@@ -500,8 +493,7 @@
                                                 {{formatNum(item.subtotal)}}
 
                                             </ion-col>
-                                            <ion-col size="12" size-xs="12"
-                                                *ngIf="showConversion">
+                                            <ion-col size="12" size-xs="12" *ngIf="showConversion">
                                                 <span class="titulosBold">{{ orderServ.getTag("PED_TAB_TOTAL")}}
                                                     {{item.oppositeCoCurrency}}:</span>
                                                 {{formatNum(item.subtotalConv)}}
@@ -630,8 +622,7 @@
                                                             {{ orderServ.getTag("PED_PRECIO_LISTA")}}
                                                             {{item.coCurrency}}: {{formatNum(item.nuPrice)}}
                                                         </ion-item>
-                                                        <ion-item
-                                                            *ngIf="showConversion">
+                                                        <ion-item *ngIf="showConversion">
                                                             {{ orderServ.getTag("PED_PRECIO_LISTA")}}
                                                             {{item.oppositeCoCurrency}}:
                                                             {{formatNum(item.oppositeNuPrice)}}
@@ -765,8 +756,7 @@
                                             }}
 
                                         </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12"
-                                            *ngIf="showConversion">
+                                        <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
 
                                             <span class="titulosBold">{{ orderServ.getTag("PED_CREDITO")}} {{
                                                 currencyServ.oppositeCoCurrency(orderServ.cliente.coCurrency) }}:</span>
