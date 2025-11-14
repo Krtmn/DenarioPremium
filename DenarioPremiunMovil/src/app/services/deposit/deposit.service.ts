@@ -110,9 +110,8 @@ export class DepositService {
 
 
   constructor() {
-    this.currencyModule = this.currencyServices.getCurrencyModule("cli");
-    this.localCurrencyDefault = this.currencyModule.localCurrencyDefault.toString() === 'true' ? true : false;
-    this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
+
+
   }
 
 
@@ -168,6 +167,13 @@ export class DepositService {
       this.disabledEnterprise = this.globalConfig.get('enterpriseEnabled') === 'true' ? false : true;
       this.disabledCurrency = this.globalConfig.get('multiCurrency') === 'true' ? false : true;
       this.userMustActivateGPS = this.globalConfig.get("userMustActivateGPS").toLowerCase() === 'true';
+      if (this.globalConfig.get("currencyModule") == "true" ? true : false) {
+        this.currencyModule = this.currencyServices.getCurrencyModule("dep");
+        this.localCurrencyDefault = this.currencyModule.localCurrencyDefault.toString() === 'true' ? true : false;
+        this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
+        this.disabledCurrency = this.currencyModule.currencySelector.toString() === "true" ? false : true;
+
+      }
 
 
       this.deposit = {
