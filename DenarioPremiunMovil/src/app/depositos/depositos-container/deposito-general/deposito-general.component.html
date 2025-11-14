@@ -4,8 +4,9 @@
     <ion-col size="12" size-sm="12" size-xs="12">
       <ion-label>{{this.depositService.depositTags.get('DEP_EMPRESA')}}:</ion-label>
       <div class="listado-enterprise-selector ion-text-center">
-        <ion-select class="ion-text-center always-flip" interface="popover" labelPlacement="stacked" [(ngModel)]="this.depositService.enterpriseSelected"
-          (ionChange)="onEnterpriseSelect()" disabled="{{this.depositService.disabledEnterprise}}">
+        <ion-select class="ion-text-center always-flip" interface="popover" labelPlacement="stacked"
+          [(ngModel)]="this.depositService.enterpriseSelected" (ionChange)="onEnterpriseSelect()"
+          disabled="{{this.depositService.disabledEnterprise}}">
           <ion-select-option *ngFor="let emp of this.depositService.enterpriseList" [value]="emp">
             {{ emp.lbEnterprise }}
           </ion-select-option>
@@ -31,8 +32,9 @@
         {{this.depositService.depositTags.get('DEP_MONEDA')}}:
       </ion-label>
       <div class="listado-enterprise-selector ion-text-center">
-        <ion-select class="ion-text-center always-flip" interface="popover" labelPlacement="stacked" [(ngModel)]="this.depositService.currencySelected"
-          disabled="{{this.depositService.disabledCurrency}}" (ionChange)="changeCurrencyMsj($event)">
+        <ion-select class="ion-text-center always-flip" interface="popover" labelPlacement="stacked"
+          [(ngModel)]="this.depositService.currencySelected" disabled="{{this.depositService.disabledCurrency}}"
+          (ionChange)="changeCurrencyMsj($event)">
           <ion-select-option *ngFor="let currency of this.depositService.currencyList"
             [value]="currency">{{currency.coCurrency}}
           </ion-select-option>
@@ -83,8 +85,8 @@
           {{this.depositService.depositTags.get('DEP_FECHA_DOC')}}:
         </ion-label>
         <a>
-          <ion-button (click)="setShowDateModal(true)" color="light"
-            [disabled]="this.depositService.hideDeposit" class="letrasFechasButton">
+          <ion-button (click)="setShowDateModal(true)" color="light" [disabled]="this.depositService.hideDeposit"
+            class="letrasFechasButton">
             {{ dateServ.formatShort(this.depositService.daDocument) }}
           </ion-button>
         </a>
@@ -95,7 +97,8 @@
     <ion-col size="12" size-sm="12" size-xs="12">
       <ion-input label="{{this.depositService.depositTags.get('DEP_COMENTARIO')}}:" #inputTxComment
         [(ngModel)]="this.depositService.txComment" label-placement="floating" fill="outline"
-        value="this.depositService.txComment" (ionInput)="onTxCommentInput()" [disabled]="this.depositService.hideDeposit">
+        value="this.depositService.txComment" (ionInput)="onTxCommentInput()"
+        [disabled]="this.depositService.hideDeposit">
       </ion-input>
     </ion-col>
 
@@ -104,7 +107,8 @@
 </ion-grid>
 
 
-<ion-modal [keepContentsMounted]="true" [isOpen]="showDateModal" (didDismiss)="setShowDateModal(false)" class="fechasModal" >
+<ion-modal [keepContentsMounted]="true" [isOpen]="showDateModal" (didDismiss)="setShowDateModal(false)"
+  class="fechasModal">
   <ng-template>
     <ion-datetime [id]="daDocument" presentation="date" [(ngModel)]="this.depositService.daDocument"
       min="{{this.depositService.fechaMenor}}" max="{{this.depositService.fechaMayor}}" [showDefaultButtons]="true"
