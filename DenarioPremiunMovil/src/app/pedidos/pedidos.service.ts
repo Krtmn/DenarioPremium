@@ -238,13 +238,14 @@ export class PedidosService {
       this.monedaSeleccionada = this.currencyService.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
     }
 
+    /*
     if (this.currencyModuleEnabled) {
       if (this.currencyModule.localCurrencyDefault)
         this.monedaSeleccionada = this.currencyService.localCurrency;
       else
         this.monedaSeleccionada = this.currencyService.hardCurrency;
     }
-
+    */
     this.getOrderTypes(coEnterprise).then(data => { this.listaOrderTypes = data; });
     this.getLists(idEnterprise).then(data => { this.listaList = data; });
     this.getPaymentConditions(idEnterprise).then(data => { this.listaPaymentCondition = data; })

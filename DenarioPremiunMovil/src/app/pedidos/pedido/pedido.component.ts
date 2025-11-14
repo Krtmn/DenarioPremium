@@ -247,21 +247,8 @@ export class PedidoComponent implements OnInit {
             this.tasaCambio = this.currencyServ.formatNumber(this.nuValueLocal);
 
           }
-        }
-        else {
-          if (this.currencyServ.multimoneda) {
-            if (this.orderServ.currencyModuleEnabled && this.orderServ.currencyModule.idModule > 0) {
-              if (this.orderServ.currencyModule.localCurrencyDefault) {
-                this.orderServ.monedaSeleccionada = this.currencyServ.getLocalCurrency();
-              } else {
-                this.orderServ.monedaSeleccionada = this.currencyServ.getHardCurrency();
-              }
-            } else {
-              this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
-            }
-          } else {
-            this.orderServ.monedaSeleccionada = this.currencyServ.getLocalCurrency();
-          }
+        } else {
+          this.currencySelection();
           //this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
           this.nuValueLocal = Number.parseFloat(this.currencyServ.getLocalValue());
           this.tasaCambio = this.currencyServ.getLocalValue();
@@ -306,10 +293,12 @@ export class PedidoComponent implements OnInit {
     this.orderServ.totalUnidad = [];
 
     this.empresaSeleccionada = this.enterpriseServ.defaultEnterprise();
+    this.currencySelection();
+    /*
     this.orderServ.monedaSeleccionada =
       this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
     this.monedaSeleccionada = this.orderServ.monedaSeleccionada;
-
+    */
     this.adjuntoService.setup(this.dbServ.getDatabase(), this.orderServ.signatureOrder, false, COLOR_VERDE);
 
     this.orderServ.productSummary();
@@ -795,12 +784,11 @@ export class PedidoComponent implements OnInit {
   }
 
   disableCurrencySelector() {
-    if (this.orderServ.currencyModuleEnabled) {
-      return this.orderServ.disableCurrency
-    }
-
     if (!this.multimoneda) {
       return true;
+    }
+    if (this.orderServ.currencyModuleEnabled) {
+      return !this.orderServ.currencyModule.currencySelector
     }
     if (this.viewOnly) {
       return true;
@@ -1066,7 +1054,7 @@ export class PedidoComponent implements OnInit {
       this.orderServ.empresaSeleccionada = this.empresaSeleccionada;
       this.orderServ.setup();
 
-      
+
       //Cliente
       this.orderServ.cliente = { lbClient: this.orderServ.getTag("PED_PLACEHOLDER_CLIENTE") } as Client;
       this.segmentLock();
@@ -1216,10 +1204,13 @@ export class PedidoComponent implements OnInit {
       });
 
       //[multiCurrencyOrder] cambio de moneda
+      //this.currencySelection();
+      /*
       if (this.orderServ.multiCurrencyOrder && !this.orderServ.openOrder) {
         this.monedaSeleccionada = this.currencyServ.getCurrency(cliente.coCurrency);
         this.onCurrencySelect();
       }
+      */
 
       //saldos si es pedido guardado/enviado
       if (this.orderServ.openOrder) {
@@ -1404,6 +1395,25 @@ export class PedidoComponent implements OnInit {
     } else {
       return '';
     }
+  }
+
+  currencySelection() {
+    //seleccion de moneda por defecto;
+    if (this.currencyServ.multimoneda) {
+      if (this.orderServ.currencyModuleEnabled && this.orderServ.currencyModule.idModule > 0) {
+        if (this.orderServ.currencyModule.localCurrencyDefault) {
+          this.orderServ.monedaSeleccionada = this.currencyServ.getLocalCurrency();
+        } else {
+          this.orderServ.monedaSeleccionada = this.currencyServ.getHardCurrency();
+        }
+      } else {
+        this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
+      }
+    } else {
+      this.orderServ.monedaSeleccionada = this.currencyServ.getLocalCurrency();
+    }
+    this.monedaSeleccionada = this.orderServ.monedaSeleccionada;
+    this.onCurrencySelect();
   }
 
   //para que se vean las opciones arriba del select
