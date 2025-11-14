@@ -167,6 +167,7 @@ export class CollectionService {
   public collectValidTabs: boolean = true;
   public calculateDifference: boolean = false;
   public showConversion: boolean = true;
+  public currencySelector: boolean = true;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;
@@ -254,6 +255,7 @@ export class CollectionService {
     },
   ];
 
+
   initLogicService() {
     //this.coTypeModule = '0';
     //this.titleModule = this.collectionTags.get('COB_NOMBRE_MODULO')!;
@@ -285,7 +287,11 @@ export class CollectionService {
     this.automatedPrepaid = this.globalConfig.get('automatedPrepaid') === 'true' ? true : false;
     this.RangoToleranciaNegativa = Number(this.globalConfig.get('RangoToleranciaNegativa'));
     this.RangoToleranciaPositiva = Number(this.globalConfig.get('RangoToleranciaPositiva'));
-    this.showConversion = this.currencyService.getCurrencyModule("cob").showConversion.toString() === "true" ? true : false;
+    if (this.globalConfig.get("currencyModule") == "true" ? true : false) {
+      this.showConversion = this.currencyService.getCurrencyModule("cob").showConversion.toString() === "true" ? true : false;
+      this.currencySelector = this.currencyService.getCurrencyModule("cob").currencySelector.toString() === "true" ? true : false;
+      this.disabledCurrency = this.currencyService.getCurrencyModule("cob").currencySelector.toString() === "true" ? false : true;
+    }
 
     this.showNuevaCuenta = this.clientBankAccount === true ? true : false;
 

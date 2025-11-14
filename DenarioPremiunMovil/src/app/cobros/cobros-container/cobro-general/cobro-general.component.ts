@@ -84,6 +84,7 @@ export class CobrosGeneralComponent implements OnInit {
   constructor(private clientSelectorService: ClienteSelectorService) { }
 
   ngOnInit() {
+
     if (this.collectService.collection.stCollection == 2 || this.collectService.collection.stCollection == 3 || this.collectService.collection.stCollection == 6) {
       //ES UN COBRO ENVIADO, NO DEBO HACER NADA, SOLO MOSTRAR LA DATA
       this.setSendedCollection();
@@ -448,7 +449,7 @@ export class CobrosGeneralComponent implements OnInit {
           switch (this.collectService.coTypeModule) {
             case "0": {
               console.log("NUEVO COBRO");
-              nameModule =  this.collectService.collectionTags.get("COB_TYPE_COBRO")!
+              nameModule = this.collectService.collectionTags.get("COB_TYPE_COBRO")!
               break
             }
             case "1": {
