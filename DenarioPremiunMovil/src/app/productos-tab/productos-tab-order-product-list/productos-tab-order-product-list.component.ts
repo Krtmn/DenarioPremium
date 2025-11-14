@@ -78,7 +78,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   disablePriceListSelector = false;
   public imagesMap: { [imgName: string]: string } = {};
   private subs = new Subscription();
-  
+
 
   constructor(
 
@@ -374,9 +374,9 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     console.log('Devolucion not implemented.');
   }
 
-    setSearchText(value: string) {
-      this.searchText = value;
-    }
+  setSearchText(value: string) {
+    this.searchText = value;
+  }
 
   onSelectProductPed(i: number, prod: OrderUtil) {
 
@@ -419,19 +419,42 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   }
 
   onSelectDiscount(e: any, product: OrderUtil) {
-    const idDiscount = e.detail.value;
+    // Prefer event value but fallback to the model (keeps it in-sync when ngModel changed it).
+    const raw = (e && e.detail && (e.detail.value !== undefined)) ? e.detail.value : product.idDiscount;
+    // Ensure a numeric primitive (0 stays 0, '0' -> 0)
+    const idDiscount = (raw === null || raw === undefined) ? 0 : Number(raw);
     let dc = product.discountList.filter(dc => dc.idDiscount == idDiscount)[0];
-    if (dc == undefined) {
+    if (!dc) {
       console.log("no se encontro el descuento " + idDiscount);
 
     } else {
-      product.idDiscount = dc.idDiscount;
-      product.quDiscount = dc.quDiscount;
+      if (idDiscount == 0 || (product.quAmount >= dc.quVolIni && product.quAmount <= dc.quVolFin)) {
+        //idDiscount = 0 significa sin descuento
+        product.idDiscount = dc.idDiscount;
+        product.quDiscount = dc.quDiscount;
+      } else {
+      setTimeout(() => {
+        product.idDiscount = 0;
+        product.quDiscount = 0;
+        this.cd.detectChanges();
+      }, 0);
+        this.message.transaccionMsjModalNB("Este Descuento no aplica para la cantidad seleccionada.");
+
+      }
+
     }
 
 
     this.orderServ.alCarrito(product);
+    this.cd.detectChanges();
 
+  }
+
+    compareWithDiscount = (o1: any, o2: any) => {
+    if (o1 === o2) return true;
+    if ((o1 === null || o1 === undefined) && (o2 === null || o2 === undefined)) return true;
+    // numeric string vs number
+    return (o1 != null && o2 != null && Number(o1) === Number(o2));
   }
 
   onSelectWarehouse(e: any, product: OrderUtil) {
