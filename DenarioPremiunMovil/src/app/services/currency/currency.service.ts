@@ -36,11 +36,9 @@ export class CurrencyService {
 
   }
 
-  setup(db: SQLiteObject): Promise<void> {
+  async setup(db: SQLiteObject): Promise<void> {
     if (this.globalConfig.get("currencyModule") === "true") {
-      this.getCurrencyModules(db).then((map) => {
-        this.currencyModulesMap = map;
-      });
+      this.currencyModulesMap = await this.getCurrencyModules(db);
     }
 
     if (this.hardCurrency != undefined && this.localCurrency != undefined) {
