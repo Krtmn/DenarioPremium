@@ -32,6 +32,7 @@ export class ProductService {
   public listaEmpresa: Enterprise[] = [];
   public multiempresa: Boolean = false;
   public unitsByProduct: Unit[] = [];
+  public showStock: boolean = true;
 
   productoSearch = new Subject<string>;
   onSearchClicked = new Subject<Boolean>;
@@ -78,7 +79,7 @@ export class ProductService {
     this.backButtonClicked.next(true);
   }
 
-  getProductsByCoProductStructureAndIdEnterprise(dbServ:SQLiteObject, idProductStructures: number[], idEnterprise: number, coCurrency: string) {
+  getProductsByCoProductStructureAndIdEnterprise(dbServ: SQLiteObject, idProductStructures: number[], idEnterprise: number, coCurrency: string) {
     var database = dbServ;
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
@@ -151,11 +152,11 @@ export class ProductService {
             productUnitList: undefined,
             idProductStructure: item.id_product_structure,
           };
-          if(coCurrency != product.coCurrency){
+          if (coCurrency != product.coCurrency) {
             //intercambiamos precios y monedas
             let tempPrice = product.price;
             let tempCurrency = product.coCurrency;
-            product.price = product.priceOpposite? product.priceOpposite : 0;
+            product.price = product.priceOpposite ? product.priceOpposite : 0;
             product.coCurrency = product.coCurrencyOpposite;
             product.priceOpposite = tempPrice;
             product.coCurrencyOpposite = tempCurrency;
@@ -170,17 +171,17 @@ export class ProductService {
     }
   }
 
-  getProductsByCoProductStructureAndIdEnterprisePaged(dbServ:SQLiteObject,idProductStructures: number[], idEnterprise: number, coCurrency: string, userCanChangeWarehouse: boolean, id_client: number, id_list: number, page: number,) {
+  getProductsByCoProductStructureAndIdEnterprisePaged(dbServ: SQLiteObject, idProductStructures: number[], idEnterprise: number, coCurrency: string, userCanChangeWarehouse: boolean, id_client: number, id_list: number, page: number,) {
     var database = dbServ;
     var offset = page * this.itemsXPagina;
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
       var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, " +
-        " (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as id_list, " +
-        " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price, " +
-        " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency, " +
-        " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price_opposite, " +
-        " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency_opposite, ";
+        " (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list, " +
+        " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price, " +
+        " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency, " +
+        " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price_opposite, " +
+        " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency_opposite, ";
       if (userCanChangeWarehouse) {
         select = select + " (select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, ";
       } else {
@@ -223,9 +224,9 @@ export class ProductService {
       })
     } else {
       var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, " +
-        "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as id_list, " +
-        "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price, " +
-        "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency, "
+        "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list, " +
+        "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price, " +
+        "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency, "
       if (userCanChangeWarehouse) {
         select = select + "(select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, ";
       } else {
@@ -273,17 +274,17 @@ export class ProductService {
     }
   }
 
-  getFeaturedProducts(dbServ:SQLiteObject,idEnterprise: number, coCurrency: string, userCanChangeWarehouse: boolean, id_client: number, id_list: number,  page: number) {
+  getFeaturedProducts(dbServ: SQLiteObject, idEnterprise: number, coCurrency: string, userCanChangeWarehouse: boolean, id_client: number, id_list: number, page: number) {
     var database = dbServ;
     var offset = page * this.itemsXPagina;
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
       var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, " +
         "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, " //+
-        //"(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price, " +
-        //"(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency, " +
-        //"(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price_opposite, " +
-        //"(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency_opposite, ";
+      //"(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price, " +
+      //"(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency, " +
+      //"(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price_opposite, " +
+      //"(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency_opposite, ";
       if (userCanChangeWarehouse) {
         select = select + " (select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, ";
       } else {
@@ -315,7 +316,7 @@ export class ProductService {
             idEnterprise: item.id_enterprise,
             coEnterprise: item.co_enterprise,
             images: this.imageServices.mapImagesFiles.get(item.co_product) === undefined ?
-             '../../../assets/images/nodisponible.png' :
+              '../../../assets/images/nodisponible.png' :
               this.imageServices.mapImagesFiles.get(item.co_product)?.[0],
             typeStocks: undefined,
             productUnitList: undefined,
@@ -329,9 +330,9 @@ export class ProductService {
       })
     } else {
       var select = 'select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, ' +
-        '(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as id_list, '// +
-        //'(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as nu_price, ' +
-        //'(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as co_currency, ';
+        '(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = ' + id_list + ' order by l.na_list limit 1) as id_list, '// +
+      //'(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as nu_price, ' +
+      //'(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as co_currency, ';
       if (userCanChangeWarehouse) {
         select = select + " (select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, ";
       } else {
@@ -381,7 +382,7 @@ export class ProductService {
 
   }
 
-  getFeaturedProductCount(dbServ:SQLiteObject,idEnterprise: number) {
+  getFeaturedProductCount(dbServ: SQLiteObject, idEnterprise: number) {
     var database = dbServ;
     let query = 'SELECT count(id_product) as count from products where featured_product = "true" and id_enterprise = ?'
     return database.executeSql(query, [idEnterprise]).then(result => {
@@ -389,7 +390,7 @@ export class ProductService {
     })
   }
 
-  getFavoriteProductCount(dbServ:SQLiteObject,idEnterprise: number) {
+  getFavoriteProductCount(dbServ: SQLiteObject, idEnterprise: number) {
     var database = dbServ;
     let query = 'select  count(distinct id_product) as count from user_product_favs where id_enterprise = ?'
     return database.executeSql(query, [idEnterprise]).then(result => {
@@ -397,17 +398,17 @@ export class ProductService {
     })
   }
 
-  getFavoriteProducts(dbServ:SQLiteObject,idEnterprise: number, coCurrency: string, userCanChangeWarehouse: boolean, id_client: number, id_list: number, page: number) {
+  getFavoriteProducts(dbServ: SQLiteObject, idEnterprise: number, coCurrency: string, userCanChangeWarehouse: boolean, id_client: number, id_list: number, page: number) {
     var database = dbServ;
     var offset = page * this.itemsXPagina;
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
       var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, " +
-        "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as id_list, " //+
-        //"(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price, " +
-        //"(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency, " +
-        //"(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price_opposite, " +
-        //"(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency_opposite, ";
+        "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list, " //+
+      //"(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price, " +
+      //"(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency, " +
+      //"(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price_opposite, " +
+      //"(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency_opposite, ";
       if (userCanChangeWarehouse) {
         select = select + " (select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, ";
       } else {
@@ -452,9 +453,9 @@ export class ProductService {
       })
     } else {
       var select = 'select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, ' +
-        '(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as id_list, ' //+
-        //'(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as nu_price, ' +
-        //'(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as co_currency, ';
+        '(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = ' + id_list + ' order by l.na_list limit 1) as id_list, ' //+
+      //'(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as nu_price, ' +
+      //'(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as co_currency, ';
       if (userCanChangeWarehouse) {
         select = select + " (select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, ";
       } else {
@@ -513,7 +514,7 @@ export class ProductService {
     return productListFilter;
   }
 
-  getProductsSearchedByCoProductAndNaProduct(dbServ:SQLiteObject,searchText: string, idEnterprise: number, coCurrency: string) {
+  getProductsSearchedByCoProductAndNaProduct(dbServ: SQLiteObject, searchText: string, idEnterprise: number, coCurrency: string) {
     var database = dbServ;
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
@@ -588,16 +589,16 @@ export class ProductService {
     }
   }
 
-  getProductsSearchedByCoProductAndNaProductAndIdList(dbServ:SQLiteObject,searchText: string, idEnterprise: number, coCurrency: string, id_list: number) {
+  getProductsSearchedByCoProductAndNaProductAndIdList(dbServ: SQLiteObject, searchText: string, idEnterprise: number, coCurrency: string, id_list: number) {
     var database = dbServ;
     searchText = searchText.toLowerCase();
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
-      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as id_list, " +
-        " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price, " +
-        " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency, " +
-        " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price_opposite, " +
-        " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency_opposite, " +
+      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list, " +
+        " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price, " +
+        " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency, " +
+        " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price_opposite, " +
+        " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency_opposite, " +
         " (select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p where LOWER(p.co_product) like '%" + searchText + "%' or LOWER(p.na_product) like '%" + searchText + "%' and p.id_enterprise = " + idEnterprise + " order by p.co_product"
       return database.executeSql(select, []).then(result => {
         for (let i = 0; i < result.rows.length; i++) {
@@ -629,13 +630,13 @@ export class ProductService {
       })
     } else {
       var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, " +
-      "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as id_list,"+
-      "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price,"+
-      "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = "+id_list+"  order by l.na_list limit 1) as co_currency,"+
-      "(select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p where LOWER(p.co_product) like '%" + 
-      searchText + "%' or LOWER(p.na_product) like '%" + 
-      searchText + "%' and p.id_enterprise = " + 
-      idEnterprise + " order by p.co_product"
+        "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list," +
+        "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price," +
+        "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + "  order by l.na_list limit 1) as co_currency," +
+        "(select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p where LOWER(p.co_product) like '%" +
+        searchText + "%' or LOWER(p.na_product) like '%" +
+        searchText + "%' and p.id_enterprise = " +
+        idEnterprise + " order by p.co_product"
       return database.executeSql(select, []).then(result => {
         for (let i = 0; i < result.rows.length; i++) {
           this.productList.push({
@@ -671,7 +672,7 @@ export class ProductService {
     }
   }
 
-  getProductDetailByIdProduct(dbServ:SQLiteObject,idList: number, idProduct: number, coCurrency: string) {
+  getProductDetailByIdProduct(dbServ: SQLiteObject, idList: number, idProduct: number, coCurrency: string) {
     var database = dbServ;
     this.productDetail = {} as ProductDetail;
     if (this.globalConfig.get("conversionByPriceList") == "true") {
@@ -756,14 +757,14 @@ export class ProductService {
 
   }
 
-  getUnitsByIdProductOrderByCoPrimaryUnit(dbServ:SQLiteObject,idProduct: number) {
+  getUnitsByIdProductOrderByCoPrimaryUnit(dbServ: SQLiteObject, idProduct: number) {
     //return this.getUnitByIdProductAndCoPrimaryUnit(idProduct);
-    return this.getUnitByIdProductAndCoPrimaryUnit(dbServ,idProduct).then(() => {
-      this.getUnitByIdProductAndNotCoPrimaryUnit(dbServ,idProduct).then();
+    return this.getUnitByIdProductAndCoPrimaryUnit(dbServ, idProduct).then(() => {
+      this.getUnitByIdProductAndNotCoPrimaryUnit(dbServ, idProduct).then();
     });
   }
 
-  getUnitByIdProductAndCoPrimaryUnit(dbServ:SQLiteObject,idProduct: number) {
+  getUnitByIdProductAndCoPrimaryUnit(dbServ: SQLiteObject, idProduct: number) {
     var database = dbServ;
     this.unitsByProduct = [];
     var select = "select u.id_unit, u.co_unit, u.na_unit, u.id_enterprise, u.co_enterprise, pu.id_product_unit, pu.co_product_unit, pu.qu_unit  from units u join product_units pu on u.id_unit = pu.id_unit join products p on pu.id_product = p.id_product where pu.id_product = ? and u.co_unit = p.co_primary_unit"
@@ -787,7 +788,7 @@ export class ProductService {
     })
   }
 
-  getUnitByIdProductAndNotCoPrimaryUnit(dbServ:SQLiteObject,idProduct: number) {
+  getUnitByIdProductAndNotCoPrimaryUnit(dbServ: SQLiteObject, idProduct: number) {
     var database = dbServ;
     var select = "select u.id_unit, u.co_unit, u.na_unit, u.id_enterprise, u.co_enterprise, pu.id_product_unit, pu.co_product_unit, pu.qu_unit from units u join product_units pu on u.id_unit = pu.id_unit join products p on pu.id_product = p.id_product where pu.id_product = ? and u.co_unit != p.co_primary_unit"
     return database.executeSql(select, [idProduct]).then(result => {
@@ -810,7 +811,7 @@ export class ProductService {
     })
   }
 
-  getUnitByIdProductAndCoUnit(dbServ:SQLiteObject,idProduct: number, coUnit: string) {
+  getUnitByIdProductAndCoUnit(dbServ: SQLiteObject, idProduct: number, coUnit: string) {
 
     //TENGO QUE BUSCAR LA UNIDAD SELECCIONADA
     var database = dbServ;
@@ -836,7 +837,7 @@ export class ProductService {
     })
   }
 
-  getProductsByIdInvoice(dbServ:SQLiteObject,idInvoice: number) {
+  getProductsByIdInvoice(dbServ: SQLiteObject, idInvoice: number) {
     var database = dbServ;
     this.productList = [];
 
@@ -884,7 +885,7 @@ export class ProductService {
     return lista;
   }
 
-  formatNumber(input: number){
+  formatNumber(input: number) {
     return this.currencyService.formatNumber(input);
   }
 }

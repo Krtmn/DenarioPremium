@@ -77,6 +77,8 @@ export class ProductListComponent implements OnInit {
 
   ngOnInit() {
 
+    this.productService.showStock = this.productService.globalConfig.get("showStock") == "true" ? true : false;
+
     this.subs.add(
       this.imageServices.imageLoaded$.subscribe(({ imgName, imgSrc }) => {
         this.imagesMap[imgName] = imgSrc;

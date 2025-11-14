@@ -17,9 +17,11 @@
             <p class="espacioentrelineas">{{this.productTags.get('PROD_COD_PROD')}}: {{ product.coProduct }}</p>
             <p class="espacioentrelineas">{{this.productTags.get('PROD_PRICE_PROD')}}: {{ formatNumber(product.price) }}
               {{ product.coCurrency }}</p>
-            <p *ngIf="showConversionInfo && product.priceOpposite" class="espacioentrelineas">{{this.productTags.get('PROD_PRICE_PROD')}}:
+            <p *ngIf="showConversionInfo && product.priceOpposite" class="espacioentrelineas">
+              {{this.productTags.get('PROD_PRICE_PROD')}}:
               {{ formatNumber(product.priceOpposite) }} {{product.coCurrencyOpposite }} </p>
-            <p class="espacioentrelineas"> {{this.productTags.get('PROD_STOCK_PROD')}}: {{ product.stock > 0 ?
+            <p class="espacioentrelineas" *ngIf="this.productService.showStock">
+              {{this.productTags.get('PROD_STOCK_PROD')}}: {{ product.stock > 0 ?
               product.stock :
               0 }} {{this.productTags.get('PROD_POINTS_PROD')}}: {{ product.points }}</p>
           </ion-label>
