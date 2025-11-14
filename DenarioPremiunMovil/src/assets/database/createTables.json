@@ -313,7 +313,7 @@
         "name": "currency_modules",
         "table": "currencyModules",
         "idName": "id_currency_module",
-        "sql": "CREATE TABLE IF NOT EXISTS currency_modules ( id_currency_module INTEGER PRIMARY KEY, id_module INTEGER, local_currency_default BOOLEAN DEFAULT 1, show_conversion BOOLEAN DEFAULT 1);"
+        "sql": "CREATE TABLE IF NOT EXISTS currency_modules ( id_currency_module INTEGER PRIMARY KEY, id_module INTEGER, local_currency_default BOOLEAN DEFAULT 1, show_conversion BOOLEAN DEFAULT 1, currency_selector BOOLEAN DEFAULT 1);"
     },
     {
         "id": 9999999,
