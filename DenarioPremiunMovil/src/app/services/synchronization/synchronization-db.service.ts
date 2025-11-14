@@ -1448,12 +1448,12 @@ export class SynchronizationDBService {
   insertCurrencyModulesBatch(arr: CurrencyModules[]) {
     var statements = [];
     let insertStatement = "INSERT OR REPLACE INTO currency_modules(" +
-      "id_currency_module, id_module ,local_currency_default, show_conversion" +
+      "id_currency_module, id_module ,local_currency_default, show_conversion, currency_selector" +
       ") " +
-      "VALUES(?,?,?,?)"
+      "VALUES(?,?,?,?,?)"
 
     for (var i = 0; i < arr.length; i++) {
-      statements.push([insertStatement, [arr[i].idCurrencyModules, arr[i].idModule, arr[i].localCurrencyDefault, arr[i].showConversion]])
+      statements.push([insertStatement, [arr[i].idCurrencyModules, arr[i].idModule, arr[i].localCurrencyDefault, arr[i].showConversion, arr[i].currencySelector]])
     }
 
     return this.database.sqlBatch(statements).then(res => {

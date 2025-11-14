@@ -6,6 +6,7 @@ export class CurrencyModules {
             obj['idModule'],
             obj['localCurrencyDefault'],
             obj['showConversion'],
+            obj['currencySelector'],
         );
     }
 
@@ -14,6 +15,7 @@ export class CurrencyModules {
         public idModule: number,
         public localCurrencyDefault: boolean,
         public showConversion: boolean,
+        public currencySelector: boolean,
 
     ) { }
 }
