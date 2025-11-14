@@ -274,7 +274,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   onProductQuantityChange(prod: OrderUtil) {
     let unit = prod.unitList.filter(u => prod.idUnit == u.idUnit)[0];
-    if ((!this.orderServ.userCanSelectProductDiscount) && (prod.discountList.length > 1)) {
+    if ( (prod.discountList.length > 1)) {
       this.autoDiscount(prod);
     }
     if (prod.quStock == 0) {
@@ -313,7 +313,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   onProductQuantityInput(prod: OrderUtil) {
     //igual que onProductQuantityChange, pero no mando al carrito
     let unit = prod.unitList.filter(u => prod.idUnit == u.idUnit)[0];
-    if ((!this.orderServ.userCanSelectProductDiscount) && (prod.discountList.length > 1)) {
+    if (  (prod.discountList.length > 1)) {
       this.autoDiscount(prod);
     }
     if (this.orderServ.stock0 && prod.quStock == 0) {
@@ -361,6 +361,9 @@ export class ProductosTabOrderProductListComponent implements OnInit {
         return;
       }
     }
+    //si llegamos aqui es que no encontro descuento
+    prod.idDiscount = 0;
+    prod.quDiscount = 0;
   }
   onShowProductStructures() {
     this.orderUtilList = [] as OrderUtil[];
@@ -434,8 +437,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
         product.quDiscount = dc.quDiscount;
       } else {
       setTimeout(() => {
-        product.idDiscount = 0;
-        product.quDiscount = 0;
+        this.autoDiscount(product);        
         this.cd.detectChanges();
       }, 0);
         this.message.transaccionMsjModalNB("Este Descuento no aplica para la cantidad seleccionada.");
