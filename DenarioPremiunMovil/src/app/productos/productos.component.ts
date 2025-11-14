@@ -14,6 +14,7 @@ import { Product } from '../modelos/tables/product';
 import { ProductDetail } from '../modelos/ProductDetail';
 import { ProductService } from '../services/products/product.service';
 import { ImageServicesService } from '../services/imageServices/image-services.service';
+import { CurrencyService } from 'src/app/services/currency/currency.service';
 
 @Component({
     selector: 'app-productos',
@@ -31,6 +32,7 @@ export class ProductosComponent {
   productStructureService = inject(ProductStructureService);
   productService = inject(ProductService);
   imageServices = inject(ImageServicesService);
+  currencyService = inject(CurrencyService);
 
   showProducts: Boolean = false;
   showProductDetail: Boolean = false;
@@ -60,6 +62,7 @@ export class ProductosComponent {
         this.productService.empresaSeleccionada = this.productService.listaEmpresa[0];
         this.productService.multiempresa = this.enterpriseService.esMultiempresa();
       });
+      this.currencyService.setup(this.db.getDatabase());
       this.getTags().then(() => {  //buscamos los tags
         this.imageServices.downloadWithConcurrency(this.imageServices.downloadFileList);
       });
