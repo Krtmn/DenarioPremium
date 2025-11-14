@@ -90,6 +90,7 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
     } else {
       //Buscar en estructuras de producto?
       this.disabledSearchButton = false;
+      this.productService.onProductTabSearchClicked();
     }
 
   }
