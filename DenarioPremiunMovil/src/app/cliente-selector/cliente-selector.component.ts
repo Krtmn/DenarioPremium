@@ -9,6 +9,7 @@ import { CurrencyEnterprise } from '../modelos/tables/currencyEnterprise';
 import { ClienteSelectorService } from './cliente-selector.service';
 import { InventariosLogicService } from '../services/inventarios/inventarios-logic.service';
 import { CollectionService } from '../services/collection/collection-logic.service';
+import { MessageService } from '../services/messageService/message.service';
 
 
 @Component({
@@ -28,6 +29,7 @@ export class ClienteSelectorComponent implements OnInit {
   private service = inject(ClienteSelectorService);
   private invenLogic = inject(InventariosLogicService);
   private collectLogic = inject(CollectionService);
+  private messageService = inject(MessageService);
 
 
   public tags = new Map<string, string>([]);
@@ -103,7 +105,7 @@ export class ClienteSelectorComponent implements OnInit {
   setup(idEnterprise: number, nombreModulo: string, colorModulo: string, cliente: null | Client, checkClient: boolean, coModule: string) {
     //hace la configuracion inicial y habilita el chequeo de cambio de cliente
     this.setSkin(nombreModulo, colorModulo);
-    this.updateClientList(idEnterprise);
+    
     this.service.checkClient = checkClient;
     this.service.clienteAnterior = cliente;
     var currencyModule = this.currencyService.getCurrencyModule(coModule);
@@ -114,7 +116,7 @@ export class ClienteSelectorComponent implements OnInit {
         this.currencySwitchEnabled = true;
       }
     }
-
+    this.updateClientList(idEnterprise);
 
 
   }
@@ -127,7 +129,7 @@ export class ClienteSelectorComponent implements OnInit {
   }
 
   updateClientList(idEnterprise: number) {
-
+    this.messageService.showLoading().then(() => {
     this.clientServ.getClients(idEnterprise).then(result => {
       this.clientes = [] as Client[];
       this.service.clientes = [] as Client[];
@@ -188,7 +190,9 @@ export class ClienteSelectorComponent implements OnInit {
       }
       //para usarlo luego
       this.service.clientes = this.clientes;
+      this.messageService.hideLoading();
     })
+  });
   }
 
   @Output() clienteSeleccionado: EventEmitter<Client> = new EventEmitter<Client>();
