@@ -40,7 +40,10 @@ export class DevolucionProductListComponent implements OnInit, OnDestroy {
   selectedDate: string = '';
 
   messageAlert!: MessageAlert;
-
+  // estado cacheado para evitar emitir eventos redundantes
+  private _lastValidState: boolean | null = null;
+  // throttle para setChange
+  private _lastSetChangeAt = 0;
 
   /*   newProductToReturn = new FormGroup({
       coDocument: new FormControl('', [Validators.required]),
@@ -160,21 +163,36 @@ export class DevolucionProductListComponent implements OnInit, OnDestroy {
     return this.tags.get('DENARIO_DEV_DATE');
   }
 
-  updateSendButtonState() {
-    let valid = true;
-    if (this.productList.length > 0) {
-      for (let index = 0; index < this.productList.length; index++) {
-        const element = this.productList[index];
-        if (!element.coDocument || !element.quProduct) {
-          valid = false;
-          break;
-        }
+  updateSendButtonState(): void {
+    const requerid = this.returnLogic.requeridedNroFactura === true;
+    const list = Array.isArray(this.productList) ? this.productList : [];
+
+    // validación: si requeridedNroFactura==true => coDocument + quProduct obligatorios
+    // si requeridedNroFactura==false => solo quProduct obligatorio
+    const valid = list.length > 0 && list.every(item => {
+      const qty = Number(item?.quProduct);
+      const qtyValid = !isNaN(qty) && qty > 0;
+
+      if (requerid) {
+        const co = (item?.coDocument ?? '').toString().trim();
+        return co.length > 0 && qtyValid;
+      } else {
+        return qtyValid;
       }
-    } else {
-      valid = false;
+    });
+
+    // Emitir solo si cambió el estado (evita trabajo innecesario en listeners)
+    if (this._lastValidState !== valid) {
+      this.returnLogic.onReturnValidToSend(valid);
+      this._lastValidState = valid;
     }
-    this.returnLogic.onReturnValidToSend(valid);
-    this.returnLogic.setChange(true, true);
+
+    // Llamada a setChange throttled para evitar ráfagas si se dispara muy seguido
+    const now = Date.now();
+    if (now - this._lastSetChangeAt > 200) { // umbral 200ms (ajustable)
+      this.returnLogic.setChange(true, true);
+      this._lastSetChangeAt = now;
+    }
   }
 
   cleanString(str: string): string {
