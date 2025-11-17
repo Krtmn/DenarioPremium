@@ -400,8 +400,8 @@
 
 <!-- RETENCION -->
 <div *ngIf="this.collectService.coTypeModule == '2'">
-    <ion-button *ngIf="this.collectService.collection.stCollection !== 3" (click)="addRetencion()" size="small"
-        fill="outline" expand="block">
+    <ion-button *ngIf="this.collectService.collection.stCollection !== 3 && this.collectService.userCanAddRetention"
+        (click)="addRetencion()" size="small" fill="outline" expand="block">
         {{this.collectService.collectionTags.get('COB_ADD_RETENTION')}}
     </ion-button>
 

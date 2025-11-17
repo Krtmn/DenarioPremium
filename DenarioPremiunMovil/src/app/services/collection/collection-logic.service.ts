@@ -168,6 +168,7 @@ export class CollectionService {
   public calculateDifference: boolean = false;
   public showConversion: boolean = true;
   public currencySelector: boolean = true;
+  public userCanAddRetention: boolean = false;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;
@@ -292,6 +293,8 @@ export class CollectionService {
       this.currencySelector = this.currencyService.getCurrencyModule("cob").currencySelector.toString() === "true" ? true : false;
       this.disabledCurrency = this.currencyService.getCurrencyModule("cob").currencySelector.toString() === "true" ? false : true;
     }
+
+    this.userCanAddRetention = this.globalConfig.get('userCanAddRetention') === 'true' ? true : false;
 
     this.showNuevaCuenta = this.clientBankAccount === true ? true : false;
 
