@@ -248,7 +248,7 @@ export class PedidoComponent implements OnInit {
 
           }
         } else {
-          this.currencySelection();
+          //this.currencySelection();
           //this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
           this.nuValueLocal = Number.parseFloat(this.currencyServ.getLocalValue());
           this.tasaCambio = this.currencyServ.getLocalValue();
