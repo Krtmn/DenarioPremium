@@ -198,9 +198,10 @@ export class ClientLogicService {
         // Recorre todos los clientes y loggea si la moneda es distinta a la moneda local
         if (this.localCurrencyDefault) {
           if (result.coCurrency !== this.localCurrency.coCurrency) {
+
+            result.saldo1 = this.currencyService.toOppositeCurrency(result.coCurrency, result.saldo1);
+            result.nuCreditLimit = this.currencyService.toOppositeCurrency(result.coCurrency, result.nuCreditLimit);
             result.coCurrency = this.localCurrency.coCurrency;
-            result.saldo1 = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, result.saldo1);
-            result.nuCreditLimit = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, result.nuCreditLimit);
           }
 
         } else {
@@ -219,14 +220,15 @@ export class ClientLogicService {
           if (this.localCurrencyDefault) {
             for (const c of result) {
               if (c.coCurrency !== this.localCurrency.coCurrency) {
+
+                c.nuAmountPaid = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuAmountPaid);
+                c.nuAmountTotal = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuAmountTotal);
+                c.nuBalance = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuBalance);
+                c.nuAmountDiscount = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuAmountDiscount);
+                c.nuAmountRetention = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuAmountRetention);
+                c.nuAmountRetention2 = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuAmountRetention2);
+                c.nuAmountTax = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuAmountTax);
                 c.coCurrency = this.localCurrency.coCurrency;
-                c.nuAmountPaid = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, c.nuAmountPaid);
-                c.nuAmountTotal = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, c.nuAmountTotal);
-                c.nuBalance = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, c.nuBalance);
-                c.nuAmountDiscount = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, c.nuAmountDiscount);
-                c.nuAmountRetention = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, c.nuAmountRetention);
-                c.nuAmountRetention2 = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, c.nuAmountRetention2);
-                c.nuAmountTax = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, c.nuAmountTax);
               }
             }
           } else {

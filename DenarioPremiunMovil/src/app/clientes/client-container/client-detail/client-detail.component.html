@@ -52,7 +52,7 @@
                     <ion-col
                         [ngStyle]="{color: client.saldo1 > 0 ? 'Red' : 'Blue' }">{{formatNumber(client.saldo1)}}</ion-col>
                 </ion-row>
-                <ion-row *ngIf="this.clientLogic.multiCurrency && this.clientLogic.showConversion">
+                <ion-row *ngIf="this.clientLogic.showConversion">
                     <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
                         {{oppositeCoCurrency(client.coCurrency)}}:</ion-col>
                     <ion-col
@@ -63,7 +63,7 @@
                         {{client.coCurrency}}:</ion-col>
                     <ion-col>{{client.nuCreditLimit}} </ion-col>
                 </ion-row>
-                <ion-row *ngIf="this.clientLogic.multiCurrency && this.clientLogic.showConversion">
+                <ion-row *ngIf="this.clientLogic.showConversion">
                     <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO")}}
                         {{oppositeCoCurrency(client.coCurrency)}}:</ion-col>
                     <ion-col>{{this.nuCreditLimitConversion}}</ion-col>
@@ -78,8 +78,10 @@
                         class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_DIRECCION")}}:</ion-col>
                     <ion-col>
                         <ion-select placeholder="{{clientLogic.clientTags.get('CLI_DETAIL_SELECCIONE_DIRECCION')}}"
-                            [(ngModel)]="selectedAddress" (ionChange)="onChangeAddress($event)" [compareWith]="addressCompare">
-                            <ion-select-option *ngFor="let direccion of clientLogic.listaDirecciones" [value]="direccion">
+                            [(ngModel)]="selectedAddress" (ionChange)="onChangeAddress($event)"
+                            [compareWith]="addressCompare">
+                            <ion-select-option *ngFor="let direccion of clientLogic.listaDirecciones"
+                                [value]="direccion">
                                 {{direccion.txAddress}}
                             </ion-select-option>
                         </ion-select>
@@ -128,30 +130,39 @@
             <ion-grid class="tablaInfoClientes tablaDocVentasGrip" *ngIf="document.length > 0">
                 <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
                     <ion-col size="2" class="titulosBold col borderSuperiorIzquierdo"></ion-col>
-                    <ion-col size="2"
-                        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_TIPO")}}</ion-col>
-                    <ion-col size="4"
-                        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_NUMERO_DOCUMENTO")}}</ion-col>
-                    <ion-col size="4"
-                        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_MONEDA_DOC")}}</ion-col>
-                    <ion-col size="4"
-                        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_DIAS_VENCIMIENTO")}}</ion-col>
-                    <ion-col size="4" *ngIf="this.clientLogic.multiCurrency && this.clientLogic.showConversion"
-                        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_TASA")}}</ion-col>
-                    <ion-col size="4" class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_MONTO")}} {{
-                        localCurrency }}</ion-col>
-                    <ion-col size="4" *ngIf="this.clientLogic.multiCurrency && this.clientLogic.showConversion"
-                        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_MONTO")}} {{ hardCurrency
-                        }}</ion-col>
-                    <ion-col size="4" class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}} {{
-                        localCurrency }}</ion-col>
-                    <ion-col size="4" *ngIf="this.clientLogic.multiCurrency && this.clientLogic.showConversion"
-                        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
-                        {{ hardCurrency }}</ion-col>
-                    <ion-col size="4"
-                        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_FECHA_DOCUMENTO")}}</ion-col>
-                    <ion-col size="4"
-                        class="titulosBold col borderSuperiorDerecho">{{clientLogic.clientTags.get("CLI_DETAIL_FECHA_VENCIMIENTO")}}</ion-col>
+                    <ion-col size="2" class="titulosBold col">
+                        {{clientLogic.clientTags.get("CLI_DETAIL_TIPO")}}</ion-col>
+                    <ion-col size="4" class="titulosBold col">
+                        {{clientLogic.clientTags.get("CLI_DETAIL_NUMERO_DOCUMENTO")}}
+                    </ion-col>
+                    <ion-col size="4" class="titulosBold col">
+                        {{clientLogic.clientTags.get("CLI_DETAIL_MONEDA_DOC")}}
+                    </ion-col>
+                    <ion-col size="4" class="titulosBold col">
+                        {{clientLogic.clientTags.get("CLI_DETAIL_DIAS_VENCIMIENTO")}}
+                    </ion-col>
+                    <ion-col size="4" *ngIf="this.clientLogic.showConversion"
+                        class="titulosBold col">
+                        {{clientLogic.clientTags.get("CLI_DETAIL_TASA")}}
+                    </ion-col>
+                    <ion-col size="4" class="titulosBold col">
+                        {{clientLogic.clientTags.get("CLI_DETAIL_MONTO")}}
+                    </ion-col>
+                    <ion-col size="4" *ngIf="this.clientLogic.showConversion"
+                        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_MONTO_CONVERSION")}}</ion-col>
+                    <ion-col size="4" class="titulosBold col">
+                        {{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
+                    </ion-col>
+                    <ion-col size="4" *ngIf="this.clientLogic.showConversion"
+                        class="titulosBold col">
+                        {{clientLogic.clientTags.get("CLI_DETAIL_SALDO_CONVERSION")}}
+                    </ion-col>
+                    <ion-col size="4" class="titulosBold col">
+                        {{clientLogic.clientTags.get("CLI_DETAIL_FECHA_DOCUMENTO")}}
+                    </ion-col>
+                    <ion-col size="4" class="titulosBold col borderSuperiorDerecho">
+                        {{clientLogic.clientTags.get("CLI_DETAIL_FECHA_VENCIMIENTO")}}
+                    </ion-col>
                 </ion-row>
                 <ion-row *ngFor="let documento of document;index as i" class="tablaDocumentosVenta tablaDocVentas row">
                     <ion-col size="2" class="ion-text-center col borderInferiorIzquierdo">
@@ -166,36 +177,51 @@
                         </a> -->
                     </ion-col>
                     <ion-col size="2" class="ion-text-center col"
-                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.coDocumentSaleType}}</ion-col>
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.coDocumentSaleType}}
+                    </ion-col>
                     <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.coDocument}}</ion-col>
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.coDocument}}
+                    </ion-col>
                     <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.coCurrency}}</ion-col>
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.coCurrency}}
+                    </ion-col>
                     <ion-col size="4" class="ion-text-center col"
                         [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">
-                        {{getDaDueDate(documento.daDueDate)}}</ion-col>
+                        {{getDaDueDate(documento.daDueDate)}}
+                    </ion-col>
                     <ion-col size="4" class="ion-text-center col"
                         [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }"
-                        *ngIf="this.clientLogic.multiCurrency && this.clientLogic.showConversion"> {{
-                        formatNumber(documento.nuValueLocal) }}</ion-col>
+                        *ngIf="this.clientLogic.showConversion">
+                        {{formatNumber(documento.nuValueLocal)}} {{localCurrency}}
+                    </ion-col>
                     <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{toLocalCurrency(documento.nuAmountTotal,
-                        documento)}}</ion-col>
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">
+                        {{formatNumber(documento.nuAmountTotal)}} {{documento.coCurrency}}
+                    </ion-col>
                     <ion-col size="4" class="ion-text-center col"
                         [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }"
-                        *ngIf="this.clientLogic.multiCurrency && this.clientLogic.showConversion">{{toHardCurrency(documento.nuAmountTotal,
-                        documento)}}</ion-col>
+                        *ngIf="this.clientLogic.showConversion">
+                        {{this.convertirMonto(documento.nuAmountTotal, documento.nuValueLocal, documento.coCurrency)}}
+                        {{oppositeCoCurrency(documento.coCurrency)}}
+                    </ion-col>
                     <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{toLocalCurrency(documento.nuBalance,
-                        documento)}}</ion-col>
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">
+                        {{formatNumber(documento.nuBalance)}} {{documento.coCurrency}}
+                    </ion-col>
+                    <ion-col size="4" class="ion-text-center col "
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }"
+                        *ngIf="this.clientLogic.showConversion">
+                        {{this.convertirMonto(documento.nuBalance, documento.nuValueLocal, documento.coCurrency)}}
+                        {{oppositeCoCurrency(documento.coCurrency)}}
+                    </ion-col>
+                    <ion-col size="4" class="ion-text-center col"
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">
+                        {{documento.daDocument}}
+                    </ion-col>
                     <ion-col size="4" class="ion-text-center col borderInferiorDerecho"
-                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }"
-                        *ngIf="this.clientLogic.multiCurrency && this.clientLogic.showConversion">{{toHardCurrency(documento.nuBalance,
-                        documento)}}</ion-col>
-                    <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.daDocument}}</ion-col>
-                    <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">{{documento.daDueDate}}</ion-col>
+                        [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">
+                        {{documento.daDueDate}}
+                    </ion-col>
                 </ion-row>
             </ion-grid>
 

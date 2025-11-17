@@ -184,4 +184,24 @@ export class ClienteComponent implements OnInit {
   addressCompare(o1: AddresClient, o2: AddresClient): boolean {
     return o1 && o2 ? o1.idAddress === o2.idAddress : o1 === o2;
   }
+
+  convertirMonto(monto: number, rate: number, currency: string) {
+
+    if (currency == this.localCurrency) {
+      return this.currencyService.formatNumber(this.cleanFormattedNumber(this.currencyService.formatNumber(monto / rate)));
+    } else {
+      return this.currencyService.formatNumber(this.cleanFormattedNumber(this.currencyService.formatNumber(monto * rate)));
+    }
+  }
+
+  public cleanFormattedNumber(str: string): number {
+    // Elimina espacios
+    str = str.trim();
+    // Elimina separador de miles (puntos)
+    str = str.replace(/\./g, '');
+    // Cambia la coma decimal por punto
+    str = str.replace(/,/g, '.');
+    // Convierte a número
+    return Number(str);
+  }
 }
