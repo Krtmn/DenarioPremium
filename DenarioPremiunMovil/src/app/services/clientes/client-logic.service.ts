@@ -173,8 +173,9 @@ export class ClientLogicService {
         if (this.localCurrencyDefault) {
           for (const c of this.clients) {
             if (c.coCurrency !== this.localCurrency.coCurrency) {
+              c.saldo1 = this.currencyService.toOppositeCurrency(c.coCurrency, c.saldo1);
               c.coCurrency = this.localCurrency.coCurrency;
-              c.saldo1 = this.currencyService.toOppositeCurrency(this.localCurrency.coCurrency, c.saldo1);
+
             }
           }
         } else {
@@ -253,10 +254,10 @@ export class ClientLogicService {
         });
       });
 
-      this.listaDirecciones = [];
-      this.clientesServices.getAddressClientsByIdClient(Number(idClient)).then((result) => {
-        this.listaDirecciones = result;
-      });
+    this.listaDirecciones = [];
+    this.clientesServices.getAddressClientsByIdClient(Number(idClient)).then((result) => {
+      this.listaDirecciones = result;
+    });
   }
 
   viewCoordenada(client: Client) {
