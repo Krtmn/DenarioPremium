@@ -152,6 +152,7 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
   onProductStructureSelected(productStructure: ProductStructure) {
     this.psSeleccionada = productStructure;
     this.productStructureService.nombreProductStructureSeleccionada = productStructure.naProductStructure;
+    this.productStructureService.idProductStructureSeleccionada = productStructure.idProductStructure;
 
     let psu: ProductStructureUtil = new ProductStructureUtil(
       this.empresaSeleccionada,
@@ -170,13 +171,15 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
 
   onFeaturedProductSelected() {
     this.productStructures = false;
-    this.productStructureService.nombreProductStructureSeleccionada = this.featuredButtonLabel.split('(')[0];;
+    this.productStructureService.nombreProductStructureSeleccionada = this.featuredButtonLabel.split('(')[0];
+    this.productStructureService.idProductStructureSeleccionada = 0;
     this.productService.onFeaturedStructureClicked();
   }
 
   onFavoriteProductSelected() {
     this.productStructures = false;
     this.productStructureService.nombreProductStructureSeleccionada = this.favoriteButtonLabel.split('(')[0];
+    this.productStructureService.idProductStructureSeleccionada = 0;
     this.productService.onFavoriteStructureClicked();
   }
 

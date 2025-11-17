@@ -70,14 +70,15 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
 
   onSearchClicked() {
     this.productStructureService.nombreProductStructureSeleccionada = '';
+    
     this.disabledSearchButton = true;
     if (this.productService.searchStructures) {
       //Buscar en estructuras de producto
       if (this.pedido) {
-          this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency, this.orderServ.listaSeleccionada.idList).then(() => {
-            this.productService.onProductTabSearchClicked();
-            this.disabledSearchButton = false;
-          });
+        this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency, this.orderServ.listaSeleccionada.idList).then(() => {
+          this.productService.onProductTabSearchClicked();
+          this.disabledSearchButton = false;
+        });
       } else {
         this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
           this.searchText,
@@ -88,9 +89,17 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
           });
       }
     } else {
-      //Buscar en estructuras de producto?
-      this.disabledSearchButton = false;
-      this.productService.onProductTabSearchClicked();
+      this.productStructureService.idProductStructureSeleccionada = 0;
+      if (this.pedido) {
+        this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency, this.orderServ.listaSeleccionada.idList).then(() => {
+          this.productService.onProductTabSearchClicked();
+          this.disabledSearchButton = false;
+        });
+      } else {
+        //Buscar en estructuras de producto?
+        this.disabledSearchButton = false;
+        this.productService.onProductTabSearchClicked();
+      }
     }
 
   }

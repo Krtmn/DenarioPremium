@@ -23,6 +23,7 @@ export class ProductService {
   imageServices = inject(ImageServicesService);
   currencyService = inject(CurrencyService);
   globalConfig = inject(GlobalConfigService);
+  psService = inject(ProductStructureService);
 
   public productList: ProductUtil[] = [];
   public typeProductStructureList: TypeProductStructure[] = [];
@@ -40,7 +41,6 @@ export class ProductService {
   featuredStructureClicked = new Subject<Boolean>;
   backButtonClicked = new Subject<Boolean>;
   favoriteStructureClicked = new Subject<Boolean>;
-
   carritoButtonClicked = new Subject<Boolean>();
 
   searchTextChanged = new Subject<string>();
@@ -599,7 +599,11 @@ export class ProductService {
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price_opposite, " +
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency_opposite, " +
-        " (select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p where LOWER(p.co_product) like '%" + searchText + "%' or LOWER(p.na_product) like '%" + searchText + "%' and p.id_enterprise = " + idEnterprise + " order by p.co_product"
+        " (select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p where LOWER(p.co_product) like '%" + searchText + "%' or LOWER(p.na_product) like '%" + searchText + "%' and p.id_enterprise = " + idEnterprise 
+        if(this.psService.idProductStructureSeleccionada > 0) {
+          select = select + " and p.id_product_structure = " + this.psService.idProductStructureSeleccionada;
+        } 
+        select = select + " order by p.co_product"
       return database.executeSql(select, []).then(result => {
         for (let i = 0; i < result.rows.length; i++) {
           this.productList.push({
@@ -633,10 +637,13 @@ export class ProductService {
         "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list," +
         "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price," +
         "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + "  order by l.na_list limit 1) as co_currency," +
-        "(select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p where LOWER(p.co_product) like '%" +
+        "(select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p where LOWER(p.co_product) like '%" +
         searchText + "%' or LOWER(p.na_product) like '%" +
-        searchText + "%' and p.id_enterprise = " +
-        idEnterprise + " order by p.co_product"
+        searchText + "%' and p.id_enterprise = "+ idEnterprise + " " ;
+        if(this.psService.idProductStructureSeleccionada > 0) {
+          select = select + " and p.id_product_structure = " + this.psService.idProductStructureSeleccionada;
+        }
+         select = select + " order by p.co_product";
       return database.executeSql(select, []).then(result => {
         for (let i = 0; i < result.rows.length; i++) {
           this.productList.push({

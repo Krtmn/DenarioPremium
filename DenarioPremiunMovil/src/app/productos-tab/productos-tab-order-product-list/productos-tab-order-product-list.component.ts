@@ -102,13 +102,12 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.ivaList = this.orderServ.ivaList;
     this.disablePriceListSelector = (!this.orderServ.userCanChangePriceListProduct);
     this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
-      this.onIonInfinite(null);
-      /*
+      
       this.showProductList = true;
       this.nameProductStructure = '';
       this.productList = this.productService.productList;
       this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
-      */
+      
     });
 
     this.psClicked = this.productService.productStructureCLicked.subscribe((data) => {
