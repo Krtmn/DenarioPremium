@@ -110,8 +110,9 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
         /* this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
           this.returnLogic.tags.get('DEV_NOMBRE_MODULO')!, "fondoAmarillo", this.cliente, this.returnLogic.validateClient); */
         this.returnLogic.onReturnValid(true);
-        this.returnLogic.onReturnValidToSave(true);
-        this.returnLogic.onReturnValidToSend(true);
+        this.returnLogic.updateSendButtonState();
+        //this.returnLogic.onReturnValidToSave(true);
+        //this.returnLogic.onReturnValidToSend(true);
       }
     });
 
