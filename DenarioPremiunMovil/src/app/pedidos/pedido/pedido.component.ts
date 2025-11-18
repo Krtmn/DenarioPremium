@@ -1413,7 +1413,7 @@ export class PedidoComponent implements OnInit {
       this.orderServ.monedaSeleccionada = this.currencyServ.getLocalCurrency();
     }
     this.monedaSeleccionada = this.orderServ.monedaSeleccionada;
-    this.onCurrencySelect();
+    //this.onCurrencySelect();
   }
 
   //para que se vean las opciones arriba del select
