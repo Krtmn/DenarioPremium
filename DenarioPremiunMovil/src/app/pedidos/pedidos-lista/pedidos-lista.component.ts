@@ -107,7 +107,7 @@ export class PedidosListaComponent implements OnInit {
       case DELIVERY_STATUS_SENT: return this.getTag("PED_STATUS_SENT");
       case 6:
         // naStatus puede ser string o un objeto => normalizar a string
-        if (naStatus == null) return '';
+        if (naStatus == null) return 'No Status';
         if (typeof naStatus === 'string') {
           return naStatus;
         }
