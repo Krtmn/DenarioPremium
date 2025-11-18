@@ -9,6 +9,7 @@ import { GeolocationService } from 'src/app/services/geolocation/geolocation.ser
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 
 @Component({
   selector: 'app-cobros-list',
@@ -310,5 +311,15 @@ export class CobrosListComponent implements OnInit {
       case '3': return this.collectService.collectionTags.get("COB_TYPE_IGTF")!;
       default: return 'Cobro';
     }
+  }
+
+  showCollectComment(event: Event, comment: string | null | undefined): void {
+    // Evitar que el click del icono burbujee y active onCollectSelect
+    event.stopPropagation();
+
+    if (!comment) return;
+    const header = this.collectService.collectionTags.get('COB_DEV_COMMENT') ?? 'Motivo';
+    const messageAlert = new MessageAlert(header, comment);
+    this.messageService.alertModal(messageAlert);
   }
 }

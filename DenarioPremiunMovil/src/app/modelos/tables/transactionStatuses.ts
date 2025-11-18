@@ -10,6 +10,7 @@ export class TransactionStatuses {
             obj['idTransaction'],
             obj['idStatus'],
             obj['coStatus'],
+            obj['txComment']
 
         );
     }
@@ -23,6 +24,7 @@ export class TransactionStatuses {
         public coTransaction: string,
         public idTransaction: number,
         public idStatus: number,
-        public coStatus: string
+        public coStatus: string,
+        public txComment: string
     ) { }
 }

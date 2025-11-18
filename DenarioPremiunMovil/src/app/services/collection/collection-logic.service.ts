@@ -3386,7 +3386,7 @@ export class CollectionService {
         let item = res.rows.item(i);
 
         // Agrega la promesa al array antes del then
-        const p = this.historyTransaction.getStatusTransaction(dbServ, 3, item.id_collection).then(status => {
+        const p = this.historyTransaction.getStatusTransaction(dbServ, 3, item.id_collection).then(data => {
           let itemListaCobro = {} as ItemListaCobros;
           itemListaCobro.id_collection = item.id_collection;
           itemListaCobro.co_collection = item.co_collection;
@@ -3394,8 +3394,9 @@ export class CollectionService {
           itemListaCobro.lb_client = item.lb_client;
           itemListaCobro.st_collection = item.st_collection;
           itemListaCobro.da_collection = item.da_collection;
-          itemListaCobro.na_status = status;
+          itemListaCobro.na_status = data.na_status;
           itemListaCobro.co_type = item.co_type;
+          itemListaCobro.tx_comment = data.tx_comment;
 
           this.itemListaCobros.push(itemListaCobro);
         }).catch(err => {

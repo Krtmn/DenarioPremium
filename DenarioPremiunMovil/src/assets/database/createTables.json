@@ -292,7 +292,7 @@
         "name": "transaction_statuses",
         "table": "transactionStatuses",
         "idName": "id_transaction_status",
-        "sql": "CREATE TABLE IF NOT EXISTS transaction_statuses ( id_transaction_status INTEGER, da_transaction_statuses TIMESTAMP, id_transaction_type INTEGER, co_transaction_type VARCHAR(10), co_transaction character VARCHAR(50), id_transaction INTEGER, id_status INTEGER, co_status character VARCHAR(10));"
+        "sql": "CREATE TABLE IF NOT EXISTS transaction_statuses ( id_transaction_status INTEGER, da_transaction_statuses TIMESTAMP, id_transaction_type INTEGER, co_transaction_type VARCHAR(10), co_transaction character VARCHAR(50), id_transaction INTEGER, id_status INTEGER, co_status character VARCHAR(10), tx_comment VARCHAR(255));"
     },
     {
         "id": 72,

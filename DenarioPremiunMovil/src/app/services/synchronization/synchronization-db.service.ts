@@ -1294,14 +1294,14 @@ export class SynchronizationDBService {
     let insertStatement = "INSERT OR REPLACE INTO transaction_statuses(" +
       "id_transaction_status, da_transaction_statuses,id_transaction_type," +
       "co_transaction_type,co_transaction,id_transaction," +
-      "id_status,co_status" +
+      "id_status,co_status, tx_comment" +
       ") " +
-      "VALUES(?,?,?,?,?,?,?,?)"
+      "VALUES(?,?,?,?,?,?,?,?,?)"
 
     for (var i = 0; i < arr.length; i++) {
       statements.push([insertStatement, [arr[i].idTransactionStatus, arr[i].daTransactionStatuses,
       arr[i].idTransactionType, arr[i].coTransactionType, arr[i].coTransaction, arr[i].idTransaction,
-      arr[i].idStatus, arr[i].coStatus]])
+      arr[i].idStatus, arr[i].coStatus, arr[i].txComment]])
     }
 
     return this.database.sqlBatch(statements).then(res => {
