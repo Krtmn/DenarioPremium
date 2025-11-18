@@ -200,8 +200,10 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
   onEnterpriseSelect() {
     this.selectorCliente.updateClientList(this.empresaSeleccionada.idEnterprise);
     this.cliente = {} as Client;
+    this.returnLogic.productList = [];
     this.nombreCliente = "";
     this.returnValid = false;
+    this.returnLogic.updateSendButtonState();
   }
 
   cleanString(str: string): string {
