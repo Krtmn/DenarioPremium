@@ -292,12 +292,23 @@ export class CobrosListComponent implements OnInit {
     }
   }
 
-  getStatusOrderName(status: number, naStatus: string) {
+  getStatusOrderName(status: number, naStatus: any) {
     switch (status) {
       case DELIVERY_STATUS_SAVED: return this.collectService.collectionTags.get("COB_STATUS_SAVED")!;
       case DELIVERY_STATUS_TO_SEND: return this.collectService.collectionTags.get("COB_STATUS_TO_SEND")!;
       case DELIVERY_STATUS_SENT: return this.collectService.collectionTags.get("COB_STATUS_SENT")!;
-      case 6: return naStatus!;
+      case 6:
+        // naStatus puede ser string o un objeto => normalizar a string
+        if (naStatus == null) return '';
+        if (typeof naStatus === 'string') {
+          return naStatus;
+        }
+        if (typeof naStatus === 'object') {
+          // intenta varias propiedades comunes
+          return naStatus.na_status;
+        }
+        return String(naStatus);
+
       default: return '';
     }
   }

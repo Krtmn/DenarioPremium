@@ -110,12 +110,23 @@ export class DevolucionListComponent implements OnInit {
     this.searchText = event.target.value.toLowerCase();
   }
 
-  getStatusOrderName(status: number, naStatus: string) {
+  getStatusOrderName(status: number, naStatus: any) {
     switch (status) {
       case DELIVERY_STATUS_SAVED: return this.tags.get('DENARIO_DEV_SAVED')! == undefined ? "Guardado" : this.tags.get('DENARIO_DEV_SAVED')!;
       case DELIVERY_STATUS_TO_SEND: return this.tags.get('DENARIO_DEV_TO_BE_SENDED')! == undefined ? "Por enviar" : this.tags.get('DENARIO_DEV_TO_BE_SENDED')!;
       case DELIVERY_STATUS_SENT: return this.tags.get('DENARIO_DEV_SENDED')! == undefined ? "Enviado" : this.tags.get('DENARIO_DEV_SENDED')!;
-      case 6: return naStatus!;
+      case 6:
+        // naStatus puede ser string o un objeto => normalizar a string
+        if (naStatus == null) return '';
+        if (typeof naStatus === 'string') {
+          return naStatus;
+        }
+        if (typeof naStatus === 'object') {
+          // intenta varias propiedades comunes
+          return naStatus.na_status;
+        }
+        return String(naStatus);
+
       default: return '';
     }
   }
