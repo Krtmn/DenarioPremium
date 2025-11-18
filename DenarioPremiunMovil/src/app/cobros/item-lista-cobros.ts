@@ -8,4 +8,5 @@ export interface ItemListaCobros {
     da_collection: string;
     co_type: string;
     na_status: string;
+    tx_comment: string;
 }

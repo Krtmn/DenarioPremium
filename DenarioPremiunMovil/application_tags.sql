@@ -360,7 +360,8 @@ INSERT INTO public.application_tags(
 	('COB_FECHA_ANTICIPO', 'COB', 'COBROS', 'ESP', 'Fecha Anticipo'),
 	('COB_FECHA_RETENCION', 'COB', 'COBROS', 'ESP', 'Fecha Retención'),
 	('COB_MSJ_RETENTION_NO_ATTACHMENTS', 'COB', 'COBROS', 'ESP', 'Al menos a un documento se le agregaron retenciones, debe agregar al menos un adjunto para poder enviar el Cobro.'),
-	('COB_RET_MSJ_RETENTION_NO_ATTACHMENTS', 'COB', 'COBROS', 'ESP', 'Para poder enviar la Retención, debe agregar al menos un adjunto.');		
+	('COB_RET_MSJ_RETENTION_NO_ATTACHMENTS', 'COB', 'COBROS', 'ESP', 'Para poder enviar la Retención, debe agregar al menos un adjunto.'),		
+	('COB_DEV_COMMENT', 'COB', 'COBROS', 'ESP', 'Motivo');		
 -- VENDEDORES
 DELETE FROM public.application_tags where co_module = 'VND';
 
@@ -753,4 +754,5 @@ INSERT INTO public.application_tags(
 	('DENARIO_MSG_GPS', 'DEN', 'DENARIO', 'ESP', 'Para poder grabar la ubicación, te recomendamos activar el servicio de localización en tu dispositivo'),
 	('DENARIO_ERR_GPS', 'DEN', 'DENARIO', 'ESP', 'Falló la ubicación. Revise GPS.'),
 	('DENARIO_SELEC_FECHA', 'DEN', 'DENARIO', 'ESP', 'Seleccione una fecha'),
+	('DENARIO_ERROR_SYNCRO', 'DEN', 'DENARIO', 'ESP', 'No hay conexión a internet, no se puede sincronizar'),
 	('DENARIO_ERROR_SYNCRO', 'DEN', 'DENARIO', 'ESP', 'No hay conexión a internet, no se puede sincronizar');

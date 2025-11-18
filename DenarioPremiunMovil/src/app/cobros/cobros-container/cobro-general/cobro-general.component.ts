@@ -1055,7 +1055,7 @@ export class CobrosGeneralComponent implements OnInit {
 
 
   printAllTransactionStatuses() {
-    this.collectService.printAllTransactionStatuses(this.synchronizationServices.getDatabase())
+    this.collectService.printAllTransactionStatuses(this.synchronizationServices.getDatabase());
   }
 
   getBancoReceptor(nuClientBankAccount: string): BancoReceptor {
