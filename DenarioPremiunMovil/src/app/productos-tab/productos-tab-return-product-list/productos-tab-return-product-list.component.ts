@@ -62,7 +62,7 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
         this.cd.markForCheck();
       })
     );
-
+    this.empresaSeleccionada = this.returnLogic.enterpriseReturn;
 
     console.log('Estoy en Devolucion');
     this.psClicked = this.productService.productStructureCLicked.subscribe((data) => {
