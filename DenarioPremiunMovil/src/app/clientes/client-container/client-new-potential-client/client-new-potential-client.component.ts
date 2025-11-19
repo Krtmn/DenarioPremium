@@ -85,6 +85,7 @@ export class NewPotentialClientComponent implements OnInit {
   public alertButtons = ['OK'];
   public messageAlert!: MessageAlert;
   public segment: string = 'default';
+  public disabledSelectEnterprise: boolean = false;
 
   public newPotentialClient = new FormGroup({
     coPotentialClient: new FormControl(''),
@@ -152,6 +153,7 @@ export class NewPotentialClientComponent implements OnInit {
         this.clientLogic.disabledEnterprise = true;
         this.clientLogic.empresaSeleccionada = this.clientLogic.listaEmpresa.find(ent => ent.idEnterprise == this.clientLogic.potentialClient.idEnterprise)!;
         this.clientLogic.potentialClient.idEnterprise = this.clientLogic.empresaSeleccionada.idEnterprise;
+        this.disabledSelectEnterprise = true;
       }
       this.clientLogic.newPotentialClientChanged = false;
     })

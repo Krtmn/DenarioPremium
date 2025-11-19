@@ -23,7 +23,7 @@
                                         class="titulosnegrita">{{this.clientLogic.clientTags.get('CLI_NEW_POT_EMPRESA')}}</ion-label>
                                 </ion-col> -->
                                 <ion-list>
-                                    <ion-col size="12">
+                                    <ion-col size="12" *ngIf="!disabledSelectEnterprise">
                                         <div class="listado-enterprise-selector ion-text-center">
                                             <ion-select class="ion-text-center always-flip"
                                                 [disabled]="this.clientLogic.disabledEnterprise == true ? true : false"
@@ -38,6 +38,14 @@
                                         </div>
                                     </ion-col>
                                 </ion-list>
+                            </ion-col>
+                        </ion-row>
+                        <ion-row *ngIf="disabledSelectEnterprise">
+                            <ion-col>
+                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_EMPRESA')}}:"
+                                    label-placement="floating" fill="outline"
+                                    [value]="clientLogic.empresaSeleccionada.lbEnterprise"
+                                    [readonly]="isDisabled"></ion-input>
                             </ion-col>
                         </ion-row>
                         <ion-row>
