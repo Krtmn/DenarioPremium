@@ -23,10 +23,10 @@ import { GeolocationService } from 'src/app/services/geolocation/geolocation.ser
 
 
 @Component({
-    selector: 'app-client-new-potential-client',
-    templateUrl: './client-new-potential-client.component.html',
-    styleUrls: ['./client-new-potential-client.component.scss'],
-    standalone: false
+  selector: 'app-client-new-potential-client',
+  templateUrl: './client-new-potential-client.component.html',
+  styleUrls: ['./client-new-potential-client.component.scss'],
+  standalone: false
 })
 
 export class NewPotentialClientComponent implements OnInit {
@@ -88,8 +88,7 @@ export class NewPotentialClientComponent implements OnInit {
 
   public newPotentialClient = new FormGroup({
     coPotentialClient: new FormControl(''),
-    idEnterprise: new FormControl('', [Validators.required]),
-    naClient: new FormControl('', [Validators.required]),
+    idEnterprise: new FormControl<number | null>(null, [Validators.required]), naClient: new FormControl('', [Validators.required]),
     nuRif: new FormControl('', [Validators.required]),
     txAddress: new FormControl('', [Validators.required]),
     txAddressDispatch: new FormControl('', [Validators.required]),
@@ -132,7 +131,7 @@ export class NewPotentialClientComponent implements OnInit {
       } else if (this.clientLogic.potentialClient.stPotentialClient == 0) {
         //ES GUARDADO
         this.isDisabled = false;
-        this.newPotentialClient.get('idEnterprise')!.setValue(this.clientLogic.potentialClient.idEnterprise.toString());
+        this.newPotentialClient.get('idEnterprise')!.setValue(this.clientLogic.potentialClient.idEnterprise);
 
         this.clientLogic.cannotSavePotentialClient = true;
         this.clientLogic.cannotSendPotentialClient = false;
@@ -145,90 +144,91 @@ export class NewPotentialClientComponent implements OnInit {
       } else {
         //POR ENVIAR O ENVIADO
         this.isDisabled = true;
-        this.newPotentialClient.get('idEnterprise')!.setValue(this.clientLogic.potentialClient.idEnterprise.toString());
+        this.newPotentialClient.get('idEnterprise')!.setValue(this.clientLogic.potentialClient.idEnterprise);
         this.clientLogic.saveSendPotentialClient = false;
         this.clientLogic.savePotentialClient = true;
         this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.config.get('signatureClient') == 'true', true, COLOR_VERDE);
         this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.clientLogic.potentialClient.coClient, 'clientes');
-
-
+        this.clientLogic.disabledEnterprise = true;
+        this.clientLogic.empresaSeleccionada = this.clientLogic.listaEmpresa.find(ent => ent.idEnterprise == this.clientLogic.potentialClient.idEnterprise)!;
+        this.clientLogic.potentialClient.idEnterprise = this.clientLogic.empresaSeleccionada.idEnterprise;
       }
       this.clientLogic.newPotentialClientChanged = false;
     })
   }
 
   ngOnDestroy() {
-   
+
   }
 
   async validatePotentialClient(potencialClient: FormGroup, saveSend: Boolean) {
     if (this.idEnterprise!.errors == null && this.naClient.errors == null && this.nuRif!.errors == null && this.txAddress!.errors == null
       && this.txAddressDispatch!.errors == null && this.txClient!.errors == null
       && this.emClient!.errors == null && this.nuPhone!.errors == null) {
-        this.messageService.showLoading().then(() => {
-                potencialClient.value.idEnterprise = this.clientLogic.empresaSeleccionada.idEnterprise;
-      potencialClient.value.coEnterprise = this.clientLogic.empresaSeleccionada.coEnterprise;
-      potencialClient.value.stPotentialClient = this.clientLogic.potentialClient.stPotentialClient;
-      potencialClient.value.coClient = this.clientLogic.potentialClient.coClient;
-      potencialClient.value.hasAttachments = this.adjuntoService.hasItems();
-      potencialClient.value.nuAttachments = this.adjuntoService.getNuAttachment();
-      this.dbService.insertPotentialClient(potencialClient.value, this.clientLogic.potentialClient.coordenada, saveSend).then(async result => {
-        await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), potencialClient.value.coClient, "clientes");
-        if (saveSend) {
-          this.clientLogic.saveSendPotentialClient = false;
-          let pendingTransaction = {} as PendingTransaction;
-          pendingTransaction.coTransaction = potencialClient.value.coClient;
-          pendingTransaction.idTransaction = 0
-          pendingTransaction.type = "potentialClient";
-          if (localStorage.getItem("connected") == "true") {
-            /*
+      this.messageService.showLoading().then(() => {
+        potencialClient.value.idEnterprise = this.clientLogic.empresaSeleccionada.idEnterprise;
+        potencialClient.value.coEnterprise = this.clientLogic.empresaSeleccionada.coEnterprise;
+        potencialClient.value.stPotentialClient = this.clientLogic.potentialClient.stPotentialClient;
+        potencialClient.value.coClient = this.clientLogic.potentialClient.coClient;
+        potencialClient.value.hasAttachments = this.adjuntoService.hasItems();
+        potencialClient.value.nuAttachments = this.adjuntoService.getNuAttachment();
+        this.dbService.insertPotentialClient(potencialClient.value, this.clientLogic.potentialClient.coordenada, saveSend).then(async result => {
+          await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), potencialClient.value.coClient, "clientes");
+          if (saveSend) {
+            this.clientLogic.saveSendPotentialClient = false;
+            let pendingTransaction = {} as PendingTransaction;
+            pendingTransaction.coTransaction = potencialClient.value.coClient;
+            pendingTransaction.idTransaction = 0
+            pendingTransaction.type = "potentialClient";
+            if (localStorage.getItem("connected") == "true") {
+              /*
+              this.messageAlert = new MessageAlert(
+                "Denario Cliente",
+                "¡Cliente potencial sera enviado!"
+              );
+              this.messageService.alertModal(this.messageAlert);
+              */
+              this.services.insertPendingTransaction(this.synchronizationServices.getDatabase(), pendingTransaction).then(result => {
+                if (result) {
+                  this.autoSend.ngOnInit();
+                  this.clientLogic.clientNewPotentialClientComponent = false;
+                  this.clientLogic.clienteNuevoBlancoImg = true;
+                  this.clientLogic.clientContainerComponent = true;
+                }
+              })
+            } else {
+              this.autoSend.ngOnInit();
+              this.clientLogic.clientNewPotentialClientComponent = false;
+              this.clientLogic.clientPotentialClientComponent = true;
+              this.clientLogic.clienteNuevoBlancoImg = true;
+              /*
+              this.messageAlert = new MessageAlert(
+                "Denario Cliente",
+                "¡Cliente potencial sera enviado al tener conexión de datos!"
+              );
+              this.messageService.alertModal(this.messageAlert);*/
+            }
+
+          } else {
             this.messageAlert = new MessageAlert(
               "Denario Cliente",
-              "¡Cliente potencial sera enviado!"
+              "¡Cliente Potencial Guardado con exito!"
             );
             this.messageService.alertModal(this.messageAlert);
-            */
-            this.services.insertPendingTransaction(this.synchronizationServices.getDatabase(), pendingTransaction).then(result => {
-              if (result) {
-                this.autoSend.ngOnInit();
-                this.clientLogic.clientNewPotentialClientComponent = false;
-                this.clientLogic.clienteNuevoBlancoImg = true;
-                this.clientLogic.clientContainerComponent = true;
-              }
-            })
-          } else {
-            this.autoSend.ngOnInit();
-            this.clientLogic.clientNewPotentialClientComponent = false;
-            this.clientLogic.clientPotentialClientComponent = true;
-            this.clientLogic.clienteNuevoBlancoImg = true;
-            /*
-            this.messageAlert = new MessageAlert(
-              "Denario Cliente",
-              "¡Cliente potencial sera enviado al tener conexión de datos!"
-            );
-            this.messageService.alertModal(this.messageAlert);*/
-          }
-            
-        } else {
-          this.messageAlert = new MessageAlert(
-            "Denario Cliente",
-            "¡Cliente Potencial Guardado con exito!"
-          );
-          this.messageService.alertModal(this.messageAlert);
 
-          if (this.clientLogic.saveOrExitOpen) {
-            this.clientLogic.newPotentialClientChanged = false;
-            this.clientLogic.saveOrExitOpen = false;
-            this.clientLogic.saveSendPotentialClient = false;
-            this.clientLogic.saveSendPotentialClient = false;
-            this.clientLogic.clientNewPotentialClientComponent = false;
-            this.clientLogic.clientContainerComponent = true;
+            if (this.clientLogic.saveOrExitOpen) {
+              this.clientLogic.newPotentialClientChanged = false;
+              this.clientLogic.saveOrExitOpen = false;
+              this.clientLogic.saveSendPotentialClient = false;
+              this.clientLogic.saveSendPotentialClient = false;
+              this.clientLogic.clientNewPotentialClientComponent = false;
+              this.clientLogic.clientContainerComponent = true;
+            }
           }
-        }
-        this.messageService.hideLoading();
-      });    
-  });
-} else {
+          this.messageService.hideLoading();
+        });
+      });
+    } else {
       this.newPotentialClient.markAllAsTouched();
     }
   }
@@ -239,9 +239,23 @@ export class NewPotentialClientComponent implements OnInit {
     })
   }
 
-  changeEnterprise(enterprise: Enterprise) {
+  changeEnterprise(enterpriseOrId: Enterprise | number) {
+    let enterprise: Enterprise | undefined;
+    if (typeof enterpriseOrId === 'number') {
+      enterprise = this.clientLogic.enterprises.find(ent => ent.idEnterprise === enterpriseOrId);
+    } else {
+      enterprise = enterpriseOrId as Enterprise;
+    }
+
+    if (!enterprise) return;
+
     this.clientLogic.empresaSeleccionada = enterprise;
-    this.clientLogic.potentialClient.idEnterprise = enterprise.idEnterprise
+    this.clientLogic.potentialClient.idEnterprise = enterprise.idEnterprise;
+
+    // mantener el FormControl sincronizado (usando number)
+    const ctl = this.newPotentialClient.get('idEnterprise');
+    if (ctl) ctl.setValue(enterprise.idEnterprise);
+
     this.checkForm();
   }
 
