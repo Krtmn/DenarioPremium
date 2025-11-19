@@ -186,7 +186,11 @@ export class InventarioActividadesComponent implements OnInit {
       this.inventariosLogicService.productTypeStocksMap.set(
         this.inventariosLogicService.newClientStock.clientStockDetails[i].idProduct, i);
     }
-
+    
+    //revisamos si tenemos un inventario valido
+    if (this.inventariosLogicService.newClientStock.clientStockDetails.length == 0) {
+      this.inventariosLogicService.cannotSendClientStock = true;      
+    }
 
   }
 
