@@ -1089,13 +1089,25 @@ export class CollectionService {
     this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagar));
     this.montoTotalPagado = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado));
 
-
-
     this.alertMessageOpen = false;
     if (this.collection.coType == '1') {
       //SI ERES ANTICIPO
-      if (this.collection.collectionPayments.length > 0)
-        this.onCollectionValidToSend(true);
+      if (this.collection.collectionPayments.length > 0) {
+        if (this.collection && Array.isArray(this.collection.collectionPayments) && this.collection.collectionPayments.length > 0) {
+          const hasPartialAmount = this.collection.collectionPayments.some(p => {
+            const amt = p?.nuAmountPartial;
+            return amt !== null && amt !== undefined && !isNaN(Number(amt)) && Number(amt) > 0;
+          });
+
+          if (hasPartialAmount) {
+            this.onCollectionValidToSend(true);
+          } else {
+            this.onCollectionValidToSend(false);
+            return;
+          }
+        }
+      }
+
     } else if (this.collection.coType == '2') {
       //SI ERES RETENCION Y ESTAS ACA, LA RETENCION ES VALIDA
       if (this.collection.collectionDetails.length > 0) {
