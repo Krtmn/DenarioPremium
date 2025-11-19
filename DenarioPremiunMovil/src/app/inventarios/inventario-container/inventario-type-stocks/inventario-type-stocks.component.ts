@@ -18,7 +18,8 @@ export class InventarioTypeStocksComponent implements OnInit {
   public inventariosLogicService = inject(InventariosLogicService)
   public dateServ = inject(DateServiceService);
   public globalConfig = inject(GlobalConfigService);
-
+  public minFecha = '1900-01-01';
+  public maxFecha = '9999-12-31';
   @ViewChild('loteExhInput', { static: false })
   loteExhInput: any;
 
@@ -264,7 +265,7 @@ export class InventarioTypeStocksComponent implements OnInit {
     this.inventariosLogicService.onStockValidToSend(true);
     this.inventariosLogicService.onStockValidToSave(true);
     this.inventariosLogicService.isEdit = true;
-    
+
   }
 
   setCantidad(cantidad: any, idP: number, indexType: number, type: string) {

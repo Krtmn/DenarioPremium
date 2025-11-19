@@ -23,25 +23,39 @@
                                         class="titulosnegrita">{{this.clientLogic.clientTags.get('CLI_NEW_POT_EMPRESA')}}</ion-label>
                                 </ion-col> -->
                                 <ion-list>
-                                    <ion-col size="12">
+                                    <ion-col size="12" *ngIf="!disabledSelectEnterprise">
                                         <div class="listado-enterprise-selector ion-text-center">
-                                            <ion-select class="ion-text-center always-flip" [disabled]="this.clientLogic.disabledEnterprise == true ? true : false" 
-                                            placeholder="{{this.clientLogic.clientTags.get('CLI_SELECTOR')}}" formControlName="idEnterprise" 
-                                            (ionChange)="changeEnterprise(clientLogic.empresaSeleccionada)" [(ngModel)]="clientLogic.empresaSeleccionada.idEnterprise"
-                                            toggleIcon="caret-down-sharp" interface="popover" labelPlacement="stacked">
-                                                <ion-select-option *ngFor="let enterprise of clientLogic.enterprises" [value]="enterprise.idEnterprise">{{enterprise.lbEnterprise}}</ion-select-option>
+                                            <ion-select class="ion-text-center always-flip"
+                                                [disabled]="this.clientLogic.disabledEnterprise == true ? true : false"
+                                                placeholder="{{this.clientLogic.clientTags.get('CLI_SELECTOR')}}"
+                                                formControlName="idEnterprise"
+                                                (ionChange)="changeEnterprise($event.detail.value)"
+                                                toggleIcon="caret-down-sharp" interface="popover"
+                                                labelPlacement="stacked">
+                                                <ion-select-option *ngFor="let enterprise of clientLogic.enterprises"
+                                                    [value]="enterprise.idEnterprise">{{enterprise.lbEnterprise}}</ion-select-option>
                                             </ion-select>
                                         </div>
                                     </ion-col>
                                 </ion-list>
                             </ion-col>
                         </ion-row>
+                        <ion-row *ngIf="disabledSelectEnterprise">
+                            <ion-col>
+                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_EMPRESA')}}:"
+                                    label-placement="floating" fill="outline"
+                                    [value]="clientLogic.empresaSeleccionada.lbEnterprise"
+                                    [readonly]="isDisabled"></ion-input>
+                            </ion-col>
+                        </ion-row>
                         <ion-row>
                             <ion-col>
-                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_NOMBRE')}}:" label-placement="floating" fill="outline" placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_NOMBRE')}}:" formControlName="naClient" 
-                                [(ngModel)]="clientLogic.potentialClient.naClient"
-                                (ionInput)="onNaClientChange()" #naClientInput
-                                    [readonly]="isDisabled" (ionChange)="checkForm()"></ion-input>
+                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_NOMBRE')}}:"
+                                    label-placement="floating" fill="outline"
+                                    placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_NOMBRE')}}:"
+                                    formControlName="naClient" [(ngModel)]="clientLogic.potentialClient.naClient"
+                                    (ionInput)="onNaClientChange()" #naClientInput [readonly]="isDisabled"
+                                    (ionChange)="checkForm()"></ion-input>
                                 <ion-label *ngIf="newPotentialClient.errors?.['required']">
                                     {{this.clientLogic.clientTags.get('CLI_NEW_POT_MENSAJE_ERROR_NOMBRE_CLIENTE')}}
                                 </ion-label>
@@ -49,77 +63,83 @@
                         </ion-row>
                         <ion-row>
                             <ion-col>
-                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_RIF')}}:" label-placement="floating" fill="outline" 
-                                placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_RIF')}}:"
-                                 formControlName="nuRif" [(ngModel)]="clientLogic.potentialClient.nuRif"
-                                 (ionInput)="onNuRifChange()" #nuRifInput
-                                    [readonly]="isDisabled" (ionChange)="checkForm()"></ion-input>
+                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_RIF')}}:"
+                                    label-placement="floating" fill="outline"
+                                    placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_RIF')}}:"
+                                    formControlName="nuRif" [(ngModel)]="clientLogic.potentialClient.nuRif"
+                                    (ionInput)="onNuRifChange()" #nuRifInput [readonly]="isDisabled"
+                                    (ionChange)="checkForm()"></ion-input>
                             </ion-col>
                         </ion-row>
                         <ion-row>
                             <ion-col>
-                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_DIRECCION')}}:" label-placement="floating" fill="outline" placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_DIRECCION')}}:"
-                                 formControlName="txAddress" [(ngModel)]="clientLogic.potentialClient.txAddress"
-                                (ionInput)="onTxAddressChange()" #txAddressInput
-                                    [readonly]="isDisabled" (ionChange)="checkForm()"></ion-input>
+                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_DIRECCION')}}:"
+                                    label-placement="floating" fill="outline"
+                                    placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_DIRECCION')}}:"
+                                    formControlName="txAddress" [(ngModel)]="clientLogic.potentialClient.txAddress"
+                                    (ionInput)="onTxAddressChange()" #txAddressInput [readonly]="isDisabled"
+                                    (ionChange)="checkForm()"></ion-input>
                             </ion-col>
                         </ion-row>
                         <ion-row>
                             <ion-col>
-                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_DIRECCION_ENTREGA')}}:" label-placement="floating" fill="outline" placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_DIRECCION_ENTREGA')}}:" formControlName="txAddressDispatch"
-                                    [(ngModel)]="clientLogic.potentialClient.txAddressDispatch" 
-                                    [readonly]="isDisabled" (ionChange)="checkForm()" #txAddressDispatchInput
+                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_DIRECCION_ENTREGA')}}:"
+                                    label-placement="floating" fill="outline"
+                                    placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_DIRECCION_ENTREGA')}}:"
+                                    formControlName="txAddressDispatch"
+                                    [(ngModel)]="clientLogic.potentialClient.txAddressDispatch" [readonly]="isDisabled"
+                                    (ionChange)="checkForm()" #txAddressDispatchInput
                                     (ionInput)="onTxAddressDispatchChange()"></ion-input>
                             </ion-col>
                         </ion-row>
                         <ion-row>
                             <ion-col>
-                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_OBSERVACION')}}:" 
-                                label-placement="floating" fill="outline" 
-                                placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_OBSERVACION')}}:" 
-                                formControlName="txClient" [(ngModel)]="clientLogic.potentialClient.txClient"
-                                (ionInput)="onTxClientChange()" #txClientInput
-                                    [readonly]="isDisabled" (ionChange)="checkForm()"></ion-input>
+                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_OBSERVACION')}}:"
+                                    label-placement="floating" fill="outline"
+                                    placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_OBSERVACION')}}:"
+                                    formControlName="txClient" [(ngModel)]="clientLogic.potentialClient.txClient"
+                                    (ionInput)="onTxClientChange()" #txClientInput [readonly]="isDisabled"
+                                    (ionChange)="checkForm()"></ion-input>
                             </ion-col>
                         </ion-row>
                         <ion-row>
                             <ion-col>
-                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_RESPONSABLE')}}:" 
-                                label-placement="floating" fill="outline"  #naResponsibleInput
-                                placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_RESPONSABLE')}}:" 
-                                formControlName="naResponsible" [(ngModel)]="clientLogic.potentialClient.naResponsible"
-                                (ionInput)="onNaResponsibleChange()"
-                                    [readonly]="isDisabled" (ionChange)="checkForm()"></ion-input>
+                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_RESPONSABLE')}}:"
+                                    label-placement="floating" fill="outline" #naResponsibleInput
+                                    placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_RESPONSABLE')}}:"
+                                    formControlName="naResponsible"
+                                    [(ngModel)]="clientLogic.potentialClient.naResponsible"
+                                    (ionInput)="onNaResponsibleChange()" [readonly]="isDisabled"
+                                    (ionChange)="checkForm()"></ion-input>
                             </ion-col>
                         </ion-row>
                         <ion-row>
                             <ion-col>
-                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_EMAIL')}}:" 
-                                label-placement="floating" fill="outline" #emClientInput
-                                placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_EMAIL')}}:" 
-                                formControlName="emClient" [(ngModel)]="clientLogic.potentialClient.emClient"
-                                (ionInput)="onEmClientChange()"
-                                    [readonly]="isDisabled" (ionChange)="checkForm()"></ion-input>
+                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_EMAIL')}}:"
+                                    label-placement="floating" fill="outline" #emClientInput
+                                    placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_EMAIL')}}:"
+                                    formControlName="emClient" [(ngModel)]="clientLogic.potentialClient.emClient"
+                                    (ionInput)="onEmClientChange()" [readonly]="isDisabled"
+                                    (ionChange)="checkForm()"></ion-input>
                             </ion-col>
                         </ion-row>
                         <ion-row>
                             <ion-col>
-                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_TELEFONO')}}:" 
-                                label-placement="floating" fill="outline"  #nuPhoneInput
-                                placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_TELEFONO')}}:" 
-                                formControlName="nuPhone" [(ngModel)]="clientLogic.potentialClient.nuPhone"
-                                (ionInput)="onNuPhoneChange()"
-                                    [readonly]="isDisabled" (ionChange)="checkForm()"></ion-input>
+                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_TELEFONO')}}:"
+                                    label-placement="floating" fill="outline" #nuPhoneInput
+                                    placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_TELEFONO')}}:"
+                                    formControlName="nuPhone" [(ngModel)]="clientLogic.potentialClient.nuPhone"
+                                    (ionInput)="onNuPhoneChange()" [readonly]="isDisabled"
+                                    (ionChange)="checkForm()"></ion-input>
                             </ion-col>
                         </ion-row>
                         <ion-row>
                             <ion-col>
-                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_WEB')}}:" 
-                                label-placement="floating" fill="outline" #naWebSiteInput
-                                placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_WEB')}}:" 
-                                formControlName="naWebSite" [(ngModel)]="clientLogic.potentialClient.naWebSite"
-                                (ionInput)="onNaWebSiteChange()"
-                                    [readonly]="isDisabled"></ion-input>
+                                <ion-input label="{{this.clientLogic.clientTags.get('CLI_NEW_POT_WEB')}}:"
+                                    label-placement="floating" fill="outline" #naWebSiteInput
+                                    placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_WEB')}}:"
+                                    formControlName="naWebSite" [(ngModel)]="clientLogic.potentialClient.naWebSite"
+                                    (ionInput)="onNaWebSiteChange()" [readonly]="isDisabled"></ion-input>
                             </ion-col>
                         </ion-row>
                     </ion-grid>
