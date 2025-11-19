@@ -117,7 +117,7 @@ export class DevolucionListComponent implements OnInit {
       case DELIVERY_STATUS_SENT: return this.tags.get('DENARIO_DEV_SENDED')! == undefined ? "Enviado" : this.tags.get('DENARIO_DEV_SENDED')!;
       case 6:
         // naStatus puede ser string o un objeto => normalizar a string
-        if (naStatus == null) return '';
+        if (naStatus == null) return 'No Status';
         if (typeof naStatus === 'string') {
           return naStatus;
         }

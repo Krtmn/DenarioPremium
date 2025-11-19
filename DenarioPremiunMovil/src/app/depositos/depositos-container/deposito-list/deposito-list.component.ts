@@ -161,7 +161,7 @@ export class DepositoListComponent implements OnInit {
       case DELIVERY_STATUS_SENT: return this.depositService.depositTags.get("DEP_DEV_SENDED")!;
       case 6:
         // naStatus puede ser string o un objeto => normalizar a string
-        if (naStatus == null) return '';
+        if (naStatus == null) return 'No Status';
         if (typeof naStatus === 'string') {
           return naStatus;
         }
