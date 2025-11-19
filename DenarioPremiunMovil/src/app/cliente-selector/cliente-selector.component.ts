@@ -190,6 +190,7 @@ export class ClienteSelectorComponent implements OnInit {
       }
       //para usarlo luego
       this.service.clientes = this.clientes;
+      this.service.checkClient = false;
       this.messageService.hideLoading();
     })
   });
