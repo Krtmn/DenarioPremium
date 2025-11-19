@@ -36,7 +36,7 @@ export class HistoryTransaction implements OnInit {
       "ORDER BY ts.da_transaction_statuses DESC LIMIT 1";
 
     return db.executeSql(query, [idTransactionType, idTransaction]).then(data => {
-      return data.rows.length > 0 ? data.rows.item(0) : "No Status";
+      return data.rows.length > 0 ? data.rows.item(0) : "Enviado";
     }).catch(error => {
       console.error("Error al obtener el estado del pedido:", error);
       return "Error al obtener el estado";
