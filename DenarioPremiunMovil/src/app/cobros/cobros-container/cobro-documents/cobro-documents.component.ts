@@ -1632,4 +1632,83 @@ export class CobrosDocumentComponent implements OnInit {
     // llamar a la lógica existente en cada cambio
     if (typeof (this as any).setPartialPay === 'function') this.setPartialPay();
   }
+
+  // --- Paste helpers (normalizar texto pegado a céntimos) ---
+  private parsePastedToCents(raw: string | null | undefined): number {
+    if (!raw) return 0;
+    let text = String(raw).trim();
+
+    // Eliminar símbolos de moneda y espacios, dejar dígitos, puntos, comas y signo menos
+    text = text.replace(/[^0-9\.,\-]/g, '');
+
+    // Si contiene ambos, asumimos '.' = miles y ',' = decimal (ej. "1.234,56")
+    if (text.indexOf('.') > -1 && text.indexOf(',') > -1) {
+      text = text.replace(/\./g, ''); // quitar separador de miles
+      text = text.replace(',', '.');  // convertir coma decimal a punto
+    } else if (text.indexOf(',') > -1 && text.indexOf('.') === -1) {
+      // Solo coma -> coma es decimal (ej. "1234,56")
+      text = text.replace(',', '.');
+    } else {
+      // Solo puntos o ninguno:
+      // Si hay múltiples puntos, probablemente son separadores de miles -> quitarlos
+      const dotCount = (text.match(/\./g) || []).length;
+      if (dotCount > 1) {
+        text = text.replace(/\./g, '');
+      }
+      // Si hay un solo punto, lo dejamos como decimal
+    }
+
+    const value = parseFloat(text || '0');
+    if (isNaN(value)) return 0;
+
+    // Convertir a céntimos y aplicar límites coherentes con flow de teclado
+    const cents = Math.round(value * 100);
+    const MAX_CENTS = 999999999999;
+    return Math.min(MAX_CENTS, Math.max(-MAX_CENTS, cents));
+  }
+
+  public onDiscountPaste(ev: ClipboardEvent): void {
+    ev.preventDefault();
+    const text = ev.clipboardData?.getData('text') ?? '';
+    const cents = this.parsePastedToCents(text);
+    this.centsDiscount = cents;
+    this.updateDiscountModel();
+  }
+
+  public onRetentionPaste(ev: ClipboardEvent): void {
+    ev.preventDefault();
+    const text = ev.clipboardData?.getData('text') ?? '';
+    const cents = this.parsePastedToCents(text);
+    this.centsRetention = cents;
+    this.updateRetentionModel();
+  }
+
+  public onRetention2Paste(ev: ClipboardEvent): void {
+    ev.preventDefault();
+    const text = ev.clipboardData?.getData('text') ?? '';
+    const cents = this.parsePastedToCents(text);
+    this.centsRetention2 = cents;
+    this.updateRetention2Model();
+  }
+
+  public onDiscountInput(ev: any): void {
+    const raw = ev?.detail?.value ?? ev?.target?.value ?? '';
+    const cents = this.parsePastedToCents(raw);
+    this.centsDiscount = cents;
+    this.updateDiscountModel();
+  }
+
+  public onRetentionInput(ev: any): void {
+    const raw = ev?.detail?.value ?? ev?.target?.value ?? '';
+    const cents = this.parsePastedToCents(raw);
+    this.centsRetention = cents;
+    this.updateRetentionModel();
+  }
+
+  public onRetention2Input(ev: any): void {
+    const raw = ev?.detail?.value ?? ev?.target?.value ?? '';
+    const cents = this.parsePastedToCents(raw);
+    this.centsRetention2 = cents;
+    this.updateRetention2Model();
+  }
 }
