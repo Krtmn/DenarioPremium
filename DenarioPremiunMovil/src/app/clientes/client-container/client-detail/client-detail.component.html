@@ -141,8 +141,7 @@
                     <ion-col size="4" class="titulosBold col">
                         {{clientLogic.clientTags.get("CLI_DETAIL_DIAS_VENCIMIENTO")}}
                     </ion-col>
-                    <ion-col size="4" *ngIf="this.clientLogic.showConversion"
-                        class="titulosBold col">
+                    <ion-col size="4" *ngIf="this.clientLogic.showConversion" class="titulosBold col">
                         {{clientLogic.clientTags.get("CLI_DETAIL_TASA")}}
                     </ion-col>
                     <ion-col size="4" class="titulosBold col">
@@ -153,8 +152,7 @@
                     <ion-col size="4" class="titulosBold col">
                         {{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
                     </ion-col>
-                    <ion-col size="4" *ngIf="this.clientLogic.showConversion"
-                        class="titulosBold col">
+                    <ion-col size="4" *ngIf="this.clientLogic.showConversion" class="titulosBold col">
                         {{clientLogic.clientTags.get("CLI_DETAIL_SALDO_CONVERSION")}}
                     </ion-col>
                     <ion-col size="4" class="titulosBold col">
@@ -192,7 +190,7 @@
                     <ion-col size="4" class="ion-text-center col"
                         [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }"
                         *ngIf="this.clientLogic.showConversion">
-                        {{formatNumber(documento.nuValueLocal)}} {{localCurrency}}
+                        {{formatNumber(this.currencyService.localValue)}} {{localCurrency}}
                     </ion-col>
                     <ion-col size="4" class="ion-text-center col"
                         [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }">
@@ -201,7 +199,8 @@
                     <ion-col size="4" class="ion-text-center col"
                         [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }"
                         *ngIf="this.clientLogic.showConversion">
-                        {{this.convertirMonto(documento.nuAmountTotal, documento.nuValueLocal, documento.coCurrency)}}
+                        {{this.convertirMonto(documento.nuAmountTotal, this.currencyService.localValue,
+                        documento.coCurrency)}}
                         {{oppositeCoCurrency(documento.coCurrency)}}
                     </ion-col>
                     <ion-col size="4" class="ion-text-center col"
@@ -211,7 +210,8 @@
                     <ion-col size="4" class="ion-text-center col "
                         [ngStyle]="{color: documento.nuAmountTotal >0 ? 'Red' : 'Blue' }"
                         *ngIf="this.clientLogic.showConversion">
-                        {{this.convertirMonto(documento.nuBalance, documento.nuValueLocal, documento.coCurrency)}}
+                        {{this.convertirMonto(documento.nuBalance, this.currencyService.localValue,
+                        documento.coCurrency)}}
                         {{oppositeCoCurrency(documento.coCurrency)}}
                     </ion-col>
                     <ion-col size="4" class="ion-text-center col"

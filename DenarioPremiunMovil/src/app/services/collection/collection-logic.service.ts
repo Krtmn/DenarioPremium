@@ -184,6 +184,7 @@ export class CollectionService {
   public montoIgtf: number = 0;
   public montoIgtfConversion: number = 0;
   public montoIgtfLocal: number = 0;
+  public montoTotalDiscounts: number = 0;
   public rateList: number[] = [];
   public rateSelected!: number;
   public parteDecimal: number = 0;
@@ -749,6 +750,7 @@ export class CollectionService {
       this.montoTotalPagado = 0;
       this.montoTotalPagadoConversion = 0;
       this.montoTotalPagar = 0;
+      this.montoTotalDiscounts = 0;
       this.onCollectionValidToSend(false);
       this.onCollectionValidToSave(true);
       return;
@@ -756,13 +758,16 @@ export class CollectionService {
     this.montoTotalPagar = 0;
     let monto = 0;
     let montoConversion = 0;
+    let montoTotalDiscounts = 0;
 
     if (this.collection.stCollection == 1) {
       for (var j = 0; j < this.collection.collectionDetails.length; j++) {
         monto += this.collection.collectionDetails[j].nuAmountPaid;
         montoConversion += this.collection.collectionDetails[j].nuAmountPaidConversion;
+        montoTotalDiscounts += this.collection.collectionDetails[j].nuAmountRetention + this.collection.collectionDetails[j].nuAmountRetention2 + this.collection.collectionDetails[j].nuAmountDiscount;
         this.montoTotalPagar = monto;
         this.montoTotalPagarConversion = montoConversion;
+
       }
     } else if (this.collection.stCollection == 2 || this.collection.stCollection == 3) {
       monto = this.collection.nuAmountTotal;
@@ -778,10 +783,14 @@ export class CollectionService {
             if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
               monto += this.documentSalesBackup[i].nuAmountPaid;
               montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuAmountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
+              montoTotalDiscounts += this.collection.collectionDetails[i].nuAmountRetention + this.collection.collectionDetails[i].nuAmountRetention2 + this.collection.collectionDetails[i].nuAmountDiscount;
+
             }
           } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
             monto += this.documentSalesBackup[i].nuBalance;
             montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
+            montoTotalDiscounts += this.documentSalesBackup[i].nuAmountDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
+
           }
         }
 
@@ -813,6 +822,10 @@ export class CollectionService {
       this.montoIgtfConversion = 0;
     }
 
+    /* this.montoTotalDiscounts = montoTotalDiscounts;
+    this.montoTotalPagado = this.montoTotalPagado - montoTotalDiscounts;
+      console.log("MONTO nuDifference: ", this.collection.nuDifference);
+      console.log("MONTO montoTotalPagado: ", this.montoTotalPagado); */
     this.collection.nuAmountPaid = this.montoTotalPagar;
     this.collection.nuAmountPaidConversion = this.convertirMonto(this.montoTotalPagar, 0, this.collection.coCurrency);
     this.collection.nuAmountFinal = this.montoTotalPagar;
@@ -826,8 +839,8 @@ export class CollectionService {
       this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado)) - this.cleanFormattedNumber(this.currencyService.formatNumber(monto));
     } else {
       this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado)) - this.cleanFormattedNumber(this.currencyService.formatNumber(monto + this.montoIgtf));
+    
       this.montoTotalPagarConversion = this.cleanFormattedNumber(this.currencyService.formatNumber(montoConversion + this.montoIgtfConversion));
-
     }
 
     this.collection.nuDifferenceConversion = this.convertirMonto(this.collection.nuDifference, 0, this.collection.coCurrency);
@@ -3554,39 +3567,40 @@ export class CollectionService {
     const original = { ...this.documentSalesBackup[index] };
     this.documentSaleOpen = { ...original };
     this.documentSales[index] = { ...original };
-    if (this.collection.stCollection == 1) {
-      const positionCollecDetails = this.documentSaleOpen.positionCollecDetails;
-      const nuAmountBase = this.collection.collectionDetails[positionCollecDetails].nuBalanceDoc,
-        nuAmountDiscount = this.collection.collectionDetails[positionCollecDetails].nuAmountDiscount,
-        nuAmountPaid = this.collection.collectionDetails[positionCollecDetails].nuAmountPaid,
-        nuAmountRetention = this.collection.collectionDetails[positionCollecDetails].nuAmountRetention,
-        nuAmountRetention2 = this.collection.collectionDetails[positionCollecDetails].nuAmountRetention2,
-        nuAmountTotal = this.collection.collectionDetails[positionCollecDetails].nuAmountDoc,
-        nuBalance = this.collection.collectionDetails[positionCollecDetails].nuBalanceDoc,
-        inPaymentPartial = this.collection.collectionDetails[positionCollecDetails].inPaymentPartial,
-        isSave = this.collection.collectionDetails[positionCollecDetails].isSave;
+    /*  if (this.collection.stCollection == 1) { */
+    const positionCollecDetails = this.documentSaleOpen.positionCollecDetails;
+    const nuAmountBase = this.collection.collectionDetails[positionCollecDetails].nuBalanceDoc,
+      nuAmountDiscount = this.collection.collectionDetails[positionCollecDetails].nuAmountDiscount,
+      nuAmountPaid = this.collection.collectionDetails[positionCollecDetails].nuAmountPaid,
+      nuAmountRetention = this.collection.collectionDetails[positionCollecDetails].nuAmountRetention,
+      nuAmountRetention2 = this.collection.collectionDetails[positionCollecDetails].nuAmountRetention2,
+      nuAmountTotal = this.collection.collectionDetails[positionCollecDetails].nuAmountDoc,
+      nuBalance = this.collection.collectionDetails[positionCollecDetails].nuBalanceDoc,
+      inPaymentPartial = this.collection.collectionDetails[positionCollecDetails].inPaymentPartial,
+      isSave = this.collection.collectionDetails[positionCollecDetails].isSave;
 
-      this.documentSales[index].nuAmountBase = nuAmountBase;
-      this.documentSalesBackup[index].nuAmountBase = nuAmountBase;
-      this.documentSales[index].nuAmountDiscount = nuAmountDiscount;
-      this.documentSalesBackup[index].nuAmountDiscount = nuAmountDiscount;
-      this.documentSales[index].nuAmountPaid = nuAmountPaid;
-      this.documentSalesBackup[index].nuAmountPaid = nuAmountPaid;
-      this.documentSales[index].nuAmountRetention = nuAmountRetention;
-      this.documentSalesBackup[index].nuAmountRetention = nuAmountRetention;
-      this.documentSales[index].nuAmountRetention2 = nuAmountRetention2;
-      this.documentSalesBackup[index].nuAmountRetention2 = nuAmountRetention2;
-      this.documentSales[index].nuAmountTotal = nuAmountTotal;
-      this.documentSalesBackup[index].nuAmountTotal = nuAmountTotal;
-      this.documentSales[index].nuBalance = nuBalance;
-      this.documentSalesBackup[index].nuBalance = nuBalance;
-      this.documentSales[index].inPaymentPartial = inPaymentPartial;
-      this.documentSalesBackup[index].inPaymentPartial = inPaymentPartial;
-      this.documentSales[index].isSave = isSave;
-      this.documentSalesBackup[index].isSave = isSave;
+    this.documentSales[index].nuAmountBase = nuAmountBase;
+    this.documentSalesBackup[index].nuAmountBase = nuAmountBase;
+    this.documentSales[index].nuAmountDiscount = nuAmountDiscount;
+    this.documentSalesBackup[index].nuAmountDiscount = nuAmountDiscount;
+    this.documentSales[index].nuAmountPaid = nuAmountPaid;
+    this.documentSalesBackup[index].nuAmountPaid = nuAmountPaid;
+    this.documentSales[index].nuAmountRetention = nuAmountRetention;
+    this.documentSalesBackup[index].nuAmountRetention = nuAmountRetention;
+    this.documentSales[index].nuAmountRetention2 = nuAmountRetention2;
+    this.documentSalesBackup[index].nuAmountRetention2 = nuAmountRetention2;
+    this.documentSales[index].nuAmountTotal = nuAmountTotal;
+    this.documentSalesBackup[index].nuAmountTotal = nuAmountTotal;
+    this.documentSales[index].nuBalance = nuBalance;
+    this.documentSalesBackup[index].nuBalance = nuBalance;
+    this.documentSales[index].inPaymentPartial = inPaymentPartial;
+    this.documentSalesBackup[index].inPaymentPartial = inPaymentPartial;
+    this.documentSales[index].isSave = isSave;
+    this.documentSalesBackup[index].isSave = isSave;
 
-    }
+    /*  } */
 
+    this.calculatePayment("", 0);
   }
 
   public copyDocumentSaleOpenToSalesAndDetails() {

@@ -22,7 +22,7 @@ export class ClienteComponent implements OnInit {
 
   private globalConfig = inject(GlobalConfigService);
   public clientLogic = inject(ClientLogicService);
-  currencyService = inject(CurrencyService);
+  public currencyService = inject(CurrencyService);
 
   public params!: any;
   public document!: DocumentSale[];

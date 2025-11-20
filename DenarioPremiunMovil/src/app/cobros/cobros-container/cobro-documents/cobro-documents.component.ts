@@ -33,32 +33,31 @@ export class CobrosDocumentComponent implements OnInit {
 
   public daVoucher: string = "";
   public fechaHoy: string = "";
-  //public daVoucher: string = this.dateServ.hoyISO();
 
-  // independent state for each input (in céntimos) and display strings
   public centsDiscount: number | undefined;
   public displayDiscount: string = '';
-
   public centsRetention: number | undefined;
   public displayRetention: string = '';
-
   public centsRetention2: number | undefined;
   public displayRetention2: string = '';
   public centsAmountPaid: number | undefined;
   public displayAmountPaid: string = '';
 
-
-
   public disabledSaveButton: boolean = false;
   public alertMessageOpen: boolean = false;
   public alertMessageOpen2: boolean = false;
-
+  // Flags para evitar race conditions entre keydown y input (teclados virtuales / emuladores)
+  private discountKeyInFlight: boolean = false;
+  private retentionKeyInFlight: boolean = false;
+  private retention2KeyInFlight: boolean = false;
 
   public mensaje: string = '';
   public saldo: string = "";
   public saldoConversion: string = "";
   public saldoView: string = "";
   public saldoConversionView: string = "";
+
+
 
   public alertButtons = [
     /*  {
@@ -313,10 +312,10 @@ export class CobrosDocumentComponent implements OnInit {
       } else {
         // stCollection != 1
         const pos = doc.positionCollecDetails;
-        const saved = cs.documentSalesBackup?.[pos]?.isSave;
+        const saved = cs.documentSalesBackup?.[index]?.isSave;
 
         if (saved) {
-          const detail = cs.collection.collectionDetails?.[index];
+          const detail = cs.collection.collectionDetails?.[pos];
           if (detail) {
             nuAmountDiscount = Number(detail.nuAmountDiscount ?? 0);
             nuAmountRetention = Number(detail.nuAmountRetention ?? 0);
@@ -414,6 +413,10 @@ export class CobrosDocumentComponent implements OnInit {
         cs.validNuRetention = false;
       }
 
+      this.displayDiscount = this.formatNumber(Number(this.displayDiscount));
+      this.displayRetention = this.formatNumber(Number(this.displayRetention));
+      this.displayRetention2 = this.formatNumber(Number(this.displayRetention2));
+      this.displayAmountPaid = this.formatNumber(Number(this.displayAmountPaid));
       return true;
     } catch (err) {
       console.error('calculateDocumentSaleOpen error:', err);
@@ -719,6 +722,7 @@ export class CobrosDocumentComponent implements OnInit {
   saveDocumentSale(action: Boolean) {
     let validate = false;
     // if (this.collectService.validNuRetention) {
+
     if (action) {
       if (this.disabledSaveButton)
         this.disabledSaveButton = false;
@@ -773,17 +777,14 @@ export class CobrosDocumentComponent implements OnInit {
       this.dontSaveDocumentSale(action);
 
     }
-    /*  } else {
-       if (action) {
-         this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].nuAmountPaid = this.collectService.amountPaid;
-         this.collectService.documentSalesBackup[this.collectService.indexDocumentSaleOpen].nuAmountPaid = this.collectService.amountPaid;
-         this.saveStatusDocument();
-       } else {
-         this.dontSaveDocumentSale(action);
-       }
- 
- 
-     } */
+    this.displayAmountPaid = "0";
+    this.displayDiscount = "0";
+    this.displayRetention = "0";
+    this.displayRetention2 = "0";
+    this.centsAmountPaid = 0;
+    this.centsDiscount = 0;
+    this.centsRetention = 0;
+    this.centsRetention2 = 0;
   }
 
   dontSaveDocumentSale(action: boolean) {
@@ -896,10 +897,6 @@ export class CobrosDocumentComponent implements OnInit {
       documentSaleOpen.igtfAmount = documentSaleOpen.nuBalance * (igtfSelected.price / 100)
     }
 
-    this.collectService.collection.collectionDetails[documentSaleOpen.positionCollecDetails]!.nuAmountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.amountPaid));
-    this.collectService.collection.collectionDetails[documentSaleOpen.positionCollecDetails]!.nuAmountPaidConversion
-      = this.collectService.amountPaid;
-
     this.displayAmountPaid = this.collectService.amountPaid.toString();
 
     console.log(this.collectService.amountPaid, "AMOUNT PAID AL GUARDAR");
@@ -923,13 +920,20 @@ export class CobrosDocumentComponent implements OnInit {
 
     let positionCollecDetails = this.collectService.documentSaleOpen.positionCollecDetails;
 
+    /* 
+    this.collectService.collection.collectionDetails[documentSaleOpen.positionCollecDetails]!.nuAmountPaid
+      = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(this.collectService.amountPaid));
+    
+      this.collectService.collection.collectionDetails[documentSaleOpen.positionCollecDetails]!.nuAmountPaidConversion
+      = this.collectService.amountPaid;
+    
     this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountDiscount = nuAmountDiscount;
     this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountDiscountConversion = 0;
     this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention = nuAmountRetention;
     this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetentionConversion = 0;
     this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention2 = nuAmountRetention2;
     this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountRetention2Conversion = 0;
-    this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountPaid = amountPaidAux;
+    this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountPaid = amountPaidAux; */
 
     this.validate();
 
@@ -1399,18 +1403,30 @@ export class CobrosDocumentComponent implements OnInit {
 
     this.ensureDiscountInit();
 
+    // Si es dígito
     if (/^\d$/.test(key)) {
+      // Marcar que estamos procesando keydown para evitar que el input handler sobreescriba
+      this.discountKeyInFlight = true;
+
       const digit = parseInt(key, 10);
       this.centsDiscount = Math.min(999999999999, (this.centsDiscount ?? 0) * 10 + digit);
       this.updateDiscountModel();
       ev.preventDefault();
+
+      // Liberar la bandera en el siguiente tick del event loop
+      setTimeout(() => { this.discountKeyInFlight = false; }, 0);
       return;
     }
 
+    // Backspace
     if (key === 'Backspace') {
+      this.discountKeyInFlight = true;
+
       this.centsDiscount = Math.floor((this.centsDiscount ?? 0) / 10);
       this.updateDiscountModel();
       ev.preventDefault();
+
+      setTimeout(() => { this.discountKeyInFlight = false; }, 0);
       return;
     }
 
@@ -1461,17 +1477,21 @@ export class CobrosDocumentComponent implements OnInit {
     this.ensureRetentionInit();
 
     if (/^\d$/.test(key)) {
+      this.retentionKeyInFlight = true;
       const digit = parseInt(key, 10);
       this.centsRetention = Math.min(999999999999, (this.centsRetention ?? 0) * 10 + digit);
       this.updateRetentionModel();
       ev.preventDefault();
+      setTimeout(() => { this.retentionKeyInFlight = false; }, 0);
       return;
     }
 
     if (key === 'Backspace') {
+      this.retentionKeyInFlight = true;
       this.centsRetention = Math.floor((this.centsRetention ?? 0) / 10);
       this.updateRetentionModel();
       ev.preventDefault();
+      setTimeout(() => { this.retentionKeyInFlight = false; }, 0);
       return;
     }
 
@@ -1521,17 +1541,21 @@ export class CobrosDocumentComponent implements OnInit {
     this.ensureRetention2Init();
 
     if (/^\d$/.test(key)) {
+      this.retention2KeyInFlight = true;
       const digit = parseInt(key, 10);
       this.centsRetention2 = Math.min(999999999999, (this.centsRetention2 ?? 0) * 10 + digit);
       this.updateRetention2Model();
       ev.preventDefault();
+      setTimeout(() => { this.retention2KeyInFlight = false; }, 0);
       return;
     }
 
     if (key === 'Backspace') {
+      this.retention2KeyInFlight = true;
       this.centsRetention2 = Math.floor((this.centsRetention2 ?? 0) / 10);
       this.updateRetention2Model();
       ev.preventDefault();
+      setTimeout(() => { this.retention2KeyInFlight = false; }, 0);
       return;
     }
 
@@ -1691,7 +1715,14 @@ export class CobrosDocumentComponent implements OnInit {
     this.updateRetention2Model();
   }
 
+
   public onDiscountInput(ev: any): void {
+    // Si venimos de keydown (teclado virtual/emulador), ignoramos este input porque ya actualizamos el modelo.
+    if (this.discountKeyInFlight) {
+      // limpiamos la flag por si quedó colgada
+      this.discountKeyInFlight = false;
+      return;
+    }
     const raw = ev?.detail?.value ?? ev?.target?.value ?? '';
     const cents = this.parsePastedToCents(raw);
     this.centsDiscount = cents;
@@ -1699,6 +1730,10 @@ export class CobrosDocumentComponent implements OnInit {
   }
 
   public onRetentionInput(ev: any): void {
+    if (this.retentionKeyInFlight) {
+      this.retentionKeyInFlight = false;
+      return;
+    }
     const raw = ev?.detail?.value ?? ev?.target?.value ?? '';
     const cents = this.parsePastedToCents(raw);
     this.centsRetention = cents;
@@ -1706,6 +1741,10 @@ export class CobrosDocumentComponent implements OnInit {
   }
 
   public onRetention2Input(ev: any): void {
+    if (this.retention2KeyInFlight) {
+      this.retention2KeyInFlight = false;
+      return;
+    }
     const raw = ev?.detail?.value ?? ev?.target?.value ?? '';
     const cents = this.parsePastedToCents(raw);
     this.centsRetention2 = cents;

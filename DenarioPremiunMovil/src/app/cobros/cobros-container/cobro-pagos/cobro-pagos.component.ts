@@ -63,7 +63,7 @@ export class CobroPagosComponent implements OnInit {
     this.alertButtons[0].text = this.collectService.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
   }
 
-   ngAfterViewInit(): void {
+  ngAfterViewInit(): void {
     // Medición simple: tiempo desde creación del componente hasta template montado
     try {
       console.time('[CobroPagos] afterViewInit');
@@ -212,6 +212,12 @@ export class CobroPagosComponent implements OnInit {
     const removedPago = pagoArray[index];
     const removedPos = removedPago.posCollectionPayment ?? index;
     const monto = Number(removedPago.monto) || 0;
+    this.collectService.montoTotalPagado -= monto;
+    if (this.collectService.collection.coCurrency == this.collectService.localCurrency.coCurrency) {
+      this.collectService.montoTotalPagadoConversion = this.currencyService.toHardCurrency(this.collectService.montoTotalPagado);
+    } else {
+      this.collectService.montoTotalPagadoConversion = this.currencyService.toLocalCurrency(this.collectService.montoTotalPagado)
+    }
 
     // Actualizar totales usando el monto del pago eliminado
     this.collectService.collection.nuAmountFinal -= monto;
@@ -248,6 +254,7 @@ export class CobroPagosComponent implements OnInit {
       this.collectService.pagoTransferencia,
       this.collectService.pagoOtros
     ];
+
     allPagoArrays.forEach(arr => {
       if (Array.isArray(arr)) {
         arr.forEach(p => {
