@@ -179,6 +179,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       this.showProductList = showList;
       this.modoLista = 'carrito';
       this.orderUtilList = this.orderServ.carrito;
+      this.warehouseList = this.orderServ.listaWarehouse;
       this.nameProductStructure = this.orderServ.getTag("PED_CARRITO")
     });
 
