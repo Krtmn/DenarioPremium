@@ -479,6 +479,7 @@ export class PedidosService {
           continue;
         };
         let unitInfo: UnitInfo[] = [];
+        var unit: UnitInfo;
         const unitFiltered = this.listaUnitInfo.filter(u => u.idProduct == item.idProduct);
         if (unitFiltered.length < 1) {
           console.log('producto ' + item.naProduct + ' no tiene ProductUnit');
@@ -486,6 +487,11 @@ export class PedidosService {
         } else {
           //creamos una copia para evitar comportamiento anormal
           unitInfo = JSON.parse(JSON.stringify(unitFiltered));
+          unit = unitInfo.find(u => u.coUnit == prod.coPrimaryUnit)!;
+          if (!unit) {
+            unit = unitInfo[0];
+            console.log('producto ' + item.naProduct + ' no tiene unidad primaria valida ' + prod.coPrimaryUnit);
+          }
         };
         var priceLists: PriceList[] = [];
         var priceListSeleccionado: PriceList = {} as PriceList;
@@ -629,7 +635,7 @@ export class PedidosService {
           "idPriceList": priceLists.length > 0 ? priceListSeleccionado.idPriceList : 0,
           "coPriceList": priceLists.length > 0 ? priceListSeleccionado.coPriceList : '',
           "unitList": unitInfo,
-          "idUnit": unitInfo.length > 0 ? unitInfo[0].idUnit : 0,
+          "idUnit": unit.idUnit,
           "inCart": false,
           "txDescription": item.txDescription,
           "listaList": listList,
