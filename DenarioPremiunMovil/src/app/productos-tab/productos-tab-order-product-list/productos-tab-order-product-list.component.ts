@@ -102,7 +102,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.ivaList = this.orderServ.ivaList;
     this.disablePriceListSelector = (!this.orderServ.userCanChangePriceListProduct);
     this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
-      
+      this.warehouseList = this.orderServ.listaWarehouse;
       this.showProductList = true;
       this.nameProductStructure = '';
       this.productList = this.productService.productList;
@@ -463,6 +463,12 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     if ((o1 === null || o1 === undefined) && (o2 === null || o2 === undefined)) return true;
     // numeric string vs number
     return (o1 != null && o2 != null && Number(o1) === Number(o2));
+  }
+
+  compareWarehouse = (o1: any, o2: any) => {
+    if (o1 === o2) return true;
+    if ((o1 === null || o1 === undefined) && (o2 === null || o2 === undefined)) return true;
+    return (o1 != null && o2 != null && o1.idWarehouse === o2.idWarehouse);
   }
 
   onSelectWarehouse(e: any, product: OrderUtil) {

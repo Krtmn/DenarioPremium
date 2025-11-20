@@ -173,7 +173,7 @@
                 <div class="listado-tps-selector ion-text-center">
                   <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
                     [value]="product.idWarehouse" interface="popover" labelPlacement="stacked"
-                    [placeholder]="orderServ.getTag('PED_PLACEHOLDER_ALMACEN')+':'"
+                    [placeholder]="orderServ.getTag('PED_PLACEHOLDER_ALMACEN')+':'" [compareWith]="compareWarehouse"
                     (ionChange)="onSelectWarehouse($event, product)" [disabled]="!orderServ.userCanChangeWarehouse">
                     <ion-select-option *ngFor="let wh of warehouseList" [value]="wh.idWarehouse">{{ wh.naWarehouse
                       }}</ion-select-option>
