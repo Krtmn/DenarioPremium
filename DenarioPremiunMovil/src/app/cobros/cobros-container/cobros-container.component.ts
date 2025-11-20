@@ -82,20 +82,23 @@ export class CobrosContainerComponent implements OnInit {
   }
 
   nuevoCobro(type: number) {
-    if (this.collectService.userMustActivateGPS) {
-      if (!this.coordenada && this.coordenada.length < 1) {
-        this.geoLoc.getCurrentPosition().then(xy => {
-          if (xy.length > 0) {
-            this.coordenada = xy;
-            this.goToNuevoCobro(type);
-          }
-        })
+    this.messageService.showLoading().then(() => {
+      if (this.collectService.userMustActivateGPS) {
+        if (!this.coordenada && this.coordenada.length < 1) {
+          this.geoLoc.getCurrentPosition().then(xy => {
+            if (xy.length > 0) {
+              this.coordenada = xy;
+              this.goToNuevoCobro(type);
+            }
+          })
+        } else {
+          this.goToNuevoCobro(type);
+        }
       } else {
         this.goToNuevoCobro(type);
       }
-    } else {
-      this.goToNuevoCobro(type);
-    }
+      this.messageService.hideLoading();
+    })
   }
 
   goToNuevoCobro(type: number) {
