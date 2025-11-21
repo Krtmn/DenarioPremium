@@ -29,8 +29,8 @@ export class ListaVisitaComponent implements OnInit {
 
   mensajeDelete = ""
   headerDelete = "";
-
-  VISIT_STATUS_SAVED = VISIT_STATUS_SAVED;
+// Make constant accessible in template for use in *ngIf or similar directives 
+   VISIT_STATUS_SAVED = VISIT_STATUS_SAVED; 
   public rolTransportista: boolean = false;
 
   public service = inject(VisitasService);
