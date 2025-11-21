@@ -40,7 +40,7 @@ export class CobroTotalComponent implements OnInit {
     console.log(this.collectService.collection)
   }
 
- 
+
 
   addRetencion() {
     this.collectService.addRetention = true;
@@ -56,6 +56,9 @@ export class CobroTotalComponent implements OnInit {
     // Buscar y deseleccionar en documentSalesBackup
     const docSaleBackup = this.collectService.documentSalesBackup.find(d => d.coDocument == coDocument);
     if (docSaleBackup) docSaleBackup.isSelected = false;
+
+    const docSaleBackupView = this.collectService.documentSalesView.find(d => d.coDocument == coDocument);
+    if (docSaleBackupView) docSaleBackupView.isSelected = false;
     // Eliminar el detalle
     this.collectService.collection.collectionDetails.splice(index, 1);
     if (this.collectService.collection.collectionDetails.length == 0)
