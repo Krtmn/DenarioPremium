@@ -275,7 +275,7 @@ export class PedidoComponent implements OnInit {
 
     //config
     this.parteDecimal = this.orderServ.parteDecimal;
-    if (!this.orderServ.userMustActivateGPS) {
+    if (!this.orderServ.userMustActivateGPS && this.orderServ.pedidoModificable) {
       //chequeo suave de coordenadas si variable es false
       this.geoServ.getCurrentPosition().then(coords => { this.orderServ.coordenadas = coords });
     }
