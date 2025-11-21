@@ -680,16 +680,6 @@ export class CobrosGeneralComponent implements OnInit {
 
 
   onChangeDateRate(event: any) {
-    /* if (this.collectService.collection.collectionDetails.length > 0 || this.collectService.collection.collectionPayments.length > 0) {
-      this.collectService.mensaje = "¿Seguro desea cambiar la fecha de la tasa? El cobro sera reiniciado!"
-      this.collectService.alertMessageChangeDateRate = true
-    } else {
-      
-      //this.collectService.collection.daRate = event.target.value;
-      this.onChangeCurrency(this.collectService.currencySelected);
-    } */
-    /* this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
-      this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => { */
     this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual)!.then((response) => {
       console.log("RESPUESTA FECHA TASA: ", response);
       if (this.collectService.historicPartialPayment) {
@@ -701,12 +691,8 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.setCurrencyConversion();
     this.collectService.calculatePayment("", 0);
 
-    /* }); */
-
-
-
-
-
+    if (this.collectService.validateCollectionDate)
+      this.collectService.updateRateTiposPago();
 
   }
 

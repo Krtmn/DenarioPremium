@@ -49,7 +49,8 @@
                     </ion-col>
                     <ion-col class="" size="12" size-sm="12" size-xs="12">
                         <ion-list>
-                            <ion-item *ngFor="let tipoPago of this.collectService.tiposPago; index as type; trackBy: trackByIndex">
+                            <ion-item
+                                *ngFor="let tipoPago of this.collectService.tiposPago; index as type; trackBy: trackByIndex">
                                 <ion-checkbox slot="start" [checked]="tipoPago.selected"
                                     (ionChange)="onSelectTipoPago(tipoPago,type)"></ion-checkbox>
                                 <ion-label class="titulosBold">{{tipoPago.name}}</ion-label>
@@ -103,7 +104,7 @@
                                     (keydown)="onMontoKeyDown($event, efectivo, ef,'ef')"
                                     (focus)="onMontoFocus(efectivo, ef,'ef')" (blur)="onMontoBlur(efectivo, ef,'ef')"
                                     class="customInput" [ngClass]="{'inp-write': !efectivo.monto}">
-                                    
+
                                 </ion-input>
                             </ion-item>
                         </ion-col>
@@ -138,7 +139,8 @@
                                         class="ion-text-center always-flip" [(ngModel)]="cheque.nombreBanco"
                                         (ionChange)="selectBankAccount(ch,'ch')" interface="alert"
                                         labelPlacement="stacked">
-                                        <ion-select-option *ngFor="let bank of this.collectService.listBanks; trackBy: trackByIndex"
+                                        <ion-select-option
+                                            *ngFor="let bank of this.collectService.listBanks; trackBy: trackByIndex"
                                             [value]="bank.coBank">{{ bank.naBank }}
                                         </ion-select-option>
                                     </ion-select>
@@ -157,7 +159,7 @@
                         <!-- clientBankAccount -->
 
                         <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item disabled="{{cheque.disabled}}">
+                            <ion-item disabled="{{this.collectService.enableDate}}">
                                 <ion-label>{{this.collectService.collectionTags.get('COB_FECHA')}}</ion-label>
                                 <a>
                                     <ion-button (click)="setShowDateChequeVenceModal(ch, true)" color="light"
@@ -186,7 +188,7 @@
                         </ion-col>
 
                         <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item disabled="{{cheque.disabled}}">
+                            <ion-item disabled="{{this.collectService.enableDate}}">
                                 <ion-label>{{this.collectService.collectionTags.get('COB_FECHA_VALOR')}}</ion-label>
                                 <a>
                                     <ion-button (click)="setShowDateChequeValorModal(ch, true)" color="light"
@@ -344,7 +346,8 @@
             <!-- DEPOSITO -->
 
             <!-- TRANSFERENCIAS -->
-            <ion-list *ngFor="let transferencia of this.collectService.pagoTransferencia; index as tr; trackBy: trackByIndex">
+            <ion-list
+                *ngFor="let transferencia of this.collectService.pagoTransferencia; index as tr; trackBy: trackByIndex">
                 <ion-accordion
                     *ngIf="this.collectService.tipoPagoTransferencia  && this.collectService.pagoTransferencia.length > 0"
                     [value]="'transferencia'+tr">
@@ -364,7 +367,8 @@
                                         class="ion-text-center always-flip" [(ngModel)]="transferencia.numeroCuenta"
                                         (ionChange)="selectBankAccount(tr,'tr')" interface="alert"
                                         labelPlacement="stacked">
-                                        <ion-select-option *ngFor="let bank of this.collectService.clientBankAccounts; trackBy: trackByIndex"
+                                        <ion-select-option
+                                            *ngFor="let bank of this.collectService.clientBankAccounts; trackBy: trackByIndex"
                                             [value]="bank.coBank">{{ bank.naBank }} -
                                             {{bank.nuAccount}}
                                         </ion-select-option>
@@ -392,10 +396,10 @@
                                     (ionChange)="selectListBankAccount(tr, 'tr')" interface="alert"
                                     labelPlacement="stacked">
                                     <ion-select-option
-                                            *ngFor="let listBankAccount of this.collectService.listBankAccounts; trackBy: trackByIndex"
-                                            [value]="listBankAccount">{{ listBankAccount.nameBank }} -
-                                            {{listBankAccount.nuAccount}}
-                                        </ion-select-option>
+                                        *ngFor="let listBankAccount of this.collectService.listBankAccounts; trackBy: trackByIndex"
+                                        [value]="listBankAccount">{{ listBankAccount.nameBank }} -
+                                        {{listBankAccount.nuAccount}}
+                                    </ion-select-option>
                                 </ion-select>
                             </div>
 
