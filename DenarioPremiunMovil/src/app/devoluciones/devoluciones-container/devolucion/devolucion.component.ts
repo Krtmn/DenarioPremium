@@ -5,6 +5,7 @@ import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { EnterpriseService } from 'src/app/services/enterprise/enterprise.service';
 import { GeolocationService } from 'src/app/services/geolocation/geolocation.service';
 import { ReturnLogicService } from 'src/app/services/returns/return-logic.service';
+import { DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 
 @Component({
     selector: 'app-devolucion',
@@ -39,7 +40,12 @@ export class DevolucionComponent implements OnInit {
 
   ngOnInit() {
     this.botonAgregar = !this.returnLogic.returnSent;
+
+    if(!this.returnLogic.userMustActivateGPS && (this.returnLogic.newReturn.stReturn !== DELIVERY_STATUS_TO_SEND &&
+       this.returnLogic.newReturn.stReturn !== DELIVERY_STATUS_SENT &&
+      this.returnLogic.newReturn.stReturn !== 6)){ 
     this.geoServ.getCurrentPosition().then(coords => { this.returnLogic.newReturn.coordenada = coords });
+    }
     this.returnLogic.returnValid.subscribe((data: Boolean) => {
       this.returnValid = data;
     });
