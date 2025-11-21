@@ -754,5 +754,4 @@ INSERT INTO public.application_tags(
 	('DENARIO_MSG_GPS', 'DEN', 'DENARIO', 'ESP', 'Para poder grabar la ubicación, te recomendamos activar el servicio de localización en tu dispositivo'),
 	('DENARIO_ERR_GPS', 'DEN', 'DENARIO', 'ESP', 'Falló la ubicación. Revise GPS.'),
 	('DENARIO_SELEC_FECHA', 'DEN', 'DENARIO', 'ESP', 'Seleccione una fecha'),
-	('DENARIO_ERROR_SYNCRO', 'DEN', 'DENARIO', 'ESP', 'No hay conexión a internet, no se puede sincronizar'),
 	('DENARIO_ERROR_SYNCRO', 'DEN', 'DENARIO', 'ESP', 'No hay conexión a internet, no se puede sincronizar');
