@@ -106,9 +106,17 @@ export class GeolocationService {
           const msg = (err && (err.message || err))?.toString() || 'unknown';
           console.warn(`[GeolocationService] getCurrentPosition attempt ${attempt} error:`, msg);
 
+          this.setMessage();
           // Si es error no recuperable, salir inmediatamente
           // Mensajes típicos: "location unavailable", "Permission denied", "Location services are disabled"
           if (msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('denied') || msg.toLowerCase().includes('disabled')) {
+            if( msg.toLowerCase().includes('disabled')){
+              this.message.alertCustomBtn(this.messageRecommend, this.buttonsOpenSettings);
+            }else{
+              if( msg.toLowerCase().includes('denied')){
+                this.message.alertCustomBtn(this.messageRecommend, this.buttonsAppDetails);
+              }
+            }
             // No intentar más, devolver null para que los llamantes manejen el caso
             return null;
           }
