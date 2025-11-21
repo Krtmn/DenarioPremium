@@ -790,15 +790,16 @@ export class PedidoComponent implements OnInit {
     if (this.viewOnly) {
       return true;
     }
-    if (!this.orderServ.multiCurrencyOrder) {
-      return true;
-    }
     if (this.orderServ.openOrder) {
       return true;
     }
     if (this.orderServ.currencyModuleEnabled) {
       return !this.orderServ.currencyModule.currencySelector
     }
+    if (!this.orderServ.multiCurrencyOrder) {
+      return true;
+    }
+
     return false;
   }
 
