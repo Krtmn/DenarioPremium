@@ -145,7 +145,7 @@ export class InventarioListComponent implements OnInit {
       case DELIVERY_STATUS_SENT: return this.inventariosLogicService.inventarioTagsDenario.get("DENARIO_DEV_STATUS")! == undefined ? "Enviado" : this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_DEV_STATUS')!;
       case 6:
         // naStatus puede ser string o un objeto => normalizar a string
-        if (naStatus == null) return 'No Status';
+        if (naStatus == null) return 'Enviado';
         if (typeof naStatus === 'string') {
           return naStatus;
         }

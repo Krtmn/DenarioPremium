@@ -11,10 +11,10 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 @Component({
-    selector: 'app-pedidos-lista',
-    templateUrl: './pedidos-lista.component.html',
-    styleUrls: ['./pedidos-lista.component.scss'],
-    standalone: false
+  selector: 'app-pedidos-lista',
+  templateUrl: './pedidos-lista.component.html',
+  styleUrls: ['./pedidos-lista.component.scss'],
+  standalone: false
 })
 export class PedidosListaComponent implements OnInit {
   orderServ = inject(PedidosService);
@@ -54,11 +54,11 @@ export class PedidosListaComponent implements OnInit {
     if (this.orderServ.userMustActivateGPS) {
       this.orderServ.coordenadas = "";
       this.geoLoc.getCurrentPosition().then(xy => {
-      if (xy.length > 0) {
-        this.orderServ.coordenadas = xy;
-      }
+        if (xy.length > 0) {
+          this.orderServ.coordenadas = xy;
+        }
       })
-    } 
+    }
   }
 
   ngOnDestroy() {
@@ -69,16 +69,16 @@ export class PedidosListaComponent implements OnInit {
     this.orderServ.pedidoModificable = (order.st_order == DELIVERY_STATUS_SAVED);
     if (this.orderServ.userMustActivateGPS &&
       (this.orderServ.pedidoModificable || this.orderServ.copiandoPedido)) {
-        if (!this.orderServ.coordenadas || this.orderServ.coordenadas.length == 0) {
-          this.geoLoc.getCurrentPosition().then(xy => {
-            if (xy.length > 0) {
-              this.orderServ.coordenadas = xy;
-              this.openOrder(order);
-            }
-      })
-    }else{
-      this.openOrder(order);
-    }
+      if (!this.orderServ.coordenadas || this.orderServ.coordenadas.length == 0) {
+        this.geoLoc.getCurrentPosition().then(xy => {
+          if (xy.length > 0) {
+            this.orderServ.coordenadas = xy;
+            this.openOrder(order);
+          }
+        })
+      } else {
+        this.openOrder(order);
+      }
     } else {
       this.openOrder(order);
     }
@@ -107,7 +107,7 @@ export class PedidosListaComponent implements OnInit {
       case DELIVERY_STATUS_SENT: return this.getTag("PED_STATUS_SENT");
       case 6:
         // naStatus puede ser string o un objeto => normalizar a string
-        if (naStatus == null) return 'No Status';
+        if (naStatus == null) return 'Enviado';
         if (typeof naStatus === 'string') {
           return naStatus;
         }

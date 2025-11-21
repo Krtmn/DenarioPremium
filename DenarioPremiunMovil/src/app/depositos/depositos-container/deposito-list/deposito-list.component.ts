@@ -54,8 +54,8 @@ export class DepositoListComponent implements OnInit {
     this.headerDelete = this.depositService.depositTags.get('DEP_HEADER_MESSAGE')!;
     this.mensajeDelete = "¿Desea eliminar el depósito seleccionado?";
     this.depositService.coordenadas = "";
-    if(this.depositService.userMustActivateGPS){
-      this.geoLoc.getCurrentPosition().then(xy => { 
+    if (this.depositService.userMustActivateGPS) {
+      this.geoLoc.getCurrentPosition().then(xy => {
         this.depositService.coordenadas = xy;
       })
     }
@@ -64,29 +64,29 @@ export class DepositoListComponent implements OnInit {
   toOpenDeposit(coDeposit: string, index: number) {
     this.messageService.showLoading().then(() => {
       let stDeposit = this.depositService.listDeposits[index].stDeposit;
-    if (this.depositService.userMustActivateGPS && stDeposit < 2) {
-      //solo puede abrir depositos editables con gps activo
-      if (this.depositService.coordenadas &&this.depositService.coordenadas.length > 0) {
-        this.openDeposit(coDeposit, index);
-      }else{
-      this.geoLoc.getCurrentPosition().then(xy => {
-        if (xy.length > 0) {
-          this.depositService.coordenadas = xy;
+      if (this.depositService.userMustActivateGPS && stDeposit < 2) {
+        //solo puede abrir depositos editables con gps activo
+        if (this.depositService.coordenadas && this.depositService.coordenadas.length > 0) {
           this.openDeposit(coDeposit, index);
+        } else {
+          this.geoLoc.getCurrentPosition().then(xy => {
+            if (xy.length > 0) {
+              this.depositService.coordenadas = xy;
+              this.openDeposit(coDeposit, index);
+            }
+          })
         }
-      })
+      } else {
+        //se actualiza coordenadas si no estan vacias. 
+        this.geoLoc.getCurrentPosition().then(xy => {
+          if (xy.length > 0) {
+            this.depositService.coordenadas = xy;
+          }
+          this.openDeposit(coDeposit, index);
+        })
       }
-    } else {
-      //se actualiza coordenadas si no estan vacias. 
-      this.geoLoc.getCurrentPosition().then(xy => {
-        if (xy.length > 0) {
-          this.depositService.coordenadas = xy;
-        }
-        this.openDeposit(coDeposit, index);
-      })
-    }
     });
-    
+
   }
 
 
@@ -161,7 +161,7 @@ export class DepositoListComponent implements OnInit {
       case DELIVERY_STATUS_SENT: return this.depositService.depositTags.get("DEP_DEV_SENDED")!;
       case 6:
         // naStatus puede ser string o un objeto => normalizar a string
-        if (naStatus == null) return 'No Status';
+        if (naStatus == null) return 'Enviado';
         if (typeof naStatus === 'string') {
           return naStatus;
         }

@@ -296,10 +296,11 @@ export class CobrosListComponent implements OnInit {
     switch (status) {
       case DELIVERY_STATUS_SAVED: return this.collectService.collectionTags.get("COB_STATUS_SAVED")!;
       case DELIVERY_STATUS_TO_SEND: return this.collectService.collectionTags.get("COB_STATUS_TO_SEND")!;
-      case DELIVERY_STATUS_SENT: return this.collectService.collectionTags.get("COB_STATUS_SENT")!;
+      case DELIVERY_STATUS_SENT:
+        return naStatus == null ? this.collectService.collectionTags.get("COB_STATUS_SENT")! : naStatus;
       case 6:
         // naStatus puede ser string o un objeto => normalizar a string
-        if (naStatus == null) return 'No Status';
+        if (naStatus == null) return 'Enviado';
         if (typeof naStatus === 'string') {
           return naStatus;
         }
