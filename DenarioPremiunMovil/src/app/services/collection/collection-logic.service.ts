@@ -705,29 +705,25 @@ export class CollectionService {
       this.rateSelected = this.collection.nuValueLocal = this.rateList[0];
       this.haveRate = true;
 
-      //si ya tengo la tasa correspondiente a la fecha, debo buscar los documentos
-      // actualizar nuValueLocal en cada documentSales para reflejar la tasa actual de la colección
-      /* if (this.documentSales && this.documentSales.length > 0) {
-        this.documentSales.forEach(ds => ds.nuValueLocal = this.collection.nuValueLocal);
-        this.documentSalesBackup.forEach(ds => ds.nuValueLocal = this.collection.nuValueLocal);
-        this.documentSalesView.forEach(ds => ds.nuValueLocal = this.collection.nuValueLocal);
-      } */
+      // Propagar la tasa seleccionada a documentSales y documentSalesBackup
+      if (Array.isArray(this.documentSales) && this.documentSales.length > 0) {
+        for (let i = 0; i < this.documentSales.length; i++) {
+          this.documentSales[i].nuValueLocal = this.rateSelected;
+        }
+      }
 
-      this.getDocumentsSales(dbServ,
-        this.collection.idClient, this.currencySelectedDocument.coCurrency, this.collection.coCollection, this.collection.idEnterprise).then(() => {
-          if (this.globalConfig.get('historicoTasa') === 'true' ? true : false) {
-            this.historicoTasa = true;
-          } else {
-            this.historicoTasa = false;
-          }
-          this.unlockTabs().then((resp) => {
-            this.onCollectionValid(resp);
-          })
+      if (Array.isArray(this.documentSalesBackup) && this.documentSalesBackup.length > 0) {
+        for (let i = 0; i < this.documentSalesBackup.length; i++) {
+          this.documentSalesBackup[i].nuValueLocal = this.rateSelected;
+        }
+      }
 
-          this.calculatePayment('', 0);
-        })
-
-
+      if (Array.isArray(this.documentSalesView) && this.documentSalesView.length > 0) {
+        for (let i = 0; i < this.documentSalesView.length; i++) {
+          this.documentSalesView[i].nuValueLocal = this.rateSelected;
+        }
+      }
+      return Promise.resolve(true);
     } else {
       //no tengo tasa para ese dia
       if (this.collection.stCollection === 3) {
@@ -741,7 +737,7 @@ export class CollectionService {
           this.onCollectionValid(resp);
         })
       }
-
+      return Promise.resolve(true);
     }
   }
 
@@ -3651,6 +3647,55 @@ export class CollectionService {
       console.error("Error fetching transaction statuses:", error);
       return [];
     });
+  }
+
+  updateRateTiposPago() {
+    try {
+      const fecha = (this.collection && this.collection.daRate) ? this.collection.daRate + " 00:00:00" : "";
+
+      // Actualizar collection.collectionPayments -> daValue
+      if (Array.isArray(this.collection?.collectionPayments)) {
+        for (let i = 0; i < this.collection.collectionPayments.length; i++) {
+          try {
+            this.collection.collectionPayments[i].daValue = fecha;
+          } catch (err) {
+            // si la estructura no tiene daValue, ignorar
+          }
+        }
+      }
+
+      // Actualizar pagoEfectivo[].fecha
+      if (Array.isArray(this.pagoEfectivo)) {
+        for (let i = 0; i < this.pagoEfectivo.length; i++) {
+          this.pagoEfectivo[i].fecha = fecha;
+        }
+      }
+
+      // Actualizar pagoCheque[].fecha
+      if (Array.isArray(this.pagoCheque)) {
+        for (let i = 0; i < this.pagoCheque.length; i++) {
+          this.pagoCheque[i].fecha = fecha;
+        }
+      }
+
+      // Actualizar pagoDeposito[].fecha
+      if (Array.isArray(this.pagoDeposito)) {
+        for (let i = 0; i < this.pagoDeposito.length; i++) {
+          this.pagoDeposito[i].fecha = fecha;
+        }
+      }
+
+      // Actualizar pagoTransferencia[].fecha
+      if (Array.isArray(this.pagoTransferencia)) {
+        for (let i = 0; i < this.pagoTransferencia.length; i++) {
+          this.pagoTransferencia[i].fecha = fecha;
+        }
+      }
+
+      // pagoOtros no tiene campo 'fecha' en el modelo actual -> no se toca
+    } catch (err) {
+      console.warn('[CollectionService] updateRateTiposPago error:', err);
+    }
   }
 
 }
