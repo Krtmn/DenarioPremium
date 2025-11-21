@@ -705,29 +705,41 @@ export class CollectionService {
       this.rateSelected = this.collection.nuValueLocal = this.rateList[0];
       this.haveRate = true;
 
-      //si ya tengo la tasa correspondiente a la fecha, debo buscar los documentos
-      // actualizar nuValueLocal en cada documentSales para reflejar la tasa actual de la colección
-      /* if (this.documentSales && this.documentSales.length > 0) {
-        this.documentSales.forEach(ds => ds.nuValueLocal = this.collection.nuValueLocal);
-        this.documentSalesBackup.forEach(ds => ds.nuValueLocal = this.collection.nuValueLocal);
-        this.documentSalesView.forEach(ds => ds.nuValueLocal = this.collection.nuValueLocal);
-      } */
+      // Propagar la tasa seleccionada a documentSales y documentSalesBackup
+      if (Array.isArray(this.documentSales) && this.documentSales.length > 0) {
+        for (let i = 0; i < this.documentSales.length; i++) {
+          this.documentSales[i].nuValueLocal = this.rateSelected;
+        }
+      }
 
-      this.getDocumentsSales(dbServ,
-        this.collection.idClient, this.currencySelectedDocument.coCurrency, this.collection.coCollection, this.collection.idEnterprise).then(() => {
-          if (this.globalConfig.get('historicoTasa') === 'true' ? true : false) {
-            this.historicoTasa = true;
-          } else {
-            this.historicoTasa = false;
-          }
-          this.unlockTabs().then((resp) => {
-            this.onCollectionValid(resp);
-          })
+      if (Array.isArray(this.documentSalesBackup) && this.documentSalesBackup.length > 0) {
+        for (let i = 0; i < this.documentSalesBackup.length; i++) {
+          this.documentSalesBackup[i].nuValueLocal = this.rateSelected;
+        }
+      }
 
-          this.calculatePayment('', 0);
-        })
+      if (Array.isArray(this.documentSalesView) && this.documentSalesView.length > 0) {
+        for (let i = 0; i < this.documentSalesView.length; i++) {
+          this.documentSalesView[i].nuValueLocal = this.rateSelected;
+        }
+      }
 
 
+      return Promise.resolve(true);
+
+      /*   return this.getDocumentsSales(dbServ,
+          this.collection.idClient, this.currencySelectedDocument.coCurrency, this.collection.coCollection, this.collection.idEnterprise).then(() => {
+            if (this.globalConfig.get('historicoTasa') === 'true' ? true : false) {
+              this.historicoTasa = true;
+            } else {
+              this.historicoTasa = false;
+            }
+            this.unlockTabs().then((resp) => {
+              this.onCollectionValid(resp);
+            })
+  
+            this.calculatePayment('', 0);
+          }); */
     } else {
       //no tengo tasa para ese dia
       if (this.collection.stCollection === 3) {
@@ -741,7 +753,7 @@ export class CollectionService {
           this.onCollectionValid(resp);
         })
       }
-
+      return Promise.resolve(true);
     }
   }
 

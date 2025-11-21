@@ -688,17 +688,20 @@ export class CobrosGeneralComponent implements OnInit {
       //this.collectService.collection.daRate = event.target.value;
       this.onChangeCurrency(this.collectService.currencySelected);
     } */
-    this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
-      this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
-        this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual);
-        if (this.collectService.historicPartialPayment) {
-          this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
-        }
+    /* this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
+      this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => { */
+    this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual)!.then((response) => {
+      console.log("RESPUESTA FECHA TASA: ", response);
+      if (this.collectService.historicPartialPayment) {
+        this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
+      }
+    });
 
-        this.collectService.setCurrencyConversion();
-        this.collectService.calculatePayment("", 0);
 
-      });
+    this.collectService.setCurrencyConversion();
+    this.collectService.calculatePayment("", 0);
+
+    /* }); */
 
 
 
