@@ -28,11 +28,13 @@
       </ion-col>
       <ion-col class="" size="2" size-sm="2" size-xs="2" *ngIf="pedido">
         <!--[Pedidos] boton de carrito -->
-        <ion-button (click)="onCartSelected()" size="small" expand="block" class="botonAddVerdePedidos">
-          <ion-icon slot="icon-only" name="cart-outline"></ion-icon>
-        </ion-button>
+          <ion-button (click)="onCartSelected()" size="small" expand="block" class="botonAddVerdePedidos">
+            <ion-icon  slot="start" name="cart-outline"></ion-icon>
+            <ion-badge slot="end">56</ion-badge>
+          </ion-button>
       </ion-col>
-
+    </ion-row>
+    <ion-row>
       <ion-col class="" size="12" size-sm="12" size-xs="12">
         <!--  Un Selector de tipos de estrucutras, por defecto el nivel mas bajo -->
         <div class="listado-tps-selector ion-text-center">

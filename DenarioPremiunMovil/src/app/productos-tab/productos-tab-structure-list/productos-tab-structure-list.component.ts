@@ -78,11 +78,12 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
     });
 
 
+    
     if (this.pedido) {
       //hacemos espacio para el boton de carrito
       this.buttonSize = 5;
     }
-
+    
 
   }
 
