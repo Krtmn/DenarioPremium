@@ -8,31 +8,30 @@
 
   <ion-grid>
     <ion-row>
-      <ion-col class="" size="{{ buttonSize }}" size-sm="{{ buttonSize }}" size-xs="{{ buttonSize }}">
-        <!-- boton favoritos -->
-        <ion-button (click)="onFavoriteProductSelected()" expand="block" size="small" class="botonAddVerdePedidos">
-          <ion-icon slot="start" name="heart"></ion-icon>
-          <!-- <ion-label> -->
-          {{favoriteButtonLabel}}
-          <!-- </ion-label> -->
-        </ion-button>
+      
+    
+
+      <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="pedido">
+      <ion-tab-bar color="light">
+  <ion-tab-button tab="1">
+    <ion-icon name="heart"></ion-icon>
+    <ion-label>Favoritos</ion-label>
+    <ion-badge color="danger"></ion-badge>
+  </ion-tab-button>
+
+  <ion-tab-button tab="2">
+    <ion-icon name="star"></ion-icon>
+    <ion-label>Destacados</ion-label>
+  </ion-tab-button>
+
+  <ion-tab-button tab="3">
+    <ion-icon name="cart-outline"></ion-icon>
+    <ion-label>Carrito</ion-label>
+    <ion-badge color="danger">30000</ion-badge>
+  </ion-tab-button>
+</ion-tab-bar>
       </ion-col>
-      <ion-col class="" size="{{ buttonSize }}" size-sm="{{ buttonSize }}" size-xs="{{ buttonSize }}">
-        <!--[featuredProducts] boton destacados -->
-        <ion-button (click)="onFeaturedProductSelected()" size="small" expand="block" class="botonAddVerdePedidos">
-          <ion-icon slot="start" name="star"></ion-icon>
-          <!-- <ion-label> -->
-          {{featuredButtonLabel}}
-          <!-- </ion-label> -->
-        </ion-button>
-      </ion-col>
-      <ion-col class="" size="2" size-sm="2" size-xs="2" *ngIf="pedido">
-        <!--[Pedidos] boton de carrito -->
-          <ion-button (click)="onCartSelected()" size="small" expand="block" class="botonAddVerdePedidos">
-            <ion-icon  slot="start" name="cart-outline"></ion-icon>
-            <ion-badge slot="end">56</ion-badge>
-          </ion-button>
-      </ion-col>
+
     </ion-row>
     <ion-row>
       <ion-col class="" size="12" size-sm="12" size-xs="12">
