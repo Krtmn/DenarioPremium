@@ -11,23 +11,24 @@
       
     
 
-      <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="pedido">
-      <ion-tab-bar color="light">
+      <ion-col class="contadoresIcon" size="12" size-sm="12" size-xs="12" *ngIf="pedido">
+      <ion-tab-bar >
   <ion-tab-button tab="1">
     <ion-icon name="heart"></ion-icon>
     <ion-label>Favoritos</ion-label>
-    <ion-badge color="danger"></ion-badge>
+    <ion-badge color="danger">10</ion-badge>
   </ion-tab-button>
 
   <ion-tab-button tab="2">
     <ion-icon name="star"></ion-icon>
     <ion-label>Destacados</ion-label>
+    <ion-badge color="danger">5</ion-badge>
   </ion-tab-button>
 
   <ion-tab-button tab="3">
     <ion-icon name="cart-outline"></ion-icon>
     <ion-label>Carrito</ion-label>
-    <ion-badge color="danger">30000</ion-badge>
+    <ion-badge color="danger">3000</ion-badge>
   </ion-tab-button>
 </ion-tab-bar>
       </ion-col>

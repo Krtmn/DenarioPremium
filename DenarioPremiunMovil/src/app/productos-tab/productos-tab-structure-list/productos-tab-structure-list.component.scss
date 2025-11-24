@@ -82,3 +82,15 @@ ion-grid, ion-row {
   overflow-y: auto;
   min-height: 0;
 } */
+
+.contadoresIcon ion-badge {
+    border-radius: 2px;
+    padding-inline: 2px;
+    margin-left: 4px;
+    padding-top: 3px;
+    padding-bottom: 2px;
+    top: 8px;
+    min-width: 12px;
+    font-size: 14px;
+    font-weight: bold;
+}
