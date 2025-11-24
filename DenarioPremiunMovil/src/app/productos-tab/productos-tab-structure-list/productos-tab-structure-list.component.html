@@ -11,7 +11,7 @@
       
     
 
-      <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="pedido">
+      <ion-col class="" size="12" size-sm="12" size-xs="12" >
       <ion-tab-bar color="light">
   <ion-tab-button tab="1">
     <ion-icon name="heart"></ion-icon>
@@ -24,10 +24,10 @@
     <ion-label>Destacados</ion-label>
   </ion-tab-button>
 
-  <ion-tab-button tab="3">
+  <ion-tab-button tab="3" *ngIf="pedido">
     <ion-icon name="cart-outline"></ion-icon>
     <ion-label>Carrito</ion-label>
-    <ion-badge color="danger">30000</ion-badge>
+    <ion-badge color="danger">456</ion-badge>
   </ion-tab-button>
 </ion-tab-bar>
       </ion-col>
