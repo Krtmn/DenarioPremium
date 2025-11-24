@@ -32,8 +32,9 @@
         [disabled]="!product.nuPrice || (!this.orderServ.stock0 && (product.quStockAux < 1))"
         toggleIcon="caret-down-circle" toggleIconSlot="end" [value]="product.coProduct">
         <!-- PARTE VISIBLE -->
-        <ion-item detail="false" slot="header" (click)="onSelectProductPed(i, product);"
-          *ngIf="searchText === '' || product.coProduct.toLowerCase().includes(searchText.toLowerCase()) || product.naProduct.toLowerCase().includes(searchText.toLowerCase())">
+        <!-- <ion-item detail="false" slot="header" (click)="onSelectProductPed(i, product);"
+          *ngIf="searchText === '' || product.coProduct.toLowerCase().includes(searchText.toLowerCase()) || product.naProduct.toLowerCase().includes(searchText.toLowerCase())"> -->
+        <ion-item detail="false" slot="header" (click)="onSelectProductPed(i, product);">
           <!-- badge de cantidad -->
           <ion-badge slot="end" color="success" class="contadorProductos" *ngIf="product.quAmount > 0">
             {{product.totalEnUnidades}}
@@ -309,7 +310,7 @@
                       <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
                         [value]="productoModal.iva" interface="popover" labelPlacement="stacked"
                         [placeholder]="orderServ.getTag('PED_PLACEHOLDER_IVA')+':'"
-                        (ionChange)="onSelectIVA($event, productoModal)" >
+                        (ionChange)="onSelectIVA($event, productoModal)">
                         <ion-select-option *ngFor="let iva of ivaList" [value]="iva.idIvaList">IVA - {{ iva.priceIva
                           }}</ion-select-option>
                       </ion-select>
@@ -325,8 +326,7 @@
                       <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
                         [(ngModel)]="productoModal.idDiscount" [disabled]="!orderServ.userCanSelectProductDiscount"
                         [placeholder]="orderServ.getTag('PED_PLACEHOLDER_DESCUENTO')+':'"
-                        [compareWith]="compareWithDiscount"
-                        (ionChange)="onSelectDiscount($event, productoModal)">
+                        [compareWith]="compareWithDiscount" (ionChange)="onSelectDiscount($event, productoModal)">
                         <ion-select-option *ngFor="let dc of productoModal.discountList" [value]="dc.idDiscount">{{
                           dc.quDiscount }}</ion-select-option>
                       </ion-select>

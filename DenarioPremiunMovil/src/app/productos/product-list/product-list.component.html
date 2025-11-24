@@ -4,8 +4,9 @@
   <div class="product-card" *ngIf="!selectedProduct">
     <ion-list class="espacioListasProductos" *ngFor="let product of productList | slice: startPro:endPro; index as i"
       (click)="onShowProductDetail(product)">
-      <div class="product-structure-title"
-        *ngIf="searchText === '' || product.coProduct.toLowerCase().includes(searchText.toLowerCase()) || product.naProduct.toLowerCase().includes(searchText.toLowerCase())">
+      <div class="product-structure-title">
+        <!-- <div class="product-structure-title"
+        *ngIf="searchText === '' || product.coProduct.toLowerCase().includes(searchText.toLowerCase()) || product.naProduct.toLowerCase().includes(searchText.toLowerCase())"> -->
         <!-- <ion-item button detail="true" *ngIf="i<10*indice"> -->
         <ion-item button detail="false">
           <ion-label fixed class="fixedLabel contenedorImgMargin">
