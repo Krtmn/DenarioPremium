@@ -111,6 +111,8 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   public setSendedCollection() {
+    this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);
+
     this.collectService.initLogicService();
     this.collectService.onCollectionValid(true);
     this.collectService.cobroValid = true;
@@ -120,6 +122,7 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.montoTotalPagarConversion = this.collectService.collection.nuAmountFinalConversion;
     this.collectService.montoTotalPagado = this.collectService.collection.nuAmountTotal;
     this.collectService.montoTotalPagadoConversion = this.collectService.collection.nuAmountTotalConversion;
+
     this.initializeCurrenciesAndRates();
     this.clientService.getClientById(this.collectService.collection.idClient).then(client => {
       this.collectService.client = client;
@@ -127,8 +130,7 @@ export class CobrosGeneralComponent implements OnInit {
       this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, 'cobros');
       this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, "Cobros", 'fondoVerde', client, false, 'cob');
       this.collectService.changeEnterprise = false;
-      this.collectService.getCurrencies(this.synchronizationServices.getDatabase(),
-        this.collectService.enterpriseSelected.idEnterprise);
+
     });
   }
 

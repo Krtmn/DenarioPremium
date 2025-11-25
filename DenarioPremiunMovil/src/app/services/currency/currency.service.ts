@@ -354,7 +354,7 @@ export class CurrencyService {
           idModule: item.id_module,
           localCurrencyDefault: item.local_currency_default.toLowerCase() === 'true',
           showConversion: item.show_conversion.toLowerCase() === 'true',
-          currencySelector: item.currency_selector.toLowerCase() === 'true',
+          currencySelector: item.currency_selector === null ? true : item.currency_selector.toLowerCase() === 'true',
         };
         map.set(item.co_module, cm);
       }
