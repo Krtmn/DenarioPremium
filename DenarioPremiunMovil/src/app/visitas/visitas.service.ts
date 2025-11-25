@@ -92,40 +92,40 @@ export class VisitasService {
   }
 
   getConfiguration() {
-    this.userMustActivateGPS = 
+    this.userMustActivateGPS =
       this.config.get("userMustActivateGPS").toLowerCase() === 'true';
 
-    this.transportRole = 
+    this.transportRole =
       this.config.get("transportRole").toLowerCase() === 'true';
 
-    this.enterpriseEnabled = 
+    this.enterpriseEnabled =
       this.config.get("enterpriseEnabled").toLowerCase() === "true";
 
-    this.checkAddressClient = 
+    this.checkAddressClient =
       this.config.get("checkAddressClient").toLowerCase() === "true";
 
-    this.signatureVisit = 
-    this.config.get('signatureVisit').toLowerCase() == 'true'
+    this.signatureVisit =
+      this.config.get('signatureVisit').toLowerCase() == 'true'
 
     //no tengo un mejor sitio para el rol, asi que ira acá
-    if(this.transportRole) {
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
-      try {
-        let user = JSON.parse(userStr);
-        if (user.transportista) {
-          this.rolTransportista = user.transportista;
-        }else{
-          //puede ser undefined o similar
+    if (this.transportRole) {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try {
+          let user = JSON.parse(userStr);
+          if (user.transportista) {
+            this.rolTransportista = user.transportista;
+          } else {
+            //puede ser undefined o similar
+            this.rolTransportista = false;
+          }
+        } catch (e) {
           this.rolTransportista = false;
         }
-      } catch (e) {
-        this.rolTransportista = false;
       }
+    } else {
+      this.rolTransportista = false;
     }
-  }else{
-    this.rolTransportista = false;
-  }
   }
 
   getLists() {
@@ -202,7 +202,7 @@ export class VisitasService {
   saveVisit(v: Visit) {
     var insertStatement: string;
     var params = []
-   
+
     insertStatement = "INSERT OR REPLACE INTO visits(" +
       "co_visit, st_visit, da_visit, coordenada, id_client, co_client," +
       "na_client, nu_sequence, id_user, co_user, co_enterprise, id_enterprise, id_visit, " +
@@ -315,68 +315,76 @@ export class VisitasService {
 
   }
 
+  /* changeDateVisit() {
+    const udpateStatement = "UPDATE visits SET da_visit = '2024-11-24T10:00:00'";
+    return this.dbServ.getDatabase().executeSql(udpateStatement, []).then(visitlist => {
+      console.log(visitlist);
+    })
+  } */
+
   getVisitList(today: string) {
 
     var retrieveReassignments = "SELECT * FROM visits WHERE is_reassigned = true AND da_reassign like ? ORDER BY nu_sequence ASC";
 
-    var retrieveVisits = "SELECT * FROM visits WHERE da_visit like ? ORDER BY nu_sequence ASC";
+    //var retrieveVisits = "SELECT * FROM visits WHERE da_visit like ? ORDER BY nu_sequence ASC";
+    var retrieveVisits = "SELECT * FROM visits WHERE da_visit IS NOT NULL AND substr(da_visit,1,10) <= substr(REPLACE(?, '%', ''),1,10) AND CAST(TRIM(st_visit) AS INTEGER) IN (0,2,6) ORDER BY nu_sequence ASC";
 
-    return this.dbServ.getDatabase().executeSql(retrieveVisits, [today]).then(visitlist => {      
+    return this.dbServ.getDatabase().executeSql(retrieveVisits, [today]).then(visitlist => {
       //console.log(data);
       let visits: Visit[] = []
       for (let i = 0; i < visitlist.rows.length; i++) {
-            visits.push(this.visitDBtoObj(visitlist.rows.item(i)));
-     }
-      if(this.rolTransportista){
+        visits.push(this.visitDBtoObj(visitlist.rows.item(i)));
+      }
+      if (this.rolTransportista) {
         //si es transportista, miro si hay reasignaciones para hoy y las meto en la lista
-       return this.dbServ.getDatabase().executeSql(retrieveReassignments, [today]).then(reasignaciones => {
+        return this.dbServ.getDatabase().executeSql(retrieveReassignments, [today]).then(reasignaciones => {
           let reassigned = []
           for (let i = 0; i < reasignaciones.rows.length; i++) {
             reassigned.push(this.visitDBtoObj(reasignaciones.rows.item(i)));
           }
           return [...reassigned, ...visits];
         });
-      }else{
+      } else {
         //no es transportista, no miro reasignaciones
         return visits;
       }
 
     });
-  
+
   }
 
-  visitDBtoObj(item : any) {
+  visitDBtoObj(item: any) {
     //traduzco el resultado de la bd al objeto visita
-      let v: Visit = {
-          idVisit: item.id_visit,
-          coVisit: item.co_visit,
-          stVisit: item.st_visit,
-          daVisit: item.da_visit,
-          coordenada: item.coordenada,
-          idClient: item.id_client,
-          coClient: item.co_client,
-          naClient: item.na_client,
-          nuSequence: item.nu_sequence,
-          idUser: item.id_user,
-          coUser: item.co_user,
-          coEnterprise: item.co_enterprise,
-          idEnterprise: item.id_enterprise,
-          visitDetails: [],
-          daInitial: item.da_initial,
-          daReal: item.da_real,
-          idAddressClient: item.id_address_client,
-          coAddressClient: item.co_address_client,
-          coordenadaSaved: item.coordenadaSaved,
-          hasAttachments: item.has_attachments,
-          nuAttachments: item.nu_attachments,
-          isReassigned: item.is_reassigned === "true" ? true : false,
-          txReassignedMotive: item.tx_reassigned_motive,
-          daReassign: item.da_reassign,
-          noDispatchedMotive: item.no_dispatched_motive,
-          isDispatched: item.is_dispatched === "true" ? true : false,
-          isVisited: item.is_visited === "true" ? true : false,
-      }
-      return v;
+    let v: Visit = {
+      idVisit: item.id_visit,
+      coVisit: item.co_visit,
+      stVisit: item.st_visit,
+      daVisit: item.da_visit,
+      coordenada: item.coordenada,
+      idClient: item.id_client,
+      coClient: item.co_client,
+      naClient: item.na_client,
+      nuSequence: item.nu_sequence,
+      idUser: item.id_user,
+      coUser: item.co_user,
+      coEnterprise: item.co_enterprise,
+      idEnterprise: item.id_enterprise,
+      visitDetails: [],
+      daInitial: item.da_initial,
+      daReal: item.da_real,
+      idAddressClient: item.id_address_client,
+      coAddressClient: item.co_address_client,
+      coordenadaSaved: item.coordenadaSaved,
+      hasAttachments: item.has_attachments,
+      nuAttachments: item.nu_attachments,
+      isReassigned: item.is_reassigned === "true" ? true : false,
+      txReassignedMotive: item.tx_reassigned_motive,
+      daReassign: item.da_reassign,
+      noDispatchedMotive: item.no_dispatched_motive,
+      isDispatched: item.is_dispatched === "true" ? true : false,
+      isVisited: item.is_visited === "true" ? true : false,
+    }
+    return v;
   }
 
   getNuSequence(date: String) {
