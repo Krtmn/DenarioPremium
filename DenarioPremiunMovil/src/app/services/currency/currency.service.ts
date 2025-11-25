@@ -352,8 +352,8 @@ export class CurrencyService {
         let cm: CurrencyModules = {
           idCurrencyModules: item.id_currency_module,
           idModule: item.id_module,
-          localCurrencyDefault: item.local_currency_default.toLowerCase() === 'true',
-          showConversion: item.show_conversion.toLowerCase() === 'true',
+          localCurrencyDefault: item.local_currency_default === null ? true : item.local_currency_default.toLowerCase() === 'true',
+          showConversion: item.show_conversion === null ? true : item.show_conversion.toLowerCase() === 'true',
           currencySelector: item.currency_selector === null ? true : item.currency_selector.toLowerCase() === 'true',
         };
         map.set(item.co_module, cm);
