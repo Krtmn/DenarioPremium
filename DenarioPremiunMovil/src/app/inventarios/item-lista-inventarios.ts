@@ -6,4 +6,5 @@ export interface ItemListaInventarios {
     stClientStock: number;
     daClientStock: string;
     naStatus: string;
+    stDelivery: number;
 }

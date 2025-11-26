@@ -425,7 +425,7 @@
         "name": "client_stocks",
         "table": "clientStocks",
         "idName": "co_client_stock",
-        "sql": "CREATE TABLE IF NOT EXISTS client_stocks (id_client_stock INTEGER,co_client_stock VARCHAR(50) PRIMARY KEY,id_user INTEGER,co_user VARCHAR(50),id_client INTEGER,co_client VARCHAR(50),id_address_client INTEGER,co_address_client VARCHAR(50),coordenada VARCHAR(50),tx_comment VARCHAR (500),id_enterprise INTEGER,co_enterprise VARCHAR(50),da_client_stock VARCHAR(80),st_client_stock INTEGER,lb_client VARCHAR(50),isSave VARCHAR(5), nu_attachments INTEGER, has_attachments BOOLEAN);"
+        "sql": "CREATE TABLE IF NOT EXISTS client_stocks (id_client_stock INTEGER,co_client_stock VARCHAR(50) PRIMARY KEY,id_user INTEGER,co_user VARCHAR(50),id_client INTEGER,co_client VARCHAR(50),id_address_client INTEGER,co_address_client VARCHAR(50),coordenada VARCHAR(50),tx_comment VARCHAR (500),id_enterprise INTEGER,co_enterprise VARCHAR(50),da_client_stock VARCHAR(80),st_client_stock INTEGER,lb_client VARCHAR(50),isSave VARCHAR(5), nu_attachments INTEGER, has_attachments BOOLEAN, st_delivery INTEGER);"
     },
     {
         "id": 99115,

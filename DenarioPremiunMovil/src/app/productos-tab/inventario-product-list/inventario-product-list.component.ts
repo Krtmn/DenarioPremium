@@ -164,7 +164,7 @@ export class InventarioProductListComponent implements OnInit {
     this.inventariosLogicService.typeDep = false;
     let indexDetail = this.inventariosLogicService.productTypeStocksMap.get(this.inventariosLogicService.productSelected.idProduct)
 
-    if (this.inventariosLogicService.newClientStock.stClientStock == DELIVERY_STATUS_SAVED) {
+    if (this.inventariosLogicService.newClientStock.stDelivery == DELIVERY_STATUS_SAVED) {
       //ES UN INVENTARIO GUARDADO
       if (this.inventariosLogicService.newClientStock.clientStockDetails == undefined
         || this.inventariosLogicService.newClientStock.clientStockDetails.length == 0) {

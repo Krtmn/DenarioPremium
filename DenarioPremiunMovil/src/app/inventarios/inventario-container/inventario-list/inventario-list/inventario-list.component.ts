@@ -27,6 +27,7 @@ export class InventarioListComponent implements OnInit {
   public indice!: number;
   public messageAlert!: MessageAlert;
 
+  public DELIVERY_STATUS_SAVED = DELIVERY_STATUS_SAVED; // para usar en el html
 
   constructor() { }
 
@@ -90,7 +91,7 @@ export class InventarioListComponent implements OnInit {
 
   beforeOpenStock(index: number) {
     //el pedido no es enviado?: saved = true;
-    var saved = (this.listClientStock[index].stClientStock == 1);
+    var saved = (this.listClientStock[index].stDelivery == DELIVERY_STATUS_SAVED);
     if (this.inventariosLogicService.userMustActivateGPS && saved) {
       if(!this.inventariosLogicService.newClientStock.coordenada || 
         this.inventariosLogicService.newClientStock.coordenada !== ""){
@@ -116,7 +117,7 @@ export class InventarioListComponent implements OnInit {
       this.inventariosLogicService.inventarioComp = true;
       this.inventariosLogicService.containerComp = false;
       this.inventariosLogicService.inventarioList = false;
-      if (this.inventariosLogicService.newClientStock.stClientStock == DELIVERY_STATUS_SENT) {
+      if (this.inventariosLogicService.newClientStock.stDelivery == DELIVERY_STATUS_SENT) {
         this.inventariosLogicService.showHeaderButtonsFunction(false);
         this.inventariosLogicService.hideTab = false;
         this.inventariosLogicService.inventarioSent = true;
