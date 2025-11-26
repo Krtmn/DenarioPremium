@@ -347,8 +347,9 @@ export class PedidosDbService {
       "nu_amount_total_base, st_order, coordenada, nu_discount, id_currency, id_currency_conversion, " +
       "nu_value_local, nu_amount_total_conversion, nu_amount_final_conversion, procedencia, " +
       "nu_amount_total_base_conversion, nu_amount_discount_conversion, id_order_type, nu_attachments, has_attachments, " +
-      "nu_details, nu_amount_total_product_discount, nu_amount_total_product_discount_conversion, id_distribution_channel, co_distribution_channel) " +
-      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "nu_details, nu_amount_total_product_discount, nu_amount_total_product_discount_conversion, id_distribution_channel, co_distribution_channel, "+
+      "st_delivery) " +
+      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     let detailQuery = "INSERT OR REPLACE INTO order_details (id_order_detail, co_order_detail, co_order, co_product, na_product, " +
       "id_product, nu_price_base, nu_amount_total, co_warehouse, id_warehouse, qu_suggested, co_enterprise, id_enterprise, " +
@@ -415,8 +416,9 @@ export class PedidosDbService {
       "nu_amount_total_base, st_order, coordenada, nu_discount, id_currency, id_currency_conversion, " +
       "nu_value_local, nu_amount_total_conversion, nu_amount_final_conversion, procedencia, " +
       "nu_amount_total_base_conversion, nu_amount_discount_conversion, id_order_type, nu_attachments, has_attachments, " +
-      "nu_details, nu_amount_total_product_discount, nu_amount_total_product_discount_conversion, id_distribution_channel, co_distribution_channel) " +
-      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "nu_details, nu_amount_total_product_discount, nu_amount_total_product_discount_conversion, id_distribution_channel, co_distribution_channel, "+
+      "st_delivery) " +
+      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
 

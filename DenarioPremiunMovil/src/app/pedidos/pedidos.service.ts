@@ -1071,6 +1071,7 @@ export class PedidosService {
     this.coOrder = coOrder;
     pedido.idOrder = 0;
     pedido.stOrder = DELIVERY_STATUS_SAVED;
+    pedido.stDelivery = DELIVERY_STATUS_SAVED;
     for (let i = 0; i < pedido.orderDetails.length; i++) {
       const detail = pedido.orderDetails[i];
       let coOrderDetail = this.dateService.generateCO(i);

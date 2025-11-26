@@ -1,4 +1,4 @@
-//Valores de status de envio(stVisit, stOrder, etc)
+//Valores de status de envio (stDelivery)
 
 export const DELIVERY_STATUS_NEW = 0
 export const DELIVERY_STATUS_SAVED = 1;
