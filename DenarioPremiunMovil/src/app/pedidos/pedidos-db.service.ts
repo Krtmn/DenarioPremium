@@ -375,7 +375,7 @@ export class PedidosDbService {
     order.nuAmountTotalBase, order.stOrder, order.coordenada, order.nuDiscount, order.idCurrency, order.idCurrencyConversion,
     order.nuValueLocal, order.nuAmountTotalConversion, order.nuAmountFinalConversion, order.procedencia, order.nuAmountTotalBaseConversion,
     order.nuAmountDiscountConversion, order.idOrderType, order.nuAttachments, order.hasAttachments, order.nuDetails,
-    order.nuAmountTotalProductDiscount, order.nuAmountTotalProductDiscountConversion, order.idDistributionChannel, order.coDistributionChannel]]);
+    order.nuAmountTotalProductDiscount, order.nuAmountTotalProductDiscountConversion, order.idDistributionChannel, order.coDistributionChannel, order.stDelivery]]);
 
     for (let i = 0; i < order.orderDetails.length; i++) {
       const item = order.orderDetails[i];
@@ -432,7 +432,7 @@ export class PedidosDbService {
       order.nuAmountTotalBase, order.stOrder, order.coordenada, order.nuDiscount, order.idCurrency, order.idCurrencyConversion,
       order.nuValueLocal, order.nuAmountTotalConversion, order.nuAmountFinalConversion, order.procedencia, order.nuAmountTotalBaseConversion,
       order.nuAmountDiscountConversion, order.idOrderType, order.nuAttachments, order.hasAttachments, order.nuDetails,
-      order.nuAmountTotalProductDiscount, order.nuAmountTotalProductDiscountConversion, order.idDistributionChannel, order.coDistributionChannel]]);
+      order.nuAmountTotalProductDiscount, order.nuAmountTotalProductDiscountConversion, order.idDistributionChannel, order.coDistributionChannel, order.stDelivery]]);
     }
     return db.sqlBatch(queries).then(() => { }).catch(error => { });
   }
