@@ -620,7 +620,7 @@ export class AutoSendService implements OnInit {
 
       case 'order':
         this.dbService.getDatabase().executeSql(
-          'UPDATE orders SET id_order = ? , st_order = ? WHERE co_order = ?', [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
+          'UPDATE orders SET id_order = ? , st_delivery = ? WHERE co_order = ?', [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
         ).then(res => {
           this.adjuntoService.sendPhotos(this.dbService.getDatabase(), idTransaction, "pedidos", coTransaction);
         })
