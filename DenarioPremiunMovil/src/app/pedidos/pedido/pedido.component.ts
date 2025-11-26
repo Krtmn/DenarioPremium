@@ -20,7 +20,7 @@ import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { Subscription } from 'rxjs';
 import { Location } from '@angular/common'
-import { COLOR_VERDE, DELIVERY_STATUS_NEW, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { COLOR_VERDE, DELIVERY_STATUS_NEW, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 import { ClienteSelectorService } from 'src/app/cliente-selector/cliente-selector.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
@@ -202,13 +202,14 @@ export class PedidoComponent implements OnInit {
           }
         });
 
+        /*//removido temporalmente
         //SI EL STORDER ES 6, NO DEBO MOSTRAR LA PESTAÑA ADJUNTOS
         if (this.orderServ.order.stOrder == 6) {
           this.hideAdjunto = false;
         } else {
           this.hideAdjunto = true;
         }
-
+        */
       } else {
         this.hideAdjunto = true;
         this.empresaSeleccionada = this.enterpriseServ.defaultEnterprise();
@@ -541,8 +542,8 @@ export class PedidoComponent implements OnInit {
 
   }
 
-  async saveOrder(stOrder: number) {
-    let order = this.makeOrder(stOrder);
+  async saveOrder(stDelivery: number) {
+    let order = this.makeOrder(stDelivery);
     await this.orderServ.deleteOrder(this.orderServ.coOrder); //borramos el pedido si este existe para evitar conflictos en BD
     await this.orderServ.saveOrder(order);
     await this.adjuntoService.savePhotos(this.dbServ.getDatabase(), order.coOrder, 'pedidos'); //guardamos adjuntos
@@ -603,7 +604,7 @@ export class PedidoComponent implements OnInit {
 
   }
 
-  makeOrder(stOrder: number) {
+  makeOrder(stDelivery: number) {
     //toma la data del pedido y la transforma en un objeto Orders
 
     let cliente = this.orderServ.cliente;
@@ -715,7 +716,7 @@ export class PedidoComponent implements OnInit {
       idAddress: this.direccionCliente.idAddress,
       nuAmountDiscount: this.orderServ.totalDctoXProducto + this.orderServ.totalGlobalDc,
       nuAmountTotalBase: this.orderServ.totalBase,
-      stOrder: stOrder,
+      stOrder: DELIVERY_STATUS_SENT,
       coordenada: this.orderServ.coordenadas,
       nuDiscount: this.orderServ.dctoGlobal,
       idCurrency: this.monedaSeleccionada.idCurrency,
@@ -735,6 +736,7 @@ export class PedidoComponent implements OnInit {
       nuAttachments: this.adjuntoService.getNuAttachment(),
       idDistributionChannel: this.orderServ.userCanSelectChannel ? this.distChannel.idChannel : null,
       coDistributionChannel: this.orderServ.userCanSelectChannel ? this.distChannel.coChannel : null,
+      stDelivery: stDelivery,
     } as Orders
 
     console.log(order);
@@ -1386,6 +1388,7 @@ export class PedidoComponent implements OnInit {
       nuAttachments: 0,
       idDistributionChannel: null,
       coDistributionChannel: null,
+      stDelivery: DELIVERY_STATUS_NEW
     } as Orders;
   }
   getNaPaymentCondition(coPaymentCondition: string) {
