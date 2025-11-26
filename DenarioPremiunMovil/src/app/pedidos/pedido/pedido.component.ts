@@ -1386,6 +1386,7 @@ export class PedidoComponent implements OnInit {
       nuAttachments: 0,
       idDistributionChannel: null,
       coDistributionChannel: null,
+      stDelivery: DELIVERY_STATUS_NEW
     } as Orders;
   }
   getNaPaymentCondition(coPaymentCondition: string) {
