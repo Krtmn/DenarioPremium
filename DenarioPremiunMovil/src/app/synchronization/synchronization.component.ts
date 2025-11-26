@@ -672,6 +672,10 @@ export class SynchronizationComponent implements OnInit {
               const resTable = (result as any)[rowKey];
               const sqlInfo = this.sqlTableMap[key];
 
+              if(!resTable){
+                console.error(`[sync] No se recibió data para la tabla con key=${key} (tableId=${tableId})`);
+              }
+
               // 1. Borra filas si corresponde
               if (resTable.deletedRowsIds != null && sqlInfo) {
                 this.handleDeletedRows(resTable.deletedRowsIds, sqlInfo.table, sqlInfo.idName);

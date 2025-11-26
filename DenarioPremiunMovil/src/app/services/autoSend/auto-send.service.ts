@@ -11,7 +11,7 @@ import { ServicesService } from '../services.service';
 import { MessageService } from '../messageService/message.service';
 import { Response } from 'src/app/modelos/response';
 import { Visit } from 'src/app/modelos/tables/visit';
-import { DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED, CLIENT_POTENTIAL_STATUS_SENT } from 'src/app/utils/appConstants'
+import { DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED, CLIENT_POTENTIAL_STATUS_SENT, ORDER_STATUS_NEW, ORDER_STATUS_SAVED, ORDER_STATUS_SENT, ORDER_STATUS_TO_SEND } from 'src/app/utils/appConstants'
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { UserAddresClients } from 'src/app/modelos/tables/userAddresClients';
 import { ClientLocationService } from '../clientes/locationClient/client-location.service';
@@ -620,7 +620,7 @@ export class AutoSendService implements OnInit {
 
       case 'order':
         this.dbService.getDatabase().executeSql(
-          'UPDATE orders SET id_order = ? , st_order = ? WHERE co_order = ?', [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
+          'UPDATE orders SET id_order = ? , st_delivery = ? WHERE co_order = ?', [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
         ).then(res => {
           this.adjuntoService.sendPhotos(this.dbService.getDatabase(), idTransaction, "pedidos", coTransaction);
         })
@@ -668,7 +668,7 @@ export class AutoSendService implements OnInit {
 
       case 'collect': {
         this.dbService.getDatabase().executeSql(
-          'UPDATE collections SET id_collection= ?, st_collection= ? WHERE co_collection = ?',
+          'UPDATE collections SET id_collection= ?, st_collection= ?, st_delivery = 3 WHERE co_collection = ?',
           [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
         ).then(res => {
           console.log("UPDATE EXITOSO ", res);

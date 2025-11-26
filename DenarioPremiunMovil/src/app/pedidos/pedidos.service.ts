@@ -32,7 +32,7 @@ import { EnterpriseService } from '../services/enterprise/enterprise.service';
 import { Router } from '@angular/router';
 import { ImageServicesService } from '../services/imageServices/image-services.service';
 import { DateServiceService } from '../services/dates/date-service.service';
-import { DELIVERY_STATUS_SAVED, VISIT_STATUS_SAVED } from '../utils/appConstants';
+import { DELIVERY_STATUS_NEW, DELIVERY_STATUS_SAVED, VISIT_STATUS_SAVED } from '../utils/appConstants';
 import { GlobalDiscount } from '../modelos/tables/globalDiscount';
 import { ClientChannelOrderType } from '../modelos/tables/clientChannelOrderType';
 import { OrderTypeProductStructure } from '../modelos/tables/orderTypeProductStructure';
@@ -1071,6 +1071,7 @@ export class PedidosService {
     this.coOrder = coOrder;
     pedido.idOrder = 0;
     pedido.stOrder = DELIVERY_STATUS_SAVED;
+    pedido.stDelivery = DELIVERY_STATUS_SAVED;
     for (let i = 0; i < pedido.orderDetails.length; i++) {
       const detail = pedido.orderDetails[i];
       let coOrderDetail = this.dateService.generateCO(i);
@@ -1337,6 +1338,7 @@ export class PedidosService {
         "nuAttachments": 0,
         "idDistributionChannel": null,
         "coDistributionChannel": null,
+        "stDelivery": DELIVERY_STATUS_NEW
       }
 
       for (let i = 0; i < this.datosPedidoSugerido.productos.length; i++) {
