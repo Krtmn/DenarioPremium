@@ -5,6 +5,7 @@ export interface ItemListaCobros {
     co_client: string;
     lb_client: string;
     st_collection: number;
+    st_delivery: number;
     da_collection: string;
     co_type: string;
     na_status: string;

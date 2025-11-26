@@ -29,6 +29,8 @@ import { ClientBankAccount } from 'src/app/modelos/tables/clientBankAccount';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { ItemListaCobros } from 'src/app/cobros/item-lista-cobros';
+import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, DELIVERY_STATUS_NEW } from 'src/app/utils/appConstants';
+
 
 @Injectable({
   providedIn: 'root'
@@ -475,7 +477,7 @@ export class CollectionService {
       return this.currencyList.find(c => ((c?.coCurrency ?? '').toString() === co.toString()));
     };
 
-    const st = Number(this.collection?.stCollection ?? 0);
+    const st = Number(this.collection?.stDelivery ?? DELIVERY_STATUS_NEW);
     let chosen: Currencies | undefined;
 
     // 1) Si la colección ya tiene estado distinto de 0 -> respetar collection.coCurrency
@@ -672,7 +674,7 @@ export class CollectionService {
       /* this.fechaMayor = yearMayor + "-" + monthMayor + "-" + diaMayor + " " + hora.split(" ")[1]; */
       this.dateRate = yearMayor + "-" + monthMayor + "-" + diaMayor + " " + hora.split(" ")[1];
 
-      if (this.collection.stCollection == 1) {
+      if (this.collection.stDelivery == DELIVERY_STATUS_SAVED) {
         this.dateRateVisual = this.collection.daRate + "T00:00:00";
       } else
         this.dateRateVisual = yearMayor + "-" + monthMayor + "-" + diaMayor + "T00:00:00";
@@ -683,7 +685,7 @@ export class CollectionService {
 
   getDateRate(dbServ: SQLiteObject, fecha: string) {
 
-    if (this.collection.stCollection > 2)
+    if (this.collection.stDelivery == DELIVERY_STATUS_TO_SEND)
       return;
 
     this.dateRate = fecha;
@@ -726,7 +728,7 @@ export class CollectionService {
       return Promise.resolve(true);
     } else {
       //no tengo tasa para ese dia
-      if (this.collection.stCollection === 3) {
+      if (this.collection.stDelivery == DELIVERY_STATUS_SENT) {
         this.rateSelected = this.collection.nuValueLocal;
         this.historicoTasa = true;
       } else {
@@ -756,7 +758,7 @@ export class CollectionService {
     let montoConversion = 0;
     let montoTotalDiscounts = 0;
 
-    if (this.collection.stCollection == 1) {
+    if (this.collection.stDelivery == DELIVERY_STATUS_SAVED) {
       for (var j = 0; j < this.collection.collectionDetails.length; j++) {
         monto += this.collection.collectionDetails[j].nuAmountPaid;
         montoConversion += this.collection.collectionDetails[j].nuAmountPaidConversion;
@@ -765,7 +767,7 @@ export class CollectionService {
         this.montoTotalPagarConversion = montoConversion;
 
       }
-    } else if (this.collection.stCollection == 2 || this.collection.stCollection == 3) {
+    } else if (this.collection.stDelivery == DELIVERY_STATUS_TO_SEND || this.collection.stDelivery == DELIVERY_STATUS_SENT) {
       monto = this.collection.nuAmountTotal;
       montoConversion = this.collection.nuAmountTotalConversion;
       this.montoTotalPagar = monto;
@@ -1437,7 +1439,7 @@ export class CollectionService {
 
   getDocumentsSales(dbServ: SQLiteObject, idClient: number, coCurrency: string, coCollection: string, idEnterprise: number) {
 
-    if (this.collection.stCollection > 2)
+    if (this.collection.stDelivery == DELIVERY_STATUS_TO_SEND)
       return Promise.resolve();
 
     let selectStatement = ""
@@ -1561,7 +1563,7 @@ export class CollectionService {
                   this.documentSalesBackup[i].daVoucher = this.collection.collectionDetails[cd].daVoucher!;
                   this.documentSalesBackup[i].nuAmountDiscount = this.collection.collectionDetails[cd].nuAmountDiscount;
 
-                  if (this.collection.stCollection != 1) {
+                  if (this.collection.stDelivery != DELIVERY_STATUS_SAVED) {
                     this.collection.collectionDetails[cd].nuBalanceDoc = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
                     this.collection.collectionDetails[cd].nuBalanceDocConversion = this.documentSales[i].nuBalance;
                     this.collection.collectionDetails[cd].nuAmountPaid = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
@@ -1966,6 +1968,7 @@ export class CollectionService {
             nuBalanceDoc: data.rows.item(i).nu_balance_doc,
             coPaymentMethod: data.rows.item(i).co_payment_method,
             stCollection: status[data.rows.item(i).st_collection],
+            stDelivery: status[data.rows.item(i).st_delivery],
             nuPaymentDoc: data.rows.item(i).nu_payment_doc == "" ? "No Ref" : data.rows.item(i).nu_payment_doc,
           })
         }
@@ -2017,7 +2020,7 @@ export class CollectionService {
       if (this.onChangeClient)
         this.cobroValid = true;
 
-      if (this.collection.stCollection == 1 || this.collection.stCollection == 3)
+      if (this.collection.stDelivery == DELIVERY_STATUS_SAVED || this.collection.stDelivery == DELIVERY_STATUS_SENT)
         this.cobroValid = true;
 
       this.onCollectionValidToSave(true);
@@ -2025,7 +2028,7 @@ export class CollectionService {
       if (this.onChangeClient)
         this.cobroValid = true;
     }
-    if (this.collection.stCollection == 2 || this.collection.stCollection == 3)
+    if (this.collection.stDelivery == DELIVERY_STATUS_TO_SEND || this.collection.stDelivery == DELIVERY_STATUS_SENT)
       this.cobroValid = true;
 
     this.validCollection.next(valid);
@@ -2052,7 +2055,7 @@ export class CollectionService {
 
     if (this.globalConfig.get("requiredComment") === 'true' ? true : false) {
       if (this.collection.txComment.trim() == "") {
-        if (this.collection.stCollection == 1)
+        if (this.collection.stDelivery == DELIVERY_STATUS_SAVED)
           banderaRequiredComment = true;
         else
           banderaRequiredComment = false;
@@ -2117,6 +2120,7 @@ export class CollectionService {
       idEnterprise: 0,
       coEnterprise: "",
       stCollection: 0,
+      stDelivery: 0,
       isEdit: 0,
       isEditTotal: 0,
       isSave: 0,
@@ -2142,6 +2146,7 @@ export class CollectionService {
       hasAttachments: false,
       collectionDetails: [] as CollectionDetail[],
       collectionPayments: [] as CollectionPayment[],
+
     }
   }
 
@@ -2500,6 +2505,7 @@ export class CollectionService {
         "co_client," +
         "lb_client," +
         "st_collection," +
+        "st_delivery," +
         "da_collection," +
         "da_rate," +
         "na_responsible," +
@@ -2524,7 +2530,7 @@ export class CollectionService {
         "hasIGTF," +
         "nu_attachments," +
         "has_attachments" +
-        ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
       return dbServ.executeSql(insertCollection,
         [
           0,
@@ -2534,6 +2540,7 @@ export class CollectionService {
           collection.coClient,
           collection.lbClient,
           collection.stCollection,
+          collection.stDelivery,
           collection.daCollection,
           collection.daRate,
           collection.naResponsible,
@@ -2557,7 +2564,8 @@ export class CollectionService {
           collection.nuIgtf,
           collection.hasIGTF,
           collection.nuAttachments,
-          collection.hasAttachments
+          collection.hasAttachments,
+
         ]
       ).then(data => {
         console.log("COLLECTION INSERT", data);
@@ -2619,7 +2627,7 @@ export class CollectionService {
     // ...existing code...
 
     const insertCollectionSQL = `
-  INSERT INTO collections (
+  INSERT OR REPLACE INTO collections (
     id_collection,
     co_collection,
     co_original_collection,
@@ -2627,6 +2635,7 @@ export class CollectionService {
     co_client,
     lb_client,
     st_collection,
+    st_delivery,
     da_collection,
     da_rate,
     na_responsible,
@@ -2651,12 +2660,12 @@ export class CollectionService {
     hasIGTF,
     nu_attachments,
     has_attachments
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
     // ...existing code...
 
     const insertCollectionDetailSQL = `
-  INSERT INTO collection_details (
+  INSERT OR REPLACE INTO collection_details (
     id_collection_detail,
     co_collection,
     co_document,
@@ -2687,7 +2696,7 @@ export class CollectionService {
     // ...existing code...
 
     const insertCollectionPaymentSQL = `
-  INSERT INTO collection_payments (
+  INSERT OR REPLACE INTO collection_payments (
     id_collection_payment,
     co_collection,
     id_collection_detail,
@@ -2721,6 +2730,7 @@ export class CollectionService {
           collect.coClient,
           collect.naClient,
           collect.stCollection,
+          collect.stDelivery,
           collect.daCollection,
           collect.daRate,
           collect.naResponsible,
@@ -2744,7 +2754,8 @@ export class CollectionService {
           collect.nuAmountFinalConversion,
           collect.hasIGTF,
           collect.nuAttachments,
-          collect.hasAttachments
+          collect.hasAttachments,
+
         ]
       ]);
 
@@ -2972,6 +2983,7 @@ export class CollectionService {
       "co_client," +
       "lb_client," +
       "st_collection," +
+      "st_delivery," +
       "da_collection," +
       "da_rate," +
       "na_responsible," +
@@ -2995,8 +3007,8 @@ export class CollectionService {
       "nu_igtf," +
       "hasIGTF," +
       "nu_attachments," +
-      "has_attachments" +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "has_attachments," +
+      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
 
     let newCoCollection = this.dateServ.generateCO(0);
@@ -3009,6 +3021,7 @@ export class CollectionService {
         collection.coClient,
         collection.lbClient,
         collection.stCollection,
+        collection.stDelivery,
         collection.daCollection,
         collection.daRate,
         collection.naResponsible,
@@ -3032,7 +3045,7 @@ export class CollectionService {
         collection.nuIgtf,
         collection.hasIGTF,
         collection.nuAttachments,
-        collection.hasAttachments
+        collection.hasAttachments,
       ]).then(data => {
         console.log("CREE ANTICIPO AUTOMATICO, DEBO CREAR EL PAYMENT")
         return this.createAnticipoCollectionPayment(dbServ, collection, newCoCollection);
@@ -3107,19 +3120,19 @@ export class CollectionService {
             ') VALUES (?,?,?)'; */
       const updateStatement = "UPDATE document_st SET st_document = ? WHERE co_document = ?"
       for (var i = 0; i < documentSales.length; i++) {
-        let stCollection = 0;
+        let stDelivery = 0;
         if (documentSales[i].isSelected) {
           if (documentSales[i].inPaymentPartial)
-            stCollection = 0;
+            stDelivery = 0;
           else //if (this.sendCollection)
-            stCollection = 2;
+            stDelivery = 2;
           stamentenDocumentSt.push([updateStatement, [
-            stCollection,
+            stDelivery,
             documentSales[i].coDocument,
           ]]);
         } else {
           stamentenDocumentSt.push([updateStatement, [
-            stCollection,
+            stDelivery,
             documentSales[i].coDocument,
           ]]);
         }
@@ -3217,6 +3230,7 @@ export class CollectionService {
         collection.idEnterprise = res.rows.item(0).id_enterprise;
         collection.coEnterprise = res.rows.item(0).co_enterprise;
         collection.stCollection = res.rows.item(0).st_collection;
+        collection.stDelivery = res.rows.item(0).st_delivery;
         collection.isEdit = 0;
         collection.isEditTotal = 0;
         collection.isSave = 1;
@@ -3382,6 +3396,7 @@ export class CollectionService {
         respCollect.idEnterprise = res.rows.item(i).id_enterprise;
         respCollect.coEnterprise = res.rows.item(i).co_enterprise;
         respCollect.stCollection = res.rows.item(i).st_collection;
+        respCollect.stDelivery = res.rows.item(i).st_delivery;
         respCollect.isEdit = 0;
         respCollect.isEditTotal = 0;
         respCollect.isSave = 1;
@@ -3414,6 +3429,7 @@ export class CollectionService {
           itemListaCobro.co_client = item.co_client;
           itemListaCobro.lb_client = item.lb_client;
           itemListaCobro.st_collection = item.st_collection;
+          itemListaCobro.st_delivery = item.st_delivery;
           itemListaCobro.da_collection = item.da_collection;
           itemListaCobro.na_status = data.na_status;
           itemListaCobro.co_type = item.co_type;
@@ -3563,7 +3579,7 @@ export class CollectionService {
     const original = { ...this.documentSalesBackup[index] };
     this.documentSaleOpen = { ...original };
     this.documentSales[index] = { ...original };
-    /*  if (this.collection.stCollection == 1) { */
+    /*  if (this.collection.stDelivery == DELIVERY_STATUS_SAVED) { */
     const positionCollecDetails = this.documentSaleOpen.positionCollecDetails;
     const nuAmountBase = this.collection.collectionDetails[positionCollecDetails].nuBalanceDoc,
       nuAmountDiscount = this.collection.collectionDetails[positionCollecDetails].nuAmountDiscount,
