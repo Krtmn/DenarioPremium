@@ -500,37 +500,14 @@ export class PedidosDbService {
     let orderUnits: OrderDetailUnit[] = [];
     let orderDetailDiscounts: OrderDetailDiscount[] = [];
 
-    let queryOrder = "SELECT co_order as coOrder, co_client as coClient , id_client as idClient , da_order as daOrder, " +
-      "da_created as daCreated , na_responsible as naResponsible, id_user as idUser, id_order_creator as idOrderCreator, " +
-      "in_order_review as inOrderReview, nu_amount_total as nuAmountTotal, nu_amount_final as nuAmountFinal, co_currency as coCurrency, " +
-      "da_dispatch as daDispatch, tx_comment as txComment, nu_purchase as nuPurchase , co_enterprise as coEnterprise, co_user as coUser , " +
-      "co_payment_condition as coPaymentCondition, id_payment_condition as idPaymentCondition, id_enterprise as idEnterprise, " +
-      "co_address_client as coAddress, id_address_client as idAddress, nu_amount_discount as nuAmountDiscount, " +
-      "nu_amount_total_base as nuAmountTotalBase, st_order as stOrder, coordenada , nu_discount as nuDiscount, " +
-      "id_currency as idCurrency, id_currency_conversion as idCurrencyConversion, nu_value_local as nuValueLocal, " +
-      "nu_amount_total_conversion as nuAmountTotalConversion, nu_amount_final_conversion as nuAmountFinalConversion, " +
-      "procedencia , nu_amount_total_base_conversion as nuAmountTotalBaseConversion, nu_details as nuDetails, nu_amount_total_product_discount as nuAmountTotalProductDiscount, nu_amount_total_product_discount_conversion as nuAmountTotalProductDiscountConversion, " +
-      "nu_amount_discount_conversion as nuAmountDiscountConversion, id_order_type as idOrderType, nu_attachments as nuAttachments, has_attachments as hasAttachments, id_distribution_channel as idDistributionChannel, co_distribution_channel as coDistributionChannel " +
-      "FROM orders WHERE co_order = ?";
+    let queryOrder = "SELECT * FROM orders WHERE co_order = ?";
 
-    let queryDetails = "SELECT id_order_detail as idOrderDetail, co_order_detail as coOrderDetail , co_order as coOrder , co_product as coProduct, " +
-      "na_product as naProduct, id_product as idProduct, nu_price_base as nuPriceBase, nu_amount_total as nuAmountTotal, " +
-      "co_warehouse as coWarehouse, id_warehouse as idWarehouse, qu_suggested as quSuggested, co_enterprise as coEnterprise, " +
-      "id_enterprise as idEnterprise, iva , nu_discount_total as nuDiscountTotal, co_discount as coDiscount, id_discount as idDiscount, " +
-      "co_price_list as coPriceList, id_price_list as idPriceList, posicion , nu_price_base_conversion as nuPriceBaseConversion, " +
-      "nu_discount_total_conversion  nuDiscountTotalConversion, nu_amount_total_conversion as nuAmountTotalConversion " +
-      "FROM order_details WHERE co_order = ? ";
+    let queryDetails = "SELECT * FROM order_details WHERE co_order = ? ";
 
     // para estos 2 debo usar un hack asqueroso donde agrego los coOrderDetail directo al query como strings.
-    let queryUnits = "SELECT id_order_detail_unit as idOrderDetailUnit, co_order_detail_unit  as coOrderDetailUnit, co_order_detail as coOrderDetail, " +
-      "co_product_unit as coProductUnit, id_product_unit as idProductUnit, qu_order as quOrder, co_enterprise as coEnterprise, " +
-      "id_enterprise as idEnterprise, co_unit as coUnit, qu_suggested as quSuggested " +
-      "FROM order_detail_units WHERE co_order_detail in (";
+    let queryUnits = "SELECT * FROM order_detail_units WHERE co_order_detail in (";
 
-    let queryDiscounts = "SELECT  id_order_detail_discount as idOrderDetailDiscount, co_order_detail_discount as coOrderDetailDiscount, " +
-      "co_order_detail as coOrderDetail, id_order_detail as idOrderDetail, id_discount as idDiscount, qu_discount as quDiscount, " +
-      "nu_price_final as nuPriceFinal, co_enterprise as coEnterprise, id_enterprise as idEnterprise " +
-      "FROM order_detail_discount WHERE co_order_detail in ( ";
+    let queryDiscounts = "SELECT * FROM order_detail_discount WHERE co_order_detail in ( ";
 
 
     return db.executeSql(queryOrder, [coOrder]).then(dataHeader => {
@@ -541,7 +518,7 @@ export class PedidosDbService {
         console.error("ERROR: getPedido. No se obtuvo pedido");
         return null;
       }
-      order = dataHeader.rows.item(0);
+      order = this.orderDBtoOrders(dataHeader.rows.item(0));
       return db.executeSql(queryDetails, [coOrder]).then(dataDetails => {
         if (dataDetails.rows.length == 0) {
           console.error("ERROR: getPedido. No se obtuvieron detalles");
@@ -550,7 +527,7 @@ export class PedidosDbService {
 
         let coOrderDetails: string = "'";
         for (let i = 0; i < dataDetails.rows.length; i++) {
-          let item = dataDetails.rows.item(i)
+          let item = this.detailsDBtoOrderDetail(dataDetails.rows.item(i));
           orderDetails.push(item);
           coOrderDetails = coOrderDetails + item.coOrderDetail;
           if (i < dataDetails.rows.length - 1) {
@@ -567,7 +544,7 @@ export class PedidosDbService {
             return null;
           }
           for (let i = 0; i < dataUnits.rows.length; i++) {
-            let item = dataUnits.rows.item(i)
+            let item = this.unitDBtoOrderDetailUnit(dataUnits.rows.item(i));
             orderUnits.push(item);
             let detail = orderDetails.find(x => x.coOrderDetail == item.coOrderDetail);
             if (detail) {
@@ -581,7 +558,7 @@ export class PedidosDbService {
 
             //No hay descuento? no hay problema.
             for (let i = 0; i < dataDiscount.rows.length; i++) {
-              let item = dataDiscount.rows.item(i);
+              let item = this.discountDBtoOrderDetailDiscount(dataDiscount.rows.item(i));
               orderDetailDiscounts.push(item);
               let detail = orderDetails.find(x => x.coOrderDetail == item.coOrderDetail);
               if (detail) {
@@ -815,6 +792,128 @@ export class PedidosDbService {
   }
 
 
+  public orderDBtoOrders(orderDB: any): Orders {
+    //convierte un objeto obtenido de la base de datos a un Orders
+    //de esta manera es mas amigable agregar campos en el futuro
+    let order: Orders = {
+      idOrder: orderDB.id_order,
+      coOrder: orderDB.co_order,
+      coClient: orderDB.co_client,
+      idClient: orderDB.id_client,
+      daOrder: orderDB.da_order,
+      daCreated: orderDB.da_created,
+      naResponsible: orderDB.na_responsible,
+      idUser: orderDB.id_user,
+      idOrderCreator: orderDB.id_order_creator,
+      inOrderReview: orderDB.in_order_review,
+      nuAmountTotal: orderDB.nu_amount_total,
+      nuAmountFinal: orderDB.nu_amount_final,
+      coCurrency: orderDB.co_currency,
+      daDispatch: orderDB.da_dispatch,
+      txComment: orderDB.tx_comment,
+      nuPurchase: orderDB.nu_purchase,
+      coEnterprise: orderDB.co_enterprise,
+      coUser: orderDB.co_user,
+      coPaymentCondition: orderDB.co_payment_condition,
+      idPaymentCondition: orderDB.id_payment_condition,
+      idEnterprise: orderDB.id_enterprise,
+      coAddress: orderDB.co_address_client,
+      idAddress: orderDB.id_address_client,
+      nuAmountDiscount: orderDB.nu_amount_discount,
+      nuAmountTotalBase: orderDB.nu_amount_total_base,
+      stOrder: orderDB.st_order,
+      coordenada: orderDB.coordenada,
+      nuDiscount: orderDB.nu_discount,
+      idCurrency: orderDB.id_currency,
+      idCurrencyConversion: orderDB.id_currency_conversion,
+      nuValueLocal: orderDB.nu_value_local,
+      nuAmountTotalConversion: orderDB.nu_amount_total_conversion,
+      nuAmountFinalConversion: orderDB.nu_amount_final_conversion,
+      procedencia: orderDB.procedencia,
+      nuAmountTotalBaseConversion: orderDB.nu_amount_total_base_conversion,
+      nuAmountDiscountConversion: orderDB.nu_amount_discount_conversion,
+      idOrderType: orderDB.id_order_type,
+      nuAttachments: orderDB.nu_attachments,
+      hasAttachments: orderDB.has_attachments,
+      nuDetails: orderDB.nu_details,
+      nuAmountTotalProductDiscount: orderDB.nu_amount_total_product_discount,
+      nuAmountTotalProductDiscountConversion: orderDB.nu_amount_total_product_discount_conversion,
+      idDistributionChannel: orderDB.id_distribution_channel,
+      coDistributionChannel: orderDB.co_distribution_channel,
+      stDelivery: orderDB.st_delivery,
+      orderDetails: []
+    };
+    return order;
+    }
+
+    public detailsDBtoOrderDetail(detailDB: any): OrderDetail {
+      //convierte un objeto obtenido de la base de datos a un OrderDetail
+      //de esta manera es mas amigable agregar campos en el futuro
+      let detail: OrderDetail = {
+        idOrderDetail: detailDB.id_order_detail,
+        coOrderDetail: detailDB.co_order_detail,
+        coOrder: detailDB.co_order,
+        coProduct: detailDB.co_product,
+        naProduct: detailDB.na_product,
+        idProduct: detailDB.id_product,
+        nuPriceBase: detailDB.nu_price_base,
+        nuAmountTotal: detailDB.nu_amount_total,
+        coWarehouse: detailDB.co_warehouse,
+        idWarehouse: detailDB.id_warehouse,
+        quSuggested: detailDB.qu_suggested,
+        coEnterprise: detailDB.co_enterprise,
+        idEnterprise: detailDB.id_enterprise,
+        iva: detailDB.iva,
+        nuDiscountTotal: detailDB.nu_discount_total,
+        coDiscount: detailDB.co_discount,
+        idDiscount: detailDB.id_discount,
+        coPriceList: detailDB.co_price_list,
+        idPriceList: detailDB.id_price_list,
+        posicion: detailDB.posicion,
+        nuPriceBaseConversion: detailDB.nu_price_base_conversion,
+        nuDiscountTotalConversion: detailDB.nu_discount_total_conversion,
+        nuAmountTotalConversion: detailDB.nu_amount_total_conversion,
+        orderDetailUnit: [],
+        orderDetailDiscount: []
+      };
+      return detail;
+      }
+
+      public unitDBtoOrderDetailUnit(unitDB: any): OrderDetailUnit {
+        //convierte un objeto obtenido de la base de datos a un OrderDetailUnit
+        //de esta manera es mas amigable agregar campos en el futuro
+        let unit: OrderDetailUnit = {
+          idOrderDetailUnit: unitDB.id_order_detail_unit,
+          coOrderDetailUnit: unitDB.co_order_detail_unit,
+          coOrderDetail: unitDB.co_order_detail,
+          coProductUnit: unitDB.co_product_unit,
+          idProductUnit: unitDB.id_product_unit,
+          quOrder: unitDB.qu_order,
+          coEnterprise: unitDB.co_enterprise,
+          idEnterprise: unitDB.id_enterprise,
+          coUnit: unitDB.co_unit,
+          quSuggested: unitDB.qu_suggested
+
+        };
+        return unit;
+      }
+
+      public discountDBtoOrderDetailDiscount(discountDB: any): OrderDetailDiscount {
+        //convierte un objeto obtenido de la base de datos a un OrderDetailDiscount
+        //de esta manera es mas amigable agregar campos en el futuro
+        let discount: OrderDetailDiscount = {
+          idOrderDetailDiscount: discountDB.id_order_detail_discount,
+          coOrderDetailDiscount: discountDB.co_order_detail_discount,
+          coOrderDetail: discountDB.co_order_detail,
+          idOrderDetail: discountDB.id_order_detail,
+          idDiscount: discountDB.id_discount,
+          quDiscount: discountDB.qu_discount,
+          nuPriceFinal: discountDB.nu_price_final,
+          coEnterprise: discountDB.co_enterprise,
+          idEnterprise: discountDB.id_enterprise
+        };
+        return discount;
+      }
 
 
 }
