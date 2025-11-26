@@ -286,6 +286,10 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     }
     if (prod.quStock == 0) {
       if (this.orderServ.stock0) {
+        if(this.orderServ.validStock){
+          //mostramos error, pero dejamos agregar al carrito
+          this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ALERTA_INVENTARIO"));
+        }
         //no hay que chequear inventario
         unit.quAmount = prod.quAmount;
         this.orderServ.alCarrito(prod);

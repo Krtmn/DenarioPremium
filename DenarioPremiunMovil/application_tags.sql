@@ -129,6 +129,7 @@ INSERT INTO public.application_tags(
 	('PED_DESDE', 'PED', 'PEDIDOS', 'ESP', ' desde '),
 	('PED_BORRAR', 'PED', 'PEDIDOS', 'ESP', 'BORRAR'),
 	('PED_CARRITO', 'PED', 'PEDIDOS', 'ESP', 'Carrito'),
+	('PED_ALERTA_INVENTARIO', 'PED', 'PEDIDOS', 'ESP', 'Este producto no tiene inventario. Verifique antes de enviar pedido.'),
 	('PED_CERRAR', 'PED', 'PEDIDOS', 'ESP', 'CERRAR');
 
 DELETE FROM public.application_tags WHERE co_module = 'CLI';

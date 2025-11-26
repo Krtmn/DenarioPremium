@@ -550,8 +550,20 @@ export class PedidosService {
           continue;
         };
         var warehouses: Warehouse[] = [];
-        if (this.validateWarehouses) {
-          warehouses = this.listaWarehouse.filter(w => w.idWarehouse == stockList[0].idWarehouse);
+        var stock = stockList[0];
+        if (this.validateWarehouses) {          
+          for (let i = 0; i < stockList.length; i++) {
+            const item = stockList[i];
+            if (item.quStock > 0) {
+              stock = item;
+              break;
+            }
+          }
+          if (stock.quStock == 0) {
+            console.log('stock tiene 0 unidades');
+            //continue;
+          }
+          warehouses = this.listaWarehouse.filter(w => w.idWarehouse == stock.idWarehouse);
           if (warehouses.length < 1) {
             console.log('stock tiene warehouse invalido');
             continue;
@@ -615,8 +627,8 @@ export class PedidosService {
           "quDiscount": 0,
           "coCurrency": coCurrency,
           "oppositeCoCurrency": this.currencyService.oppositeCoCurrency(coCurrency),
-          "quStock": stockList[0].quStock,
-          "quStockAux": stockList[0].quStock,
+          "quStock": stock.quStock,
+          "quStockAux": stock.quStock,
           "nuAmountDiscount": 0,
           "idDiscount": 0,
           "iva": this.ivaList.length > 0 ? this.ivaList[0].priceIva : 0,
