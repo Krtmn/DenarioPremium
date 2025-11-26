@@ -3374,7 +3374,7 @@ export class CollectionService {
       this.listCollect = [] as Collection[];
       this.itemListaCobros = [] as ItemListaCobros[];
       const res = await dbServ.executeSql(
-        'SELECT c.* FROM collections c ORDER BY c.st_collection ASC, c.da_collection DESC', []
+        'SELECT c.* FROM collections c ORDER BY c.st_collection ASC, c.id_collection ASC, c.da_collection DESC', []
       );
 
       const promises: Promise<void>[] = [];
@@ -3712,6 +3712,16 @@ export class CollectionService {
     } catch (err) {
       console.warn('[CollectionService] updateRateTiposPago error:', err);
     }
+  }
+
+  checkDocumentSales(dbServ: SQLiteObject, coDocument: string) {
+    const updateStatement = "UPDATE document_st SET st_document = 0 WHERE co_document = ?"
+    return dbServ.executeSql(updateStatement, [coDocument]).then(res => {
+      return Promise.resolve(true);
+    }).catch(e => {
+      console.log(e);
+      return Promise.resolve(true);
+    })
   }
 
 }

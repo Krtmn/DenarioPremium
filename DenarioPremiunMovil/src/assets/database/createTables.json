@@ -285,7 +285,7 @@
         "name": "statuses",
         "table": "statuses",
         "idName": "id_status",
-        "sql": "CREATE TABLE IF NOT EXISTS statuses ( id_status INTEGER, co_status VARCHAR(10), na_status VARCHAR(50));"
+        "sql": "CREATE TABLE IF NOT EXISTS statuses ( id_status INTEGER, co_status VARCHAR(10), na_status VARCHAR(50), status_action INTEGER);"
     },
     {
         "id": 65,

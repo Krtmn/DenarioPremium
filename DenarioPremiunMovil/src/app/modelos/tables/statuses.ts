@@ -5,7 +5,8 @@ export class Statuses {
             obj['idStatus'],
             obj['coStatus'],
             obj['naStatus'],
-         
+            obj['statusAction'],
+
         );
     }
 
@@ -13,6 +14,7 @@ export class Statuses {
         public idStatus: number,
         public coStatus: string,
         public naStatus: string,
-       
+        public statusAction: number,
+
     ) { }
 }
