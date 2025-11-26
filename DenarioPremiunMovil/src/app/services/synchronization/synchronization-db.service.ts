@@ -1336,12 +1336,12 @@ export class SynchronizationDBService {
   insertStatusesBatch(arr: Statuses[]) {
     var statements = [];
     let insertStatement = "INSERT OR REPLACE INTO statuses(" +
-      "id_status, co_status ,na_status" +
+      "id_status, co_status, na_status, status_action" +
       ") " +
-      "VALUES(?,?,?)"
+      "VALUES(?,?,?,?)"
 
     for (var i = 0; i < arr.length; i++) {
-      statements.push([insertStatement, [arr[i].idStatus, arr[i].coStatus, arr[i].naStatus]])
+      statements.push([insertStatement, [arr[i].idStatus, arr[i].coStatus, arr[i].naStatus, arr[i].statusAction]])
     }
 
     return this.database.sqlBatch(statements).then(res => {

@@ -10,7 +10,7 @@
                 <!-- Ahora iteramos displayedItems en lugar de itemListaCobros -->
                 <ion-list *ngFor="let collect of displayedItems; index as i" button detail="false">
                     <div
-                        *ngIf="searchText === '' || collect.co_client.toLowerCase().includes(searchText) || collect.lb_client.toLowerCase().includes(searchText)">
+                        *ngIf="searchText === '' || collect.co_client.toLowerCase().includes(searchText) || collect.lb_client.toLowerCase().includes(searchText) || collect.id_collection.toString().includes(searchText)">
                         <ion-item button detail="true">
                             <!-- Pasamos el índice real en la lista completa usando getOriginalIndex -->
                             <ion-label
