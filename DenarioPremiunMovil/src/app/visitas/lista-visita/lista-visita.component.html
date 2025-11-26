@@ -49,6 +49,7 @@
   </ion-fab>
 
   <ion-list *ngFor="let visit of listaVisitas;" button detail="false">
+    <!-- <ion-button (click)="service.changeDateVisit()"></ion-button> -->
     <div
       *ngIf="searchText === '' || visit.coVisit.toLowerCase().includes(searchText) || visit.naClient.toLowerCase().includes(searchText)">
       <ion-item button detail="false">

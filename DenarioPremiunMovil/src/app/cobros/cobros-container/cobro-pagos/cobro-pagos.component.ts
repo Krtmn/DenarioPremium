@@ -10,9 +10,6 @@ import { PagoDeposito } from 'src/app/modelos/pago-deposito';
 import { PagoTransferencia } from 'src/app/modelos/pago-transferencia';
 import { PagoOtros } from 'src/app/modelos/pago-otros';
 import { DateServiceService } from 'src/app/services/dates/date-service.service';
-import { TiposPago } from 'src/app/modelos/tipos-pago';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 
 @Component({
   selector: 'app-cobro-pagos',

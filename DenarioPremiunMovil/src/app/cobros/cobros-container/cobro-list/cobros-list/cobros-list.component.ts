@@ -8,7 +8,7 @@ import { EnterpriseService } from 'src/app/services/enterprise/enterprise.servic
 import { GeolocationService } from 'src/app/services/geolocation/geolocation.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
-import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { ORDER_STATUS_SAVED, ORDER_STATUS_SENT, ORDER_STATUS_TO_SEND, ORDER_STATUS_NEW } from 'src/app/utils/appConstants';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 
 @Component({
@@ -43,6 +43,12 @@ export class CobrosListComponent implements OnInit {
   private displayedIndexMap: Map<string, number> = new Map(); // map co_collection -> indice real en itemListaCobros
   private currentOffset = 0; // cuántos items ya mostramos
   public hasMore = true;
+
+  public ORDER_STATUS_SAVED = ORDER_STATUS_SAVED;
+  public ORDER_STATUS_SENT = ORDER_STATUS_SENT;
+  public ORDER_STATUS_TO_SEND = ORDER_STATUS_TO_SEND;
+  public ORDER_STATUS_NEW = ORDER_STATUS_NEW;
+
 
   public buttonsDelete = [
     {
@@ -292,11 +298,22 @@ export class CobrosListComponent implements OnInit {
     }
   }
 
-  getStatusOrderName(status: number, naStatus: any) {
+  getStatusOrderName(stCollection: number, stDelivery: number, naStatus: any) {
+    if (stCollection != 0) {
+      if (naStatus == null || naStatus === undefined) {
+        return this.getStatus(stDelivery, naStatus);
+      }
+      return naStatus;
+    } else {
+      this.getStatus(stDelivery, naStatus);
+    }
+  }
+
+  getStatus(status: number, naStatus: any): string {
     switch (status) {
-      case DELIVERY_STATUS_SAVED: return this.collectService.collectionTags.get("COB_STATUS_SAVED")!;
-      case DELIVERY_STATUS_TO_SEND: return this.collectService.collectionTags.get("COB_STATUS_TO_SEND")!;
-      case DELIVERY_STATUS_SENT:
+      case ORDER_STATUS_SAVED: return this.collectService.collectionTags.get("COB_STATUS_SAVED")!;
+      case ORDER_STATUS_TO_SEND: return this.collectService.collectionTags.get("COB_STATUS_TO_SEND")!;
+      case ORDER_STATUS_SENT:
         return naStatus == null ? this.collectService.collectionTags.get("COB_STATUS_SENT")! : naStatus;
       case 6:
         // naStatus puede ser string o un objeto => normalizar a string
