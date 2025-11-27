@@ -1302,21 +1302,22 @@ export class SynchronizationDBService {
       statements.push([insertStatement, [arr[i].idTransactionStatus, arr[i].daTransactionStatuses,
       arr[i].idTransactionType, arr[i].coTransactionType, arr[i].coTransaction, arr[i].idTransaction,
       arr[i].idStatus, arr[i].coStatus, arr[i].txComment]])
-      if(arr[i].coTransactionType === "3"){
+      if (arr[i].idTransactionType === 3) {
         //GUARDO LA LISTA DE  COBROS PARA CHEQUEAR SI VIENEN RECHAZADOS 
         //Y ACTUALIZAR LOS DOCUMENTOS DE ESE COBRO
         this.collectionService.listTransactionStatusCollections.push(arr[i]);
 
       }
 
-    
+
     }
 
     return this.database.sqlBatch(statements).then(res => {
       console.log("insert transactionStatuses ready")
-      this.collectionService.checkHistoricCollects().then(()=>{
+      this.collectionService.checkHistoricCollects(this.database).then(() => {
         console.log("checkHistoricCollects process finished");
-        this.collectionService.findDocumentSalesRefused();
+        this.collectionService.unlockDocumentSales(this.database);
+        this.collectionService.lockDocumentSales(this.database);
       });
       return res;
     }).catch(e => {
