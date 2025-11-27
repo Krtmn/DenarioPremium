@@ -330,17 +330,17 @@ export class VisitasService {
     //var retrieveVisits = "SELECT * FROM visits WHERE da_visit like ? ORDER BY nu_sequence ASC"; //version original, para comparar
     if(this.rolTransportista){
       //trae todos los no visitados. 
-      retrieveVisits = "SELECT * FROM visits WHERE (st_visit = 3 and is_reassigned = false) "+
+      retrieveVisits = "SELECT * FROM visits WHERE (st_visit = 3 AND is_reassigned = false) "+
       //o los otros status, si los hiciste hoy
-      " or (st_visit < 3 and da_real like ?) " +
+      " OR (st_visit < 3 AND da_real LIKE ?) " +
       //primero los reasignados, luego el resto por secuencia, prioridad los no visitados
-      " order by is_reassigned DESC, st_visit DESC, nu_sequence ASC "
+      " ORDER BY is_reassigned DESC, st_visit DESC, nu_sequence ASC "
 
       //retrieveReassignments = "SELECT * FROM visits WHERE is_reassigned = true and da_visit like ? ORDER BY nu_sequence ASC";
       //params = [today];
     }else{
       //trae los no visitados de hoy
-      retrieveVisits = "SELECT * FROM visits WHERE (st_visit = 3 AND da_visit like ?) " +
+      retrieveVisits = "SELECT * FROM visits WHERE (st_visit = 3 AND da_visit LIKE ?) " +
         //o de cualquier otro estado
         "OR (st_visit < 3) " +
         //primero los no visitados, por secuencia
