@@ -517,14 +517,30 @@ export class ProductService {
   getProductsSearchedByCoProductAndNaProduct(dbServ: SQLiteObject, searchText: string, idEnterprise: number, coCurrency: string) {
     var database = dbServ;
     this.productList = [];
+
+    // Normalize and split search text into tokens
+    const tokens = (searchText || '').toString().trim().toLowerCase().split(/\s+/).filter(t => t.length > 0);
+
+    // Build WHERE clause: for each token require (co_product LIKE ? OR na_product LIKE ?)
+    const tokenClauses: string[] = [];
+    const params: any[] = [];
+    for (const t of tokens) {
+      tokenClauses.push("(LOWER(p.co_product) LIKE ? OR LOWER(p.na_product) LIKE ?)");
+      params.push(`%${t}%`, `%${t}%`);
+    }
+
+    // always filter by enterprise
+    const whereTokens = tokenClauses.length ? tokenClauses.join(" AND ") + " AND p.id_enterprise = ?" : "p.id_enterprise = ?";
+    params.push(idEnterprise);
+
     if (this.globalConfig.get("conversionByPriceList") == "true") {
       var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, " +
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as nu_price_opposite, " +
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as co_currency_opposite, " +
-        " (select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p where LOWER(p.co_product) like '%" + searchText + "%' or LOWER(p.na_product) like '%" + searchText + "%' and p.id_enterprise = " + idEnterprise + " order by p.co_product"
-      return database.executeSql(select, []).then(result => {
+        " (select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereTokens + " order by p.co_product";
+      return database.executeSql(select, params).then(result => {
         for (let i = 0; i < result.rows.length; i++) {
           this.productList.push({
             idProduct: result.rows.item(i).id_product,
@@ -553,8 +569,8 @@ export class ProductService {
         console.log(e);
       })
     } else {
-      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, (select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p where LOWER(p.co_product) like '%" + searchText + "%' or LOWER(p.na_product) like '%" + searchText + "%' and p.id_enterprise = " + idEnterprise + " order by p.co_product"
-      return database.executeSql(select, []).then(result => {
+      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, (select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereTokens + " order by p.co_product";
+      return database.executeSql(select, params).then(result => {
         for (let i = 0; i < result.rows.length; i++) {
           this.productList.push({
             idProduct: result.rows.item(i).id_product,
@@ -591,7 +607,25 @@ export class ProductService {
 
   getProductsSearchedByCoProductAndNaProductAndIdList(dbServ: SQLiteObject, searchText: string, idEnterprise: number, coCurrency: string, id_list: number) {
     var database = dbServ;
-    searchText = searchText.toLowerCase();
+    const tokens = (searchText || '').toString().trim().toLowerCase().split(/\s+/).filter(t => t.length > 0);
+
+    const tokenClauses: string[] = [];
+    const params: any[] = [];
+    for (const t of tokens) {
+      tokenClauses.push("(LOWER(p.co_product) LIKE ? OR LOWER(p.na_product) LIKE ?)");
+      params.push(`%${t}%`, `%${t}%`);
+    }
+
+    // always filter by enterprise
+    let whereClause = tokenClauses.length ? tokenClauses.join(" AND ") + " AND p.id_enterprise = ?" : "p.id_enterprise = ?";
+    params.push(idEnterprise);
+
+    // if a product structure selection exists, add it (numeric)
+    if (this.psService && this.psService.idProductStructureSeleccionada > 0) {
+      whereClause += " AND p.id_product_structure = ?";
+      params.push(this.psService.idProductStructureSeleccionada);
+    }
+
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
       var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list, " +
@@ -599,12 +633,8 @@ export class ProductService {
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price_opposite, " +
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency_opposite, " +
-        " (select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p where LOWER(p.co_product) like '%" + searchText + "%' or LOWER(p.na_product) like '%" + searchText + "%' and p.id_enterprise = " + idEnterprise 
-        if(this.psService.idProductStructureSeleccionada > 0) {
-          select = select + " and p.id_product_structure = " + this.psService.idProductStructureSeleccionada;
-        } 
-        select = select + " order by p.co_product"
-      return database.executeSql(select, []).then(result => {
+        " (select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereClause + " order by p.co_product";
+      return database.executeSql(select, params).then(result => {
         for (let i = 0; i < result.rows.length; i++) {
           this.productList.push({
             idProduct: result.rows.item(i).id_product,
@@ -637,14 +667,8 @@ export class ProductService {
         "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list," +
         "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price," +
         "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + "  order by l.na_list limit 1) as co_currency," +
-        "(select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p where LOWER(p.co_product) like '%" +
-        searchText + "%' or LOWER(p.na_product) like '%" +
-        searchText + "%' and p.id_enterprise = "+ idEnterprise + " " ;
-        if(this.psService.idProductStructureSeleccionada > 0) {
-          select = select + " and p.id_product_structure = " + this.psService.idProductStructureSeleccionada;
-        }
-         select = select + " order by p.co_product";
-      return database.executeSql(select, []).then(result => {
+        "(select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereClause + " order by p.co_product";
+      return database.executeSql(select, params).then(result => {
         for (let i = 0; i < result.rows.length; i++) {
           this.productList.push({
             idProduct: result.rows.item(i).id_product,
@@ -657,10 +681,10 @@ export class ProductService {
             coCurrency: result.rows.item(i).co_currency,
             priceOpposite: result.rows.item(i).co_currency === this.currencyService.getLocalCurrency ?
               this.currencyService.toHardCurrency(result.rows.item(i).nu_price) :
-              this.currencyService.toLocalCurrency(result.rows.item(i).nu_price), // Precio en la moneda opuesta a la lista de precio
+              this.currencyService.toLocalCurrency(result.rows.item(i).nu_price),
             coCurrencyOpposite: result.rows.item(i).co_currency === this.currencyService.getLocalCurrency ?
               this.currencyService.hardCurrency.coCurrency :
-              this.currencyService.localCurrency.coCurrency, // moneda opuesta a la lista de precio,
+              this.currencyService.localCurrency.coCurrency,
             stock: result.rows.item(i).qu_stock,
             idEnterprise: result.rows.item(i).id_enterprise,
             coEnterprise: result.rows.item(i).co_enterprise,
@@ -678,7 +702,6 @@ export class ProductService {
       })
     }
   }
-
   getProductDetailByIdProduct(dbServ: SQLiteObject, idList: number, idProduct: number, coCurrency: string) {
     var database = dbServ;
     this.productDetail = {} as ProductDetail;

@@ -1,4 +1,4 @@
-//Valores de status de envio(stVisit, stOrder, etc)
+//Valores de status de envio (stDelivery)
 
 export const DELIVERY_STATUS_NEW = 0
 export const DELIVERY_STATUS_SAVED = 1;
@@ -7,12 +7,21 @@ export const DELIVERY_STATUS_SENT = 3;
 
 //FIN VALORES ENVIO
 
+//Valores de status de collection
+
+export const ORDER_STATUS_NEW = 0
+export const ORDER_STATUS_SAVED = 1;
+export const ORDER_STATUS_TO_SEND = 2;
+export const ORDER_STATUS_SENT = 3;
+
+//FIN VALORES collection
+
 //Valores de status de visita
 
-export const VISIT_STATUS_SAVED = 0; 
+export const VISIT_STATUS_SAVED = 0;
 export const VISIT_STATUS_TO_SEND = 1;
-export const VISIT_STATUS_VISITED = 2; 
-export const VISIT_STATUS_NOT_VISITED = 3; 
+export const VISIT_STATUS_VISITED = 2;
+export const VISIT_STATUS_NOT_VISITED = 3;
 
 //FIN VALORES VISITA
 

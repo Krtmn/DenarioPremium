@@ -39,7 +39,7 @@
                     </ion-select>
                 </div>
                 <div
-                    *ngIf="this.collectService.collection.stCollection == 2 || this.collectService.collection.stCollection == 3 || this.collectService.collection.stCollection == 6">
+                    *ngIf="this.collectService.collection.stDelivery == this.ORDER_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.ORDER_STATUS_SENT || this.collectService.collection.stCollection == 6">
                     <ion-item>
                         <ion-label>
                             {{this.collectService.collectionTags.get('COB_MONEDA')}}:
@@ -58,7 +58,7 @@
                     </ion-label>
                     <a>
                         <ion-button (click)="setShowDateRateModal(true)" color="light" class="letrasFechasButton"
-                            [disabled]="this.collectService.collection.stCollection == 2 || this.collectService.collection.stCollection == 3 || this.collectService.collection.stCollection == 6">
+                            [disabled]="this.collectService.collection.stDelivery == this.ORDER_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.ORDER_STATUS_SENT || this.collectService.collection.stCollection == 6">
                             {{ bottonDateRateLabel() }}
                         </ion-button>
                     </a>
@@ -83,7 +83,7 @@
                 </div>
             </ion-col>
             <ion-col size="6" size-sm="12" size-xs="12"
-                *ngIf="this.collectService.multiCurrency && this.collectService.showConversion && (this.collectService.collection.stCollection == 2 || this.collectService.collection.stCollection == 3 || this.collectService.collection.stCollection == 6)">
+                *ngIf="this.collectService.multiCurrency && this.collectService.showConversion && (this.collectService.collection.stDelivery == this.ORDER_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.ORDER_STATUS_SENT || this.collectService.collection.stCollection == 6)">
                 <ion-item>
                     <ion-label>
                         {{this.collectService.collectionTags.get('COB_TASA')}}
@@ -115,7 +115,7 @@
                 <ion-input label="{{this.collectService.collectionTags.get('COB_RESPONSABLE')}}:"
                     [(ngModel)]="this.collectService.collection.naResponsible" label-placement="floating" fill="outline"
                     value="" id="currency" color="primary" (ionChange)="setResponsible()"
-                    [readonly]="this.collectService.collection.stCollection == 2 || this.collectService.collection.stCollection == 3 || this.collectService.collection.stCollection == 6"></ion-input>
+                    [readonly]="this.collectService.collection.stDelivery == this.ORDER_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.ORDER_STATUS_SENT || this.collectService.collection.stCollection == 6"></ion-input>
             </ion-col>
 
             <ion-col size="6" size-sm="12" size-xs="12">
@@ -124,7 +124,7 @@
                     (ionChange)="setComment()" value="this.collectService.collection.txComment"
                     [ngClass]="{'inp-write': !this.collectService.validComment}"
                     [required]="this.collectService.requiredComment"
-                    [readonly]="this.collectService.collection.stCollection == 2 || this.collectService.collection.stCollection == 3 || this.collectService.collection.stCollection == 6">
+                    [readonly]="this.collectService.collection.stDelivery == this.ORDER_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.ORDER_STATUS_SENT || this.collectService.collection.stCollection == 6">
                     <!-- <div *ngIf="this.collectService.collection.txComment.trim() == '' && this.requiredComment"
                         slot="label">
                         <ion-text color="danger">Campo Obligatorio</ion-text>
@@ -137,8 +137,7 @@
                 </ion-label>
 
                 <!-- <ion-button (click)="print()"></ion-button> -->
-                <!-- <ion-button (click)="printAllTransactionStatuses()"></ion-button> -->
-
+         
             </ion-col>
         </ion-col>
 

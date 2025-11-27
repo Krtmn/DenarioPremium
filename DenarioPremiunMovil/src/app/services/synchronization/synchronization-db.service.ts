@@ -94,7 +94,6 @@ export class SynchronizationDBService {
   public inHome: Boolean = true;
 
 
-
   constructor(
     private navController: NavController,
 
@@ -1291,6 +1290,7 @@ export class SynchronizationDBService {
 
   insertTransactionStatusesBatch(arr: TransactionStatuses[]) {
     var statements = [];
+    this.collectionService.listTransactionStatusCollections = [] as TransactionStatuses[]; // LIMPIO LA LISTA ANTES DE CARGAR NUEVOS DATOS
     let insertStatement = "INSERT OR REPLACE INTO transaction_statuses(" +
       "id_transaction_status, da_transaction_statuses,id_transaction_type," +
       "co_transaction_type,co_transaction,id_transaction," +
@@ -1302,10 +1302,23 @@ export class SynchronizationDBService {
       statements.push([insertStatement, [arr[i].idTransactionStatus, arr[i].daTransactionStatuses,
       arr[i].idTransactionType, arr[i].coTransactionType, arr[i].coTransaction, arr[i].idTransaction,
       arr[i].idStatus, arr[i].coStatus, arr[i].txComment]])
+      if (arr[i].idTransactionType === 3) {
+        //GUARDO LA LISTA DE  COBROS PARA CHEQUEAR SI VIENEN RECHAZADOS 
+        //Y ACTUALIZAR LOS DOCUMENTOS DE ESE COBRO
+        this.collectionService.listTransactionStatusCollections.push(arr[i]);
+
+      }
+
+
     }
 
     return this.database.sqlBatch(statements).then(res => {
       console.log("insert transactionStatuses ready")
+      this.collectionService.checkHistoricCollects(this.database).then(() => {
+        console.log("checkHistoricCollects process finished");
+        this.collectionService.unlockDocumentSales(this.database);
+        this.collectionService.lockDocumentSales(this.database);
+      });
       return res;
     }).catch(e => {
       console.log(e);
@@ -1336,12 +1349,12 @@ export class SynchronizationDBService {
   insertStatusesBatch(arr: Statuses[]) {
     var statements = [];
     let insertStatement = "INSERT OR REPLACE INTO statuses(" +
-      "id_status, co_status ,na_status" +
+      "id_status, co_status, na_status, status_action" +
       ") " +
-      "VALUES(?,?,?)"
+      "VALUES(?,?,?,?)"
 
     for (var i = 0; i < arr.length; i++) {
-      statements.push([insertStatement, [arr[i].idStatus, arr[i].coStatus, arr[i].naStatus]])
+      statements.push([insertStatement, [arr[i].idStatus, arr[i].coStatus, arr[i].naStatus, arr[i].statusAction]])
     }
 
     return this.database.sqlBatch(statements).then(res => {

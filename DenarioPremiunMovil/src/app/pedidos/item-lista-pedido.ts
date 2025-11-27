@@ -4,7 +4,8 @@ export interface ItemListaPedido {
     co_order: string;
     co_client: string;
     lb_client: string;
-    st_order: number;
+    st_order: number;// añadido para compatibilidad con versiones anteriores
     da_order: string;
     na_status: string;
+    st_delivery: number; 
 }

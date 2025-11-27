@@ -286,6 +286,10 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     }
     if (prod.quStock == 0) {
       if (this.orderServ.stock0) {
+        if(this.orderServ.validStock){
+          //mostramos error, pero dejamos agregar al carrito
+          this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ALERTA_INVENTARIO"));
+        }
         //no hay que chequear inventario
         unit.quAmount = prod.quAmount;
         this.orderServ.alCarrito(prod);
@@ -466,19 +470,44 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     return (o1 != null && o2 != null && Number(o1) === Number(o2));
   }
 
+  /*
   compareWarehouse = (o1: any, o2: any) => {
     if (o1 === o2) return true;
     if ((o1 === null || o1 === undefined) && (o2 === null || o2 === undefined)) return true;
     return (o1 != null && o2 != null && o1.idWarehouse === o2.idWarehouse);
   }
+    */
 
   onSelectWarehouse(e: any, product: OrderUtil) {
-    const wh = e.detail.value;
-    product.idWarehouse = wh.idWarehouse;
-    product.naWarehouse = wh.naWarehouse;
+    const idwh = e.detail.value;
+    var warehouse = this.warehouseList.filter(w => w.idWarehouse == idwh)[0];
+    var stock = this.orderServ.listaStock.filter(s => s.idProduct == product.idProduct && s.idWarehouse == warehouse.idWarehouse)[0];
+    product.idWarehouse = warehouse.idWarehouse;
+    product.naWarehouse = warehouse.naWarehouse;
+    product.quStock = stock.quStock;
+    product.quStockAux = stock.quStock;
 
+    this.onProductQuantityChange(product);
     this.orderServ.alCarrito(product);
 
+  }
+
+  disableProduct(prod: OrderUtil) {
+    if(!prod.nuPrice){
+      return true;
+    }
+    if (!this.orderServ.stock0 &&  (prod.quStockAux < 1)) {
+      var stocks = this.orderServ.listaStock.filter(s => s.idProduct == prod.idProduct)
+      //si el warehouse seleccionado tiene 0 stock, comprobamos si hay stock en otro warehouse
+      for (let i = 0; i < stocks.length; i++) {
+        if (stocks[i].quStock > 0) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    return false;
   }
 
   cantidadInputMode() {

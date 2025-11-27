@@ -347,7 +347,9 @@
 
                                 </ion-col>
 
-                                <div *ngIf="orderServ.showCreditLimit">
+                                <div *ngIf="orderServ.showCreditLimit" 
+                                [ngClass]="{ 'text-green': orderServ.cliente.nuCreditLimit > orderServ.totalPedido, 
+                                'text-red': orderServ.cliente.nuCreditLimit <= orderServ.totalPedido }">
                                     <h3>{{ orderServ.getTag("PED_LIMITE_CREDITO")}}:
                                         {{formatNum(orderServ.cliente.nuCreditLimit)}}</h3>
                                 </div>

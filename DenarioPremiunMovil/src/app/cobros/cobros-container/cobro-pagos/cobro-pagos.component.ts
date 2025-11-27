@@ -10,9 +10,6 @@ import { PagoDeposito } from 'src/app/modelos/pago-deposito';
 import { PagoTransferencia } from 'src/app/modelos/pago-transferencia';
 import { PagoOtros } from 'src/app/modelos/pago-otros';
 import { DateServiceService } from 'src/app/services/dates/date-service.service';
-import { TiposPago } from 'src/app/modelos/tipos-pago';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 
 @Component({
   selector: 'app-cobro-pagos',
@@ -37,7 +34,7 @@ export class CobroPagosComponent implements OnInit {
   private displayMap: { [uid: string]: string } = {};
   private __uidCounter = 0;
   private debounceTimers: { [uid: string]: any } = {};
-  private debounceDelay = 1500;
+  private debounceDelay = 2000;
 
 
   public alertButtons = [
@@ -187,6 +184,7 @@ export class CobroPagosComponent implements OnInit {
   }
 
   deleteTipoPago(index: number, type: string) {
+    this.collectService.messageSended = false;
     if (this.collectService.disabledSelectCollectMethodDisabled)
       this.collectService.disabledSelectCollectMethodDisabled = false;
 
@@ -791,14 +789,6 @@ export class CobroPagosComponent implements OnInit {
     this.setShowEventModal(false);
   }
 
-  checkPaymentPartialPay() {
-    if (this.collectService.existPartialPayment)
-      if (this.collectService.montoTotalPagado != this.collectService.montoTotalPagar) {
-        this.collectService.mensaje = "Existe al menos un pago parcial, el monto pagado debe ser igual al monto a pagar";
-        this.alertMessageOpen = true;
-        this.collectService.onCollectionValidToSend(false)
-      }
-  }
   checkCreateAutomatedPrepaid() {
     if (!this.collectService.recentOpenCollect) {
       this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSG_AUTOMATED_PREPAID')! + " " + this.currencyService.formatNumber(this.collectService.collection.nuDifference);
@@ -815,8 +805,6 @@ export class CobroPagosComponent implements OnInit {
           this.collectService.calcularMontos(type, index).then(resp => {
             if (this.collectService.createAutomatedPrepaid)
               this.checkCreateAutomatedPrepaid();
-
-            this.checkPaymentPartialPay();
             this.collectService.validateToSend();
             /*  if (this.collectService.pagoEfectivo[index].nuRecibo != "") {
                this.collectService.validateToSend();
@@ -841,7 +829,7 @@ export class CobroPagosComponent implements OnInit {
               && this.collectService.pagoCheque[index].numeroCheque != "") {
               if (this.collectService.createAutomatedPrepaid)
                 this.checkCreateAutomatedPrepaid();
-              this.checkPaymentPartialPay();
+
               this.collectService.validateToSend();
             }
           })
@@ -864,7 +852,7 @@ export class CobroPagosComponent implements OnInit {
               && this.collectService.pagoDeposito[index].numeroDeposito != "") {
               if (this.collectService.createAutomatedPrepaid)
                 this.checkCreateAutomatedPrepaid();
-              this.checkPaymentPartialPay();
+
               this.collectService.validateToSend();
             }
           })
@@ -887,7 +875,7 @@ export class CobroPagosComponent implements OnInit {
                 && this.collectService.pagoTransferencia[index].numeroTransferencia != "") {
                 if (this.collectService.createAutomatedPrepaid)
                   this.checkCreateAutomatedPrepaid();
-                this.checkPaymentPartialPay();
+
                 this.collectService.validateToSend();
               }
             })
@@ -900,7 +888,7 @@ export class CobroPagosComponent implements OnInit {
                 && this.collectService.pagoTransferencia[index].numeroTransferencia != "") {
                 if (this.collectService.createAutomatedPrepaid)
                   this.checkCreateAutomatedPrepaid();
-                this.checkPaymentPartialPay();
+
                 this.collectService.validateToSend();
               }
             })
@@ -914,7 +902,6 @@ export class CobroPagosComponent implements OnInit {
         if (this.collectService.pagoOtros[index].monto >= 0) {
           this.collectService.calcularMontos(type, index).then(resp => {
             if (this.collectService.pagoOtros[index].nombre != "") {
-              this.checkPaymentPartialPay();
               this.collectService.validateToSend();
             }
           })

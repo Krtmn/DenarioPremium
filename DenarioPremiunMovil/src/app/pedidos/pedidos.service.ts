@@ -32,7 +32,7 @@ import { EnterpriseService } from '../services/enterprise/enterprise.service';
 import { Router } from '@angular/router';
 import { ImageServicesService } from '../services/imageServices/image-services.service';
 import { DateServiceService } from '../services/dates/date-service.service';
-import { DELIVERY_STATUS_SAVED, VISIT_STATUS_SAVED } from '../utils/appConstants';
+import { DELIVERY_STATUS_NEW, DELIVERY_STATUS_SAVED, VISIT_STATUS_SAVED } from '../utils/appConstants';
 import { GlobalDiscount } from '../modelos/tables/globalDiscount';
 import { ClientChannelOrderType } from '../modelos/tables/clientChannelOrderType';
 import { OrderTypeProductStructure } from '../modelos/tables/orderTypeProductStructure';
@@ -550,8 +550,20 @@ export class PedidosService {
           continue;
         };
         var warehouses: Warehouse[] = [];
-        if (this.validateWarehouses) {
-          warehouses = this.listaWarehouse.filter(w => w.idWarehouse == stockList[0].idWarehouse);
+        var stock = stockList[0];
+        if (this.validateWarehouses) {          
+          for (let i = 0; i < stockList.length; i++) {
+            const item = stockList[i];
+            if (item.quStock > 0) {
+              stock = item;
+              break;
+            }
+          }
+          if (stock.quStock == 0) {
+            console.log('stock tiene 0 unidades');
+            //continue;
+          }
+          warehouses = this.listaWarehouse.filter(w => w.idWarehouse == stock.idWarehouse);
           if (warehouses.length < 1) {
             console.log('stock tiene warehouse invalido');
             continue;
@@ -615,8 +627,8 @@ export class PedidosService {
           "quDiscount": 0,
           "coCurrency": coCurrency,
           "oppositeCoCurrency": this.currencyService.oppositeCoCurrency(coCurrency),
-          "quStock": stockList[0].quStock,
-          "quStockAux": stockList[0].quStock,
+          "quStock": stock.quStock,
+          "quStockAux": stock.quStock,
           "nuAmountDiscount": 0,
           "idDiscount": 0,
           "iva": this.ivaList.length > 0 ? this.ivaList[0].priceIva : 0,
@@ -1071,6 +1083,7 @@ export class PedidosService {
     this.coOrder = coOrder;
     pedido.idOrder = 0;
     pedido.stOrder = DELIVERY_STATUS_SAVED;
+    pedido.stDelivery = DELIVERY_STATUS_SAVED;
     for (let i = 0; i < pedido.orderDetails.length; i++) {
       const detail = pedido.orderDetails[i];
       let coOrderDetail = this.dateService.generateCO(i);
@@ -1337,6 +1350,7 @@ export class PedidosService {
         "nuAttachments": 0,
         "idDistributionChannel": null,
         "coDistributionChannel": null,
+        "stDelivery": DELIVERY_STATUS_NEW
       }
 
       for (let i = 0; i < this.datosPedidoSugerido.productos.length; i++) {

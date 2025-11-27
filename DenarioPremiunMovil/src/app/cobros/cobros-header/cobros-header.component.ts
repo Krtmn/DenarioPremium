@@ -7,6 +7,8 @@ import { Collection } from 'src/app/modelos/tables/collection';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
+import { ORDER_STATUS_SAVED, ORDER_STATUS_SENT, ORDER_STATUS_TO_SEND, ORDER_STATUS_NEW, DELIVERY_STATUS_SENT } from 'src/app/utils/appConstants';
+
 
 @Component({
   selector: 'app-cobros-header',
@@ -43,6 +45,11 @@ export class CobrosHeaderComponent implements OnInit {
   public subscriptionAttachmentChanged: any;
   public subscriptionAttachmentWeightExceeded: any;
 
+  public ORDER_STATUS_SAVED = ORDER_STATUS_SAVED;
+  public ORDER_STATUS_SENT = ORDER_STATUS_SENT;
+  public ORDER_STATUS_TO_SEND = ORDER_STATUS_TO_SEND;
+  public ORDER_STATUS_NEW = ORDER_STATUS_NEW;
+
   public alertButtons = [
     /*  {
        text: '',
@@ -74,7 +81,7 @@ export class CobrosHeaderComponent implements OnInit {
         this.messageService.showLoading().then(() => {
           this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
           this.alertMessageOpen = true;
-          this.collectService.collection.stCollection = 1;
+          this.collectService.collection.stDelivery = 1;
           this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, true).then(async response => {
             await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
             console.log(response);
@@ -202,7 +209,7 @@ export class CobrosHeaderComponent implements OnInit {
       this.collectService.collectionIsSave = false;
       this.collectService.cobroListComponent = false;
       this.collectService.cobrosComponent = true;
-    } else if (!this.collectService.collectionIsSave && this.collectService.collectValidTabs && this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3 && this.collectService.collection.stCollection != 6) {
+    } else if (!this.collectService.collectionIsSave && this.collectService.collectValidTabs && this.collectService.collection.stDelivery != ORDER_STATUS_TO_SEND && this.collectService.collection.stDelivery != ORDER_STATUS_SENT && this.collectService.collection.stDelivery != 6) {
       this.collectService.saveOrExitOpen = true;
     } else {
       this.collectService.collectValid = false;
@@ -306,7 +313,7 @@ export class CobrosHeaderComponent implements OnInit {
     this.messageService.showLoading().then(() => {
       if (sendOrSave) {
         //envio
-        this.collectService.collection.stCollection = 2;
+        this.collectService.collection.stDelivery = 2;
         this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(async response => {
           await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
           console.log(response);
@@ -333,7 +340,7 @@ export class CobrosHeaderComponent implements OnInit {
         })
       } else {
         //salvo
-        this.collectService.collection.stCollection = 1;
+        this.collectService.collection.stDelivery = 1;
         this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(async response => {
           await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
           console.log(response);
