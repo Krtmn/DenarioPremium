@@ -42,16 +42,4 @@ export class HistoryTransaction implements OnInit {
       return "Error al obtener el estado";
     });
   }
-
-  async printAllTransactionStatuses(db: SQLiteObject): Promise<void> {
-    try {
-      const query = 'SELECT * FROM transaction_statuses';
-      const result = await db.executeSql(query, []);
-      for (let i = 0; i < result.rows.length; i++) {
-        console.log(result.rows.item(i));
-      }
-    } catch (error) {
-      console.error('Error al consultar transaction_statuses:', error);
-    }
-  }
 }

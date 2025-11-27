@@ -30,6 +30,7 @@ import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { ItemListaCobros } from 'src/app/cobros/item-lista-cobros';
 import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, DELIVERY_STATUS_NEW } from 'src/app/utils/appConstants';
+import { TransactionStatuses } from '../../modelos/tables/transactionStatuses';
 
 
 @Injectable({
@@ -82,6 +83,8 @@ export class CollectionService {
   public paymentPartials: PaymentPartials[] = [];
   public itemListaCobros: ItemListaCobros[] = [];
   public coDocumentToUpdate: string[] = [];
+  public listTransactionStatusCollections: TransactionStatuses[] = [];
+  public collectionRefused: TransactionStatuses[] = [];
 
   public anticipoAutomatico!: any;
 
@@ -3655,16 +3658,6 @@ export class CollectionService {
     }
   }
 
-  async printAllTransactionStatuses(dbServ: SQLiteObject) {
-    return this.historyTransaction.printAllTransactionStatuses(dbServ).then(statuses => {
-      console.log("Transaction Statuses:", statuses);
-      return statuses;
-    }).catch(error => {
-      console.error("Error fetching transaction statuses:", error);
-      return [];
-    });
-  }
-
   updateRateTiposPago() {
     try {
       const fecha = (this.collection && this.collection.daRate) ? this.collection.daRate + " 00:00:00" : "";
@@ -3714,14 +3707,132 @@ export class CollectionService {
     }
   }
 
-  checkDocumentSales(dbServ: SQLiteObject, coDocument: string) {
-    const updateStatement = "UPDATE document_st SET st_document = 0 WHERE co_document = ?"
-    return dbServ.executeSql(updateStatement, [coDocument]).then(res => {
-      return Promise.resolve(true);
-    }).catch(e => {
-      console.log(e);
-      return Promise.resolve(true);
-    })
+  async checkHistoricCollects(): Promise<TransactionStatuses[]> {
+    this.collectionRefused = [] as TransactionStatuses;
+    try {
+      const list = Array.isArray(this.listTransactionStatusCollections) ? this.listTransactionStatusCollections : [];
+      if (list.length === 0) return this.collectionRefused;
+
+      // Extraer ids únicos y sanearlos
+      const ids = Array.from(new Set(list
+        .map(ts => ts?.idStatus ?? (ts as any)?.id_status ?? (ts as any)?.id)
+        .filter(id => id !== undefined && id !== null)
+        .map(String)
+      ));
+      if (ids.length === 0) return this.collectionRefused;
+
+      // Preparar query IN (...) para obtener todos los statuses en una sola llamada
+      const placeholders = ids.map(_ => '?').join(',');
+      const sql = `SELECT id_status AS idStatus, status FROM statuses WHERE id_status IN (${placeholders})`;
+
+      // Obtener objeto DB (usar this.database si está inicializado o intentar getDatabase si existe)
+      const db: SQLiteObject | undefined = (this as any).database ?? (typeof (this as any).getDatabase === 'function' ? await (this as any).getDatabase() : undefined);
+      if (!db) {
+        console.warn('[checkHistoricCollects] database unavailable');
+        return this.collectionRefused;
+      }
+
+      const res = await db.executeSql(sql, ids);
+      const statusMap = new Map<string, number>();
+      for (let i = 0; i < res.rows.length; i++) {
+        const row = res.rows.item(i);
+        const key = String(row.idStatus ?? row.id_status ?? row.id);
+        statusMap.set(key, Number(row.status));
+      }
+
+      // Asignar a collectionRefused los TransactionStatuses cuyo status en la tabla sea 2
+      for (const ts of list) {
+        const idStatus = ts?.idStatus ?? (ts as any)?.id_status ?? (ts as any)?.id;
+        if (idStatus == null) continue;
+        if (statusMap.get(String(idStatus)) === 2) {
+          this.collectionRefused.push(ts);
+        }
+      }
+    } catch (err) {
+      console.error('[checkHistoricCollects] error:', err);
+    }
+    return this.collectionRefused;
   }
 
+  // ...existing code...
+  async findDocumentSalesRefused(): Promise<string[]> {
+    const docs: string[] = [];
+    try {
+      const list = Array.isArray(this.collectionRefused) ? this.collectionRefused : [];
+      if (list.length === 0) {
+        this.coDocumentToUpdate = [];
+        return docs;
+      }
+
+      // extraer coTransaction (acepta varias posibles claves)
+      const coTransactions = Array.from(new Set(
+        list
+          .map(ts => (ts as any)?.coTransaction ?? (ts as any)?.co_transaction ?? (ts as any)?.coCollection ?? (ts as any)?.co_collection)
+          .filter(Boolean)
+          .map(String)
+      ));
+
+      if (coTransactions.length === 0) {
+        this.coDocumentToUpdate = [];
+        return docs;
+      }
+
+      // preparar consulta IN (...) para obtener todos los co_document de una sola vez
+      const placeholders = coTransactions.map(() => '?').join(',');
+      const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders})`;
+
+      const db: SQLiteObject | undefined =
+        (this as any).database ??
+        (typeof (this as any).getDatabase === 'function' ? await (this as any).getDatabase() : undefined);
+
+      if (!db) {
+        console.warn('[findDocumentSalesRefused] database unavailable');
+        this.coDocumentToUpdate = [];
+        return docs;
+      }
+
+      const res = await db.executeSql(sql, coTransactions);
+      for (let i = 0; i < res.rows.length; i++) {
+        const cd = res.rows.item(i).co_document;
+        if (cd != null) docs.push(cd);
+      }
+
+      // Guardar resultado en la propiedad usada por otros flujos
+      this.coDocumentToUpdate = docs.slice();
+
+      // llamar a checkDocumentSales para actualizar st_document = 0 para los co_documents obtenidos
+      try {
+        await this.checkDocumentSales(db, docs);
+      } catch (e) {
+        console.error('[findDocumentSalesRefused] checkDocumentSales error:', e);
+      }
+
+      return docs;
+    } catch (err) {
+      console.error('[findDocumentSalesRefused] error:', err);
+      this.coDocumentToUpdate = [];
+      return docs;
+    }
+  }
+  
+  async checkDocumentSales(dbServ: SQLiteObject, coDocumentSales: string[]): Promise<boolean> {
+    try {
+      if (!Array.isArray(coDocumentSales) || coDocumentSales.length === 0) {
+        return true;
+      }
+
+      // sanitizar: eliminar nulos y convertir a strings
+      const docs = coDocumentSales.filter(d => d != null).map(String);
+      if (docs.length === 0) return true;
+
+      const placeholders = docs.map(() => '?').join(',');
+      const sql = `UPDATE document_st SET st_document = 0 WHERE co_document IN (${placeholders})`;
+
+      await dbServ.executeSql(sql, docs);
+      return true;
+    } catch (err) {
+      console.error('[checkDocumentSales] error updating document_st:', err);
+      return false;
+    }
+  }
 }
