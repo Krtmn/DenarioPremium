@@ -395,7 +395,9 @@ export class PedidosDbService {
 
       for (let j = 0; j < item.orderDetailUnit.length; j++) {
         const unit = item.orderDetailUnit[j];
-
+        if(unit.quOrder <= 0){
+          continue;
+        }
         //query de unidad
         queries.push([unitQuery, [unit.idOrderDetailUnit, unit.coOrderDetailUnit, unit.coOrderDetail, unit.coProductUnit,
         unit.idProductUnit, unit.quOrder, unit.coEnterprise, unit.idEnterprise, unit.coUnit, unit.quSuggested,]]);
