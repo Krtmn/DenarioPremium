@@ -5,10 +5,10 @@ import { GlobalConfigService } from 'src/app/services/globalConfig/global-config
 import { MessageService } from 'src/app/services/messageService/message.service';
 
 @Component({
-    selector: 'app-cobro',
-    templateUrl: './cobro.component.html',
-    styleUrls: ['./cobro.component.scss'],
-    standalone: false
+  selector: 'app-cobro',
+  templateUrl: './cobro.component.html',
+  styleUrls: ['./cobro.component.scss'],
+  standalone: false
 })
 export class CobroComponent implements OnInit, OnDestroy {
 
@@ -71,6 +71,7 @@ export class CobroComponent implements OnInit, OnDestroy {
       try {
         console.timeEnd('[onChangeTab] duration');
         console.log('[onChangeTab] current segment ->', this.segment);
+        this.collectService.tabSelected = this.segment;
       } catch (e) {
         /* ignore */
       }

@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
 import { Subject } from 'rxjs';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite/ngx';
 import { ChangeDetectorRef } from '@angular/core';
@@ -29,8 +29,10 @@ import { ClientBankAccount } from 'src/app/modelos/tables/clientBankAccount';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { ItemListaCobros } from 'src/app/cobros/item-lista-cobros';
-import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, DELIVERY_STATUS_NEW } from 'src/app/utils/appConstants';
+import { ORDER_STATUS_SAVED, ORDER_STATUS_SENT, ORDER_STATUS_TO_SEND, ORDER_STATUS_NEW } from 'src/app/utils/appConstants';
 import { TransactionStatuses } from '../../modelos/tables/transactionStatuses';
+import { MessageService } from '../messageService/message.service';
+import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 
 
 @Injectable({
@@ -42,11 +44,17 @@ export class CollectionService {
   public services = inject(ServicesService);
   public dateServ = inject(DateServiceService);
   public historyTransaction = inject(HistoryTransaction);
-
   private currencyService = inject(CurrencyService);
   public adjuntoService = inject(AdjuntoService);
+  public injector = inject(Injector);
+  private _messageService?: MessageService;
+  public get messageService(): MessageService {
+    if (!this._messageService) {
+      this._messageService = this.injector.get(MessageService);
+    }
+    return this._messageService!;
+  }
 
-  private database!: SQLiteObject
   public collection!: Collection;
   public enterprise!: Enterprise;
   public client!: Client;
@@ -85,6 +93,9 @@ export class CollectionService {
   public coDocumentToUpdate: string[] = [];
   public listTransactionStatusCollections: TransactionStatuses[] = [];
   public collectionRefused: TransactionStatuses[] = [];
+  public collectionApproved: TransactionStatuses[] = [];
+  public collectionSended: TransactionStatuses[] = [];
+  public messageAlert!: MessageAlert;
 
   public anticipoAutomatico!: any;
 
@@ -174,6 +185,7 @@ export class CollectionService {
   public showConversion: boolean = true;
   public currencySelector: boolean = true;
   public userCanAddRetention: boolean = false;
+  public messageSended: boolean = false;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;
@@ -226,6 +238,7 @@ export class CollectionService {
   public coDocumentPaymentPartial: string = '';
   public MonedaTolerancia: string = "";
   public prepaidRangeCurrency: string = "";
+  public tabSelected: string = "general";
 
   public backRoute = new Subject<string>;
   public saveCollect = new Subject<string>;
@@ -262,6 +275,10 @@ export class CollectionService {
     },
   ];
 
+  public ORDER_STATUS_SAVED = ORDER_STATUS_SAVED;
+  public ORDER_STATUS_SENT = ORDER_STATUS_SENT;
+  public ORDER_STATUS_TO_SEND = ORDER_STATUS_TO_SEND;
+  public ORDER_STATUS_NEW = ORDER_STATUS_NEW;
 
   initLogicService() {
     //this.coTypeModule = '0';
@@ -480,7 +497,7 @@ export class CollectionService {
       return this.currencyList.find(c => ((c?.coCurrency ?? '').toString() === co.toString()));
     };
 
-    const st = Number(this.collection?.stDelivery ?? DELIVERY_STATUS_NEW);
+    const st = Number(this.collection?.stDelivery ?? this.ORDER_STATUS_NEW);
     let chosen: Currencies | undefined;
 
     // 1) Si la colección ya tiene estado distinto de 0 -> respetar collection.coCurrency
@@ -677,7 +694,7 @@ export class CollectionService {
       /* this.fechaMayor = yearMayor + "-" + monthMayor + "-" + diaMayor + " " + hora.split(" ")[1]; */
       this.dateRate = yearMayor + "-" + monthMayor + "-" + diaMayor + " " + hora.split(" ")[1];
 
-      if (this.collection.stDelivery == DELIVERY_STATUS_SAVED) {
+      if (this.collection.stDelivery == ORDER_STATUS_SAVED) {
         this.dateRateVisual = this.collection.daRate + "T00:00:00";
       } else
         this.dateRateVisual = yearMayor + "-" + monthMayor + "-" + diaMayor + "T00:00:00";
@@ -688,7 +705,7 @@ export class CollectionService {
 
   getDateRate(dbServ: SQLiteObject, fecha: string) {
 
-    if (this.collection.stDelivery == DELIVERY_STATUS_TO_SEND)
+    if (this.collection.stDelivery == ORDER_STATUS_TO_SEND)
       return;
 
     this.dateRate = fecha;
@@ -731,7 +748,7 @@ export class CollectionService {
       return Promise.resolve(true);
     } else {
       //no tengo tasa para ese dia
-      if (this.collection.stDelivery == DELIVERY_STATUS_SENT) {
+      if (this.collection.stDelivery == this.ORDER_STATUS_SENT) {
         this.rateSelected = this.collection.nuValueLocal;
         this.historicoTasa = true;
       } else {
@@ -761,7 +778,7 @@ export class CollectionService {
     let montoConversion = 0;
     let montoTotalDiscounts = 0;
 
-    if (this.collection.stDelivery == DELIVERY_STATUS_SAVED) {
+    if (this.collection.stDelivery == this.ORDER_STATUS_SAVED) {
       for (var j = 0; j < this.collection.collectionDetails.length; j++) {
         monto += this.collection.collectionDetails[j].nuAmountPaid;
         montoConversion += this.collection.collectionDetails[j].nuAmountPaidConversion;
@@ -770,7 +787,7 @@ export class CollectionService {
         this.montoTotalPagarConversion = montoConversion;
 
       }
-    } else if (this.collection.stDelivery == DELIVERY_STATUS_TO_SEND || this.collection.stDelivery == DELIVERY_STATUS_SENT) {
+    } else if (this.collection.stDelivery == this.ORDER_STATUS_TO_SEND || this.collection.stDelivery == this.ORDER_STATUS_SENT) {
       monto = this.collection.nuAmountTotal;
       montoConversion = this.collection.nuAmountTotalConversion;
       this.montoTotalPagar = monto;
@@ -1140,22 +1157,55 @@ export class CollectionService {
       }
     } else {
       //DEBO VALIDAR SI HAY ALGUN PAGO PARCIAL, EL MONTO DEBE PAGADO DEBE SER IGUAL AL MONTO A PAGAR
-      for (var i = 0; i < this.collection.collectionDetails.length; i++) {
-        if (this.collection.collectionDetails[i].inPaymentPartial.toString() == "true") {
-          this.existPartialPayment = true
-          break;
-        } else {
-          this.existPartialPayment = false;
-        }
+      let onlyPaymentPartial = 0;
+      // Seguridad: normalizar array
+      const details = Array.isArray(this.collection.collectionDetails) ? this.collection.collectionDetails : [];
 
-      }
+      // Helper local para interpretar 'true' (acepta boolean o string)
+      const isTrue = (v: any) => v === true || String(v ?? '').toLowerCase() === 'true';
+
+      // Contar cuantos detalles están marcado como pago parcial
+      onlyPaymentPartial = details.reduce((count, d) => {
+        return count + (isTrue(d?.inPaymentPartial) ? 1 : 0);
+      }, 0);
+
+      // Existencia: true si hay al menos uno marcado
+      this.existPartialPayment = onlyPaymentPartial > 0;
+
+      let allPaymentPartial = false;
+      if (onlyPaymentPartial == this.collection.collectionDetails.length)
+        allPaymentPartial = true;
 
       if (this.existPartialPayment) {
-        if (this.montoTotalPagado == this.montoTotalPagar) {
-          this.onCollectionValidToSend(true);
+        if (allPaymentPartial && this.collection.collectionPayments.length > 0 && this.tabSelected == "pagos") {
+          if (this.montoTotalPagado == this.montoTotalPagar) {
+            this.onCollectionValidToSend(true);
+          } else {
+            if (!this.messageSended) {
+              this.mensaje = "Todos los documentos están marcados como pago parcial, el monto pagado debe ser igual al monto a pagar.";
+
+              this.messageAlert = new MessageAlert(
+                this.collectionTags.get('COB_NOMBRE_MODULO')!,
+                this.mensaje,
+              );
+              this.messageService.alertModal(this.messageAlert);
+              this.messageSended = true;
+            }
+
+            this.onCollectionValidToSend(false);
+            return;
+          }
         } else {
-          this.onCollectionValidToSend(false);
-          return;
+          if (this.tolerancia0) {
+            this.checkTolerancia();
+          } else {
+            if (Math.abs(this.montoTotalPagado) == Math.abs(this.montoTotalPagar)) {
+              this.onCollectionValidToSend(true);
+            } else {
+              this.onCollectionValidToSend(false);
+              return;
+            }
+          }
         }
       } else {
         if (isNaN(this.montoTotalPagado))
@@ -1169,159 +1219,7 @@ export class CollectionService {
         } else {
 
           if (this.tolerancia0) {
-            //TOLERANCIA0 TRUE PERMITO DIFERENCIA SE DEBEN VALIDAR LAS SIGUIENTES VARIABLES TipoTolerancia, RangoTolerancia, MonedaTolerancia
-            if (this.TipoTolerancia == 0) {
-              if (this.collection.coCurrency == this.MonedaTolerancia) {
-                //COMO LA MONEDA DEL COBRO Y LA MONEDA DE LA TOLERANCIA SON IGUALES, ENTONCES COMPARO DIRECTAMENTE 
-                let amount = this.montoTotalPagado - this.montoTotalPagar;
-                if (amount > 0) {
-                  if (amount < this.RangoToleranciaPositiva)
-                    this.onCollectionValidToSend(true);
-                  else {
-                    this.onCollectionValidToSend(false);
-                    return;
-                  }
-                } else if (amount < 0) {
-                  if (Math.abs(amount) < this.RangoToleranciaNegativa)
-                    this.onCollectionValidToSend(true);
-                  else {
-                    this.onCollectionValidToSend(false);
-                    return;
-                  }
-                } else {
-                  this.onCollectionValidToSend(true);
-                }
-
-
-              } else {
-                //LA MONEDA DEL COBRO Y DE LA TOLERANCIA SON DISTINTAS, DEBO SABER QUE MONEDA ES PARA REALIZAR LA CONVERSION
-                //CORRESPONDIENTE PARA CALCULAR BIEN LA DIFERENCIA
-                if (this.MonedaToleranciaIsLocal) {
-                  if (this.collection.coCurrency == this.MonedaTolerancia) {
-                    //LA MONEDA ES LOCAL, NO DEBO CONVERTIR
-                    let amount = this.montoTotalPagado - this.montoTotalPagar;
-                    if (amount > 0) {
-                      if (amount < this.RangoToleranciaPositiva)
-                        this.onCollectionValidToSend(true);
-                      else {
-                        this.onCollectionValidToSend(false);
-                        return;
-                      }
-                    } else if (amount < 0) {
-                      if (Math.abs(amount) < this.RangoToleranciaNegativa)
-                        this.onCollectionValidToSend(true);
-                      else {
-                        this.onCollectionValidToSend(false);
-                        return;
-                      }
-                    } else {
-                      this.onCollectionValidToSend(true);
-                    }
-                  } else {
-                    //LA MONEDA TOLERANCIA ES LOCA, PERO LA MONEDA DEL COBRO ES LA HARD, DEBO CONVERTIR LA TOLERANCIA A HARD
-                    let amount = this.montoTotalPagado - this.montoTotalPagar;
-                    if (amount > 0) {
-                      if (amount < this.currencyService.toHardCurrency(this.RangoToleranciaPositiva))
-                        this.onCollectionValidToSend(true);
-                      else {
-                        this.onCollectionValidToSend(false);
-                        return;
-                      }
-                    } else if (amount < 0) {
-                      if (Math.abs(amount) < this.currencyService.toHardCurrency(this.RangoToleranciaPositiva))
-                        this.onCollectionValidToSend(true);
-                      else {
-                        this.onCollectionValidToSend(false);
-                        return;
-                      }
-                    } else {
-                      this.onCollectionValidToSend(true);
-                    }
-                  }
-                } else {
-                  //LA MONEDA TOLERANCIA ES HARD
-                  if (this.collection.coCurrency == this.MonedaTolerancia) {
-                    //LA MONEDA ES LOCAL, NO DEBO CONVERTIR
-                    let amount = this.montoTotalPagado - this.montoTotalPagar;
-                    if (amount > 0) {
-                      if (amount < this.RangoToleranciaPositiva)
-                        this.onCollectionValidToSend(true);
-                      else {
-                        this.onCollectionValidToSend(false);
-                        return;
-                      }
-                    } else if (amount < 0) {
-                      if (Math.abs(amount) < this.RangoToleranciaNegativa)
-                        this.onCollectionValidToSend(true);
-                      else {
-                        this.onCollectionValidToSend(false);
-                        return;
-                      }
-                    } else {
-                      this.onCollectionValidToSend(true);
-                    }
-                  } else {
-                    //LA MONEDA TOLERANCIA ES HARD, PERO LA MONEDA DEL COBRO ES LA HARD, DEBO CONVERTIR LA TOLERANCIA A LOCAL
-                    let amount = this.montoTotalPagado - this.montoTotalPagar;
-                    if (amount > 0) {
-                      if (amount < this.currencyService.toLocalCurrency(this.RangoToleranciaPositiva))
-                        this.onCollectionValidToSend(true);
-                      else {
-                        this.onCollectionValidToSend(false);
-                        return;
-                      }
-                    } else if (amount < 0) {
-                      if (Math.abs(amount) < this.currencyService.toLocalCurrency(this.RangoToleranciaNegativa))
-                        this.onCollectionValidToSend(true);
-                      else {
-                        this.onCollectionValidToSend(false);
-                        return;
-                      }
-                    } else {
-                      this.onCollectionValidToSend(true);
-                    }
-
-                  }
-                }
-              }
-            } else {
-              //EL TIPO DE TOLERANCIA ES POR RANGO, SE DEBE SACAR PORCENTAJE Y CALCULAR SI SE PUEDE ENVIAR O NO
-              const delta = Number(((Number(this.montoTotalPagado) || 0) - (Number(this.montoTotalPagar) || 0)).toFixed(this.parteDecimal));
-              const base = Math.abs(Number(this.montoTotalPagar) || 0);
-
-
-              // Si el monto a pagar es 0, exigir igualdad exacta
-              if (base === 0) {
-                if (Math.abs(delta) === 0) {
-                  this.onCollectionValidToSend(true);
-                } else {
-                  this.onCollectionValidToSend(false);
-                  return;
-                }
-              }
-
-              // RangoToleranciaPositiva y RangoToleranciaNegativa son porcentajes
-              const allowedPositive = (base * (Number(this.RangoToleranciaPositiva) || 0)) / 100;
-              const allowedNegative = (base * (Number(this.RangoToleranciaNegativa) || 0)) / 100;
-
-              if (delta >= 0) {
-                // Sobrepago: comparar contra rango positivo
-                if (delta <= allowedPositive) {
-                  this.onCollectionValidToSend(true);
-                } else {
-                  this.onCollectionValidToSend(false);
-                  return;
-                }
-              } else {
-                // Falta pago: comparar magnitud contra rango negativo
-                if (Math.abs(delta) <= allowedNegative) {
-                  this.onCollectionValidToSend(true);
-                } else {
-                  this.onCollectionValidToSend(false);
-                  return;
-                }
-              }
-            }
+            this.checkTolerancia();
           } else {
             if (Math.abs(this.montoTotalPagado) == Math.abs(this.montoTotalPagar)) {
               this.onCollectionValidToSend(true);
@@ -1333,6 +1231,163 @@ export class CollectionService {
         }
       }
       this.validateReferencePayment();
+    }
+  }
+
+  checkTolerancia() {
+
+    //TOLERANCIA0 TRUE PERMITO DIFERENCIA SE DEBEN VALIDAR LAS SIGUIENTES VARIABLES TipoTolerancia, RangoTolerancia, MonedaTolerancia
+    if (this.TipoTolerancia == 0) {
+      if (this.collection.coCurrency == this.MonedaTolerancia) {
+        //COMO LA MONEDA DEL COBRO Y LA MONEDA DE LA TOLERANCIA SON IGUALES, ENTONCES COMPARO DIRECTAMENTE 
+        let amount = this.montoTotalPagado - this.montoTotalPagar;
+        if (amount > 0) {
+          if (amount < this.RangoToleranciaPositiva)
+            this.onCollectionValidToSend(true);
+          else {
+            this.onCollectionValidToSend(false);
+            return;
+          }
+        } else if (amount < 0) {
+          if (Math.abs(amount) < this.RangoToleranciaNegativa)
+            this.onCollectionValidToSend(true);
+          else {
+            this.onCollectionValidToSend(false);
+            return;
+          }
+        } else {
+          this.onCollectionValidToSend(true);
+        }
+
+
+      } else {
+        //LA MONEDA DEL COBRO Y DE LA TOLERANCIA SON DISTINTAS, DEBO SABER QUE MONEDA ES PARA REALIZAR LA CONVERSION
+        //CORRESPONDIENTE PARA CALCULAR BIEN LA DIFERENCIA
+        if (this.MonedaToleranciaIsLocal) {
+          if (this.collection.coCurrency == this.MonedaTolerancia) {
+            //LA MONEDA ES LOCAL, NO DEBO CONVERTIR
+            let amount = this.montoTotalPagado - this.montoTotalPagar;
+            if (amount > 0) {
+              if (amount < this.RangoToleranciaPositiva)
+                this.onCollectionValidToSend(true);
+              else {
+                this.onCollectionValidToSend(false);
+                return;
+              }
+            } else if (amount < 0) {
+              if (Math.abs(amount) < this.RangoToleranciaNegativa)
+                this.onCollectionValidToSend(true);
+              else {
+                this.onCollectionValidToSend(false);
+                return;
+              }
+            } else {
+              this.onCollectionValidToSend(true);
+            }
+          } else {
+            //LA MONEDA TOLERANCIA ES LOCA, PERO LA MONEDA DEL COBRO ES LA HARD, DEBO CONVERTIR LA TOLERANCIA A HARD
+            let amount = this.montoTotalPagado - this.montoTotalPagar;
+            if (amount > 0) {
+              if (amount < this.currencyService.toHardCurrency(this.RangoToleranciaPositiva))
+                this.onCollectionValidToSend(true);
+              else {
+                this.onCollectionValidToSend(false);
+                return;
+              }
+            } else if (amount < 0) {
+              if (Math.abs(amount) < this.currencyService.toHardCurrency(this.RangoToleranciaPositiva))
+                this.onCollectionValidToSend(true);
+              else {
+                this.onCollectionValidToSend(false);
+                return;
+              }
+            } else {
+              this.onCollectionValidToSend(true);
+            }
+          }
+        } else {
+          //LA MONEDA TOLERANCIA ES HARD
+          if (this.collection.coCurrency == this.MonedaTolerancia) {
+            //LA MONEDA ES LOCAL, NO DEBO CONVERTIR
+            let amount = this.montoTotalPagado - this.montoTotalPagar;
+            if (amount > 0) {
+              if (amount < this.RangoToleranciaPositiva)
+                this.onCollectionValidToSend(true);
+              else {
+                this.onCollectionValidToSend(false);
+                return;
+              }
+            } else if (amount < 0) {
+              if (Math.abs(amount) < this.RangoToleranciaNegativa)
+                this.onCollectionValidToSend(true);
+              else {
+                this.onCollectionValidToSend(false);
+                return;
+              }
+            } else {
+              this.onCollectionValidToSend(true);
+            }
+          } else {
+            //LA MONEDA TOLERANCIA ES HARD, PERO LA MONEDA DEL COBRO ES LA HARD, DEBO CONVERTIR LA TOLERANCIA A LOCAL
+            let amount = this.montoTotalPagado - this.montoTotalPagar;
+            if (amount > 0) {
+              if (amount < this.currencyService.toLocalCurrency(this.RangoToleranciaPositiva))
+                this.onCollectionValidToSend(true);
+              else {
+                this.onCollectionValidToSend(false);
+                return;
+              }
+            } else if (amount < 0) {
+              if ((amount) < this.currencyService.toLocalCurrency(this.RangoToleranciaNegativa))
+                this.onCollectionValidToSend(true);
+              else {
+                this.onCollectionValidToSend(false);
+                return;
+              }
+            } else {
+              this.onCollectionValidToSend(true);
+            }
+
+          }
+        }
+      }
+    } else {
+      //EL TIPO DE TOLERANCIA ES POR RANGO, SE DEBE SACAR PORCENTAJE Y CALCULAR SI SE PUEDE ENVIAR O NO
+      const delta = Number(((Number(this.montoTotalPagado) || 0) - (Number(this.montoTotalPagar) || 0)).toFixed(this.parteDecimal));
+      const base = Math.abs(Number(this.montoTotalPagar) || 0);
+
+
+      // Si el monto a pagar es 0, exigir igualdad exacta
+      if (base === 0) {
+        if (Math.abs(delta) === 0) {
+          this.onCollectionValidToSend(true);
+        } else {
+          this.onCollectionValidToSend(false);
+          return;
+        }
+      }
+
+      // RangoToleranciaPositiva y RangoToleranciaNegativa son porcentajes
+      const allowedPositive = (base * (Number(this.RangoToleranciaPositiva) || 0)) / 100;
+      const allowedNegative = (base * (Number(this.RangoToleranciaNegativa) || 0)) / 100;
+
+      if (delta >= 0) {
+        // Sobrepago: comparar contra rango positivo
+        if (delta <= allowedPositive) {
+          this.onCollectionValidToSend(true);
+        } else {
+          this.onCollectionValidToSend(false);
+          return;
+        }
+      } else {
+        // Falta pago: comparar magnitud contra rango negativo
+        if (Math.abs(delta) <= allowedNegative) {
+          this.onCollectionValidToSend(true);
+        } else {
+          this.onCollectionValidToSend(false);
+          return;
+        }
+      }
     }
   }
 
@@ -1442,7 +1497,7 @@ export class CollectionService {
 
   getDocumentsSales(dbServ: SQLiteObject, idClient: number, coCurrency: string, coCollection: string, idEnterprise: number) {
 
-    if (this.collection.stDelivery == DELIVERY_STATUS_TO_SEND)
+    if (this.collection.stDelivery == this.ORDER_STATUS_TO_SEND)
       return Promise.resolve();
 
     let selectStatement = ""
@@ -1566,7 +1621,7 @@ export class CollectionService {
                   this.documentSalesBackup[i].daVoucher = this.collection.collectionDetails[cd].daVoucher!;
                   this.documentSalesBackup[i].nuAmountDiscount = this.collection.collectionDetails[cd].nuAmountDiscount;
 
-                  if (this.collection.stDelivery != DELIVERY_STATUS_SAVED) {
+                  if (this.collection.stDelivery != this.ORDER_STATUS_SAVED) {
                     this.collection.collectionDetails[cd].nuBalanceDoc = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
                     this.collection.collectionDetails[cd].nuBalanceDocConversion = this.documentSales[i].nuBalance;
                     this.collection.collectionDetails[cd].nuAmountPaid = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
@@ -2023,7 +2078,7 @@ export class CollectionService {
       if (this.onChangeClient)
         this.cobroValid = true;
 
-      if (this.collection.stDelivery == DELIVERY_STATUS_SAVED || this.collection.stDelivery == DELIVERY_STATUS_SENT)
+      if (this.collection.stDelivery == this.ORDER_STATUS_SAVED || this.collection.stDelivery == this.ORDER_STATUS_SENT)
         this.cobroValid = true;
 
       this.onCollectionValidToSave(true);
@@ -2031,7 +2086,7 @@ export class CollectionService {
       if (this.onChangeClient)
         this.cobroValid = true;
     }
-    if (this.collection.stDelivery == DELIVERY_STATUS_TO_SEND || this.collection.stDelivery == DELIVERY_STATUS_SENT)
+    if (this.collection.stDelivery == this.ORDER_STATUS_TO_SEND || this.collection.stDelivery == this.ORDER_STATUS_SENT)
       this.cobroValid = true;
 
     this.validCollection.next(valid);
@@ -2058,7 +2113,7 @@ export class CollectionService {
 
     if (this.globalConfig.get("requiredComment") === 'true' ? true : false) {
       if (this.collection.txComment.trim() == "") {
-        if (this.collection.stDelivery == DELIVERY_STATUS_SAVED)
+        if (this.collection.stDelivery == this.ORDER_STATUS_SAVED)
           banderaRequiredComment = true;
         else
           banderaRequiredComment = false;
@@ -2733,7 +2788,7 @@ export class CollectionService {
           collect.coClient,
           collect.naClient,
           collect.stCollection,
-          collect.stDelivery,
+          collect.stDelivery == null ? this.ORDER_STATUS_SENT : collect.stDelivery,
           collect.daCollection,
           collect.daRate,
           collect.naResponsible,
@@ -3377,7 +3432,7 @@ export class CollectionService {
       this.listCollect = [] as Collection[];
       this.itemListaCobros = [] as ItemListaCobros[];
       const res = await dbServ.executeSql(
-        'SELECT c.* FROM collections c ORDER BY c.st_collection ASC, c.id_collection ASC, c.da_collection DESC', []
+        'SELECT c.* FROM collections c ORDER BY c.st_delivery ASC, c.st_collection ASC, c.id_collection ASC, c.da_collection DESC', []
       );
 
       const promises: Promise<void>[] = [];
@@ -3399,7 +3454,7 @@ export class CollectionService {
         respCollect.idEnterprise = res.rows.item(i).id_enterprise;
         respCollect.coEnterprise = res.rows.item(i).co_enterprise;
         respCollect.stCollection = res.rows.item(i).st_collection;
-        respCollect.stDelivery = res.rows.item(i).st_delivery;
+        respCollect.stDelivery = res.rows.item(i).st_delivery == null ? this.ORDER_STATUS_SENT : res.rows.item(i).st_delivery;
         respCollect.isEdit = 0;
         respCollect.isEditTotal = 0;
         respCollect.isSave = 1;
@@ -3707,11 +3762,13 @@ export class CollectionService {
     }
   }
 
-  async checkHistoricCollects(): Promise<TransactionStatuses[]> {
-    this.collectionRefused = [] as TransactionStatuses;
+  async checkHistoricCollects(db: SQLiteObject): Promise<boolean> {
+    this.collectionRefused = [] as TransactionStatuses[];
+    this.collectionApproved = [] as TransactionStatuses[];
+    this.collectionSended = [] as TransactionStatuses[];
     try {
       const list = Array.isArray(this.listTransactionStatusCollections) ? this.listTransactionStatusCollections : [];
-      if (list.length === 0) return this.collectionRefused;
+      if (list.length === 0) return Promise.resolve(false);
 
       // Extraer ids únicos y sanearlos
       const ids = Array.from(new Set(list
@@ -3719,46 +3776,50 @@ export class CollectionService {
         .filter(id => id !== undefined && id !== null)
         .map(String)
       ));
-      if (ids.length === 0) return this.collectionRefused;
+      if (ids.length === 0) return Promise.resolve(false);
 
       // Preparar query IN (...) para obtener todos los statuses en una sola llamada
       const placeholders = ids.map(_ => '?').join(',');
-      const sql = `SELECT id_status AS idStatus, status FROM statuses WHERE id_status IN (${placeholders})`;
-
-      // Obtener objeto DB (usar this.database si está inicializado o intentar getDatabase si existe)
-      const db: SQLiteObject | undefined = (this as any).database ?? (typeof (this as any).getDatabase === 'function' ? await (this as any).getDatabase() : undefined);
-      if (!db) {
-        console.warn('[checkHistoricCollects] database unavailable');
-        return this.collectionRefused;
-      }
+      const sql = `SELECT * FROM statuses WHERE id_status IN (${placeholders})`;
 
       const res = await db.executeSql(sql, ids);
       const statusMap = new Map<string, number>();
       for (let i = 0; i < res.rows.length; i++) {
         const row = res.rows.item(i);
-        const key = String(row.idStatus ?? row.id_status ?? row.id);
-        statusMap.set(key, Number(row.status));
+        const key = String(row.id_status);
+        statusMap.set(key, Number(row.status_action));
       }
 
       // Asignar a collectionRefused los TransactionStatuses cuyo status en la tabla sea 2
       for (const ts of list) {
-        const idStatus = ts?.idStatus ?? (ts as any)?.id_status ?? (ts as any)?.id;
+        const idStatus = ts.idStatus;
         if (idStatus == null) continue;
-        if (statusMap.get(String(idStatus)) === 2) {
-          this.collectionRefused.push(ts);
+        switch (statusMap.get(String(idStatus))) {
+          case 1:
+            this.collectionApproved.push(ts);
+            break;
+          case 2:
+            this.collectionRefused.push(ts);
+            break;
+          case 3:
+            this.collectionSended.push(ts);
+            break;
+          default:
+            // otros casos se ignoran
+            break;
         }
       }
     } catch (err) {
       console.error('[checkHistoricCollects] error:', err);
     }
-    return this.collectionRefused;
+    return Promise.resolve(true);
   }
 
-  // ...existing code...
-  async findDocumentSalesRefused(): Promise<string[]> {
+
+  async lockDocumentSales(db: SQLiteObject): Promise<string[]> {
     const docs: string[] = [];
     try {
-      const list = Array.isArray(this.collectionRefused) ? this.collectionRefused : [];
+      const list = Array.isArray(this.collectionSended) ? this.collectionSended : [];
       if (list.length === 0) {
         this.coDocumentToUpdate = [];
         return docs;
@@ -3781,16 +3842,6 @@ export class CollectionService {
       const placeholders = coTransactions.map(() => '?').join(',');
       const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders})`;
 
-      const db: SQLiteObject | undefined =
-        (this as any).database ??
-        (typeof (this as any).getDatabase === 'function' ? await (this as any).getDatabase() : undefined);
-
-      if (!db) {
-        console.warn('[findDocumentSalesRefused] database unavailable');
-        this.coDocumentToUpdate = [];
-        return docs;
-      }
-
       const res = await db.executeSql(sql, coTransactions);
       for (let i = 0; i < res.rows.length; i++) {
         const cd = res.rows.item(i).co_document;
@@ -3800,9 +3851,8 @@ export class CollectionService {
       // Guardar resultado en la propiedad usada por otros flujos
       this.coDocumentToUpdate = docs.slice();
 
-      // llamar a checkDocumentSales para actualizar st_document = 0 para los co_documents obtenidos
       try {
-        await this.checkDocumentSales(db, docs);
+        await this.checkDocumentSales(db, docs, 2);
       } catch (e) {
         console.error('[findDocumentSalesRefused] checkDocumentSales error:', e);
       }
@@ -3814,8 +3864,64 @@ export class CollectionService {
       return docs;
     }
   }
-  
-  async checkDocumentSales(dbServ: SQLiteObject, coDocumentSales: string[]): Promise<boolean> {
+
+  async unlockDocumentSales(db: SQLiteObject): Promise<string[]> {
+    const docs: string[] = [];
+    try {
+      // Usar tanto collectionRefused como collectionApproved como fuente
+      const combinedList = [
+        ...(Array.isArray(this.collectionRefused) ? this.collectionRefused : []),
+        ...(Array.isArray(this.collectionApproved) ? this.collectionApproved : [])
+      ];
+
+      if (combinedList.length === 0) {
+        this.coDocumentToUpdate = [];
+        return docs;
+      }
+
+      // extraer coTransaction (acepta varias posibles claves)
+      const coTransactions = Array.from(new Set(
+        combinedList
+          .map(ts => (ts as any)?.coTransaction ?? (ts as any)?.co_transaction ?? (ts as any)?.coCollection ?? (ts as any)?.co_collection)
+          .filter(Boolean)
+          .map(String)
+      ));
+
+      if (coTransactions.length === 0) {
+        this.coDocumentToUpdate = [];
+        return docs;
+      }
+
+      // preparar consulta IN (...) para obtener todos los co_document de una sola vez
+      const placeholders = coTransactions.map(() => '?').join(',');
+      const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders})`;
+
+      const res = await db.executeSql(sql, coTransactions);
+      for (let i = 0; i < res.rows.length; i++) {
+        const cd = res.rows.item(i).co_document;
+        if (cd != null) docs.push(cd);
+      }
+
+      // Guardar resultado en la propiedad usada por otros flujos
+      this.coDocumentToUpdate = docs.slice();
+
+      // llamar a checkDocumentSales para actualizar st_document = 0 (desbloquear)
+      try {
+        await this.checkDocumentSales(db, docs, 0);
+      } catch (e) {
+        console.error('[unlockDocumentSales] checkDocumentSales error:', e);
+      }
+
+      return docs;
+    } catch (err) {
+      console.error('[unlockDocumentSales] error:', err);
+      this.coDocumentToUpdate = [];
+      return docs;
+    }
+  }
+
+  async checkDocumentSales(dbServ: SQLiteObject, coDocumentSales: string[], action: number): Promise<boolean> {
+    //action: 0 el documento vuelvo a salir, 2 documento bloqueado
     try {
       if (!Array.isArray(coDocumentSales) || coDocumentSales.length === 0) {
         return true;
@@ -3826,7 +3932,7 @@ export class CollectionService {
       if (docs.length === 0) return true;
 
       const placeholders = docs.map(() => '?').join(',');
-      const sql = `UPDATE document_st SET st_document = 0 WHERE co_document IN (${placeholders})`;
+      const sql = `UPDATE document_st SET st_document = ${action} WHERE co_document IN (${placeholders})`;
 
       await dbServ.executeSql(sql, docs);
       return true;

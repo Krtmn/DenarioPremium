@@ -231,10 +231,10 @@ export class CobrosListComponent implements OnInit {
         this.collectService.getCollectionDetails(this.synchronizationServices.getDatabase(), coCollection).then(collectionDetails => {
           this.collectService.collection.collectionDetails = collectionDetails;
           this.collectService.getCollectionPayments(this.synchronizationServices.getDatabase(), coCollection).then(collectionPayment => {
-            if (this.collectService.collection.stCollection == 2 || this.collectService.collection.stCollection == 3) {
+            if (this.collectService.collection.stDelivery == this.ORDER_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.ORDER_STATUS_SENT) {
               this.collectService.hideDocuments = true;
               this.collectService.hidePayments = true;
-            } else if (this.collectService.collection.stCollection == 6) {
+            } else if (this.collectService.collection.stDelivery == 6) {
               this.collectService.showHeaderButtonsFunction(false);
               this.collectService.hideDocuments = true;
               this.collectService.hidePayments = true;
