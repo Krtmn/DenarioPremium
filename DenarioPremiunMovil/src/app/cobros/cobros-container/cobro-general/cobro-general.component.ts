@@ -28,6 +28,8 @@ import { ClienteSelectorService } from 'src/app/cliente-selector/cliente-selecto
 import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 import { BancoReceptor } from 'src/app/modelos/bancoReceptor';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
+import { ORDER_STATUS_SAVED, ORDER_STATUS_NEW, ORDER_STATUS_SENT, ORDER_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+
 
 @Component({
   selector: 'app-cobro-general',
@@ -73,6 +75,11 @@ export class CobrosGeneralComponent implements OnInit {
   private messageAlert!: MessageAlert;
   private coordenadas: string = "";
 
+  public ORDER_STATUS_SAVED = ORDER_STATUS_SAVED;
+  public ORDER_STATUS_SENT = ORDER_STATUS_SENT;
+  public ORDER_STATUS_TO_SEND = ORDER_STATUS_TO_SEND;
+  public ORDER_STATUS_NEW = ORDER_STATUS_NEW;
+
   public alertButtons = [
     { text: '', role: 'confirm' },
   ];
@@ -85,7 +92,7 @@ export class CobrosGeneralComponent implements OnInit {
 
   ngOnInit() {
 
-    if (this.collectService.collection.stCollection == 2 || this.collectService.collection.stCollection == 3 || this.collectService.collection.stCollection == 6) {
+    if (this.collectService.collection.stDelivery == this.ORDER_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.ORDER_STATUS_SENT || this.collectService.collection.stDelivery == 6) {
       //ES UN COBRO ENVIADO, NO DEBO HACER NADA, SOLO MOSTRAR LA DATA
       this.setSendedCollection();
     } else {
@@ -159,10 +166,10 @@ export class CobrosGeneralComponent implements OnInit {
     //this.collectService.disabledCurrency = true;
     this.collectService.cobroValid = true;
 
-    if (Number(this.collectService.collection.stCollection) > 1) {
+    if (Number(this.collectService.collection.stDelivery) > this.ORDER_STATUS_SAVED) {
       this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", true, COLOR_VERDE);
       this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, 'cobros');
-      if (Number(this.collectService.collection.stCollection) === 3)
+      if (Number(this.collectService.collection.stDelivery) === this.ORDER_STATUS_SENT)
         this.collectService.onCollectionValid(true);
     }
 
@@ -575,7 +582,7 @@ export class CobrosGeneralComponent implements OnInit {
     //SE BUSCA LA MONEDA 
     this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise).then(r => {
 
-      if (this.collectService.collection.stCollection === 3) {
+      if (this.collectService.collection.stDelivery === this.ORDER_STATUS_SENT) {
         this.collectService.rateSelected = this.collectService.collection.nuValueLocal;
         this.collectService.historicoTasa = true;
       } else if (this.collectService.historicoTasa) {
@@ -606,7 +613,7 @@ export class CobrosGeneralComponent implements OnInit {
             if (this.collectService.onChangeClient)
               this.collectService.onChangeClient = false;
 
-            if (this.collectService.collection.stCollection >= 2) {
+            if (this.collectService.collection.stDelivery >= this.ORDER_STATUS_TO_SEND) {
               this.collectService.disabledInputClient = true;
               this.collectService.enterpriseEnabled = false;
               //this.collectService.collection.nuValueLocal = 80;
@@ -902,7 +909,7 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   onOpenCalendar() {
-    if (this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3) {
+    if (this.collectService.collection.stDelivery != this.ORDER_STATUS_TO_SEND && this.collectService.collection.stDelivery != this.ORDER_STATUS_SENT) {
       this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual.split("T")[0]);
       this.collectService.calculatePayment("", 0);
     }
@@ -1018,18 +1025,18 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   bottonDateRateLabel() {
-    if (this.collectService.collection.stCollection == 2 || this.collectService.collection.stCollection == 3) {
+    if (this.collectService.collection.stDelivery == this.ORDER_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.ORDER_STATUS_SENT) {
       // normalizar a formato con espacio en vez de 'T'
       if (this.collectService.collection.daRate) {
         this.collectService.dateRateVisual = this.collectService.collection.daRate.replace('T', ' ');
       }
       return this.dateServ.formatShort(this.collectService.dateRateVisual);
-    } else if (this.collectService.collection.stCollection == 1) {
+    } else if (this.collectService.collection.stDelivery == this.ORDER_STATUS_SAVED) {
       if (this.collectService.collection.daRate) {
         this.collectService.dateRateVisual = this.collectService.collection.daRate.replace('T', ' ');
       }
       return this.dateServ.formatShort(this.collectService.dateRateVisual);
-    } else if (this.collectService.collection.stCollection == 6) {
+    } else if (this.collectService.collection.stDelivery == 6) {
       const raw = this.collectService.collection.daCollection || '';
       this.collectService.dateRate = raw.substring(0, 19).replace('T', ' ');
       this.collectService.dateRateVisual = raw.replace('T', ' ');
@@ -1042,11 +1049,6 @@ export class CobrosGeneralComponent implements OnInit {
       this.collectService.dateRate = (this.collectService.dateRate || '').split("T")[0];
       return this.dateServ.formatShort(this.collectService.dateRateVisual);
     }
-  }
-
-
-  printAllTransactionStatuses() {
-    this.collectService.printAllTransactionStatuses(this.synchronizationServices.getDatabase());
   }
 
   getBancoReceptor(nuClientBankAccount: string): BancoReceptor {

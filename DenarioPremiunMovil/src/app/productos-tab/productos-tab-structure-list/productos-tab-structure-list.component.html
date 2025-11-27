@@ -8,31 +8,33 @@
 
   <ion-grid>
     <ion-row>
-      <ion-col class="" size="{{ buttonSize }}" size-sm="{{ buttonSize }}" size-xs="{{ buttonSize }}">
-        <!-- boton favoritos -->
-        <ion-button (click)="onFavoriteProductSelected()" expand="block" size="small" class="botonAddVerdePedidos">
-          <ion-icon slot="start" name="heart"></ion-icon>
-          <!-- <ion-label> -->
-          {{favoriteButtonLabel}}
-          <!-- </ion-label> -->
-        </ion-button>
-      </ion-col>
-      <ion-col class="" size="{{ buttonSize }}" size-sm="{{ buttonSize }}" size-xs="{{ buttonSize }}">
-        <!--[featuredProducts] boton destacados -->
-        <ion-button (click)="onFeaturedProductSelected()" size="small" expand="block" class="botonAddVerdePedidos">
-          <ion-icon slot="start" name="star"></ion-icon>
-          <!-- <ion-label> -->
-          {{featuredButtonLabel}}
-          <!-- </ion-label> -->
-        </ion-button>
-      </ion-col>
-      <ion-col class="" size="2" size-sm="2" size-xs="2" *ngIf="pedido">
-        <!--[Pedidos] boton de carrito -->
-        <ion-button (click)="onCartSelected()" size="small" expand="block" class="botonAddVerdePedidos">
-          <ion-icon slot="icon-only" name="cart-outline"></ion-icon>
-        </ion-button>
+      
+    
+
+      <ion-col class="contadoresIcon" size="12" size-sm="12" size-xs="12" >
+      <ion-tab-bar class="fondoVerde">
+  <ion-tab-button tab="1" (click)="onFavoriteProductSelected();">
+    <ion-icon name="heart"></ion-icon>
+    <ion-label>{{favoriteButtonLabel}}</ion-label>
+    <ion-badge color="danger">{{ favoriteButtonCount }}</ion-badge>
+  </ion-tab-button>
+
+  <ion-tab-button tab="2" (click)="onFeaturedProductSelected()">
+    <ion-icon name="star"></ion-icon>
+    <ion-label>{{featuredButtonLabel}}</ion-label>
+    <ion-badge color="danger">{{ featuredButtonCount }}</ion-badge>
+  </ion-tab-button>
+
+  <ion-tab-button tab="3" (click)="onCartSelected();">
+    <ion-icon name="cart"></ion-icon>
+    <ion-label>Carrito</ion-label>
+    <ion-badge color="danger">{{ this.orderServ.carrito.length }}</ion-badge>    
+  </ion-tab-button>
+</ion-tab-bar>
       </ion-col>
 
+    </ion-row>
+    <ion-row>
       <ion-col class="" size="12" size-sm="12" size-xs="12">
         <!--  Un Selector de tipos de estrucutras, por defecto el nivel mas bajo -->
         <div class="listado-tps-selector ion-text-center">

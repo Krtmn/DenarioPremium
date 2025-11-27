@@ -8,6 +8,7 @@ export class PaymentPartials {
         public coPaymentMethod: string,
         public stCollection: string,
         public nuPaymentDoc: string,
+        public stDelivery: string,
 
     ) { }
 }

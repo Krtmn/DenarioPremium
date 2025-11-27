@@ -49,6 +49,7 @@ export class Collection {
             //obj['daVoucher'],
             obj['collectionDetails'],
             obj['collectionPayments'],
+            obj['stDelivery'],
         );
     }
 
@@ -73,7 +74,7 @@ export class Collection {
         public coClient: string = "",
         public idEnterprise: number = 0,
         public coEnterprise: string = "",
-        public stCollection: number = 3,
+        public stCollection: number = 0,
         public isEdit: number = 0,
         public isEditTotal: number = 0,
         public isSave: number = 0,
@@ -99,6 +100,7 @@ export class Collection {
         public hasAttachments: boolean = false,
         public collectionDetails: CollectionDetail[],
         public collectionPayments: CollectionPayment[],
+        public stDelivery: number = 0,
     ) { }
 }
 

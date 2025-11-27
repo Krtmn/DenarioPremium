@@ -11,8 +11,6 @@ import { MessageService } from '../services/messageService/message.service';
 import { HttpClient } from '@angular/common/http';
 import createTables from 'src/assets/database/createTables.json';
 import { ImageServicesService } from '../services/imageServices/image-services.service';
-import { OrderDetailDiscount } from '../modelos/orderDetailDiscount';
-import { OrderDetailUnit } from '../modelos/tables/orderDetailUnit';
 
 @Component({
   selector: 'app-synchronization',
@@ -226,6 +224,7 @@ export class SynchronizationComponent implements OnInit {
       .map(Number)
       .sort((a, b) => a - b);
     this.currentTableIndex = 0;
+    this.adjustTableOrderDependency(63, 68);
 
     this.sub = this.route.params.subscribe(
       params => {
@@ -238,6 +237,32 @@ export class SynchronizationComponent implements OnInit {
         }
       }
     );
+  }
+
+  /**
+ * Mueve el `dependentId` para que quede inmediatamente después de `afterId`
+ * dentro de `this.tableKeyOrder`, si ambos existen.
+ * No modifica la lista si alguno no está presente.
+ */
+  private adjustTableOrderDependency(dependentId: number, afterId: number): void {
+    if (!Array.isArray(this.tableKeyOrder) || this.tableKeyOrder.length === 0) return;
+
+    const depIndex = this.tableKeyOrder.indexOf(dependentId);
+    const afterIndex = this.tableKeyOrder.indexOf(afterId);
+
+    // Si alguno no existe o ya está después, no hacemos nada
+    if (depIndex === -1 || afterIndex === -1) return;
+    if (depIndex > afterIndex) return; // ya está después
+
+    // Remover el elemento dependentId de su posición actual
+    this.tableKeyOrder.splice(depIndex, 1);
+
+    // Recalcular afterIndex en caso de que la remoción afecte índices
+    const newAfterIndex = this.tableKeyOrder.indexOf(afterId);
+    const insertPos = newAfterIndex === -1 ? this.tableKeyOrder.length : newAfterIndex + 1;
+
+    // Insertar dependentId después de afterId
+    this.tableKeyOrder.splice(insertPos, 0, dependentId);
   }
 
   ngOnDestroy(): void {
@@ -672,7 +697,7 @@ export class SynchronizationComponent implements OnInit {
               const resTable = (result as any)[rowKey];
               const sqlInfo = this.sqlTableMap[key];
 
-              if(!resTable){
+              if (!resTable) {
                 console.error(`[sync] No se recibió data para la tabla con key=${key} (tableId=${tableId})`);
               }
 
@@ -762,7 +787,7 @@ export class SynchronizationComponent implements OnInit {
     if ([59, 60].includes(tableId)) {
       return cfgTrue('userCanSelectChannel');
     }
-    if ([61, 62, 63, 64, 65, 66, 67, 68].includes(tableId)) {
+    if ([61, 62, 65, 64, 66, 67, 68, 63].includes(tableId)) {
       return cfgTrue('transactionHistory');
     }
     // LA VALIDACIÓN SOLICITADA: tabla 72 depende de conversionCalculator
