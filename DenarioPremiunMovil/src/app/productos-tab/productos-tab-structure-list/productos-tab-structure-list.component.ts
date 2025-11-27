@@ -39,7 +39,9 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
   typeProductStructureList: TypeProductStructure[] = [];
   psSeleccionada!: ProductStructure;
   featuredButtonLabel = '';
+  featuredButtonCount = 0;
   favoriteButtonLabel = '';
+  favoriteButtonCount = 0;
 
   productStructureList: ProductStructure[] = [];
   productStructures: Boolean = false;
@@ -126,13 +128,15 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
       this.productService.getFavoriteProductCount(this.dbServ.getDatabase(), this.empresaSeleccionada.idEnterprise).then(count => {
         let favname = this.orderServ.tags.get("PED_FAVORITO");
         this.favoriteButtonLabel = (favname != undefined) ? favname : 'Favoritos';
-        this.favoriteButtonLabel += ' (' + count + ')';
+        //this.favoriteButtonLabel += ' (' + count + ')';
+        this.favoriteButtonCount = count;
       })
 
 
       if (this.orderServ.featuredProducts) {
         this.productService.getFeaturedProductCount(this.dbServ.getDatabase(), this.empresaSeleccionada.idEnterprise).then(count => {
-          this.featuredButtonLabel = this.orderServ.nameProductLine + ' (' + count + ')';
+          this.featuredButtonLabel = this.orderServ.nameProductLine// + ' (' + count + ')';
+          this.featuredButtonCount = count;
         })
 
       }

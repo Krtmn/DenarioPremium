@@ -13,16 +13,16 @@
 
       <ion-col class="contadoresIcon" size="12" size-sm="12" size-xs="12" >
       <ion-tab-bar class="fondoVerde">
-  <ion-tab-button tab="1">
+  <ion-tab-button tab="1" (click)="onFavoriteProductSelected();">
     <ion-icon name="heart"></ion-icon>
-    <ion-label>Favoritos</ion-label>
-    <ion-badge color="danger">10</ion-badge>
+    <ion-label>{{favoriteButtonLabel}}</ion-label>
+    <ion-badge color="danger">{{ favoriteButtonCount }}</ion-badge>
   </ion-tab-button>
 
-  <ion-tab-button tab="2">
+  <ion-tab-button tab="2" (click)="onFeaturedProductSelected()">
     <ion-icon name="star"></ion-icon>
-    <ion-label>Destacados</ion-label>
-    <ion-badge color="danger">5</ion-badge>
+    <ion-label>{{featuredButtonLabel}}</ion-label>
+    <ion-badge color="danger">{{ featuredButtonCount }}</ion-badge>
   </ion-tab-button>
 
   <ion-tab-button tab="3" (click)="onCartSelected();">
