@@ -3708,7 +3708,7 @@ export class CollectionService {
   }
 
   async checkHistoricCollects(): Promise<TransactionStatuses[]> {
-    this.collectionRefused = [] as TransactionStatuses;
+    this.collectionRefused = [] as TransactionStatuses[];
     try {
       const list = Array.isArray(this.listTransactionStatusCollections) ? this.listTransactionStatusCollections : [];
       if (list.length === 0) return this.collectionRefused;
