@@ -324,10 +324,26 @@ export class VisitasService {
 
   getVisitList(today: string) {
 
-    var retrieveReassignments = "SELECT * FROM visits WHERE is_reassigned = true AND da_reassign like ? ORDER BY nu_sequence ASC";
-
-    //var retrieveVisits = "SELECT * FROM visits WHERE da_visit like ? ORDER BY nu_sequence ASC";
-    var retrieveVisits = "SELECT * FROM visits WHERE da_visit IS NOT NULL AND substr(da_visit,1,10) <= substr(REPLACE(?, '%', ''),1,10) AND CAST(TRIM(st_visit) AS INTEGER) IN (0,2,6) ORDER BY nu_sequence ASC";
+    //var retrieveReassignments = "";
+    var retrieveVisits = "";
+    //var params: string[] = [];
+    //var retrieveVisits = "SELECT * FROM visits WHERE da_visit like ? ORDER BY nu_sequence ASC"; //version original, para comparar
+    if(this.rolTransportista){
+      //trae todos los no visitados. 
+      retrieveVisits = "SELECT * FROM visits WHERE (st_visit = 3 OR st_visit = 0 and is_reassigned = false) "+
+      //o los otros status, si los hiciste hoy
+      " or (st_visit < 3 and da_real like ?) " +
+      //primero los reasignados, luego el resto por secuencia, prioridad los no visitados
+      " order by is_reassigned DESC, st_visit DESC, nu_sequence ASC "
+      //retrieveReassignments = "SELECT * FROM visits WHERE is_reassigned = true and da_visit like ? ORDER BY nu_sequence ASC";
+      //params = [today];
+    }else{
+      retrieveVisits = "SELECT * FROM visits WHERE da_visit IS NOT NULL "+
+     " AND substr(da_visit,1,10) <= substr(REPLACE(?, '%', ''),1,10) AND "+
+     " CAST(TRIM(st_visit) AS INTEGER) IN (0,2,6)"+
+     " ORDER BY nu_sequence ASC";
+     //params = [today];
+    }
 
     return this.dbServ.getDatabase().executeSql(retrieveVisits, [today]).then(visitlist => {
       //console.log(data);
@@ -335,19 +351,23 @@ export class VisitasService {
       for (let i = 0; i < visitlist.rows.length; i++) {
         visits.push(this.visitDBtoObj(visitlist.rows.item(i)));
       }
+      return visits;
+      /*
       if (this.rolTransportista) {
         //si es transportista, miro si hay reasignaciones para hoy y las meto en la lista
-        return this.dbServ.getDatabase().executeSql(retrieveReassignments, [today]).then(reasignaciones => {
+        //esto tenia mas sentido cuando no traia todas las no visitadas. se deja por si acaso.
+        return this.dbServ.getDatabase().executeSql(retrieveReassignments, params).then(reasignaciones => {
           let reassigned = []
           for (let i = 0; i < reasignaciones.rows.length; i++) {
             reassigned.push(this.visitDBtoObj(reasignaciones.rows.item(i)));
           }
           return [...reassigned, ...visits];
         });
-      } else {
+        */
+      //} else {
         //no es transportista, no miro reasignaciones
-        return visits;
-      }
+        //return visits;
+      //}
 
     });
 
