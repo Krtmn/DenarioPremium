@@ -107,7 +107,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       this.nameProductStructure = '';
       this.productList = this.productService.productList;
       this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
-      
+
     });
 
     this.psClicked = this.productService.productStructureCLicked.subscribe((data) => {
@@ -216,7 +216,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       case 'carrito':
         //no hay que hacer nada, ya que el carrito no tiene paginacion
         this.scrollDisable = true;
-        if( ev ){
+        if (ev) {
           ev.target.complete(); //termina la animacion del infiniteScroll
         }
         break;
@@ -235,7 +235,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       }
 
     }
-    if( ev ){
+    if (ev) {
       ev.target.complete(); //termina la animacion del infiniteScroll
     }
   }
@@ -281,12 +281,12 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   onProductQuantityChange(prod: OrderUtil) {
     let unit = prod.unitList.filter(u => prod.idUnit == u.idUnit)[0];
-    if ( (prod.discountList.length > 1)) {
+    if ((prod.discountList.length > 1)) {
       this.autoDiscount(prod);
     }
     if (prod.quStock == 0) {
       if (this.orderServ.stock0) {
-        if(this.orderServ.validStock){
+        if (this.orderServ.validStock) {
           //mostramos error, pero dejamos agregar al carrito
           this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ALERTA_INVENTARIO"));
         }
@@ -324,7 +324,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   onProductQuantityInput(prod: OrderUtil) {
     //igual que onProductQuantityChange, pero no mando al carrito
     let unit = prod.unitList.filter(u => prod.idUnit == u.idUnit)[0];
-    if (  (prod.discountList.length > 1)) {
+    if ((prod.discountList.length > 1)) {
       this.autoDiscount(prod);
     }
     if (this.orderServ.stock0 && prod.quStock == 0) {
@@ -382,6 +382,8 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.productService.searchStructures = true;
     this.productService.onBackButtonClicked();
     this.productStructureService.onAddProductCLicked();
+    this.productStructureService.idProductStructureSeleccionada = 0;
+    this.productStructureService.nombreProductStructureSeleccionada = '';
   }
 
   onSelectProductDev() {
@@ -447,10 +449,10 @@ export class ProductosTabOrderProductListComponent implements OnInit {
         product.idDiscount = dc.idDiscount;
         product.quDiscount = dc.quDiscount;
       } else {
-      setTimeout(() => {
-        this.autoDiscount(product);        
-        this.cd.detectChanges();
-      }, 0);
+        setTimeout(() => {
+          this.autoDiscount(product);
+          this.cd.detectChanges();
+        }, 0);
         this.message.transaccionMsjModalNB("Este Descuento no aplica para la cantidad seleccionada.");
 
       }
@@ -463,7 +465,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   }
 
-    compareWithDiscount = (o1: any, o2: any) => {
+  compareWithDiscount = (o1: any, o2: any) => {
     if (o1 === o2) return true;
     if ((o1 === null || o1 === undefined) && (o2 === null || o2 === undefined)) return true;
     // numeric string vs number
@@ -493,10 +495,10 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   }
 
   disableProduct(prod: OrderUtil) {
-    if(!prod.nuPrice){
+    if (!prod.nuPrice) {
       return true;
     }
-    if (!this.orderServ.stock0 &&  (prod.quStockAux < 1)) {
+    if (!this.orderServ.stock0 && (prod.quStockAux < 1)) {
       var stocks = this.orderServ.listaStock.filter(s => s.idProduct == prod.idProduct)
       //si el warehouse seleccionado tiene 0 stock, comprobamos si hay stock en otro warehouse
       for (let i = 0; i < stocks.length; i++) {
