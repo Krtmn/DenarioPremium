@@ -487,6 +487,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     product.quStock = stock.quStock;
     product.quStockAux = stock.quStock;
 
+    this.onProductQuantityChange(product);
     this.orderServ.alCarrito(product);
 
   }
