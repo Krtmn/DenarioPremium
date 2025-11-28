@@ -7,4 +7,5 @@ export interface ItemListaDevoluciones {
     stReturn: number;
     daReturn: string;
     naStatus: string;
+    stDelivery: number;
 }

@@ -27,7 +27,7 @@ export class ReturnDatabaseService {
       "na_responsible as naResponsible, nu_seal as nuSeal, id_type as idType, tx_comment as txComment, " +
       "co_user as coUser, id_user as idUser, co_client as coClient, id_client as idClient, lb_client as lbClient, " +
       "co_invoice as coInvoice, id_invoice as idInvoice, coordenada, " +
-      "co_enterprise as coEnterprise, id_enterprise as idEnterprise, nu_attachments as nuAttachments, has_attachments as hasAttachments  " +
+      "co_enterprise as coEnterprise, id_enterprise as idEnterprise, nu_attachments as nuAttachments, has_attachments as hasAttachments, st_delivery as stDelivery  " +
       "FROM returns WHERE co_return = ?"
     return dbServ.executeSql(retrieveStatement, [coReturn]).then(result => {
       devol = result.rows.item(0);
@@ -83,12 +83,11 @@ export class ReturnDatabaseService {
 
     insertStatement = "INSERT OR REPLACE INTO returns(" +
       "id_return, co_return, st_return, da_return, na_responsible, nu_seal, id_type," +
-      " tx_comment, co_user, id_user, co_client, id_client, lb_client, co_invoice, id_invoice, coordenada, co_enterprise, id_enterprise, nu_attachments, has_attachments)"
-      + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      " tx_comment, co_user, id_user, co_client, id_client, lb_client, co_invoice, id_invoice, coordenada, co_enterprise, id_enterprise, nu_attachments, has_attachments, st_delivery) " +
+      "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
     params = [newReturn.idReturn, newReturn.coReturn, newReturn.stReturn, newReturn.daReturn, this.cleanString(newReturn.naResponsible), this.cleanString(newReturn.nuSeal), newReturn.idType,
     this.cleanString(newReturn.txComment), newReturn.coUser, newReturn.idUser, newReturn.coClient, newReturn.idClient, newReturn.lbClient, newReturn.coInvoice, newReturn.idInvoice,
-    newReturn.coordenada, newReturn.coEnterprise, newReturn.idEnterprise, newReturn.nuAttachments, newReturn.hasAttachments];
-
+    newReturn.coordenada, newReturn.coEnterprise, newReturn.idEnterprise, newReturn.nuAttachments, newReturn.hasAttachments, newReturn.stDelivery];
     return dbServ.executeSql(insertStatement, params).then(
       () => {
         console.log("[ReturnDatabaseService] saveReturn exitoso");
@@ -104,8 +103,8 @@ export class ReturnDatabaseService {
     const insertStatement = "INSERT OR REPLACE INTO returns(" +
       "id_return, co_return, st_return, da_return, na_responsible, nu_seal, id_type, " +
       "tx_comment, co_user, id_user, co_client, id_client, lb_client, co_invoice, id_invoice, " +
-      "coordenada, co_enterprise, id_enterprise, nu_attachments, has_attachments) " +
-      "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "coordenada, co_enterprise, id_enterprise, nu_attachments, has_attachments, st_delivery) " +
+      "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     const insertStatementDetails = "INSERT OR REPLACE INTO return_details(co_return, co_return_detail, id_product, co_product, na_product, qu_product, id_measure_unit, co_measure_unit, na_measure_unit, qu_unit, unit_co_enterprise, unit_id_enterprise, id_product_unit, co_product_unit, nu_lote, da_duedate, co_document, id_motive) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
@@ -140,7 +139,8 @@ export class ReturnDatabaseService {
           devolucion.coEnterprise,
           devolucion.idEnterprise,
           devolucion.nuAttachments,
-          devolucion.hasAttachments
+          devolucion.hasAttachments,
+          devolucion.stDelivery
         ]
       ]);
 

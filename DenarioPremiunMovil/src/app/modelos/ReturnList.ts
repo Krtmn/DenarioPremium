@@ -8,6 +8,7 @@ export class ReturnList {
             obj['naClient'],
             obj['stReturn'],
             obj['daReturn'],
+            obj['stDelivery'],
         );
     }
 
@@ -17,6 +18,7 @@ export class ReturnList {
         public coClient: string,
         public naClient: string,
         public stReturn: number,
-        public daReturn: string,
+        public daReturn: string,        
+        public stDelivery: number,
     ) { }
 }

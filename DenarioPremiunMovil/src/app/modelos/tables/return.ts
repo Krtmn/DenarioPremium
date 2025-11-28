@@ -29,6 +29,7 @@ export class Return {
             obj['idEnterprise'],
             obj['hasAttachments'],
             obj['nuAttachments'],
+            obj['stDelivery'],
         );
     }
 
@@ -56,6 +57,7 @@ export class Return {
         public idEnterprise: number = 0,
         public hasAttachments: boolean,
         public nuAttachments: number,
+        public stDelivery: number,
     ) { }
 }
 

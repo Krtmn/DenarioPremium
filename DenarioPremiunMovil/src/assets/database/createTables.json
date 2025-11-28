@@ -411,7 +411,7 @@
         "name": "returns",
         "table": "returns",
         "idName": "co_return",
-        "sql": "CREATE TABLE IF NOT EXISTS returns (co_return VARCHAR(30) PRIMARY KEY, id_return INTEGER NOT_NULL, st_return NUMERIC(1,0) NOT NULL, da_return TIMESTAMP, na_responsible VARCHAR(80), nu_seal VARCHAR(30), id_type INTEGER, id_client INTEGER NOT NULL, co_client VARCHAR(30) NOT NULL, id_user INTEGER NOT NULL, co_user VARCHAR(30) NOT NULL, lb_client VARCHAR(80), co_invoice VARCHAR(30), id_invoice INTEGER, tx_comment VARCHAR(500), coordenada VARCHAR(50), id_enterprise INTEGER, co_enterprise VARCHAR(30), nu_attachments INTEGER, has_attachments BOOLEAN);"
+        "sql": "CREATE TABLE IF NOT EXISTS returns (co_return VARCHAR(30) PRIMARY KEY, id_return INTEGER NOT_NULL, st_return NUMERIC(1,0) NOT NULL, da_return TIMESTAMP, na_responsible VARCHAR(80), nu_seal VARCHAR(30), id_type INTEGER, id_client INTEGER NOT NULL, co_client VARCHAR(30) NOT NULL, id_user INTEGER NOT NULL, co_user VARCHAR(30) NOT NULL, lb_client VARCHAR(80), co_invoice VARCHAR(30), id_invoice INTEGER, tx_comment VARCHAR(500), coordenada VARCHAR(50), id_enterprise INTEGER, co_enterprise VARCHAR(30), nu_attachments INTEGER, has_attachments BOOLEAN, st_delivery INTEGER);"
     },
     {
         "id": 99113,

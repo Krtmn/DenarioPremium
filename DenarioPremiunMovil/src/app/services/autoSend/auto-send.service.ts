@@ -389,7 +389,7 @@ export class AutoSendService implements OnInit {
         }
         this.returnDatabaseService.getReturn(this.dbService.getDatabase(), coTransaction).then(ret => {
           request.returns = ret;
-          if (ret.stReturn == DELIVERY_STATUS_TO_SEND) {
+          if (ret.stDelivery == DELIVERY_STATUS_TO_SEND) {
             //si es la primera vez que se manda,
             //poner id en null para que se le asigne el id correcto en backend
             request.returns.idReturn = null;
@@ -640,7 +640,7 @@ export class AutoSendService implements OnInit {
 
       case 'return': {
         this.dbService.getDatabase().executeSql(
-          'UPDATE returns SET id_return = ?, st_return = ? WHERE co_return = ?',
+          'UPDATE returns SET id_return = ?, st_delivery = ? WHERE co_return = ?',
           [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
         ).then(res => {
           console.log("UPDATE EXITOSO ", res);

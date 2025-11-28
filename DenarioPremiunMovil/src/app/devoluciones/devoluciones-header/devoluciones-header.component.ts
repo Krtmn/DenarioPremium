@@ -172,7 +172,7 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
       // SOLO SE VA A GUARDAR LA DEVOLUCION, NO SERA ENVIADA
       this.messageService.showLoading().then(() => {
         console.log('daReturn ' + this.returnLogic.newReturn.daReturn);
-        this.returnLogic.newReturn.stReturn = DELIVERY_STATUS_SAVED;
+        this.returnLogic.newReturn.stDelivery = DELIVERY_STATUS_SAVED;
         this.returnLogic.newReturn.hasAttachments = this.adjuntoService.hasItems();
         this.returnLogic.newReturn.nuAttachments = this.adjuntoService.getNuAttachment();
         this.returnDatabaseService.saveReturn(this.synchronizationServices.getDatabase(),this.returnLogic.newReturn).then(async () => {
@@ -197,7 +197,7 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
 
   sendReturn(dbServ:SQLiteObject) {
     let pendingTransaction = {} as PendingTransaction;
-    this.returnLogic.newReturn.stReturn = DELIVERY_STATUS_TO_SEND;
+    this.returnLogic.newReturn.stDelivery = DELIVERY_STATUS_TO_SEND;
     this.returnLogic.newReturn.hasAttachments = this.adjuntoService.hasItems();
     this.returnLogic.newReturn.nuAttachments = this.adjuntoService.getNuAttachment();
     this.messageService.showLoading().then(() => {
@@ -252,7 +252,7 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
       this.returnLogic.newReturn.details = this.returnLogic.productList;
       // SOLO SE VA A GUARDAR LA DEVOLUCION, NO SERA ENVIADA
       console.log('daReturn ' + this.returnLogic.newReturn.daReturn);
-      this.returnLogic.newReturn.stReturn = DELIVERY_STATUS_SAVED;
+      this.returnLogic.newReturn.stDelivery = DELIVERY_STATUS_SAVED;
       this.returnLogic.newReturn.hasAttachments = this.adjuntoService.hasItems();
       this.returnLogic.newReturn.nuAttachments = this.adjuntoService.getNuAttachment();
       this.returnDatabaseService.saveReturn(dbServ,this.returnLogic.newReturn).then(async () => {

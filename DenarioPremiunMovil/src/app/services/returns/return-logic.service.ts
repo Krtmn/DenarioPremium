@@ -210,7 +210,7 @@ export class ReturnLogicService {
     var database = this.dbServ.getDatabase();
     this.returnList = [];
     this.itemReturns = [] as ItemListaDevoluciones[];
-    var select = 'select rt.id_return as idReturn, rt.co_return as coReturn, rt.co_client as coClient, rt.lb_client as naClient, rt.st_return as stReturn, rt.da_return as daReturn FROM returns rt ORDER BY rt.st_return ASC, rt.da_return DESC'
+    var select = 'select rt.id_return as idReturn, rt.co_return as coReturn, rt.co_client as coClient, rt.lb_client as naClient, rt.st_return as stReturn, rt.da_return as daReturn, rt.st_delivery as stDelivery FROM returns rt ORDER BY rt.st_return ASC, rt.da_return DESC'
     return database.executeSql(select, []).then(async result => {
       let promises: Promise<void>[] = [];
 
@@ -230,6 +230,7 @@ export class ReturnLogicService {
             stReturn: item.stReturn,
             daReturn: item.daReturn,
             naStatus: status,
+            stDelivery: item.stDelivery
           }
           this.itemReturns.push(itemReturn);
         });
@@ -289,8 +290,8 @@ export class ReturnLogicService {
       });
       this.adjuntoService.getSavedPhotos(this.dbServ.getDatabase(), this.newReturn.coReturn, 'devoluciones');
       this.enterpriseReturn = this.enterpriseServ.empresas.find((emp) => emp.idEnterprise === this.newReturn.idEnterprise)!;
-      this.returnSent = this.newReturn.stReturn === 3 || this.newReturn.stReturn === 6;
-      this.bloquearFactura = this.newReturn.stReturn === 3 || this.newReturn.stReturn === 6;  ;
+      this.returnSent = this.newReturn.stDelivery === 3 || this.newReturn.stDelivery === 6;
+      this.bloquearFactura = this.newReturn.stDelivery === 3 || this.newReturn.stDelivery === 6;  ;
       this.findInvoices().then();
       this.findInvoiceDetailUnits().then();
       this.setChange(false, true);
@@ -303,7 +304,7 @@ export class ReturnLogicService {
     this.newReturn = {} as Return;
     var select = "select rs.id_return as idReturn, rs.co_return as coReturn, rs.st_return as stReturn, rs.da_return as daReturn, rs.na_responsible as naResponsible, rs.na_responsible as naResponsible, " +
       " rs.nu_seal as nuSeal, rs.id_type as idType, rs.tx_comment as txComment, rs.co_user as coUser, rs.id_user as idUser, " +
-      " rs.co_client as coClient, rs.id_client as idClient, rs.lb_client as lbClient, rs.co_invoice as coInvoice, rs.id_invoice as idInvoice, " +
+      " rs.co_client as coClient, rs.id_client as idClient, rs.lb_client as lbClient, rs.co_invoice as coInvoice, rs.id_invoice as idInvoice, rs.st_delivery as stDelivery " +
       " rs.coordenada as coordenada, rs.co_enterprise as coEnterprise, rs.id_enterprise as idEnterprise FROM returns rs where rs.co_return = ?"
     return database.executeSql(select, [coReturn]).then(result => {
       this.newReturn = result.rows.item(0);

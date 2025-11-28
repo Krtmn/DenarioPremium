@@ -67,8 +67,8 @@ export class DevolucionListComponent implements OnInit {
     }
   ];
 
-  onReturnSelected(coReturnSelected: string, stReturn: number) {
-    if (this.returnLogic.userMustActivateGPS && stReturn === 1) {
+  onReturnSelected(coReturnSelected: string, stDelivery: number) {
+    if (this.returnLogic.userMustActivateGPS && (stDelivery === DELIVERY_STATUS_SAVED)) {
       if(this.returnLogic.newReturn.coordenada && this.returnLogic.newReturn.coordenada.length > 0){
         this.returnLogic.findReturnSelected(coReturnSelected);
       } else {

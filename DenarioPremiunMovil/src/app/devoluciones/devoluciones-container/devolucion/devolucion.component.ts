@@ -40,10 +40,14 @@ export class DevolucionComponent implements OnInit {
 
   ngOnInit() {
     this.botonAgregar = !this.returnLogic.returnSent;
+    if(this.returnLogic.newReturn.stDelivery == undefined){
+      //fix temporal para que las devoluciones viejas no fallen
+      this.returnLogic.newReturn.stDelivery = this.returnLogic.newReturn.stReturn;
+    }      
 
-    if(!this.returnLogic.userMustActivateGPS && (this.returnLogic.newReturn.stReturn !== DELIVERY_STATUS_TO_SEND &&
-       this.returnLogic.newReturn.stReturn !== DELIVERY_STATUS_SENT &&
-      this.returnLogic.newReturn.stReturn !== 6)){ 
+    if(!this.returnLogic.userMustActivateGPS && (this.returnLogic.newReturn.stDelivery !== DELIVERY_STATUS_TO_SEND &&
+       this.returnLogic.newReturn.stDelivery !== DELIVERY_STATUS_SENT &&
+      this.returnLogic.newReturn.stDelivery !== 6)){ 
     this.geoServ.getCurrentPosition().then(coords => { this.returnLogic.newReturn.coordenada = coords });
     }
     this.returnLogic.returnValid.subscribe((data: Boolean) => {
