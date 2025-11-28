@@ -26,6 +26,7 @@ export class ClientStocks {
             obj["productList"],
             obj["hasAttachments"],
             obj["nuAttachments"],
+            obj["stDelivery"],
 
         );
     }
@@ -53,6 +54,7 @@ export class ClientStocks {
         public productList: ProductUtil[],
         public hasAttachments: boolean,
         public nuAttachments: number,
+        public stDelivery: number = DELIVERY_STATUS_NEW,
     ) { }
 }
 

@@ -16,6 +16,7 @@ import { Client } from 'src/app/modelos/tables/client';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 
+
 @Component({
     selector: 'app-inventario-actividades',
     templateUrl: './inventario-actividades.component.html',
@@ -37,7 +38,7 @@ export class InventarioActividadesComponent implements OnInit {
 
   public message = inject(MessageService);
   
-
+  public DELIVERY_STATUS_SENT = DELIVERY_STATUS_SENT;// para usar en el html
 
   constructor() { }
 
@@ -136,7 +137,7 @@ export class InventarioActividadesComponent implements OnInit {
     }
     //guardar el stock actual
     var toSend =  false;
-    if(this.inventariosLogicService.newClientStock.stClientStock != DELIVERY_STATUS_SENT){
+    if(this.inventariosLogicService.newClientStock.stDelivery != DELIVERY_STATUS_SENT){
       this.inventariosLogicService.saveClientStock(this.dbServ.getDatabase(),false);
       this.adjuntoService.savePhotos(this.dbServ.getDatabase(), 
       this.inventariosLogicService.newClientStock.coClientStock, "inventarios");

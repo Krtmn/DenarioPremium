@@ -410,9 +410,9 @@ export class InventariosLogicService {
     const insertClientStock = 'INSERT OR REPLACE INTO client_stocks ('
       + 'id_client_stock, co_client_stock, id_user, co_user, id_client, co_client, id_address_client,'
       + 'co_address_client,coordenada, tx_comment,'
-      + 'id_enterprise, co_enterprise, st_client_stock, da_client_stock, lb_client, isSave, nu_attachments, has_attachments'
-      + ') VALUES ('
-      + '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+      + 'id_enterprise, co_enterprise, st_client_stock, da_client_stock, lb_client, isSave, nu_attachments, has_attachments, '
+      + 'st_delivery) VALUES ('
+      + '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
 
     const insertClientStocksDetails = "INSERT OR REPLACE INTO client_stocks_details ("
       + "id_client_stock_detail, co_client_stock_detail, co_client_stock, na_product, co_product, id_product,"
@@ -439,7 +439,7 @@ export class InventariosLogicService {
           clientStock.idClient, clientStock.coClient, clientStock.idAddressClient, clientStock.coAddressClient,
           clientStock.coordenada, clientStock.txComment, clientStock.idEnterprise, clientStock.coEnterprise,
           clientStock.stClientStock, clientStock.daClientStock, clientStock.lbClient, clientStock.isSave,
-          clientStock.nuAttachments, clientStock.hasAttachments
+          clientStock.nuAttachments, clientStock.hasAttachments, clientStock.stDelivery
         ]
       ]);
 
@@ -483,9 +483,9 @@ export class InventariosLogicService {
     var batch = [];
 
     if (send) {
-      this.newClientStock.stClientStock = DELIVERY_STATUS_TO_SEND;
+      this.newClientStock.stDelivery = DELIVERY_STATUS_TO_SEND;
     } else {
-      this.newClientStock.stClientStock = DELIVERY_STATUS_SAVED;
+      this.newClientStock.stDelivery = DELIVERY_STATUS_SAVED;
     }
     this.newClientStock.hasAttachments = this.adjuntoService.hasItems();
     this.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
@@ -494,16 +494,16 @@ export class InventariosLogicService {
     insertStatement = 'INSERT OR REPLACE INTO client_stocks ('
       + 'id_client_stock, co_client_stock, id_user, co_user, id_client, co_client, id_address_client,'
       + 'co_address_client,coordenada, tx_comment,'
-      + 'id_enterprise, co_enterprise, st_client_stock, da_client_stock, lb_client, isSave, nu_attachments, has_attachments'
+      + 'id_enterprise, co_enterprise, st_client_stock, da_client_stock, lb_client, isSave, nu_attachments, has_attachments, st_delivery'
       + ') VALUES ('
-      + '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+      + '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
 
     var q = [insertStatement,
       [this.newClientStock.idClientStock, this.newClientStock.coClientStock, this.newClientStock.idUser, this.newClientStock.coUser,
       this.newClientStock.idClient, this.newClientStock.coClient, this.newClientStock.idAddressClient, this.newClientStock.coAddressClient,
       this.newClientStock.coordenada, this.newClientStock.txComment, this.newClientStock.idEnterprise, this.newClientStock.coEnterprise,
       this.newClientStock.stClientStock, this.newClientStock.daClientStock, this.newClientStock.lbClient, this.newClientStock.isSave,
-      this.newClientStock.nuAttachments, this.newClientStock.hasAttachments]
+      this.newClientStock.nuAttachments, this.newClientStock.hasAttachments, this.newClientStock.stDelivery]
     ];
     batch.push(q);
 
@@ -694,7 +694,7 @@ export class InventariosLogicService {
       + "id_client_stock as idClientStock, co_client_stock as coClientStock, id_user as idUser, co_user as coUser,"
       + "id_client as idClient, co_client as coClient, id_address_client as idAddressClient, co_address_client as coAddressClient,"
       + "coordenada, tx_comment as txComment, id_enterprise as idEnterprise, co_enterprise as coEnterprise,"
-      + "da_client_stock as daClientStock, st_client_stock as stClientStock, lb_client as lbClient, isSave as isSave, nu_attachments as nuAttachments, has_attachments as hasAttachments  "
+      + "da_client_stock as daClientStock, st_client_stock as stClientStock, lb_client as lbClient, isSave as isSave, nu_attachments as nuAttachments, has_attachments as hasAttachments, st_delivery as stDelivery "
       + "FROM client_stocks WHERE co_client_stock = ?"
 
     return dbServ.executeSql(selectClientStock, [coClientStock]).then(result => {
@@ -768,7 +768,7 @@ export class InventariosLogicService {
       + "co_user as coUser, id_client as idClient, co_client as coClient, id_address_client as idAddressClient,"
       + "co_address_client as coAddressClient,coordenada, tx_comment as txComment,"
       + "id_enterprise as idEnterprise, co_enterprise as coEnterprise, st_client_stock as stClientStock,"
-      + "da_client_stock as daClientStock, lb_client as lbClient, isSave "
+      + "da_client_stock as daClientStock, lb_client as lbClient, isSave, st_delivery as stDelivery "
       + "FROM client_stocks";
     return dbServ.executeSql(selectStatement, []).then(async data => {
       let promises: Promise<void>[] = [];
@@ -788,7 +788,8 @@ export class InventariosLogicService {
             lbClient: item.lbClient,
             stClientStock: item.stClientStock,
             daClientStock: item.daClientStock,
-            naStatus: status
+            naStatus: status,
+            stDelivery: item.stDelivery
           };
           this.itemListClientStocks.push(itemClientStock);
         });

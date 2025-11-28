@@ -11,13 +11,13 @@
         <div class="product-structure-title">
           <ion-item button detail="true">
             <ion-label class="textList espaciotextoListaProduc"
-              (click)="onReturnSelected(return.coReturn, return.stReturn)">
+              (click)="onReturnSelected(return.coReturn, return.stDelivery != undefined ? return.stDelivery : return.stReturn )">
               <p class="espacioentrelineas">{{this.tags.get('DENARIO_DEV_NU_REF')}}: {{ return.idReturn }}</p>
               <p class="espacioentrelineas">{{this.tags.get('DENARIO_DEV_CLIENT')}}: {{ return.coClient }} - {{
                 return.naClient }}</p>
               <p class="espacioentrelineas">
                 <!-- Estatus: {{ getStatusOrderName(collect.stCollection, collect.idCollection!) }} -->
-                {{this.tags.get('DENARIO_DEV_STATUS')}}: {{ getStatusOrderName(return.stReturn, return.naStatus)}}
+                {{this.tags.get('DENARIO_DEV_STATUS')}}: {{ getStatusOrderName(return.stDelivery, return.naStatus)}}
 
               </p>
              <!--  <p *ngIf="return.stReturn === 1" class="espacioentrelineas">{{this.tags.get('DENARIO_DEV_STATUS')}}:
@@ -30,7 +30,7 @@
                 "dd/MM/yyyy
                 hh:mm:ss" }}</p>
             </ion-label>
-            <ion-button *ngIf="return.stReturn === 1" (click)="showAlertDelete(return, i)" color="danger"><ion-icon
+            <ion-button *ngIf="return.stDelivery === 1" (click)="showAlertDelete(return, i)" color="danger"><ion-icon
                 slot="icon-only" name="trash"></ion-icon></ion-button>
           </ion-item>
         </div>

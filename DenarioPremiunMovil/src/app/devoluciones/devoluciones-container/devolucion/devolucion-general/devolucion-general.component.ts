@@ -172,6 +172,7 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
       this.returnLogic.newReturn.coUser = localStorage.getItem('coUser') || "[]";
       this.returnLogic.enterpriseReturn = this.empresaSeleccionada;
       this.returnLogic.newReturn.stReturn = DELIVERY_STATUS_NEW; // 0 = Nuevo, 1 = Guardado, 2 = Por Enviar, 3 = Enviado
+      this.returnLogic.newReturn.stDelivery = DELIVERY_STATUS_NEW; // 0 = Nuevo, 1 = Guardado, 2 = Por Enviar, 3 = Enviado
       this.returnLogic.onReturnValidToSave(true);
       if (this.returnLogic.validateReturn) {
         this.returnLogic.findInvoices();

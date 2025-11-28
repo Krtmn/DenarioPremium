@@ -335,7 +335,8 @@ export class InventarioGeneralComponent implements OnInit {
           this.inventariosLogicService.newClientStock.txComment = this.txComment;
           this.inventariosLogicService.newClientStock.coordenada = this.coordenada;
           /* this.inventariosLogicService.newClientStock.daClientStock =  */
-          this.inventariosLogicService.newClientStock.stClientStock = DELIVERY_STATUS_NEW; // 0 = Nuevo, 1 = Guardado, 2 = Por Enviar, 3 = Enviado
+          this.inventariosLogicService.newClientStock.stDelivery = DELIVERY_STATUS_NEW; // 0 = Nuevo, 1 = Guardado, 2 = Por Enviar, 3 = Enviado
+          this.inventariosLogicService.newClientStock.stClientStock = DELIVERY_STATUS_NEW;
           this.inventariosLogicService.getAllAddressByClient(this.dbServ.getDatabase(),this.inventariosLogicService.cliente.idClient).then((result) => {
             if (result) {
               this.direccionAnterior = this.inventariosLogicService.newClientStock.idAddressClient;

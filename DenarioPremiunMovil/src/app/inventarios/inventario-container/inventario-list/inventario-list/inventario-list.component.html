@@ -24,14 +24,14 @@
                                 </p>
                                 <p>
                                     {{this.inventariosLogicService.inventarioTags.get('INV_DEV_STATUS')}}: {{
-                                    getStatusOrderName(list.stClientStock, list.naStatus)}}
+                                    getStatusOrderName(list.stDelivery, list.naStatus)}}
                                 </p>
                                 <p>
                                     {{this.inventariosLogicService.inventarioTags.get('INV_FECHA')}}:
                                     {{list.daClientStock.replace('T', ' ') | date: "dd/MM/yyyy hh:mm:ss"}}
                                 </p>
                             </ion-label>
-                            <ion-button *ngIf="list.stClientStock == 1" color="danger"
+                            <ion-button *ngIf="list.stDelivery == DELIVERY_STATUS_SAVED" color="danger"
                                 (click)="deleteClientStock(i)"><ion-icon slot="icon-only" name="trash"></ion-icon>
                             </ion-button>
                         </ion-item>

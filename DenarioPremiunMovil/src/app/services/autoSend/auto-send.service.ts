@@ -389,7 +389,7 @@ export class AutoSendService implements OnInit {
         }
         this.returnDatabaseService.getReturn(this.dbService.getDatabase(), coTransaction).then(ret => {
           request.returns = ret;
-          if (ret.stReturn == DELIVERY_STATUS_TO_SEND) {
+          if (ret.stDelivery == DELIVERY_STATUS_TO_SEND) {
             //si es la primera vez que se manda,
             //poner id en null para que se le asigne el id correcto en backend
             request.returns.idReturn = null;
@@ -441,7 +441,7 @@ export class AutoSendService implements OnInit {
           console.log("terime!", clientStock)
           request.clientStock = clientStock;
           request.clientStock.daClientStock = request.clientStock.daClientStock.replace('T', ' ');
-          if (clientStock.stClientStock == DELIVERY_STATUS_TO_SEND) {
+          if (clientStock.stDelivery == DELIVERY_STATUS_TO_SEND) {
             //si es la primera vez que se manda,
             //poner id en null para que se le asigne el id correcto en backend
             request.clientStock.idClientStock = null;
@@ -640,7 +640,7 @@ export class AutoSendService implements OnInit {
 
       case 'return': {
         this.dbService.getDatabase().executeSql(
-          'UPDATE returns SET id_return = ?, st_return = ? WHERE co_return = ?',
+          'UPDATE returns SET id_return = ?, st_delivery = ? WHERE co_return = ?',
           [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
         ).then(res => {
           console.log("UPDATE EXITOSO ", res);
@@ -655,7 +655,7 @@ export class AutoSendService implements OnInit {
 
       case 'clientStock': {
         this.dbService.getDatabase().executeSql(
-          'UPDATE client_stocks SET id_client_stock = ?, st_client_stock = ? WHERE co_client_stock = ?',
+          'UPDATE client_stocks SET id_client_stock = ?, st_delivery = ? WHERE co_client_stock = ?',
           [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
         ).then(res => {
           console.log("UPDATE EXITOSO ", res);
