@@ -400,6 +400,12 @@ export class PedidoComponent implements OnInit {
               unitUtil.quAmount = unit.quOrder;
               if (unitUtil.idUnit === item.idUnit) {
                 item.quAmount = unitUtil.quAmount;
+              }else{
+                //si es la unica unidad, la seleccionamos tambien
+                if(detail.orderDetailUnit.length == 1){
+                  item.quAmount = unitUtil.quAmount;
+                  item.idUnit = unitUtil.idUnit;
+                }
               }
             } else {
               console.error("No se consiguio Unit: " + unit.idProductUnit);
