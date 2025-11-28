@@ -13,7 +13,8 @@ export class DepositoCobrosComponent implements OnInit {
 
   public depositService = inject(DepositService);
   public dateServ = inject(DateServiceService);
-
+  public nuAmountDoc: number = 0;
+  public nuAmountDocConversion: number = 0;
 
   public multiCurrency: string = "";
 
@@ -22,7 +23,9 @@ export class DepositoCobrosComponent implements OnInit {
 
   }
 
-  ngOnInit() { }
+  ngOnInit() {
+
+  }
 
 
   selectCobro(cobroDetails: CollectDeposit, index: number) {
@@ -36,7 +39,7 @@ export class DepositoCobrosComponent implements OnInit {
         coDeposit: this.depositService.deposit.coDeposit,
         coDocument: cobroDetails.co_document,
         nuAmountTotal: cobroDetails.nu_amount_total,
-        nuTotalDeposit: cobroDetails.total_deposit,
+        nuTotalDeposit: cobroDetails.nu_total_deposit,
         coCollection: cobroDetails.co_collection,
         idCollection: cobroDetails.id_collection,
         st: 0,
@@ -47,10 +50,10 @@ export class DepositoCobrosComponent implements OnInit {
 
       indexDepositCollect = this.depositService.deposit.depositCollect.length - 1;
       this.depositService.deposit.nuValueLocal = cobroDetails.nu_value_local;
-      this.depositService.deposit.nuAmountDoc += cobroDetails.total_deposit;
-      this.depositService.deposit.nuAmountDocConversion += cobroDetails.total_deposit_conversion;
-      this.depositService.deposit.nuAmountDoc = Number(this.depositService.deposit.nuAmountDoc.toFixed(this.depositService.parteDecimal));
-      this.depositService.deposit.nuAmountDocConversion = Number(this.depositService.deposit.nuAmountDocConversion.toFixed(this.depositService.parteDecimal));
+      this.nuAmountDoc += cobroDetails.nu_total_deposit;
+      this.nuAmountDocConversion += cobroDetails.nu_total_deposit_conversion;
+      //this.depositService.deposit.nuAmountDoc = Number(this.depositService.deposit.nuAmountDoc.toFixed(this.depositService.parteDecimal));
+      //this.depositService.deposit.nuAmountDocConversion = Number(this.depositService.deposit.nuAmountDocConversion.toFixed(this.depositService.parteDecimal));
 
     } else {
       cobroDetails.inDepositCollect = false;

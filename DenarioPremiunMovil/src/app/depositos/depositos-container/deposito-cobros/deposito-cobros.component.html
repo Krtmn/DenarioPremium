@@ -31,8 +31,8 @@
       <ion-col size="6" class="ion-text-center col">{{cobrosDetails.lb_client}}</ion-col>
       <ion-col size="6" class="ion-text-center col">{{cobrosDetails.da_collection}}</ion-col>
       <ion-col size="6" class="ion-text-center col">{{cobrosDetails.co_collection}}</ion-col>
-      <ion-col size="6" class="ion-text-center col">{{cobrosDetails.total_deposit}} </ion-col>
-      <ion-col size="6" class="ion-text-center col borderInferiorDerecho">{{cobrosDetails.total_deposit}} </ion-col>
+      <ion-col size="6" class="ion-text-center col">{{cobrosDetails.nu_total_deposit}} </ion-col>
+      <ion-col size="6" class="ion-text-center col borderInferiorDerecho">{{cobrosDetails.nu_amount_total}} </ion-col>
     </ion-row>
   </ion-grid>
 
@@ -45,16 +45,17 @@
 
     <ion-row class="tabladocumentSalesVenta tablaDocVentas row" *ngIf="this.depositService.disabledCurrency">
       <ion-col size="10" size-xs="10" size-sm="8" offset-sm="2" offset-xs="1" class="ion-text-center col">
-        {{this.depositService.deposit.nuAmountDoc}} {{this.depositService.deposit.coCurrency}}
+        {{nuAmountDoc}} {{this.depositService.deposit.coCurrency}}
         <br>
         <ng-container *ngIf="this.multiCurrency == 'true'">
-          {{this.depositService.deposit.nuAmountDocConversion}} {{this.depositService.currencyConversion.coCurrency}}
+          {{nuAmountDocConversion}} {{this.depositService.currencyConversion.coCurrency}}
         </ng-container>
       </ion-col>
     </ion-row>
+
     <ion-row class="tabladocumentSalesVenta tablaDocVentas row" *ngIf="!this.depositService.disabledCurrency">
       <ion-col size="10" size-xs="10" size-sm="8" offset-sm="2" offset-xs="1" class="ion-text-center col">
-        {{this.depositService.deposit.nuAmountDoc}} {{this.depositService.deposit.coCurrency}}
+        {{nuAmountDoc}} {{this.depositService.deposit.coCurrency}}
       </ion-col>
     </ion-row>
   </ion-grid>

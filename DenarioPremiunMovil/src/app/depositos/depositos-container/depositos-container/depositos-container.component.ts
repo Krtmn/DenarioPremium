@@ -7,10 +7,10 @@ import { GeolocationService } from 'src/app/services/geolocation/geolocation.ser
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
 @Component({
-    selector: 'app-depositos-container',
-    templateUrl: './depositos-container.component.html',
-    styleUrls: ['./depositos-container.component.scss'],
-    standalone: false
+  selector: 'app-depositos-container',
+  templateUrl: './depositos-container.component.html',
+  styleUrls: ['./depositos-container.component.scss'],
+  standalone: false
 })
 export class DepositosContainerComponent implements OnInit {
 
@@ -18,15 +18,15 @@ export class DepositosContainerComponent implements OnInit {
   public router = inject(Router);
   public dateServ = inject(DateServiceService);
   geoLoc = inject(GeolocationService);
-synchronizationServices = inject(SynchronizationDBService);
+  synchronizationServices = inject(SynchronizationDBService);
   public subs: any;
 
   constructor() { }
 
   ngOnInit() {
     this.depositService.coordenadas = "";
-    if(this.depositService.userMustActivateGPS){
-      this.geoLoc.getCurrentPosition().then(xy => { 
+    if (this.depositService.userMustActivateGPS) {
+      this.geoLoc.getCurrentPosition().then(xy => {
         this.depositService.coordenadas = xy;
       })
     }
@@ -58,24 +58,24 @@ synchronizationServices = inject(SynchronizationDBService);
     });
   }
 
-  nuevoDeposito(){
-  if(this.depositService.userMustActivateGPS){
-        //TRUE: si no hay coordenada no entra
-    if(this.depositService.coordenadas && this.depositService.coordenadas.length>0){
-      this.goToNuevoDeposito();
-    }else{
-      this.geoLoc.getCurrentPosition().then(xy => { 
-        this.depositService.coordenadas = xy;
+  nuevoDeposito() {
+    if (this.depositService.userMustActivateGPS) {
+      //TRUE: si no hay coordenada no entra
+      if (this.depositService.coordenadas && this.depositService.coordenadas.length > 0) {
         this.goToNuevoDeposito();
+      } else {
+        this.geoLoc.getCurrentPosition().then(xy => {
+          this.depositService.coordenadas = xy;
+          this.goToNuevoDeposito();
+        })
+      }
+    } else {
+      //FALSE:  se permite entrar asi coordenadas esten vacias
+      this.geoLoc.getCurrentPosition().then(xy => {
+        this.depositService.coordenadas = xy;
       })
+      this.goToNuevoDeposito();
     }
-  }else{
-    //FALSE:  se permite entrar asi coordenadas esten vacias
-    this.geoLoc.getCurrentPosition().then(xy => { 
-      this.depositService.coordenadas = xy;      
-    })
-    this.goToNuevoDeposito();
-  }
   }
 
 
@@ -94,8 +94,8 @@ synchronizationServices = inject(SynchronizationDBService);
   }
 
   buscarDeposito() {
-    this.depositService.getAllDeposits(this.synchronizationServices.getDatabase(),).then(r => {
-      this.depositService.depositComponent = false;      
+    this.depositService.getAllDeposits(this.synchronizationServices.getDatabase()).then(r => {
+      this.depositService.depositComponent = false;
       this.depositService.depositListComponent = true;
     })
   }

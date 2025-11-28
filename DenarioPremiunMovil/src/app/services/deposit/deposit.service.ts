@@ -14,7 +14,7 @@ import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 import { CollectDeposit } from 'src/app/modelos/collect-deposit';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { ItemListaDepositos } from 'src/app/depositos/item-lista-depositos';
-import { DELIVERY_STATUS_NEW } from 'src/app/utils/appConstants';
+import { DEPOSITO_STATUS_NEW, DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 
 @Injectable({
   providedIn: 'root'
@@ -86,6 +86,10 @@ export class DepositService {
   public localCurrencyDefault: boolean = false;
   public currencyModule: any;
 
+  public DEPOSITO_STATUS_NEW = DEPOSITO_STATUS_NEW;
+  public DEPOSITO_STATUS_SAVED = DEPOSITO_STATUS_SAVED;
+  public DEPOSITO_STATUS_TO_SEND = DEPOSITO_STATUS_TO_SEND;
+  public DEPOSITO_STATUS_SENT = DEPOSITO_STATUS_SENT;
 
   public alertButtons = [
     /*     {
@@ -194,7 +198,7 @@ export class DepositService {
         txComment: "",
         nuValueLocal: 0,
         idCurrency: 0,
-        stDeposit: DELIVERY_STATUS_NEW,
+        stDeposit: DEPOSITO_STATUS_NEW,
         isEdit: true,
         isEditTotal: false,
         isSave: false,
@@ -803,10 +807,16 @@ export class DepositService {
           this.listDeposits.push(item);
           let p = this.historyTransaction.getStatusTransaction(dbServ, 6, item.idDeposit!).then(status => {
 
+            item.stDelivery == null ? 0 : item.stDelivery;
+            item.stDeposit == this.DEPOSITO_STATUS_SAVED ? status = 'Guardado' : status;
+            item.stDeposit == this.DEPOSITO_STATUS_TO_SEND ? status = 'Por Enviar' : status;
+            
+
             const itemListaDeposit: ItemListaDepositos = {
               idDeposit: item.idDeposit ?? 0,
               coDeposit: item.coDeposit,
               stDeposit: item.stDeposit,
+              stDelivery: item.stDelivery,
               daDeposit: item.daDeposit,
               naStatus: status,
               nuAmountDoc: item.nuAmountDoc.toFixed(this.parteDecimal),

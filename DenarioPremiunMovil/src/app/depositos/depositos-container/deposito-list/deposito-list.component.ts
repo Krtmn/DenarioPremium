@@ -154,11 +154,24 @@ export class DepositoListComponent implements OnInit {
   handleInput(event: any) {
     this.searchText = event.target.value.toLowerCase();
   }
-  getStatusOrderName(status: number, naStatus: any) {
+
+  getStatusOrderName(stDeposito: number, stDelivery: number, naStatus: any) {
+    if (stDeposito != 0) {
+      if (naStatus == null || naStatus === undefined) {
+        return this.getStatus(stDelivery, naStatus);
+      }
+      return naStatus;
+    } else {
+      this.getStatus(stDelivery, naStatus);
+    }
+  }
+
+  getStatus(status: number, naStatus: any): string {
     switch (status) {
       case DELIVERY_STATUS_SAVED: return this.depositService.depositTags.get("DEP_DEV_SAVED")!;
       case DELIVERY_STATUS_TO_SEND: return this.depositService.depositTags.get("DEP_DEV_TO_BE_SENDED")!;
-      case DELIVERY_STATUS_SENT: return this.depositService.depositTags.get("DEP_DEV_SENDED")!;
+      case DELIVERY_STATUS_SENT:
+        return naStatus == null ? this.depositService.depositTags.get("DEP_DEV_SENDED")! : naStatus;
       case 6:
         // naStatus puede ser string o un objeto => normalizar a string
         if (naStatus == null) return 'Enviado';

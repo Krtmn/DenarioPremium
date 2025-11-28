@@ -2,18 +2,18 @@ import { Component, EventEmitter, OnInit, Output, inject, Input } from '@angular
 import { Router } from '@angular/router';
 import { DepositService } from 'src/app/services/deposit/deposit.service';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
-import { DELIVERY_STATUS_NEW, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_TO_SEND, DELIVERY_STATUS_SENT } from 'src/app/utils/appConstants';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { Subscription } from 'rxjs';
 import { Platform } from '@ionic/angular';
 import { MessageService } from 'src/app/services/messageService/message.service';
+import { DEPOSITO_STATUS_NEW, DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_TO_SEND, DEPOSITO_STATUS_SENT } from 'src/app/utils/appConstants';
 
 
 @Component({
-    selector: 'app-depositos-header',
-    templateUrl: './depositos-header.component.html',
-    styleUrls: ['./depositos-header.component.scss'],
-    standalone: false
+  selector: 'app-depositos-header',
+  templateUrl: './depositos-header.component.html',
+  styleUrls: ['./depositos-header.component.scss'],
+  standalone: false
 })
 export class DepositosHeaderComponent implements OnInit {
 
@@ -37,6 +37,11 @@ export class DepositosHeaderComponent implements OnInit {
 
   public alertMessageOpenSend: Boolean = false;
   public alertMessageOpenSave: Boolean = false;
+
+  public DEPOSITO_STATUS_NEW = DEPOSITO_STATUS_NEW;
+  public DEPOSITO_STATUS_SAVED = DEPOSITO_STATUS_SAVED;
+  public DEPOSITO_STATUS_TO_SEND = DEPOSITO_STATUS_TO_SEND;
+  public DEPOSITO_STATUS_SENT = DEPOSITO_STATUS_SENT;
 
   public buttonsSalvar = [
     {
@@ -145,7 +150,7 @@ export class DepositosHeaderComponent implements OnInit {
 
 
   goBack() {
-    if (this.depositService.depositValid && this.depositService.deposit.stDeposit !== DELIVERY_STATUS_SENT) {
+    if (this.depositService.depositValid && this.depositService.deposit.stDeposit !== this.DEPOSITO_STATUS_SENT) {
       this.buttonsSalvar[0].text = this.depositService.depositTagsDenario.get('DENARIO_BOTON_SALIR_GUARDAR')!
       this.buttonsSalvar[1].text = this.depositService.depositTagsDenario.get('DENARIO_BOTON_SALIR')!
       this.buttonsSalvar[2].text = this.depositService.depositTagsDenario.get('DENARIO_BOTON_CANCELAR')!
@@ -156,10 +161,10 @@ export class DepositosHeaderComponent implements OnInit {
 
   }
 
-    backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
-      //console.log('backButton was called!');
-      this.goBack();
-    });
+  backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
+    //console.log('backButton was called!');
+    this.goBack();
+  });
 
   buttonSave() {
 
@@ -179,8 +184,8 @@ export class DepositosHeaderComponent implements OnInit {
 
   saveDeposit(): Promise<any> {
     return this.messageService.showLoading().then(() => {
-    this.depositService.deposit.stDeposit = DELIVERY_STATUS_SAVED;
-      return this.depositService.saveDeposit(this.synchronizationServices.getDatabase(),this.depositService.deposit).then(resp => {
+      this.depositService.deposit.stDeposit = this.DEPOSITO_STATUS_SAVED;
+      return this.depositService.saveDeposit(this.synchronizationServices.getDatabase(), this.depositService.deposit).then(resp => {
         console.log("DEPOSIT SAVE");
         this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.depositService.deposit.coDeposit, "depositos");
         return true;
@@ -191,13 +196,13 @@ export class DepositosHeaderComponent implements OnInit {
 
   sendDeposit() {
     this.messageService.showLoading().then(() => {
-      this.depositService.deposit.stDeposit = DELIVERY_STATUS_TO_SEND;
-      this.depositService.saveDeposit(this.synchronizationServices.getDatabase(),this.depositService.deposit).then(resp => {
+      this.depositService.deposit.stDeposit = this.DEPOSITO_STATUS_TO_SEND;
+      this.depositService.saveDeposit(this.synchronizationServices.getDatabase(), this.depositService.deposit).then(resp => {
         console.log("DEPOSIT SAVE READY TO SEND");
         this.depositService.sendDeposit.next(this.depositService.deposit.coDeposit);
-    })
+      })
     });
-    
+
   }
 
 

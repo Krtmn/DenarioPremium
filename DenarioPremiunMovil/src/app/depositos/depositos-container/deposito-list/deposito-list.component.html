@@ -22,7 +22,7 @@
                 <p>
                   <!-- Estatus: {{ getStatusOrderName(collect.stCollection, collect.idCollection!) }} -->
                   {{this.depositService.depositTags.get('DEP_DEV_STATUS')}}: {{
-                  getStatusOrderName(deposit.stDeposit, deposit.naStatus)}}
+                  getStatusOrderName(deposit.stDeposit,deposit.stDelivery, deposit.naStatus)}}
 
                 </p>
                 <p>
