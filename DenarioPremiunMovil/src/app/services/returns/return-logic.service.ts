@@ -304,7 +304,7 @@ export class ReturnLogicService {
     this.newReturn = {} as Return;
     var select = "select rs.id_return as idReturn, rs.co_return as coReturn, rs.st_return as stReturn, rs.da_return as daReturn, rs.na_responsible as naResponsible, rs.na_responsible as naResponsible, " +
       " rs.nu_seal as nuSeal, rs.id_type as idType, rs.tx_comment as txComment, rs.co_user as coUser, rs.id_user as idUser, " +
-      " rs.co_client as coClient, rs.id_client as idClient, rs.lb_client as lbClient, rs.co_invoice as coInvoice, rs.id_invoice as idInvoice, rs.st_delivery as stDelivery " +
+      " rs.co_client as coClient, rs.id_client as idClient, rs.lb_client as lbClient, rs.co_invoice as coInvoice, rs.id_invoice as idInvoice, rs.st_delivery as stDelivery, " +
       " rs.coordenada as coordenada, rs.co_enterprise as coEnterprise, rs.id_enterprise as idEnterprise FROM returns rs where rs.co_return = ?"
     return database.executeSql(select, [coReturn]).then(result => {
       this.newReturn = result.rows.item(0);
