@@ -8,7 +8,8 @@ export class PagoEfectivo {
             obj['posCollectionPayment'],
             obj['type'],
             obj['anticipoPrepaid'],
-            obj['disabled']
+            obj['disabled'],
+            obj['showDateModal']
         );
     }
 
@@ -21,5 +22,6 @@ export class PagoEfectivo {
         public type = "ef",
         public anticipoPrepaid: boolean = false,
         public disabled: boolean = true,
+        public showDateModal: boolean = false,
     ) { }
 }

@@ -195,6 +195,8 @@ export class CollectionPayment {
             obj['st'],
             obj['isSave'],
             obj['isAnticipoPrepaid'],
+            obj['idDifferenceCode'],
+            obj['coDifferenceCode'],
 
         );
     }
@@ -218,7 +220,9 @@ export class CollectionPayment {
         public coType: string = "",
         public st: number = 0, // si es 0 se inserta, si es 1 se actualiza, si es 2 se elimina
         public isSave: boolean = true, // true se guarda el pedido, false se actualiza
-        public isAnticipoPrepaid: boolean = false // true se guarda el pedido, false se actualiza
+        public isAnticipoPrepaid: boolean = false, // true se guarda el pedido, false se actualiza
+        public idDifferenceCode: number = 0,
+        public coDifferenceCode: string = ""
 
 
     ) { }

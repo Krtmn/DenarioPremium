@@ -33,6 +33,7 @@ import { ORDER_STATUS_SAVED, ORDER_STATUS_SENT, ORDER_STATUS_TO_SEND, ORDER_STAT
 import { TransactionStatuses } from '../../modelos/tables/transactionStatuses';
 import { MessageService } from '../messageService/message.service';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
+import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
 
 
 @Injectable({
@@ -95,8 +96,9 @@ export class CollectionService {
   public collectionRefused: TransactionStatuses[] = [];
   public collectionApproved: TransactionStatuses[] = [];
   public collectionSended: TransactionStatuses[] = [];
-  public messageAlert!: MessageAlert;
+  public differenceCode: DifferenceCode[] = [];
 
+  public messageAlert!: MessageAlert;
   public anticipoAutomatico!: any;
 
   public collectionTags = new Map<string, string>([]);
@@ -186,6 +188,7 @@ export class CollectionService {
   public currencySelector: boolean = true;
   public userCanAddRetention: boolean = false;
   public messageSended: boolean = false;
+  public enableDifferenceCodes: boolean = false;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;
@@ -318,6 +321,7 @@ export class CollectionService {
     }
 
     this.userCanAddRetention = this.globalConfig.get('userCanAddRetention') === 'true' ? true : false;
+    this.enableDifferenceCodes = this.globalConfig.get('enableDifferenceCodes') === 'true' ? true : false;
 
     this.showNuevaCuenta = this.clientBankAccount === true ? true : false;
 
@@ -349,6 +353,7 @@ export class CollectionService {
         defaultIgtf: 'false'
       } as IgtfList;
     }
+
     return Promise.resolve(true);
   }
 
@@ -1176,6 +1181,31 @@ export class CollectionService {
       if (onlyPaymentPartial == this.collection.collectionDetails.length)
         allPaymentPartial = true;
 
+      if (this.enableDifferenceCodes) {
+        const payments = Array.isArray(this.collection.collectionPayments) ? this.collection.collectionPayments : [];
+        for (let i = 0; i < payments.length; i++) {
+          const pago = payments[i];
+          const method = (pago.coPaymentMethod ?? pago.coType ?? '').toString().toLowerCase();
+          if (method === 'ot') {
+            const idDiff = pago.idDifferenceCode;
+            const coDiff = (pago.coDifferenceCode ?? '').toString().trim();
+            // Requerimos que idDifferenceCode no sea null/undefined y que coDifferenceCode no sea cadena vacía
+            if (idDiff == null || coDiff === '') {
+              /*  this.mensaje = "Para pagos de tipo 'Otros' debe seleccionar un código de diferencia y su código asociado.";
+               this.messageAlert = new MessageAlert(
+                 this.collectionTags.get('COB_NOMBRE_MODULO') ?? 'Denario Premium',
+                 this.mensaje
+               );
+               this.messageService.alertModal(this.messageAlert);*/
+              this.onCollectionValidToSend(false);
+              return;
+            } else {
+              this.onCollectionValidToSend(true);
+            }
+          }
+        }
+      }
+
       if (this.existPartialPayment) {
         if (allPaymentPartial && this.collection.collectionPayments.length > 0 && this.tabSelected == "pagos") {
           if (this.montoTotalPagado == this.montoTotalPagar) {
@@ -1464,6 +1494,535 @@ export class CollectionService {
     // Convierte a número
     return Number(str);
   }
+
+  showHeaderButtonsFunction(headerButtos: boolean) {
+    this.showButtons.next(headerButtos);
+  }
+
+  onCollectionValidToSave(valid: boolean) {
+    console.log('returnLogicService: onReturnValid');
+    this.collectValidToSave.next(valid);
+  }
+
+  onCollectionValidToSend(validToSend: boolean) {
+    console.log('returnLogicService: onReturnValidToSend');
+    this.collectValidToSend.next(validToSend);
+  }
+
+
+  onCollectionValid(valid: boolean) {
+    console.log('clientStockService: onClientStockValid');
+    if (valid) {
+      if (this.onChangeClient)
+        this.cobroValid = true;
+
+      if (this.collection.stDelivery == this.ORDER_STATUS_SAVED || this.collection.stDelivery == this.ORDER_STATUS_SENT)
+        this.cobroValid = true;
+
+      this.onCollectionValidToSave(true);
+    } else {
+      if (this.onChangeClient)
+        this.cobroValid = true;
+    }
+    if (this.collection.stDelivery == this.ORDER_STATUS_TO_SEND || this.collection.stDelivery == this.ORDER_STATUS_SENT)
+      this.cobroValid = true;
+
+    this.validCollection.next(valid);
+  }
+
+  unlockTabs() {
+    let banderaMulticurrency = true;
+    let banderaHistoricoTasa = true;
+    let banderaChangeEnterprise = true;
+    let banderaRequiredComment = true;
+
+    /*     if (this.globalConfig.get('multiCurrency') === "false") {
+          banderaMulticurrency = false;
+        } else
+          banderaMulticurrency = true */
+
+    if (this.globalConfig.get('historicoTasa') === "true" && !this.historicoTasa) {
+      banderaHistoricoTasa = false;
+    }
+
+    if (this.changeEnterprise) {
+      banderaChangeEnterprise = false;
+    }
+
+    if (this.globalConfig.get("requiredComment") === 'true' ? true : false) {
+      if (this.collection.txComment.trim() == "") {
+        if (this.collection.stDelivery == this.ORDER_STATUS_SAVED)
+          banderaRequiredComment = true;
+        else
+          banderaRequiredComment = false;
+      } else {
+        banderaRequiredComment = true;
+      }
+    } else {
+      banderaRequiredComment = true;
+
+    }
+
+    return Promise.resolve(banderaMulticurrency && banderaHistoricoTasa && banderaChangeEnterprise && banderaRequiredComment);
+  }
+
+  initCollection(collection: Collection) {
+    this.pagoEfectivo = [] as PagoEfectivo[];
+    this.pagoCheque = [] as PagoCheque[];
+    this.pagoDeposito = [] as PagoDeposito[];
+    this.pagoTransferencia = [] as PagoTransferencia[];
+    this.pagoOtros = [] as PagoOtros[];
+    this.lengthMethodPaid = -1;
+    this.bankAccountSelected = [] as BankAccount[];
+    this.collectionIsSave = false;
+    this.igtfList = [] as IgtfList[];
+    this.igtfSelected = {} as IgtfList;
+    this.alertMessageOpen = false;
+
+    //this.enterpriseSelected = {} as Enterprise;
+    this.listBankAccounts = [] as BankAccount[];
+    this.documentSales = [] as DocumentSale[];
+    this.documentSalesBackup = [] as DocumentSale[];
+    this.mapDocumentsSales = new Map<number, DocumentSale>([]);
+
+    this.montoTotalPagar = 0;
+    this.montoTotalPagarConversion = 0;
+
+    if (this.coTypeModule == '0')
+      this.disabledSelectCollectMethodDisabled = true;
+    else
+      this.disabledSelectCollectMethodDisabled = false;
+
+
+    return collection = {
+      idUser: Number(localStorage.getItem("idUser")),
+      coUser: localStorage.getItem("coUser")!,
+      idCollection: null,
+      coCollection: "",
+      coOriginalCollection: null,
+      daCollection: "",
+      daRate: "",
+      naResponsible: "",
+      idCurrency: 0,
+      idCurrencyConversion: 0,
+      coCurrency: "",
+      coCurrencyConversion: "",
+      coType: this.coTypeModule,
+      txComment: "",
+      lbClient: "",
+      naClient: "",
+      idClient: 0,
+      coClient: "",
+      idEnterprise: 0,
+      coEnterprise: "",
+      stCollection: 0,
+      stDelivery: 0,
+      isEdit: 0,
+      isEditTotal: 0,
+      isSave: 0,
+      nuValueLocal: 0,
+      //idConversionType: 0,
+      txConversion: "",
+      nuAmountTotal: 0,
+      nuAmountTotalConversion: 0,
+      nuAmountPaid: 0,
+      nuAmountPaidConversion: 0,
+      nuDifference: 0,
+      nuDifferenceConversion: 0,
+      nuIgtf: 0,
+      nuAmountIgtf: 0,
+      nuAmountFinal: 0,
+      nuAmountIgtfConversion: 0,
+      nuAmountFinalConversion: 0,
+      hasIGTF: false,
+      document: new DocumentSale,
+      coordenada: "",
+      //daVoucher: "",
+      nuAttachments: 0,
+      hasAttachments: false,
+      collectionDetails: [] as CollectionDetail[],
+      collectionPayments: [] as CollectionPayment[],
+
+    }
+  }
+
+  public async convertAmount(
+    value: number,
+    from: 'local' | 'hard',
+    to: 'local' | 'hard',
+    coTypeDoc: string,
+    nuValueLocalDoc: number
+  ): Promise<number> {
+    let tasa = 0;
+    if (nuValueLocalDoc == 0)
+      tasa = this.getNuValueLocal();
+    else
+      tasa = nuValueLocalDoc;
+
+    if (value > 0)
+      tasa = this.collection.nuValueLocal;
+
+    if (from === to) return value;
+
+    if (to === 'local') {
+      // Si tu método es síncrono, puedes dejarlo así
+      return this.currencyService.toLocalCurrencyByNuValueLocal(value, tasa);
+    } else {
+      // Espera la llamada asíncrona
+      return this.currencyService.toHardCurrencyByNuValueLocal(value, tasa);
+    }
+  }
+
+  public async toHardCurrencyByNuValueLocal(localAmount: number, nuValueLocal: number
+  ): Promise<number> {
+    // Si necesitas lógica asíncrona, usa await aquí
+    if (nuValueLocal == null)
+      return 0;
+    else if (localAmount < 0) {
+      this.calculateDifference = true;
+      return nuValueLocal;
+    } else {
+      this.calculateDifference = false;
+      return (localAmount * 1) / nuValueLocal;
+    }
+  }
+
+  // Helper para asegurar valores numéricos
+  public ensureNumber(obj: any, prop: string) {
+    if (obj[prop] == null || obj[prop] == undefined) obj[prop] = 0;
+  }
+
+  public toLocal(value: number): number {
+    return this.currencyService.toLocalCurrencyByNuValueLocal(value, this.collection.nuValueLocal);
+  }
+
+  public toHard(value: number): number {
+
+    return this.currencyService.toHardCurrencyByNuValueLocal(value, this.collection.nuValueLocal);
+
+  }
+
+  public updateBalancesOnPartialPay(index: number) {
+    const backup = this.documentSalesBackup[index];
+
+    this.amountPaid = this.cleanFormattedNumber(this.currencyService.formatNumber(backup.nuBalance));
+  }
+
+  public isRetentionInvalid(nuAmountRetention: number, nuAmountRetention2: number, nuBalance: number): boolean {
+    const suma = nuAmountRetention + nuAmountRetention2;
+    return suma > nuBalance || suma < 0 || (nuAmountRetention === 0 && nuAmountRetention2 === 0);
+  }
+
+  restoreDocumentSaleState(index: number) {
+    // Copia los datos de documentSales[index] a documentSaleOpen y documentSalesBackup[index]
+    const original = { ...this.documentSalesBackup[index] };
+    this.documentSaleOpen = { ...original };
+    this.documentSales[index] = { ...original };
+    /*  if (this.collection.stDelivery == DELIVERY_STATUS_SAVED) { */
+    const positionCollecDetails = this.documentSaleOpen.positionCollecDetails;
+    const nuAmountBase = this.collection.collectionDetails[positionCollecDetails].nuBalanceDoc,
+      nuAmountDiscount = this.collection.collectionDetails[positionCollecDetails].nuAmountDiscount,
+      nuAmountPaid = this.collection.collectionDetails[positionCollecDetails].nuAmountPaid,
+      nuAmountRetention = this.collection.collectionDetails[positionCollecDetails].nuAmountRetention,
+      nuAmountRetention2 = this.collection.collectionDetails[positionCollecDetails].nuAmountRetention2,
+      nuAmountTotal = this.collection.collectionDetails[positionCollecDetails].nuAmountDoc,
+      nuBalance = this.collection.collectionDetails[positionCollecDetails].nuBalanceDoc,
+      inPaymentPartial = this.collection.collectionDetails[positionCollecDetails].inPaymentPartial,
+      isSave = this.collection.collectionDetails[positionCollecDetails].isSave;
+
+    this.documentSales[index].nuAmountBase = nuAmountBase;
+    this.documentSalesBackup[index].nuAmountBase = nuAmountBase;
+    this.documentSales[index].nuAmountDiscount = nuAmountDiscount;
+    this.documentSalesBackup[index].nuAmountDiscount = nuAmountDiscount;
+    this.documentSales[index].nuAmountPaid = nuAmountPaid;
+    this.documentSalesBackup[index].nuAmountPaid = nuAmountPaid;
+    this.documentSales[index].nuAmountRetention = nuAmountRetention;
+    this.documentSalesBackup[index].nuAmountRetention = nuAmountRetention;
+    this.documentSales[index].nuAmountRetention2 = nuAmountRetention2;
+    this.documentSalesBackup[index].nuAmountRetention2 = nuAmountRetention2;
+    this.documentSales[index].nuAmountTotal = nuAmountTotal;
+    this.documentSalesBackup[index].nuAmountTotal = nuAmountTotal;
+    this.documentSales[index].nuBalance = nuBalance;
+    this.documentSalesBackup[index].nuBalance = nuBalance;
+    this.documentSales[index].inPaymentPartial = inPaymentPartial;
+    this.documentSalesBackup[index].inPaymentPartial = inPaymentPartial;
+    this.documentSales[index].isSave = isSave;
+    this.documentSalesBackup[index].isSave = isSave;
+
+    /*  } */
+
+    this.calculatePayment("", 0);
+  }
+
+  public copyDocumentSaleOpenToSalesAndDetails() {
+    const open = this.documentSaleOpen;
+    const idx = this.indexDocumentSaleOpen;
+    const detailIdx = open.positionCollecDetails;
+
+    // Copia a documentSales
+    this.documentSales[idx].inPaymentPartial = this.isPaymentPartial;
+    this.documentSales[idx].isSave = true;
+    this.documentSalesBackup[idx].inPaymentPartial = this.isPaymentPartial;
+    this.documentSalesBackup[idx].isSave = true;
+    this.documentSales[idx].nuAmountPaid = this.amountPaid;
+    this.documentSalesBackup[idx].nuAmountPaid = this.amountPaid;
+    this.documentSales[idx].nuAmountBase = this.amountPaid;
+    this.documentSalesBackup[idx].nuAmountBase = this.amountPaid;
+    this.documentSales[idx].nuAmountDiscount = open.nuAmountDiscount;
+    this.documentSalesBackup[idx].nuAmountDiscount = open.nuAmountDiscount;
+
+    // Copia a collectionDetails
+    const detail = this.collection.collectionDetails[detailIdx];
+    if (detail) {
+
+      detail.nuAmountPaid = this.amountPaid
+      detail.nuAmountPaidConversion = this.convertirMonto(this.amountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
+      detail.nuBalanceDoc = open.nuBalance;
+      detail.nuBalanceDocConversion = this.convertirMonto(open.nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
+      detail.daVoucher = open.daVoucher;
+      detail.nuAmountDiscount = open.nuAmountDiscount;
+      detail.nuAmountDiscountConversion = this.convertirMonto(open.nuAmountDiscount, this.collection.nuValueLocal, this.collection.coCurrency);
+      detail.nuAmountRetention = open.nuAmountRetention;
+      detail.nuAmountRetentionConversion = this.convertirMonto(open.nuAmountRetention, this.collection.nuValueLocal, this.collection.coCurrency);
+      detail.nuAmountRetention2 = open.nuAmountRetention2;
+      detail.nuAmountRetention2Conversion = this.convertirMonto(open.nuAmountRetention2, this.collection.nuValueLocal, this.collection.coCurrency);
+      detail.nuVoucherRetention = open.nuVaucherRetention;
+      detail.nuValueLocal = open.nuValueLocal;
+      detail.isSave = true;
+
+      // ...otros campos...
+    }
+  }
+
+  updateRateTiposPago() {
+    try {
+      const fecha = (this.collection && this.collection.daRate) ? this.collection.daRate + " 00:00:00" : "";
+
+      // Actualizar collection.collectionPayments -> daValue
+      if (Array.isArray(this.collection?.collectionPayments)) {
+        for (let i = 0; i < this.collection.collectionPayments.length; i++) {
+          try {
+            this.collection.collectionPayments[i].daValue = fecha;
+          } catch (err) {
+            // si la estructura no tiene daValue, ignorar
+          }
+        }
+      }
+
+      // Actualizar pagoEfectivo[].fecha
+      if (Array.isArray(this.pagoEfectivo)) {
+        for (let i = 0; i < this.pagoEfectivo.length; i++) {
+          this.pagoEfectivo[i].fecha = fecha;
+        }
+      }
+
+      // Actualizar pagoCheque[].fecha
+      if (Array.isArray(this.pagoCheque)) {
+        for (let i = 0; i < this.pagoCheque.length; i++) {
+          this.pagoCheque[i].fecha = fecha;
+        }
+      }
+
+      // Actualizar pagoDeposito[].fecha
+      if (Array.isArray(this.pagoDeposito)) {
+        for (let i = 0; i < this.pagoDeposito.length; i++) {
+          this.pagoDeposito[i].fecha = fecha;
+        }
+      }
+
+      // Actualizar pagoTransferencia[].fecha
+      if (Array.isArray(this.pagoTransferencia)) {
+        for (let i = 0; i < this.pagoTransferencia.length; i++) {
+          this.pagoTransferencia[i].fecha = fecha;
+        }
+      }
+
+      // pagoOtros no tiene campo 'fecha' en el modelo actual -> no se toca
+    } catch (err) {
+      console.warn('[CollectionService] updateRateTiposPago error:', err);
+    }
+  }
+
+  async checkHistoricCollects(db: SQLiteObject): Promise<boolean> {
+    this.collectionRefused = [] as TransactionStatuses[];
+    this.collectionApproved = [] as TransactionStatuses[];
+    this.collectionSended = [] as TransactionStatuses[];
+    try {
+      const list = Array.isArray(this.listTransactionStatusCollections) ? this.listTransactionStatusCollections : [];
+      if (list.length === 0) return Promise.resolve(false);
+
+      // Extraer ids únicos y sanearlos
+      const ids = Array.from(new Set(list
+        .map(ts => ts?.idStatus ?? (ts as any)?.id_status ?? (ts as any)?.id)
+        .filter(id => id !== undefined && id !== null)
+        .map(String)
+      ));
+      if (ids.length === 0) return Promise.resolve(false);
+
+      // Preparar query IN (...) para obtener todos los statuses en una sola llamada
+      const placeholders = ids.map(_ => '?').join(',');
+      const sql = `SELECT * FROM statuses WHERE id_status IN (${placeholders})`;
+
+      const res = await db.executeSql(sql, ids);
+      const statusMap = new Map<string, number>();
+      for (let i = 0; i < res.rows.length; i++) {
+        const row = res.rows.item(i);
+        const key = String(row.id_status);
+        statusMap.set(key, Number(row.status_action));
+      }
+
+      // Asignar a collectionRefused los TransactionStatuses cuyo status en la tabla sea 2
+      for (const ts of list) {
+        const idStatus = ts.idStatus;
+        if (idStatus == null) continue;
+        switch (statusMap.get(String(idStatus))) {
+          case 1:
+            this.collectionApproved.push(ts);
+            break;
+          case 2:
+            this.collectionRefused.push(ts);
+            break;
+          case 3:
+            this.collectionSended.push(ts);
+            break;
+          default:
+            // otros casos se ignoran
+            break;
+        }
+      }
+    } catch (err) {
+      console.error('[checkHistoricCollects] error:', err);
+    }
+    return Promise.resolve(true);
+  }
+
+
+  async lockDocumentSales(db: SQLiteObject): Promise<string[]> {
+    const docs: string[] = [];
+    try {
+      const list = Array.isArray(this.collectionSended) ? this.collectionSended : [];
+      if (list.length === 0) {
+        this.coDocumentToUpdate = [];
+        return docs;
+      }
+
+      // extraer coTransaction (acepta varias posibles claves)
+      const coTransactions = Array.from(new Set(
+        list
+          .map(ts => (ts as any)?.coTransaction ?? (ts as any)?.co_transaction ?? (ts as any)?.coCollection ?? (ts as any)?.co_collection)
+          .filter(Boolean)
+          .map(String)
+      ));
+
+      if (coTransactions.length === 0) {
+        this.coDocumentToUpdate = [];
+        return docs;
+      }
+
+      // preparar consulta IN (...) para obtener todos los co_document de una sola vez
+      const placeholders = coTransactions.map(() => '?').join(',');
+      const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders})`;
+
+      const res = await db.executeSql(sql, coTransactions);
+      for (let i = 0; i < res.rows.length; i++) {
+        const cd = res.rows.item(i).co_document;
+        if (cd != null) docs.push(cd);
+      }
+
+      // Guardar resultado en la propiedad usada por otros flujos
+      this.coDocumentToUpdate = docs.slice();
+
+      try {
+        await this.checkDocumentSales(db, docs, 2);
+      } catch (e) {
+        console.error('[findDocumentSalesRefused] checkDocumentSales error:', e);
+      }
+
+      return docs;
+    } catch (err) {
+      console.error('[findDocumentSalesRefused] error:', err);
+      this.coDocumentToUpdate = [];
+      return docs;
+    }
+  }
+
+  async unlockDocumentSales(db: SQLiteObject): Promise<string[]> {
+    const docs: string[] = [];
+    try {
+      // Usar tanto collectionRefused como collectionApproved como fuente
+      const combinedList = [
+        ...(Array.isArray(this.collectionRefused) ? this.collectionRefused : []),
+        ...(Array.isArray(this.collectionApproved) ? this.collectionApproved : [])
+      ];
+
+      if (combinedList.length === 0) {
+        this.coDocumentToUpdate = [];
+        return docs;
+      }
+
+      // extraer coTransaction (acepta varias posibles claves)
+      const coTransactions = Array.from(new Set(
+        combinedList
+          .map(ts => (ts as any)?.coTransaction ?? (ts as any)?.co_transaction ?? (ts as any)?.coCollection ?? (ts as any)?.co_collection)
+          .filter(Boolean)
+          .map(String)
+      ));
+
+      if (coTransactions.length === 0) {
+        this.coDocumentToUpdate = [];
+        return docs;
+      }
+
+      // preparar consulta IN (...) para obtener todos los co_document de una sola vez
+      const placeholders = coTransactions.map(() => '?').join(',');
+      const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders})`;
+
+      const res = await db.executeSql(sql, coTransactions);
+      for (let i = 0; i < res.rows.length; i++) {
+        const cd = res.rows.item(i).co_document;
+        if (cd != null) docs.push(cd);
+      }
+
+      // Guardar resultado en la propiedad usada por otros flujos
+      this.coDocumentToUpdate = docs.slice();
+
+      // llamar a checkDocumentSales para actualizar st_document = 0 (desbloquear)
+      try {
+        await this.checkDocumentSales(db, docs, 0);
+      } catch (e) {
+        console.error('[unlockDocumentSales] checkDocumentSales error:', e);
+      }
+
+      return docs;
+    } catch (err) {
+      console.error('[unlockDocumentSales] error:', err);
+      this.coDocumentToUpdate = [];
+      return docs;
+    }
+  }
+
+  async checkDocumentSales(dbServ: SQLiteObject, coDocumentSales: string[], action: number): Promise<boolean> {
+    //action: 0 el documento vuelvo a salir, 2 documento bloqueado
+    try {
+      if (!Array.isArray(coDocumentSales) || coDocumentSales.length === 0) {
+        return true;
+      }
+
+      // sanitizar: eliminar nulos y convertir a strings
+      const docs = coDocumentSales.filter(d => d != null).map(String);
+      if (docs.length === 0) return true;
+
+      const placeholders = docs.map(() => '?').join(',');
+      const sql = `UPDATE document_st SET st_document = ${action} WHERE co_document IN (${placeholders})`;
+
+      await dbServ.executeSql(sql, docs);
+      return true;
+    } catch (err) {
+      console.error('[checkDocumentSales] error updating document_st:', err);
+      return false;
+    }
+  }
+
 
   ///////////////////QUERYS////////////////
 
@@ -2057,156 +2616,6 @@ export class CollectionService {
       })
   }
 
-  showHeaderButtonsFunction(headerButtos: boolean) {
-    this.showButtons.next(headerButtos);
-  }
-
-  onCollectionValidToSave(valid: boolean) {
-    console.log('returnLogicService: onReturnValid');
-    this.collectValidToSave.next(valid);
-  }
-
-  onCollectionValidToSend(validToSend: boolean) {
-    console.log('returnLogicService: onReturnValidToSend');
-    this.collectValidToSend.next(validToSend);
-  }
-
-
-  onCollectionValid(valid: boolean) {
-    console.log('clientStockService: onClientStockValid');
-    if (valid) {
-      if (this.onChangeClient)
-        this.cobroValid = true;
-
-      if (this.collection.stDelivery == this.ORDER_STATUS_SAVED || this.collection.stDelivery == this.ORDER_STATUS_SENT)
-        this.cobroValid = true;
-
-      this.onCollectionValidToSave(true);
-    } else {
-      if (this.onChangeClient)
-        this.cobroValid = true;
-    }
-    if (this.collection.stDelivery == this.ORDER_STATUS_TO_SEND || this.collection.stDelivery == this.ORDER_STATUS_SENT)
-      this.cobroValid = true;
-
-    this.validCollection.next(valid);
-  }
-
-  unlockTabs() {
-    let banderaMulticurrency = true;
-    let banderaHistoricoTasa = true;
-    let banderaChangeEnterprise = true;
-    let banderaRequiredComment = true;
-
-    /*     if (this.globalConfig.get('multiCurrency') === "false") {
-          banderaMulticurrency = false;
-        } else
-          banderaMulticurrency = true */
-
-    if (this.globalConfig.get('historicoTasa') === "true" && !this.historicoTasa) {
-      banderaHistoricoTasa = false;
-    }
-
-    if (this.changeEnterprise) {
-      banderaChangeEnterprise = false;
-    }
-
-    if (this.globalConfig.get("requiredComment") === 'true' ? true : false) {
-      if (this.collection.txComment.trim() == "") {
-        if (this.collection.stDelivery == this.ORDER_STATUS_SAVED)
-          banderaRequiredComment = true;
-        else
-          banderaRequiredComment = false;
-      } else {
-        banderaRequiredComment = true;
-      }
-    } else {
-      banderaRequiredComment = true;
-
-    }
-
-    return Promise.resolve(banderaMulticurrency && banderaHistoricoTasa && banderaChangeEnterprise && banderaRequiredComment);
-  }
-
-  initCollection(collection: Collection) {
-    this.pagoEfectivo = [] as PagoEfectivo[];
-    this.pagoCheque = [] as PagoCheque[];
-    this.pagoDeposito = [] as PagoDeposito[];
-    this.pagoTransferencia = [] as PagoTransferencia[];
-    this.pagoOtros = [] as PagoOtros[];
-    this.lengthMethodPaid = -1;
-    this.bankAccountSelected = [] as BankAccount[];
-    this.collectionIsSave = false;
-    this.igtfList = [] as IgtfList[];
-    this.igtfSelected = {} as IgtfList;
-    this.alertMessageOpen = false;
-
-    //this.enterpriseSelected = {} as Enterprise;
-    this.listBankAccounts = [] as BankAccount[];
-    this.documentSales = [] as DocumentSale[];
-    this.documentSalesBackup = [] as DocumentSale[];
-    this.mapDocumentsSales = new Map<number, DocumentSale>([]);
-
-    this.montoTotalPagar = 0;
-    this.montoTotalPagarConversion = 0;
-
-    if (this.coTypeModule == '0')
-      this.disabledSelectCollectMethodDisabled = true;
-    else
-      this.disabledSelectCollectMethodDisabled = false;
-
-
-    return collection = {
-      idUser: Number(localStorage.getItem("idUser")),
-      coUser: localStorage.getItem("coUser")!,
-      idCollection: null,
-      coCollection: "",
-      coOriginalCollection: null,
-      daCollection: "",
-      daRate: "",
-      naResponsible: "",
-      idCurrency: 0,
-      idCurrencyConversion: 0,
-      coCurrency: "",
-      coCurrencyConversion: "",
-      coType: this.coTypeModule,
-      txComment: "",
-      lbClient: "",
-      naClient: "",
-      idClient: 0,
-      coClient: "",
-      idEnterprise: 0,
-      coEnterprise: "",
-      stCollection: 0,
-      stDelivery: 0,
-      isEdit: 0,
-      isEditTotal: 0,
-      isSave: 0,
-      nuValueLocal: 0,
-      //idConversionType: 0,
-      txConversion: "",
-      nuAmountTotal: 0,
-      nuAmountTotalConversion: 0,
-      nuAmountPaid: 0,
-      nuAmountPaidConversion: 0,
-      nuDifference: 0,
-      nuDifferenceConversion: 0,
-      nuIgtf: 0,
-      nuAmountIgtf: 0,
-      nuAmountFinal: 0,
-      nuAmountIgtfConversion: 0,
-      nuAmountFinalConversion: 0,
-      hasIGTF: false,
-      document: new DocumentSale,
-      coordenada: "",
-      //daVoucher: "",
-      nuAttachments: 0,
-      hasAttachments: false,
-      collectionDetails: [] as CollectionDetail[],
-      collectionPayments: [] as CollectionPayment[],
-
-    }
-  }
 
   getCurrenciesEnterprise(dbServ: SQLiteObject, idEnterprise: number) {
 
@@ -3414,7 +3823,9 @@ export class CollectionService {
           coType: res.rows.item(i).co_type,
           st: 0,
           isSave: true,
-          isAnticipoPrepaid: false
+          isAnticipoPrepaid: false,
+          idDifferenceCode: res.rows.item(i).id_difference_code,
+          coDifferenceCode: res.rows.item(i).co_difference_code
         })
       }
       return collectionPayments;
@@ -3564,381 +3975,25 @@ export class CollectionService {
       })
   }
 
-
-  public async convertAmount(
-    value: number,
-    from: 'local' | 'hard',
-    to: 'local' | 'hard',
-    coTypeDoc: string,
-    nuValueLocalDoc: number
-  ): Promise<number> {
-    let tasa = 0;
-    if (nuValueLocalDoc == 0)
-      tasa = this.getNuValueLocal();
-    else
-      tasa = nuValueLocalDoc;
-
-    if (value > 0)
-      tasa = this.collection.nuValueLocal;
-
-    if (from === to) return value;
-
-    if (to === 'local') {
-      // Si tu método es síncrono, puedes dejarlo así
-      return this.currencyService.toLocalCurrencyByNuValueLocal(value, tasa);
-    } else {
-      // Espera la llamada asíncrona
-      return this.currencyService.toHardCurrencyByNuValueLocal(value, tasa);
-    }
-  }
-
-  public async toHardCurrencyByNuValueLocal(localAmount: number, nuValueLocal: number
-  ): Promise<number> {
-    // Si necesitas lógica asíncrona, usa await aquí
-    if (nuValueLocal == null)
-      return 0;
-    else if (localAmount < 0) {
-      this.calculateDifference = true;
-      return nuValueLocal;
-    } else {
-      this.calculateDifference = false;
-      return (localAmount * 1) / nuValueLocal;
-    }
-  }
-
-  // Helper para asegurar valores numéricos
-  public ensureNumber(obj: any, prop: string) {
-    if (obj[prop] == null || obj[prop] == undefined) obj[prop] = 0;
-  }
-
-  public toLocal(value: number): number {
-    return this.currencyService.toLocalCurrencyByNuValueLocal(value, this.collection.nuValueLocal);
-  }
-
-  public toHard(value: number): number {
-
-    return this.currencyService.toHardCurrencyByNuValueLocal(value, this.collection.nuValueLocal);
-
-  }
-
-  public updateBalancesOnPartialPay(index: number) {
-    const backup = this.documentSalesBackup[index];
-
-    this.amountPaid = this.cleanFormattedNumber(this.currencyService.formatNumber(backup.nuBalance));
-  }
-
-  public isRetentionInvalid(nuAmountRetention: number, nuAmountRetention2: number, nuBalance: number): boolean {
-    const suma = nuAmountRetention + nuAmountRetention2;
-    return suma > nuBalance || suma < 0 || (nuAmountRetention === 0 && nuAmountRetention2 === 0);
-  }
-
-  restoreDocumentSaleState(index: number) {
-    // Copia los datos de documentSales[index] a documentSaleOpen y documentSalesBackup[index]
-    const original = { ...this.documentSalesBackup[index] };
-    this.documentSaleOpen = { ...original };
-    this.documentSales[index] = { ...original };
-    /*  if (this.collection.stDelivery == DELIVERY_STATUS_SAVED) { */
-    const positionCollecDetails = this.documentSaleOpen.positionCollecDetails;
-    const nuAmountBase = this.collection.collectionDetails[positionCollecDetails].nuBalanceDoc,
-      nuAmountDiscount = this.collection.collectionDetails[positionCollecDetails].nuAmountDiscount,
-      nuAmountPaid = this.collection.collectionDetails[positionCollecDetails].nuAmountPaid,
-      nuAmountRetention = this.collection.collectionDetails[positionCollecDetails].nuAmountRetention,
-      nuAmountRetention2 = this.collection.collectionDetails[positionCollecDetails].nuAmountRetention2,
-      nuAmountTotal = this.collection.collectionDetails[positionCollecDetails].nuAmountDoc,
-      nuBalance = this.collection.collectionDetails[positionCollecDetails].nuBalanceDoc,
-      inPaymentPartial = this.collection.collectionDetails[positionCollecDetails].inPaymentPartial,
-      isSave = this.collection.collectionDetails[positionCollecDetails].isSave;
-
-    this.documentSales[index].nuAmountBase = nuAmountBase;
-    this.documentSalesBackup[index].nuAmountBase = nuAmountBase;
-    this.documentSales[index].nuAmountDiscount = nuAmountDiscount;
-    this.documentSalesBackup[index].nuAmountDiscount = nuAmountDiscount;
-    this.documentSales[index].nuAmountPaid = nuAmountPaid;
-    this.documentSalesBackup[index].nuAmountPaid = nuAmountPaid;
-    this.documentSales[index].nuAmountRetention = nuAmountRetention;
-    this.documentSalesBackup[index].nuAmountRetention = nuAmountRetention;
-    this.documentSales[index].nuAmountRetention2 = nuAmountRetention2;
-    this.documentSalesBackup[index].nuAmountRetention2 = nuAmountRetention2;
-    this.documentSales[index].nuAmountTotal = nuAmountTotal;
-    this.documentSalesBackup[index].nuAmountTotal = nuAmountTotal;
-    this.documentSales[index].nuBalance = nuBalance;
-    this.documentSalesBackup[index].nuBalance = nuBalance;
-    this.documentSales[index].inPaymentPartial = inPaymentPartial;
-    this.documentSalesBackup[index].inPaymentPartial = inPaymentPartial;
-    this.documentSales[index].isSave = isSave;
-    this.documentSalesBackup[index].isSave = isSave;
-
-    /*  } */
-
-    this.calculatePayment("", 0);
-  }
-
-  public copyDocumentSaleOpenToSalesAndDetails() {
-    const open = this.documentSaleOpen;
-    const idx = this.indexDocumentSaleOpen;
-    const detailIdx = open.positionCollecDetails;
-
-    // Copia a documentSales
-    this.documentSales[idx].inPaymentPartial = this.isPaymentPartial;
-    this.documentSales[idx].isSave = true;
-    this.documentSalesBackup[idx].inPaymentPartial = this.isPaymentPartial;
-    this.documentSalesBackup[idx].isSave = true;
-    this.documentSales[idx].nuAmountPaid = this.amountPaid;
-    this.documentSalesBackup[idx].nuAmountPaid = this.amountPaid;
-    this.documentSales[idx].nuAmountBase = this.amountPaid;
-    this.documentSalesBackup[idx].nuAmountBase = this.amountPaid;
-    this.documentSales[idx].nuAmountDiscount = open.nuAmountDiscount;
-    this.documentSalesBackup[idx].nuAmountDiscount = open.nuAmountDiscount;
-
-    // Copia a collectionDetails
-    const detail = this.collection.collectionDetails[detailIdx];
-    if (detail) {
-
-      detail.nuAmountPaid = this.amountPaid
-      detail.nuAmountPaidConversion = this.convertirMonto(this.amountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
-      detail.nuBalanceDoc = open.nuBalance;
-      detail.nuBalanceDocConversion = this.convertirMonto(open.nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
-      detail.daVoucher = open.daVoucher;
-      detail.nuAmountDiscount = open.nuAmountDiscount;
-      detail.nuAmountDiscountConversion = this.convertirMonto(open.nuAmountDiscount, this.collection.nuValueLocal, this.collection.coCurrency);
-      detail.nuAmountRetention = open.nuAmountRetention;
-      detail.nuAmountRetentionConversion = this.convertirMonto(open.nuAmountRetention, this.collection.nuValueLocal, this.collection.coCurrency);
-      detail.nuAmountRetention2 = open.nuAmountRetention2;
-      detail.nuAmountRetention2Conversion = this.convertirMonto(open.nuAmountRetention2, this.collection.nuValueLocal, this.collection.coCurrency);
-      detail.nuVoucherRetention = open.nuVaucherRetention;
-      detail.nuValueLocal = open.nuValueLocal;
-      detail.isSave = true;
-
-      // ...otros campos...
-    }
-  }
-
-  updateRateTiposPago() {
-    try {
-      const fecha = (this.collection && this.collection.daRate) ? this.collection.daRate + " 00:00:00" : "";
-
-      // Actualizar collection.collectionPayments -> daValue
-      if (Array.isArray(this.collection?.collectionPayments)) {
-        for (let i = 0; i < this.collection.collectionPayments.length; i++) {
-          try {
-            this.collection.collectionPayments[i].daValue = fecha;
-          } catch (err) {
-            // si la estructura no tiene daValue, ignorar
-          }
-        }
+  getDifferenceCodes(dbServ: SQLiteObject) {
+    const selectStatement = 'SELECT * FROM difference_codes';
+    return dbServ.executeSql(selectStatement, []).then(res => {
+      this.differenceCode = [] as DifferenceCode[];
+      for (var i = 0; i < res.rows.length; i++) {
+        this.differenceCode.push({
+          idDifferenceCode: res.rows.item(i).id_difference_code,
+          coDifferenceCode: res.rows.item(i).co_difference_code,
+          naDifferenceCode: res.rows.item(i).na_difference_code,
+          txDescription: res.rows.item(i).tx_description
+        })
       }
+      return Promise.resolve(true);
+    }).catch(e => {
 
-      // Actualizar pagoEfectivo[].fecha
-      if (Array.isArray(this.pagoEfectivo)) {
-        for (let i = 0; i < this.pagoEfectivo.length; i++) {
-          this.pagoEfectivo[i].fecha = fecha;
-        }
-      }
-
-      // Actualizar pagoCheque[].fecha
-      if (Array.isArray(this.pagoCheque)) {
-        for (let i = 0; i < this.pagoCheque.length; i++) {
-          this.pagoCheque[i].fecha = fecha;
-        }
-      }
-
-      // Actualizar pagoDeposito[].fecha
-      if (Array.isArray(this.pagoDeposito)) {
-        for (let i = 0; i < this.pagoDeposito.length; i++) {
-          this.pagoDeposito[i].fecha = fecha;
-        }
-      }
-
-      // Actualizar pagoTransferencia[].fecha
-      if (Array.isArray(this.pagoTransferencia)) {
-        for (let i = 0; i < this.pagoTransferencia.length; i++) {
-          this.pagoTransferencia[i].fecha = fecha;
-        }
-      }
-
-      // pagoOtros no tiene campo 'fecha' en el modelo actual -> no se toca
-    } catch (err) {
-      console.warn('[CollectionService] updateRateTiposPago error:', err);
-    }
-  }
-
-  async checkHistoricCollects(db: SQLiteObject): Promise<boolean> {
-    this.collectionRefused = [] as TransactionStatuses[];
-    this.collectionApproved = [] as TransactionStatuses[];
-    this.collectionSended = [] as TransactionStatuses[];
-    try {
-      const list = Array.isArray(this.listTransactionStatusCollections) ? this.listTransactionStatusCollections : [];
-      if (list.length === 0) return Promise.resolve(false);
-
-      // Extraer ids únicos y sanearlos
-      const ids = Array.from(new Set(list
-        .map(ts => ts?.idStatus ?? (ts as any)?.id_status ?? (ts as any)?.id)
-        .filter(id => id !== undefined && id !== null)
-        .map(String)
-      ));
-      if (ids.length === 0) return Promise.resolve(false);
-
-      // Preparar query IN (...) para obtener todos los statuses en una sola llamada
-      const placeholders = ids.map(_ => '?').join(',');
-      const sql = `SELECT * FROM statuses WHERE id_status IN (${placeholders})`;
-
-      const res = await db.executeSql(sql, ids);
-      const statusMap = new Map<string, number>();
-      for (let i = 0; i < res.rows.length; i++) {
-        const row = res.rows.item(i);
-        const key = String(row.id_status);
-        statusMap.set(key, Number(row.status_action));
-      }
-
-      // Asignar a collectionRefused los TransactionStatuses cuyo status en la tabla sea 2
-      for (const ts of list) {
-        const idStatus = ts.idStatus;
-        if (idStatus == null) continue;
-        switch (statusMap.get(String(idStatus))) {
-          case 1:
-            this.collectionApproved.push(ts);
-            break;
-          case 2:
-            this.collectionRefused.push(ts);
-            break;
-          case 3:
-            this.collectionSended.push(ts);
-            break;
-          default:
-            // otros casos se ignoran
-            break;
-        }
-      }
-    } catch (err) {
-      console.error('[checkHistoricCollects] error:', err);
-    }
-    return Promise.resolve(true);
+      return Promise.resolve(true);
+    })
   }
 
 
-  async lockDocumentSales(db: SQLiteObject): Promise<string[]> {
-    const docs: string[] = [];
-    try {
-      const list = Array.isArray(this.collectionSended) ? this.collectionSended : [];
-      if (list.length === 0) {
-        this.coDocumentToUpdate = [];
-        return docs;
-      }
-
-      // extraer coTransaction (acepta varias posibles claves)
-      const coTransactions = Array.from(new Set(
-        list
-          .map(ts => (ts as any)?.coTransaction ?? (ts as any)?.co_transaction ?? (ts as any)?.coCollection ?? (ts as any)?.co_collection)
-          .filter(Boolean)
-          .map(String)
-      ));
-
-      if (coTransactions.length === 0) {
-        this.coDocumentToUpdate = [];
-        return docs;
-      }
-
-      // preparar consulta IN (...) para obtener todos los co_document de una sola vez
-      const placeholders = coTransactions.map(() => '?').join(',');
-      const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders})`;
-
-      const res = await db.executeSql(sql, coTransactions);
-      for (let i = 0; i < res.rows.length; i++) {
-        const cd = res.rows.item(i).co_document;
-        if (cd != null) docs.push(cd);
-      }
-
-      // Guardar resultado en la propiedad usada por otros flujos
-      this.coDocumentToUpdate = docs.slice();
-
-      try {
-        await this.checkDocumentSales(db, docs, 2);
-      } catch (e) {
-        console.error('[findDocumentSalesRefused] checkDocumentSales error:', e);
-      }
-
-      return docs;
-    } catch (err) {
-      console.error('[findDocumentSalesRefused] error:', err);
-      this.coDocumentToUpdate = [];
-      return docs;
-    }
-  }
-
-  async unlockDocumentSales(db: SQLiteObject): Promise<string[]> {
-    const docs: string[] = [];
-    try {
-      // Usar tanto collectionRefused como collectionApproved como fuente
-      const combinedList = [
-        ...(Array.isArray(this.collectionRefused) ? this.collectionRefused : []),
-        ...(Array.isArray(this.collectionApproved) ? this.collectionApproved : [])
-      ];
-
-      if (combinedList.length === 0) {
-        this.coDocumentToUpdate = [];
-        return docs;
-      }
-
-      // extraer coTransaction (acepta varias posibles claves)
-      const coTransactions = Array.from(new Set(
-        combinedList
-          .map(ts => (ts as any)?.coTransaction ?? (ts as any)?.co_transaction ?? (ts as any)?.coCollection ?? (ts as any)?.co_collection)
-          .filter(Boolean)
-          .map(String)
-      ));
-
-      if (coTransactions.length === 0) {
-        this.coDocumentToUpdate = [];
-        return docs;
-      }
-
-      // preparar consulta IN (...) para obtener todos los co_document de una sola vez
-      const placeholders = coTransactions.map(() => '?').join(',');
-      const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders})`;
-
-      const res = await db.executeSql(sql, coTransactions);
-      for (let i = 0; i < res.rows.length; i++) {
-        const cd = res.rows.item(i).co_document;
-        if (cd != null) docs.push(cd);
-      }
-
-      // Guardar resultado en la propiedad usada por otros flujos
-      this.coDocumentToUpdate = docs.slice();
-
-      // llamar a checkDocumentSales para actualizar st_document = 0 (desbloquear)
-      try {
-        await this.checkDocumentSales(db, docs, 0);
-      } catch (e) {
-        console.error('[unlockDocumentSales] checkDocumentSales error:', e);
-      }
-
-      return docs;
-    } catch (err) {
-      console.error('[unlockDocumentSales] error:', err);
-      this.coDocumentToUpdate = [];
-      return docs;
-    }
-  }
-
-  async checkDocumentSales(dbServ: SQLiteObject, coDocumentSales: string[], action: number): Promise<boolean> {
-    //action: 0 el documento vuelvo a salir, 2 documento bloqueado
-    try {
-      if (!Array.isArray(coDocumentSales) || coDocumentSales.length === 0) {
-        return true;
-      }
-
-      // sanitizar: eliminar nulos y convertir a strings
-      const docs = coDocumentSales.filter(d => d != null).map(String);
-      if (docs.length === 0) return true;
-
-      const placeholders = docs.map(() => '?').join(',');
-      const sql = `UPDATE document_st SET st_document = ${action} WHERE co_document IN (${placeholders})`;
-
-      await dbServ.executeSql(sql, docs);
-      return true;
-    } catch (err) {
-      console.error('[checkDocumentSales] error updating document_st:', err);
-      return false;
-    }
-  }
+  ///////////////////QUERYS////////////////
 }
