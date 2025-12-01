@@ -64,12 +64,13 @@ export class LoginComponent implements OnInit {
   async ngOnInit() {
     /* App.getInfo().then(async (res) => { */
     // preferir la versión real del paquete si está disponible, si no usar fallback
-    this.versionApp = "6.3.13";
-    
+    this.versionApp = "6.3.143";
+
     const storedVersionApp = localStorage.getItem("versionApp");
     // primer arranque: guardamos la versionApp actual
     if (!storedVersionApp) {
       localStorage.setItem("versionApp", this.versionApp);
+      await this.initLogin();
     } else {
       // si la semver actual es mayor que la guardada --> ejecutar limpieza/sincronización
       if (this.compareSemVer(this.versionApp, storedVersionApp) > 0) {
@@ -80,6 +81,7 @@ export class LoginComponent implements OnInit {
               // limpia y vuelve a dejar guardada la nueva versiónApp
               localStorage.clear();
               localStorage.setItem("versionApp", this.versionApp);
+              this.initLogin();
             }).catch(err => {
               console.error('dropTables error', err);
             });
@@ -89,9 +91,14 @@ export class LoginComponent implements OnInit {
         } catch (err) {
           console.error('Error al obtener createTables para sincronizar', err);
         }
+      } else {
+        await this.initLogin();
       }
     }
 
+  }
+
+  async initLogin() {
     this.loginDetail = {} as Login;
     if (localStorage.getItem("recuerdame") == "true") {
       this.loginDetail.login = localStorage.getItem("login")!;
@@ -112,6 +119,7 @@ export class LoginComponent implements OnInit {
       let f = this.loginForm;
       localStorage.setItem("login", f.value.login.trim());
       localStorage.setItem("password", f.value.password);
+
       (await this.synchronization.getCreateTables()).subscribe((res) => {
         this.loginLogic.dropTables(res).then((res: any) => {
           console.log(res)
@@ -122,8 +130,6 @@ export class LoginComponent implements OnInit {
         })
       })
     })
-
-
 
     this.deviceInfo = await Device.getInfo();
     this.deviceId = await Device.getId();
@@ -147,11 +153,8 @@ export class LoginComponent implements OnInit {
     private navController: NavController,
     private sqlite: SQLite,
     private platform: Platform
-  ) {
-    this.ngOnInit();
+  ) { }
 
-
-  }
   loginForm = new FormGroup({
     login: new FormControl(),
     password: new FormControl(),

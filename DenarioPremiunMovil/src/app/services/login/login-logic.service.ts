@@ -16,13 +16,12 @@ export class LoginLogicService {
   public nameDatabases: any[] = [];
   public imgHome!: string;
 
-  changeUser = new Subject<Boolean>; //para mensajes que el boton no va atras
+  changeUser = new Subject<boolean>() //para mensajes que el boton no va atras
 
   constructor(
     private sqlite: SQLite,
 
   ) {
-    this.prueba();
   }
 
 
@@ -34,35 +33,42 @@ export class LoginLogicService {
     });
   }
 
-  prueba() {
-
-    this.sqlite.create({
-      name: 'denarioPremium',
-      location: 'default'
-    }).then((db: SQLiteObject) => {
-      this.database = db;
-    }).catch(e => {
-      console.log(e)
-    });
+  dropTables(tables: any[]): Promise<any> {
+    if (this.database == undefined) {
+      // devolvemos la promesa para cubrir todos los caminos de ejecución
+      return this.sqlite.create({
+        name: 'denarioPremium',
+        location: 'default'
+      }).then((db: SQLiteObject) => {
+        this.database = db;
+        return this.deleteTables(tables, db);
+      }).catch(e => {
+        console.error('[dropTables] sqlite.create error:', e);
+        throw e;
+      });
+    } else {
+      return this.deleteTables(tables, this.database);
+    }
   }
 
-  dropTables(tables: any[]) {
+  deleteTables(tables: any[], database: SQLiteObject): Promise<any> {
+    const statements: [string, any[]][] = [];
+    let dropTable = '';
+
+    // usar el array recibido directamente
     this.nameDatabases = tables;
-    //this.database = this.databaseService.getDatabase();
-    var statements = [];
-    let dropTable = ""
-    localStorage.setItem("createTables", "false");
-    for (var i = 0; i < this.nameDatabases.length; i++) {
-      dropTable = "DROP TABLE IF EXISTS " + this.nameDatabases[i].name;
-      statements.push([dropTable, []])
+
+    localStorage.setItem('createTables', 'false');
+    for (let i = 0; i < tables.length; i++) {
+      dropTable = 'DROP TABLE IF EXISTS ' + tables[i].name;
+      statements.push([dropTable, []]);
     }
-    return this.database.sqlBatch(statements).then(res => {
-      /* dropTable = "DROP TABLE IF EXISTS banks" */
-      /* return this.database.executeSql(dropTable).then(res => { */
+
+    return database.sqlBatch(statements).then(res => {
       return res;
     }).catch(e => {
-      console.log(e);
-    })
-
+      console.error('[deleteTables] sqlBatch error:', e);
+      throw e;
+    });
   }
 }
