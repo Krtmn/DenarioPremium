@@ -316,6 +316,13 @@
         "sql": "CREATE TABLE IF NOT EXISTS currency_modules ( id_currency_module INTEGER PRIMARY KEY, id_module INTEGER, local_currency_default BOOLEAN DEFAULT 1, show_conversion BOOLEAN DEFAULT 1, currency_selector BOOLEAN DEFAULT 1);"
     },
     {
+        "id": 75,
+        "name": "difference_codes",
+        "table": "differenceCodes",
+        "idName": "id_difference_code",
+        "sql": "CREATE TABLE IF NOT EXISTS difference_codes ( id_difference_code INTEGER PRIMARY KEY, co_difference_code VARCHAR(80), na_difference_code VARCHAR(80), tx_description VARCHAR(255));"
+    },
+    {
         "id": 9999999,
         "name": "versionsTables",
         "table": "versionsTables",
@@ -397,7 +404,7 @@
         "name": "collection_payments",
         "table": "collectionPayments",
         "idName": "id_collection_payment",
-        "sql": "CREATE TABLE IF NOT EXISTS collection_payments (id_collection_payment INTEGER, co_collection VARCHAR(30) ,id_collection_detail INTEGER, co_payment_method VARCHAR(30), id_bank INTEGER, nu_payment_doc VARCHAR(50), na_bank VARCHAR(80), co_client_bank_account VARCHAR(30), nu_client_bank_account VARCHAR(50), da_value TIMESTAMP, da_collection_payment TIMESTAMP, nu_collection_payment VARCHAR(30), nu_amount_partial NUMERIC(10,10), co_type VARCHAR(5), nu_amount_partial_conversion NUMERIC(10,10));"
+        "sql": "CREATE TABLE IF NOT EXISTS collection_payments (id_collection_payment INTEGER, co_collection VARCHAR(30) ,id_collection_detail INTEGER, co_payment_method VARCHAR(30), id_bank INTEGER, nu_payment_doc VARCHAR(50), na_bank VARCHAR(80), co_client_bank_account VARCHAR(30), nu_client_bank_account VARCHAR(50), da_value TIMESTAMP, da_collection_payment TIMESTAMP, nu_collection_payment VARCHAR(30), nu_amount_partial NUMERIC(10,10), co_type VARCHAR(5), nu_amount_partial_conversion NUMERIC(10,10), id_difference_code INTEGER, co_difference_code VARCHAR(30));"
     },
     {
         "id": 99111,

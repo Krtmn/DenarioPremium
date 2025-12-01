@@ -75,6 +75,7 @@ import { OrderDetailDiscount } from 'src/app/modelos/orderDetailDiscount';
 import { Conversion } from 'src/app/modelos/tables/conversion';
 import { CurrencyModules } from '../../modelos/tables/currencyModules';
 import { Modules } from '../../modelos/tables/modules';
+import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
 
 @Injectable({
   providedIn: 'root'
@@ -165,6 +166,7 @@ export class SynchronizationDBService {
       { "id": 72, "nameTable": "conversionTable" },
       { "id": 73, "nameTable": "modules" },
       { "id": 74, "nameTable": "currencyModules" },
+      { "id": 75, "nameTable": "differenceCodes" },
     ]
   }
 
@@ -1472,6 +1474,25 @@ export class SynchronizationDBService {
 
     return this.database.sqlBatch(statements).then(res => {
       console.log("insert modules ready")
+      return res;
+    }).catch(e => {
+      console.log(e);
+    })
+  }
+
+  insertDifferenceCodesBatch(arr: DifferenceCode[]) {
+    var statements = [];
+    let insertStatement = "INSERT OR REPLACE INTO difference_codes(" +
+      "id_difference_code, co_difference_code ,na_difference_code, tx_description" +
+      ") " +
+      "VALUES(?,?,?,?)"
+
+    for (var i = 0; i < arr.length; i++) {
+      statements.push([insertStatement, [arr[i].idDifferenceCode, arr[i].coDifferenceCode, arr[i].naDifferenceCode, arr[i].txDescription]])
+    }
+
+    return this.database.sqlBatch(statements).then(res => {
+      console.log("insert DifferenceCode ready")
       return res;
     }).catch(e => {
       console.log(e);

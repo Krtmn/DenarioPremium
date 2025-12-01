@@ -108,8 +108,37 @@
                                 </ion-input>
                             </ion-item>
                         </ion-col>
+                        <ion-col size="6" size-sm="12" size-xs="12">
+                            <ion-item disabled="{{this.collectService.enableDate}}">
+                                <ion-label>{{this.collectService.collectionTags.get('COB_FECHA')}}</ion-label>
+                                <a (click)="onOpenCalendar(ef, 'ef')">
+                                    <ion-button (click)="setShowDateEfectivoModal(ef, true)" color="light"
+                                        class="letrasFechasButton"
+                                        [disabled]="this.collectService.validateCollectionDate">
+                                        {{ dateServ.formatShort(efectivo.fecha) }}
+                                    </ion-button>
+                                </a>
+                                <a (click)="onOpenCalendar(ef,'ef')">
+                                    <ion-icon slot="end" src="../../../assets/icon/calendar-outline.svg"></ion-icon>
+                                </a>
+                                <ion-modal [keepContentsMounted]="true" [isOpen]="efectivo.showDateModal"
+                                    (didDismiss)="setShowDateEfectivoModal(ef, false)" class="fechasModal">
+                                    <ng-template>
+                                        <ion-datetime [id]="'fechaEfectivo'+ef" presentation="date"
+                                            [(ngModel)]="efectivo.fecha.split(' ')[0]"
+                                            (ngModelChange)="onFechaValorChange($event, ef,'ef')"
+                                            [showDefaultButtons]="true"
+                                            doneText="{{this.collectService.collectionTags.get('COB_ACEPTAR')}}"
+                                            cancelText="{{this.collectService.collectionTags.get('COB_CANCELAR')}}"
+                                            min="{{this.collectService.fechaMenor}}"
+                                            max="{{this.collectService.fechaMayor}}"
+                                            [disabled]="this.collectService.validateCollectionDate">
+                                        </ion-datetime>
+                                    </ng-template>
+                                </ion-modal>
+                            </ion-item>
+                        </ion-col>
                         <ion-item>
-
                             <ion-button color="danger" (click)="deleteTipoPago(ef,'ef')"><ion-icon
                                     name="trash"></ion-icon></ion-button>
                         </ion-item>
@@ -402,7 +431,6 @@
                                     </ion-select-option>
                                 </ion-select>
                             </div>
-
                         </ion-item>
                         <ion-col size="6" size-sm="12" size-xs="12">
                             <ion-item disabled="{{transferencia.disabled}}">
@@ -460,7 +488,6 @@
                         </ion-col>
 
                         <ion-item>
-
                             <ion-button color="danger" (click)="deleteTipoPago(tr,'tr')"><ion-icon
                                     name="trash"></ion-icon></ion-button>
                         </ion-item>
@@ -480,6 +507,20 @@
                         <ion-label> {{this.collectService.collectionTags.get('COB_OTROS')}}</ion-label>
                     </ion-item>
                     <div class="ion-padding" slot="content">
+                        <ion-col size="6" size-sm="12" size-xs="12" *ngIf="this.collectService.enableDifferenceCodes">
+                            <div class="listado-enterprise-selector ion-text-center">
+                                <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
+                                    class="ion-text-center always-flip" [(ngModel)]="otros.idDifferenceCode"
+                                    (ionChange)="selectDifferenceCode(ot)" interface="alert"
+                                    labelPlacement="stacked">
+                                    <ion-select-option
+                                        *ngFor="let differenceCode of this.collectService.differenceCode; trackBy: trackByIndex"
+                                        [value]="differenceCode">{{ differenceCode.coDifferenceCode }} -
+                                        {{differenceCode.naDifferenceCode}}
+                                    </ion-select-option>
+                                </ion-select>
+                            </div>
+                        </ion-col>
                         <ion-col size="6" size-sm="12" size-xs="12">
                             <ion-item>
                                 <ion-input label="{{this.collectService.collectionTags.get('COB_OTROS_ESPECIFIQUE')}}:"
@@ -497,6 +538,36 @@
                                     (focus)="onMontoFocus(otros, ot, 'ot')" (blur)="onMontoBlur(otros, ot, 'ot')"
                                     class="customInput" [ngClass]="{'inp-write': !otros.monto}">
                                 </ion-input>
+                            </ion-item>
+                        </ion-col>
+                        <ion-col size="6" size-sm="12" size-xs="12">
+                            <ion-item disabled="{{this.collectService.enableDate}}">
+                                <ion-label>{{this.collectService.collectionTags.get('COB_FECHA')}}</ion-label>
+                                <a (click)="onOpenCalendar(ot, 'ot')">
+                                    <ion-button (click)="setShowDateOtrosModal(ot, true)" color="light"
+                                        class="letrasFechasButton"
+                                        [disabled]="this.collectService.validateCollectionDate">
+                                        {{ dateServ.formatShort(otros.fecha) }}
+                                    </ion-button>
+                                </a>
+                                <a (click)="onOpenCalendar(ot,'ot')">
+                                    <ion-icon slot="end" src="../../../assets/icon/calendar-outline.svg"></ion-icon>
+                                </a>
+                                <ion-modal [keepContentsMounted]="true" [isOpen]="otros.showDateModal"
+                                    (didDismiss)="setShowDateOtrosModal(ot, false)" class="fechasModal">
+                                    <ng-template>
+                                        <ion-datetime [id]="'fechaOtros'+ot" presentation="date"
+                                            [(ngModel)]="otros.fecha.split(' ')[0]"
+                                            (ngModelChange)="onFechaValorChange($event, ot,'ot')"
+                                            [showDefaultButtons]="true"
+                                            doneText="{{this.collectService.collectionTags.get('COB_ACEPTAR')}}"
+                                            cancelText="{{this.collectService.collectionTags.get('COB_CANCELAR')}}"
+                                            min="{{this.collectService.fechaMenor}}"
+                                            max="{{this.collectService.fechaMayor}}"
+                                            [disabled]="this.collectService.validateCollectionDate">
+                                        </ion-datetime>
+                                    </ng-template>
+                                </ion-modal>
                             </ion-item>
                         </ion-col>
                         <ion-button color="danger" (click)="deleteTipoPago(ot,'ot')"><ion-icon

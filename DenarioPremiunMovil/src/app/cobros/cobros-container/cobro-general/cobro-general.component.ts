@@ -187,7 +187,14 @@ export class CobrosGeneralComponent implements OnInit {
       this.collectService.unlockTabs().then((resp) => {
         this.collectService.onCollectionValid(resp);
       });
+
+      if (this.collectService.enableDifferenceCodes) {
+        this.collectService.getDifferenceCodes(this.synchronizationServices.getDatabase());
+      }
+
       this.collectService.changeEnterprise = false;
+
+
     });
 
     this.collectService.validateReferencePayment();
@@ -200,6 +207,11 @@ export class CobrosGeneralComponent implements OnInit {
     this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", this.viewOnly, COLOR_VERDE);
     this.collectService.loadPaymentMethods();
     this.collectService.initLogicService();
+    if (this.collectService.enableDifferenceCodes) {
+     
+      this.collectService.getDifferenceCodes(this.synchronizationServices.getDatabase());
+    }
+
   }
 
   private initializeCurrenciesAndRates() {
@@ -322,6 +334,7 @@ export class CobrosGeneralComponent implements OnInit {
             type: "ef",
             anticipoPrepaid: payment.isAnticipoPrepaid,
             disabled: false,
+            showDateModal: false,
           };
           this.collectService.pagoEfectivo.push(newPagoEfectivo);
           break;
@@ -404,6 +417,10 @@ export class CobrosGeneralComponent implements OnInit {
             type: "ot",
             anticipoPrepaid: payment.isAnticipoPrepaid,
             disabled: false,
+            idDifferenceCode: 0,
+            coDifferenceCode: "",
+            fecha: payment.daValue!,
+            'showDateModal': false,
           };
           this.collectService.pagoOtros.push(newPagoOtros);
           break;

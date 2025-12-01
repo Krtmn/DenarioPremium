@@ -128,7 +128,8 @@ export class SynchronizationComponent implements OnInit {
     71: 'orderDetailDiscounts',
     72: 'conversion',
     73: 'modules',
-    74: 'currencyModules'
+    74: 'currencyModules',
+    75: 'differenceCodes',
   };
 
   /**
@@ -191,6 +192,7 @@ export class SynchronizationComponent implements OnInit {
     conversion: 'Tasas de Conversión',
     modules: 'Módulos',
     currencyModules: 'Monedas Módulos',
+    differenceCodes: 'Códigos de Diferencia',
   };
 
   constructor(
@@ -609,6 +611,11 @@ export class SynchronizationComponent implements OnInit {
             this.tables.page = 0;
             break;
           }
+          case 75: {
+            this.tables.differenceCodeTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
 
           default: {
             //statements;
@@ -800,6 +807,11 @@ export class SynchronizationComponent implements OnInit {
       const cfgKey = 'currencyModule';
       console.debug(`[sync] shouldSyncTable: tableId=${tableId}, cfgKey=${cfgKey}, cfgValue=`, this.globalConfig.get(cfgKey));
       return cfgTrue(cfgKey);
+    }
+
+    if ([75].includes(tableId)) {
+      return cfgTrue('enableDifferenceCodes');
+      
     }
 
     // Para cualquier otra tabla, por defecto sincronizamos
@@ -1227,7 +1239,14 @@ export class SynchronizationComponent implements OnInit {
       tableKey: 'currencyModuleTableLastUpdate',
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
-    }
+    },
+    differenceCodes: {
+      batchFn: this.synchronizationServices.insertDifferenceCodesBatch.bind(this.synchronizationServices),
+      rowKey: 'differenceCodeTable',
+      tableKey: 'differenceCodeTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
     // ...agrega más si tienes más tablas...
   };
 

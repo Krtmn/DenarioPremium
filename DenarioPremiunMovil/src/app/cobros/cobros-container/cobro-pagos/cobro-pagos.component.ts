@@ -10,6 +10,7 @@ import { PagoDeposito } from 'src/app/modelos/pago-deposito';
 import { PagoTransferencia } from 'src/app/modelos/pago-transferencia';
 import { PagoOtros } from 'src/app/modelos/pago-otros';
 import { DateServiceService } from 'src/app/services/dates/date-service.service';
+import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
 
 @Component({
   selector: 'app-cobro-pagos',
@@ -106,6 +107,13 @@ export class CobroPagosComponent implements OnInit {
       case "ef": {
         let newPagoEfectivo: PagoEfectivo = new PagoEfectivo;
         newPagoEfectivo.posCollectionPayment = this.collectService.collection.collectionPayments!.length - 1;
+        if (this.collectService.validateCollectionDate) {
+          // use normalized daRate (may already include time)
+          newPagoEfectivo.fecha = daRate;
+        } else {
+          newPagoEfectivo.fecha = this.dateServ.hoyISO();
+        }
+
         this.collectService.pagoEfectivo.push(newPagoEfectivo);
         newPago = newPagoEfectivo;
         break
@@ -156,6 +164,12 @@ export class CobroPagosComponent implements OnInit {
       case "ot": {
         let newPagoOtros: PagoOtros = new PagoOtros;
         newPagoOtros.posCollectionPayment = this.collectService.collection.collectionPayments!.length - 1;
+        if (this.collectService.validateCollectionDate) {
+          // use normalized daRate (may already include time)
+          newPagoOtros.fecha = daRate;
+        } else {
+          newPagoOtros.fecha = this.dateServ.hoyISO();
+        }
         this.collectService.pagoOtros.push(newPagoOtros);
         newPago = newPagoOtros;
         break;
@@ -317,6 +331,12 @@ export class CobroPagosComponent implements OnInit {
 
     switch (type) {
       case "ef": {
+        if (this.collectService.validateCollectionDate) {
+          this.collectService.pagoEfectivo[index].fecha = this.collectService.dateRate + " 00:00:00";
+        } else {
+          this.collectService.pagoEfectivo[index].fecha = fecha + " 00:00:00";
+          fecha = fecha + " 00:00:00";
+        }
         break
       }
 
@@ -362,6 +382,12 @@ export class CobroPagosComponent implements OnInit {
       }
 
       case "ot": {
+        if (this.collectService.validateCollectionDate) {
+          this.collectService.pagoOtros[index].fecha = this.collectService.dateRate + " 00:00:00";
+        } else {
+          this.collectService.pagoOtros[index].fecha = fecha + " 00:00:00";
+          fecha = fecha + " 00:00:00";
+        }
         this.collectService.validateToSend();
         break;
       }
@@ -564,6 +590,10 @@ export class CobroPagosComponent implements OnInit {
 
     switch (type) {
       case "ef": {
+        this.collectService.pagoEfectivo[i].fecha = this.dateServ.hoyISO();
+        this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[i].posCollectionPayment]!.daCollectionPayment
+          = this.collectService.pagoEfectivo[i].fecha.split("T")[0] + " " + this.collectService.pagoEfectivo[i].fecha.split("T")[1];;
+        this.collectService.validateToSend();
         break
       }
 
@@ -589,7 +619,10 @@ export class CobroPagosComponent implements OnInit {
       }
 
       case "ot": {
-
+        this.collectService.pagoOtros[i].fecha = this.dateServ.hoyISO();
+        this.collectService.collection.collectionPayments![this.collectService.pagoOtros[i].posCollectionPayment]!.daCollectionPayment
+          = this.collectService.pagoOtros[i].fecha.split("T")[0] + " " + this.collectService.pagoOtros[i].fecha.split("T")[1];;
+        this.collectService.validateToSend();
         break;
       }
     }
@@ -806,9 +839,7 @@ export class CobroPagosComponent implements OnInit {
             if (this.collectService.createAutomatedPrepaid)
               this.checkCreateAutomatedPrepaid();
             this.collectService.validateToSend();
-            /*  if (this.collectService.pagoEfectivo[index].nuRecibo != "") {
-               this.collectService.validateToSend();
-             } */
+       
           })
         }
 
@@ -1023,6 +1054,16 @@ export class CobroPagosComponent implements OnInit {
     transferencia.showDateModal = val;
   }
 
+  setShowDateEfectivoModal(i: number, val: boolean) {
+    let efectivo = this.collectService.pagoEfectivo[i];
+    efectivo.showDateModal = val;
+  }
+
+  setShowDateOtrosModal(i: number, val: boolean) {
+    let otros = this.collectService.pagoOtros[i];
+    otros.showDateModal = val;
+  }
+
   setShowEventModal(value: boolean) {
     this.showEventModal = value;
     // Si se está abriendo el modal, limpiar selección
@@ -1045,6 +1086,13 @@ export class CobroPagosComponent implements OnInit {
   onFechaValorChange(value: string, index: number, type: string) {
     // Guarda solo la parte de la fecha (YYYY-MM-DD)
     switch (type) {
+      case "ef": {
+        if (value) {
+          this.collectService.pagoEfectivo[index].fecha = value.split('T')[0];
+          this.getFechaValor(this.collectService.pagoEfectivo[index].fecha, index, 'ef');
+        }
+        break
+      }
       case "de": {
         if (value) {
           this.collectService.pagoDeposito[index].fecha = value.split('T')[0];
@@ -1063,6 +1111,13 @@ export class CobroPagosComponent implements OnInit {
         if (value) {
           this.collectService.pagoTransferencia[index].fecha = value.split('T')[0];
           this.getFechaValor(this.collectService.pagoTransferencia[index].fecha, index, 'tr');
+        }
+        break
+      }
+      case "ot": {
+        if (value) {
+          this.collectService.pagoOtros[index].fecha = value.split('T')[0];
+          this.getFechaValor(this.collectService.pagoOtros[index].fecha, index, 'ot');
         }
         break
       }
@@ -1239,5 +1294,15 @@ export class CobroPagosComponent implements OnInit {
     const minor = Math.max(0, this.centsMap[uid] ?? 0);
     this.centsMap[uid] = minor;
     this.displayMap[uid] = this.formatFromMinorUnits(minor);
+  }
+
+  selectDifferenceCode(index: number) {
+    let posCollectionPayment = this.collectService.pagoOtros[index].posCollectionPayment;
+    const idDifferenceCode = this.collectService.collection.collectionPayments![posCollectionPayment]!.idDifferenceCode;
+    const coDifferenceCode = this.collectService.collection.collectionPayments![posCollectionPayment]!.coDifferenceCode;
+
+    this.collectService.collection.collectionPayments![posCollectionPayment]!.idDifferenceCode = idDifferenceCode;
+    this.collectService.collection.collectionPayments![posCollectionPayment]!.coDifferenceCode = coDifferenceCode;
+    this.validatePayment("ot", index);
   }
 }
