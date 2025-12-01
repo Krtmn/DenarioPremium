@@ -180,7 +180,8 @@ export class SynchronizationDBService {
   }
 
   getDatabase() {
-    return this.database;
+  
+      return this.database;
   }
 
   async createTables(user: User, conexion: Boolean) {
