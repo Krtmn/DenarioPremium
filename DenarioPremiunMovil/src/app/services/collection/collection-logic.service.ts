@@ -29,7 +29,7 @@ import { ClientBankAccount } from 'src/app/modelos/tables/clientBankAccount';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { ItemListaCobros } from 'src/app/cobros/item-lista-cobros';
-import { ORDER_STATUS_SAVED, ORDER_STATUS_SENT, ORDER_STATUS_TO_SEND, ORDER_STATUS_NEW } from 'src/app/utils/appConstants';
+import { COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW } from 'src/app/utils/appConstants';
 import { TransactionStatuses } from '../../modelos/tables/transactionStatuses';
 import { MessageService } from '../messageService/message.service';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
@@ -279,10 +279,10 @@ export class CollectionService {
     },
   ];
 
-  public ORDER_STATUS_SAVED = ORDER_STATUS_SAVED;
-  public ORDER_STATUS_SENT = ORDER_STATUS_SENT;
-  public ORDER_STATUS_TO_SEND = ORDER_STATUS_TO_SEND;
-  public ORDER_STATUS_NEW = ORDER_STATUS_NEW;
+  public COLLECT_STATUS_SAVED = COLLECT_STATUS_SAVED;
+  public COLLECT_STATUS_SENT = COLLECT_STATUS_SENT;
+  public COLLECT_STATUS_TO_SEND = COLLECT_STATUS_TO_SEND;
+  public COLLECT_STATUS_NEW = COLLECT_STATUS_NEW;
 
   initLogicService() {
     //this.coTypeModule = '0';
@@ -503,7 +503,7 @@ export class CollectionService {
       return this.currencyList.find(c => ((c?.coCurrency ?? '').toString() === co.toString()));
     };
 
-    const st = Number(this.collection?.stDelivery ?? this.ORDER_STATUS_NEW);
+    const st = Number(this.collection?.stDelivery ?? this.COLLECT_STATUS_NEW);
     let chosen: Currencies | undefined;
 
     // 1) Si la colección ya tiene estado distinto de 0 -> respetar collection.coCurrency
@@ -700,7 +700,7 @@ export class CollectionService {
       /* this.fechaMayor = yearMayor + "-" + monthMayor + "-" + diaMayor + " " + hora.split(" ")[1]; */
       this.dateRate = yearMayor + "-" + monthMayor + "-" + diaMayor + " " + hora.split(" ")[1];
 
-      if (this.collection.stDelivery == ORDER_STATUS_SAVED) {
+      if (this.collection.stDelivery == COLLECT_STATUS_SAVED) {
         this.dateRateVisual = this.collection.daRate + "T00:00:00";
       } else
         this.dateRateVisual = yearMayor + "-" + monthMayor + "-" + diaMayor + "T00:00:00";
@@ -711,7 +711,7 @@ export class CollectionService {
 
   getDateRate(dbServ: SQLiteObject, fecha: string) {
 
-    if (this.collection.stDelivery == ORDER_STATUS_TO_SEND)
+    if (this.collection.stDelivery == COLLECT_STATUS_TO_SEND)
       return;
 
     this.dateRate = fecha;
@@ -754,7 +754,7 @@ export class CollectionService {
       return Promise.resolve(true);
     } else {
       //no tengo tasa para ese dia
-      if (this.collection.stDelivery == this.ORDER_STATUS_SENT) {
+      if (this.collection.stDelivery == this.COLLECT_STATUS_SENT) {
         this.rateSelected = this.collection.nuValueLocal;
         this.historicoTasa = true;
       } else {
@@ -784,7 +784,7 @@ export class CollectionService {
     let montoConversion = 0;
     let montoTotalDiscounts = 0;
 
-    if (this.collection.stDelivery == this.ORDER_STATUS_SAVED) {
+    if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED) {
       for (var j = 0; j < this.collection.collectionDetails.length; j++) {
         monto += this.collection.collectionDetails[j].nuAmountPaid;
         montoConversion += this.collection.collectionDetails[j].nuAmountPaidConversion;
@@ -793,7 +793,7 @@ export class CollectionService {
         this.montoTotalPagarConversion = montoConversion;
 
       }
-    } else if (this.collection.stDelivery == this.ORDER_STATUS_TO_SEND || this.collection.stDelivery == this.ORDER_STATUS_SENT) {
+    } else if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == this.COLLECT_STATUS_SENT) {
       monto = this.collection.nuAmountTotal;
       montoConversion = this.collection.nuAmountTotalConversion;
       this.montoTotalPagar = monto;
@@ -1510,7 +1510,7 @@ export class CollectionService {
       if (this.onChangeClient)
         this.cobroValid = true;
 
-      if (this.collection.stDelivery == this.ORDER_STATUS_SAVED || this.collection.stDelivery == this.ORDER_STATUS_SENT)
+      if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED || this.collection.stDelivery == this.COLLECT_STATUS_SENT)
         this.cobroValid = true;
 
       this.onCollectionValidToSave(true);
@@ -1518,7 +1518,7 @@ export class CollectionService {
       if (this.onChangeClient)
         this.cobroValid = true;
     }
-    if (this.collection.stDelivery == this.ORDER_STATUS_TO_SEND || this.collection.stDelivery == this.ORDER_STATUS_SENT)
+    if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == this.COLLECT_STATUS_SENT)
       this.cobroValid = true;
 
     this.validCollection.next(valid);
@@ -1545,7 +1545,7 @@ export class CollectionService {
 
     if (this.globalConfig.get("requiredComment") === 'true' ? true : false) {
       if (this.collection.txComment.trim() == "") {
-        if (this.collection.stDelivery == this.ORDER_STATUS_SAVED)
+        if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED)
           banderaRequiredComment = true;
         else
           banderaRequiredComment = false;
@@ -2064,7 +2064,7 @@ export class CollectionService {
 
   getDocumentsSales(dbServ: SQLiteObject, idClient: number, coCurrency: string, coCollection: string, idEnterprise: number) {
 
-    if (this.collection.stDelivery == this.ORDER_STATUS_TO_SEND)
+    if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND)
       return Promise.resolve();
 
     let selectStatement = ""
@@ -2188,7 +2188,7 @@ export class CollectionService {
                   this.documentSalesBackup[i].daVoucher = this.collection.collectionDetails[cd].daVoucher!;
                   this.documentSalesBackup[i].nuAmountDiscount = this.collection.collectionDetails[cd].nuAmountDiscount;
 
-                  if (this.collection.stDelivery != this.ORDER_STATUS_SAVED) {
+                  if (this.collection.stDelivery != this.COLLECT_STATUS_SAVED) {
                     this.collection.collectionDetails[cd].nuBalanceDoc = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
                     this.collection.collectionDetails[cd].nuBalanceDocConversion = this.documentSales[i].nuBalance;
                     this.collection.collectionDetails[cd].nuAmountPaid = this.convertirMonto(this.documentSales[i].nuBalance, this.collection.nuValueLocal, this.documentSales[i].coCurrency);
@@ -3205,7 +3205,7 @@ export class CollectionService {
           collect.coClient,
           collect.naClient,
           collect.stCollection,
-          collect.stDelivery == null ? this.ORDER_STATUS_SENT : collect.stDelivery,
+          collect.stDelivery == null ? this.COLLECT_STATUS_SENT : collect.stDelivery,
           collect.daCollection,
           collect.daRate,
           collect.naResponsible,
@@ -3836,11 +3836,12 @@ export class CollectionService {
           st: 0,
           isSave: true,
           isAnticipoPrepaid: false,
-          idDifferenceCode: res.rows.item(i).id_difference_code,
-          coDifferenceCode: res.rows.item(i).co_difference_code
+          idDifferenceCode: this.enableDifferenceCodes ? res.rows.item(i).id_difference_code : 0,
+          coDifferenceCode: this.enableDifferenceCodes ? res.rows.item(i).co_difference_code : "",
         })
       }
       return collectionPayments;
+
     }).catch(e => {
       let collectionPayments: CollectionPayment[] = [];
       console.log(e);
@@ -3877,7 +3878,7 @@ export class CollectionService {
         respCollect.idEnterprise = res.rows.item(i).id_enterprise;
         respCollect.coEnterprise = res.rows.item(i).co_enterprise;
         respCollect.stCollection = res.rows.item(i).st_collection;
-        respCollect.stDelivery = res.rows.item(i).st_delivery == null ? this.ORDER_STATUS_SENT : res.rows.item(i).st_delivery;
+        respCollect.stDelivery = res.rows.item(i).st_delivery == null ? this.COLLECT_STATUS_SENT : res.rows.item(i).st_delivery;
         respCollect.isEdit = 0;
         respCollect.isEditTotal = 0;
         respCollect.isSave = 1;

@@ -8,7 +8,7 @@ import { EnterpriseService } from 'src/app/services/enterprise/enterprise.servic
 import { GeolocationService } from 'src/app/services/geolocation/geolocation.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
-import { ORDER_STATUS_SAVED, ORDER_STATUS_SENT, ORDER_STATUS_TO_SEND, ORDER_STATUS_NEW } from 'src/app/utils/appConstants';
+import { COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW } from 'src/app/utils/appConstants';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 
 @Component({
@@ -44,10 +44,10 @@ export class CobrosListComponent implements OnInit {
   private currentOffset = 0; // cuántos items ya mostramos
   public hasMore = true;
 
-  public ORDER_STATUS_SAVED = ORDER_STATUS_SAVED;
-  public ORDER_STATUS_SENT = ORDER_STATUS_SENT;
-  public ORDER_STATUS_TO_SEND = ORDER_STATUS_TO_SEND;
-  public ORDER_STATUS_NEW = ORDER_STATUS_NEW;
+  public COLLECT_STATUS_SAVED = COLLECT_STATUS_SAVED;
+  public COLLECT_STATUS_SENT = COLLECT_STATUS_SENT;
+  public COLLECT_STATUS_TO_SEND = COLLECT_STATUS_TO_SEND;
+  public COLLECT_STATUS_NEW = COLLECT_STATUS_NEW;
 
 
   public buttonsDelete = [
@@ -231,7 +231,7 @@ export class CobrosListComponent implements OnInit {
         this.collectService.getCollectionDetails(this.synchronizationServices.getDatabase(), coCollection).then(collectionDetails => {
           this.collectService.collection.collectionDetails = collectionDetails;
           this.collectService.getCollectionPayments(this.synchronizationServices.getDatabase(), coCollection).then(collectionPayment => {
-            if (this.collectService.collection.stDelivery == this.ORDER_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.ORDER_STATUS_SENT) {
+            if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT) {
               this.collectService.hideDocuments = true;
               this.collectService.hidePayments = true;
             } else if (this.collectService.collection.stDelivery == 6) {
@@ -311,9 +311,9 @@ export class CobrosListComponent implements OnInit {
 
   getStatus(status: number, naStatus: any): string {
     switch (status) {
-      case ORDER_STATUS_SAVED: return this.collectService.collectionTags.get("COB_STATUS_SAVED")!;
-      case ORDER_STATUS_TO_SEND: return this.collectService.collectionTags.get("COB_STATUS_TO_SEND")!;
-      case ORDER_STATUS_SENT:
+      case COLLECT_STATUS_SAVED: return this.collectService.collectionTags.get("COB_STATUS_SAVED")!;
+      case COLLECT_STATUS_TO_SEND: return this.collectService.collectionTags.get("COB_STATUS_TO_SEND")!;
+      case COLLECT_STATUS_SENT:
         return naStatus == null ? this.collectService.collectionTags.get("COB_STATUS_SENT")! : naStatus;
       case 6:
         // naStatus puede ser string o un objeto => normalizar a string

@@ -18,10 +18,10 @@ export const DEPOSITO_STATUS_SENT = 3;
 
 //Valores de status de collection
 
-export const ORDER_STATUS_NEW = 0
-export const ORDER_STATUS_SAVED = 1;
-export const ORDER_STATUS_TO_SEND = 2;
-export const ORDER_STATUS_SENT = 3;
+export const COLLECT_STATUS_NEW = 0
+export const COLLECT_STATUS_SAVED = 1;
+export const COLLECT_STATUS_TO_SEND = 2;
+export const COLLECT_STATUS_SENT = 3;
 
 //FIN VALORES collection
 

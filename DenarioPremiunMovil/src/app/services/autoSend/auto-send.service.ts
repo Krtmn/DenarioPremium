@@ -11,7 +11,7 @@ import { ServicesService } from '../services.service';
 import { MessageService } from '../messageService/message.service';
 import { Response } from 'src/app/modelos/response';
 import { Visit } from 'src/app/modelos/tables/visit';
-import { DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED, CLIENT_POTENTIAL_STATUS_SENT, ORDER_STATUS_NEW, ORDER_STATUS_SAVED, ORDER_STATUS_SENT, ORDER_STATUS_TO_SEND } from 'src/app/utils/appConstants'
+import { DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED, CLIENT_POTENTIAL_STATUS_SENT, COLLECT_STATUS_NEW, COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND } from 'src/app/utils/appConstants'
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { UserAddresClients } from 'src/app/modelos/tables/userAddresClients';
 import { ClientLocationService } from '../clientes/locationClient/client-location.service';

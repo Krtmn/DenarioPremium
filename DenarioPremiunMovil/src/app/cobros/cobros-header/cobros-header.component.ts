@@ -7,7 +7,7 @@ import { Collection } from 'src/app/modelos/tables/collection';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
-import { ORDER_STATUS_SAVED, ORDER_STATUS_SENT, ORDER_STATUS_TO_SEND, ORDER_STATUS_NEW, DELIVERY_STATUS_SENT } from 'src/app/utils/appConstants';
+import { COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW, DELIVERY_STATUS_SENT } from 'src/app/utils/appConstants';
 
 
 @Component({
@@ -45,10 +45,10 @@ export class CobrosHeaderComponent implements OnInit {
   public subscriptionAttachmentChanged: any;
   public subscriptionAttachmentWeightExceeded: any;
 
-  public ORDER_STATUS_SAVED = ORDER_STATUS_SAVED;
-  public ORDER_STATUS_SENT = ORDER_STATUS_SENT;
-  public ORDER_STATUS_TO_SEND = ORDER_STATUS_TO_SEND;
-  public ORDER_STATUS_NEW = ORDER_STATUS_NEW;
+  public COLLECT_STATUS_SAVED = COLLECT_STATUS_SAVED;
+  public COLLECT_STATUS_SENT = COLLECT_STATUS_SENT;
+  public COLLECT_STATUS_TO_SEND = COLLECT_STATUS_TO_SEND;
+  public COLLECT_STATUS_NEW = COLLECT_STATUS_NEW;
 
   public alertButtons = [
     /*  {
@@ -209,7 +209,7 @@ export class CobrosHeaderComponent implements OnInit {
       this.collectService.collectionIsSave = false;
       this.collectService.cobroListComponent = false;
       this.collectService.cobrosComponent = true;
-    } else if (!this.collectService.collectionIsSave && this.collectService.collectValidTabs && this.collectService.collection.stDelivery != ORDER_STATUS_TO_SEND && this.collectService.collection.stDelivery != ORDER_STATUS_SENT && this.collectService.collection.stDelivery != 6) {
+    } else if (!this.collectService.collectionIsSave && this.collectService.collectValidTabs && this.collectService.collection.stDelivery != COLLECT_STATUS_TO_SEND && this.collectService.collection.stDelivery != COLLECT_STATUS_SENT && this.collectService.collection.stDelivery != 6) {
       this.collectService.saveOrExitOpen = true;
     } else {
       this.collectService.collectValid = false;

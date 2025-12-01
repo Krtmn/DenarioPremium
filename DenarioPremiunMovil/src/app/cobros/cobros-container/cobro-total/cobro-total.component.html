@@ -400,7 +400,7 @@
 
 <!-- RETENCION -->
 <div *ngIf="this.collectService.coTypeModule == '2'">
-    <ion-button *ngIf="this.collectService.collection.stDelivery == this.ORDER_STATUS_SENT && this.collectService.userCanAddRetention"
+    <ion-button *ngIf="this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT && this.collectService.userCanAddRetention"
         (click)="addRetencion()" size="small" fill="outline" expand="block">
         {{this.collectService.collectionTags.get('COB_ADD_RETENTION')}}
     </ion-button>
@@ -445,7 +445,7 @@
                         retentionDetails.nuAmountRetention2)}}
                     </ion-item>
 
-                    <ion-item *ngIf="this.collectService.collection.stDelivery == this.ORDER_STATUS_SENT">
+                    <ion-item *ngIf="this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT">
                         <ion-button size="small" color="danger" expand="block" (click)="deleteRetention(ret)">
                             <!-- {{this.collectService.collectionTags.get('COB_BOTON_ELIMINAR')}} -->
                             <ion-icon slot="icon-only" name="trash"></ion-icon>

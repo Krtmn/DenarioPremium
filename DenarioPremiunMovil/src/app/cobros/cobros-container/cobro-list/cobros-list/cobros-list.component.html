@@ -45,7 +45,7 @@
                                     {{getCoTypeName(collect.co_type)}}
                                 </p>
                             </ion-label>
-                            <ion-button *ngIf="collect.st_delivery === this.ORDER_STATUS_SAVED"
+                            <ion-button *ngIf="collect.st_delivery === this.COLLECT_STATUS_SAVED"
                                 (click)="showAlertDelete(collect, getOriginalIndex(collect))" color="danger">
                                 <ion-icon slot="icon-only" name="trash"> </ion-icon>
                             </ion-button>

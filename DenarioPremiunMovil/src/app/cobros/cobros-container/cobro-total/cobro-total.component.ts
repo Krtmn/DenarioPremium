@@ -6,7 +6,7 @@ import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { DateServiceService } from 'src/app/services/dates/date-service.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
-import { ORDER_STATUS_SAVED, ORDER_STATUS_SENT, ORDER_STATUS_TO_SEND, ORDER_STATUS_NEW } from 'src/app/utils/appConstants';
+import { COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW } from 'src/app/utils/appConstants';
 
 
 @Component({
@@ -25,10 +25,10 @@ export class CobroTotalComponent implements OnInit {
   public currencyService = inject(CurrencyService)
   public dateServ = inject(DateServiceService);
   public synchronizationServices = inject(SynchronizationDBService);
-  public ORDER_STATUS_SAVED = ORDER_STATUS_SAVED;
-  public ORDER_STATUS_SENT = ORDER_STATUS_SENT;
-  public ORDER_STATUS_TO_SEND = ORDER_STATUS_TO_SEND;
-  public ORDER_STATUS_NEW = ORDER_STATUS_NEW;
+  public COLLECT_STATUS_SAVED = COLLECT_STATUS_SAVED;
+  public COLLECT_STATUS_SENT = COLLECT_STATUS_SENT;
+  public COLLECT_STATUS_TO_SEND = COLLECT_STATUS_TO_SEND;
+  public COLLECT_STATUS_NEW = COLLECT_STATUS_NEW;
 
   public disabledButton: Boolean = true;
 

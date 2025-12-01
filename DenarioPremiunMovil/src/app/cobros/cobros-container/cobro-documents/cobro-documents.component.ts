@@ -12,7 +12,7 @@ import { PagoTransferencia } from 'src/app/modelos/pago-transferencia';
 import { PagoOtros } from 'src/app/modelos/pago-otros';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { BankAccount } from 'src/app/modelos/tables/bankAccount';
-import { ORDER_STATUS_SAVED, ORDER_STATUS_SENT, ORDER_STATUS_TO_SEND, ORDER_STATUS_NEW } from 'src/app/utils/appConstants';
+import { COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW } from 'src/app/utils/appConstants';
 
 
 @Component({
@@ -59,10 +59,10 @@ export class CobrosDocumentComponent implements OnInit {
   public saldoView: string = "";
   public saldoConversionView: string = "";
 
-  public ORDER_STATUS_SAVED = ORDER_STATUS_SAVED;
-  public ORDER_STATUS_SENT = ORDER_STATUS_SENT;
-  public ORDER_STATUS_TO_SEND = ORDER_STATUS_TO_SEND;
-  public ORDER_STATUS_NEW = ORDER_STATUS_NEW;
+  public COLLECT_STATUS_SAVED = COLLECT_STATUS_SAVED;
+  public COLLECT_STATUS_SENT = COLLECT_STATUS_SENT;
+  public COLLECT_STATUS_TO_SEND = COLLECT_STATUS_TO_SEND;
+  public COLLECT_STATUS_NEW = COLLECT_STATUS_NEW;
 
 
 
@@ -214,7 +214,7 @@ export class CobrosDocumentComponent implements OnInit {
     };
 
     if (!doc.isSave) {
-      if (this.collectService.collection.stDelivery == ORDER_STATUS_SAVED) {
+      if (this.collectService.collection.stDelivery == COLLECT_STATUS_SAVED) {
         const indexCollectionDetail = doc.positionCollecDetails;
         const detail = this.collectService.collection.collectionDetails?.[indexCollectionDetail];
         if (detail) {
@@ -289,7 +289,7 @@ export class CobrosDocumentComponent implements OnInit {
       let nuVaucherRetention = '';
 
       // Caso colección guardada (stCollection == 1)
-      if (cs.collection.stDelivery == ORDER_STATUS_SAVED) {
+      if (cs.collection.stDelivery == COLLECT_STATUS_SAVED) {
         const pos = doc.positionCollecDetails;
         const detail = cs.collection.collectionDetails?.[pos];
 
@@ -458,7 +458,7 @@ export class CobrosDocumentComponent implements OnInit {
         this.collectService.documentSaleOpen.daVoucher = daVoucherValue;
       }
 
-      if (this.collectService.collection.stDelivery == ORDER_STATUS_SAVED) {
+      if (this.collectService.collection.stDelivery == COLLECT_STATUS_SAVED) {
         //este cobro fue guardado, se debe colocar los datos del documento como fueron guardados(si es q hubo alguna modificacion)
         const detail = this.collectService.collection.collectionDetails.find(
           d => d.coDocument == this.collectService.documentSaleOpen.coDocument && d.isSave
@@ -955,7 +955,7 @@ export class CobrosDocumentComponent implements OnInit {
       this.collectService.amountPaid = 0;
       this.centsAmountPaid = Math.round((this.collectService.amountPaid ?? 0) * 100);
       this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
-      if (this.collectService.collection.stDelivery != ORDER_STATUS_SAVED)
+      if (this.collectService.collection.stDelivery != COLLECT_STATUS_SAVED)
         this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails]!.inPaymentPartial = true;
 
       this.disabledSaveButton = true;
@@ -969,7 +969,7 @@ export class CobrosDocumentComponent implements OnInit {
       return; // Early return, no más lógica abajo
     }
 
-    if (this.collectService.collection.stDelivery == ORDER_STATUS_SAVED) {
+    if (this.collectService.collection.stDelivery == COLLECT_STATUS_SAVED) {
       this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].inPaymentPartial = false;
       this.collectService.documentSalesBackup[this.collectService.indexDocumentSaleOpen].inPaymentPartial = false;
       this.collectService.documentSalesView[this.collectService.indexDocumentSaleOpen].inPaymentPartial = false;
@@ -1006,7 +1006,7 @@ export class CobrosDocumentComponent implements OnInit {
         this.centsAmountPaid = Math.round((this.collectService.documentSaleOpen.nuAmountPaid ?? 0) * 100);
         this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
 
-        if (this.collectService.collection.stDelivery != ORDER_STATUS_SAVED)
+        if (this.collectService.collection.stDelivery != COLLECT_STATUS_SAVED)
           this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails]!.inPaymentPartial = false;
 
         this.validate();
