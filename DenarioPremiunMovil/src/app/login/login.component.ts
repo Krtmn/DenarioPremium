@@ -64,7 +64,7 @@ export class LoginComponent implements OnInit {
   async ngOnInit() {
     /* App.getInfo().then(async (res) => { */
     // preferir la versión real del paquete si está disponible, si no usar fallback
-    this.versionApp = "6.3.143";
+    this.versionApp = "6.5.3";
 
     const storedVersionApp = localStorage.getItem("versionApp");
     // primer arranque: guardamos la versionApp actual
@@ -79,8 +79,13 @@ export class LoginComponent implements OnInit {
           createTables$.subscribe((createTablesRes) => {
             this.loginLogic.dropTables(createTablesRes).then((dropRes: any) => {
               // limpia y vuelve a dejar guardada la nueva versiónApp
+              let connected = localStorage.getItem("connected");
+              let connectionType = localStorage.getItem("connectionType");
               localStorage.clear();
               localStorage.setItem("versionApp", this.versionApp);
+              localStorage.setItem("connected", String(connected));
+              localStorage.setItem("connectionType", String(connectionType));
+              
               this.initLogin();
             }).catch(err => {
               console.error('dropTables error', err);
