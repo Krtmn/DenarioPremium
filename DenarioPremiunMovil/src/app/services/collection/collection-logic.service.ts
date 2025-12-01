@@ -1136,7 +1136,6 @@ export class CollectionService {
 
           if (hasPartialAmount) {
             this.onCollectionValidToSend(true);
-            return;
           } else {
             this.onCollectionValidToSend(false);
             return;
@@ -1155,7 +1154,6 @@ export class CollectionService {
         }
         if (sum > 0) {
           this.onCollectionValidToSend(true);
-          return;
         } else {
           this.onCollectionValidToSend(false);
           return;
