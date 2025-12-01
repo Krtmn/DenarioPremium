@@ -82,6 +82,7 @@ export class CobrosHeaderComponent implements OnInit {
           this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
           this.alertMessageOpen = true;
           this.collectService.collection.stDelivery = 1;
+          this.collectService.collection.stCollection = COLLECT_STATUS_SAVED;
           this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, true).then(async response => {
             await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
             console.log(response);
@@ -314,6 +315,7 @@ export class CobrosHeaderComponent implements OnInit {
       if (sendOrSave) {
         //envio
         this.collectService.collection.stDelivery = 2;
+        this.collectService.collection.stCollection = COLLECT_STATUS_TO_SEND;
         this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(async response => {
           await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
           console.log(response);
@@ -341,6 +343,7 @@ export class CobrosHeaderComponent implements OnInit {
       } else {
         //salvo
         this.collectService.collection.stDelivery = 1;
+        this.collectService.collection.stCollection = COLLECT_STATUS_SAVED;
         this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(async response => {
           await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
           console.log(response);
