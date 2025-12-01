@@ -51,7 +51,6 @@ export class LoginComponent implements OnInit {
   public password!: string;
   public messageAlert!: MessageAlert;
   public versionApp!: string;
-  public version!: number;
   public subs: any;
   public subsChangeUser: any;
   public fechaCreacion: string = "2000-01-01 00:00:00";
@@ -64,24 +63,38 @@ export class LoginComponent implements OnInit {
 
   async ngOnInit() {
     App.getInfo().then(async (res) => {
-      //this.versionApp = res.version;
-      this.versionApp = "6.2.3"; //ESTE ES EL CAMPO QUE SE MUESTRA EN EL LOGIN DE LA APP
-      this.version = 8;  //ESTE ES EL NUMERO DE VERSION QUE SE USA PARA SABER SI HAY QUE ACTUALIZAR LA BD
-      //COLOCA EL PRIMER NUMERO DE VERSIONAPP EN VERSION PARA PODER SABER SI ES MAS NUEVA LA APP
-      console.log(res);
-      if (localStorage.getItem("versionApp") == null)
-        localStorage.setItem("versionApp", this.version.toString());
-      else {
-        if (Number(this.version) > Number(localStorage.getItem("versionApp"))) {
-          (await this.synchronization.getCreateTables()).subscribe((res) => {
-            this.loginLogic.dropTables(res).then((res: any) => {
-              localStorage.clear();
-              localStorage.setItem("versionApp", this.version.toString());
-            })
-          })
+      // preferir la versión real del paquete si está disponible, si no usar fallback
+      this.versionApp = (res && res.version) ? res.version : "6.3.10";
+
+      console.log('App info', res, 'versionApp:', this.versionApp);
+
+      const storedVersionApp = localStorage.getItem("versionApp");
+
+      // primer arranque: guardamos la versionApp actual
+      if (!storedVersionApp) {
+        localStorage.setItem("versionApp", this.versionApp);
+      } else {
+        // si la semver actual es mayor que la guardada --> ejecutar limpieza/sincronización
+        if (this.compareSemVer(this.versionApp, storedVersionApp) > 0) {
+          try {
+            const createTables$ = await this.synchronization.getCreateTables();
+            createTables$.subscribe((createTablesRes) => {
+              this.loginLogic.dropTables(createTablesRes).then((dropRes: any) => {
+                // limpia y vuelve a dejar guardada la nueva versiónApp
+                localStorage.clear();
+                localStorage.setItem("versionApp", this.versionApp);
+              }).catch(err => {
+                console.error('dropTables error', err);
+              });
+            }, (err: any) => {
+              console.error('getCreateTables subscribe error', err);
+            });
+          } catch (err) {
+            console.error('Error al obtener createTables para sincronizar', err);
+          }
         }
       }
-    })
+    });
 
     this.loginDetail = {} as Login;
     if (localStorage.getItem("recuerdame") == "true") {
@@ -294,6 +307,23 @@ export class LoginComponent implements OnInit {
         localStorage.removeItem("recuerdame");
       }
     }
+  }
+
+  // Comparador semver: devuelve 1 si a>b, -1 si a<b, 0 si iguales
+  private compareSemVer(a?: string, b?: string): number {
+    if (!a && !b) return 0;
+    if (!a) return -1;
+    if (!b) return 1;
+    const pa = a.split('.').map(x => parseInt(x, 10) || 0);
+    const pb = b.split('.').map(x => parseInt(x, 10) || 0);
+    const len = Math.max(pa.length, pb.length);
+    for (let i = 0; i < len; i++) {
+      const na = pa[i] ?? 0;
+      const nb = pb[i] ?? 0;
+      if (na > nb) return 1;
+      if (na < nb) return -1;
+    }
+    return 0;
   }
 
 }
