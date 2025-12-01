@@ -23,10 +23,10 @@ import { Keyboard } from '@capacitor/keyboard';
 
 
 @Component({
-    selector: 'app-login',
-    templateUrl: './login.component.html',
-    styleUrls: ['./login.component.scss'],
-    standalone: false
+  selector: 'app-login',
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.scss'],
+  standalone: false
 })
 export class LoginComponent implements OnInit {
   public loginLogic = inject(LoginLogicService);
@@ -66,8 +66,8 @@ export class LoginComponent implements OnInit {
     App.getInfo().then(async (res) => {
       //this.versionApp = res.version;
       this.versionApp = "6.2.3"; //ESTE ES EL CAMPO QUE SE MUESTRA EN EL LOGIN DE LA APP
+      this.version = 8;  //ESTE ES EL NUMERO DE VERSION QUE SE USA PARA SABER SI HAY QUE ACTUALIZAR LA BD
       //COLOCA EL PRIMER NUMERO DE VERSIONAPP EN VERSION PARA PODER SABER SI ES MAS NUEVA LA APP
-      this.version = 8;
       console.log(res);
       if (localStorage.getItem("versionApp") == null)
         localStorage.setItem("versionApp", this.version.toString());
@@ -217,7 +217,7 @@ export class LoginComponent implements OnInit {
 
             this.user = result;
             localStorage.setItem("user", JSON.stringify(this.user));
-            this.synchronization.initDb(this.user, conexion);            
+            this.synchronization.initDb(this.user, conexion);
 
 
           } else if (result.errorCode == '104') {
