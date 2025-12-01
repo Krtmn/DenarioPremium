@@ -97,6 +97,7 @@ export class CollectionService {
   public collectionApproved: TransactionStatuses[] = [];
   public collectionSended: TransactionStatuses[] = [];
   public differenceCode: DifferenceCode[] = [];
+  public differenceCodeSelected: DifferenceCode[] = [];
 
   public messageAlert!: MessageAlert;
   public anticipoAutomatico!: any;
@@ -1107,8 +1108,6 @@ export class CollectionService {
           this.mensaje = this.collectionTags.get('COB_MSG_AUTOMATED_PREPAID')! + " " + this.currencyService.formatNumber(this.collection.nuDifference);
           this.alertMessageOpen = true;
         }
-
-
         this.onCollectionValidToSend(true);
       } else if (this.disabledSelectCollectMethodDisabled && this.collection.collectionDetails.length > 0) {
         this.disabledSelectCollectMethodDisabled = false;
@@ -1121,7 +1120,7 @@ export class CollectionService {
     return Promise.resolve(true);
   }
 
-  validateToSend() {
+  async validateToSend() {
     this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagar));
     this.montoTotalPagado = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado));
 
@@ -1137,6 +1136,7 @@ export class CollectionService {
 
           if (hasPartialAmount) {
             this.onCollectionValidToSend(true);
+            return;
           } else {
             this.onCollectionValidToSend(false);
             return;
@@ -1155,12 +1155,15 @@ export class CollectionService {
         }
         if (sum > 0) {
           this.onCollectionValidToSend(true);
+          return;
         } else {
           this.onCollectionValidToSend(false);
           return;
         }
       }
     } else {
+
+      await this.validateReferencePayment();
       //DEBO VALIDAR SI HAY ALGUN PAGO PARCIAL, EL MONTO DEBE PAGADO DEBE SER IGUAL AL MONTO A PAGAR
       let onlyPaymentPartial = 0;
       // Seguridad: normalizar array
@@ -1199,8 +1202,6 @@ export class CollectionService {
                this.messageService.alertModal(this.messageAlert);*/
               this.onCollectionValidToSend(false);
               return;
-            } else {
-              this.onCollectionValidToSend(true);
             }
           }
         }
@@ -1260,7 +1261,6 @@ export class CollectionService {
           }
         }
       }
-      this.validateReferencePayment();
     }
   }
 
@@ -1279,11 +1279,10 @@ export class CollectionService {
             return;
           }
         } else if (amount < 0) {
-          if (Math.abs(amount) < this.RangoToleranciaNegativa)
-            this.onCollectionValidToSend(true);
-          else {
+          if (Math.abs(amount) > this.RangoToleranciaNegativa)
             this.onCollectionValidToSend(false);
-            return;
+          else {
+            this.onCollectionValidToSend(true);
           }
         } else {
           this.onCollectionValidToSend(true);
@@ -1305,11 +1304,10 @@ export class CollectionService {
                 return;
               }
             } else if (amount < 0) {
-              if (Math.abs(amount) < this.RangoToleranciaNegativa)
-                this.onCollectionValidToSend(true);
-              else {
+              if (Math.abs(amount) > this.RangoToleranciaNegativa)
                 this.onCollectionValidToSend(false);
-                return;
+              else {
+                this.onCollectionValidToSend(true);
               }
             } else {
               this.onCollectionValidToSend(true);
@@ -1348,11 +1346,10 @@ export class CollectionService {
                 return;
               }
             } else if (amount < 0) {
-              if (Math.abs(amount) < this.RangoToleranciaNegativa)
-                this.onCollectionValidToSend(true);
-              else {
+              if (Math.abs(amount) > this.RangoToleranciaNegativa)
                 this.onCollectionValidToSend(false);
-                return;
+              else {
+                this.onCollectionValidToSend(true);
               }
             } else {
               this.onCollectionValidToSend(true);
@@ -1368,11 +1365,10 @@ export class CollectionService {
                 return;
               }
             } else if (amount < 0) {
-              if ((amount) < this.currencyService.toLocalCurrency(this.RangoToleranciaNegativa))
-                this.onCollectionValidToSend(true);
-              else {
+              if ((Math.abs(amount)) > this.currencyService.toLocalCurrency(this.RangoToleranciaNegativa))
                 this.onCollectionValidToSend(false);
-                return;
+              else {
+                this.onCollectionValidToSend(true);
               }
             } else {
               this.onCollectionValidToSend(true);
@@ -1421,7 +1417,7 @@ export class CollectionService {
     }
   }
 
-  validateReferencePayment() {
+  async validateReferencePayment() {
     // Si no hay colección o no hay pagos, no está válido para enviar
     if (!this.collection || !this.collection.collectionPayments || this.collection.collectionPayments.length <= 0) {
       this.onCollectionValidToSend(false);
@@ -1464,10 +1460,10 @@ export class CollectionService {
     if (existePagoSinReferencia) {
       this.onCollectionValidToSend(false);
       return;
+    } else {
+      Promise.resolve(true);
     }
 
-    // Todos los pagos tienen monto y, si corresponde, referencia -> válido
-    this.onCollectionValidToSend(true);
   }
 
   cleanString(str: string): string {
@@ -2023,6 +2019,20 @@ export class CollectionService {
     }
   }
 
+  syncPagoOtrosDifferenceCodes() {
+    if (!Array.isArray(this.pagoOtros)) return;
+    const diffList = this.differenceCode || [];
+    for (const pago of this.pagoOtros) {
+      const idx = pago?.posCollectionPayment;
+      if (idx == null) continue;
+      const payment = this.collection.collectionPayments?.[idx];
+      if (!payment) continue;
+      const found = diffList.find(dc => dc.idDifferenceCode === payment.idDifferenceCode);
+      // As pago.differenceCode expects an object with the shape { idDifferenceCode: number | null; coDifferenceCode: string | null; }
+      // provide a default object when no matching difference code is found to avoid assigning null.
+      pago.differenceCode = found ?? { idDifferenceCode: null, coDifferenceCode: null };
+    }
+  }
 
   ///////////////////QUERYS////////////////
 
@@ -3404,8 +3414,10 @@ export class CollectionService {
       "nu_collection_payment, " +
       "nu_amount_partial, " +
       "nu_amount_partial_conversion, " +
-      "co_type" +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "co_type," +
+      "id_difference_code," +
+      "co_difference_code" +
+      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     for (var i = 0; i < collectionPayment.length; i++) {
       statementsCollectionPayment.push([insertStatement, [
@@ -3423,7 +3435,9 @@ export class CollectionService {
         collectionPayment[i].nuCollectionPayment,
         collectionPayment[i].nuAmountPartial,
         collectionPayment[i].nuAmountPartialConversion,
-        collectionPayment[i].coType
+        collectionPayment[i].coType,
+        collectionPayment[i].idDifferenceCode,
+        collectionPayment[i].coDifferenceCode
       ]]);
     }
 
@@ -3775,7 +3789,7 @@ export class CollectionService {
           nuAmountIgtfConversion: res.rows.item(i).nu_amount_igtf_conversion,
           st: res.rows.item(i).st,
           isSave: true,
-          daVoucher: res.rows.item(i).da_voucher == "" ? null : res.rows.item(i).da_voucher
+          daVoucher: res.rows.item(i).da_voucher == "" ? null : res.rows.item(i).da_voucher,
         })
       }
       return collectionDetails;

@@ -189,7 +189,12 @@ export class CobrosGeneralComponent implements OnInit {
       });
 
       if (this.collectService.enableDifferenceCodes) {
-        this.collectService.getDifferenceCodes(this.synchronizationServices.getDatabase());
+        this.collectService.getDifferenceCodes(this.synchronizationServices.getDatabase())
+          .then(() => {
+            // una vez cargados los difference codes, vincula los pagos 'otros'
+            this.collectService.syncPagoOtrosDifferenceCodes();
+          })
+          .catch(err => console.error('getDifferenceCodes error', err));
       }
 
       this.collectService.changeEnterprise = false;
@@ -207,9 +212,14 @@ export class CobrosGeneralComponent implements OnInit {
     this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", this.viewOnly, COLOR_VERDE);
     this.collectService.loadPaymentMethods();
     this.collectService.initLogicService();
-    if (this.collectService.enableDifferenceCodes) {
 
-      this.collectService.getDifferenceCodes(this.synchronizationServices.getDatabase());
+    if (this.collectService.enableDifferenceCodes) {
+      this.collectService.getDifferenceCodes(this.synchronizationServices.getDatabase())
+        .then(() => {
+          // una vez cargados los difference codes, vincula los pagos 'otros'
+          this.collectService.syncPagoOtrosDifferenceCodes();
+        })
+        .catch(err => console.error('getDifferenceCodes error', err));
     }
 
   }
@@ -409,7 +419,10 @@ export class CobrosGeneralComponent implements OnInit {
           break;
         }
         case 'ot': {
-          const newPagoOtros: PagoOtros = {
+          // intenta encontrar la instancia de DifferenceCode ya cargada
+          const selectedDiff = (this.collectService.differenceCode || []).find(dc => dc.idDifferenceCode === payment.idDifferenceCode) ?? null;
+
+          const newPagoOtros: any = {
             nombre: payment.nuPaymentDoc,
             monto: payment.nuAmountPartial,
             montoConversion: payment.nuAmountPartialConversion,
@@ -419,10 +432,8 @@ export class CobrosGeneralComponent implements OnInit {
             disabled: false,
             fecha: payment.daValue!,
             showDateModal: false,
-            differenceCode: {
-              idDifferenceCode: null,
-              coDifferenceCode: null
-            }
+            // usa la instancia encontrada (o null)
+            differenceCode: selectedDiff
           };
           this.collectService.pagoOtros.push(newPagoOtros);
           break;

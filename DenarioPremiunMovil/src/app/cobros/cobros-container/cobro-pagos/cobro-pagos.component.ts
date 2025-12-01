@@ -177,7 +177,6 @@ export class CobroPagosComponent implements OnInit {
       }
     }
 
-    // --- Paso 2 corregido: obtener el cp (collectionPayment) recién añadido y asignar uid/inicializar mapas ---
     const cpIndex = this.collectService.collection.collectionPayments.length - 1;
     const cp = this.collectService.collection.collectionPayments[cpIndex] as any;
 
