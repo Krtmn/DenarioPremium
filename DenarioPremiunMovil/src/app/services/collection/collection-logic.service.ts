@@ -1368,7 +1368,7 @@ export class CollectionService {
                 return;
               }
             } else if (amount < 0) {
-              if ((amount) < this.currencyService.toLocalCurrency(this.RangoToleranciaNegativa))
+              if ((Math.abs(amount)) < this.currencyService.toLocalCurrency(this.RangoToleranciaNegativa))
                 this.onCollectionValidToSend(true);
               else {
                 this.onCollectionValidToSend(false);
