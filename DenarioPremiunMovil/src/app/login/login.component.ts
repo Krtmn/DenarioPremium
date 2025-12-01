@@ -62,39 +62,35 @@ export class LoginComponent implements OnInit {
   public showFooter: boolean = true; // <-- NUEVA PROPIEDAD
 
   async ngOnInit() {
-    App.getInfo().then(async (res) => {
-      // preferir la versión real del paquete si está disponible, si no usar fallback
-      this.versionApp = (res && res.version) ? res.version : "6.3.10";
-
-      console.log('App info', res, 'versionApp:', this.versionApp);
-
-      const storedVersionApp = localStorage.getItem("versionApp");
-
-      // primer arranque: guardamos la versionApp actual
-      if (!storedVersionApp) {
-        localStorage.setItem("versionApp", this.versionApp);
-      } else {
-        // si la semver actual es mayor que la guardada --> ejecutar limpieza/sincronización
-        if (this.compareSemVer(this.versionApp, storedVersionApp) > 0) {
-          try {
-            const createTables$ = await this.synchronization.getCreateTables();
-            createTables$.subscribe((createTablesRes) => {
-              this.loginLogic.dropTables(createTablesRes).then((dropRes: any) => {
-                // limpia y vuelve a dejar guardada la nueva versiónApp
-                localStorage.clear();
-                localStorage.setItem("versionApp", this.versionApp);
-              }).catch(err => {
-                console.error('dropTables error', err);
-              });
-            }, (err: any) => {
-              console.error('getCreateTables subscribe error', err);
+    /* App.getInfo().then(async (res) => { */
+    // preferir la versión real del paquete si está disponible, si no usar fallback
+    this.versionApp = "6.3.13";
+    
+    const storedVersionApp = localStorage.getItem("versionApp");
+    // primer arranque: guardamos la versionApp actual
+    if (!storedVersionApp) {
+      localStorage.setItem("versionApp", this.versionApp);
+    } else {
+      // si la semver actual es mayor que la guardada --> ejecutar limpieza/sincronización
+      if (this.compareSemVer(this.versionApp, storedVersionApp) > 0) {
+        try {
+          const createTables$ = await this.synchronization.getCreateTables();
+          createTables$.subscribe((createTablesRes) => {
+            this.loginLogic.dropTables(createTablesRes).then((dropRes: any) => {
+              // limpia y vuelve a dejar guardada la nueva versiónApp
+              localStorage.clear();
+              localStorage.setItem("versionApp", this.versionApp);
+            }).catch(err => {
+              console.error('dropTables error', err);
             });
-          } catch (err) {
-            console.error('Error al obtener createTables para sincronizar', err);
-          }
+          }, (err: any) => {
+            console.error('getCreateTables subscribe error', err);
+          });
+        } catch (err) {
+          console.error('Error al obtener createTables para sincronizar', err);
         }
       }
-    });
+    }
 
     this.loginDetail = {} as Login;
     if (localStorage.getItem("recuerdame") == "true") {
