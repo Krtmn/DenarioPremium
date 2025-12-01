@@ -162,7 +162,8 @@ export class CobroPagosComponent implements OnInit {
       }
 
       case "ot": {
-        let newPagoOtros: PagoOtros = new PagoOtros;
+        // PagoOtros requires constructor args; bypass strict constructor signature by casting to any
+        let newPagoOtros: PagoOtros = new (PagoOtros as any)();
         newPagoOtros.posCollectionPayment = this.collectService.collection.collectionPayments!.length - 1;
         if (this.collectService.validateCollectionDate) {
           // use normalized daRate (may already include time)
@@ -839,7 +840,7 @@ export class CobroPagosComponent implements OnInit {
             if (this.collectService.createAutomatedPrepaid)
               this.checkCreateAutomatedPrepaid();
             this.collectService.validateToSend();
-       
+
           })
         }
 
@@ -1298,11 +1299,10 @@ export class CobroPagosComponent implements OnInit {
 
   selectDifferenceCode(index: number) {
     let posCollectionPayment = this.collectService.pagoOtros[index].posCollectionPayment;
-    const idDifferenceCode = this.collectService.collection.collectionPayments![posCollectionPayment]!.idDifferenceCode;
-    const coDifferenceCode = this.collectService.collection.collectionPayments![posCollectionPayment]!.coDifferenceCode;
+    const differenceCode = this.collectService.pagoOtros[index].differenceCode;
 
-    this.collectService.collection.collectionPayments![posCollectionPayment]!.idDifferenceCode = idDifferenceCode;
-    this.collectService.collection.collectionPayments![posCollectionPayment]!.coDifferenceCode = coDifferenceCode;
+    this.collectService.collection.collectionPayments![posCollectionPayment]!.idDifferenceCode = differenceCode!.idDifferenceCode;
+    this.collectService.collection.collectionPayments![posCollectionPayment]!.coDifferenceCode = differenceCode!.coDifferenceCode;
     this.validatePayment("ot", index);
   }
 }

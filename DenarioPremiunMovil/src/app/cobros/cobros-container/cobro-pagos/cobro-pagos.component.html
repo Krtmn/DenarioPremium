@@ -510,9 +510,8 @@
                         <ion-col size="6" size-sm="12" size-xs="12" *ngIf="this.collectService.enableDifferenceCodes">
                             <div class="listado-enterprise-selector ion-text-center">
                                 <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
-                                    class="ion-text-center always-flip" [(ngModel)]="otros.idDifferenceCode"
-                                    (ionChange)="selectDifferenceCode(ot)" interface="alert"
-                                    labelPlacement="stacked">
+                                    class="ion-text-center always-flip" [(ngModel)]="otros.differenceCode"
+                                    (ionChange)="selectDifferenceCode(ot)" interface="alert" labelPlacement="stacked">
                                     <ion-select-option
                                         *ngFor="let differenceCode of this.collectService.differenceCode; trackBy: trackByIndex"
                                         [value]="differenceCode">{{ differenceCode.coDifferenceCode }} -

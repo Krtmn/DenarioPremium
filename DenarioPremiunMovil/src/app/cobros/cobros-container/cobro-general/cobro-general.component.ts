@@ -208,7 +208,7 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.loadPaymentMethods();
     this.collectService.initLogicService();
     if (this.collectService.enableDifferenceCodes) {
-     
+
       this.collectService.getDifferenceCodes(this.synchronizationServices.getDatabase());
     }
 
@@ -417,10 +417,12 @@ export class CobrosGeneralComponent implements OnInit {
             type: "ot",
             anticipoPrepaid: payment.isAnticipoPrepaid,
             disabled: false,
-            idDifferenceCode: 0,
-            coDifferenceCode: "",
             fecha: payment.daValue!,
-            'showDateModal': false,
+            showDateModal: false,
+            differenceCode: {
+              idDifferenceCode: null,
+              coDifferenceCode: null
+            }
           };
           this.collectService.pagoOtros.push(newPagoOtros);
           break;

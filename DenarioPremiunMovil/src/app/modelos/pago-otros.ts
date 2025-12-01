@@ -8,11 +8,9 @@ export class PagoOtros {
             obj['type'],
             obj['anticipoPrepaid'],
             obj['disabled'],
-            // permite explícitamente 0 o null; si no existe, usamos null
-            obj.hasOwnProperty('idDifferenceCode') ? obj['idDifferenceCode'] : null,
-            obj['coDifferenceCode'],
             obj['fecha'],
-            obj['showDateModal']
+            obj['showDateModal'],
+            obj['differenceCode']
         );
     }
 
@@ -24,9 +22,11 @@ export class PagoOtros {
         public type = "ot",
         public anticipoPrepaid: boolean = false,
         public disabled: boolean = true,
-        public idDifferenceCode: number | null = null,
-        public coDifferenceCode: string = "",
         public fecha: string = "",
         public showDateModal: boolean = false,
+        public differenceCode: {
+            idDifferenceCode: number | null,
+            coDifferenceCode: string | null;
+        }
     ) { }
 }
