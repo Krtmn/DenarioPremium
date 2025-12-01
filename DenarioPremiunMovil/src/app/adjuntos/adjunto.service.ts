@@ -52,7 +52,7 @@ export class AdjuntoService {
 
   constructor() { }
 
-setup(dbServ: SQLiteObject, tieneFirma: boolean, viewOnly: boolean, colorBoton: string) {
+  setup(dbServ: SQLiteObject, tieneFirma: boolean, viewOnly: boolean, colorBoton: string) {
     this.fotos = [];
     this.firma = "";
     this.file = null;
@@ -152,6 +152,14 @@ setup(dbServ: SQLiteObject, tieneFirma: boolean, viewOnly: boolean, colorBoton: 
 
     //borro todo y comienzo de 0
     var deleteStatement = "DELETE from transaction_images WHERE co_transaction = ?" +
+      "AND na_transaction = ?"
+    batch.push([deleteStatement, [coTransaction, naTransaction]]);
+    //borro todo y comienzo de 0
+    var deleteStatement = "DELETE from transaction_signatures WHERE co_transaction = ?" +
+      "AND na_transaction = ?"
+    batch.push([deleteStatement, [coTransaction, naTransaction]]);
+    //borro todo y comienzo de 0
+    var deleteStatement = "DELETE from transaction_files WHERE co_transaction = ?" +
       "AND na_transaction = ?"
     batch.push([deleteStatement, [coTransaction, naTransaction]]);
 
