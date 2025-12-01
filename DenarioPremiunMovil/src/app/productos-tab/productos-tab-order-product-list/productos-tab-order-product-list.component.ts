@@ -126,6 +126,11 @@ export class ProductosTabOrderProductListComponent implements OnInit {
           this.orderServ.userCanChangeWarehouse, this.orderServ.cliente.idClient, this.orderServ.listaSeleccionada.idList, this.page).then(() => {
             this.productList = this.productService.productList;
             this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
+            if(this.orderUtilList.length < 20){
+              //probablemente muchos productos fueron eliminados, agregamos mas. 
+              this.onIonInfinite(null);
+            }
+
           });
       }
     });
