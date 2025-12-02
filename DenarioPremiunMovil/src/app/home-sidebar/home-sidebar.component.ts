@@ -56,15 +56,16 @@ export class HomeSidebarComponent implements OnInit {
 
   setResult(ev: any) {
     console.log('Apretó:' + ev.detail.role);
-    if (ev.detail.role === 'confirm') {
-      this.alertMessageOpenSend = false;
-      localStorage.setItem("sincronizarHome", "true");
-      //this.synchronizationServices.createTables(JSON.parse(localStorage.getItem("user")!), true);
-      /* this.router.navigate(["synchronization"]); */
-      this.navController.navigateForward("synchronization/sincronizar")
+    // Cerrar el alert inmediatamente para que Ionic lo procese
+    this.alertMessageOpenSend = false;
 
-    } else {
-      this.alertMessageOpenSend = false;
+    if (ev.detail.role === 'confirm') {
+      localStorage.setItem("sincronizarHome", "true");
+      // Retrasamos la navegación un tick para permitir que Ionic termine
+      // de procesar el cierre del alert y evitar problemas de focus.
+      setTimeout(() => {
+        this.navController.navigateForward("synchronization/sincronizar");
+      }, 50);
     }
   }
 
