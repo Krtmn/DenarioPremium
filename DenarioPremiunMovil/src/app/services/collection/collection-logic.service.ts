@@ -1942,7 +1942,7 @@ export class CollectionService {
 
       // preparar consulta IN (...) para obtener todos los co_document de una sola vez
       const placeholders = coTransactions.map(() => '?').join(',');
-      const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders})`;
+      const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders}) AND in_payment_partial = 'false'`;
 
       const res = await db.executeSql(sql, coTransactions);
       for (let i = 0; i < res.rows.length; i++) {
@@ -1996,7 +1996,7 @@ export class CollectionService {
 
       // preparar consulta IN (...) para obtener todos los co_document de una sola vez
       const placeholders = coTransactions.map(() => '?').join(',');
-      const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders})`;
+      const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders}) AND in_payment_partial = 'false`;
 
       const res = await db.executeSql(sql, coTransactions);
       for (let i = 0; i < res.rows.length; i++) {
@@ -3125,7 +3125,7 @@ export class CollectionService {
 
   }
 
-  saveCollectionBatch(dbServ: SQLiteObject, collection: Collection[],) {
+  saveCollectionBatch(dbServ: SQLiteObject, collection: Collection[]) {
     // ...existing code...
 
     const insertCollectionSQL = `
@@ -3216,8 +3216,6 @@ export class CollectionService {
     co_type
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
-
-    // ...existing code...
 
     let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
 
@@ -3320,10 +3318,6 @@ export class CollectionService {
           ]);
         }
       }
-      /* if (this.coDocumentToUpdate.length > 0) {
-        // Actualizar los documentos en la base de datos
-        this.updateDocuments(dbServ, this.coDocumentToUpdate);
-      } */
     }
     return dbServ.sqlBatch(queries).then(() => {
       console.log('Batch insertado con éxito');
@@ -3331,6 +3325,35 @@ export class CollectionService {
 
       console.log('Error al insertar en batch:', error);
     });
+  }
+
+  deleteCollectionsBatch(dbServ: SQLiteObject, collection: Collection[]) {
+    const deleteCollectionsSQL = `DELETE FROM collections WHERE co_collection = ?`;
+    const deleteCollectionDetailsSQL = `DELETE FROM collection_details WHERE co_collection = ?`;
+    const deleteCollectionPaymentsSQL = `DELETE FROM collection_payments WHERE co_collection = ?`;
+
+    let queries: any[] = []
+    for (var co = 0; co < collection.length; co++) {
+      const collect = collection[co];
+      queries.push([deleteCollectionPaymentsSQL, [collect.coCollection]]);
+      for (var coDetail = 0; coDetail < collect.collectionDetails.length; coDetail++) {
+        const collectionDetail = collect.collectionDetails[coDetail];
+        queries.push([deleteCollectionDetailsSQL, [collect.coCollection]]);
+        for (var coDetailPayment = 0; coDetailPayment < collect.collectionPayments.length; coDetailPayment++) {
+          const collectionPayment = collect.collectionPayments[coDetailPayment];
+          queries.push([deleteCollectionPaymentsSQL, [collect.coCollection]]);
+        }
+      }
+    }
+
+    return dbServ.sqlBatch(queries).then(() => {
+      console.log('Batch delete con éxito');
+      return Promise.resolve(true);
+    }).catch(error => {
+      console.log('Error al insertar en batch:', error);
+      return Promise.resolve(false);
+    });
+
   }
 
   saveCollectionDetail(dbServ: SQLiteObject, collectionDetail: CollectionDetail[], coCollection: string) {

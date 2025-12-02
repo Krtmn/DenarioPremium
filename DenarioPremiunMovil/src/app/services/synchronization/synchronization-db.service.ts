@@ -182,8 +182,8 @@ export class SynchronizationDBService {
   }
 
   getDatabase() {
-  
-      return this.database;
+
+    return this.database;
   }
 
   async createTables(user: User, conexion: Boolean) {
@@ -1383,7 +1383,11 @@ export class SynchronizationDBService {
   }
   // En SynchronizationDBService
   insertCollectionBatch(arr: Collection[]) {
-    return this.collectionService.saveCollectionBatch(this.database, arr);
+    return this.collectionService.deleteCollectionsBatch(this.database, arr).then((r) => {
+      console.log("deleteCollectionsBatch completed before insertCollectionBatch");
+      return this.collectionService.saveCollectionBatch(this.database, arr);
+    })
+
   }
   insertReturnBatch(arr: Return[]) {
     return this.returnService.saveReturnBatch(this.database, arr);
