@@ -1845,8 +1845,34 @@ export class CollectionService {
       const list = Array.isArray(this.listTransactionStatusCollections) ? this.listTransactionStatusCollections : [];
       if (list.length === 0) return Promise.resolve(false);
 
-      // Extraer ids únicos y sanearlos
-      const ids = Array.from(new Set(list
+      // --- DEPURACIÓN: mantener solo el registro más reciente por (idTransaction, coTransaction)
+      const dedupMap = new Map<string, TransactionStatuses>();
+      for (const ts of list) {
+        if (!ts) continue;
+        const idTrans = ts.idTransaction ?? (ts as any).id_transaction ?? (ts as any).id;
+        const coTrans = (ts.coTransaction ?? (ts as any).co_transaction ?? (ts as any).coCollection ?? (ts as any).co_collection ?? '').toString();
+        const key = `${idTrans ?? ''}#${coTrans}`;
+
+        // Normalizar y parsear fecha (si no existe, tratamos como mínima)
+        const curDate = ts.daTransactionStatuses ? new Date(ts.daTransactionStatuses) : null;
+
+        const existing = dedupMap.get(key);
+        if (!existing) {
+          dedupMap.set(key, ts);
+        } else {
+          const existingDate = existing.daTransactionStatuses ? new Date(existing.daTransactionStatuses) : null;
+          if (curDate && (!existingDate || curDate > existingDate)) {
+            dedupMap.set(key, ts);
+          }
+        }
+      }
+
+      const dedupedList = Array.from(dedupMap.values());
+      if (dedupedList.length === 0) return Promise.resolve(false);
+      // --- fin depuración
+
+      // Extraer ids únicos y sanearlos desde la lista depurada
+      const ids = Array.from(new Set(dedupedList
         .map(ts => ts?.idStatus ?? (ts as any)?.id_status ?? (ts as any)?.id)
         .filter(id => id !== undefined && id !== null)
         .map(String)
@@ -1865,19 +1891,20 @@ export class CollectionService {
         statusMap.set(key, Number(row.status_action));
       }
 
-      // Asignar a collectionRefused los TransactionStatuses cuyo status en la tabla sea 2
-      for (const ts of list) {
-        const idStatus = ts.idStatus;
+      // Asignar a collectionRefused/Approved/Sended usando la lista depurada
+      for (const ts of dedupedList) {
+        const idStatus = ts.idStatus ?? (ts as any).id_status ?? (ts as any).id;
         if (idStatus == null) continue;
         switch (statusMap.get(String(idStatus))) {
           case 1:
-            this.collectionApproved.push(ts);
+            //this.collectionApproved.push(ts);
+            this.collectionSended.push(ts);//lista para bloquear los documentos
             break;
           case 2:
-            this.collectionRefused.push(ts);
+            this.collectionRefused.push(ts);//lista para liberar los documentos
             break;
           case 3:
-            this.collectionSended.push(ts);
+            this.collectionSended.push(ts);//lista para bloquear los documentos
             break;
           default:
             // otros casos se ignoran
@@ -3149,23 +3176,23 @@ export class CollectionService {
     nu_amount_retention,
     nu_amount_retention2,
     nu_amount_paid,
+    nu_amount_paid_conversion,
     nu_amount_discount,
+    nu_amount_discount_conversion,
     nu_amount_doc,
+    nu_amount_doc_conversion,
     da_document,
     nu_balance_doc,
+    nu_balance_doc_conversion,
     co_original,
     co_type_doc,
     id_document,
-    nu_amount_doc_conversion,
-    nu_balance_doc_conversion,
     nu_amount_retention_iva_conversion,
     nu_amount_retention_islr_conversion,
-    nu_amount_discount_conversion,
-    nu_amount_paid_conversion,
     nu_amount_igtf,
     nu_amount_igtf_conversion,
     da_voucher
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 `;
 
     // ...existing code...
@@ -3856,7 +3883,8 @@ export class CollectionService {
       this.listCollect = [] as Collection[];
       this.itemListaCobros = [] as ItemListaCobros[];
       const res = await dbServ.executeSql(
-        'SELECT c.* FROM collections c ORDER BY c.st_delivery ASC, c.st_collection ASC, c.id_collection DESC, c.da_collection DESC', []
+        //'SELECT c.* FROM collections c ORDER BY c.st_delivery ASC, c.st_collection ASC,  c.da_collection ASC, c.id_collection DESC;', []
+        'SELECT c.* FROM collections c ORDER BY c.st_delivery ASC, c.da_collection DESC, c.st_collection ASC, c.id_collection DESC; ', []
       );
 
       const promises: Promise<void>[] = [];

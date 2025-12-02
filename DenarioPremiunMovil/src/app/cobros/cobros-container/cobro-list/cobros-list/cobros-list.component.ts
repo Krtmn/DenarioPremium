@@ -29,7 +29,9 @@ export class CobrosListComponent implements OnInit {
 
   public valid: Boolean = false;
   public alertDelete: boolean = false;
-  public searchText: string = '';
+  public allItems: any[] = [];         // llena al cargar
+  public displayedItems: any[] = [];   // lo que iteras en la plantilla
+  public searchText = '';
 
   public indice = 0;
   public headerDelete = "";
@@ -39,7 +41,7 @@ export class CobrosListComponent implements OnInit {
 
   // --- Infinite scroll / paginación client-side ---
   private readonly PAGE_SIZE = 20;
-  public displayedItems: ItemListaCobros[] = []; // lo que se muestra en la UI
+  //public displayedItems: ItemListaCobros[] = []; // lo que se muestra en la UI
   private displayedIndexMap: Map<string, number> = new Map(); // map co_collection -> indice real en itemListaCobros
   private currentOffset = 0; // cuántos items ya mostramos
   public hasMore = true;
@@ -65,7 +67,11 @@ export class CobrosListComponent implements OnInit {
     }
   ];
 
-  constructor() { }
+  constructor() {
+    // inicializa after load
+    this.allItems = this.collectService.itemListaCobros;        // lo que obtengas originalmente
+    this.displayedItems = [...this.allItems];
+  }
 
   ngOnInit() {
     if (this.collectService.userMustActivateGPS) {
@@ -279,8 +285,22 @@ export class CobrosListComponent implements OnInit {
     this.alertDelete = value;
   }
 
+  /* handleInput(event: any) {
+    this.searchText = (event?.detail?.value ?? '').toString().toLowerCase().trim();
+  } */
   handleInput(event: any) {
-    this.searchText = event.target.value.toLowerCase();
+    this.searchText = (event?.detail?.value ?? '').toString().toLowerCase().trim();
+    if (!this.searchText) {
+      this.displayedItems = [...this.allItems];
+      return;
+    }
+    const q = this.searchText;
+    this.displayedItems = this.allItems.filter(collect => {
+      const coClient = (collect.co_client ?? '').toString().toLowerCase();
+      const lbClient = (collect.lb_client ?? '').toString().toLowerCase();
+      const idColl = collect.id_collection != null ? collect.id_collection.toString() : '';
+      return coClient.includes(q) || lbClient.includes(q) || idColl.includes(q);
+    });
   }
 
   async onIonInfinite(ev: any) {
