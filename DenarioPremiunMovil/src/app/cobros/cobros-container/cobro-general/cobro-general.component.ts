@@ -724,6 +724,23 @@ export class CobrosGeneralComponent implements OnInit {
       if (this.collectService.historicPartialPayment) {
         this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
       }
+      if (Array.isArray(this.collectService.documentSalesView)) {
+        try {
+          const deep = this.collectService.documentSalesView.map(d => JSON.parse(JSON.stringify(d)));
+          this.collectService.documentSales = deep.map(d => ({ ...d }));
+          this.collectService.documentSalesBackup = deep.map(d => ({ ...d }));
+        } catch (e) {
+          // Fallback: asignación por referencia si la serialización falla
+          this.collectService.documentSales = [...this.collectService.documentSalesView];
+          this.collectService.documentSalesBackup = [...this.collectService.documentSalesView];
+          console.warn('No se pudo serializar documentSalesView para copia profunda, usando copia superficial', e);
+        }
+      } else {
+        this.collectService.documentSales = [];
+        this.collectService.documentSalesBackup = [];
+      }
+
+      this.collectService.convertDocumentSales();
     });
 
 
