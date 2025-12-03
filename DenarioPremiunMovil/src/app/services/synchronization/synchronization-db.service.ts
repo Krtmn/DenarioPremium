@@ -399,16 +399,17 @@ export class SynchronizationDBService {
       'id_client,id_enterprise,co_enterprise,co_client,lb_client,na_client,' +
       'nu_rif,id_channel,id_warehouse,id_head_quarter,id_list,' +
       'id_payment_condition,co_payment_condition,in_suspension,qu_discount,na_email,' +
-      'nu_credit_limit,na_web_site,id_currency,co_currency,multimoneda,collection_iva' +
+      'nu_credit_limit,na_web_site,id_currency,co_currency,multimoneda,collection_iva, tx_description_1,tx_description_2 ' +
       ') ' +
-      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
     var statements = [];
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
       statements.push([insertStatement, [obj.idClient, obj.idEnterprise, obj.coEnterprise, obj.coClient,
       obj.lbClient, obj.naClient, obj.nuRif, obj.idChannel, obj.idWarehouse, obj.idHeadQuarter, obj.idList,
       obj.idPaymentCondition, obj.coPaymentCondition, obj.inSuspension, obj.quDiscount, obj.naEmail,
-      obj.nuCreditLimit, obj.naWebSite, obj.idCurrency, obj.coCurrency, obj.multimoneda, obj.collectionIva]]);
+      obj.nuCreditLimit, obj.naWebSite, obj.idCurrency, obj.coCurrency, obj.multimoneda, obj.collectionIva,
+      obj.txDescription1, obj.txDescription2]]);
     }
 
     return this.database.sqlBatch(statements).then(res => {
@@ -1381,7 +1382,7 @@ export class SynchronizationDBService {
   insertOrderDetailDiscountBatch(arr: OrderDetailDiscount[]) {
     return this.pedidosService.saveOrderDetailDiscountBatch(this.database, arr)
   }
-  // En SynchronizationDBService
+
   insertCollectionBatch(arr: Collection[]) {
     return this.collectionService.deleteCollectionsBatch(this.database, arr).then((r) => {
       console.log("deleteCollectionsBatch completed before insertCollectionBatch");

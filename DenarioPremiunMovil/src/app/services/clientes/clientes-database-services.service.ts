@@ -115,6 +115,8 @@ export class ClientesDatabaseServicesService {
           idAddressClients: 0,
           coAddressClients: "",
           collectionIva: data.rows.item(i).collection_iva == "true" ? true : false,
+          txDescription1: data.rows.item(i).tx_description_1,
+          txDescription2: data.rows.item(i).tx_description_2,
         });
       }
       return lists;
@@ -161,6 +163,8 @@ export class ClientesDatabaseServicesService {
          c.nu_credit_limit AS nuCreditLimit,
          c.nu_rif AS nuRif,
          c.qu_discount AS quDiscount,
+         c.tx_description_1 AS txDescription1,
+         c.tx_description_2 AS txDescription2,
 
          (SELECT na_responsible FROM address_clients WHERE id_client = ? LIMIT 1) AS naResponsible,
          (SELECT na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1) AS naPriceList,
@@ -257,6 +261,8 @@ export class ClientesDatabaseServicesService {
     c.na_email AS naEmail,
     c.na_client AS naClient,
     c.qu_discount AS quDiscount,
+    c.tx_description_1 AS txDescription1,
+    c.tx_description_2 AS txDescription2,
 
     (SELECT na_responsible FROM address_clients WHERE id_client = ? LIMIT 1) AS naResponsible,
     (SELECT na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1) AS naPriceList,
@@ -312,7 +318,7 @@ export class ClientesDatabaseServicesService {
     } else {
       // Reemplaza el var selectStatement + executeSql(...) por lo siguiente:
 
-const selectStatement = `
+      const selectStatement = `
   SELECT
     c.co_client AS coClient,
     c.co_currency AS coCurrency,
@@ -334,6 +340,8 @@ const selectStatement = `
     c.na_email AS naEmail,
     c.na_client AS naClient,
     c.qu_discount AS quDiscount,
+    c.tx_description_1 AS txDescription1,
+    c.tx_description_2 AS txDescription2,
 
     (SELECT na_responsible FROM address_clients WHERE id_client = ? LIMIT 1) AS na_responsible,
     (SELECT na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1) AS na_price_list,
@@ -360,29 +368,29 @@ const selectStatement = `
   WHERE c.id_client = ?
 `;
 
-// parámetros (orden de los '?' en la query)
-const params = [
-  idClient, // na_responsible
-  idClient, // nu_phone
-  idClient, // tx_address
-  idClient, // saldo (ds.id_client)
-  idClient, // coCurrency (ds.id_client)
-  idClient  // WHERE c.id_client = ?
-];
+      // parámetros (orden de los '?' en la query)
+      const params = [
+        idClient, // na_responsible
+        idClient, // nu_phone
+        idClient, // tx_address
+        idClient, // saldo (ds.id_client)
+        idClient, // coCurrency (ds.id_client)
+        idClient  // WHERE c.id_client = ?
+      ];
 
-return this.dbServ.getDatabase().executeSql(selectStatement, params).then(data => {
-  if (!data || data.rows.length === 0) return null;
-  const row = data.rows.item(0);
+      return this.dbServ.getDatabase().executeSql(selectStatement, params).then(data => {
+        if (!data || data.rows.length === 0) return null;
+        const row = data.rows.item(0);
 
-  // Normalizaciones / alias y nueva propiedad camelCase
-  row.saldo = row.saldo == null ? 0 : row.saldo;
-  row.coCurrency = row.coCurrency ?? row.co_currency ?? null;
-  // Exponer la descripción de la condición de pago en camelCase
-  row.naPaymentCondition = row.na_payment_condition ?? null;
-  // También puedes mapear/aliasar otras columnas si tu código cliente usa nombres distintos
+        // Normalizaciones / alias y nueva propiedad camelCase
+        row.saldo = row.saldo == null ? 0 : row.saldo;
+        row.coCurrency = row.coCurrency ?? row.co_currency ?? null;
+        // Exponer la descripción de la condición de pago en camelCase
+        row.naPaymentCondition = row.na_payment_condition ?? null;
+        // También puedes mapear/aliasar otras columnas si tu código cliente usa nombres distintos
 
-  return row;
-});
+        return row;
+      });
     }
   }
 
@@ -464,7 +472,7 @@ return this.dbServ.getDatabase().executeSql(selectStatement, params).then(data =
           coEnterprise: item.co_enterprise,
           idEnterprise: item.id_enterprise,
           coordenada: item.coordenada,
-          editable: item.editable.toLowerCase() === 'true' ? true : false,          
+          editable: item.editable.toLowerCase() === 'true' ? true : false,
         })
       }
       return lists;

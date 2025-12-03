@@ -10,6 +10,9 @@ import { ClienteSelectorService } from './cliente-selector.service';
 import { InventariosLogicService } from '../services/inventarios/inventarios-logic.service';
 import { CollectionService } from '../services/collection/collection-logic.service';
 import { MessageService } from '../services/messageService/message.service';
+import { ClientLogicService } from '../services/clientes/client-logic.service';
+import { ModalController } from '@ionic/angular';
+import { ClienteComponent } from '../clientes/client-container/client-detail/client-detail.component';
 
 
 @Component({
@@ -27,10 +30,10 @@ export class ClienteSelectorComponent implements OnInit {
   private dbServ = inject(SynchronizationDBService);
   private currencyService = inject(CurrencyService);
   private service = inject(ClienteSelectorService);
-  private invenLogic = inject(InventariosLogicService);
   private collectLogic = inject(CollectionService);
   private messageService = inject(MessageService);
-
+  private clientLogic = inject(ClientLogicService);
+  private modalCtrl = inject(ModalController);
 
   public tags = new Map<string, string>([]);
   public clientes!: Client[]
@@ -105,7 +108,7 @@ export class ClienteSelectorComponent implements OnInit {
   setup(idEnterprise: number, nombreModulo: string, colorModulo: string, cliente: null | Client, checkClient: boolean, coModule: string) {
     //hace la configuracion inicial y habilita el chequeo de cambio de cliente
     this.setSkin(nombreModulo, colorModulo);
-    
+
     this.service.checkClient = checkClient;
     this.service.clienteAnterior = cliente;
     var currencyModule = this.currencyService.getCurrencyModule(coModule);
@@ -130,70 +133,70 @@ export class ClienteSelectorComponent implements OnInit {
 
   updateClientList(idEnterprise: number) {
     this.messageService.showLoading().then(() => {
-    this.clientServ.getClients(idEnterprise).then(result => {
-      this.clientes = [] as Client[];
-      this.service.clientes = [] as Client[];
-      if (this.nombreModulo == 'Cobros') {
-        if (this.collectLogic.userCanCollectIva && this.collectLogic.cobro25) {
-          for (var i = 0; i < result.length; i++) {
-            if (result[i].collectionIva) {
-              this.clientes.push(result[i]);
+      this.clientServ.getClients(idEnterprise).then(result => {
+        this.clientes = [] as Client[];
+        this.service.clientes = [] as Client[];
+        if (this.nombreModulo == 'Cobros') {
+          if (this.collectLogic.userCanCollectIva && this.collectLogic.cobro25) {
+            for (var i = 0; i < result.length; i++) {
+              if (result[i].collectionIva) {
+                this.clientes.push(result[i]);
+              }
             }
+          } else {
+            this.clientes = result;
           }
-        } else {
+
+        } else
           this.clientes = result;
-        }
+        //this.service.clienteAnterior = null;
 
-      } else
-        this.clientes = result;
-      //this.service.clienteAnterior = null;
-
-      this.indice = 1;
-      //console.log("[ClienteSelector] Lista de clientes actualizada");
-      //mostrando los saldos correctamente
-      let saldoCliente = 0, saldoOpuesto = 0;
-      if (this.currencyService.multimoneda) {
-        for (let c = 0; c < this.clientes.length; c++) {
-          if (this.clientes[c].coCurrency == this.localCurrency.coCurrency) {
-            saldoCliente = this.clientes[c].saldo1 + this.currencyService.toLocalCurrency(this.clientes[c].saldo2);
-            saldoOpuesto = this.currencyService.toHardCurrency(saldoCliente);
-          } else {
-            saldoCliente = this.clientes[c].saldo1 + this.currencyService.toHardCurrency(this.clientes[c].saldo2);
-            saldoOpuesto = this.currencyService.toLocalCurrency(saldoCliente);
-          }
-          this.clientes[c].saldo1 = saldoCliente;
-          this.clientes[c].saldo2 = saldoOpuesto;
-
-          if (this.currencySwitchEnabled && this.localCurrencyDefault) {
-            //la primera moneda es la local
-            if (this.clientes[c].coCurrency != this.localCurrency.coCurrency) {
-              //cambiamos la moneda del cliente
-              this.clientes[c].coCurrency = this.oppositeCoCurrency(this.clientes[c].coCurrency);
-              var tempSaldo = this.clientes[c].saldo1;
-              this.clientes[c].saldo1 = this.clientes[c].saldo2;
-              this.clientes[c].saldo2 = tempSaldo;
+        this.indice = 1;
+        //console.log("[ClienteSelector] Lista de clientes actualizada");
+        //mostrando los saldos correctamente
+        let saldoCliente = 0, saldoOpuesto = 0;
+        if (this.currencyService.multimoneda) {
+          for (let c = 0; c < this.clientes.length; c++) {
+            if (this.clientes[c].coCurrency == this.localCurrency.coCurrency) {
+              saldoCliente = this.clientes[c].saldo1 + this.currencyService.toLocalCurrency(this.clientes[c].saldo2);
+              saldoOpuesto = this.currencyService.toHardCurrency(saldoCliente);
+            } else {
+              saldoCliente = this.clientes[c].saldo1 + this.currencyService.toHardCurrency(this.clientes[c].saldo2);
+              saldoOpuesto = this.currencyService.toLocalCurrency(saldoCliente);
             }
-          } else {
-            //la primera moneda es la dura
-            if (this.clientes[c].coCurrency != this.hardCurrency.coCurrency) {
-              //cambiamos la moneda del cliente
-              this.clientes[c].coCurrency = this.oppositeCoCurrency(this.clientes[c].coCurrency);
-              var tempSaldo = this.clientes[c].saldo1;
-              this.clientes[c].saldo1 = this.clientes[c].saldo2;
-              this.clientes[c].saldo2 = tempSaldo;
+            this.clientes[c].saldo1 = saldoCliente;
+            this.clientes[c].saldo2 = saldoOpuesto;
+
+            if (this.currencySwitchEnabled && this.localCurrencyDefault) {
+              //la primera moneda es la local
+              if (this.clientes[c].coCurrency != this.localCurrency.coCurrency) {
+                //cambiamos la moneda del cliente
+                this.clientes[c].coCurrency = this.oppositeCoCurrency(this.clientes[c].coCurrency);
+                var tempSaldo = this.clientes[c].saldo1;
+                this.clientes[c].saldo1 = this.clientes[c].saldo2;
+                this.clientes[c].saldo2 = tempSaldo;
+              }
+            } else {
+              //la primera moneda es la dura
+              if (this.clientes[c].coCurrency != this.hardCurrency.coCurrency) {
+                //cambiamos la moneda del cliente
+                this.clientes[c].coCurrency = this.oppositeCoCurrency(this.clientes[c].coCurrency);
+                var tempSaldo = this.clientes[c].saldo1;
+                this.clientes[c].saldo1 = this.clientes[c].saldo2;
+                this.clientes[c].saldo2 = tempSaldo;
+              }
             }
+
+            saldoCliente = saldoOpuesto = 0;
           }
 
-          saldoCliente = saldoOpuesto = 0;
         }
-
-      }
-      //para usarlo luego
-      this.service.clientes = this.clientes;
-      this.service.checkClient = false;
-      this.messageService.hideLoading();
-    })
-  });
+        //para usarlo luego
+        this.service.clientes = this.clientes;
+        this.service.checkClient = false;
+        this.messageService.hideLoading();
+      })
+    });
   }
 
   @Output() clienteSeleccionado: EventEmitter<Client> = new EventEmitter<Client>();
@@ -301,5 +304,37 @@ export class ClienteSelectorComponent implements OnInit {
   ];
 
 
+  async showClientDetail(event: Event, client: Client) {
 
+    event.stopPropagation();
+    console.log("Mostrando detalle de cliente:", client);
+    await this.messageService.showLoading();
+    try {
+      // Cerrar el modal selector primero (evita que quede encima)
+      this.closeModal();
+
+      // Cargar los datos del cliente usando la lógica existente (monedas, documentos, direcciones...)
+      // viewDetailClient ya hace getCurrency() y goToClient(id) internamente.
+      this.clientLogic.getTags();
+      this.clientLogic.getTagsDenario();
+      await this.clientLogic.viewDetailClient(client.idClient);
+
+      // Abrir modal con el componente de detalle (usa los datos cargados en clientLogic)
+      const modal = await this.modalCtrl.create({
+        component: ClienteComponent,
+        componentProps: { showHeader: true },
+        cssClass: 'client-detail-modal'
+      });
+
+      await modal.present();
+
+      // opcional: esperar a dismiss si necesitas algo al cerrar
+      // const { data } = await modal.onDidDismiss();
+      this.messageService.hideLoading();
+
+
+    } catch (err) {
+      console.error('Error mostrando detalle de cliente en modal:', err);
+    }
+  }
 }

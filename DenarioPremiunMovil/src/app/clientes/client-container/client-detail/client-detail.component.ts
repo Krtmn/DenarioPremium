@@ -39,7 +39,7 @@ export class ClienteComponent implements OnInit {
 
   public clientShareModalOpen: boolean = false;
   subjectClientShareModalOpen: any;
-
+  @Input() showHeader: boolean = false;
 
   constructor() {
 

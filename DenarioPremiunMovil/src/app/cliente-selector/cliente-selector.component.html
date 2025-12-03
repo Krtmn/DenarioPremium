@@ -55,6 +55,12 @@
                                     {{this.tags.get('CLI_SALDO')}} {{oppositeCoCurrency(client.coCurrency)}}:
                                     {{formatNum(client.saldo2)}}
                                 </p>
+                                <p>Ver mas detalles
+                                    <ion-button fill="clear" size="small" (click)="showClientDetail($event, client)"
+                                        aria-label="Ver comentario">
+                                        <ion-icon name="information-circle-outline"></ion-icon>
+                                    </ion-button>
+                                </p>
                             </ion-label>
                             <ion-note slot="end">
                                 <ion-icon class="icon-List" name="chevron-forward-outline"></ion-icon>

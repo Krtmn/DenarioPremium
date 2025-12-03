@@ -7,14 +7,14 @@ import { ClientLogicService } from 'src/app/services/clientes/client-logic.servi
 import { PotentialClient } from 'src/app/modelos/tables/potentialClient';
 import { PotentialClientDatabaseServicesService } from 'src/app/services/clientes/potentialClient/potential-client-database-services.service';
 import { ServicesService } from 'src/app/services/services.service';
-import { Platform } from '@ionic/angular';
+import { Platform, ModalController } from '@ionic/angular';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 
 @Component({
-    selector: 'app-client-header',
-    templateUrl: './client-header.component.html',
-    styleUrls: ['./client-header.component.scss'],
-    standalone: false
+  selector: 'app-client-header',
+  templateUrl: './client-header.component.html',
+  styleUrls: ['./client-header.component.scss'],
+  standalone: false
 })
 export class ClientesHeaderComponent implements OnInit {
 
@@ -23,6 +23,7 @@ export class ClientesHeaderComponent implements OnInit {
   public locationService = inject(ClientLocationService);
   public potentialClientService = inject(PotentialClientDatabaseServicesService);
   public adjuntoService = inject(AdjuntoService);
+  public modalCtrl = inject(ModalController);
 
   public subscriberShow: any;
   public subscriberDisabled: any;
@@ -67,7 +68,7 @@ export class ClientesHeaderComponent implements OnInit {
           this.saveSendLocationFunction()
         }
         if (this.clientLogic.clientNewPotentialClientComponent) {
-          this.clientLogic.saveSendPotentialClient = false;          
+          this.clientLogic.saveSendPotentialClient = false;
           this.clientLogic.clientNewPotentialClientComponent = false;
           this.clientLogic.clienteNuevoBlancoImg = true;
           this.clientLogic.clientPotentialClientComponent = true;
@@ -142,7 +143,7 @@ export class ClientesHeaderComponent implements OnInit {
       var valid = this.clientLogic.validPotentialClient;
       this.clientLogic.cannotSavePotentialClient = !valid;
       this.clientLogic.cannotSendPotentialClient = !valid;
-  });
+    });
 
   }
 
@@ -198,7 +199,21 @@ export class ClientesHeaderComponent implements OnInit {
     this.clientLogic.clientNewPotentialClientComponent = true;
   }
 
-  goBack() {
+  async goBack() {
+    // Si hay un modal activo: cerrarlo y salir
+    try {
+      const topModal = await this.modalCtrl.getTop();
+      if (topModal) {
+        this.clientLogic.clientDetailComponent = false;
+        await topModal.dismiss();
+        return;
+      }
+    } catch (err) {
+      // no crítico: si falla getTop() seguimos con la lógica normal
+      console.warn('Error comprobando modal top:', err);
+    }
+
+    // lógica previa para navegar/mostrar alertas seguras
     if (this.clientLogic.newPotentialClientChanged) {
       this.clientLogic.saveOrExitOpen = true;
     } else if (this.clientLogic.clientContainerComponent) {
@@ -220,7 +235,6 @@ export class ClientesHeaderComponent implements OnInit {
     } else if (this.clientLogic.clientDocumentSaleComponent) {
       this.clientLogic.showBackRoute('clientDocumentSaleComponent');
     }
-
   }
 
   backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {

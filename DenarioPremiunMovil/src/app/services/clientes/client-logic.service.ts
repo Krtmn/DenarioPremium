@@ -190,77 +190,98 @@ export class ClientLogicService {
       });
   }
 
-  goToClient(idClient: number) {
-    this.clientListComponent = false; //apagamos el componente client list
-    this.clientesServices.getClientById(
-      Number(idClient)).then((result) => {
-        this.datos = {} as SelectedClient;
-        // Recorre todos los clientes y loggea si la moneda es distinta a la moneda local
+  // Reemplazar la función goToClient existente por esta versión async
+  async goToClient(idClient: number): Promise<void> {
+    try {
+      this.clientListComponent = false; // apagamos el componente client list
+
+      // 1) Obtener cliente
+      const clientResult = await this.clientesServices.getClientById(Number(idClient));
+      this.datos = {} as SelectedClient;
+
+      // Normalizar moneda del cliente
+      if (this.localCurrencyDefault) {
+        if (clientResult.coCurrency !== this.localCurrency.coCurrency) {
+          clientResult.saldo1 = this.currencyService.toOppositeCurrency(clientResult.coCurrency, clientResult.saldo1);
+          clientResult.nuCreditLimit = this.currencyService.toOppositeCurrency(clientResult.coCurrency, clientResult.nuCreditLimit);
+          clientResult.coCurrency = this.localCurrency.coCurrency;
+        }
+      } else {
+        if (clientResult.coCurrency !== this.hardCurrency.coCurrency) {
+          clientResult.coCurrency = this.hardCurrency.coCurrency;
+          clientResult.saldo1 = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, clientResult.saldo1);
+          clientResult.nuCreditLimit = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, clientResult.nuCreditLimit);
+        }
+      }
+
+      clientResult.editable = clientResult.editable == null ? false : (clientResult.editable.toString().toLowerCase() === 'true');
+
+      this.datos.client = clientResult;
+
+      // 2) Obtener documentos de venta del cliente
+      const docsResult = await this.clientesServices.getDocumentSaleByIdClient(Number(idClient));
+      if (Array.isArray(docsResult)) {
         if (this.localCurrencyDefault) {
-          if (result.coCurrency !== this.localCurrency.coCurrency) {
-
-            result.saldo1 = this.currencyService.toOppositeCurrency(result.coCurrency, result.saldo1);
-            result.nuCreditLimit = this.currencyService.toOppositeCurrency(result.coCurrency, result.nuCreditLimit);
-            result.coCurrency = this.localCurrency.coCurrency;
+          for (const c of docsResult) {
+            if (c.coCurrency !== this.localCurrency.coCurrency) {
+              c.nuAmountPaid = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuAmountPaid);
+              c.nuAmountTotal = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuAmountTotal);
+              c.nuBalance = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuBalance);
+              c.nuAmountDiscount = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuAmountDiscount);
+              c.nuAmountRetention = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuAmountRetention);
+              c.nuAmountRetention2 = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuAmountRetention2);
+              c.nuAmountTax = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuAmountTax);
+              c.coCurrency = this.localCurrency.coCurrency;
+            }
           }
-
         } else {
-          if (result.coCurrency !== this.hardCurrency.coCurrency) {
-            result.coCurrency = this.hardCurrency.coCurrency;
-            result.saldo1 = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, result.saldo1);
-            result.nuCreditLimit = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, result.nuCreditLimit);
+          for (const c of docsResult) {
+            if (c.coCurrency !== this.hardCurrency.coCurrency) {
+              c.coCurrency = this.hardCurrency.coCurrency;
+              c.nuAmountPaid = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuAmountPaid);
+              c.nuAmountTotal = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuAmountTotal);
+              c.nuBalance = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuBalance);
+              c.nuAmountDiscount = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuAmountDiscount);
+              c.nuAmountRetention = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuAmountRetention);
+              c.nuAmountRetention2 = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuAmountRetention2);
+              c.nuAmountTax = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuAmountTax);
+            }
           }
         }
 
-
-        result.editable == null ? false : result.editable.toLowerCase() === 'true' ? true : false;
-
-        this.datos.client = result;
-        this.clientesServices.getDocumentSaleByIdClient(Number(idClient)).then((result) => {
-          // Recorre todos los clientes y loggea si la moneda es distinta a la moneda local
-          if (this.localCurrencyDefault) {
-            for (const c of result) {
-              if (c.coCurrency !== this.localCurrency.coCurrency) {
-
-                c.nuAmountPaid = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuAmountPaid);
-                c.nuAmountTotal = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuAmountTotal);
-                c.nuBalance = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuBalance);
-                c.nuAmountDiscount = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuAmountDiscount);
-                c.nuAmountRetention = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuAmountRetention);
-                c.nuAmountRetention2 = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuAmountRetention2);
-                c.nuAmountTax = this.currencyService.toOppositeCurrency(c.coCurrency, c.nuAmountTax);
-                c.coCurrency = this.localCurrency.coCurrency;
-              }
-            }
-          } else {
-            for (const c of result) {
-              if (c.coCurrency !== this.hardCurrency.coCurrency) {
-                c.coCurrency = this.hardCurrency.coCurrency;
-                c.nuAmountPaid = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuAmountPaid);
-                c.nuAmountTotal = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuAmountTotal);
-                c.nuBalance = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuBalance);
-                c.nuAmountDiscount = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuAmountDiscount);
-                c.nuAmountRetention = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuAmountRetention);
-                c.nuAmountRetention2 = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuAmountRetention2);
-                c.nuAmountTax = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.nuAmountTax);
-              }
-            }
-          }
-
-
-          this.datos.document = result;
-          this.clientDetailComponent = true;
-          this.datos.document.forEach((doc) => {
+        this.datos.document = docsResult;
+        this.clientDetailComponent = true;
+        this.datos.document.forEach((doc) => {
+          if (typeof doc.daDocument === 'string' && doc.daDocument.includes('-')) {
             doc.daDocument = doc.daDocument.split("-")[2] + "/" + doc.daDocument.split("-")[1] + "/" + doc.daDocument.split("-")[0];
+          }
+          if (typeof doc.daDueDate === 'string' && doc.daDueDate.includes('-')) {
             doc.daDueDate = doc.daDueDate.split("-")[2] + "/" + doc.daDueDate.split("-")[1] + "/" + doc.daDueDate.split("-")[0];
-          })
+          }
         });
-      });
+      } else {
+        // Si la llamada no devolvió array, asegurar valores por defecto
+        this.datos.document = [];
+        this.clientDetailComponent = true;
+      }
 
-    this.listaDirecciones = [];
-    this.clientesServices.getAddressClientsByIdClient(Number(idClient)).then((result) => {
-      this.listaDirecciones = result;
-    });
+      // 3) Obtener direcciones del cliente
+      try {
+        const addresses = await this.clientesServices.getAddressClientsByIdClient(Number(idClient));
+        this.listaDirecciones = Array.isArray(addresses) ? addresses : [];
+      } catch (e) {
+        this.listaDirecciones = [];
+        console.warn('[goToClient] error cargando direcciones:', e);
+      }
+
+    } catch (err) {
+      console.error('[goToClient] error:', err);
+      // En caso de error, aseguramos estados razonables
+      this.datos = {} as SelectedClient;
+      this.datos.document = [];
+      this.clientDetailComponent = false;
+      this.listaDirecciones = [];
+    }
   }
 
   viewCoordenada(client: Client) {
@@ -320,4 +341,11 @@ export class ClientLogicService {
     this.closeClientShareModal.next(true);
   }
 
+
+  // Reemplazar viewDetailClient para esperar la promesa completa
+  async viewDetailClient(idClient: number): Promise<void> {
+    await this.getCurrency();
+    this.clientContainerComponent = true; // Aseguramos que el contenedor de clientes esté activo
+    await this.goToClient(idClient); // ahora espera hasta que goToClient termine todas las cargas
+  }
 }

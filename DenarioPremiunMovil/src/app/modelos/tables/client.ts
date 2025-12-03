@@ -38,6 +38,8 @@ export class Client {
             obj['idAddressClients'],
             obj['coAddressClients'],
             obj['collectionIva'],
+            obj['txDescription1'],
+            obj['txDescription2'],
         );
     }
 
@@ -79,6 +81,8 @@ export class Client {
         public idAddressClients: number,
         public coAddressClients: string,
         public collectionIva: boolean,
+        public txDescription1: string,
+        public txDescription2: string,
     ) { }
 
 }

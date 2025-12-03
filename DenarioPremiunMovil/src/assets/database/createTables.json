@@ -19,7 +19,7 @@
         "name": "clients",
         "table": "clients",
         "idName": "id_client",
-        "sql": "CREATE TABLE IF NOT EXISTS clients ( id_client INTEGER PRIMARY KEY, co_client VARCHAR(30) NOT NULL, lb_client VARCHAR(80) NOT NULL, na_client TEXT, nu_rif VARCHAR(15), id_channel INTEGER, id_warehouse INTEGER, id_head_quarter INTEGER, id_list INTEGER, id_payment_condition INTEGER, co_payment_condition VARCHAR(30), in_suspension BOOLEAN DEFAULT false, qu_discount DECIMAL(10,5), na_email character varying(30), nu_credit_limit DECIMAL(10,5), na_web_site character varying(150), id_currency INTEGER, co_currency VARCHAR(30), multimoneda BOOLEAN DEFAULT false, co_enterprise VARCHAR(50), id_enterprise INTEGER NOT NULL, collection_iva BOOLEAN DEFAULT false);"
+        "sql": "CREATE TABLE IF NOT EXISTS clients ( id_client INTEGER PRIMARY KEY, co_client VARCHAR(30) NOT NULL, lb_client VARCHAR(80) NOT NULL, na_client TEXT, nu_rif VARCHAR(15), id_channel INTEGER, id_warehouse INTEGER, id_head_quarter INTEGER, id_list INTEGER, id_payment_condition INTEGER, co_payment_condition VARCHAR(30), in_suspension BOOLEAN DEFAULT false, qu_discount DECIMAL(10,5), na_email character varying(30), nu_credit_limit DECIMAL(10,5), na_web_site character varying(150), id_currency INTEGER, co_currency VARCHAR(30), multimoneda BOOLEAN DEFAULT false, co_enterprise VARCHAR(50), id_enterprise INTEGER NOT NULL, collection_iva BOOLEAN DEFAULT false, tx_description_1 VARCHAR(255), tx_description_2 VARCHAR(255));"
     },
     {
         "id": 5,
