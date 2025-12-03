@@ -1310,19 +1310,19 @@ export class SynchronizationDBService {
         //GUARDO LA LISTA DE  COBROS PARA CHEQUEAR SI VIENEN RECHAZADOS 
         //Y ACTUALIZAR LOS DOCUMENTOS DE ESE COBRO
         this.collectionService.listTransactionStatusCollections.push(arr[i]);
-
       }
-
-
     }
 
     return this.database.sqlBatch(statements).then(res => {
       console.log("insert transactionStatuses ready")
-      this.collectionService.checkHistoricCollects(this.database).then(() => {
-        console.log("checkHistoricCollects process finished");
-        this.collectionService.unlockDocumentSales(this.database);
-        this.collectionService.lockDocumentSales(this.database);
-      });
+      this.collectionService.checkRequireApproval(this.database).then((res) => {
+        if (res)
+          this.collectionService.checkHistoricCollects(this.database).then(() => {
+            console.log("checkHistoricCollects process finished");
+            this.collectionService.unlockDocumentSales(this.database);
+            this.collectionService.lockDocumentSales(this.database);
+          });
+      })
       return res;
     }).catch(e => {
       console.log(e);
@@ -1333,13 +1333,13 @@ export class SynchronizationDBService {
 
     var statements = [];
     let insertStatement = "INSERT OR REPLACE INTO transaction_types(" +
-      "id_transaction_type,co_transaction_type,na_transaction_type" +
+      "id_transaction_type,co_transaction_type,na_transaction_type,require_approval " +
       ") " +
-      "VALUES(?,?,?)"
+      "VALUES(?,?,?,?)"
 
     for (var i = 0; i < arr.length; i++) {
       statements.push([insertStatement, [arr[i].idTransactionType,
-      arr[i].coTransactionType, arr[i].naTransactionType]])
+      arr[i].coTransactionType, arr[i].naTransactionType, arr[i].requireApproval]])
     }
 
     return this.database.sqlBatch(statements).then(res => {

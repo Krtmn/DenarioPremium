@@ -1837,6 +1837,18 @@ export class CollectionService {
     }
   }
 
+  checkRequireApproval(db: SQLiteObject): Promise<boolean> {
+    const selectStatement = 'SELECT require_approval as requireApproval FROM transaction_types WHERE id_transaction_type == 3';
+    let requireApproval = false
+    return db.executeSql(selectStatement, []).then((res) => {
+      requireApproval = res.rows.item(0).requireApproval == "true" ? true : false;
+      return Promise.resolve(requireApproval);
+    }).catch((err) => {
+      return Promise.resolve(requireApproval);
+    })
+  }
+
+
   async checkHistoricCollects(db: SQLiteObject): Promise<boolean> {
     this.collectionRefused = [] as TransactionStatuses[];
     this.collectionApproved = [] as TransactionStatuses[];

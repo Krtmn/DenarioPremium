@@ -5,7 +5,8 @@ export class TransactionTypes {
             obj['idTransactionType'],
             obj['coTransactionType'],
             obj['naTransactionType'],
-         
+            obj['requireApproval'],
+
         );
     }
 
@@ -13,5 +14,6 @@ export class TransactionTypes {
         public idTransactionType: number,
         public coTransactionType: string,
         public naTransactionType: string,
+        public requireApproval: boolean,
     ) { }
 }

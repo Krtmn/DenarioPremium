@@ -226,7 +226,9 @@ export class SynchronizationComponent implements OnInit {
       .map(Number)
       .sort((a, b) => a - b);
     this.currentTableIndex = 0;
-    this.adjustTableOrderDependency(63, 68);
+
+    //con esta funcion definimos que tabla se sincroniza primero
+    this.adjustTableOrderDependency(63, 68); //queremos que la tabla 63 se sincronice desues que la 68
 
     this.sub = this.route.params.subscribe(
       params => {
@@ -811,7 +813,7 @@ export class SynchronizationComponent implements OnInit {
 
     if ([75].includes(tableId)) {
       return cfgTrue('enableDifferenceCodes');
-      
+
     }
 
     // Para cualquier otra tabla, por defecto sincronizamos

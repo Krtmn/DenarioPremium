@@ -278,7 +278,7 @@
         "name": "transaction_types",
         "table": "transactionTypes",
         "idName": "id_transaction_type",
-        "sql": "CREATE TABLE IF NOT EXISTS transaction_types ( id_transaction_type INTEGER, co_transaction_type VARCHAR(3), na_transaction_type character VARCHAR(50));"
+        "sql": "CREATE TABLE IF NOT EXISTS transaction_types ( id_transaction_type INTEGER, co_transaction_type VARCHAR(3), na_transaction_type character VARCHAR(50), require_approval BOOLEAN DEFAULT 0);"
     },
     {
         "id": 64,
