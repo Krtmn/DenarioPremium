@@ -274,7 +274,8 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.getCurrencies(this.synchronizationServices.getDatabase(),
       this.collectService.enterpriseSelected.idEnterprise);
     this.initializeCollectionData(client);
-    this.selectorCliente.updateClientList(this.collectService.enterpriseSelected.idEnterprise);
+    //this.selectorCliente.updateClientList(this.collectService.enterpriseSelected.idEnterprise);
+    //this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, "Cobros", 'fondoVerde', client, true, 'cob');
 
     if (this.collectService.historicoTasa)
       this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise)
@@ -509,7 +510,7 @@ export class CobrosGeneralComponent implements OnInit {
             }
           }
           this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, nameModule, 'fondoVerde', null, true, 'cob');
-          this.selectorCliente.updateClientList(this.collectService.enterpriseSelected.idEnterprise);
+          //this.selectorCliente.updateClientList(this.collectService.enterpriseSelected.idEnterprise);
 
           this.collectService.collection.coCollection = this.dateServ.generateCO(0);
           this.collectService.collection.idEnterprise = this.collectService.enterpriseSelected.idEnterprise;
@@ -609,6 +610,8 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   loadData() {
+    this.clientSelectorService.checkClient = true;
+
     //SE BUSCA LA MONEDA 
     this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise).then(r => {
 

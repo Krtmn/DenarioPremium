@@ -3335,7 +3335,7 @@ export class CollectionService {
     let queries: any[] = []
     for (var co = 0; co < collection.length; co++) {
       const collect = collection[co];
-      queries.push([deleteCollectionPaymentsSQL, [collect.coCollection]]);
+      queries.push([deleteCollectionsSQL, [collect.coCollection]]);
       for (var coDetail = 0; coDetail < collect.collectionDetails.length; coDetail++) {
         const collectionDetail = collect.collectionDetails[coDetail];
         queries.push([deleteCollectionDetailsSQL, [collect.coCollection]]);
