@@ -33,9 +33,12 @@
 }
 
 .masInfo {
-    margin-top: -4px;
+    --padding-start: 0;
+    --padding-end: 0;
+    margin-top: 0;
     }
 
 ion-button.masInfo {
-  --background: #430197;
+    --color: #430197;
+    font-weight: bold;
 }
