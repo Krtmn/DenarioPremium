@@ -239,7 +239,7 @@ export class AdjuntoComponent implements OnInit {
         if (p.base64String) {
           var muyPesado = this.service.getFileWeight(p.base64String) > this.service.imageWeightLimit
           var f = new Foto(
-            ".jpg",
+            "jpeg",
             p.base64String,
             '',
             muyPesado

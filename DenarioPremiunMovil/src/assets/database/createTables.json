@@ -383,7 +383,7 @@
         "name": "transaction_images",
         "table": "transactionImages",
         "idName": "id_transaction_image",
-        "sql": "CREATE TABLE IF NOT EXISTS transaction_images(id_transaction_image INTEGER, co_transaction VARCHAR(30) PRIMARY KEY, na_transaction VARCHAR(30), na_image VARCHAR(30));"
+        "sql": "CREATE TABLE IF NOT EXISTS transaction_images(id_transaction_image INTEGER, co_transaction VARCHAR(30), na_transaction VARCHAR(30), na_image VARCHAR(30));"
     },
     {
         "id": 99108,
@@ -453,14 +453,14 @@
         "name": "transaction_signatures",
         "table": "transactionSignatures",
         "idName": "id_transaction_signature",
-        "sql": "CREATE TABLE IF NOT EXISTS transaction_signatures (id_transaction_signature INTEGER, na_transaction TEXT NOT NULL, co_transaction VARCHAR(50) PRIMARY KEY,na_image TEXT NOT NULL );"
+        "sql": "CREATE TABLE IF NOT EXISTS transaction_signatures (id_transaction_signature INTEGER, na_transaction TEXT NOT NULL, co_transaction VARCHAR(50),na_image TEXT NOT NULL );"
     },
     {
         "id": 991178,
         "name": "transaction_files",
         "table": "transaction_files",
         "idName": "id_transaction_files",
-        "sql": "CREATE TABLE IF NOT EXISTS transaction_files (id_transaction_files INTEGER, na_transaction TEXT NOT NULL, co_transaction VARCHAR(50) PRIMARY KEY,na_file TEXT NOT NULL );"
+        "sql": "CREATE TABLE IF NOT EXISTS transaction_files (id_transaction_files INTEGER, na_transaction TEXT NOT NULL, co_transaction VARCHAR(50),na_file TEXT NOT NULL );"
     },
     {
         "id": 991179,

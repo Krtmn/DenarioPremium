@@ -151,15 +151,15 @@ export class AdjuntoService {
     var batch = [];
 
     //borro todo y comienzo de 0
-    var deleteStatement = "DELETE from transaction_images WHERE co_transaction = ?" +
+    var deleteStatement = "DELETE from transaction_images WHERE co_transaction = ? " +
       "AND na_transaction = ?"
     batch.push([deleteStatement, [coTransaction, naTransaction]]);
     //borro todo y comienzo de 0
-    var deleteStatement = "DELETE from transaction_signatures WHERE co_transaction = ?" +
+    var deleteStatement = "DELETE from transaction_signatures WHERE co_transaction = ? " +
       "AND na_transaction = ?"
     batch.push([deleteStatement, [coTransaction, naTransaction]]);
     //borro todo y comienzo de 0
-    var deleteStatement = "DELETE from transaction_files WHERE co_transaction = ?" +
+    var deleteStatement = "DELETE from transaction_files WHERE co_transaction = ? " +
       "AND na_transaction = ?"
     batch.push([deleteStatement, [coTransaction, naTransaction]]);
 
