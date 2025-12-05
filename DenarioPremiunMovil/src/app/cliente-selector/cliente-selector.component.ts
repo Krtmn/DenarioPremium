@@ -33,8 +33,8 @@ export class ClienteSelectorComponent implements OnInit {
   private service = inject(ClienteSelectorService);
   private collectLogic = inject(CollectionService);
   private messageService = inject(MessageService);
-  private clientLogic = inject(ClientLogicService);
-  private modalCtrl = inject(ModalController);
+  public clientLogic = inject(ClientLogicService);
+  public modalCtrl = inject(ModalController);
 
   public tags = new Map<string, string>([]);
   public clientes!: Client[]
@@ -306,39 +306,4 @@ export class ClienteSelectorComponent implements OnInit {
   ];
 
 
-  async showClientDetail(event: Event, client: Client) {
-
-    event.stopPropagation();
-    console.log("Mostrando detalle de cliente:", client);
-    await this.messageService.showLoading();
-    try {
-      // Cerrar el modal selector primero (evita que quede encima)
-      this.closeModal();
-
-      // Cargar los datos del cliente usando la lógica existente (monedas, documentos, direcciones...)
-      // viewDetailClient ya hace getCurrency() y goToClient(id) internamente.
-      this.clientLogic.getTags();
-      this.clientLogic.getTagsDenario();
-      await this.clientLogic.viewDetailClient(client.idClient);
-
-      // Abrir modal con el componente de detalle (usa los datos cargados en clientLogic)
-      const modal = await this.modalCtrl.create({
-        component: ClienteComponent,
-        componentProps: { showHeader: true },
-        cssClass: 'client-detail-modal'
-      });
-
-      await modal.present();
-
-      // opcional: esperar a dismiss si necesitas algo al cerrar
-      // const { data } = await modal.onDidDismiss();
-      this.messageService.hideLoading();
-
-
-    } catch (err) {
-      console.error('Error mostrando detalle de cliente en modal:', err);
-    }
-  }
-
-  
 }

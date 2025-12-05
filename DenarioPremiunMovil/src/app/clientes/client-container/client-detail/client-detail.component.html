@@ -234,14 +234,51 @@
 
         </ion-card>
     </div>
-    <ion-fab slot="fixed" vertical="bottom" horizontal="start">
-        <ion-fab-button (click)="openShareModal(true)">
+    <ion-fab *ngIf="this.clientLogic.datos?.document?.length ?? 0" slot="fixed" vertical="bottom" horizontal="start">
+        <ion-fab-button (click)="openSelectShareModal(true)">
             <ion-icon name="share-social-outline"></ion-icon>
         </ion-fab-button>
     </ion-fab>
     <ion-modal [isOpen]="clientShareModalOpen" (didDismiss)="openShareModal(false)">
         <ng-template>
             <app-client-share-modal></app-client-share-modal>
+        </ng-template>
+    </ion-modal>
+    <ion-modal [isOpen]="clientSelectShareModalOpen" (didDismiss)="openSelectShareModal(false)">
+        <ng-template>
+            <div *ngIf="clientLogic.datos?.document?.length">
+                <ion-item lines="none">
+                    <ion-label>{{ clientLogic.clientTags.get('CLI_DETAIL_SELECT_DOCS') || 'Seleccionar documentos'
+                        }}</ion-label>
+                    <ion-button fill="clear" size="small" slot="end" (click)="selectAllDocuments()">Todos</ion-button>
+                </ion-item>
+
+                <ion-item>
+                    <ion-select multiple="true" interface="popover" labelPlacement="stacked"
+                        [(ngModel)]="selectedDocuments" okText="OK" cancelText="Cancelar"
+                        placeholder="Seleccione los documentos a compartir">
+                        <ion-select-option *ngFor="let doc of clientLogic.datos.document" [value]="doc.coDocument">
+                            {{ doc.coDocument }}
+                        </ion-select-option>
+                    </ion-select>
+                </ion-item>
+
+                <ion-grid>
+                    <ion-row>
+                        <ion-col size="6">
+                            <ion-button expand="block" color="medium" (click)="openSelectShareModal(false)">
+                                Cancelar
+                            </ion-button>
+                        </ion-col>
+                        <ion-col size="6">
+                            <ion-button expand="block" color="primary"
+                                (click)="openShareModal(true); openSelectShareModal(false)">
+                                Aceptar
+                            </ion-button>
+                        </ion-col>
+                    </ion-row>
+                </ion-grid>
+            </div>
         </ng-template>
     </ion-modal>
 </ion-content>

@@ -37,8 +37,15 @@ export class ClienteComponent implements OnInit {
   public decimales = 2;
   public selectedAddress!: AddresClient;
 
-  public clientShareModalOpen: boolean = false;
   subjectClientShareModalOpen: any;
+  // selección múltiple de documentos
+  public selectedDocuments: string[] = [];
+
+  // control de modales
+  public clientShareModalOpen = false;
+  public clientSelectShareModalOpen = false;
+
+
   @Input() showHeader: boolean = false;
 
   constructor() {
@@ -165,8 +172,37 @@ export class ClienteComponent implements OnInit {
     return this.currencyService.oppositeCoCurrency(coCurrency);
   }
 
-  openShareModal(open: boolean) {
-    this.clientShareModalOpen = open;
+  public selectAllDocuments(): void {
+    this.selectedDocuments = Array.isArray(this.clientLogic.datos?.document)
+      ? this.clientLogic.datos.document.map(d => d.coDocument)
+      : [];
+  }
+
+  public openSelectShareModal(open: boolean): void {
+    this.clientSelectShareModalOpen = !!open;
+  }
+
+  public openShareModal(open: boolean): void {
+    // Obtener lista de documentos actuales
+    const docs: DocumentSale[] = Array.isArray(this.clientLogic.datos?.document)
+      ? this.clientLogic.datos.document
+      : [];
+
+    // Asegurar array destino
+    if (!Array.isArray(this.clientLogic.documentsSaleSelectShared)) {
+      this.clientLogic.documentsSaleSelectShared = [];
+    }
+
+    // Mapear selectedDocuments (coDocument strings) a objetos DocumentSale y asignar sin duplicados
+    const selectedDocs = this.selectedDocuments
+      .map(co => docs.find(d => d.coDocument === co))
+      .filter((d): d is DocumentSale => !!d);
+
+    // Reemplazamos la colección compartida por los objetos seleccionados (sin duplicados)
+    this.clientLogic.documentsSaleSelectShared = selectedDocs;
+
+    // Abrir/cerrar modal
+    this.clientShareModalOpen = !!open;
   }
 
   onChangeAddress($event: any) {

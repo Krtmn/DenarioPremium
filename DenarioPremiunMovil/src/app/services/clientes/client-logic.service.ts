@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, ViewChild, inject } from '@angular/core';
 import { Subject } from 'rxjs';
 import { ServicesService } from '../services.service';
 import { SynchronizationDBService } from '../synchronization/synchronization-db.service';
@@ -18,6 +18,8 @@ import { PotentialClient } from 'src/app/modelos/tables/potentialClient';
 import { Coordinate } from 'src/app/modelos/coordinate';
 import { DocumentSale } from 'src/app/modelos/tables/documentSale';
 import { AddresClient } from 'src/app/modelos/tables/addresClient';
+import { IonModal, ModalController } from '@ionic/angular';
+import { ClienteComponent } from 'src/app/clientes/client-container/client-detail/client-detail.component';
 
 
 @Injectable({
@@ -33,7 +35,7 @@ export class ClientLogicService {
   public clientesServices = inject(ClientesDatabaseServicesService);
   public globalConfig = inject(GlobalConfigService);
   public potentialClientService = inject(PotentialClientDatabaseServicesService);
-
+  private modalCtrl = inject(ModalController);
 
   public showButtons = new Subject<Boolean>;
   public stockValidToSave = new Subject<Boolean>;
@@ -55,6 +57,7 @@ export class ClientLogicService {
   public potentialClients!: PotentialClient[];
   public potentialClient!: PotentialClient;
   public documentSaleSelect!: DocumentSale;
+  public documentsSaleSelectShared: DocumentSale[] = [];
   public indice!: number;
   public coordenada!: Coordinate;
   public listaDirecciones: AddresClient[] = [];
@@ -96,6 +99,7 @@ export class ClientLogicService {
     return d;
   })();
 
+  @ViewChild(IonModal) modal!: IonModal;
 
   constructor() {
     this.multiCurrency = this.globalConfig.get('multiCurrency').toString() === "true" ? true : false;
@@ -396,5 +400,44 @@ export class ClientLogicService {
     // normalizar horas a medianoche antes de comparar
     dueDate.setHours(0, 0, 0, 0);
     return dueDate < this.dateToday;
+  }
+
+  closeModal() {
+    this.modal.dismiss(null, 'cancel');
+    //console.log("cerre el modal de cliente");
+  }
+
+  async showClientDetail(event: Event, client: Client) {
+
+    event.stopPropagation();
+    console.log("Mostrando detalle de cliente:", client);
+    await this.message.showLoading();
+    try {
+      // Cerrar el modal selector primero (evita que quede encima)
+      this.closeModal();
+
+      // Cargar los datos del cliente usando la lógica existente (monedas, documentos, direcciones...)
+      // viewDetailClient ya hace getCurrency() y goToClient(id) internamente.
+      this.getTags();
+      this.getTagsDenario();
+      await this.viewDetailClient(client.idClient);
+
+      // Abrir modal con el componente de detalle (usa los datos cargados en clientLogic)
+      const modal = await this.modalCtrl.create({
+        component: ClienteComponent,
+        componentProps: { showHeader: true },
+        cssClass: 'client-detail-modal'
+      });
+
+      await modal.present();
+
+      // opcional: esperar a dismiss si necesitas algo al cerrar
+      // const { data } = await modal.onDidDismiss();
+      this.message.hideLoading();
+
+
+    } catch (err) {
+      console.error('Error mostrando detalle de cliente en modal:', err);
+    }
   }
 }

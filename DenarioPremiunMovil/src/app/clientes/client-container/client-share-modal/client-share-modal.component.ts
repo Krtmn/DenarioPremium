@@ -36,7 +36,8 @@ export class ClientShareModalComponent implements OnInit {
   ngOnInit() {
     this.localCurrency = this.clientLogic.localCurrency.coCurrency;
     this.hardCurrency = this.clientLogic.hardCurrency.coCurrency;
-    this.document = this.clientLogic.datos.document;
+    //this.document = this.clientLogic.datos.document;
+    this.document = this.clientLogic.documentsSaleSelectShared;
     this.client = this.clientLogic.datos.client;
     this.tagRif = this.globalConfig.get("tagRif")!;
     /*
@@ -97,28 +98,28 @@ export class ClientShareModalComponent implements OnInit {
     //const html = this.content.nativeElement.innerHTML;
     this.message.showLoading().then(async () => {
       const element = this.content.nativeElement as HTMLElement;
-    const doc = await this.pdfCreator.generateWithJsPDF(element, { scale: 1, layoutScale: 0.7 });
-    const base64 = doc.output('datauristring');
-    const trimmed = base64.split(',')[1];
-    const filename = 'invoice_' + this.clientLogic.datos.client.lbClient + '.pdf';
-    this.pdfCreator.savePdf(trimmed, filename).then(res => {
-      console.log('PDF saved successfully:', filename);
-      //this.pdfCreator.openPdf(res.uri);
-      //this.message.hideLoading();
-      Share.share({
-        url: res.uri,
-      }).then(() => {
-        console.log('PDF shared successfully');
-        this.finishShare(filename);
+      const doc = await this.pdfCreator.generateWithJsPDF(element, { scale: 1, layoutScale: 0.7 });
+      const base64 = doc.output('datauristring');
+      const trimmed = base64.split(',')[1];
+      const filename = 'invoice_' + this.clientLogic.datos.client.lbClient + '.pdf';
+      this.pdfCreator.savePdf(trimmed, filename).then(res => {
+        console.log('PDF saved successfully:', filename);
+        //this.pdfCreator.openPdf(res.uri);
+        //this.message.hideLoading();
+        Share.share({
+          url: res.uri,
+        }).then(() => {
+          console.log('PDF shared successfully');
+          this.finishShare(filename);
+        }).catch(err => {
+          console.error('Error sharing PDF:', err);
+          this.finishShare(filename);
+        });
       }).catch(err => {
-        console.error('Error sharing PDF:', err);
-        this.finishShare(filename);
+        console.error('Error saving PDF:', err);
       });
-    }).catch(err => {
-      console.error('Error saving PDF:', err);
     });
-    });
-    
+
 
   }
 
@@ -136,4 +137,4 @@ export class ClientShareModalComponent implements OnInit {
     this.message.hideLoading();
   }
 
-  }
+}

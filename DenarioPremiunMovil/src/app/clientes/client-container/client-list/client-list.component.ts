@@ -109,5 +109,4 @@ export class ClientListComponent implements OnInit {
     })
   }
 
- 
 }
