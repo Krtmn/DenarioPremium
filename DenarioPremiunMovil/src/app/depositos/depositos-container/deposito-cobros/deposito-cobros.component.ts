@@ -50,7 +50,7 @@ export class DepositoCobrosComponent implements OnInit {
 
       indexDepositCollect = this.depositService.deposit.depositCollect.length - 1;
       this.depositService.deposit.nuValueLocal = cobroDetails.nu_value_local;
-      this.nuAmountDoc += cobroDetails.nu_total_deposit;
+      this.nuAmountDoc += cobroDetails.nu_total_deposit == null ? cobroDetails.nu_amount_total : cobroDetails.nu_total_deposit;
       this.nuAmountDocConversion += cobroDetails.nu_total_deposit_conversion;
       //this.depositService.deposit.nuAmountDoc = Number(this.depositService.deposit.nuAmountDoc.toFixed(this.depositService.parteDecimal));
       //this.depositService.deposit.nuAmountDocConversion = Number(this.depositService.deposit.nuAmountDocConversion.toFixed(this.depositService.parteDecimal));
