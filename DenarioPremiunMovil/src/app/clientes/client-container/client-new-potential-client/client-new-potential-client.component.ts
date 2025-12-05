@@ -98,7 +98,8 @@ export class NewPotentialClientComponent implements OnInit {
     emClient: new FormControl('', [Validators.required, Validators.email, // Angular's built-in email validator
     Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/)]),
     nuPhone: new FormControl('', [Validators.required]),
-    naWebSite: new FormControl('')
+    naWebSite: new FormControl(''),
+    coordenada: new FormControl(''),
   });
 
   /* /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/ */
@@ -407,6 +408,9 @@ export class NewPotentialClientComponent implements OnInit {
     }
   }
 
+  onCoordenadaChange() {
+
+  }
 
 
 }
