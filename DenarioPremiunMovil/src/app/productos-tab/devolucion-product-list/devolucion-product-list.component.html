@@ -21,20 +21,19 @@
                     <div id="inputLote">
                       <ion-input disabled="{{ this.returnLogic.returnSent }}" [ngModelOptions]="{standalone: true}"
                         label="{{this.tags.get('DEV_LOTE')}}" label-placement="floating" fill="outline" #inputLote
-                        [(ngModel)]="product.nuLote" value="{{ product.nuLote }}" color="primary" maxlength="30"
-                        (ionInput)="inputLote.value = cleanInput(inputLote.value);
+                        [(ngModel)]="product.nuLote" value="{{ product.nuLote }}" color="primary" (ionInput)="inputLote.value = cleanInput(inputLote.value);
                         product.nuLote = cleanString(product.nuLote)"></ion-input>
                     </div>
                   </ion-col>
                   <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                     <div id="inputDocument">
                       <!-- <ion-input formControlName="coDocument" label="{{this.tags.get('DEV_DOC')}}" -->
-                      <ion-input disabled="{{ this.returnLogic.returnSent || this.returnLogic.validateReturn}}"
-                        label="{{this.tags.get('DEV_DOC')}}" (input)="onCoDocumentTextChanged()" #inputCoDocument
-                        label-placement="floating" fill="outline" [(ngModel)]="product.coDocument"
-                        [ngClass]="{'inp-write': !product.coDocument && this.returnLogic.requeridedNroFactura}" value="{{ product.coDocument }}" maxlength="30"
-                        (ionInput)="inputCoDocument.value = cleanInput(inputCoDocument.value);
-                        product.coDocument = cleanString(product.coDocument)" required></ion-input>
+                      <!-- <ion-input disabled="{{ this.returnLogic.returnSent || this.returnLogic.validateReturn}}" -->
+                      <ion-input label="{{ tags.get('DEV_DOC') }}" #inputCoDocument label-placement="floating"
+                        fill="outline" [(ngModel)]="product.coDocument" #inputDocument value="{{ product.coDocument }}"
+                        [ngClass]="{ 'inp-write': !product.coDocument && returnLogic.requeridedNroFactura }" (ionInput)="inputCoDocument.value = cleanInput(inputCoDocument.value);
+                        product.coDocument = cleanString(product.coDocument)" [required]="returnLogic.requeridedNroFactura ? true : false">
+                      </ion-input>
                     </div>
                   </ion-col>
                   <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
@@ -42,15 +41,15 @@
                       <ion-item>
                         <ion-label>{{this.tags.get('DEV_FECHA_VENCE')}}:</ion-label>
                         <ion-button (click)="setShowDateModal(i,true)" color="light" class="letrasFechasButton"
-                        disabled="{{ this.returnLogic.returnSent }}">
+                          disabled="{{ this.returnLogic.returnSent }}">
                           {{ formatShort(this.productList[i].daDueDate ) }}
                         </ion-button>
                         <ion-modal [keepContentsMounted]="true" [isOpen]="this.productList[i].showDateModal"
-                         (didDismiss)="setShowDateModal(i,false)" class="fechasModal">
+                          (didDismiss)="setShowDateModal(i,false)" class="fechasModal">
                           <ng-template>
                             <ion-datetime disabled="{{ this.returnLogic.returnSent }}"
-                               [formatOptions]="{ date: dateServ.dateFormatOptionsShort }"
-                              [id]="'fechaVence'+i" presentation="date" doneText="{{this.tags.get('DENARIO_BOTON_ACEPTAR')}}"
+                              [formatOptions]="{ date: dateServ.dateFormatOptionsShort }" [id]="'fechaVence'+i"
+                              presentation="date" doneText="{{this.tags.get('DENARIO_BOTON_ACEPTAR')}}"
                               cancelText="{{this.tags.get('DENARIO_BOTON_CANCELAR')}}"
                               (ionInput)="updateSendButtonState()" [(ngModel)]="this.productList[i].daDueDate"
                               (ionChange)="datePick(i)" [showDefaultButtons]="true"></ion-datetime>
@@ -66,9 +65,8 @@
                       <ion-input disabled="{{ this.returnLogic.returnSent }}" type="number"
                         label="{{this.tags.get('DEV_QU_PRODUCT')}}" (ionBlur)="onValidateUnitChanged(product, i)"
                         label-placement="floating" [(ngModel)]="product.quProduct" fill="outline"
-                        (ionInput)="updateSendButtonState()"
-                        [ngClass]="{'inp-write': !product.quProduct}" value="{{ product.quProduct }}" type="number"
-                        required></ion-input>
+                        (ionInput)="updateSendButtonState()" [ngClass]="{'inp-write': !product.quProduct}"
+                        value="{{ product.quProduct }}" type="number" required></ion-input>
                     </div>
                   </ion-col>
 

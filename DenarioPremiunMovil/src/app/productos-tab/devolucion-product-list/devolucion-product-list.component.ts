@@ -134,8 +134,11 @@ export class DevolucionProductListComponent implements OnInit, OnDestroy {
     }
     for (let index = 0; index < this.productList.length; index++) {
       const element = this.productList[index];
-      if (bandera)
-        element.coDocument = "0";
+      if (bandera) {
+        if (element.coDocument!.trim() === '')
+          element.coDocument = "0";
+      }
+
       if (!element.coDocument || !element.quProduct) {
         this.returnLogic.onReturnValidToSend(false);
         break;
@@ -146,6 +149,7 @@ export class DevolucionProductListComponent implements OnInit, OnDestroy {
       }
     }
   }
+
 
   changeProductUnit(index: number, idUnit: number) {
     this.productList[index].unit = this.productList[index].productUnits.find(pu => pu.idUnit == idUnit);
