@@ -94,3 +94,11 @@ ion-checkbox::part(container) {
   // border-radius: 6px;
   border: 2px solid #59b02d;
 }
+
+ion-modal.compartirDoc {
+  --width: fit-content;
+  --min-width: 90%;
+  --height: 70%;
+  --border-radius: 6px;
+  --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
+}
