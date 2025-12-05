@@ -72,6 +72,8 @@ export class NewPotentialClientComponent implements OnInit {
 
   @ViewChild('naWebSiteInput', { static: false })
   naWebSiteInput: any;
+  @ViewChild('coordenadaInput', { static: false })
+  coordenadaInput: any;
 
 
 
@@ -99,7 +101,7 @@ export class NewPotentialClientComponent implements OnInit {
     Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/)]),
     nuPhone: new FormControl('', [Validators.required]),
     naWebSite: new FormControl(''),
-    coordenada: new FormControl(''),
+    coordenadaClient: new FormControl(''),
   });
 
   /* /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/ */
@@ -129,7 +131,8 @@ export class NewPotentialClientComponent implements OnInit {
         this.isDisabled = false;
         this.clientLogic.saveSendPotentialClient = true;
         this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.config.get('signatureClient') == 'true', false, COLOR_VERDE);
-        this.onChanges()
+        this.onChanges();
+        this.checkForm();
       } else if (this.clientLogic.potentialClient.stPotentialClient == 0) {
         //ES GUARDADO
         this.isDisabled = false;
@@ -140,7 +143,8 @@ export class NewPotentialClientComponent implements OnInit {
         this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.config.get('signatureClient') == 'true', false, COLOR_VERDE);
         this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.clientLogic.potentialClient.coClient, 'clientes');
         this.clientLogic.saveSendPotentialClient = true;
-        this.onChanges()
+        this.onChanges();
+        this.checkForm();
 
 
       } else {
@@ -175,6 +179,7 @@ export class NewPotentialClientComponent implements OnInit {
         potencialClient.value.coClient = this.clientLogic.potentialClient.coClient;
         potencialClient.value.hasAttachments = this.adjuntoService.hasItems();
         potencialClient.value.nuAttachments = this.adjuntoService.getNuAttachment();
+        potencialClient.value.coordenadaClient = this.clientLogic.potentialClient.coordenadaClient;
         this.dbService.insertPotentialClient(potencialClient.value, this.clientLogic.potentialClient.coordenada, saveSend).then(async result => {
           await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), potencialClient.value.coClient, "clientes");
           if (saveSend) {
@@ -409,8 +414,6 @@ export class NewPotentialClientComponent implements OnInit {
   }
 
   onCoordenadaChange() {
-
+    this.clientLogic.viewCoordenadaPotentialClient(this.clientLogic.potentialClient, 'potentialClient');
   }
-
-
 }

@@ -231,7 +231,10 @@ export class ClientesHeaderComponent implements OnInit {
     } else if (this.clientLogic.clientLocationChanged) {
       this.clientLogic.saveOrExitOpen = true;
     } else if (this.clientLogic.clientLocationComponent) {
-      this.clientLogic.showBackRoute('clientLocationComponent');
+      if (this.clientLogic.nameModule === "potentialClient")
+        this.backPotentialClient();
+      else
+        this.clientLogic.showBackRoute('clientLocationComponent');
     } else if (this.clientLogic.clientDocumentSaleComponent) {
       this.clientLogic.showBackRoute('clientDocumentSaleComponent');
     }
@@ -253,12 +256,20 @@ export class ClientesHeaderComponent implements OnInit {
       this.mensaje = this.clientLogic.clientTags.get('CLI_DENARIO_CONFIRM_SEND_POTENTIAL_CLIENT')!;
       this.alertMessageOpen = true;
     }
-
   }
 
   saveSendLocationFunction() {
-    this.mensaje = this.clientLogic.clientTags.get('CLI_DENARIO_CONFIRM_SEND_LOCATION')!;
-    this.alertMessageOpen = true;
+    if (this.clientLogic.nameModule === "potentialClient") {
+      this.backPotentialClient();
+    } else {
+      this.mensaje = this.clientLogic.clientTags.get('CLI_DENARIO_CONFIRM_SEND_LOCATION')!;
+      this.alertMessageOpen = true;
+    }
+  }
 
+  backPotentialClient() {
+    this.clientLogic.clientLocationComponent = false;
+    this.clientLogic.clienteNuevoBlancoImg = false;
+    this.clientLogic.clientNewPotentialClientComponent = true;
   }
 }

@@ -15,13 +15,13 @@ import { MessageService } from 'src/app/services/messageService/message.service'
 import { ServicesService } from 'src/app/services/services.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { API_KEY_GOOGLE_MAPS } from 'src/app/utils/appConstants';
-import {GoogleMap} from '@angular/google-maps';
+import { GoogleMap } from '@angular/google-maps';
 
 @Component({
-    selector: 'app-client-location',
-    templateUrl: './client-location.component.html',
-    styleUrls: ['./client-location.component.scss'],
-    standalone: false
+  selector: 'app-client-location',
+  templateUrl: './client-location.component.html',
+  styleUrls: ['./client-location.component.scss'],
+  standalone: false
 })
 export class ClientLocationComponent implements OnInit {
 
@@ -42,15 +42,16 @@ export class ClientLocationComponent implements OnInit {
   public selectedLogitude!: number;
   public isValidCoordinate: Boolean = true;
   public disableMap: Boolean = false;
+  public coordenadaInicial: string = "";
 
-  mapCenter: google.maps.LatLngLiteral = {lat: 10.48801, lng: -66.87919}; //por defecto ponemos caracas
-  redMarker: google.maps.LatLngLiteral = {lat: 10.48801, lng: -66.87919};
+  mapCenter: google.maps.LatLngLiteral = { lat: 10.48801, lng: -66.87919 }; //por defecto ponemos caracas
+  redMarker: google.maps.LatLngLiteral = { lat: 10.48801, lng: -66.87919 };
 
   mapOptions: google.maps.MapOptions = {
     zoom: 15,
-    fullscreenControl:false,
-    mapTypeControl:false,
-    streetViewControl:false,
+    fullscreenControl: false,
+    mapTypeControl: false,
+    streetViewControl: false,
   }
 
   public regexLatitude = new RegExp(/^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,30}/);
@@ -58,12 +59,12 @@ export class ClientLocationComponent implements OnInit {
   public regexLongitude = new RegExp(/^-?([0-9]{1,2}|1[0-7][0-9]|180)\.{1}\d{1,30}/);
 
   moveMap(event: google.maps.MapMouseEvent) {
-    if (this.disableMap){
+    if (this.disableMap) {
       //si el mapa esta deshabilitado no hago nada
       console.log("mapa deshabilitado");
       this.clientLogic.clientLocationChanged = false;
       return;
-    } 
+    }
     if (event.latLng !== null) {
       this.redMarker = event.latLng.toJSON();
       this.selectedLatitude = Number(this.redMarker.lat.toFixed(7));
@@ -71,31 +72,41 @@ export class ClientLocationComponent implements OnInit {
 
       this.setLocation();
 
-      this.clientLogic.clientLocationChanged = true;
+      if (this.clientLogic.nameModule == "potentialClient")
+        this.clientLogic.clientLocationChanged = false;
+      else
+        this.clientLogic.clientLocationChanged = true;
       this.clientLogic.cannotSendClientCoordinate = false; //INHABILITO BOTYON DE ENVIAR
+
     }
   }
 
   addMarker(xy: Coordinate) {
 
-      this.redMarker = {
-        lat: xy.lat,
-        lng: xy.lng,
-      }
+    this.redMarker = {
+      lat: xy.lat,
+      lng: xy.lng,
+    }
 
-      this.mapCenter = {
-        lat: xy.lat,
-        lng: xy.lng,
-      }
+    this.mapCenter = {
+      lat: xy.lat,
+      lng: xy.lng,
+    }
 
-      this.selectedLatitude = xy.lat;
-      this.selectedLogitude = xy.lng;
+    this.selectedLatitude = xy.lat;
+    this.selectedLogitude = xy.lng;
 
-      //this.clientLogic.clientLocationChanged = true;
-      //this.clientLogic.cannotSendClientCoordinate = false; //INHABILITO BOTYON DE ENVIAR
+    //this.clientLogic.clientLocationChanged = true;
+    //this.clientLogic.cannotSendClientCoordinate = false; //INHABILITO BOTYON DE ENVIAR
 
-      //this.setLocation();
-    
+    //this.setLocation();
+
+    if (this.clientLogic.nameModule == "potentialClient") {
+      this.clientLogic.clientLocationChanged = false;
+      this.clientLogic.potentialClient.coordenada = this.coordenadaInicial;
+      this.clientLogic.potentialClient.coordenadaClient = this.selectedLatitude + "," + this.selectedLogitude;
+    }
+
   }
 
   public clientLocationForm = new FormGroup({
@@ -107,9 +118,9 @@ export class ClientLocationComponent implements OnInit {
   });
 
 
-  
+
   //@ViewChild('mapClient')
-   mapClient() {
+  mapClient() {
     this.messageService.showLoading().then(() => {
       this.geoServ.getCurrentPosition().then(coords => {
         let pos = this.geoServ.getLatestPosition();
@@ -137,15 +148,16 @@ export class ClientLocationComponent implements OnInit {
           this.coordinateClient.lng = Number(this.selectedLogitude);
         }
 
+        this.coordenadaInicial = this.selectedLatitude + "," + this.selectedLogitude;
         this.addMarker(this.coordinateClient);
 
-        	this.messageService.hideLoading();
+        this.messageService.hideLoading();
         //this.createMap(ref.nativeElement);
       });
 
     })
   }
-  
+
 
   constructor(
     private geoServ: GeolocationService,
@@ -163,7 +175,7 @@ export class ClientLocationComponent implements OnInit {
     //this.clientLogic.cannotSendClientCoordinate = false;
     this.disableMap = this.clientLogic.coordenada.editable ? false : true;
     this.clientLogic.cannotSendClientCoordinate = this.disableMap;
-    if (this.disableMap){
+    if (this.disableMap) {
       this.clientLogic.clientLocationChanged = false;
     }
 
@@ -183,39 +195,39 @@ export class ClientLocationComponent implements OnInit {
       this.selectedLogitude = pos.coords.longitude;
     })
 */
-    this.mapClient();    
+    this.mapClient();
   }
 
 
-  
-   
+
+
 
   ngOnDestroy() {
     //this.newMap.destroy();
     this.subs.unsubscribe();
   }
-/*
-  async createMap(ref: HTMLElement) {
-    this.newMap = await GoogleMap.create({
-      id: 'my-map', // Unique identifier for this map instance
-      element: ref, // reference to the capacitor-google-map element
-      apiKey: API_KEY_GOOGLE_MAPS, // Your Google Maps API Key
-      config: {
-        center: {
-          // The initial position to be rendered by the map
-          lat: this.coordinateClient.lat,
-          lng: this.coordinateClient.lng,
+  /*
+    async createMap(ref: HTMLElement) {
+      this.newMap = await GoogleMap.create({
+        id: 'my-map', // Unique identifier for this map instance
+        element: ref, // reference to the capacitor-google-map element
+        apiKey: API_KEY_GOOGLE_MAPS, // Your Google Maps API Key
+        config: {
+          center: {
+            // The initial position to be rendered by the map
+            lat: this.coordinateClient.lat,
+            lng: this.coordinateClient.lng,
+          },
+          zoom: 14, // The initial zoom level to be rendered by the map
         },
-        zoom: 14, // The initial zoom level to be rendered by the map
-      },
-      forceCreate: true,
-    })
-    this.addMarker(this.coordinateClient).then(resp => {
-      this.colocarPingClick();
-    });
-
-  }
-    */
+        forceCreate: true,
+      })
+      this.addMarker(this.coordinateClient).then(resp => {
+        this.colocarPingClick();
+      });
+  
+    }
+      */
 
   /*
   destroy() {
@@ -224,7 +236,7 @@ export class ClientLocationComponent implements OnInit {
   }
     */
 
-    
+
   /*
   async colocarPingClick() {
     this.messageService.hideLoading();
@@ -252,53 +264,53 @@ export class ClientLocationComponent implements OnInit {
   saveLocation() {
     this.subs = this.locationService.salvarGuardarLocacion.subscribe(() => {
       this.messageService.showLoading().then(() => {
-              this.coordinateClient.idClient = this.clientLogic.coordenada.idClient;
-      this.coordinateClient.idAddressClients = this.clientLogic.coordenada.idAddressClients;
-      this.coordinateClient.coAddressClients = this.clientLogic.coordenada.coAddressClients;
-      this.coordinateClient.idEnterprise = this.clientLogic.coordenada.idEnterprise;
-      this.coordinateClient.txComment = "cambiando coordenada cliente";
+        this.coordinateClient.idClient = this.clientLogic.coordenada.idClient;
+        this.coordinateClient.idAddressClients = this.clientLogic.coordenada.idAddressClients;
+        this.coordinateClient.coAddressClients = this.clientLogic.coordenada.coAddressClients;
+        this.coordinateClient.idEnterprise = this.clientLogic.coordenada.idEnterprise;
+        this.coordinateClient.txComment = "cambiando coordenada cliente";
 
-      this.clientLogic.datos.client.coordenada = this.selectedLatitude + "," + this.selectedLogitude;
-      this.locationService.insertUserAddressClient(this.coordinateClient).then((result) => {
-        console.log("se actualizo la coordenada");
-        /*        this.messageAlert = new MessageAlert(
-                 "Denario Cliente",
-                 "¡Coordenada actualizada con exito!"
-               );
-               this.messageService.alertModal(this.messageAlert); */
-        let pendingTransaction = {} as PendingTransaction;
-        pendingTransaction.coTransaction = this.coordinateClient.coUserAddressClient;
-        pendingTransaction.idTransaction = this.coordinateClient.idUserAddressClient;
-        pendingTransaction.type = "updateaddress";
-        if (localStorage.getItem("connected") == "true") {
-          /*
-          this.messageAlert = new MessageAlert(
-            "Denario Cliente",
-            "¡La nueva coordenada sera enviada!"
-          );
-          this.messageService.alertModal(this.messageAlert);
-          */
-          //this.messageService.transaccionMsjModalNB("¡La nueva coordenada sera enviada!");
+        this.clientLogic.datos.client.coordenada = this.selectedLatitude + "," + this.selectedLogitude;
+        this.locationService.insertUserAddressClient(this.coordinateClient).then((result) => {
+          console.log("se actualizo la coordenada");
+          /*        this.messageAlert = new MessageAlert(
+                   "Denario Cliente",
+                   "¡Coordenada actualizada con exito!"
+                 );
+                 this.messageService.alertModal(this.messageAlert); */
+          let pendingTransaction = {} as PendingTransaction;
+          pendingTransaction.coTransaction = this.coordinateClient.coUserAddressClient;
+          pendingTransaction.idTransaction = this.coordinateClient.idUserAddressClient;
+          pendingTransaction.type = "updateaddress";
+          if (localStorage.getItem("connected") == "true") {
+            /*
+            this.messageAlert = new MessageAlert(
+              "Denario Cliente",
+              "¡La nueva coordenada sera enviada!"
+            );
+            this.messageService.alertModal(this.messageAlert);
+            */
+            //this.messageService.transaccionMsjModalNB("¡La nueva coordenada sera enviada!");
 
-          this.services.insertPendingTransaction(this.synchronizationServices.getDatabase(), pendingTransaction).then(result => {
-            if (result) {
-              this.autoSend.ngOnInit();              
-              this.clientLogic.showBackRoute('clientLocationComponent');              
-            }
+            this.services.insertPendingTransaction(this.synchronizationServices.getDatabase(), pendingTransaction).then(result => {
+              if (result) {
+                this.autoSend.ngOnInit();
+                this.clientLogic.showBackRoute('clientLocationComponent');
+              }
+              this.messageService.hideLoading();
+            })
+          } else {
             this.messageService.hideLoading();
-          })
-        } else {
-          this.messageService.hideLoading();
-          /*
-          this.messageAlert = new MessageAlert(
-            "Denario Cliente",
-            "¡La nueva coordenada sera enviada al tener conexión de datos!"
-          );
-          this.messageService.alertModal(this.messageAlert);
-          */
-          //this.messageService.transaccionMsjModalNB("¡La nueva coordenada sera enviada al tener conexión de datos!");
-        }
-      });
+            /*
+            this.messageAlert = new MessageAlert(
+              "Denario Cliente",
+              "¡La nueva coordenada sera enviada al tener conexión de datos!"
+            );
+            this.messageService.alertModal(this.messageAlert);
+            */
+            //this.messageService.transaccionMsjModalNB("¡La nueva coordenada sera enviada al tener conexión de datos!");
+          }
+        });
       });
 
     })
@@ -306,7 +318,7 @@ export class ClientLocationComponent implements OnInit {
   setCoordenada(coordenada: any) {
     console.log("BOTON ACEPTAR EN ACCORDION ", coordenada)
     /*     this.clientLocationForm.markAllAsTouched(); */
-     this.setLocation(); 
+    this.setLocation();
   }
 
   async setLocation() {
@@ -315,10 +327,19 @@ export class ClientLocationComponent implements OnInit {
     this.coordinateClient.coUserAddressClient = date.getTime().toString();
     this.coordinateClient.idUserAddressClient = 0;
 
+    if (this.clientLogic.nameModule == "potentialClient") {
+      this.clientLogic.clientLocationChanged = false;
+      this.clientLogic.potentialClient.coordenada = this.coordenadaInicial;
+      this.clientLogic.potentialClient.coordenadaClient = this.selectedLatitude + "," + this.selectedLogitude;
+    } else {
+      this.clientLogic.coordenada.lat = this.selectedLatitude;
+      this.clientLogic.coordenada.lng = this.selectedLogitude;
+    }
+    
     this.coordinateClient.lat = this.selectedLatitude;
     this.coordinateClient.lng = this.selectedLogitude;
-    this.clientLogic.coordenada.lat = this.selectedLatitude;
-    this.clientLogic.coordenada.lng = this.selectedLogitude;
+
+
 
     //this.addMarker(this.coordinateClient);
   }

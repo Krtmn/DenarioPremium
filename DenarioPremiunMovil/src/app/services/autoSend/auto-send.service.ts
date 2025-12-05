@@ -272,6 +272,7 @@ export class AutoSendService implements OnInit {
             "coEnterprise": pc[0].coEnterprise,
             "idEnterprise": pc[0].idEnterprise,
             "coordenada": pc[0].coordenada,
+            "coordenadaClient": pc[0].coordenadaClient,
             "nuAttachments": pc[0].nuAttachments,
             "hasAttachments": (String)(pc[0].hasAttachments).toLowerCase() === 'true' ? true : false,
           };

@@ -90,6 +90,7 @@ export class ClientLogicService {
   public user: any = {};
   public currencyModule: any;
 
+  public nameModule: string = "";
   public segment = 'default';
 
   public dateToday: Date = (() => {
@@ -295,9 +296,35 @@ export class ClientLogicService {
     }
   }
 
+  viewCoordenadaPotentialClient(potentialClient: PotentialClient, module: string) {
+    this.nameModule = module;
+    this.coordenada = {} as Coordinate;
+    this.coordenada.idClient = potentialClient.idClient;
+    this.coordenada.idAddressClients = 0;
+    this.coordenada.coAddressClients = "";
+    this.coordenada.editable = true;
+    this.coordenada.idEnterprise = potentialClient.idEnterprise;
+    this.coordenada.naClient = potentialClient.naClient;
+    this.coordenada.lat = Number((potentialClient.coordenada.split(",")[0].trim()));
+    this.coordenada.lng = Number((potentialClient.coordenada.split(",")[1].trim()));
+
+    this.datos = {} as SelectedClient;
+    this.datos.client = {} as Client;
+    this.datos.client.idClient = potentialClient.idClient;
+    this.datos.client.idAddressClients = 0;
+    this.datos.client.editable = true;
+
+    this.saveSendPotentialClient = false;
+    this.clientContainerComponent = false;
+    this.clienteNuevoBlancoImg = false;
+    this.clientNewPotentialClientComponent = false;
+    this.clienteNuevoBlancoImg = false;
+    this.clientLocationComponent = true;
+  }
+
   viewCoordenada(client: Client, module: string) {
     this.clienteNuevoBlancoImg = false;
-
+    this.nameModule = module;
     //DEBO VALIDAR SI EXISTE COORDENADAS, SI NO EXISTE COLOCAR LA COORDENADA DEL TELEFONO, SINO YA VEREMOS!
     this.coordenada = {} as Coordinate
     if (client.coordenada == null

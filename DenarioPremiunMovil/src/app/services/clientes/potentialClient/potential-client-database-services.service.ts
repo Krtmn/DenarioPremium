@@ -61,6 +61,7 @@ export class PotentialClientDatabaseServicesService {
           idEnterprise: res.rows.item(i).id_enterprise,
           coEnterprise: res.rows.item(i).co_enterprise,
           coordenada: res.rows.item(i).coordenada,
+          coordenadaClient: res.rows.item(i).coordenada_client,
           hasAttachments: res.rows.item(i).has_attachments,
           nuAttachments: res.rows.item(i).nu_attachments,
         })
@@ -100,6 +101,7 @@ export class PotentialClientDatabaseServicesService {
           idEnterprise: res.rows.item(i).id_enterprise,
           coEnterprise: res.rows.item(i).co_enterprise,
           coordenada: res.rows.item(i).coordenada,
+          coordenadaClient: res.rows.item(i).coordenada_client,
           hasAttachments: res.rows.item(i).has_attachments,
           nuAttachments: res.rows.item(i).nu_attachments,
         })
@@ -144,9 +146,9 @@ export class PotentialClientDatabaseServicesService {
         'id_client,co_client,id_user,co_user,na_client,' +
         'nu_rif,tx_address,tx_address_dispatch,tx_client,na_responsible,' +
         'em_client,nu_phone,na_web_site,da_potential_client,st_potential_client,' +
-        'id_enterprise,co_enterprise, coordenada,nu_attachments,has_attachments' +
+        'id_enterprise,co_enterprise, coordenada,coordenada_client, nu_attachments,has_attachments' +
         ') ' +
-        'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+        'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
 
       //let fecha = new Date();
       potencialClient.idUser = Number(localStorage.getItem("idUser"));
@@ -163,7 +165,7 @@ export class PotentialClientDatabaseServicesService {
         potencialClient.txClient, potencialClient.naResponsible, potencialClient.emClient, potencialClient.nuPhone,
         potencialClient.naWebSite, potencialClient.daPotentialClient, potencialClient.stPotentialClient,
         potencialClient.idEnterprise, potencialClient.coEnterprise,
-        coordenada, potencialClient.nuAttachments, potencialClient.hasAttachments
+        coordenada, potencialClient.coordenadaClient, potencialClient.nuAttachments, potencialClient.hasAttachments
       ]).then(res => {
         console.log("POTENTIAL CLIENT INSERT");
       }).catch(e => {

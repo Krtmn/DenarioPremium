@@ -20,6 +20,7 @@ export class PotentialClient {
             obj['idEnterprise'],
             obj['coEnterprise'],
             obj['coordenada'],
+            obj['coordenadaClient'],
             obj['nuAttachments'],
             obj['hasAttachments'],
         );
@@ -45,6 +46,7 @@ export class PotentialClient {
         public idEnterprise: number,
         public coEnterprise: string,
         public coordenada: string = "",
+        public coordenadaClient: string = "",
         public nuAttachments: number = 0,
         public hasAttachments: boolean = false,
     ) { }

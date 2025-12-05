@@ -348,7 +348,7 @@
         "name": "potential_clients",
         "table": "potentialClients",
         "idName": "co_client",
-        "sql": "CREATE TABLE IF NOT EXISTS potential_clients(id INTEGER, id_client INTEGER, co_client VARCHAR(40) PRIMARY KEY, id_user INTEGER, co_user VARCHAR(30), na_client VARCHAR(80), nu_rif VARCHAR(15), tx_address VARCHAR(150),tx_address_dispatch VARCHAR(150),tx_client VARCHAR(160),na_responsible VARCHAR(80),em_client VARCHAR(80),nu_phone VARCHAR(80),na_web_site VARCHAR(150),da_potential_client TIMESTAMP,st_potential_client INTEGER,id_enterprise INTEGER,co_enterprise VARCHAR(30),coordenada VARCHAR(50), nu_attachments INTEGER, has_attachments BOOLEAN);"
+        "sql": "CREATE TABLE IF NOT EXISTS potential_clients(id INTEGER, id_client INTEGER, co_client VARCHAR(40) PRIMARY KEY, id_user INTEGER, co_user VARCHAR(30), na_client VARCHAR(80), nu_rif VARCHAR(15), tx_address VARCHAR(150),tx_address_dispatch VARCHAR(150),tx_client VARCHAR(160),na_responsible VARCHAR(80),em_client VARCHAR(80),nu_phone VARCHAR(80),na_web_site VARCHAR(150),da_potential_client TIMESTAMP,st_potential_client INTEGER,id_enterprise INTEGER,co_enterprise VARCHAR(30),coordenada VARCHAR(50), coordenada_client VARCHAR(50), nu_attachments INTEGER, has_attachments BOOLEAN);"
     },
     {
         "id": 99103,
