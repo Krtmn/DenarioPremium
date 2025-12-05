@@ -98,7 +98,43 @@ ion-checkbox::part(container) {
 ion-modal.compartirDoc {
   --width: fit-content;
   --min-width: 90%;
-  --height: 70%;
+  --height: 50%;
   --border-radius: 6px;
   --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
+}
+
+/* Asegura que el contenido del modal no quede oculto por el footer fijo */
+.compartirDoc .compartirDoc-content {
+  padding-bottom: 82px; /* dejar espacio para el footer (ajusta si cambias la altura) */
+  max-height: calc(100vh - 90px); /* evita overflow excesivo, opcional */
+  overflow: auto;
+}
+
+/* Personaliza el footer del modal si quieres fondo/altura */
+.compartirDoc .compartirDoc-footer {
+  --background: var(--ion-background-color); /* o un color específico */
+  padding: 8px 0;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+}
+
+
+.compartirDoc-header {
+  --background: var(--ion-background-color);
+  z-index: 10;
+  ion-item {
+    --inner-padding-end: 12px;
+    --inner-padding-start: 12px;
+  }
+}
+
+/* Dejamos espacio en el contenido para header y footer */
+.compartirDoc-content {
+  padding-top: 56px;   /* ajustar si tu header ocupa más/menos */
+  padding-bottom: 82px; /* igual que antes para no tapar footer */
+  --overflow: auto;
+}
+
+/* Asegurar que el footer esté por delante del contenido */
+.compartirDoc-footer {
+  z-index: 11;
 }

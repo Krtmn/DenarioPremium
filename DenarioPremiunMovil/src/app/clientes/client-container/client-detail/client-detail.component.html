@@ -244,44 +244,51 @@
             <app-client-share-modal></app-client-share-modal>
         </ng-template>
     </ion-modal>
-    <ion-modal [isOpen]="clientSelectShareModalOpen" (didDismiss)="openSelectShareModal(false)" class="compartirDoc">
-        <ng-template>
-            <div *ngIf="clientLogic.datos?.document?.length">
-                <ion-item lines="none">
-                    <ion-label>{{ clientLogic.clientTags.get('CLI_DETAIL_SELECT_DOCS') || 'Seleccionar documentos'
-                        }}</ion-label>
-                    <ion-button fill="clear" size="small" slot="end" (click)="selectAllDocuments()">Todos</ion-button>
-                </ion-item>
+<ion-modal [isOpen]="clientSelectShareModalOpen" (didDismiss)="openSelectShareModal(false)" class="compartirDoc">
+  <ng-template>
+    <!-- Header fijo arriba -->
+    <ion-header class="compartirDoc-header" slot="fixed">
+      <ion-toolbar>
+        <ion-item lines="none">
+          <ion-label>{{ clientLogic.clientTags.get('CLI_DETAIL_SELECT_DOCS') || 'Seleccionar documentos' }}</ion-label>
+          <ion-button fill="clear" size="small" slot="end" (click)="selectAllDocuments()">Todos</ion-button>
+        </ion-item>
+      </ion-toolbar>
+    </ion-header>
 
-                <ion-item>
-                    <div *ngIf="clientLogic.datos?.document?.length">
-                        <ion-list>
-                            <ion-item *ngFor="let doc of clientLogic.datos.document">
-                                <ion-label>{{ doc.coDocument }}</ion-label>
-                                <ion-checkbox slot="end" [checked]="selectedDocuments?.includes(doc.coDocument)"
-                                    (ionChange)="toggleDocumentSelection(doc.coDocument, $event)">
-                                </ion-checkbox>
-                            </ion-item>
-                        </ion-list>
-                    </div>
-                </ion-item>
+    <!-- Contenido desplazable -->
+    <ion-content class="compartirDoc-content">
+      <div *ngIf="clientLogic.datos?.document?.length">
+        <ion-list>
+          <ion-item *ngFor="let doc of clientLogic.datos.document">
+            <ion-label>{{ doc.coDocument }}</ion-label>
+            <ion-checkbox slot="end" [checked]="selectedDocuments?.includes(doc.coDocument)"
+              (ionChange)="toggleDocumentSelection(doc.coDocument, $event)">
+            </ion-checkbox>
+          </ion-item>
+        </ion-list>
+      </div>
+    </ion-content>
 
-                <ion-grid>
-                    <ion-row>
-                        <ion-col size="6">
-                            <ion-button expand="block" color="medium" (click)="openSelectShareModal(false)">
-                                Cancelar
-                            </ion-button>
-                        </ion-col>
-                        <ion-col size="6">
-                            <ion-button expand="block" color="primary"
-                                (click)="openShareModal(true); openSelectShareModal(false)">
-                                Aceptar
-                            </ion-button>
-                        </ion-col>
-                    </ion-row>
-                </ion-grid>
-            </div>
-        </ng-template>
-    </ion-modal>
-</ion-content>
+    <!-- Footer fijo del modal -->
+    <ion-footer slot="fixed" class="compartirDoc-footer">
+      <ion-toolbar>
+        <ion-grid>
+          <ion-row>
+            <ion-col size="6">
+              <ion-button expand="block" size="small" color="light" (click)="openSelectShareModal(false)">
+                Cancelar
+              </ion-button>
+            </ion-col>
+            <ion-col size="6">
+              <ion-button expand="block" size="small" class="botonAddVerde"
+                (click)="openShareModal(true); openSelectShareModal(false)">
+                Aceptar
+              </ion-button>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+      </ion-toolbar>
+    </ion-footer>
+  </ng-template>
+</ion-modal>
