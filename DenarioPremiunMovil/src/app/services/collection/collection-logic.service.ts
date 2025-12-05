@@ -730,6 +730,7 @@ export class CollectionService {
     })
 
     if (this.rateList.length > 0) {
+      this.historicoTasa = true;
       this.rateSelected = this.collection.nuValueLocal = this.rateList[0];
       this.haveRate = true;
 
