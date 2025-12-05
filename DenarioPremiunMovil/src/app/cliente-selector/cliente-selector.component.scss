@@ -9,19 +9,22 @@
 }
 
 .fondoVerde {
-  background: #59b02d !important; /* Usa tu color verde corporativo */
-  --background: #59b02d !important;
-  color: #fff !important;
+    background: #59b02d !important;
+    /* Usa tu color verde corporativo */
+    --background: #59b02d !important;
+    color: #fff !important;
 }
 
-.fondoAmarillo{
-    background: #daab19 !important; /* Usa tu color amarillo corporativo */
+.fondoAmarillo {
+    background: #daab19 !important;
+    /* Usa tu color amarillo corporativo */
     --background: #daab19 !important;
     color: #fff !important;
 }
 
-.fondoLila{
-    background: #430197 !important; /* Usa tu color lila corporativo */
+.fondoLila {
+    background: #430197 !important;
+    /* Usa tu color lila corporativo */
     --background: #430197 !important;
     color: #fff !important;
 
@@ -36,9 +39,15 @@
     --padding-start: 0;
     --padding-end: 0;
     margin-top: 0;
-    }
+}
 
 ion-button.masInfo {
     --color: #430197;
     font-weight: bold;
+}
+
+ion-button.masInfo,
+ion-button.masInfo .button-inner,
+ion-button.masInfo .button-inner>* {
+    text-transform: none !important;
 }

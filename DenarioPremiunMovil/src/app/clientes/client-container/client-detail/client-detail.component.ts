@@ -55,6 +55,11 @@ export class ClienteComponent implements OnInit {
   ngOnInit() {
     //console.log(this.clientDetail);
     this.client = this.clientLogic.datos.client;
+
+    this.client.txDescription1 = this.sanitizeDescription(this.client.txDescription1);
+    this.client.txDescription2 = this.sanitizeDescription(this.client.txDescription2);
+
+
     this.selectedAddress = this.clientLogic.listaDirecciones.find(address => address.idAddress === this.client.idAddressClients)!;
 
     if (this.clientLogic.multiCurrency) {
@@ -101,6 +106,13 @@ export class ClienteComponent implements OnInit {
 
   ngOnDestroy() {
     this.subjectClientShareModalOpen.unsubscribe();
+  }
+
+  private sanitizeDescription(value: any): string {
+    if (value == null || value === undefined) return '';
+    const s = String(value).trim();
+    if (s === '' || s.toLowerCase() === 'null') return '';
+    return s;
   }
 
   openDoc(idDocumento: number, index: number) {
