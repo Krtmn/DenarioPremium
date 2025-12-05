@@ -108,11 +108,11 @@
                         class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_COORDENADA")}}:</ion-col>
                     <ion-col>{{getCoordenada(client.coordenada)}}
                         <ion-button *ngIf="hayCoordenada(client.coordenada)" class="botonAddVerde" size="small"
-                            (click)="viewCoordenada(true,  client)">
+                            (click)="viewCoordenada(true,  client, 'client')">
                             <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
                         </ion-button>
                         <ion-button *ngIf="!hayCoordenada(client.coordenada)" class="botonAddVerde" size="small"
-                            (click)="viewCoordenada(false,client)">
+                            (click)="viewCoordenada(false,client, 'client')">
                             <ion-icon slot="icon-only" name="add"></ion-icon>
                         </ion-button>
 
@@ -123,7 +123,7 @@
                         class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_COORDENADA")}}:</ion-col>
                     <ion-col>{{client.coordenada}}
                         <ion-button *ngIf="hayCoordenada(client.coordenada)" class="botonAddVerde" size="small"
-                            (click)="viewCoordenada(true, client)">
+                            (click)="viewCoordenada(true, client, 'client')">
                             <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
                         </ion-button>
                         <!-- <a (click)="viewCoordenada(true, client)">
@@ -254,13 +254,16 @@
                 </ion-item>
 
                 <ion-item>
-                    <ion-select multiple="true" interface="popover" labelPlacement="stacked"
-                        [(ngModel)]="selectedDocuments" okText="OK" cancelText="Cancelar"
-                        placeholder="Seleccione los documentos a compartir">
-                        <ion-select-option *ngFor="let doc of clientLogic.datos.document" [value]="doc.coDocument">
-                            {{ doc.coDocument }}
-                        </ion-select-option>
-                    </ion-select>
+                    <div *ngIf="clientLogic.datos?.document?.length">
+                        <ion-list>
+                            <ion-item *ngFor="let doc of clientLogic.datos.document">
+                                <ion-label>{{ doc.coDocument }}</ion-label>
+                                <ion-checkbox slot="end" [checked]="selectedDocuments?.includes(doc.coDocument)"
+                                    (ionChange)="toggleDocumentSelection(doc.coDocument, $event)">
+                                </ion-checkbox>
+                            </ion-item>
+                        </ion-list>
+                    </div>
                 </ion-item>
 
                 <ion-grid>
