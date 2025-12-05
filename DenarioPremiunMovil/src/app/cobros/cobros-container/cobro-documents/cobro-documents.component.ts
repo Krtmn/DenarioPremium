@@ -13,6 +13,7 @@ import { PagoOtros } from 'src/app/modelos/pago-otros';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 import { COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW } from 'src/app/utils/appConstants';
+import { ClientLogicService } from 'src/app/services/clientes/client-logic.service';
 
 
 @Component({
@@ -28,6 +29,7 @@ export class CobrosDocumentComponent implements OnInit {
   public currencyService = inject(CurrencyService);
   public dateServ = inject(DateServiceService);
   public synchronizationServices = inject(SynchronizationDBService);
+  public clientLogic = inject(ClientLogicService);
   public cdr: ChangeDetectorRef;
 
   public Math = Math;

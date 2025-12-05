@@ -117,24 +117,25 @@
             </ion-col>
 
             <ion-col size="2" class="ion-text-center col"
-                [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }">
+                [ngStyle]="{color: this.clientLogic.isDueSoon(documentSale.daDueDate) ? 'Red' : 'Blue' }">
                 {{documentSale.coDocumentSaleType}}
             </ion-col>
             <ion-col size="4" class="ion-text-center col"
-                [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }">
+                [ngStyle]="{color: this.clientLogic.isDueSoon(documentSale.daDueDate) ? 'Red' : 'Blue' }">
                 {{documentSale.coDocument}}
             </ion-col>
             <ion-col size="6" class="ion-text-center col"
-                [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }">
+                [ngStyle]="{color: this.clientLogic.isDueSoon(documentSale.daDueDate) ? 'Red' : 'Blue' }">
                 {{documentSale.coCurrency}}
             </ion-col>
             <ion-col size="6" class="ion-text-center col"
-                [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }">
+                [ngStyle]="{color: this.clientLogic.isDueSoon(documentSale.daDueDate) ? 'Red' : 'Blue' }">
                 {{getDaDueDate(documentSale.daDueDate)}}
             </ion-col>
 
             <ion-col *ngIf="this.collectService.multiCurrency && this.collectService.showConversion" size="6"
-                class="ion-text-center col" [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }">
+                class="ion-text-center col"
+                [ngStyle]="{color: this.clientLogic.isDueSoon(documentSale.daDueDate) ? 'Red' : 'Blue' }">
 
                 {{ getTasaByAmount(documentSale.nuAmountTotal, documentSale.nuValueLocal) }}
                 {{this.collectService.localCurrency.coCurrency}}
@@ -142,13 +143,14 @@
 
             <!-- MONTO -->
             <ion-col size="6" class="ion-text-center col" size="6" class="ion-text-center col"
-                [ngStyle]="{color: documentSale.nuAmountTotal > 0 ? 'Red' : 'Blue' }">
+                [ngStyle]="{color: this.clientLogic.isDueSoon(documentSale.daDueDate) ? 'Red' : 'Blue' }">
                 {{formatNumber((documentSale.nuAmountTotal))}}
                 {{documentSale.coCurrency}}
             </ion-col>
             <!-- Monto CONVERSION -->
             <ion-col size="6" *ngIf="this.collectService.showConversion" class="ion-text-center col" size="6"
-                class="ion-text-center col" [ngStyle]="{color: documentSale.nuAmountTotal > 0 ? 'Red' : 'Blue' }">
+                class="ion-text-center col"
+                [ngStyle]="{color: this.clientLogic.isDueSoon(documentSale.daDueDate) ? 'Red' : 'Blue' }">
                 {{formatNumber(this.collectService.convertirMonto(documentSale.nuAmountTotal,
                 documentSale.nuValueLocal,documentSale.coCurrency))}}
                 {{oppositeCoCurrency(documentSale.coCurrency)}}
@@ -156,25 +158,26 @@
 
             <!-- SALDO -->
             <ion-col size="6" class="ion-text-center col" size="6" class="ion-text-center col"
-                [ngStyle]="{color: documentSale.nuAmountTotal > 0 ? 'Red' : 'Blue' }">
+                [ngStyle]="{color: this.clientLogic.isDueSoon(documentSale.daDueDate) ? 'Red' : 'Blue' }">
                 {{formatNumber((documentSale.nuBalance))}}
                 {{documentSale.coCurrency}}
             </ion-col>
 
             <!-- SALDO CONVERSION -->
             <ion-col size="6" *ngIf="this.collectService.showConversion" class="ion-text-center col" size="6"
-                class="ion-text-center col" [ngStyle]="{color: documentSale.nuAmountTotal > 0 ? 'Red' : 'Blue' }">
+                class="ion-text-center col"
+                [ngStyle]="{color: this.clientLogic.isDueSoon(documentSale.daDueDate) ? 'Red' : 'Blue' }">
                 {{formatNumber(this.collectService.convertirMonto(documentSale.nuBalance,
                 documentSale.nuValueLocal,documentSale.coCurrency))}}
                 {{oppositeCoCurrency(documentSale.coCurrency)}}
             </ion-col>
 
             <ion-col size="6" class="ion-text-center col"
-                [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }">
+                [ngStyle]="{color:this.clientLogic.isDueSoon(documentSale.daDueDate) ? 'Red' : 'Blue' }">
                 {{documentSale.daDocument | date: "dd/MM/yyyy"}}
             </ion-col>
             <ion-col size="6" class="ion-text-center col borderInferiorDerecho"
-                [ngStyle]="{color: documentSale.nuAmountTotal >0 ? 'Red' : 'Blue' }">
+                [ngStyle]="{color: this.clientLogic.isDueSoon(documentSale.daDueDate) ? 'Red' : 'Blue' }">
                 {{documentSale.daDueDate | date: "dd/MM/yyyy"}}
             </ion-col>
         </ion-row>
