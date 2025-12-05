@@ -249,6 +249,7 @@
     <!-- Header fijo arriba -->
     <ion-header class="compartirDoc-header" slot="fixed">
       <ion-toolbar>
+        <ion-title class="tituloCompartir">Compartir documentos</ion-title>
         <ion-item lines="none">
           <ion-label>{{ clientLogic.clientTags.get('CLI_DETAIL_SELECT_DOCS') || 'Seleccionar documentos' }}</ion-label>
           <ion-button fill="clear" size="small" slot="end" (click)="selectAllDocuments()">Todos</ion-button>
