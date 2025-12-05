@@ -355,7 +355,7 @@ export class PedidoComponent implements OnInit {
       if (this.orderServ.order.daDispatch != null) {
         this.fechaDespacho = this.dateServ.toISOString(this.orderServ.order.daDispatch);
       }
-      this.fechaPedido = this.dateServ.toISOString(this.orderServ.order.daOrder);
+      this.fechaPedido = this.orderServ.order.daOrder;
       this.daDispatchChanged = true;
     }
     //responsable
