@@ -28,6 +28,9 @@ export class ClientesDatabaseServicesService {
           '(SELECT SUM(ds.nu_amount_total) FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client AND ds.co_currency = c.co_currency) nuAmountTotal1, ' +
           '(SELECT SUM(ds.nu_amount_total) FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client  AND ds.co_currency != c.co_currency) nuAmountTotal2, ' +
           '(SELECT co_currency FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) coCurrency, ' +
+          '(SELECT da_document FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDocument, ' +
+          '(SELECT da_due_date FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDueDate, ' +
+          '(SELECT COUNT(*) FROM document_sales ds WHERE ds.id_client=c.id_client AND da_due_date < DATE("now") AND  ds.id_enterprise = ' + idEnterprise + ') as countDueDate, ' +
           '(SELECT coordenada FROM address_clients ac WHERE ac.id_client=c.id_client) coordenada, ' +
           '(SELECT editable FROM address_clients ac WHERE ac.id_client=c.id_client) editable, ' +
           '(SELECT e.lb_enterprise FROM enterprises e WHERE e.id_enterprise = c.id_enterprise LIMIT 1 ) lbl_enterprise ' +
@@ -35,6 +38,7 @@ export class ClientesDatabaseServicesService {
           'LEFT JOIN lists p ON p.id_list = c.id_list ' +
           'LEFT JOIN distribution_channels dc ON dc.id_channel = c.id_channel ' +
           'WHERE c.id_enterprise = ?'
+
       } else {
         selectStatement = 'SELECT c.*, (SELECT p.na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1 ) na_price_list, ' +
           '(SELECT na_channel FROM distribution_channels WHERE id_channel = c.id_channel LIMIT 1 ) channel, ' +
@@ -43,7 +47,9 @@ export class ClientesDatabaseServicesService {
           '(SELECT SUM(ds.nu_amount_total) FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client AND ds.co_currency = c.co_currency) nuAmountTotal1, ' +
           '(SELECT SUM(ds.nu_amount_total) FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client  AND ds.co_currency != c.co_currency) nuAmountTotal2, ' +
           '(SELECT co_currency FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) coCurrency, ' +
-          '(SELECT coordenada FROM address_clients ac WHERE ac.id_client=c.id_client) coordenada, ' +
+          '(SELECT da_document FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDocument, ' +
+          '(SELECT da_due_date FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDueDate, ' +
+          '(SELECT COUNT(*) FROM document_sales ds WHERE ds.id_client=c.id_client AND da_due_date < DATE("now") AND  ds.id_enterprise = ' + idEnterprise + ') as countDueDate, ' + '(SELECT coordenada FROM address_clients ac WHERE ac.id_client=c.id_client) coordenada, ' +
           '(SELECT editable FROM address_clients ac WHERE ac.id_client=c.id_client) editable, ' +
           '(SELECT e.lb_enterprise FROM enterprises e WHERE e.id_enterprise = c.id_enterprise LIMIT 1 ) lbl_enterprise ' +
           'FROM clients c ' +
@@ -57,7 +63,9 @@ export class ClientesDatabaseServicesService {
         '(SELECT SUM(ds.nu_balance) FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) saldo1, ' +
         '(SELECT SUM(ds.nu_amount_total) FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) nuAmountTotal, ' +
         '(SELECT co_currency FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) coCurrency, ' +
-        '(SELECT coordenada FROM address_clients ac WHERE ac.id_client=c.id_client) coordenada, ' +
+        '(SELECT da_document FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDocument, ' +
+        '(SELECT da_due_date FROM document_sales ds WHERE ds.id_enterprise = ' + idEnterprise + ' AND ds.id_client=c.id_client) daDueDate, ' +
+        '(SELECT COUNT(*) FROM document_sales ds WHERE ds.id_client=c.id_client AND da_due_date < DATE("now") AND  ds.id_enterprise = ' + idEnterprise + ') as countDueDate, ' + '(SELECT coordenada FROM address_clients ac WHERE ac.id_client=c.id_client) coordenada, ' +
         '(SELECT editable FROM address_clients ac WHERE ac.id_client=c.id_client) editable, ' +
         '(SELECT e.lb_enterprise FROM enterprises e WHERE e.id_enterprise = c.id_enterprise LIMIT 1 ) lbl_enterprise ' +
         'FROM clients c ' +
@@ -117,6 +125,9 @@ export class ClientesDatabaseServicesService {
           collectionIva: data.rows.item(i).collection_iva == "true" ? true : false,
           txDescription1: data.rows.item(i).tx_description_1,
           txDescription2: data.rows.item(i).tx_description_2,
+          daDocument: data.rows.item(i).daDocument,
+          daDueDate: data.rows.item(i).daDueDate,
+          countDueDate: data.rows.item(i).countDueDate
         });
       }
       return lists;
@@ -484,10 +495,3 @@ export class ClientesDatabaseServicesService {
   }
 
 }
-
-
-
-
-
-
-

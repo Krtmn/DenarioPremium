@@ -13,6 +13,7 @@ import { MessageService } from '../services/messageService/message.service';
 import { ClientLogicService } from '../services/clientes/client-logic.service';
 import { ModalController } from '@ionic/angular';
 import { ClienteComponent } from '../clientes/client-container/client-detail/client-detail.component';
+import { DateServiceService } from '../services/dates/date-service.service';
 
 
 @Component({
@@ -91,6 +92,7 @@ export class ClienteSelectorComponent implements OnInit {
 
   ngOnInit() {
     //console.log("Cliente selector ON");
+    //this.dateToday = this.dateServ.onlyDateHoyISO();
   }
 
   getTag(tagName: string) {
@@ -337,4 +339,6 @@ export class ClienteSelectorComponent implements OnInit {
       console.error('Error mostrando detalle de cliente en modal:', err);
     }
   }
+
+  
 }

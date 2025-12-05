@@ -89,6 +89,13 @@ export class ClientLogicService {
 
   public segment = 'default';
 
+  public dateToday: Date = (() => {
+    const d = new Date();
+    d.setDate(d.getDate());
+    d.setHours(0, 0, 0, 0);
+    return d;
+  })();
+
 
   constructor() {
     this.multiCurrency = this.globalConfig.get('multiCurrency').toString() === "true" ? true : false;
@@ -347,5 +354,47 @@ export class ClientLogicService {
     await this.getCurrency();
     this.clientContainerComponent = true; // Aseguramos que el contenedor de clientes esté activo
     await this.goToClient(idClient); // ahora espera hasta que goToClient termine todas las cargas
+  }
+
+
+  private parseDate(value: string | number | Date | undefined | null): Date | null {
+    if (!value && value !== 0) return null;
+    if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+    if (typeof value === 'number') {
+      const n = new Date(value);
+      return isNaN(n.getTime()) ? null : n;
+    }
+    const s = String(value).trim();
+    if (!s) return null;
+
+    // dd/MM/yyyy[ HH:mm[:ss]]
+    const slash = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/.exec(s);
+    if (slash) {
+      const day = Number(slash[1]), month = Number(slash[2]) - 1, year = Number(slash[3]);
+      const hr = Number(slash[4] ?? 0), min = Number(slash[5] ?? 0), sec = Number(slash[6] ?? 0);
+      const d = new Date(year, month, day, hr, min, sec);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    // yyyy-MM-dd[THH:mm[:ss]]
+    const dash = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/.exec(s);
+    if (dash) {
+      const year = Number(dash[1]), month = Number(dash[2]) - 1, day = Number(dash[3]);
+      const hr = Number(dash[4] ?? 0), min = Number(dash[5] ?? 0), sec = Number(dash[6] ?? 0);
+      const d = new Date(year, month, day, hr, min, sec);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    // Fallback a Date constructor / parse
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  public isDueSoon(daDueDate: string | Date | undefined | null): boolean {
+    const dueDate = this.parseDate(daDueDate);
+    if (!dueDate) return false;
+    // normalizar horas a medianoche antes de comparar
+    dueDate.setHours(0, 0, 0, 0);
+    return dueDate < this.dateToday;
   }
 }

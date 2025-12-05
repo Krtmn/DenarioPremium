@@ -40,6 +40,9 @@ export class Client {
             obj['collectionIva'],
             obj['txDescription1'],
             obj['txDescription2'],
+            obj['daDocument'],
+            obj['daDueDate'],
+            obj['countDueDate'],
         );
     }
 
@@ -83,6 +86,9 @@ export class Client {
         public collectionIva: boolean,
         public txDescription1: string,
         public txDescription2: string,
+        public daDocument: string,
+        public daDueDate: string,
+        public countDueDate: number,
     ) { }
 
 }

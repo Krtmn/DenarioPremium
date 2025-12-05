@@ -15,10 +15,10 @@ import { ServicesService } from 'src/app/services/services.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
 @Component({
-    selector: 'app-client-list',
-    templateUrl: './client-list.component.html',
-    styleUrls: ['./client-list.component.scss'],
-    standalone: false
+  selector: 'app-client-list',
+  templateUrl: './client-list.component.html',
+  styleUrls: ['./client-list.component.scss'],
+  standalone: false
 })
 export class ClientListComponent implements OnInit {
 
@@ -39,6 +39,14 @@ export class ClientListComponent implements OnInit {
   public indice!: number;
   public clientDetailComponent: Boolean = false;
   public precision = this.currencyService.precision;
+
+  public dateToday: Date = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  })();
+
 
 
   @Input()
@@ -81,7 +89,7 @@ export class ClientListComponent implements OnInit {
     this.service.clientes = [] as Client[];
     this.clientLogic.getClients(this.clientLogic.empresaSeleccionada.idEnterprise).then(result => {
 
-      this.indice = 1;      
+      this.indice = 1;
       if (this.currencyService.multimoneda) {
         let saldoCliente = 0, saldoOpuesto = 0;
         for (let c = 0; c < this.clientLogic.clients.length; c++) {
@@ -100,4 +108,6 @@ export class ClientListComponent implements OnInit {
       this.service.clientes = this.clientLogic.clients;
     })
   }
+
+ 
 }
