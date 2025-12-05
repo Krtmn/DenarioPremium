@@ -244,7 +244,7 @@
             <app-client-share-modal></app-client-share-modal>
         </ng-template>
     </ion-modal>
-    <ion-modal [isOpen]="clientSelectShareModalOpen" (didDismiss)="openSelectShareModal(false)">
+    <ion-modal [isOpen]="clientSelectShareModalOpen" (didDismiss)="openSelectShareModal(false)" class="compartirDoc">
         <ng-template>
             <div *ngIf="clientLogic.datos?.document?.length">
                 <ion-item lines="none">
