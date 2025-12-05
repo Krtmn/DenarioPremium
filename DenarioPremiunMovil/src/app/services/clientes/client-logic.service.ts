@@ -295,7 +295,7 @@ export class ClientLogicService {
     }
   }
 
-  viewCoordenada(client: Client) {
+  viewCoordenada(client: Client, module: string) {
     this.clienteNuevoBlancoImg = false;
 
     //DEBO VALIDAR SI EXISTE COORDENADAS, SI NO EXISTE COLOCAR LA COORDENADA DEL TELEFONO, SINO YA VEREMOS!
@@ -317,8 +317,21 @@ export class ClientLogicService {
     this.coordenada.idEnterprise = client.idEnterprise;
     this.coordenada.naClient = client.lbClient;
 
-    this.clientDetailComponent = false;
-    this.clientLocationComponent = true;
+    switch (module) {
+      case "client":
+        this.clientDetailComponent = false;
+        this.clientLocationComponent = true;
+        break;
+      case "clientNewPotentialClient":
+        this.clientNewPotentialClientComponent = false;
+        this.clientLocationComponent = true;
+        break;
+      case "visitas":
+        this.clientLocationComponent = true;
+        break;
+    }
+
+
   }
 
   getPotentialClient() {

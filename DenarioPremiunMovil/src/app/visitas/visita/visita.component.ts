@@ -139,12 +139,12 @@ export class VisitaComponent implements OnInit {
     this.nombreCliente = client.lbClient;
   });
 
-    backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
+  backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
     //console.log('backButton was called!');
-    if(this.showEventModal){
+    if (this.showEventModal) {
       //cerramos el modal de eventos primero.
       this.resetEventSelect();
-    }else{
+    } else {
       this.goBack();
     }
   });
@@ -325,25 +325,25 @@ export class VisitaComponent implements OnInit {
 
     this.setButtonsSalvar();
 
-    if (!this.visitServ.userMustActivateGPS && 
-      (this.visitServ.visit.stVisit === VISIT_STATUS_NOT_VISITED || 
+    if (!this.visitServ.userMustActivateGPS &&
+      (this.visitServ.visit.stVisit === VISIT_STATUS_NOT_VISITED ||
         this.visitServ.visit.stVisit === VISIT_STATUS_SAVED)) {
       //si esta desactivado, se hace el chequeo suave de fondo. 
       //no bloqueamos si coords esta vacio
       if (this.visitServ.coordenadas == "") {
-      this.geoServ.getCurrentPosition().then(coords => {
-        if (coords.length > 0) {
-          this.visitServ.coordenadas = coords;
-          this.disabledButtonViewRoute = false;
-        }
-      })
-    }
+        this.geoServ.getCurrentPosition().then(coords => {
+          if (coords.length > 0) {
+            this.visitServ.coordenadas = coords;
+            this.disabledButtonViewRoute = false;
+          }
+        })
+      }
     } else {
       this.disabledButtonViewRoute = true;
     }
     this.clientLogic.getTags();
 
-  this.message.hideLoading();
+    this.message.hideLoading();
 
   }
 
@@ -562,7 +562,7 @@ export class VisitaComponent implements OnInit {
     //this.clientLogic.goToClient(this.cliente.idClient);
     this.clientLogic.datos = {} as SelectedClient;
     this.clientLogic.datos.client = this.cliente;
-    this.clientLogic.viewCoordenada(this.cliente);
+    this.clientLogic.viewCoordenada(this.cliente, "visitas");
 
 
   }
@@ -935,8 +935,8 @@ export class VisitaComponent implements OnInit {
       // console.log(incidences);
 
       //revisamos que tengamos coordenadas
-        // Validar que this.visitServ.coordenadas no sea null ni undefined antes de acceder a length
-        if (!this.visitServ.coordenadas || this.visitServ.coordenadas.length <= 0) {
+      // Validar que this.visitServ.coordenadas no sea null ni undefined antes de acceder a length
+      if (!this.visitServ.coordenadas || this.visitServ.coordenadas.length <= 0) {
         await this.message.showLoading().then(async () => {
           await this.geoServ.getCurrentPosition().then(coords => {
             if (coords.length > 0) {
@@ -1015,8 +1015,8 @@ export class VisitaComponent implements OnInit {
     this.changesMade = value;
     if (value) {
       var disable = !((this.cliente.idClient != null) &&
-       (this.listaEventos.length > 0) &&
-       (!this.adjuntoService.weightLimitExceeded));
+        (this.listaEventos.length > 0) &&
+        (!this.adjuntoService.weightLimitExceeded));
       this.disableSaveButton = disable;
       this.disableSendButton = disable;
       if (this.rolTransportista) {
@@ -1163,10 +1163,10 @@ export class VisitaComponent implements OnInit {
 
   async openRouteInGoogleMaps() {
     let hasNoClientCoordinates = false;
-    if (this.cliente.coordenada == null 
-    || this.cliente.coordenada.trim() == "" 
-    || this.cliente.coordenada.trim() == "0,0" 
-    || this.cliente.coordenada.toLowerCase().trim() === "null") {
+    if (this.cliente.coordenada == null
+      || this.cliente.coordenada.trim() == ""
+      || this.cliente.coordenada.trim() == "0,0"
+      || this.cliente.coordenada.toLowerCase().trim() === "null") {
       if (this.clientLogic.coordenada &&
         this.clientLogic.coordenada.lat !== 0 &&
         this.clientLogic.coordenada.lng !== 0) {
