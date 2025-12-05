@@ -113,12 +113,12 @@ export class ClienteComponent implements OnInit {
     this.clientLogic.opendDocClick = true;
   }
 
-  viewCoordenada(verCrear: Boolean, client: Client) {
+  viewCoordenada(verCrear: Boolean, client: Client, module: string) {
     if (verCrear)
       console.log("ver mapa");
     else
       console.log("crear ubicacion");
-    this.clientLogic.viewCoordenada(client);
+    this.clientLogic.viewCoordenada(client, module);
   }
 
   hayCoordenada(coord: string) {
@@ -170,6 +170,17 @@ export class ClienteComponent implements OnInit {
 
   oppositeCoCurrency(coCurrency: string) {
     return this.currencyService.oppositeCoCurrency(coCurrency);
+  }
+
+  public toggleDocumentSelection(coDocument: string, event?: any): void {
+    const checked = event?.detail?.checked ?? !!event?.target?.checked;
+    if (!Array.isArray(this.selectedDocuments)) this.selectedDocuments = [];
+    const idx = this.selectedDocuments.indexOf(coDocument);
+    if (checked) {
+      if (idx === -1) this.selectedDocuments.push(coDocument);
+    } else {
+      if (idx !== -1) this.selectedDocuments.splice(idx, 1);
+    }
   }
 
   public selectAllDocuments(): void {
