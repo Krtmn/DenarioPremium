@@ -131,7 +131,7 @@ export class LoginComponent implements OnInit {
           console.log(f);
           localStorage.removeItem("lastUpdate")
           this.validateConnection(f)
-          this.subsChangeUser.unsubscribe();
+          //this.subsChangeUser.unsubscribe();
         })
       })
     })
