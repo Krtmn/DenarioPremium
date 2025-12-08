@@ -457,6 +457,8 @@ export class ClientLogicService {
     event.stopPropagation();
     await this.message.showLoading();
     try {
+      //mostramos el componente de detalle
+      this.segment = 'default';
       // Cerrar el modal selector primero (evita que quede encima)
       await this.closeModal();
 

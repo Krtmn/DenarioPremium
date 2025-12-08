@@ -55,6 +55,7 @@ export class ClienteContainerComponent implements OnInit {
         this.clientLogic.clientListComponent = false;
         this.clientLogic.clientContainerComponent = true;
       } else if (this.clientLogic.clientDetailComponent) {
+        this.clientLogic.segment = 'default';
         this.clientLogic.clientDetailComponent = false;
         this.clientLogic.clientListComponent = true;
       } else if (this.clientLogic.clientPotentialClientComponent) {
