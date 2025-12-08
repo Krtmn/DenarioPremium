@@ -2009,7 +2009,7 @@ export class CollectionService {
 
       // preparar consulta IN (...) para obtener todos los co_document de una sola vez
       const placeholders = coTransactions.map(() => '?').join(',');
-      const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders}) AND in_payment_partial = 'false`;
+      const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders}) AND in_payment_partial = 'false'`;
 
       const res = await db.executeSql(sql, coTransactions);
       for (let i = 0; i < res.rows.length; i++) {
