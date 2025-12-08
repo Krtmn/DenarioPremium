@@ -64,7 +64,7 @@ export class LoginComponent implements OnInit {
   async ngOnInit() {
     /* App.getInfo().then(async (res) => { */
     // preferir la versión real del paquete si está disponible, si no usar fallback
-    this.versionApp = "6.5.3";
+    this.versionApp = "6.5.12";
 
     const storedVersionApp = localStorage.getItem("versionApp");
     // primer arranque: guardamos la versionApp actual
