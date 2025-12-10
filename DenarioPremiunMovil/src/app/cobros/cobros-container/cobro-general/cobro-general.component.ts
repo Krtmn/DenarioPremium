@@ -720,6 +720,14 @@ export class CobrosGeneralComponent implements OnInit {
 
   }
 
+  onChangeDateRateMsj(event: any) {
+    if (this.collectService.collection.collectionDetails.length > 0) {
+      this.collectService.mensaje = this.collectService.collectionTags.get('COB_COB_CHANGE_DATERATE')! == undefined ? "Al cambiar la fecha de la tasa, se eliminarán los detalles del cobro. ¿Desea continuar?" : this.collectService.collectionTags.get('COB_COB_CHANGE_DATERATE')!;
+      this.collectService.alertMessageChangeDateRate = true
+    } else {
+      this.onChangeDateRate(event);
+    }
+  }
 
   onChangeDateRate(event: any) {
     this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual)!.then((response) => {
@@ -755,11 +763,16 @@ export class CobrosGeneralComponent implements OnInit {
 
   }
 
-  setChangeDateRate(event: any) {
+ async setChangeDateRate(event: any) {
     this.collectService.alertMessageChangeDateRate = false;
     if (event.detail.role === 'confirm') {
       console.log("CAMBIAR DATERATE");
-      this.onChangeCurrency(this.collectService.currencySelected);
+
+      await this.resetValues();
+      this.onChangeDateRate(event);
+    } else {
+      //SI NO QUIERE CAMBIAR, DEBO COLOCAR LA FECHA ANTERIOR
+      this.collectService.dateRateVisual = this.collectService.collection.daRate;
     }
   }
 
@@ -835,9 +848,7 @@ export class CobrosGeneralComponent implements OnInit {
 
   }
 
-
-  onChangeCurrency(currency: Currencies) {
-
+  async resetValues() {
     if (this.collectService.collection.collectionDetails.length > 0) {
       //DEBO ELIMINAR 
       this.collectService.collection.collectionDetails = [] as CollectionDetail[];
@@ -846,21 +857,12 @@ export class CobrosGeneralComponent implements OnInit {
       this.collectService.collection.collectionPayments = [] as CollectionPayment[];
     }
 
+
     this.collectService.documentSales = [] as DocumentSale[];
     this.collectService.documentSalesBackup = [] as DocumentSale[];
     this.collectService.documentSaleOpen = {} as DocumentSale;
-    this.collectService.mapDocumentsSales.clear()
-    this.collectService.documentSaleOpen = {} as DocumentSale;
+    this.collectService.mapDocumentsSales.clear();
 
-    if (this.collectService.collection.coType != "1")
-      this.collectService.disabledSelectCollectMethodDisabled = true;
-
-    this.collectService.currencySelected = currency;
-    this.collectService.currencySelectedDocument = currency;
-
-    this.collectService.collection.idCurrency = currency.idCurrency;
-    this.collectService.collection.coCurrency = currency.coCurrency;
-    this.collectService.setCurrencyDocument();
     this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
       this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
         this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual);
@@ -871,15 +873,30 @@ export class CobrosGeneralComponent implements OnInit {
 
       });
 
-    this.collectService.loadPaymentMethods();
-
     this.collectService.collection.nuAmountFinal = 0;
     this.collectService.collection.nuAmountFinalConversion = 0;
     this.collectService.collection.nuAmountTotal = 0;
     this.collectService.collection.nuAmountTotalConversion = 0;
     this.collectService.collection.nuDifference = 0;
     this.collectService.collection.nuDifferenceConversion = 0;
+  }
 
+
+ async onChangeCurrency(currency: Currencies) {
+
+   await this.resetValues();
+
+    if (this.collectService.collection.coType != "1")
+      this.collectService.disabledSelectCollectMethodDisabled = true;
+
+    this.collectService.currencySelected = currency;
+    this.collectService.currencySelectedDocument = currency;
+
+    this.collectService.collection.idCurrency = currency.idCurrency;
+    this.collectService.collection.coCurrency = currency.coCurrency;
+
+    this.collectService.setCurrencyDocument();
+    this.collectService.loadPaymentMethods();
     this.collectService.setCurrencyConversion();
     this.collectService.calculatePayment("", 0);
 
