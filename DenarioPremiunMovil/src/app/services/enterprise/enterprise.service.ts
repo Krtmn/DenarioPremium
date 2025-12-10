@@ -59,4 +59,8 @@ export class EnterpriseService {
   getEntepriseById(idEnterprise: number) {
     return this.empresas.find((emp: Enterprise) => emp.idEnterprise === idEnterprise)!;
   }
+
+  initialze() {
+    this.empresas = [] as Enterprise[];
+  }
 }

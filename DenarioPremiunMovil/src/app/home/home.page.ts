@@ -16,6 +16,7 @@ import { GeolocationService } from '../services/geolocation/geolocation.service'
 import { SynchronizationDBService } from '../services/synchronization/synchronization-db.service';
 import { SynchronizationComponent } from '../synchronization/synchronization.component';
 import { Subscription } from 'rxjs';
+import { EnterpriseService } from '../services/enterprise/enterprise.service';
 
 @Component({
   selector: 'app-home',
@@ -35,6 +36,7 @@ export class HomePage implements OnInit {
   private geoServ = inject(GeolocationService);
   public synchronizationServices = inject(SynchronizationDBService)
   private router = inject(Router);
+  private enterpriseService = inject(EnterpriseService);
 
   public sub!: object;
   public conexion!: string;
@@ -54,10 +56,10 @@ export class HomePage implements OnInit {
   public fechaCreacion: string = "2000-01-01 00:00:00";
   public userMustActivateGPS: boolean = false;
 
-    backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(1, () => {
-      //console.log('backButton was called!');
-      //de aqui no te vas
-    });
+  backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(1, () => {
+    //console.log('backButton was called!');
+    //de aqui no te vas
+  });
 
 
   public id!: string;
@@ -222,6 +224,9 @@ export class HomePage implements OnInit {
         this.user = {};
       }
     }
+
+    this.enterpriseService.initialze();
+    
   }
   getListFilesPremiumDispatch() {
     console.log("getListFilesPremiumDispatch");
