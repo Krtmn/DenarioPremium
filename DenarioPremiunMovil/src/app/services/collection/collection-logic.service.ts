@@ -2091,7 +2091,8 @@ export class CollectionService {
 
         // Si es nota de crédito -> negro
         const docType = String(doc.coDocumentSaleType ?? '').trim().toUpperCase();
-        if (['NC', 'ADEL', 'NCR'].includes(docType)) {
+        const docNuBalance = doc.nuBalance
+        if (docNuBalance <= 0) {
           doc.colorRow = 'black';
         } else {
           // isDueSoon devuelve boolean -> mapeamos a color
@@ -3080,6 +3081,19 @@ export class CollectionService {
     })
   }
 
+  deleteCollectionBatch(dbServ: SQLiteObject, deleteCollectionSQL: string, deleteCollectionDetailsSQL: string, deleteCollectionPaymentsSQL: string, coCollection: string) {
+    var statements = [];
+    statements.push([deleteCollectionSQL, [coCollection]]);
+    statements.push([deleteCollectionDetailsSQL, [coCollection]]);
+    statements.push([deleteCollectionPaymentsSQL, [coCollection]]);
+
+    return dbServ.sqlBatch(statements).then(res => {
+      return Promise.resolve();
+    }).catch(e => {
+      return Promise.reject(e);
+    })
+  }
+
   saveCollection(dbServ: SQLiteObject, collection: Collection, action: boolean) {
 
 
@@ -3096,128 +3110,134 @@ export class CollectionService {
       this.collection.nuAmountFinal = this.montoTotalPagar;
       this.collection.nuAmountFinalConversion = this.convertirMonto(this.collection.nuAmountFinal, 0, this.collection.coCurrency);
 
-      const insertCollection = "INSERT OR REPLACE INTO collections (" +
-        "id_collection," +
-        "co_collection," +
-        "co_original_collection," +
-        "id_client," +
-        "co_client," +
-        "lb_client," +
-        "st_collection," +
-        "st_delivery," +
-        "da_collection," +
-        "da_rate," +
-        "na_responsible," +
-        "id_enterprise," +
-        "co_enterprise," +
-        "id_currency," +
-        "co_currency," +
-        "co_type," +
-        "tx_comment," +
-        "coordenada," +
-        "nu_value_local," +
-        "nu_difference," +
-        "nu_difference_conversion," +
-        "tx_conversion," +
-        "nu_amount_total," +
-        "nu_amount_total_conversion," +
-        "nu_amount_igtf," +
-        "nu_amount_igtf_conversion," +
-        "nu_amount_final," +
-        "nu_amount_final_conversion," +
-        "nu_igtf," +
-        "hasIGTF," +
-        "nu_attachments," +
-        "has_attachments" +
-        ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-      return dbServ.executeSql(insertCollection,
-        [
-          0,
-          collection.coCollection,
-          collection.coOriginalCollection,
-          collection.idClient,
-          collection.coClient,
-          collection.lbClient,
-          collection.stCollection,
-          collection.stDelivery,
-          collection.daCollection,
-          collection.daRate,
-          collection.naResponsible,
-          collection.idEnterprise,
-          collection.coEnterprise,
-          collection.idCurrency,
-          collection.coCurrency,
-          collection.coType,
-          collection.txComment,
-          collection.coordenada,
-          collection.nuValueLocal,
-          collection.nuDifference,
-          collection.nuDifferenceConversion,
-          collection.txConversion,
-          collection.nuAmountTotal,
-          collection.nuAmountTotalConversion,
-          collection.nuAmountIgtf,
-          collection.nuAmountIgtfConversion,
-          collection.nuAmountFinal,
-          collection.nuAmountFinalConversion,
-          collection.nuIgtf,
-          collection.hasIGTF,
-          collection.nuAttachments,
-          collection.hasAttachments,
+      const deleteCollectionSQL = 'DELETE FROM collections WHERE co_collection = ?';
+      const deleteCollectionDetailsSQL = 'DELETE FROM collection_details WHERE co_collection = ?';
+      const deleteCollectionPaymentsSQL = 'DELETE FROM collection_payments WHERE co_collection = ?';
 
-        ]
-      ).then(data => {
-        console.log("COLLECTION INSERT", data);
+      this.deleteCollectionBatch(dbServ, deleteCollectionSQL, deleteCollectionDetailsSQL, deleteCollectionPaymentsSQL, collection.coCollection).then(() => {
+        const insertCollection = "INSERT OR REPLACE INTO collections (" +
+          "id_collection," +
+          "co_collection," +
+          "co_original_collection," +
+          "id_client," +
+          "co_client," +
+          "lb_client," +
+          "st_collection," +
+          "st_delivery," +
+          "da_collection," +
+          "da_rate," +
+          "na_responsible," +
+          "id_enterprise," +
+          "co_enterprise," +
+          "id_currency," +
+          "co_currency," +
+          "co_type," +
+          "tx_comment," +
+          "coordenada," +
+          "nu_value_local," +
+          "nu_difference," +
+          "nu_difference_conversion," +
+          "tx_conversion," +
+          "nu_amount_total," +
+          "nu_amount_total_conversion," +
+          "nu_amount_igtf," +
+          "nu_amount_igtf_conversion," +
+          "nu_amount_final," +
+          "nu_amount_final_conversion," +
+          "nu_igtf," +
+          "hasIGTF," +
+          "nu_attachments," +
+          "has_attachments" +
+          ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        return dbServ.executeSql(insertCollection,
+          [
+            0,
+            collection.coCollection,
+            collection.coOriginalCollection,
+            collection.idClient,
+            collection.coClient,
+            collection.lbClient,
+            collection.stCollection,
+            collection.stDelivery,
+            collection.daCollection,
+            collection.daRate,
+            collection.naResponsible,
+            collection.idEnterprise,
+            collection.coEnterprise,
+            collection.idCurrency,
+            collection.coCurrency,
+            collection.coType,
+            collection.txComment,
+            collection.coordenada,
+            collection.nuValueLocal,
+            collection.nuDifference,
+            collection.nuDifferenceConversion,
+            collection.txConversion,
+            collection.nuAmountTotal,
+            collection.nuAmountTotalConversion,
+            collection.nuAmountIgtf,
+            collection.nuAmountIgtfConversion,
+            collection.nuAmountFinal,
+            collection.nuAmountFinalConversion,
+            collection.nuIgtf,
+            collection.hasIGTF,
+            collection.nuAttachments,
+            collection.hasAttachments,
 
-        //cobro o igtf
-        if (collection.coType == '0' || collection.coType == '3' || collection.coType == '4') {
-          return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
-            console.log("TERMINE DOCUMENT ST")
-            return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
-              return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, this.collection.coCollection).then(resp => {
+          ]
+        ).then(data => {
+          console.log("COLLECTION INSERT", data);
+
+          //cobro o igtf
+          if (collection.coType == '0' || collection.coType == '3' || collection.coType == '4') {
+            return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
+              console.log("TERMINE DOCUMENT ST")
+              return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
+                return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, this.collection.coCollection).then(resp => {
+                  if (action) {
+                    this.documentSales = [] as DocumentSale[];
+                    this.documentSalesBackup = [] as DocumentSale[];
+                  }
+
+                  return resp
+                })
+              });
+            });
+          } else if (collection.coType == '1') {
+            //es ancitipo solo debo guardar el payment
+            return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, this.collection.coCollection).then(resp => {
+              return resp
+            })
+          } else if (collection.coType == '2') {
+            //es retencion, solo debo guardar el detalle
+            return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
+              console.log("TERMINE DOCUMENT ST")
+              return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
                 if (action) {
                   this.documentSales = [] as DocumentSale[];
                   this.documentSalesBackup = [] as DocumentSale[];
                 }
+                return resp;
+              });
 
-                return resp
-              })
-            });
-          });
-        } else if (collection.coType == '1') {
-          //es ancitipo solo debo guardar el payment
-          return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, this.collection.coCollection).then(resp => {
-            return resp
-          })
-        } else if (collection.coType == '2') {
-          //es retencion, solo debo guardar el detalle
-          return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
-            console.log("TERMINE DOCUMENT ST")
-            return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
-              if (action) {
-                this.documentSales = [] as DocumentSale[];
-                this.documentSalesBackup = [] as DocumentSale[];
-              }
-              return resp;
             });
 
-          });
-
-        } else {
-          //es cobranza normal debo guardar el payment y el detalle
-          /*  return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
-             console.log("TERMINE DOCUMENT ST")
-             return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
-               //this.documentSales = [] as DocumentSale[];
-               //this.documentSalesBackup = [] as DocumentSale[];
-               return resp;
-             });
-           }); */
-          return Promise.resolve();
-        }
-      }).catch(e => {
-        return Promise.reject(e);
-      })
+          } else {
+            //es cobranza normal debo guardar el payment y el detalle
+            /*  return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
+               console.log("TERMINE DOCUMENT ST")
+               return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
+                 //this.documentSales = [] as DocumentSale[];
+                 //this.documentSalesBackup = [] as DocumentSale[];
+                 return resp;
+               });
+             }); */
+            return Promise.resolve();
+          }
+        }).catch(e => {
+          return Promise.reject(e);
+        })
+      });
     })
 
   }
