@@ -177,7 +177,7 @@
                 {{documentSale.daDocument | date: "dd/MM/yyyy"}}
             </ion-col>
             <ion-col size="6" class="ion-text-center col borderInferiorDerecho"
-                [ngStyle]="{color: this.clientLogic.isDueSoon(documentSale.daDueDate) ? 'Red' : 'Blue' }">
+                [ngStyle]="{color: this.collectService.getColorRowDocumentSale(i)}">
                 {{documentSale.daDueDate | date: "dd/MM/yyyy"}}
             </ion-col>
         </ion-row>

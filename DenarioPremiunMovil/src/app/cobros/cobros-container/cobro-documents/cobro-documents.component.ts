@@ -412,7 +412,8 @@ export class CobrosDocumentComponent implements OnInit {
         txConversion: doc.txConversion,
         inPaymentPartial: cs.isPaymentPartial,
         historicPaymentPartial: doc.historicPaymentPartial,
-        isSave: doc.isSave
+        isSave: doc.isSave,
+        colorRow: doc.colorRow,
       };
 
       // Validación de retención

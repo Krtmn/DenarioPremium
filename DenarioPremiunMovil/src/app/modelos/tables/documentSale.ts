@@ -37,6 +37,7 @@ export class DocumentSale {
             obj['inPaymentPartial'],
             obj['historicPaymentPartial'],
             obj['isSave'],
+            obj['colorRow'],
         );
     }
 
@@ -76,5 +77,6 @@ export class DocumentSale {
         public inPaymentPartial: boolean = false,
         public historicPaymentPartial: boolean = false,
         public isSave: boolean = false,
+        public colorRow: string = ""
     ) { }
 }

@@ -34,6 +34,7 @@ import { TransactionStatuses } from '../../modelos/tables/transactionStatuses';
 import { MessageService } from '../messageService/message.service';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
+import { ClientLogicService } from '../clientes/client-logic.service';
 
 
 @Injectable({
@@ -48,6 +49,7 @@ export class CollectionService {
   private currencyService = inject(CurrencyService);
   public adjuntoService = inject(AdjuntoService);
   public injector = inject(Injector);
+  public clientLogic = inject(ClientLogicService);
   private _messageService?: MessageService;
   public get messageService(): MessageService {
     if (!this._messageService) {
@@ -2072,6 +2074,13 @@ export class CollectionService {
     }
   }
 
+  getColorRowDocumentSale(index: number) {
+    if (this.documentSales[index].coDocumentSaleType == "NC") {
+      return 'blue';
+    } else
+      return this.clientLogic.isDueSoon(this.documentSales[index].daDueDate)
+  }
+
   ///////////////////QUERYS////////////////
 
   getAllBanks(dbServ: SQLiteObject, idEnterprise: number) {
@@ -2757,6 +2766,7 @@ export class CollectionService {
           historicPaymentPartial: this.documentSales[index].historicPaymentPartial,
           isSelected: this.documentSales[index].isSelected,
           isSave: false,
+          colorRow: this.documentSales[index].colorRow
         }
 
         this.documentSalesBackup[index] = Object.assign({}, this.documentSales[index]);
@@ -2947,7 +2957,8 @@ export class CollectionService {
       txConversion: 0,
       inPaymentPartial: false,
       historicPaymentPartial: false,
-      isSave: false
+      isSave: false,
+      colorRow: ""
     });
 
     this.insertDocumentSaleBatch(dbServ, igtfDocument).then((resp) => {
