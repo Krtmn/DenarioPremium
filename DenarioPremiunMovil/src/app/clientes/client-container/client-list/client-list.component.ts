@@ -108,5 +108,4 @@ export class ClientListComponent implements OnInit {
       this.service.clientes = this.clientLogic.clients;
     })
   }
-
 }

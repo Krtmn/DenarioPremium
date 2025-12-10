@@ -442,6 +442,7 @@ export class ClientLogicService {
     return dueDate < this.dateToday;
   }
 
+
   public async closeModal(): Promise<void> {
     try {
       const topModal = await this.modalCtrl.getTop();

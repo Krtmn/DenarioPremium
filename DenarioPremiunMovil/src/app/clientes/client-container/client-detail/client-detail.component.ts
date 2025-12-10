@@ -102,6 +102,8 @@ export class ClienteComponent implements OnInit {
       this.clientShareModalOpen = false;
     });
 
+    this.getColorRowDocumentSale();
+
   }
 
   ngOnDestroy() {
@@ -263,4 +265,39 @@ export class ClienteComponent implements OnInit {
     // Convierte a número
     return Number(str);
   }
+
+  getColorRowDocumentSale() {
+      try {
+        if (!Array.isArray(this.document)) return;
+  
+        for (let i = 0; i < this.document.length; i++) {
+          const doc = this.document[i];
+          if (!doc) continue;
+  
+          // Si es nota de crédito -> negro
+          const docType = String(doc.coDocumentSaleType ?? '').trim().toUpperCase();
+          if (['NC', 'ADEL', 'NCR'].includes(docType)) {
+            doc.colorRow = 'black';
+          } else {
+            // isDueSoon devuelve boolean -> mapeamos a color
+            const dueSoon = this.clientLogic.isDueSoon(doc.daDueDate);
+            doc.colorRow = dueSoon ? 'Red' : 'Blue';
+          }
+  
+          // Mantener sincronizado documentSalesView si existe
+          if (Array.isArray(this.document) && this.document[i]) {
+            this.document[i].colorRow = doc.colorRow;
+          }
+  
+          // Mantener mapa actualizado (si existe entrada por idDocument)
+         /*  if (doc.idDocument != null && this.mapDocumentsSales && this.mapDocumentsSales.has(doc.idDocument)) {
+            const mapped = this.mapDocumentsSales.get(doc.idDocument)!;
+            mapped.colorRow = doc.colorRow;
+            this.mapDocumentsSales.set(doc.idDocument, mapped);
+          } */
+        }
+      } catch (err) {
+        console.warn('[CollectionService] getColorRowDocumentSale error:', err);
+      }
+    }
 }

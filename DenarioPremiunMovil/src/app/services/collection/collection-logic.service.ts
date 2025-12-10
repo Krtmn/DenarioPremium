@@ -49,7 +49,7 @@ export class CollectionService {
   private currencyService = inject(CurrencyService);
   public adjuntoService = inject(AdjuntoService);
   public injector = inject(Injector);
-  public clientLogic = inject(ClientLogicService);
+  //public clientLogic = inject(ClientLogicService);
   private _messageService?: MessageService;
   public get messageService(): MessageService {
     if (!this._messageService) {
@@ -258,6 +258,13 @@ export class CollectionService {
 
   public regexOnlyText = new RegExp("[A-Za-z]", "i");
   public regexAlphaNumeric = new RegExp("[A-Za-z0-9]", "i");
+
+  public dateToday: Date = (() => {
+    const d = new Date();
+    d.setDate(d.getDate());
+    d.setHours(0, 0, 0, 0);
+    return d;
+  })();
 
   public alertButtons = [
     /*  {
@@ -2074,11 +2081,80 @@ export class CollectionService {
     }
   }
 
-  getColorRowDocumentSale(index: number) {
-    if (this.documentSales[index].coDocumentSaleType == "NC") {
-      return 'blue';
-    } else
-      return this.clientLogic.isDueSoon(this.documentSales[index].daDueDate)
+  getColorRowDocumentSale() {
+    try {
+      if (!Array.isArray(this.documentSales)) return;
+
+      for (let i = 0; i < this.documentSales.length; i++) {
+        const doc = this.documentSales[i];
+        if (!doc) continue;
+
+        // Si es nota de crédito -> negro
+        const docType = String(doc.coDocumentSaleType ?? '').trim().toUpperCase();
+        if (['NC', 'ADEL', 'NCR'].includes(docType)) {
+          doc.colorRow = 'black';
+        } else {
+          // isDueSoon devuelve boolean -> mapeamos a color
+          const dueSoon = this.isDueSoon(doc.daDueDate);
+          doc.colorRow = dueSoon ? 'Red' : 'Blue';
+        }
+
+        // Mantener sincronizado documentSalesView si existe
+        if (Array.isArray(this.documentSalesView) && this.documentSalesView[i]) {
+          this.documentSalesView[i].colorRow = doc.colorRow;
+        }
+
+        // Mantener mapa actualizado (si existe entrada por idDocument)
+        if (doc.idDocument != null && this.mapDocumentsSales && this.mapDocumentsSales.has(doc.idDocument)) {
+          const mapped = this.mapDocumentsSales.get(doc.idDocument)!;
+          mapped.colorRow = doc.colorRow;
+          this.mapDocumentsSales.set(doc.idDocument, mapped);
+        }
+      }
+    } catch (err) {
+      console.warn('[CollectionService] getColorRowDocumentSale error:', err);
+    }
+  }
+
+  public isDueSoon(daDueDate: string | Date | undefined | null): boolean {
+    const dueDate = this.parseDate(daDueDate);
+    if (!dueDate) return false;
+    // normalizar horas a medianoche antes de comparar
+    dueDate.setHours(0, 0, 0, 0);
+    return dueDate < this.dateToday;
+  }
+
+  private parseDate(value: string | number | Date | undefined | null): Date | null {
+    if (!value && value !== 0) return null;
+    if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+    if (typeof value === 'number') {
+      const n = new Date(value);
+      return isNaN(n.getTime()) ? null : n;
+    }
+    const s = String(value).trim();
+    if (!s) return null;
+
+    // dd/MM/yyyy[ HH:mm[:ss]]
+    const slash = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/.exec(s);
+    if (slash) {
+      const day = Number(slash[1]), month = Number(slash[2]) - 1, year = Number(slash[3]);
+      const hr = Number(slash[4] ?? 0), min = Number(slash[5] ?? 0), sec = Number(slash[6] ?? 0);
+      const d = new Date(year, month, day, hr, min, sec);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    // yyyy-MM-dd[THH:mm[:ss]]
+    const dash = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/.exec(s);
+    if (dash) {
+      const year = Number(dash[1]), month = Number(dash[2]) - 1, day = Number(dash[3]);
+      const hr = Number(dash[4] ?? 0), min = Number(dash[5] ?? 0), sec = Number(dash[6] ?? 0);
+      const d = new Date(year, month, day, hr, min, sec);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    // Fallback a Date constructor / parse
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
   }
 
   ///////////////////QUERYS////////////////
@@ -2268,10 +2344,7 @@ export class CollectionService {
 
         this.documentSalesView = JSON.parse(JSON.stringify(this.documentSales));
         this.convertDocumentSales();
-        // ...existing code...
-
-
-
+        this.getColorRowDocumentSale();
 
         return this.documentSales;
       }).catch(e => {
@@ -2390,6 +2463,7 @@ export class CollectionService {
         }
         this.documentSalesView = this.documentSales.map(ds => ({ ...ds }));
         this.convertDocumentSales();
+        this.getColorRowDocumentSale();
 
         return this.documentSales;
       }).catch(e => {
@@ -2400,7 +2474,6 @@ export class CollectionService {
     return Promise.resolve([]);
   }
 
-  // ...existing code...
   /**
    * Convierte los importes de documentSales según la moneda de la colección.
    * - Si la colección está en hardCurrency y el documento en localCurrency: convierte local -> hard.

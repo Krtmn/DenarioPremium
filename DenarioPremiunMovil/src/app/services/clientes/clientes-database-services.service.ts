@@ -127,7 +127,8 @@ export class ClientesDatabaseServicesService {
           txDescription2: data.rows.item(i).tx_description_2,
           daDocument: data.rows.item(i).daDocument,
           daDueDate: data.rows.item(i).daDueDate,
-          countDueDate: data.rows.item(i).countDueDate
+          countDueDate: data.rows.item(i).countDueDate,
+          colorRow: ""
         });
       }
       return lists;
@@ -450,6 +451,7 @@ export class ClientesDatabaseServicesService {
           inPaymentPartial: false,
           historicPaymentPartial: false,
           isSave: false,
+          colorRow: ''
         })
       }
       return lists

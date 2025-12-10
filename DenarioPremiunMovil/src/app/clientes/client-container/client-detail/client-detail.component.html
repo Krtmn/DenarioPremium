@@ -182,51 +182,51 @@
                         </a> -->
                     </ion-col>
                     <ion-col size="2" class="ion-text-center col"
-                        [ngStyle]="{color: this.clientLogic.isDueSoon(documento.daDueDate) ? 'Red' : 'Blue' }">{{documento.coDocumentSaleType}}
+                        [ngStyle]="{color: documento.colorRow }">{{documento.coDocumentSaleType}}
                     </ion-col>
                     <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: this.clientLogic.isDueSoon(documento.daDueDate) ? 'Red' : 'Blue' }">{{documento.coDocument}}
+                        [ngStyle]="{color: documento.colorRow }">{{documento.coDocument}}
                     </ion-col>
                     <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: this.clientLogic.isDueSoon(documento.daDueDate) ? 'Red' : 'Blue' }">{{documento.coCurrency}}
+                        [ngStyle]="{color: documento.colorRow }">{{documento.coCurrency}}
                     </ion-col>
                     <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: this.clientLogic.isDueSoon(documento.daDueDate) ? 'Red' : 'Blue' }">
+                        [ngStyle]="{color: documento.colorRow }">
                         {{getDaDueDate(documento.daDueDate)}}
                     </ion-col>
                     <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: this.clientLogic.isDueSoon(documento.daDueDate) ? 'Red' : 'Blue' }"
+                        [ngStyle]="{color: documento.colorRow }"
                         *ngIf="this.clientLogic.showConversion">
                         {{formatNumber(this.currencyService.localValue)}} {{localCurrency}}
                     </ion-col>
                     <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: this.clientLogic.isDueSoon(documento.daDueDate) ? 'Red' : 'Blue' }">
+                        [ngStyle]="{color: documento.colorRow }">
                         {{formatNumber(documento.nuAmountTotal)}} {{documento.coCurrency}}
                     </ion-col>
                     <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: this.clientLogic.isDueSoon(documento.daDueDate) ? 'Red' : 'Blue' }"
+                        [ngStyle]="{color: documento.colorRow }"
                         *ngIf="this.clientLogic.showConversion">
                         {{this.convertirMonto(documento.nuAmountTotal, this.currencyService.localValue,
                         documento.coCurrency)}}
                         {{oppositeCoCurrency(documento.coCurrency)}}
                     </ion-col>
                     <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: this.clientLogic.isDueSoon(documento.daDueDate) ? 'Red' : 'Blue' }">
+                        [ngStyle]="{color: documento.colorRow }">
                         {{formatNumber(documento.nuBalance)}} {{documento.coCurrency}}
                     </ion-col>
                     <ion-col size="4" class="ion-text-center col "
-                        [ngStyle]="{color: this.clientLogic.isDueSoon(documento.daDueDate) ? 'Red' : 'Blue' }"
+                        [ngStyle]="{color: documento.colorRow }"
                         *ngIf="this.clientLogic.showConversion">
                         {{this.convertirMonto(documento.nuBalance, this.currencyService.localValue,
                         documento.coCurrency)}}
                         {{oppositeCoCurrency(documento.coCurrency)}}
                     </ion-col>
                     <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: this.clientLogic.isDueSoon(documento.daDueDate) ? 'Red' : 'Blue' }">
+                        [ngStyle]="{color: documento.colorRow }">
                         {{documento.daDocument}}
                     </ion-col>
                     <ion-col size="4" class="ion-text-center col borderInferiorDerecho"
-                        [ngStyle]="{color: this.clientLogic.isDueSoon(documento.daDueDate) ? 'Red' : 'Blue' }">
+                        [ngStyle]="{color: documento.colorRow }">
                         {{documento.daDueDate}}
                     </ion-col>
                 </ion-row>

@@ -43,6 +43,7 @@ export class Client {
             obj['daDocument'],
             obj['daDueDate'],
             obj['countDueDate'],
+            obj['colorRow'],
         );
     }
 
@@ -89,6 +90,7 @@ export class Client {
         public daDocument: string,
         public daDueDate: string,
         public countDueDate: number,
+        public colorRow: string,
     ) { }
 
 }
