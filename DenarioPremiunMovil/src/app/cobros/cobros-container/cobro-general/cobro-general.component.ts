@@ -729,19 +729,26 @@ export class CobrosGeneralComponent implements OnInit {
     }
   }
 
-  onChangeDateRate(event: any) {
-    this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual)!.then((response) => {
-      console.log("RESPUESTA FECHA TASA: ", response);
+  async onChangeDateRate(event: any) {
+    try {
+      this.collectService.montoTotalPagar = 0;
+      this.collectService.montoTotalPagarConversion = 0;
+
+      // Esperar a que se resuelva la búsqueda de la tasa
+      await this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual);
+      console.log("RESPUESTA FECHA TASA: ");
+
       if (this.collectService.historicPartialPayment) {
         this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
       }
+
       if (Array.isArray(this.collectService.documentSalesView)) {
         try {
           const deep = this.collectService.documentSalesView.map(d => JSON.parse(JSON.stringify(d)));
           this.collectService.documentSales = deep.map(d => ({ ...d }));
           this.collectService.documentSalesBackup = deep.map(d => ({ ...d }));
         } catch (e) {
-          // Fallback: asignación por referencia si la serialización falla
+          // Fallback: copia superficial si falla la serialización
           this.collectService.documentSales = [...this.collectService.documentSalesView];
           this.collectService.documentSalesBackup = [...this.collectService.documentSalesView];
           console.warn('No se pudo serializar documentSalesView para copia profunda, usando copia superficial', e);
@@ -751,19 +758,22 @@ export class CobrosGeneralComponent implements OnInit {
         this.collectService.documentSalesBackup = [];
       }
 
-      this.collectService.convertDocumentSales();
-    });
+      // Convertir y recalcular (esperando a que terminen)
+      await this.collectService.convertDocumentSales();
+      await this.collectService.calculatePayment("", 0);
 
+      // Mantener conversion de moneda y actualización de UI
+      this.collectService.setCurrencyConversion();
 
-    this.collectService.setCurrencyConversion();
-    this.collectService.calculatePayment("", 0);
-
-    if (this.collectService.validateCollectionDate)
-      this.collectService.updateRateTiposPago();
-
+      if (this.collectService.validateCollectionDate) {
+        this.collectService.updateRateTiposPago();
+      }
+    } catch (err) {
+      console.error('[onChangeDateRate] error:', err);
+    }
   }
 
- async setChangeDateRate(event: any) {
+  async setChangeDateRate(event: any) {
     this.collectService.alertMessageChangeDateRate = false;
     if (event.detail.role === 'confirm') {
       console.log("CAMBIAR DATERATE");
@@ -882,9 +892,9 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
 
- async onChangeCurrency(currency: Currencies) {
+  async onChangeCurrency(currency: Currencies) {
 
-   await this.resetValues();
+    await this.resetValues();
 
     if (this.collectService.collection.coType != "1")
       this.collectService.disabledSelectCollectMethodDisabled = true;
