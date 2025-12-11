@@ -926,16 +926,7 @@ export class VisitaComponent implements OnInit {
   }
 
   async enviarVisita(isVisited: boolean) {
-    this.visitServ.visit.isVisited = isVisited;
-    await this.saveVisit(true).then(async saved => {
-      //console.log("insertadas las incidencias");
-      //var incidences = saved.incidencias;
-      var visita = saved.visit;
-
-      // console.log(incidences);
-
       //revisamos que tengamos coordenadas
-      // Validar que this.visitServ.coordenadas no sea null ni undefined antes de acceder a length
       if (!this.visitServ.coordenadas || this.visitServ.coordenadas.length <= 0) {
         await this.message.showLoading().then(async () => {
           await this.geoServ.getCurrentPosition().then(coords => {
@@ -947,6 +938,15 @@ export class VisitaComponent implements OnInit {
 
         });
       }
+    this.visitServ.visit.isVisited = isVisited;
+    await this.saveVisit(true).then(async saved => {
+      //console.log("insertadas las incidencias");
+      //var incidences = saved.incidencias;
+      var visita = saved.visit;
+
+      // console.log(incidences);
+
+
       //ahora es el turno de las transacciones
 
       //la transaccion de la visita
