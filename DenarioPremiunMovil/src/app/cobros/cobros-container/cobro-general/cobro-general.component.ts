@@ -722,7 +722,7 @@ export class CobrosGeneralComponent implements OnInit {
 
   onChangeDateRateMsj(event: any) {
     if (this.collectService.collection.collectionDetails.length > 0) {
-      this.collectService.mensaje = this.collectService.collectionTags.get('COB_COB_CHANGE_DATERATE')! == undefined ? "Al cambiar la fecha de la tasa, se eliminarán los detalles del cobro. ¿Desea continuar?" : this.collectService.collectionTags.get('COB_COB_CHANGE_DATERATE')!;
+      this.collectService.mensaje = this.collectService.collectionTags.get('COB_COB_CHANGE_DATERATE')! == undefined ? "Está cambiando la fecha de la tasa, esto recalculará  los montos. ¿Desea continuar?" : this.collectService.collectionTags.get('COB_COB_CHANGE_DATERATE')!;
       this.collectService.alertMessageChangeDateRate = true
     } else {
       this.onChangeDateRate(event);
@@ -778,7 +778,7 @@ export class CobrosGeneralComponent implements OnInit {
     if (event.detail.role === 'confirm') {
       console.log("CAMBIAR DATERATE");
 
-      await this.resetValues();
+      //await this.resetValues();
       this.onChangeDateRate(event);
     } else {
       //SI NO QUIERE CAMBIAR, DEBO COLOCAR LA FECHA ANTERIOR
