@@ -585,7 +585,7 @@ INSERT INTO public.application_tags(
 	('DEV_COD_INVOICE', 'DEV', 'DEVOLUCIONES', 'ESP','Factura'),
 	('DEV_COD_INVOICE', 'DEV', 'DEVOLUCIONES', 'ENG','Invoice'),
 	('DEV_HEADER_ALERTA', 'DEV', 'DEVOLUCIONES', 'ESP','¡Alerta!'),
-	('DEV_RESET_CONFIRMA', 'DEV', 'DEVOLUCIONES', 'ESP','Se ha detectado cambio de la factura por lo que debera iniciar nuevamente la devolución.');
+	('DEV_RESET_CONFIRMA', 'DEV', 'DEVOLUCIONES', 'ESP','Se ha detectado cambio de la factura por lo que deberá iniciar nuevamente la devolución.');
 	
 	
 -- HOME
