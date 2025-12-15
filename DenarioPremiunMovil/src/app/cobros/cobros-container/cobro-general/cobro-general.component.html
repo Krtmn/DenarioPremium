@@ -1,179 +1,179 @@
 <ion-grid>
-    <ion-row>
-        <ion-col size="6" size-sm="12" size-xs="12">
-            <ion-label>{{this.collectService.collectionTags.get('COB_EMPRESA')}}:</ion-label>
-            <div class="listado-enterprise-selector ion-text-center">
-                <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.enterpriseSelected"
-                    [disabled]="!this.collectService.enterpriseEnabled" (ionChange)="onChangeEnterprise()"
-                    class="ion-text-center always-flip" interface="popover" labelPlacement="stacked">
-                    <ion-select-option *ngFor="let emp of this.collectService.enterpriseList" [value]="emp">{{
-                        emp.lbEnterprise }}
-                    </ion-select-option>
-                </ion-select>
-            </div>
-        </ion-col>
+  <ion-row>
+    <ion-col size="6" size-sm="12" size-xs="12">
+      <ion-label>{{this.collectService.collectionTags.get('COB_EMPRESA')}}:</ion-label>
+      <div class="listado-enterprise-selector ion-text-center">
+        <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.enterpriseSelected"
+          [disabled]="!this.collectService.enterpriseEnabled" (ionChange)="onChangeEnterprise()"
+          class="ion-text-center always-flip" interface="popover" labelPlacement="stacked">
+          <ion-select-option *ngFor="let emp of this.collectService.enterpriseList" [value]="emp">{{
+            emp.lbEnterprise }}
+          </ion-select-option>
+        </ion-select>
+      </div>
+    </ion-col>
 
-        <ion-col size="6" size-sm="12" size-xs="12">
-            <div id="inputClient">
-                <ion-input label="{{this.collectService.collectionTags.get('COB_CLIENTE')}}:" label-placement="floating"
-                    fill="outline" value="{{this.collectService.collection.lbClient}}" id="clienteSelect"
-                    color="primary" [disabled]="this.collectService.disabledInputClient">
-                </ion-input>
-            </div>
-        </ion-col>
+    <ion-col size="6" size-sm="12" size-xs="12">
+      <div id="inputClient">
+        <ion-input label="{{this.collectService.collectionTags.get('COB_CLIENTE')}}:" label-placement="floating"
+          fill="outline" value="{{this.collectService.collection.lbClient}}" id="clienteSelect" color="primary"
+          [disabled]="this.collectService.disabledInputClient">
+        </ion-input>
+      </div>
+    </ion-col>
 
-        <ion-col size="6" size-sm="12" size-xs="12" *ngIf="this.collectService.cobroValid">
-            <ion-col size="6" size-sm="12" size-xs="12">
-                <ion-label
-                    *ngIf="this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3 && this.collectService.collection.stCollection != 6">
-                    {{this.collectService.collectionTags.get('COB_MONEDA')}}:
-                </ion-label>
-                <div class="listado-enterprise-selector ion-text-center"
-                    *ngIf="this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3 && this.collectService.collection.stCollection != 6">
-                    <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.currencySelected"
-                        (ionChange)="onChangeCurrencyMsj($event)" disabled="{{this.collectService.disabledCurrency}}"
-                        interface="popover" labelPlacement="stacked">
-                        <ion-select-option *ngFor="let currency of this.collectService.currencyList"
-                            [value]="currency">{{currency.coCurrency}}
-                        </ion-select-option>
-                    </ion-select>
-                </div>
-                <div
-                    *ngIf="this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stCollection == 6">
-                    <ion-item>
-                        <ion-label>
-                            {{this.collectService.collectionTags.get('COB_MONEDA')}}:
-                            {{this.collectService.collection.coCurrency}}
-                        </ion-label>
-                    </ion-item>
-                </div>
+    <ion-col size="6" size-sm="12" size-xs="12" *ngIf="this.collectService.cobroValid">
+      <ion-col size="6" size-sm="12" size-xs="12">
+        <ion-label
+          *ngIf="this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3 && this.collectService.collection.stCollection != 6">
+          {{this.collectService.collectionTags.get('COB_MONEDA')}}:
+        </ion-label>
+        <div class="listado-enterprise-selector ion-text-center"
+          *ngIf="this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3 && this.collectService.collection.stCollection != 6">
+          <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.currencySelected"
+            (ionChange)="onChangeCurrencyMsj($event)" disabled="{{this.collectService.disabledCurrency}}"
+            interface="popover" labelPlacement="stacked">
+            <ion-select-option *ngFor="let currency of this.collectService.currencyList"
+              [value]="currency">{{currency.coCurrency}}
+            </ion-select-option>
+          </ion-select>
+        </div>
+        <div
+          *ngIf="this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stCollection == 6">
+          <ion-item>
+            <ion-label>
+              {{this.collectService.collectionTags.get('COB_MONEDA')}}:
+              {{this.collectService.collection.coCurrency}}
+            </ion-label>
+          </ion-item>
+        </div>
 
-            </ion-col>
+      </ion-col>
 
-            <ion-col size="6" size-sm="12" size-xs="12"
-                *ngIf="this.collectService.multiCurrency && this.collectService.showConversion && this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3 && this.collectService.collection.stCollection != 6">
-                <ion-item>
-                    <ion-label (click)="onOpenCalendar()">
-                        {{this.collectService.collectionTags.get('COB_FECHA_TASA')}}
-                    </ion-label>
-                    <a>
-                        <ion-button (click)="setShowDateRateModal(true)" color="light" class="letrasFechasButton"
-                            [disabled]="this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stCollection == 6">
-                            {{ bottonDateRateLabel() }}
-                        </ion-button>
-                    </a>
-                </ion-item>
-            </ion-col>
+      <ion-col size="6" size-sm="12" size-xs="12"
+        *ngIf="this.collectService.multiCurrency && this.collectService.showConversion && this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3 && this.collectService.collection.stCollection != 6">
+        <ion-item>
+          <ion-label (click)="onOpenCalendar()">
+            {{this.collectService.collectionTags.get('COB_FECHA_TASA')}}
+          </ion-label>
+          <a>
+            <ion-button (click)="setShowDateRateModal(true)" color="light" class="letrasFechasButton"
+              [disabled]="this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stCollection == 6">
+              {{ bottonDateRateLabel() }}
+            </ion-button>
+          </a>
+        </ion-item>
+      </ion-col>
 
-            <ion-col size="6" size-sm="12" size-xs="12"
-                *ngIf="this.collectService.multiCurrency && this.collectService.showConversion && this.collectService.haveRate && this.collectService.historicoTasa && this.collectService.collection.stCollection != 2 &&  this.collectService.collection.stCollection != 3 &&  this.collectService.collection.stCollection != 6">
-                <ion-label>
-                    {{this.collectService.collectionTags.get('COB_TASA')}}
-                    {{this.collectService.localCurrency.coCurrency}}:
-                </ion-label>
-                <div class="listado-enterprise-selector ion-text-center">
-                    <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.rateSelected"
-                        (ionChange)="onChangeRate($event)" disabled="{{this.collectService.isOpenCollect}}"
-                        interface="popover" labelPlacement="stacked">
-                        <ion-select-option *ngFor="let rate of this.collectService.rateList"
-                            [value]="rate">{{this.currencyServices.formatNumber(rate)}}
-                            {{this.collectService.localCurrency.coCurrency}}
-                        </ion-select-option>
-                    </ion-select>
-                </div>
-            </ion-col>
-            <ion-col size="6" size-sm="12" size-xs="12"
-                *ngIf="this.collectService.multiCurrency && this.collectService.showConversion && (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stCollection == 6)">
-                <ion-item>
-                    <ion-label>
-                        {{this.collectService.collectionTags.get('COB_TASA')}}
-                        {{this.collectService.localCurrency.coCurrency}}:
-                    </ion-label>
-                    <ion-label>{{this.currencyServices.formatNumber(this.collectService.collection.nuValueLocal)}}</ion-label>
-                </ion-item>
+      <ion-col size="6" size-sm="12" size-xs="12"
+        *ngIf="this.collectService.multiCurrency && this.collectService.showConversion && this.collectService.haveRate && this.collectService.historicoTasa && this.collectService.collection.stCollection != 2 &&  this.collectService.collection.stCollection != 3 &&  this.collectService.collection.stCollection != 6">
+        <ion-label>
+          {{this.collectService.collectionTags.get('COB_TASA')}}
+          {{this.collectService.localCurrency.coCurrency}}:
+        </ion-label>
+        <div class="listado-enterprise-selector ion-text-center">
+          <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.rateSelected"
+            (ionChange)="onChangeRate($event)" disabled="{{this.collectService.isOpenCollect}}" interface="popover"
+            labelPlacement="stacked">
+            <ion-select-option *ngFor="let rate of this.collectService.rateList"
+              [value]="rate">{{this.currencyServices.formatNumber(rate)}}
+              {{this.collectService.localCurrency.coCurrency}}
+            </ion-select-option>
+          </ion-select>
+        </div>
+      </ion-col>
+      <ion-col size="6" size-sm="12" size-xs="12"
+        *ngIf="this.collectService.multiCurrency && this.collectService.showConversion && (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stCollection == 6)">
+        <ion-item>
+          <ion-label>
+            {{this.collectService.collectionTags.get('COB_TASA')}}
+            {{this.collectService.localCurrency.coCurrency}}:
+          </ion-label>
+          <ion-label>{{this.currencyServices.formatNumber(this.collectService.collection.nuValueLocal)}}</ion-label>
+        </ion-item>
 
-            </ion-col>
+      </ion-col>
 
-            <ion-col size="6" size-sm="12" size-xs="12" *ngIf="changeRate">
-                <ion-input label="{{this.collectService.collectionTags.get('COB_RAZON_CAMBIO_TASA')}}:"
-                    label-placement="floating" fill="outline" value="" id="currency" color="primary"
-                    [(ngModel)]="this.collectService.collection.txConversion" (ionChange)="onChangeTxConversion($event)"
-                    required="true" [ngClass]="{'inp-write': !this.collectService.collection.txConversion}"></ion-input>
-            </ion-col>
+      <ion-col size="6" size-sm="12" size-xs="12" *ngIf="changeRate">
+        <ion-input label="{{this.collectService.collectionTags.get('COB_RAZON_CAMBIO_TASA')}}:"
+          label-placement="floating" fill="outline" value="" id="currency" color="primary"
+          [(ngModel)]="this.collectService.collection.txConversion" (ionChange)="onChangeTxConversion($event)"
+          required="true" [ngClass]="{'inp-write': !this.collectService.collection.txConversion}"></ion-input>
+      </ion-col>
 
-            <ion-col size="6" size-sm="12" size-xs="12">
-                <ion-item>
-                    <ion-label>{{tagFecha()}}</ion-label>
-                    <ion-button disabled=true color="light">
-                        {{dateServ.formatComplete(this.dateCollect)}}
-                    </ion-button>
-                </ion-item>
-            </ion-col>
+      <ion-col size="6" size-sm="12" size-xs="12">
+        <ion-item>
+          <ion-label>{{tagFecha()}}</ion-label>
+          <ion-button disabled=true color="light">
+            {{dateServ.formatComplete(this.dateCollect)}}
+          </ion-button>
+        </ion-item>
+      </ion-col>
 
 
-            <ion-col size="6" size-sm="12" size-xs="12">
-                <ion-input label="{{this.collectService.collectionTags.get('COB_RESPONSABLE')}}:"
-                    [(ngModel)]="this.collectService.collection.naResponsible" label-placement="floating" fill="outline"
-                    value="" id="currency" color="primary" (ionChange)="setResponsible()"
-                    [readonly]="this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stCollection == 6"></ion-input>
-            </ion-col>
+      <ion-col size="6" size-sm="12" size-xs="12">
+        <ion-input label="{{this.collectService.collectionTags.get('COB_RESPONSABLE')}}:"
+          [(ngModel)]="this.collectService.collection.naResponsible" label-placement="floating" fill="outline" value=""
+          id="currency" color="primary" (ionChange)="setResponsible()"
+          [readonly]="this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stCollection == 6"
+          [ngClass]="{
+            'inp-write': !this.collectService.validComment && !isSentDelivery,
+            'no-validate': isSentDelivery
+          }"></ion-input>
+      </ion-col>
 
-            <ion-col size="6" size-sm="12" size-xs="12">
-                <ion-input #input label="{{this.collectService.collectionTags.get('COB_COMENTARIO')}}:"
-                    [(ngModel)]="this.collectService.collection.txComment" label-placement="floating" fill="outline"
-                    (ionChange)="setComment()" value="this.collectService.collection.txComment"
-                    [ngClass]="{'inp-write': !this.collectService.validComment}"
-                    [required]="this.collectService.requiredComment"
-                    [readonly]="this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stCollection == 6">
-                    <!-- <div *ngIf="this.collectService.collection.txComment.trim() == '' && this.requiredComment"
-                        slot="label">
-                        <ion-text color="danger">Campo Obligatorio</ion-text>
-                    </div> -->
-                </ion-input>
-                <ion-label
-                    *ngIf="this.collectService.collection.txComment.trim() == '' && this.collectService.requiredComment"
-                    color="danger" class="campoObligatorio">
-                    {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}
-                </ion-label>
+      <ion-col size="6" size-sm="12" size-xs="12">
+        <ion-input #input label="{{this.collectService.collectionTags.get('COB_COMENTARIO')}}:"
+          [(ngModel)]="this.collectService.collection.txComment" label-placement="floating" fill="outline"
+          (ionChange)="setComment()" value="this.collectService.collection.txComment" [ngClass]="{
+            'inp-write': !this.collectService.validComment && !isSentDelivery,
+            'no-validate': isSentDelivery
+          }" [required]="this.collectService.requiredComment"
+          [readonly]="this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stCollection == 6">
+        </ion-input>
+        <ion-label *ngIf="this.collectService.collection.txComment.trim() == '' && this.collectService.requiredComment"
+          color="danger" class="campoObligatorio">
+          {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}
+        </ion-label>
 
-                <!-- <ion-button (click)="print()"></ion-button> -->
+        <!-- <ion-button (click)="print()"></ion-button> -->
 
-            </ion-col>
-        </ion-col>
+      </ion-col>
+    </ion-col>
 
-    </ion-row>
+  </ion-row>
 </ion-grid>
 
 <ion-modal [keepContentsMounted]="true" [isOpen]="showDateRateModal" (didDismiss)="setShowDateRateModal(false)"
-    class="fechasModal">
-    <ng-template>
-        <ion-datetime [id]="dateRate" presentation="date" [(ngModel)]="this.collectService.dateRateVisual"
-            (ngModelChange)="onChangeDateRateMsj($event)" [min]="this.collectService.fechaMenor"
-            [max]="this.collectService.fechaMayor" [showDefaultButtons]="true" doneText="Aceptar" cancelText="Cancelar">
-        </ion-datetime>
-    </ng-template>
+  class="fechasModal">
+  <ng-template>
+    <ion-datetime [id]="dateRate" presentation="date" [(ngModel)]="this.collectService.dateRateVisual"
+      (ngModelChange)="onChangeDateRateMsj($event)" [min]="this.collectService.fechaMenor"
+      [max]="this.collectService.fechaMayor" [showDefaultButtons]="true" doneText="Aceptar" cancelText="Cancelar">
+    </ion-datetime>
+  </ng-template>
 </ion-modal>
 
 
 <app-cliente-selector #selectorCliente *ngIf="!this.collectService.disabledInputClient"
-    (clienteSeleccionado)="setClientfromSelector($event)"></app-cliente-selector>
+  (clienteSeleccionado)="setClientfromSelector($event)"></app-cliente-selector>
 
 <!-- alerta de envio-->
 <ion-alert [isOpen]="this.collectService.alertMessageOpen"
-    header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}" message={{this.collectService.mensaje}}
-    [buttons]="this.collectService.alertButtons" (didDismiss)="setResult($event)"></ion-alert>
+  header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}" message={{this.collectService.mensaje}}
+  [buttons]="this.collectService.alertButtons" (didDismiss)="setResult($event)"></ion-alert>
 
 <!-- alerta de envio-->
 <ion-alert [isOpen]="this.collectService.alertMessageChangeCurrency"
-    header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}" message={{this.collectService.mensaje}}
-    [buttons]="this.collectService.alertButtonsSend" (didDismiss)="setChangeCurrency($event)"></ion-alert>
+  header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}" message={{this.collectService.mensaje}}
+  [buttons]="this.collectService.alertButtonsSend" (didDismiss)="setChangeCurrency($event)"></ion-alert>
 
 <ion-alert [isOpen]="this.collectService.alertMessageChangeDateRate"
-    header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}" message={{this.collectService.mensaje}}
-    [buttons]="this.collectService.alertButtonsSend" (didDismiss)="setChangeDateRate($event)"></ion-alert>˝
+  header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}" message={{this.collectService.mensaje}}
+  [buttons]="this.collectService.alertButtonsSend" (didDismiss)="setChangeDateRate($event)"></ion-alert>
 <!-- alerta de envio-->
 <ion-alert [isOpen]="this.collectService.alertMessageChangeEnterprise"
-    header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}" message={{this.collectService.mensaje}}
-    [buttons]="this.collectService.alertButtonsSend" (didDismiss)="setResultEnterprise($event)"></ion-alert>
+  header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}" message={{this.collectService.mensaje}}
+  [buttons]="this.collectService.alertButtonsSend" (didDismiss)="setResultEnterprise($event)"></ion-alert>
 
 <app-message></app-message>

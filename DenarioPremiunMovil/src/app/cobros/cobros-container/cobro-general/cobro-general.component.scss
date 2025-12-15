@@ -2,6 +2,14 @@
     --border-color: #e60c0c!important;
   }
 
+.no-validate {
+  --border-color: transparent !important;
+  --highlight-color: transparent !important;
+  --highlight-color-focused: transparent !important;
+  --highlight-color-valid: transparent !important;
+  --highlight-color-invalid: transparent !important;
+}
+
   $colorVerde: #59b02d;
   $colorVerdeRegistrar: #7dc60f;
   $colorAmarillo: #daab19;
