@@ -852,6 +852,8 @@ export class VisitaComponent implements OnInit {
       isDispatched: this.visitServ.visit.isDispatched ? this.visitServ.visit.isDispatched : false,
       noDispatchedMotive: this.visitServ.visit.noDispatchedMotive,
       isVisited: this.visitServ.visit.isVisited ? this.visitServ.visit.isVisited : false,
+      coCycle: this.visitServ.visit.coCycle ? this.visitServ.visit.coCycle : 'N/A',
+      idCycle: this.visitServ.visit.idCycle ? this.visitServ.visit.idCycle : null
     }
     //console.log("visita antes de insert:");
     //console.log(visita);

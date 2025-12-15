@@ -30,6 +30,9 @@ export class Visit {
             obj['isReassigned'],
             obj['txReassignedMotive'],
             obj['daReassign'],
+            obj['isVisited'],
+            obj['coCycle'],
+            obj['idCycle']
 
 
         );
@@ -62,8 +65,9 @@ export class Visit {
         public isReassigned: boolean = false,
         public txReassignedMotive: string = '',
         public daReassign: string = '',
-
         public isVisited: boolean = false,
+        public coCycle: string = '',
+        public idCycle: number | null = null
 
 
     ) { }

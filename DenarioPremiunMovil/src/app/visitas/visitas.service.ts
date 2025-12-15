@@ -412,6 +412,8 @@ export class VisitasService {
       noDispatchedMotive: item.no_dispatched_motive,
       isDispatched: item.is_dispatched === "true" ? true : false,
       isVisited: item.is_visited === "true" ? true : false,
+      coCycle: item.co_cycle,
+      idCycle: item.id_cycle
     }
     return v;
   }
