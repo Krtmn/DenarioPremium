@@ -80,6 +80,12 @@ export class CobrosGeneralComponent implements OnInit {
   public COLLECT_STATUS_TO_SEND = COLLECT_STATUS_TO_SEND;
   public COLLECT_STATUS_NEW = COLLECT_STATUS_NEW;
 
+  // True cuando el cobro ya fue enviado/por enviar o status 6
+  get isSentDelivery(): boolean {
+    const st = Number(this.collectService?.collection?.stDelivery);
+    return st === this.COLLECT_STATUS_TO_SEND || st === this.COLLECT_STATUS_SENT || st === 6;
+  }
+
   public alertButtons = [
     { text: '', role: 'confirm' },
   ];
@@ -136,6 +142,10 @@ export class CobrosGeneralComponent implements OnInit {
       this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", true, COLOR_VERDE);
       this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, 'cobros');
       this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, "Cobros", 'fondoVerde', client, false, 'cob');
+
+      if (!this.collectService.igtfList?.length)
+        this.collectService.getIgtfList(this.synchronizationServices.getDatabase());
+
       this.collectService.changeEnterprise = false;
 
     });
@@ -284,7 +294,7 @@ export class CobrosGeneralComponent implements OnInit {
         });
     this.initializeCurrenciesAndRates();
     if (!this.collectService.igtfList?.length)
-      this.collectService.getIgtfList(this.synchronizationServices.getDatabase(),);
+      this.collectService.getIgtfList(this.synchronizationServices.getDatabase());
     this.loadData();
   }
 
@@ -321,7 +331,7 @@ export class CobrosGeneralComponent implements OnInit {
         });
         this.updateSelectedCurrency(this.collectService.collection.idCurrency);
         //this.collectService.disabledCurrency = true;
-        this.collectService.getIgtfList(this.synchronizationServices.getDatabase(),).then(() => {
+        this.collectService.getIgtfList(this.synchronizationServices.getDatabase()).then(() => {
           this.updateSelectedIgtf(this.collectService.collection.nuIgtf);
         });
         this.loadData();
@@ -532,7 +542,7 @@ export class CobrosGeneralComponent implements OnInit {
           // }
 
           if (this.collectService.igtfList == null || this.collectService.igtfList.length == 0)
-            this.collectService.getIgtfList(this.synchronizationServices.getDatabase(),);
+            this.collectService.getIgtfList(this.synchronizationServices.getDatabase());
 
 
 
@@ -578,7 +588,7 @@ export class CobrosGeneralComponent implements OnInit {
       this.ngOnInit();
       this.collectService.client = {} as Client;
       this.collectService.nameClient = "";
-      //luego de seleccionar empresa, buscamos las tasas    
+      //luego de seleccionar empresa, buscamos las tasas
       if (this.collectService.historicoTasa)
         this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise)
           .then(() => {
@@ -612,7 +622,7 @@ export class CobrosGeneralComponent implements OnInit {
   loadData() {
     this.clientSelectorService.checkClient = true;
 
-    //SE BUSCA LA MONEDA 
+    //SE BUSCA LA MONEDA
     this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise).then(r => {
 
       if (this.collectService.collection.stDelivery === this.COLLECT_STATUS_SENT) {
@@ -860,7 +870,7 @@ export class CobrosGeneralComponent implements OnInit {
 
   async resetValues() {
     if (this.collectService.collection.collectionDetails.length > 0) {
-      //DEBO ELIMINAR 
+      //DEBO ELIMINAR
       this.collectService.collection.collectionDetails = [] as CollectionDetail[];
     }
     if (this.collectService.collection.collectionPayments.length > 0) {
