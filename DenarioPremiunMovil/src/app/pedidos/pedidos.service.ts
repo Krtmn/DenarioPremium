@@ -764,6 +764,11 @@ export class PedidosService {
 
       curItem = 0;
       item.totalEnUnidades = 0;
+      let masterUnit = {} as UnitInfo;
+      if(this.showTotalProductUnit){
+        //[showTotalProductUnit] unidad que se usara para hacer calculos de totalizacion
+        masterUnit = item.unitList.find(u => u.coUnit == this.codeTotalProductUnit)!;
+      }
       for (let j = 0; j < item.unitList.length; j++) {
         const unit = item.unitList[j];
         curItem += unit.quUnit * unit.quAmount * item.nuPrice;
@@ -775,7 +780,13 @@ export class PedidosService {
             this.countTotalProductUnit += unit.quAmount;
             this.nameTotalProductUnit = unit.naUnit;
           } else {
-            this.countTotalProductUnit += unit.quAmount * unit.quUnit;
+            if(masterUnit != undefined && masterUnit.quUnit == 1){
+              //caso ideal, la unidad maestra es la unidad base (1)
+              this.countTotalProductUnit += unit.quAmount * unit.quUnit;
+            }else{
+              this.countTotalProductUnit += unit.quAmount / masterUnit.quUnit;
+            }
+            
           }
         }
         item.totalEnUnidades += unit.quUnit * unit.quAmount;

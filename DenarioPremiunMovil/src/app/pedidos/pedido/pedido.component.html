@@ -384,7 +384,7 @@
                                             <ion-item *ngIf="orderServ.showTotalProductUnit">
                                                 <span class="titulosBold">{{ orderServ.getTag("PED_TAB_TOTAL")}}
                                                     {{orderServ.nameTotalProductUnit}}:</span>
-                                                {{orderServ.countTotalProductUnit}}
+                                                {{formatNum(orderServ.countTotalProductUnit)}}
                                             </ion-item>
                                         </ion-col>
 
