@@ -918,3 +918,14 @@ ion-select {
   margin: 0 auto;
   display: block;
 }
+
+/* Enable selection and context menu globally for inputs */
+ion-input::part(native),
+input,
+textarea {
+    user-select: text;
+    -webkit-user-select: text;
+    -ms-user-select: text;
+    -moz-user-select: text;
+    -webkit-touch-callout: default;
+}

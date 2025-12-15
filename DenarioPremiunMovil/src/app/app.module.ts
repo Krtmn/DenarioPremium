@@ -102,6 +102,7 @@ import { HistoryTransaction } from './services/historyTransaction/historyTransac
 import { FileOpener } from '@awesome-cordova-plugins/file-opener/ngx';
 import { VisitaPdfModalComponent } from './visitas/vista-pdfComponent/visitaPdfModal.component';
 import { ConversionService } from './services/conversion/conversion.service';
+import { installGlobalClipboardEnablers } from 'src/app/utils/clipboard-enablers';
 import { CalculatorComponent } from './calculator/calculator.component';
 //import { HomeSidebarComponent } from './home-sidebar/home-sidebar.component';
 
@@ -223,6 +224,8 @@ export class AppModule {
     this.platform.ready().then(() => {
       // Desactiva el swipe para volver atrás
       document.querySelector('ion-router-outlet')?.setAttribute('swipeGesture', 'false');
+      // Habilita copiar/pegar/seleccionar en todos los inputs de forma global
+      try { installGlobalClipboardEnablers(); } catch {}
     });
   }
 }
