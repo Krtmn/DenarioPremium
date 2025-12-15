@@ -207,12 +207,12 @@ export class VisitasService {
       "co_visit, st_visit, da_visit, coordenada, id_client, co_client," +
       "na_client, nu_sequence, id_user, co_user, co_enterprise, id_enterprise, id_visit, " +
       "da_real, da_initial, id_address_client, co_address_client, nu_attachments, has_attachments, " +
-      "is_reassigned, tx_reassigned_motive, da_reassign, is_visited ) " +
-      "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "is_reassigned, tx_reassigned_motive, da_reassign, is_visited, co_cycle, id_cycle ) " +
+      "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
     params = [v.coVisit, v.stVisit, v.daVisit, v.coordenada, v.idClient, v.coClient,
     v.naClient, v.nuSequence, v.idUser, v.coUser, v.coEnterprise, v.idEnterprise, (this.editVisit ? v.idVisit : 0),
     v.daReal, v.daInitial, v.idAddressClient, v.coAddressClient, v.nuAttachments,
-    v.hasAttachments, v.isReassigned, v.txReassignedMotive, v.daReassign, v.isVisited];
+    v.hasAttachments, v.isReassigned, v.txReassignedMotive, v.daReassign, v.isVisited, v.coCycle, v.idCycle];
     //}
 
 
