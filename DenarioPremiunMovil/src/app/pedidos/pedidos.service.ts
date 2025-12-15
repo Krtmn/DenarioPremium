@@ -775,7 +775,7 @@ export class PedidosService {
             this.countTotalProductUnit += unit.quAmount;
             this.nameTotalProductUnit = unit.naUnit;
           } else {
-            this.countTotalProductUnit += item.quAmount * unit.quUnit;
+            this.countTotalProductUnit += unit.quAmount * unit.quUnit;
           }
         }
         item.totalEnUnidades += unit.quUnit * unit.quAmount;
