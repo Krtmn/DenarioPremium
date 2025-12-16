@@ -334,6 +334,8 @@ export class CobrosGeneralComponent implements OnInit {
         this.collectService.getIgtfList(this.synchronizationServices.getDatabase()).then(() => {
           this.updateSelectedIgtf(this.collectService.collection.nuIgtf);
         });
+
+
         this.loadData();
       });
     });
@@ -666,6 +668,9 @@ export class CobrosGeneralComponent implements OnInit {
               this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
                 if (this.collectService.historicPartialPayment) {
                   this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
+                }
+                if (this.collectService.userCanSelectCollectDiscount) {
+                  this.collectService.getCollectDiscounts(this.synchronizationServices.getDatabase());
                 }
               });
           })

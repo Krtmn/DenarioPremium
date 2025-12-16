@@ -236,25 +236,39 @@ export class CobrosListComponent implements OnInit {
 
         this.collectService.getCollectionDetails(this.synchronizationServices.getDatabase(), coCollection).then(collectionDetails => {
           this.collectService.collection.collectionDetails = collectionDetails;
-          this.collectService.getCollectionPayments(this.synchronizationServices.getDatabase(), coCollection).then(collectionPayment => {
-            if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT) {
-              this.collectService.hideDocuments = true;
-              this.collectService.hidePayments = true;
-            } else if (this.collectService.collection.stDelivery == 6) {
-              this.collectService.showHeaderButtonsFunction(false);
-              this.collectService.hideDocuments = true;
-              this.collectService.hidePayments = true;
-            } else {
-              this.collectService.showHeaderButtonsFunction(true);
+          this.collectService.getCollectionDetailsDiscounts(this.synchronizationServices.getDatabase(), coCollection).then(collectionDetailsDiscounts => {
+
+
+            const all = collectionDetailsDiscounts || [];
+            const isDiscount = (x: any): x is any => x && (x.idCollectDiscount !== undefined || x.nuCollectDiscount !== undefined);
+            const discounts = (all as any[]).filter(isDiscount);
+            if (collectionDetailsDiscounts.length > 0) {
+              for (const detail of this.collectService.collection.collectionDetails) {
+                detail.collectionDetailDiscounts = discounts.filter(d => d.coCollection === detail.coCollection) ?? [];
+              }
+
             }
 
-            this.collectService.collection.collectionPayments = collectionPayment;
-            this.collectService.isOpenCollect = true;
-            this.collectService.cobroListComponent = false;
-            this.collectService.cobroComponent = true;
-            this.messageService.hideLoading();
+            this.collectService.getCollectionPayments(this.synchronizationServices.getDatabase(), coCollection).then(collectionPayment => {
+              if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT) {
+                this.collectService.hideDocuments = true;
+                this.collectService.hidePayments = true;
+              } else if (this.collectService.collection.stDelivery == 6) {
+                this.collectService.showHeaderButtonsFunction(false);
+                this.collectService.hideDocuments = true;
+                this.collectService.hidePayments = true;
+              } else {
+                this.collectService.showHeaderButtonsFunction(true);
+              }
+
+              this.collectService.collection.collectionPayments = collectionPayment;
+              this.collectService.isOpenCollect = true;
+              this.collectService.cobroListComponent = false;
+              this.collectService.cobroComponent = true;
+              this.messageService.hideLoading();
+            })
           })
-        })
+        });
       })
     });
   }

@@ -5,7 +5,7 @@ import { ChangeDetectorRef } from '@angular/core';
 
 
 import { Client } from 'src/app/modelos/tables/client';
-import { Collection, CollectionDetail, CollectionPayment } from 'src/app/modelos/tables/collection';
+import { Collection, CollectionDetail, CollectionDetailDiscount, CollectionPayment } from 'src/app/modelos/tables/collection';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { Currencies } from 'src/app/modelos/tables/currencies';
 import { ConversionType } from 'src/app/modelos/tables/conversionType';
@@ -35,6 +35,7 @@ import { MessageService } from '../messageService/message.service';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
 import { ClientLogicService } from '../clientes/client-logic.service';
+import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
 
 
 @Injectable({
@@ -100,6 +101,8 @@ export class CollectionService {
   public collectionSended: TransactionStatuses[] = [];
   public differenceCode: DifferenceCode[] = [];
   public differenceCodeSelected: DifferenceCode[] = [];
+  public collectDiscounts: CollectDiscounts[] = [];
+  public selectedCollectDiscounts: number[] = [];
 
   public messageAlert!: MessageAlert;
   public anticipoAutomatico!: any;
@@ -142,7 +145,6 @@ export class CollectionService {
   public cobroListComponent: boolean = false;
   public collectionIsSave: boolean = false;
   public collectValid: boolean = false;
-
   public requiredComment: boolean = false;
   public validComment: boolean = false;
   public isAnticipo: boolean = false;
@@ -192,6 +194,7 @@ export class CollectionService {
   public userCanAddRetention: boolean = false;
   public messageSended: boolean = false;
   public enableDifferenceCodes: boolean = false;
+  public userCanSelectCollectDiscount: boolean = false;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;
@@ -332,6 +335,7 @@ export class CollectionService {
 
     this.userCanAddRetention = this.globalConfig.get('userCanAddRetention') === 'true' ? true : false;
     this.enableDifferenceCodes = this.globalConfig.get('enableDifferenceCodes') === 'true' ? true : false;
+    this.userCanSelectCollectDiscount = this.globalConfig.get('userCanSelectCollectDiscount') === 'true' ? true : false;
 
     this.showNuevaCuenta = this.clientBankAccount === true ? true : false;
 
@@ -1277,7 +1281,7 @@ export class CollectionService {
     //TOLERANCIA0 TRUE PERMITO DIFERENCIA SE DEBEN VALIDAR LAS SIGUIENTES VARIABLES TipoTolerancia, RangoTolerancia, MonedaTolerancia
     if (this.TipoTolerancia == 0) {
       if (this.collection.coCurrency == this.MonedaTolerancia) {
-        //COMO LA MONEDA DEL COBRO Y LA MONEDA DE LA TOLERANCIA SON IGUALES, ENTONCES COMPARO DIRECTAMENTE 
+        //COMO LA MONEDA DEL COBRO Y LA MONEDA DE LA TOLERANCIA SON IGUALES, ENTONCES COMPARO DIRECTAMENTE
         let amount = this.montoTotalPagado - this.montoTotalPagar;
         if (amount > 0) {
           if (amount < this.RangoToleranciaPositiva)
@@ -2465,7 +2469,6 @@ export class CollectionService {
         this.documentSalesView = this.documentSales.map(ds => ({ ...ds }));
         this.convertDocumentSales();
         this.getColorRowDocumentSale();
-
         return this.documentSales;
       }).catch(e => {
         //this.documentSales
@@ -2643,9 +2646,9 @@ export class CollectionService {
     if (coDocuments.length === 0) return Promise.resolve();
 
     const selectStatement = `
-    SELECT code.id_document, code.in_payment_partial 
-    FROM collection_details code 
-    JOIN collection_payments copa ON code.co_collection = copa.co_collection 
+    SELECT code.id_document, code.in_payment_partial
+    FROM collection_details code
+    JOIN collection_payments copa ON code.co_collection = copa.co_collection
     JOIN collections co ON co.id_client = ?
     WHERE co_document IN ('${coDocuments.join("', '")}')
   `;
@@ -3081,10 +3084,11 @@ export class CollectionService {
     })
   }
 
-  deleteCollectionBatch(dbServ: SQLiteObject, deleteCollectionSQL: string, deleteCollectionDetailsSQL: string, deleteCollectionPaymentsSQL: string, coCollection: string) {
+  deleteCollectionBatch(dbServ: SQLiteObject, deleteCollectionSQL: string, deleteCollectionDetailsSQL: string, deleteCollectionDetailDiscountsSQL: string, deleteCollectionPaymentsSQL: string, coCollection: string) {
     var statements = [];
     statements.push([deleteCollectionSQL, [coCollection]]);
     statements.push([deleteCollectionDetailsSQL, [coCollection]]);
+    statements.push([deleteCollectionDetailDiscountsSQL, [coCollection]]);
     statements.push([deleteCollectionPaymentsSQL, [coCollection]]);
 
     return dbServ.sqlBatch(statements).then(res => {
@@ -3112,9 +3116,10 @@ export class CollectionService {
 
       const deleteCollectionSQL = 'DELETE FROM collections WHERE co_collection = ?';
       const deleteCollectionDetailsSQL = 'DELETE FROM collection_details WHERE co_collection = ?';
+      const deleteCollectionDetailsDiscountSQL = 'DELETE FROM collection_detail_discounts WHERE co_collection = ?';
       const deleteCollectionPaymentsSQL = 'DELETE FROM collection_payments WHERE co_collection = ?';
 
-      this.deleteCollectionBatch(dbServ, deleteCollectionSQL, deleteCollectionDetailsSQL, deleteCollectionPaymentsSQL, collection.coCollection).then(() => {
+      this.deleteCollectionBatch(dbServ, deleteCollectionSQL, deleteCollectionDetailsSQL, deleteCollectionDetailsDiscountSQL, deleteCollectionPaymentsSQL, collection.coCollection).then(() => {
         const insertCollection = "INSERT OR REPLACE INTO collections (" +
           "id_collection," +
           "co_collection," +
@@ -3193,13 +3198,15 @@ export class CollectionService {
             return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
               console.log("TERMINE DOCUMENT ST")
               return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
-                return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, this.collection.coCollection).then(resp => {
-                  if (action) {
-                    this.documentSales = [] as DocumentSale[];
-                    this.documentSalesBackup = [] as DocumentSale[];
-                  }
+                return this.saveCollectionDetailDiscounts(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
+                  return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, this.collection.coCollection).then(resp => {
+                    if (action) {
+                      this.documentSales = [] as DocumentSale[];
+                      this.documentSalesBackup = [] as DocumentSale[];
+                    }
 
-                  return resp
+                    return resp
+                  })
                 })
               });
             });
@@ -3243,7 +3250,6 @@ export class CollectionService {
   }
 
   saveCollectionBatch(dbServ: SQLiteObject, collection: Collection[]) {
-    // ...existing code...
 
     const insertCollectionSQL = `
   INSERT OR REPLACE INTO collections (
@@ -3260,15 +3266,15 @@ export class CollectionService {
     na_responsible,
     id_enterprise,
     co_enterprise,
-    nu_amount_total,    
+    nu_amount_total,
     nu_amount_total_conversion,
     id_currency,
     co_currency,
     co_type,
     tx_comment,
     coordenada,
-    nu_value_local,    
-    nu_difference,    
+    nu_value_local,
+    nu_difference,
     nu_difference_conversion,
     tx_conversion,
     nu_igtf,
@@ -3281,7 +3287,6 @@ export class CollectionService {
     has_attachments
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
-    // ...existing code...
 
     const insertCollectionDetailSQL = `
   INSERT OR REPLACE INTO collection_details (
@@ -3312,8 +3317,6 @@ export class CollectionService {
   ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 `;
 
-    // ...existing code...
-
     const insertCollectionPaymentSQL = `
   INSERT OR REPLACE INTO collection_payments (
     id_collection_payment,
@@ -3328,11 +3331,20 @@ export class CollectionService {
     da_value,
     da_collection_payment,
     nu_collection_payment,
-    nu_amount_partial,    
+    nu_amount_partial,
     nu_amount_partial_conversion,
     co_type
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
+    const insertCollectionDetailDiscountSQL = `
+  INSERT OR REPLACE INTO collection_detail_discounts (
+    id_collection_detail_discount,
+    id_collection_detail,
+    nu_collect_discount_other,
+    na_collect_discount_other,
+    co_collection
+  ) VALUES (?,?,?,?,?)
+    `
 
     let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
 
@@ -3382,7 +3394,6 @@ export class CollectionService {
         if (collectionDetail.inPaymentPartial == true) {
           this.coDocumentToUpdate.push(collectionDetail.coDocument);
         }
-
         queries.push([insertCollectionDetailSQL,
           [
             collectionDetail.idCollectionDetail,
@@ -3412,28 +3423,41 @@ export class CollectionService {
           ]
         ]);
 
-        for (var coDetailPayment = 0; coDetailPayment < collect.collectionPayments.length; coDetailPayment++) {
-          const collectionPayment = collect.collectionPayments[coDetailPayment];
-          queries.push([insertCollectionPaymentSQL,
-            [
-              collectionPayment.idCollectionPayment,
-              collectionPayment.coCollection,
-              collectionPayment.idCollectionDetail,
-              collectionPayment.coPaymentMethod,
-              collectionPayment.idBank,
-              collectionPayment.nuPaymentDoc,
-              collectionPayment.naBank,
-              collectionPayment.coClientBankAccount,
-              collectionPayment.nuClientBankAccount,
-              collectionPayment.daValue,
-              collectionPayment.daCollectionPayment,
-              collectionPayment.nuCollectionPayment,
-              collectionPayment.nuAmountPartial,
-              collectionPayment.nuAmountPartialConversion,
-              collectionPayment.coType
-            ]
-          ]);
+        if (collectionDetail.collectionDetailDiscounts?.length! > 0) {
+          for (var coDetailDiscount = 0; coDetailDiscount < collectionDetail.collectionDetailDiscounts!.length; coDetailDiscount++) {
+            const collectionDetailDiscount = collectionDetail.collectionDetailDiscounts![coDetailDiscount];
+            queries.push([insertCollectionDetailDiscountSQL,
+              collectionDetailDiscount.idCollectionDetailDiscount,
+              collectionDetailDiscount.idCollectionDetail,
+              collectionDetailDiscount.nuCollectDiscountOther,
+              collectionDetailDiscount.naCollectDiscountOther,
+              collectionDetail.coCollection,
+            ]);
+          }
         }
+      }
+
+      for (var coDetailPayment = 0; coDetailPayment < collect.collectionPayments.length; coDetailPayment++) {
+        const collectionPayment = collect.collectionPayments[coDetailPayment];
+        queries.push([insertCollectionPaymentSQL,
+          [
+            collectionPayment.idCollectionPayment,
+            collectionPayment.coCollection,
+            collectionPayment.idCollectionDetail,
+            collectionPayment.coPaymentMethod,
+            collectionPayment.idBank,
+            collectionPayment.nuPaymentDoc,
+            collectionPayment.naBank,
+            collectionPayment.coClientBankAccount,
+            collectionPayment.nuClientBankAccount,
+            collectionPayment.daValue,
+            collectionPayment.daCollectionPayment,
+            collectionPayment.nuCollectionPayment,
+            collectionPayment.nuAmountPartial,
+            collectionPayment.nuAmountPartialConversion,
+            collectionPayment.coType
+          ]
+        ]);
       }
     }
     return dbServ.sqlBatch(queries).then(() => {
@@ -3447,6 +3471,7 @@ export class CollectionService {
   deleteCollectionsBatch(dbServ: SQLiteObject, collection: Collection[]) {
     const deleteCollectionsSQL = `DELETE FROM collections WHERE co_collection = ?`;
     const deleteCollectionDetailsSQL = `DELETE FROM collection_details WHERE co_collection = ?`;
+    const deleteCollectionDetailDiscountsSQL = `DELETE FROM collection_detail_discounts WHERE co_collection = ?`;
     const deleteCollectionPaymentsSQL = `DELETE FROM collection_payments WHERE co_collection = ?`;
 
     let queries: any[] = []
@@ -3456,10 +3481,14 @@ export class CollectionService {
       for (var coDetail = 0; coDetail < collect.collectionDetails.length; coDetail++) {
         const collectionDetail = collect.collectionDetails[coDetail];
         queries.push([deleteCollectionDetailsSQL, [collect.coCollection]]);
-        for (var coDetailPayment = 0; coDetailPayment < collect.collectionPayments.length; coDetailPayment++) {
-          const collectionPayment = collect.collectionPayments[coDetailPayment];
-          queries.push([deleteCollectionPaymentsSQL, [collect.coCollection]]);
+        for (var coDetailDiscount = 0; coDetailDiscount < collect.collectionDetails[coDetail].collectionDetailDiscounts!.length; coDetailDiscount++) {
+          const collectionDetailDisctount = collect.collectionDetails[coDetail].collectionDetailDiscounts![coDetailDiscount];
+          queries.push([deleteCollectionDetailDiscountsSQL, [collect.coCollection]]);
         }
+      }
+      for (var coDetailPayment = 0; coDetailPayment < collect.collectionPayments.length; coDetailPayment++) {
+        const collectionPayment = collect.collectionPayments[coDetailPayment];
+        queries.push([deleteCollectionPaymentsSQL, [collect.coCollection]]);
       }
     }
 
@@ -3552,6 +3581,39 @@ export class CollectionService {
     }).catch(e => {
       console.log(e);
     })
+  }
+
+  saveCollectionDetailDiscounts(dbServ: SQLiteObject, collectionDetail: CollectionDetail[], coCollection: string) {
+    const statementsCollectionDiscount = [];
+    const insertStatement = "INSERT OR REPLACE INTO collection_detail_discounts(" +
+      "id_collection_detail," +
+      "id_collect_discount," +
+      "nu_collect_discount_other," +
+      "na_collect_discount_other," +
+      "co_collection" +
+      ") VALUES (?,?,?,?,?)";
+
+    for (var i = 0; i < collectionDetail.length; i++) {
+      for (var j = 0; j < collectionDetail[i].collectionDetailDiscounts!.length; j++) {
+        statementsCollectionDiscount.push([insertStatement, [
+          collectionDetail[i].collectionDetailDiscounts![j].idCollectionDetail,
+          collectionDetail[i].collectionDetailDiscounts![j].idCollectDiscount,
+          collectionDetail[i].collectionDetailDiscounts![j].nuCollectDiscountOther,
+          collectionDetail[i].collectionDetailDiscounts![j].naCollectDiscountOther,
+          coCollection
+        ]]);
+      }
+
+    }
+
+    return dbServ.sqlBatch(statementsCollectionDiscount).then(res => {
+      console.log("collection_detail_discounts INSERT", res);
+      return ("TERMINE");
+      //this.saveCollectionPayment(this.collection.collectPayment)
+    }).catch(e => {
+      console.log(e);
+    })
+
   }
 
   saveCollectionPayment(dbServ: SQLiteObject, collectionPayment: CollectionPayment[], coCollection: string) {
@@ -3955,9 +4017,33 @@ export class CollectionService {
           st: res.rows.item(i).st,
           isSave: true,
           daVoucher: res.rows.item(i).da_voucher == "" ? null : res.rows.item(i).da_voucher,
+          collectionDetailDiscounts: [] as CollectionDetailDiscount[],
         })
       }
       return collectionDetails;
+    }).catch(e => {
+      let collectionDetails: CollectionDetail[] = [];
+      console.log(e);
+      return collectionDetails;
+    })
+  }
+
+  getCollectionDetailsDiscounts(dbServ: SQLiteObject, coCollection: string) {
+    return dbServ.executeSql(
+      'SELECT * FROM collection_detail_discounts WHERE co_collection=?', [coCollection
+    ]).then(res => {
+      let CollectionDetailDiscount: CollectionDetailDiscount[] = [];
+      for (var i = 0; i < res.rows.length; i++) {
+        CollectionDetailDiscount.push({
+          idCollectionDetailDiscount: res.rows.item(i).id_collection_detail_discount,
+          idCollectionDetail: res.rows.item(i).id_collection_detail,
+          idCollectDiscount: res.rows.item(i).id_collect_discount,
+          nuCollectDiscountOther: res.rows.item(i).nu_collect_discount,
+          naCollectDiscountOther: res.rows.item(i).na_collect_discount,
+          coCollection: res.rows.item(i).co_collection,
+        })
+      }
+      return CollectionDetailDiscount;
     }).catch(e => {
       let collectionDetails: CollectionDetail[] = [];
       console.log(e);
@@ -4166,6 +4252,25 @@ export class CollectionService {
           coDifferenceCode: res.rows.item(i).co_difference_code,
           naDifferenceCode: res.rows.item(i).na_difference_code,
           txDescription: res.rows.item(i).tx_description
+        })
+      }
+      return Promise.resolve(true);
+    }).catch(e => {
+
+      return Promise.resolve(true);
+    })
+  }
+
+  getCollectDiscounts(dbServ: SQLiteObject) {
+    const selectStatement = 'SELECT * FROM collect_discounts ORDER BY nu_collect_discount ASC';
+    return dbServ.executeSql(selectStatement, []).then(res => {
+      this.collectDiscounts = [] as CollectDiscounts[];
+      for (var i = 0; i < res.rows.length; i++) {
+        this.collectDiscounts.push({
+          idCollectDiscount: res.rows.item(i).id_collect_discount,
+          nuCollectDiscount: res.rows.item(i).nu_collect_discount,
+          naCollectDiscount: res.rows.item(i).na_collect_discount,
+          requireInput: res.rows.item(i).require_input == "true" ? true : false,
         })
       }
       return Promise.resolve(true);
