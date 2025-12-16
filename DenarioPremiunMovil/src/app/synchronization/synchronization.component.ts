@@ -104,7 +104,7 @@ export class SynchronizationComponent implements OnInit {
     44: 'conversion_types',
     46: 'type_product_structures',
     48: 'product_structures',
-    50: 'units',/* 
+    50: 'units',/*
     51: 'product_structure_counts', */
     52: 'order_types',
     53: 'user_product_favs',
@@ -669,7 +669,7 @@ export class SynchronizationComponent implements OnInit {
       // Filtra las tablas si el usuario es transportista
       if (this.user.transportista) {
         // IDs de tablas que NO quieres sincronizar para transportista
-        const tablasTransportista = [1, 3, 5, 6, 8, 9, 10, 15, 23, 32, 33, 42, 43, 44, 46, 48, 50]; // ejemplo, ajusta según tu lógica
+        const tablasTransportista = [1, 3, 5, 8, 9, 10, 15, 23, 32, 33, 42, 43, 44, 46, 48, 50]; // ejemplo, ajusta según tu lógica
         this.tableKeyOrder = this.tableKeyOrder.filter(id => tablasTransportista.includes(id));
         this.N = Object.keys(this.tableKeyMap).length;
         this.PROGRESS = 1 / this.N;
