@@ -7,8 +7,6 @@
     </ion-row>
   </ion-grid>
 
-
-
   <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
     <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
       <ion-col class="titulosBold col borderSuperiorIzquierdo"
@@ -28,10 +26,11 @@
         class="ion-text-center col">{{cobrosDetails.da_collection}}</ion-col>
       <ion-col *ngIf="cobrosDetails.isSelected" size="6"
         class="ion-text-center col">{{cobrosDetails.co_collection}}</ion-col>
-      <ion-col *ngIf="cobrosDetails.isSelected" size="6" class="ion-text-center col">{{cobrosDetails.nu_amount_final}}
+      <ion-col *ngIf="cobrosDetails.isSelected" size="6" class="ion-text-center col">{{cobrosDetails.nu_total_deposit ==
+        null ? cobrosDetails.nu_amount_total : cobrosDetails.nu_total_deposit}}
       </ion-col>
       <ion-col *ngIf="cobrosDetails.isSelected" size="6"
-        class="ion-text-center col borderInferiorDerecho">{{cobrosDetails.nu_amount_final}}
+        class="ion-text-center col borderInferiorDerecho">{{cobrosDetails.nu_amount_total}}
       </ion-col>
     </ion-row>
   </ion-grid>
@@ -45,7 +44,7 @@
     <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
       <ion-col size="10" offset-xs="1" class="ion-text-center col">
         {{this.depositService.deposit.nuAmountDoc}} {{this.depositService.deposit.coCurrency}}
-        <ng-container *ngIf="this.depositService.showConversion">
+        <ng-container *ngIf="this.depositService.multiCurrency == 'true'">
           <br>
           {{this.depositService.deposit.nuAmountDocConversion}} {{this.depositService.currencyConversion.coCurrency}}
         </ng-container>

@@ -13,18 +13,15 @@ export class DepositoCobrosComponent implements OnInit {
 
   public depositService = inject(DepositService);
   public dateServ = inject(DateServiceService);
-  public nuAmountDoc: number = 0;
-  public nuAmountDocConversion: number = 0;
-
-  public multiCurrency: string = "";
 
   constructor() {
-    this.multiCurrency = this.depositService.globalConfig.get("multiCurrency");
+
 
   }
 
   ngOnInit() {
-
+    this.depositService.nuAmountDoc = 0;
+    this.depositService.nuAmountDocConversion = 0;
   }
 
 
@@ -39,7 +36,7 @@ export class DepositoCobrosComponent implements OnInit {
         coDeposit: this.depositService.deposit.coDeposit,
         coDocument: cobroDetails.co_document,
         nuAmountTotal: cobroDetails.nu_amount_total,
-        nuTotalDeposit: cobroDetails.nu_total_deposit,
+        nuTotalDeposit: cobroDetails.nu_total_deposit == undefined ? cobroDetails.nu_amount_total : cobroDetails.nu_total_deposit,
         coCollection: cobroDetails.co_collection,
         idCollection: cobroDetails.id_collection,
         st: 0,
@@ -50,25 +47,26 @@ export class DepositoCobrosComponent implements OnInit {
 
       indexDepositCollect = this.depositService.deposit.depositCollect.length - 1;
       this.depositService.deposit.nuValueLocal = cobroDetails.nu_value_local;
-      this.nuAmountDoc += cobroDetails.nu_total_deposit == null ? cobroDetails.nu_amount_total : cobroDetails.nu_total_deposit;
-      this.nuAmountDocConversion += cobroDetails.nu_total_deposit_conversion;
-      //this.depositService.deposit.nuAmountDoc = Number(this.depositService.deposit.nuAmountDoc.toFixed(this.depositService.parteDecimal));
-      //this.depositService.deposit.nuAmountDocConversion = Number(this.depositService.deposit.nuAmountDocConversion.toFixed(this.depositService.parteDecimal));
+      this.depositService.nuAmountDoc += cobroDetails.nu_total_deposit == null ? cobroDetails.nu_amount_total : cobroDetails.nu_total_deposit;
+      this.depositService.nuAmountDocConversion += cobroDetails.nu_total_deposit_conversion;
 
     } else {
       cobroDetails.inDepositCollect = false;
       this.depositService.deposit.depositCollect.splice(indexDepositCollect, 1);
       if (this.depositService.deposit.depositCollect.length == 0) {
         this.depositService.onDepositValidToSend(false);
-        this.depositService.deposit.nuAmountDoc = 0;
-        this.depositService.deposit.nuAmountDocConversion = 0;
+        this.depositService.nuAmountDoc = 0;
+        this.depositService.nuAmountDocConversion = 0;
       } else {
-        this.depositService.deposit.nuAmountDoc -= cobroDetails.nu_amount_final;
-        this.depositService.deposit.nuAmountDocConversion -= cobroDetails.nu_amount_final_conversion;
-        this.depositService.deposit.nuAmountDoc = Number(this.depositService.deposit.nuAmountDoc.toFixed(this.depositService.parteDecimal));
-        this.depositService.deposit.nuAmountDocConversion = Number(this.depositService.deposit.nuAmountDocConversion.toFixed(this.depositService.parteDecimal));
+        this.depositService.nuAmountDoc -= cobroDetails.nu_total_deposit == null ? cobroDetails.nu_amount_total : cobroDetails.nu_total_deposit;
+        this.depositService.nuAmountDocConversion -= cobroDetails.nu_total_deposit_conversion;
+        this.depositService.nuAmountDoc = Number(this.depositService.nuAmountDoc.toFixed(this.depositService.parteDecimal));
+        this.depositService.nuAmountDocConversion = Number(this.depositService.nuAmountDocConversion.toFixed(this.depositService.parteDecimal));
       }
     }
+
+
+    this.depositService.totalizarDeposito();
 
   }
 }
