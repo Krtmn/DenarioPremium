@@ -76,6 +76,7 @@ import { Conversion } from 'src/app/modelos/tables/conversion';
 import { CurrencyModules } from '../../modelos/tables/currencyModules';
 import { Modules } from '../../modelos/tables/modules';
 import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
+import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
 
 @Injectable({
   providedIn: 'root'
@@ -141,7 +142,7 @@ export class SynchronizationDBService {
       { "id": 44, "nameTable": "conversionTypeTable" },
       { "id": 46, "nameTable": "typeProductStructureTable" },
       { "id": 48, "nameTable": "productStructureTable" },
-      { "id": 50, "nameTable": "unitTable" },/* 
+      { "id": 50, "nameTable": "unitTable" },/*
       { "id": 51, "nameTable": "productStructureCountTable" }, */
       { "id": 52, "nameTable": "orderTypeTable" },
       { "id": 53, "nameTable": "userProductFavTable" },
@@ -167,6 +168,7 @@ export class SynchronizationDBService {
       { "id": 73, "nameTable": "modules" },
       { "id": 74, "nameTable": "currencyModules" },
       { "id": 75, "nameTable": "differenceCodes" },
+      { "id": 76, "nameTable": "collectDiscounts" },
     ]
   }
 
@@ -248,7 +250,7 @@ export class SynchronizationDBService {
                //this.router.navigate(['synchronization']);
                this.inHome = false;
                //this.navController.navigateForward("synchronization")
-               
+
              } else { */
         this.navController.navigateForward("synchronization");
         //this.globalConfig.setVars(user.variablesConfiguracion);
@@ -258,7 +260,7 @@ export class SynchronizationDBService {
         this.insertTags(user.tags)
         //}        //DEBO IR A SINCRONIZAR
       } else {
-        //ESTOY SIN DATOS PERO YA SINCRONICE UNA VEZ, SE DEJA LOGGEAR Y SE MANDA MSJ DE NOTIFICACION    
+        //ESTOY SIN DATOS PERO YA SINCRONICE UNA VEZ, SE DEJA LOGGEAR Y SE MANDA MSJ DE NOTIFICACION
         localStorage.setItem("connected", "false")
         this.services.getTags(this.getDatabase(), "HOME", "ESP").then(result => {
           for (var i = 0; i < result.length; i++) {
@@ -1307,7 +1309,7 @@ export class SynchronizationDBService {
       arr[i].idTransactionType, arr[i].coTransactionType, arr[i].coTransaction, arr[i].idTransaction,
       arr[i].idStatus, arr[i].coStatus, arr[i].txComment]])
       if (arr[i].idTransactionType === 3) {
-        //GUARDO LA LISTA DE  COBROS PARA CHEQUEAR SI VIENEN RECHAZADOS 
+        //GUARDO LA LISTA DE  COBROS PARA CHEQUEAR SI VIENEN RECHAZADOS
         //Y ACTUALIZAR LOS DOCUMENTOS DE ESE COBRO
         this.collectionService.listTransactionStatusCollections.push(arr[i]);
       }
@@ -1504,4 +1506,23 @@ export class SynchronizationDBService {
     })
   }
 
+  insertCollectDiscountsBatch(arr: CollectDiscounts[]) {
+    var statements = [];
+    let insertStatement = "INSERT OR REPLACE INTO collect_discounts(" +
+      "id_collect_discount, nu_collect_discount, na_collect_discount, require_input" +
+      ") " +
+      "VALUES(?,?,?,?)"
+
+    for (var i = 0; i < arr.length; i++) {
+      statements.push([insertStatement, [arr[i].idCollectDiscount,
+      arr[i].nuCollectDiscount, arr[i].naCollectDiscount, arr[i].requireInput]
+      ])
+    }
+    return this.database.sqlBatch(statements).then(res => {
+      console.log("insert collect_discounts ready")
+      return res;
+    }).catch(e => {
+      console.log(e);
+    })
+  }
 }

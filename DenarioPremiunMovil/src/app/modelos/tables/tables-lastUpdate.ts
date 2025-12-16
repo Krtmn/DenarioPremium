@@ -57,6 +57,7 @@ export interface TablesLastUpdate {
   moduleTableLastUpdate: string,
   currencyModuleTableLastUpdate: string,
   differenceCodeTableLastUpdate: string,
+  collectDiscountTableLastUpdate: string,
   page: number
 
 }

@@ -130,6 +130,7 @@ export class SynchronizationComponent implements OnInit {
     73: 'modules',
     74: 'currencyModules',
     75: 'differenceCodes',
+    76: 'collectDiscounts'
   };
 
   /**
@@ -193,6 +194,7 @@ export class SynchronizationComponent implements OnInit {
     modules: 'Módulos',
     currencyModules: 'Monedas Módulos',
     differenceCodes: 'Códigos de Diferencia',
+    collectDiscounts: 'Descuentos de Cobro'
   };
 
   constructor(
@@ -618,6 +620,11 @@ export class SynchronizationComponent implements OnInit {
             this.tables.page = 0;
             break;
           }
+          case 76: {
+            this.tables.collectDiscountTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
 
           default: {
             //statements;
@@ -813,7 +820,10 @@ export class SynchronizationComponent implements OnInit {
 
     if ([75].includes(tableId)) {
       return cfgTrue('enableDifferenceCodes');
+    }
 
+    if ([76].includes(tableId)) {
+      return cfgTrue('userCanSelectCollectDiscount');
     }
 
     // Para cualquier otra tabla, por defecto sincronizamos
@@ -1249,7 +1259,13 @@ export class SynchronizationComponent implements OnInit {
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
     },
-    // ...agrega más si tienes más tablas...
+    collectDiscounts: {
+      batchFn: this.synchronizationServices.insertCollectDiscountsBatch.bind(this.synchronizationServices),
+      rowKey: 'collectDiscountTable',
+      tableKey: 'collectDiscountTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
   };
 
   /**
