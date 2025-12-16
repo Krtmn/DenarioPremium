@@ -4,7 +4,7 @@
         <ion-segment-button value="default">
             <ion-label class="textTab">{{clientLogic.clientTags.get("CLI_DETAIL_TAB_DETALLE")}}</ion-label>
         </ion-segment-button>
-        <ion-segment-button value="docVentas" [disabled]="client == null" *ngIf="!clientLogic.user.transportista">
+        <ion-segment-button value="docVentas" [disabled]="client == null" *ngIf="!this.clientLogic.esTransportista">
             <ion-label class="textTab">{{clientLogic.clientTags.get("CLI_DETAIL_TAB_DOCUMENTO_VENTA")}}</ion-label>
         </ion-segment-button>
     </ion-segment>
