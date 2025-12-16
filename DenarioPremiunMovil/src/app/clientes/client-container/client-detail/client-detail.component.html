@@ -4,7 +4,7 @@
         <ion-segment-button value="default">
             <ion-label class="textTab">{{clientLogic.clientTags.get("CLI_DETAIL_TAB_DETALLE")}}</ion-label>
         </ion-segment-button>
-        <ion-segment-button value="docVentas" [disabled]="client == null" *ngIf="!clientLogic.user.transportista">
+        <ion-segment-button value="docVentas" [disabled]="client == null" *ngIf="!this.clientLogic.esTransportista">
             <ion-label class="textTab">{{clientLogic.clientTags.get("CLI_DETAIL_TAB_DOCUMENTO_VENTA")}}</ion-label>
         </ion-segment-button>
     </ion-segment>
@@ -24,7 +24,7 @@
                     <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CODIGO")}}:</ion-col>
                     <ion-col>{{client.coClient}}</ion-col>
                 </ion-row>
-                <ion-row>
+                <ion-row *ngIf="!this.clientLogic.esTransportista">
                     <ion-col size="4"
                         class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_LISTA_PRECIO")}}:</ion-col>
                     <ion-col>{{client.naPriceList}}</ion-col>
@@ -47,29 +47,29 @@
                         class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_TELEFONO")}}:</ion-col>
                     <ion-col>{{client.nuPhone}}</ion-col>
                 </ion-row>
-                <ion-row>
+                <ion-row *ngIf="!this.clientLogic.esTransportista">
                     <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
                         {{client.coCurrency}}:</ion-col>
                     <ion-col
                         [ngStyle]="{color: client.saldo1 > 0 ? 'Red' : 'Blue' }">{{formatNumber(client.saldo1)}}</ion-col>
                 </ion-row>
-                <ion-row *ngIf="this.clientLogic.showConversion">
+                <ion-row *ngIf="this.clientLogic.showConversion && !this.clientLogic.esTransportista">
                     <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
                         {{oppositeCoCurrency(client.coCurrency)}}:</ion-col>
                     <ion-col
                         [ngStyle]="{color: client.saldo1 > 0 ? 'Red' : 'Blue' }">{{formatNumber(client.saldo2)}}</ion-col>
                 </ion-row>
-                <ion-row>
+                <ion-row *ngIf="!this.clientLogic.esTransportista">
                     <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO")}}
                         {{client.coCurrency}}:</ion-col>
                     <ion-col>{{client.nuCreditLimit}} </ion-col>
                 </ion-row>
-                <ion-row *ngIf="this.clientLogic.showConversion">
+                <ion-row *ngIf="this.clientLogic.showConversion && !this.clientLogic.esTransportista">
                     <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO")}}
                         {{oppositeCoCurrency(client.coCurrency)}}:</ion-col>
                     <ion-col>{{this.nuCreditLimitConversion}}</ion-col>
                 </ion-row>
-                <ion-row>
+                <ion-row *ngIf="!this.clientLogic.esTransportista">
                     <ion-col size="4"
                         class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CONDICION_PAGO")}}:</ion-col>
                     <ion-col>{{client.coPaymentCondition}} - {{client. naPaymentCondition}}</ion-col>

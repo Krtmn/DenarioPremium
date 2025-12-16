@@ -47,6 +47,7 @@
                             <ion-label>
                                 <p>{{ client.lbClient }}</p>
                                 <p>{{this.tags.get('CLI_CODIGO')}}: {{ client.coClient}}</p>
+                                <div *ngIf="!this.clientLogic.esTransportista">
                                 <p [ngStyle]="{color: client.countDueDate >0 ? 'Red' : 'Blue' }">
                                     {{this.tags.get('CLI_SALDO')}} {{client.coCurrency}}: {{formatNum(client.saldo1)}}
                                 </p>
@@ -55,6 +56,7 @@
                                     {{this.tags.get('CLI_SALDO')}} {{oppositeCoCurrency(client.coCurrency)}}:
                                     {{formatNum(client.saldo2)}}
                                 </p>
+                                </div>
                                 <p>
                                     <ion-button class="masInfo" fill="clear"
                                         (click)="this.clientLogic.showClientDetail($event, client)"

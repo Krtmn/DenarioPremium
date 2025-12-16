@@ -86,8 +86,10 @@ export class ClientLogicService {
 
   public showConversion: boolean = true;
   public multiCurrency: boolean = false;
+  public transportRole: boolean = false;
   public localCurrencyDefault: boolean = false;
   public user: any = {};
+  esTransportista: boolean = false;
   public currencyModule: any;
 
   public nameModule: string = "";
@@ -107,20 +109,25 @@ export class ClientLogicService {
     this.currencyModule = this.currencyService.getCurrencyModule("cli");
     this.localCurrencyDefault = this.currencyModule.localCurrencyDefault.toString() === 'true' ? true : false;
     this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
-
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
-      try {
-        this.user = JSON.parse(userStr);
-
-      } catch (e) {
-        this.user = {};
+    this.transportRole = this.globalConfig.get("transportRole").toString() === 'true' ? true : false;
+    //Si el rol de transportista esta activo, debo validar si el usuario es transportista
+    if (this.transportRole) {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try {
+          let user = JSON.parse(userStr);
+          if (user.transportista) {
+            this.esTransportista = user.transportista;
+          } else {
+            //puede ser undefined o similar
+            this.esTransportista = false;
+          }
+        } catch (e) {
+          this.esTransportista = false;
+        }
       }
-    }
-    if (this.user.transportista) {
-
     } else {
-
+      this.esTransportista = false;
     }
 
   }

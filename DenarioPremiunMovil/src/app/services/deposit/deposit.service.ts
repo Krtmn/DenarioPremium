@@ -46,6 +46,7 @@ export class DepositService {
   public nuDocument: string = "";
   public txComment: string = "";
   public message: string = "";
+  public multiCurrency: string = "";
 
   public daDocument: string = this.dateServ.hoyISOFullTime();;
 
@@ -79,6 +80,8 @@ export class DepositService {
 
   public totalDeposit: number = 0;
   public parteDecimal: number = 0;
+  public nuAmountDoc: number = 0;
+  public nuAmountDocConversion: number = 0;
 
   public sendDeposit = new Subject<string>;
 
@@ -114,7 +117,7 @@ export class DepositService {
 
 
   constructor() {
-
+    this.multiCurrency = this.globalConfig.get("multiCurrency");
 
   }
 
@@ -164,6 +167,9 @@ export class DepositService {
 
   initServices(dbServ: SQLiteObject) {
     this.enterpriseServ.setup(dbServ).then(() => {
+      this.disabledSaveButton = true;
+      this.disabledSendButton = true;
+      this.hideDeposit = false;
       this.depositValid = false;
       this.enterpriseList = this.enterpriseServ.empresas;
       this.enterpriseSelected = this.enterpriseList[0];
@@ -327,6 +333,27 @@ export class DepositService {
     } else {
       return (monto * this.deposit.nuValueLocal).toFixed(this.parteDecimal);
     }
+  }
+
+  totalizarDeposito() {
+    this.deposit.nuAmountDoc = 0;
+    this.deposit.nuAmountDocConversion = 0;
+    let total = 0;
+    if (this.deposit && Array.isArray(this.deposit.depositCollect)) {
+      for (const dc of this.deposit.depositCollect) {
+        const val = Number((dc as any).nuAmountTotal ?? (dc as any).nu_amount_total ?? 0);
+        total += isNaN(val) ? 0 : val;
+      }
+    }
+
+    const factor = Math.pow(10, Number(this.parteDecimal ?? 2));
+    this.deposit.nuAmountDoc = Math.round(total * factor) / factor;
+    //this.nuAmountDoc = this.deposit.nuAmountDoc;
+
+    // convertir y guardar la conversión tanto en el objeto deposit como en la variable de servicio
+    const conv = Number(this.convertirMonto(this.deposit.nuAmountDoc));
+    this.deposit.nuAmountDocConversion = isNaN(conv) ? 0 : conv;
+    //this.nuAmountDocConversion = this.deposit.nuAmountDocConversion;
   }
 
   //querys
@@ -561,9 +588,9 @@ export class DepositService {
       if (Array.isArray(deposit.collectionIds) && deposit.collectionIds.length > 0) {
         const placeholders = deposit.collectionIds.map(() => '?').join(',');
         const selectCollections = `
-        SELECT c.co_collection as coCollection, 
-               c.id_collection as idCollection, 
-               c.nu_amount_total as nuAmountTotal, 
+        SELECT c.co_collection as coCollection,
+               c.id_collection as idCollection,
+               c.nu_amount_total as nuAmountTotal,
                c.nu_amount_final as nuAmountFinal,
                cd.co_document as coDocument
         FROM collections c
@@ -810,7 +837,7 @@ export class DepositService {
             item.stDelivery == null ? 0 : item.stDelivery;
             item.stDeposit == this.DEPOSITO_STATUS_SAVED ? status = 'Guardado' : status;
             item.stDeposit == this.DEPOSITO_STATUS_TO_SEND ? status = 'Por Enviar' : status;
-            
+
 
             const itemListaDeposit: ItemListaDepositos = {
               idDeposit: item.idDeposit ?? 0,

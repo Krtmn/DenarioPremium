@@ -89,3 +89,29 @@ capacitor-google-map {
   max-width: 100%;
   text-align: center;
 }
+
+@media(min-width: 576px) {
+    .home {
+        .image-size {
+            display: block;
+            margin: 0 auto;
+            width: 50%!important;
+        }
+        a {
+            text-decoration: none;
+            font-weight: bold;
+            color: black;
+            p {
+                font-size: 20px!important;
+            }
+        }
+    
+    }
+    .nombreModulos {
+        margin-bottom: 10px!important;
+    }
+    .logo {
+        width: 60%!important;
+    }
+
+}

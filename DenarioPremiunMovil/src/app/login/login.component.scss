@@ -123,3 +123,11 @@ ion-checkbox::part(container) {
         }
     }
 }
+
+@media(min-width: 576px) {
+
+    .imageninput {
+        width: 6%!important;
+    }
+
+}
