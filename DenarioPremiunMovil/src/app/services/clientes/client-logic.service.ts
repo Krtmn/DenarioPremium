@@ -132,6 +132,33 @@ export class ClientLogicService {
 
   }
 
+  initService() {
+    this.multiCurrency = this.globalConfig.get('multiCurrency').toString() === "true" ? true : false;
+    this.currencyModule = this.currencyService.getCurrencyModule("cli");
+    this.localCurrencyDefault = this.currencyModule.localCurrencyDefault.toString() === 'true' ? true : false;
+    this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
+    this.transportRole = this.globalConfig.get("transportRole").toString() === 'true' ? true : false;
+    //Si el rol de transportista esta activo, debo validar si el usuario es transportista
+    if (this.transportRole) {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try {
+          let user = JSON.parse(userStr);
+          if (user.transportista) {
+            this.esTransportista = user.transportista;
+          } else {
+            //puede ser undefined o similar
+            this.esTransportista = false;
+          }
+        } catch (e) {
+          this.esTransportista = false;
+        }
+      }
+    } else {
+      this.esTransportista = false;
+    }
+  }
+
   getCurrency() {
     this.currencyService.setup(this.dbServ.getDatabase()).then(() => {
       this.localCurrency = this.currencyService.getLocalCurrency();
