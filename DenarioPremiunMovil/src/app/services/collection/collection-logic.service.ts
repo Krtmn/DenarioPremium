@@ -3481,7 +3481,10 @@ export class CollectionService {
       for (var coDetail = 0; coDetail < collect.collectionDetails.length; coDetail++) {
         const collectionDetail = collect.collectionDetails[coDetail];
         queries.push([deleteCollectionDetailsSQL, [collect.coCollection]]);
-        for (var coDetailDiscount = 0; coDetailDiscount < collect.collectionDetails[coDetail].collectionDetailDiscounts!.length; coDetailDiscount++) {
+        var collectionDetailDiscounts = collect.collectionDetails[coDetail].collectionDetailDiscounts;
+        var quCollectionDetailDiscounts = collectionDetailDiscounts ? collectionDetailDiscounts.length : 0;
+
+        for (var coDetailDiscount = 0; coDetailDiscount < quCollectionDetailDiscounts; coDetailDiscount++) {
           const collectionDetailDisctount = collect.collectionDetails[coDetail].collectionDetailDiscounts![coDetailDiscount];
           queries.push([deleteCollectionDetailDiscountsSQL, [collect.coCollection]]);
         }
