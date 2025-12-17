@@ -7,7 +7,7 @@ import { Collection } from 'src/app/modelos/tables/collection';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
-import { COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW, DELIVERY_STATUS_SENT } from 'src/app/utils/appConstants';
+import { COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW } from 'src/app/utils/appConstants';
 
 
 @Component({
@@ -82,7 +82,7 @@ export class CobrosHeaderComponent implements OnInit {
           this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
           this.alertMessageOpen = true;
           this.collectService.collection.stDelivery = 1;
-          this.collectService.collection.stCollection = COLLECT_STATUS_SAVED;
+          this.collectService.collection.stCollection = this.COLLECT_STATUS_SAVED;
           this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, true).then(async response => {
             await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
             console.log(response);
@@ -210,7 +210,7 @@ export class CobrosHeaderComponent implements OnInit {
       this.collectService.collectionIsSave = false;
       this.collectService.cobroListComponent = false;
       this.collectService.cobrosComponent = true;
-    } else if (!this.collectService.collectionIsSave && this.collectService.collectValidTabs && this.collectService.collection.stDelivery != COLLECT_STATUS_TO_SEND && this.collectService.collection.stDelivery != COLLECT_STATUS_SENT && this.collectService.collection.stDelivery != 6) {
+    } else if (!this.collectService.collectionIsSave && this.collectService.collectValidTabs && this.collectService.collection.stDelivery != this.COLLECT_STATUS_TO_SEND && this.collectService.collection.stDelivery != this.COLLECT_STATUS_SAVED && this.collectService.collection.stDelivery != 6) {
       this.collectService.saveOrExitOpen = true;
     } else {
       this.collectService.collectValid = false;
@@ -315,35 +315,37 @@ export class CobrosHeaderComponent implements OnInit {
       if (sendOrSave) {
         //envio
         this.collectService.collection.stDelivery = 2;
-        this.collectService.collection.stCollection = COLLECT_STATUS_TO_SEND;
-        this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(async response => {
-          await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
-          console.log(response);
-          this.saveSendNewCollection(true, this.collectService.collection.coCollection);
-          if (this.collectService.createAutomatedPrepaid) {
-            //DEBO CREAR EL ANTICIPO AUTOMATICO
-            this.collectService.createAnticipoCollection(this.synchronizationServices.getDatabase(), this.collectService.collection).then(resp => {
-              console.log(resp, " SE CREO ANTICIPO AUTOMATICO");
-              this.collectService.createAutomatedPrepaid = false;
-              this.collectService.anticipoAutomatico = [];
-            });
-          }
+        this.collectService.collection.stCollection = this.COLLECT_STATUS_TO_SEND;
+        this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(response => {
+          this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros").then(() => {
+            console.log(response);
+            this.saveSendNewCollection(true, this.collectService.collection.coCollection);
+            if (this.collectService.createAutomatedPrepaid) {
+              //DEBO CREAR EL ANTICIPO AUTOMATICO
+              this.collectService.createAnticipoCollection(this.synchronizationServices.getDatabase(), this.collectService.collection).then(resp => {
+                console.log(resp, " SE CREO ANTICIPO AUTOMATICO");
+                this.collectService.createAutomatedPrepaid = false;
+                this.collectService.anticipoAutomatico = [];
+              });
+            }
 
-          this.collectService.initCollect = true;
-          this.collectService.disableSavedButton = true;
-          this.collectService.disableSendButton = true;
-          this.collectService.showHeaderButtons = false;
-          this.collectService.cobroComponent = false;
-          this.collectService.cobrosComponent = true;
-          this.collectService.collectValid = false;
-          this.collectService.collectionIsSave = false;
-          this.messageService.hideLoading();
+            this.collectService.initCollect = true;
+            this.collectService.disableSavedButton = true;
+            this.collectService.disableSendButton = true;
+            this.collectService.showHeaderButtons = false;
+            this.collectService.cobroComponent = false;
+            this.collectService.cobrosComponent = true;
+            this.collectService.collectValid = false;
+            this.collectService.collectionIsSave = false;
+            this.messageService.hideLoading();
+          })
+
 
         })
       } else {
         //salvo
         this.collectService.collection.stDelivery = 1;
-        this.collectService.collection.stCollection = COLLECT_STATUS_SAVED;
+        this.collectService.collection.stCollection = this.COLLECT_STATUS_SAVED;
         this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(async response => {
           await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
           console.log(response);

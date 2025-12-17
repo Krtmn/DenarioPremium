@@ -49,7 +49,7 @@ export class ClienteComponent implements OnInit {
   @Input() showHeader: boolean = false;
 
   constructor() {
-
+    this.clientLogic.initService();
   }
 
   ngOnInit() {
@@ -65,7 +65,7 @@ export class ClienteComponent implements OnInit {
     if (this.clientLogic.multiCurrency) {
       if (this.currencyService.multimoneda) {
         //arreglamos el saldo del cliente
-        //porque vergas saldo1 y saldo2 significan vainas distintas aqui y en la lista nunca sabré. 
+        //porque vergas saldo1 y saldo2 significan vainas distintas aqui y en la lista nunca sabré.
         // Asumo que estaban rascaos cuando lo escribieron...
         let saldoCliente = 0, saldoOpuesto = 0;
 
@@ -151,7 +151,7 @@ export class ClienteComponent implements OnInit {
     return "";
   }
 
-  //Hacer estas conversiones en el servicio de moneda 
+  //Hacer estas conversiones en el servicio de moneda
   //tomaria muchos queries a la bd, lo hacemos aca mejor.
   toLocalCurrency(hardAmount: number, doc: DocumentSale): string {
     if (doc.coCurrency == this.localCurrency) {
@@ -232,7 +232,7 @@ export class ClienteComponent implements OnInit {
 
   onChangeAddress($event: any) {
     //cargamos la data de la direccion al cliente para usarla luego en modal de direcciones.
-    this.selectedAddress = $event.detail.value;
+    //his.selectedAddress = $event.detail.value;
     this.client.txAddress = this.selectedAddress.txAddress;
     this.client.idAddressClients = this.selectedAddress.idAddress;
     this.client.coAddressClients = this.selectedAddress.coAddress;
