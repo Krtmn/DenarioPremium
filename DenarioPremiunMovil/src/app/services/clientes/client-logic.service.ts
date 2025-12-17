@@ -118,16 +118,20 @@ export class ClientLogicService {
           let user = JSON.parse(userStr);
           if (user.transportista) {
             this.esTransportista = user.transportista;
+            this.showConversion = false;
           } else {
             //puede ser undefined o similar
             this.esTransportista = false;
+            this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
           }
         } catch (e) {
           this.esTransportista = false;
+          this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
         }
       }
     } else {
       this.esTransportista = false;
+      this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
     }
 
   }
@@ -146,16 +150,20 @@ export class ClientLogicService {
           let user = JSON.parse(userStr);
           if (user.transportista) {
             this.esTransportista = user.transportista;
+            this.showConversion = false;
           } else {
             //puede ser undefined o similar
             this.esTransportista = false;
+            this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
           }
         } catch (e) {
           this.esTransportista = false;
+          this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
         }
       }
     } else {
       this.esTransportista = false;
+      this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
     }
   }
 
