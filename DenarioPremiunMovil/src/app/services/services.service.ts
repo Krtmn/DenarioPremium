@@ -17,7 +17,7 @@ import { PendingTransaction } from '../modelos/tables/pendingTransactions';
 })
 export class ServicesService {
   //private WsUrl = "http://soportepremium.ddns.net:8181/PremiumWS/services/";
-  private WsUrl = "http://192.168.0.231:8282/PremiumWS/services/";
+  //private WsUrl = "http://192.168.0.231:8282/PremiumWS/services/";
   //private WsUrl = "http://192.168.0.217:8080/PremiumWS/services/";
 
   //private WsUrl = "http://denariodemo.ddns.net:8282/PremiumWS/services/"; 
@@ -34,16 +34,11 @@ export class ServicesService {
   //NUTRINA andres nutac123
   //private WsUrl = "http://soportepremium.ddns.net:9993/PremiumWS/services/";
 
-  //nutrina
-  //private WsUrl = 'http://soportepremium.ddns.net:8191/PremiumWS/services/';
-
-  //  private WsUrl = "http://200.35.84.250:8085/PremiumWS/services/";
-
   //la fuente asanchez // 123456
   //private WsUrl = "http://denariolafuente.dyndns.org:8083/PremiumWS/services/";
 
   //charcuteria ventas01 // 123456
-  //private WsUrl = "http://soportepremium.ddns.net:9998/PremiumWS/services/"
+  //private WsUrl = "http://soportepremium.ddns.net:8191/PremiumWS/services/"
 
   //El Eden Import
  // private WsUrl = "http://ec2-3-129-33-188.us-east-2.compute.amazonaws.com:8081/PremiumWS/services/";
@@ -73,15 +68,20 @@ export class ServicesService {
 
   //private WsUrl = "http://denariodemo.ddns.net:8282/PremiumWS/services/";
 
-  //private WsUrl = "http://200.35.84.250:8085/PremiumWS/services/";
-
-  // diprocher pruebas QA
-  //private WsUrl = "http://soportepremium.ddns.net:9991/PremiumWS/services/";
+  // Diprocher
+  // private WsUrl = "http://200.35.84.250:8081/PremiumWS/services/";
 
   //private WsUrl = "http://soportepremium.ddns.net:9993/PremiumWS/services/";
 
   //001 123456 Dist Mundo agricola
   //private WsUrl = "http://soportepremium.ddns.net:9995/PremiumWS/services/";
+
+  //ferrenuestro mayor jmd 16453593
+  //private WsUrl = "http://denario.ddns.net:8081/PremiumWS/services/";
+
+  // prueba QA Romher servidor Kiberno 
+  // transportista 700 123456 // cliente 170 123456
+  private WsUrl = "http://soportepremium.ddns.net:9292/PremiumWS/services/"
 
   private name = "";
   private last = "";
