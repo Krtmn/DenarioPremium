@@ -210,6 +210,8 @@ export class PedidosService {
   public userCanChangePriceListProduct!: boolean;
   public disableCurrency: boolean = true;
 
+  codeTotalProductUnitMessageFlag = false;
+
   /*  ClientChangeSubscription: Subscription = this.clientSelectorService.ClientChanged.subscribe(client => {    
       this.reset();
       //this.cliente = client;    
@@ -251,11 +253,17 @@ export class PedidosService {
     this.getPaymentConditions(idEnterprise).then(data => { this.listaPaymentCondition = data; })
     this.getIVAList().then(data => { this.ivaList = data; });
     this.getProducts(idEnterprise).then(data => { this.listaProductos = data; });
-    this.getUnitInfo(idEnterprise).then(data => { this.listaUnitInfo = data; });
+   
     this.getDiscounts(idEnterprise).then(data => { this.listaDiscount = data; });
     this.getPricelists(idEnterprise).then(data => { this.listaPricelist = data; });
     this.getStocks(idEnterprise).then(data => { this.listaStock = data; });
-
+    this.getUnitInfo(idEnterprise).then(data => { 
+      this.listaUnitInfo = data; 
+    if(this.showTotalProductUnit){
+      //buscamos el nombre de la unidad para mostrar en el total
+      this.nameTotalProductUnit = this.listaUnitInfo.filter(u => u.coUnit == this.codeTotalProductUnit)[0]?.naUnit || '';
+    }
+    });
 
     if (this.validateWarehouses) {
       this.getWarehouses(idEnterprise).then(data => { this.listaWarehouse = data; });
@@ -277,6 +285,7 @@ export class PedidosService {
 
       });
     }
+
   }
 
   getTags() {
@@ -765,6 +774,7 @@ export class PedidosService {
       curItem = 0;
       item.totalEnUnidades = 0;
       let masterUnit = {} as UnitInfo;
+      this.codeTotalProductUnitMessageFlag = false;
       if(this.showTotalProductUnit){
         //[showTotalProductUnit] unidad que se usara para hacer calculos de totalizacion
         masterUnit = item.unitList.find(u => u.coUnit == this.codeTotalProductUnit)!;
@@ -778,13 +788,18 @@ export class PedidosService {
         if (this.showTotalProductUnit) {
           if (unit.coUnit === this.codeTotalProductUnit) {
             this.countTotalProductUnit += unit.quAmount;
-            this.nameTotalProductUnit = unit.naUnit;
+            //this.nameTotalProductUnit = unit.naUnit;
           } else {
-            if(masterUnit != undefined && masterUnit.quUnit == 1){
-              //caso ideal, la unidad maestra es la unidad base (1)
+            if(masterUnit != undefined){
+              if(masterUnit.quUnit == 1){
+                //caso ideal, la unidad maestra es la unidad base (1)
               this.countTotalProductUnit += unit.quAmount * unit.quUnit;
-            }else{
+              }else{
               this.countTotalProductUnit += unit.quAmount / masterUnit.quUnit;
+            }              
+            }else{
+              //no se encontro la unidad maestra,  hay que mostrar mensajito
+              this.codeTotalProductUnitMessageFlag = true;
             }
             
           }
