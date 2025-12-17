@@ -423,6 +423,7 @@ export class CobrosDocumentComponent implements OnInit {
         historicPaymentPartial: doc.historicPaymentPartial,
         isSave: doc.isSave,
         colorRow: doc.colorRow,
+        daUpdate: doc.daUpdate,
       };
 
       // Validación de retención
