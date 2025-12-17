@@ -20,7 +20,8 @@ export class ProductUtil {
       obj['images'],
       obj['typeStocks'],
       obj['productUnitList'],
-      obj['idProductStructure']
+      obj['idProductStructure'],
+      obj['nuTax'],
     );
   }
 
@@ -43,6 +44,10 @@ export class ProductUtil {
     public typeStocks: Inventarios[] | undefined,
     public productUnitList: Unit[] | undefined,
     public idProductStructure: number,
-    public imgName?: string // <-- propiedad opcional para reactividad de imagen
+    public nuTax: number,
+    public imgName?: string, // <-- propiedad opcional para reactividad de imagen
+    
+
+  
   ) { }
 }

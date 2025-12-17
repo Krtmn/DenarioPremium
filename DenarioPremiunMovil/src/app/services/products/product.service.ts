@@ -83,7 +83,7 @@ export class ProductService {
     var database = dbServ;
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
-      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, " +
+      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, " +
         " (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, " +
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, " +
@@ -111,6 +111,7 @@ export class ProductService {
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: result.rows.item(i).id_product_structure,
+            nuTax: result.rows.item(i).nu_tax
           });
         }
       }).catch(e => {
@@ -119,7 +120,7 @@ export class ProductService {
         console.log(e);
       })
     } else {
-      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, " +
+      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, " +
         "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, " +
         "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, " +
         "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, " +
@@ -151,6 +152,7 @@ export class ProductService {
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: item.id_product_structure,
+            nuTax: item.nu_tax
           };
           if (coCurrency != product.coCurrency) {
             //intercambiamos precios y monedas
@@ -176,7 +178,7 @@ export class ProductService {
     var offset = page * this.itemsXPagina;
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
-      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, " +
+      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, " +
         " (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price, " +
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency, " +
@@ -215,6 +217,7 @@ export class ProductService {
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: result.rows.item(i).id_product_structure,
+            nuTax: result.rows.item(i).nu_tax
           });
         }
       }).catch(e => {
@@ -223,7 +226,7 @@ export class ProductService {
         console.log(e);
       })
     } else {
-      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, " +
+      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, " +
         "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list, " +
         "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price, " +
         "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency, "
@@ -264,6 +267,7 @@ export class ProductService {
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: result.rows.item(i).id_product_structure,
+            nuTax: result.rows.item(i).nu_tax
           });
         }
       }).catch(e => {
@@ -279,7 +283,7 @@ export class ProductService {
     var offset = page * this.itemsXPagina;
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
-      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, " +
+      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, " +
         "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, " //+
       //"(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price, " +
       //"(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency, " +
@@ -321,6 +325,7 @@ export class ProductService {
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: item.id_product_structure,
+            nuTax: item.nu_tax
           });
         }
       }).catch(e => {
@@ -329,7 +334,7 @@ export class ProductService {
         console.log(e);
       })
     } else {
-      var select = 'select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, ' +
+      var select = 'select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, ' +
         '(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = ' + id_list + ' order by l.na_list limit 1) as id_list, '// +
       //'(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as nu_price, ' +
       //'(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as co_currency, ';
@@ -371,6 +376,7 @@ export class ProductService {
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: item.id_product_structure,
+            nuTax: item.nu_tax
           });
         }
       }).catch(e => {
@@ -403,7 +409,7 @@ export class ProductService {
     var offset = page * this.itemsXPagina;
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
-      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, " +
+      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, " +
         "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list, " //+
       //"(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as nu_price, " +
       //"(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = "+id_list+" order by l.na_list limit 1) as co_currency, " +
@@ -444,6 +450,7 @@ export class ProductService {
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: result.rows.item(i).id_product_structure,
+            nuTax: result.rows.item(i).nu_tax
           });
         }
       }).catch(e => {
@@ -452,7 +459,7 @@ export class ProductService {
         console.log(e);
       })
     } else {
-      var select = 'select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, ' +
+      var select = 'select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, ' +
         '(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = ' + id_list + ' order by l.na_list limit 1) as id_list, ' //+
       //'(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as nu_price, ' +
       //'(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = '+id_list+' order by l.na_list limit 1) as co_currency, ';
@@ -495,6 +502,7 @@ export class ProductService {
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: result.rows.item(i).id_product_structure,
+            nuTax: result.rows.item(i).nu_tax
           });
         }
       }).catch(e => {
@@ -534,7 +542,7 @@ export class ProductService {
     params.push(idEnterprise);
 
     if (this.globalConfig.get("conversionByPriceList") == "true") {
-      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, " +
+      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, " +
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as nu_price_opposite, " +
@@ -560,6 +568,7 @@ export class ProductService {
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: result.rows.item(i).id_product_structure,
+            nuTax: result.rows.item(i).nu_tax
           });
         }
       }
@@ -569,7 +578,7 @@ export class ProductService {
         console.log(e);
       })
     } else {
-      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, (select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereTokens + " order by p.co_product";
+      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, (select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereTokens + " order by p.co_product";
       return database.executeSql(select, params).then(result => {
         for (let i = 0; i < result.rows.length; i++) {
           this.productList.push({
@@ -594,6 +603,7 @@ export class ProductService {
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: result.rows.item(i).id_product_structure,
+            nuTax: result.rows.item(i).nu_tax
           });
         }
       }
@@ -628,7 +638,7 @@ export class ProductService {
 
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
-      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list, " +
+      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price, " +
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price_opposite, " +
@@ -654,6 +664,7 @@ export class ProductService {
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: result.rows.item(i).id_product_structure,
+            nuTax: result.rows.item(i).nu_tax
           });
         }
       }
@@ -663,7 +674,7 @@ export class ProductService {
         console.log(e);
       })
     } else {
-      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, " +
+      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, " +
         "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list," +
         "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price," +
         "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + "  order by l.na_list limit 1) as co_currency," +
@@ -692,6 +703,7 @@ export class ProductService {
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: result.rows.item(i).id_product_structure,
+            nuTax: result.rows.item(i).nu_tax
           });
         }
       }
@@ -871,7 +883,7 @@ export class ProductService {
     var database = dbServ;
     this.productList = [];
 
-    var select = 'SELECT id_product, co_product, na_product, id_enterprise, co_enterprise, p.id_product_structure ' +
+    var select = 'SELECT id_product, co_product, na_product, id_enterprise, co_enterprise, p.id_product_structure, p.nu_tax ' +
       'FROM products p WHERE id_product IN ' +
       '(SELECT id_product FROM invoice_details WHERE id_invoice = ? ORDER BY id_product ASC)'
     return database.executeSql(select, [idInvoice]).then(result => {
@@ -894,6 +906,7 @@ export class ProductService {
           typeStocks: undefined,
           productUnitList: undefined,
           idProductStructure: result.rows.item(i).id_product_structure,
+          nuTax: result.rows.item(i).nu_tax
         });
       }
     }).catch(e => {

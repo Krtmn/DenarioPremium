@@ -659,6 +659,7 @@ export class PedidosService {
           "subtotal": 0,
           "subtotalConv": 0,
           "totalEnUnidades": 0,
+          "nuTax": item.nuTax
         }
         orderUtils.push(ou);
 
@@ -1160,6 +1161,7 @@ export class PedidosService {
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: prod.id_product_structure,
+            nuTax: prod.nu_tax
           });
         }
         return this.productListToOrderUtil(productList);
@@ -1193,6 +1195,7 @@ export class PedidosService {
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: prod.id_product_structure,
+            nuTax: prod.nu_tax
           });
         }
         return this.productListToOrderUtil(productList);
