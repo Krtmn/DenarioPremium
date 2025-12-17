@@ -846,6 +846,9 @@ export class PedidosService {
       //IVA
       iva = 0;
       ivaItem = 0;
+      if(this.vatExemptProducts && item.nuTax!= null){
+        item.iva = item.nuTax;
+      }
       if (item.iva != null) {
         iva = item.iva;
         ivaItem = curItem * (iva / 100);
