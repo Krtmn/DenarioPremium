@@ -253,11 +253,17 @@ export class PedidosService {
     this.getPaymentConditions(idEnterprise).then(data => { this.listaPaymentCondition = data; })
     this.getIVAList().then(data => { this.ivaList = data; });
     this.getProducts(idEnterprise).then(data => { this.listaProductos = data; });
-    this.getUnitInfo(idEnterprise).then(data => { this.listaUnitInfo = data; });
+   
     this.getDiscounts(idEnterprise).then(data => { this.listaDiscount = data; });
     this.getPricelists(idEnterprise).then(data => { this.listaPricelist = data; });
     this.getStocks(idEnterprise).then(data => { this.listaStock = data; });
-
+    this.getUnitInfo(idEnterprise).then(data => { 
+      this.listaUnitInfo = data; 
+    if(this.showTotalProductUnit){
+      //buscamos el nombre de la unidad para mostrar en el total
+      this.nameTotalProductUnit = this.listaUnitInfo.filter(u => u.coUnit == this.codeTotalProductUnit)[0]?.naUnit || '';
+    }
+    });
 
     if (this.validateWarehouses) {
       this.getWarehouses(idEnterprise).then(data => { this.listaWarehouse = data; });
@@ -279,6 +285,7 @@ export class PedidosService {
 
       });
     }
+
   }
 
   getTags() {
@@ -781,7 +788,7 @@ export class PedidosService {
         if (this.showTotalProductUnit) {
           if (unit.coUnit === this.codeTotalProductUnit) {
             this.countTotalProductUnit += unit.quAmount;
-            this.nameTotalProductUnit = unit.naUnit;
+            //this.nameTotalProductUnit = unit.naUnit;
           } else {
             if(masterUnit != undefined){
               if(masterUnit.quUnit == 1){
