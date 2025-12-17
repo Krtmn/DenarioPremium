@@ -418,7 +418,7 @@
     "name": "document_st",
     "table": "documentSt",
     "idName": "id",
-    "sql": "CREATE TABLE IF NOT EXISTS document_st (id INTEGER PRIMARY KEY, id_document INTEGER UNIQUE NOT NULL, co_document VARCHAR(30) NOT NULL, st_document INTEGER NOT NULL DEFAULT 0)"
+    "sql": "CREATE TABLE IF NOT EXISTS document_st (id INTEGER PRIMARY KEY, id_document INTEGER UNIQUE NOT NULL, co_document VARCHAR(30) NOT NULL, st_document INTEGER, da_update TIMESTAMP);"
   },
   {
     "id": 99112,

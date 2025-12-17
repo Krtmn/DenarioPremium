@@ -1,295 +1,272 @@
 <app-client-header *ngIf="showHeader"></app-client-header>
 <ion-content class="client-detail">
-    <ion-segment value="default" [(ngModel)]="this.clientLogic.segment" scrollable>
-        <ion-segment-button value="default">
-            <ion-label class="textTab">{{clientLogic.clientTags.get("CLI_DETAIL_TAB_DETALLE")}}</ion-label>
-        </ion-segment-button>
-        <ion-segment-button value="docVentas" [disabled]="client == null" *ngIf="!this.clientLogic.esTransportista">
-            <ion-label class="textTab">{{clientLogic.clientTags.get("CLI_DETAIL_TAB_DOCUMENTO_VENTA")}}</ion-label>
-        </ion-segment-button>
-    </ion-segment>
-    <div [ngSwitch]="this.clientLogic.segment">
-        <ion-card *ngSwitchCase="'default'">
-            <ion-grid [fixed]="true" class="tablaInfoclients">
-                <ion-row>
-                    <ion-col size="4"
-                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_EMPRESA")}}:</ion-col>
-                    <ion-col>{{client.lblEnterprise}}</ion-col>
-                </ion-row>
-                <ion-row>
-                    <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_NOMBRE")}}:</ion-col>
-                    <ion-col>{{client.naClient}}</ion-col>
-                </ion-row>
-                <ion-row>
-                    <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CODIGO")}}:</ion-col>
-                    <ion-col>{{client.coClient}}</ion-col>
-                </ion-row>
-                <ion-row *ngIf="!this.clientLogic.esTransportista">
-                    <ion-col size="4"
-                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_LISTA_PRECIO")}}:</ion-col>
-                    <ion-col>{{client.naPriceList}}</ion-col>
-                </ion-row>
-                <ion-row>
-                    <ion-col size="4" class="titulosBold">{{tagRif}}:</ion-col>
-                    <ion-col>{{client.nuRif}}</ion-col>
-                </ion-row>
-                <ion-row>
-                    <ion-col size="4"
-                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CONTACTO")}}:</ion-col>
-                    <ion-col>{{client.naResponsible}}</ion-col>
-                </ion-row>
-                <ion-row>
-                    <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_EMAIL")}}:</ion-col>
-                    <ion-col size="8">{{client.naEmail}}</ion-col>
-                </ion-row>
-                <ion-row>
-                    <ion-col size="4"
-                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_TELEFONO")}}:</ion-col>
-                    <ion-col>{{client.nuPhone}}</ion-col>
-                </ion-row>
-                <ion-row *ngIf="!this.clientLogic.esTransportista">
-                    <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
-                        {{client.coCurrency}}:</ion-col>
-                    <ion-col
-                        [ngStyle]="{color: client.saldo1 > 0 ? 'Red' : 'Blue' }">{{formatNumber(client.saldo1)}}</ion-col>
-                </ion-row>
-                <ion-row *ngIf="this.clientLogic.showConversion && !this.clientLogic.esTransportista">
-                    <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
-                        {{oppositeCoCurrency(client.coCurrency)}}:</ion-col>
-                    <ion-col
-                        [ngStyle]="{color: client.saldo1 > 0 ? 'Red' : 'Blue' }">{{formatNumber(client.saldo2)}}</ion-col>
-                </ion-row>
-                <ion-row *ngIf="!this.clientLogic.esTransportista">
-                    <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO")}}
-                        {{client.coCurrency}}:</ion-col>
-                    <ion-col>{{client.nuCreditLimit}} </ion-col>
-                </ion-row>
-                <ion-row *ngIf="this.clientLogic.showConversion && !this.clientLogic.esTransportista">
-                    <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO")}}
-                        {{oppositeCoCurrency(client.coCurrency)}}:</ion-col>
-                    <ion-col>{{this.nuCreditLimitConversion}}</ion-col>
-                </ion-row>
-                <ion-row *ngIf="!this.clientLogic.esTransportista">
-                    <ion-col size="4"
-                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CONDICION_PAGO")}}:</ion-col>
-                    <ion-col>{{client.coPaymentCondition}} - {{client. naPaymentCondition}}</ion-col>
-                </ion-row>
-                <ion-row>
-                    <ion-col size="4"
-                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_DIRECCION")}}:</ion-col>
-                    <ion-col>
-                        <ion-select placeholder="{{clientLogic.clientTags.get('CLI_DETAIL_SELECCIONE_DIRECCION')}}"
-                            [(ngModel)]="selectedAddress" (ionChange)="onChangeAddress($event)"
-                            [compareWith]="addressCompare">
-                            <ion-select-option *ngFor="let direccion of clientLogic.listaDirecciones"
-                                [value]="direccion">
-                                {{direccion.txAddress}}
-                            </ion-select-option>
-                        </ion-select>
-                    </ion-col>
-                </ion-row>
-                <ion-row>
-                    <ion-col size="4"
-                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_DIRECCION")}}:</ion-col>
-                    <ion-col>{{client.txAddress}}</ion-col>
-                </ion-row>
-                <ion-row>
-                    <ion-col size="4"
-                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_DESCRIPTION_1")}}:</ion-col>
-                    <ion-col>{{client.txDescription1}}</ion-col>
-                </ion-row>
-                <ion-row>
-                    <ion-col size="4"
-                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_DESCRIPTION_2")}}:</ion-col>
-                    <ion-col>{{client.txDescription2}}</ion-col>
-                </ion-row>
-                <ion-row *ngIf="client.editable">
-                    <ion-col size="4"
-                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_COORDENADA")}}:</ion-col>
-                    <ion-col>{{getCoordenada(client.coordenada)}}
-                        <ion-button *ngIf="hayCoordenada(client.coordenada)" class="botonAddVerde" size="small"
-                            (click)="viewCoordenada(true,  client, 'client')">
-                            <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
-                        </ion-button>
-                        <ion-button *ngIf="!hayCoordenada(client.coordenada)" class="botonAddVerde" size="small"
-                            (click)="viewCoordenada(false,client, 'client')">
-                            <ion-icon slot="icon-only" name="add"></ion-icon>
-                        </ion-button>
+  <ion-segment value="default" [(ngModel)]="this.clientLogic.segment" scrollable>
+    <ion-segment-button value="default">
+      <ion-label class="textTab">{{clientLogic.clientTags.get("CLI_DETAIL_TAB_DETALLE")}}</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="docVentas" [disabled]="client == null" *ngIf="!this.clientLogic.esTransportista">
+      <ion-label class="textTab">{{clientLogic.clientTags.get("CLI_DETAIL_TAB_DOCUMENTO_VENTA")}}</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+  <div [ngSwitch]="this.clientLogic.segment">
+    <ion-card *ngSwitchCase="'default'">
+      <ion-grid [fixed]="true" class="tablaInfoclients">
+        <ion-row>
+          <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_EMPRESA")}}:</ion-col>
+          <ion-col>{{client.lblEnterprise}}</ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_NOMBRE")}}:</ion-col>
+          <ion-col>{{client.naClient}}</ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CODIGO")}}:</ion-col>
+          <ion-col>{{client.coClient}}</ion-col>
+        </ion-row>
+        <ion-row *ngIf="!this.clientLogic.esTransportista">
+          <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_LISTA_PRECIO")}}:</ion-col>
+          <ion-col>{{client.naPriceList}}</ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col size="4" class="titulosBold">{{tagRif}}:</ion-col>
+          <ion-col>{{client.nuRif}}</ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CONTACTO")}}:</ion-col>
+          <ion-col>{{client.naResponsible}}</ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_EMAIL")}}:</ion-col>
+          <ion-col size="8">{{client.naEmail}}</ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_TELEFONO")}}:</ion-col>
+          <ion-col>{{client.nuPhone}}</ion-col>
+        </ion-row>
+        <ion-row *ngIf="!this.clientLogic.esTransportista">
+          <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
+            {{client.coCurrency}}:</ion-col>
+          <ion-col [ngStyle]="{color: client.saldo1 > 0 ? 'Red' : 'Blue' }">{{formatNumber(client.saldo1)}}</ion-col>
+        </ion-row>
+        <ion-row *ngIf="this.clientLogic.showConversion && !this.clientLogic.esTransportista">
+          <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
+            {{oppositeCoCurrency(client.coCurrency)}}:</ion-col>
+          <ion-col [ngStyle]="{color: client.saldo1 > 0 ? 'Red' : 'Blue' }">{{formatNumber(client.saldo2)}}</ion-col>
+        </ion-row>
+        <ion-row *ngIf="!this.clientLogic.esTransportista">
+          <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO")}}
+            {{client.coCurrency}}:</ion-col>
+          <ion-col>{{client.nuCreditLimit}} </ion-col>
+        </ion-row>
+        <ion-row *ngIf="this.clientLogic.showConversion && !this.clientLogic.esTransportista">
+          <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO")}}
+            {{oppositeCoCurrency(client.coCurrency)}}:</ion-col>
+          <ion-col>{{this.nuCreditLimitConversion}}</ion-col>
+        </ion-row>
+        <ion-row *ngIf="!this.clientLogic.esTransportista">
+          <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CONDICION_PAGO")}}:</ion-col>
+          <ion-col>{{client.coPaymentCondition}} - {{client. naPaymentCondition}}</ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_CO_DETAIL_DIRECCION")}}:</ion-col>
+          <ion-col>
+            <ion-select placeholder="{{clientLogic.clientTags.get('COB_SELECCIONE')}}" [(ngModel)]="selectedAddress"
+              (ionChange)="onChangeAddress($event)" [compareWith]="addressCompare">
+              <ion-select-option *ngFor="let direccion of clientLogic.listaDirecciones" [value]="direccion">
+                {{direccion.coAddress}}
+              </ion-select-option>
+            </ion-select>q
+          </ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_DIRECCION")}}:</ion-col>
+          <ion-col>{{client.txAddress}}</ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_DESCRIPTION_1")}}:</ion-col>
+          <ion-col>{{client.txDescription1}}</ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_DESCRIPTION_2")}}:</ion-col>
+          <ion-col>{{client.txDescription2}}</ion-col>
+        </ion-row>
+        <ion-row *ngIf="client.editable">
+          <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_COORDENADA")}}:</ion-col>
+          <ion-col>{{getCoordenada(client.coordenada)}}
+            <ion-button *ngIf="hayCoordenada(client.coordenada)" class="botonAddVerde" size="small"
+              (click)="viewCoordenada(true,  client, 'client')">
+              <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
+            </ion-button>
+            <ion-button *ngIf="!hayCoordenada(client.coordenada)" class="botonAddVerde" size="small"
+              (click)="viewCoordenada(false,client, 'client')">
+              <ion-icon slot="icon-only" name="add"></ion-icon>
+            </ion-button>
 
-                    </ion-col>
-                </ion-row>
-                <ion-row *ngIf="!client.editable">
-                    <ion-col size="4"
-                        class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_COORDENADA")}}:</ion-col>
-                    <ion-col>{{client.coordenada}}
-                        <ion-button *ngIf="hayCoordenada(client.coordenada)" class="botonAddVerde" size="small"
-                            (click)="viewCoordenada(true, client, 'client')">
-                            <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
-                        </ion-button>
-                        <!-- <a (click)="viewCoordenada(true, client)">
+          </ion-col>
+        </ion-row>
+        <ion-row *ngIf="!client.editable">
+          <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_COORDENADA")}}:</ion-col>
+          <ion-col>{{client.coordenada}}
+            <ion-button *ngIf="hayCoordenada(client.coordenada)" class="botonAddVerde" size="small"
+              (click)="viewCoordenada(true, client, 'client')">
+              <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
+            </ion-button>
+            <!-- <a (click)="viewCoordenada(true, client)">
                             <ion-icon *ngIf="coordenada" src="../../../assets/icon/search-circle-outline.svg"></ion-icon>
                         </a> -->
-                    </ion-col>
-                </ion-row>
-            </ion-grid>
-        </ion-card>
-        <ion-card *ngSwitchCase="'docVentas'">
-            <ion-grid class="tablaInfoClientes tablaDocVentasGrip" *ngIf="document.length > 0">
-                <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
-                    <ion-col size="2" class="titulosBold col borderSuperiorIzquierdo"></ion-col>
-                    <ion-col size="2" class="titulosBold col">
-                        {{clientLogic.clientTags.get("CLI_DETAIL_TIPO")}}</ion-col>
-                    <ion-col size="4" class="titulosBold col">
-                        {{clientLogic.clientTags.get("CLI_DETAIL_NUMERO_DOCUMENTO")}}
-                    </ion-col>
-                    <ion-col size="4" class="titulosBold col">
-                        {{clientLogic.clientTags.get("CLI_DETAIL_MONEDA_DOC")}}
-                    </ion-col>
-                    <ion-col size="4" class="titulosBold col">
-                        {{clientLogic.clientTags.get("CLI_DETAIL_DIAS_VENCIMIENTO")}}
-                    </ion-col>
-                    <ion-col size="4" *ngIf="this.clientLogic.showConversion" class="titulosBold col">
-                        {{clientLogic.clientTags.get("CLI_DETAIL_TASA")}}
-                    </ion-col>
-                    <ion-col size="4" class="titulosBold col">
-                        {{clientLogic.clientTags.get("CLI_DETAIL_MONTO")}}
-                    </ion-col>
-                    <ion-col size="4" *ngIf="this.clientLogic.showConversion"
-                        class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_MONTO_CONVERSION")}}</ion-col>
-                    <ion-col size="4" class="titulosBold col">
-                        {{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
-                    </ion-col>
-                    <ion-col size="4" *ngIf="this.clientLogic.showConversion" class="titulosBold col">
-                        {{clientLogic.clientTags.get("CLI_DETAIL_SALDO_CONVERSION")}}
-                    </ion-col>
-                    <ion-col size="4" class="titulosBold col">
-                        {{clientLogic.clientTags.get("CLI_DETAIL_FECHA_DOCUMENTO")}}
-                    </ion-col>
-                    <ion-col size="4" class="titulosBold col borderSuperiorDerecho">
-                        {{clientLogic.clientTags.get("CLI_DETAIL_FECHA_VENCIMIENTO")}}
-                    </ion-col>
-                </ion-row>
-                <ion-row *ngFor="let documento of document;index as i" class="tablaDocumentosVenta tablaDocVentas row">
-                    <ion-col size="2" class="ion-text-center col borderInferiorIzquierdo">
-                        <ion-button (click)="openDoc(documento.idDocument, i)" expand="block" class="botonAddVerde"
-                            size="small">
-                            <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
-                            <!-- {{clientLogic.clientTags.get("CLI_DOC_SALE_BUTTON_VIEW")}} -->
-                        </ion-button>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </ion-card>
+    <ion-card *ngSwitchCase="'docVentas'">
+      <ion-grid class="tablaInfoClientes tablaDocVentasGrip" *ngIf="document.length > 0">
+        <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
+          <ion-col size="2" class="titulosBold col borderSuperiorIzquierdo"></ion-col>
+          <ion-col size="2" class="titulosBold col">
+            {{clientLogic.clientTags.get("CLI_DETAIL_TIPO")}}</ion-col>
+          <ion-col size="4" class="titulosBold col">
+            {{clientLogic.clientTags.get("CLI_DETAIL_NUMERO_DOCUMENTO")}}
+          </ion-col>
+          <ion-col size="4" class="titulosBold col">
+            {{clientLogic.clientTags.get("CLI_DETAIL_MONEDA_DOC")}}
+          </ion-col>
+          <ion-col size="4" class="titulosBold col">
+            {{clientLogic.clientTags.get("CLI_DETAIL_DIAS_VENCIMIENTO")}}
+          </ion-col>
+          <ion-col size="4" *ngIf="this.clientLogic.showConversion" class="titulosBold col">
+            {{clientLogic.clientTags.get("CLI_DETAIL_TASA")}}
+          </ion-col>
+          <ion-col size="4" class="titulosBold col">
+            {{clientLogic.clientTags.get("CLI_DETAIL_MONTO")}}
+          </ion-col>
+          <ion-col size="4" *ngIf="this.clientLogic.showConversion"
+            class="titulosBold col">{{clientLogic.clientTags.get("CLI_DETAIL_MONTO_CONVERSION")}}</ion-col>
+          <ion-col size="4" class="titulosBold col">
+            {{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
+          </ion-col>
+          <ion-col size="4" *ngIf="this.clientLogic.showConversion" class="titulosBold col">
+            {{clientLogic.clientTags.get("CLI_DETAIL_SALDO_CONVERSION")}}
+          </ion-col>
+          <ion-col size="4" class="titulosBold col">
+            {{clientLogic.clientTags.get("CLI_DETAIL_FECHA_DOCUMENTO")}}
+          </ion-col>
+          <ion-col size="4" class="titulosBold col borderSuperiorDerecho">
+            {{clientLogic.clientTags.get("CLI_DETAIL_FECHA_VENCIMIENTO")}}
+          </ion-col>
+        </ion-row>
+        <ion-row *ngFor="let documento of document;index as i" class="tablaDocumentosVenta tablaDocVentas row">
+          <ion-col size="2" class="ion-text-center col borderInferiorIzquierdo">
+            <ion-button (click)="openDoc(documento.idDocument, i)" expand="block" class="botonAddVerde" size="small">
+              <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
+              <!-- {{clientLogic.clientTags.get("CLI_DOC_SALE_BUTTON_VIEW")}} -->
+            </ion-button>
 
-                        <!-- <a (click)="openDoc(documento.idDocument, i)">
+            <!-- <a (click)="openDoc(documento.idDocument, i)">
                             <ion-icon src=" ../../../assets/icon/search-circle-outline.svg"></ion-icon>Ver
                         </a> -->
-                    </ion-col>
-                    <ion-col size="2" class="ion-text-center col"
-                        [ngStyle]="{color: documento.colorRow }">{{documento.coDocumentSaleType}}
-                    </ion-col>
-                    <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: documento.colorRow }">{{documento.coDocument}}
-                    </ion-col>
-                    <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: documento.colorRow }">{{documento.coCurrency}}
-                    </ion-col>
-                    <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: documento.colorRow }">
-                        {{getDaDueDate(documento.daDueDate)}}
-                    </ion-col>
-                    <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: documento.colorRow }"
-                        *ngIf="this.clientLogic.showConversion">
-                        {{formatNumber(this.currencyService.localValue)}} {{localCurrency}}
-                    </ion-col>
-                    <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: documento.colorRow }">
-                        {{formatNumber(documento.nuAmountTotal)}} {{documento.coCurrency}}
-                    </ion-col>
-                    <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: documento.colorRow }"
-                        *ngIf="this.clientLogic.showConversion">
-                        {{this.convertirMonto(documento.nuAmountTotal, this.currencyService.localValue,
-                        documento.coCurrency)}}
-                        {{oppositeCoCurrency(documento.coCurrency)}}
-                    </ion-col>
-                    <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: documento.colorRow }">
-                        {{formatNumber(documento.nuBalance)}} {{documento.coCurrency}}
-                    </ion-col>
-                    <ion-col size="4" class="ion-text-center col "
-                        [ngStyle]="{color: documento.colorRow }"
-                        *ngIf="this.clientLogic.showConversion">
-                        {{this.convertirMonto(documento.nuBalance, this.currencyService.localValue,
-                        documento.coCurrency)}}
-                        {{oppositeCoCurrency(documento.coCurrency)}}
-                    </ion-col>
-                    <ion-col size="4" class="ion-text-center col"
-                        [ngStyle]="{color: documento.colorRow }">
-                        {{documento.daDocument}}
-                    </ion-col>
-                    <ion-col size="4" class="ion-text-center col borderInferiorDerecho"
-                        [ngStyle]="{color: documento.colorRow }">
-                        {{documento.daDueDate}}
-                    </ion-col>
-                </ion-row>
-            </ion-grid>
+          </ion-col>
+          <ion-col size="2" class="ion-text-center col"
+            [ngStyle]="{color: documento.colorRow }">{{documento.coDocumentSaleType}}
+          </ion-col>
+          <ion-col size="4" class="ion-text-center col"
+            [ngStyle]="{color: documento.colorRow }">{{documento.coDocument}}
+          </ion-col>
+          <ion-col size="4" class="ion-text-center col"
+            [ngStyle]="{color: documento.colorRow }">{{documento.coCurrency}}
+          </ion-col>
+          <ion-col size="4" class="ion-text-center col" [ngStyle]="{color: documento.colorRow }">
+            {{getDaDueDate(documento.daDueDate)}}
+          </ion-col>
+          <ion-col size="4" class="ion-text-center col" [ngStyle]="{color: documento.colorRow }"
+            *ngIf="this.clientLogic.showConversion">
+            {{formatNumber(this.currencyService.localValue)}} {{localCurrency}}
+          </ion-col>
+          <ion-col size="4" class="ion-text-center col" [ngStyle]="{color: documento.colorRow }">
+            {{formatNumber(documento.nuAmountTotal)}} {{documento.coCurrency}}
+          </ion-col>
+          <ion-col size="4" class="ion-text-center col" [ngStyle]="{color: documento.colorRow }"
+            *ngIf="this.clientLogic.showConversion">
+            {{this.convertirMonto(documento.nuAmountTotal, this.currencyService.localValue,
+            documento.coCurrency)}}
+            {{oppositeCoCurrency(documento.coCurrency)}}
+          </ion-col>
+          <ion-col size="4" class="ion-text-center col" [ngStyle]="{color: documento.colorRow }">
+            {{formatNumber(documento.nuBalance)}} {{documento.coCurrency}}
+          </ion-col>
+          <ion-col size="4" class="ion-text-center col " [ngStyle]="{color: documento.colorRow }"
+            *ngIf="this.clientLogic.showConversion">
+            {{this.convertirMonto(documento.nuBalance, this.currencyService.localValue,
+            documento.coCurrency)}}
+            {{oppositeCoCurrency(documento.coCurrency)}}
+          </ion-col>
+          <ion-col size="4" class="ion-text-center col" [ngStyle]="{color: documento.colorRow }">
+            {{documento.daDocument}}
+          </ion-col>
+          <ion-col size="4" class="ion-text-center col borderInferiorDerecho" [ngStyle]="{color: documento.colorRow }">
+            {{documento.daDueDate}}
+          </ion-col>
+        </ion-row>
+      </ion-grid>
 
-        </ion-card>
-    </div>
-    <ion-fab *ngIf="this.clientLogic.datos?.document?.length ?? 0" slot="fixed" vertical="bottom" horizontal="start">
-        <ion-fab-button (click)="openSelectShareModal(true)">
-            <ion-icon name="share-social-outline"></ion-icon>
-        </ion-fab-button>
-    </ion-fab>
-    <ion-modal [isOpen]="clientShareModalOpen" (didDismiss)="openShareModal(false)">
-        <ng-template>
-            <app-client-share-modal></app-client-share-modal>
-        </ng-template>
-    </ion-modal>
-<ion-modal [isOpen]="clientSelectShareModalOpen" (didDismiss)="openSelectShareModal(false)" class="compartirDoc">
-  <ng-template>
-    <!-- Header fijo arriba -->
-    <ion-header class="compartirDoc-header" slot="fixed">
-      <ion-toolbar>
-        <ion-title class="tituloCompartir">Compartir documentos</ion-title>
-        <ion-item lines="none">
-          <ion-label>{{ clientLogic.clientTags.get('CLI_DETAIL_SELECT_DOCS') || 'Seleccionar documentos' }}</ion-label>
-          <ion-button fill="clear" size="small" slot="end" (click)="selectAllDocuments()">Todos</ion-button>
-        </ion-item>
-      </ion-toolbar>
-    </ion-header>
-
-    <!-- Contenido desplazable -->
-    <ion-content class="compartirDoc-content">
-      <div *ngIf="clientLogic.datos?.document?.length">
-        <ion-list>
-          <ion-item *ngFor="let doc of clientLogic.datos.document">
-            <ion-label>{{ doc.coDocument }}</ion-label>
-            <ion-checkbox slot="end" [checked]="selectedDocuments?.includes(doc.coDocument)"
-              (ionChange)="toggleDocumentSelection(doc.coDocument, $event)">
-            </ion-checkbox>
+    </ion-card>
+  </div>
+  <ion-fab *ngIf="this.clientLogic.datos?.document?.length ?? 0" slot="fixed" vertical="bottom" horizontal="start">
+    <ion-fab-button (click)="openSelectShareModal(true)">
+      <ion-icon name="share-social-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+  <ion-modal [isOpen]="clientShareModalOpen" (didDismiss)="openShareModal(false)">
+    <ng-template>
+      <app-client-share-modal></app-client-share-modal>
+    </ng-template>
+  </ion-modal>
+  <ion-modal [isOpen]="clientSelectShareModalOpen" (didDismiss)="openSelectShareModal(false)" class="compartirDoc">
+    <ng-template>
+      <!-- Header fijo arriba -->
+      <ion-header class="compartirDoc-header" slot="fixed">
+        <ion-toolbar>
+          <ion-title class="tituloCompartir">Compartir documentos</ion-title>
+          <ion-item lines="none">
+            <ion-label>{{ clientLogic.clientTags.get('CLI_DETAIL_SELECT_DOCS') || 'Seleccionar documentos'
+              }}</ion-label>
+            <ion-button fill="clear" size="small" slot="end" (click)="selectAllDocuments()">Todos</ion-button>
           </ion-item>
-        </ion-list>
-      </div>
-    </ion-content>
+        </ion-toolbar>
+      </ion-header>
 
-    <!-- Footer fijo del modal -->
-    <ion-footer slot="fixed" class="compartirDoc-footer">
-      <ion-toolbar>
-        <ion-grid>
-          <ion-row>
-            <ion-col size="6">
-              <ion-button expand="block" size="small" color="light" (click)="openSelectShareModal(false)">
-                Cancelar
-              </ion-button>
-            </ion-col>
-            <ion-col size="6">
-              <ion-button expand="block" size="small" class="botonAddVerde"
-                (click)="openShareModal(true); openSelectShareModal(false)" [disabled]="!selectedDocuments?.length">
-                Aceptar
-              </ion-button>
-            </ion-col>
-          </ion-row>
-        </ion-grid>
-      </ion-toolbar>
-    </ion-footer>
-  </ng-template>
-</ion-modal>
+      <!-- Contenido desplazable -->
+      <ion-content class="compartirDoc-content">
+        <div *ngIf="clientLogic.datos?.document?.length">
+          <ion-list>
+            <ion-item *ngFor="let doc of clientLogic.datos.document">
+              <ion-label>{{ doc.coDocument }}</ion-label>
+              <ion-checkbox slot="end" [checked]="selectedDocuments?.includes(doc.coDocument)"
+                (ionChange)="toggleDocumentSelection(doc.coDocument, $event)">
+              </ion-checkbox>
+            </ion-item>
+          </ion-list>
+        </div>
+      </ion-content>
+
+      <!-- Footer fijo del modal -->
+      <ion-footer slot="fixed" class="compartirDoc-footer">
+        <ion-toolbar>
+          <ion-grid>
+            <ion-row>
+              <ion-col size="6">
+                <ion-button expand="block" size="small" color="light" (click)="openSelectShareModal(false)">
+                  Cancelar
+                </ion-button>
+              </ion-col>
+              <ion-col size="6">
+                <ion-button expand="block" size="small" class="botonAddVerde"
+                  (click)="openShareModal(true); openSelectShareModal(false)" [disabled]="!selectedDocuments?.length">
+                  Aceptar
+                </ion-button>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </ion-toolbar>
+      </ion-footer>
+    </ng-template>
+  </ion-modal>

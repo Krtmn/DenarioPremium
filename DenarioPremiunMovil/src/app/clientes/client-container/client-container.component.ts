@@ -14,10 +14,10 @@ import { ServicesService } from 'src/app/services/services.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
 @Component({
-    selector: 'app-client-container',
-    templateUrl: './client-container.component.html',
-    styleUrls: ['./client-container.component.scss'],
-    standalone: false
+  selector: 'app-client-container',
+  templateUrl: './client-container.component.html',
+  styleUrls: ['./client-container.component.scss'],
+  standalone: false
 })
 export class ClienteContainerComponent implements OnInit {
 
@@ -74,21 +74,22 @@ export class ClienteContainerComponent implements OnInit {
         this.clientLogic.clienteNuevoBlancoImg = true;
         this.clientLogic.clientDetailComponent = true;
       } else if (this.clientLogic.clientDocumentSaleComponent) {
-        if(this.clientLogic.opendDocClick) {
+        if (this.clientLogic.opendDocClick) {
           //aca tengo que ir directo a la pestaña de documentos, como lo hago???
           this.clientLogic.opendDocClick = false;
           this.clientLogic.clientDocumentSaleComponent = false;
           this.clientLogic.clientDetailComponent = true;
           this.clientLogic.segment = 'docVentas';
-        }else{
+        } else {
           this.clientLogic.clientDocumentSaleComponent = false;
-        this.clientLogic.clientDetailComponent = true;
+          this.clientLogic.clientDetailComponent = true;
         }
       }
     });
   }
 
   clientList() {
+    this.clientLogic.initService();
     this.messageService.showLoading().then(() => {
       this.clientLogic.getClients(this.clientLogic.listaEmpresa[0].idEnterprise).then(resp => {
         this.messageService.hideLoading();

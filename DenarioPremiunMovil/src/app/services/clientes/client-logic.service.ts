@@ -118,18 +118,53 @@ export class ClientLogicService {
           let user = JSON.parse(userStr);
           if (user.transportista) {
             this.esTransportista = user.transportista;
+            this.showConversion = false;
           } else {
             //puede ser undefined o similar
             this.esTransportista = false;
+            this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
           }
         } catch (e) {
           this.esTransportista = false;
+          this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
         }
       }
     } else {
       this.esTransportista = false;
+      this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
     }
 
+  }
+
+  initService() {
+    this.multiCurrency = this.globalConfig.get('multiCurrency').toString() === "true" ? true : false;
+    this.currencyModule = this.currencyService.getCurrencyModule("cli");
+    this.localCurrencyDefault = this.currencyModule.localCurrencyDefault.toString() === 'true' ? true : false;
+    this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
+    this.transportRole = this.globalConfig.get("transportRole").toString() === 'true' ? true : false;
+    //Si el rol de transportista esta activo, debo validar si el usuario es transportista
+    if (this.transportRole) {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try {
+          let user = JSON.parse(userStr);
+          if (user.transportista) {
+            this.esTransportista = user.transportista;
+            this.showConversion = false;
+          } else {
+            //puede ser undefined o similar
+            this.esTransportista = false;
+            this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
+          }
+        } catch (e) {
+          this.esTransportista = false;
+          this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
+        }
+      }
+    } else {
+      this.esTransportista = false;
+      this.showConversion = this.currencyModule.showConversion.toString() === 'true' ? true : false;
+    }
   }
 
   getCurrency() {
@@ -269,7 +304,6 @@ export class ClientLogicService {
         }
 
         this.datos.document = docsResult;
-        this.clientDetailComponent = true;
         this.datos.document.forEach((doc) => {
           if (typeof doc.daDocument === 'string' && doc.daDocument.includes('-')) {
             doc.daDocument = doc.daDocument.split("-")[2] + "/" + doc.daDocument.split("-")[1] + "/" + doc.daDocument.split("-")[0];
@@ -281,15 +315,16 @@ export class ClientLogicService {
       } else {
         // Si la llamada no devolvió array, asegurar valores por defecto
         this.datos.document = [];
-        this.clientDetailComponent = true;
       }
 
       // 3) Obtener direcciones del cliente
       try {
         const addresses = await this.clientesServices.getAddressClientsByIdClient(Number(idClient));
         this.listaDirecciones = Array.isArray(addresses) ? addresses : [];
+        this.clientDetailComponent = true;
       } catch (e) {
         this.listaDirecciones = [];
+        this.clientDetailComponent = true;
         console.warn('[goToClient] error cargando direcciones:', e);
       }
 

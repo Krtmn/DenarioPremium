@@ -1945,12 +1945,13 @@ export class CollectionService {
 
 
   async lockDocumentSales(db: SQLiteObject): Promise<string[]> {
-    const docs: string[] = [];
+    const docsLock: string[] = [];
+    const docsUnlock: string[] = [];
     try {
       const list = Array.isArray(this.collectionSended) ? this.collectionSended : [];
       if (list.length === 0) {
         this.coDocumentToUpdate = [];
-        return docs;
+        return docsLock;
       }
 
       // extraer coTransaction (acepta varias posibles claves)
@@ -1963,33 +1964,95 @@ export class CollectionService {
 
       if (coTransactions.length === 0) {
         this.coDocumentToUpdate = [];
-        return docs;
+        return docsLock;
       }
 
       // preparar consulta IN (...) para obtener todos los co_document de una sola vez
       const placeholders = coTransactions.map(() => '?').join(',');
-      const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders}) AND in_payment_partial = 'false'`;
+      /* const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders}) AND in_payment_partial = 'false'`;
 
       const res = await db.executeSql(sql, coTransactions);
       for (let i = 0; i < res.rows.length; i++) {
         const cd = res.rows.item(i).co_document;
         if (cd != null) docs.push(cd);
       }
+ */
 
-      // Guardar resultado en la propiedad usada por otros flujos
-      this.coDocumentToUpdate = docs.slice();
+      //DOCUMENTOS A BLOQUEAR
+      const sqlBloquear = `SELECT DISTINCT(ds.co_document)
+FROM document_sales ds
+JOIN collection_details cd ON ds.co_document = cd.co_document
+JOIN collections c ON cd.co_collection = c.co_collection AND c.st_collection IN (1,3)
+JOIN transaction_statuses ts ON c.co_collection = ts.co_transaction AND ts.id_transaction_type = 3
+WHERE ts.da_transaction_statuses = (
+    SELECT MAX(ts2.da_transaction_statuses)
+    FROM transaction_statuses ts2
+    JOIN collection_details cd2 ON cd2.co_collection = ts2.co_transaction
+    WHERE cd2.co_document = ds.co_document
+      AND ts2.id_transaction_type = 3
+)
+AND ts.da_transaction_statuses > ds.da_update;`;
 
       try {
-        await this.checkDocumentSales(db, docs, 2);
+        const resBloq = await db.executeSql(sqlBloquear, []);
+        // SELECT: filas devueltas
+        if (resBloq.rows && resBloq.rows.length > 0) {
+          for (let i = 0; i < resBloq.rows.length; i++) {
+            docsLock.push(resBloq.rows.item(i).co_document);
+            // procesar row
+          }
+        } else {
+          // no hay filas (resultado vacío)
+        }
+      } catch (err) {
+        console.error('SQL execution error:', err);
+        // manejar error: reintentar, notificar, etc.
+      }
+
+      //DOCUMENTOS A DESBLOQUEAR
+      this.coDocumentToUpdate = docsLock.slice();
+      const sqlDesbloquear = `SELECT DISTINCT(ds.co_document)
+FROM document_sales ds
+JOIN collection_details cd ON ds.co_document = cd.co_document
+JOIN collections c ON cd.co_collection = c.co_collection AND c.st_collection IN (1,3)
+JOIN transaction_statuses ts ON c.co_collection = ts.co_transaction AND ts.id_transaction_type = 3
+WHERE ts.da_transaction_statuses = (
+    SELECT MAX(ts2.da_transaction_statuses)
+    FROM transaction_statuses ts2
+    JOIN collection_details cd2 ON cd2.co_collection = ts2.co_transaction
+    WHERE cd2.co_document = ds.co_document
+      AND ts2.id_transaction_type = 3
+)
+AND ds.da_update >= ts.da_transaction_statuses ;`;
+
+      try {
+        const resDesbloq = await db.executeSql(sqlDesbloquear, []);
+        // SELECT: filas devueltas
+        if (resDesbloq.rows && resDesbloq.rows.length > 0) {
+          for (let i = 0; i < resDesbloq.rows.length; i++) {
+            docsUnlock.push(resDesbloq.rows.item(i).co_document);
+            // procesar row
+          }
+        } else {
+          // no hay filas (resultado vacío)
+        }
+      } catch (err) {
+        console.error('SQL execution error:', err);
+        // manejar error: reintentar, notificar, etc.
+      }
+
+      try {
+        await this.checkDocumentSales(db, docsLock, 2);
+        await this.checkDocumentSales(db, docsUnlock, 0);
       } catch (e) {
         console.error('[findDocumentSalesRefused] checkDocumentSales error:', e);
       }
 
-      return docs;
+      return docsLock;
     } catch (err) {
       console.error('[findDocumentSalesRefused] error:', err);
       this.coDocumentToUpdate = [];
-      return docs;
+      return docsLock;
     }
   }
 
@@ -3121,7 +3184,7 @@ export class CollectionService {
       const deleteCollectionDetailsDiscountSQL = 'DELETE FROM collection_detail_discounts WHERE co_collection = ?';
       const deleteCollectionPaymentsSQL = 'DELETE FROM collection_payments WHERE co_collection = ?';
 
-      this.deleteCollectionBatch(dbServ, deleteCollectionSQL, deleteCollectionDetailsSQL, deleteCollectionDetailsDiscountSQL, deleteCollectionPaymentsSQL, collection.coCollection).then(() => {
+      return this.deleteCollectionBatch(dbServ, deleteCollectionSQL, deleteCollectionDetailsSQL, deleteCollectionDetailsDiscountSQL, deleteCollectionPaymentsSQL, collection.coCollection).then(() => {
         const insertCollection = "INSERT OR REPLACE INTO collections (" +
           "id_collection," +
           "co_collection," +
@@ -3232,15 +3295,7 @@ export class CollectionService {
             });
 
           } else {
-            //es cobranza normal debo guardar el payment y el detalle
-            /*  return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
-               console.log("TERMINE DOCUMENT ST")
-               return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
-                 //this.documentSales = [] as DocumentSale[];
-                 //this.documentSalesBackup = [] as DocumentSale[];
-                 return resp;
-               });
-             }); */
+
             return Promise.resolve();
           }
         }).catch(e => {
@@ -3573,14 +3628,7 @@ export class CollectionService {
 
     return dbServ.sqlBatch(statementsCollectionDetails).then(res => {
       console.log("COLLECTION DETAILS INSERT", res);
-      /*  if (this.collection.coType != "1" && this.collection.coType != "2") {
-         return this.saveCollectionPayment(dbServ, this.collection.collectionPayments, coCollection).then(resp => {
-           return resp
-         })
-       } else {
-         return res
-       }
-  */
+      return Promise.resolve("TERMINE");
     }).catch(e => {
       console.log(e);
     })
@@ -3597,7 +3645,7 @@ export class CollectionService {
       ") VALUES (?,?,?,?,?)";
 
     for (var i = 0; i < collectionDetail.length; i++) {
-      for (var j = 0; j < collectionDetail[i].collectionDetailDiscounts!.length; j++) {
+      for (var j = 0; j < collectionDetail[i].collectionDetailDiscounts!?.length; j++) {
         statementsCollectionDiscount.push([insertStatement, [
           collectionDetail[i].collectionDetailDiscounts![j].idCollectionDetail,
           collectionDetail[i].collectionDetailDiscounts![j].idCollectDiscount,
@@ -3611,7 +3659,7 @@ export class CollectionService {
 
     return dbServ.sqlBatch(statementsCollectionDiscount).then(res => {
       console.log("collection_detail_discounts INSERT", res);
-      return ("TERMINE");
+      return Promise.resolve("TERMINE");
       //this.saveCollectionPayment(this.collection.collectPayment)
     }).catch(e => {
       console.log(e);
@@ -3673,8 +3721,7 @@ export class CollectionService {
 
     return dbServ.sqlBatch(statementsCollectionPayment).then(res => {
       console.log("COLLECTION PAYMENTS INSERT", res);
-      return ("TERMINE");
-      //this.saveCollectionPayment(this.collection.collectPayment)
+      return Promise.resolve("TERMINE");
     }).catch(e => {
       console.log(e);
     })
@@ -3815,10 +3862,12 @@ export class CollectionService {
     if (documentSales.length == 0) {
       return Promise.resolve(true);
     }
+    let daUpdate = this.dateServ.hoyISOFullTime();
     if (documentSales[0].coDocumentSaleType == "IGTF") {
-      const updateStatement = "UPDATE document_st SET st_document = 2 WHERE co_document = ?"
+
+      const updateStatement = "UPDATE document_st SET st_document = 2, da_update = ? WHERE co_document = ?"
       return dbServ.executeSql(updateStatement,
-        [documentSales[0].coDocument]
+        [daUpdate, documentSales[0].coDocument]
       ).then(data => {
         console.log("UPDATE DOCUMENTO IGTF", documentSales[0].coDocument)
       }).catch(e => {
@@ -3829,7 +3878,7 @@ export class CollectionService {
       /*     let insertStatement = 'INSERT OR REPLACE INTO document_st (' +
             'id_document,co_document,st_document' +
             ') VALUES (?,?,?)'; */
-      const updateStatement = "UPDATE document_st SET st_document = ? WHERE co_document = ?"
+      const updateStatement = "UPDATE document_st SET st_document = ?, da_update = ? WHERE co_document = ?"
       for (var i = 0; i < documentSales.length; i++) {
         let stDelivery = 0;
         if (documentSales[i].isSelected) {
@@ -3839,11 +3888,13 @@ export class CollectionService {
             stDelivery = 2;
           stamentenDocumentSt.push([updateStatement, [
             stDelivery,
+            daUpdate,
             documentSales[i].coDocument,
           ]]);
         } else {
           stamentenDocumentSt.push([updateStatement, [
             stDelivery,
+            daUpdate,
             documentSales[i].coDocument,
           ]]);
         }
@@ -3851,10 +3902,17 @@ export class CollectionService {
 
       return dbServ.sqlBatch(stamentenDocumentSt).then(res => {
         console.log("SE ACTUALIZARON LOS DOCUMENT ST")
+        /*  dbServ.executeSql('SELECT * FROM document_st', []).then(resBloq => {
+           console.log("DOCUMENT STs", resBloq);
+           return Promise.resolve(true)
+         }).catch(e => {
+           console.log(e);
+           return Promise.resolve(true)
+         }) */
         setTimeout(() => {
           return Promise.resolve(true)
         }, 1000);
-        //return Promise.resolve(true)
+
       }).catch(e => {
         console.log(e);
         return e;
@@ -3866,7 +3924,7 @@ export class CollectionService {
 
   getDocumentIGTF(dbServ: SQLiteObject, collection: Collection) {
     return dbServ.executeSql(
-      'SELECT * FROM document_sales WHERE co_collection=?', [collection.coCollection
+      'SELECT * FROM document_sales WHERE co_collection = ?', [collection.coCollection
     ]).then(data => {
       if (data.rows.length > 0) {
         let documentSales = {} as DocumentSale;
@@ -4197,7 +4255,7 @@ export class CollectionService {
     }
   }
 
-  //var updateStatement = 'UPDATE document_st SET st_document = 0 where co_document in (SELECT co_document FROM collection_detail where co_collection= ?)';
+  //var updateStatement = 'UPDATE document_st SET st_document = 0 where co_document in (SELECT co_document FROM collection_details where co_collection= ?)';
 
   updateDocumentStForDelete(dbServ: SQLiteObject, coCollection: string) {
     return dbServ.executeSql(
