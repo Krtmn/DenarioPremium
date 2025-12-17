@@ -393,6 +393,12 @@ export class PedidosService {
       this.userCanChangePriceListProduct = false;
     }
 
+    if(this.vatExemptProducts){
+      //si estan mandando el iva por productos, no tiene sentido que el usuario pueda cambiarlo
+      //posiblemente en el futuro se quite el selector de iva (?).
+      this.userCanSelectIVA = false;
+    }
+
   }
 
 
