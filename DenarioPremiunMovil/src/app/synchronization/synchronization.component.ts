@@ -791,7 +791,10 @@ export class SynchronizationComponent implements OnInit {
       const val: any = this.globalConfig.get(key);
       if (typeof val === 'undefined' || val === null) return false;
       if (typeof val === 'boolean') return val;
-      if (typeof val === 'string') return val.toLowerCase() === 'true';
+      if (typeof val === 'string') {
+        if (val.trim() === "") return false;
+        return val.toLowerCase() === 'true';
+      }
       return false; // por defecto consideramos deshabilitado si no está presente
     };
 

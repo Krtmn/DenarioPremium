@@ -450,9 +450,9 @@ export class SynchronizationDBService {
       'da_document,da_due_date,nu_amount_base,nu_amount_discount,nu_amount_tax,' +
       'nu_amount_total,nu_balance,id_currency,co_currency,id_enterprise,' +
       'co_enterprise,nu_document,tx_comment,co_document,co_collection,' +
-      'nu_value_local,st_document_sale' +
+      'nu_value_local,st_document_sale, da_update' +
       ') ' +
-      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
@@ -460,7 +460,7 @@ export class SynchronizationDBService {
       obj.daDocument, obj.daDueDate, obj.nuAmountBase, obj.nuAmountDiscount, obj.nuAmountTax,
       obj.nuAmountTotal, obj.nuBalance, obj.idCurrency, obj.coCurrency, obj.idEnterprise,
       obj.coEnterprise, obj.nuDocument, obj.txComment, obj.coDocument, obj.coCollection,
-      obj.nuValueLocal, obj.stDocumentSale]]);
+      obj.nuValueLocal, obj.stDocumentSale, obj.daUpdate]]);
     }
 
     return this.database.sqlBatch(statements).then(res => {

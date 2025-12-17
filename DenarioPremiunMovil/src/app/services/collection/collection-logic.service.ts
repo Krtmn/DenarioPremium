@@ -2843,7 +2843,8 @@ export class CollectionService {
           historicPaymentPartial: this.documentSales[index].historicPaymentPartial,
           isSelected: this.documentSales[index].isSelected,
           isSave: false,
-          colorRow: this.documentSales[index].colorRow
+          colorRow: this.documentSales[index].colorRow,
+          daUpdate: this.documentSales[index].daUpdate,
         }
 
         this.documentSalesBackup[index] = Object.assign({}, this.documentSales[index]);
@@ -3035,7 +3036,8 @@ export class CollectionService {
       inPaymentPartial: false,
       historicPaymentPartial: false,
       isSave: false,
-      colorRow: ""
+      colorRow: "",
+      daUpdate: ""
     });
 
     this.insertDocumentSaleBatch(dbServ, igtfDocument).then((resp) => {
@@ -3481,13 +3483,11 @@ export class CollectionService {
       for (var coDetail = 0; coDetail < collect.collectionDetails.length; coDetail++) {
         const collectionDetail = collect.collectionDetails[coDetail];
         queries.push([deleteCollectionDetailsSQL, [collect.coCollection]]);
-        var collectionDetailDiscounts = collect.collectionDetails[coDetail].collectionDetailDiscounts;
-        var quCollectionDetailDiscounts = collectionDetailDiscounts ? collectionDetailDiscounts.length : 0;
-
-        for (var coDetailDiscount = 0; coDetailDiscount < quCollectionDetailDiscounts; coDetailDiscount++) {
-          const collectionDetailDisctount = collect.collectionDetails[coDetail].collectionDetailDiscounts![coDetailDiscount];
-          queries.push([deleteCollectionDetailDiscountsSQL, [collect.coCollection]]);
-        }
+        if (collectionDetail.collectionDetailDiscounts?.length! > 0)
+          for (var coDetailDiscount = 0; coDetailDiscount < collect.collectionDetails[coDetail].collectionDetailDiscounts!.length; coDetailDiscount++) {
+            const collectionDetailDisctount = collect.collectionDetails[coDetail].collectionDetailDiscounts![coDetailDiscount];
+            queries.push([deleteCollectionDetailDiscountsSQL, [collect.coCollection]]);
+          }
       }
       for (var coDetailPayment = 0; coDetailPayment < collect.collectionPayments.length; coDetailPayment++) {
         const collectionPayment = collect.collectionPayments[coDetailPayment];

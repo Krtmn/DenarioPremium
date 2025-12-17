@@ -33,7 +33,7 @@
     "name": "document_sales",
     "table": "documentSales",
     "idName": "id_document",
-    "sql": "CREATE TABLE IF NOT EXISTS document_sales ( id_document INTEGER PRIMARY KEY, id_client INTEGER NOT NULL, co_client VARCHAR(50), id_document_sale_type INTEGER, co_document_sale_type VARCHAR(30), da_document TIMESTAMP, da_due_date TIMESTAMP, nu_amount_base DECIMAL(10,5), nu_amount_discount DECIMAL(10,5), nu_amount_tax DECIMAL(10,5), nu_amount_total DECIMAL(10,5), nu_balance DECIMAL(10,5), id_currency INTEGER, co_currency VARCHAR(30), nu_document VARCHAR(30), tx_comment VARCHAR(185), co_document VARCHAR(30), co_collection VARCHAR(50), nu_value_local DECIMAL(10,5), st_document_sale INTEGER, co_enterprise VARCHAR(30), id_enterprise INTEGER);"
+    "sql": "CREATE TABLE IF NOT EXISTS document_sales ( id_document INTEGER PRIMARY KEY, id_client INTEGER NOT NULL, co_client VARCHAR(50), id_document_sale_type INTEGER, co_document_sale_type VARCHAR(30), da_document TIMESTAMP, da_due_date TIMESTAMP, nu_amount_base DECIMAL(10,5), nu_amount_discount DECIMAL(10,5), nu_amount_tax DECIMAL(10,5), nu_amount_total DECIMAL(10,5), nu_balance DECIMAL(10,5), id_currency INTEGER, co_currency VARCHAR(30), nu_document VARCHAR(30), tx_comment VARCHAR(185), co_document VARCHAR(30), co_collection VARCHAR(50), nu_value_local DECIMAL(10,5), st_document_sale INTEGER, co_enterprise VARCHAR(30), id_enterprise INTEGER, da_update TIMESTAMP);"
   },
   {
     "id": 7,
