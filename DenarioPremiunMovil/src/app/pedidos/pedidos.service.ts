@@ -210,6 +210,8 @@ export class PedidosService {
   public userCanChangePriceListProduct!: boolean;
   public disableCurrency: boolean = true;
 
+  codeTotalProductUnitMessageFlag = false;
+
   /*  ClientChangeSubscription: Subscription = this.clientSelectorService.ClientChanged.subscribe(client => {    
       this.reset();
       //this.cliente = client;    
@@ -765,6 +767,7 @@ export class PedidosService {
       curItem = 0;
       item.totalEnUnidades = 0;
       let masterUnit = {} as UnitInfo;
+      this.codeTotalProductUnitMessageFlag = false;
       if(this.showTotalProductUnit){
         //[showTotalProductUnit] unidad que se usara para hacer calculos de totalizacion
         masterUnit = item.unitList.find(u => u.coUnit == this.codeTotalProductUnit)!;
@@ -780,11 +783,16 @@ export class PedidosService {
             this.countTotalProductUnit += unit.quAmount;
             this.nameTotalProductUnit = unit.naUnit;
           } else {
-            if(masterUnit != undefined && masterUnit.quUnit == 1){
-              //caso ideal, la unidad maestra es la unidad base (1)
+            if(masterUnit != undefined){
+              if(masterUnit.quUnit == 1){
+                //caso ideal, la unidad maestra es la unidad base (1)
               this.countTotalProductUnit += unit.quAmount * unit.quUnit;
-            }else{
+              }else{
               this.countTotalProductUnit += unit.quAmount / masterUnit.quUnit;
+            }              
+            }else{
+              //no se encontro la unidad maestra,  hay que mostrar mensajito
+              this.codeTotalProductUnitMessageFlag = true;
             }
             
           }
