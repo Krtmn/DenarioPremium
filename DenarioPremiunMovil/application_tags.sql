@@ -287,6 +287,7 @@ INSERT INTO public.application_tags(
 	('COB_PAGO','COB','COBROS','ESP','Pago'),
 	('COB_DIFERENCIA','COB','COBROS','ESP','Diferencia'),
 	('COB_DESC','COB','COBROS','ESP','Desc.'),
+	('COB_DEV_FALT','COB','COBROS','ESP','Dev/Falt.'),
 	('COB_MONTO_DOC','COB','COBROS','ESP','Monto Doc.'),
 	('COB_MONTO_PAGO','COB','COBROS','ESP','Monto Pago'),
 	('COB_NRO_DOC','COB','COBROS','ESP','Nro. Doc.'),
