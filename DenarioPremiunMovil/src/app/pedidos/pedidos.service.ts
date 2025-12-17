@@ -207,6 +207,7 @@ export class PedidosService {
   public signatureOrder!: boolean;
   public disableDaDispatch!: boolean;
   public currencyModuleEnabled!: boolean;
+  public vatExemptProducts!: boolean;
   public userCanChangePriceListProduct!: boolean;
   public disableCurrency: boolean = true;
 
@@ -354,6 +355,7 @@ export class PedidosService {
     this.signatureOrder = this.config.get("signatureOrder").toLowerCase() === "true";
     this.disableDaDispatch = this.config.get("disableDaDispatch").toLowerCase() === "true";
     this.currencyModuleEnabled = this.config.get("currencyModule").toLowerCase() === "true";
+    this.vatExemptProducts = this.config.get("vatExemptProducts").toLowerCase() === "true";
     //string
     this.codeTotalProductUnit = this.config.get("codeTotalProductUnit");
     this.nameProductLine = this.config.get("nameProductLine");
