@@ -304,7 +304,6 @@ export class ClientLogicService {
         }
 
         this.datos.document = docsResult;
-        this.clientDetailComponent = true;
         this.datos.document.forEach((doc) => {
           if (typeof doc.daDocument === 'string' && doc.daDocument.includes('-')) {
             doc.daDocument = doc.daDocument.split("-")[2] + "/" + doc.daDocument.split("-")[1] + "/" + doc.daDocument.split("-")[0];
@@ -316,15 +315,16 @@ export class ClientLogicService {
       } else {
         // Si la llamada no devolvió array, asegurar valores por defecto
         this.datos.document = [];
-        this.clientDetailComponent = true;
       }
 
       // 3) Obtener direcciones del cliente
       try {
         const addresses = await this.clientesServices.getAddressClientsByIdClient(Number(idClient));
         this.listaDirecciones = Array.isArray(addresses) ? addresses : [];
+        this.clientDetailComponent = true;
       } catch (e) {
         this.listaDirecciones = [];
+        this.clientDetailComponent = true;
         console.warn('[goToClient] error cargando direcciones:', e);
       }
 

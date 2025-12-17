@@ -232,7 +232,7 @@ export class ClienteComponent implements OnInit {
 
   onChangeAddress($event: any) {
     //cargamos la data de la direccion al cliente para usarla luego en modal de direcciones.
-    this.selectedAddress = $event.detail.value;
+    //his.selectedAddress = $event.detail.value;
     this.client.txAddress = this.selectedAddress.txAddress;
     this.client.idAddressClients = this.selectedAddress.idAddress;
     this.client.coAddressClients = this.selectedAddress.coAddress;

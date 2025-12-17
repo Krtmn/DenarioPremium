@@ -6,10 +6,10 @@ CREATE TABLE IF NOT EXISTS public.application_tags
     co_application_tag text,
 	co_language text COLLATE pg_catalog."default",
 	co_module text COLLATE pg_catalog."default",
-    na_module text COLLATE pg_catalog."default",	
-    tag text COLLATE pg_catalog."default",    
+    na_module text COLLATE pg_catalog."default",
+    tag text COLLATE pg_catalog."default",
     co_operation character(1) COLLATE pg_catalog."default",
-	da_update timestamp without time zone,    
+	da_update timestamp without time zone,
     CONSTRAINT pk_application_tags PRIMARY KEY (id_application_tag),
 	UNIQUE (co_application_tag, co_language)
 )
@@ -24,20 +24,20 @@ ALTER TABLE public.application_tags
 -- DROP TRIGGER application_tags_da_update ON public.application_tags;
 
 CREATE TRIGGER application_tags_da_update
-    BEFORE INSERT OR UPDATE 
+    BEFORE INSERT OR UPDATE
     ON public.application_tags
     FOR EACH ROW
     EXECUTE FUNCTION public.da_update();
 
 -- INDEX
-CREATE INDEX IF NOT EXISTS application_tags_co_module_idx ON public.application_tags USING btree (co_module);	
+CREATE INDEX IF NOT EXISTS application_tags_co_module_idx ON public.application_tags USING btree (co_module);
 
 --PEDIDOS
 DELETE FROM public.application_tags WHERE co_module = 'PED';
 
 INSERT INTO public.application_tags(
 	co_application_tag, co_module, na_module, co_language, tag)
-	VALUES 
+	VALUES
 	('PED_NOMBRE_MODULO', 'PED', 'PEDIDOS', 'ESP', 'Pedidos'),
 	('PED_NUEVO_PEDIDO', 'PED', 'PEDIDOS', 'ESP', 'PEDIDO'),
 	('PED_BUSCAR_PEDIDO', 'PED', 'PEDIDOS', 'ESP', 'BUSCAR'),
@@ -136,7 +136,7 @@ DELETE FROM public.application_tags WHERE co_module = 'CLI';
 --TAGS CLIENTES - NUEVO CLIENTE POTENCIAL
 INSERT INTO public.application_tags(
 	co_application_tag, co_module, na_module, co_language, tag)
-	VALUES 
+	VALUES
 	('CLI_NEW_POT_NOMBRE_MODULO','CLI','CLIENTES','ESP','Clientes'),
 	('CLI_NEW_POT_NOMBRE','CLI','CLIENTES','ESP','Nombre'),
 	('CLI_NEW_POT_RIF','CLI','CLIENTES','ESP','Rif'),
@@ -157,7 +157,7 @@ INSERT INTO public.application_tags(
 	('CLI_NOMBRE_MODULO', 'CLI', 'CLIENTES', 'ESP','Clientes'),
 	('CLI_CODIGO', 'CLI', 'CLIENTES', 'ESP','Código'),
 	('CLI_SALDO', 'CLI', 'CLIENTES', 'ESP','Saldo'),
-	('CLI_EMPRESA', 'CLI', 'CLIENTES', 'ESP','Empresa'), 
+	('CLI_EMPRESA', 'CLI', 'CLIENTES', 'ESP','Empresa'),
 	('CLI_POT_NOMBRE_MODULO','CLI','CLIENTES','ESP','Clientes'),
 	('CLI_POT_LISTADO','CLI','CLIENTES','ESP','Listado Cliente Potencial'),
 	('CLI_POT_CLIENTE','CLI','CLIENTES','ESP','Cliente'),
@@ -184,6 +184,7 @@ INSERT INTO public.application_tags(
 	('CLI_DETAIL_SALDO_CONVERSION','CLI','CLIENTES','ESP','Saldo Conversión'),
 	('CLI_DETAIL_CREDITO','CLI','CLIENTES','ESP','Crédito'),
 	('CLI_DETAIL_CONDICION_PAGO','CLI','CLIENTES','ESP','Condición de Pago'),
+	('CLI_CO_DETAIL_DIRECCION','CLI','CLIENTES','ESP','Cod Dirección'),
 	('CLI_DETAIL_DIRECCION','CLI','CLIENTES','ESP','Dirección'),
 	('CLI_DETAIL_DESCRIPTION_1','CLI','CLIENTES','ESP','Descripción 1'),
 	('CLI_DETAIL_DESCRIPTION_2','CLI','CLIENTES','ESP','Descripción 2'),
@@ -221,13 +222,13 @@ INSERT INTO public.application_tags(
 	('CLI_SELECTOR_HEADER','CLI','CLIENTES','ESP',''),
 	('CLI_HEADER_ALERTA', 'CLI', 'CLIENTES', 'ESP','¡Alerta!'),
 	('CLI_RESET_CONFIRMA', 'CLI', 'CLIENTES', 'ESP','Se ha detectado cambio del cliente por lo que debera iniciar nuevamente la transacción.');
-	
+
 -- TAGS COBROS
 DELETE FROM public.application_tags WHERE co_module = 'COB';
 -- TAGS COBROS
 INSERT INTO public.application_tags(
 	co_application_tag, co_module, na_module, co_language, tag)
-	VALUES 
+	VALUES
 	('COB_NOMBRE_MODULO','COB','COBROS','ESP','Cobros'),
 	('COB_NOMBRE_MODULO_ANTICIPO','COB','COBROS','ESP','Anticipo'),
 	('COB_NOMBRE_MODULO_RETENTION','COB','COBROS','ESP','Retención'),
@@ -342,7 +343,7 @@ INSERT INTO public.application_tags(
 	('COB_CONFIRM_DELETE', 'COB', 'COBROS', 'ESP', '¿Desea eliminar el Cobro?'),
 	('COB_MODULE_COBRO25', 'COB', 'COBROS', 'ESP', 'COBRO 25% IVA'),
 	('COB_MSJ_PARTIALPAY_MAYOR_DOCAMOUNT', 'COB', 'COBROS', 'ESP', '¡El pago parcial no puede ser mayor al monto del documento!'),
-	('COB_MSJ_PAY_MAYOR_DOCAMOUNT', 'COB', 'COBROS', 'ESP', '¡El pago no puede ser mayor al monto del documento!'),	
+	('COB_MSJ_PAY_MAYOR_DOCAMOUNT', 'COB', 'COBROS', 'ESP', '¡El pago no puede ser mayor al monto del documento!'),
 	('COB_MSJ_RETENTION_ONLY_TEXT', 'COB', 'COBROS', 'ESP','El comprobante de retenci\u00f3n no debe tener n\u00fameros'),
 	('COB_MSJ_RETENTION_ALPHANUMERIC', 'COB', 'COBROS', 'ESP','El comprobante de retenci\u00f3n solo debe tener n\u00fameros y letras'),
 	('COB_MSJ_IGTF_MAYOR0', 'COB', 'COBROS', 'ESP','¡Debe seleccionar un IGTF mayor a 0!'),
@@ -363,8 +364,8 @@ INSERT INTO public.application_tags(
 	('COB_FECHA_ANTICIPO', 'COB', 'COBROS', 'ESP', 'Fecha Anticipo'),
 	('COB_FECHA_RETENCION', 'COB', 'COBROS', 'ESP', 'Fecha Retención'),
 	('COB_MSJ_RETENTION_NO_ATTACHMENTS', 'COB', 'COBROS', 'ESP', 'Al menos a un documento se le agregaron retenciones, debe agregar al menos un adjunto para poder enviar el Cobro.'),
-	('COB_RET_MSJ_RETENTION_NO_ATTACHMENTS', 'COB', 'COBROS', 'ESP', 'Para poder enviar la Retención, debe agregar al menos un adjunto.'),		
-	('COB_DEV_COMMENT', 'COB', 'COBROS', 'ESP', 'Motivo'),	
+	('COB_RET_MSJ_RETENTION_NO_ATTACHMENTS', 'COB', 'COBROS', 'ESP', 'Para poder enviar la Retención, debe agregar al menos un adjunto.'),
+	('COB_DEV_COMMENT', 'COB', 'COBROS', 'ESP', 'Motivo'),
 	('COB_COB_CHANGE_DATERATE', 'COB', 'COBROS', 'ESP', 'Está cambiando la fecha de la tasa, esto recalculará  los montos. ¿Desea continuar?');
 
 
@@ -384,13 +385,13 @@ INSERT INTO public.application_tags(
 	('VND_TIPO_PLAN', 'VND', 'VENDEDOR', 'ESP', 'Plan por'),
 	('VND_CUOTA_MES', 'VND', 'VENDEDOR', 'ESP', 'Cuota Mes'),
 	('VND_VENTA_REAL', 'VND', 'VENDEDOR', 'ESP', 'Venta Real Mes');
-	
+
 --TAGS INVENTARIO
 DELETE FROM public.application_tags WHERE co_module = 'INV';
 --TAGS INVENTARIO
 	INSERT INTO public.application_tags(
 	co_application_tag, co_module, na_module, co_language, tag)
-	VALUES 
+	VALUES
 	('INV_NOMBRE_MODULO','INV','INVENTARIO','ESP','Inventarios'),
 	('INV_NUEVO_INVENTARIO','INV','INVENTARIO','ESP','INVENTARIO'),
 	('INV_BUSCAR_INVENTARIO','INV','INVENTARIO','ESP','BUSCAR'),
@@ -450,7 +451,7 @@ DELETE FROM public.application_tags WHERE co_module = 'INV';
 	('INV_ADD_TYPE', 'INV', 'INVENTARIO', 'ESP','Agregar tipo de Inventario'),
 	('INV_ADD_TYPE', 'INV', 'INVENTARIO', 'ENG','Add Stock Type'),
 	('INV_DEV_STATUS', 'INV', 'INVENTARIO', 'ENG','Status');
-	
+
 
 -- PRODUCTOS
 DELETE FROM public.application_tags where co_module = 'PROD';
@@ -491,9 +492,9 @@ INSERT INTO public.application_tags(
 	('PROD_POINTS_PROD', 'PROD', 'PRODUCTOS', 'Eng', 'Points'),
 	('ADD_PRODUCT', 'PROD', 'DEVOLUCIONES', 'ESP', 'Agregar Producto'),
 	('ADD_PRODUCT', 'PROD', 'DEVOLUCIONES', 'ENG', 'Add Product'),
-	('PROD_VOLVER', 'PROD', 'PRODUCTOS', 'ESP', 'Volver'),	
+	('PROD_VOLVER', 'PROD', 'PRODUCTOS', 'ESP', 'Volver'),
 	('PROD_VOLVER', 'PROD', 'PRODUCTOS', 'ENG', 'Back');
-	
+
 -- DEVOLUCIONES
 DELETE FROM public.application_tags where co_module = 'DEV';
 
@@ -527,19 +528,19 @@ INSERT INTO public.application_tags(
 	('DEV_TIPO_DEV', 'DEV', 'DEVOLUCIONES', 'ENG', 'Type'),
 	('DEV_AGREGAR_PRODUCTO', 'DEV', 'DEVOLUCIONES', 'ESP', 'Agregar Producto'),
 	('DEV_AGREGAR_PRODUCTO', 'DEV', 'DEVOLUCIONES', 'ENG', 'Add Product'),
-	('DEV_VOLVER', 'DEV', 'DEVOLUCIONES', 'ESP', 'Volver'),	
+	('DEV_VOLVER', 'DEV', 'DEVOLUCIONES', 'ESP', 'Volver'),
 	('DEV_VOLVER', 'DEV', 'DEVOLUCIONES', 'ENG', 'Back'),
-	('DEV_LOTE', 'DEV', 'DEVOLUCIONES', 'ESP', 'Lote'),	
+	('DEV_LOTE', 'DEV', 'DEVOLUCIONES', 'ESP', 'Lote'),
 	('DEV_LOTE', 'DEV', 'DEVOLUCIONES', 'ENG', 'Batch'),
-	('DEV_DOC', 'DEV', 'DEVOLUCIONES', 'ESP', 'Nro Factura'),	
+	('DEV_DOC', 'DEV', 'DEVOLUCIONES', 'ESP', 'Nro Factura'),
 	('DEV_DOC', 'DEV', 'DEVOLUCIONES', 'ENG', 'Document Number'),
-	('DEV_FECHA_VENCE', 'DEV', 'DEVOLUCIONES', 'ESP', 'Fecha Venc'),	
+	('DEV_FECHA_VENCE', 'DEV', 'DEVOLUCIONES', 'ESP', 'Fecha Venc'),
 	('DEV_FECHA_VENCE', 'DEV', 'DEVOLUCIONES', 'ENG', 'Due Date'),
-	('DEV_QU_PRODUCT', 'DEV', 'DEVOLUCIONES', 'ESP', 'Cantidad Devuelta'),	
+	('DEV_QU_PRODUCT', 'DEV', 'DEVOLUCIONES', 'ESP', 'Cantidad Devuelta'),
 	('DEV_QU_PRODUCT', 'DEV', 'DEVOLUCIONES', 'ENG', 'Return Quantity'),
-	('DEV_UNIT', 'DEV', 'DEVOLUCIONES', 'ESP', 'Unidad'),	
+	('DEV_UNIT', 'DEV', 'DEVOLUCIONES', 'ESP', 'Unidad'),
 	('DEV_UNIT', 'DEV', 'DEVOLUCIONES', 'ENG', 'Unit'),
-	('DEV_MOTIVE', 'DEV', 'DEVOLUCIONES', 'ESP', 'Motivo'),	
+	('DEV_MOTIVE', 'DEV', 'DEVOLUCIONES', 'ESP', 'Motivo'),
 	('DEV_MOTIVE', 'DEV', 'DEVOLUCIONES', 'ENG', 'Motive'),
 	('DENARIO_DEV', 'DEV', 'DEVOLUCIONES', 'ESP', 'Denario Devolución'),
 	('DENARIO_DEV', 'DEV', 'DEVOLUCIONES', 'ENG', 'Denario Return'),
@@ -586,14 +587,14 @@ INSERT INTO public.application_tags(
 	('DEV_COD_INVOICE', 'DEV', 'DEVOLUCIONES', 'ENG','Invoice'),
 	('DEV_HEADER_ALERTA', 'DEV', 'DEVOLUCIONES', 'ESP','¡Alerta!'),
 	('DEV_RESET_CONFIRMA', 'DEV', 'DEVOLUCIONES', 'ESP','Se ha detectado cambio de la factura por lo que debera iniciar nuevamente la devolución.');
-	
-	
+
+
 -- HOME
 DELETE FROM public.application_tags where co_module = 'HOME';
 
 INSERT INTO public.application_tags(
 	co_application_tag, co_module, na_module, co_language, tag)
-	VALUES 
+	VALUES
 	('HOME_VISITAS', 'HOME', 'HOME', 'ESP', 'Visitas'),
 	('HOME_DESPACHOS', 'HOME', 'HOME', 'ESP', 'Despachos'),
 	('HOME_INVENTARIO', 'HOME', 'HOME', 'ESP', 'Inventarios'),
@@ -605,15 +606,15 @@ INSERT INTO public.application_tags(
 	('HOME_PRODUCTOS', 'HOME', 'HOME', 'ESP', 'Productos'),
 	('HOME_CLIENTES', 'HOME', 'HOME', 'ESP', 'Clientes'),
 	('HOME_SINCRONIZAR', 'HOME', 'HOME', 'ESP', 'Sincronizar');
-	
-		
+
+
 -- visitas
 
 DELETE FROM public.application_tags where co_module = 'VIS';
 
 INSERT INTO public.application_tags(
 	co_application_tag, co_module, na_module, co_language, tag)
-	VALUES 
+	VALUES
 	('VIS_NOMBRE_MODULO', 'VIS', 'VISITAS', 'ESP','Visitas'),
 	('VIS_NOMBRE_MODULO_DESPACHOS', 'VIS', 'VISITAS', 'ESP','Despachos'),
 	('VIS_BOTON_LISTA', 'VIS', 'VISITAS', 'ESP','RUTA DE HOY'),
@@ -634,7 +635,7 @@ INSERT INTO public.application_tags(
 	('VIS_MOTIVO', 'VIS', 'VISITAS', 'ESP','Motivo'),
 	('VIS_COMENTARIO', 'VIS', 'VISITAS', 'ESP','Comentario'),
 	('VIS_OPERACION', 'VIS', 'VISITAS', 'ESP','Operación'),
-	('VIS_SUCURSAL', 'VIS', 'VISITAS', 'ESP', 'Sucursal'),	
+	('VIS_SUCURSAL', 'VIS', 'VISITAS', 'ESP', 'Sucursal'),
 	('VIS_HEADER_MENSAJE', 'VIS', 'VISITAS', 'ESP', 'Denario - Visita'),
 	('VIS_MENSAJE_SELEC_CLIENTE', 'VIS', 'VISITAS', 'ESP', 'Seleccione un Cliente'),
 	('VIS_MENSAJE_ENVIAR', 'VIS', 'VISITAS', 'ESP', '¿Desea enviar la visita?'),
@@ -669,7 +670,7 @@ DELETE FROM public.application_tags WHERE co_module = 'DEP';
 -- TAGS DEPOSITOS
 INSERT INTO public.application_tags(
 	co_application_tag, co_module, na_module, co_language, tag)
-	VALUES 
+	VALUES
 	('DEP_NOMBRE_MODULO','DEP','DEPOSITOS','ESP','Depósitos'),
 	('DEP_MODULE_NUEVO_DEPOSITO','DEP','DEPOSITOS','ESP','DEPÓSITO'),
 	('DEP_MODULE_BUSCAR','DEP','DEPOSITOS','ESP','BUSCAR'),
@@ -702,24 +703,24 @@ INSERT INTO public.application_tags(
 	('DEP_DEV_DATE', 'DEP', 'DEPOSITOS', 'ENG', 'Date Return'),
 	('DEP_DEV_SAVED', 'DEP', 'DEPOSITOS', 'ESP','Guardado');
 
-	
+
 --	MENSAJES
 DELETE FROM public.application_tags where co_module = 'MSG';
 
 INSERT INTO public.application_tags(
 	co_application_tag, co_module, na_module, co_language, tag)
-	VALUES 	
+	VALUES
 	('MSG_BOTON_SALIR', 'MSG', 'MENSAJES', 'ESP','Salir sin guardar'),
 	('MSG_BOTON_SALIR_GUARDAR', 'MSG', 'MENSAJES', 'ESP','Guardar y salir'),
 	('MSG_BOTON_CANCELAR', 'MSG', 'MENSAJES', 'ESP','Cancelar'),
 	('MSG_HEADER_ALERTA', 'MSG', 'MENSAJES', 'ESP','¡Alerta!');
-	
+
 --	ADJUNTOS
-DELETE FROM public.application_tags where co_module = 'ADJ';	
+DELETE FROM public.application_tags where co_module = 'ADJ';
 
 INSERT INTO public.application_tags(
 	co_application_tag, co_module, na_module, co_language, tag)
-	VALUES 
+	VALUES
 	('ADJ_BUSCAR_FOTO', 'ADJ', 'ADJUNTOS', 'ESP','BUSCAR FOTO'),
 	('ADJ_TOMAR_FOTO', 'ADJ', 'ADJUNTOS', 'ESP','TOMAR FOTO'),
 	('ADJ_BUSCAR_FOTO', 'ADJ', 'ADJUNTOS', 'ENG','SEARCH PHOTO'),
@@ -737,13 +738,13 @@ INSERT INTO public.application_tags(
 	('ADJ_ELIMINE_IMAGEN', 'ADJ', 'ADJUNTOS', 'ESP','Esta Imagen excede el límite permitido, por favor elimínela para enviar la transacción'),
 	('ADJ_ELIMINE_ARCHIVO', 'ADJ', 'ADJUNTOS', 'ESP','Este Archivo excede el límite permitido, por favor elimínelo para enviar la transacción'),
 	('ADJ_SUBIR_ARCHIVO', 'ADJ', 'ADJUNTOS', 'ESP','Subir Archivo');
-	
+
 
 --	COMUNES
 DELETE FROM public.application_tags WHERE co_module = 'DEN';
 INSERT INTO public.application_tags(
 	co_application_tag, co_module, na_module, co_language, tag)
-	VALUES 
+	VALUES
 	('DENARIO_NOMBRE_APP','DEN','DENARIO','ESP','Denario Premium'),
 	('DENARIO_BOTON_SALIR_GUARDAR','DEN','DENARIO','ESP','Guardar y salir'),
 	('DENARIO_BOTON_SALIR','DEN','DENARIO','ESP','Salir sin guardar'),
@@ -754,7 +755,7 @@ INSERT INTO public.application_tags(
 	('DENARIO_BOTON_BORRAR','DEN','DENARIO','ESP','Borrar'),
 	('DENARIO_BOTON_OK','DEN','DENARIO','ESP','Ok'),
 	('DENARIO_BOTON_GUARDAR','DEN','DENARIO','ESP','Guardar'),
-	('DENARIO_HEADER_ALERTA', 'DEN', 'DENARIO', 'ESP','¡Alerta!'),	
+	('DENARIO_HEADER_ALERTA', 'DEN', 'DENARIO', 'ESP','¡Alerta!'),
 	('DENARIO_CAMPO_OBLIGATORIO', 'DEN', 'DENARIO', 'ESP','¡Campo Obligatorio!'),
 	('DENARIO_CAMBIO_DIRECCION', 'DEN', 'DENARIO', 'ESP','¿Seguro desea cambiar la sucursal del cliente?'),
 	('DENARIO_MSG_GPS', 'DEN', 'DENARIO', 'ESP', 'Para poder grabar la ubicación, te recomendamos activar el servicio de localización en tu dispositivo'),
