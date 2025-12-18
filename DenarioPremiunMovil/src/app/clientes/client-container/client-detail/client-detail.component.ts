@@ -250,9 +250,11 @@ export class ClienteComponent implements OnInit {
     if (this.clientLogic.esTransportista) {
       return false;
     }
+    /*
     if (this.clientLogic.fromSelector){
       return false;
     }
+      */
     return true;
   }
 
