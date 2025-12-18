@@ -219,7 +219,7 @@
     </ion-card>
   </div>
   @if(!clientLogic.fromSelector){
-  <ion-fab *ngIf="this.clientLogic.datos?.document?.length ?? 0" slot="fixed" vertical="bottom" horizontal="start">
+  <ion-fab size="small" *ngIf="this.clientLogic.datos?.document?.length ?? 0" slot="fixed" vertical="bottom" horizontal="start">
     <ion-fab-button (click)="openSelectShareModal(true)">
       <ion-icon name="share-social-outline"></ion-icon>
     </ion-fab-button>
