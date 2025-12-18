@@ -246,6 +246,16 @@ export class ClienteComponent implements OnInit {
     return o1 && o2 ? o1.idAddress === o2.idAddress : o1 === o2;
   }
 
+  showDocVentasTab() {
+    if (this.clientLogic.esTransportista) {
+      return false;
+    }
+    if (this.clientLogic.fromSelector){
+      return false;
+    }
+    return true;
+  }
+
   convertirMonto(monto: number, rate: number, currency: string) {
 
     if (currency == this.localCurrency) {

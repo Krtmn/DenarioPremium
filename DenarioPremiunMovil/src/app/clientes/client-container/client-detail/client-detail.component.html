@@ -4,9 +4,11 @@
     <ion-segment-button value="default">
       <ion-label class="textTab">{{clientLogic.clientTags.get("CLI_DETAIL_TAB_DETALLE")}}</ion-label>
     </ion-segment-button>
-    <ion-segment-button value="docVentas" [disabled]="client == null" *ngIf="!this.clientLogic.esTransportista">
+    @if(showDocVentasTab()){
+    <ion-segment-button value="docVentas" [disabled]="client == null">
       <ion-label class="textTab">{{clientLogic.clientTags.get("CLI_DETAIL_TAB_DOCUMENTO_VENTA")}}</ion-label>
     </ion-segment-button>
+  }
   </ion-segment>
   <div [ngSwitch]="this.clientLogic.segment">
     <ion-card *ngSwitchCase="'default'">
@@ -93,6 +95,8 @@
         <ion-row *ngIf="client.editable">
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_COORDENADA")}}:</ion-col>
           <ion-col>{{getCoordenada(client.coordenada)}}
+            @if(!this.clientLogic.fromSelector){
+              <!--si venimos del selector, no mostramos botones de coordenadas-->
             <ion-button *ngIf="hayCoordenada(client.coordenada)" class="botonAddVerde" size="small"
               (click)="viewCoordenada(true,  client, 'client')">
               <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
@@ -101,7 +105,7 @@
               (click)="viewCoordenada(false,client, 'client')">
               <ion-icon slot="icon-only" name="add"></ion-icon>
             </ion-button>
-
+          }
           </ion-col>
         </ion-row>
         <ion-row *ngIf="!client.editable">
