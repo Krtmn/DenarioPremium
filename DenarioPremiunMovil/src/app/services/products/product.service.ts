@@ -34,6 +34,7 @@ export class ProductService {
   public multiempresa: Boolean = false;
   public unitsByProduct: Unit[] = [];
   public showStock: boolean = true;
+  public vatExemptProducts: boolean = false;
 
   productoSearch = new Subject<string>;
   onSearchClicked = new Subject<Boolean>;
@@ -718,7 +719,7 @@ export class ProductService {
     var database = dbServ;
     this.productDetail = {} as ProductDetail;
     if (this.globalConfig.get("conversionByPriceList") == "true") {
-      var select = "select p.id_product, p.co_product, p.na_product, ps.id_product_structure, ps.co_product_structure, ps.na_product_structure, p.tx_description, u.id_unit, u.co_unit, u.na_unit, p.points, " +
+      var select = "select p.id_product, p.co_product, p.na_product, ps.id_product_structure, ps.co_product_structure, ps.na_product_structure, p.tx_description, u.id_unit, u.co_unit, u.na_unit, p.points, p.nu_tax, " +
         "(select pl.nu_price from price_lists pl where pl.id_list = " + idList + " and pl.id_product = " + idProduct + " and pl.co_currency = '" + coCurrency + "') as nu_price_default, " +
         "(select pl.co_currency from price_lists pl where pl.id_list = " + idList + " and pl.id_product = " + idProduct + " and pl.co_currency = '" + coCurrency + "') as co_currency_default, " +
         "(select pl.nu_price from price_lists pl where pl.id_list = " + idList + " and pl.id_product = " + idProduct + " and pl.co_currency != '" + coCurrency + "') as nu_price_opposite, " +
@@ -751,7 +752,8 @@ export class ProductService {
             this.currencyService.getLocalValue(),  // TASA            
             pd.rows.item(0).qu_stock,
             pd.rows.item(0).co_enterprise,
-            pd.rows.item(0).id_enterprise
+            pd.rows.item(0).id_enterprise,
+            pd.rows.item(0).nu_tax
           )
         }
       }).catch(e => {
@@ -760,7 +762,7 @@ export class ProductService {
         console.log(e);
       })
     } else {
-      var select = "select p.id_product, p.co_product, p.na_product, ps.id_product_structure, ps.co_product_structure, ps.na_product_structure, p.tx_description, u.id_unit, u.co_unit, u.na_unit, p.points, (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, " +
+      var select = "select p.id_product, p.co_product, p.na_product, p.nu_tax, ps.id_product_structure, ps.co_product_structure, ps.na_product_structure, p.tx_description, u.id_unit, u.co_unit, u.na_unit, p.points, (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, " +
         "(select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse asc limit 1) as qu_stock, p.co_enterprise, p.id_enterprise from products p join product_structures ps on p.id_product_structure = ps.id_product_structure join units u on p.co_primary_unit = u.co_unit and p.id_enterprise = u.id_enterprise where id_product = ?"
       return database.executeSql(select, [idProduct]).then(pd => {
         if (pd) {
@@ -787,7 +789,8 @@ export class ProductService {
             this.currencyService.getLocalValue(),  // TASA
             pd.rows.item(0).qu_stock,
             pd.rows.item(0).co_enterprise,
-            pd.rows.item(0).id_enterprise
+            pd.rows.item(0).id_enterprise,
+            pd.rows.item(0).nu_tax
           )
         }
       }).catch(e => {

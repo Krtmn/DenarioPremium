@@ -15,6 +15,7 @@ import { ProductDetail } from '../modelos/ProductDetail';
 import { ProductService } from '../services/products/product.service';
 import { ImageServicesService } from '../services/imageServices/image-services.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
+import { GlobalConfigService } from '../services/globalConfig/global-config.service';
 
 @Component({
     selector: 'app-productos',
@@ -33,6 +34,7 @@ export class ProductosComponent {
   productService = inject(ProductService);
   imageServices = inject(ImageServicesService);
   currencyService = inject(CurrencyService);
+  public config = inject(GlobalConfigService);
 
   showProducts: Boolean = false;
   showProductDetail: Boolean = false;
@@ -67,6 +69,7 @@ export class ProductosComponent {
         this.imageServices.downloadWithConcurrency(this.imageServices.downloadFileList);
       });
     });
+    this.productService.vatExemptProducts = this.config.get("vatExemptProducts").toLowerCase() === "true";
   }
 
   getTags(): Promise<void> {
