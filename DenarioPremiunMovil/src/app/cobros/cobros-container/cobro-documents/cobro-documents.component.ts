@@ -1405,6 +1405,7 @@ export class CobrosDocumentComponent implements OnInit {
     console.log(this.collectService.collection);
   }
 
+
   formatNumber(num: number) {
     return this.currencyService.formatNumber(num);
   }
