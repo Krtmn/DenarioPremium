@@ -63,6 +63,10 @@
               product.quMinimum }}</p>
             <p *ngIf="orderServ.productMinMul && product.quMultiple > 1">{{ orderServ.getTag("PED_MULTIPLO")}}: {{
               product.quMultiple }}</p>
+            @if(this.orderServ.vatExemptProducts){
+            <p>{{this.productsTabTags.get('PROD_IVA')}}: 
+              {{ formatNum(product.nuTax) }} %</p>
+            }
 
           </ion-label>
           <!-- <ion-note slot="end"><ion-icon class="icon-List2" name="chevron-forward-outline"></ion-icon></ion-note> -->
@@ -229,7 +233,7 @@
                     </ion-img>
                   </ion-label>
                 </ion-col>
-                <!-- NOMBRE, CODIGO, PRECIO, STOCK, PUNTOS, MINIMO, MULTIPLO -->
+                <!-- NOMBRE, CODIGO, PRECIO, STOCK, PUNTOS, MINIMO, MULTIPLO, IVA -->
                 <ion-col class="" size="12" size-sm="12" size-xs="12">
                   <p class="titulosBold"><span class="titulosBold">{{ productoModal.naProduct }}</span></p>
                   <p><span class="titulosBold">{{this.productsTabTags.get('PROD_COD_PROD')}}:</span> {{
@@ -248,6 +252,10 @@
                       orderServ.getTag("PED_MINIMO")}}:</span> {{ productoModal.quMinimum }}</p>
                   <p *ngIf="orderServ.productMinMul && productoModal.quMultiple > 1"><span class="titulosBold">{{
                       orderServ.getTag("PED_MULTIPLO")}}:</span> {{ productoModal.quMultiple }}</p>
+                  @if(this.productService.vatExemptProducts){
+                  <p><span class="titulosBold">{{this.productsTabTags.get('PROD_IVA')}}:</span> 
+                    {{ productoModal.nuTax }} %</p>
+                  }
 
                 </ion-col>
               </ion-row>
