@@ -256,8 +256,8 @@
                   <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                     <ion-input
                       label="{{this.collectService.collectionTags.get('COB_SALDO')}} {{this.collectService.collection.coCurrency}}"
-                      label-placement="floating" fill="outline" value="{{this.saldoView}}" color="primary"
-                      [readonly]="true"></ion-input>
+                      label-placement="floating" fill="outline" value="{{this.formatNumber(this.saldoView)}}"
+                      color="primary" [readonly]="true"></ion-input>
                   </ion-col>
                   <!-- SALDO -->
 
@@ -266,8 +266,8 @@
                     *ngIf="this.collectService.multiCurrency && this.collectService.showConversion">
                     <ion-input
                       label="{{this.collectService.collectionTags.get('COB_SALDO')}} {{this.collectService.currencyConversion.coCurrency}}"
-                      label-placement="floating" fill="outline" value="{{this.saldoConversionView}}" color="primary"
-                      [readonly]="true"></ion-input>
+                      label-placement="floating" fill="outline" value="{{this.formatNumber(this.saldoConversionView)}}"
+                      color="primary" [readonly]="true"></ion-input>
                   </ion-col>
                   <!-- SALDO CONVERSION -->
 
@@ -360,13 +360,13 @@
                   <!-- LISTA DESCUENTOS  userCanSelectCollectDiscount -->
                   <ion-col *ngIf="this.collectService.userCanSelectCollectDiscount" size="12" size-xs="12" size-sm="12"
                     size-md="12">
-                    <ion-button expand="block" size="small" (click)="openAssignDiscounts()">
+                    <ion-button expand="block" size="small" (click)="openAssignDiscounts()" class="botonAddVerde">
                       {{ this.collectService.collectionTags.get('COB_DESCUENTOS') || 'Asignar descuento' }}
                     </ion-button>
 
-                    <ion-modal [isOpen]="assignDiscountsOpen" backdrop-dismiss="false">
+                    <ion-modal [isOpen]="assignDiscountsOpen" backdrop-dismiss="false" class="collectDiscounts">
                       <ng-template>
-                        <ion-header>
+                        <ion-header class="compartirDoc-header">
                           <ion-toolbar>
                             <ion-title>
                               {{ this.collectService.collectionTags.get('COB_DESCUENTOS') || 'Descuentos' }}
@@ -378,32 +378,63 @@
                             </ion-buttons>
                           </ion-toolbar>
                         </ion-header>
-                        <ion-content>
+                        <ion-content class="compartirDoc-content">
                           <!-- lista scrollable -->
                           <div style="max-height:60vh; overflow:auto;">
                             <ion-list>
-                              <ion-item *ngFor="let d of this.collectService.collectDiscounts">
-                                <ion-label>{{d.naCollectDiscount}} - {{d.nuCollectDiscount}}</ion-label>
+                              <!-- <ion-item *ngFor="let d of this.collectService.collectDiscounts">
+                                <ion-label>{{d.nuCollectDiscount}}% - {{d.naCollectDiscount}} </ion-label>
                                 <ion-checkbox slot="end"
                                   [checked]="tempSelectedCollectDiscounts?.includes(d.idCollectDiscount)"
                                   (ionChange)="toggleTempSelection(d.idCollectDiscount)"></ion-checkbox>
-                              </ion-item>
+                              </ion-item> -->
+                              <ng-container *ngFor="let d of this.collectService.collectDiscounts">
+                                <ion-item>
+                                  <ion-label>{{d.nuCollectDiscount}}% - {{d.naCollectDiscount}}</ion-label>
+                                  <ion-checkbox slot="end" [checked]="isCollectDiscountSelected(d.idCollectDiscount)"
+                                    (ionChange)="toggleTempSelection(d.idCollectDiscount)"></ion-checkbox>
+                                </ion-item>
+
+                                <div *ngIf="isCollectDiscountSelected(d.idCollectDiscount) && d.requireInput === true"
+                                  class="collect-discount-inputs" style="width:100%; padding:0 16px 8px 16px;">
+                                  <ion-item lines="none"
+                                    [ngClass]="{'input-rojo': isTempCollectDiscountFieldInvalid(d.idCollectDiscount,'nuCollectDiscount'), 'inp-write': isTempCollectDiscountFieldValid(d.idCollectDiscount,'nuCollectDiscount')}">
+                                    <ion-label position="floating">Tasa (%)</ion-label>
+                                    <ion-input type="number" [ngModel]="getNuCollectDiscount(d.idCollectDiscount)"
+                                      (ngModelChange)="setNuCollectDiscount(d.idCollectDiscount, $event)" required
+                                      max="{{100 - this.collectService.totalCollectDiscountsSelected}}">
+                                    </ion-input>
+                                  </ion-item>
+                                  <div style="padding:4px 16px; font-size:0.9em; color:var(--ion-color-medium);">
+                                    Disponible: {{ 100 - (this.collectService.totalCollectDiscountsSelected || 0) }}%
+                                  </div>
+                                  <ion-item lines="none"
+                                    [ngClass]="{'input-rojo': isTempCollectDiscountFieldInvalid(d.idCollectDiscount,'naCollectDiscount'), 'inp-write': isTempCollectDiscountFieldValid(d.idCollectDiscount,'naCollectDiscount')}">
+                                    <ion-label position="floating">Nombre descuento</ion-label>
+                                    <ion-input type="text" [ngModel]="getNaCollectDiscount(d.idCollectDiscount)"
+                                      (ngModelChange)="setNaCollectDiscount(d.idCollectDiscount, $event)"
+                                      required></ion-input>
+                                  </ion-item>
+                                </div>
+                              </ng-container>
                             </ion-list>
                           </div>
                         </ion-content>
 
                         <!-- botones abajo del modal -->
-                        <ion-footer>
+                        <ion-footer class="compartirDoc-footer">
                           <ion-toolbar>
                             <ion-grid>
                               <ion-row>
                                 <ion-col size="6">
-                                  <ion-button expand="block" (click)="cancelCollectDiscounts()">
+                                  <ion-button expand="block" size="small" color="light"
+                                    (click)="cancelCollectDiscounts()">
                                     {{ this.collectService.collectionTagsDenario.get('DENARIO_BOTON_CANCELAR') }}
                                   </ion-button>
                                 </ion-col>
                                 <ion-col size="6">
-                                  <ion-button expand="block" color="primary" (click)="acceptCollectDiscounts()">
+                                  <ion-button expand="block" size="small" (click)="acceptCollectDiscounts()"
+                                    class="botonAddVerde" [disabled]="this.disabledCollectDiscountButton">
                                     {{ this.collectService.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR') }}
                                   </ion-button>
                                 </ion-col>
@@ -413,9 +444,26 @@
                         </ion-footer>
                       </ng-template>
                     </ion-modal>
-
+                  </ion-col>
+                  <ion-col *ngIf="this.collectService.selectedCollectDiscounts.length > 0" size="12" size-xs="12"
+                    size-sm="12">
+                    <ion-input label="Descuentos Seleccionados" label-placement="floating" fill="outline"
+                      color="primary" type="text" [value]="getSelectedCollectDiscountsNames()" readonly>
+                    </ion-input>
+                  </ion-col>
+                  <ion-col *ngIf="this.collectService.selectedCollectDiscounts.length > 0" size="12" size-xs="12"
+                    size-sm="12">
+                    <ion-input label="Total Descuento" label-placement="floating" fill="outline" color="primary"
+                      type="text" [value]="this.collectService.totalCollectDiscountsView" readonly>
+                    </ion-input>
                   </ion-col>
                   <!-- LISTA DESCUENTOS -->
+                  <ion-col *ngIf="this.collectService.selectedCollectDiscounts.length > 0" size="12" size-xs="12"
+                    size-sm="12">
+                    <ion-input label="Comentarios" label-placement="floating" fill="outline" color="primary" type="text"
+                      [(ngModel)]="discountComment" (ngModelChange)="setDiscountComment()" required>
+                    </ion-input>
+                  </ion-col>
                 </ion-list>
               </ion-col>
 
@@ -727,7 +775,9 @@
                   {{paymentPartials.idCollection}}
                 </ion-col>
                 <ion-col size="4" class="ion-text-center col">
-                  {{paymentPartials.stDelivery}}
+                  <!-- {{paymentPartials.stDelivery}} -->
+                  {{this.collectService.getStatusOrderName(
+                  Number(paymentPartials.stCollection), Number(paymentPartials.stDelivery), paymentPartials.naStatus)}}
                 </ion-col>
                 <ion-col size="4" class="ion-text-center col">
                   {{paymentPartials.coPaymentMethod}} : {{paymentPartials.nuPaymentDoc}}

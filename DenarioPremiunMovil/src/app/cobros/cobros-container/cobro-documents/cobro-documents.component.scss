@@ -105,3 +105,73 @@ ion-checkbox::part(container) {
   padding: 0!important;
 }
 
+ion-modal.collectDiscounts {
+  --width: fit-content;
+  --min-width: 90%;
+  --height: 50%;
+  --border-radius: 6px;
+  --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
+}
+
+.compartirDoc-header {
+  --background: var(--ion-background-color);
+  z-index: 10;
+  ion-item {
+    --inner-padding-end: 12px;
+    --inner-padding-start: 12px;
+  }
+}
+
+/* Dejamos espacio en el contenido para header y footer */
+.compartirDoc-content {
+  padding-top: 56px;   /* ajustar si tu header ocupa más/menos */
+  padding-bottom: 82px; /* igual que antes para no tapar footer */
+  --overflow: auto;
+}
+
+/* Asegurar que el footer esté por delante del contenido */
+.compartirDoc-footer {
+  z-index: 11;
+}
+
+// ...existing code...
+/* oscurecer backdrop del ion-modal */
+.collectDiscounts {
+  --backdrop-opacity: 0.75; /* ajusta opacidad */
+}
+
+/* en caso de que la parte backdrop esté disponible */
+.collectDiscounts::part(backdrop) {
+  background: rgba(0,0,0,0.75);
+}
+
+/* fallback: overlay fijo que se muestra cuando el modal está abierto */
+.modal-dim-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 9990;
+  pointer-events: none;
+}
+
+.input-rojo {
+  --ion-color-step-600: #ff4d4f; /* fallback para temas Ionic */
+  ion-input, .item-native {
+    border-color: #e53935 !important;
+    color: #e53935 !important;
+  }
+  ion-label {
+    color: #e53935 !important;
+  }
+}
+
+.inp-write {
+  --ion-color-step-600: #4caf50;
+  ion-input, .item-native {
+    border-color: #4caf50 !important;
+    color: #4caf50 !important;
+  }
+  ion-label {
+    color: #4caf50 !important;
+  }
+}
