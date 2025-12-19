@@ -193,10 +193,20 @@ export class AutoSendService implements OnInit {
             } else {
               this.collectionService.getCollectionDetails(this.dbService.getDatabase(), coTransaction).then((collectionDetails) => {
                 request.collection!.collectionDetails = collectionDetails;
-                this.collectionService.getCollectionPayments(this.dbService.getDatabase(), coTransaction).then((collectionPayments) => {
-                  request.collection!.collectionPayments = collectionPayments;
-                  resolve("ok");
-                })
+                this.collectionService.getCollectionDetailsDiscounts(this.dbService.getDatabase(), coTransaction).then((collectionDetailsDiscounts) => {
+                  const all = collectionDetailsDiscounts || [];
+                  const isDiscount = (x: any): x is any => x && (x.idCollectDiscount !== undefined || x.nuCollectDiscount !== undefined);
+                  const discounts = (all as any[]).filter(isDiscount);
+                  for (let i = 0; i < request.collection!.collectionDetails.length; i++) {
+                    const detail = request.collection!.collectionDetails[i] as any;
+                    // Añadir/normalizar la propiedad donde se guardarán los descuentos del detalle
+                    detail.collectionDetailDiscounts = discounts.filter(d => d.coCollection === detail.coCollection) ?? [];
+                  }
+                  this.collectionService.getCollectionPayments(this.dbService.getDatabase(), coTransaction).then((collectionPayments) => {
+                    request.collection!.collectionPayments = collectionPayments;
+                    resolve("ok");
+                  })
+                });
               })
             }
 
@@ -708,12 +718,12 @@ export class AutoSendService implements OnInit {
     getOrderRequest(coOrder: string) {
       //busca todos los documentos relacionados con el coOrder y los devuelve en un request.
       //para mandarlo a backend.
-  
+
       let order: Orders;
       let orderDetails: OrderDetail[] = [];
       let orderUnits: OrderDetailUnit[] = [];
       let orderDetailDiscounts: OrderDetailDiscount[] = [];
-  
+
       let queryOrder = "SELECT co_order as coOrder, co_client as coClient , id_client as idClient , da_order as daOrder, " +
         "da_created as daCreated , na_responsible as naResponsible, id_user as idUser, id_order_creator as idOrderCreator, " +
         "in_order_review as inOrderReview, nu_amount_total as nuAmountTotal, nu_amount_final as nuAmountFinal, co_currency as coCurrency, " +
@@ -726,7 +736,7 @@ export class AutoSendService implements OnInit {
         "procedencia , nu_amount_total_base_conversion as nuAmountTotalBaseConversion, " +
         "nu_amount_discount_conversion nuAmountDiscountConversion, id_order_type as idOrderType, nu_attachments as nuAttachments, has_attachments as hasAttachments " +
         "FROM orders WHERE co_order = ?";
-  
+
       let queryDetails = "SELECT co_order_detail as coOrderDetail , co_order as coOrder , co_product as coProduct, " +
         "na_product as naProduct, id_product as idProduct, nu_price_base as nuPriceBase, nu_amount_total as nuAmountTotal, " +
         "co_warehouse as coWarehouse, id_warehouse as idWarehouse, qu_suggested as quSuggested, co_enterprise as coEnterprise, " +
@@ -734,31 +744,31 @@ export class AutoSendService implements OnInit {
         "co_price_list as coPriceList, id_price_list as idPriceList, posicion , nu_price_base_conversion as nuPriceConversion, " +
         "nu_discount_total_conversion  nuDiscountTotalConversion, nu_amount_total_conversion as nuAmountTotalConversion " +
         "FROM order_details WHERE co_order = ? ";
-  
+
       // para estos 2 debo usar un hack asqueroso donde agrego los coOrderDetail directo al query como strings.
       let queryUnits = "SELECT co_order_detail_unit  as coOrderDetailUnit, co_order_detail as coOrderDetail, " +
         "co_product_unit as coProductUnit, id_product_unit as idProductUnit, qu_order as quOrder, co_enterprise as coEnterprise, " +
         "id_enterprise as idEnterprise, co_unit as coUnit, qu_suggested as quSuggested " +
         "FROM order_detail_units WHERE co_order_detail in (";
-  
+
       let queryDiscounts = "SELECT co_order_detail_discount as coOrderDetailDiscount, " +
         "co_order_detail as coOrderDetail, id_order_detail as idOrderDetail, id_discount as idDiscount, qu_discount as quDiscount, " +
         "nu_price_final as nuPriceFinal, co_enterprise as coEnterprise, id_enterprise as idEnterprise " +
         "FROM order_detail_discount WHERE co_order_detail in (";
-  
-  
+
+
       return this.dbService.getDatabase().executeSql(queryOrder, [coOrder]).then(data1 => {
         order = data1.rows.item(0);
         return this.dbService.getDatabase().executeSql(queryDetails, [coOrder]).then(data2 => {
           let coOrderDetails: string[] = [];
           for (let i = 0; i < data2.rows.length; i++) {
             let item = data2.rows.item(i);
-  
+
             orderDetails.push(item);
             coOrderDetails.push(item.coOrderDetail);
           }
           order.orderDetails = orderDetails;
-  
+
           return this.dbService.getDatabase().executeSql(queryUnits + coOrderDetails.toString() + ")", []).then(data3 => {
             for (let i = 0; i < data3.rows.length; i++) {
               let item = data3.rows.item(i)
@@ -770,7 +780,7 @@ export class AutoSendService implements OnInit {
                 detail.orderDetailUnit.push(item);
               }
             }
-  
+
             return this.dbService.getDatabase().executeSql(queryDiscounts + coOrderDetails.toString() + ")", []).then(data4 => {
               for (let i = 0; i < data4.rows.length; i++) {
                 let item = data4.rows.item(i);
@@ -783,26 +793,26 @@ export class AutoSendService implements OnInit {
                 }
               }
               order.nuDetails = orderDetails.length;
-  
+
               let request = {
                 order: order,
                 //orderDetails: orderDetails,
                 //orderDetailUnits: orderUnits,
                 //orderDetailDiscounts: orderDetailDiscounts
-  
+
               }
-  
+
               console.log(request);
               return request;
-  
+
             });
           });
         })
-  
-  
+
+
       });
-  
-  
+
+
     }
       */
 
