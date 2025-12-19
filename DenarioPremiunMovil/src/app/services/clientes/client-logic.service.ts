@@ -91,7 +91,7 @@ export class ClientLogicService {
   public user: any = {};
   esTransportista: boolean = false;
   public currencyModule: any;
-
+  public fromSelector = false; //flag que indica si estas abriendo el detalle de cliente desde selector o no.
   public nameModule: string = "";
   public segment = 'default';
 
@@ -248,7 +248,7 @@ export class ClientLogicService {
   async goToClient(idClient: number): Promise<void> {
     try {
       this.clientListComponent = false; // apagamos el componente client list
-
+      
       // 1) Obtener cliente
       const clientResult = await this.clientesServices.getClientById(Number(idClient));
       this.datos = {} as SelectedClient;
@@ -504,6 +504,9 @@ export class ClientLogicService {
       this.segment = 'default';
       // Cerrar el modal selector primero (evita que quede encima)
       await this.closeModal();
+
+      //indicamos que venimos del selector de cliente
+      this.fromSelector = true;
 
       // Cargar tags y datos del cliente
       this.getTags();

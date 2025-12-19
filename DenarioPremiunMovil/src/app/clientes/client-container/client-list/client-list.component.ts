@@ -65,6 +65,7 @@ export class ClientListComponent implements OnInit {
     this.indice = 1;
     this.clientDetailComponent = false;
     this.onChangeEnterprise();
+    this.clientLogic.fromSelector = false; //indicamos que no venimos del selector de cliente, sino del listado de clientes
   }
 
   onIonInfinite(ev: any) {
