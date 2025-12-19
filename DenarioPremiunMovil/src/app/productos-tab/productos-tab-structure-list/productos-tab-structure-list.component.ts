@@ -133,9 +133,9 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
       })
 
 
-      if (this.orderServ.featuredProducts) {
+      if (this.productStructureService.featuredProducts) {
         this.productService.getFeaturedProductCount(this.dbServ.getDatabase(), this.empresaSeleccionada.idEnterprise).then(count => {
-          this.featuredButtonLabel = this.orderServ.nameProductLine// + ' (' + count + ')';
+          this.featuredButtonLabel = this.productStructureService.nameProductLine// + ' (' + count + ')';
           this.featuredButtonCount = count;
         })
 
