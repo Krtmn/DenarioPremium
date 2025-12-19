@@ -47,6 +47,7 @@ export class ProductosSearchComponent{
 
   onSearchTextChanged(){
     this.searchTextChanged.emit(this.searchText);
+    this.productoService.onProductSearch(this.searchText);
   }
 
 }
