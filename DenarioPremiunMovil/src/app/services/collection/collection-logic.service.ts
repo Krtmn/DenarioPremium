@@ -2405,6 +2405,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             documentSales.igtfAmount = data.rows.item(i).igtfAmount == undefined ? 0 : data.rows.item(i).igtfAmount;
             documentSales.txConversion = data.rows.item(i).txConversion == undefined ? "" : data.rows.item(i).txConversion;
             documentSales.inPaymentPartial = false;
+            documentSales.historicPaymentPartial = false;
             documentSales.isSave = false;
 
 
@@ -2540,6 +2541,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             documentSales.idEnterprise = data.rows.item(i).id_enterprise;
             documentSales.naType = data.rows.item(i).naTypev;
             documentSales.inPaymentPartial = false;
+            documentSales.historicPaymentPartial = false;
             documentSales.isSelected = false;
             documentSales.isSave = false;
 
@@ -2761,7 +2763,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     FROM collection_details code
     JOIN collection_payments copa ON code.co_collection = copa.co_collection
     JOIN collections co ON co.id_client = ?
-    WHERE co_document IN ('${coDocuments.join("', '")}')
+    WHERE code.in_payment_partial == 'true' AND code.co_document IN ('${coDocuments.join("', '")}')
   `;
 
     return dbServ.executeSql(selectStatement, [idClient]).then(data => {
@@ -2778,24 +2780,44 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       this.documentSalesView.forEach(ds => {
         if (ds && typeof ds.coDocument === 'string') docSalesViewMap.set(ds.coDocument, ds);
       });
+
       for (let i = 0; i < data.rows.length; i++) {
         const coDoc = data.rows.item(i).co_document;
         const isPartial = data.rows.item(i).in_payment_partial === 'true';
 
-        // Actualiza documentSales
-        if (docSalesMap.has(coDoc)) {
-          docSalesMap.get(coDoc)!.historicPaymentPartial = isPartial;
-          docSalesMap.get(coDoc)!.inPaymentPartial = isPartial;
-          docSalesViewMap.get(coDoc)!.historicPaymentPartial = isPartial;
-          docSalesViewMap.get(coDoc)!.inPaymentPartial = isPartial;
-          docSalesBackupMap.get(coDoc)!.historicPaymentPartial = isPartial;
-          docSalesBackupMap.get(coDoc)!.inPaymentPartial = isPartial;
+        // Actualiza los mapas indexados por coDocument
+        const ds = docSalesMap.get(coDoc);
+        if (ds) {
+          ds.historicPaymentPartial = isPartial;
+        }
+        const dsView = docSalesViewMap.get(coDoc);
+        if (dsView) {
+          dsView.historicPaymentPartial = isPartial;
+        }
+        const dsBackup = docSalesBackupMap.get(coDoc);
+        if (dsBackup) {
+          dsBackup.historicPaymentPartial = isPartial;
         }
 
-        // Actualiza mapDocumentsSales
-        if (docSalesMap.get(coDoc)?.idDocument) {
-          this.mapDocumentsSales.get(coDoc)!.historicPaymentPartial = isPartial;
-          this.mapDocumentsSales.get(coDoc)!.inPaymentPartial = isPartial;
+        // Sincronizar mapDocumentsSales (que está indexado por idDocument:number)
+        // buscando el idDocument desde el entry por coDocument
+        const source = ds ?? dsBackup ?? dsView;
+        if (source && source.idDocument != null) {
+          const id = source.idDocument;
+          if (this.mapDocumentsSales.has(id)) {
+            const mapped = this.mapDocumentsSales.get(id)!;
+            mapped.historicPaymentPartial = isPartial;
+            this.mapDocumentsSales.set(id, mapped);
+          }
+        } else {
+          // fallback: buscar por valor si no encontramos source
+          for (const [id, val] of this.mapDocumentsSales.entries()) {
+            if (val && val.coDocument === coDoc) {
+              val.historicPaymentPartial = isPartial;
+              this.mapDocumentsSales.set(id, val);
+              break;
+            }
+          }
         }
       }
     }).catch(e => {

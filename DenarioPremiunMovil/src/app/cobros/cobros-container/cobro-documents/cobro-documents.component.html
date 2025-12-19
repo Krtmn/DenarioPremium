@@ -762,10 +762,10 @@
                   Monto Parcial
                 </ion-col>
                 <ion-col class="titulosBold col " size="4">
-                  Ref. Pago
+                  Moneda
                 </ion-col>
                 <ion-col class="titulosBold col borderSuperiorDerecho" size="4">
-                  Moneda
+                  Ref. Pago
                 </ion-col>
               </ion-row>
 
@@ -780,20 +780,18 @@
                   Number(paymentPartials.stCollection), Number(paymentPartials.stDelivery), paymentPartials.naStatus)}}
                 </ion-col>
                 <ion-col size="4" class="ion-text-center col">
-                  {{paymentPartials.coPaymentMethod}} : {{paymentPartials.nuPaymentDoc}}
+                  {{paymentPartials.daCollection.substring(0,10)}}
+                </ion-col>
+                <ion-col size="4" class="ion-text-center col">
+                  {{paymentPartials.nuAmountPaid}}
                 </ion-col>
                 <ion-col size="4" class="ion-text-center col">
                   {{paymentPartials.coCurrency}}
                 </ion-col>
-                <ion-col size="4" class="ion-text-center col ">
-                  {{paymentPartials.nuAmountPaid}}
+                <ion-col size=" 4" class="ion-text-center col borderInferiorDerecho">
+                  {{paymentPartials.coPaymentMethod}} : {{paymentPartials.nuPaymentDoc}}
                 </ion-col>
-                <ion-col size="4" class="ion-text-center col borderInferiorDerecho">
-                  {{paymentPartials.daCollection}}
-                </ion-col>
-
               </ion-row>
-
             </ion-grid>
           </ion-grid>
 
