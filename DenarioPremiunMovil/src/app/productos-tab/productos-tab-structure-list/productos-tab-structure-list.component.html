@@ -19,7 +19,7 @@
     <ion-badge color="danger">{{ favoriteButtonCount }}</ion-badge>
   </ion-tab-button>
 
-  @if(productStructureService.featuredProducts) {
+  @if(featuredProducts) {
   <ion-tab-button tab="2" (click)="onFeaturedProductSelected()">
     <ion-icon name="star"></ion-icon>
     <ion-label>{{featuredButtonLabel}}</ion-label>

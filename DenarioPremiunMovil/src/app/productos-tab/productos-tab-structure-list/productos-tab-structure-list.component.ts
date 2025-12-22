@@ -4,6 +4,7 @@ import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { ProductStructure } from 'src/app/modelos/tables/productStructure';
 import { TypeProductStructure } from 'src/app/modelos/tables/typeProductStructure';
 import { PedidosService } from 'src/app/pedidos/pedidos.service';
+import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { ProductStructureService } from 'src/app/services/productStructures/product-structure.service';
 import { ProductService } from 'src/app/services/products/product.service';
 import { ReturnLogicService } from 'src/app/services/returns/return-logic.service';
@@ -23,6 +24,7 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
   returnLogic = inject(ReturnLogicService);
   orderServ = inject(PedidosService);
   dbServ = inject(SynchronizationDBService);
+  public config = inject(GlobalConfigService);
 
   @Input()
   empresaSeleccionada!: Enterprise;
@@ -42,6 +44,9 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
   featuredButtonCount = 0;
   favoriteButtonLabel = '';
   favoriteButtonCount = 0;
+//config options
+  public featuredProducts: Boolean = false;
+  public nameProductLine = '';
 
   productStructureList: ProductStructure[] = [];
   productStructures: Boolean = false;
@@ -56,6 +61,9 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
 
 
   ngOnInit() {
+    //config options
+    this.featuredProducts = this.config.get("featuredProducts").toLowerCase() === 'true';
+    this.nameProductLine = this.config.get("nameProductLine");
 
     if (this.showProductStructure) {
       this.productStructures = true;
@@ -133,9 +141,9 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
       })
 
 
-      if (this.productStructureService.featuredProducts) {
+      if (this.featuredProducts) {
         this.productService.getFeaturedProductCount(this.dbServ.getDatabase(), this.empresaSeleccionada.idEnterprise).then(count => {
-          this.featuredButtonLabel = this.productStructureService.nameProductLine// + ' (' + count + ')';
+          this.featuredButtonLabel = this.nameProductLine// + ' (' + count + ')';
           this.featuredButtonCount = count;
         })
 

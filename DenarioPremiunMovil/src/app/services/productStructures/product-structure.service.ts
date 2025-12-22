@@ -4,7 +4,7 @@ import { TypeProductStructure } from 'src/app/modelos/tables/typeProductStructur
 import { ProductStructure } from 'src/app/modelos/tables/productStructure';
 import { Subject } from 'rxjs';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
-import { GlobalConfigService } from '../globalConfig/global-config.service';
+
 
 
 
@@ -13,24 +13,19 @@ import { GlobalConfigService } from '../globalConfig/global-config.service';
 })
 export class ProductStructureService {
 
- public config = inject(GlobalConfigService);
+
   public productStructureList: ProductStructure[] = [] 
   public typeProductStructureList: TypeProductStructure[] = [] 
   public idProductStructureList: number[] = [] 
   public coProductStructureListString: string = "";
   public nombreProductStructureSeleccionada = "";
   public idProductStructureSeleccionada = 0;
-  public featuredProducts: Boolean = false;
-  public nameProductLine = '';
+
 
   productStructures = new Subject<Boolean>;
 
   constructor() { }
 
-  ngOnInit() {
-    this.featuredProducts = this.config.get("featuredProducts").toLowerCase() === 'true';
-    this.nameProductLine = this.config.get("nameProductLine");
-  }
 
 
   onAddProductCLicked(){
