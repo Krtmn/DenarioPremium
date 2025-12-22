@@ -326,7 +326,7 @@ export class VisitaComponent implements OnInit {
     this.setButtonsSalvar();
 
     if (!this.visitServ.userMustActivateGPS &&
-      (this.visitServ.visit.stVisit === VISIT_STATUS_NOT_VISITED ||
+      ( this.visitServ.visit.stVisit === VISIT_STATUS_NOT_VISITED ||
         this.visitServ.visit.stVisit === VISIT_STATUS_SAVED)) {
       //si esta desactivado, se hace el chequeo suave de fondo. 
       //no bloqueamos si coords esta vacio

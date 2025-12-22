@@ -136,6 +136,10 @@ export class CollectionDetail {
       obj['st'],
       obj['isSave'],
       obj['daVoucher'],
+      obj['hasDiscount'],
+      obj['discountComment'],
+      obj['nuAmountCollectDiscount'],
+      obj['nuCollectDiscount'],
       obj['collectionDetailDiscounts'],
     );
   }
@@ -170,7 +174,11 @@ export class CollectionDetail {
     public st: number = 0,
     public isSave: boolean = true,
     public daVoucher: string | null = "",
-    public collectionDetailDiscounts?: CollectionDetailDiscount[],
+    public hasDiscount: boolean = false,
+    public discountComment: string | null = "",
+    public nuAmountCollectDiscount: number = 0,
+    public nuCollectDiscount: number = 0,
+    public collectionDetailDiscounts?: CollectionDetailDiscounts[],
   ) { }
 }
 
@@ -229,9 +237,9 @@ export class CollectionPayment {
   ) { }
 }
 
-export class CollectionDetailDiscount {
-  static CollectionDetailDiscountJson(obj: CollectionDetailDiscount) {
-    return new CollectionDetailDiscount(
+export class CollectionDetailDiscounts {
+  static CollectionDetailDiscountsJson(obj: CollectionDetailDiscounts) {
+    return new CollectionDetailDiscounts(
       obj['idCollectionDetailDiscount'],
       obj['idCollectionDetail'],
       obj['idCollectDiscount'],

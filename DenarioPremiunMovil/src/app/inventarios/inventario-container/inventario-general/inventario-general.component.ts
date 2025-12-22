@@ -291,6 +291,9 @@ export class InventarioGeneralComponent implements OnInit {
   }
 
   onEnterpriseSelect() {
+    this.inventariosLogicService.onStockValidToSave(false);
+    this.inventariosLogicService.onStockValidToSend(false);
+    this.inventariosLogicService.onClientStockValid(false);
     this.selectorCliente.updateClientList(this.inventariosLogicService.empresaSeleccionada.idEnterprise);
     this.inventariosLogicService.cliente = {} as Client;
     this.inventariosLogicService.nombreCliente = "";

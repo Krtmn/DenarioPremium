@@ -105,6 +105,10 @@ export class CobroTotalComponent implements OnInit {
         st: 0,
         isSave: true,
         daVoucher: daVoucher.split("T")[0],
+        hasDiscount: false,
+        discountComment: "",
+        nuAmountCollectDiscount: 0,
+        nuCollectDiscount: 0,
       })
     }
     this.collectService.addRetention = false;

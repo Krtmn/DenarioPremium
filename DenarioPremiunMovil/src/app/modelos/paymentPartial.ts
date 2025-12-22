@@ -9,6 +9,7 @@ export class PaymentPartials {
         public stCollection: string,
         public nuPaymentDoc: string,
         public stDelivery: string,
+        public naStatus: string,
 
     ) { }
 }

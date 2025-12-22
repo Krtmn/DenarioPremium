@@ -6,6 +6,8 @@ import { Subject } from 'rxjs';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
 
 
+
+
 @Injectable({
   providedIn: 'root'
 })
@@ -19,9 +21,12 @@ export class ProductStructureService {
   public nombreProductStructureSeleccionada = "";
   public idProductStructureSeleccionada = 0;
 
+
   productStructures = new Subject<Boolean>;
 
   constructor() { }
+
+
 
   onAddProductCLicked(){
     this.productStructures.next(true);

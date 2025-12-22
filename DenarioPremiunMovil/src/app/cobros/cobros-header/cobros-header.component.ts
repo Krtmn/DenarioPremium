@@ -210,7 +210,7 @@ export class CobrosHeaderComponent implements OnInit {
       this.collectService.collectionIsSave = false;
       this.collectService.cobroListComponent = false;
       this.collectService.cobrosComponent = true;
-    } else if (!this.collectService.collectionIsSave && this.collectService.collectValidTabs && this.collectService.collection.stDelivery != this.COLLECT_STATUS_TO_SEND && this.collectService.collection.stDelivery != this.COLLECT_STATUS_SAVED && this.collectService.collection.stDelivery != 6) {
+    } else if (!this.collectService.collectionIsSave && this.collectService.collectValidTabs && this.collectService.collection.stDelivery != this.COLLECT_STATUS_TO_SEND && this.collectService.collection.stDelivery != this.COLLECT_STATUS_SAVED && this.collectService.collection.stDelivery != 6 && this.collectService.collection.stDelivery != this.COLLECT_STATUS_SENT) {
       this.collectService.saveOrExitOpen = true;
     } else {
       this.collectService.collectValid = false;

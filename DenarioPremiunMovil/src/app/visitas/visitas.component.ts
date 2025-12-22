@@ -6,6 +6,8 @@ import { MessageComponent } from 'src/app/message/message.component';
 import { GeolocationService } from '../services/geolocation/geolocation.service';
 import { Subscription } from 'rxjs';
 import { Platform } from '@ionic/angular';
+import { Visit } from '../modelos/tables/visit';
+import { VISIT_STATUS_NOT_VISITED } from '../utils/appConstants';
 
 
 @Component({
@@ -93,6 +95,8 @@ export class VisitasComponent implements OnInit {
   }
 
   navigateToNuevaVisita(){
+    this.service.visit = {} as Visit;
+    this.service.visit.stVisit = VISIT_STATUS_NOT_VISITED;
     this.service.editVisit = false;
     this.router.navigate(['visita']);
   }

@@ -62,28 +62,28 @@ export class AdjuntoComponent implements OnInit {
     //window.dispatchEvent(new Event('resize'));
     //this.checkCarousel(); 
     //console.log('SignaturePad:', this.signaturePad); 
-    this.signaturePad.set('minWidth', 3); // set szimek/signature_pad options at runtime
-    if (this.service.firma.length > 0 && this.signaturePad != undefined) {
-      this.reloadSignature() //recarga la firma
-    }
-
-
+    if(this.service.signatureConfig){    
+      this.signaturePad.set('minWidth', 3); // set szimek/signature_pad options at runtime
+      if (this.service.firma.length > 0 && this.signaturePad != undefined) {
+        this.reloadSignature() //recarga la firma
+      }
     // Workaround: Add native pointer event listeners to the canvas
     setTimeout(() => {
       const canvas = document.querySelector('#signaturePad canvas');
       if (canvas) {
         canvas.addEventListener('pointerup', () => {
-          console.log('Native pointerup detected');
+          //console.log('Native pointerup detected');
           this.drawComplete();
         });
         canvas.addEventListener('pointerdown', () => {
-          console.log('Native pointerdown detected');
+          //console.log('Native pointerdown detected');
           this.drawStart();
         });
       }
     }, 0);
 
     this.canvasResize();
+  }
   }
 
   canvasResize() {

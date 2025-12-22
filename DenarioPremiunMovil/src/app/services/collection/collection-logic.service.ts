@@ -5,7 +5,7 @@ import { ChangeDetectorRef } from '@angular/core';
 
 
 import { Client } from 'src/app/modelos/tables/client';
-import { Collection, CollectionDetail, CollectionDetailDiscount, CollectionPayment } from 'src/app/modelos/tables/collection';
+import { Collection, CollectionDetail, CollectionDetailDiscounts, CollectionPayment } from 'src/app/modelos/tables/collection';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { Currencies } from 'src/app/modelos/tables/currencies';
 import { ConversionType } from 'src/app/modelos/tables/conversionType';
@@ -102,7 +102,10 @@ export class CollectionService {
   public differenceCode: DifferenceCode[] = [];
   public differenceCodeSelected: DifferenceCode[] = [];
   public collectDiscounts: CollectDiscounts[] = [];
+  public tempSelectedCollectDiscounts: CollectDiscounts[] = [];
+  public prevSelectedCollectDiscounts: CollectDiscounts[] = [];
   public selectedCollectDiscounts: number[] = [];
+  public displayedItems: any[] = [];
 
   public messageAlert!: MessageAlert;
   public anticipoAutomatico!: any;
@@ -232,6 +235,8 @@ export class CollectionService {
   public difDocsNegativosByRate: number = 0;
   public difDocsNegativosByOriginalRate: number = 0;
   public difference: number = 0;
+  public totalCollectDiscounts: number = 0;
+  public totalCollectDiscountsSelected: number = 0;
 
   public documentCurrency!: string;
   public dateTasa!: string;
@@ -248,6 +253,7 @@ export class CollectionService {
   public MonedaTolerancia: string = "";
   public prepaidRangeCurrency: string = "";
   public tabSelected: string = "general";
+  public totalCollectDiscountsView: string = "";
 
   public backRoute = new Subject<string>;
   public saveCollect = new Subject<string>;
@@ -1592,6 +1598,8 @@ export class CollectionService {
     this.documentSales = [] as DocumentSale[];
     this.documentSalesBackup = [] as DocumentSale[];
     this.mapDocumentsSales = new Map<number, DocumentSale>([]);
+    this.tempSelectedCollectDiscounts = [] as CollectDiscounts[];
+    this.prevSelectedCollectDiscounts = [] as CollectDiscounts[];
 
     this.montoTotalPagar = 0;
     this.montoTotalPagarConversion = 0;
@@ -2225,6 +2233,46 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     return isNaN(d.getTime()) ? null : d;
   }
 
+  public deepFreeze(obj: any) {
+    if (obj && typeof obj === 'object') {
+      Object.keys(obj).forEach(k => this.deepFreeze(obj[k]));
+      Object.freeze(obj);
+    }
+  }
+
+  getStatusOrderName(stCollection: number, stDelivery: number, naStatus: any) {
+    if (stCollection != 0) {
+      if (naStatus == null || naStatus === undefined) {
+        return this.getStatus(stDelivery, naStatus);
+      }
+      return naStatus;
+    } else {
+      this.getStatus(stDelivery, naStatus);
+    }
+  }
+
+  getStatus(status: number, naStatus: any): string {
+    switch (status) {
+      case COLLECT_STATUS_SAVED: return this.collectionTags.get("COB_STATUS_SAVED")!;
+      case COLLECT_STATUS_TO_SEND: return this.collectionTags.get("COB_STATUS_TO_SEND")!;
+      case COLLECT_STATUS_SENT:
+        return naStatus == null ? this.collectionTags.get("COB_STATUS_SENT")! : naStatus;
+      case 6:
+        // naStatus puede ser string o un objeto => normalizar a string
+        if (naStatus == null) return 'Enviado';
+        if (typeof naStatus === 'string') {
+          return naStatus;
+        }
+        if (typeof naStatus === 'object') {
+          // intenta varias propiedades comunes
+          return naStatus.na_status;
+        }
+        return String(naStatus);
+
+      default: return '';
+    }
+  }
+
   ///////////////////QUERYS////////////////
 
   getAllBanks(dbServ: SQLiteObject, idEnterprise: number) {
@@ -2357,6 +2405,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             documentSales.igtfAmount = data.rows.item(i).igtfAmount == undefined ? 0 : data.rows.item(i).igtfAmount;
             documentSales.txConversion = data.rows.item(i).txConversion == undefined ? "" : data.rows.item(i).txConversion;
             documentSales.inPaymentPartial = false;
+            documentSales.historicPaymentPartial = false;
             documentSales.isSave = false;
 
 
@@ -2492,6 +2541,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             documentSales.idEnterprise = data.rows.item(i).id_enterprise;
             documentSales.naType = data.rows.item(i).naTypev;
             documentSales.inPaymentPartial = false;
+            documentSales.historicPaymentPartial = false;
             documentSales.isSelected = false;
             documentSales.isSave = false;
 
@@ -2709,41 +2759,65 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     if (coDocuments.length === 0) return Promise.resolve();
 
     const selectStatement = `
-    SELECT code.id_document, code.in_payment_partial
+    SELECT code.co_document, code.in_payment_partial
     FROM collection_details code
     JOIN collection_payments copa ON code.co_collection = copa.co_collection
     JOIN collections co ON co.id_client = ?
-    WHERE co_document IN ('${coDocuments.join("', '")}')
+    WHERE code.in_payment_partial == 'true' AND code.co_document IN ('${coDocuments.join("', '")}')
   `;
 
     return dbServ.executeSql(selectStatement, [idClient]).then(data => {
-      // Crea un Map para acceso rápido por id_document
-      const docSalesMap = new Map<number, DocumentSale>();
-      this.documentSales.forEach(ds => docSalesMap.set(ds.idDocument, ds));
-      const docSalesBackupMap = new Map<number, DocumentSale>();
-      this.documentSalesBackup.forEach(ds => docSalesBackupMap.set(ds.idDocument, ds));
-      const docSalesViewMap = new Map<number, DocumentSale>();
-      this.documentSalesView.forEach(ds => docSalesViewMap.set(ds.idDocument, ds));
+      // Crea un Map para acceso rápido por id_document (usar idDocument como clave numérica)
+      const docSalesMap = new Map<string, DocumentSale>();
+      this.documentSales.forEach(ds => {
+        if (ds && typeof ds.coDocument === 'string') docSalesMap.set(ds.coDocument, ds);
+      });
+      const docSalesBackupMap = new Map<string, DocumentSale>();
+      this.documentSalesBackup.forEach(ds => {
+        if (ds && typeof ds.coDocument === 'string') docSalesBackupMap.set(ds.coDocument, ds);
+      });
+      const docSalesViewMap = new Map<string, DocumentSale>();
+      this.documentSalesView.forEach(ds => {
+        if (ds && typeof ds.coDocument === 'string') docSalesViewMap.set(ds.coDocument, ds);
+      });
 
       for (let i = 0; i < data.rows.length; i++) {
-        const idDoc = data.rows.item(i).id_document;
+        const coDoc = data.rows.item(i).co_document;
         const isPartial = data.rows.item(i).in_payment_partial === 'true';
 
-        // Actualiza documentSales
-        if (docSalesMap.has(idDoc)) {
-          docSalesMap.get(idDoc)!.historicPaymentPartial = isPartial;
+        // Actualiza los mapas indexados por coDocument
+        const ds = docSalesMap.get(coDoc);
+        if (ds) {
+          ds.historicPaymentPartial = isPartial;
         }
-        // Actualiza documentSalesBackup
-        if (docSalesBackupMap.has(idDoc)) {
-          docSalesBackupMap.get(idDoc)!.historicPaymentPartial = isPartial;
+        const dsView = docSalesViewMap.get(coDoc);
+        if (dsView) {
+          dsView.historicPaymentPartial = isPartial;
         }
-        // Actualiza documentSalesBackup
-        if (docSalesViewMap.has(idDoc)) {
-          docSalesViewMap.get(idDoc)!.historicPaymentPartial = isPartial;
+        const dsBackup = docSalesBackupMap.get(coDoc);
+        if (dsBackup) {
+          dsBackup.historicPaymentPartial = isPartial;
         }
-        // Actualiza mapDocumentsSales
-        if (this.mapDocumentsSales.has(idDoc)) {
-          this.mapDocumentsSales.get(idDoc)!.historicPaymentPartial = isPartial;
+
+        // Sincronizar mapDocumentsSales (que está indexado por idDocument:number)
+        // buscando el idDocument desde el entry por coDocument
+        const source = ds ?? dsBackup ?? dsView;
+        if (source && source.idDocument != null) {
+          const id = source.idDocument;
+          if (this.mapDocumentsSales.has(id)) {
+            const mapped = this.mapDocumentsSales.get(id)!;
+            mapped.historicPaymentPartial = isPartial;
+            this.mapDocumentsSales.set(id, mapped);
+          }
+        } else {
+          // fallback: buscar por valor si no encontramos source
+          for (const [id, val] of this.mapDocumentsSales.entries()) {
+            if (val && val.coDocument === coDoc) {
+              val.historicPaymentPartial = isPartial;
+              this.mapDocumentsSales.set(id, val);
+              break;
+            }
+          }
         }
       }
     }).catch(e => {
@@ -2759,6 +2833,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "co.da_collection, " +
       "co.id_collection, " +
       "co.st_collection, " +
+      "co.st_delivery, " +
       "code.*, " +
       "copa.nu_payment_doc, " +
       "copa.co_payment_method " +
@@ -2774,6 +2849,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         this.paymentPartials = [] as PaymentPartials[];
         var status = ["No Status", "Guardado", "Por Enviar", "Enviado"]
         for (var i = 0; i < data.rows.length; i++) {
+          let item = this.itemListaCobros.find(item => item.id_collection == data.rows.item(i).id_collection);
           this.paymentPartials.push({
             idCollection: data.rows.item(i).id_collection,
             daCollection: data.rows.item(i).da_collection,
@@ -2781,15 +2857,15 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             nuAmountPaid: data.rows.item(i).nu_amount_paid,
             nuBalanceDoc: data.rows.item(i).nu_balance_doc,
             coPaymentMethod: data.rows.item(i).co_payment_method,
-            stCollection: status[data.rows.item(i).st_collection],
-            stDelivery: status[data.rows.item(i).st_delivery],
+            stCollection: data.rows.item(i).st_collection,
+            stDelivery: data.rows.item(i).st_delivery,
             nuPaymentDoc: data.rows.item(i).nu_payment_doc == "" ? "No Ref" : data.rows.item(i).nu_payment_doc,
+            naStatus: item?.na_status!
           })
         }
       }
     })
   }
-
 
   getIgtfList(dbServ: SQLiteObject) {
 
@@ -3594,8 +3670,12 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "nu_amount_retention_islr_conversion," +
       "nu_amount_igtf," +
       "nu_amount_igtf_conversion," +
-      "da_voucher" +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "da_voucher," +
+      "has_discount," +
+      "discount_comment," +
+      "nu_amount_collect_discount," +
+      "nu_collect_discount" +
+      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     for (var i = 0; i < collectionDetail.length; i++) {
       statementsCollectionDetails.push([inserStatementCollectionDetail, [
@@ -3622,7 +3702,11 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         collectionDetail[i].nuAmountRetention2Conversion,
         collectionDetail[i].nuAmountIgtf,
         collectionDetail[i].nuAmountIgtfConversion,
-        collectionDetail[i].daVoucher
+        collectionDetail[i].daVoucher,
+        collectionDetail[i].hasDiscount,
+        collectionDetail[i].discountComment,
+        collectionDetail[i].nuAmountCollectDiscount,
+        collectionDetail[i].nuCollectDiscount
       ]]);
     }
 
@@ -4078,7 +4162,11 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           st: res.rows.item(i).st,
           isSave: true,
           daVoucher: res.rows.item(i).da_voucher == "" ? null : res.rows.item(i).da_voucher,
-          collectionDetailDiscounts: [] as CollectionDetailDiscount[],
+          hasDiscount: res.rows.item(i).has_discount == "true" ? true : false,
+          discountComment: res.rows.item(i).discount_comment == "" ? null : res.rows.item(i).discount_comment,
+          nuAmountCollectDiscount: res.rows.item(i).nu_amount_collect_discount,
+          nuCollectDiscount: res.rows.item(i).nu_collect_discount,
+          collectionDetailDiscounts: [] as CollectionDetailDiscounts[],
         })
       }
       return collectionDetails;
@@ -4091,20 +4179,20 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
   getCollectionDetailsDiscounts(dbServ: SQLiteObject, coCollection: string) {
     return dbServ.executeSql(
-      'SELECT * FROM collection_detail_discounts WHERE co_collection=?', [coCollection
+      'SELECT * FROM collection_detail_discounts WHERE co_collection = ?', [coCollection
     ]).then(res => {
-      let CollectionDetailDiscount: CollectionDetailDiscount[] = [];
+      let CollectionDetailDiscounts: CollectionDetailDiscounts[] = [];
       for (var i = 0; i < res.rows.length; i++) {
-        CollectionDetailDiscount.push({
+        CollectionDetailDiscounts.push({
           idCollectionDetailDiscount: res.rows.item(i).id_collection_detail_discount,
           idCollectionDetail: res.rows.item(i).id_collection_detail,
           idCollectDiscount: res.rows.item(i).id_collect_discount,
-          nuCollectDiscountOther: res.rows.item(i).nu_collect_discount,
-          naCollectDiscountOther: res.rows.item(i).na_collect_discount,
+          nuCollectDiscountOther: res.rows.item(i).nu_collect_discount_other == undefined ? null : res.rows.item(i).nu_collect_discount_other,
+          naCollectDiscountOther: res.rows.item(i).na_collect_discount_other == undefined ? null : res.rows.item(i).na_collect_discount_other,
           coCollection: res.rows.item(i).co_collection,
         })
       }
-      return CollectionDetailDiscount;
+      return CollectionDetailDiscounts;
     }).catch(e => {
       let collectionDetails: CollectionDetail[] = [];
       console.log(e);

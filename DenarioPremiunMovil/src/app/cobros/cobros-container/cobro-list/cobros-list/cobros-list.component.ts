@@ -30,7 +30,7 @@ export class CobrosListComponent implements OnInit {
   public valid: Boolean = false;
   public alertDelete: boolean = false;
   public allItems: any[] = [];         // llena al cargar
-  public displayedItems: any[] = [];   // lo que iteras en la plantilla
+  // lo que iteras en la plantilla
   public searchText = '';
 
   public indice = 0;
@@ -70,7 +70,7 @@ export class CobrosListComponent implements OnInit {
   constructor() {
     // inicializa after load
     this.allItems = this.collectService.itemListaCobros;        // lo que obtengas originalmente
-    this.displayedItems = [...this.allItems];
+    this.collectService.displayedItems = [...this.allItems];
   }
 
   ngOnInit() {
@@ -109,14 +109,14 @@ export class CobrosListComponent implements OnInit {
 
   private rebuildDisplayedItems(count: number) {
     const total = this.collectService.itemListaCobros?.length ?? 0;
-    this.displayedItems = this.collectService.itemListaCobros.slice(0, count);
+    this.collectService.displayedItems = this.collectService.itemListaCobros.slice(0, count);
     this.displayedIndexMap.clear();
-    for (let i = 0; i < this.displayedItems.length; i++) {
-      const it = this.displayedItems[i];
+    for (let i = 0; i < this.collectService.displayedItems.length; i++) {
+      const it = this.collectService.displayedItems[i];
       // usamos co_collection como clave (único por colección)
       this.displayedIndexMap.set(it.co_collection, this.collectService.itemListaCobros.findIndex(x => x.co_collection === it.co_collection));
     }
-    this.currentOffset = this.displayedItems.length;
+    this.currentOffset = this.collectService.displayedItems.length;
     this.hasMore = this.currentOffset < total;
   }
 
@@ -131,10 +131,10 @@ export class CobrosListComponent implements OnInit {
       const nextOffset = this.currentOffset + this.PAGE_SIZE;
       const nextSlice = this.collectService.itemListaCobros.slice(this.currentOffset, nextOffset);
       for (const item of nextSlice) {
-        this.displayedItems.push(item);
+        this.collectService.displayedItems.push(item);
         this.displayedIndexMap.set(item.co_collection, this.collectService.itemListaCobros.findIndex(x => x.co_collection === item.co_collection));
       }
-      this.currentOffset = this.displayedItems.length;
+      this.currentOffset = this.collectService.displayedItems.length;
       this.hasMore = this.currentOffset < total;
       resolve();
     });
@@ -305,11 +305,11 @@ export class CobrosListComponent implements OnInit {
   handleInput(event: any) {
     this.searchText = (event?.detail?.value ?? '').toString().toLowerCase().trim();
     if (!this.searchText) {
-      this.displayedItems = [...this.allItems];
+      this.collectService.displayedItems = [...this.allItems];
       return;
     }
     const q = this.searchText;
-    this.displayedItems = this.allItems.filter(collect => {
+    this.collectService.displayedItems = this.allItems.filter(collect => {
       const coClient = (collect.co_client ?? '').toString().toLowerCase();
       const lbClient = (collect.lb_client ?? '').toString().toLowerCase();
       const idColl = collect.id_collection != null ? collect.id_collection.toString() : '';
