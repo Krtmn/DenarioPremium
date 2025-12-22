@@ -79,12 +79,14 @@
               </div>
             </div>
           </ion-accordion>
+           <!-- panel de firma -->
+           @if(service.signatureConfig){
           <ion-accordion value="sign" [disabled]="viewOnly && service.firma === '' ">
             <ion-item slot="header" color="light">
               <ion-label>{{ getTag('ADJ_ACORDEON_FIRMA')}}</ion-label>
             </ion-item>
-            <!-- panel de firma -->
-
+           
+           
             <div slot="content" *ngIf="!viewOnly">
               <signature-pad id="signaturePad" class="signPad" [options]="signaturePadOptions" (onEnd)="drawComplete()"
                 (onBegin)="drawStart()"></signature-pad>
@@ -103,6 +105,7 @@
             </div>
 
           </ion-accordion>
+        }
 
         </ion-accordion-group>
       </ion-col>
