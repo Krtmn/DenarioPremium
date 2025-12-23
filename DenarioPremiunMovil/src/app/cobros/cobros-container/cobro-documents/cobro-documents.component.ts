@@ -1849,7 +1849,6 @@ export class CobrosDocumentComponent implements OnInit {
       if (!existing) return { ...ps };
       return {
         ...ps,
-        // preserve edited fields from temp, fallback to master values
         nuCollectDiscount: existing.nuCollectDiscount ?? ps.nuCollectDiscount,
         naCollectDiscount: existing.naCollectDiscount ?? ps.naCollectDiscount,
         requireInput: ps.requireInput
@@ -1908,7 +1907,11 @@ export class CobrosDocumentComponent implements OnInit {
   clearTempSelection() {
     this.collectService.tempSelectedCollectDiscounts = [];
     let index = this.collectService.documentSaleOpen.positionCollecDetails;
-    this.collectService.collection.collectionDetails[index].discountComment = this.discountComment;
+
+    if (Number.isInteger(index) && index >= 0 && index < (this.collectService.collection.collectionDetails?.length ?? 0)) {
+      this.collectService.collection.collectionDetails[index].discountComment = this.discountComment;
+    }
+
     this.validate();
     this.disableDiscountCheckboxes = false;
     this.collectService.totalCollectDiscountsSelected = 0;
@@ -1990,11 +1993,6 @@ export class CobrosDocumentComponent implements OnInit {
         this.disabledSaveButton = true;
 
       this.collectService.totalCollectDiscountsView = this.formatNumber(discountAmount);
-      // Actualizar documentSaleOpen creando un nuevo objeto (no mutamos referencias compartidas)
-      /* this.collectService.documentSaleOpen = {
-        ...this.collectService.documentSaleOpen,
-        nuBalance: newBalance
-      }; */
 
       // Romper referencias clonando las arrays antes de modificar entries para evitar afectar documentSalesView
       const clonedDocumentSales = JSON.parse(JSON.stringify(this.collectService.documentSales || []));

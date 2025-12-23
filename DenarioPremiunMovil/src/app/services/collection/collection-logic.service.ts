@@ -1,3 +1,4 @@
+import { Position } from '@capacitor/geolocation';
 import { Injectable, Injector, inject } from '@angular/core';
 import { Subject } from 'rxjs';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite/ngx';
@@ -1735,7 +1736,27 @@ export class CollectionService {
     this.documentSaleOpen = { ...original };
     this.documentSales[index] = { ...original };
     /*  if (this.collection.stDelivery == DELIVERY_STATUS_SAVED) { */
-    const positionCollecDetails = this.documentSaleOpen.positionCollecDetails;
+    let collectioDetail: any;
+    let position = 0;
+
+    if (this.documentSaleOpen.positionCollecDetails === undefined || this.documentSaleOpen.positionCollecDetails === null) {
+      const idx = Array.isArray(this.collection?.collectionDetails)
+        ? this.collection.collectionDetails.findIndex(d => d && d.coDocument === this.documentSaleOpen.coDocument)
+        : -1;
+      if (idx !== -1) {
+        position = idx;
+        collectioDetail = this.collection.collectionDetails[idx];
+      } else {
+        // fallback: keep position 0 if not found
+        position = 0;
+        collectioDetail = undefined;
+      }
+    } else {
+      position = this.documentSaleOpen.positionCollecDetails;
+      collectioDetail = this.collection.collectionDetails[position];
+    }
+
+    const positionCollecDetails = position;
     const nuAmountBase = this.collection.collectionDetails[positionCollecDetails].nuBalanceDoc,
       nuAmountDiscount = this.collection.collectionDetails[positionCollecDetails].nuAmountDiscount,
       nuAmountPaid = this.collection.collectionDetails[positionCollecDetails].nuAmountPaid,
