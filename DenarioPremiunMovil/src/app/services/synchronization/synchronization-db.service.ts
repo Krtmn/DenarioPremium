@@ -675,16 +675,16 @@ export class SynchronizationDBService {
     let insertStatement = "INSERT OR REPLACE INTO products(" +
       'id_product,co_product,na_product,co_primary_unit,co_product_structure,' +
       'id_product_structure,tx_dimension,tx_packing,points,nu_priority,' +
-      'featured_product,tx_description, co_enterprise, id_enterprise' +
+      'featured_product,tx_description, co_enterprise, id_enterprise, nu_tax' +
       ') ' +
-      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
       statements.push([insertStatement, [obj.idProduct, obj.coProduct, obj.naProduct,
       obj.coPrimaryUnit, obj.coProductStructure, obj.idProductStructure, obj.txDimension,
       obj.txPacking, obj.points, obj.nuPriority, obj.featuredProduct,
-      obj.txDescription, obj.coEnterprise, obj.idEnterprise]]);
+      obj.txDescription, obj.coEnterprise, obj.idEnterprise, obj.nuTax]]);
     }
 
     return this.database.sqlBatch(statements).then(res => {

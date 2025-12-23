@@ -45,5 +45,6 @@ export class ProductDetail {
       public stock: number,
       public coEnterprise: string,
       public idEnterprise: number,
+      public nuTax: number = 0,
   ) { }
 }

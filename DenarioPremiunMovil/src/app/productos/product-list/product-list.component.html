@@ -21,6 +21,11 @@
             <p *ngIf="showConversionInfo && product.priceOpposite" class="espacioentrelineas">
               {{this.productTags.get('PROD_PRICE_PROD')}}:
               {{ formatNumber(product.priceOpposite) }} {{product.coCurrencyOpposite }} </p>
+              @if(this.productService.vatExemptProducts){
+            <p class="espacioentrelineas">
+             {{this.productTags.get('PROD_IVA')}}:
+              {{ formatNumber(product.nuTax) }} % </p>
+            }
             <p class="espacioentrelineas" *ngIf="this.productService.showStock">
               {{this.productTags.get('PROD_STOCK_PROD')}}: {{ product.stock > 0 ?
               product.stock :

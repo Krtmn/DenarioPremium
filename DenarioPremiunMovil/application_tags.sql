@@ -496,6 +496,7 @@ INSERT INTO public.application_tags(
 	('ADD_PRODUCT', 'PROD', 'DEVOLUCIONES', 'ESP', 'Agregar Producto'),
 	('ADD_PRODUCT', 'PROD', 'DEVOLUCIONES', 'ENG', 'Add Product'),
 	('PROD_VOLVER', 'PROD', 'PRODUCTOS', 'ESP', 'Volver'),
+	('PROD_IVA', 'PROD', 'PRODUCTOS', 'ESP', 'IVA'),
 	('PROD_VOLVER', 'PROD', 'PRODUCTOS', 'ENG', 'Back');
 
 -- DEVOLUCIONES

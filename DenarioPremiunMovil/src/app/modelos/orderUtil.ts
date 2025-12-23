@@ -53,6 +53,7 @@ export class OrderUtil {
       obj['quPoints'],
       obj['idList'],
       obj['totalEnUnidades'],
+      obj['nuTax'],
     );
   }
 
@@ -105,7 +106,8 @@ export class OrderUtil {
   public quPoints: number,
   public idList : number,
   //el total de productos en unidades. ej 1 docena + 1 unidad => totalunit = 13
-  public totalEnUnidades: number, 
+  public totalEnUnidades: number,
+  public nuTax: number, 
 
   ) { }
 }

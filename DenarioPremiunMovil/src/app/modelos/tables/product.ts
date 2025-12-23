@@ -16,6 +16,7 @@ export class Product {
             obj['txDescription'],
             obj['coEnterprise'],
             obj['idEnterprise'],
+            obj['nuTax'],
           
         );
     }
@@ -35,6 +36,7 @@ export class Product {
         public txDescription: string,
         public coEnterprise: string,
         public idEnterprise: number,
+        public nuTax: number,
         
     ) { }
 }

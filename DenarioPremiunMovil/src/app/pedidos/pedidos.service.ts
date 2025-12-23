@@ -207,6 +207,7 @@ export class PedidosService {
   public signatureOrder!: boolean;
   public disableDaDispatch!: boolean;
   public currencyModuleEnabled!: boolean;
+  public vatExemptProducts!: boolean;
   public userCanChangePriceListProduct!: boolean;
   public disableCurrency: boolean = true;
 
@@ -363,6 +364,7 @@ export class PedidosService {
     this.signatureOrder = this.config.get("signatureOrder").toLowerCase() === "true";
     this.disableDaDispatch = this.config.get("disableDaDispatch").toLowerCase() === "true";
     this.currencyModuleEnabled = this.config.get("currencyModule").toLowerCase() === "true";
+    this.vatExemptProducts = this.config.get("vatExemptProducts").toLowerCase() === "true";
     //string
     this.codeTotalProductUnit = this.config.get("codeTotalProductUnit");
     this.nameProductLine = this.config.get("nameProductLine");
@@ -389,6 +391,12 @@ export class PedidosService {
     } else {
       //si el usuario no puede cambiar la lista de precios, tampoco podra cambiarla por producto
       this.userCanChangePriceListProduct = false;
+    }
+
+    if(this.vatExemptProducts){
+      //si estan mandando el iva por productos, no tiene sentido que el usuario pueda cambiarlo
+      //posiblemente en el futuro se quite el selector de iva (?).
+      this.userCanSelectIVA = false;
     }
 
   }
@@ -668,6 +676,7 @@ export class PedidosService {
           "subtotal": 0,
           "subtotalConv": 0,
           "totalEnUnidades": 0,
+          "nuTax": item.nuTax
         }
         orderUtils.push(ou);
 
@@ -837,6 +846,9 @@ export class PedidosService {
       //IVA
       iva = 0;
       ivaItem = 0;
+      if(this.vatExemptProducts && item.nuTax!= null){
+        item.iva = item.nuTax;
+      }
       if (item.iva != null) {
         iva = item.iva;
         ivaItem = curItem * (iva / 100);
@@ -1175,6 +1187,7 @@ export class PedidosService {
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: prod.id_product_structure,
+            nuTax: prod.nu_tax
           });
         }
         return this.productListToOrderUtil(productList);
@@ -1208,6 +1221,7 @@ export class PedidosService {
             typeStocks: undefined,
             productUnitList: undefined,
             idProductStructure: prod.id_product_structure,
+            nuTax: prod.nu_tax
           });
         }
         return this.productListToOrderUtil(productList);
