@@ -567,24 +567,44 @@ export class PedidosService {
           continue;
         };
         var warehouses: Warehouse[] = [];
-        var stock = stockList[0];
-        if (this.validateWarehouses) {          
-          for (let i = 0; i < stockList.length; i++) {
-            const item = stockList[i];
-            if (item.quStock > 0) {
-              stock = item;
-              break;
+        var stock = stockList.filter(s => s.idWarehouse == this.cliente.idWarehouse)[0];
+        if (stock == null || stock == undefined) {
+          stock = stockList[0];
+        }
+        var warehouseClient: Warehouse = {} as Warehouse;
+        if (this.validateWarehouses) {
+          if(stock.quStock == 0){
+            //si wh no tiene stock, buscamos otro wh con stock          
+            for (let i = 0; i < stockList.length; i++) {
+              const item = stockList[i];
+              if (item.quStock > 0) {
+                stock = item;
+                break;
+              }
             }
           }
           if (stock.quStock == 0) {
+            //ninguno tiene stock
             console.log('stock tiene 0 unidades');
             //continue;
           }
           warehouses = this.listaWarehouse.filter(w => w.idWarehouse == stock.idWarehouse);
+
           if (warehouses.length < 1) {
             console.log('stock tiene warehouse invalido');
             continue;
           };
+
+          warehouseClient = warehouses.filter(w => w.idWarehouse == stock.idWarehouse)[0];
+          if (warehouseClient == null || warehouseClient == undefined) {
+            //esto implica que el warehouse del stock no esta en la lista de warehouses. no deberia ocurrir nunca.
+            console.log('producto  ' + item.naProduct + ' no tiene warehouse');
+          }
+        }else{
+          //no se validan almacenes, ponemos valores que no exploten el WS
+          warehouseClient.idWarehouse = 0;
+          warehouseClient.coWarehouse = '';
+          warehouseClient.naWarehouse = '';
         }
         let quMultiple = 1;
         let quMinimum = 1;
@@ -651,10 +671,10 @@ export class PedidosService {
           "iva": this.ivaList.length > 0 ? this.ivaList[0].priceIva : 0,
           "ivaProducto": 0,
           "taxedNuPrice": 0,
-          "idWarehouse": this.validateWarehouses ? warehouses[0].idWarehouse : 0,
-          "prevWarehouse": this.validateWarehouses ? warehouses[0].idWarehouse : 0,
-          "coWarehouse": this.validateWarehouses ? warehouses[0].coWarehouse : '',
-          "naWarehouse": this.validateWarehouses ? warehouses[0].naWarehouse : '',
+          "idWarehouse": warehouseClient.idWarehouse,
+          "prevWarehouse": warehouseClient.idWarehouse,
+          "coWarehouse": warehouseClient.coWarehouse,
+          "naWarehouse": warehouseClient.naWarehouse,
           "discountList": discountList,
           "imagenProduct": imagenProduct,
           "stepFactor": 0,
