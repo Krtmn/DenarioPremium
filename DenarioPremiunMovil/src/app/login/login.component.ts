@@ -66,6 +66,16 @@ export class LoginComponent implements OnInit {
     // preferir la versión real del paquete si está disponible, si no usar fallback
     this.versionApp = "6.5.12";
 
+    if (localStorage.getItem("tokenExpired") === "true") {
+      localStorage.removeItem("tokenExpired");
+      localStorage.removeItem("token");
+      this.messageAlert = new MessageAlert(
+        "Denario Premium",
+        "Tu sesión expiró. Vuelve a iniciar sesión para continuar sincronizando."
+      );
+      this.messageService.alertModal(this.messageAlert);
+    }
+
     const storedVersionApp = localStorage.getItem("versionApp");
     // primer arranque: guardamos la versionApp actual
     if (!storedVersionApp) {
@@ -85,7 +95,7 @@ export class LoginComponent implements OnInit {
               localStorage.setItem("versionApp", this.versionApp);
               localStorage.setItem("connected", String(connected));
               localStorage.setItem("connectionType", String(connectionType));
-              
+
               this.initLogin();
             }).catch(err => {
               console.error('dropTables error', err);
@@ -118,7 +128,7 @@ export class LoginComponent implements OnInit {
 
     //subcripcion por si cambian el usuario
     this.subsChangeUser = this.loginLogic.changeUser.subscribe(async (data: Boolean) => {
-      //SI LE DAN A ACEPTAR, HAY QUE BORRAR LA BD, GUARDAR EN LOCALSTORAGE EL NUEVO LOGIN Y PASS, 
+      //SI LE DAN A ACEPTAR, HAY QUE BORRAR LA BD, GUARDAR EN LOCALSTORAGE EL NUEVO LOGIN Y PASS,
       //Y SINCRONIZAR CON LOS NUEVOS DATOS
       console.log(data);
       let f = this.loginForm;

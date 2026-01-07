@@ -55,6 +55,7 @@ export class AutoSendService implements OnInit {
   private orderService = inject(PedidosService);
 
   public rolTransportista = false;
+  private isProcessingPending = false;
 
   constructor(
     private dbService: SynchronizationDBService,
@@ -67,8 +68,6 @@ export class AutoSendService implements OnInit {
     private returnDatabaseService: ReturnDatabaseService
 
   ) {
-    //this.process();
-
     const userStr = localStorage.getItem("user");
     if (userStr) {
       try {
@@ -81,25 +80,11 @@ export class AutoSendService implements OnInit {
       }
     }
 
-    this.getPendingTransaction().then((result) => {
-      this.pendingTransaction = result;
-      if (this.pendingTransaction.length > 0) {
-        this.funcObsQueueCount = this.pendingTransaction.length;
-        /* this.process(this.pendingTransaction) */
-        this.initTransaction(this.pendingTransaction);
-      }
-    })
+    this.loadAndProcessPending();
   }
 
   ngOnInit(): void {
-    this.getPendingTransaction().then((result) => {
-      this.pendingTransaction = result;
-      if (this.pendingTransaction.length > 0) {
-        this.funcObsQueueCount = this.pendingTransaction.length;
-        /* this.process(this.pendingTransaction) */
-        this.initTransaction(this.pendingTransaction);
-      }
-    })
+    this.loadAndProcessPending();
   }
 
   public addFuncObs() {
@@ -131,6 +116,24 @@ export class AutoSendService implements OnInit {
       console.log(e);
       return pendingTransaction;
     })
+  }
+
+  private async loadAndProcessPending() {
+    if (this.isProcessingPending) return;
+    this.isProcessingPending = true;
+    try {
+      this.pendingTransaction = await this.getPendingTransaction();
+      if (this.pendingTransaction.length > 0) {
+        this.funcObsQueueCount = this.pendingTransaction.length;
+        this.initTransaction(this.pendingTransaction);
+      }
+    } finally {
+      this.isProcessingPending = false;
+    }
+  }
+
+  public async runPendingQueue() {
+    await this.loadAndProcessPending();
   }
 
   private process(transaction: PendingTransaction[]) {
