@@ -1,9 +1,11 @@
+import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, NgZone, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Network } from '@capacitor/network';
 import { Platform } from '@ionic/angular';
 import { firstValueFrom } from 'rxjs';
+import createTables from 'src/assets/database/createTables.json';
 
 import { AutoSendService } from '../autoSend/auto-send.service';
 import { ServicesService } from '../services.service';
@@ -12,34 +14,43 @@ import { ServicesService } from '../services.service';
 export class BackgroundSyncService {
   private started = false;
   private syncing = false;
-  private readonly intervalMs = 15 * 60 * 1000; // 15 minutes, aligns with WorkManager minimum
+  private readonly intervalMs = 20 * 1000; // 20 seconds for rapid polling during dev
   private timerId?: ReturnType<typeof setInterval>;
   // Tablas a sincronizar en segundo plano (IDs de tableKeyMap en synchronization.component)
-  private readonly backgroundTableIds = [64, 65, 66, 25];
+  private readonly backgroundTableIds = [6];
+
+  private sqlTableMap: Record<string, { table: string; id: string; idName: string }> = {};
+  private tableKeyMap: Record<number, keyof typeof this.insertConfig> = {
+    6: 'document_sales',
+  };
 
   private autoSend = inject(AutoSendService);
   private services = inject(ServicesService);
+  private synchronizationServices = inject(SynchronizationDBService)
 
   constructor(
     private http: HttpClient,
     private router: Router,
     private platform: Platform,
     private zone: NgZone
-  ) {}
+  ) { }
 
   async start() {
     if (this.started) return;
     this.started = true;
-
+    console.log('[BackgroundSync] start() called');
     await this.platform.ready();
+    console.log('[BackgroundSync] platform ready');
 
     Network.addListener('networkStatusChange', status => {
+      console.log('[BackgroundSync] networkStatusChange', status);
       if (status.connected) {
         this.trySync('network-recovered');
       }
     });
 
     this.timerId = setInterval(() => this.trySync('interval'), this.intervalMs);
+    console.log('[BackgroundSync] timer set', this.intervalMs, 'ms');
     this.trySync('startup');
   }
 
@@ -54,20 +65,22 @@ export class BackgroundSyncService {
   private async trySync(reason: string) {
     if (this.syncing) return;
     this.syncing = true;
+    console.log('[BackgroundSync] trySync', reason);
 
     try {
       const status = await Network.getStatus();
+      console.log('[BackgroundSync] network status', status);
       if (!status.connected) return;
 
       await this.autoSend.runPendingQueue();
 
-      const hasChanges = await this.checkServerDelta();
-      if (hasChanges) {
-        const tablesParam = this.backgroundTableIds.length ? `?tables=${this.backgroundTableIds.join(',')}` : '';
-        this.zone.run(() => {
-          this.router.navigateByUrl(`/synchronization/sincronizar${tablesParam}`).catch(() => {});
-        });
-      }
+      /*   const hasChanges = await this.checkServerDelta();
+        console.log('[BackgroundSync] checkServerDelta ->', hasChanges);
+        if (hasChanges) {
+          await this.syncInBackground();
+        } */
+      await this.syncInBackground();
+
     } catch (error: any) {
       if (error?.status === 401) {
         localStorage.setItem('tokenExpired', 'true');
@@ -84,7 +97,7 @@ export class BackgroundSyncService {
     if (!idUser) return false;
 
     const lastSync = localStorage.getItem('lastUpdate') || '2000-01-01 00:00:00.000';
-    const url = `${this.services.getURLService()}syncservice/sync-check`;
+    const url = `${this.services.getURLService()}syncservice/getsync`;
     const payload: Record<string, any> = {
       userId: Number(idUser),
       lastSyncDate: lastSync
@@ -103,4 +116,84 @@ export class BackgroundSyncService {
 
     return Boolean(response?.changes ?? response?.hasChanges ?? response?.syncRequired);
   }
+
+  private ensureSqlTableMap() {
+    if (Object.keys(this.sqlTableMap).length) return;
+    for (const table of createTables as any[]) {
+      this.sqlTableMap[String(table.name)] = {
+        table: table.name,
+        id: String(table.id),
+        idName: table.idName
+      };
+    }
+  }
+
+  private async syncInBackground() {
+    this.ensureSqlTableMap();
+    const versions = await this.synchronizationServices.getTablesVersion();
+    const lastUpdateById: Record<number, string> = {};
+    versions.forEach((row: any) => {
+      lastUpdateById[row.id_table] = row.last_update;
+    });
+
+    for (const tableId of this.backgroundTableIds) {
+      const key = this.tableKeyMap[tableId];
+      if (!key) {
+        console.warn('[BackgroundSync] tableId without key mapping', tableId);
+        continue;
+      }
+
+      const cfg = this.insertConfig[key];
+      if (!cfg) {
+        console.warn('[BackgroundSync] missing insert config for key', key);
+        continue;
+      }
+
+      const tableLastUpdate = lastUpdateById[tableId] ?? '2000-01-01 00:00:00.000';
+      let page = 0;
+      let morePages = true;
+
+      while (morePages) {
+        const tablaPayload: any = { [cfg.tableKey]: tableLastUpdate, page };
+        const result = await firstValueFrom(this.services.getSync(JSON.stringify(tablaPayload)));
+        const resTable: any = (result as any)[cfg.rowKey];
+        const sqlInfo = this.sqlTableMap[key as string];
+
+        if (!resTable) {
+          console.error(`[BackgroundSync] No data for key=${key} (tableId=${tableId})`);
+          break;
+        }
+
+        if (resTable.deletedRowsIds != null && sqlInfo) {
+          await this.synchronizationServices.deleteDataTable(resTable.deletedRowsIds, sqlInfo.table, sqlInfo.idName);
+        }
+
+        if (resTable.numberOfPages === 0) {
+          await this.synchronizationServices.updateVersionsTables(resTable.updateTime, Number(resTable.id));
+          morePages = false;
+          break;
+        }
+
+        if (resTable.row != null) {
+          await cfg.batchFn(resTable.row);
+          page++;
+
+          if (page >= resTable.numberOfPages) {
+            await this.synchronizationServices.updateVersionsTables(resTable.updateTime, Number(resTable.id));
+            morePages = false;
+          }
+        } else {
+          morePages = false;
+        }
+      }
+    }
+  }
+
+  private insertConfig = {
+    document_sales: {
+      batchFn: this.synchronizationServices.insertDocumentSaleBatch.bind(this.synchronizationServices),
+      rowKey: 'documentSaleTable',
+      tableKey: 'documentSaleTableLastUpdate'
+    },
+  };
 }
