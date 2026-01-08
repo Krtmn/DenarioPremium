@@ -9,7 +9,6 @@ import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { Enterprise } from './modelos/tables/enterprise';
 import { GlobalConfigService } from './services/globalConfig/global-config.service';
-import { BackgroundSyncService } from './services/background-sync/background-sync.service';
 
 @Component({
   selector: 'app-root',
@@ -22,7 +21,6 @@ export class AppComponent {
   public netWork!: any;
 
   public loginService = inject(LoginLogicService);
-  private backgroundSync = inject(BackgroundSyncService);
 
   constructor(
     private platform: Platform,
@@ -55,8 +53,6 @@ export class AppComponent {
         // Intencionalmente vacío
       });
     }
-
-    await this.backgroundSync.start();
 
     // Nota: si quieres permitir "back" en rutas concretas, revisa la sección "Alternativas"
   }
