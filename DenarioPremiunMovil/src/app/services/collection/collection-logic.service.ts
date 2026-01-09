@@ -2546,7 +2546,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         this.ensureNumber(doc, 'nuAmountTotal');
         this.ensureNumber(doc, 'nuBalance');
 
-        const rateForDoc = (doc.nuValueLocal ?? this.collection.nuValueLocal) ?? 0;
+        //const rateForDoc = (doc.nuValueLocal ?? this.collection.nuValueLocal) ?? 0;
+        const rateForDoc = this.collection.nuValueLocal;
         const coTypeDoc = (doc.coDocumentSaleType ?? '').toString();
 
         // collection hard, doc local -> convertir local -> hard

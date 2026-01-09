@@ -1200,7 +1200,7 @@ export class CobrosDocumentComponent implements OnInit {
     }
 
     // Si el monto pagado es mayor al saldo
-    if (Math.abs(cs.amountPaid) > doc.nuBalance) {
+    if (Math.abs(cs.amountPaid) > Math.abs(doc.nuBalance)) {
       cs.mensaje = cs.isPaymentPartial
         ? cs.collectionTags.get('COB_MSJ_PARTIALPAY_MAYOR_DOCAMOUNT')!
         : cs.collectionTags.get('COB_MSJ_PAY_MAYOR_DOCAMOUNT')!;
