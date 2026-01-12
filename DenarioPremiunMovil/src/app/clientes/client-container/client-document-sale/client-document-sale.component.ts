@@ -22,4 +22,33 @@ export class ClientDocumentSaleComponent implements OnInit {
     return this.currency.formatNumber(num);
   }
 
+    getDaDueDate(daDueDate: string) {
+    let dateDoc = new Date(daDueDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$2/$1/$3")).getTime();
+    return Math.round(((new Date()).getTime() - dateDoc) / 86400000);
+  }
+
+    convertirMonto(monto: number, rate: number, currency: string) {
+
+    if (currency ==  this.currency.localCurrency.coCurrency) {
+      return this.currency.formatNumber(this.cleanFormattedNumber(this.currency.formatNumber(monto / rate)));
+    } else {
+      return this.currency.formatNumber(this.cleanFormattedNumber(this.currency.formatNumber(monto * rate)));
+    }
+  }
+
+  public cleanFormattedNumber(str: string): number {
+    // Elimina espacios
+    str = str.trim();
+    // Elimina separador de miles (puntos)
+    str = str.replace(/\./g, '');
+    // Cambia la coma decimal por punto
+    str = str.replace(/,/g, '.');
+    // Convierte a número
+    return Number(str);
+  }
+
+    oppositeCoCurrency(coCurrency: string) {
+    return this.currency.oppositeCoCurrency(coCurrency);
+  }
+
 }

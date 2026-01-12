@@ -175,43 +175,54 @@
                         </a> -->
           </ion-col>
           }
+          <!-- Tipo -->
           <ion-col size="2" class="ion-text-center col"
             [ngStyle]="{color: documento.colorRow }">{{documento.coDocumentSaleType}}
           </ion-col>
+          <!-- Numero Documento -->
           <ion-col size="4" class="ion-text-center col"
             [ngStyle]="{color: documento.colorRow }">{{documento.coDocument}}
           </ion-col>
+          <!-- Moneda Documento -->
           <ion-col size="4" class="ion-text-center col"
             [ngStyle]="{color: documento.colorRow }">{{documento.coCurrency}}
           </ion-col>
+          <!-- Dias Vencimiento -->
           <ion-col size="4" class="ion-text-center col" [ngStyle]="{color: documento.colorRow }">
             {{getDaDueDate(documento.daDueDate)}}
           </ion-col>
+          <!-- Tasa -->
           <ion-col size="4" class="ion-text-center col" [ngStyle]="{color: documento.colorRow }"
             *ngIf="this.clientLogic.showConversion">
             {{formatNumber(this.currencyService.localValue)}} {{localCurrency}}
           </ion-col>
+          <!-- Monto -->
           <ion-col size="4" class="ion-text-center col" [ngStyle]="{color: documento.colorRow }">
             {{formatNumber(documento.nuAmountTotal)}} {{documento.coCurrency}}
           </ion-col>
+          <!-- Monto Conversion -->
           <ion-col size="4" class="ion-text-center col" [ngStyle]="{color: documento.colorRow }"
             *ngIf="this.clientLogic.showConversion">
             {{this.convertirMonto(documento.nuAmountTotal, this.currencyService.localValue,
             documento.coCurrency)}}
             {{oppositeCoCurrency(documento.coCurrency)}}
           </ion-col>
+          <!-- Saldo -->
           <ion-col size="4" class="ion-text-center col" [ngStyle]="{color: documento.colorRow }">
             {{formatNumber(documento.nuBalance)}} {{documento.coCurrency}}
           </ion-col>
+          <!-- Saldo Conversion -->
           <ion-col size="4" class="ion-text-center col " [ngStyle]="{color: documento.colorRow }"
             *ngIf="this.clientLogic.showConversion">
             {{this.convertirMonto(documento.nuBalance, this.currencyService.localValue,
             documento.coCurrency)}}
             {{oppositeCoCurrency(documento.coCurrency)}}
           </ion-col>
+          <!-- Fecha Documento -->
           <ion-col size="4" class="ion-text-center col" [ngStyle]="{color: documento.colorRow }">
             {{documento.daDocument}}
           </ion-col>
+          <!-- Fecha Vencimiento -->
           <ion-col size="4" class="ion-text-center col borderInferiorDerecho" [ngStyle]="{color: documento.colorRow }">
             {{documento.daDueDate}}
           </ion-col>
