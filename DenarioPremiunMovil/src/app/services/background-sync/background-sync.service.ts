@@ -17,11 +17,13 @@ export class BackgroundSyncService {
   private readonly intervalMs = 20 * 1000; // 20 seconds for rapid polling during dev
   private timerId?: ReturnType<typeof setInterval>;
   // Tablas a sincronizar en segundo plano (IDs de tableKeyMap en synchronization.component)
-  private readonly backgroundTableIds = [6];
-
+  private readonly backgroundTableIds = [6, 13, 23, 25]; //document_sales, price_lists, lists, stocks
   private sqlTableMap: Record<string, { table: string; id: string; idName: string }> = {};
-  private tableKeyMap: Record<number, keyof typeof this.insertConfig> = {
+  private tableKeyMap: Record<number, string> = {
     6: 'document_sales',
+    13: 'price_lists',
+    23: 'lists',
+    25: 'stocks',
   };
 
   private autoSend = inject(AutoSendService);
@@ -189,11 +191,38 @@ export class BackgroundSyncService {
     }
   }
 
-  private insertConfig = {
+  private readonly insertConfig: Record<string, {
+    batchFn: (arr: any[]) => Promise<void>;
+    rowKey: string;
+    tableKey: string;
+    pageKey?: string;
+    numberOfPagesKey?: string;
+  }> = {
     document_sales: {
       batchFn: this.synchronizationServices.insertDocumentSaleBatch.bind(this.synchronizationServices),
       rowKey: 'documentSaleTable',
       tableKey: 'documentSaleTableLastUpdate'
     },
+    price_lists: {
+      batchFn: this.synchronizationServices.insertPriceListBatch.bind(this.synchronizationServices),
+      rowKey: 'priceListTable',
+      tableKey: 'priceListTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
+    lists: {
+      batchFn: this.synchronizationServices.insertListBatch.bind(this.synchronizationServices),
+      rowKey: 'listTable',
+      tableKey: 'listTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
+    stocks: {
+      batchFn: this.synchronizationServices.insertStockBatch.bind(this.synchronizationServices),
+      rowKey: 'stockTable',
+      tableKey: 'stockTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    }
   };
 }
