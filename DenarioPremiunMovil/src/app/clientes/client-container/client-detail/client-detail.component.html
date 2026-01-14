@@ -47,15 +47,15 @@
         </ion-row>
         <ion-row *ngIf="!this.clientLogic.esTransportista">
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
-            {{client.coCurrency}}:</ion-col>
+            {{localCurrency}}:</ion-col>
           <ion-col
-            [ngStyle]="{color: client.saldo1 > 0 ? 'Red' : 'Blue' }">{{formatNumber(this.saldoCliente)}}</ion-col>
+            [ngStyle]="{color: client.saldo1 > 0 ? 'Red' : 'Blue' }">{{formatNumber(this.saldoLocal)}}</ion-col>
         </ion-row>
         <ion-row *ngIf="this.clientLogic.showConversion && !this.clientLogic.esTransportista">
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
-            {{oppositeCoCurrency(client.coCurrency)}}:</ion-col>
+            {{hardCurrency}}:</ion-col>
           <ion-col
-            [ngStyle]="{color: client.saldo1 > 0 ? 'Red' : 'Blue' }">{{formatNumber(this.saldoOpuesto)}}</ion-col>
+            [ngStyle]="{color: client.saldo1 > 0 ? 'Red' : 'Blue' }">{{formatNumber(this.saldoFuerte)}}</ion-col>
         </ion-row>
         <ion-row *ngIf="!this.clientLogic.esTransportista">
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO")}}
