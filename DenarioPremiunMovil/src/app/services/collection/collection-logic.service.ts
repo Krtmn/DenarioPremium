@@ -199,6 +199,7 @@ export class CollectionService {
   public messageSended: boolean = false;
   public enableDifferenceCodes: boolean = false;
   public userCanSelectCollectDiscount: boolean = false;
+  public faltaRetencion: boolean = false;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;

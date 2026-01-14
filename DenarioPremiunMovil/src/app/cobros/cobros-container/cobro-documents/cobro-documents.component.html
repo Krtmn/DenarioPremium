@@ -271,6 +271,24 @@
                   </ion-col>
                   <!-- SALDO CONVERSION -->
 
+                  <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                    <ion-grid class="ion-margin-top">
+                      <ion-row>
+                        <ion-col class="padding0" size="4" size-xs="4" size-sm="6" size-md="6">
+                          <ion-label>Falta Retención:
+                          </ion-label>
+                        </ion-col>
+                        <ion-col class="padding0" size="6" size-xs="8" size-sm="6" size-md="6">
+                          <!--   <ion-item> -->
+                          <ion-toggle [enableOnOffLabels]="true" checked="{{this.collectService.faltaRetencion}}"
+                            (ionChange)="faltaRetencion($event)">
+                          </ion-toggle>
+                          <!-- </ion-item> -->
+                        </ion-col>
+                      </ion-row>
+                    </ion-grid>
+                  </ion-col>
+
                   <!-- NRO COMPROBANTE RET -->
                   <!-- <div *ngIf="this.collectService.retencion"> -->
                   <ion-col size="12" size-xs="12" size-sm="12" size-md="12"

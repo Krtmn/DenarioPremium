@@ -978,6 +978,14 @@ export class CobrosDocumentComponent implements OnInit {
     return Promise.resolve(true);
   }
 
+  faltaRetencion(event: any) {
+    this.collectService.faltaRetencion = event.target.checked;
+    if (event.target.checked) {
+      this.collectService.mensaje = "NO SE QUE PONER ACA";
+      this.alertMessageOpen = true;
+    }
+  }
+
   partialPay(event: any) {
     this.collectService.isChangePaymentPartial = true;
     this.collectService.isPaymentPartial = event.target.checked;
