@@ -70,16 +70,18 @@ export class ClienteComponent implements OnInit {
         //porque vergas saldo1 y saldo2 significan vainas distintas aqui y en la lista nunca sabré.
         // Asumo que estaban rascaos cuando lo escribieron...
         this.saldoLocal = 0, this.saldoFuerte = 0;
-
-       // if (this.client.coCurrency == this.clientLogic.localCurrency.coCurrency) {
           this.saldoLocal = this.client.saldo1 + this.currencyService.toLocalCurrency(this.client.saldo2);
           this.saldoFuerte = this.currencyService.toHardCurrency(this.saldoLocal);
+        if (this.client.coCurrency == this.clientLogic.localCurrency.coCurrency) {
+          //saldoCliente es ahora saldoLocal
+          //saldoOpuesto es ahora saldoFuerte
+          //como es fijo, se hace antes del if.
           this.nuCreditLimitConversion = this.formatNumber(this.currencyService.toHardCurrency(this.client.nuCreditLimit));
-        /*} else {
-          this.saldoCliente = this.client.saldo1 + this.currencyService.toHardCurrency(this.client.saldo2);
-          this.saldoOpuesto = this.currencyService.toLocalCurrency(this.saldoCliente);
+        } else {
+          //this.saldoCliente = this.client.saldo1 + this.currencyService.toHardCurrency(this.client.saldo2);
+          //this.saldoOpuesto = this.currencyService.toLocalCurrency(this.saldoCliente);
           this.nuCreditLimitConversion = this.formatNumber(this.currencyService.toLocalCurrency(this.client.nuCreditLimit));
-        }*/
+        }
         //this.client.saldo1 = saldoCliente;
         //this.client.saldo2 = saldoOpuesto;
         //saldoCliente = saldoOpuesto = 0;
