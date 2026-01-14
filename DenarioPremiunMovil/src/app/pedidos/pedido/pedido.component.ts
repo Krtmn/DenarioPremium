@@ -1071,6 +1071,7 @@ export class PedidoComponent implements OnInit {
 
       //OrderType
       if (this.orderServ.orderTypeByEnterprise) {
+        this.tipoOrden = {} as OrderType;
         this.selectOrderTypebyEnterprise()
       }
 
@@ -1080,15 +1081,17 @@ export class PedidoComponent implements OnInit {
 
   selectOrderTypebyEnterprise() {
 
-    if (this.tipoOrden == undefined) {
+    if (this.tipoOrden == undefined || this.tipoOrden.idOrderType == null) {
       this.tipoOrden = this.listaOrderTypes[0];
     }
 
     this.tipoOrdenAnterior = this.tipoOrden;
     this.orderServ.tipoOrden = this.tipoOrden;
 
+  }
 
-
+  orderTypeCompare(a: OrderType, b: OrderType) {
+    return a && b ? a.idOrderType === b.idOrderType : a === b;
   }
 
   listCompare(a: List, b: List) {

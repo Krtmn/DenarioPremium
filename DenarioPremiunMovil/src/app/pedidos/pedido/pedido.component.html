@@ -155,7 +155,7 @@
                                     <div class="listado-tps-selector ion-text-center" id="inputOrderType">
                                         <ion-select (ionChange)="onOrderTypeChange()" [(ngModel)]="tipoOrden"
                                             [disabled]="disableOrderTypeSelector()" interface="popover"
-                                            labelPlacement="stacked">
+                                            labelPlacement="stacked" compareWith="orderTypeCompare">
                                             <ion-select-option *ngFor="let type of listaOrderTypes" [value]="type">
                                                 {{ type.naOrderType }}
                                             </ion-select-option>
