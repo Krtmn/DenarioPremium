@@ -255,13 +255,13 @@ export class ClientLogicService {
 
       // Normalizar moneda del cliente
       if (this.localCurrencyDefault) {
-        if (clientResult.coCurrency !== this.localCurrency.coCurrency) {
+        if (clientResult.idCurrency !== this.localCurrency.idCurrency) {
           clientResult.saldo1 = this.currencyService.toOppositeCurrency(clientResult.coCurrency, clientResult.saldo1);
           clientResult.nuCreditLimit = this.currencyService.toOppositeCurrency(clientResult.coCurrency, clientResult.nuCreditLimit);
           clientResult.coCurrency = this.localCurrency.coCurrency;
         }
       } else {
-        if (clientResult.coCurrency !== this.hardCurrency.coCurrency) {
+        if (clientResult.idCurrency !== this.hardCurrency.idCurrency) {
           clientResult.coCurrency = this.hardCurrency.coCurrency;
           clientResult.saldo1 = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, clientResult.saldo1);
           clientResult.nuCreditLimit = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, clientResult.nuCreditLimit);
@@ -270,6 +270,10 @@ export class ClientLogicService {
 
       clientResult.editable = clientResult.editable == null ? false : (clientResult.editable.toString().toLowerCase() === 'true');
 
+      if(clientResult.coCurrency == null || clientResult.coCurrency.trim() === "") {
+        clientResult.coCurrency = this.currencyService.getCurrencyById(clientResult.idCurrency).coCurrency;
+      }
+      
       this.datos.client = clientResult;
 
       // 2) Obtener documentos de venta del cliente

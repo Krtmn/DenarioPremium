@@ -72,7 +72,7 @@ export class ClienteComponent implements OnInit {
         this.saldoLocal = 0, this.saldoFuerte = 0;
           this.saldoLocal = this.client.saldo1 + this.currencyService.toLocalCurrency(this.client.saldo2);
           this.saldoFuerte = this.currencyService.toHardCurrency(this.saldoLocal);
-        if (this.client.coCurrency == this.clientLogic.localCurrency.coCurrency) {
+        if (this.client.coCurrency === this.clientLogic.localCurrency.coCurrency) {
           //saldoCliente es ahora saldoLocal
           //saldoOpuesto es ahora saldoFuerte
           //como es fijo, se hace antes del if.
