@@ -301,7 +301,7 @@ export class InventarioTypeStocksComponent implements OnInit {
                this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits[i].quStock = Number(cantidad.target.value);
              }
            } */
-          this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits[indexType].quStock = Number(cantidad.target.value);
+          this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits[length].quStock = Number(cantidad.target.value);
         }
         //this.setExistCantidad(cantidad.target.value, indexProduct, indexType, type);
       }

@@ -49,23 +49,25 @@ export class InventarioActividadesComponent implements OnInit {
       clienStockTotal.totalUnits = 0;
       clienStockTotal.totalExh = 0;
       clienStockTotal.totalDep = 0;
-      for (var i = 0; i < this.inventariosLogicService.newClientStock.clientStockDetails[value].clientStockDetailUnits.length; i++) {
-        clienStockTotal.idEnterprise = this.inventariosLogicService.newClientStock.clientStockDetails[value].idEnterprise;
-        clienStockTotal.coEnterprise = this.inventariosLogicService.newClientStock.clientStockDetails[value].coEnterprise;
-        clienStockTotal.idProduct = this.inventariosLogicService.newClientStock.clientStockDetails[value].idProduct;
-        clienStockTotal.coProduct = this.inventariosLogicService.newClientStock.clientStockDetails[value].coProduct;
-        clienStockTotal.naProduct = this.inventariosLogicService.newClientStock.clientStockDetails[value].naProduct;
-        clienStockTotal.naUnit = this.inventariosLogicService.newClientStock.clientStockDetails[value].clientStockDetailUnits[i].naUnit;
-        clienStockTotal.idUnit = this.inventariosLogicService.newClientStock.clientStockDetails[value].clientStockDetailUnits[i].idUnit;
-        clienStockTotal.coUnit = this.inventariosLogicService.newClientStock.clientStockDetails[value].clientStockDetailUnits[i].coUnit;
+      let clientStockDetail = this.inventariosLogicService.newClientStock.clientStockDetails[value];
+      for (var i = 0; i < clientStockDetail.clientStockDetailUnits.length; i++) {
+        let detailUnit = clientStockDetail.clientStockDetailUnits[i];
+        clienStockTotal.idEnterprise = clientStockDetail.idEnterprise;
+        clienStockTotal.coEnterprise = clientStockDetail.coEnterprise;
+        clienStockTotal.idProduct = clientStockDetail.idProduct;
+        clienStockTotal.coProduct = clientStockDetail.coProduct;
+        clienStockTotal.naProduct = clientStockDetail.naProduct;
+        
+        clienStockTotal.naUnit = detailUnit.naUnit;
+        clienStockTotal.idUnit = detailUnit.idUnit;
+        clienStockTotal.coUnit = detailUnit.coUnit;
 
-        clienStockTotal.totalUnits += this.inventariosLogicService.newClientStock.clientStockDetails[value].clientStockDetailUnits[i].quStock;
-        clienStockTotal.ubicacion = this.inventariosLogicService.newClientStock.clientStockDetails[value].clientStockDetailUnits[i].ubicacion;
-
+        clienStockTotal.totalUnits += detailUnit.quStock;
+        clienStockTotal.ubicacion = detailUnit.ubicacion;
         if (clienStockTotal.ubicacion == "exh")
-          clienStockTotal.totalExh += Number(this.inventariosLogicService.newClientStock.clientStockDetails[value].clientStockDetailUnits[i].quStock);
+          clienStockTotal.totalExh += Number(detailUnit.quStock);
         else
-          clienStockTotal.totalDep += Number(this.inventariosLogicService.newClientStock.clientStockDetails[value].clientStockDetailUnits[i].quStock);
+          clienStockTotal.totalDep += Number(detailUnit.quStock);
       }
       this.clientStocksTotal.push(clienStockTotal);
     });
