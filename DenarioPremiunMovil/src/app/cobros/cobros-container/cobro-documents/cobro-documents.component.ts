@@ -988,13 +988,15 @@ export class CobrosDocumentComponent implements OnInit {
     this.collectService.isChangePaymentPartial = true;
     this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].inPaymentPartial = event.target.checked;
 
-    /* if (event.target.checked) {
-      this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSJ_MISSING_RETENTION')!;
-      this.alertMessageOpen2 = true;
+    if (event.target.checked) {
+      this.disabledSaveButton = true;
+     /*  this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSJ_MISSING_RETENTION')!;
+      this.alertMessageOpen2 = true; */
     } else {
-      this.collectService.mensaje = "NO SE QUE PONER ACA";
-      this.alertMessageOpen = true;
-    } */
+     /*  this.collectService.mensaje = "NO SE QUE PONER ACA";
+      this.alertMessageOpen = true; */
+      this.disabledSaveButton = false;
+    }
   }
 
   partialPay(event: any) {

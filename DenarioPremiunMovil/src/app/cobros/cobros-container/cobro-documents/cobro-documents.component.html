@@ -289,6 +289,17 @@
                     </ion-grid>
                   </ion-col>
 
+                  <!-- DIFERENCIA DEVOLUCION/FALTANTE -->
+                  <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                    <ion-input label="{{this.collectService.collectionTags.get('COB_DIF_DEVOLUCION_FALTANTE')}}"
+                      label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
+                      [value]="displayDiscount || formatFromCents(centsDiscount)" (keydown)="onDiscountKeyDown($event)"
+                      (focus)="onDiscountFocus()" (blur)="onDiscountBlur()" (paste)="onDiscountPaste($event)"
+                      (input)="onDiscountInput($event)">
+                    </ion-input>
+                  </ion-col>
+                  <!-- DIFERENCIA DEVOLUCION/FALTANTE -->
+
                   <!-- NRO COMPROBANTE RET -->
                   <!-- <div *ngIf="this.collectService.retencion"> -->
                   <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
@@ -297,7 +308,7 @@
                       label-placement="floating" fill="outline" color="primary" type="number"
                       value="{{this.collectService.documentSaleOpen.nuVaucherRetention}}"
                       [(ngModel)]="this.collectService.documentSaleOpen.nuVaucherRetention"
-                      (ionChange)="validateNuVaucherRetention(true)">
+                      (ionChange)="validateNuVaucherRetention(true)" [disabled]="this.collectService.missingRetention">
                     </ion-input>
                   </ion-col>
                   <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
@@ -340,16 +351,7 @@
                   </ion-col>
                   <!-- FECHA COMP RET  -->
 
-                  <!-- DIFERENCIA DEVOLUCION/FALTANTE -->
-                  <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-                    <ion-input label="{{this.collectService.collectionTags.get('COB_DIF_DEVOLUCION_FALTANTE')}}"
-                      label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
-                      [value]="displayDiscount || formatFromCents(centsDiscount)" (keydown)="onDiscountKeyDown($event)"
-                      (focus)="onDiscountFocus()" (blur)="onDiscountBlur()" (paste)="onDiscountPaste($event)"
-                      (input)="onDiscountInput($event)">
-                    </ion-input>
-                  </ion-col>
-                  <!-- DIFERENCIA DEVOLUCION/FALTANTE -->
+
 
                   <!-- MONTO RET IVA-->
                   <ion-col *ngIf="this.collectService.retencion" size="12" size-xs="12" size-sm="12" size-md="12">

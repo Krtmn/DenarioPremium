@@ -1611,6 +1611,8 @@ export class CollectionService {
     else
       this.disabledSelectCollectMethodDisabled = false;
 
+    this.missingRetention = false;
+
 
     return collection = {
       idUser: Number(localStorage.getItem("idUser")),
@@ -3598,8 +3600,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "has_discount," +
       "discount_comment," +
       "nu_amount_collect_discount," +
-      "nu_collect_discount" +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "nu_collect_discount," +
+      "missing_retention" +
+      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     for (var i = 0; i < collectionDetail.length; i++) {
       statementsCollectionDetails.push([inserStatementCollectionDetail, [
@@ -3630,7 +3633,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         collectionDetail[i].hasDiscount,
         collectionDetail[i].discountComment,
         collectionDetail[i].nuAmountCollectDiscount,
-        collectionDetail[i].nuCollectDiscount
+        collectionDetail[i].nuCollectDiscount,
+        collectionDetail[i].missingRetention
       ]]);
     }
 
