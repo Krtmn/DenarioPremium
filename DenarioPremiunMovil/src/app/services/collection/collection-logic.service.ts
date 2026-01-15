@@ -199,7 +199,7 @@ export class CollectionService {
   public messageSended: boolean = false;
   public enableDifferenceCodes: boolean = false;
   public userCanSelectCollectDiscount: boolean = false;
-  public faltaRetencion: boolean = false;
+  public missingRetention: boolean = false;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;
@@ -3368,8 +3368,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     nu_amount_retention_islr_conversion,
     nu_amount_igtf,
     nu_amount_igtf_conversion,
-    da_voucher
-  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    da_voucher,
+    missing_retention
+  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 `;
 
     const insertCollectionPaymentSQL = `
@@ -3474,7 +3475,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             collectionDetail.nuAmountRetention2Conversion,
             collectionDetail.nuAmountIgtf,
             collectionDetail.nuAmountIgtfConversion,
-            collectionDetail.daVoucher
+            collectionDetail.daVoucher,
+            collectionDetail.missingRetention
           ]
         ]);
 
@@ -4088,6 +4090,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           discountComment: res.rows.item(i).discount_comment == "" ? null : res.rows.item(i).discount_comment,
           nuAmountCollectDiscount: res.rows.item(i).nu_amount_collect_discount,
           nuCollectDiscount: res.rows.item(i).nu_collect_discount,
+          missingRetention: res.rows.item(i).missing_retention == "true" ? true : false,
           collectionDetailDiscounts: [] as CollectionDetailDiscounts[],
         })
       }

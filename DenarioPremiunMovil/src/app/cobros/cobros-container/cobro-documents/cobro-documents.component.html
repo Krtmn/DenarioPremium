@@ -280,8 +280,8 @@
                         </ion-col>
                         <ion-col class="padding0" size="6" size-xs="8" size-sm="6" size-md="6">
                           <!--   <ion-item> -->
-                          <ion-toggle [enableOnOffLabels]="true" checked="{{this.collectService.faltaRetencion}}"
-                            (ionChange)="faltaRetencion($event)">
+                          <ion-toggle [enableOnOffLabels]="true" [checked]="this.collectService.missingRetention"
+                            (ionChange)="missingRetention($event)">
                           </ion-toggle>
                           <!-- </ion-item> -->
                         </ion-col>

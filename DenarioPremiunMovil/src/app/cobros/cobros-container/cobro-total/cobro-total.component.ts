@@ -109,6 +109,7 @@ export class CobroTotalComponent implements OnInit {
         discountComment: "",
         nuAmountCollectDiscount: 0,
         nuCollectDiscount: 0,
+        missingRetention: this.collectService.missingRetention,
       })
     }
     this.collectService.addRetention = false;

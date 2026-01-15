@@ -754,6 +754,7 @@ export class CobrosDocumentComponent implements OnInit {
       discountComment: "",
       nuAmountCollectDiscount: 0,
       nuCollectDiscount: 0,
+      missingRetention: false,
     })
     this.collectService.documentSales[id].positionCollecDetails = this.collectService.collection.collectionDetails.length - 1;
     this.collectService.documentSalesBackup[id].positionCollecDetails = this.collectService.collection.collectionDetails.length - 1;
@@ -978,12 +979,22 @@ export class CobrosDocumentComponent implements OnInit {
     return Promise.resolve(true);
   }
 
-  faltaRetencion(event: any) {
-    this.collectService.faltaRetencion = event.target.checked;
-    if (event.target.checked) {
+  missingRetention(event: any) {
+
+    this.collectService.missingRetention = event.target.checked;
+    this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails]!.missingRetention = event.target.checked;
+    this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails]!.inPaymentPartial = event.target.checked;
+    this.collectService.isPaymentPartial = event.target.checked;
+    this.collectService.isChangePaymentPartial = true;
+    this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].inPaymentPartial = event.target.checked;
+
+    /* if (event.target.checked) {
+      this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSJ_MISSING_RETENTION')!;
+      this.alertMessageOpen2 = true;
+    } else {
       this.collectService.mensaje = "NO SE QUE PONER ACA";
       this.alertMessageOpen = true;
-    }
+    } */
   }
 
   partialPay(event: any) {
