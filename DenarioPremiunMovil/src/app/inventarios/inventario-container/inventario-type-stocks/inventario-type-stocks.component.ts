@@ -149,7 +149,7 @@ export class InventarioTypeStocksComponent implements OnInit {
 
       }
     }
-    this.inventariosLogicService.checkImageWeightLimit();
+    this.inventariosLogicService.updateHeaderButtons();
   }
 
 
@@ -206,7 +206,7 @@ export class InventarioTypeStocksComponent implements OnInit {
       this.inventariosLogicService.onStockValidToSave(true);
 
     }
-    this.inventariosLogicService.checkImageWeightLimit();
+    this.inventariosLogicService.updateHeaderButtons();
   }
 
   addClientStocktMethod(typeStock: string, index: number, product: any) {
@@ -259,8 +259,15 @@ export class InventarioTypeStocksComponent implements OnInit {
       this.inventariosLogicService.onStockValidToSave(false);
       return;
     }
+    let length = 0
+        for (var i = 0; i < this.inventariosLogicService.typeStocks.length; i++) {
+          if (this.inventariosLogicService.typeStocks[i].idProduct == idP) {
+            length++;
+          }
+        }
+        length--;
     this.inventariosLogicService.typeStocks[indexType].validateLote = true;
-    this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits[indexType].nuBatch = lote.target.value;
+    this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits[length].nuBatch = lote.target.value;
 
     this.inventariosLogicService.onStockValidToSend(true);
     this.inventariosLogicService.onStockValidToSave(true);
@@ -301,7 +308,7 @@ export class InventarioTypeStocksComponent implements OnInit {
                this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits[i].quStock = Number(cantidad.target.value);
              }
            } */
-          this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits[indexType].quStock = Number(cantidad.target.value);
+          this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!].clientStockDetailUnits[length].quStock = Number(cantidad.target.value);
         }
         //this.setExistCantidad(cantidad.target.value, indexProduct, indexType, type);
       }
