@@ -116,9 +116,11 @@
           *ngIf="this.collectService.igtfSelected.price > 0 && !this.collectService.separateIgtf">
           {{this.collectService.collectionTags.get('COB_IGTF_LABEL')}}
         </ion-col>
+        @if(this.collectService.userCanSelectCollectDiscount){
         <ion-col class="titulosBold col" size="4">
           {{this.collectService.collectionTags.get('COB_DESC')}}
         </ion-col>
+        }
         <ion-col class="titulosBold col borderSuperiorDerecho"
           size="4">{{this.collectService.collectionTags.get('COB_MONTO_PAGO')}}</ion-col>
       </ion-row>
@@ -142,10 +144,12 @@
           *ngIf="this.collectService.igtfSelected.price > 0 && !this.collectService.separateIgtf">
           {{this.currencyService.formatNumber(this.collectService.montoIgtf)}}
         </ion-col>
+        @if(this.collectService.userCanSelectCollectDiscount){
         <ion-col class="ion-text-center col" size="4">
           {{this.currencyService.formatNumber(collectionDetails.nuAmountCollectDiscount)}}
           ({{this.currencyService.formatNumber(collectionDetails.nuCollectDiscount)}}%)
         </ion-col>
+        }
         <ion-col class="ion-text-center col borderInferiorDerecho" size="4">
           {{this.currencyService.formatNumber(collectionDetails.nuAmountPaid)}}</ion-col>
       </ion-row>

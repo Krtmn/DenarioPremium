@@ -36,6 +36,8 @@ export class ClienteComponent implements OnInit {
   public hardCurrency = '';
   public decimales = 2;
   public selectedAddress!: AddresClient;
+  public saldoLocal: number = 0;
+  public saldoFuerte: number = 0;
 
   subjectClientShareModalOpen: any;
   // selección múltiple de documentos
@@ -67,24 +69,26 @@ export class ClienteComponent implements OnInit {
         //arreglamos el saldo del cliente
         //porque vergas saldo1 y saldo2 significan vainas distintas aqui y en la lista nunca sabré.
         // Asumo que estaban rascaos cuando lo escribieron...
-        let saldoCliente = 0, saldoOpuesto = 0;
-
-        if (this.client.coCurrency == this.clientLogic.localCurrency.coCurrency) {
-          saldoCliente = this.client.saldo1 + this.currencyService.toLocalCurrency(this.client.saldo2);
-          saldoOpuesto = this.currencyService.toHardCurrency(saldoCliente);
+        this.saldoLocal = 0, this.saldoFuerte = 0;
+          this.saldoLocal = this.client.saldo1 + this.currencyService.toLocalCurrency(this.client.saldo2);
+          this.saldoFuerte = this.currencyService.toHardCurrency(this.saldoLocal);
+        if (this.client.coCurrency === this.clientLogic.localCurrency.coCurrency) {
+          //saldoCliente es ahora saldoLocal
+          //saldoOpuesto es ahora saldoFuerte
+          //como es fijo, se hace antes del if.
           this.nuCreditLimitConversion = this.formatNumber(this.currencyService.toHardCurrency(this.client.nuCreditLimit));
         } else {
-          saldoCliente = this.client.saldo1 + this.currencyService.toHardCurrency(this.client.saldo2);
-          saldoOpuesto = this.currencyService.toLocalCurrency(saldoCliente);
+          //this.saldoCliente = this.client.saldo1 + this.currencyService.toHardCurrency(this.client.saldo2);
+          //this.saldoOpuesto = this.currencyService.toLocalCurrency(this.saldoCliente);
           this.nuCreditLimitConversion = this.formatNumber(this.currencyService.toLocalCurrency(this.client.nuCreditLimit));
         }
-        this.client.saldo1 = saldoCliente;
-        this.client.saldo2 = saldoOpuesto;
-        saldoCliente = saldoOpuesto = 0;
+        //this.client.saldo1 = saldoCliente;
+        //this.client.saldo2 = saldoOpuesto;
+        //saldoCliente = saldoOpuesto = 0;
 
       }
     } else {
-      this.client.saldo1 = this.client.saldo1;;
+      this.client.saldo1 = this.client.saldo1;
     }
 
 
