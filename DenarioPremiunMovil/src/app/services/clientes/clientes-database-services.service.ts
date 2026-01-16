@@ -452,7 +452,8 @@ export class ClientesDatabaseServicesService {
           historicPaymentPartial: false,
           isSave: false,
           colorRow: '',
-          daUpdate: ''
+          daUpdate: '',
+          missingRetention: false,
         })
       }
       return lists

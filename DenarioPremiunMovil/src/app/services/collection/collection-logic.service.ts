@@ -2389,7 +2389,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     const commonOrder = `ORDER BY CASE WHEN d.co_currency = "${this.enterpriseSelected.coCurrencyDefault}" THEN 0 ELSE 1 END, d.co_currency`;
 
     // module 0 and 2 are non-IGTF, but module 2 omits ds.st_document < 2
-    const includeDocStateFilter = true //moduleType === '0'; //DESCOMENTAR ACA SI SE CAMBIA LA LOGICA PARA RETENCIONES
+
+    const includeDocStateFilter = moduleType === '0';
+    const includeDocStateFilterRetenttion = moduleType === '2';
 
     if (moduleType === '0' || moduleType === '2') {
       if (currencyIsEmpty) {
@@ -2401,8 +2403,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             'LEFT JOIN document_st ds ON d.co_document = ds.co_document ' +
             'WHERE (d.id_client = ? ' +
             (includeDocStateFilter ? 'AND ds.st_document < 2 ' : '') +
+            (includeDocStateFilterRetenttion ? 'AND ds.st_document < 3 ' : '') +
             'AND d.id_enterprise = ? AND d.co_document_sale_type != "IGTF") ' +
-            'OR d.co_document IN (SELECT co_document FROM collection_details WHERE co_collection= ?) ' +
+            'OR d.co_document IN (SELECT co_document FROM collection_details WHERE co_collection= ? ) ' +
             commonOrder
         };
       }
@@ -2750,6 +2753,78 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     });
   }
 
+  findIsMissingRetention(dbServ: SQLiteObject, idClient: number) {
+    const coDocuments = Array.from(this.mapDocumentsSales.values()).map(obj => obj.coDocument);
+    if (coDocuments.length === 0) return Promise.resolve();
+
+    const selectStatement = `
+    SELECT code.co_document, code.missing_retention
+    FROM collection_details code
+    JOIN collections co ON co.id_client = ?
+    WHERE code.missing_retention == 'true' AND code.co_document IN ('${coDocuments.join("', '")}')
+  `;
+
+    return dbServ.executeSql(selectStatement, [idClient]).then(data => {
+      // Crea un Map para acceso rápido por id_document (usar idDocument como clave numérica)
+      const docSalesMap = new Map<string, DocumentSale>();
+      this.documentSales.forEach(ds => {
+        if (ds && typeof ds.coDocument === 'string') docSalesMap.set(ds.coDocument, ds);
+      });
+      const docSalesBackupMap = new Map<string, DocumentSale>();
+      this.documentSalesBackup.forEach(ds => {
+        if (ds && typeof ds.coDocument === 'string') docSalesBackupMap.set(ds.coDocument, ds);
+      });
+      const docSalesViewMap = new Map<string, DocumentSale>();
+      this.documentSalesView.forEach(ds => {
+        if (ds && typeof ds.coDocument === 'string') docSalesViewMap.set(ds.coDocument, ds);
+      });
+
+      for (let i = 0; i < data.rows.length; i++) {
+        const coDoc = data.rows.item(i).co_document;
+        const missingRetention = data.rows.item(i).missing_retention === 'true';
+
+        // Actualiza los mapas indexados por coDocument
+        const ds = docSalesMap.get(coDoc);
+        if (ds) {
+          ds.missingRetention = missingRetention;
+        }
+        const dsView = docSalesViewMap.get(coDoc);
+        if (dsView) {
+          dsView.missingRetention = missingRetention;
+        }
+        const dsBackup = docSalesBackupMap.get(coDoc);
+        if (dsBackup) {
+          dsBackup.missingRetention = missingRetention;
+        }
+
+        // Sincronizar mapDocumentsSales (que está indexado por idDocument:number)
+        // buscando el idDocument desde el entry por coDocument
+        const source = ds ?? dsBackup ?? dsView;
+        if (source && source.idDocument != null) {
+          const id = source.idDocument;
+          if (this.mapDocumentsSales.has(id)) {
+            const mapped = this.mapDocumentsSales.get(id)!;
+            mapped.missingRetention = missingRetention;
+            this.mapDocumentsSales.set(id, mapped);
+          }
+        } else {
+          // fallback: buscar por valor si no encontramos source
+          for (const [id, val] of this.mapDocumentsSales.entries()) {
+            if (val && val.coDocument === coDoc) {
+              val.missingRetention = missingRetention;
+              this.mapDocumentsSales.set(id, val);
+              break;
+            }
+          }
+        }
+      }
+    }).catch(e => {
+      console.error('Error en findIsPaymentPartial:', e);
+      return Promise.resolve();
+    });
+  }
+
+
   getPaymentPartialByDocument(dbServ: SQLiteObject, coDocument: string) {
 
     let selectStatement = "SELECT " +
@@ -2899,6 +2974,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           nuAmountRetention: data.rows.item(0).nuAmountRetention == undefined ? 0 : data.rows.item(0).nuAmountRetention,
           nuAmountRetention2: data.rows.item(0).nuAmountRetention2 == undefined ? 0 : data.rows.item(0).nuAmountRetention2,
           daVoucher: data.rows.item(0).daVoucher == undefined ? "" : data.rows.item(0).daVoucher,
+          // ensure daUpdate is provided (DB column may be daUpdate or da_update) to satisfy the DocumentSale model
+          daUpdate: data.rows.item(0).daUpdate == undefined ? (data.rows.item(0).da_update == undefined ? "" : data.rows.item(0).da_update) : data.rows.item(0).daUpdate,
           nuVaucherRetention: data.rows.item(0).nuVaucherRetention == undefined ? "" : this.documentSales[index].nuVaucherRetention,
           igtfAmount: data.rows.item(0).igtfAmount == undefined ? 0 : this.documentSales[index].igtfAmount,
           txConversion: this.documentSales[index].txConversion,
@@ -2907,9 +2984,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           isSelected: this.documentSales[index].isSelected,
           isSave: false,
           colorRow: this.documentSales[index].colorRow,
-          daUpdate: this.documentSales[index].daUpdate,
+          missingRetention: this.documentSales[index].missingRetention,
         }
-
         this.documentSalesBackup[index] = Object.assign({}, this.documentSales[index]);
         this.documentSalesBackup[index].positionCollecDetails = -1;
 
@@ -3100,7 +3176,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       historicPaymentPartial: false,
       isSave: false,
       colorRow: "",
-      daUpdate: ""
+      daUpdate: "",
+      missingRetention: false,
     });
 
     this.insertDocumentSaleBatch(dbServ, igtfDocument).then((resp) => {
@@ -3259,8 +3336,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           console.log("COLLECTION INSERT", data);
 
           //cobro o igtf
-          if (collection.coType == '0' || collection.coType == '3' || collection.coType == '4') {
-            return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
+          if (collection.coType == '0' || collection.coType == '2' || collection.coType == '3' || collection.coType == '4') {
+            return this.updateDocumentSt(dbServ, this.documentSales, collection.coType).then((resp) => {
               console.log("TERMINE DOCUMENT ST")
               return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
                 return this.saveCollectionDetailDiscounts(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
@@ -3870,7 +3947,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       })
   }
 
-  updateDocumentSt(dbServ: SQLiteObject, documentSales: DocumentSale[]) {
+  updateDocumentSt(dbServ: SQLiteObject, documentSales: DocumentSale[], coType: string = "") {
     if (documentSales.length == 0) {
       return Promise.resolve(true);
     }
@@ -3894,10 +3971,16 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       for (var i = 0; i < documentSales.length; i++) {
         let stDelivery = 0;
         if (documentSales[i].isSelected) {
-          if (documentSales[i].inPaymentPartial)
+          if (coType == '2') {
+            //es retencion
+            stDelivery = 3;
+          } else if (documentSales[i].missingRetention) {
+            stDelivery = 2;
+          } else if (documentSales[i].inPaymentPartial)
             stDelivery = 0;
           else //if (this.sendCollection)
             stDelivery = 2;
+
           stamentenDocumentSt.push([updateStatement, [
             stDelivery,
             daUpdate,

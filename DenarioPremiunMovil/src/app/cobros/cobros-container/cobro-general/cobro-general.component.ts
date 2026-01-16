@@ -328,6 +328,8 @@ export class CobrosGeneralComponent implements OnInit {
           if (this.collectService.historicPartialPayment) {
             this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
           }
+          this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
+
         });
         this.updateSelectedCurrency(this.collectService.collection.idCurrency);
         //this.collectService.disabledCurrency = true;
@@ -540,6 +542,8 @@ export class CobrosGeneralComponent implements OnInit {
                 if (this.collectService.historicPartialPayment) {
                   this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
                 }
+                this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
+
               });
           // }
 
@@ -672,6 +676,8 @@ export class CobrosGeneralComponent implements OnInit {
                 if (this.collectService.userCanSelectCollectDiscount) {
                   this.collectService.getCollectDiscounts(this.synchronizationServices.getDatabase());
                 }
+                this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
+
               });
           })
 
@@ -865,6 +871,7 @@ export class CobrosGeneralComponent implements OnInit {
             else
               this.collectService.documentsSaleComponent = false;
 
+            this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
             this.loadPayments();
           })
 
@@ -894,8 +901,7 @@ export class CobrosGeneralComponent implements OnInit {
         if (this.collectService.historicPartialPayment) {
           this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
         }
-
-
+        this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
       });
 
     this.collectService.collection.nuAmountFinal = 0;

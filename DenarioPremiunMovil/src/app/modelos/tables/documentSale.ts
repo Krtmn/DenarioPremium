@@ -39,6 +39,7 @@ export class DocumentSale {
       obj['isSave'],
       obj['colorRow'],
       obj['daUpdate'],
+      obj['missingRetention'],
     );
   }
 
@@ -80,5 +81,6 @@ export class DocumentSale {
     public isSave: boolean = false,
     public colorRow: string = "",
     public daUpdate: string = "",
+    public missingRetention: boolean = false,
   ) { }
 }
