@@ -117,17 +117,19 @@ export class InventariosLogicService {
     this.stockValid.next(valid);
   }
 
-  checkImageWeightLimit(){
+  updateHeaderButtons(){
     if(this.adjuntoService.weightLimitExceeded){
       this.onStockValidToSave(false);
       this.onStockValidToSend(false);
-    }else{
-      var valid = this.checkValidStockToSend();
-      this.onStockValidToSave(valid);
-      this.onStockValidToSend(valid);
-
+      return;
     }
-  }
+    //si ningun otro flag ha bloqueado el guardado o envio, validamos los stocks
+    var valid = this.checkValidStockToSend();
+    this.onStockValidToSave(valid);
+    this.onStockValidToSend(valid);
+    return;
+    }
+  
 
   checkValidStockToSend(){
     if(this.typeStocks.length == 0){
