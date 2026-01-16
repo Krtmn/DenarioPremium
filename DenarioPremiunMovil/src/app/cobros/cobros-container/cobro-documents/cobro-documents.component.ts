@@ -1918,29 +1918,34 @@ export class CobrosDocumentComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  acceptCollectDiscounts() {
+  async acceptCollectDiscounts() {
     // guardar prev antes de aceptar
     this.collectService.prevSelectedCollectDiscounts = this.collectService.tempSelectedCollectDiscounts.map(d => ({ ...d }));
-    // actualizar selectedCollectDiscounts como array de ids (mantener compatibilidad con el servicio)
+    // actualizar selectedCollectDiscounts como array de ids (mantener compatibilidad)
     this.collectService.selectedCollectDiscounts = this.collectService.tempSelectedCollectDiscounts.map(d => d.idCollectDiscount);
+
+    // asegurar index válido
+    if (this.indexDocumentSaleOpen == null || this.indexDocumentSaleOpen < 0) {
+      const idx = this.collectService.documentSales.findIndex(d => d?.coDocument === this.collectService.documentSaleOpen?.coDocument);
+      if (idx >= 0) this.indexDocumentSaleOpen = idx;
+    }
+
+    // aplicar cambios y esperar cálculos antes de cerrar el modal
+    await this.selectCollectDiscounts();
+
     this.assignDiscountsOpen = false;
-    this.selectCollectDiscounts();
     this.cdr.detectChanges();
 
     const selectedIds: number[] = Array.isArray(this.collectService.selectedCollectDiscounts)
       ? this.collectService.selectedCollectDiscounts
       : [];
 
-    // verificar inputs requeridos y demás lógica...
-    const requiringInput = selectedIds.map(id => {
-      const d = this.collectService.collectDiscounts.find(cd => cd.idCollectDiscount === id);
-      if (!d) return null;
-      const req = d.requireInput === true;
-      return req ? { id: d.idCollectDiscount, requireInput: d.requireInput } : null;
-    }).filter(x => x !== null);
-
+    // verificar inputs requeridos
+    const requiringInput = selectedIds
+      .map(id => this.collectService.collectDiscounts.find(cd => cd.idCollectDiscount === id))
+      .filter(d => !!d && d!.requireInput);
     if (requiringInput.length > 0) {
-      console.log('Selected collectDiscounts requiring input:', requiringInput);
+      // mantener la validación actual (botón se deshabilita por validateCollectDiscountsInputs)
     }
   }
 
@@ -1953,95 +1958,82 @@ export class CobrosDocumentComponent implements OnInit {
 
   public async selectCollectDiscounts() {
     try {
-      console.log('selectCollectDiscounts - accepted ids:', this.collectService.selectedCollectDiscounts);
+      // asegurar índice del documento activo
+      if (this.indexDocumentSaleOpen == null || this.indexDocumentSaleOpen < 0) {
+        const idx = this.collectService.documentSales.findIndex(d => d?.coDocument === this.collectService.documentSaleOpen?.coDocument);
+        if (idx < 0) return;
+        this.indexDocumentSaleOpen = idx;
+      }
+
+      // saldo base actualizado
+      await this.calculateSaldo(this.indexDocumentSaleOpen);
 
       const selectedIds: number[] = Array.isArray(this.collectService.selectedCollectDiscounts)
         ? this.collectService.selectedCollectDiscounts
         : [];
 
-      if (this.indexDocumentSaleOpen == null || this.indexDocumentSaleOpen < 0) {
-        console.warn('selectCollectDiscounts: indexDocumentSaleOpen inválido', this.indexDocumentSaleOpen);
-        return;
+      // asegurar posición del detalle
+      let idxDetail = this.collectService.documentSaleOpen.positionCollecDetails;
+      if (!Number.isInteger(idxDetail) || (idxDetail as number) < 0) {
+        idxDetail = this.collectService.collection.collectionDetails
+          .findIndex(d => d.coDocument === this.collectService.documentSaleOpen.coDocument);
+        if ((idxDetail as number) >= 0) this.collectService.documentSaleOpen.positionCollecDetails = idxDetail as number;
       }
 
+      // total de descuentos seleccionado
       const totalDiscounts = selectedIds.reduce((acc, id) => {
-        //const d = this.collectService.collectDiscounts.find(cd => cd.idCollectDiscount === id);
         const d = this.collectService.tempSelectedCollectDiscounts.find(cd => cd.idCollectDiscount === id);
-        const val = d ? Number(d.nuCollectDiscount ?? 0) : 0;
-        return acc + val;
+        return acc + Number(d?.nuCollectDiscount ?? 0);
       }, 0);
 
-      // Leer el valor desde documentSalesView (solo lectura) — no tocar ese objeto
-      //const nuBalanceView = Number(this.collectService.documentSalesView?.[this.indexDocumentSaleOpen]?.nuBalance ?? 0);
-      // parteDecimal indica cuántos decimales conservar al redondear
       const parteDecimal = Number.parseInt(String(this.globalConfig.get('parteDecimal') ?? '0'), 10) || 0;
       const factor = Math.pow(10, parteDecimal);
-      const nuBalanceView = Number(this.saldoView);
+      const baseBalance = Number(this.saldoView);
 
-      //const nuBalanceView = Number(this.collectService.amountPaid);
-      const discountAmountRaw = (nuBalanceView * totalDiscounts) / 100;
+      const discountAmountRaw = (baseBalance * totalDiscounts) / 100;
       const discountAmount = Math.round(discountAmountRaw * factor) / factor;
+      const newBalance = Number((baseBalance - discountAmount).toFixed(parteDecimal));
 
-      const newBalance = nuBalanceView - discountAmount;
+      // actualizar detalle de colección
+      if (Number.isInteger(idxDetail) && (idxDetail as number) >= 0) {
+        const detail = this.collectService.collection.collectionDetails[idxDetail as number];
+        const updated = {
+          ...detail,
+          nuAmountCollectDiscount: discountAmount,
+          nuCollectDiscount: totalDiscounts,
+          hasDiscount: totalDiscounts > 0,
+          nuAmountPaid: newBalance
+        };
+        const clonedDetails = [...this.collectService.collection.collectionDetails];
+        clonedDetails[idxDetail as number] = updated;
+        this.collectService.collection.collectionDetails = clonedDetails;
+      }
+
       this.collectService.totalCollectDiscounts = discountAmount;
-      this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails!].nuAmountCollectDiscount = discountAmount;
-      this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails!].nuCollectDiscount = totalDiscounts;
-      totalDiscounts > 0 ? this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails!].hasDiscount = true :
-        this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails!].hasDiscount = false;
-
-      if (this.discountComment.trim() == "")
-        this.disabledSaveButton = true;
-
       this.collectService.totalCollectDiscountsView = this.formatNumber(discountAmount);
 
-      // Romper referencias clonando las arrays antes de modificar entries para evitar afectar documentSalesView
-      const clonedDocumentSales = JSON.parse(JSON.stringify(this.collectService.documentSales || []));
-      if (clonedDocumentSales[this.indexDocumentSaleOpen]) {
-        clonedDocumentSales[this.indexDocumentSaleOpen] = {
-          ...clonedDocumentSales[this.indexDocumentSaleOpen],
-          nuBalance: newBalance
-        };
+      // sincronizar arrays de documentos
+      const ds = [...this.collectService.documentSales];
+      if (ds[this.indexDocumentSaleOpen]) {
+        ds[this.indexDocumentSaleOpen] = { ...ds[this.indexDocumentSaleOpen], nuBalance: newBalance };
       }
-      this.collectService.documentSales = clonedDocumentSales;
+      this.collectService.documentSales = ds;
 
-      const clonedDocumentSalesBackup = JSON.parse(JSON.stringify(this.collectService.documentSalesBackup || []));
-      if (clonedDocumentSalesBackup[this.indexDocumentSaleOpen]) {
-        clonedDocumentSalesBackup[this.indexDocumentSaleOpen] = {
-          ...clonedDocumentSalesBackup[this.indexDocumentSaleOpen],
-          nuBalance: newBalance
-        };
+      const dsb = [...this.collectService.documentSalesBackup];
+      if (dsb[this.indexDocumentSaleOpen]) {
+        dsb[this.indexDocumentSaleOpen] = { ...dsb[this.indexDocumentSaleOpen], nuBalance: newBalance };
       }
+      this.collectService.documentSalesBackup = dsb;
 
-      this.collectService.documentSalesBackup = clonedDocumentSalesBackup;
-
-      const indexCollectionDetail = this.collectService.documentSaleOpen.positionCollecDetails;
-      if (Number.isInteger(indexCollectionDetail) && indexCollectionDetail >= 0) {
-        const detail = this.collectService.collection.collectionDetails[indexCollectionDetail];
-        if (detail) {
-          // Reemplazar el detalle por una copia para no mutar objetos compartidos con documentSalesView
-          const newDetail = {
-            ...detail,
-            nuAmountPaid: newBalance,
-            //nuBalanceDoc: newBalance
-          };
-          // Crear copia superficial de la colección de detalles y asignar
-          const clonedDetails = [...this.collectService.collection.collectionDetails];
-          clonedDetails[indexCollectionDetail] = newDetail;
-          this.collectService.collection.collectionDetails = clonedDetails;
-        }
-      }
-
-      // Recalcula sin mutar documentSalesView internamente
+      // recalcular documento abierto y totales
       await this.calculateDocumentSaleOpen(this.indexDocumentSaleOpen);
-      if (typeof this.collectService.calculatePayment === 'function') {
-        await Promise.resolve(this.collectService.calculatePayment("", 0));
-      }
+      await Promise.resolve(this.collectService.calculatePayment("", 0));
 
-      // Forzar actualización del campo mostrado (amountPaid proviene de calculatePayment/calc doc open)
+      // actualizar UI
       this.centsAmountPaid = Math.round((this.collectService.amountPaid ?? 0) * 100);
       this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
 
-      this.setCollectionDetailDiscounts(indexCollectionDetail, selectedIds);
+      this.setCollectionDetailDiscounts(this.collectService.documentSaleOpen.positionCollecDetails!, selectedIds);
       this.cdr.detectChanges();
     } catch (err) {
       console.error('selectCollectDiscounts error:', err);
