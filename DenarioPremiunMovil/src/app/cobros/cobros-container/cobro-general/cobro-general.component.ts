@@ -955,6 +955,19 @@ export class CobrosGeneralComponent implements OnInit {
   // Reemplaza/adapta tu onChangeRate para normalizar la fecha como "date-only" local.
 
   onChangeRate(ev: any) {
+    this.collectService.rateSelected = ev?.detail?.value ?? ev;
+    if (!this.collectService.rateSelected){
+      console.warn('onChangeRate: no se seleccionó ninguna tasa', ev);
+      return;
+    }else{
+      this.collectService.collection.idConversionType = this.collectService.rateSelected.idConversionType;
+      this.collectService.collection.nuValueLocal = this.collectService.rateSelected.nuValueLocal;
+      this.collectService.collection.daRate = this.collectService.dateRateVisual.split("T")[0];
+    } 
+  }
+
+  /* //esta version es como si guardara la fecha en el objeto rate, lo cual no es cierto.
+  onChangeRate(ev: any) {
     // ev puede venir como evento (ev.detail.value) o directamente como el objeto seleccionado.
     const selected = ev?.detail?.value ?? ev;
     if (!selected) return;
@@ -1006,7 +1019,7 @@ export class CobrosGeneralComponent implements OnInit {
 
     // Mantener la lógica que necesites luego de cambiar la tasa...
   }
-
+*/
   onOpenCalendar() {
     if (this.collectService.collection.stDelivery != this.COLLECT_STATUS_TO_SEND && this.collectService.collection.stDelivery != this.COLLECT_STATUS_SENT) {
       this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual.split("T")[0]);

@@ -3223,7 +3223,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           "hasIGTF," +
           "nu_attachments," +
           "has_attachments," +
-          "id_conversion_type"
+          "id_conversion_type "+
           ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         return dbServ.executeSql(insertCollection,
           [

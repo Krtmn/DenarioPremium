@@ -76,7 +76,7 @@
             (ionChange)="onChangeRate($event)" disabled="{{this.collectService.isOpenCollect}}" interface="popover"
             labelPlacement="stacked">
             <ion-select-option *ngFor="let rate of this.collectService.rateList"
-              [value]="rate">{{this.currencyServices.formatNumber(rate)}}
+              [value]="rate">{{this.currencyServices.formatNumber(rate.nuValueLocal)}}
               {{this.collectService.localCurrency.coCurrency}}
             </ion-select-option>
           </ion-select>
