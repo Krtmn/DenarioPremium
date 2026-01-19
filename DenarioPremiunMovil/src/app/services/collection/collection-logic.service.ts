@@ -3603,7 +3603,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "has_discount," +
       "discount_comment," +
       "nu_amount_collect_discount," +
-      "nu_collect_discount" +
+      "nu_amount_collect_discount_conversion" +
       ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     for (var i = 0; i < collectionDetail.length; i++) {
@@ -3635,7 +3635,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         collectionDetail[i].hasDiscount,
         collectionDetail[i].discountComment,
         collectionDetail[i].nuAmountCollectDiscount,
-        collectionDetail[i].nuCollectDiscount
+        collectionDetail[i].nuAmountCollectDiscountConversion
       ]]);
     }
 
@@ -4087,8 +4087,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           nuAmountDoc: res.rows.item(i).nu_amount_doc,
           nuAmountDocConversion: res.rows.item(i).nu_amount_doc_conversion,
           daDocument: res.rows.item(i).da_document,
-          nuBalanceDoc: res.rows.item(i).nu_balance_doc,
-          nuBalanceDocConversion: res.rows.item(i).nu_balance_doc_conversion,
+          nuBalanceDoc: res.rows.item(i).nu_balance_doc + res.rows.item(i).nu_amount_collect_discount,
+          nuBalanceDocConversion: res.rows.item(i).nu_balance_doc_conversion + res.rows.item(i).nu_amount_collect_discount_conversion,
           coOriginal: res.rows.item(i).co_original,
           coTypeDoc: res.rows.item(i).co_type_doc,
           nuValueLocal: res.rows.item(i).nu_value_local,
@@ -4100,7 +4100,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           hasDiscount: res.rows.item(i).has_discount == "true" ? true : false,
           discountComment: res.rows.item(i).discount_comment == "" ? null : res.rows.item(i).discount_comment,
           nuAmountCollectDiscount: res.rows.item(i).nu_amount_collect_discount,
-          nuCollectDiscount: res.rows.item(i).nu_collect_discount,
+          nuAmountCollectDiscountConversion: res.rows.item(i).nu_amount_collect_discount_conversion,
           collectionDetailDiscounts: [] as CollectionDetailDiscounts[],
         })
       }

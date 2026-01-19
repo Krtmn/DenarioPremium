@@ -186,12 +186,7 @@ export class CobrosDocumentComponent implements OnInit {
       this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSJ_IGTF_MAYOR0')!;
       this.alertMessageOpen = true;
     }
-
-
-
   }
-
-
 
   async calculateSaldo(index: number) {
     // No mutaciones: leer copias de los objetos para evitar tocar documentSalesView / documentSales / collectionDetails
@@ -217,8 +212,6 @@ export class CobrosDocumentComponent implements OnInit {
         this.saldoConversionView = (docOriginal.nuBalance);
         this.saldoView = this.collectService.convertirMonto(docOriginal.nuBalance, this.collectService.collection.nuValueLocal, docOriginal.coCurrency);
       }
-
-
       return true;
     };
 
@@ -753,7 +746,7 @@ export class CobrosDocumentComponent implements OnInit {
       hasDiscount: false,
       discountComment: "",
       nuAmountCollectDiscount: 0,
-      nuCollectDiscount: 0,
+      nuAmountCollectDiscountConversion: 0,
     })
     this.collectService.documentSales[id].positionCollecDetails = this.collectService.collection.collectionDetails.length - 1;
     this.collectService.documentSalesBackup[id].positionCollecDetails = this.collectService.collection.collectionDetails.length - 1;
@@ -2059,6 +2052,7 @@ export class CobrosDocumentComponent implements OnInit {
         const updated = {
           ...detail,
           nuAmountCollectDiscount: totalDiscountAmount,
+          nuAmountCollectDiscountConversion: this.collectService.convertirMonto(totalDiscountAmount, this.collectService.collection.nuValueLocal, this.collectService.documentSaleOpen.coCurrency),
           nuCollectDiscount: totalDiscounts,
           hasDiscount: totalDiscounts > 0,
           nuAmountPaid: newBalance
@@ -2125,6 +2119,12 @@ export class CobrosDocumentComponent implements OnInit {
         this.detailCollectDiscountsPos++;
       }
     });
+
+
+    this.collectService.tempSelectedCollectDiscounts = [];
+    this.collectService.prevSelectedCollectDiscounts = [];
+    this.collectService.selectedCollectDiscounts = [];
+    //this.collectService.tempSelectedCollectDiscounts = [];
   }
 
   public getSelectedCollectDiscountsNames(): string {
