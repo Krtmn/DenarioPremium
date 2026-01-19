@@ -3396,8 +3396,11 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     id_collection_detail,
     nu_collect_discount_other,
     na_collect_discount_other,
-    co_collection
-  ) VALUES (?,?,?,?,?)
+    co_collection,
+    nu_amount_collect_discount_other,
+    nu_amount_collect_discount_other_conversion,
+    posicion
+  ) VALUES (?,?,?,?,?,?,?,?)
     `
 
     let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
@@ -3481,11 +3484,16 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           for (var coDetailDiscount = 0; coDetailDiscount < collectionDetail.collectionDetailDiscounts!.length; coDetailDiscount++) {
             const collectionDetailDiscount = collectionDetail.collectionDetailDiscounts![coDetailDiscount];
             queries.push([insertCollectionDetailDiscountSQL,
-              collectionDetailDiscount.idCollectionDetailDiscount,
-              collectionDetailDiscount.idCollectionDetail,
-              collectionDetailDiscount.nuCollectDiscountOther,
-              collectionDetailDiscount.naCollectDiscountOther,
-              collectionDetail.coCollection,
+              [
+                collectionDetailDiscount.idCollectionDetailDiscount,
+                collectionDetailDiscount.idCollectionDetail,
+                collectionDetailDiscount.nuCollectDiscountOther,
+                collectionDetailDiscount.naCollectDiscountOther,
+                collectionDetail.coCollection,
+                collectionDetailDiscount.nuAmountCollectDiscountOther,
+                collectionDetailDiscount.nuAmountCollectDiscountOtherConversion,
+                collectionDetailDiscount.posicion
+              ]
             ]);
           }
         }
@@ -3646,8 +3654,11 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "id_collect_discount," +
       "nu_collect_discount_other," +
       "na_collect_discount_other," +
-      "co_collection" +
-      ") VALUES (?,?,?,?,?)";
+      "co_collection," +
+      "nu_amount_collect_discount_other," +
+      "nu_amount_collect_discount_other_conversion," +
+      "posicion" +
+      ") VALUES (?,?,?,?,?,?,?,?)";
 
     for (var i = 0; i < collectionDetail.length; i++) {
       for (var j = 0; j < collectionDetail[i].collectionDetailDiscounts!?.length; j++) {
@@ -3656,7 +3667,10 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           collectionDetail[i].collectionDetailDiscounts![j].idCollectDiscount,
           collectionDetail[i].collectionDetailDiscounts![j].nuCollectDiscountOther,
           collectionDetail[i].collectionDetailDiscounts![j].naCollectDiscountOther,
-          coCollection
+          coCollection,
+          collectionDetail[i].collectionDetailDiscounts![j].nuAmountCollectDiscountOther,
+          collectionDetail[i].collectionDetailDiscounts![j].nuAmountCollectDiscountOtherConversion,
+          collectionDetail[i].collectionDetailDiscounts![j].posicion
         ]]);
       }
 
@@ -4111,9 +4125,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           nuCollectDiscountOther: res.rows.item(i).nu_collect_discount_other == undefined ? null : res.rows.item(i).nu_collect_discount_other,
           naCollectDiscountOther: res.rows.item(i).na_collect_discount_other == undefined ? null : res.rows.item(i).na_collect_discount_other,
           coCollection: res.rows.item(i).co_collection,
-          nuAmountCollectDiscountOther: 0,
-          nuAmountCollectDiscountOtherConversion: 0,
-          posicion: 0,
+          nuAmountCollectDiscountOther: res.rows.item(i).nu_amount_collect_discount_other == undefined ? null : res.rows.item(i).nu_amount_collect_discount_other,
+          nuAmountCollectDiscountOtherConversion: res.rows.item(i).nu_amount_collect_discount_other_conversion == undefined ? null : res.rows.item(i).nu_amount_collect_discount_other_conversion,
+          posicion: res.rows.item(i).posicion == undefined ? null : res.rows.item(i).posicion,
         })
       }
       return CollectionDetailDiscounts;
