@@ -779,7 +779,7 @@ export class CollectionService {
       if (this.collection.stDelivery == this.COLLECT_STATUS_SENT) {
         let rateFound = this.conversionTypes.find((ct) => {
           ct.idConversionType == this.collection.idConversionType;
-        })[0];
+        });
 
         if (rateFound) {
           this.rateSelected = rateFound;
@@ -3222,8 +3222,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           "nu_igtf," +
           "hasIGTF," +
           "nu_attachments," +
-          "has_attachments" +
-          ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+          "has_attachments," +
+          "id_conversion_type"
+          ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         return dbServ.executeSql(insertCollection,
           [
             0,
@@ -3258,6 +3259,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             collection.hasIGTF,
             collection.nuAttachments,
             collection.hasAttachments,
+            collection.idConversionType
 
           ]
         ).then(data => {
@@ -3346,8 +3348,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     nu_amount_final_conversion,
     hasIGTF,
     nu_attachments,
-    has_attachments
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    has_attachments,
+    id_conversion_type
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
     const insertCollectionDetailSQL = `
@@ -3446,6 +3449,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           collect.hasIGTF,
           collect.nuAttachments,
           collect.hasAttachments,
+          collect.idConversionType
 
         ]
       ]);
@@ -3779,7 +3783,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "hasIGTF," +
       "nu_attachments," +
       "has_attachments," +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "id_conversion_type" +
+      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
 
     let newCoCollection = this.dateServ.generateCO(0);
@@ -3817,6 +3822,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         collection.hasIGTF,
         collection.nuAttachments,
         collection.hasAttachments,
+        collection.idConversionType
       ]).then(data => {
         console.log("CREE ANTICIPO AUTOMATICO, DEBO CREAR EL PAYMENT")
         return this.createAnticipoCollectionPayment(dbServ, collection, newCoCollection);
@@ -4037,6 +4043,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         collection.coordenada = res.rows.item(0).coordenada;
         collection.hasAttachments = res.rows.item(0).has_attachments == "true" ? true : false;
         collection.nuAttachments = res.rows.item(0).nu_attachments;
+        collection.idConversionType = res.rows.item(0).id_conversion_type;
         collection.collectionDetails = [] as CollectionDetail[];
         collection.collectionPayments = [] as CollectionPayment[];
       }
