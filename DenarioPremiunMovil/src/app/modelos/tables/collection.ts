@@ -50,6 +50,7 @@ export class Collection {
       obj['collectionDetails'],
       obj['collectionPayments'],
       obj['stDelivery'],
+      obj['idConversionType'],
     );
   }
 
@@ -101,6 +102,7 @@ export class Collection {
     public collectionDetails: CollectionDetail[],
     public collectionPayments: CollectionPayment[],
     public stDelivery: number = 0,
+    public idConversionType: number,
   ) { }
 }
 

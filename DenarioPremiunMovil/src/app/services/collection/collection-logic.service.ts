@@ -1659,6 +1659,7 @@ export class CollectionService {
       hasAttachments: false,
       collectionDetails: [] as CollectionDetail[],
       collectionPayments: [] as CollectionPayment[],
+      idConversionType: 0,
 
     }
   }
