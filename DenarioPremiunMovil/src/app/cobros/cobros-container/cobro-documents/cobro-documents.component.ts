@@ -1923,7 +1923,7 @@ export class CobrosDocumentComponent implements OnInit {
     this.collectService.selectedCollectDiscounts = this.collectService.tempSelectedCollectDiscounts.map(d => d.idCollectDiscount);
 
     // aplicar cambios y esperar cálculos antes de cerrar el modal
-    await this.selectCollectDiscounts();
+    await this.applyCollectDiscounts();
 
     this.assignDiscountsOpen = false;
     this.cdr.detectChanges();
@@ -1948,7 +1948,7 @@ export class CobrosDocumentComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  public async selectCollectDiscounts() {
+  public async applyCollectDiscounts() {
     try {
       // saldo base actualizado
       await this.calculateSaldo(this.indexDocumentSaleOpen);
@@ -2110,6 +2110,14 @@ export class CobrosDocumentComponent implements OnInit {
     this.collectService.tempSelectedCollectDiscounts.forEach(cd => {
       if (cd.idCollectDiscount === idCollectDiscount) {
         cd.naCollectDiscount = naCollectDiscount;
+      }
+    });
+  }
+
+  setNuAmountCollectDiscount(idCollectDiscount: number, nuAmountCollectDiscount: any) {
+    this.collectService.tempSelectedCollectDiscounts.forEach(cd => {
+      if (cd.idCollectDiscount === idCollectDiscount) {
+        cd.nuAmountCollectDiscount = nuAmountCollectDiscount;
       }
     });
   }
