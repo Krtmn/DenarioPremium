@@ -753,6 +753,8 @@ export class CollectionService {
       this.historicoTasa = true;
       this.rateSelected = this.rateList[0];
       this.collection.nuValueLocal = this.rateSelected.nuValueLocal;
+      this.collection.idConversionType = this.rateSelected.idConversionType;
+      this.collection.daRate = this.dateRateVisual.split("T")[0];
       this.haveRate = true;
 
       // Propagar la tasa seleccionada a documentSales y documentSalesBackup
