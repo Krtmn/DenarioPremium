@@ -87,8 +87,11 @@
       </ion-col>
 
       <ion-col size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_FECHA_DOC')}}</ion-col>
+      <ion-col size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_FECHA_VENCIMIENTO')}}
+      </ion-col>
       <ion-col size="6"
-        class="titulosBold col borderSuperiorDerecho">{{this.collectService.collectionTags.get('COB_FECHA_VENCIMIENTO')}}</ion-col>
+        class="titulosBold col borderSuperiorDerecho">{{this.collectService.collectionTags.get('COB_COMENTARIO')}}
+      </ion-col>
     </ion-row>
     <ion-row *ngFor="let documentSale of this.collectService.documentSalesView;index as i"
       class="tabladocumentSalesVenta tablaDocVentas row">
@@ -165,8 +168,13 @@
       <ion-col size="6" class="ion-text-center col" [ngStyle]="{color:documentSale.colorRow }">
         {{documentSale.daDocument | date: "dd/MM/yyyy"}}
       </ion-col>
-      <ion-col size="6" class="ion-text-center col borderInferiorDerecho" [ngStyle]="{color: documentSale.colorRow}">
+      <ion-col size="6" class="ion-text-center col" [ngStyle]="{color: documentSale.colorRow}">
         {{documentSale.daDueDate | date: "dd/MM/yyyy"}}
+      </ion-col>
+
+      <!-- COMENTARIO -->
+      <ion-col size="6" class="ion-text-center col borderInferiorDerecho" [ngStyle]="{color: documentSale.colorRow}">
+        {{documentSale.txComment}}
       </ion-col>
     </ion-row>
   </ion-grid>
@@ -270,6 +278,14 @@
                       color="primary" [readonly]="true"></ion-input>
                   </ion-col>
                   <!-- SALDO CONVERSION -->
+                  <!-- COMENTARIO-->
+                  <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                    <ion-input label="{{this.collectService.collectionTags.get('COB_COMENTARIO')}}"
+                      label-placement="floating" fill="outline"
+                      value="{{this.collectService.documentSaleOpen.txComment}}" color="primary"
+                      [readonly]="true"></ion-input>
+                  </ion-col>
+                  <!-- COMENTARIO -->
 
                   <!-- NRO COMPROBANTE RET -->
                   <!-- <div *ngIf="this.collectService.retencion"> -->
@@ -604,6 +620,14 @@
                   [readonly]="true"></ion-input>
               </ion-col>
               <!-- SALDO CONVERSION -->
+
+              <!-- COMENTARIO-->
+              <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                <ion-input label="{{this.collectService.collectionTags.get('COB_COMENTARIO')}}"
+                  label-placement="floating" fill="outline" value="{{this.collectService.documentSaleOpen.txComment}}"
+                  color="primary" [readonly]="true"></ion-input>
+              </ion-col>
+              <!-- COMENTARIO-->
 
               <!-- NRO COMPROBANTE RET -->
 
