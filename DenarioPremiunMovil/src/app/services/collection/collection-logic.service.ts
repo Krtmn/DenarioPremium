@@ -4111,6 +4111,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           nuCollectDiscountOther: res.rows.item(i).nu_collect_discount_other == undefined ? null : res.rows.item(i).nu_collect_discount_other,
           naCollectDiscountOther: res.rows.item(i).na_collect_discount_other == undefined ? null : res.rows.item(i).na_collect_discount_other,
           coCollection: res.rows.item(i).co_collection,
+          nuAmountCollectDiscountOther: 0,
+          nuAmountCollectDiscountOtherConversion: 0,
+          posicion: 0,
         })
       }
       return CollectionDetailDiscounts;
@@ -4341,6 +4344,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           nuCollectDiscount: res.rows.item(i).nu_collect_discount,
           naCollectDiscount: res.rows.item(i).na_collect_discount,
           requireInput: res.rows.item(i).require_input == "true" ? true : false,
+          nuAmountCollectDiscount: 0,
+          nuAmountCollectDiscountConversion: 0,
+          position: 0,
         })
       }
       return Promise.resolve(true);

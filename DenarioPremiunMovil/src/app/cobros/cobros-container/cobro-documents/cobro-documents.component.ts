@@ -1919,16 +1919,8 @@ export class CobrosDocumentComponent implements OnInit {
   }
 
   async acceptCollectDiscounts() {
-    // guardar prev antes de aceptar
-    this.collectService.prevSelectedCollectDiscounts = this.collectService.tempSelectedCollectDiscounts.map(d => ({ ...d }));
-    // actualizar selectedCollectDiscounts como array de ids (mantener compatibilidad)
-    this.collectService.selectedCollectDiscounts = this.collectService.tempSelectedCollectDiscounts.map(d => d.idCollectDiscount);
 
-    // asegurar index válido
-    if (this.indexDocumentSaleOpen == null || this.indexDocumentSaleOpen < 0) {
-      const idx = this.collectService.documentSales.findIndex(d => d?.coDocument === this.collectService.documentSaleOpen?.coDocument);
-      if (idx >= 0) this.indexDocumentSaleOpen = idx;
-    }
+    this.collectService.selectedCollectDiscounts = this.collectService.tempSelectedCollectDiscounts.map(d => d.idCollectDiscount);
 
     // aplicar cambios y esperar cálculos antes de cerrar el modal
     await this.selectCollectDiscounts();
@@ -1958,13 +1950,6 @@ export class CobrosDocumentComponent implements OnInit {
 
   public async selectCollectDiscounts() {
     try {
-      // asegurar índice del documento activo
-      if (this.indexDocumentSaleOpen == null || this.indexDocumentSaleOpen < 0) {
-        const idx = this.collectService.documentSales.findIndex(d => d?.coDocument === this.collectService.documentSaleOpen?.coDocument);
-        if (idx < 0) return;
-        this.indexDocumentSaleOpen = idx;
-      }
-
       // saldo base actualizado
       await this.calculateSaldo(this.indexDocumentSaleOpen);
 
@@ -2056,6 +2041,9 @@ export class CobrosDocumentComponent implements OnInit {
           coCollection: coCollection,
           nuCollectDiscountOther: this.getNuCollectDiscount(discount.idCollectDiscount!),
           naCollectDiscountOther: this.getNaCollectDiscount(discount.idCollectDiscount!),
+          nuAmountCollectDiscountOther: this.getNuAmountCollectDiscount(discount.idCollectDiscount!),
+          nuAmountCollectDiscountOtherConversion: this.getNaCollectDiscount(discount.idCollectDiscount!),
+          posicion: this.getNaCollectDiscount(discount.idCollectDiscount!),
         };
         this.collectService.collection.collectionDetails[index].collectionDetailDiscounts!.push(cdd);
         this.detailCollectDiscountsPos++;
@@ -2139,6 +2127,13 @@ export class CobrosDocumentComponent implements OnInit {
 
     this.validateCollectDiscountsInputs();
     return cd ? cd.naCollectDiscount : null;
+  }
+
+  getNuAmountCollectDiscount(idCollectDiscount: number): any {
+    const cd = this.collectService.tempSelectedCollectDiscounts.find(cd => cd.idCollectDiscount === idCollectDiscount);
+
+    this.validateCollectDiscountsInputs();
+    return cd ? cd.nuAmountCollectDiscount : null;
   }
 
   validateCollectDiscountsInputs(): boolean {

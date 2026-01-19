@@ -246,6 +246,9 @@ export class CollectionDetailDiscounts {
       obj['nuCollectDiscountOther'],
       obj['naCollectDiscountOther'],
       obj['coCollection'],
+      obj['nuAmountCollectDiscountOther'],
+      obj['nuAmountCollectDiscountOtherConversion'],
+      obj['posicion'],
     );
   }
 
@@ -256,6 +259,9 @@ export class CollectionDetailDiscounts {
     public nuCollectDiscountOther: number | null = null,
     public naCollectDiscountOther: string | null = "",
     public coCollection: string = "",
+    public nuAmountCollectDiscountOther: number = 0,
+    public nuAmountCollectDiscountOtherConversion: number = 0,
+    public posicion: number = 0,
 
   ) { }
 }

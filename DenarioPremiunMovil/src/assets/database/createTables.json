@@ -530,6 +530,6 @@
     "table": "collection_detail_discounts",
     "name": "collection_detail_discounts",
     "idName": "id_collection_detail_discount",
-    "sql": "CREATE TABLE IF NOT EXISTS collection_detail_discounts(id_collection_detail_discount INTEGER PRIMARY KEY AUTOINCREMENT, id_collection_detail INTEGER, id_collect_discount INTEGER, nu_collect_discount_other NUMBER, na_collect_discount_other VARCHAR(250), co_collection VARCHAR(30));"
+    "sql": "CREATE TABLE IF NOT EXISTS collection_detail_discounts(id_collection_detail_discount INTEGER PRIMARY KEY AUTOINCREMENT, id_collection_detail INTEGER, id_collect_discount INTEGER, nu_collect_discount_other NUMBER, na_collect_discount_other VARCHAR(250), co_collection VARCHAR(30), nu_amount_collect_discount_other NUMERIC(29,4), nu_amount_collect_discount_other_conversion NUMERIC(29,4), posicion INTEGER);"
   }
 ]
