@@ -628,7 +628,14 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise).then(r => {
 
       if (this.collectService.collection.stDelivery === this.COLLECT_STATUS_SENT) {
-        this.collectService.rateSelected = this.collectService.collection.nuValueLocal;
+          let rateFound = this.collectService.conversionTypes.find((ct) => {
+          ct.idConversionType == this.collectService.collection.idConversionType;
+        });
+
+        if (rateFound) {
+          this.collectService.rateSelected = rateFound;
+        }
+        //this.collectService.rateSelected = this.collectService.collection.nuValueLocal;
         this.collectService.historicoTasa = true;
       } else if (this.collectService.historicoTasa) {
         this.collectService.getTasasHistorico(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise)

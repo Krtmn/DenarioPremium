@@ -215,8 +215,8 @@ export class CollectionService {
   public montoIgtfConversion: number = 0;
   public montoIgtfLocal: number = 0;
   public montoTotalDiscounts: number = 0;
-  public rateList: number[] = [];
-  public rateSelected!: number;
+  public rateList: ConversionType[] = [];
+  public rateSelected!: ConversionType;
   public parteDecimal: number = 0;
   public montoaPagar: number = 0;
   public indexDocumentSaleOpen: number = 0;
@@ -745,38 +745,45 @@ export class CollectionService {
 
     this.conversionTypes.find((ct) => {
       if (fecha.substring(0, 10) == ct.dateConversion.split("T")[0]) {
-        this.rateList.push(ct.nuValueLocal);
+        this.rateList.push(ct);
       }
     })
 
     if (this.rateList.length > 0) {
       this.historicoTasa = true;
-      this.rateSelected = this.collection.nuValueLocal = this.rateList[0];
+      this.rateSelected = this.rateList[0];
+      this.collection.nuValueLocal = this.rateSelected.nuValueLocal;
       this.haveRate = true;
 
       // Propagar la tasa seleccionada a documentSales y documentSalesBackup
       if (Array.isArray(this.documentSales) && this.documentSales.length > 0) {
         for (let i = 0; i < this.documentSales.length; i++) {
-          this.documentSales[i].nuValueLocal = this.rateSelected;
+          this.documentSales[i].nuValueLocal = this.rateSelected.nuValueLocal;
         }
       }
 
       if (Array.isArray(this.documentSalesBackup) && this.documentSalesBackup.length > 0) {
         for (let i = 0; i < this.documentSalesBackup.length; i++) {
-          this.documentSalesBackup[i].nuValueLocal = this.rateSelected;
+          this.documentSalesBackup[i].nuValueLocal = this.rateSelected.nuValueLocal;
         }
       }
 
       if (Array.isArray(this.documentSalesView) && this.documentSalesView.length > 0) {
         for (let i = 0; i < this.documentSalesView.length; i++) {
-          this.documentSalesView[i].nuValueLocal = this.rateSelected;
+          this.documentSalesView[i].nuValueLocal = this.rateSelected.nuValueLocal;
         }
       }
       return Promise.resolve(true);
     } else {
       //no tengo tasa para ese dia
       if (this.collection.stDelivery == this.COLLECT_STATUS_SENT) {
-        this.rateSelected = this.collection.nuValueLocal;
+        let rateFound = this.conversionTypes.find((ct) => {
+          ct.idConversionType == this.collection.idConversionType;
+        })[0];
+
+        if (rateFound) {
+          this.rateSelected = rateFound;
+        }
         this.historicoTasa = true;
       } else {
         this.historicoTasa = false;
