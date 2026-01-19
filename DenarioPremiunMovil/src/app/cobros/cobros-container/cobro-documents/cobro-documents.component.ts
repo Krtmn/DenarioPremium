@@ -2118,8 +2118,8 @@ export class CobrosDocumentComponent implements OnInit {
           nuCollectDiscountOther: this.getNuCollectDiscount(discount.idCollectDiscount!),
           naCollectDiscountOther: this.getNaCollectDiscount(discount.idCollectDiscount!),
           nuAmountCollectDiscountOther: this.getNuAmountCollectDiscount(discount.idCollectDiscount!),
-          nuAmountCollectDiscountOtherConversion: this.getNaCollectDiscount(discount.idCollectDiscount!),
-          posicion: this.getNaCollectDiscount(discount.idCollectDiscount!),
+          nuAmountCollectDiscountOtherConversion: this.collectService.convertirMonto(this.getNuAmountCollectDiscount(discount.idCollectDiscount!), this.collectService.collection.nuValueLocal, this.collectService.documentSaleOpen.coCurrency),
+          posicion: this.detailCollectDiscountsPos + 1,
         };
         this.collectService.collection.collectionDetails[index].collectionDetailDiscounts!.push(cdd);
         this.detailCollectDiscountsPos++;
@@ -2255,6 +2255,11 @@ export class CobrosDocumentComponent implements OnInit {
 
   isTempCollectDiscountFieldInvalid(id: number, field: 'nuCollectDiscount' | 'naCollectDiscount'): boolean {
     return !this.isTempCollectDiscountFieldValid(id, field);
+  }
+
+  getCollectDiscountPosition(idCollectDiscount: number): number | null {
+    const idx = this.collectService.tempSelectedCollectDiscounts.findIndex(cd => cd.idCollectDiscount === idCollectDiscount);
+    return idx >= 0 ? idx + 1 : null;
   }
 
   setDiscountComment() {
