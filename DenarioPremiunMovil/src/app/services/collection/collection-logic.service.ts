@@ -2388,7 +2388,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     // module 0 and 2 are non-IGTF, but module 2 omits ds.st_document < 2
     const includeDocStateFilter = true //moduleType === '0'; //DESCOMENTAR ACA SI SE CAMBIA LA LOGICA PARA RETENCIONES
 
-    if (moduleType === '0' || moduleType === '2') {
+    if (moduleType === '0' || moduleType === '2' || moduleType === '4') {
       if (currencyIsEmpty) {
         return {
           isIgtf: false,
