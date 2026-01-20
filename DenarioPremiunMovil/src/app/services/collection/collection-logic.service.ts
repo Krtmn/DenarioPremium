@@ -3404,10 +3404,11 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     nu_collect_discount_other,
     na_collect_discount_other,
     co_collection,
+    co_document,
     nu_amount_collect_discount_other,
     nu_amount_collect_discount_other_conversion,
     posicion
-  ) VALUES (?,?,?,?,?,?,?,?)
+  ) VALUES (?,?,?,?,?,?,?,?,?)
     `
 
     let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
@@ -3497,6 +3498,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
                 collectionDetailDiscount.nuCollectDiscountOther,
                 collectionDetailDiscount.naCollectDiscountOther,
                 collectionDetail.coCollection,
+                collectionDetail.coDocument,
                 collectionDetailDiscount.nuAmountCollectDiscountOther,
                 collectionDetailDiscount.nuAmountCollectDiscountOtherConversion,
                 collectionDetailDiscount.posicion
@@ -3666,10 +3668,11 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "nu_collect_discount_other," +
       "na_collect_discount_other," +
       "co_collection," +
+      "co_document," +
       "nu_amount_collect_discount_other," +
       "nu_amount_collect_discount_other_conversion," +
       "posicion" +
-      ") VALUES (?,?,?,?,?,?,?,?)";
+      ") VALUES (?,?,?,?,?,?,?,?,?)";
 
     for (var i = 0; i < collectionDetail.length; i++) {
       for (var j = 0; j < collectionDetail[i].collectionDetailDiscounts!?.length; j++) {
@@ -3679,6 +3682,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           collectionDetail[i].collectionDetailDiscounts![j].nuCollectDiscountOther,
           collectionDetail[i].collectionDetailDiscounts![j].naCollectDiscountOther,
           coCollection,
+          collectionDetail[i].collectionDetailDiscounts![j].coDocument,
           collectionDetail[i].collectionDetailDiscounts![j].nuAmountCollectDiscountOther,
           collectionDetail[i].collectionDetailDiscounts![j].nuAmountCollectDiscountOtherConversion,
           collectionDetail[i].collectionDetailDiscounts![j].posicion
@@ -4074,7 +4078,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
   getCollectionDetails(dbServ: SQLiteObject, coCollection: string) {
     return dbServ.executeSql(
-      'SELECT * FROM collection_details WHERE co_collection=?', [coCollection
+      'SELECT * FROM collection_details WHERE co_collection = ?', [coCollection
     ]).then(res => {
       let collectionDetails: CollectionDetail[] = [];
       for (var i = 0; i < res.rows.length; i++) {
@@ -4127,28 +4131,29 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
   getCollectionDetailsDiscounts(dbServ: SQLiteObject, coCollection: string) {
     return dbServ.executeSql(
-      'SELECT * FROM collection_detail_discounts WHERE co_collection = ?', [coCollection
-    ]).then(res => {
-      let CollectionDetailDiscounts: CollectionDetailDiscounts[] = [];
-      for (var i = 0; i < res.rows.length; i++) {
-        CollectionDetailDiscounts.push({
-          idCollectionDetailDiscount: res.rows.item(i).id_collection_detail_discount,
-          idCollectionDetail: res.rows.item(i).id_collection_detail,
-          idCollectDiscount: res.rows.item(i).id_collect_discount,
-          nuCollectDiscountOther: res.rows.item(i).nu_collect_discount_other == undefined ? null : res.rows.item(i).nu_collect_discount_other,
-          naCollectDiscountOther: res.rows.item(i).na_collect_discount_other == undefined ? null : res.rows.item(i).na_collect_discount_other,
-          coCollection: res.rows.item(i).co_collection,
-          nuAmountCollectDiscountOther: res.rows.item(i).nu_amount_collect_discount_other == undefined ? null : res.rows.item(i).nu_amount_collect_discount_other,
-          nuAmountCollectDiscountOtherConversion: res.rows.item(i).nu_amount_collect_discount_other_conversion == undefined ? null : res.rows.item(i).nu_amount_collect_discount_other_conversion,
-          posicion: res.rows.item(i).posicion == undefined ? null : res.rows.item(i).posicion,
-        })
-      }
-      return CollectionDetailDiscounts;
-    }).catch(e => {
-      let collectionDetails: CollectionDetail[] = [];
-      console.log(e);
-      return collectionDetails;
-    })
+      'SELECT * FROM collection_detail_discounts WHERE co_collection = ?',
+      [coCollection]).then(res => {
+        let CollectionDetailDiscounts: CollectionDetailDiscounts[] = [];
+        for (var i = 0; i < res.rows.length; i++) {
+          CollectionDetailDiscounts.push({
+            idCollectionDetailDiscount: res.rows.item(i).id_collection_detail_discount,
+            idCollectionDetail: res.rows.item(i).id_collection_detail,
+            idCollectDiscount: res.rows.item(i).id_collect_discount,
+            nuCollectDiscountOther: res.rows.item(i).nu_collect_discount_other == undefined ? null : res.rows.item(i).nu_collect_discount_other,
+            naCollectDiscountOther: res.rows.item(i).na_collect_discount_other == undefined ? null : res.rows.item(i).na_collect_discount_other,
+            coCollection: res.rows.item(i).co_collection,
+            coDocument: res.rows.item(i).co_document,
+            nuAmountCollectDiscountOther: res.rows.item(i).nu_amount_collect_discount_other == undefined ? null : res.rows.item(i).nu_amount_collect_discount_other,
+            nuAmountCollectDiscountOtherConversion: res.rows.item(i).nu_amount_collect_discount_other_conversion == undefined ? null : res.rows.item(i).nu_amount_collect_discount_other_conversion,
+            posicion: res.rows.item(i).posicion == undefined ? null : res.rows.item(i).posicion,
+          })
+        }
+        return CollectionDetailDiscounts;
+      }).catch(e => {
+        let collectionDetails: CollectionDetail[] = [];
+        console.log(e);
+        return collectionDetails;
+      })
   }
 
   getCollectionPayments(dbServ: SQLiteObject, coCollection: string) {

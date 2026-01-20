@@ -1911,6 +1911,11 @@ export class CobrosDocumentComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
+  getDiscountSelectionOrder(id: number): number | null {
+    const idx = this.collectService.tempSelectedCollectDiscounts.findIndex(x => x.idCollectDiscount === id);
+    return idx >= 0 ? idx + 1 : null;
+  }
+
   clearTempSelection() {
     this.collectService.tempSelectedCollectDiscounts = [];
     let index = this.collectService.documentSaleOpen.positionCollecDetails;
@@ -2110,6 +2115,7 @@ export class CobrosDocumentComponent implements OnInit {
     this.collectService.collection.collectionDetails[index].collectionDetailDiscounts = [] as CollectionDetailDiscounts[];
     const idCollectionDetail = this.collectService.collection.collectionDetails[index].idCollectionDetail!;
     const coCollection = this.collectService.collection.collectionDetails[index].coCollection!;
+    const coDocument = this.collectService.collection.collectionDetails[index].coDocument!;
     selectedIds.forEach(id => {
       const discount = this.collectService.collectDiscounts.find(cd => cd.idCollectDiscount === id);
       if (discount) {
@@ -2123,6 +2129,7 @@ export class CobrosDocumentComponent implements OnInit {
           nuAmountCollectDiscountOther: this.getNuAmountCollectDiscount(discount.idCollectDiscount!),
           nuAmountCollectDiscountOtherConversion: this.collectService.convertirMonto(this.getNuAmountCollectDiscount(discount.idCollectDiscount!), this.collectService.collection.nuValueLocal, this.collectService.documentSaleOpen.coCurrency),
           posicion: this.detailCollectDiscountsPos + 1,
+          coDocument: coDocument
         };
         this.collectService.collection.collectionDetails[index].collectionDetailDiscounts!.push(cdd);
         this.detailCollectDiscountsPos++;
@@ -2133,7 +2140,7 @@ export class CobrosDocumentComponent implements OnInit {
     this.collectService.tempSelectedCollectDiscounts = [];
     this.collectService.prevSelectedCollectDiscounts = [];
     this.collectService.selectedCollectDiscounts = [];
-    //this.collectService.tempSelectedCollectDiscounts = [];
+    this.disabledSaveButton = false;
   }
 
   public getSelectedCollectDiscountsNames(): string {
@@ -2275,7 +2282,7 @@ export class CobrosDocumentComponent implements OnInit {
     this.validate();
     let index = this.collectService.documentSaleOpen.positionCollecDetails;
     this.collectService.collection.collectionDetails[index].discountComment = this.discountComment;
-    this.disabledSaveButton = false;
+    //this.disabledSaveButton = false;
   }
 
 

@@ -407,8 +407,11 @@
                               <ng-container *ngFor="let d of this.collectService.collectDiscounts">
                                 <ion-item>
                                   <ion-label>{{d.nuCollectDiscount}}% - {{d.naCollectDiscount}}</ion-label>
-                                  <ion-checkbox slot="end" [checked]="isCollectDiscountSelected(d.idCollectDiscount)"
-                                    (ionChange)="toggleTempSelection(d.idCollectDiscount)"></ion-checkbox>
+                                  <div slot="end" style="display:flex; align-items:center; gap:8px;">
+                                    <ion-badge color="primary" *ngIf="getDiscountSelectionOrder(d.idCollectDiscount) as order">{{order}}</ion-badge>
+                                    <ion-checkbox [checked]="isCollectDiscountSelected(d.idCollectDiscount)"
+                                      (ionChange)="toggleTempSelection(d.idCollectDiscount)"></ion-checkbox>
+                                  </div>
                                 </ion-item>
 
                                 <div *ngIf="isCollectDiscountSelected(d.idCollectDiscount) && d.requireInput === true"
@@ -477,7 +480,7 @@
                   <ion-col *ngIf="this.collectService.selectedCollectDiscounts.length > 0" size="12" size-xs="12"
                     size-sm="12">
                     <ion-input label="Comentarios" label-placement="floating" fill="outline" color="primary" type="text"
-                      [(ngModel)]="discountComment" (ngModelChange)="setDiscountComment()" required>
+                      [(ngModel)]="discountComment" (ngModelChange)="setDiscountComment()">
                     </ion-input>
                   </ion-col>
                 </ion-list>

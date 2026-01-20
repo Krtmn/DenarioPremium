@@ -206,7 +206,7 @@ export class AutoSendService implements OnInit {
                   for (let i = 0; i < request.collection!.collectionDetails.length; i++) {
                     const detail = request.collection!.collectionDetails[i] as any;
                     // Añadir/normalizar la propiedad donde se guardarán los descuentos del detalle
-                    detail.collectionDetailDiscounts = discounts.filter(d => d.coCollection === detail.coCollection) ?? [];
+                    detail.collectionDetailDiscounts = discounts.filter(d => d.coDocument === detail.coDocument) ?? [];
                   }
                   this.collectionService.getCollectionPayments(this.dbService.getDatabase(), coTransaction).then((collectionPayments) => {
                     request.collection!.collectionPayments = collectionPayments;
