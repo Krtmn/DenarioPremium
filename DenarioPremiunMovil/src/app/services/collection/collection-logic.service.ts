@@ -1811,6 +1811,9 @@ export class CollectionService {
     // Copia a collectionDetails
     const detail = this.collection.collectionDetails[detailIdx];
     if (detail) {
+      // Preservar los saldos originales para no mutarlos durante las actualizaciones
+      const originalBalance = detail.nuBalanceDocOriginal;
+      const originalBalanceConversion = detail.nuBalanceDocOriginalConversion;
 
       detail.nuAmountPaid = this.amountPaid
       detail.nuAmountPaidConversion = this.convertirMonto(this.amountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
@@ -1826,6 +1829,10 @@ export class CollectionService {
       detail.nuVoucherRetention = open.nuVaucherRetention;
       detail.nuValueLocal = open.nuValueLocal;
       detail.isSave = true;
+
+      // Restablecer explícitamente los montos originales para garantizar que no se alteren
+      detail.nuBalanceDocOriginal = originalBalance;
+      detail.nuBalanceDocOriginalConversion = originalBalanceConversion;
 
       // ...otros campos...
     }
@@ -3592,6 +3599,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "da_document," +
       "nu_balance_doc," +
       "nu_balance_doc_conversion," +
+      "nu_balance_doc_original," +
+      "nu_balance_doc_original_conversion," +
       "co_original," +
       "co_type_doc," +
       "id_document," +
@@ -3604,7 +3613,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "discount_comment," +
       "nu_amount_collect_discount," +
       "nu_amount_collect_discount_conversion" +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     for (var i = 0; i < collectionDetail.length; i++) {
       statementsCollectionDetails.push([inserStatementCollectionDetail, [
@@ -3624,6 +3633,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         collectionDetail[i].daDocument,
         collectionDetail[i].nuBalanceDoc,
         collectionDetail[i].nuBalanceDocConversion,
+        collectionDetail[i].nuBalanceDocOriginal,
+        collectionDetail[i].nuBalanceDocOriginalConversion,
         collectionDetail[i].coOriginal,
         collectionDetail[i].coTypeDoc,
         collectionDetail[i].idDocument,
@@ -4087,8 +4098,10 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           nuAmountDoc: res.rows.item(i).nu_amount_doc,
           nuAmountDocConversion: res.rows.item(i).nu_amount_doc_conversion,
           daDocument: res.rows.item(i).da_document,
-          nuBalanceDoc: res.rows.item(i).nu_balance_doc + res.rows.item(i).nu_amount_collect_discount,
-          nuBalanceDocConversion: res.rows.item(i).nu_balance_doc_conversion + res.rows.item(i).nu_amount_collect_discount_conversion,
+          nuBalanceDoc: res.rows.item(i).nu_balance_doc,
+          nuBalanceDocConversion: res.rows.item(i).nu_balance_doc_conversion,
+          nuBalanceDocOriginal: res.rows.item(i).nu_balance_doc_original,
+          nuBalanceDocOriginalConversion: res.rows.item(i).nu_balance_doc_original_conversion,
           coOriginal: res.rows.item(i).co_original,
           coTypeDoc: res.rows.item(i).co_type_doc,
           nuValueLocal: res.rows.item(i).nu_value_local,

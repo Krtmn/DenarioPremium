@@ -97,6 +97,8 @@ export class CobroTotalComponent implements OnInit {
         daDocument: daVoucher.split("T")[0],
         nuBalanceDoc: 0,
         nuBalanceDocConversion: 0,
+        nuBalanceDocOriginal: 0,
+        nuBalanceDocOriginalConversion: 0,
         coOriginal: "",
         coTypeDoc: "",
         nuValueLocal: this.collectService.collection.nuValueLocal,

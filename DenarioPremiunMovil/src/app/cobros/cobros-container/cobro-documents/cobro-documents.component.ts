@@ -688,6 +688,7 @@ export class CobrosDocumentComponent implements OnInit {
 
     const coTypeDoc = documentSale.coDocumentSaleType;
     const nuValueLocalDoc = this.collectService.collection.nuValueLocal;
+    let nuBalanceOriginal, nuBalanceOriginalConversion;
 
     if (documentSale.isSave) {
       //EL DOCUMENTO YA FUE GUARDADO, POR LO TANTO SE DEBEN USAR LOS MONTOS YA CONVERTIDOS Y GUARDADOS
@@ -696,6 +697,8 @@ export class CobrosDocumentComponent implements OnInit {
       nuAmountBalanceConversion = this.collectService.collection.collectionDetails[positionCollecDetails].nuBalanceDocConversion;
       nuAmountTotal = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountDoc;
       nuAmountTotalConversion = this.collectService.collection.collectionDetails[positionCollecDetails].nuAmountDocConversion;
+      nuBalanceOriginal = documentSale.nuBalance;
+      nuBalanceOriginalConversion = this.collectService.convertirMonto(documentSale.nuBalance, this.collectService.collection.nuValueLocal, documentSale.coCurrency);
     } else {
       if (documentSale.coCurrency != this.collectService.collection.coCurrency) {
         //AL SER MONEDAS DIFERENTES, SE DEBE CONVETIR EL MONTO DEL DOCUMENTO A LA MONEDA DEL COBRO
@@ -704,12 +707,16 @@ export class CobrosDocumentComponent implements OnInit {
         nuAmountBalanceConversion = documentSale.nuBalance;
         nuAmountTotal = this.collectService.convertirMonto(documentSale.nuAmountTotal, this.collectService.collection.nuValueLocal, documentSale.coCurrency);
         nuAmountTotalConversion = documentSale.nuAmountTotal;
+        nuBalanceOriginalConversion = documentSale.nuBalance;
+        nuBalanceOriginal = this.collectService.convertirMonto(documentSale.nuBalance, this.collectService.collection.nuValueLocal, documentSale.coCurrency);
       } else {
         //AL SER LA MISMA MONEDA, LOS MONTOS QUEDAN IGUALES, SOLO SE CALCULAN LOS MONTOS CONVERSION
         nuAmountTotal = documentSale.nuAmountTotal;
         nuAmountBalance = documentSale.nuBalance;
         nuAmountBalanceConversion = this.collectService.convertirMonto(nuAmountBalance, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
         nuAmountTotalConversion = this.collectService.convertirMonto(nuAmountTotal, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
+        nuBalanceOriginal = documentSale.nuBalance;
+        nuBalanceOriginalConversion = this.collectService.convertirMonto(documentSale.nuBalance, this.collectService.collection.nuValueLocal, documentSale.coCurrency);
       }
     }
 
@@ -735,6 +742,8 @@ export class CobrosDocumentComponent implements OnInit {
       daDocument: documentSale.daDocument,
       nuBalanceDoc: nuAmountBalance!,
       nuBalanceDocConversion: nuAmountBalanceConversion,
+      nuBalanceDocOriginal: nuBalanceOriginal!,
+      nuBalanceDocOriginalConversion: nuBalanceOriginalConversion!,
       coOriginal: documentSale.coCurrency,
       coTypeDoc: documentSale.coDocumentSaleType,
       nuValueLocal: documentSale.nuValueLocal,

@@ -186,13 +186,19 @@ export class AutoSendService implements OnInit {
 
             } else if (coType === 2) {
               this.collectionService.getCollectionDetails(this.dbService.getDatabase(), coTransaction).then((collectionDetails) => {
-                request.collection!.collectionDetails = collectionDetails;
+                request.collection!.collectionDetails = collectionDetails.map(detail => ({
+                  ...detail,
+                  nuBalanceDoc: detail.nuBalanceDocOriginal,
+                }));
                 request.collection!.collectionPayments = [];
                 resolve("ok");
               })
             } else {
               this.collectionService.getCollectionDetails(this.dbService.getDatabase(), coTransaction).then((collectionDetails) => {
-                request.collection!.collectionDetails = collectionDetails;
+                request.collection!.collectionDetails = collectionDetails.map(detail => ({
+                  ...detail,
+                  nuBalanceDoc: detail.nuBalanceDocOriginal,
+                }));
                 this.collectionService.getCollectionDetailsDiscounts(this.dbService.getDatabase(), coTransaction).then((collectionDetailsDiscounts) => {
                   const all = collectionDetailsDiscounts || [];
                   const isDiscount = (x: any): x is any => x && (x.idCollectDiscount !== undefined || x.nuCollectDiscount !== undefined);
