@@ -569,6 +569,9 @@ export class CobrosDocumentComponent implements OnInit {
       this.cdr.detectChanges();
       this.collectService.cobrosComponent = false;
       this.collectService.isOpen = true;
+
+      if (this.collectService.userCanSelectCollectDiscount)
+        this.checkCollectDiscount();
     }
 
     if (this.collectService.retencion)
@@ -578,6 +581,29 @@ export class CobrosDocumentComponent implements OnInit {
 
 
     console.log(this.collectService.amountPaid, "AMOUNT PAID AL ABRIR")
+  }
+
+  checkCollectDiscount() {
+    const idxDetail = Number.isInteger(this.collectService.documentSaleOpen?.positionCollecDetails)
+      ? this.collectService.documentSaleOpen!.positionCollecDetails as number
+      : this.collectService.collection.collectionDetails.findIndex(
+        d => d.coDocument === this.collectService.documentSaleOpen?.coDocument
+      );
+
+    if (idxDetail === -1) {
+      this.collectService.selectedCollectDiscounts = [];
+      return;
+    }
+
+    const detail = this.collectService.collection.collectionDetails[idxDetail];
+    const discounts = Array.isArray(detail?.collectionDetailDiscounts)
+      ? detail.collectionDetailDiscounts
+      : [];
+
+    const ids = discounts
+      .map(d => Number(d.idCollectDiscount))
+      .filter(id => !Number.isNaN(id));
+    this.collectService.selectedCollectDiscounts = Array.from(new Set(ids));
   }
 
   selectDocumentSale(documentSale: DocumentSale, indexDocumentSale: number, event: any) {
