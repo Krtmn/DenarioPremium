@@ -1644,6 +1644,8 @@ export class CollectionService {
       nuAmountTotalConversion: 0,
       nuAmountPaid: 0,
       nuAmountPaidConversion: 0,
+      nuAmountDiscountTotal: 0,
+      nuAmountDiscountTotalConversion: 0,
       nuDifference: 0,
       nuDifferenceConversion: 0,
       nuIgtf: 0,
@@ -3183,6 +3185,11 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       this.collection.nuAmountFinal = this.montoTotalPagar;
       this.collection.nuAmountFinalConversion = this.convertirMonto(this.collection.nuAmountFinal, 0, this.collection.coCurrency);
 
+
+      const details = this.collection?.collectionDetails ?? [];
+      const nuAmountDiscountTotal = details.reduce((sum, detail) => sum + Number(detail?.nuAmountCollectDiscount ?? 0), 0);
+      const nuAmountDiscountTotalConversion = details.reduce((sum, detail) => sum + Number(detail?.nuAmountCollectDiscountConversion ?? 0), 0);
+
       const deleteCollectionSQL = 'DELETE FROM collections WHERE co_collection = ?';
       const deleteCollectionDetailsSQL = 'DELETE FROM collection_details WHERE co_collection = ?';
       const deleteCollectionDetailsDiscountSQL = 'DELETE FROM collection_detail_discounts WHERE co_collection = ?';
@@ -3218,11 +3225,14 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           "nu_amount_igtf_conversion," +
           "nu_amount_final," +
           "nu_amount_final_conversion," +
+          "nu_amount_discount_total," +
+          "nu_amount_discount_total_conversion," +
           "nu_igtf," +
           "hasIGTF," +
           "nu_attachments," +
           "has_attachments" +
-          ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+          ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
         return dbServ.executeSql(insertCollection,
           [
             0,
@@ -3253,6 +3263,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             collection.nuAmountIgtfConversion,
             collection.nuAmountFinal,
             collection.nuAmountFinalConversion,
+            nuAmountDiscountTotal,
+            nuAmountDiscountTotalConversion,
             collection.nuIgtf,
             collection.hasIGTF,
             collection.nuAttachments,
@@ -3343,10 +3355,12 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     nu_amount_igtf_conversion,
     nu_amount_final,
     nu_amount_final_conversion,
+    nu_amount_discount_total,
+    nu_amount_discount_total_conversion,
     hasIGTF,
     nu_attachments,
     has_attachments
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
     const insertCollectionDetailSQL = `
@@ -3413,6 +3427,11 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
     let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
 
+    const details = this.collection?.collectionDetails ?? [];
+    const nuAmountDiscountTotal = details.reduce((sum, detail) => sum + Number(detail?.nuAmountCollectDiscount ?? 0), 0);
+    const nuAmountDiscountTotalConversion = details.reduce((sum, detail) => sum + Number(detail?.nuAmountCollectDiscountConversion ?? 0), 0);
+
+
     for (var co = 0; co < collection.length; co++) {
       const collect = collection[co];
       queries.push([insertCollectionSQL,
@@ -3446,6 +3465,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           collect.nuAmountIgtfConversion,
           collect.nuAmountFinal,
           collect.nuAmountFinalConversion,
+          nuAmountDiscountTotal,
+          nuAmountDiscountTotalConversion,
           collect.hasIGTF,
           collect.nuAttachments,
           collect.hasAttachments,
@@ -3796,11 +3817,13 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "nu_amount_igtf_conversion," +
       "nu_amount_final," +
       "nu_amount_final_conversion," +
+      "nu_amount_discount_total," +
+      "nu_amount_discount_total_conversion," +
       "nu_igtf," +
       "hasIGTF," +
       "nu_attachments," +
       "has_attachments," +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
 
     let newCoCollection = this.dateServ.generateCO(0);
@@ -3834,6 +3857,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         0,//collection.nuAmountIgtfConversion,
         collection.nuDifference,//collection.nuAmountFinal,
         collection.nuDifferenceConversion,//collection.nuAmountFinalConversion,
+        collection.nuAmountDiscountTotal,//collection.nuAmountDiscountTotal,
+        collection.nuAmountDiscountTotalConversion,//collection.nuAmountDiscountTotalConversion,
         collection.nuIgtf,
         collection.hasIGTF,
         collection.nuAttachments,
@@ -4052,6 +4077,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         collection.nuAmountIgtfConversion = res.rows.item(0).nu_amount_igtf_conversion == null ? 0 : res.rows.item(0).nu_amount_igtf_conversion;
         collection.nuAmountPaid = res.rows.item(0).nu_amount_paid == null ? 0 : res.rows.item(0).nu_amount_paid;
         collection.nuAmountPaidConversion = res.rows.item(0).nu_amount_paid_conversion == null ? 0 : res.rows.item(0).nu_amount_paid_conversion;
+        collection.nuAmountDiscountTotal = res.rows.item(0).nu_amount_discount_total == null ? 0 : res.rows.item(0).nu_amount_discount_total;
+        collection.nuAmountDiscountTotalConversion = res.rows.item(0).nu_amount_discount_total_conversion == null ? 0 : res.rows.item(0).nu_amount_discount_total_conversion;
         collection.hasIGTF = res.rows.item(0).hasIGTF == undefined ? false : res.rows.item(0).hasIGTF;
         //collection.daVoucher = res.rows.item(0).daVoucher;
         collection.document = {} as DocumentSale;

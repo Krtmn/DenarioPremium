@@ -231,23 +231,21 @@ export class AutoSendService implements OnInit {
             switch (coType) {
               // coType 0, 3, 4 => ambos arrays NO deben estar vacíos
               case 0:
-              case 3:
-              case 4:
-                if (payments.length === 0 || details.length === 0) {
-                  send = false;
-                }
-                break;
-
               // coType 1 => collectionPayments NO debe estar vacío
               case 1:
                 if (payments.length === 0) {
                   send = false;
                 }
                 break;
-
               // coType 2 => collectionDetails NO debe estar vacío
               case 2:
                 if (details.length === 0) {
+                  send = false;
+                }
+                break;
+              case 3:
+              case 4:
+                if (payments.length === 0 || details.length === 0) {
                   send = false;
                 }
                 break;
