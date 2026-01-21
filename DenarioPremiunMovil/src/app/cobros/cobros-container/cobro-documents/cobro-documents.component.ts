@@ -2031,11 +2031,19 @@ export class CobrosDocumentComponent implements OnInit {
           ? this.collectService.collection.collectionDetails[idxDetail as number]?.nuBalanceDoc
           : NaN
       );
-      const viewBalance = Number(this.collectService.documentSalesView?.[this.indexDocumentSaleOpen]?.nuBalance ?? NaN);
+
+
+      const monedaDoc = this.collectService.documentSaleOpen.coCurrency;
       const backupBalance = Number(this.collectService.documentSalesBackup?.[this.indexDocumentSaleOpen]?.nuBalance ?? NaN);
       const currentBalance = Number(this.collectService.documentSaleOpen?.nuBalance ?? NaN);
+      let viewBalance = 0;
+      if (this.collectService.collection.coCurrency == monedaDoc) {
+        viewBalance = Number(this.collectService.documentSalesView?.[this.indexDocumentSaleOpen]?.nuBalance);
+      } else {
+        viewBalance = this.collectService.convertirMonto(Number(this.collectService.documentSalesView?.[this.indexDocumentSaleOpen]?.nuBalance), this.collectService.collection.nuValueLocal, monedaDoc);
+      }
 
-      const candidates = [viewBalance, detailBalance, backupBalance, currentBalance].filter(v => !Number.isNaN(v));
+      const candidates = [viewBalance].filter(v => !Number.isNaN(v));
       const baseBalance = candidates.length ? candidates[0] : 0;
       let runningBalance = baseBalance;
 
@@ -2124,10 +2132,10 @@ export class CobrosDocumentComponent implements OnInit {
       this.centsAmountPaid = Math.round((this.collectService.amountPaid ?? 0) * 100);
       this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
 
-      const hasDiscountComment = typeof this.discountComment === 'string' && this.discountComment.trim().length > 0;
-      if (hasDiscountComment) {
-        this.disabledSaveButton = false;
-      }
+      //const hasDiscountComment = typeof this.discountComment === 'string' && this.discountComment.trim().length > 0;
+      //if (hasDiscountComment) {
+      this.disabledSaveButton = false;
+      //}
 
       this.cdr.detectChanges();
     } catch (err) {
