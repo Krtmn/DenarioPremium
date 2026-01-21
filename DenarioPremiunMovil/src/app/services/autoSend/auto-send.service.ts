@@ -189,6 +189,7 @@ export class AutoSendService implements OnInit {
                 request.collection!.collectionDetails = collectionDetails.map(detail => ({
                   ...detail,
                   nuBalanceDoc: detail.nuBalanceDocOriginal,
+                  nuBalanceDocConversion: detail.nuBalanceDocOriginalConversion,
                 }));
                 request.collection!.collectionPayments = [];
                 resolve("ok");
@@ -198,6 +199,7 @@ export class AutoSendService implements OnInit {
                 request.collection!.collectionDetails = collectionDetails.map(detail => ({
                   ...detail,
                   nuBalanceDoc: detail.nuBalanceDocOriginal,
+                  nuBalanceDocConversion: detail.nuBalanceDocOriginalConversion,
                 }));
                 this.collectionService.getCollectionDetailsDiscounts(this.dbService.getDatabase(), coTransaction).then((collectionDetailsDiscounts) => {
                   const all = collectionDetailsDiscounts || [];
