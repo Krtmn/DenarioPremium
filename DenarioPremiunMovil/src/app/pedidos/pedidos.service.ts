@@ -574,7 +574,11 @@ export class PedidosService {
         var warehouseClient: Warehouse = {} as Warehouse;
         if (this.validateWarehouses) {
           if(stock.quStock == 0){
-            //si wh no tiene stock, buscamos otro wh con stock          
+            //si wh no tiene stock, buscamos otro wh con el mayor stock
+            stockList.sort((a, b) => b.quStock - a.quStock);
+            stock = stockList[0];
+          }
+            /*          
             for (let i = 0; i < stockList.length; i++) {
               const item = stockList[i];
               if (item.quStock > 0) {
@@ -583,6 +587,7 @@ export class PedidosService {
               }
             }
           }
+            */
           if (stock.quStock == 0) {
             //ninguno tiene stock
             console.log('stock tiene 0 unidades');
