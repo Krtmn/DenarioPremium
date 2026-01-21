@@ -3770,7 +3770,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "nu_igtf," +
       "hasIGTF," +
       "nu_attachments," +
-      "has_attachments," +
+      "has_attachments" +
       ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
 
@@ -3808,7 +3808,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         collection.nuIgtf,
         collection.hasIGTF,
         collection.nuAttachments,
-        collection.hasAttachments,
+        collection.hasAttachments
       ]).then(data => {
         console.log("CREE ANTICIPO AUTOMATICO, DEBO CREAR EL PAYMENT")
         return this.createAnticipoCollectionPayment(dbServ, collection, newCoCollection);
