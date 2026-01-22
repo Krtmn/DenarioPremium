@@ -128,7 +128,8 @@ export class ClientesDatabaseServicesService {
           daDocument: data.rows.item(i).daDocument,
           daDueDate: data.rows.item(i).daDueDate,
           countDueDate: data.rows.item(i).countDueDate,
-          colorRow: ""
+          colorRow: "",
+          txtPrueba: data.rows.item(i).txtPrueba,
         });
       }
       return lists;
@@ -177,6 +178,7 @@ export class ClientesDatabaseServicesService {
          c.qu_discount AS quDiscount,
          c.tx_description_1 AS txDescription1,
          c.tx_description_2 AS txDescription2,
+         c.txtPrueba AS txtPrueba,
 
          (SELECT na_responsible FROM address_clients WHERE id_client = ? LIMIT 1) AS naResponsible,
          (SELECT na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1) AS naPriceList,

@@ -64,7 +64,7 @@ export class LoginComponent implements OnInit {
   async ngOnInit() {
     /* App.getInfo().then(async (res) => { */
     // preferir la versión real del paquete si está disponible, si no usar fallback
-    this.versionApp = "6.5.12";
+    this.versionApp = "6.5.19";
 
     const storedVersionApp = localStorage.getItem("versionApp");
     // primer arranque: guardamos la versionApp actual
@@ -73,32 +73,35 @@ export class LoginComponent implements OnInit {
       await this.initLogin();
     } else {
       // si la semver actual es mayor que la guardada --> ejecutar limpieza/sincronización
-      if (this.compareSemVer(this.versionApp, storedVersionApp) > 0) {
+      /* if (this.compareSemVer(this.versionApp, storedVersionApp) > 0) {
         try {
           const createTables$ = await this.synchronization.getCreateTables();
-          createTables$.subscribe((createTablesRes) => {
-            this.loginLogic.dropTables(createTablesRes).then((dropRes: any) => {
-              // limpia y vuelve a dejar guardada la nueva versiónApp
-              let connected = localStorage.getItem("connected");
-              let connectionType = localStorage.getItem("connectionType");
-              localStorage.clear();
-              localStorage.setItem("versionApp", this.versionApp);
-              localStorage.setItem("connected", String(connected));
-              localStorage.setItem("connectionType", String(connectionType));
-              
-              this.initLogin();
-            }).catch(err => {
-              console.error('dropTables error', err);
-            });
-          }, (err: any) => {
-            console.error('getCreateTables subscribe error', err);
+          createTables$.subscribe({
+            next: (createTablesRes) => {
+              this.loginLogic.dropTables(createTablesRes).then((dropRes: any) => {
+                // limpia y vuelve a dejar guardada la nueva versiónApp
+                let connected = localStorage.getItem("connected");
+                let connectionType = localStorage.getItem("connectionType");
+                localStorage.clear();
+                localStorage.setItem("versionApp", this.versionApp);
+                localStorage.setItem("connected", String(connected));
+                localStorage.setItem("connectionType", String(connectionType));
+
+                this.initLogin();
+              }).catch(err => {
+                console.error('dropTables error', err);
+              });
+            },
+            error: (err: any) => {
+              console.error('getCreateTables subscribe error', err);
+            }
           });
         } catch (err) {
           console.error('Error al obtener createTables para sincronizar', err);
         }
-      } else {
-        await this.initLogin();
-      }
+      } else { */
+      await this.initLogin();
+      //}
     }
 
   }
@@ -118,7 +121,7 @@ export class LoginComponent implements OnInit {
 
     //subcripcion por si cambian el usuario
     this.subsChangeUser = this.loginLogic.changeUser.subscribe(async (data: Boolean) => {
-      //SI LE DAN A ACEPTAR, HAY QUE BORRAR LA BD, GUARDAR EN LOCALSTORAGE EL NUEVO LOGIN Y PASS, 
+      //SI LE DAN A ACEPTAR, HAY QUE BORRAR LA BD, GUARDAR EN LOCALSTORAGE EL NUEVO LOGIN Y PASS,
       //Y SINCRONIZAR CON LOS NUEVOS DATOS
       console.log(data);
       let f = this.loginForm;
@@ -234,7 +237,7 @@ export class LoginComponent implements OnInit {
 
             this.user = result;
             localStorage.setItem("user", JSON.stringify(this.user));
-            this.synchronization.initDb(this.user, conexion);
+            this.synchronization.initDb(this.user, conexion, this.versionApp);
 
 
           } else if (result.errorCode == '104') {
@@ -273,7 +276,7 @@ export class LoginComponent implements OnInit {
       }
       let user = {} as User;
       this.globalConfig.setVars([]);
-      this.synchronization.initDb(user, conexion);
+      this.synchronization.initDb(user, conexion, this.versionApp);
 /*       this.message.hideLoading();
  */    }
   }

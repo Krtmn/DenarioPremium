@@ -248,7 +248,7 @@ export class ClientLogicService {
   async goToClient(idClient: number): Promise<void> {
     try {
       this.clientListComponent = false; // apagamos el componente client list
-      
+
       // 1) Obtener cliente
       const clientResult = await this.clientesServices.getClientById(Number(idClient));
       this.datos = {} as SelectedClient;
@@ -270,10 +270,10 @@ export class ClientLogicService {
 
       clientResult.editable = clientResult.editable == null ? false : (clientResult.editable.toString().toLowerCase() === 'true');
 
-      if(clientResult.coCurrency == null || clientResult.coCurrency.trim() === "") {
+      if (clientResult.coCurrency == null || clientResult.coCurrency.trim() === "") {
         clientResult.coCurrency = this.currencyService.getCurrencyById(clientResult.idCurrency).coCurrency;
       }
-      
+
       this.datos.client = clientResult;
 
       // 2) Obtener documentos de venta del cliente

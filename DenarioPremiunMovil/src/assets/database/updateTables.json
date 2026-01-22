@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "name": "clients",
+    "table": "clients",
+    "version": "6.5.18.19",
+    "sql": "ALTER TABLE clients ADD COLUMN txtPrueba VARCHAR(100);"
+  },
+  {
+    "id": 1,
+    "name": "clients",
+    "table": "clients",
+    "version": "6.5.19",
+    "sql": "UPDATE clients SET tx_description_2 = 'prueba' WHERE co_client = 'CCS011';"
+  },
+  {
+    "id": 2,
+    "name": "clients",
+    "table": "clients",
+    "version": "6.5.12",
+    "sql": "ALTER TABLE clients ADD COLUMN txtPruebaNOSALDRA VARCHAR(100);"
+  }
+]

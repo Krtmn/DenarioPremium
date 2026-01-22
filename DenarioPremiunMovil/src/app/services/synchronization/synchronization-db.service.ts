@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-import { BehaviorSubject, fromEventPattern, identity, Observable, throwError } from 'rxjs';
+import { BehaviorSubject, fromEventPattern, identity, Observable, throwError, firstValueFrom } from 'rxjs';
+
 import { NavController } from '@ionic/angular';
 import { Platform } from '@ionic/angular';
 // import { SQLitePorter } from '@ionic-native/sqlite-porter';
@@ -95,6 +96,8 @@ export class SynchronizationDBService {
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
 
+  private readonly TARGET_DB_VERSION = 2;
+
 
   constructor(
     private navController: NavController,
@@ -172,13 +175,14 @@ export class SynchronizationDBService {
     ]
   }
 
-  async initDb(user: User, conexion: Boolean) {
+  async initDb(user: User, conexion: Boolean, versionApp: string) {
     this.databaseReady = new BehaviorSubject(false);
     this.sqlite.create({
       name: 'denarioPremium',
       location: 'default'
-    }).then((db: SQLiteObject) => {
+    }).then(async (db: SQLiteObject) => {
       this.database = db;
+      await this.ensureSchemaUpToDate(versionApp); // <-- migraciones antes de usar la BD
       this.createTables(user, conexion);
     }).catch(e => console.log(e));
   }
@@ -276,10 +280,92 @@ export class SynchronizationDBService {
 
   }
 
+  private async ensureSchemaUpToDate(versionApp: string) {
+    const current = await this.getDbVersion(); // versión almacenada en localStorage
+    if (this.compareSemVer(current, versionApp) >= 0) return; // ya actualizado o igual
+
+    // baseline si no hay versión previa
+    if (!current) {
+      await this.setDbVersion(versionApp);
+      return;
+    }
+
+    // Aplica todas las migraciones pendientes entre current y versionApp
+    await this.migrateFrom1To2(current, versionApp);
+    await this.setDbVersion(versionApp);
+  }
+
+  private compareSemVer(a?: string, b?: string): number {
+    if (!a && !b) return 0;
+    if (!a) return -1;
+    if (!b) return 1;
+    const pa = a.split('.').map(n => parseInt(n, 10) || 0);
+    const pb = b.split('.').map(n => parseInt(n, 10) || 0);
+    const len = Math.max(pa.length, pb.length);
+    for (let i = 0; i < len; i++) {
+      const da = pa[i] ?? 0;
+      const db = pb[i] ?? 0;
+      if (da > db) return 1;
+      if (da < db) return -1;
+    }
+    return 0;
+  }
+
+  private async migrateFrom1To2(currentVersion: string, targetVersion: string) {
+    type MigrationRow = { id: number; name?: string; table?: string; version?: string; sql: string; index?: string };
+
+    let migrations: MigrationRow[] = [];
+    try {
+      migrations = await firstValueFrom(this.http.get<MigrationRow[]>('assets/database/updateTables.json'));
+    } catch (e) {
+      console.error('No se pudo leer updateTables.json', e);
+      return;
+    }
+
+    // Solo migraciones con versión > currentVersion y <= targetVersion
+    const pending = migrations
+      .filter(m =>
+        m.version &&
+        this.compareSemVerSafe(m.version, currentVersion) > 0 &&
+        this.compareSemVerSafe(m.version, targetVersion) <= 0
+      )
+      .sort((a, b) => this.compareSemVerSafe(a.version!, b.version!));
+
+    for (const m of pending) {
+      try {
+        await this.database.executeSql(m.sql, []);
+        if (m.index) await this.database.executeSql(m.index, []);
+        console.log(`Migración aplicada (${m.version}): ${m.name || m.table || m.id}`);
+      } catch (err) {
+        console.error(`Error aplicando migración ${m.version} (${m.name || m.table || m.id})`, err);
+        throw err; // aborta para no dejar la BD a medias
+      }
+    }
+  }
+
+  private async getDbVersion(): Promise<string | undefined> {
+    return localStorage.getItem("versionApp") || undefined;
+  }
+
+  private async setDbVersion(v: string) {
+    localStorage.setItem("versionApp", v);
+    // opcional: también guardarlo en PRAGMA user_version si quisieras un entero
+    // await this.database.executeSql(`PRAGMA user_version = ${parseInt(v.replace(/\D/g,'')) || 0};`, []);
+  }
+
+  private compareSemVerSafe(a?: string, b?: string): number {
+    try {
+      return this.compareSemVer(a, b);
+    } catch {
+      return 0;
+    }
+  }
+
   getDataBaseState() {
     return this.databaseReady.asObservable();
   }
 
+  //////////////////////////////////QUERYS//////////////////////////////////
   getTablesVersion() {
     return this.database.executeSql("SELECT * FROM versionsTables", []).then(data => {
       let lists = [];

@@ -44,6 +44,7 @@ export class Client {
             obj['daDueDate'],
             obj['countDueDate'],
             obj['colorRow'],
+            obj['txtPrueba'],
         );
     }
 
@@ -91,6 +92,7 @@ export class Client {
         public daDueDate: string,
         public countDueDate: number,
         public colorRow: string,
+        public txtPrueba: string,
     ) { }
 
 }
