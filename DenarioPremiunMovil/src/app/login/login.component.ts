@@ -126,7 +126,8 @@ export class LoginComponent implements OnInit {
       localStorage.setItem("password", f.value.password);
 
       (await this.synchronization.getCreateTables()).subscribe((res) => {
-        this.loginLogic.dropTables(res).then((res: any) => {
+        this.loginLogic.dropTables(res).then(async (res: any) => {
+          await this.synchronization.checkAndRunMigrations();
           console.log(res)
           console.log(f);
           localStorage.removeItem("lastUpdate")
