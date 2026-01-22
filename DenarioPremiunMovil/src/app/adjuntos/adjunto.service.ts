@@ -37,6 +37,10 @@ export class AdjuntoService {
 
   imageWeightLimit = 30; //limite de peso de archivos, en MB
 
+  public showCamera = true;
+  public userCanUploadFiles = true;
+  
+
   //flag que se levanta si un archivo excede weightLimit 
   weightLimitExceeded = false;
 
@@ -61,6 +65,8 @@ export class AdjuntoService {
     this.viewOnly = viewOnly;
     this.colorBoton = colorBoton;
     this.totalPhoto = +this.config.get('quAttach');
+    this.showCamera = this.config.get('showCamera') === 'true' ? true : false;
+    this.userCanUploadFiles = this.config.get('userCanUploadFiles') === 'true' ? true : false;
     let weightLimit = this.config.get('imageWeightLimit');
     this.imageWeightLimit = weightLimit.length > 0 ? +weightLimit : 30; //mientras se corren scripts de actualizacion
     //console.log('totalPhoto: '+this.totalPhoto);
