@@ -69,7 +69,7 @@ export class PedidosListaComponent implements OnInit {
     if (order.st_delivery == undefined) {
       order.st_delivery = order.st_order;
     }
-    this.orderServ.pedidoModificable = (order.st_delivery == DELIVERY_STATUS_SAVED);
+    this.orderServ.pedidoModificable = (order.st_delivery == 3 || order.st_delivery == null);
     if (this.orderServ.userMustActivateGPS &&
       (this.orderServ.pedidoModificable || this.orderServ.copiandoPedido)) {
       if (!this.orderServ.coordenadas || this.orderServ.coordenadas.length == 0) {
@@ -104,24 +104,27 @@ export class PedidosListaComponent implements OnInit {
   }
 
   getStatusOrderName(status: number, naStatus: any) {
-    switch (status) {
-      case DELIVERY_STATUS_SAVED: return this.getTag("PED_STATUS_SAVED");
-      case DELIVERY_STATUS_TO_SEND: return this.getTag("PED_STATUS_TO_SEND");
-      case DELIVERY_STATUS_SENT: return this.getTag("PED_STATUS_SENT");
-      case 6:
-        // naStatus puede ser string o un objeto => normalizar a string
-        if (naStatus == null) return 'Enviado';
-        if (typeof naStatus === 'string') {
-          return naStatus;
-        }
-        if (typeof naStatus === 'object') {
-          // intenta varias propiedades comunes
-          return naStatus.na_status;
-        }
-        return String(naStatus);
+    if (typeof naStatus === 'object') {
+      return naStatus.na_status;
+    } else
+      switch (status) {
+        case DELIVERY_STATUS_SAVED: return this.getTag("PED_STATUS_SAVED");
+        case DELIVERY_STATUS_TO_SEND: return this.getTag("PED_STATUS_TO_SEND");
+        case DELIVERY_STATUS_SENT: return this.getTag("PED_STATUS_SENT");
+        case 6:
+          // naStatus puede ser string o un objeto => normalizar a string
+          if (naStatus == null) return 'Enviado';
+          if (typeof naStatus === 'string') {
+            return naStatus;
+          }
+          if (typeof naStatus === 'object') {
+            // intenta varias propiedades comunes
+            return naStatus.na_status;
+          }
+          return String(naStatus);
 
-      default: return '';
-    }
+        default: return '';
+      }
   }
 
   showAlertDelete(order: ItemListaPedido, index: number) {

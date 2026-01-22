@@ -65,7 +65,6 @@ export class AutoSendService implements OnInit {
     private router: Router,
     private adjuntoService: AdjuntoService,
     private returnDatabaseService: ReturnDatabaseService
-
   ) {
     //this.process();
 
@@ -624,14 +623,14 @@ export class AutoSendService implements OnInit {
         });
 
         this.dbService.getDatabase().executeSql(
-          'UPDATE visits SET id_visit = ? , st_visit = ? WHERE co_visit = ?', [idTransaction, VISIT_STATUS_VISITED, coTransaction]
+          'UPDATE visits SET id_visit = ?, st_visit = ?, st_delivery = ? WHERE co_visit = ?', [idTransaction, VISIT_STATUS_VISITED, coTransaction]
         )
         break;
       }
 
       case 'order':
         this.dbService.getDatabase().executeSql(
-          'UPDATE orders SET id_order = ? , st_delivery = ? WHERE co_order = ?', [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
+          'UPDATE orders SET id_order = ?, st_visit = ?, st_delivery = ? WHERE co_order = ?', [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
         ).then(res => {
           this.adjuntoService.sendPhotos(this.dbService.getDatabase(), idTransaction, "pedidos", coTransaction);
         })

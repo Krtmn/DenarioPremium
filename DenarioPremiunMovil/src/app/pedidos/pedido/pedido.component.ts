@@ -146,7 +146,7 @@ export class PedidoComponent implements OnInit {
     //this.orderServ.reset();
 
     this.setClientfromSelector(client);
-    //como estamos recien reseteados, no hay necesidad de chequear 
+    //como estamos recien reseteados, no hay necesidad de chequear
     this.clienteSelectorService.checkClient = false;
 
   })
@@ -307,7 +307,7 @@ export class PedidoComponent implements OnInit {
 
   abrirPedido() {
     //esta funcion toma un pedido guardado o enviado y lo pone para modificarlo o mostrarlo respectivamente
-    //mini reset 
+    //mini reset
     this.orderServ.carrito = [];
     //[groupByTotalByLines]
     this.orderServ.carritoWithLines = [];
@@ -329,7 +329,7 @@ export class PedidoComponent implements OnInit {
     // Direccion de cliente: hecho en setup empresa, setClientFromSelector(c);
     // Tipo de orden: hecho en setup empresa
     // Lista de precio: hecho en setup empresa, setClientFromSelector(c);
-    //Numero de pedido: 
+    //Numero de pedido:
 
     this.nuPurchase = this.orderServ.order.nuPurchase === null ?
       '' : this.orderServ.order.nuPurchase;
@@ -742,7 +742,7 @@ export class PedidoComponent implements OnInit {
       nuAttachments: this.adjuntoService.getNuAttachment(),
       idDistributionChannel: this.orderServ.userCanSelectChannel ? this.distChannel.idChannel : null,
       coDistributionChannel: this.orderServ.userCanSelectChannel ? this.distChannel.coChannel : null,
-      stDelivery: stDelivery,
+      stDelivery: 3,
     } as Orders
 
     console.log(order);
@@ -959,7 +959,7 @@ export class PedidoComponent implements OnInit {
 
 
     } else {
-      //no se hace nada, solo el onchange() 
+      //no se hace nada, solo el onchange()
     }
     this.onChange();
   }
