@@ -16,12 +16,75 @@ import { PendingTransaction } from '../modelos/tables/pendingTransactions';
   providedIn: 'root'
 })
 export class ServicesService {
-  private WsUrl = "http://192.168.0.186:8181/PremiumWS/services/"; // intellij 
-  //private WsUrl = "http://190.142.84.15:9091/PremiumWS/services/"; //soporte premium
-  //private WsUrl = "http://192.168.0.231:8282/PremiumWS/services/"; //muthen service
+ //private WsUrl = "http://soportepremium.ddns.net:8181/PremiumWS/services/";
+  private WsUrl = "http://192.168.0.231:8282/PremiumWS/services/";
+  //private WsUrl = "http://192.168.0.217:8080/PremiumWS/services/";
+
+  //private WsUrl = "http://denariodemo.ddns.net:8282/PremiumWS/services/";
+
+  //KIBERNO
+  //private WsUrl = "http://190.52.107.151:8282/PremiumWS/services/";
+
+  //DEMO
+  //private WsUrl = 'http://soportepremium.ddns.net:9090/PremiumWS/services/';
+
+  //Server Savia asanchez // 123456
+  //rivate WsUrl = "http://soportepremium.ddns.net:9995/PremiumWS/services/";
+
+  //NUTRINA andres nutac123
+  //private WsUrl = "http://soportepremium.ddns.net:9993/PremiumWS/services/";
+
+  //nutrina
+  //private WsUrl = 'http://soportepremium.ddns.net:8191/PremiumWS/services/';
+
+  //  private WsUrl = "http://200.35.84.250:8085/PremiumWS/services/";
+
+  //la fuente asanchez // 123456
+  //private WsUrl = "http://denariolafuente.dyndns.org:8083/PremiumWS/services/";
+
+  //charcuteria ventas01 // 123456
+  //private WsUrl = "http://soportepremium.ddns.net:9998/PremiumWS/services/"
+
+  //El Eden Import
+  // private WsUrl = "http://ec2-3-129-33-188.us-east-2.compute.amazonaws.com:8081/PremiumWS/services/";
+
+  //Alimentos Cofivenca
+  //private WsUrl = "http://207.244.239.61:9091/PremiumWS/services/";
+
+  //Importadora4k
+  //private WsUrl = "http://38.51.157.214:9080/PremiumWS/services/";
+
+  //Alimentos Global MP
+  //private WsUrl = "http://3.224.206.209:8081/PremiumWS/services/";
+
+
+  //mystic ggonzalez // 123456
   //private WsUrl = "http://soportepremium.ddns.net:9292/PremiumWS/services/";
-  //private WsUrl = "http://3.237.203.97:9091/PremiumWS/services/"; 
-  //private WsUrl = "http://denariolafuente.dyndns.org:8083/PremiumWS/services/"
+
+  //el palmar 1988 // 09247*
+  //private WsUrl = "http://denarioazucar.ddns.net:8181/PremiumWS/services/";
+
+  //romher 170 // 123456
+  // private WsUrl = "http://190.121.225.172:8060/PremiumWS/services/";
+
+  //private WsUrl = "https://denario-mobile-dev.apps.kraftheinz.com/PremiumWS/services/";
+
+  //private WsUrl ="http://52.45.133.141:8282/PremiumWS/services/"
+
+  //private WsUrl = "http://denariodemo.ddns.net:8282/PremiumWS/services/";
+
+  //private WsUrl = "http://200.35.84.250:8085/PremiumWS/services/";
+
+  // diprocher pruebas QA
+  //private WsUrl = "http://soportepremium.ddns.net:9991/PremiumWS/services/";
+
+  //private WsUrl = "http://soportepremium.ddns.net:9993/PremiumWS/services/";
+
+  //001 123456 Dist Mundo agricola
+  //private WsUrl = "http://soportepremium.ddns.net:9995/PremiumWS/services/";
+
+  //001 123456  miopart
+  //private WsUrl = " http://186.14.151.4:59091/PremiumWS/services/";
 
 
   private name = "";
