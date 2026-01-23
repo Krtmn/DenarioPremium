@@ -11,7 +11,7 @@ import { ServicesService } from '../services.service';
 import { MessageService } from '../messageService/message.service';
 import { Response } from 'src/app/modelos/response';
 import { Visit } from 'src/app/modelos/tables/visit';
-import { DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED, CLIENT_POTENTIAL_STATUS_SENT, COLLECT_STATUS_NEW, COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND } from 'src/app/utils/appConstants'
+import { DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED, CLIENT_POTENTIAL_STATUS_SENT, COLLECT_STATUS_NEW, COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, DEPOSITO_STATUS_SENT } from 'src/app/utils/appConstants'
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { UserAddresClients } from 'src/app/modelos/tables/userAddresClients';
 import { ClientLocationService } from '../clientes/locationClient/client-location.service';
@@ -653,7 +653,7 @@ export class AutoSendService implements OnInit {
       case 'return': {
         this.dbService.getDatabase().executeSql(
           'UPDATE returns SET id_return = ?, st_delivery = ? WHERE co_return = ?',
-          [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
+          [idTransaction, 1, coTransaction]
         ).then(res => {
           console.log("UPDATE EXITOSO ", res);
 
@@ -692,8 +692,8 @@ export class AutoSendService implements OnInit {
       }
       case 'deposit': {
         this.dbService.getDatabase().executeSql(
-          'UPDATE deposits SET id_deposit= ?, st_deposit= ? WHERE co_deposit= ?',
-          [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
+          'UPDATE deposits SET id_deposit= ?, st_deposit= ?, st_delivery = ? WHERE co_deposit= ?',
+          [idTransaction, DEPOSITO_STATUS_SENT, 1, coTransaction]
         ).then(res => {
           console.log("UPDATE EXITOSO ", res);
           //this.adjuntoService.sendPhotos(idTransaction, "deposit", coTransaction);

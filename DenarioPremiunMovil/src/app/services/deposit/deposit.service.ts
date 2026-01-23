@@ -779,10 +779,9 @@ export class DepositService {
       this.cobrosDetails = [] as CollectDeposit[];
       for (var i = 0; i < res.rows.length; i++) {
         item = res.rows.item(i)
-        item.isSelected = this.deposit.stDeposit >= 2 ? true : false;
+        item.isSelected = this.deposit.stDelivery == 1 || this.deposit.stDelivery == null ? true : false;
         this.cobrosDetails.push(item);
       }
-
       return this.deposit;
     }).catch(e => {
       this.deposit.depositCollect = [] as DepositCollect[];

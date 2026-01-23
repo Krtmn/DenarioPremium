@@ -51,22 +51,24 @@ export class DepositoGeneralComponent implements OnInit {
   ngOnInit() {
     this.alertButtons[0].text = this.depositService.depositTagsDenario.get('DENARIO_BOTON_CANCELAR')!
     this.alertButtons[1].text = this.depositService.depositTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
-    this.geoServ.getCurrentPosition().then(coords => {
-      if (this.depositService.userMustActivateGPS) {
-        //prevenimos que sobreescriba coordenadas con string vacio
-        if (coords.length > 0) {
+    if (this.depositService.deposit.stDeposit == 1) {
+      this.depositService.disabledEnterprise = true;
+      this.depositService.disabledCurrency = true;
+    } else {
+      this.geoServ.getCurrentPosition().then(coords => {
+        if (this.depositService.userMustActivateGPS) {
+          //prevenimos que sobreescriba coordenadas con string vacio
+          if (coords.length > 0) {
+            this.depositService.deposit.coordenada = coords
+          }
+        } else {
           this.depositService.deposit.coordenada = coords
         }
-      } else {
-        this.depositService.deposit.coordenada = coords
-      }
 
-      if (this.depositService.deposit.stDeposit == 3) {
-        this.depositService.disabledEnterprise = true;
-        this.depositService.disabledCurrency = true;
-      }
 
-    });
+
+      });
+    }
   }
 
 
