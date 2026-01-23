@@ -253,11 +253,11 @@ export class CobrosListComponent implements OnInit {
               if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == 1) {
                 this.collectService.hideDocuments = true;
                 this.collectService.hidePayments = true;
-              } else if (this.collectService.collection.stDelivery == 3) {
+              } /* else if (this.collectService.collection.stDelivery == 3) {
                 this.collectService.showHeaderButtonsFunction(false);
                 this.collectService.hideDocuments = true;
                 this.collectService.hidePayments = true;
-              } else {
+              } */ else {
                 this.collectService.showHeaderButtonsFunction(true);
               }
 
@@ -345,9 +345,9 @@ export class CobrosListComponent implements OnInit {
 
   getStatus(status: number, naStatus: any): string {
     switch (status) {
-      case COLLECT_STATUS_SAVED: return this.collectService.collectionTags.get("COB_STATUS_SAVED")!;
+      case 3: return this.collectService.collectionTags.get("COB_STATUS_SAVED")!;
       case COLLECT_STATUS_TO_SEND: return this.collectService.collectionTags.get("COB_STATUS_TO_SEND")!;
-      case COLLECT_STATUS_SENT:
+      case 1:
         return naStatus == null ? this.collectService.collectionTags.get("COB_STATUS_SENT")! : naStatus;
       case 6:
         // naStatus puede ser string o un objeto => normalizar a string

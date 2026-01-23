@@ -3445,7 +3445,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           collect.coClient,
           collect.naClient,
           collect.stCollection,
-          collect.stDelivery == null ? this.COLLECT_STATUS_SENT : collect.stDelivery,
+          1,
           collect.daCollection,
           collect.daRate,
           collect.naResponsible,
@@ -4244,7 +4244,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       this.itemListaCobros = [] as ItemListaCobros[];
       const res = await dbServ.executeSql(
         //'SELECT c.* FROM collections c ORDER BY c.st_delivery ASC, c.st_collection ASC,  c.da_collection ASC, c.id_collection DESC;', []
-        'SELECT c.* FROM collections c ORDER BY c.st_delivery ASC, c.da_collection DESC, c.st_collection ASC, c.id_collection DESC; ', []
+        'SELECT c.* FROM collections c ORDER BY c.st_delivery DESC, c.da_collection DESC, c.st_collection ASC, c.id_collection DESC; ', []
       );
 
       const promises: Promise<void>[] = [];

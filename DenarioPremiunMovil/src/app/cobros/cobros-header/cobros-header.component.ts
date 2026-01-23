@@ -344,7 +344,7 @@ export class CobrosHeaderComponent implements OnInit {
         })
       } else {
         //salvo
-        this.collectService.collection.stDelivery = 1;
+        this.collectService.collection.stDelivery = 3;
         this.collectService.collection.stCollection = this.COLLECT_STATUS_SAVED;
         this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(async response => {
           await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
