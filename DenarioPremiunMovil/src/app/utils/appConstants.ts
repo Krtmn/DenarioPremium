@@ -34,6 +34,15 @@ export const VISIT_STATUS_NOT_VISITED = 3;
 
 //FIN VALORES VISITA
 
+//Valores de integracion (para tener en cuenta)
+/*
+1: aprobado - puede ser integrado
+2: rechazado - se devuelve a la móvil no se integra
+3: por defecto - no se hace nada (Este debe ser el estatus que traigan todas las transacciones por defecto)
+5: Hubo un error de integración - queda en stand by
+6: integrado
+*/
+
 
 //COLORES MODULOS
 
