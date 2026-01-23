@@ -117,7 +117,7 @@ export class InventarioListComponent implements OnInit {
       this.inventariosLogicService.inventarioComp = true;
       this.inventariosLogicService.containerComp = false;
       this.inventariosLogicService.inventarioList = false;
-      if (this.inventariosLogicService.newClientStock.stDelivery == 3 || this.inventariosLogicService.newClientStock.stDelivery == null) {
+      if (this.inventariosLogicService.newClientStock.stDelivery == 1 || this.inventariosLogicService.newClientStock.stDelivery == null) {
         this.inventariosLogicService.showHeaderButtonsFunction(false);
         this.inventariosLogicService.hideTab = false;
         this.inventariosLogicService.inventarioSent = true;
@@ -139,27 +139,32 @@ export class InventarioListComponent implements OnInit {
     this.searchText = event.target.value.toLowerCase();
   }
 
-  getStatusOrderName(status: number, naStatus: any) {
+  getStatusOrderName(status: number, naStatus: any, idClientStock: number) {
     if (typeof naStatus === 'object') {
       return naStatus.na_status;
     } else
-      switch (status) {
-        case DELIVERY_STATUS_SAVED: return this.inventariosLogicService.inventarioTagsDenario.get("DENARIO_DEV_SAVED")! == undefined ? "Guardado" : this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_DEV_SAVED')!;
-        case DELIVERY_STATUS_TO_SEND: return this.inventariosLogicService.inventarioTagsDenario.get("DENARIO_DEV_TO_BE_SENDED")! == undefined ? "Por enviar" : this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_DEV_TO_BE_SENDED')!;
-        case DELIVERY_STATUS_SENT: return this.inventariosLogicService.inventarioTagsDenario.get("DENARIO_DEV_STATUS")! == undefined ? "Enviado" : this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_DEV_STATUS')!;
-        case 6:
-          // naStatus puede ser string o un objeto => normalizar a string
-          if (naStatus == null) return 'Enviado';
-          if (typeof naStatus === 'string') {
-            return naStatus;
-          }
-          if (typeof naStatus === 'object') {
-            // intenta varias propiedades comunes
-            return naStatus.na_status;
-          }
-          return String(naStatus);
+      if (idClientStock == null || idClientStock == 0) {
+        switch (status) {
+          case 3: return this.inventariosLogicService.inventarioTagsDenario.get("DENARIO_DEV_SAVED")! == undefined ? "Guardado" : this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_DEV_SAVED')!;
+          case DELIVERY_STATUS_TO_SEND: return this.inventariosLogicService.inventarioTagsDenario.get("DENARIO_DEV_TO_BE_SENDED")! == undefined ? "Por enviar" : this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_DEV_TO_BE_SENDED')!;
+          case 1: return this.inventariosLogicService.inventarioTagsDenario.get("DENARIO_DEV_SENDED")! == undefined ? "Enviado" : this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_DEV_SENDED')!;
+          case 6:
+            // naStatus puede ser string o un objeto => normalizar a string
+            if (naStatus == null) return 'Enviado';
+            if (typeof naStatus === 'string') {
+              return naStatus;
+            }
+            if (typeof naStatus === 'object') {
+              // intenta varias propiedades comunes
+              return naStatus.na_status;
+            }
+            return String(naStatus);
 
-        default: return '';
+          default: return '';
+        }
+      }
+      else {
+        return this.inventariosLogicService.inventarioTagsDenario.get("DENARIO_DEV_SENDED")! == undefined ? "Enviado" : this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_DEV_SENDED')!;
       }
   }
 

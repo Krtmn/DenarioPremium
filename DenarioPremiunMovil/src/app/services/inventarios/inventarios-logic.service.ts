@@ -485,9 +485,9 @@ export class InventariosLogicService {
     var batch = [];
 
     if (send) {
-      this.newClientStock.stDelivery = DELIVERY_STATUS_TO_SEND;
+      this.newClientStock.stDelivery = DELIVERY_STATUS_SENT;
     } else {
-      this.newClientStock.stDelivery = DELIVERY_STATUS_SAVED;
+      this.newClientStock.stDelivery = 3;
     }
     this.newClientStock.hasAttachments = this.adjuntoService.hasItems();
     this.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();

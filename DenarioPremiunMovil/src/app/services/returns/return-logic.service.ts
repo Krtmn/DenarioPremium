@@ -210,7 +210,7 @@ export class ReturnLogicService {
     var database = this.dbServ.getDatabase();
     this.returnList = [];
     this.itemReturns = [] as ItemListaDevoluciones[];
-    var select = 'select rt.id_return as idReturn, rt.co_return as coReturn, rt.co_client as coClient, rt.lb_client as naClient, rt.st_return as stReturn, rt.da_return as daReturn, rt.st_delivery as stDelivery FROM returns rt ORDER BY rt.st_return ASC, rt.da_return DESC'
+    var select = 'select rt.id_return as idReturn, rt.co_return as coReturn, rt.co_client as coClient, rt.lb_client as naClient, rt.st_return as stReturn, rt.da_return as daReturn, rt.st_delivery as stDelivery FROM returns rt ORDER BY rt.st_delivery DESC, rt.da_return DESC'
     return database.executeSql(select, []).then(async result => {
       let promises: Promise<void>[] = [];
 
