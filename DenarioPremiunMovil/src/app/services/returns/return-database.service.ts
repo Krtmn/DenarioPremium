@@ -97,6 +97,25 @@ export class ReturnDatabaseService {
       });
   }
 
+  deleteReturnsBatch(dbServ: SQLiteObject, returns: Return[]) {
+    let queries: any[] = [];
+    const deleteStatement = "DELETE FROM returns WHERE co_return = ?";
+    const deleteDetailsStatement = "DELETE FROM return_details WHERE co_return = ?";
+
+    for (let i = 0; i < returns.length; i++) {
+      let coReturn = returns[i].coReturn;
+      queries.push([deleteDetailsStatement, [coReturn]]);
+      queries.push([deleteStatement, [coReturn]]);
+    }
+    return dbServ.sqlBatch(queries).then(() => {
+      console.log("[ReturnDatabaseService] deleteReturnsBatch exitoso");
+    }).catch(error => {
+      console.log("[ReturnDatabaseService] Error al ejecutar deleteReturnsBatch.");
+      console.log(error);
+    });
+  }
+
+
   saveReturnBatch(dbServ: SQLiteObject, returns: Return[]) {
     let queries: any[] = [];
 
@@ -146,6 +165,7 @@ export class ReturnDatabaseService {
 
       for (let i = 0; i < devolucion.details.length; i++) {
         const detail = devolucion.details[i];
+        detail.coReturnDetail = devolucion.coReturn + '-' + (i + 1);
         queries.push([
           insertStatementDetails,
           [
