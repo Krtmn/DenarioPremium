@@ -668,7 +668,7 @@ export class AutoSendService implements OnInit {
       case 'clientStock': {
         this.dbService.getDatabase().executeSql(
           'UPDATE client_stocks SET id_client_stock = ?, st_delivery = ? WHERE co_client_stock = ?',
-          [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
+          [idTransaction, 1, coTransaction]
         ).then(res => {
           console.log("UPDATE EXITOSO ", res);
           this.adjuntoService.sendPhotos(this.dbService.getDatabase(), idTransaction, "inventarios", coTransaction);
