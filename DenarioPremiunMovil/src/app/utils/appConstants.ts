@@ -1,9 +1,9 @@
 //Valores de status de envio (stDelivery)
 
 export const DELIVERY_STATUS_NEW = 0
-export const DELIVERY_STATUS_SAVED = 1;
+export const DELIVERY_STATUS_SENT = 1;
 export const DELIVERY_STATUS_TO_SEND = 2;
-export const DELIVERY_STATUS_SENT = 3;
+export const DELIVERY_STATUS_SAVED = 3;
 
 //FIN VALORES ENVIO
 
