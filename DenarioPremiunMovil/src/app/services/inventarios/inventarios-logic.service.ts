@@ -771,7 +771,7 @@ export class InventariosLogicService {
       + "co_address_client as coAddressClient,coordenada, tx_comment as txComment,"
       + "id_enterprise as idEnterprise, co_enterprise as coEnterprise, st_client_stock as stClientStock,"
       + "da_client_stock as daClientStock, lb_client as lbClient, isSave, st_delivery as stDelivery "
-      + "FROM client_stocks ORDER BY st_delivery ASC, da_client_stock DESC";
+      + "FROM client_stocks ORDER BY st_delivery DESC, da_client_stock DESC";
     return dbServ.executeSql(selectStatement, []).then(async data => {
       let promises: Promise<void>[] = [];
       let clientStock = [] as ClientStocks[];
