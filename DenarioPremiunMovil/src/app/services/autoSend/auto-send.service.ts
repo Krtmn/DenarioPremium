@@ -623,8 +623,10 @@ export class AutoSendService implements OnInit {
         });
 
         this.dbService.getDatabase().executeSql(
-          'UPDATE visits SET id_visit = ?, st_visit = ?, st_delivery = ? WHERE co_visit = ?', [idTransaction, VISIT_STATUS_VISITED, coTransaction]
-        )
+          'UPDATE visits SET id_visit = ?, st_visit = ? WHERE co_visit = ?', [idTransaction, VISIT_STATUS_VISITED, coTransaction]
+        ).catch(e => {
+          console.log("UPDATE NO EXITOSO ", e);
+        });
         break;
       }
 
