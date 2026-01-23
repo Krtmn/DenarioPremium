@@ -66,10 +66,12 @@ export class PedidosListaComponent implements OnInit {
   }
 
   selectOrder(order: ItemListaPedido) {
+    /*
     if (order.st_delivery == undefined) {
       order.st_delivery = order.st_order;
     }
-    this.orderServ.pedidoModificable = (order.st_delivery == 3 || order.st_delivery == null);
+    */
+    this.orderServ.pedidoModificable = (order.st_delivery == DELIVERY_STATUS_SAVED);
     if (this.orderServ.userMustActivateGPS &&
       (this.orderServ.pedidoModificable || this.orderServ.copiandoPedido)) {
       if (!this.orderServ.coordenadas || this.orderServ.coordenadas.length == 0) {

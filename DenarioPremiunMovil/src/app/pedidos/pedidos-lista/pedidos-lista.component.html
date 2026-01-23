@@ -40,9 +40,12 @@
               order.na_status, order.id_order) }}</p>
             <p>{{ getTag("PED_FECHA") }}: {{order.da_order.substring(0,10) }}</p>
           </ion-label>
-          <ion-button (click)="showAlertDelete(order,i)" color="danger"
-            *ngIf="order.st_delivery == 3"><ion-icon slot="icon-only"
-              name="trash"></ion-icon></ion-button>
+          @if(order.st_delivery != null && order.st_delivery == DELIVERY_STATUS_SAVED){
+          <ion-button (click)="showAlertDelete(order,i)" color="danger">
+            <ion-icon slot="icon-only"
+              name="trash"></ion-icon>
+            </ion-button>
+          }
           <ion-note slot="end"><ion-icon class="icon-List" name="chevron-forward-outline"></ion-icon></ion-note>
         </ion-item>
       </div>
