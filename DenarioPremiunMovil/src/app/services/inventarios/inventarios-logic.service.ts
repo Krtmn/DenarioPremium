@@ -117,8 +117,8 @@ export class InventariosLogicService {
     this.stockValid.next(valid);
   }
 
-  updateHeaderButtons(){
-    if(this.adjuntoService.weightLimitExceeded){
+  updateHeaderButtons() {
+    if (this.adjuntoService.weightLimitExceeded) {
       this.onStockValidToSave(false);
       this.onStockValidToSend(false);
       return;
@@ -128,18 +128,18 @@ export class InventariosLogicService {
     this.onStockValidToSave(valid);
     this.onStockValidToSend(valid);
     return;
-    }
-  
+  }
 
-  checkValidStockToSend(){
-    if(this.typeStocks.length == 0){
+
+  checkValidStockToSend() {
+    if (this.typeStocks.length == 0) {
       return false;
     }
     for (const typeStock of this.typeStocks) {
       if (!typeStock.validateCantidad) {
         return false;
       }
-      if(this.expirationBatch && !typeStock.validateLote){
+      if (this.expirationBatch && !typeStock.validateLote) {
         return false;
       }
     };
@@ -485,9 +485,9 @@ export class InventariosLogicService {
     var batch = [];
 
     if (send) {
-      this.newClientStock.stDelivery = DELIVERY_STATUS_TO_SEND;
+      this.newClientStock.stDelivery = DELIVERY_STATUS_SENT;
     } else {
-      this.newClientStock.stDelivery = DELIVERY_STATUS_SAVED;
+      this.newClientStock.stDelivery = 3;
     }
     this.newClientStock.hasAttachments = this.adjuntoService.hasItems();
     this.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
@@ -533,7 +533,7 @@ export class InventariosLogicService {
 
     /*     this.variables.forEach((value, key) => {
           for (var i = 0; i < value.length; i++) {
-    
+
             var q = [insertStatement,
               [value[i].clientStockDetail[0].idClientStockDetail, value[i].clientStockDetail[0].coClientStockDetail,
               value[i].clientStockDetail[0].coClientStock, value[i].clientStockDetail[0].naProduct,
@@ -541,9 +541,9 @@ export class InventariosLogicService {
               value[i].clientStockDetail[0].coEnterprise, value[i].clientStockDetail[0].idEnterprise,
               value[i].clientStockDetail[0].posicion, value[i].clientStockDetail[0].isSave]
             ]
-    
+
             batch.push(q);
-    
+
           }
         }) */
     for (var i = 0; i < clientStockDetails.length; i++) {
@@ -590,7 +590,7 @@ export class InventariosLogicService {
           value[i].clientStockDetail[0].clientStockDetailUnits[0].coClientStockDetail,
           value[i].clientStockDetail[0].clientStockDetailUnits[0].coProductUnit,
           value[i].clientStockDetail[0].clientStockDetailUnits[0].coUnit,
-          value[i].clientStockDetail[0].clientStockDetailUnits[0].idProductUnit,          
+          value[i].clientStockDetail[0].clientStockDetailUnits[0].idProductUnit,
           value[i].cantidad,
           value[i].clientStockDetail[0].clientStockDetailUnits[0].coEnterprise,
           value[i].clientStockDetail[0].clientStockDetailUnits[0].idEnterprise,
@@ -661,7 +661,7 @@ export class InventariosLogicService {
         details.isSave = value[i].clientStockDetail[0].isSave;
 
         details.clientStockDetailUnits = [] as ClientStocksDetailUnits[];
-        
+
         detailsUnits.coClientStockDetail = value[i].clientStockDetail[0].clientStockDetailUnits[0].coClientStockDetail;
         detailsUnits.coClientStockDetailUnit = value[i].clientStockDetail[0].clientStockDetailUnits[0].coClientStockDetailUnit;
         detailsUnits.coEnterprise = value[i].clientStockDetail[0].clientStockDetailUnits[0].coEnterprise;
@@ -771,7 +771,7 @@ export class InventariosLogicService {
       + "co_address_client as coAddressClient,coordenada, tx_comment as txComment,"
       + "id_enterprise as idEnterprise, co_enterprise as coEnterprise, st_client_stock as stClientStock,"
       + "da_client_stock as daClientStock, lb_client as lbClient, isSave, st_delivery as stDelivery "
-      + "FROM client_stocks";
+      + "FROM client_stocks ORDER BY st_delivery DESC, da_client_stock DESC";
     return dbServ.executeSql(selectStatement, []).then(async data => {
       let promises: Promise<void>[] = [];
       let clientStock = [] as ClientStocks[];

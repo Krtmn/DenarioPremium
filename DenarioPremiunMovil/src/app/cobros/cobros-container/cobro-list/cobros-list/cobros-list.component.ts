@@ -250,10 +250,10 @@ export class CobrosListComponent implements OnInit {
             }
 
             this.collectService.getCollectionPayments(this.synchronizationServices.getDatabase(), coCollection).then(collectionPayment => {
-              if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT) {
+              if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == 1) {
                 this.collectService.hideDocuments = true;
                 this.collectService.hidePayments = true;
-              } else if (this.collectService.collection.stDelivery == 6) {
+              } else if (this.collectService.collection.stDelivery == 3) {
                 this.collectService.showHeaderButtonsFunction(false);
                 this.collectService.hideDocuments = true;
                 this.collectService.hidePayments = true;

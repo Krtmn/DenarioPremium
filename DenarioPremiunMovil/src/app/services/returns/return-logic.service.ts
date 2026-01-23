@@ -210,7 +210,7 @@ export class ReturnLogicService {
     var database = this.dbServ.getDatabase();
     this.returnList = [];
     this.itemReturns = [] as ItemListaDevoluciones[];
-    var select = 'select rt.id_return as idReturn, rt.co_return as coReturn, rt.co_client as coClient, rt.lb_client as naClient, rt.st_return as stReturn, rt.da_return as daReturn, rt.st_delivery as stDelivery FROM returns rt ORDER BY rt.st_return ASC, rt.da_return DESC'
+    var select = 'select rt.id_return as idReturn, rt.co_return as coReturn, rt.co_client as coClient, rt.lb_client as naClient, rt.st_return as stReturn, rt.da_return as daReturn, rt.st_delivery as stDelivery FROM returns rt ORDER BY rt.st_delivery DESC, rt.da_return DESC'
     return database.executeSql(select, []).then(async result => {
       let promises: Promise<void>[] = [];
 
@@ -249,7 +249,7 @@ export class ReturnLogicService {
     })
   }
 
-    updateSendButtonState() {
+  updateSendButtonState() {
     let valid = true;
     if (this.productList.length > 0) {
       for (let index = 0; index < this.productList.length; index++) {
@@ -290,8 +290,8 @@ export class ReturnLogicService {
       });
       this.adjuntoService.getSavedPhotos(this.dbServ.getDatabase(), this.newReturn.coReturn, 'devoluciones');
       this.enterpriseReturn = this.enterpriseServ.empresas.find((emp) => emp.idEnterprise === this.newReturn.idEnterprise)!;
-      this.returnSent = this.newReturn.stDelivery === 3 || this.newReturn.stDelivery === 6;
-      this.bloquearFactura = this.newReturn.stDelivery === 3 || this.newReturn.stDelivery === 6;  ;
+      this.returnSent = this.newReturn.stDelivery === null || this.newReturn.stDelivery === 1;
+      this.bloquearFactura = this.newReturn.stDelivery === null || this.newReturn.stDelivery === 1;
       this.findInvoices().then();
       this.findInvoiceDetailUnits().then();
       this.setChange(false, true);

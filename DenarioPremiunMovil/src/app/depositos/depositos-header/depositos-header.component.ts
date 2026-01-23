@@ -150,7 +150,7 @@ export class DepositosHeaderComponent implements OnInit {
 
 
   goBack() {
-    if (this.depositService.depositValid && this.depositService.deposit.stDeposit !== this.DEPOSITO_STATUS_SENT) {
+    if (this.depositService.depositValid && this.depositService.deposit.stDelivery == this.DEPOSITO_STATUS_SENT) {
       this.buttonsSalvar[0].text = this.depositService.depositTagsDenario.get('DENARIO_BOTON_SALIR_GUARDAR')!
       this.buttonsSalvar[1].text = this.depositService.depositTagsDenario.get('DENARIO_BOTON_SALIR')!
       this.buttonsSalvar[2].text = this.depositService.depositTagsDenario.get('DENARIO_BOTON_CANCELAR')!
@@ -185,6 +185,7 @@ export class DepositosHeaderComponent implements OnInit {
   saveDeposit(): Promise<any> {
     return this.messageService.showLoading().then(() => {
       this.depositService.deposit.stDeposit = this.DEPOSITO_STATUS_SAVED;
+      this.depositService.deposit.stDelivery = 3;
       return this.depositService.saveDeposit(this.synchronizationServices.getDatabase(), this.depositService.deposit).then(resp => {
         console.log("DEPOSIT SAVE");
         this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.depositService.deposit.coDeposit, "depositos");

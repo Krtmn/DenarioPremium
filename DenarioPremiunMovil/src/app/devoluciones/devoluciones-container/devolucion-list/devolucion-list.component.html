@@ -20,7 +20,7 @@
                 {{this.tags.get('DENARIO_DEV_STATUS')}}: {{ getStatusOrderName(return.stDelivery, return.naStatus)}}
 
               </p>
-             <!--  <p *ngIf="return.stReturn === 1" class="espacioentrelineas">{{this.tags.get('DENARIO_DEV_STATUS')}}:
+              <!--  <p *ngIf="return.stReturn === 1" class="espacioentrelineas">{{this.tags.get('DENARIO_DEV_STATUS')}}:
                 {{this.tags.get('DENARIO_DEV_SAVED')}}</p>
               <p *ngIf="return.stReturn === 2" class="espacioentrelineas">{{this.tags.get('DENARIO_DEV_STATUS')}}:
                 {{this.tags.get('DENARIO_DEV_TO_BE_SENDED')}}</p>
@@ -30,7 +30,7 @@
                 "dd/MM/yyyy
                 hh:mm:ss" }}</p>
             </ion-label>
-            <ion-button *ngIf="return.stDelivery === 1" (click)="showAlertDelete(return, i)" color="danger"><ion-icon
+            <ion-button *ngIf="return.stDelivery === 3" (click)="showAlertDelete(return, i)" color="danger"><ion-icon
                 slot="icon-only" name="trash"></ion-icon></ion-button>
           </ion-item>
         </div>

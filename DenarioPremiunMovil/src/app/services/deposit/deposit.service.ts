@@ -205,6 +205,7 @@ export class DepositService {
         nuValueLocal: 0,
         idCurrency: 0,
         stDeposit: DEPOSITO_STATUS_NEW,
+        stDelivery: DEPOSITO_STATUS_NEW,
         isEdit: true,
         isEditTotal: false,
         isSave: false,
@@ -315,6 +316,7 @@ export class DepositService {
       nuValueLocal: 0,
       idCurrency: 0,
       stDeposit: 0,
+      stDelivery: 0,
       isEdit: true,
       isEditTotal: false,
       isSave: false,
@@ -536,13 +538,14 @@ export class DepositService {
       'id_enterprise, ' +
       'co_enterprise, ' +
       'st_deposit, ' +
+      'st_delivery, ' +
       'tx_comment, ' +
       'nu_amount_doc_conversion, ' +
       'nu_value_local, ' +
       'id_currency,' +
       'coordenada' +
       ') VALUES (' +
-      '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+      '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
 
     const insertDepositCollect = 'INSERT OR REPLACE INTO deposit_collects (' +
       'id_deposit_collect,' +
@@ -577,6 +580,7 @@ export class DepositService {
         deposit.idEnterprise,
         deposit.coEnterprise,
         deposit.stDeposit,
+        deposit.stDelivery,
         deposit.txComment,
         deposit.nuAmountDocConversion,
         deposit.nuValueLocal,
@@ -644,13 +648,14 @@ export class DepositService {
       'id_enterprise, ' +
       'co_enterprise, ' +
       'st_deposit, ' +
+      'st_delivery, ' +
       'tx_comment, ' +
       'nu_amount_doc_conversion, ' +
       'nu_value_local, ' +
       'id_currency,' +
       'coordenada' +
       ') VALUES (' +
-      '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+      '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
     return this.database.executeSql(insertStatement,
       [
         0,
@@ -665,6 +670,7 @@ export class DepositService {
         deposit.idEnterprise,
         deposit.coEnterprise,
         deposit.stDeposit,
+        deposit.stDelivery,
         deposit.txComment,
         deposit.nuAmountDocConversion,
         deposit.nuValueLocal,
@@ -736,6 +742,7 @@ export class DepositService {
         deposit.nuValueLocal = res.rows.item(0).nu_value_local;
         deposit.idCurrency = res.rows.item(0).id_currency;
         deposit.stDeposit = res.rows.item(0).st_deposit;
+        deposit.stDelivery = res.rows.item(0).st_delivery;
         deposit.isEdit = false;
         deposit.isEditTotal = false;
         deposit.isSave = false;
@@ -772,10 +779,9 @@ export class DepositService {
       this.cobrosDetails = [] as CollectDeposit[];
       for (var i = 0; i < res.rows.length; i++) {
         item = res.rows.item(i)
-        item.isSelected = this.deposit.stDeposit >= 2 ? true : false;
+        item.isSelected = this.deposit.stDelivery == 1 || this.deposit.stDelivery == null ? true : false;
         this.cobrosDetails.push(item);
       }
-
       return this.deposit;
     }).catch(e => {
       this.deposit.depositCollect = [] as DepositCollect[];
@@ -819,6 +825,7 @@ export class DepositService {
       'id_enterprise as idEnterprise,' +
       'co_enterprise as coEnterprise,' +
       'st_deposit as stDeposit,' +
+      'st_delivery as stDelivery,' +
       'tx_comment as txComment,' +
       'nu_value_local as nuValueLocal,' +
       'nu_amount_doc as nuAmountDoc, ' +
@@ -834,10 +841,12 @@ export class DepositService {
           this.listDeposits.push(item);
           let p = this.historyTransaction.getStatusTransaction(dbServ, 6, item.idDeposit!).then(status => {
 
-            item.stDelivery == null ? 0 : item.stDelivery;
-            item.stDeposit == this.DEPOSITO_STATUS_SAVED ? status = 'Guardado' : status;
-            item.stDeposit == this.DEPOSITO_STATUS_TO_SEND ? status = 'Por Enviar' : status;
 
+            item.stDelivery == null ? 0 : item.stDelivery;
+            if (item.idDeposit == 0) {
+              item.stDeposit == this.DEPOSITO_STATUS_SAVED ? status = 'Guardado' : status;
+              item.stDeposit == this.DEPOSITO_STATUS_TO_SEND ? status = 'Por Enviar' : status;
+            }
 
             const itemListaDeposit: ItemListaDepositos = {
               idDeposit: item.idDeposit ?? 0,

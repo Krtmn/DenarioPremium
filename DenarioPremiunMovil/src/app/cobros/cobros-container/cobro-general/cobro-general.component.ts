@@ -137,6 +137,8 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.montoTotalPagadoConversion = this.collectService.collection.nuAmountTotalConversion;
 
     this.initializeCurrenciesAndRates();
+    this.collectService.loadPaymentMethods();
+    this.loadPayments();
     this.clientService.getClientById(this.collectService.collection.idClient).then(client => {
       this.collectService.client = client;
       this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", true, COLOR_VERDE);

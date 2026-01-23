@@ -1,31 +1,31 @@
 <ion-header :translucent="false">
-    <ion-toolbar class="fondoVerde">
-      <ion-grid>
-        <ion-row>
-          <ion-col size="1" size-sm="1" size-xs="2">
-            <a>
-              <!-- <a (click)="goBack()"> -->
-              <img routerLink="/pedidos" class="fechaAtras" alt="" src="../../../assets/images/flecha-blanca.png" />
-            </a>
-          </ion-col>
-          <ion-col size="8" size-sm="10" size-xs="8">
-            <h1 class="tituloModulos">{{ getTag("PED_NOMBRE_MODULO") }}</h1>
-          </ion-col>
-          <ion-col size="1" size-sm="1" size-xs="2">
-            <img class="fechaAtras" alt="" src="../../../assets/images/pedidosNuevoBlanco.svg" />
-          </ion-col>
-        </ion-row>
-      </ion-grid>
+  <ion-toolbar class="fondoVerde">
+    <ion-grid>
+      <ion-row>
+        <ion-col size="1" size-sm="1" size-xs="2">
+          <a>
+            <!-- <a (click)="goBack()"> -->
+            <img routerLink="/pedidos" class="fechaAtras" alt="" src="../../../assets/images/flecha-blanca.png" />
+          </a>
+        </ion-col>
+        <ion-col size="8" size-sm="10" size-xs="8">
+          <h1 class="tituloModulos">{{ getTag("PED_NOMBRE_MODULO") }}</h1>
+        </ion-col>
+        <ion-col size="1" size-sm="1" size-xs="2">
+          <img class="fechaAtras" alt="" src="../../../assets/images/pedidosNuevoBlanco.svg" />
+        </ion-col>
+      </ion-row>
+    </ion-grid>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
-          <div class="sticky-searchbar">
-            <ion-searchbar show-clear-button="always" class="lupamorada" search-icon="search-circle" clear-icon="trash-bin"
+  <div class="sticky-searchbar">
+    <ion-searchbar show-clear-button="always" class="lupamorada" search-icon="search-circle" clear-icon="trash-bin"
       [placeholder]="searchPlaceholder" [debounce]="1000" (ionInput)="handleInput($event)">
     </ion-searchbar>
-        </div>
- 
+  </div>
+
 
   <div class="scroll-lista-pedidos">
     <ion-list *ngFor="let order of orderServ.listaPedidos; index as i" button detail="false">
@@ -36,12 +36,16 @@
             <p>{{ getTag("PED_NU_REF") }}: {{ order.id_order }}</p>
             <p *ngIf="showCoOrder">CO_ORDER: {{ order.co_order }}</p>
             <p>{{ getTag("PED_CLIENTE") }}: {{ order.lb_client}}</p>
-            <p>{{ getTag("PED_STATUS") }}: {{ getStatusOrderName(order.st_delivery? order.st_delivery: order.st_order, order.na_status) }}</p>
+            <p>{{ getTag("PED_STATUS") }}: {{ getStatusOrderName(order.st_delivery? order.st_delivery: order.st_order,
+              order.na_status, order.id_order) }}</p>
             <p>{{ getTag("PED_FECHA") }}: {{order.da_order.substring(0,10) }}</p>
           </ion-label>
-          <ion-button (click)="showAlertDelete(order,i)" color="danger"
-            *ngIf="order.st_delivery ==  DELIVERY_STATUS_SAVED"><ion-icon slot="icon-only"
-              name="trash"></ion-icon></ion-button>
+          @if(order.st_delivery != null && order.st_delivery == DELIVERY_STATUS_SAVED){
+          <ion-button (click)="showAlertDelete(order,i)" color="danger">
+            <ion-icon slot="icon-only"
+              name="trash"></ion-icon>
+            </ion-button>
+          }
           <ion-note slot="end"><ion-icon class="icon-List" name="chevron-forward-outline"></ion-icon></ion-note>
         </ion-item>
       </div>

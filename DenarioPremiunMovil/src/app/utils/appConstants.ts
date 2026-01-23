@@ -1,9 +1,9 @@
 //Valores de status de envio (stDelivery)
 
 export const DELIVERY_STATUS_NEW = 0
-export const DELIVERY_STATUS_SAVED = 1;
+export const DELIVERY_STATUS_SENT = 1;
 export const DELIVERY_STATUS_TO_SEND = 2;
-export const DELIVERY_STATUS_SENT = 3;
+export const DELIVERY_STATUS_SAVED = 3;
 
 //FIN VALORES ENVIO
 
@@ -33,6 +33,15 @@ export const VISIT_STATUS_VISITED = 2;
 export const VISIT_STATUS_NOT_VISITED = 3;
 
 //FIN VALORES VISITA
+
+//Valores de integracion (para tener en cuenta)
+/*
+1: aprobado - puede ser integrado
+2: rechazado - se devuelve a la móvil no se integra
+3: por defecto - no se hace nada (Este debe ser el estatus que traigan todas las transacciones por defecto)
+5: Hubo un error de integración - queda en stand by
+6: integrado
+*/
 
 
 //COLORES MODULOS

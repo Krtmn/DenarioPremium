@@ -516,7 +516,7 @@
     "table": "deposits",
     "name": "deposits",
     "idName": "id_deposit",
-    "sql": "CREATE TABLE IF NOT EXISTS deposits(id_deposit INTEGER, co_deposit VARCHAR(30) PRIMARY KEY,da_deposit TIMESTAMP,co_bank VARCHAR(30) NOT NULL,id_bank INTEGER,nu_account VARCHAR(50),nu_document VARCHAR(30),da_document TIMESTAMP NOT NULL,nu_amount_doc NUMERIC(29,4) NOT NULL,co_currency VARCHAR(30),id_enterprise INTEGER,co_enterprise VARCHAR(50),st_deposit NUMERIC(1,0),tx_comment VARCHAR(150),nu_value_local NUMERIC,nu_amount_doc_conversion NUMERIC(29,4) NOT NULL,id_currency INTEGER ,coordenada VARCHAR(20));"
+    "sql": "CREATE TABLE IF NOT EXISTS deposits(id_deposit INTEGER, co_deposit VARCHAR(30) PRIMARY KEY,da_deposit TIMESTAMP,co_bank VARCHAR(30) NOT NULL,id_bank INTEGER,nu_account VARCHAR(50),nu_document VARCHAR(30),da_document TIMESTAMP NOT NULL,nu_amount_doc NUMERIC(29,4) NOT NULL,co_currency VARCHAR(30),id_enterprise INTEGER,co_enterprise VARCHAR(50),st_deposit NUMERIC(1,0),tx_comment VARCHAR(150),nu_value_local NUMERIC,nu_amount_doc_conversion NUMERIC(29,4) NOT NULL,id_currency INTEGER ,coordenada VARCHAR(20), st_delivery NUMERIC(1,0));"
   },
   {
     "id": 991186,
