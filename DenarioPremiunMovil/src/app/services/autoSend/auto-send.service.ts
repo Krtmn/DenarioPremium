@@ -651,7 +651,7 @@ export class AutoSendService implements OnInit {
       case 'return': {
         this.dbService.getDatabase().executeSql(
           'UPDATE returns SET id_return = ?, st_delivery = ? WHERE co_return = ?',
-          [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
+          [idTransaction, 1, coTransaction]
         ).then(res => {
           console.log("UPDATE EXITOSO ", res);
 
