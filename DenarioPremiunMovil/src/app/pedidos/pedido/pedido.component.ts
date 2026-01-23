@@ -505,7 +505,7 @@ export class PedidoComponent implements OnInit {
 
   saveButton() {
     if (this.orderServ.changesMade) {
-      this.saveOrder(DELIVERY_STATUS_SAVED).then(s => {
+      this.saveOrder(3).then(s => {
         this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_AVISO_GUARDADO")); //TAG THIS
         this.orderServ.disableSendButton = false;
       });
