@@ -117,8 +117,8 @@ export class InventariosLogicService {
     this.stockValid.next(valid);
   }
 
-  updateHeaderButtons(){
-    if(this.adjuntoService.weightLimitExceeded){
+  updateHeaderButtons() {
+    if (this.adjuntoService.weightLimitExceeded) {
       this.onStockValidToSave(false);
       this.onStockValidToSend(false);
       return;
@@ -128,18 +128,18 @@ export class InventariosLogicService {
     this.onStockValidToSave(valid);
     this.onStockValidToSend(valid);
     return;
-    }
+  }
 
 
-  checkValidStockToSend(){
-    if(this.typeStocks.length == 0){
+  checkValidStockToSend() {
+    if (this.typeStocks.length == 0) {
       return false;
     }
     for (const typeStock of this.typeStocks) {
       if (!typeStock.validateCantidad) {
         return false;
       }
-      if(this.expirationBatch && !typeStock.validateLote){
+      if (this.expirationBatch && !typeStock.validateLote) {
         return false;
       }
     };
