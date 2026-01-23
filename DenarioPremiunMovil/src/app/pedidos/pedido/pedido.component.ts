@@ -400,9 +400,9 @@ export class PedidoComponent implements OnInit {
               unitUtil.quAmount = unit.quOrder;
               if (unitUtil.idUnit === item.idUnit) {
                 item.quAmount = unitUtil.quAmount;
-              }else{
+              } else {
                 //si es la unica unidad, la seleccionamos tambien
-                if(detail.orderDetailUnit.length == 1){
+                if (detail.orderDetailUnit.length == 1) {
                   item.quAmount = unitUtil.quAmount;
                   item.idUnit = unitUtil.idUnit;
                 }
@@ -742,7 +742,7 @@ export class PedidoComponent implements OnInit {
       nuAttachments: this.adjuntoService.getNuAttachment(),
       idDistributionChannel: this.orderServ.userCanSelectChannel ? this.distChannel.idChannel : null,
       coDistributionChannel: this.orderServ.userCanSelectChannel ? this.distChannel.coChannel : null,
-      stDelivery: 3,
+      stDelivery: stDelivery,
     } as Orders
 
     console.log(order);
