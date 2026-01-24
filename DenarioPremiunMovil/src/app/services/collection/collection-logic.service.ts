@@ -2011,7 +2011,7 @@ export class CollectionService {
       const sqlBloquear = `SELECT DISTINCT(ds.co_document)
 FROM document_sales ds
 JOIN collection_details cd ON ds.co_document = cd.co_document
-JOIN collections c ON cd.co_collection = c.co_collection AND c.st_collection IN (1,3)
+JOIN collections c ON cd.co_collection = c.co_collection AND c.st_delivery IN (1,3)
 JOIN transaction_statuses ts ON c.co_collection = ts.co_transaction AND ts.id_transaction_type = 3
 WHERE ts.da_transaction_statuses = (
     SELECT MAX(ts2.da_transaction_statuses)
@@ -2043,7 +2043,7 @@ AND ts.da_transaction_statuses > ds.da_update;`;
       const sqlDesbloquear = `SELECT DISTINCT(ds.co_document)
 FROM document_sales ds
 JOIN collection_details cd ON ds.co_document = cd.co_document
-JOIN collections c ON cd.co_collection = c.co_collection AND c.st_collection IN (1,3)
+JOIN collections c ON cd.co_collection = c.co_collection AND c.st_delivery IN (1,3)
 JOIN transaction_statuses ts ON c.co_collection = ts.co_transaction AND ts.id_transaction_type = 3
 WHERE ts.da_transaction_statuses = (
     SELECT MAX(ts2.da_transaction_statuses)
