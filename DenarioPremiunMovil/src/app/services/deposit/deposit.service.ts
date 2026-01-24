@@ -830,7 +830,7 @@ export class DepositService {
       'nu_value_local as nuValueLocal,' +
       'nu_amount_doc as nuAmountDoc, ' +
       'coordenada as coordenada ' +
-      'FROM deposits', []).then(async res => {
+      'FROM deposits ORDER BY st_delivery DESC, da_deposit DESC', []).then(async res => {
         let promises: Promise<void>[] = [];
 
         this.listDeposits = [] as Deposit[];
