@@ -1247,7 +1247,8 @@ export class CollectionService {
           }
         } else {
           if (this.tolerancia0) {
-            this.checkTolerancia();
+            if (this.collection.collectionDetails.length > 0 && this.collection.collectionPayments.length > 0)
+              this.checkTolerancia();
           } else {
             if (Math.abs(this.montoTotalPagado) == Math.abs(this.montoTotalPagar)) {
               this.onCollectionValidToSend(true);
@@ -1269,7 +1270,8 @@ export class CollectionService {
         } else {
 
           if (this.tolerancia0) {
-            this.checkTolerancia();
+            if (this.collection.collectionDetails.length > 0 && this.collection.collectionPayments.length > 0)
+              this.checkTolerancia();
           } else {
             if (Math.abs(this.montoTotalPagado) == Math.abs(this.montoTotalPagar)) {
               this.onCollectionValidToSend(true);
@@ -1284,7 +1286,6 @@ export class CollectionService {
   }
 
   checkTolerancia() {
-
     //TOLERANCIA0 TRUE PERMITO DIFERENCIA SE DEBEN VALIDAR LAS SIGUIENTES VARIABLES TipoTolerancia, RangoTolerancia, MonedaTolerancia
     if (this.TipoTolerancia == 0) {
       if (this.collection.coCurrency == this.MonedaTolerancia) {
