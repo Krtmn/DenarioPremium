@@ -1401,7 +1401,9 @@ export class SynchronizationDBService {
     return this.clientStockService.saveClientStockBatch(this.database, arr);
   }
   insertDepositBatch(arr: Deposit[]) {
-    return this.depositService.saveDepositBatch(this.database, arr);
+    return this.depositService.deleteDepositBatch(this.database, arr).then((r) => {
+      return this.depositService.saveDepositBatch(this.database, arr);
+    })
   }
 
   deleteDataTable(arr: number[], nameTable: string, nameId: string) {
