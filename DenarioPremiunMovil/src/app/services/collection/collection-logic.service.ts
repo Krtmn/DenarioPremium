@@ -775,7 +775,7 @@ export class CollectionService {
       return Promise.resolve(true);
     } else {
       //no tengo tasa para ese dia
-      if (this.collection.stDelivery == this.COLLECT_STATUS_SENT) {
+      if (this.collection.stDelivery == 1) {
         this.rateSelected = this.collection.nuValueLocal;
         this.historicoTasa = true;
       } else {
@@ -805,7 +805,7 @@ export class CollectionService {
     let montoConversion = 0;
     let montoTotalDiscounts = 0;
 
-    if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED) {
+    if (this.collection.stDelivery == 3) {
       for (var j = 0; j < this.collection.collectionDetails.length; j++) {
         monto += this.collection.collectionDetails[j].nuAmountPaid;
         montoConversion += this.collection.collectionDetails[j].nuAmountPaidConversion;
@@ -814,7 +814,7 @@ export class CollectionService {
         this.montoTotalPagarConversion = montoConversion;
 
       }
-    } else if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == this.COLLECT_STATUS_SENT) {
+    } else if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == 1) {
       monto = this.collection.nuAmountTotal;
       montoConversion = this.collection.nuAmountTotalConversion;
       this.montoTotalPagar = monto;
@@ -1531,7 +1531,7 @@ export class CollectionService {
       if (this.onChangeClient)
         this.cobroValid = true;
 
-      if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED || this.collection.stDelivery == this.COLLECT_STATUS_SENT)
+      if (this.collection.stDelivery == 3 || this.collection.stDelivery == 1)
         this.cobroValid = true;
 
       this.onCollectionValidToSave(true);
@@ -1539,7 +1539,7 @@ export class CollectionService {
       if (this.onChangeClient)
         this.cobroValid = true;
     }
-    if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == this.COLLECT_STATUS_SENT)
+    if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == 1)
       this.cobroValid = true;
 
     this.validCollection.next(valid);
@@ -1566,7 +1566,7 @@ export class CollectionService {
 
     if (this.globalConfig.get("requiredComment") === 'true' ? true : false) {
       if (this.collection.txComment.trim() == "") {
-        if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED)
+        if (this.collection.stDelivery == 3)
           banderaRequiredComment = true;
         else
           banderaRequiredComment = false;
@@ -2492,7 +2492,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       this.documentSalesBackup[index].daVoucher = detail.daVoucher!;
       this.documentSalesBackup[index].nuAmountDiscount = detail.nuAmountDiscount;
 
-      if (this.collection.stDelivery != this.COLLECT_STATUS_SAVED) {
+      if (this.collection.stDelivery != 3) {
         detail.nuBalanceDoc = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
         detail.nuBalanceDocConversion = doc.nuBalance;
         detail.nuAmountPaid = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
@@ -3413,7 +3413,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           collect.coClient,
           collect.naClient,
           collect.stCollection,
-          collect.stDelivery == null ? this.COLLECT_STATUS_SENT : collect.stDelivery,
+          collect.stDelivery == null ? 1 : collect.stDelivery,
           collect.daCollection,
           collect.daRate,
           collect.naResponsible,
@@ -4180,7 +4180,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       this.itemListaCobros = [] as ItemListaCobros[];
       const res = await dbServ.executeSql(
         //'SELECT c.* FROM collections c ORDER BY c.st_delivery ASC, c.st_collection ASC,  c.da_collection ASC, c.id_collection DESC;', []
-        'SELECT c.* FROM collections c ORDER BY c.st_delivery ASC, c.da_collection DESC, c.st_collection ASC, c.id_collection DESC; ', []
+        'SELECT c.* FROM collections c ORDER BY c.st_delivery DESC, c.da_collection DESC, c.st_collection ASC, c.id_collection DESC; ', []
       );
 
       const promises: Promise<void>[] = [];
@@ -4202,7 +4202,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         respCollect.idEnterprise = res.rows.item(i).id_enterprise;
         respCollect.coEnterprise = res.rows.item(i).co_enterprise;
         respCollect.stCollection = res.rows.item(i).st_collection;
-        respCollect.stDelivery = res.rows.item(i).st_delivery == null ? this.COLLECT_STATUS_SENT : res.rows.item(i).st_delivery;
+        respCollect.stDelivery = res.rows.item(i).st_delivery == null ? 1 : res.rows.item(i).st_delivery;
         respCollect.isEdit = 0;
         respCollect.isEditTotal = 0;
         respCollect.isSave = 1;
