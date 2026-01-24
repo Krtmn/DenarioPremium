@@ -175,11 +175,10 @@ export class CobrosGeneralComponent implements OnInit {
   private handleOpenCollect() {
     this.collectService.isOpenCollect = false;
     this.collectService.recentOpenCollect = true;
-    //this.collectService.disabledCurrency = true;
     this.collectService.cobroValid = true;
 
     if (Number(this.collectService.collection.stDelivery) >= 3) {
-      this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", true, COLOR_VERDE);
+      this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", false, COLOR_VERDE);
       this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, 'cobros');
       if (Number(this.collectService.collection.stDelivery) === 1)
         this.collectService.onCollectionValid(true);
