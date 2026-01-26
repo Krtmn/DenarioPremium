@@ -52,6 +52,7 @@ export class HomePage implements OnInit {
   public ruta!: string;
   public modulos!: { id: number, name: string | undefined; imgIcon: string; routerLink: string; letterColor: string; }[];
   public modulosTransportista!: { id: number, name: string | undefined; imgIcon: string; routerLink: string; letterColor: string; }[];
+  public modulosCliente!: { id: number, name: string | undefined; imgIcon: string; routerLink: string; letterColor: string; }[];
   /* public modulos: any[] = []; */
   public fechaCreacion: string = "2000-01-01 00:00:00";
   public userMustActivateGPS: boolean = false;
@@ -199,6 +200,11 @@ export class HomePage implements OnInit {
     if (userStr) {
       try {
         this.user = JSON.parse(userStr);
+        if (this.user.cliente) {
+          this.modulosCliente = this.modulos.filter(m => m.id === 7 || m.id === 2 || m.id === 8 || m.id === 10);
+          const desiredOrder = [7, 2, 8, 10];
+          this.modulosCliente.sort((a, b) => desiredOrder.indexOf(a.id) - desiredOrder.indexOf(b.id));
+        }
         if (this.user.transportista) {
           this.modulosTransportista = this.modulos.filter(m => m.id === 0 || m.id === 8 || m.id === 10);
 
@@ -226,7 +232,7 @@ export class HomePage implements OnInit {
     }
 
     this.enterpriseService.initialze();
-    
+
   }
   getListFilesPremiumDispatch() {
     console.log("getListFilesPremiumDispatch");
