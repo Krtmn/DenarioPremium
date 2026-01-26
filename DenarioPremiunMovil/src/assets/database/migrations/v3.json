@@ -1,0 +1,6 @@
+[
+  {
+    "sql": "ALTER TABLE address_clients ADD COLUMN test TEXT",
+    "description": "ESTO ES UN EJEMPLO, BORRAR AL CREAR UN VERDADERO V3"
+  }
+]
