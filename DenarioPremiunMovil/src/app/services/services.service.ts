@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { catchError, map, tap } from 'rxjs/operators';
-import { throwError } from 'rxjs';
+import { throwError, firstValueFrom } from 'rxjs';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite/ngx';
 import { User } from '../modelos/user';
 import { Login } from '../modelos/login';
@@ -16,7 +16,7 @@ import { PendingTransaction } from '../modelos/tables/pendingTransactions';
   providedIn: 'root'
 })
 export class ServicesService {
- //private WsUrl = "http://soportepremium.ddns.net:8181/PremiumWS/services/";
+  //private WsUrl = "http://soportepremium.ddns.net:8181/PremiumWS/services/";
   private WsUrl = "http://192.168.0.231:8282/PremiumWS/services/";
   //private WsUrl = "http://192.168.0.217:8080/PremiumWS/services/";
 
@@ -237,36 +237,40 @@ export class ServicesService {
   }
 
 
-  async sendImage(transaction: string, id: string, posicion: string, file: string, filename: string, type: string, cantidad: number) {
-
+  async sendImage(transaction: string, id: string, posicion: string, file: string, filename: string, type: string, cantidad: number): Promise<any> {
     const httpOptions = {
       headers: new HttpHeaders({
-        "Accept": "application/json",/*
-          'Content-Type': 'multipart/form-data', */
+        "Accept": "application/json",
         'Authorization': 'Bearer ' + localStorage.getItem("token")
       })
     }
 
-    let fetched = await fetch('data:image/jpeg;base64,' + file);
-    let blob = await fetched.blob();
+    try {
+      const fetched = await fetch('data:image/jpeg;base64,' + file);
+      const blob = await fetched.blob();
 
-    const data = new FormData();
-    data.append('transaction', transaction);
-    data.append('id', id);
-    data.append('posicion', posicion);
-    data.append('file', blob, filename);
-    data.append('type', type);
-    data.append('cantidad', cantidad.toString());
+      const data = new FormData();
+      data.append('transaction', transaction);
+      data.append('id', id);
+      data.append('posicion', posicion);
+      data.append('file', blob, filename);
+      data.append('type', type);
+      data.append('cantidad', cantidad.toString());
 
+      console.log("[ServiceService] Subiendo Imagenes");
 
-    console.log("[ServiceService] Subiendo Imagenes");
+      const obs = this.http.post<{
+        errorCode: String, errorMessage: String, serviceVersion: any, type: string,
+        name: string; transaction: string
+      }>(this.WsUrl + "uploadimages", data, httpOptions);
 
-    return this.http.post<Response>(this.WsUrl + "uploadimages",
-      data, httpOptions).subscribe(res => {
-        console.log("[ServiceService] Respuesta de server:");
-        console.log(res);
-      })
-
+      const res = await firstValueFrom(obs);
+      console.log("[ServiceService] Respuesta de server:", res);
+      return res;
+    } catch (err) {
+      console.error('[ServiceService] Error al subir la imagen', err);
+      throw err;
+    }
   }
 
   getTagsHome() {
