@@ -1,6 +1,0 @@
-[
-  {
-    "sql": "ALTER TABLE clients ADD COLUMN tx_test TEXT",
-    "description": "Add test column to clients table"
-  }
-]
