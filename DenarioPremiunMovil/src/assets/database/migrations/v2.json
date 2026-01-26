@@ -1,6 +1,6 @@
 [
   {
-    "sql": "ALTER TABLE clients ADD COLUMN email TEXT",
-    "description": "Add email column to clients table"
+    "sql": "ALTER TABLE clients ADD COLUMN test TEXT",
+    "description": "ESTE ES UN EJEMPLO, BORRAR AL CREAR UN VERDADERO V2"
   }
 ]
