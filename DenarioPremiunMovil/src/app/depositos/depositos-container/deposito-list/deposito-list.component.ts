@@ -7,6 +7,7 @@ import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } 
 import { ItemListaDepositos } from '../../item-lista-depositos';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
+import { DateServiceService } from 'src/app/services/dates/date-service.service';
 
 
 @Component({
@@ -21,6 +22,7 @@ export class DepositoListComponent implements OnInit {
   geoLoc = inject(GeolocationService);
   db = inject(SynchronizationDBService);
   messageService = inject(MessageService);
+  dateServ = inject(DateServiceService);
 
   public indice = 0;
 
