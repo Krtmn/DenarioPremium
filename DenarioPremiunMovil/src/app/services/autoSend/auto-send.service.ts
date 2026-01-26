@@ -34,6 +34,7 @@ import { PedidosService } from 'src/app/pedidos/pedidos.service';
 import { DocumentSale } from 'src/app/modelos/tables/documentSale';
 import { Request } from 'src/app/modelos/request';
 import { PotentialClient } from 'src/app/modelos/tables/potentialClient';
+import { PendingTransactionsAttachments } from 'src/app/modelos/tables/pendingTransactionsAttachments';
 
 @Injectable({
   providedIn: 'root'
@@ -45,6 +46,7 @@ export class AutoSendService implements OnInit {
   public funcObsQueue = new Subject<() => Observable<any>>();
   public funcObsQueueCount = 1;
   public pendingTransaction!: PendingTransaction[];
+  public pendingTransactionsAttachments!: PendingTransactionsAttachments[];
   public messageAlert!: MessageAlert;
   private potentialClientServices = inject(PotentialClientDatabaseServicesService)
   private locationServices = inject(ClientLocationService)
@@ -79,15 +81,6 @@ export class AutoSendService implements OnInit {
         this.rolTransportista = false;
       }
     }
-
-    this.getPendingTransaction().then((result) => {
-      this.pendingTransaction = result;
-      if (this.pendingTransaction.length > 0) {
-        this.funcObsQueueCount = this.pendingTransaction.length;
-        /* this.process(this.pendingTransaction) */
-        this.initTransaction(this.pendingTransaction);
-      }
-    })
   }
 
   ngOnInit(): void {
@@ -97,6 +90,22 @@ export class AutoSendService implements OnInit {
         this.funcObsQueueCount = this.pendingTransaction.length;
         /* this.process(this.pendingTransaction) */
         this.initTransaction(this.pendingTransaction);
+      }
+    })
+    this.getPendingTransactionsAttachments().then((result) => {
+      console.log("PendingTransactionsAttachments", result);
+      this.pendingTransactionsAttachments = result;
+      if (this.pendingTransactionsAttachments.length > 0) {
+        // actualizar en memoria la propiedad `cantidad` con el total por coTransaction
+        const counts = new Map<string, number>();
+        this.pendingTransactionsAttachments.forEach(att => {
+          counts.set(att.coTransaction, (counts.get(att.coTransaction) ?? 0) + 1);
+        });
+        this.pendingTransactionsAttachments.forEach(att => {
+          att.cantidad = counts.get(att.coTransaction) ?? 0;
+        });
+
+        this.adjuntoService.sendPendingPhotos(this.dbService.getDatabase(), this.pendingTransactionsAttachments);
       }
     })
   }
@@ -129,6 +138,29 @@ export class AutoSendService implements OnInit {
     }).catch(e => {
       console.log(e);
       return pendingTransaction;
+    })
+  }
+
+  private getPendingTransactionsAttachments() {
+    let pendingTransactionsAttachments: PendingTransactionsAttachments[] = [];
+    return this.dbService.getDatabase().executeSql(
+      'SELECT * FROM pending_transactions_attachments WHERE id_transaction <> 0;', [
+    ]).then(res => {
+      for (var i = 0; i < res.rows.length; i++) {
+        pendingTransactionsAttachments.push({
+          naAttachment: res.rows.item(i).na_attachment,
+          idTransaction: res.rows.item(i).id_transaction,
+          coTransaction: res.rows.item(i).co_transaction,
+          type: res.rows.item(i).type,
+          naTransaction: res.rows.item(i).na_transaction,
+          position: res.rows.item(i).position,
+          cantidad: 0
+        })
+      }
+      return pendingTransactionsAttachments;
+    }).catch(e => {
+      console.log(e);
+      return pendingTransactionsAttachments;
     })
   }
 
@@ -595,7 +627,11 @@ export class AutoSendService implements OnInit {
       );
   }
 
-  updateTransaction(coTransaction: string, idTransaction: number, type: string) {
+  async updateTransaction(coTransaction: string, idTransaction: number, type: string) {
+
+    const updatePendingTransactionsAttachments = 'UPDATE pending_transactions_attachments SET id_transaction = ? WHERE co_transaction = ?';
+    await this.dbService.getDatabase().executeSql(updatePendingTransactionsAttachments, [idTransaction, coTransaction])
+
     switch (type) {
       case 'potentialClient': {
         this.dbService.getDatabase()!.executeSql(
@@ -603,9 +639,7 @@ export class AutoSendService implements OnInit {
           [idTransaction, CLIENT_POTENTIAL_STATUS_SENT, coTransaction]
         ).then(res => {
           console.log("UPDATE EXITOSO ", res);
-
           this.adjuntoService.sendPhotos(this.dbService.getDatabase(), idTransaction, "clientes", coTransaction);
-
         }).catch(e => {
           console.log("UPDATE NO EXITOSO ", e);
         })
