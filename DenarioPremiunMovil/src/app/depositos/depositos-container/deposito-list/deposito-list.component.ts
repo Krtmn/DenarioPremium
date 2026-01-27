@@ -7,7 +7,6 @@ import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } 
 import { ItemListaDepositos } from '../../item-lista-depositos';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
-import { DateServiceService } from 'src/app/services/dates/date-service.service';
 
 
 @Component({
@@ -22,7 +21,6 @@ export class DepositoListComponent implements OnInit {
   geoLoc = inject(GeolocationService);
   db = inject(SynchronizationDBService);
   messageService = inject(MessageService);
-  dateServ = inject(DateServiceService);
 
   public indice = 0;
 
@@ -96,7 +94,7 @@ export class DepositoListComponent implements OnInit {
     console.log("OPEN", coDeposit, index);
     this.messageService.hideLoading();
     //si el estado es por enviar o enviado entonces no se pueden editar cobros
-    if (this.depositService.listDeposits[index].stDelivery <= 2) {
+    if (this.depositService.listDeposits[index].stDeposit == 1 && this.depositService.listDeposits[index].stDelivery != 3) {
       //por enviar o enviado entones ocultamos la pestaña de cobros
       this.depositService.hideDeposit = true;
       this.depositService.deposit = this.depositService.listDeposits[index];

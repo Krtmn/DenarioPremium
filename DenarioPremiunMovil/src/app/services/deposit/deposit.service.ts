@@ -522,24 +522,6 @@ export class DepositService {
       })
   }
 
-  async deleteDepositBatch(dbServ: SQLiteObject, deposits: Deposit[]) {
-    this.database = dbServ;
-    let queries: any[] = [];
-    const deleteDeposit = 'DELETE FROM deposits WHERE co_deposit = ?';
-    const deleteDepositCollect = 'DELETE FROM deposit_collects WHERE co_deposit = ?';
-    for (let i = 0; i < deposits.length; i++) {
-      let coDeposit = deposits[i].coDeposit;
-      queries.push([deleteDepositCollect, [coDeposit]]);
-      queries.push([deleteDeposit, [coDeposit]]);
-    }
-    return dbServ.sqlBatch(queries).then(() => {
-      console.log("[ReturnDatabaseService] deleteReturnsBatch exitoso");
-    }).catch(error => {
-      console.log("[ReturnDatabaseService] Error al ejecutar deleteReturnsBatch.");
-      console.log(error);
-    });
-  }
-
   async saveDepositBatch(dbServ: SQLiteObject, deposits: Deposit[]) {
     this.database = dbServ;
 
@@ -766,6 +748,7 @@ export class DepositService {
         deposit.isSave = false;
         deposit.coordenada = res.rows.item(0).coordenada;
         deposit.depositCollect = [] as DepositCollect[];
+
       }
       return deposit;
     }).catch(e => {
@@ -781,23 +764,21 @@ export class DepositService {
       'FROM deposit_collects dc JOIN collections c ON dc.co_collection = c.co_collection WHERE dc.co_deposit = ?'
     return dbServ.executeSql(selectStatement, [coDeposit]).then(res => {
       this.deposit.depositCollect = [] as DepositCollect[];
+      let depositCollect = {} as DepositCollect
       let item;
       for (var i = 0; i < res.rows.length; i++) {
-        const row = res.rows.item(i);
-        const depositCollect = {} as DepositCollect;
-        depositCollect.idDepositCollect = row.id_deposit_collect;
-        depositCollect.coDepositCollect = row.co_deposit_collect;
-        depositCollect.coDeposit = row.co_deposit;
-        depositCollect.nuAmountTotal = row.nu_amount_total;
-        depositCollect.nuTotalDeposit = row.nu_total_deposit;
-        // corregir asignaciones: coCollection debe venir de co_collection y idCollection de id_collection
-        depositCollect.coCollection = row.co_collection;
-        depositCollect.idCollection = row.id_collection;
+        depositCollect.idDepositCollect = res.rows.item(i).id_deposit_collect;
+        depositCollect.coDepositCollect = res.rows.item(i).co_deposit_collect;
+        depositCollect.coDeposit = res.rows.item(i).co_deposit;
+        depositCollect.nuAmountTotal = res.rows.item(i).nu_amount_total;
+        depositCollect.nuTotalDeposit = res.rows.item(i).nu_total_deposit;
+        depositCollect.coCollection = res.rows.item(i).id_collection;
+        depositCollect.idCollection = res.rows.item(i).co_collection;
         this.deposit.depositCollect.push(depositCollect);
       }
       this.cobrosDetails = [] as CollectDeposit[];
       for (var i = 0; i < res.rows.length; i++) {
-        item = res.rows.item(i);
+        item = res.rows.item(i)
         item.isSelected = this.deposit.stDelivery == 1 || this.deposit.stDelivery == null ? true : false;
         this.cobrosDetails.push(item);
       }
@@ -849,7 +830,7 @@ export class DepositService {
       'nu_value_local as nuValueLocal,' +
       'nu_amount_doc as nuAmountDoc, ' +
       'coordenada as coordenada ' +
-      'FROM deposits ORDER BY st_delivery DESC, da_deposit DESC', []).then(async res => {
+      'FROM deposits', []).then(async res => {
         let promises: Promise<void>[] = [];
 
         this.listDeposits = [] as Deposit[];

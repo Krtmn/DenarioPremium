@@ -169,17 +169,10 @@
                 }
                 <p>{{ getTag("VIS_OBSERVACION") }}:&nbsp;{{ event.comentario }}</p>
               </ion-label>
-              @if(!viewOnly){
-              <ion-button (click)="deleteEvent(event)" color="danger">
+              <ion-button (click)="deleteEvent(event)" color="danger" *ngIf="!viewOnly">
                 <ion-icon name="trash"></ion-icon>
               </ion-button>
-            }
-            @if(!viewOnly){
-              <ion-note slot="end">
-                <ion-icon class="icon-List" name="chevron-forward-outline">
-                </ion-icon>
-              </ion-note>
-            }
+              <ion-note slot="end"><ion-icon class="icon-List" name="chevron-forward-outline"></ion-icon></ion-note>
             </ion-item>
           </div>
         </ion-list>

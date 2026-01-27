@@ -1,6 +1,0 @@
-[
-  {
-    "sql": "ALTER TABLE clients ADD COLUMN test TEXT",
-    "description": "ESTE ES UN EJEMPLO, BORRAR AL CREAR UN VERDADERO V2"
-  }
-]

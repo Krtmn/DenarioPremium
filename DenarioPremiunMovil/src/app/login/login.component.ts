@@ -85,7 +85,7 @@ export class LoginComponent implements OnInit {
               localStorage.setItem("versionApp", this.versionApp);
               localStorage.setItem("connected", String(connected));
               localStorage.setItem("connectionType", String(connectionType));
-
+              
               this.initLogin();
             }).catch(err => {
               console.error('dropTables error', err);
@@ -118,7 +118,7 @@ export class LoginComponent implements OnInit {
 
     //subcripcion por si cambian el usuario
     this.subsChangeUser = this.loginLogic.changeUser.subscribe(async (data: Boolean) => {
-      //SI LE DAN A ACEPTAR, HAY QUE BORRAR LA BD, GUARDAR EN LOCALSTORAGE EL NUEVO LOGIN Y PASS,
+      //SI LE DAN A ACEPTAR, HAY QUE BORRAR LA BD, GUARDAR EN LOCALSTORAGE EL NUEVO LOGIN Y PASS, 
       //Y SINCRONIZAR CON LOS NUEVOS DATOS
       console.log(data);
       let f = this.loginForm;
@@ -126,8 +126,7 @@ export class LoginComponent implements OnInit {
       localStorage.setItem("password", f.value.password);
 
       (await this.synchronization.getCreateTables()).subscribe((res) => {
-        this.loginLogic.dropTables(res).then(async (res: any) => {
-          await this.synchronization.checkAndRunMigrations();
+        this.loginLogic.dropTables(res).then((res: any) => {
           console.log(res)
           console.log(f);
           localStorage.removeItem("lastUpdate")
@@ -228,11 +227,7 @@ export class LoginComponent implements OnInit {
             localStorage.setItem("login", login);
             localStorage.setItem("token", result.jwtAuthResponse.tokenDeAcceso);
             localStorage.setItem("lastUpdate", result.lastUpdate);
-            if (result.cliente)
-              this.globalConfig.setVars(result.variablesConfiguracionCliente)
-            else
-              this.globalConfig.setVars(result.variablesConfiguracion)
-
+            this.globalConfig.setVars(result.variablesConfiguracion)
             //localStorage.setItem("globalConfiguration", JSON.stringify(result.variablesConfiguracion));
             localStorage.setItem("idUser", result.idUser.toString());
             localStorage.setItem("coUser", result.coUser);

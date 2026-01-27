@@ -16,7 +16,7 @@ import { PendingTransaction } from '../modelos/tables/pendingTransactions';
   providedIn: 'root'
 })
 export class ServicesService {
- //private WsUrl = "http://soportepremium.ddns.net:8181/PremiumWS/services/";
+  //private WsUrl = "http://soportepremium.ddns.net:8181/PremiumWS/services/";
   private WsUrl = "http://192.168.0.231:8282/PremiumWS/services/";
   //private WsUrl = "http://192.168.0.217:8080/PremiumWS/services/";
 
@@ -85,7 +85,6 @@ export class ServicesService {
 
   //001 123456  miopart
   //private WsUrl = " http://186.14.151.4:59091/PremiumWS/services/";
-
 
   private name = "";
   private last = "";
