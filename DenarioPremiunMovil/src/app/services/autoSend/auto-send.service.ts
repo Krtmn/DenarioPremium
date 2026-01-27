@@ -473,57 +473,57 @@ export class AutoSendService implements OnInit {
       this.callService(request, type, coTransaction).subscribe({
         next: (result) => {
           console.log(result);
-          if (result && result.status == 0) {
+          if (result && result.errorCode == "000") {
             this.messageAlert = new MessageAlert(
               "Denario Premium",
-              result.data.errorMessage
+              result.errorMessage
             );
             this.messageService.alertModal(this.messageAlert);
             //DEBO SACAR DE LA TABLA pending_transactions EL ROW COPN EL COTRANSACTION INDICADO Y ACTUALIZAR EN EL MODULO CORRESPONDIENTE
             //COMO ENVIADA LA TRANSACCION(ACTUALIZAR EL ST)
             switch (type) {
               case "potentialClient":
-                this.updateTransaction(result.data.coTransaction, result.data.idClient, result.data.type);
+                this.updateTransaction(result.coTransaction, result.idClient, result.type);
                 break;
 
               case "visit":
-                this.updateTransaction(result.data.coTransaction, result.data.idVisit, result.data.type);
+                this.updateTransaction(result.coTransaction, result.idVisit, result.type);
                 break;
 
               case 'order':
-                this.updateTransaction(result.data.coTransaction, result.data.orderId, result.data.type);
+                this.updateTransaction(result.coTransaction, result.orderId, result.type);
                 break;
 
               case "updateaddress":
-                this.updateTransaction(result.data.coTransaction, result.data.userAddressClientId, result.data.type);
+                this.updateTransaction(result.coTransaction, result.userAddressClientId, result.type);
                 break;
 
               case "return":
-                this.updateTransaction(result.data.coTransaction, result.data.returnId, result.data.type);
+                this.updateTransaction(result.coTransaction, result.returnId, result.type);
                 break;
 
               case "clientStock":
-                this.updateTransaction(result.data.coTransaction, result.data.clientStockId, result.data.type);
+                this.updateTransaction(result.coTransaction, result.clientStockId, result.type);
                 break;
 
               case "collect":
-                this.updateTransaction(result.data.coTransaction, result.data.collectionId, result.data.type);
+                this.updateTransaction(result.coTransaction, result.collectionId, result.type);
                 break;
               case "deposit":
-                this.updateTransaction(result.data.coTransaction, result.data.depositId, result.data.type);
+                this.updateTransaction(result.coTransaction, result.depositId, result.type);
                 break;
 
               default:
                 break;
             }
 
-            this.deletePendingTransaction(result.data.coTransaction, result.data.type)
+            this.deletePendingTransaction(result.coTransaction, result.type)
           }
-          if (result && result.status == 66) {
+          if (result && result.errorCode == "066") {
             //que se baje de la mula, nojoda!
             this.messageAlert = new MessageAlert(
               "Denario Premium",
-              result.data.errorMessage
+              result.errorMessage
             );
             this.messageService.alertModal(this.messageAlert);
           }
@@ -593,7 +593,7 @@ export class AutoSendService implements OnInit {
         map(resp => {
           resp.data.coTransaction = coTransaction;
           resp.data.type = type;
-          return resp;
+          return resp.data;
         })
       );
   }
