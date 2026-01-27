@@ -173,9 +173,7 @@ export class ServicesService {
   getSync(tables: string) {
     let opt = this.getHttpOptionsAuthorization();
     opt.url += "syncservice/getsync";
-    opt.data = {
-      "tables": tables
-    };
+    opt.data = JSON.parse(tables) as syncResponse;
     return from(CapacitorHttp.post(opt))
       .pipe(
         map(resp => {
