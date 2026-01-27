@@ -30,7 +30,7 @@ import { ClientBankAccount } from 'src/app/modelos/tables/clientBankAccount';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { ItemListaCobros } from 'src/app/cobros/item-lista-cobros';
-import { COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW } from 'src/app/utils/appConstants';
+import { COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW } from 'src/app/utils/appConstants';
 import { TransactionStatuses } from '../../modelos/tables/transactionStatuses';
 import { MessageService } from '../messageService/message.service';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
@@ -298,8 +298,7 @@ export class CollectionService {
     },
   ];
 
-  public COLLECT_STATUS_SAVED = COLLECT_STATUS_SAVED;
-  public COLLECT_STATUS_SENT = COLLECT_STATUS_SENT;
+
   public COLLECT_STATUS_TO_SEND = COLLECT_STATUS_TO_SEND;
   public COLLECT_STATUS_NEW = COLLECT_STATUS_NEW;
 
@@ -720,7 +719,7 @@ export class CollectionService {
       /* this.fechaMayor = yearMayor + "-" + monthMayor + "-" + diaMayor + " " + hora.split(" ")[1]; */
       this.dateRate = yearMayor + "-" + monthMayor + "-" + diaMayor + " " + hora.split(" ")[1];
 
-      if (this.collection.stDelivery == COLLECT_STATUS_SAVED) {
+      if (this.collection.stDelivery == 3) {
         this.dateRateVisual = this.collection.daRate + "T00:00:00";
       } else
         this.dateRateVisual = yearMayor + "-" + monthMayor + "-" + diaMayor + "T00:00:00";
@@ -775,7 +774,7 @@ export class CollectionService {
       return Promise.resolve(true);
     } else {
       //no tengo tasa para ese dia
-      if (this.collection.stDelivery == this.COLLECT_STATUS_SENT) {
+      if (this.collection.stDelivery == 1) {
         this.rateSelected = this.collection.nuValueLocal;
         this.historicoTasa = true;
       } else {
@@ -805,7 +804,7 @@ export class CollectionService {
     let montoConversion = 0;
     let montoTotalDiscounts = 0;
 
-    if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED) {
+    if (this.collection.stDelivery == 3) {
       for (var j = 0; j < this.collection.collectionDetails.length; j++) {
         monto += this.collection.collectionDetails[j].nuAmountPaid;
         montoConversion += this.collection.collectionDetails[j].nuAmountPaidConversion;
@@ -814,7 +813,7 @@ export class CollectionService {
         this.montoTotalPagarConversion = montoConversion;
 
       }
-    } else if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == this.COLLECT_STATUS_SENT) {
+    } else if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == 1) {
       monto = this.collection.nuAmountTotal;
       montoConversion = this.collection.nuAmountTotalConversion;
       this.montoTotalPagar = monto;
@@ -1531,7 +1530,7 @@ export class CollectionService {
       if (this.onChangeClient)
         this.cobroValid = true;
 
-      if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED || this.collection.stDelivery == this.COLLECT_STATUS_SENT)
+      if (this.collection.stDelivery == 3 || this.collection.stDelivery == 1)
         this.cobroValid = true;
 
       this.onCollectionValidToSave(true);
@@ -1539,7 +1538,7 @@ export class CollectionService {
       if (this.onChangeClient)
         this.cobroValid = true;
     }
-    if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == this.COLLECT_STATUS_SENT)
+    if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == 1)
       this.cobroValid = true;
 
     this.validCollection.next(valid);
@@ -1566,7 +1565,7 @@ export class CollectionService {
 
     if (this.globalConfig.get("requiredComment") === 'true' ? true : false) {
       if (this.collection.txComment.trim() == "") {
-        if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED)
+        if (this.collection.stDelivery == 3)
           banderaRequiredComment = true;
         else
           banderaRequiredComment = false;
@@ -1822,8 +1821,7 @@ export class CollectionService {
       detail.nuBalanceDoc = open.nuBalance;
       detail.nuBalanceDocConversion = this.convertirMonto(open.nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
       detail.daVoucher = open.daVoucher;
-      detail.nuAmountDiscount = open.nuAmountDiscount;
-      detail.nuAmountDiscountConversion = this.convertirMonto(open.nuAmountDiscount, this.collection.nuValueLocal, this.collection.coCurrency);
+      detail.nuAmountDiscountConversion = this.convertirMonto(detail.nuAmountDiscount, this.collection.nuValueLocal, this.collection.coCurrency);
       detail.nuAmountRetention = open.nuAmountRetention;
       detail.nuAmountRetentionConversion = this.convertirMonto(open.nuAmountRetention, this.collection.nuValueLocal, this.collection.coCurrency);
       detail.nuAmountRetention2 = open.nuAmountRetention2;
@@ -2283,7 +2281,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
   getStatus(status: number, naStatus: any): string {
     switch (status) {
-      case COLLECT_STATUS_SAVED: return this.collectionTags.get("COB_STATUS_SAVED")!;
+      case 3: return this.collectionTags.get("COB_STATUS_SAVED")!;
       case COLLECT_STATUS_TO_SEND: return this.collectionTags.get("COB_STATUS_TO_SEND")!;
       case COLLECT_STATUS_SENT:
         return naStatus == null ? this.collectionTags.get("COB_STATUS_SENT")! : naStatus;
@@ -2457,7 +2455,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     doc.coDocumentSaleType = row.co_document_sale_type;
     doc.daDocument = row.da_document;
     doc.daDueDate = row.da_due_date;
-    doc.nuAmountBase = row.na_amount_base == null ? 0 : row.na_amount_base;
+    doc.nuAmountBase = row.nu_amount_base == null ? 0 : row.nu_amount_base;
     doc.nuAmountDiscount = row.nu_amount_discount == null ? 0 : row.nu_amount_discount;
     doc.nuAmountTax = row.nu_amount_tax == null ? 0 : row.nu_amount_tax;
     doc.nuAmountTotal = row.nu_amount_total == null ? 0 : row.nu_amount_total;
@@ -2501,7 +2499,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       this.documentSalesBackup[index].daVoucher = detail.daVoucher!;
       this.documentSalesBackup[index].nuAmountDiscount = detail.nuAmountDiscount;
 
-      if (this.collection.stDelivery != this.COLLECT_STATUS_SAVED) {
+      if (this.collection.stDelivery != 3) {
         detail.nuBalanceDoc = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
         detail.nuBalanceDocConversion = doc.nuBalance;
         detail.nuAmountPaid = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
@@ -2550,7 +2548,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
         // normalizar campos numéricos
         this.ensureNumber(doc, 'nuAmountBase');
-        this.ensureNumber(doc, 'nuAmountDiscount');
+        // this.ensureNumber(doc, 'nuAmountDiscount');
         this.ensureNumber(doc, 'nuAmountTax');
         this.ensureNumber(doc, 'nuAmountTotal');
         this.ensureNumber(doc, 'nuBalance');
@@ -2562,7 +2560,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         // collection hard, doc local -> convertir local -> hard
         if (collectionIsHard && doc.coCurrency === local.coCurrency) {
           doc.nuAmountBase = await this.convertAmount(doc.nuAmountBase, 'local', 'hard', coTypeDoc, rateForDoc);
-          doc.nuAmountDiscount = await this.convertAmount(doc.nuAmountDiscount, 'local', 'hard', coTypeDoc, rateForDoc);
+          //doc.nuAmountDiscount = await this.convertAmount(doc.nuAmountDiscount, 'local', 'hard', coTypeDoc, rateForDoc);
           doc.nuAmountTax = await this.convertAmount(doc.nuAmountTax, 'local', 'hard', coTypeDoc, rateForDoc);
           doc.nuAmountTotal = await this.convertAmount(doc.nuAmountTotal, 'local', 'hard', coTypeDoc, rateForDoc);
           doc.nuBalance = await this.convertAmount(doc.nuBalance, 'local', 'hard', coTypeDoc, rateForDoc);
@@ -2573,7 +2571,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         // collection local, doc hard -> convertir hard -> local
         if (collectionIsLocal && doc.coCurrency === hard.coCurrency) {
           doc.nuAmountBase = await this.convertAmount(doc.nuAmountBase, 'hard', 'local', coTypeDoc, rateForDoc);
-          doc.nuAmountDiscount = await this.convertAmount(doc.nuAmountDiscount, 'hard', 'local', coTypeDoc, rateForDoc);
+          //doc.nuAmountDiscount = await this.convertAmount(doc.nuAmountDiscount, 'hard', 'local', coTypeDoc, rateForDoc);
           doc.nuAmountTax = await this.convertAmount(doc.nuAmountTax, 'hard', 'local', coTypeDoc, rateForDoc);
           doc.nuAmountTotal = await this.convertAmount(doc.nuAmountTotal, 'hard', 'local', coTypeDoc, rateForDoc);
           doc.nuBalance = await this.convertAmount(doc.nuBalance, 'hard', 'local', coTypeDoc, rateForDoc);
@@ -2587,7 +2585,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             // copia profunda de los campos actualizados
             this.documentSalesBackup[idxBackup] = Object.assign({}, this.documentSalesBackup[idxBackup], {
               nuAmountBase: doc.nuAmountBase,
-              nuAmountDiscount: doc.nuAmountDiscount,
+              //nuAmountDiscount: doc.nuAmountDiscount,
               nuAmountTax: doc.nuAmountTax,
               nuAmountTotal: doc.nuAmountTotal,
               nuBalance: doc.nuBalance,
@@ -2629,7 +2627,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
       // normalizar campos numéricos
       this.ensureNumber(doc, 'nuAmountBase');
-      this.ensureNumber(doc, 'nuAmountDiscount');
+      //this.ensureNumber(doc, 'nuAmountDiscount');
       this.ensureNumber(doc, 'nuAmountTax');
       this.ensureNumber(doc, 'nuAmountTotal');
       this.ensureNumber(doc, 'nuBalance');
@@ -2640,7 +2638,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       // collection hard, doc local -> convertir local -> hard
       if (collectionIsHard && doc.coCurrency === local.coCurrency) {
         doc.nuAmountBase = await this.convertAmount(doc.nuAmountBase, 'local', 'hard', coTypeDoc, rateForDoc);
-        doc.nuAmountDiscount = await this.convertAmount(doc.nuAmountDiscount, 'local', 'hard', coTypeDoc, rateForDoc);
+        //doc.nuAmountDiscount = await this.convertAmount(doc.nuAmountDiscount, 'local', 'hard', coTypeDoc, rateForDoc);
         doc.nuAmountTax = await this.convertAmount(doc.nuAmountTax, 'local', 'hard', coTypeDoc, rateForDoc);
         doc.nuAmountTotal = await this.convertAmount(doc.nuAmountTotal, 'local', 'hard', coTypeDoc, rateForDoc);
         doc.nuBalance = await this.convertAmount(doc.nuBalance, 'local', 'hard', coTypeDoc, rateForDoc);
@@ -2651,7 +2649,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       // collection local, doc hard -> convertir hard -> local
       if (collectionIsLocal && doc.coCurrency === hard.coCurrency) {
         doc.nuAmountBase = await this.convertAmount(doc.nuAmountBase, 'hard', 'local', coTypeDoc, rateForDoc);
-        doc.nuAmountDiscount = await this.convertAmount(doc.nuAmountDiscount, 'hard', 'local', coTypeDoc, rateForDoc);
+        //doc.nuAmountDiscount = await this.convertAmount(doc.nuAmountDiscount, 'hard', 'local', coTypeDoc, rateForDoc);
         doc.nuAmountTax = await this.convertAmount(doc.nuAmountTax, 'hard', 'local', coTypeDoc, rateForDoc);
         doc.nuAmountTotal = await this.convertAmount(doc.nuAmountTotal, 'hard', 'local', coTypeDoc, rateForDoc);
         doc.nuBalance = await this.convertAmount(doc.nuBalance, 'hard', 'local', coTypeDoc, rateForDoc);
@@ -2665,7 +2663,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           // copia profunda de los campos actualizados
           this.documentSalesBackup[idxBackup] = Object.assign({}, this.documentSalesBackup[idxBackup], {
             nuAmountBase: doc.nuAmountBase,
-            nuAmountDiscount: doc.nuAmountDiscount,
+            //nuAmountDiscount: doc.nuAmountDiscount,
             nuAmountTax: doc.nuAmountTax,
             nuAmountTotal: doc.nuAmountTotal,
             nuBalance: doc.nuBalance,
@@ -4266,7 +4264,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         respCollect.idEnterprise = res.rows.item(i).id_enterprise;
         respCollect.coEnterprise = res.rows.item(i).co_enterprise;
         respCollect.stCollection = res.rows.item(i).st_collection;
-        respCollect.stDelivery = res.rows.item(i).st_delivery == null ? this.COLLECT_STATUS_SENT : res.rows.item(i).st_delivery;
+        respCollect.stDelivery = res.rows.item(i).st_delivery == null ? 1 : res.rows.item(i).st_delivery;
         respCollect.isEdit = 0;
         respCollect.isEditTotal = 0;
         respCollect.isSave = 1;
