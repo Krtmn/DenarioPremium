@@ -775,7 +775,7 @@ export class CollectionService {
       return Promise.resolve(true);
     } else {
       //no tengo tasa para ese dia
-      if (this.collection.stDelivery == this.COLLECT_STATUS_SENT) {
+      if (this.collection.stDelivery == 1) {
         this.rateSelected = this.collection.nuValueLocal;
         this.historicoTasa = true;
       } else {
@@ -805,7 +805,7 @@ export class CollectionService {
     let montoConversion = 0;
     let montoTotalDiscounts = 0;
 
-    if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED) {
+    if (this.collection.stDelivery == 3) {
       for (var j = 0; j < this.collection.collectionDetails.length; j++) {
         monto += this.collection.collectionDetails[j].nuAmountPaid;
         montoConversion += this.collection.collectionDetails[j].nuAmountPaidConversion;
@@ -814,7 +814,7 @@ export class CollectionService {
         this.montoTotalPagarConversion = montoConversion;
 
       }
-    } else if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == this.COLLECT_STATUS_SENT) {
+    } else if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == 1) {
       monto = this.collection.nuAmountTotal;
       montoConversion = this.collection.nuAmountTotalConversion;
       this.montoTotalPagar = monto;
@@ -1247,7 +1247,8 @@ export class CollectionService {
           }
         } else {
           if (this.tolerancia0) {
-            this.checkTolerancia();
+            if (this.collection.collectionDetails.length > 0 && this.collection.collectionPayments.length > 0)
+              this.checkTolerancia();
           } else {
             if (Math.abs(this.montoTotalPagado) == Math.abs(this.montoTotalPagar)) {
               this.onCollectionValidToSend(true);
@@ -1269,7 +1270,8 @@ export class CollectionService {
         } else {
 
           if (this.tolerancia0) {
-            this.checkTolerancia();
+            if (this.collection.collectionDetails.length > 0 && this.collection.collectionPayments.length > 0)
+              this.checkTolerancia();
           } else {
             if (Math.abs(this.montoTotalPagado) == Math.abs(this.montoTotalPagar)) {
               this.onCollectionValidToSend(true);
@@ -1284,7 +1286,6 @@ export class CollectionService {
   }
 
   checkTolerancia() {
-
     //TOLERANCIA0 TRUE PERMITO DIFERENCIA SE DEBEN VALIDAR LAS SIGUIENTES VARIABLES TipoTolerancia, RangoTolerancia, MonedaTolerancia
     if (this.TipoTolerancia == 0) {
       if (this.collection.coCurrency == this.MonedaTolerancia) {
@@ -1531,7 +1532,7 @@ export class CollectionService {
       if (this.onChangeClient)
         this.cobroValid = true;
 
-      if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED || this.collection.stDelivery == this.COLLECT_STATUS_SENT)
+      if (this.collection.stDelivery == 3 || this.collection.stDelivery == 1)
         this.cobroValid = true;
 
       this.onCollectionValidToSave(true);
@@ -1539,7 +1540,7 @@ export class CollectionService {
       if (this.onChangeClient)
         this.cobroValid = true;
     }
-    if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == this.COLLECT_STATUS_SENT)
+    if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == 1)
       this.cobroValid = true;
 
     this.validCollection.next(valid);
@@ -1566,7 +1567,7 @@ export class CollectionService {
 
     if (this.globalConfig.get("requiredComment") === 'true' ? true : false) {
       if (this.collection.txComment.trim() == "") {
-        if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED)
+        if (this.collection.stDelivery == 3)
           banderaRequiredComment = true;
         else
           banderaRequiredComment = false;
@@ -1644,8 +1645,6 @@ export class CollectionService {
       nuAmountTotalConversion: 0,
       nuAmountPaid: 0,
       nuAmountPaidConversion: 0,
-      nuAmountDiscountTotal: 0,
-      nuAmountDiscountTotalConversion: 0,
       nuDifference: 0,
       nuDifferenceConversion: 0,
       nuIgtf: 0,
@@ -1813,9 +1812,6 @@ export class CollectionService {
     // Copia a collectionDetails
     const detail = this.collection.collectionDetails[detailIdx];
     if (detail) {
-      // Preservar los saldos originales para no mutarlos durante las actualizaciones
-      const originalBalance = detail.nuBalanceDocOriginal;
-      const originalBalanceConversion = detail.nuBalanceDocOriginalConversion;
 
       detail.nuAmountPaid = this.amountPaid
       detail.nuAmountPaidConversion = this.convertirMonto(this.amountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
@@ -1831,10 +1827,6 @@ export class CollectionService {
       detail.nuVoucherRetention = open.nuVaucherRetention;
       detail.nuValueLocal = open.nuValueLocal;
       detail.isSave = true;
-
-      // Restablecer explícitamente los montos originales para garantizar que no se alteren
-      detail.nuBalanceDocOriginal = originalBalance;
-      detail.nuBalanceDocOriginalConversion = originalBalanceConversion;
 
       // ...otros campos...
     }
@@ -2020,7 +2012,7 @@ export class CollectionService {
       const sqlBloquear = `SELECT DISTINCT(ds.co_document)
 FROM document_sales ds
 JOIN collection_details cd ON ds.co_document = cd.co_document
-JOIN collections c ON cd.co_collection = c.co_collection AND c.st_collection IN (1,3)
+JOIN collections c ON cd.co_collection = c.co_collection AND c.st_delivery IN (1,3)
 JOIN transaction_statuses ts ON c.co_collection = ts.co_transaction AND ts.id_transaction_type = 3
 WHERE ts.da_transaction_statuses = (
     SELECT MAX(ts2.da_transaction_statuses)
@@ -2052,7 +2044,7 @@ AND ts.da_transaction_statuses > ds.da_update;`;
       const sqlDesbloquear = `SELECT DISTINCT(ds.co_document)
 FROM document_sales ds
 JOIN collection_details cd ON ds.co_document = cd.co_document
-JOIN collections c ON cd.co_collection = c.co_collection AND c.st_collection IN (1,3)
+JOIN collections c ON cd.co_collection = c.co_collection AND c.st_delivery IN (1,3)
 JOIN transaction_statuses ts ON c.co_collection = ts.co_transaction AND ts.id_transaction_type = 3
 WHERE ts.da_transaction_statuses = (
     SELECT MAX(ts2.da_transaction_statuses)
@@ -2501,7 +2493,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       this.documentSalesBackup[index].daVoucher = detail.daVoucher!;
       this.documentSalesBackup[index].nuAmountDiscount = detail.nuAmountDiscount;
 
-      if (this.collection.stDelivery != this.COLLECT_STATUS_SAVED) {
+      if (this.collection.stDelivery != 3) {
         detail.nuBalanceDoc = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
         detail.nuBalanceDocConversion = doc.nuBalance;
         detail.nuAmountPaid = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
@@ -3185,13 +3177,6 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       this.collection.nuAmountFinal = this.montoTotalPagar;
       this.collection.nuAmountFinalConversion = this.convertirMonto(this.collection.nuAmountFinal, 0, this.collection.coCurrency);
 
-
-      const details = this.collection?.collectionDetails ?? [];
-      const nuAmountDiscountTotal = details.reduce((sum, detail) => sum + Number(detail?.nuAmountCollectDiscount ?? 0), 0);
-      const nuAmountDiscountTotalConversion = details.reduce((sum, detail) => sum + Number(detail?.nuAmountCollectDiscountConversion ?? 0), 0);
-
-
-
       const deleteCollectionSQL = 'DELETE FROM collections WHERE co_collection = ?';
       const deleteCollectionDetailsSQL = 'DELETE FROM collection_details WHERE co_collection = ?';
       const deleteCollectionDetailsDiscountSQL = 'DELETE FROM collection_detail_discounts WHERE co_collection = ?';
@@ -3227,14 +3212,11 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           "nu_amount_igtf_conversion," +
           "nu_amount_final," +
           "nu_amount_final_conversion," +
-          "nu_amount_discount_total," +
-          "nu_amount_discount_total_conversion," +
           "nu_igtf," +
           "hasIGTF," +
           "nu_attachments," +
           "has_attachments" +
-          ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-
+          ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         return dbServ.executeSql(insertCollection,
           [
             0,
@@ -3265,8 +3247,6 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             collection.nuAmountIgtfConversion,
             collection.nuAmountFinal,
             collection.nuAmountFinalConversion,
-            nuAmountDiscountTotal,
-            nuAmountDiscountTotalConversion,
             collection.nuIgtf,
             collection.hasIGTF,
             collection.nuAttachments,
@@ -3357,12 +3337,10 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     nu_amount_igtf_conversion,
     nu_amount_final,
     nu_amount_final_conversion,
-    nu_amount_discount_total,
-    nu_amount_discount_total_conversion,
     hasIGTF,
     nu_attachments,
     has_attachments
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
     const insertCollectionDetailSQL = `
@@ -3419,20 +3397,11 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     id_collection_detail,
     nu_collect_discount_other,
     na_collect_discount_other,
-    co_collection,
-    co_document,
-    nu_amount_collect_discount_other,
-    nu_amount_collect_discount_other_conversion,
-    posicion
-  ) VALUES (?,?,?,?,?,?,?,?,?)
+    co_collection
+  ) VALUES (?,?,?,?,?)
     `
 
     let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
-
-    const details = this.collection?.collectionDetails ?? [];
-    const nuAmountDiscountTotal = details.reduce((sum, detail) => sum + Number(detail?.nuAmountCollectDiscount ?? 0), 0);
-    const nuAmountDiscountTotalConversion = details.reduce((sum, detail) => sum + Number(detail?.nuAmountCollectDiscountConversion ?? 0), 0);
-
 
     for (var co = 0; co < collection.length; co++) {
       const collect = collection[co];
@@ -3445,7 +3414,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           collect.coClient,
           collect.naClient,
           collect.stCollection,
-          1,
+          collect.stDelivery == null ? 1 : collect.stDelivery,
           collect.daCollection,
           collect.daRate,
           collect.naResponsible,
@@ -3467,8 +3436,6 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           collect.nuAmountIgtfConversion,
           collect.nuAmountFinal,
           collect.nuAmountFinalConversion,
-          nuAmountDiscountTotal,
-          nuAmountDiscountTotalConversion,
           collect.hasIGTF,
           collect.nuAttachments,
           collect.hasAttachments,
@@ -3515,17 +3482,11 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           for (var coDetailDiscount = 0; coDetailDiscount < collectionDetail.collectionDetailDiscounts!.length; coDetailDiscount++) {
             const collectionDetailDiscount = collectionDetail.collectionDetailDiscounts![coDetailDiscount];
             queries.push([insertCollectionDetailDiscountSQL,
-              [
-                collectionDetailDiscount.idCollectionDetailDiscount,
-                collectionDetailDiscount.idCollectionDetail,
-                collectionDetailDiscount.nuCollectDiscountOther,
-                collectionDetailDiscount.naCollectDiscountOther,
-                collectionDetail.coCollection,
-                collectionDetail.coDocument,
-                collectionDetailDiscount.nuAmountCollectDiscountOther,
-                collectionDetailDiscount.nuAmountCollectDiscountOtherConversion,
-                collectionDetailDiscount.posicion
-              ]
+              collectionDetailDiscount.idCollectionDetailDiscount,
+              collectionDetailDiscount.idCollectionDetail,
+              collectionDetailDiscount.nuCollectDiscountOther,
+              collectionDetailDiscount.naCollectDiscountOther,
+              collectionDetail.coCollection,
             ]);
           }
         }
@@ -3624,8 +3585,6 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "da_document," +
       "nu_balance_doc," +
       "nu_balance_doc_conversion," +
-      "nu_balance_doc_original," +
-      "nu_balance_doc_original_conversion," +
       "co_original," +
       "co_type_doc," +
       "id_document," +
@@ -3637,8 +3596,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "has_discount," +
       "discount_comment," +
       "nu_amount_collect_discount," +
-      "nu_amount_collect_discount_conversion" +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "nu_collect_discount" +
+      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     for (var i = 0; i < collectionDetail.length; i++) {
       statementsCollectionDetails.push([inserStatementCollectionDetail, [
@@ -3658,8 +3617,6 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         collectionDetail[i].daDocument,
         collectionDetail[i].nuBalanceDoc,
         collectionDetail[i].nuBalanceDocConversion,
-        collectionDetail[i].nuBalanceDocOriginal,
-        collectionDetail[i].nuBalanceDocOriginalConversion,
         collectionDetail[i].coOriginal,
         collectionDetail[i].coTypeDoc,
         collectionDetail[i].idDocument,
@@ -3671,7 +3628,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         collectionDetail[i].hasDiscount,
         collectionDetail[i].discountComment,
         collectionDetail[i].nuAmountCollectDiscount,
-        collectionDetail[i].nuAmountCollectDiscountConversion
+        collectionDetail[i].nuCollectDiscount
       ]]);
     }
 
@@ -3690,12 +3647,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "id_collect_discount," +
       "nu_collect_discount_other," +
       "na_collect_discount_other," +
-      "co_collection," +
-      "co_document," +
-      "nu_amount_collect_discount_other," +
-      "nu_amount_collect_discount_other_conversion," +
-      "posicion" +
-      ") VALUES (?,?,?,?,?,?,?,?,?)";
+      "co_collection" +
+      ") VALUES (?,?,?,?,?)";
 
     for (var i = 0; i < collectionDetail.length; i++) {
       for (var j = 0; j < collectionDetail[i].collectionDetailDiscounts!?.length; j++) {
@@ -3704,11 +3657,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           collectionDetail[i].collectionDetailDiscounts![j].idCollectDiscount,
           collectionDetail[i].collectionDetailDiscounts![j].nuCollectDiscountOther,
           collectionDetail[i].collectionDetailDiscounts![j].naCollectDiscountOther,
-          coCollection,
-          collectionDetail[i].collectionDetailDiscounts![j].coDocument,
-          collectionDetail[i].collectionDetailDiscounts![j].nuAmountCollectDiscountOther,
-          collectionDetail[i].collectionDetailDiscounts![j].nuAmountCollectDiscountOtherConversion,
-          collectionDetail[i].collectionDetailDiscounts![j].posicion
+          coCollection
         ]]);
       }
 
@@ -3819,13 +3768,11 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "nu_amount_igtf_conversion," +
       "nu_amount_final," +
       "nu_amount_final_conversion," +
-      "nu_amount_discount_total," +
-      "nu_amount_discount_total_conversion," +
       "nu_igtf," +
       "hasIGTF," +
       "nu_attachments," +
       "has_attachments" +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
 
     let newCoCollection = this.dateServ.generateCO(0);
@@ -3859,8 +3806,6 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         0,//collection.nuAmountIgtfConversion,
         collection.nuDifference,//collection.nuAmountFinal,
         collection.nuDifferenceConversion,//collection.nuAmountFinalConversion,
-        collection.nuAmountDiscountTotal,//collection.nuAmountDiscountTotal,
-        collection.nuAmountDiscountTotalConversion,//collection.nuAmountDiscountTotalConversion,
         collection.nuIgtf,
         collection.hasIGTF,
         collection.nuAttachments,
@@ -4079,8 +4024,6 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         collection.nuAmountIgtfConversion = res.rows.item(0).nu_amount_igtf_conversion == null ? 0 : res.rows.item(0).nu_amount_igtf_conversion;
         collection.nuAmountPaid = res.rows.item(0).nu_amount_paid == null ? 0 : res.rows.item(0).nu_amount_paid;
         collection.nuAmountPaidConversion = res.rows.item(0).nu_amount_paid_conversion == null ? 0 : res.rows.item(0).nu_amount_paid_conversion;
-        collection.nuAmountDiscountTotal = res.rows.item(0).nu_amount_discount_total == null ? 0 : res.rows.item(0).nu_amount_discount_total;
-        collection.nuAmountDiscountTotalConversion = res.rows.item(0).nu_amount_discount_total_conversion == null ? 0 : res.rows.item(0).nu_amount_discount_total_conversion;
         collection.hasIGTF = res.rows.item(0).hasIGTF == undefined ? false : res.rows.item(0).hasIGTF;
         //collection.daVoucher = res.rows.item(0).daVoucher;
         collection.document = {} as DocumentSale;
@@ -4107,7 +4050,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
   getCollectionDetails(dbServ: SQLiteObject, coCollection: string) {
     return dbServ.executeSql(
-      'SELECT * FROM collection_details WHERE co_collection = ?', [coCollection
+      'SELECT * FROM collection_details WHERE co_collection=?', [coCollection
     ]).then(res => {
       let collectionDetails: CollectionDetail[] = [];
       for (var i = 0; i < res.rows.length; i++) {
@@ -4133,8 +4076,6 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           daDocument: res.rows.item(i).da_document,
           nuBalanceDoc: res.rows.item(i).nu_balance_doc,
           nuBalanceDocConversion: res.rows.item(i).nu_balance_doc_conversion,
-          nuBalanceDocOriginal: res.rows.item(i).nu_balance_doc_original,
-          nuBalanceDocOriginalConversion: res.rows.item(i).nu_balance_doc_original_conversion,
           coOriginal: res.rows.item(i).co_original,
           coTypeDoc: res.rows.item(i).co_type_doc,
           nuValueLocal: res.rows.item(i).nu_value_local,
@@ -4146,7 +4087,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           hasDiscount: res.rows.item(i).has_discount == "true" ? true : false,
           discountComment: res.rows.item(i).discount_comment == "" ? null : res.rows.item(i).discount_comment,
           nuAmountCollectDiscount: res.rows.item(i).nu_amount_collect_discount,
-          nuAmountCollectDiscountConversion: res.rows.item(i).nu_amount_collect_discount_conversion,
+          nuCollectDiscount: res.rows.item(i).nu_collect_discount,
           collectionDetailDiscounts: [] as CollectionDetailDiscounts[],
         })
       }
@@ -4160,29 +4101,25 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
   getCollectionDetailsDiscounts(dbServ: SQLiteObject, coCollection: string) {
     return dbServ.executeSql(
-      'SELECT * FROM collection_detail_discounts WHERE co_collection = ?',
-      [coCollection]).then(res => {
-        let CollectionDetailDiscounts: CollectionDetailDiscounts[] = [];
-        for (var i = 0; i < res.rows.length; i++) {
-          CollectionDetailDiscounts.push({
-            idCollectionDetailDiscount: res.rows.item(i).id_collection_detail_discount,
-            idCollectionDetail: res.rows.item(i).id_collection_detail,
-            idCollectDiscount: res.rows.item(i).id_collect_discount,
-            nuCollectDiscountOther: res.rows.item(i).nu_collect_discount_other == undefined ? null : res.rows.item(i).nu_collect_discount_other,
-            naCollectDiscountOther: res.rows.item(i).na_collect_discount_other == undefined ? null : res.rows.item(i).na_collect_discount_other,
-            coCollection: res.rows.item(i).co_collection,
-            coDocument: res.rows.item(i).co_document,
-            nuAmountCollectDiscountOther: res.rows.item(i).nu_amount_collect_discount_other == undefined ? null : res.rows.item(i).nu_amount_collect_discount_other,
-            nuAmountCollectDiscountOtherConversion: res.rows.item(i).nu_amount_collect_discount_other_conversion == undefined ? null : res.rows.item(i).nu_amount_collect_discount_other_conversion,
-            posicion: res.rows.item(i).posicion == undefined ? null : res.rows.item(i).posicion,
-          })
-        }
-        return CollectionDetailDiscounts;
-      }).catch(e => {
-        let collectionDetails: CollectionDetail[] = [];
-        console.log(e);
-        return collectionDetails;
-      })
+      'SELECT * FROM collection_detail_discounts WHERE co_collection = ?', [coCollection
+    ]).then(res => {
+      let CollectionDetailDiscounts: CollectionDetailDiscounts[] = [];
+      for (var i = 0; i < res.rows.length; i++) {
+        CollectionDetailDiscounts.push({
+          idCollectionDetailDiscount: res.rows.item(i).id_collection_detail_discount,
+          idCollectionDetail: res.rows.item(i).id_collection_detail,
+          idCollectDiscount: res.rows.item(i).id_collect_discount,
+          nuCollectDiscountOther: res.rows.item(i).nu_collect_discount_other == undefined ? null : res.rows.item(i).nu_collect_discount_other,
+          naCollectDiscountOther: res.rows.item(i).na_collect_discount_other == undefined ? null : res.rows.item(i).na_collect_discount_other,
+          coCollection: res.rows.item(i).co_collection,
+        })
+      }
+      return CollectionDetailDiscounts;
+    }).catch(e => {
+      let collectionDetails: CollectionDetail[] = [];
+      console.log(e);
+      return collectionDetails;
+    })
   }
 
   getCollectionPayments(dbServ: SQLiteObject, coCollection: string) {
@@ -4266,7 +4203,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         respCollect.idEnterprise = res.rows.item(i).id_enterprise;
         respCollect.coEnterprise = res.rows.item(i).co_enterprise;
         respCollect.stCollection = res.rows.item(i).st_collection;
-        respCollect.stDelivery = res.rows.item(i).st_delivery == null ? this.COLLECT_STATUS_SENT : res.rows.item(i).st_delivery;
+        respCollect.stDelivery = res.rows.item(i).st_delivery == null ? 1 : res.rows.item(i).st_delivery;
         respCollect.isEdit = 0;
         respCollect.isEditTotal = 0;
         respCollect.isSave = 1;
@@ -4405,9 +4342,6 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           nuCollectDiscount: res.rows.item(i).nu_collect_discount,
           naCollectDiscount: res.rows.item(i).na_collect_discount,
           requireInput: res.rows.item(i).require_input == "true" ? true : false,
-          nuAmountCollectDiscount: 0,
-          nuAmountCollectDiscountConversion: 0,
-          position: 0,
         })
       }
       return Promise.resolve(true);

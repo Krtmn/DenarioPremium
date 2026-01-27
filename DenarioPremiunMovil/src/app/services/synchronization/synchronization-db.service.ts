@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-import { BehaviorSubject, fromEventPattern, identity, Observable, throwError } from 'rxjs';
+import { BehaviorSubject, fromEventPattern, identity, Observable, throwError, firstValueFrom } from 'rxjs';
 import { NavController } from '@ionic/angular';
 import { Platform } from '@ionic/angular';
 // import { SQLitePorter } from '@ionic-native/sqlite-porter';
@@ -94,6 +94,7 @@ export class SynchronizationDBService {
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
+  private CURRENT_DB_VERSION: number = 1;
 
 
   constructor(
@@ -223,7 +224,7 @@ export class SynchronizationDBService {
         }
       })
 
-      promesa.then((value) => {
+      promesa.then(async (value) => {
         this.inHome = false;
         if (conexion) {
           let variablesConfiguracion = JSON.parse(localStorage.getItem("globalConfiguration") || "[]");
@@ -233,6 +234,7 @@ export class SynchronizationDBService {
             this.insertTags(user.tags)
 
           this.initTableVersions(this.tables);
+          await this.checkAndRunMigrations();
           this.navController.navigateForward("synchronization")
         } else
           this.router.navigate(['home']);
@@ -252,6 +254,7 @@ export class SynchronizationDBService {
                //this.navController.navigateForward("synchronization")
 
              } else { */
+        await this.checkAndRunMigrations();
         this.navController.navigateForward("synchronization");
         //this.globalConfig.setVars(user.variablesConfiguracion);
         let variablesConfiguracion = JSON.parse(localStorage.getItem("globalConfiguration") || "[]");
@@ -292,6 +295,50 @@ export class SynchronizationDBService {
 
   async getCreateTables(): Promise<Observable<any[]>> {
     return this.http.get<any[]>('assets/database/createTables.json');
+  }
+
+  async checkAndRunMigrations() {
+    try {
+      const storedVersion = Number(localStorage.getItem('db_version') || '1');
+      if (storedVersion >= this.CURRENT_DB_VERSION) {
+        return;
+      }
+      for (let v = storedVersion + 1; v <= this.CURRENT_DB_VERSION; v++) {
+        await this.runMigrationForVersion(v);
+        localStorage.setItem('db_version', String(v));
+        console.log(`Database migrated to v${v}`);
+      }
+    } catch (e) {
+      console.log('checkAndRunMigrations error', e);
+    }
+  }
+
+  private async runMigrationForVersion(version: number) {
+    try {
+      const migrations = await this.loadMigrationFile(version);
+      if (!migrations || migrations.length === 0) return;
+      for (const m of migrations) {
+        if (typeof m === 'string') {
+          await this.database.executeSql(m, []);
+        } else if (m && m.sql) {
+          const params = m.params || [];
+          await this.database.executeSql(m.sql, params);
+        }
+      }
+    } catch (e) {
+      console.log(`runMigrationForVersion v${version} error`, e);
+    }
+  }
+
+  private async loadMigrationFile(version: number): Promise<any[]> {
+    try {
+      const url = 'assets/database/migrations/v'+version+'.json';
+      const obs = this.http.get<any[]>(url);
+      return await firstValueFrom(obs);
+    } catch (e) {
+      console.log('loadMigrationFile error', e);
+      return [];
+    }
   }
 
   initTableVersions(tables: any[]) {
@@ -1401,7 +1448,9 @@ export class SynchronizationDBService {
     return this.clientStockService.saveClientStockBatch(this.database, arr);
   }
   insertDepositBatch(arr: Deposit[]) {
-    return this.depositService.saveDepositBatch(this.database, arr);
+    return this.depositService.deleteDepositBatch(this.database, arr).then((r) => {
+      return this.depositService.saveDepositBatch(this.database, arr);
+    })
   }
 
   deleteDataTable(arr: number[], nameTable: string, nameId: string) {

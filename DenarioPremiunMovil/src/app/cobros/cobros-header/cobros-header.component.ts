@@ -81,7 +81,7 @@ export class CobrosHeaderComponent implements OnInit {
         this.messageService.showLoading().then(() => {
           this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
           this.alertMessageOpen = true;
-          this.collectService.collection.stDelivery = 1;
+          this.collectService.collection.stDelivery = 3;
           this.collectService.collection.stCollection = this.COLLECT_STATUS_SAVED;
           this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, true).then(async response => {
             await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
@@ -210,7 +210,7 @@ export class CobrosHeaderComponent implements OnInit {
       this.collectService.collectionIsSave = false;
       this.collectService.cobroListComponent = false;
       this.collectService.cobrosComponent = true;
-    } else if (!this.collectService.collectionIsSave && this.collectService.collectValidTabs && this.collectService.collection.stDelivery != this.COLLECT_STATUS_TO_SEND && this.collectService.collection.stDelivery != this.COLLECT_STATUS_SAVED && this.collectService.collection.stDelivery != 6 && this.collectService.collection.stDelivery != this.COLLECT_STATUS_SENT) {
+    } else if (!this.collectService.collectionIsSave && this.collectService.collectValidTabs && this.collectService.collection.stDelivery != 1 && this.collectService.collection.stDelivery != 3 && this.collectService.collection.stDelivery != 6) {
       this.collectService.saveOrExitOpen = true;
     } else {
       this.collectService.collectValid = false;
@@ -360,7 +360,6 @@ export class CobrosHeaderComponent implements OnInit {
               this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_ANTICIPO_MSG')!;
               break;
             }
-
             case "2": {
               this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_RETENTION_MSG')!;
               break;
