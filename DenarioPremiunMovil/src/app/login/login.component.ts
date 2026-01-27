@@ -188,7 +188,7 @@ export class LoginComponent implements OnInit {
 
   }
 
-  onLogin(f: FormGroup, deviceInfo: {}, deviceId: {}, conexion: boolean) {
+  async onLogin(f: FormGroup, deviceInfo: {}, deviceId: {}, conexion: boolean) {
     let login = "";
     //conexion = false; //descomentar para probar sin conexion
     if (f.value.login != undefined) {
@@ -214,9 +214,19 @@ export class LoginComponent implements OnInit {
 
 
     } else if (conexion) {
-      this.subs = this.services.onLogin(f.value, deviceInfo, deviceId).subscribe({
-        next: (result) => {
-          if (result.errorCode == '000') {
+      this.subs = await this.services.onLogin(f.value, deviceInfo, deviceId).then((result) => {
+        if(!result) {
+          this.message.hideLoading();
+
+          this.messageAlert = new MessageAlert(
+            "Denario Premium",
+            "Ocurrió un error de comunicación con el servidor, verifique cobertura e intente nuevamente."
+          );
+          this.messageService.alertModal(this.messageAlert);
+          //console.error(e);
+        }
+        
+          if (result && result.status == 0) {
             if (localStorage.getItem("recuerdame") == "true") {
 
               localStorage.setItem("password", f.value.password);
@@ -226,23 +236,23 @@ export class LoginComponent implements OnInit {
             }
 
             localStorage.setItem("login", login);
-            localStorage.setItem("token", result.jwtAuthResponse.tokenDeAcceso);
-            localStorage.setItem("lastUpdate", result.lastUpdate);
-            if (result.cliente)
-              this.globalConfig.setVars(result.variablesConfiguracionCliente)
+            localStorage.setItem("token", result.data.jwtAuthResponse.tokenDeAcceso);
+            localStorage.setItem("lastUpdate", result.data.lastUpdate);
+            if (result.data.cliente)
+              this.globalConfig.setVars(result.data.variablesConfiguracionCliente)
             else
-              this.globalConfig.setVars(result.variablesConfiguracion)
+              this.globalConfig.setVars(result.data.variablesConfiguracion)
 
             //localStorage.setItem("globalConfiguration", JSON.stringify(result.variablesConfiguracion));
-            localStorage.setItem("idUser", result.idUser.toString());
-            localStorage.setItem("coUser", result.coUser);
+            localStorage.setItem("idUser", result.data.idUser.toString());
+            localStorage.setItem("coUser", result.data.coUser);
 
-            this.user = result;
+            this.user = result.data;
             localStorage.setItem("user", JSON.stringify(this.user));
             this.synchronization.initDb(this.user, conexion);
 
 
-          } else if (result.errorCode == '104') {
+          } else if (result &&result.status == 104) {
             this.message.hideLoading();
             this.messageAlert = new MessageAlert(
               "Denario Premium",
@@ -252,22 +262,8 @@ export class LoginComponent implements OnInit {
           }
 
         },
-        complete: () => {
-          console.info('complete')
-        },
-        error: (e) => {
-          this.message.hideLoading();
-
-          this.messageAlert = new MessageAlert(
-            "Denario Premium",
-            "Ocurrió un error de comunicación con el servidor, verifique cobertura e intente nuevamente."
-          );
-          this.messageService.alertModal(this.messageAlert);
-          /*           this.message.hideLoading();
-           */
-          console.error(e);
-        },
-      })
+        
+      )
     } else {
       if (localStorage.getItem("recuerdame") == "true") {
         localStorage.setItem("login", login);
