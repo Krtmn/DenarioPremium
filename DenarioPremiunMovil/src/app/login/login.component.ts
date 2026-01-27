@@ -20,6 +20,7 @@ import { ImageServicesService } from '../services/imageServices/image-services.s
 import { Imagenes } from '../modelos/imagenes';
 import { ScreenOrientation, OrientationType } from '@capawesome/capacitor-screen-orientation';
 import { Keyboard } from '@capacitor/keyboard';
+import { from } from 'rxjs';
 
 
 @Component({
@@ -188,7 +189,7 @@ export class LoginComponent implements OnInit {
 
   }
 
-  async onLogin(f: FormGroup, deviceInfo: {}, deviceId: {}, conexion: boolean) {
+  onLogin(f: FormGroup, deviceInfo: {}, deviceId: {}, conexion: boolean) {
     let login = "";
     //conexion = false; //descomentar para probar sin conexion
     if (f.value.login != undefined) {
@@ -214,19 +215,9 @@ export class LoginComponent implements OnInit {
 
 
     } else if (conexion) {
-      this.subs = await this.services.onLogin(f.value, deviceInfo, deviceId).then((result) => {
-        if(!result) {
-          this.message.hideLoading();
-
-          this.messageAlert = new MessageAlert(
-            "Denario Premium",
-            "Ocurrió un error de comunicación con el servidor, verifique cobertura e intente nuevamente."
-          );
-          this.messageService.alertModal(this.messageAlert);
-          //console.error(e);
-        }
-        
-          if (result && result.status == 0) {
+      this.subs = from(this.services.onLogin(f.value, deviceInfo, deviceId)).subscribe({
+        next: (result) => {
+          if (result && result.data.errorCode == '000') {
             if (localStorage.getItem("recuerdame") == "true") {
 
               localStorage.setItem("password", f.value.password);
@@ -246,13 +237,12 @@ export class LoginComponent implements OnInit {
             //localStorage.setItem("globalConfiguration", JSON.stringify(result.variablesConfiguracion));
             localStorage.setItem("idUser", result.data.idUser.toString());
             localStorage.setItem("coUser", result.data.coUser);
-
             this.user = result.data;
             localStorage.setItem("user", JSON.stringify(this.user));
             this.synchronization.initDb(this.user, conexion);
 
 
-          } else if (result &&result.status == 104) {
+          } else if (result && result.data.errorCode == '104') {
             this.message.hideLoading();
             this.messageAlert = new MessageAlert(
               "Denario Premium",
@@ -262,16 +252,22 @@ export class LoginComponent implements OnInit {
           }
 
         },
-        
-      ).catch((e) => {
-        this.message.hideLoading();
-        this.messageAlert = new MessageAlert(
-          "Denario Premium",
-          "Ocurrió un error de comunicación con el servidor, verifique cobertura e intente nuevamente."
-        );
-        this.messageService.alertModal(this.messageAlert);
-        console.error(e);
-      });
+        complete: () => {
+          console.info('complete')
+        },
+        error: (e) => {
+          this.message.hideLoading();
+
+          this.messageAlert = new MessageAlert(
+            "Denario Premium",
+            "Ocurrió un error de comunicación con el servidor, verifique cobertura e intente nuevamente."
+          );
+          this.messageService.alertModal(this.messageAlert);
+          /*           this.message.hideLoading();
+           */
+          console.error(e);
+        },
+      })
     } else {
       if (localStorage.getItem("recuerdame") == "true") {
         localStorage.setItem("login", login);

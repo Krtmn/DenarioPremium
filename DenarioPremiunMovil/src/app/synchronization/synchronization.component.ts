@@ -717,7 +717,7 @@ export class SynchronizationComponent implements OnInit {
 
           from(this.services.getSync(JSON.stringify(tabla))).subscribe({
             next: (result) => {
-              const resTable = (result as any)[rowKey];
+              const resTable = (result.data as any)[rowKey];
               const sqlInfo = this.sqlTableMap[key];
 
               if (!resTable) {
