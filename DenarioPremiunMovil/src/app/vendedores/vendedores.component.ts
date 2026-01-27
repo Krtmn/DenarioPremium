@@ -85,16 +85,20 @@ export class VendedoresComponent  implements OnInit {
 
   getUserInfo(){
     //obtiene la info del vendedor por el servicio      
-      this.services.getUserInformation().subscribe({
-      next: (obs : Response) => {
+      this.services.getUserInformation().then(obs =>{
+
         this.observador = obs;
         this.userInfo = this.observador.userInfo;
         //console.log("!!! USER INFO: ");
         console.log(this.userInfo);
-      }, 
-      error: (e) => console.error(e),
-      complete: () => { this.message.hideLoading(); }
-    });
+      }).catch(e => {
+        console.error("Error al obtener la info del vendedor: ");
+        console.error(e);
+      }).finally(() => {
+        this.cdr.detectChanges();
+        this.message.hideLoading();
+      });
+
   }
 
    async getEnterpriseInfo(){

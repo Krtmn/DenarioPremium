@@ -1,8 +1,8 @@
 import { Injectable, OnInit, inject } from '@angular/core';
-import { Observable, Subject, map, finalize, concatMap, timer } from 'rxjs';
+import { Observable, Subject, map, finalize, concatMap, timer, from } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-
+import { CapacitorHttp, HttpOptions, HttpResponse, HttpHeaders } from '@capacitor/core';
 
 import { PendingTransaction } from 'src/app/modelos/tables/pendingTransactions';
 import { SynchronizationDBService } from '../synchronization/synchronization-db.service';
@@ -473,57 +473,57 @@ export class AutoSendService implements OnInit {
       this.callService(request, type, coTransaction).subscribe({
         next: (result) => {
           console.log(result);
-          if (result.errorCode == "000") {
+          if (result && result.status == 0) {
             this.messageAlert = new MessageAlert(
               "Denario Premium",
-              result.errorMessage
+              result.data.errorMessage
             );
             this.messageService.alertModal(this.messageAlert);
             //DEBO SACAR DE LA TABLA pending_transactions EL ROW COPN EL COTRANSACTION INDICADO Y ACTUALIZAR EN EL MODULO CORRESPONDIENTE
             //COMO ENVIADA LA TRANSACCION(ACTUALIZAR EL ST)
             switch (type) {
               case "potentialClient":
-                this.updateTransaction(result.coTransaction, result.idClient, result.type);
+                this.updateTransaction(result.data.coTransaction, result.data.idClient, result.data.type);
                 break;
 
               case "visit":
-                this.updateTransaction(result.coTransaction, result.idVisit, result.type);
+                this.updateTransaction(result.data.coTransaction, result.data.idVisit, result.data.type);
                 break;
 
               case 'order':
-                this.updateTransaction(result.coTransaction, result.orderId, result.type);
+                this.updateTransaction(result.data.coTransaction, result.data.orderId, result.data.type);
                 break;
 
               case "updateaddress":
-                this.updateTransaction(result.coTransaction, result.userAddressClientId, result.type);
+                this.updateTransaction(result.data.coTransaction, result.data.userAddressClientId, result.data.type);
                 break;
 
               case "return":
-                this.updateTransaction(result.coTransaction, result.returnId, result.type);
+                this.updateTransaction(result.data.coTransaction, result.data.returnId, result.data.type);
                 break;
 
               case "clientStock":
-                this.updateTransaction(result.coTransaction, result.clientStockId, result.type);
+                this.updateTransaction(result.data.coTransaction, result.data.clientStockId, result.data.type);
                 break;
 
               case "collect":
-                this.updateTransaction(result.coTransaction, result.collectionId, result.type);
+                this.updateTransaction(result.data.coTransaction, result.data.collectionId, result.data.type);
                 break;
               case "deposit":
-                this.updateTransaction(result.coTransaction, result.depositId, result.type);
+                this.updateTransaction(result.data.coTransaction, result.data.depositId, result.data.type);
                 break;
 
               default:
                 break;
             }
 
-            this.deletePendingTransaction(result.coTransaction, result.type)
+            this.deletePendingTransaction(result.data.coTransaction, result.data.type)
           }
-          if (result.errorCode == "066") {
+          if (result && result.status == 66) {
             //que se baje de la mula, nojoda!
             this.messageAlert = new MessageAlert(
               "Denario Premium",
-              result.errorMessage
+              result.data.errorMessage
             );
             this.messageService.alertModal(this.messageAlert);
           }
@@ -584,12 +584,15 @@ export class AutoSendService implements OnInit {
       default:
         break;
     }
-    return this.http.post<Response>(url, request,
-      this.services.getHttpOptionsAuthorization())
+    let opt =  this.services.getHttpOptionsAuthorization();
+    opt.url = url;
+    opt.data = request;
+
+    return from(CapacitorHttp.post(opt))
       .pipe(
         map(resp => {
-          resp.coTransaction = coTransaction;
-          resp.type = type;
+          resp.data.coTransaction = coTransaction;
+          resp.data.type = type;
           return resp;
         })
       );

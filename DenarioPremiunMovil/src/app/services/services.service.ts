@@ -139,7 +139,7 @@ export class ServicesService {
 
   }
 
-  onLogin(_login: Login, deviceInfo: any, deviceId: any) {
+  async onLogin(_login: Login, deviceInfo: any, deviceId: any) {
     if (localStorage.getItem("lastUpdate") == null)
       localStorage.setItem("lastUpdate", "2000-01-01 00:00:00.000");
 
@@ -159,9 +159,14 @@ export class ServicesService {
         }
       };
 
-    return CapacitorHttp.post(opt).catch(err => {
-       catchError(this.handleError);
-    });
+    try {
+    return await CapacitorHttp.post(opt)
+    }catch (error) {
+      console.error(error);
+      catchError(this.handleError);
+      throw error;
+      
+    }
       
   }
 

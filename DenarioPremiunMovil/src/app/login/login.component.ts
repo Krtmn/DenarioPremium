@@ -263,7 +263,15 @@ export class LoginComponent implements OnInit {
 
         },
         
-      )
+      ).catch((e) => {
+        this.message.hideLoading();
+        this.messageAlert = new MessageAlert(
+          "Denario Premium",
+          "Ocurrió un error de comunicación con el servidor, verifique cobertura e intente nuevamente."
+        );
+        this.messageService.alertModal(this.messageAlert);
+        console.error(e);
+      });
     } else {
       if (localStorage.getItem("recuerdame") == "true") {
         localStorage.setItem("login", login);

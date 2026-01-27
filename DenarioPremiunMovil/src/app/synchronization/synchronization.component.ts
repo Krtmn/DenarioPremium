@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { NavController, Platform } from '@ionic/angular';
-import { of, Observable, Subscription } from 'rxjs';
+import { of, Observable, Subscription, from } from 'rxjs';
 import { SynchronizationDBService } from '../services/synchronization/synchronization-db.service';
 import { ServicesService } from '../services/services.service';
 import { TablesLastUpdate } from '../modelos/tables/tables-lastUpdate';
@@ -715,7 +715,7 @@ export class SynchronizationComponent implements OnInit {
           // Muestra el nombre amigable de la tabla que se está sincronizando
           this.synchronizationServices.tablaSincronizando = `- ${this.tableLabelMap[key] || key}`;
 
-          this.services.getSync(JSON.stringify(tabla)).subscribe({
+          from(this.services.getSync(JSON.stringify(tabla))).subscribe({
             next: (result) => {
               const resTable = (result as any)[rowKey];
               const sqlInfo = this.sqlTableMap[key];
@@ -739,7 +739,7 @@ export class SynchronizationComponent implements OnInit {
                 });
               } else if (resTable.row != null) {
                 // 3. Si hay datos, inserta y sigue
-                this.insertTable(key, result).then(response => {
+                this.insertTable(key, result.data).then(response => {
                   if (response) {
                     this.syncNextTable(response);
                   } else if (resTable.numberOfPages == resTable.page) {
