@@ -14,7 +14,5 @@
         <domain includeSubdomains="true">192.168.0.186</domain>
         <!-- Kiberno - Richard -->
         <domain includeSubdomains="true">192.168.0.231</domain>
-        <!-- -->
-        <domain includeSubdomains="true">38.68.184.48</domain>
     </domain-config>
 </network-security-config>
