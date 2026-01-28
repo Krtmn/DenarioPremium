@@ -94,6 +94,8 @@ export class SynchronizationDBService {
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
+  private CURRENT_DB_VERSION: number = 1;
+
 
 
   constructor(
@@ -274,6 +276,50 @@ export class SynchronizationDBService {
       }
     }
 
+  }
+
+  async checkAndRunMigrations() {
+    try {
+      const storedVersion = Number(localStorage.getItem('db_version') || '1');
+      if (storedVersion >= this.CURRENT_DB_VERSION) {
+        return;
+      }
+      for (let v = storedVersion + 1; v <= this.CURRENT_DB_VERSION; v++) {
+        await this.runMigrationForVersion(v);
+        localStorage.setItem('db_version', String(v));
+        console.log(`Database migrated to v${v}`);
+      }
+    } catch (e) {
+      console.log('checkAndRunMigrations error', e);
+    }
+  }
+
+  private async runMigrationForVersion(version: number) {
+    try {
+      const migrations = await this.loadMigrationFile(version);
+      if (!migrations || migrations.length === 0) return;
+      for (const m of migrations) {
+        if (typeof m === 'string') {
+          await this.database.executeSql(m, []);
+        } else if (m && m.sql) {
+          const params = m.params || [];
+          await this.database.executeSql(m.sql, params);
+        }
+      }
+    } catch (e) {
+      console.log(`runMigrationForVersion v${version} error`, e);
+    }
+  }
+
+  private async loadMigrationFile(version: number): Promise<any[]> {
+    try {
+      const url = 'assets/database/migrations/v' + version + '.json';
+      const obs = this.http.get<any[]>(url);
+      return await firstValueFrom(obs);
+    } catch (e) {
+      console.log('loadMigrationFile error', e);
+      return [];
+    }
   }
 
   getDataBaseState() {
