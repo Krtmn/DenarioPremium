@@ -824,16 +824,20 @@ export class CollectionService {
         for (var i = 0; i < this.documentSales.length; i++) {
           //for (var j = 0; j < this.collection.collectionDetails.length; j++) {
           if (this.documentSales[i].isSave) {
+            let pos = this.documentSales[i].positionCollecDetails;
             if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
               monto += this.documentSalesBackup[i].nuAmountPaid;
               montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuAmountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
-              montoTotalDiscounts += this.documentSalesBackup[i].nuAmountDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
+              montoTotalDiscounts += /* this.documentSalesBackup[i].nuAmountDiscount + */
+                this.collection.collectionDetails[pos].nuAmountCollectDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
 
             }
           } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
             monto += this.documentSalesBackup[i].nuBalance;
+            let pos = this.documentSales[i].positionCollecDetails;
             montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
-            montoTotalDiscounts += this.documentSalesBackup[i].nuAmountDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
+            montoTotalDiscounts += /* this.documentSalesBackup[i].nuAmountDiscount + */
+              this.collection.collectionDetails[pos].nuAmountCollectDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
 
           }
         }
@@ -1768,8 +1772,8 @@ export class CollectionService {
       inPaymentPartial = this.collection.collectionDetails[positionCollecDetails].inPaymentPartial,
       isSave = this.collection.collectionDetails[positionCollecDetails].isSave;
 
-    this.documentSales[index].nuAmountBase = nuAmountBase;
-    this.documentSalesBackup[index].nuAmountBase = nuAmountBase;
+    //this.documentSales[index].nuAmountBase = nuAmountBase;
+    //this.documentSalesBackup[index].nuAmountBase = nuAmountBase;
     this.documentSales[index].nuAmountDiscount = nuAmountDiscount;
     this.documentSalesBackup[index].nuAmountDiscount = nuAmountDiscount;
     this.documentSales[index].nuAmountPaid = nuAmountPaid;
@@ -1804,8 +1808,8 @@ export class CollectionService {
     this.documentSalesBackup[idx].isSave = true;
     this.documentSales[idx].nuAmountPaid = this.amountPaid;
     this.documentSalesBackup[idx].nuAmountPaid = this.amountPaid;
-    this.documentSales[idx].nuAmountBase = this.amountPaid;
-    this.documentSalesBackup[idx].nuAmountBase = this.amountPaid;
+    //this.documentSales[idx].nuAmountBase = this.amountPaid;
+    //this.documentSalesBackup[idx].nuAmountBase = this.amountPaid;
     this.documentSales[idx].nuAmountDiscount = open.nuAmountDiscount;
     this.documentSalesBackup[idx].nuAmountDiscount = open.nuAmountDiscount;
 
@@ -2283,7 +2287,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     switch (status) {
       case 3: return this.collectionTags.get("COB_STATUS_SAVED")!;
       case COLLECT_STATUS_TO_SEND: return this.collectionTags.get("COB_STATUS_TO_SEND")!;
-      case COLLECT_STATUS_SENT:
+      case 1:
         return naStatus == null ? this.collectionTags.get("COB_STATUS_SENT")! : naStatus;
       case 6:
         // naStatus puede ser string o un objeto => normalizar a string

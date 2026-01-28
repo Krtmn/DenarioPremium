@@ -1263,14 +1263,14 @@ export class CobrosDocumentComponent implements OnInit {
     }
 
     //SI HAY DESCUENTOS APLICADOS, EL COMENTARIO NO PUEDE ESTAR VACIO
-    if (this.collectService.tempSelectedCollectDiscounts.length > 0) {
+    /* if (this.collectService.tempSelectedCollectDiscounts.length > 0) {
       if (this.discountComment == null || this.discountComment == undefined || this.discountComment == "" || this.discountComment.trim() == "") {
         this.disabledSaveButton = true;
         return;
       } else {
         this.disabledSaveButton = false;
       }
-    }
+    } */
   }
 
   imprimir() {
@@ -2033,7 +2033,7 @@ export class CobrosDocumentComponent implements OnInit {
       const detailBase = this.collectService.documentSaleOpen.nuAmountBase;
       const percentDiscount = this.collectService.documentSaleOpen.nuAmountDiscount;
       const discountBase = detailBase * percentDiscount;
-      const detailBaseNew = detailBase - discountBase;
+      let detailBaseNew = detailBase - discountBase;
       const monedaDoc = this.collectService.documentSaleOpen.coCurrency;
       const backupBalance = Number(this.collectService.documentSalesBackup?.[this.indexDocumentSaleOpen]?.nuBalance ?? NaN);
       const currentBalance = Number(this.collectService.documentSaleOpen?.nuBalance ?? NaN);
@@ -2059,6 +2059,7 @@ export class CobrosDocumentComponent implements OnInit {
         const rate = Number(source.nuCollectDiscount ?? 0);
         const stepRaw = (detailBaseNew * rate) / 100;
         const step = Math.round(stepRaw * factor) / factor;
+        detailBaseNew-= step;
 
         const entry: CollectDiscounts = { ...source, nuAmountCollectDiscount: step } as any;
         calculatedDiscounts.push(entry);
