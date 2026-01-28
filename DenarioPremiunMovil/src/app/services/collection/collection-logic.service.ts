@@ -1774,8 +1774,8 @@ export class CollectionService {
 
     //this.documentSales[index].nuAmountBase = nuAmountBase;
     //this.documentSalesBackup[index].nuAmountBase = nuAmountBase;
-    this.documentSales[index].nuAmountDiscount = nuAmountDiscount;
-    this.documentSalesBackup[index].nuAmountDiscount = nuAmountDiscount;
+   /*  this.documentSales[index].nuAmountDiscount = nuAmountDiscount;
+    this.documentSalesBackup[index].nuAmountDiscount = nuAmountDiscount; */
     this.documentSales[index].nuAmountPaid = nuAmountPaid;
     this.documentSalesBackup[index].nuAmountPaid = nuAmountPaid;
     this.documentSales[index].nuAmountRetention = nuAmountRetention;
@@ -1810,8 +1810,8 @@ export class CollectionService {
     this.documentSalesBackup[idx].nuAmountPaid = this.amountPaid;
     //this.documentSales[idx].nuAmountBase = this.amountPaid;
     //this.documentSalesBackup[idx].nuAmountBase = this.amountPaid;
-    this.documentSales[idx].nuAmountDiscount = open.nuAmountDiscount;
-    this.documentSalesBackup[idx].nuAmountDiscount = open.nuAmountDiscount;
+    /* this.documentSales[idx].nuAmountDiscount = open.nuAmountDiscount;
+    this.documentSalesBackup[idx].nuAmountDiscount = open.nuAmountDiscount; */
 
     // Copia a collectionDetails
     const detail = this.collection.collectionDetails[detailIdx];
@@ -2501,7 +2501,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       this.documentSales[index].isSave = detail.isSave;
       this.documentSalesBackup[index].isSave = detail.isSave;
       this.documentSalesBackup[index].daVoucher = detail.daVoucher!;
-      this.documentSalesBackup[index].nuAmountDiscount = detail.nuAmountDiscount;
+      //this.documentSalesBackup[index].nuAmountDiscount = detail.nuAmountDiscount;
 
       if (this.collection.stDelivery != 3) {
         detail.nuBalanceDoc = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
