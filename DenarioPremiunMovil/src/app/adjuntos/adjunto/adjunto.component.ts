@@ -10,6 +10,7 @@ import { Archivo } from 'src/app/modelos/archivo';
 import { IonModal } from '@ionic/angular';
 import { register } from 'swiper/element/bundle';
 import { Swiper } from 'swiper/types';
+import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
 
 
@@ -32,6 +33,8 @@ export class AdjuntoComponent implements OnInit {
 
   public message = inject(MessageService);
   public service = inject(AdjuntoService);
+
+
 
 
   @ViewChild(SignaturePad) signaturePad!: SignaturePad;
@@ -60,30 +63,30 @@ export class AdjuntoComponent implements OnInit {
   ngAfterViewInit() {
 
     //window.dispatchEvent(new Event('resize'));
-    //this.checkCarousel(); 
-    //console.log('SignaturePad:', this.signaturePad); 
-    if(this.service.signatureConfig){    
+    //this.checkCarousel();
+    //console.log('SignaturePad:', this.signaturePad);
+    if (this.service.signatureConfig) {
       this.signaturePad.set('minWidth', 3); // set szimek/signature_pad options at runtime
       if (this.service.firma.length > 0 && this.signaturePad != undefined) {
         this.reloadSignature() //recarga la firma
       }
-    // Workaround: Add native pointer event listeners to the canvas
-    setTimeout(() => {
-      const canvas = document.querySelector('#signaturePad canvas');
-      if (canvas) {
-        canvas.addEventListener('pointerup', () => {
-          //console.log('Native pointerup detected');
-          this.drawComplete();
-        });
-        canvas.addEventListener('pointerdown', () => {
-          //console.log('Native pointerdown detected');
-          this.drawStart();
-        });
-      }
-    }, 0);
+      // Workaround: Add native pointer event listeners to the canvas
+      setTimeout(() => {
+        const canvas = document.querySelector('#signaturePad canvas');
+        if (canvas) {
+          canvas.addEventListener('pointerup', () => {
+            //console.log('Native pointerup detected');
+            this.drawComplete();
+          });
+          canvas.addEventListener('pointerdown', () => {
+            //console.log('Native pointerdown detected');
+            this.drawStart();
+          });
+        }
+      }, 0);
 
-    this.canvasResize();
-  }
+      this.canvasResize();
+    }
   }
 
   canvasResize() {
@@ -336,22 +339,27 @@ export class AdjuntoComponent implements OnInit {
       if (muyPesado) {
         this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_ARCHIVO") + this.service.imageWeightLimit + " MB");
       }
-        this.service.file = new Archivo(
-          file.mimeType,
-          file.data as string,
-          file.name as string,
-          muyPesado
-        )
+      this.service.file = new Archivo(
+        file.mimeType,
+        file.data as string,
+        file.name as string,
+        muyPesado
+      )
 
-        this.service.weightLimitExceeded = muyPesado;
-        //console.log(this.service.file);
+      this.service.weightLimitExceeded = muyPesado;
+      //console.log(this.service.file);
 
-        this.onAttachmentChanged();
-      
+      this.onAttachmentChanged();
+
 
 
     }
   }
 
+  deletePendingTransactionAttachments(idTransaction: number, position: number, type: string, naTransaction: string) {
+    const dbService = inject(SynchronizationDBService).getDatabase();
+    console.log("ESTA FOTO SE ENVIO ", idTransaction, position, type, naTransaction, "SE ELIMINA DE LA TABLA DE ADJUNTOS PENDIENTES");
+    this.service.deletePendingTransactionAttachments(dbService, idTransaction, position, type, naTransaction)
+  }
 
 }

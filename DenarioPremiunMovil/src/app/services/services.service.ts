@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { CapacitorHttp, HttpOptions, HttpResponse, HttpHeaders } from '@capacitor/core';
 import { catchError, map, tap } from 'rxjs/operators';
-import { from, throwError } from 'rxjs';
+import { from, throwError,firstValueFrom } from 'rxjs';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite/ngx';
 import { User } from '../modelos/user';
 import { Login } from '../modelos/login';
