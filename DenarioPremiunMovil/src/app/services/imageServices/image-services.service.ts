@@ -6,8 +6,9 @@ import { Imagenes, ResponseFiles, ResponseImages } from 'src/app/modelos/imagene
 import { Directory, DownloadFileResult, Filesystem } from '@capacitor/filesystem';
 import { SynchronizationDBService } from '../synchronization/synchronization-db.service';
 import { DateServiceService } from '../dates/date-service.service';
-import { Subject, Subscription } from 'rxjs';
+import { from, Subject, Subscription } from 'rxjs';
 import { BehaviorSubject, Observable, of } from 'rxjs';
+import { CapacitorHttp, HttpOptions, HttpResponse, HttpHeaders } from '@capacitor/core';
 
 
 @Injectable({
@@ -48,17 +49,21 @@ export class ImageServicesService {
 
     this.mapPdfFiles = new Map(JSON.parse(localStorage.getItem("mapPdfFiles")!));
 
-    return this.http.post<ResponseFiles>(this.services.getURLService() + "listfilespremiumdispatch", {
+    let opt = this.services.getHttpOptionsAuthorization();
+    opt.url = this.services.getURLService() + "listfilespremiumdispatch";
+    opt.data = {
       type: 'files',
       coUser: localStorage.getItem("coUser")!,
       naFiles: this.listFilesPdf
-    }, this.services.getHttpOptionsAuthorization())
+    }
+
+    return from(CapacitorHttp.post(opt))
       .pipe(
         map(resp => {
-          if (resp.errorCode == "000") {
+          if (resp.data.errorCode == "000") {
 
-            this.downloadFileListPdf = resp.downloadFileListDispatch;
-            this.removeFileListPdf = resp.removeFileListDispatch;
+            this.downloadFileListPdf = resp.data.downloadFileListDispatch;
+            this.removeFileListPdf = resp.data.removeFileListDispatch;
             if (this.removeFileListPdf.length > 0)
               this.deleteImages(this.removeFileListPdf);
             return resp
@@ -77,30 +82,33 @@ export class ImageServicesService {
 
     this.mapImagesFiles = new Map(JSON.parse(localStorage.getItem("mapImagesFiles")!));
 
-
-    return this.http.post<ResponseImages>(this.services.getURLService() + "listfilespremium", {
+    let opt = this.services.getHttpOptionsAuthorization();
+    opt.url = this.services.getURLService() + "listfilespremium";
+    opt.data ={
       type: 'productos',
       naImages: this.listFilesImages
-    }, this.services.getHttpOptionsAuthorization())
+    }
+
+    return from(CapacitorHttp.post(opt))
       .pipe(
         map(resp => {
-          if (resp.errorCode == "000") {
-            for (let i = 0; i < resp.downloadFileList.length; i++) {
-              if (resp.downloadFileList[i].split(".")[1] == "db" || resp.downloadFileList[i].split(".")[1] == "ini") {
-                resp.downloadFileList.splice(i, 1);
+          if (resp.data.errorCode == "000") {
+            for (let i = 0; i < resp.data.downloadFileList.length; i++) {
+              if (resp.data.downloadFileList[i].split(".")[1] == "db" || resp.data.downloadFileList[i].split(".")[1] == "ini") {
+                resp.data.downloadFileList.splice(i, 1);
                 i--;
               }
             }
 
-            for (var i = 0; i < resp.removeFileList.length; i++) {
-              if (resp.removeFileList[i].split(".")[1] == "db" || resp.removeFileList[i].split(".")[1] == "ini") {
-                resp.removeFileList.splice(i, 1);
+            for (var i = 0; i < resp.data.removeFileList.length; i++) {
+              if (resp.data.removeFileList[i].split(".")[1] == "db" || resp.data.removeFileList[i].split(".")[1] == "ini") {
+                resp.data.removeFileList.splice(i, 1);
                 i--;
               }
             }
 
-            this.downloadFileList = resp.downloadFileList;
-            this.removeFileList = resp.removeFileList;
+            this.downloadFileList = resp.data.downloadFileList;
+            this.removeFileList = resp.data.removeFileList;
             if (this.removeFileList.length > 0)
               this.deleteImages(this.removeFileList);
 
