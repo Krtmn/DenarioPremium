@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-import { BehaviorSubject, fromEventPattern, identity, Observable, throwError } from 'rxjs';
+import { BehaviorSubject, fromEventPattern, identity, Observable, throwError, firstValueFrom } from 'rxjs';
 import { NavController } from '@ionic/angular';
 import { Platform } from '@ionic/angular';
 // import { SQLitePorter } from '@ionic-native/sqlite-porter';
