@@ -3,6 +3,7 @@
 <network-security-config>
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">denario-mobile-dev.apps.kraftheinz.com</domain>
+        <domain includeSubdomains="true">denario-mobile.apps.kraftheinz.com</domain>
         <trust-anchors>
             <certificates src="system" />
             <certificates src="user" />
