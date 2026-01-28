@@ -20,6 +20,7 @@ import { ImageServicesService } from '../services/imageServices/image-services.s
 import { Imagenes } from '../modelos/imagenes';
 import { ScreenOrientation, OrientationType } from '@capawesome/capacitor-screen-orientation';
 import { Keyboard } from '@capacitor/keyboard';
+import { from } from 'rxjs';
 
 
 @Component({
@@ -214,9 +215,9 @@ export class LoginComponent implements OnInit {
 
 
     } else if (conexion) {
-      this.subs = this.services.onLogin(f.value, deviceInfo, deviceId).subscribe({
+      this.subs = from(this.services.onLogin(f.value, deviceInfo, deviceId)).subscribe({
         next: (result) => {
-          if (result.errorCode == '000') {
+          if (result && result.data.errorCode == '000') {
             if (localStorage.getItem("recuerdame") == "true") {
 
               localStorage.setItem("password", f.value.password);
@@ -226,23 +227,22 @@ export class LoginComponent implements OnInit {
             }
 
             localStorage.setItem("login", login);
-            localStorage.setItem("token", result.jwtAuthResponse.tokenDeAcceso);
-            localStorage.setItem("lastUpdate", result.lastUpdate);
-            if (result.cliente)
-              this.globalConfig.setVars(result.variablesConfiguracionCliente)
+            localStorage.setItem("token", result.data.jwtAuthResponse.tokenDeAcceso);
+            localStorage.setItem("lastUpdate", result.data.lastUpdate);
+            if (result.data.cliente)
+              this.globalConfig.setVars(result.data.variablesConfiguracionCliente)
             else
-              this.globalConfig.setVars(result.variablesConfiguracion)
+              this.globalConfig.setVars(result.data.variablesConfiguracion)
 
             //localStorage.setItem("globalConfiguration", JSON.stringify(result.variablesConfiguracion));
-            localStorage.setItem("idUser", result.idUser.toString());
-            localStorage.setItem("coUser", result.coUser);
-
-            this.user = result;
+            localStorage.setItem("idUser", result.data.idUser.toString());
+            localStorage.setItem("coUser", result.data.coUser);
+            this.user = result.data;
             localStorage.setItem("user", JSON.stringify(this.user));
             this.synchronization.initDb(this.user, conexion);
 
 
-          } else if (result.errorCode == '104') {
+          } else if (result && result.data.errorCode == '104') {
             this.message.hideLoading();
             this.messageAlert = new MessageAlert(
               "Denario Premium",
