@@ -1,15 +1,13 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { CapacitorHttp, HttpOptions, HttpResponse, HttpHeaders } from '@capacitor/core';
+import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { catchError, map, tap } from 'rxjs/operators';
-import { from, throwError } from 'rxjs';
+import { throwError } from 'rxjs';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite/ngx';
 import { User } from '../modelos/user';
 import { Login } from '../modelos/login';
 import { syncResponse } from '../modelos/tables/getSyncResponse';
 import { ApplicationTags } from '../modelos/tables/applicationTags';
 import { PendingTransaction } from '../modelos/tables/pendingTransactions';
-import { url } from 'inspector';
 
 
 
@@ -107,7 +105,7 @@ export class ServicesService {
       // The response body may contain clues as to what went wrong.
       console.error(
         `Backend returned code ${error.status}, ` +
-        `body was: ${JSON.stringify(error.error)}`);
+        `body was: ${error.error}`);
     }
     // Return an observable with a user-facing error message.
     return throwError(
@@ -118,37 +116,37 @@ export class ServicesService {
   // Http Options
   getHttpOptions() {
     const httpOptions = {
-      url: this.WsUrl,
-      headers:{
+      headers: new HttpHeaders({
         'Content-Type': 'application/json',
-      }
-    } as HttpOptions;
+      })
+    }
     return httpOptions;
   }
 
   getHttpOptionsAuthorization() {
     const httpOptions = {
-      url: this.WsUrl,
-      headers:{        
+      headers: new HttpHeaders({
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + localStorage.getItem("token")
-      }
-    } as HttpOptions;
+      })
+    }
     return httpOptions;
 
   }
 
-  async onLogin(_login: Login, deviceInfo: any, deviceId: any) {
+  onLogin(_login: Login, deviceInfo: any, deviceId: any) {
     if (localStorage.getItem("lastUpdate") == null)
       localStorage.setItem("lastUpdate", "2000-01-01 00:00:00.000");
 
-    var opt : HttpOptions;
-    opt = this.getHttpOptions();
-    opt.url += "authservice/auth";
-    opt.data={
+    return this.http.post<User>(this.WsUrl + "authservice/auth",
+      {
         "login": _login.login.trim(),
         "password": _login.password,
         "lastLogin": localStorage.getItem("lastUpdate"),
+        // "dispositivo": null
+        // "login": "prueba",
+        //     "password": "123456",
+        // "lastLogin": localStorage.getItem("lastUpdate"),
         "dispositivo": {
           "deviceUUID": deviceId.identifier,
           "devicePlatform": deviceInfo.platform,
@@ -156,24 +154,14 @@ export class ServicesService {
           "deviceVersion": deviceInfo.name,
           "appVersion": "3.8"
         }
-      };
-
-    try {
-    return await CapacitorHttp.post(opt)
-    }catch (error) {
-      console.error(error);
-      catchError(this.handleError);
-      throw error;
-      
-    }
-      
+      }, this.getHttpOptions())
+      .pipe(
+        catchError(this.handleError)
+      );
   }
 
   getSync(tables: string) {
-    let opt = this.getHttpOptionsAuthorization();
-    opt.url += "syncservice/getsync";
-    opt.data = JSON.parse(tables) as syncResponse;
-    return from(CapacitorHttp.post(opt))
+    return this.http.post<syncResponse>(this.WsUrl + "syncservice/getsync", tables, this.getHttpOptionsAuthorization())
       .pipe(
         map(resp => {
           return resp
@@ -237,14 +225,12 @@ export class ServicesService {
   }
 
   getUserInformation() {
-    let opt = this.getHttpOptionsAuthorization();
-    opt.url += "userservice/userinformation";
-    opt.data = {
-      "idUser": localStorage.getItem("idUser")
-    };
 
-    return CapacitorHttp.post(opt)
-      .catch(
+    return this.http.post<Response>(this.WsUrl + "userservice/userinformation",
+      {
+        "idUser": localStorage.getItem("idUser")
+      }, this.getHttpOptionsAuthorization())
+      .pipe(
         catchError(this.handleError)
       );
   }
@@ -252,7 +238,13 @@ export class ServicesService {
 
   async sendImage(transaction: string, id: string, posicion: string, file: string, filename: string, type: string, cantidad: number) {
 
-    const httpOptions = this.getHttpOptionsAuthorization();
+    const httpOptions = {
+      headers: new HttpHeaders({
+        "Accept": "application/json",/*
+          'Content-Type': 'multipart/form-data', */
+        'Authorization': 'Bearer ' + localStorage.getItem("token")
+      })
+    }
 
     let fetched = await fetch('data:image/jpeg;base64,' + file);
     let blob = await fetched.blob();
@@ -267,11 +259,9 @@ export class ServicesService {
 
 
     console.log("[ServiceService] Subiendo Imagenes");
-    let opt = this.getHttpOptionsAuthorization();
-    opt.url += "uploadimageservice/uploadimages";
-    
 
-    return CapacitorHttp.post(opt).then(res => {
+    return this.http.post<Response>(this.WsUrl + "uploadimages",
+      data, httpOptions).subscribe(res => {
         console.log("[ServiceService] Respuesta de server:");
         console.log(res);
       })

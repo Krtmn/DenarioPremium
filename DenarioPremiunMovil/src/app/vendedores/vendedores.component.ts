@@ -9,7 +9,7 @@ import { SQLiteObject } from '@awesome-cordova-plugins/sqlite/ngx';
 import { Enterprise } from '../modelos/tables/enterprise';
 import { EnterpriseService } from '../services/enterprise/enterprise.service';
 import { IonAccordionGroup, Platform } from '@ionic/angular';
-import { Observable, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 
 
@@ -85,25 +85,16 @@ export class VendedoresComponent  implements OnInit {
 
   getUserInfo(){
     //obtiene la info del vendedor por el servicio      
-      this.services.getUserInformation().then(obs =>{
-        if(obs instanceof Observable){
-          console.error("Error al obtener la info del vendedor: el servicio devolvio un Observable en vez de los datos esperados.");
-          this.message.hideLoading();
-          return;
-        }
-
-        this.observador = obs.data; 
+      this.services.getUserInformation().subscribe({
+      next: (obs : Response) => {
+        this.observador = obs;
         this.userInfo = this.observador.userInfo;
         //console.log("!!! USER INFO: ");
         console.log(this.userInfo);
-      }).catch(e => {
-        console.error("Error al obtener la info del vendedor: ");
-        console.error(e);
-      }).finally(() => {
-        this.cdr.detectChanges();
-        this.message.hideLoading();
-      });
-
+      }, 
+      error: (e) => console.error(e),
+      complete: () => { this.message.hideLoading(); }
+    });
   }
 
    async getEnterpriseInfo(){

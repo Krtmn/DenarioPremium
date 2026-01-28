@@ -1,8 +1,8 @@
 import { Injectable, OnInit, inject } from '@angular/core';
-import { Observable, Subject, map, finalize, concatMap, timer, from } from 'rxjs';
+import { Observable, Subject, map, finalize, concatMap, timer } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { CapacitorHttp, HttpOptions, HttpResponse, HttpHeaders } from '@capacitor/core';
+
 
 import { PendingTransaction } from 'src/app/modelos/tables/pendingTransactions';
 import { SynchronizationDBService } from '../synchronization/synchronization-db.service';
@@ -479,7 +479,7 @@ export class AutoSendService implements OnInit {
       this.callService(request, type, coTransaction).subscribe({
         next: (result) => {
           console.log(result);
-          if (result && result.errorCode == "000") {
+          if (result.errorCode == "000") {
             this.messageAlert = new MessageAlert(
               "Denario Premium",
               result.errorMessage
@@ -525,7 +525,7 @@ export class AutoSendService implements OnInit {
 
             this.deletePendingTransaction(result.coTransaction, result.type)
           }
-          if (result && result.errorCode == "066") {
+          if (result.errorCode == "066") {
             //que se baje de la mula, nojoda!
             this.messageAlert = new MessageAlert(
               "Denario Premium",
@@ -590,16 +590,13 @@ export class AutoSendService implements OnInit {
       default:
         break;
     }
-    let opt =  this.services.getHttpOptionsAuthorization();
-    opt.url = url;
-    opt.data = request;
-
-    return from(CapacitorHttp.post(opt))
+    return this.http.post<Response>(url, request,
+      this.services.getHttpOptionsAuthorization())
       .pipe(
         map(resp => {
-          resp.data.coTransaction = coTransaction;
-          resp.data.type = type;
-          return resp.data;
+          resp.coTransaction = coTransaction;
+          resp.type = type;
+          return resp;
         })
       );
   }
