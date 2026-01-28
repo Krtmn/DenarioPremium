@@ -22,6 +22,9 @@ export class ServicesService {
   private WsUrl = "http://192.168.0.231:8282/PremiumWS/services/";
   //private WsUrl = "http://192.168.0.217:8080/PremiumWS/services/";
 
+
+  //KRON
+  // private WsUrl = "http://190.6.31.99:10200/PremiumWS/services/";
   //private WsUrl = "http://denariodemo.ddns.net:8282/PremiumWS/services/";
 
   //KIBERNO
@@ -119,7 +122,7 @@ export class ServicesService {
   getHttpOptions() {
     const httpOptions = {
       url: this.WsUrl,
-      headers:{
+      headers: {
         'Content-Type': 'application/json',
       }
     } as HttpOptions;
@@ -129,7 +132,7 @@ export class ServicesService {
   getHttpOptionsAuthorization() {
     const httpOptions = {
       url: this.WsUrl,
-      headers:{        
+      headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + localStorage.getItem("token")
       }
@@ -142,31 +145,31 @@ export class ServicesService {
     if (localStorage.getItem("lastUpdate") == null)
       localStorage.setItem("lastUpdate", "2000-01-01 00:00:00.000");
 
-    var opt : HttpOptions;
+    var opt: HttpOptions;
     opt = this.getHttpOptions();
     opt.url += "authservice/auth";
-    opt.data={
-        "login": _login.login.trim(),
-        "password": _login.password,
-        "lastLogin": localStorage.getItem("lastUpdate"),
-        "dispositivo": {
-          "deviceUUID": deviceId.identifier,
-          "devicePlatform": deviceInfo.platform,
-          "deviceModel": deviceInfo.model,
-          "deviceVersion": deviceInfo.name,
-          "appVersion": "3.8"
-        }
-      };
+    opt.data = {
+      "login": _login.login.trim(),
+      "password": _login.password,
+      "lastLogin": localStorage.getItem("lastUpdate"),
+      "dispositivo": {
+        "deviceUUID": deviceId.identifier,
+        "devicePlatform": deviceInfo.platform,
+        "deviceModel": deviceInfo.model,
+        "deviceVersion": deviceInfo.name,
+        "appVersion": "3.8"
+      }
+    };
 
     try {
-    return await CapacitorHttp.post(opt)
-    }catch (error) {
+      return await CapacitorHttp.post(opt)
+    } catch (error) {
       console.error(error);
       catchError(this.handleError);
       throw error;
-      
+
     }
-      
+
   }
 
   getSync(tables: string) {
@@ -265,16 +268,26 @@ export class ServicesService {
     data.append('type', type);
     data.append('cantidad', cantidad.toString());
 
-
-    console.log("[ServiceService] Subiendo Imagenes");
-    let opt = this.getHttpOptionsAuthorization();
-    opt.url += "uploadimageservice/uploadimages";
-    
-
-    return CapacitorHttp.post(opt).then(res => {
-        console.log("[ServiceService] Respuesta de server:");
-        console.log(res);
-      })
+    const url = (httpOptions.url.endsWith('/') ? httpOptions.url : httpOptions.url) + 'uploadimages';
+    const headers: any = {};
+    if (httpOptions.headers && (httpOptions.headers as any).Authorization) {
+      headers['Authorization'] = (httpOptions.headers as any).Authorization;
+    }
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        body: data,
+        headers
+      });
+      const text = await response.text();
+      let body: any;
+      try { body = JSON.parse(text); } catch { body = text; }
+      console.log("[ServiceService] Respuesta de server:", response.status, body);
+      return body;
+    } catch (err) {
+      console.error("[ServiceService] upload error:", err);
+      throw err;
+    }
 
   }
 
