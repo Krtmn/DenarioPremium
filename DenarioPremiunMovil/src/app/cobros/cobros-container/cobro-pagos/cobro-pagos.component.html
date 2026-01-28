@@ -101,7 +101,7 @@
                                 <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}"
                                     label-placement="floating" fill="outline" color="primary" type="text"
                                     inputmode="numeric" [value]="getDisplay(efectivo, ef,'ef') || '0,00'"
-                                    (keydown)="onMontoKeyDown($event, efectivo, ef,'ef')"
+                                    (keydown)="onMontoKeyDown($event, efectivo, ef,'ef')" (ionInput)="onMontoInput($event, efectivo, ef,'ef')"
                                     (focus)="onMontoFocus(efectivo, ef,'ef')" (blur)="onMontoBlur(efectivo, ef,'ef')"
                                     class="customInput" [ngClass]="{'inp-write': !efectivo.monto}">
 
@@ -260,7 +260,7 @@
                                 <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}"
                                     label-placement="floating" fill="outline" color="primary" type="text"
                                     inputmode="numeric" [value]="getDisplay(cheque, ch, 'ch') || '0,00'"
-                                    (keydown)="onMontoKeyDown($event, cheque, ch, 'ch')"
+                                    (keydown)="onMontoKeyDown($event, cheque, ch, 'ch')" (ionInput)="onMontoInput($event, cheque, ch, 'ch')"
                                     (focus)="onMontoFocus(cheque, ch, 'ch')" (blur)="onMontoBlur(cheque, ch, 'ch')"
                                     class="customInput" [ngClass]="{'inp-write': !cheque.monto}">
                                 </ion-input>
@@ -323,7 +323,7 @@
                                 <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}"
                                     label-placement="floating" fill="outline" color="primary" type="text"
                                     inputmode="numeric" [value]="getDisplay(deposito, de,'de') || '0,00'"
-                                    (keydown)="onMontoKeyDown($event, deposito, de,'de')"
+                                    (keydown)="onMontoKeyDown($event, deposito, de,'de')" (ionInput)="onMontoInput($event, deposito, de,'de')"
                                     (focus)="onMontoFocus(deposito, de,'de')" (blur)="onMontoBlur(deposito, de,'de')"
                                     class="customInput" [ngClass]="{'inp-write': !deposito.monto}">
                                 </ion-input>
@@ -449,7 +449,7 @@
                                 <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}"
                                     label-placement="floating" fill="outline" color="primary" type="text"
                                     inputmode="numeric" [value]="getDisplay(transferencia, tr, 'tr') || '0,00'"
-                                    (keydown)="onMontoKeyDown($event, transferencia, tr, 'tr')"
+                                    (keydown)="onMontoKeyDown($event, transferencia, tr, 'tr')" (ionInput)="onMontoInput($event, transferencia, tr, 'tr')"
                                     (focus)="onMontoFocus(transferencia, tr, 'tr')"
                                     (blur)="onMontoBlur(transferencia, tr, 'tr')" class="customInput"
                                     [ngClass]="{'inp-write': !transferencia.monto}">
@@ -533,7 +533,7 @@
                                 <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}"
                                     label-placement="floating" fill="outline" color="primary" type="text"
                                     inputmode="numeric" [value]="getDisplay(otros, ot,'ot') || '0,00'"
-                                    (keydown)="onMontoKeyDown($event, otros, ot, 'ot')"
+                                    (keydown)="onMontoKeyDown($event, otros, ot, 'ot')" (ionInput)="onMontoInput($event, otros, ot, 'ot')"
                                     (focus)="onMontoFocus(otros, ot, 'ot')" (blur)="onMontoBlur(otros, ot, 'ot')"
                                     class="customInput" [ngClass]="{'inp-write': !otros.monto}">
                                 </ion-input>

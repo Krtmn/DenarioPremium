@@ -404,8 +404,7 @@
                   <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
                     *ngIf="this.collectService.retencion && this.collectService.formatRetention == 'number'">
                     <ion-input label="{{this.collectService.collectionTags.get('COB_NUMBER_COMPROBANTE_RETENTION')}}"
-                      label-placement="floating" fill="outline" color="primary" type="number"
-                      value="{{this.collectService.documentSaleOpen.nuVaucherRetention}}"
+                      label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
                       [(ngModel)]="this.collectService.documentSaleOpen.nuVaucherRetention"
                       (ionChange)="validateNuVaucherRetention(true)">
                     </ion-input>

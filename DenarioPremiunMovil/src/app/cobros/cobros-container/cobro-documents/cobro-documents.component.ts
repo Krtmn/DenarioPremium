@@ -1846,38 +1846,82 @@ export class CobrosDocumentComponent implements OnInit {
 
 
   public onDiscountInput(ev: any): void {
-    // Si venimos de keydown (teclado virtual/emulador), ignoramos este input porque ya actualizamos el modelo.
-    if (this.discountKeyInFlight) {
-      // limpiamos la flag por si quedó colgada
-      this.discountKeyInFlight = false;
-      return;
+    try {
+      const inputChar = typeof ev?.data === 'string' ? ev.data : undefined;
+      const inputType = ev?.inputType ?? '';
+      const MAX_CENTS = 999999999999;
+
+      this.ensureDiscountInit();
+
+      if (inputType.includes('delete') || inputChar === null) {
+        // teclado virtual borró un carácter
+        this.centsDiscount = Math.trunc((this.centsDiscount ?? 0) / 10);
+      } else if (inputChar && /^\d$/.test(inputChar)) {
+        // dígito insertado por teclado virtual: comportarse igual que onDiscountKeyDown
+        const digit = parseInt(inputChar, 10);
+        this.centsDiscount = Math.min(MAX_CENTS, (this.centsDiscount ?? 0) * 10 + digit);
+      } else {
+        // pegado o input no estándar: parsear todo el valor
+        const raw = ev?.target?.value ?? String(ev ?? '');
+        this.centsDiscount = this.parsePastedToCents(raw);
+      }
+
+      this.updateDiscountModel();
+      this.displayDiscount = this.formatFromCents(this.centsDiscount);
+    } catch (e) {
+      console.error(e);
     }
-    const raw = ev?.detail?.value ?? ev?.target?.value ?? '';
-    const cents = this.parsePastedToCents(raw);
-    this.centsDiscount = cents;
-    this.updateDiscountModel();
   }
 
+
   public onRetentionInput(ev: any): void {
-    if (this.retentionKeyInFlight) {
-      this.retentionKeyInFlight = false;
-      return;
+    try {
+      const inputChar = typeof ev?.data === 'string' ? ev.data : undefined;
+      const inputType = ev?.inputType ?? '';
+      const MAX_CENTS = 999999999999;
+
+      this.ensureRetentionInit();
+
+      if (inputType.includes('delete') || inputChar === null) {
+        this.centsRetention = Math.trunc((this.centsRetention ?? 0) / 10);
+      } else if (inputChar && /^\d$/.test(inputChar)) {
+        const digit = parseInt(inputChar, 10);
+        this.centsRetention = Math.min(MAX_CENTS, (this.centsRetention ?? 0) * 10 + digit);
+      } else {
+        const raw = ev?.target?.value ?? String(ev ?? '');
+        this.centsRetention = this.parsePastedToCents(raw);
+      }
+
+      this.updateRetentionModel();
+      this.displayRetention = this.formatFromCents(this.centsRetention);
+    } catch (e) {
+      console.error(e);
     }
-    const raw = ev?.detail?.value ?? ev?.target?.value ?? '';
-    const cents = this.parsePastedToCents(raw);
-    this.centsRetention = cents;
-    this.updateRetentionModel();
   }
 
   public onRetention2Input(ev: any): void {
-    if (this.retention2KeyInFlight) {
-      this.retention2KeyInFlight = false;
-      return;
+    try {
+      const inputChar = typeof ev?.data === 'string' ? ev.data : undefined;
+      const inputType = ev?.inputType ?? '';
+      const MAX_CENTS = 999999999999;
+
+      this.ensureRetention2Init();
+
+      if (inputType.includes('delete') || inputChar === null) {
+        this.centsRetention2 = Math.trunc((this.centsRetention2 ?? 0) / 10);
+      } else if (inputChar && /^\d$/.test(inputChar)) {
+        const digit = parseInt(inputChar, 10);
+        this.centsRetention2 = Math.min(MAX_CENTS, (this.centsRetention2 ?? 0) * 10 + digit);
+      } else {
+        const raw = ev?.target?.value ?? String(ev ?? '');
+        this.centsRetention2 = this.parsePastedToCents(raw);
+      }
+
+      this.updateRetention2Model();
+      this.displayRetention2 = this.formatFromCents(this.centsRetention2);
+    } catch (e) {
+      console.error(e);
     }
-    const raw = ev?.detail?.value ?? ev?.target?.value ?? '';
-    const cents = this.parsePastedToCents(raw);
-    this.centsRetention2 = cents;
-    this.updateRetention2Model();
   }
 
   selectCollectDiscount(event: any) {
