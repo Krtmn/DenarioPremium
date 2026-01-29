@@ -92,7 +92,7 @@ export class AutoSendService implements OnInit {
         this.initTransaction(this.pendingTransaction);
       }
     })
-    this.getPendingTransactionsAttachments().then((result) => {
+    /* this.getPendingTransactionsAttachments().then((result) => {
       console.log("PendingTransactionsAttachments", result);
       this.pendingTransactionsAttachments = result;
       if (this.pendingTransactionsAttachments.length > 0) {
@@ -107,7 +107,7 @@ export class AutoSendService implements OnInit {
 
         this.adjuntoService.sendPendingPhotos(this.dbService.getDatabase(), this.pendingTransactionsAttachments);
       }
-    })
+    }) */
   }
 
   public addFuncObs() {
