@@ -622,7 +622,7 @@ export class AutoSendService implements OnInit {
       default:
         break;
     }
-    let opt =  this.services.getHttpOptionsAuthorization();
+    let opt = this.services.getHttpOptionsAuthorization();
     opt.url = url;
     opt.data = request;
 
