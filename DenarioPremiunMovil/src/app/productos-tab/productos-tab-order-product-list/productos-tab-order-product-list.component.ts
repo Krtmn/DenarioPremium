@@ -401,7 +401,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   onSelectProductPed(i: number, prod: OrderUtil) {
 
-    if (!this.orderServ.stock0 && (prod.quStockAux < 1)) {
+    if (!this.orderServ.stock0 && (prod.quStockAux <= 0)) {
       this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_STOCK0"));
       //this.accordionGroup.value = undefined;
     } else {
