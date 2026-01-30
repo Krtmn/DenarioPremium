@@ -181,6 +181,8 @@ export class AdjuntoService {
       "(na_attachment, id_transaction, co_transaction, type, na_transaction, position)" +
       " VALUES (?, ?, ?, ?, ?, ?)"
 
+    let position = this.fotos.length ? null : -1;
+
     for (let i = 0; i < this.fotos.length; i++) {
       const f = this.fotos[i];
       if (f.data) {
@@ -210,9 +212,8 @@ export class AdjuntoService {
         data: this.firma,
         directory: Directory.External
       });
-      let posicion = this.fotos.length++;
       batch.push([saveStatement, [coTransaction, naTransaction, filename]]);
-      batch.push([saveTransacctionImages, [filename, 0, coTransaction, "signature", naTransaction, posicion]]);
+      batch.push([saveTransacctionImages, [filename, 0, coTransaction, "signature", naTransaction, 0]]);
     }
     if (this.file != null) {
       //guardamos el archivo en BD
@@ -229,9 +230,8 @@ export class AdjuntoService {
         data: this.file.data as string,
         directory: Directory.External
       });
-      let posicion = this.fotos.length++;
       batch.push([saveStatement, [coTransaction, naTransaction, this.file.naFile]]);
-      batch.push([saveTransacctionImages, [this.file.naFile, 0, coTransaction, "file", naTransaction, posicion]]);
+      batch.push([saveTransacctionImages, [this.file.naFile, 0, coTransaction, "file", naTransaction, 0]]);
     }
 
 
@@ -497,6 +497,7 @@ export class AdjuntoService {
                   let position = resp.name.split('_')[1].split(".")[0]
                   let type = resp.type;
                   let naTransaction = resp.transaction;
+
                   this.deletePendingTransactionAttachments(dbServ, idTransaction, position, type, naTransaction)
                 })
 
