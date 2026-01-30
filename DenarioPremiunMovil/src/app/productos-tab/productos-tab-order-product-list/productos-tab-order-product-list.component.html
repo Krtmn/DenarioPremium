@@ -255,7 +255,7 @@
                   <p *ngIf="orderServ.showStock"><span
                       class="titulosBold">{{this.productsTabTags.get('PROD_STOCK_PROD')}}:</span> {{
                     productoModal.quStock
-                    > 0 ? productoModal.quStock :
+                    > 0 ? quStock(productoModal) :
                     0 }}</p>
                   @if(orderServ.displayProductPoints){
                   <p><span class="titulosBold">{{this.productsTabTags.get('PROD_POINTS_PROD')}}:</span> {{
