@@ -210,6 +210,7 @@ export class PedidosService {
   public vatExemptProducts!: boolean;
   public userCanChangePriceListProduct!: boolean;
   public disableCurrency: boolean = true;
+  public hideStock0: boolean = false;
 
   codeTotalProductUnitMessageFlag = false;
 
@@ -365,6 +366,7 @@ export class PedidosService {
     this.disableDaDispatch = this.config.get("disableDaDispatch").toLowerCase() === "true";
     this.currencyModuleEnabled = this.config.get("currencyModule").toLowerCase() === "true";
     this.vatExemptProducts = this.config.get("vatExemptProducts").toLowerCase() === "true";
+    
     //string
     this.codeTotalProductUnit = this.config.get("codeTotalProductUnit");
     this.nameProductLine = this.config.get("nameProductLine");
@@ -397,6 +399,13 @@ export class PedidosService {
       //si estan mandando el iva por productos, no tiene sentido que el usuario pueda cambiarlo
       //posiblemente en el futuro se quite el selector de iva (?).
       this.userCanSelectIVA = false;
+    }
+
+    if(this.stock0){
+      //si puedo tomar productos con stock 0, no tiene sentido ocultarlos
+      this.hideStock0 = false;
+    }else{
+      this.hideStock0 = this.config.get("hideStock0").toLowerCase() === "true";
     }
 
   }
@@ -591,7 +600,10 @@ export class PedidosService {
           if (stock.quStock == 0) {
             //ninguno tiene stock
             console.log('stock tiene 0 unidades');
-            //continue;
+            if(this.hideStock0){
+              //si esta variable esta activa, no mostramos productos sin stockcld
+              continue;
+            }
           }
           warehouses = this.listaWarehouse.filter(w => w.idWarehouse == stock.idWarehouse);
 
