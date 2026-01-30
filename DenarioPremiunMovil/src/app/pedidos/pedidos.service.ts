@@ -212,6 +212,8 @@ export class PedidosService {
   public disableCurrency: boolean = true;
   public hideStock0: boolean = false;
 
+  public displayProductPoints = false;
+
   codeTotalProductUnitMessageFlag = false;
 
   /*  ClientChangeSubscription: Subscription = this.clientSelectorService.ClientChanged.subscribe(client => {    
@@ -366,6 +368,7 @@ export class PedidosService {
     this.disableDaDispatch = this.config.get("disableDaDispatch").toLowerCase() === "true";
     this.currencyModuleEnabled = this.config.get("currencyModule").toLowerCase() === "true";
     this.vatExemptProducts = this.config.get("vatExemptProducts").toLowerCase() === "true";
+    this.displayProductPoints = this.config.get("displayProductPoints").toLowerCase() === "true";
     
     //string
     this.codeTotalProductUnit = this.config.get("codeTotalProductUnit");
@@ -698,7 +701,7 @@ export class PedidosService {
           "nuAmountDiscount": 0,
           "idDiscount": 0,
           "iva": iva,
-          "ivaProducto": 0,
+          "ivaProducto": ivaProducto,
           "taxedNuPrice": 0,
           "idWarehouse": warehouseClient.idWarehouse,
           "prevWarehouse": warehouseClient.idWarehouse,
