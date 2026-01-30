@@ -503,9 +503,12 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     if (!prod.nuPrice) {
       return true;
     }
-    if (!this.orderServ.stock0 && (prod.quStockAux < 1)) {
+    if (!this.orderServ.stock0 && (prod.quStockAux <= 0)) {
       var stocks = this.orderServ.listaStock.filter(s => s.idProduct == prod.idProduct)
       //si el warehouse seleccionado tiene 0 stock, comprobamos si hay stock en otro warehouse
+      if(!this.orderServ.userCanChangeWarehouse){
+        return true;
+      }
       for (let i = 0; i < stocks.length; i++) {
         if (stocks[i].quStock > 0) {
           return false;
