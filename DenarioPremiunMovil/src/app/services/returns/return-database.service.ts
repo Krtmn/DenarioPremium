@@ -67,6 +67,7 @@ export class ReturnDatabaseService {
         item.unit = unitProduct;
         item.idUnit = data.rows.item(i).id_measure_unit;
         item.productUnits = this.getUnitsByIdProductOrderByCoPrimaryUnit(dbServ, item.idProduct);
+        item.showDateModal = false;
         returnDetails.push(item);
       }
       return returnDetails;
