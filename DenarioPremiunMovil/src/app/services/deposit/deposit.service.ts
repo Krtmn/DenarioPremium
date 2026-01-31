@@ -779,7 +779,7 @@ export class DepositService {
       this.cobrosDetails = [] as CollectDeposit[];
       for (var i = 0; i < res.rows.length; i++) {
         item = res.rows.item(i)
-        item.isSelected = this.deposit.stDelivery == 1 || this.deposit.stDelivery == null ? true : false;
+        item.isSelected = this.deposit.stDelivery == DEPOSITO_STATUS_SAVED || this.deposit.stDelivery == null ? true : false;
         this.cobrosDetails.push(item);
       }
       return this.deposit;
@@ -853,7 +853,7 @@ export class DepositService {
               coDeposit: item.coDeposit,
               stDeposit: item.stDeposit,
               stDelivery: item.stDelivery,
-              daDeposit: item.daDeposit,
+              daDeposit: this.normalizeDaDeposit(item.daDeposit),
               naStatus: status,
               nuAmountDoc: item.nuAmountDoc.toFixed(this.parteDecimal),
               coCurrency: item.coCurrency,
@@ -900,6 +900,30 @@ export class DepositService {
 
   getCurrencyConversion(coCurrency: string) {
     this.currencyConversion = this.currencyServices.getOppositeCurrency(coCurrency);
+  }
+
+  private normalizeDaDeposit(value: string): string {
+    if (!value) {
+      return value;
+    }
+
+    // Formato esperado: YYYY-MM-DD HH:mm:ss
+    // Si viene como ISO con zona: YYYY-MM-DDTHH:mm:ss.sss+00:00
+    if (value.includes('T')) {
+      return value.substring(0, 19).replace('T', ' ');
+    }
+
+    // Si solo trae fecha, agrega hora
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return `${value} 00:00:00`;
+    }
+
+    // Si trae minutos sin segundos, agrega segundos
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(value)) {
+      return `${value}:00`;
+    }
+
+    return value;
   }
 
 }
