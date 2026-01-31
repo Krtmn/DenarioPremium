@@ -532,9 +532,9 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     let stock = prod.quStock;
     let unit = prod.unitList.filter(u => prod.idUnit == u.idUnit)[0];
     if(this.orderServ.quUnitDecimals){
-      return stock / unit.quUnit;
+      return this.formatNum(stock / unit.quUnit);
     }
-    return Math.floor(stock / unit.quUnit);
+    return Math.floor(stock / unit.quUnit).toString();
   }
 
 
