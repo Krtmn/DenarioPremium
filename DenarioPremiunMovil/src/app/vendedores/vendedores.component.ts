@@ -55,11 +55,12 @@ export class VendedoresComponent  implements OnInit {
       this.getEnterpriseInfo(); //buscamos info de empresas / multiempresas      
 
       if(this.infoVendedores){
-          this.getUserInfoBD();
-          this.message.hideLoading();       
+        this.getUserInfo();
+     
       }else{
         // metodo por defecto        
-        this.getUserInfo();
+        this.getUserInfoBD();
+        this.message.hideLoading();  
       }
       
     });
