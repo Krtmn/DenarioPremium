@@ -131,6 +131,7 @@ export class InventarioGeneralComponent implements OnInit {
       this.inventariosLogicService.newClientStock.hasAttachments = this.adjuntoService.hasItems();
       this.inventariosLogicService.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
     }
+    this.txComment = this.inventariosLogicService.newClientStock.txComment;
   }
 
 
