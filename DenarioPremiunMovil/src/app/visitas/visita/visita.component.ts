@@ -734,6 +734,7 @@ export class VisitaComponent implements OnInit {
     if (saveEventChanges) {
       evento.evento = this.motivoSeleccionado!;
       evento.actividad = this.actividadSeleccionada!;
+      evento.saved = false;
       evento.comentario = this.comentario;
       this.eventoAEditar = -1;
       this.setChangesMade(true);
