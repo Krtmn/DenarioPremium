@@ -634,6 +634,11 @@ export class DepositService {
   }
 
   saveDeposit(dbServ: SQLiteObject, deposit: Deposit) {
+    let deleteStatementDeposit = 'DELETE FROM deposits WHERE co_deposit = ?';
+    let deleteStatementDepositCollect = 'DELETE FROM deposit_collects WHERE co_deposit = ?';
+    this.database.executeSql(deleteStatementDepositCollect, [deposit.coDeposit]);
+    this.database.executeSql(deleteStatementDeposit, [deposit.coDeposit]);
+
     this.database = dbServ
     let insertStatement = 'INSERT OR REPLACE INTO deposits (' +
       'id_deposit,' +
