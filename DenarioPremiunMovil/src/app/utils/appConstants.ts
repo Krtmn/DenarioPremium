@@ -10,9 +10,9 @@ export const DELIVERY_STATUS_SAVED = 3;
 //Valores de status de envio (stDelivery)
 
 export const DEPOSITO_STATUS_NEW = 0
-export const DEPOSITO_STATUS_SAVED = 1;
+export const DEPOSITO_STATUS_SAVED = 3;
 export const DEPOSITO_STATUS_TO_SEND = 2;
-export const DEPOSITO_STATUS_SENT = 3;
+export const DEPOSITO_STATUS_SENT = 1;
 
 //FIN VALORES ENVIO
 
