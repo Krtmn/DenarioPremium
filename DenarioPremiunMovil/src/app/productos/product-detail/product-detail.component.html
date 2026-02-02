@@ -87,13 +87,14 @@
           </ion-row>
         }
           <ion-row>
-
+            
             <ion-col class="tituloDetails titulosDetallesProductos" size="4" size-sm="4"
               size-xs="4">{{this.productDetailTags.get('PROD_PRICE_LIST_PROD')}}</ion-col>
             <ion-col size="8" size-sm="8" size-xs="8">
               <!--  Un Selector de listas de precio, por defecto na_list asc -->
               <div class="listado-price-list selectDetail">
-                <ion-select [(ngModel)]="listSeleccionada" (ionChange)="onListChanged(listSeleccionada.idList)">
+                <ion-select [(ngModel)]="listSeleccionada" (ionChange)="onListChanged(listSeleccionada.idList)"
+                [disabled]="!lists || lists.length === 1">
                   <ion-select-option *ngFor="let list of lists" [value]="list">{{ list.naList }}</ion-select-option>
                 </ion-select>
               </div>
@@ -130,7 +131,7 @@
             <ion-col size="8" size-sm="8" size-xs="8">
               <!--  Un Selector de almacenes, por defecto na_warehouse asc -->
               <div class="listado-warehouse-list select-style selectDetail">
-                <ion-select [(ngModel)]="warehouseSeleccionado" [disabled]="!warehouses || warehouses.length === 1 || this.orderService.userCanChangeWarehouse === false"
+                <ion-select [(ngModel)]="warehouseSeleccionado" [disabled]="!warehouses || warehouses.length === 1"
                   (ionChange)="onWarehouseChanged(warehouseSeleccionado.idWarehouse)">
                   <ion-select-option *ngFor="let w of warehouses" [value]="w">{{ w.naWarehouse }}
                   </ion-select-option>
