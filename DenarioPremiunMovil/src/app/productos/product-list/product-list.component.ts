@@ -78,7 +78,7 @@ export class ProductListComponent implements OnInit {
 
   ngOnInit() {
 
-    this.productService.showStock = this.productService.globalConfig.get("showStock") == "true" ? true : false;
+    //this.productService.showStock = this.productService.globalConfig.get("showStock") == "true" ? true : false;
 
     this.subs.add(
       this.imageServices.imageLoaded$.subscribe(({ imgName, imgSrc }) => {
@@ -122,7 +122,7 @@ export class ProductListComponent implements OnInit {
 
   filterProductList(list: ProductUtil[]) {
     if (this.orderService.hideStock0){
-      list = list.filter(product => product.stock != null && product.stock > 0);
+      list = list.filter(product => product.stock && product.stock > 0);
     }
 
     return list;

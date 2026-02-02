@@ -26,10 +26,12 @@
              {{this.productTags.get('PROD_IVA')}}:
               {{ formatNumber(product.nuTax) }} % </p>
             }
-            <p class="espacioentrelineas" *ngIf="this.productService.showStock">
+            @if(this.orderService.showStock){
+            <p class="espacioentrelineas">
               {{this.productTags.get('PROD_STOCK_PROD')}}: {{ product.stock > 0 ?
               product.stock :
               0 }}</p>
+            }
                @if(this.orderService.displayProductPoints){
               <p> {{this.productTags.get('PROD_POINTS_PROD')}}: {{ product.points }}</p>
                }

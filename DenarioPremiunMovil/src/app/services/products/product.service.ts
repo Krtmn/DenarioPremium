@@ -33,7 +33,6 @@ export class ProductService {
   public listaEmpresa: Enterprise[] = [];
   public multiempresa: Boolean = false;
   public unitsByProduct: Unit[] = [];
-  public showStock: boolean = true;
   public vatExemptProducts: boolean = false;
 
   productoSearch = new Subject<string>;

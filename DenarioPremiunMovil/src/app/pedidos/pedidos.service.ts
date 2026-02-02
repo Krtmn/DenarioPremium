@@ -350,8 +350,7 @@ export class PedidosService {
     this.userCanSelectProductDiscount = this.config.get("userCanSelectProductDiscount").toLowerCase() === 'true';
     this.showTransactionCurrency = this.config.get("showTransactionCurrency").toLowerCase() === 'true'; //eliminada, se usa currencyModule
     this.validateNuOrder = this.config.get("validateNuOrder").toLowerCase() === 'true';
-    this.userCanSelectGlobalDiscount = this.config.get("userCanSelectGlobalDiscount").toLowerCase() === 'true';
-    this.userCanSelectIVA = this.config.get("userCanSelectIVA").toLowerCase() === 'true';
+    this.userCanSelectGlobalDiscount = this.config.get("userCanSelectGlobalDiscount").toLowerCase() === 'true'; 
     this.selectOrderType = this.config.get("selectOrderType").toLowerCase() === 'true';
     this.userCanSelectChannel = this.config.get("userCanSelectChannel").toLowerCase() === 'true';
     this.validateWarehouses = this.config.get("validateWarehouses").toLowerCase() === 'true';
@@ -402,6 +401,8 @@ export class PedidosService {
       //si estan mandando el iva por productos, no tiene sentido que el usuario pueda cambiarlo
       //posiblemente en el futuro se quite el selector de iva (?).
       this.userCanSelectIVA = false;
+    }else{
+      this.userCanSelectIVA = this.config.get("userCanSelectIVA").toLowerCase() === 'true';
     }
 
     if(this.stock0){
