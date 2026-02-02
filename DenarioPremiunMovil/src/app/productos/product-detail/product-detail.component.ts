@@ -72,10 +72,12 @@ export class ProductDetailComponent implements OnInit {
       this.lists = this.priceListService.productlists;
       this.listSeleccionada = this.lists[0];
     });
+    if(this.orderService.validateWarehouses){
     this.stockService.getWarehousesByIdProduct(this.pSeleccionado.idProduct).then(() => {
       this.warehouses = this.stockService.productWarehouses;
       this.warehouseSeleccionado = this.warehouses[0];
     });
+    }
     this.checkReorderPrices();
     //console.log('pSeleccionado: ' + JSON.stringify(this.pSeleccionado));
   }
