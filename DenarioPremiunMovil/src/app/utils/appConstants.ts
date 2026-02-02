@@ -53,7 +53,8 @@ export const COLOR_LILA = "#430197";
 //FIN COLORES MODULOS
 
 //API KEY GOOGLE MAPS
-export const API_KEY_GOOGLE_MAPS = "AIzaSyCeyMgfUB692ysC6nuELqhGYIB4FChCS5Y";
+export const API_KEY_GOOGLE_MAPS = "AIzaSyAXNdXiFgAPtnHX1NLtY4HszaCnX_BoNdo";
+
 //API KEY GOOGLE MAPS
 
 //Valores de status de cliente potencial
