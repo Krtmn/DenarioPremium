@@ -11,23 +11,28 @@ import { ApplicationTags } from '../modelos/tables/applicationTags';
 import { PendingTransaction } from '../modelos/tables/pendingTransactions';
 import { url } from 'inspector';
 
-const env = (window as Window & { __env?: Record<string, string> }).__env || {};
-
 
 @Injectable({
   providedIn: 'root'
 })
 export class ServicesService {
-  private WsUrl = env["API_BASE_URL"];
+  private WsUrl = "";
 
   private name = "";
   private last = "";
   public tags = new Map<string, string>([]);
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {
+    this.WsUrl = this.getWsUrl();
+  }
+
+  private getWsUrl(): string {
+    const env = (window as Window & { __env?: Record<string, string> }).__env || {};
+    return env["WsUrl"];
+  }
 
   getURLService() {
-    return this.WsUrl;
+    return this.WsUrl || this.getWsUrl();
   }
 
   handleError(error: HttpErrorResponse) {
@@ -50,7 +55,7 @@ export class ServicesService {
   // Http Options
   getHttpOptions() {
     const httpOptions = {
-      url: this.WsUrl,
+      url: this.WsUrl || this.getWsUrl(),
       headers: {
         'Content-Type': 'application/json',
       }
@@ -60,7 +65,7 @@ export class ServicesService {
 
   getHttpOptionsAuthorization() {
     const httpOptions = {
-      url: this.WsUrl,
+      url: this.WsUrl || this.getWsUrl(),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + localStorage.getItem("token")
