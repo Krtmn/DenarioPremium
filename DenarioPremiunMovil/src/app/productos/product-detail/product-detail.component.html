@@ -128,7 +128,7 @@
             <ion-col size="8" size-sm="8" size-xs="8">
               <!--  Un Selector de almacenes, por defecto na_warehouse asc -->
               <div class="listado-warehouse-list select-style selectDetail">
-                <ion-select [(ngModel)]="warehouseSeleccionado"
+                <ion-select [(ngModel)]="warehouseSeleccionado" [disabled]="!warehouses || warehouses.length === 1 || this.orderService.userCanChangeWarehouse === false"
                   (ionChange)="onWarehouseChanged(warehouseSeleccionado.idWarehouse)">
                   <ion-select-option *ngFor="let w of warehouses" [value]="w">{{ w.naWarehouse }}
                   </ion-select-option>
