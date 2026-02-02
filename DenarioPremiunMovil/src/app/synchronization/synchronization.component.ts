@@ -684,6 +684,15 @@ export class SynchronizationComponent implements OnInit {
         this.BUFF = 1 / this.N;
       }
 
+      ///DEFINIR QUE TABLAS LLEVA EL ROL CLIENTE
+      if (this.user.cliente) {
+        const tablasCliente = [1, 3, 5, 7, 8, 13, 15, 23, 25, 32, 34, 35, 37, 39, 42, 43, 44, 46, 50, 52, 53, 54, 55, 60, 61, 62, 63, 64, 69, 70, 71, 72, 72, 74]; // ejemplo, ajusta según tu lógica
+        this.tableKeyOrder = this.tableKeyOrder.filter(id => tablasCliente.includes(id));
+        this.N = Object.keys(this.tableKeyMap).length;
+        this.PROGRESS = 1 / this.N;
+        this.BUFF = 1 / this.N;
+      }
+
       const tableId = this.tableKeyOrder[this.currentTableIndex];
       const key = this.tableKeyMap[tableId];
 
