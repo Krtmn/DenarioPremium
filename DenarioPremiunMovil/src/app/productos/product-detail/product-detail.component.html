@@ -150,6 +150,29 @@
             </ion-col>
           </ion-row>
         }
+         @if(this.orderService.productMinMul &&this.orderService.prodMinMulMap.has(pSeleccionado.idProduct)){
+         }
+          @if( this.orderService.getProdMinMulByProduct(pSeleccionado.idProduct).quMinimum > 1 ){
+          <ion-row>
+            <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">
+              {{this.orderService.getTag('PED_MINIMO')}}
+            </ion-col>
+            <ion-col size="8" size-sm="8" size-xs="8">
+              {{ this.orderService.getProdMinMulByProduct(pSeleccionado.idProduct).quMinimum }}
+            </ion-col>
+          </ion-row>
+        }
+          @if( this.orderService.getProdMinMulByProduct(pSeleccionado.idProduct).quMultiple > 1 ){
+          <ion-row>
+            <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">
+              {{this.orderService.getTag('PED_MULTIPLO')}}
+            </ion-col>
+            <ion-col size="8" size-sm="8" size-xs="8">
+              {{ this.orderService.getProdMinMulByProduct(pSeleccionado.idProduct).quMultiple }}
+            </ion-col>
+          </ion-row>
+        }
+         
         </ion-grid>
       </ion-col>
     </ion-row>

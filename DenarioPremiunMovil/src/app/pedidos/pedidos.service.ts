@@ -216,6 +216,8 @@ export class PedidosService {
 
   codeTotalProductUnitMessageFlag = false;
 
+   public prodMinMulMap: Map<number, { quMinimum: number; quMultiple: number }> = new Map<number, { quMinimum: number; quMultiple: number }>();
+
   /*  ClientChangeSubscription: Subscription = this.clientSelectorService.ClientChanged.subscribe(client => {    
       this.reset();
       //this.cliente = client;    
@@ -280,7 +282,10 @@ export class PedidosService {
       this.getDistributionChannels(idEnterprise).then(data => { this.distributionChannels = data; });
     }
     if (this.productMinMul) {
-      this.getProductMinMulList(idEnterprise).then(data => { this.listaProdMinMul = data });
+      this.getProductMinMulList(idEnterprise).then(data => { 
+        this.listaProdMinMul = data 
+        this.fillProdMinMulMap();
+      });
     }
     if (this.groupByTotalByLines) {
       this.getProductStructures(idEnterprise).then(data => {
@@ -291,7 +296,16 @@ export class PedidosService {
     }
 
   }
+    fillProdMinMulMap() {
+      this.listaProdMinMul.forEach((value) => {
+        this.prodMinMulMap.set(value.idProduct, 
+          { quMinimum: value.quMinimum, quMultiple: value.quMultiple });
+      });
+    }
 
+  getProdMinMulByProduct(idProduct: number): { quMinimum: number; quMultiple: number } {
+    return this.prodMinMulMap.get(idProduct) || { quMinimum: 1, quMultiple: 1 };
+  }
   getTags() {
     if (this.tags.size > 0) {
       //ya tenemos los tags, no hay que hacer nada.

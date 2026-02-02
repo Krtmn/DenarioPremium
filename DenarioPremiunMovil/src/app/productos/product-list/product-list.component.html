@@ -37,6 +37,19 @@
               {{this.productTags.get('PROD_POINTS_PROD')}}: {{ product.points }}
             </p>
             }
+            @if(this.orderService.productMinMul &&this.orderService.prodMinMulMap.has(product.idProduct)){
+            @if( this.orderService.getProdMinMulByProduct(product.idProduct).quMinimum > 1 ){
+            <p class="espacioentrelineas">
+              {{this.orderService.getTag('PED_MINIMO')}}: {{ this.orderService.getProdMinMulByProduct(product.idProduct).quMinimum }} 
+            </p>
+          }
+          @if( this.orderService.getProdMinMulByProduct(product.idProduct).quMultiple > 1 ){
+            <p class="espacioentrelineas">  
+              {{this.orderService.getTag('PED_MULTIPLO')}}: {{ this.orderService.getProdMinMulByProduct(product.idProduct).quMultiple }}
+            </p>
+            }
+          }
+          
           </ion-label>
           <ion-note slot="end"><ion-icon class="icon-List2" name="chevron-forward-outline"></ion-icon></ion-note>
         </ion-item>
