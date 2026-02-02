@@ -761,7 +761,7 @@ export class PedidosDbService {
     let query = "select id_product_min_mul as idProductMinMul, co_product as coProduct, " +
       "id_product as idProduct, qu_minimum as quMinimum, qu_multiple as quMultiple, " +
       "flag, co_enterprise as coEnterprise, id_enterprise as idEnterprise " +
-      'from product_min_muls where id_enterprise = ? and (qu_minimum > 1 OR qu_multiple > 1) and flag = "true" ';
+      "from product_min_muls where id_enterprise = ? and (qu_minimum > 1 OR qu_multiple > 1) and flag = 'true'";
 
     return db.executeSql(query, [idEnterprise]).then(data => {
       let list: ProductMinMulFav[] = [];
