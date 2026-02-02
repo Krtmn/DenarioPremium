@@ -8,6 +8,7 @@ import { CurrencyModules } from 'src/app/modelos/tables/currencyModules';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { Product } from 'src/app/modelos/tables/product';
 import { ProductStructure } from 'src/app/modelos/tables/productStructure';
+import { PedidosService } from 'src/app/pedidos/pedidos.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
@@ -34,7 +35,7 @@ export class ProductListComponent implements OnInit {
   message = inject(MessageService);
   imageServices = inject(ImageServicesService);
   currencyService = inject(CurrencyService);
-
+  orderService = inject(PedidosService);
   config = inject(GlobalConfigService);
 
   public imagesMap: { [imgName: string]: string } = {};
