@@ -126,6 +126,12 @@ export class ProductListComponent implements OnInit {
     if (this.orderService.hideStock0){
       list = list.filter(product => product.stock && product.stock > 0);
     }
+    if( this.orderService.hideProdWithoutPrice){
+      const distinctIds = new Set<number>(
+        this.orderService.listaPricelist.map(pl => pl.idProduct)
+      );
+      list = list.filter(product => distinctIds.has(product.idProduct));
+    }
 
     return list;
   }
