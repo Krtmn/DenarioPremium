@@ -2,17 +2,17 @@
 <!-- Prod Heinz HTTPS -->
 <network-security-config>
     <domain-config cleartextTrafficPermitted="false">
-        <domain includeSubdomains="true">denario-mobile-dev.apps.kraftheinz.com</domain>
-        <domain includeSubdomains="true">denario-mobile.apps.kraftheinz.com</domain>
+        <!-- si cliente usa HTTPS, va aqui -->
+        <domain includeSubdomains="true">denario.net</domain>
+
         <trust-anchors>
             <certificates src="system" />
             <certificates src="user" />
         </trust-anchors>
     </domain-config>
     <domain-config cleartextTrafficPermitted="true">
-        <!-- Kiberno - Diego TESTING-->
-        <domain includeSubdomains="true">192.168.0.186</domain>
-        <!-- Kiberno - Richard -->
-        <domain includeSubdomains="true">192.168.0.231</domain>
+        <!-- si cliente _NO_ usa HTTPS, va aqui -->
+        <!-- tambien va aqui cualquier servidor de prueba -->
+        <domain includeSubdomains="true">denariopremium.com</domain>
     </domain-config>
 </network-security-config>
