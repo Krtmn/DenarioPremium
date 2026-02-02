@@ -216,6 +216,8 @@ export class PedidosService {
 
   codeTotalProductUnitMessageFlag = false;
 
+   public prodMinMulMap: Map<number, { quMinimum: number; quMultiple: number }> = new Map<number, { quMinimum: number; quMultiple: number }>();
+
   /*  ClientChangeSubscription: Subscription = this.clientSelectorService.ClientChanged.subscribe(client => {    
       this.reset();
       //this.cliente = client;    
@@ -280,7 +282,10 @@ export class PedidosService {
       this.getDistributionChannels(idEnterprise).then(data => { this.distributionChannels = data; });
     }
     if (this.productMinMul) {
-      this.getProductMinMulList(idEnterprise).then(data => { this.listaProdMinMul = data });
+      this.getProductMinMulList(idEnterprise).then(data => { 
+        this.listaProdMinMul = data 
+        this.fillProdMinMulMap();
+      });
     }
     if (this.groupByTotalByLines) {
       this.getProductStructures(idEnterprise).then(data => {
@@ -291,7 +296,16 @@ export class PedidosService {
     }
 
   }
+    fillProdMinMulMap() {
+      this.listaProdMinMul.forEach((value) => {
+        this.prodMinMulMap.set(value.idProduct, 
+          { quMinimum: value.quMinimum, quMultiple: value.quMultiple });
+      });
+    }
 
+  getProdMinMulByProduct(idProduct: number): { quMinimum: number; quMultiple: number } {
+    return this.prodMinMulMap.get(idProduct) || { quMinimum: 1, quMultiple: 1 };
+  }
   getTags() {
     if (this.tags.size > 0) {
       //ya tenemos los tags, no hay que hacer nada.
@@ -350,8 +364,7 @@ export class PedidosService {
     this.userCanSelectProductDiscount = this.config.get("userCanSelectProductDiscount").toLowerCase() === 'true';
     this.showTransactionCurrency = this.config.get("showTransactionCurrency").toLowerCase() === 'true'; //eliminada, se usa currencyModule
     this.validateNuOrder = this.config.get("validateNuOrder").toLowerCase() === 'true';
-    this.userCanSelectGlobalDiscount = this.config.get("userCanSelectGlobalDiscount").toLowerCase() === 'true';
-    this.userCanSelectIVA = this.config.get("userCanSelectIVA").toLowerCase() === 'true';
+    this.userCanSelectGlobalDiscount = this.config.get("userCanSelectGlobalDiscount").toLowerCase() === 'true'; 
     this.selectOrderType = this.config.get("selectOrderType").toLowerCase() === 'true';
     this.userCanSelectChannel = this.config.get("userCanSelectChannel").toLowerCase() === 'true';
     this.validateWarehouses = this.config.get("validateWarehouses").toLowerCase() === 'true';
@@ -402,6 +415,8 @@ export class PedidosService {
       //si estan mandando el iva por productos, no tiene sentido que el usuario pueda cambiarlo
       //posiblemente en el futuro se quite el selector de iva (?).
       this.userCanSelectIVA = false;
+    }else{
+      this.userCanSelectIVA = this.config.get("userCanSelectIVA").toLowerCase() === 'true';
     }
 
     if(this.stock0){

@@ -8,6 +8,7 @@ import { CurrencyModules } from 'src/app/modelos/tables/currencyModules';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { Product } from 'src/app/modelos/tables/product';
 import { ProductStructure } from 'src/app/modelos/tables/productStructure';
+import { PedidosService } from 'src/app/pedidos/pedidos.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
@@ -34,7 +35,7 @@ export class ProductListComponent implements OnInit {
   message = inject(MessageService);
   imageServices = inject(ImageServicesService);
   currencyService = inject(CurrencyService);
-
+  orderService = inject(PedidosService);
   config = inject(GlobalConfigService);
 
   public imagesMap: { [imgName: string]: string } = {};
@@ -77,7 +78,7 @@ export class ProductListComponent implements OnInit {
 
   ngOnInit() {
 
-    this.productService.showStock = this.productService.globalConfig.get("showStock") == "true" ? true : false;
+    //this.productService.showStock = this.productService.globalConfig.get("showStock") == "true" ? true : false;
 
     this.subs.add(
       this.imageServices.imageLoaded$.subscribe(({ imgName, imgSrc }) => {
@@ -87,7 +88,9 @@ export class ProductListComponent implements OnInit {
     );
 
     // Reemite imágenes cacheadas (si existen)
-    this.imageServices.emitCachedImages();
+    if(this.orderService.showProductImages){
+      this.imageServices.emitCachedImages();
+    }
     this.currencyModuleEnabled = this.config.get("currencyModule").toLowerCase() === "true";
     var currencyModule: CurrencyModules = this.currencyService.getCurrencyModule('pro');
     this.showConversionInfo = currencyModule.showConversion;
@@ -102,11 +105,11 @@ export class ProductListComponent implements OnInit {
     }
     if (this.searchText) {
       if (this.productService.productList.length > 0) {
-        this.productList = this.productService.productList;
+        this.productList = this.filterProductList(this.productService.productList);
       } else {
         this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
           this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency).then(() => {
-            this.productList = this.productService.productList;
+            this.productList = this.filterProductList(this.productService.productList);
           });
       }
     } else {
@@ -114,9 +117,23 @@ export class ProductListComponent implements OnInit {
       this.coProductStructureListString = this.productStructureService.coProductStructureListString;
       this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
         this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.defaultCurrency).then(() => {
-          this.productList = this.productService.productList;
+          this.productList = this.filterProductList(this.productService.productList);
         });
     }
+  }
+
+  filterProductList(list: ProductUtil[]) {
+    if (this.orderService.hideStock0){
+      list = list.filter(product => product.stock && product.stock > 0);
+    }
+    if( this.orderService.hideProdWithoutPrice){
+      const distinctIds = new Set<number>(
+        this.orderService.listaPricelist.map(pl => pl.idProduct)
+      );
+      list = list.filter(product => distinctIds.has(product.idProduct));
+    }
+
+    return list;
   }
 
   searchSubscription: Subscription = this.productService.productoSearch.subscribe((data) => {
@@ -124,7 +141,7 @@ export class ProductListComponent implements OnInit {
     if (this.searchText) {
       this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
         this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency).then(() => {
-          this.productList = this.productService.productList;
+          this.productList = this.filterProductList(this.productService.productList);
         });
     }
   });
