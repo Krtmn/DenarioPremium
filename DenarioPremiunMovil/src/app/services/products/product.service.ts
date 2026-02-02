@@ -13,6 +13,7 @@ import { CurrencyService } from '../currency/currency.service';
 import { GlobalConfigService } from '../globalConfig/global-config.service';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
+import { PedidosService } from 'src/app/pedidos/pedidos.service';
 
 @Injectable({
   providedIn: 'root'
@@ -49,6 +50,25 @@ export class ProductService {
   itemsXPagina = 20;
 
   constructor() { }
+
+
+  formatStock(stock: number | null, quUnitDecimals: boolean): string {
+    if(quUnitDecimals){
+      //mostrar decimales
+      if (stock === null) {
+        return this.currencyService.formatNumber(0);
+      }
+      return this.currencyService.formatNumber(stock);
+    }else{
+      //no mostrar decimales
+      if (stock === null) {
+        return '0';
+      }
+      return Math.floor(stock).toString();
+    }
+
+
+  }
 
   onProductSearch(search: string) {
     this.productoSearch.next(search);

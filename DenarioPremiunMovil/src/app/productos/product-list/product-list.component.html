@@ -30,13 +30,13 @@
             }
             @if(this.orderService.showStock){
             <p class="espacioentrelineas">
-              {{this.productTags.get('PROD_STOCK_PROD')}}: {{ product.stock > 0 ?
-              product.stock :
-              0 }}</p>
+              {{this.productTags.get('PROD_STOCK_PROD')}}: {{ this.productService.formatStock(product.stock, this.orderService.quUnitDecimals) }}</p>
             }
-               @if(this.orderService.displayProductPoints){
-              <p> {{this.productTags.get('PROD_POINTS_PROD')}}: {{ product.points }}</p>
-               }
+            @if(this.orderService.displayProductPoints){
+            <p class="espacioentrelineas"> 
+              {{this.productTags.get('PROD_POINTS_PROD')}}: {{ product.points }}
+            </p>
+            }
           </ion-label>
           <ion-note slot="end"><ion-icon class="icon-List2" name="chevron-forward-outline"></ion-icon></ion-note>
         </ion-item>
