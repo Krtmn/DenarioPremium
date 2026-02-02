@@ -103,11 +103,11 @@ export class ProductListComponent implements OnInit {
     }
     if (this.searchText) {
       if (this.productService.productList.length > 0) {
-        this.productList = this.productService.productList;
+        this.productList = this.filterProductList(this.productService.productList);
       } else {
         this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
           this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency).then(() => {
-            this.productList = this.productService.productList;
+            this.productList = this.filterProductList(this.productService.productList);
           });
       }
     } else {
@@ -115,9 +115,17 @@ export class ProductListComponent implements OnInit {
       this.coProductStructureListString = this.productStructureService.coProductStructureListString;
       this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
         this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.defaultCurrency).then(() => {
-          this.productList = this.productService.productList;
+          this.productList = this.filterProductList(this.productService.productList);
         });
     }
+  }
+
+  filterProductList(list: ProductUtil[]) {
+    if (this.orderService.hideStock0){
+      list = list.filter(product => product.stock != null && product.stock > 0);
+    }
+
+    return list;
   }
 
   searchSubscription: Subscription = this.productService.productoSearch.subscribe((data) => {
@@ -125,7 +133,7 @@ export class ProductListComponent implements OnInit {
     if (this.searchText) {
       this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
         this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency).then(() => {
-          this.productList = this.productService.productList;
+          this.productList = this.filterProductList(this.productService.productList);
         });
     }
   });
