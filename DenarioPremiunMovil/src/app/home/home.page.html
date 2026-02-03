@@ -12,8 +12,8 @@
 
 
 <ion-content [fullscreen]="true" class="ion-padding">
-<!-- <app-home-sidebar>   Descomentar para sidebar-->
-<!-- </app-home-sidebar> -->
+  <!-- <app-home-sidebar>   Descomentar para sidebar-->
+  <!-- </app-home-sidebar> -->
   <ion-grid class="home">
     <ion-row>
       <ion-col size="12" class="ion-text-center">
@@ -46,8 +46,8 @@
       </ion-col>
     </ion-row>
 
-    <!-- Iconos en filas de 3 -->
-    <ion-row *ngIf="!user.transportista">
+    <!-- Iconos en filas de 3 (no transportista y no cliente) -->
+    <ion-row *ngIf="!user.transportista && !user.cliente">
       <ng-container *ngFor="let row of [0,3,6,9]">
         <ion-col size="4" *ngIf="modulos[row]">
           <a class="ion-text-center" expand="block" (click)="goToModule(modulos[row])">
@@ -69,6 +69,16 @@
         </ion-col>
 
       </ng-container>
+    </ion-row>
+
+    <!-- Fila para cliente -->
+    <ion-row *ngIf="user.cliente">
+      <ion-col size="6" *ngFor="let modulo of modulosCliente">
+        <a class="ion-text-center" expand="block" (click)="goToModule(modulo)">
+          <img alt="" class="image-size" [src]="modulo.imgIcon" />
+          <p class="nombreModulos" [ngStyle]="{'color': modulo.letterColor}">{{modulo.name}}</p>
+        </a>
+      </ion-col>
     </ion-row>
 
 
