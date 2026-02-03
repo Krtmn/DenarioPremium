@@ -24,6 +24,15 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
+REM 1.1 Copiar claves.env al www (por si el build no lo incluye)
+set ENV_FILE_SOURCE=%PROJECT_DIR%\..\claves.env
+set ENV_FILE_TARGET=%PROJECT_DIR%\www\claves.env
+if exist "%ENV_FILE_SOURCE%" (
+  copy /y "%ENV_FILE_SOURCE%" "%ENV_FILE_TARGET%" > nul
+) else (
+  echo WARNING: No se encontró claves.env en %ENV_FILE_SOURCE%.
+)
+
 
 REM 2. Sincronizar cambios con Android
 call npx cap sync android
