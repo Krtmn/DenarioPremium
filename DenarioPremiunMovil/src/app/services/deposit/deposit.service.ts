@@ -15,6 +15,7 @@ import { CollectDeposit } from 'src/app/modelos/collect-deposit';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { ItemListaDepositos } from 'src/app/depositos/item-lista-depositos';
 import { DEPOSITO_STATUS_NEW, DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { Return } from 'src/app/modelos/tables/return';
 
 @Injectable({
   providedIn: 'root'
@@ -473,6 +474,7 @@ export class DepositService {
         this.cobrosDetails = [] as CollectDeposit[];
         for (var i = 0; i < data.rows.length; i++) {
           const item = data.rows.item(i);
+          item.da_collection = this.normalizeDaDeposit(item.da_collection)
           this.cobrosDetails.push(item);
         }
         return Promise.resolve(data.rows);
@@ -514,6 +516,7 @@ export class DepositService {
       [coCurrency]).then(data => {
         for (var i = 0; i < data.rows.length; i++) {
           const item = data.rows.item(i);
+          item.da_collection = this.normalizeDaDeposit(item.da_collection)
           this.cobrosDetails.push(item);
         }
         return Promise.resolve(data.rows);
@@ -521,6 +524,24 @@ export class DepositService {
         console.log(e);
       })
   }
+
+   deleteDepositsBatch(dbServ: SQLiteObject, deposits: Deposit[]) {
+      let queries: any[] = [];
+      const deleteStatement = "DELETE FROM deposits WHERE co_deposit = ?";
+      const deleteDetailsStatement = "DELETE FROM deposit_collects WHERE co_deposit = ?";
+
+      for (let i = 0; i < deposits.length; i++) {
+        let coDeposit = deposits[i].coDeposit;
+        queries.push([deleteDetailsStatement, [coDeposit]]);
+        queries.push([deleteStatement, [coDeposit]]);
+      }
+      return dbServ.sqlBatch(queries).then(() => {
+        console.log("[Deposit Service] deleteDepositsBatch exitoso");
+      }).catch(error => {
+        console.log("[Deposit Service] Error al ejecutar deleteDepositsBatch.");
+        console.log(error);
+      });
+    }
 
   async saveDepositBatch(dbServ: SQLiteObject, deposits: Deposit[]) {
     this.database = dbServ;
@@ -784,7 +805,8 @@ export class DepositService {
       this.cobrosDetails = [] as CollectDeposit[];
       for (var i = 0; i < res.rows.length; i++) {
         item = res.rows.item(i)
-        item.isSelected = this.deposit.stDelivery == DEPOSITO_STATUS_SAVED || this.deposit.stDelivery == null ? true : false;
+        item.isSelected = this.deposit.stDelivery == this.DEPOSITO_STATUS_SAVED || this.deposit.stDelivery == this.DEPOSITO_STATUS_SENT  || this.deposit.stDelivery == null ? true : false;
+        item.da_collection = this.normalizeDaDeposit(item.da_collection)
         this.cobrosDetails.push(item);
       }
       return this.deposit;
@@ -835,7 +857,7 @@ export class DepositService {
       'nu_value_local as nuValueLocal,' +
       'nu_amount_doc as nuAmountDoc, ' +
       'coordenada as coordenada ' +
-      'FROM deposits', []).then(async res => {
+      'FROM deposits ORDER BY st_delivery DESC, da_deposit DESC, st_deposit ASC, id_deposit DESC ', []).then(async res => {
         let promises: Promise<void>[] = [];
 
         this.listDeposits = [] as Deposit[];
