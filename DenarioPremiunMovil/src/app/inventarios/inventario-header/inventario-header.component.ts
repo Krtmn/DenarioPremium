@@ -82,17 +82,17 @@ export class InventarioHeaderComponent implements OnInit {
     });
 
     this.AttachSubscription = this.adjuntoService.AttachmentChanged.subscribe(() => {
-    this.inventariosLogicService.newClientStock.hasAttachments = this.adjuntoService.hasItems();
-    this.inventariosLogicService.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
-    var valid = this.inventariosLogicService.checkValidStockToSend();
-    this.inventariosLogicService.onStockValidToSave(valid);
-    this.inventariosLogicService.onStockValidToSend(valid);
-  });
+      this.inventariosLogicService.newClientStock.hasAttachments = this.adjuntoService.hasItems();
+      this.inventariosLogicService.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
+      var valid = this.inventariosLogicService.checkValidStockToSend();
+      this.inventariosLogicService.onStockValidToSave(valid);
+      this.inventariosLogicService.onStockValidToSend(valid);
+    });
 
-  this.AttachWeightSubscription = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
-    this.inventariosLogicService.onStockValidToSave(false);
-    this.inventariosLogicService.onStockValidToSend(false);
-  });
+    this.AttachWeightSubscription = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
+      this.inventariosLogicService.onStockValidToSave(false);
+      this.inventariosLogicService.onStockValidToSend(false);
+    });
 
     this.alertButtons = [
       {
@@ -200,7 +200,7 @@ export class InventarioHeaderComponent implements OnInit {
 
       this.inventariosLogicService.deleteClientStockDetailsUnits(this.synchronizationServices.getDatabase(), coClientStockDetailUnits).then(result => {
         this.inventariosLogicService.deleteClientStockDetails(this.synchronizationServices.getDatabase(), this.inventariosLogicService.newClientStock.coClientStock).then(result => {
-          //SE GUARDARA CLIENTSTOCK    
+          //SE GUARDARA CLIENTSTOCK
           this.inventariosLogicService.saveClientStock(this.synchronizationServices.getDatabase(), send).then(async (res) => {
             this.inventariosLogicService.isEdit = false;
             await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.inventariosLogicService.newClientStock.coClientStock, "inventarios");
@@ -212,17 +212,21 @@ export class InventarioHeaderComponent implements OnInit {
               pendingTransaction.coTransaction = this.inventariosLogicService.newClientStock.coClientStock;
               pendingTransaction.idTransaction = this.inventariosLogicService.newClientStock.idClientStock;
               pendingTransaction.type = "clientStock";
+
+              console.log("preparando para enviar inventario");
+
+
               if (localStorage.getItem("connected") == "true") {
-                /*
+                //nada aca
                 this.messageAlert = new MessageAlert(
                   this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!,
-                  this.inventariosLogicService.inventarioTags.get('INV_MSJ_SEND_TYPESTOCKS')!,
+                  this.inventariosLogicService.inventarioTags.get('INV_SEND_STOCK_MSG') == undefined ? "El Inventario será enviado" : this.inventariosLogicService.inventarioTags.get('INV_SEND_STOCK_MSG')!,
                 );
-                this.messageService.alertModal(this.messageAlert);*/
+                this.messageService.alertModal(this.messageAlert);
               } else {
                 this.messageAlert = new MessageAlert(
                   this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!,
-                  this.inventariosLogicService.inventarioTags.get('INV_MSJ_ERROR_NOTSIGNAL')!,
+                  this.inventariosLogicService.inventarioTags.get('INV_MSJ_ERROR_NOTSIGNAL') == undefined ? "No hay conexión a internet, no se puede enviar el inventario" : this.inventariosLogicService.inventarioTags.get('INV_MSJ_ERROR_NOTSIGNAL')!,
 
                 );
                 this.messageService.alertModal(this.messageAlert);
@@ -246,7 +250,7 @@ export class InventarioHeaderComponent implements OnInit {
               this.messageService.alertModal(this.messageAlert);
               if (buttonBack) {
                 console.log("salvar y salir")
-                this.inventariosLogicService.showBackRoute('inventarios');               
+                this.inventariosLogicService.showBackRoute('inventarios');
 
               }
               this.messageService.hideLoading();

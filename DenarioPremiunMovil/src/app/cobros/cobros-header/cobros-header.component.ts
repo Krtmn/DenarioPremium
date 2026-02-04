@@ -4,6 +4,7 @@ import { Platform } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { Collection } from 'src/app/modelos/tables/collection';
+import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
@@ -26,6 +27,8 @@ export class CobrosHeaderComponent implements OnInit {
   public adjuntoService = inject(AdjuntoService);
   public synchronizationServices = inject(SynchronizationDBService);
   public messageService = inject(MessageService);
+  messageAlert!: MessageAlert;
+
 
 
   public textSave: String = '';
@@ -259,6 +262,19 @@ export class CobrosHeaderComponent implements OnInit {
     if (send) {
       this.collectService.sendCollection = true;
       this.collectService.saveSendCollection(coCollection);
+      if (localStorage.getItem("connected") == "true") {
+        this.messageAlert = new MessageAlert(
+          this.collectService.collectionTags.get('COB_HEADER_MESSAGE')!,
+          this.collectService.collectionTags.get('COB_DENARIO_TO_SEND')!,
+        );
+      } else {
+        this.messageAlert = new MessageAlert(
+          this.collectService.collectionTags.get('COB_HEADER_MESSAGE')!,
+          this.collectService.collectionTags.get('DENARIO_DEV_TO_SEND_OFFLINE')!,
+        );
+
+      }
+      this.messageService.alertModal(this.messageAlert);
     }
 
   }

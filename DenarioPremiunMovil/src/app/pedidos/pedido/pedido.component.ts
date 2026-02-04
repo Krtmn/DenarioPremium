@@ -64,6 +64,8 @@ export class PedidoComponent implements OnInit {
   public dbServ = inject(SynchronizationDBService);
   public services = inject(ServicesService);
   public autoSend = inject(AutoSendService);
+  messageAlert!: MessageAlert;
+
 
   public geoServ = inject(GeolocationService);
 
@@ -535,6 +537,20 @@ export class PedidoComponent implements OnInit {
               type: "clientStock"
             })
           }
+
+          if (localStorage.getItem("connected") == "true") {
+            this.messageAlert = new MessageAlert(
+              this.orderServ.getTag('PED_DENARIO')!,
+              this.orderServ.getTag('PED_DENARIO_TO_SEND')!,
+            );
+
+          } else {
+            this.messageAlert = new MessageAlert(
+              this.orderServ.getTag('PED_DENARIO')!,
+              this.orderServ.getTag('PED_DENARIO_TO_SEND_OFFLINE')!,
+            );
+          }
+          this.message.alertModal(this.messageAlert);
           this.services.insertPendingTransactionBatch(this.dbServ.getDatabase(), transactions).then(() => {
             this.autoSend.ngOnInit();
           });
