@@ -132,7 +132,11 @@ INSERT INTO public.application_tags(
 	('PED_TOTAL_UNIDAD_NO_ENCONTRADA', 'PED', 'PEDIDOS', 'ESP', 'Algunos productos no poseen la Unidad Seleccionada.'),
 	('PED_ALERTA_INVENTARIO', 'PED', 'PEDIDOS', 'ESP', 'Este producto no tiene inventario. Verifique antes de enviar pedido.'),
 	('PED_CERRAR', 'PED', 'PEDIDOS', 'ESP', 'CERRAR'),
-	('PED_PRECIO+IVA', 'PED', 'PEDIDOS', 'ESP', 'Precio + IVA');
+	('PED_PRECIO+IVA', 'PED', 'PEDIDOS', 'ESP', 'Precio + IVA'),
+  ('PED_DENARIO', 'PED', 'PEDIDOS', 'ESP','Denario Pedidos'),
+	('PED_DENARIO_TO_SEND', 'PED', 'PEDIDOS', 'ESP','Su Pedido será enviado'),
+  ('PED_DENARIO_TO_SEND_OFFLINE', 'PED', 'PEDIDOS', 'ESP','Su Pedido será enviado al tener conexión de datos');
+
 
 
 DELETE FROM public.application_tags WHERE co_module = 'CLI';
@@ -370,7 +374,9 @@ INSERT INTO public.application_tags(
 	('COB_MSJ_RETENTION_NO_ATTACHMENTS', 'COB', 'COBROS', 'ESP', 'Al menos a un documento se le agregaron retenciones, debe agregar al menos un adjunto para poder enviar el Cobro.'),
 	('COB_RET_MSJ_RETENTION_NO_ATTACHMENTS', 'COB', 'COBROS', 'ESP', 'Para poder enviar la Retención, debe agregar al menos un adjunto.'),
 	('COB_DEV_COMMENT', 'COB', 'COBROS', 'ESP', 'Motivo'),
-	('COB_COB_CHANGE_DATERATE', 'COB', 'COBROS', 'ESP', 'Está cambiando la fecha de la tasa, esto recalculará  los montos. ¿Desea continuar?');
+	('COB_COB_CHANGE_DATERATE', 'COB', 'COBROS', 'ESP', 'Está cambiando la fecha de la tasa, esto recalculará  los montos. ¿Desea continuar?'),
+	('COB_DENARIO_TO_SEND', 'COB', 'COBROS', 'ESP','Su Cobro será enviado'),
+  ('COB_DENARIO_TO_SEND_OFFLINE', 'COB', 'COBROS', 'ESP','Su Cobro será enviado al tener conexión de datos');
 
 
 -- VENDEDORES
@@ -455,7 +461,8 @@ DELETE FROM public.application_tags WHERE co_module = 'INV';
 	('INV_ADD_TYPE', 'INV', 'INVENTARIO', 'ESP','Agregar tipo de Inventario'),
 	('INV_ADD_TYPE', 'INV', 'INVENTARIO', 'ENG','Add Stock Type'),
 	('INV_DEV_STATUS', 'INV', 'INVENTARIO', 'ENG','Status'),
-  ('INV_SEND_STOCK_MSG','INV','INVENTARIO','ESP','El Inventario será enviado');
+  ('INV_SEND_STOCK_MSG','INV','INVENTARIO','ESP','El Inventario será enviado'),
+  ('INV_MSJ_ERROR_NOTSIGNAL','INV','INVENTARIO','ESP','¡Su Inventario será enviado al tener conexión de datos!');
 
 
 -- PRODUCTOS
@@ -668,7 +675,11 @@ INSERT INTO public.application_tags(
 	('VIS_BOTON_NUEVA', 'VIS', 'VISITAS', 'ESP','NUEVA VISITA'),
 	('VIS_BOTON_NUEVA_DESPACHO', 'VIS', 'VISITAS', 'ESP','Nuevo Despacho'),
 	('VIS_GUIAS_DESPACHO', 'VIS', 'VISITAS', 'ESP','Guías de Despacho'),
-	('VIS_NO_GUIAS_DESPACHO', 'VIS', 'VISITAS', 'ESP','No hay guías de despacho disponibles');
+	('VIS_NO_GUIAS_DESPACHO', 'VIS', 'VISITAS', 'ESP','No hay guías de despacho disponibles'),
+	('VIS_DENARIO', 'VIS', 'VISITAS', 'ESP','Denario Visitas'),
+	('VIS_DENARIO_TO_SEND', 'VIS', 'VISITAS', 'ESP','Su Visita será enviada'),
+  ('VIS_DENARIO_TO_SEND_OFFLINE', 'VIS', 'VISITAS', 'ESP','Su Visita será enviada al tener conexión de datos');
+
 
 
 -- TAGS DEPOSITOS

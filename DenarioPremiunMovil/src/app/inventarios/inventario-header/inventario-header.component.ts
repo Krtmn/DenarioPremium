@@ -214,22 +214,23 @@ export class InventarioHeaderComponent implements OnInit {
               pendingTransaction.type = "clientStock";
 
               console.log("preparando para enviar inventario");
-              this.messageAlert = new MessageAlert(
-                this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!,
-                this.inventariosLogicService.inventarioTags.get('INV_SEND_STOCK_MSG') == undefined ? "El Inventario será enviado" : this.inventariosLogicService.inventarioTags.get('INV_SEND_STOCK_MSG')!,
-              );
-              this.messageService.alertModal(this.messageAlert);
 
-              /*  if (localStorage.getItem("connected") == "true") {
-                 //nada aca
-               } else {
-                 this.messageAlert = new MessageAlert(
-                   this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!,
-                   this.inventariosLogicService.inventarioTags.get('INV_MSJ_ERROR_NOTSIGNAL') == undefined ? "No hay conexión a internet, no se puede enviar el inventario" : this.inventariosLogicService.inventarioTags.get('INV_MSJ_ERROR_NOTSIGNAL')!,
 
-                 );
-                 this.messageService.alertModal(this.messageAlert);
-               } */
+              if (localStorage.getItem("connected") == "true") {
+                //nada aca
+                this.messageAlert = new MessageAlert(
+                  this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!,
+                  this.inventariosLogicService.inventarioTags.get('INV_SEND_STOCK_MSG') == undefined ? "El Inventario será enviado" : this.inventariosLogicService.inventarioTags.get('INV_SEND_STOCK_MSG')!,
+                );
+                this.messageService.alertModal(this.messageAlert);
+              } else {
+                this.messageAlert = new MessageAlert(
+                  this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!,
+                  this.inventariosLogicService.inventarioTags.get('INV_MSJ_ERROR_NOTSIGNAL') == undefined ? "No hay conexión a internet, no se puede enviar el inventario" : this.inventariosLogicService.inventarioTags.get('INV_MSJ_ERROR_NOTSIGNAL')!,
+
+                );
+                this.messageService.alertModal(this.messageAlert);
+              }
 
               this.services.insertPendingTransaction(this.synchronizationServices.getDatabase(), pendingTransaction).then(result => {
                 if (result) {
