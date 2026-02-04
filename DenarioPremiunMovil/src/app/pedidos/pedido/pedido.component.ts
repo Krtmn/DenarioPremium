@@ -1175,11 +1175,24 @@ export class PedidoComponent implements OnInit {
 
 
       // Lista
-      let list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
-      if (list != undefined) {
-        this.orderServ.listaSeleccionada = list;
-        this.listaAnterior = list;
-        this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList)
+      let list: List | undefined;
+      if (this.orderServ.openOrder) {
+        let idPriceList = this.orderServ.order.orderDetails[0].idPriceList
+        this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idPriceList == idPriceList)
+        let idList = this.orderServ.listaPriceListFiltrada[0].idList;
+        list = this.orderServ.listaList.find((list) => list.idList == idList);
+        this.orderServ.listaSeleccionada = list!;
+        this.listaAnterior = list!;
+
+      } else {
+        list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
+
+
+        if (list != undefined) {
+          this.orderServ.listaSeleccionada = list;
+          this.listaAnterior = list;
+          this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList)
+        }
       }
 
 
