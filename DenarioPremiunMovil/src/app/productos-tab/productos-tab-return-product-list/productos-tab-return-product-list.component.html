@@ -8,6 +8,13 @@
 
   <!--  Listado clickeable de productos  -->
   <div class="product-card product-structure-scroll2">
+    @if(noProductsAlertShown){
+    <ion-item>
+      <ion-label class="ion-text-center" style="color: red;">
+        {{this.productsTabTags.get("DENARIO_SIN_RESULTADOS")}}
+      </ion-label>
+    </ion-item>
+    } 
     <ion-list class="espacioListasProductos" *ngFor="let product of productList; index as i"
       (click)="onSelectProductDev(product)">
       <div class="product-structure-title"

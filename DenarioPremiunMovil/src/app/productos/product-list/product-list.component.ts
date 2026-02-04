@@ -51,7 +51,7 @@ export class ProductListComponent implements OnInit {
   searchText: string = '';
   showConversionInfo: Boolean = false;
   localCurrencyDefault: Boolean = true;
-
+  noProductsAlertShown = false;
 
   productList: ProductUtil[] = [];
   productListView: ProductUtil[] = [];
@@ -109,7 +109,9 @@ export class ProductListComponent implements OnInit {
       } else {
         this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
           this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency).then(() => {
+            this.noProductsAlertShown = false;
             this.productList = this.filterProductList(this.productService.productList);
+            this.noProductsAlertShown = this.productList.length === 0;
           });
       }
     } else {
@@ -117,7 +119,9 @@ export class ProductListComponent implements OnInit {
       this.coProductStructureListString = this.productStructureService.coProductStructureListString;
       this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
         this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.defaultCurrency).then(() => {
+          this.noProductsAlertShown = false;
           this.productList = this.filterProductList(this.productService.productList);
+          this.noProductsAlertShown = this.productList.length === 0;
         });
     }
   }
@@ -141,7 +145,9 @@ export class ProductListComponent implements OnInit {
     if (this.searchText) {
       this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
         this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency).then(() => {
+          this.noProductsAlertShown = false;
           this.productList = this.filterProductList(this.productService.productList);
+          this.noProductsAlertShown = this.productList.length === 0;
         });
     }
   });
