@@ -27,7 +27,7 @@
               },
               {
                 "glob": "claves.env",
-                "input": "..",
+                "input": ".",
                 "output": "."
               },
               {
@@ -107,6 +107,11 @@
                 "glob": "**/*",
                 "input": "src/assets",
                 "output": "assets"
+              },
+              {
+                "glob": "claves.env",
+                "input": ".",
+                "output": "."
               },
               {
                 "glob": "**/*.svg",

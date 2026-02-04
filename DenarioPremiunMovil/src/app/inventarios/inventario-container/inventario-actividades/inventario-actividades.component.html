@@ -36,7 +36,7 @@
             <ion-label>{{this.inventariosLogicService.inventarioTags.get('INV_UNIDAD')}}: {{total.naUnit}}
             </ion-label>
           </ion-item>
-          <ion-button *ngIf="this.inventariosLogicService.newClientStock.stDelivery == 3" (click)="deleteClientStock(i)"
+          <ion-button *ngIf="this.inventariosLogicService.newClientStock.stDelivery == 0 || this.inventariosLogicService.newClientStock.stDelivery == 3" (click)="deleteClientStock(i)"
             color="danger">
             <ion-icon slot="icon-only" name="trash"></ion-icon>
           </ion-button>

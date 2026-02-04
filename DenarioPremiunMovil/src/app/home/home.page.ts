@@ -249,7 +249,7 @@ export class HomePage implements OnInit {
       if (localStorage.getItem("connected") === "false") {
         var msj = this.services.tags.get("DENARIO_ERROR_SYNCRO");
         if (msj === undefined) {
-          msj = "";
+          msj = "No hay conexión a internet, no se puede sincronizar";
         }
         this.messageService.transaccionMsjModalNB(msj);
 
