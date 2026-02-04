@@ -454,7 +454,8 @@ DELETE FROM public.application_tags WHERE co_module = 'INV';
 	('INV_DEV_STATUS', 'INV', 'INVENTARIO', 'ESP','Estatus'),
 	('INV_ADD_TYPE', 'INV', 'INVENTARIO', 'ESP','Agregar tipo de Inventario'),
 	('INV_ADD_TYPE', 'INV', 'INVENTARIO', 'ENG','Add Stock Type'),
-	('INV_DEV_STATUS', 'INV', 'INVENTARIO', 'ENG','Status');
+	('INV_DEV_STATUS', 'INV', 'INVENTARIO', 'ENG','Status'),
+  ('INV_SEND_STOCK_MSG','INV','INVENTARIO','ESP','El Inventario será enviado');
 
 
 -- PRODUCTOS
