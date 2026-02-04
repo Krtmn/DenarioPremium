@@ -135,7 +135,6 @@ INSERT INTO public.application_tags(
 	('PED_PRECIO+IVA', 'PED', 'PEDIDOS', 'ESP', 'Precio + IVA'),
   	('PED_DENARIO', 'PED', 'PEDIDOS', 'ESP','Denario Pedidos'),
 	('PED_DENARIO_TO_SEND', 'PED', 'PEDIDOS', 'ESP','Su Pedido será enviado'),
-	('PED_SIN_RESULTADOS', 'PED', 'PEDIDOS', 'ESP','No hay productos disponibles'),
   	('PED_DENARIO_TO_SEND_OFFLINE', 'PED', 'PEDIDOS', 'ESP','Su Pedido será enviado al tener conexión de datos');
 
 
@@ -779,4 +778,5 @@ INSERT INTO public.application_tags(
 	('DENARIO_MSG_GPS', 'DEN', 'DENARIO', 'ESP', 'Para poder grabar la ubicación, te recomendamos activar el servicio de localización en tu dispositivo'),
 	('DENARIO_ERR_GPS', 'DEN', 'DENARIO', 'ESP', 'Falló la ubicación. Revise GPS.'),
 	('DENARIO_SELEC_FECHA', 'DEN', 'DENARIO', 'ESP', 'Seleccione una fecha'),
+	('DENARIO_SIN_RESULTADOS', 'DEN', 'DENARIO', 'ESP','No hay productos disponibles'),
 	('DENARIO_ERROR_SYNCRO', 'DEN', 'DENARIO', 'ESP', 'No hay conexión a internet, no se puede sincronizar');
