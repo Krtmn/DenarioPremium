@@ -1,5 +1,11 @@
 <div class="listado-product-structures">
-
+    @if(noProductsAlertShown){
+    <ion-item>
+      <ion-label class="ion-text-center" style="color: red;">
+        {{orderService.getTag("DENARIO_SIN_RESULTADOS")}}
+      </ion-label>
+    </ion-item>
+    } 
   <!--  Listado clickeable de productos  -->
   <div class="product-card" *ngIf="!selectedProduct">
     <ion-list class="espacioListasProductos" *ngFor="let product of productList | slice: startPro:endPro; index as i"
