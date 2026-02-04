@@ -50,6 +50,7 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
   favClicked: any;
   searchSub: any;
   validateReturnSub: any;
+  noProductsAlertShown = false;
   public imagesMap: { [imgName: string]: string } = {};
   constructor(private cd: ChangeDetectorRef,) { }
 
@@ -67,27 +68,35 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
     console.log('Estoy en Devolucion');
     this.psClicked = this.productService.productStructureCLicked.subscribe((data) => {
       this.showProductList = data;
+      this.noProductsAlertShown = false;
       if (this.showProductList) {
         this.idProductStructureList = this.productStructureService.idProductStructureList;
         this.coProductStructureListString = this.productStructureService.coProductStructureListString;
         this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
           this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault).then(() => {
             this.productList = this.productService.productList;
+            this.noProductsAlertShown = (this.productList.length == 0);
           });
       }
     });
 
     this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
+      this.noProductsAlertShown = false;
       this.showProductList = true;
       this.productList = this.productService.productList;
+      this.noProductsAlertShown = (this.productList.length == 0);
+
     });
 
     this.validateReturnSub = this.returnLogic.productsByInvoice.subscribe((data) => {
+      this.noProductsAlertShown = false;
       this.showProductList = true;
       this.productList = this.productService.productList;
+      this.noProductsAlertShown = (this.productList.length == 0);
     });
 
     this.featClicked = this.productService.featuredStructureClicked.subscribe((data) => {
+      this.noProductsAlertShown = false;
       this.productService.getFeaturedProducts(this.db.getDatabase(),
         this.empresaSeleccionada.idEnterprise,
         this.empresaSeleccionada.coCurrencyDefault,
@@ -97,11 +106,13 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
         0).then(() => {
           this.showProductList = true;
           this.productList = this.productService.productList;
+          this.noProductsAlertShown = (this.productList.length == 0);
         }
         )
     });
 
     this.favClicked = this.productService.favoriteStructureClicked.subscribe((data) => {
+      this.noProductsAlertShown = false;
       this.productService.getFavoriteProducts(this.db.getDatabase(),
         this.empresaSeleccionada.idEnterprise,
         this.empresaSeleccionada.coCurrencyDefault,
@@ -111,6 +122,7 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
         0).then(() => {
           this.showProductList = true;
           this.productList = this.productService.productList;
+          this.noProductsAlertShown = (this.productList.length == 0);
         }
         )
     });
@@ -120,6 +132,8 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
     this.psClicked.unsubscribe();
     this.searchSub.unsubscribe();
     this.validateReturnSub.unsubscribe();
+    this.featClicked.unsubscribe();
+    this.favClicked.unsubscribe();
   }
 
   onShowProductStructures() {
