@@ -976,6 +976,10 @@ export class PedidoComponent implements OnInit {
 
     } else {
       //no se hace nada, solo el onchange()
+      this.orderServ.tipoOrden = this.tipoOrden;
+      this.tipoOrdenAnterior = this.tipoOrden;
+      this.tipoOrden = this.orderServ.tipoOrden;
+
     }
     this.onChange();
   }
