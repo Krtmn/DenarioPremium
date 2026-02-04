@@ -94,7 +94,7 @@ export class SynchronizationDBService {
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
-  private CURRENT_DB_VERSION: number = 1;
+  private CURRENT_DB_VERSION: number = 2;
 
 
 
@@ -270,7 +270,15 @@ export class SynchronizationDBService {
               result[i].coApplicationTag, result[i].tag
             )
           }
-          this.router.navigate(['home']);
+          this.services.getTags(this.getDatabase(), "DEN", "ESP").then(result => {
+            for (var i = 0; i < result.length; i++) {
+              this.services.tags.set(
+                result[i].coApplicationTag, result[i].tag
+              )
+            }
+            this.router.navigate(['home']);
+          })
+
         });
 
       }
