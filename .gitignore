@@ -41,3 +41,4 @@ DenarioPremiunMovil/android_backup/res/xml/file_paths.xml
 **/android/keystore.properties
 claves.env
 DenarioPremiunMovil/claves.env
+GoogleService-Info.plist
