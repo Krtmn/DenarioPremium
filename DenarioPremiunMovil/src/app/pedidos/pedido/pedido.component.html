@@ -155,7 +155,7 @@
                                     <div class="listado-tps-selector ion-text-center" id="inputOrderType">
                                         <ion-select (ionChange)="onOrderTypeChange()" [(ngModel)]="tipoOrden"
                                             [disabled]="disableOrderTypeSelector()" interface="popover"
-                                            labelPlacement="stacked" compareWith="orderTypeCompare">
+                                            labelPlacement="stacked" [compareWith]="orderTypeCompare">
                                             <ion-select-option *ngFor="let type of listaOrderTypes" [value]="type">
                                                 {{ type.naOrderType }}
                                             </ion-select-option>
@@ -347,8 +347,8 @@
 
                                 </ion-col>
 
-                                <div *ngIf="orderServ.showCreditLimit" 
-                                [ngClass]="{ 'text-green': orderServ.cliente.nuCreditLimit > orderServ.totalPedido, 
+                                <div *ngIf="orderServ.showCreditLimit"
+                                [ngClass]="{ 'text-green': orderServ.cliente.nuCreditLimit > orderServ.totalPedido,
                                 'text-red': orderServ.cliente.nuCreditLimit <= orderServ.totalPedido }">
                                     <h3>{{ orderServ.getTag("PED_LIMITE_CREDITO")}}:
                                         {{formatNum(orderServ.cliente.nuCreditLimit)}}</h3>
