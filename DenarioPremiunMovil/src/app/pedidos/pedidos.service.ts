@@ -611,12 +611,14 @@ export class PedidosService {
         };
         var warehouses: Warehouse[] = [];
         var stock = stockList.filter(s => s.idWarehouse == this.cliente.idWarehouse)[0];
-        if (stock == null || stock == undefined) {
+        //si el usuario no puede cambiar el warehouse,
+        //se queda con el del cliente aunque no tenga stock
+        if (this.userCanChangeWarehouse && (stock == null || stock == undefined)) {
           stock = stockList[0];
         }
         var warehouseClient: Warehouse = {} as Warehouse;
         if (this.validateWarehouses) {
-          if(stock.quStock == 0){
+          if(this.userCanChangeWarehouse && stock.quStock == 0){
             //si wh no tiene stock, buscamos otro wh con el mayor stock
             stockList.sort((a, b) => b.quStock - a.quStock);
             stock = stockList[0];
