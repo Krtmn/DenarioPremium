@@ -135,7 +135,7 @@ INSERT INTO public.application_tags(
 	('PED_PRECIO+IVA', 'PED', 'PEDIDOS', 'ESP', 'Precio + IVA'),
   	('PED_DENARIO', 'PED', 'PEDIDOS', 'ESP','Denario Pedidos'),
 	('PED_DENARIO_TO_SEND', 'PED', 'PEDIDOS', 'ESP','Su Pedido será enviado'),
-	('PED_SIN_RESULTADOS', 'PED', 'PEDIDOS', 'ESP','No se encontraron resultados'),
+	('PED_SIN_RESULTADOS', 'PED', 'PEDIDOS', 'ESP','No hay productos disponibles'),
   	('PED_DENARIO_TO_SEND_OFFLINE', 'PED', 'PEDIDOS', 'ESP','Su Pedido será enviado al tener conexión de datos');
 
 

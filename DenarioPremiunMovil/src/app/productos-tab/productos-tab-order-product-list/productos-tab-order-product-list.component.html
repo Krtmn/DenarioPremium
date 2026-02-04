@@ -27,7 +27,7 @@
   <!--  Listado clickeable de productos  -->
 
   <ion-content class="product-card product-structure-scroll accordionProductos">
-    @if(orderUtilList.length === 0){
+    @if(noProductsAlertShown){
     <ion-item>
       <ion-label class="ion-text-center" style="color: red;">
         {{orderServ.getTag("PED_SIN_RESULTADOS")}}
