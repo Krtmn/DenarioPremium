@@ -12,6 +12,9 @@ import { TransactionFile } from '../modelos/tables/transactionFile';
 import { Archivo } from '../modelos/archivo';
 import { GlobalConfigService } from '../services/globalConfig/global-config.service';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
+import { SynchronizationComponent } from '../synchronization/synchronization.component';
+import { SynchronizationDBService } from '../services/synchronization/synchronization-db.service';
+import { PendingTransactionsAttachments } from '../modelos/tables/pendingTransactionsAttachments';
 
 
 @Injectable({
@@ -37,15 +40,20 @@ export class AdjuntoService {
 
   imageWeightLimit = 30; //limite de peso de archivos, en MB
 
-  //flag que se levanta si un archivo excede weightLimit 
+  public showCamera = true;
+  public userCanUploadFiles = true;
+
+
+  //flag que se levanta si un archivo excede weightLimit
   weightLimitExceeded = false;
 
 
 
   public moduleName: string = '';
 
-  AttachmentChanged = new Subject;
-  AttachmentWeightExceeded = new Subject;
+  public AttachmentChanged = new Subject<any>();
+  public AttachmentWeightExceeded = new Subject<any>();
+
   public config = inject(GlobalConfigService);
 
   public servicesServ = inject(ServicesService);
@@ -61,6 +69,8 @@ export class AdjuntoService {
     this.viewOnly = viewOnly;
     this.colorBoton = colorBoton;
     this.totalPhoto = +this.config.get('quAttach');
+    this.showCamera = this.config.get('showCamera') === 'true' ? true : false;
+    this.userCanUploadFiles = this.config.get('userCanUploadFiles') === 'true' ? true : false;
     let weightLimit = this.config.get('imageWeightLimit');
     this.imageWeightLimit = weightLimit.length > 0 ? +weightLimit : 30; //mientras se corren scripts de actualizacion
     //console.log('totalPhoto: '+this.totalPhoto);
@@ -166,6 +176,13 @@ export class AdjuntoService {
     var saveStatement = "INSERT OR REPLACE INTO transaction_images" +
       "(co_transaction, na_transaction, na_image)" +
       " VALUES (?, ?, ?)"
+
+    const saveTransacctionImages = "INSERT INTO pending_transactions_attachments" +
+      "(na_attachment, id_transaction, co_transaction, type, na_transaction, position)" +
+      " VALUES (?, ?, ?, ?, ?, ?)"
+
+    let position = this.fotos.length ? null : -1;
+
     for (let i = 0; i < this.fotos.length; i++) {
       const f = this.fotos[i];
       if (f.data) {
@@ -178,6 +195,7 @@ export class AdjuntoService {
         f.naImage = filename;
 
         batch.push([saveStatement, [coTransaction, naTransaction, filename]]);
+        batch.push([saveTransacctionImages, [filename, 0, coTransaction, "attach", naTransaction, i]]);
 
       }
     }
@@ -185,6 +203,9 @@ export class AdjuntoService {
       var saveStatement = "INSERT OR REPLACE INTO transaction_signatures" +
         "(co_transaction, na_transaction, na_image)" +
         " VALUES (?, ?, ?)"
+      const saveTransacctionImages = "INSERT INTO pending_transactions_attachments" +
+        "(na_attachment, id_transaction, co_transaction, type, na_transaction, position)" +
+        " VALUES (?, ?, ?, ?, ?, ?)"
       var filename = coTransaction + "_Signature.jpg";
       const savedFile = await Filesystem.writeFile({
         path: filename,
@@ -192,12 +213,16 @@ export class AdjuntoService {
         directory: Directory.External
       });
       batch.push([saveStatement, [coTransaction, naTransaction, filename]]);
+      batch.push([saveTransacctionImages, [filename, 0, coTransaction, "signature", naTransaction, 0]]);
     }
     if (this.file != null) {
       //guardamos el archivo en BD
       var saveStatement = "INSERT OR REPLACE INTO transaction_files" +
         "(co_transaction, na_transaction, na_file)" +
         " VALUES (?, ?, ?)"
+      const saveTransacctionImages = "INSERT INTO pending_transactions_attachments" +
+        "(na_attachment, id_transaction, co_transaction, type, na_transaction, position)" +
+        " VALUES (?, ?, ?, ?, ?, ?)"
 
       //var filename = coTransaction + "_File" + this.file.name.split('.')[-1];
       const savedFile = await Filesystem.writeFile({
@@ -206,6 +231,7 @@ export class AdjuntoService {
         directory: Directory.External
       });
       batch.push([saveStatement, [coTransaction, naTransaction, this.file.naFile]]);
+      batch.push([saveTransacctionImages, [this.file.naFile, 0, coTransaction, "file", naTransaction, 0]]);
     }
 
 
@@ -295,9 +321,87 @@ export class AdjuntoService {
     })
   }
 
+  async sendPendingPhotos(dbServ: SQLiteObject, pendingTransactionsAttachments: PendingTransactionsAttachments[]) {
+
+    for (var i = 0; i < pendingTransactionsAttachments.length; i++) {
+      let item = pendingTransactionsAttachments[i];
+      switch (pendingTransactionsAttachments[i].type) {
+        case 'attach':
+          var file: string;
+          try {
+            Filesystem.readFile({
+              path: item.naAttachment,
+              directory: Directory.External,
+            }).then(f => {
+              file = f.data as string;
+
+              this.servicesServ.sendImage(item.naTransaction, item.idTransaction.toString(), item.position.toString(), file, item.naAttachment, 'attach', item.cantidad!).then((resp) => {
+                console.log(resp);
+                let idTransaction = resp.name.split('_')[0];
+                let position = resp.name.split('_')[1].split(".")[0]
+                let type = resp.type;
+                let naTransaction = resp.transaction;
+                this.deletePendingTransactionAttachments(dbServ, idTransaction, position, type, naTransaction)
+              })
+
+            }).catch((error) => { console.log(error) });
+            break;
+          } catch (e) {
+            console.log(e);
+            break;
+          }
+        case 'signature':
+          var file: string;
+          try {
+            Filesystem.readFile({
+              path: item.naAttachment,
+              directory: Directory.External,
+            }).then(f => {
+              file = f.data as string;
+
+              this.servicesServ.sendImage(item.naTransaction, item.idTransaction.toString(), item.position.toString(), file, item.naAttachment, 'signature', item.cantidad - 1).then((resp) => {
+                let idTransaction = resp.name.split('_')[0];
+                let position = resp.name.split('_')[1].split(".")[0];
+                let type = resp.type;
+                let naTransaction = resp.transaction;
+                this.deletePendingTransactionAttachments(dbServ, idTransaction, position, type, naTransaction)
+              })
+
+            }).catch((error) => { console.log(error) });
+          } catch (e) {
+            console.log(e);
+          }
+          break;
+        case 'file':
+          var file: string;
+          try {
+            Filesystem.readFile({
+              path: item.naAttachment,
+              directory: Directory.External,
+            }).then(f => {
+              file = f.data as string;
+
+              this.servicesServ.sendImage(item.naTransaction, item.idTransaction.toString(), item.position.toString(), file, item.naAttachment, 'file', item.cantidad!).then((resp) => {
+                let idTransaction = resp.name.split('_')[0];
+                let position = resp.name.split('_')[1].split(".")[0]
+                let type = resp.type;
+                let naTransaction = resp.transaction;
+                this.deletePendingTransactionAttachments(dbServ, idTransaction, position, type, naTransaction)
+              })
+
+            }).catch((error) => { console.log(error) });
+          } catch (e) {
+            console.log(e);
+          }
+          break;
+      }
+    }
+  }
+
   async sendPhotos(dbServ: SQLiteObject, idTransaction: number, naTransaction: string, coTransaction: string) {
 
     let cantidad: number = 0;
+    let cantidadFotos: number = 0;
     return this.getNuAttachImages(dbServ, coTransaction, naTransaction).then(nuAttachImages => {
 
       cantidad = nuAttachImages;
@@ -321,7 +425,14 @@ export class AdjuntoService {
             }).then(f => {
               file = f.data as string;
 
-              this.servicesServ.sendImage(naTransaction, idTransaction.toString(), i.toString(), file, item.naImage, 'attach', cantidad);
+              this.servicesServ.sendImage(naTransaction, idTransaction.toString(), i.toString(), file, item.naImage, 'attach', cantidad).then((resp) => {
+                console.log(resp);
+                let idTransaction = resp.name.split('_')[0];
+                let position = resp.name.split('_')[1].split(".")[0]
+                let type = resp.type;
+                let naTransaction = resp.transaction;
+                this.deletePendingTransactionAttachments(dbServ, idTransaction, position, type, naTransaction)
+              })
 
 
             }).catch((error) => { console.log(error) });
@@ -348,8 +459,13 @@ export class AdjuntoService {
               }).then(f => {
                 file = f.data as string;
 
-                this.servicesServ.sendImage(naTransaction, idTransaction.toString(), '0', file, item.naImage, 'signature', cantidad);
-
+                this.servicesServ.sendImage(naTransaction, idTransaction.toString(), '0', file, item.naImage, 'signature', cantidad).then((resp) => {
+                  let idTransaction = resp.name.split('_')[0];
+                  let position = resp.name.split('_')[1].split(".")[0];
+                  let type = resp.type;
+                  let naTransaction = resp.transaction;
+                  this.deletePendingTransactionAttachments(dbServ, idTransaction, position, type, naTransaction)
+                })
 
               }).catch((error) => { console.log(error) });
             } catch (e) {
@@ -376,8 +492,14 @@ export class AdjuntoService {
               }).then(f => {
                 file = f.data as string;
 
-                this.servicesServ.sendImage(naTransaction, idTransaction.toString(), '0', file, item.naFile, 'file', cantidad);
+                this.servicesServ.sendImage(naTransaction, idTransaction.toString(), '0', file, item.naFile, 'file', cantidad).then((resp) => {
+                  let idTransaction = resp.name.split('_')[0];
+                  let position = resp.name.split('_')[1].split(".")[0]
+                  let type = resp.type;
+                  let naTransaction = resp.transaction;
 
+                  this.deletePendingTransactionAttachments(dbServ, idTransaction, position, type, naTransaction)
+                })
 
               }).catch((error) => { console.log(error) });
             } catch (e) {
@@ -392,7 +514,7 @@ export class AdjuntoService {
   }
 
   getSavedPhotos(dbServ: SQLiteObject, co_transaction: string, na_transaction: string) {
-    //Obtiene TODOS los adjuntos de un documento. 
+    //Obtiene TODOS los adjuntos de un documento.
     //Usar para abrir documentos guardados o enviados
     this.moduleName = na_transaction;
     this.getImagesByTransaction(dbServ, co_transaction, na_transaction).then(data => {
@@ -531,6 +653,19 @@ export class AdjuntoService {
 
   getQuantityAdjuntos() {
     return Promise.resolve(this.fotos.length + (this.file != null ? 1 : 0) + (this.firma != "" ? 1 : 0))
+  }
+
+  deletePendingTransactionAttachments(dbServ: SQLiteObject, idTransaction: number, position: number, type: string, naTransaction: string) {
+    console.log("ESTA FOTO SE ENVIO ", idTransaction, position, type, naTransaction, "SE ELIMINA DE LA TABLA DE ADJUNTOS PENDIENTES");
+    return dbServ.executeSql(
+      'DELETE FROM pending_transactions_attachments WHERE id_transaction = ? AND position = ? AND type = ? AND na_transaction = ?;',
+      [idTransaction, position, type, naTransaction]
+    ).then(() => {
+      return true;
+    }).catch(e => {
+      console.error('[AdjuntoService] deletePendingTransactionAttachments error', e);
+      return false;
+    });
   }
 
 }

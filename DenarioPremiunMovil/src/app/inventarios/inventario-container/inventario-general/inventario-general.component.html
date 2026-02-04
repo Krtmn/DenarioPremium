@@ -68,13 +68,13 @@
                 </ion-modal>
             </ion-item>
         </ion-col>
-
+        <!-- COMENTARIO -->
         <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
             <div id="inputComentario" >
-                <ion-textarea label="{{this.inventariosLogicService.inventarioTags.get('INV_COMENTARIO')}}:"
+                <ion-input label="{{this.inventariosLogicService.inventarioTags.get('INV_COMENTARIO')}}:"
                     id="responsable" [(ngModel)]="txComment" #txCommentInput labelPlacement="floating" fill="outline"
                     placeholder="{{this.inventariosLogicService.inventarioTags.get('INV_COMENTARIO')}}:" maxlength="120"
-                    (ngModelChange)="setTXComment()"></ion-textarea>
+                    (ionChange)="setTXComment()"></ion-input>
             </div>
         </ion-col>
         </ion-row>

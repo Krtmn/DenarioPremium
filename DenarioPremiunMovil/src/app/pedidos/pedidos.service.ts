@@ -210,8 +210,13 @@ export class PedidosService {
   public vatExemptProducts!: boolean;
   public userCanChangePriceListProduct!: boolean;
   public disableCurrency: boolean = true;
+  public hideStock0: boolean = false;
+
+  public displayProductPoints = false;
 
   codeTotalProductUnitMessageFlag = false;
+
+   public prodMinMulMap: Map<number, { quMinimum: number; quMultiple: number }> = new Map<number, { quMinimum: number; quMultiple: number }>();
 
   /*  ClientChangeSubscription: Subscription = this.clientSelectorService.ClientChanged.subscribe(client => {    
       this.reset();
@@ -277,7 +282,10 @@ export class PedidosService {
       this.getDistributionChannels(idEnterprise).then(data => { this.distributionChannels = data; });
     }
     if (this.productMinMul) {
-      this.getProductMinMulList(idEnterprise).then(data => { this.listaProdMinMul = data });
+      this.getProductMinMulList(idEnterprise).then(data => { 
+        this.listaProdMinMul = data 
+        this.fillProdMinMulMap();
+      });
     }
     if (this.groupByTotalByLines) {
       this.getProductStructures(idEnterprise).then(data => {
@@ -288,7 +296,16 @@ export class PedidosService {
     }
 
   }
+    fillProdMinMulMap() {
+      this.listaProdMinMul.forEach((value) => {
+        this.prodMinMulMap.set(value.idProduct, 
+          { quMinimum: value.quMinimum, quMultiple: value.quMultiple });
+      });
+    }
 
+  getProdMinMulByProduct(idProduct: number): { quMinimum: number; quMultiple: number } {
+    return this.prodMinMulMap.get(idProduct) || { quMinimum: 1, quMultiple: 1 };
+  }
   getTags() {
     if (this.tags.size > 0) {
       //ya tenemos los tags, no hay que hacer nada.
@@ -347,8 +364,7 @@ export class PedidosService {
     this.userCanSelectProductDiscount = this.config.get("userCanSelectProductDiscount").toLowerCase() === 'true';
     this.showTransactionCurrency = this.config.get("showTransactionCurrency").toLowerCase() === 'true'; //eliminada, se usa currencyModule
     this.validateNuOrder = this.config.get("validateNuOrder").toLowerCase() === 'true';
-    this.userCanSelectGlobalDiscount = this.config.get("userCanSelectGlobalDiscount").toLowerCase() === 'true';
-    this.userCanSelectIVA = this.config.get("userCanSelectIVA").toLowerCase() === 'true';
+    this.userCanSelectGlobalDiscount = this.config.get("userCanSelectGlobalDiscount").toLowerCase() === 'true'; 
     this.selectOrderType = this.config.get("selectOrderType").toLowerCase() === 'true';
     this.userCanSelectChannel = this.config.get("userCanSelectChannel").toLowerCase() === 'true';
     this.validateWarehouses = this.config.get("validateWarehouses").toLowerCase() === 'true';
@@ -365,6 +381,8 @@ export class PedidosService {
     this.disableDaDispatch = this.config.get("disableDaDispatch").toLowerCase() === "true";
     this.currencyModuleEnabled = this.config.get("currencyModule").toLowerCase() === "true";
     this.vatExemptProducts = this.config.get("vatExemptProducts").toLowerCase() === "true";
+    this.displayProductPoints = this.config.get("displayProductPoints").toLowerCase() === "true";
+    
     //string
     this.codeTotalProductUnit = this.config.get("codeTotalProductUnit");
     this.nameProductLine = this.config.get("nameProductLine");
@@ -397,6 +415,15 @@ export class PedidosService {
       //si estan mandando el iva por productos, no tiene sentido que el usuario pueda cambiarlo
       //posiblemente en el futuro se quite el selector de iva (?).
       this.userCanSelectIVA = false;
+    }else{
+      this.userCanSelectIVA = this.config.get("userCanSelectIVA").toLowerCase() === 'true';
+    }
+
+    if(this.stock0){
+      //si puedo tomar productos con stock 0, no tiene sentido ocultarlos
+      this.hideStock0 = false;
+    }else{
+      this.hideStock0 = this.config.get("hideStock0").toLowerCase() === "true";
     }
 
   }
@@ -510,6 +537,7 @@ export class PedidosService {
             console.log('producto ' + item.naProduct + ' no tiene unidad primaria valida ' + prod.coPrimaryUnit);
           }
         };
+        //LISTA DE PRECIOS
         var priceLists: PriceList[] = [];
         var priceListSeleccionado: PriceList = {} as PriceList;
         if (this.userCanChangePriceList && this.userCanChangePriceListProduct) {
@@ -534,6 +562,7 @@ export class PedidosService {
             priceListSeleccionado = priceLists[0];
           }
         };
+        //PRECIO
         var price = 0;
         if (priceListSeleccionado) {
           item.coCurrency = priceListSeleccionado.coCurrency;
@@ -561,6 +590,20 @@ export class PedidosService {
             continue;
           }
         }
+        //FIN LISTA DE PRECIOS
+        //IVA
+        let ivaProducto = 0;
+        let iva = 0;
+        if(this.vatExemptProducts){
+          //el iva viene del producto
+          ivaProducto = price*item.nuTax/100;
+          iva = item.nuTax;
+        }else{
+          //viene de la lista de iva
+          iva = this.ivaList.length > 0 ? this.ivaList[0].priceIva : 0,
+          ivaProducto = price * iva / 100;
+        }
+        //STOCK Y WAREHOUSES
         const stockList = this.listaStock.filter(s => s.idProduct == item.idProduct);
         if (stockList.length < 1) {
           console.log('producto  ' + item.naProduct + ' no tiene stock');
@@ -568,25 +611,26 @@ export class PedidosService {
         };
         var warehouses: Warehouse[] = [];
         var stock = stockList.filter(s => s.idWarehouse == this.cliente.idWarehouse)[0];
-        if (stock == null || stock == undefined) {
+        //si el usuario no puede cambiar el warehouse,
+        //se queda con el del cliente aunque no tenga stock
+        if (this.userCanChangeWarehouse && (stock == null || stock == undefined)) {
           stock = stockList[0];
         }
         var warehouseClient: Warehouse = {} as Warehouse;
         if (this.validateWarehouses) {
-          if(stock.quStock == 0){
-            //si wh no tiene stock, buscamos otro wh con stock          
-            for (let i = 0; i < stockList.length; i++) {
-              const item = stockList[i];
-              if (item.quStock > 0) {
-                stock = item;
-                break;
-              }
-            }
+          if(this.userCanChangeWarehouse && stock.quStock == 0){
+            //si wh no tiene stock, buscamos otro wh con el mayor stock
+            stockList.sort((a, b) => b.quStock - a.quStock);
+            stock = stockList[0];
           }
+
           if (stock.quStock == 0) {
             //ninguno tiene stock
             console.log('stock tiene 0 unidades');
-            //continue;
+            if(this.hideStock0){
+              //si esta variable esta activa, no mostramos productos sin stockcld
+              continue;
+            }
           }
           warehouses = this.listaWarehouse.filter(w => w.idWarehouse == stock.idWarehouse);
 
@@ -606,6 +650,8 @@ export class PedidosService {
           warehouseClient.coWarehouse = '';
           warehouseClient.naWarehouse = '';
         }
+        //FIN WAREHOUSES Y STOCK
+        //MINIMOS Y MULTIPLOS
         let quMultiple = 1;
         let quMinimum = 1;
         if (this.productMinMul) {
@@ -616,6 +662,7 @@ export class PedidosService {
           }
         }
 
+        //DESCUENTOS
         let discountList: Discount[] = [];
         if (priceListSeleccionado.idList != null) {
           discountList = this.listaDiscount.filter(d => d.idProduct == item.idProduct && d.idList == priceListSeleccionado.idList);
@@ -638,6 +685,7 @@ export class PedidosService {
           idEnterprise: 0
         })
 
+        //IMAGENES
         let imagenesProduct = this.imageServices.mapImagesFiles.get(item.coProduct);
         let imagenProduct = '';
         if (imagenesProduct === undefined
@@ -648,6 +696,7 @@ export class PedidosService {
           imagenProduct = imagenesProduct[0];
         }
 
+        //FINALMENTE CREAMOS EL ORDERUTIL
         let ou: OrderUtil = {
           "quAmount": 0,
           "idProduct": item.idProduct,
@@ -660,7 +709,7 @@ export class PedidosService {
           "nuPrice": price,
           "oppositeNuPrice": item.coCurrency == this.currencyService.getLocalCurrency().coCurrency ?
             this.currencyService.toHardCurrency(price) : this.currencyService.toLocalCurrency(price),
-          "discountedNuPrice": 0,
+          "discountedNuPrice": price,
           "quDiscount": 0,
           "coCurrency": coCurrency,
           "oppositeCoCurrency": this.currencyService.oppositeCoCurrency(coCurrency),
@@ -668,8 +717,8 @@ export class PedidosService {
           "quStockAux": stock.quStock,
           "nuAmountDiscount": 0,
           "idDiscount": 0,
-          "iva": this.ivaList.length > 0 ? this.ivaList[0].priceIva : 0,
-          "ivaProducto": 0,
+          "iva": iva,
+          "ivaProducto": ivaProducto,
           "taxedNuPrice": 0,
           "idWarehouse": warehouseClient.idWarehouse,
           "prevWarehouse": warehouseClient.idWarehouse,

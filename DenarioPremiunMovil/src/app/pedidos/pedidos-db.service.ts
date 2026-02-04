@@ -591,7 +591,7 @@ export class PedidosDbService {
     // obtiene la lista de pedidos para mostrarlos en pedidos-lista (para copiar o ver);
     let query = "SELECT id_order, co_order, orders.co_client as co_client, clients.lb_client as lb_client, st_order, st_delivery, da_order " +
       "FROM orders JOIN clients ON orders.id_client = clients.id_client " +
-      "ORDER BY st_order ASC, da_order DESC";
+      "ORDER BY st_delivery DESC, da_order DESC";
 
     return db.executeSql(query, []).then(async data => {
       let orders: ItemListaPedido[] = [];
@@ -713,7 +713,7 @@ export class PedidosDbService {
   }
 
   getOrderTypeProductStructure(db: SQLiteObject, idEnterprise: number) {
-    //busca la relacion OrderType-ProductStructure, para usar en userCanSelectChannel;  
+    //busca la relacion OrderType-ProductStructure, para usar en userCanSelectChannel;
     let query = "select id_order_type_product_structure as idOrderTypeProductStructure, " +
       "co_order_type_product_structure as coOrderTypeProductStructure, id_order_type as idOrderType, " +
       "co_order_type as coOrderType, id_product_structure as idProductStructure, " +
@@ -761,7 +761,7 @@ export class PedidosDbService {
     let query = "select id_product_min_mul as idProductMinMul, co_product as coProduct, " +
       "id_product as idProduct, qu_minimum as quMinimum, qu_multiple as quMultiple, " +
       "flag, co_enterprise as coEnterprise, id_enterprise as idEnterprise " +
-      'from product_min_muls where id_enterprise = ? and (qu_minimum > 1 OR qu_multiple > 1) and flag = "true" ';
+      "from product_min_muls where id_enterprise = ? and (qu_minimum > 1 OR qu_multiple > 1) and flag = 'true'";
 
     return db.executeSql(query, [idEnterprise]).then(data => {
       let list: ProductMinMulFav[] = [];

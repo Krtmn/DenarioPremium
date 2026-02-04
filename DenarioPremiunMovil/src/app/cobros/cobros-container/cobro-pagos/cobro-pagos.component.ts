@@ -36,6 +36,7 @@ export class CobroPagosComponent implements OnInit {
   private __uidCounter = 0;
   private debounceTimers: { [uid: string]: any } = {};
   private debounceDelay = 2000;
+  private ignoreInputMap: { [uid: string]: boolean } = {};
 
 
   public alertButtons = [
@@ -1122,8 +1123,6 @@ export class CobroPagosComponent implements OnInit {
         break
       }
     }
-
-
   }
 
   onFechaChange(value: string, index: number, type: string) {
@@ -1135,6 +1134,9 @@ export class CobroPagosComponent implements OnInit {
   }
 
   private getDecimals(): number {
+    // Prefer global config value if present, fallback to service property, then default 2
+    const fromGlobal = Number.parseInt(String(this.globalConfig.get('parteDecimal') ?? ''), 10);
+    if (Number.isInteger(fromGlobal) && fromGlobal >= 0) return fromGlobal;
     const d = Number(this.collectService?.parteDecimal);
     return Number.isInteger(d) && d >= 0 ? d : 2; // default 2 decimales
   }
@@ -1160,6 +1162,67 @@ export class CobroPagosComponent implements OnInit {
     const cent = (abs % 100).toString().padStart(2, '0');
     const unitsStr = units.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     return `${sign}${unitsStr || '0'},${cent}`;
+  }
+
+  private parsePastedToMinorUnits(raw: string): number {
+    if (!raw || typeof raw !== 'string') return 0;
+    // Remove non-numeric except comma and dot and minus
+    let cleaned = raw.replace(/\s/g, '');
+    // If it contains comma as decimal separator and dot thousands, convert
+    // Normalize: remove thousands dots, convert comma to dot
+    cleaned = cleaned.replace(/\./g, '');
+    cleaned = cleaned.replace(/,/g, '.');
+    // Remove any characters except digits, dot and minus
+    cleaned = cleaned.replace(/[^0-9.-]/g, '');
+    if (cleaned === '' || cleaned === '.' || cleaned === '-' ) return 0;
+    const n = Number(cleaned);
+    if (isNaN(n)) return 0;
+    return Math.round(n * this.getMultiplier());
+  }
+
+  public onMontoInput(event: any, pago: any, index: number, type: string) {
+    // Support Ionic's ionInput and native InputEvent shapes
+    const detail = event?.detail ?? {};
+    const inputEvent = detail?.event ?? event;
+    const data = inputEvent?.data ?? detail?.data ?? null;
+    const inputType = inputEvent?.inputType ?? detail?.inputType ?? null;
+    const value = detail?.value ?? (event?.target?.value ?? '');
+
+    const uid = this.ensureInitFor(pago);
+
+    // If keydown already handled this input, ignore the subsequent input event
+    if (this.ignoreInputMap[uid]) {
+      delete this.ignoreInputMap[uid];
+      return;
+    }
+
+    // Paste or drop
+    if (inputType === 'insertFromPaste' || inputType === 'insertFromDrop') {
+      const minor = this.parsePastedToMinorUnits(String(value));
+      this.centsMap[uid] = minor;
+      this.updateAfterChange(uid, pago, index, type);
+      return;
+    }
+
+    // Single digit insertion
+    if (/^\d$/.test(String(data)) && (inputType === 'insertText' || inputType === 'insertCompositionText' || inputType === null)) {
+      const digit = parseInt(String(data), 10);
+      this.centsMap[uid] = Math.min(999999999999, (this.centsMap[uid] ?? 0) * 10 + digit);
+      this.updateAfterChange(uid, pago, index, type);
+      return;
+    }
+
+    // Backspace / cut
+    if (inputType === 'deleteContentBackward' || inputType === 'deleteByCut') {
+      this.centsMap[uid] = Math.floor((this.centsMap[uid] ?? 0) / 10);
+      this.updateAfterChange(uid, pago, index, type);
+      return;
+    }
+
+    // Fallback: parse the whole field value
+    const minor = this.parsePastedToMinorUnits(String(value));
+    this.centsMap[uid] = minor;
+    this.updateAfterChange(uid, pago, index, type);
   }
 
   // Añade este helper en la clase
@@ -1236,6 +1299,7 @@ export class CobroPagosComponent implements OnInit {
     // Si seleccionan todo y borran -> poner 0
     if ((key === 'Backspace' || key === 'Delete') && hasSelection) {
       this.centsMap[uid] = 0;
+      this.ignoreInputMap[uid] = true;
       this.updateAfterChange(uid, pago, index, type);
       event.preventDefault();
       return;
@@ -1244,6 +1308,7 @@ export class CobroPagosComponent implements OnInit {
     if (key === 'Delete') {
       // borra último dígito (derecha)
       this.centsMap[uid] = Math.floor((this.centsMap[uid] ?? 0) / 10);
+      this.ignoreInputMap[uid] = true;
       this.updateAfterChange(uid, pago, index, type);
       event.preventDefault();
       return;
@@ -1253,6 +1318,7 @@ export class CobroPagosComponent implements OnInit {
       const digit = parseInt(key, 10);
       // desplaza y añade dígito en unidades menores (funciona para cualquier parteDecimal)
       this.centsMap[uid] = Math.min(999999999999, (this.centsMap[uid] ?? 0) * 10 + digit);
+      this.ignoreInputMap[uid] = true;
       this.updateAfterChange(uid, pago, index, type);
       event.preventDefault();
       return;
@@ -1260,6 +1326,7 @@ export class CobroPagosComponent implements OnInit {
 
     if (key === 'Backspace') {
       this.centsMap[uid] = Math.floor((this.centsMap[uid] ?? 0) / 10);
+      this.ignoreInputMap[uid] = true;
       this.updateAfterChange(uid, pago, index, type);
       event.preventDefault();
       return;

@@ -113,7 +113,7 @@ INSERT INTO public.application_tags(
 	('PED_ELIMINAR_PEDIDO', 'PED', 'PEDIDOS', 'ESP', '¿Seguro que quieres eliminar este pedido?'),
 	('PED_ERROR_INVENTARIO', 'PED', 'PEDIDOS', 'ESP', 'Debe ingresar un valor menor o igual al inventario.'),
 	('PED_ERROR_STOCK0', 'PED', 'PEDIDOS', 'ESP', 'No se puede agregar productos sin inventario'),
-	('PED_CHECK_CLIENTE', 'PED', 'PEDIDOS', 'ESP', 'El campo de cliente no puede estar vacio'),
+	('PED_CHECK_CLIENTE', 'PED', 'PEDIDOS', 'ESP', 'Cliente no puede estar vacío'),
 	('PED_AVISO_GUARDADO', 'PED', 'PEDIDOS', 'ESP', 'Pedido Guardado'),
 	('PED_AVISO_COPIADO', 'PED', 'PEDIDOS', 'ESP', 'Pedido Copiado Exitosamente'),
 	('PED_PREGUNTA_GUARDADO', 'PED', 'PEDIDOS', 'ESP', '¿Desea Enviar el pedido?'),
@@ -131,7 +131,8 @@ INSERT INTO public.application_tags(
 	('PED_CARRITO', 'PED', 'PEDIDOS', 'ESP', 'Carrito'),
 	('PED_TOTAL_UNIDAD_NO_ENCONTRADA', 'PED', 'PEDIDOS', 'ESP', 'Algunos productos no poseen la Unidad Seleccionada.'),
 	('PED_ALERTA_INVENTARIO', 'PED', 'PEDIDOS', 'ESP', 'Este producto no tiene inventario. Verifique antes de enviar pedido.'),
-	('PED_CERRAR', 'PED', 'PEDIDOS', 'ESP', 'CERRAR');
+	('PED_CERRAR', 'PED', 'PEDIDOS', 'ESP', 'CERRAR'),
+	('PED_PRECIO+IVA', 'PED', 'PEDIDOS', 'ESP', 'Precio + IVA');
 
 
 DELETE FROM public.application_tags WHERE co_module = 'CLI';

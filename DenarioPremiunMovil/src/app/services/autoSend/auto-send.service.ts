@@ -1,8 +1,8 @@
 import { Injectable, OnInit, inject } from '@angular/core';
-import { Observable, Subject, map, finalize, concatMap, timer } from 'rxjs';
+import { Observable, Subject, map, finalize, concatMap, timer, from } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-
+import { CapacitorHttp, HttpOptions, HttpResponse, HttpHeaders } from '@capacitor/core';
 
 import { PendingTransaction } from 'src/app/modelos/tables/pendingTransactions';
 import { SynchronizationDBService } from '../synchronization/synchronization-db.service';
@@ -11,7 +11,7 @@ import { ServicesService } from '../services.service';
 import { MessageService } from '../messageService/message.service';
 import { Response } from 'src/app/modelos/response';
 import { Visit } from 'src/app/modelos/tables/visit';
-import { DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED, CLIENT_POTENTIAL_STATUS_SENT, COLLECT_STATUS_NEW, COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND } from 'src/app/utils/appConstants'
+import { DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED, CLIENT_POTENTIAL_STATUS_SENT, COLLECT_STATUS_NEW, COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, DEPOSITO_STATUS_SENT } from 'src/app/utils/appConstants'
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { UserAddresClients } from 'src/app/modelos/tables/userAddresClients';
 import { ClientLocationService } from '../clientes/locationClient/client-location.service';
@@ -34,6 +34,7 @@ import { PedidosService } from 'src/app/pedidos/pedidos.service';
 import { DocumentSale } from 'src/app/modelos/tables/documentSale';
 import { Request } from 'src/app/modelos/request';
 import { PotentialClient } from 'src/app/modelos/tables/potentialClient';
+import { PendingTransactionsAttachments } from 'src/app/modelos/tables/pendingTransactionsAttachments';
 
 @Injectable({
   providedIn: 'root'
@@ -45,6 +46,7 @@ export class AutoSendService implements OnInit {
   public funcObsQueue = new Subject<() => Observable<any>>();
   public funcObsQueueCount = 1;
   public pendingTransaction!: PendingTransaction[];
+  public pendingTransactionsAttachments!: PendingTransactionsAttachments[];
   public messageAlert!: MessageAlert;
   private potentialClientServices = inject(PotentialClientDatabaseServicesService)
   private locationServices = inject(ClientLocationService)
@@ -65,7 +67,6 @@ export class AutoSendService implements OnInit {
     private router: Router,
     private adjuntoService: AdjuntoService,
     private returnDatabaseService: ReturnDatabaseService
-
   ) {
     //this.process();
 
@@ -80,15 +81,6 @@ export class AutoSendService implements OnInit {
         this.rolTransportista = false;
       }
     }
-
-    this.getPendingTransaction().then((result) => {
-      this.pendingTransaction = result;
-      if (this.pendingTransaction.length > 0) {
-        this.funcObsQueueCount = this.pendingTransaction.length;
-        /* this.process(this.pendingTransaction) */
-        this.initTransaction(this.pendingTransaction);
-      }
-    })
   }
 
   ngOnInit(): void {
@@ -98,6 +90,21 @@ export class AutoSendService implements OnInit {
         this.funcObsQueueCount = this.pendingTransaction.length;
         /* this.process(this.pendingTransaction) */
         this.initTransaction(this.pendingTransaction);
+      }
+    })
+    this.getPendingTransactionsAttachments().then((result) => {
+      console.log("PendingTransactionsAttachments", result);
+      this.pendingTransactionsAttachments = result;
+      if (this.pendingTransactionsAttachments.length > 0) {
+        // actualizar en memoria la propiedad `cantidad` con el total por coTransaction
+        const counts = new Map<string, number>();
+        this.pendingTransactionsAttachments.forEach(att => {
+          counts.set(att.coTransaction, (counts.get(att.coTransaction) ?? 0) + 1);
+        });
+        this.pendingTransactionsAttachments.forEach(att => {
+          att.cantidad = counts.get(att.coTransaction) ?? 0;
+        });
+        this.adjuntoService.sendPendingPhotos(this.dbService.getDatabase(), this.pendingTransactionsAttachments);
       }
     })
   }
@@ -130,6 +137,29 @@ export class AutoSendService implements OnInit {
     }).catch(e => {
       console.log(e);
       return pendingTransaction;
+    })
+  }
+
+  private getPendingTransactionsAttachments() {
+    let pendingTransactionsAttachments: PendingTransactionsAttachments[] = [];
+    return this.dbService.getDatabase().executeSql(
+      'SELECT * FROM pending_transactions_attachments WHERE id_transaction <> 0;', [
+    ]).then(res => {
+      for (var i = 0; i < res.rows.length; i++) {
+        pendingTransactionsAttachments.push({
+          naAttachment: res.rows.item(i).na_attachment,
+          idTransaction: res.rows.item(i).id_transaction,
+          coTransaction: res.rows.item(i).co_transaction,
+          type: res.rows.item(i).type,
+          naTransaction: res.rows.item(i).na_transaction,
+          position: res.rows.item(i).position,
+          cantidad: 0
+        })
+      }
+      return pendingTransactionsAttachments;
+    }).catch(e => {
+      console.log(e);
+      return pendingTransactionsAttachments;
     })
   }
 
@@ -186,13 +216,21 @@ export class AutoSendService implements OnInit {
 
             } else if (coType === 2) {
               this.collectionService.getCollectionDetails(this.dbService.getDatabase(), coTransaction).then((collectionDetails) => {
-                request.collection!.collectionDetails = collectionDetails;
+                request.collection!.collectionDetails = collectionDetails.map(detail => ({
+                  ...detail,
+                  nuBalanceDoc: detail.nuBalanceDocOriginal,
+                  nuBalanceDocConversion: detail.nuBalanceDocOriginalConversion,
+                }));
                 request.collection!.collectionPayments = [];
                 resolve("ok");
               })
             } else {
               this.collectionService.getCollectionDetails(this.dbService.getDatabase(), coTransaction).then((collectionDetails) => {
-                request.collection!.collectionDetails = collectionDetails;
+                request.collection!.collectionDetails = collectionDetails.map(detail => ({
+                  ...detail,
+                  nuBalanceDoc: detail.nuBalanceDocOriginal,
+                  nuBalanceDocConversion: detail.nuBalanceDocOriginalConversion,
+                }));
                 this.collectionService.getCollectionDetailsDiscounts(this.dbService.getDatabase(), coTransaction).then((collectionDetailsDiscounts) => {
                   const all = collectionDetailsDiscounts || [];
                   const isDiscount = (x: any): x is any => x && (x.idCollectDiscount !== undefined || x.nuCollectDiscount !== undefined);
@@ -200,7 +238,7 @@ export class AutoSendService implements OnInit {
                   for (let i = 0; i < request.collection!.collectionDetails.length; i++) {
                     const detail = request.collection!.collectionDetails[i] as any;
                     // Añadir/normalizar la propiedad donde se guardarán los descuentos del detalle
-                    detail.collectionDetailDiscounts = discounts.filter(d => d.coCollection === detail.coCollection) ?? [];
+                    detail.collectionDetailDiscounts = discounts.filter(d => d.coDocument === detail.coDocument) ?? [];
                   }
                   this.collectionService.getCollectionPayments(this.dbService.getDatabase(), coTransaction).then((collectionPayments) => {
                     request.collection!.collectionPayments = collectionPayments;
@@ -225,23 +263,21 @@ export class AutoSendService implements OnInit {
             switch (coType) {
               // coType 0, 3, 4 => ambos arrays NO deben estar vacíos
               case 0:
-              case 3:
-              case 4:
-                if (payments.length === 0 || details.length === 0) {
-                  send = false;
-                }
-                break;
-
               // coType 1 => collectionPayments NO debe estar vacío
               case 1:
                 if (payments.length === 0) {
                   send = false;
                 }
                 break;
-
               // coType 2 => collectionDetails NO debe estar vacío
               case 2:
                 if (details.length === 0) {
+                  send = false;
+                }
+                break;
+              case 3:
+              case 4:
+                if (payments.length === 0 || details.length === 0) {
                   send = false;
                 }
                 break;
@@ -474,7 +510,7 @@ export class AutoSendService implements OnInit {
       this.callService(request, type, coTransaction).subscribe({
         next: (result) => {
           console.log(result);
-          if (result.errorCode == "000") {
+          if (result && result.errorCode == "000") {
             this.messageAlert = new MessageAlert(
               "Denario Premium",
               result.errorMessage
@@ -520,7 +556,7 @@ export class AutoSendService implements OnInit {
 
             this.deletePendingTransaction(result.coTransaction, result.type)
           }
-          if (result.errorCode == "066") {
+          if (result && result.errorCode == "066") {
             //que se baje de la mula, nojoda!
             this.messageAlert = new MessageAlert(
               "Denario Premium",
@@ -585,18 +621,25 @@ export class AutoSendService implements OnInit {
       default:
         break;
     }
-    return this.http.post<Response>(url, request,
-      this.services.getHttpOptionsAuthorization())
+    let opt = this.services.getHttpOptionsAuthorization();
+    opt.url = url;
+    opt.data = request;
+
+    return from(CapacitorHttp.post(opt))
       .pipe(
         map(resp => {
-          resp.coTransaction = coTransaction;
-          resp.type = type;
-          return resp;
+          resp.data.coTransaction = coTransaction;
+          resp.data.type = type;
+          return resp.data;
         })
       );
   }
 
-  updateTransaction(coTransaction: string, idTransaction: number, type: string) {
+  async updateTransaction(coTransaction: string, idTransaction: number, type: string) {
+
+    const updatePendingTransactionsAttachments = 'UPDATE pending_transactions_attachments SET id_transaction = ? WHERE co_transaction = ?';
+    await this.dbService.getDatabase().executeSql(updatePendingTransactionsAttachments, [idTransaction, coTransaction])
+
     switch (type) {
       case 'potentialClient': {
         this.dbService.getDatabase()!.executeSql(
@@ -604,9 +647,7 @@ export class AutoSendService implements OnInit {
           [idTransaction, CLIENT_POTENTIAL_STATUS_SENT, coTransaction]
         ).then(res => {
           console.log("UPDATE EXITOSO ", res);
-
           this.adjuntoService.sendPhotos(this.dbService.getDatabase(), idTransaction, "clientes", coTransaction);
-
         }).catch(e => {
           console.log("UPDATE NO EXITOSO ", e);
         })
@@ -624,14 +665,16 @@ export class AutoSendService implements OnInit {
         });
 
         this.dbService.getDatabase().executeSql(
-          'UPDATE visits SET id_visit = ? , st_visit = ? WHERE co_visit = ?', [idTransaction, VISIT_STATUS_VISITED, coTransaction]
-        )
+          'UPDATE visits SET id_visit = ?, st_visit = ? WHERE co_visit = ?', [idTransaction, VISIT_STATUS_VISITED, coTransaction]
+        ).catch(e => {
+          console.log("UPDATE NO EXITOSO ", e);
+        });
         break;
       }
 
       case 'order':
         this.dbService.getDatabase().executeSql(
-          'UPDATE orders SET id_order = ? , st_delivery = ? WHERE co_order = ?', [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
+          'UPDATE orders SET id_order = ?, st_delivery = ? WHERE co_order = ?', [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
         ).then(res => {
           this.adjuntoService.sendPhotos(this.dbService.getDatabase(), idTransaction, "pedidos", coTransaction);
         })
@@ -652,7 +695,7 @@ export class AutoSendService implements OnInit {
       case 'return': {
         this.dbService.getDatabase().executeSql(
           'UPDATE returns SET id_return = ?, st_delivery = ? WHERE co_return = ?',
-          [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
+          [idTransaction, 1, coTransaction]
         ).then(res => {
           console.log("UPDATE EXITOSO ", res);
 
@@ -667,7 +710,7 @@ export class AutoSendService implements OnInit {
       case 'clientStock': {
         this.dbService.getDatabase().executeSql(
           'UPDATE client_stocks SET id_client_stock = ?, st_delivery = ? WHERE co_client_stock = ?',
-          [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
+          [idTransaction, 1, coTransaction]
         ).then(res => {
           console.log("UPDATE EXITOSO ", res);
           this.adjuntoService.sendPhotos(this.dbService.getDatabase(), idTransaction, "inventarios", coTransaction);
@@ -679,7 +722,7 @@ export class AutoSendService implements OnInit {
 
       case 'collect': {
         this.dbService.getDatabase().executeSql(
-          'UPDATE collections SET id_collection= ?, st_collection= ?, st_delivery = 3 WHERE co_collection = ?',
+          'UPDATE collections SET id_collection= ?, st_collection= ?, st_delivery = 1 WHERE co_collection = ?',
           [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
         ).then(res => {
           console.log("UPDATE EXITOSO ", res);
@@ -691,8 +734,8 @@ export class AutoSendService implements OnInit {
       }
       case 'deposit': {
         this.dbService.getDatabase().executeSql(
-          'UPDATE deposits SET id_deposit= ?, st_deposit= ? WHERE co_deposit= ?',
-          [idTransaction, DELIVERY_STATUS_SENT, coTransaction]
+          'UPDATE deposits SET id_deposit= ?, st_deposit= ?, st_delivery = ? WHERE co_deposit= ?',
+          [idTransaction, DEPOSITO_STATUS_SENT, 1, coTransaction]
         ).then(res => {
           console.log("UPDATE EXITOSO ", res);
           //this.adjuntoService.sendPhotos(idTransaction, "deposit", coTransaction);

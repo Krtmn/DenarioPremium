@@ -32,7 +32,7 @@
                   Monto {{deposit.coCurrency}}: {{deposit.nuAmountDoc}}
                 </p>
               </ion-label>
-              <ion-button *ngIf="deposit.stDeposit === 1" (click)="showAlertDelete(deposit,i)" color="danger">
+              <ion-button *ngIf="deposit.stDelivery === 3" (click)="showAlertDelete(deposit,i)" color="danger">
                 <ion-icon slot="icon-only" name="trash"> </ion-icon>
               </ion-button>
 

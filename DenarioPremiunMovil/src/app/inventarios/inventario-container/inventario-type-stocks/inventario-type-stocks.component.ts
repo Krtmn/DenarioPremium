@@ -45,7 +45,7 @@ export class InventarioTypeStocksComponent implements OnInit {
     this.inventariosLogicService.typeExh = false;
     this.inventariosLogicService.typeDep = false;
 
-    //ELIMINO TODOS LOS REGISTROS DE ESE PRODUCTO     
+    //ELIMINO TODOS LOS REGISTROS DE ESE PRODUCTO
 
     let indexClientStockDetail = this.inventariosLogicService.productTypeStocksMap.get(this.inventariosLogicService.productSelected.idProduct)
     if (this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!] != undefined) {
@@ -260,12 +260,12 @@ export class InventarioTypeStocksComponent implements OnInit {
       return;
     }
     let length = 0
-        for (var i = 0; i < this.inventariosLogicService.typeStocks.length; i++) {
-          if (this.inventariosLogicService.typeStocks[i].idProduct == idP) {
-            length++;
-          }
-        }
-        length--;
+    for (var i = 0; i < this.inventariosLogicService.typeStocks.length; i++) {
+      if (this.inventariosLogicService.typeStocks[i].idProduct == idP) {
+        length++;
+      }
+    }
+    length--;
     this.inventariosLogicService.typeStocks[indexType].validateLote = true;
     this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits[length].nuBatch = lote.target.value;
 
@@ -312,6 +312,12 @@ export class InventarioTypeStocksComponent implements OnInit {
         }
         //this.setExistCantidad(cantidad.target.value, indexProduct, indexType, type);
       }
+
+      if (!this.expirationBatch) {
+        this.inventariosLogicService.onStockValidToSend(true);
+        this.inventariosLogicService.onStockValidToSave(true);
+      }
+
 
     } else {
       //NO PUEDE COLOCAR CANTIDAD MENOR A 0

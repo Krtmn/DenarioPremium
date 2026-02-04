@@ -83,7 +83,7 @@ export class CobrosGeneralComponent implements OnInit {
   // True cuando el cobro ya fue enviado/por enviar o status 6
   get isSentDelivery(): boolean {
     const st = Number(this.collectService?.collection?.stDelivery);
-    return st === this.COLLECT_STATUS_TO_SEND || st === this.COLLECT_STATUS_SENT || st === 6;
+    return st === this.COLLECT_STATUS_TO_SEND || st === 1 || st === 6;
   }
 
   public alertButtons = [
@@ -98,7 +98,7 @@ export class CobrosGeneralComponent implements OnInit {
 
   ngOnInit() {
 
-    if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stDelivery == 6) {
+    if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == 1 || this.collectService.collection.stDelivery == 6) {
       //ES UN COBRO ENVIADO, NO DEBO HACER NADA, SOLO MOSTRAR LA DATA
       this.setSendedCollection();
     } else {
@@ -137,6 +137,8 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.montoTotalPagadoConversion = this.collectService.collection.nuAmountTotalConversion;
 
     this.initializeCurrenciesAndRates();
+    this.collectService.loadPaymentMethods();
+    this.loadPayments();
     this.clientService.getClientById(this.collectService.collection.idClient).then(client => {
       this.collectService.client = client;
       this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", true, COLOR_VERDE);
@@ -176,10 +178,10 @@ export class CobrosGeneralComponent implements OnInit {
     //this.collectService.disabledCurrency = true;
     this.collectService.cobroValid = true;
 
-    if (Number(this.collectService.collection.stDelivery) > this.COLLECT_STATUS_SAVED) {
-      this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", true, COLOR_VERDE);
+    if (Number(this.collectService.collection.stDelivery) == 3) {
+      this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", false, COLOR_VERDE);
       this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, 'cobros');
-      if (Number(this.collectService.collection.stDelivery) === this.COLLECT_STATUS_SENT)
+      if (Number(this.collectService.collection.stDelivery) === 1)
         this.collectService.onCollectionValid(true);
     }
 
@@ -348,7 +350,7 @@ export class CobrosGeneralComponent implements OnInit {
     const bankAccounts = this.collectService.listBankAccounts;
     for (let i = 0; i < payments.length; i++) {
       const payment = payments[i];
-      switch (payment.coType) {
+      switch (payment.coPaymentMethod) {
         case 'ef': {
           const newPagoEfectivo: PagoEfectivo = {
             monto: payment.nuAmountPartial,
@@ -631,7 +633,7 @@ export class CobrosGeneralComponent implements OnInit {
     //SE BUSCA LA MONEDA
     this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise).then(r => {
 
-      if (this.collectService.collection.stDelivery === this.COLLECT_STATUS_SENT) {
+      if (this.collectService.collection.stDelivery === 1) {
         this.collectService.rateSelected = this.collectService.collection.nuValueLocal;
         this.collectService.historicoTasa = true;
       } else if (this.collectService.historicoTasa) {
@@ -1007,7 +1009,7 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   onOpenCalendar() {
-    if (this.collectService.collection.stDelivery != this.COLLECT_STATUS_TO_SEND && this.collectService.collection.stDelivery != this.COLLECT_STATUS_SENT) {
+    if (this.collectService.collection.stDelivery != this.COLLECT_STATUS_TO_SEND && this.collectService.collection.stDelivery != 1) {
       this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual.split("T")[0]);
       this.collectService.calculatePayment("", 0);
     }
@@ -1123,7 +1125,7 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   bottonDateRateLabel() {
-    if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT) {
+    if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == 1) {
       // normalizar a formato con espacio en vez de 'T'
       if (this.collectService.collection.daRate) {
         this.collectService.dateRateVisual = this.collectService.collection.daRate.replace('T', ' ');

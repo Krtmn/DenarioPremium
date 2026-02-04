@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { NavController, Platform } from '@ionic/angular';
-import { of, Observable, Subscription } from 'rxjs';
+import { of, Observable, Subscription, from } from 'rxjs';
 import { SynchronizationDBService } from '../services/synchronization/synchronization-db.service';
 import { ServicesService } from '../services/services.service';
 import { TablesLastUpdate } from '../modelos/tables/tables-lastUpdate';
@@ -684,6 +684,15 @@ export class SynchronizationComponent implements OnInit {
         this.BUFF = 1 / this.N;
       }
 
+      ///DEFINIR QUE TABLAS LLEVA EL ROL CLIENTE
+      if (this.user.cliente) {
+        const tablasCliente = [1, 3, 5, 7, 8, 13, 15, 23, 25, 32, 34, 35, 37, 39, 42, 43, 44, 46, 50, 52, 53, 54, 55, 60, 61, 62, 63, 64, 69, 70, 71, 72, 72, 74]; // ejemplo, ajusta según tu lógica
+        this.tableKeyOrder = this.tableKeyOrder.filter(id => tablasCliente.includes(id));
+        this.N = Object.keys(this.tableKeyMap).length;
+        this.PROGRESS = 1 / this.N;
+        this.BUFF = 1 / this.N;
+      }
+
       const tableId = this.tableKeyOrder[this.currentTableIndex];
       const key = this.tableKeyMap[tableId];
 
@@ -709,9 +718,9 @@ export class SynchronizationComponent implements OnInit {
           // Muestra el nombre amigable de la tabla que se está sincronizando
           this.synchronizationServices.tablaSincronizando = `- ${this.tableLabelMap[key] || key}`;
 
-          this.services.getSync(JSON.stringify(tabla)).subscribe({
+          from(this.services.getSync(JSON.stringify(tabla))).subscribe({
             next: (result) => {
-              const resTable = (result as any)[rowKey];
+              const resTable = (result.data as any)[rowKey];
               const sqlInfo = this.sqlTableMap[key];
 
               if (!resTable) {
@@ -733,7 +742,7 @@ export class SynchronizationComponent implements OnInit {
                 });
               } else if (resTable.row != null) {
                 // 3. Si hay datos, inserta y sigue
-                this.insertTable(key, result).then(response => {
+                this.insertTable(key, result.data).then(response => {
                   if (response) {
                     this.syncNextTable(response);
                   } else if (resTable.numberOfPages == resTable.page) {

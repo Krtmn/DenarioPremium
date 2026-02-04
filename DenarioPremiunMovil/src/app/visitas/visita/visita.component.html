@@ -158,12 +158,15 @@
 
       </ion-card-header>
       <ion-card-content>
-        <ion-list *ngFor="let event of listaEventos">
+        @for(event of listaEventos; track event){
+        <ion-list>
           <div>
             <ion-item button="{{!viewOnly}}" detail="false">
               <ion-label (click)="editEvent(event)">
                 <p>{{ getTag("VIS_ACTIVIDAD") }}:&nbsp;{{ event.actividad.naType }}</p>
-                <p *ngIf="actividadRequiereEvento"> {{ getTag("VIS_EVENTO") }}:&nbsp;{{ event.evento.naMotive}} </p>
+                @if(actividadRequiereEvento || (event.evento.naMotive != null && event.evento.naMotive.length > 0)){
+                <p> {{ getTag("VIS_EVENTO") }}:&nbsp;{{ event.evento.naMotive}} </p>
+                }
                 <p>{{ getTag("VIS_OBSERVACION") }}:&nbsp;{{ event.comentario }}</p>
               </ion-label>
               <ion-button (click)="deleteEvent(event)" color="danger" *ngIf="!viewOnly">
@@ -173,6 +176,7 @@
             </ion-item>
           </div>
         </ion-list>
+      }
       </ion-card-content>
       <!--Segunda card: modal de  seleccionar evento -->
       <ion-modal [isOpen]="showEventModal" id="eventModal" size="cover"

@@ -15,6 +15,7 @@ import { CollectDeposit } from 'src/app/modelos/collect-deposit';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { ItemListaDepositos } from 'src/app/depositos/item-lista-depositos';
 import { DEPOSITO_STATUS_NEW, DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { Return } from 'src/app/modelos/tables/return';
 
 @Injectable({
   providedIn: 'root'
@@ -205,6 +206,7 @@ export class DepositService {
         nuValueLocal: 0,
         idCurrency: 0,
         stDeposit: DEPOSITO_STATUS_NEW,
+        stDelivery: DEPOSITO_STATUS_NEW,
         isEdit: true,
         isEditTotal: false,
         isSave: false,
@@ -315,6 +317,7 @@ export class DepositService {
       nuValueLocal: 0,
       idCurrency: 0,
       stDeposit: 0,
+      stDelivery: 0,
       isEdit: true,
       isEditTotal: false,
       isSave: false,
@@ -471,6 +474,7 @@ export class DepositService {
         this.cobrosDetails = [] as CollectDeposit[];
         for (var i = 0; i < data.rows.length; i++) {
           const item = data.rows.item(i);
+          item.da_collection = this.normalizeDaDeposit(item.da_collection)
           this.cobrosDetails.push(item);
         }
         return Promise.resolve(data.rows);
@@ -512,6 +516,7 @@ export class DepositService {
       [coCurrency]).then(data => {
         for (var i = 0; i < data.rows.length; i++) {
           const item = data.rows.item(i);
+          item.da_collection = this.normalizeDaDeposit(item.da_collection)
           this.cobrosDetails.push(item);
         }
         return Promise.resolve(data.rows);
@@ -519,6 +524,24 @@ export class DepositService {
         console.log(e);
       })
   }
+
+   deleteDepositsBatch(dbServ: SQLiteObject, deposits: Deposit[]) {
+      let queries: any[] = [];
+      const deleteStatement = "DELETE FROM deposits WHERE co_deposit = ?";
+      const deleteDetailsStatement = "DELETE FROM deposit_collects WHERE co_deposit = ?";
+
+      for (let i = 0; i < deposits.length; i++) {
+        let coDeposit = deposits[i].coDeposit;
+        queries.push([deleteDetailsStatement, [coDeposit]]);
+        queries.push([deleteStatement, [coDeposit]]);
+      }
+      return dbServ.sqlBatch(queries).then(() => {
+        console.log("[Deposit Service] deleteDepositsBatch exitoso");
+      }).catch(error => {
+        console.log("[Deposit Service] Error al ejecutar deleteDepositsBatch.");
+        console.log(error);
+      });
+    }
 
   async saveDepositBatch(dbServ: SQLiteObject, deposits: Deposit[]) {
     this.database = dbServ;
@@ -536,13 +559,14 @@ export class DepositService {
       'id_enterprise, ' +
       'co_enterprise, ' +
       'st_deposit, ' +
+      'st_delivery, ' +
       'tx_comment, ' +
       'nu_amount_doc_conversion, ' +
       'nu_value_local, ' +
       'id_currency,' +
       'coordenada' +
       ') VALUES (' +
-      '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+      '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
 
     const insertDepositCollect = 'INSERT OR REPLACE INTO deposit_collects (' +
       'id_deposit_collect,' +
@@ -577,6 +601,7 @@ export class DepositService {
         deposit.idEnterprise,
         deposit.coEnterprise,
         deposit.stDeposit,
+        deposit.stDelivery,
         deposit.txComment,
         deposit.nuAmountDocConversion,
         deposit.nuValueLocal,
@@ -630,6 +655,11 @@ export class DepositService {
   }
 
   saveDeposit(dbServ: SQLiteObject, deposit: Deposit) {
+    let deleteStatementDeposit = 'DELETE FROM deposits WHERE co_deposit = ?';
+    let deleteStatementDepositCollect = 'DELETE FROM deposit_collects WHERE co_deposit = ?';
+    this.database.executeSql(deleteStatementDepositCollect, [deposit.coDeposit]);
+    this.database.executeSql(deleteStatementDeposit, [deposit.coDeposit]);
+
     this.database = dbServ
     let insertStatement = 'INSERT OR REPLACE INTO deposits (' +
       'id_deposit,' +
@@ -644,13 +674,14 @@ export class DepositService {
       'id_enterprise, ' +
       'co_enterprise, ' +
       'st_deposit, ' +
+      'st_delivery, ' +
       'tx_comment, ' +
       'nu_amount_doc_conversion, ' +
       'nu_value_local, ' +
       'id_currency,' +
       'coordenada' +
       ') VALUES (' +
-      '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+      '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
     return this.database.executeSql(insertStatement,
       [
         0,
@@ -665,6 +696,7 @@ export class DepositService {
         deposit.idEnterprise,
         deposit.coEnterprise,
         deposit.stDeposit,
+        deposit.stDelivery,
         deposit.txComment,
         deposit.nuAmountDocConversion,
         deposit.nuValueLocal,
@@ -736,6 +768,7 @@ export class DepositService {
         deposit.nuValueLocal = res.rows.item(0).nu_value_local;
         deposit.idCurrency = res.rows.item(0).id_currency;
         deposit.stDeposit = res.rows.item(0).st_deposit;
+        deposit.stDelivery = res.rows.item(0).st_delivery;
         deposit.isEdit = false;
         deposit.isEditTotal = false;
         deposit.isSave = false;
@@ -772,10 +805,10 @@ export class DepositService {
       this.cobrosDetails = [] as CollectDeposit[];
       for (var i = 0; i < res.rows.length; i++) {
         item = res.rows.item(i)
-        item.isSelected = this.deposit.stDeposit >= 2 ? true : false;
+        item.isSelected = this.deposit.stDelivery == this.DEPOSITO_STATUS_SAVED || this.deposit.stDelivery == this.DEPOSITO_STATUS_SENT  || this.deposit.stDelivery == null ? true : false;
+        item.da_collection = this.normalizeDaDeposit(item.da_collection)
         this.cobrosDetails.push(item);
       }
-
       return this.deposit;
     }).catch(e => {
       this.deposit.depositCollect = [] as DepositCollect[];
@@ -819,11 +852,12 @@ export class DepositService {
       'id_enterprise as idEnterprise,' +
       'co_enterprise as coEnterprise,' +
       'st_deposit as stDeposit,' +
+      'st_delivery as stDelivery,' +
       'tx_comment as txComment,' +
       'nu_value_local as nuValueLocal,' +
       'nu_amount_doc as nuAmountDoc, ' +
       'coordenada as coordenada ' +
-      'FROM deposits', []).then(async res => {
+      'FROM deposits ORDER BY st_delivery DESC, da_deposit DESC, st_deposit ASC, id_deposit DESC ', []).then(async res => {
         let promises: Promise<void>[] = [];
 
         this.listDeposits = [] as Deposit[];
@@ -834,17 +868,19 @@ export class DepositService {
           this.listDeposits.push(item);
           let p = this.historyTransaction.getStatusTransaction(dbServ, 6, item.idDeposit!).then(status => {
 
-            item.stDelivery == null ? 0 : item.stDelivery;
-            item.stDeposit == this.DEPOSITO_STATUS_SAVED ? status = 'Guardado' : status;
-            item.stDeposit == this.DEPOSITO_STATUS_TO_SEND ? status = 'Por Enviar' : status;
 
+            item.stDelivery == null ? 0 : item.stDelivery;
+            if (item.idDeposit == 0) {
+              item.stDeposit == this.DEPOSITO_STATUS_SAVED ? status = 'Guardado' : status;
+              item.stDeposit == this.DEPOSITO_STATUS_TO_SEND ? status = 'Por Enviar' : status;
+            }
 
             const itemListaDeposit: ItemListaDepositos = {
               idDeposit: item.idDeposit ?? 0,
               coDeposit: item.coDeposit,
               stDeposit: item.stDeposit,
               stDelivery: item.stDelivery,
-              daDeposit: item.daDeposit,
+              daDeposit: this.normalizeDaDeposit(item.daDeposit),
               naStatus: status,
               nuAmountDoc: item.nuAmountDoc.toFixed(this.parteDecimal),
               coCurrency: item.coCurrency,
@@ -891,6 +927,30 @@ export class DepositService {
 
   getCurrencyConversion(coCurrency: string) {
     this.currencyConversion = this.currencyServices.getOppositeCurrency(coCurrency);
+  }
+
+  private normalizeDaDeposit(value: string): string {
+    if (!value) {
+      return value;
+    }
+
+    // Formato esperado: YYYY-MM-DD HH:mm:ss
+    // Si viene como ISO con zona: YYYY-MM-DDTHH:mm:ss.sss+00:00
+    if (value.includes('T')) {
+      return value.substring(0, 19).replace('T', ' ');
+    }
+
+    // Si solo trae fecha, agrega hora
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return `${value} 00:00:00`;
+    }
+
+    // Si trae minutos sin segundos, agrega segundos
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(value)) {
+      return `${value}:00`;
+    }
+
+    return value;
   }
 
 }

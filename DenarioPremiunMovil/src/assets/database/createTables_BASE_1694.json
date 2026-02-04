@@ -397,14 +397,14 @@
     "name": "collections",
     "table": "collections",
     "idName": "id_collection",
-    "sql": "CREATE TABLE IF NOT EXISTS collections (local_id INTEGER PRIMARY KEY AUTOINCREMENT, id_collection INTEGER NOT_NULL, co_collection VARCHAR(30), co_original_collection VARCHAR(30), id_client INTEGER NOT NULL, co_client VARCHAR(30) NOT NULL, lb_client VARCHAR(80), st_collection NUMERIC(1,0), da_collection TIMESTAMP, da_rate TIMESTAMP, na_responsible VARCHAR(30), id_enterprise INTEGER, co_enterprise VARCHAR(30), nu_amount_total NUMERIC(10,10), co_currency VARCHAR(30), co_type INTEGER, tx_comment VARCHAR(500), coordenada VARCHAR(50), nu_value_local NUMERIC, id_currency INTEGER, nu_difference NUMERIC(10,10), tx_conversion VARCHAR(500), nu_amount_total_conversion NUMERIC(10,10), nu_difference_conversion NUMERIC(10,10), nu_igtf NUMERIC(10,10), nu_amount_igtf NUMERIC(10,10), nu_amount_igtf_conversion NUMERIC(10,10), nu_amount_final NUMERIC(10,10), nu_amount_final_conversion NUMERIC(10,10), hasIGTF VARCHAR(5) , nu_attachments INTEGER, has_attachments BOOLEAN, st_delivery NUMERIC(1,0), nu_amount_discount_total NUMERIC(20,10),nu_amount_discount_total_conversion NUMERIC(20,10));"
+    "sql": "CREATE TABLE IF NOT EXISTS collections (local_id INTEGER PRIMARY KEY AUTOINCREMENT, id_collection INTEGER NOT_NULL, co_collection VARCHAR(30), co_original_collection VARCHAR(30), id_client INTEGER NOT NULL, co_client VARCHAR(30) NOT NULL, lb_client VARCHAR(80), st_collection NUMERIC(1,0), da_collection TIMESTAMP, da_rate TIMESTAMP, na_responsible VARCHAR(30), id_enterprise INTEGER, co_enterprise VARCHAR(30), nu_amount_total NUMERIC(10,10), co_currency VARCHAR(30), co_type INTEGER, tx_comment VARCHAR(500), coordenada VARCHAR(50), nu_value_local NUMERIC, id_currency INTEGER, nu_difference NUMERIC(10,10), tx_conversion VARCHAR(500), nu_amount_total_conversion NUMERIC(10,10), nu_difference_conversion NUMERIC(10,10), nu_igtf NUMERIC(10,10), nu_amount_igtf NUMERIC(10,10), nu_amount_igtf_conversion NUMERIC(10,10), nu_amount_final NUMERIC(10,10), nu_amount_final_conversion NUMERIC(10,10), hasIGTF VARCHAR(5) , nu_attachments INTEGER, has_attachments BOOLEAN, st_delivery NUMERIC(1,0));"
   },
   {
     "id": 99109,
     "name": "collection_details",
     "table": "collectionDetails",
     "idName": "id_collection_detail",
-    "sql": "CREATE TABLE IF NOT EXISTS collection_details (local_id INTEGER PRIMARY KEY AUTOINCREMENT, id_collection_detail INTEGER, co_collection VARCHAR(30), co_document VARCHAR(30), in_payment_partial BOOLEAN DEFAULT false, nu_voucher_retention VARCHAR(30), nu_amount_retention NUMERIC(10,10), nu_amount_retention2 NUMERIC(10,10), nu_amount_paid NUMERIC(10,10), nu_amount_discount NUMERIC(10,10), nu_amount_doc NUMERIC(10,10), da_document TIMESTAMP, nu_balance_doc NUMERIC(10,10), nu_balance_doc_original NUMERIC(10,10),  co_original VARCHAR(30), co_type_doc VARCHAR(30), id_document INTEGER, nu_amount_doc_conversion NUMERIC(10,10), nu_balance_doc_conversion NUMERIC(10,10), nu_balance_doc_original_conversion NUMERIC(10,10), nu_amount_retention_iva_conversion NUMERIC(10,10), nu_amount_retention_islr_conversion NUMERIC(10,10), nu_amount_discount_conversion NUMERIC(10,10), nu_amount_paid_conversion NUMERIC(10,10), nu_amount_igtf NUMERIC(10,10), nu_amount_igtf_conversion NUMERIC(10,10), da_voucher VARCHAR(20), has_discount BOOLEAN DEFAULT false, discount_comment VARCHAR(100), nu_amount_collect_discount NUMERIC(10,10), nu_amount_collect_discount_conversion NUMERIC(10,10), nu_collect_discount NUMERIC(10,10));"
+    "sql": "CREATE TABLE IF NOT EXISTS collection_details (local_id INTEGER PRIMARY KEY AUTOINCREMENT, id_collection_detail INTEGER, co_collection VARCHAR(30), co_document VARCHAR(30), in_payment_partial BOOLEAN DEFAULT false, nu_voucher_retention VARCHAR(30), nu_amount_retention NUMERIC(10,10), nu_amount_retention2 NUMERIC(10,10), nu_amount_paid NUMERIC(10,10), nu_amount_discount NUMERIC(10,10), nu_amount_doc NUMERIC(10,10), da_document TIMESTAMP, nu_balance_doc NUMERIC(10,10), co_original VARCHAR(30), co_type_doc VARCHAR(30), id_document INTEGER, nu_amount_doc_conversion NUMERIC(10,10), nu_balance_doc_conversion NUMERIC(10,10), nu_amount_retention_iva_conversion NUMERIC(10,10), nu_amount_retention_islr_conversion NUMERIC(10,10), nu_amount_discount_conversion NUMERIC(10,10), nu_amount_paid_conversion NUMERIC(10,10), nu_amount_igtf NUMERIC(10,10), nu_amount_igtf_conversion NUMERIC(10,10), da_voucher VARCHAR(20), has_discount BOOLEAN DEFAULT false, discount_comment VARCHAR(100), nu_amount_collect_discount NUMERIC(10,10), nu_collect_discount NUMERIC(10,10));"
   },
   {
     "id": 99110,
@@ -530,13 +530,6 @@
     "table": "collection_detail_discounts",
     "name": "collection_detail_discounts",
     "idName": "id_collection_detail_discount",
-    "sql": "CREATE TABLE IF NOT EXISTS collection_detail_discounts(id_collection_detail_discount INTEGER PRIMARY KEY AUTOINCREMENT, id_collection_detail INTEGER, id_collect_discount INTEGER, nu_collect_discount_other NUMBER, na_collect_discount_other VARCHAR(250), co_collection VARCHAR(30), nu_amount_collect_discount_other NUMERIC(29,4), nu_amount_collect_discount_other_conversion NUMERIC(29,4), posicion INTEGER, co_document VARCHAR(30));"
-  },
-  {
-    "id": 991188,
-    "name": "pending_transactions_attachments",
-    "table": "pendingTransactionsAttachments",
-    "idName": "id_pending",
-    "sql": "CREATE TABLE IF NOT EXISTS pending_transactions_attachments(id_pending INTEGER PRIMARY KEY AUTOINCREMENT, na_attachment VARCHAR(30), id_transaction INTEGER, co_transaction VARCHAR(40), type VARCHAR(30), na_transaction VARCHAR(30), position INTEGER);"
+    "sql": "CREATE TABLE IF NOT EXISTS collection_detail_discounts(id_collection_detail_discount INTEGER PRIMARY KEY AUTOINCREMENT, id_collection_detail INTEGER, id_collect_discount INTEGER, nu_collect_discount_other NUMBER, na_collect_discount_other VARCHAR(250), co_collection VARCHAR(30));"
   }
 ]

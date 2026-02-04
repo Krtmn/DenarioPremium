@@ -48,14 +48,12 @@
         <ion-row *ngIf="!this.clientLogic.esTransportista">
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
             {{localCurrency}}:</ion-col>
-          <ion-col
-            [ngStyle]="{color: client.saldo1 > 0 ? 'Red' : 'Blue' }">{{formatNumber(this.saldoLocal)}}</ion-col>
+          <ion-col [ngStyle]="{color: client.saldo1 > 0 ? 'Red' : 'Blue' }">{{formatNumber(this.saldoLocal)}}</ion-col>
         </ion-row>
         <ion-row *ngIf="this.clientLogic.showConversion && !this.clientLogic.esTransportista">
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
             {{hardCurrency}}:</ion-col>
-          <ion-col
-            [ngStyle]="{color: client.saldo1 > 0 ? 'Red' : 'Blue' }">{{formatNumber(this.saldoFuerte)}}</ion-col>
+          <ion-col [ngStyle]="{color: client.saldo1 > 0 ? 'Red' : 'Blue' }">{{formatNumber(this.saldoFuerte)}}</ion-col>
         </ion-row>
         <ion-row *ngIf="!this.clientLogic.esTransportista">
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO")}}
@@ -158,8 +156,11 @@
           <ion-col size="4" class="titulosBold col">
             {{clientLogic.clientTags.get("CLI_DETAIL_FECHA_DOCUMENTO")}}
           </ion-col>
-          <ion-col size="4" class="titulosBold col borderSuperiorDerecho">
+          <ion-col size="4" class="titulosBold col">
             {{clientLogic.clientTags.get("CLI_DETAIL_FECHA_VENCIMIENTO")}}
+          </ion-col>
+          <ion-col size="4" class="titulosBold col borderSuperiorDerecho">
+            {{clientLogic.clientTags.get("CLI_DOC_SALE_TXCOMMENT")}}
           </ion-col>
         </ion-row>
         <ion-row *ngFor="let documento of document;index as i" class="tablaDocumentosVenta tablaDocVentas row">
@@ -223,8 +224,11 @@
             {{documento.daDocument}}
           </ion-col>
           <!-- Fecha Vencimiento -->
-          <ion-col size="4" class="ion-text-center col borderInferiorDerecho" [ngStyle]="{color: documento.colorRow }">
+          <ion-col size="4" class="ion-text-center col" [ngStyle]="{color: documento.colorRow }">
             {{documento.daDueDate}}
+          </ion-col>
+          <ion-col size="4" class="ion-text-center col borderInferiorDerecho" [ngStyle]="{color: documento.colorRow }">
+            {{documento.txComment}}
           </ion-col>
         </ion-row>
       </ion-grid>
@@ -264,7 +268,7 @@
           <ion-list>
             <ion-item *ngFor="let doc of clientLogic.datos.document">
               <ion-label>{{ doc.coDocument }}</ion-label>
-              <ion-checkbox slot="end" [checked]="selectedDocuments?.includes(doc.coDocument)"
+              <ion-checkbox slot="end" [checked]="selectedDocuments.includes(doc.coDocument)"
                 (ionChange)="toggleDocumentSelection(doc.coDocument, $event)">
               </ion-checkbox>
             </ion-item>
@@ -284,7 +288,7 @@
               </ion-col>
               <ion-col size="6">
                 <ion-button expand="block" size="small" class="botonAddVerde"
-                  (click)="openShareModal(true); openSelectShareModal(false)" [disabled]="!selectedDocuments?.length">
+                  (click)="openShareModal(true); openSelectShareModal(false)" [disabled]="!selectedDocuments.length">
                   Aceptar
                 </ion-button>
               </ion-col>

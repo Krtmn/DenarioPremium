@@ -97,6 +97,8 @@ export class CobroTotalComponent implements OnInit {
         daDocument: daVoucher.split("T")[0],
         nuBalanceDoc: 0,
         nuBalanceDocConversion: 0,
+        nuBalanceDocOriginal: 0,
+        nuBalanceDocOriginalConversion: 0,
         coOriginal: "",
         coTypeDoc: "",
         nuValueLocal: this.collectService.collection.nuValueLocal,
@@ -110,6 +112,7 @@ export class CobroTotalComponent implements OnInit {
         nuAmountCollectDiscount: 0,
         nuCollectDiscount: 0,
         missingRetention: this.collectService.missingRetention,
+        nuAmountCollectDiscountConversion: 0,
       })
     }
     this.collectService.addRetention = false;

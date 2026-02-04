@@ -146,7 +146,7 @@ export class PedidoComponent implements OnInit {
     //this.orderServ.reset();
 
     this.setClientfromSelector(client);
-    //como estamos recien reseteados, no hay necesidad de chequear 
+    //como estamos recien reseteados, no hay necesidad de chequear
     this.clienteSelectorService.checkClient = false;
 
   })
@@ -307,7 +307,7 @@ export class PedidoComponent implements OnInit {
 
   abrirPedido() {
     //esta funcion toma un pedido guardado o enviado y lo pone para modificarlo o mostrarlo respectivamente
-    //mini reset 
+    //mini reset
     this.orderServ.carrito = [];
     //[groupByTotalByLines]
     this.orderServ.carritoWithLines = [];
@@ -329,7 +329,7 @@ export class PedidoComponent implements OnInit {
     // Direccion de cliente: hecho en setup empresa, setClientFromSelector(c);
     // Tipo de orden: hecho en setup empresa
     // Lista de precio: hecho en setup empresa, setClientFromSelector(c);
-    //Numero de pedido: 
+    //Numero de pedido:
 
     this.nuPurchase = this.orderServ.order.nuPurchase === null ?
       '' : this.orderServ.order.nuPurchase;
@@ -400,9 +400,9 @@ export class PedidoComponent implements OnInit {
               unitUtil.quAmount = unit.quOrder;
               if (unitUtil.idUnit === item.idUnit) {
                 item.quAmount = unitUtil.quAmount;
-              }else{
+              } else {
                 //si es la unica unidad, la seleccionamos tambien
-                if(detail.orderDetailUnit.length == 1){
+                if (detail.orderDetailUnit.length == 1) {
                   item.quAmount = unitUtil.quAmount;
                   item.idUnit = unitUtil.idUnit;
                 }
@@ -505,7 +505,7 @@ export class PedidoComponent implements OnInit {
 
   saveButton() {
     if (this.orderServ.changesMade) {
-      this.saveOrder(DELIVERY_STATUS_SAVED).then(s => {
+      this.saveOrder(3).then(s => {
         this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_AVISO_GUARDADO")); //TAG THIS
         this.orderServ.disableSendButton = false;
       });
@@ -959,7 +959,7 @@ export class PedidoComponent implements OnInit {
 
 
     } else {
-      //no se hace nada, solo el onchange() 
+      //no se hace nada, solo el onchange()
     }
     this.onChange();
   }

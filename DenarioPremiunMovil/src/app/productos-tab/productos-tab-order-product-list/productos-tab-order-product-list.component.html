@@ -55,18 +55,22 @@
             <p>{{this.productsTabTags.get('PROD_PRICE_PROD')}}: {{ product.nuPrice ? formatNum(product.nuPrice) : 'N/A'
               }} {{
               product.coCurrency }} </p>
+                        @if(this.orderServ.vatExemptProducts){
+            <p>{{orderServ.getTag("PED_IVA")}}: 
+              {{ product.nuTax }} %</p>            }
+            <p>{{orderServ.getTag("PED_PRECIO+IVA")}}: {{formatNum(product.ivaProducto+product.discountedNuPrice)}} {{
+              product.coCurrency }}</p>
             <p *ngIf="orderServ.showStock">{{this.productsTabTags.get('PROD_STOCK_PROD')}}: {{ product.quStock > 0 ?
               quStock(product) :
               0 }}</p>
+            @if(orderServ.displayProductPoints){
             <p>{{this.productsTabTags.get('PROD_POINTS_PROD')}}: {{ product.quPoints }}</p>
+            }
             <p *ngIf="orderServ.productMinMul && product.quMinimum > 1">{{ orderServ.getTag("PED_MINIMO")}}: {{
               product.quMinimum }}</p>
             <p *ngIf="orderServ.productMinMul && product.quMultiple > 1">{{ orderServ.getTag("PED_MULTIPLO")}}: {{
               product.quMultiple }}</p>
-            @if(this.orderServ.vatExemptProducts){
-            <p>{{this.productsTabTags.get('PROD_IVA')}}: 
-              {{ formatNum(product.nuTax) }} %</p>
-            }
+
 
           </ion-label>
           <!-- <ion-note slot="end"><ion-icon class="icon-List2" name="chevron-forward-outline"></ion-icon></ion-note> -->
@@ -149,10 +153,11 @@
 
 
               <!-- DESCUENTO -->
-              <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="product.discountList.length > 1">
+               @if(product.discountList.length > 1){
+              <ion-col class="" size="12" size-sm="12" size-xs="12">
                 <ion-label>{{ orderServ.getTag("PED_DC")}}</ion-label>
               </ion-col>
-              <ion-col class="" size="10" size-sm="10" size-xs="10" *ngIf="product.discountList.length > 1">
+              <ion-col class="" size="10" size-sm="10" size-xs="10" >
                 <div class="listado-tps-selector ion-text-center">
                   <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
                     [(ngModel)]="product.idDiscount" [disabled]="!orderServ.userCanSelectProductDiscount"
@@ -165,11 +170,13 @@
                 </div>
 
               </ion-col>
+            
               <ion-col class="" size="2" size-sm="2" size-xs="2" *ngIf="product.discountList.length > 1">
                 <ion-button size="small" (click)="loadDiscount(product)">
                   <ion-icon name="information-circle-outline"></ion-icon>
                 </ion-button>
               </ion-col>
+            }
               <!-- ALMACEN -->
               <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="orderServ.validateWarehouses">
                 <ion-label>{{ orderServ.getTag("PED_ALMACEN")}}</ion-label>
@@ -241,20 +248,25 @@
                   <p><span class="titulosBold">{{this.productsTabTags.get('PROD_PRICE_PROD')}}:</span> {{
                     productoModal.nuPrice ? productoModal.nuPrice : 'N/A' }} {{
                     productoModal.coCurrency }}</p>
+                  <p><span class="titulosBold">{{orderServ.getTag("PED_IVA")}}:</span> 
+                    {{ productoModal.nuTax }} %</p>
+                  <p><span class="titulosBold">{{orderServ.getTag("PED_PRECIO+IVA")}}:</span>{{formatNum(productoModal.ivaProducto+productoModal.discountedNuPrice)}} {{
+              productoModal.coCurrency }}</p>
                   <p *ngIf="orderServ.showStock"><span
                       class="titulosBold">{{this.productsTabTags.get('PROD_STOCK_PROD')}}:</span> {{
                     productoModal.quStock
-                    > 0 ? productoModal.quStock :
+                    > 0 ? quStock(productoModal) :
                     0 }}</p>
+                  @if(orderServ.displayProductPoints){
                   <p><span class="titulosBold">{{this.productsTabTags.get('PROD_POINTS_PROD')}}:</span> {{
                     productoModal.quPoints }}</p>
+                  }
                   <p *ngIf="orderServ.productMinMul && productoModal.quMinimum > 1"><span class="titulosBold">{{
                       orderServ.getTag("PED_MINIMO")}}:</span> {{ productoModal.quMinimum }}</p>
                   <p *ngIf="orderServ.productMinMul && productoModal.quMultiple > 1"><span class="titulosBold">{{
                       orderServ.getTag("PED_MULTIPLO")}}:</span> {{ productoModal.quMultiple }}</p>
-                  @if(this.productService.vatExemptProducts){
-                  <p><span class="titulosBold">{{this.productsTabTags.get('PROD_IVA')}}:</span> 
-                    {{ productoModal.nuTax }} %</p>
+                  @if(this.orderServ.vatExemptProducts){
+
                   }
 
                 </ion-col>
@@ -326,6 +338,7 @@
 
                   </ion-col>
                   <!-- DESCUENTO -->
+                   @if(productoModal.discountList.length > 1){
                   <ion-col size="12" size-sm="12" size-xs="12">
                     <ion-label>{{ orderServ.getTag("PED_DC")}}</ion-label>
                   </ion-col>
@@ -341,6 +354,7 @@
                     </div>
 
                   </ion-col>
+                }
                   <!-- ALMACEN -->
                   <ion-col size="12" size-sm="12" size-xs="12">
                     <ion-label *ngIf="orderServ.validateWarehouses">{{ orderServ.getTag("PED_ALMACEN")}}</ion-label>

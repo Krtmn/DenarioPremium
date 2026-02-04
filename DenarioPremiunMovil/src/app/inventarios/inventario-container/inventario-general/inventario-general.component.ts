@@ -23,10 +23,10 @@ import { SynchronizationDBService } from 'src/app/services/synchronization/synch
 
 
 @Component({
-    selector: 'app-inventario-general',
-    templateUrl: './inventario-general.component.html',
-    styleUrls: ['./inventario-general.component.scss'],
-    standalone: false
+  selector: 'app-inventario-general',
+  templateUrl: './inventario-general.component.html',
+  styleUrls: ['./inventario-general.component.scss'],
+  standalone: false
 })
 export class InventarioGeneralComponent implements OnInit {
 
@@ -131,6 +131,7 @@ export class InventarioGeneralComponent implements OnInit {
       this.inventariosLogicService.newClientStock.hasAttachments = this.adjuntoService.hasItems();
       this.inventariosLogicService.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
     }
+    this.txComment = this.inventariosLogicService.newClientStock.txComment;
   }
 
 
@@ -161,9 +162,9 @@ export class InventarioGeneralComponent implements OnInit {
           this.selectorCliente.setup(this.inventariosLogicService.listaEmpresa[0].idEnterprise, "Inventarios", 'fondoAmarillo', null, false, 'inv');
           /*  this.clientService.getClientById(this.inventariosLogicService.newClientStock.idClient).then(client => {
              this.inventariosLogicService.client = client;
-             this.selectorCliente.setup(this.inventariosLogicService.empresaSeleccionada.idEnterprise, "Inventarios", 'fondoVerde', client, false);   
-    
- 
+             this.selectorCliente.setup(this.inventariosLogicService.empresaSeleccionada.idEnterprise, "Inventarios", 'fondoVerde', client, false);
+
+
            }) */
         }
         this.orderServ.empresaSeleccionada = this.inventariosLogicService.listaEmpresa[0];
@@ -172,7 +173,7 @@ export class InventarioGeneralComponent implements OnInit {
         this.txComment = this.inventariosLogicService.newClientStock.txComment;
         if (this.inventariosLogicService.newClientStock.idClient == undefined) {
 
-          //ESTOY REALIZANDO UN INVENTARIO DESDE 0          
+          //ESTOY REALIZANDO UN INVENTARIO DESDE 0
           this.inventariosLogicService.empresaSeleccionada = this.inventariosLogicService.listaEmpresa[0];
           this.geoServ.getCurrentPosition().then(coords => { this.coordenada = coords });
           //this.selectorCliente.updateClientList(this.inventariosLogicService.listaEmpresa[0].idEnterprise);
@@ -193,11 +194,11 @@ export class InventarioGeneralComponent implements OnInit {
           //PARA BUSCAR LAS FOTOS DE UN INVENTARIO GUARDADO
           this.adjuntoService.getSavedPhotos(this.dbServ.getDatabase(), this.inventariosLogicService.newClientStock.coClientStock, "inventarios");
 
-          this.inventariosLogicService.getAllAddressByClient(this.dbServ.getDatabase(),this.inventariosLogicService.cliente.idClient)
+          this.inventariosLogicService.getAllAddressByClient(this.dbServ.getDatabase(), this.inventariosLogicService.cliente.idClient)
 
           if (!this.cambieCLiente) {
 
-            this.inventariosLogicService.getClientStock(this.dbServ.getDatabase(),this.inventariosLogicService.newClientStock.coClientStock).then(clientStock => {
+            this.inventariosLogicService.getClientStock(this.dbServ.getDatabase(), this.inventariosLogicService.newClientStock.coClientStock).then(clientStock => {
               console.log(clientStock);
               if (clientStock != undefined) {
                 if (clientStock.clientStockDetails.length == 0) {
@@ -221,7 +222,7 @@ export class InventarioGeneralComponent implements OnInit {
                 } else {
                   for (var i = 0; i < clientStock.clientStockDetails.length; i++) {
 
-                    this.inventariosLogicService.getClientStockDetailsUnits(this.dbServ.getDatabase(),clientStock.clientStockDetails[i].coClientStockDetail, i).then(data => {
+                    this.inventariosLogicService.getClientStockDetailsUnits(this.dbServ.getDatabase(), clientStock.clientStockDetails[i].coClientStockDetail, i).then(data => {
                       console.log(data);
                       let [index, object] = data
 
@@ -230,25 +231,8 @@ export class InventarioGeneralComponent implements OnInit {
                         arr = object[j]
 
                         clientStock.clientStockDetails[index].clientStockDetailUnits.push(arr);
-                        /*   let newTypeStock: Inventarios = {} as Inventarios;
-                          newTypeStock.tipo = object[j].ubicacion;
-                          newTypeStock.idProduct = clientStock.clientStockDetails[index].idProduct;
-                          newTypeStock.fechaVencimiento = object[j].daExpiration;
-                          newTypeStock.validateCantidad = true;
-                          newTypeStock.validateLote = true;
-                          newTypeStock.clientStockDetail = [] as ClientStocksDetail[];
-                          newTypeStock.clientStockDetail.push(clientStock.clientStockDetails[index]);
-                          this.inventariosLogicService.typeStocks.push(newTypeStock); */
-
                       }
                       console.log(clientStock.clientStockDetails[index]);
-
-
-
-
-
-
-
                       if (index == clientStock.clientStockDetails.length - 1) {
                         /* this.inventariosLogicService.newClientStock.clientStockDetails = [] as ClientStocksDetail[]; */
                         this.inventariosLogicService.newClientStock.clientStockDetails = clientStock.clientStockDetails;
@@ -340,7 +324,7 @@ export class InventarioGeneralComponent implements OnInit {
           /* this.inventariosLogicService.newClientStock.daClientStock =  */
           this.inventariosLogicService.newClientStock.stDelivery = DELIVERY_STATUS_NEW; // 0 = Nuevo, 1 = Guardado, 2 = Por Enviar, 3 = Enviado
           this.inventariosLogicService.newClientStock.stClientStock = DELIVERY_STATUS_NEW;
-          this.inventariosLogicService.getAllAddressByClient(this.dbServ.getDatabase(),this.inventariosLogicService.cliente.idClient).then((result) => {
+          this.inventariosLogicService.getAllAddressByClient(this.dbServ.getDatabase(), this.inventariosLogicService.cliente.idClient).then((result) => {
             if (result) {
               this.direccionAnterior = this.inventariosLogicService.newClientStock.idAddressClient;
               this.coDireccionAnterior = this.inventariosLogicService.newClientStock.coAddressClient;
@@ -348,12 +332,12 @@ export class InventarioGeneralComponent implements OnInit {
               this.inventariosLogicService.onClientStockValid(true);
             } else {
               //setTimeout(() => {
-                this.inventariosLogicService.selectedClient = false;
-                this.inventariosLogicService.onStockValidToSave(false);
-                this.inventariosLogicService.onStockValidToSend(false);
-                this.inventariosLogicService.onClientStockValid(false);
-                this.inventariosLogicService.message = this.inventariosLogicService.inventarioTags.get('INV_ERROR_LIST_ADDRESS')!;
-                this.inventariosLogicService.alertMessageOpen = true;
+              this.inventariosLogicService.selectedClient = false;
+              this.inventariosLogicService.onStockValidToSave(false);
+              this.inventariosLogicService.onStockValidToSend(false);
+              this.inventariosLogicService.onClientStockValid(false);
+              this.inventariosLogicService.message = this.inventariosLogicService.inventarioTags.get('INV_ERROR_LIST_ADDRESS')!;
+              this.inventariosLogicService.alertMessageOpen = true;
               //}, 500);
 
             }
@@ -378,7 +362,7 @@ export class InventarioGeneralComponent implements OnInit {
       if (this.txCommentInput && this.txCommentInput.value !== clean) {
         this.txCommentInput.value = clean;
       }
-    }else{
+    } else {
       this.inventariosLogicService.newClientStock.txComment = this.txComment;
     }
   }
@@ -399,7 +383,8 @@ export class InventarioGeneralComponent implements OnInit {
 
   getFechaValor() {
     // this.dateServ.hoyISO();
-    this.inventariosLogicService.newClientStock.daClientStock = this.daClientStock;
+    if (this.inventariosLogicService.newClientStock.stDelivery != 3)
+      this.inventariosLogicService.newClientStock.daClientStock = this.daClientStock;
   }
 
   daClientStockFormatted() {

@@ -23,6 +23,10 @@ log.txt
 /platforms
 /plugins
 /android
+!/android/app/src/main/AndroidManifest.xml
+!/android/app/src/main/res/
+!/android/app/src/main/res/xml/
+!/android/app/src/main/res/xml/network_security_config.xml
 
 # Compiled output
 /dist

@@ -17,6 +17,7 @@
                       {{ getTag('ADJ_BUSCAR_FOTO') }}
                     </ion-button>
                   </ion-col>
+                  @if(service.showCamera){
                   <ion-col size="12" size-sm="12" size-xs="12">
                     <ion-button expand="block" size="small" style="--background: {{colorBoton}}" (click)="tomarImg()"
                       *ngIf="!viewOnly" [disabled]="disablePhotos">
@@ -24,6 +25,7 @@
                       {{ getTag('ADJ_TOMAR_FOTO') }}
                     </ion-button>
                   </ion-col>
+                }
                 </ion-row>
               </ion-grid>
 
@@ -51,6 +53,7 @@
             </div>
           </ion-accordion>
 
+          @if(service.userCanUploadFiles){
           <ion-accordion value="file" [disabled]="viewOnly && service.file == null">
             <ion-item slot="header" color="light">
               <ion-label>{{ getTag('ADJ_ACORDEON_ARCHIVO')}}</ion-label>
@@ -79,6 +82,7 @@
               </div>
             </div>
           </ion-accordion>
+        }
            <!-- panel de firma -->
            @if(service.signatureConfig){
           <ion-accordion value="sign" [disabled]="viewOnly && service.firma === '' ">

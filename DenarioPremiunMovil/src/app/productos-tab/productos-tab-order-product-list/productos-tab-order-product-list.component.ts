@@ -401,7 +401,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   onSelectProductPed(i: number, prod: OrderUtil) {
 
-    if (!this.orderServ.stock0 && (prod.quStockAux < 1)) {
+    if (!this.orderServ.stock0 && (prod.quStockAux <= 0)) {
       this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_STOCK0"));
       //this.accordionGroup.value = undefined;
     } else {
@@ -503,9 +503,12 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     if (!prod.nuPrice) {
       return true;
     }
-    if (!this.orderServ.stock0 && (prod.quStockAux < 1)) {
+    if (!this.orderServ.stock0 && (prod.quStockAux <= 0)) {
       var stocks = this.orderServ.listaStock.filter(s => s.idProduct == prod.idProduct)
       //si el warehouse seleccionado tiene 0 stock, comprobamos si hay stock en otro warehouse
+      if(!this.orderServ.userCanChangeWarehouse){
+        return true;
+      }
       for (let i = 0; i < stocks.length; i++) {
         if (stocks[i].quStock > 0) {
           return false;
@@ -528,7 +531,10 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   quStock(prod: OrderUtil) {
     let stock = prod.quStock;
     let unit = prod.unitList.filter(u => prod.idUnit == u.idUnit)[0];
-    return Math.floor(stock / unit.quUnit);
+    if(this.orderServ.quUnitDecimals){
+      return this.formatNum(stock / unit.quUnit);
+    }
+    return Math.floor(stock / unit.quUnit).toString();
   }
 
 
