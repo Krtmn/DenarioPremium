@@ -96,8 +96,6 @@ export class SynchronizationDBService {
   public inHome: Boolean = true;
   private CURRENT_DB_VERSION: number = 2;
 
-
-
   constructor(
     private navController: NavController,
 
