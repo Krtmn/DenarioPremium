@@ -1178,10 +1178,11 @@ export class PedidoComponent implements OnInit {
       let list: List | undefined;
       if (this.orderServ.openOrder) {
         let idPriceList = this.orderServ.order.orderDetails[0].idPriceList
-        this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idPriceList == idPriceList)
-        let idList = this.orderServ.listaPriceListFiltrada[0].idList;
+        let pl = this.orderServ.listaPricelist.filter((pl) => pl.idPriceList == idPriceList)
+        let idList = pl[0].idList;
         list = this.orderServ.listaList.find((list) => list.idList == idList);
         this.orderServ.listaSeleccionada = list!;
+        this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList);
         this.listaAnterior = list!;
 
       } else {
