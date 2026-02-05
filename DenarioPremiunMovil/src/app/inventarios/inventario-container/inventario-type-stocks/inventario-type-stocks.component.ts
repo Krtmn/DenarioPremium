@@ -346,13 +346,9 @@ export class InventarioTypeStocksComponent implements OnInit {
       .showDateModalDep = val;
   }
   selectProducUnit(e: any, index: number, type: string) {
-    let indexDetail = this.inventariosLogicService.productTypeStocksMap.get(this.inventariosLogicService.productSelected.idProduct)
-    for (var i = 0; i < this.inventariosLogicService.typeStocks.length; i++) {
-      if (this.inventariosLogicService.typeStocks[i].idProduct == this.inventariosLogicService.productSelected.idProduct) {
-        this.inventariosLogicService.typeStocks[i].unidad = e.target.value
-        /* this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits![index].daExpiration = e.target.value */
-        this.inventariosLogicService.isEdit = true;
-      }
+    if (this.inventariosLogicService.typeStocks[index] != undefined) {
+      this.inventariosLogicService.typeStocks[index].unidad = e.target.value;
+      this.inventariosLogicService.isEdit = true;
     }
     this.inventariosLogicService.unitSelected = e.target.value
   }

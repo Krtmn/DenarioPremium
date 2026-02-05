@@ -1,45 +1,45 @@
 <div class="listado-product-structures" *ngIf="inventariosLogicService.showProductList">
 
-    <ion-button fill="outline" class="colorBorderBuscar" size="small" shape="round" (click)="onShowProductStructures()">
-        {{this.productsTabTags.get('PROD_VOLVER')}}
-        <!-- <ion-icon slot="start" name="search-outline"></ion-icon> -->
-        <ion-icon class="colorIconBuscar" slot="start" name="arrow-back-circle-sharp"></ion-icon>
-    </ion-button>
+  <ion-button fill="outline" class="colorBorderBuscar" size="small" shape="round" (click)="onShowProductStructures()">
+    {{this.productsTabTags.get('PROD_VOLVER')}}
+    <!-- <ion-icon slot="start" name="search-outline"></ion-icon> -->
+    <ion-icon class="colorIconBuscar" slot="start" name="arrow-back-circle-sharp"></ion-icon>
+  </ion-button>
 
-    <!--  Listado clickeable de productos  -->
-    <div class="product-card product-structure-scroll">
+  <!--  Listado clickeable de productos  -->
+  <div class="product-card product-structure-scroll">
     @if(noProductsAlertShown){
     <ion-item>
       <ion-label class="ion-text-center" style="color: red;">
         {{this.productsTabTags.get("DENARIO_SIN_RESULTADOS")}}
       </ion-label>
     </ion-item>
-    } 
-        <ion-list *ngFor="let product of inventariosLogicService.newClientStock.productList; index as pro"
-            (click)="onSelectProductInv(pro,product)">
-            <!-- <productos-tab-search [showProductStructure]="showProductStructure" [empresaSeleccionada]="empresaSeleccionada" [productsTabTags]="productsTabTags"></productos-tab-search> -->
-            <div class="product-structure-title"
-                *ngIf="searchText === '' || product.coProduct.toLowerCase().includes(searchText.toLowerCase()) || product.naProduct.toLowerCase().includes(searchText.toLowerCase())">
-                <!-- <ion-item button detail="true" *ngIf="i<10*indice"> -->
-                <ion-item button detail="false" [id]="'modalTypes'+product.idProduct">
-                    <ion-label fixed class="fixedLabel">
-                        <img class="productImage" alt=""
-                            [src]="product.coProduct ? (serviceImages.getImageObservable(product.coProduct) | async) : '../../../assets/images/nodisponible.png'" />
-                    </ion-label>
-                    <ion-label class="textList">
-                        <p>{{ product.naProduct }}</p>
-                        <p>{{this.productsTabTags.get('PROD_COD_PROD')}}: {{ product.coProduct }}</p>
-                    </ion-label>
-                    <ion-note slot="end">
-                        <ion-icon class="icon-List2" name="chevron-forward-outline"></ion-icon>
-                    </ion-note>
-                </ion-item>
-            </div>
+    }
+    <ion-list *ngFor="let product of inventariosLogicService.newClientStock.productList; index as pro"
+      (click)="onSelectProductInv(pro,product)">
+      <!-- <productos-tab-search [showProductStructure]="showProductStructure" [empresaSeleccionada]="empresaSeleccionada" [productsTabTags]="productsTabTags"></productos-tab-search> -->
+      <div class="product-structure-title"
+        *ngIf="searchText === '' || product.coProduct.toLowerCase().includes(searchText.toLowerCase()) || product.naProduct.toLowerCase().includes(searchText.toLowerCase())">
+        <!-- <ion-item button detail="true" *ngIf="i<10*indice"> -->
+        <ion-item button detail="false" [id]="'modalTypes'+product.idProduct">
+          <ion-label fixed class="fixedLabel">
+            <img class="productImage" alt=""
+              [src]="product.coProduct ? (serviceImages.getImgForProduct(product.coProduct)) : '../../../assets/images/nodisponible.png'" />
+          </ion-label>
+          <ion-label class="textList">
+            <p>{{ product.naProduct }}</p>
+            <p>{{this.productsTabTags.get('PROD_COD_PROD')}}: {{ product.coProduct }}</p>
+          </ion-label>
+          <ion-note slot="end">
+            <ion-icon class="icon-List2" name="chevron-forward-outline"></ion-icon>
+          </ion-note>
+        </ion-item>
+      </div>
 
 
 
-        </ion-list>
-    </div>
+    </ion-list>
+  </div>
 </div>
 
 <app-message></app-message>
