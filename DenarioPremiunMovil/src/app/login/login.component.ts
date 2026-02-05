@@ -77,20 +77,21 @@ export class LoginComponent implements OnInit {
       if (this.compareSemVer(this.versionApp, storedVersionApp) > 0) {
         try {
           const createTables$ = await this.synchronization.getCreateTables();
-          createTables$.subscribe((createTablesRes) => {
-            this.loginLogic.dropTables(createTablesRes).then((dropRes: any) => {
-              // limpia y vuelve a dejar guardada la nueva versiónApp
-              let connected = localStorage.getItem("connected");
-              let connectionType = localStorage.getItem("connectionType");
-              localStorage.clear();
-              localStorage.setItem("versionApp", this.versionApp);
-              localStorage.setItem("connected", String(connected));
-              localStorage.setItem("connectionType", String(connectionType));
+          createTables$.subscribe(async (createTablesRes) => {
+            //this.loginLogic.dropTables(createTablesRes).then((dropRes: any) => {
+            // limpia y vuelve a dejar guardada la nueva versiónApp
+            let connected = localStorage.getItem("connected");
+            let connectionType = localStorage.getItem("connectionType");
+            await this.synchronization.checkAndRunMigrations();
+            //localStorage.clear();
+            localStorage.setItem("versionApp", this.versionApp);
+            localStorage.setItem("connected", String(connected));
+            localStorage.setItem("connectionType", String(connectionType));
 
-              this.initLogin();
-            }).catch(err => {
+            this.initLogin();
+            /* }).catch(err => {
               console.error('dropTables error', err);
-            });
+            }); */
           }, (err: any) => {
             console.error('getCreateTables subscribe error', err);
           });
