@@ -64,6 +64,8 @@ export class PedidoComponent implements OnInit {
   public dbServ = inject(SynchronizationDBService);
   public services = inject(ServicesService);
   public autoSend = inject(AutoSendService);
+  messageAlert!: MessageAlert;
+
 
   public geoServ = inject(GeolocationService);
 
@@ -535,6 +537,20 @@ export class PedidoComponent implements OnInit {
               type: "clientStock"
             })
           }
+
+          if (localStorage.getItem("connected") == "true") {
+            this.messageAlert = new MessageAlert(
+              this.orderServ.getTag('PED_DENARIO')!,
+              this.orderServ.getTag('PED_DENARIO_TO_SEND')!,
+            );
+
+          } else {
+            this.messageAlert = new MessageAlert(
+              this.orderServ.getTag('PED_DENARIO')!,
+              this.orderServ.getTag('PED_DENARIO_TO_SEND_OFFLINE')!,
+            );
+          }
+          this.message.alertModal(this.messageAlert);
           this.services.insertPendingTransactionBatch(this.dbServ.getDatabase(), transactions).then(() => {
             this.autoSend.ngOnInit();
           });
@@ -960,6 +976,10 @@ export class PedidoComponent implements OnInit {
 
     } else {
       //no se hace nada, solo el onchange()
+      this.orderServ.tipoOrden = this.tipoOrden;
+      this.tipoOrdenAnterior = this.tipoOrden;
+      this.tipoOrden = this.orderServ.tipoOrden;
+
     }
     this.onChange();
   }
@@ -1155,11 +1175,25 @@ export class PedidoComponent implements OnInit {
 
 
       // Lista
-      let list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
-      if (list != undefined) {
-        this.orderServ.listaSeleccionada = list;
-        this.listaAnterior = list;
-        this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList)
+      let list: List | undefined;
+      if (this.orderServ.openOrder) {
+        let idPriceList = this.orderServ.order.orderDetails[0].idPriceList
+        let pl = this.orderServ.listaPricelist.filter((pl) => pl.idPriceList == idPriceList)
+        let idList = pl[0].idList;
+        list = this.orderServ.listaList.find((list) => list.idList == idList);
+        this.orderServ.listaSeleccionada = list!;
+        this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList);
+        this.listaAnterior = list!;
+
+      } else {
+        list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
+
+
+        if (list != undefined) {
+          this.orderServ.listaSeleccionada = list;
+          this.listaAnterior = list;
+          this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList)
+        }
       }
 
 

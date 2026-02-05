@@ -32,7 +32,7 @@ import { from } from 'rxjs';
 export class LoginComponent implements OnInit {
   public loginLogic = inject(LoginLogicService);
 
-  private messageService = inject(MessageService);
+
   private synchronization = inject(SynchronizationDBService);
   private globalConfig = inject(GlobalConfigService);
   private services = inject(ServicesService);
@@ -65,7 +65,7 @@ export class LoginComponent implements OnInit {
   async ngOnInit() {
     /* App.getInfo().then(async (res) => { */
     // preferir la versión real del paquete si está disponible, si no usar fallback
-    this.versionApp = "6.5.12";
+    this.versionApp = "6.6.3";
 
     const storedVersionApp = localStorage.getItem("versionApp");
     // primer arranque: guardamos la versionApp actual
@@ -77,20 +77,21 @@ export class LoginComponent implements OnInit {
       if (this.compareSemVer(this.versionApp, storedVersionApp) > 0) {
         try {
           const createTables$ = await this.synchronization.getCreateTables();
-          createTables$.subscribe((createTablesRes) => {
-            this.loginLogic.dropTables(createTablesRes).then((dropRes: any) => {
-              // limpia y vuelve a dejar guardada la nueva versiónApp
-              let connected = localStorage.getItem("connected");
-              let connectionType = localStorage.getItem("connectionType");
-              localStorage.clear();
-              localStorage.setItem("versionApp", this.versionApp);
-              localStorage.setItem("connected", String(connected));
-              localStorage.setItem("connectionType", String(connectionType));
+          createTables$.subscribe(async (createTablesRes) => {
+            //this.loginLogic.dropTables(createTablesRes).then((dropRes: any) => {
+            // limpia y vuelve a dejar guardada la nueva versiónApp
+            let connected = localStorage.getItem("connected");
+            let connectionType = localStorage.getItem("connectionType");
+            await this.synchronization.checkAndRunMigrations();
+            //localStorage.clear();
+            localStorage.setItem("versionApp", this.versionApp);
+            localStorage.setItem("connected", String(connected));
+            localStorage.setItem("connectionType", String(connectionType));
 
-              this.initLogin();
-            }).catch(err => {
+            this.initLogin();
+            /* }).catch(err => {
               console.error('dropTables error', err);
-            });
+            }); */
           }, (err: any) => {
             console.error('getCreateTables subscribe error', err);
           });
@@ -183,7 +184,7 @@ export class LoginComponent implements OnInit {
           "Denario Premium",
           "Debe conectarse el celular a una red Wifi o señal de datos"
         );
-        this.messageService.alertModal(this.messageAlert);
+        this.message.alertModal(this.messageAlert);
       }
     });
 
@@ -202,7 +203,7 @@ export class LoginComponent implements OnInit {
         "Usuario y/o password no pueden ser vacios"
       );
       /* this.message.hideLoading(); */
-      this.messageService.alertModal(this.messageAlert);
+      this.message.alertModal(this.messageAlert);
     } else if (localStorage.getItem("login") != login && localStorage.getItem("login") != null) {
       this.message.hideLoading();
       this.messageAlert = new MessageAlert(
@@ -211,7 +212,7 @@ export class LoginComponent implements OnInit {
         " de aceptar la sincronización todos los datos anteriores serán borrados. ¿Está de acuerdo?"
       );
 
-      this.messageService.alertModalModule(this.messageAlert, "login");
+      this.message.alertModalModule(this.messageAlert, "login");
 
 
     } else if (conexion) {
@@ -248,7 +249,7 @@ export class LoginComponent implements OnInit {
                 "Denario Premium",
                 "Usuario y/o contraseña incorrectos."
               );
-              this.messageService.alertModal(this.messageAlert);
+              this.message.alertModal(this.messageAlert);
               break;
             case '403':
               let msj = "";
@@ -262,7 +263,7 @@ export class LoginComponent implements OnInit {
                 "Denario Premium",
                 msj
               );
-              this.messageService.alertModal(this.messageAlert);
+              this.message.alertModal(this.messageAlert);
               break;
             default: {
               this.message.hideLoading();
@@ -270,7 +271,7 @@ export class LoginComponent implements OnInit {
                 "Denario Premium",
                 "Ocurrió un error de comunicación con el servidor, verifique cobertura e intente nuevamente."
               );
-              this.messageService.alertModal(this.messageAlert);
+              this.message.alertModal(this.messageAlert);
             }
           }
 
@@ -285,7 +286,7 @@ export class LoginComponent implements OnInit {
             "Denario Premium",
             "Ocurrió un error de comunicación con el servidor, verifique cobertura e intente nuevamente."
           );
-          this.messageService.alertModal(this.messageAlert);
+          this.message.alertModal(this.messageAlert);
           /*           this.message.hideLoading();
            */
           console.error(e);

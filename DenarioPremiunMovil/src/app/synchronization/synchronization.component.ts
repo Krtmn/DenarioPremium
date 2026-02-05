@@ -11,6 +11,7 @@ import { MessageService } from '../services/messageService/message.service';
 import { HttpClient } from '@angular/common/http';
 import createTables from 'src/assets/database/createTables.json';
 import { ImageServicesService } from '../services/imageServices/image-services.service';
+import { MessageAlert } from '../modelos/tables/messageAlert';
 
 @Component({
   selector: 'app-synchronization',
@@ -26,6 +27,7 @@ export class SynchronizationComponent implements OnInit {
   private message = inject(MessageService);
   private imageServices = inject(ImageServicesService);
 
+  public messageAlert!: MessageAlert;
   private sqlTableMap: Record<string, { table: string, id: string, idName: string }> = {};
   private tableKeyOrder: number[] = []; // Orden de sincronización de tablas
 
@@ -218,31 +220,40 @@ export class SynchronizationComponent implements OnInit {
    * Inicializa el componente, obtiene el orden de tablas y gestiona la navegación.
    */
   ngOnInit() {
-    this.generateSqlTableMap();
-    this.N = Object.keys(this.tableKeyMap).length;
-    this.PROGRESS = 1 / this.N;
-    this.BUFF = 1 / this.N;
+    if (localStorage.getItem("connectionType") == "wifi" || localStorage.getItem("connectionType") == "cellular") {
+      //HAY CONEXION
+      this.generateSqlTableMap();
+      this.N = Object.keys(this.tableKeyMap).length;
+      this.PROGRESS = 1 / this.N;
+      this.BUFF = 1 / this.N;
 
-    this.message.hideLoading();
-    this.tableKeyOrder = Object.keys(this.tableKeyMap)
-      .map(Number)
-      .sort((a, b) => a - b);
-    this.currentTableIndex = 0;
+      this.message.hideLoading();
+      this.tableKeyOrder = Object.keys(this.tableKeyMap)
+        .map(Number)
+        .sort((a, b) => a - b);
+      this.currentTableIndex = 0;
 
-    //con esta funcion definimos que tabla se sincroniza primero
-    this.adjustTableOrderDependency(63, 68); //queremos que la tabla 63 se sincronice desues que la 68
+      //con esta funcion definimos que tabla se sincroniza primero
+      this.adjustTableOrderDependency(63, 68); //queremos que la tabla 63 se sincronice desues que la 68
 
-    this.sub = this.route.params.subscribe(
-      params => {
-        this.id = params['sincronizar'];
-        if (this.id == 'sincronizar') {
-          // Mostrar modal para preguntar si quiere sincronizar
-          this.alertMessageOpenSend = true;
-        } else {
-          this.sincronice();
+      this.sub = this.route.params.subscribe(
+        params => {
+          this.id = params['sincronizar'];
+          if (this.id == 'sincronizar') {
+            // Mostrar modal para preguntar si quiere sincronizar
+            this.alertMessageOpenSend = true;
+          } else {
+            this.sincronice();
+          }
         }
-      }
-    );
+      );
+    } else {
+      this.messageAlert = new MessageAlert(
+        "Denario Premium",
+        "No hay conexión a internet, por favor conectese a una red Wifi o señal de datos para sincronizar."
+      );
+      this.message.alertModal(this.messageAlert);
+    }
   }
 
   /**

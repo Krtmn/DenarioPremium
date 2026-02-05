@@ -27,6 +27,13 @@
   <!--  Listado clickeable de productos  -->
 
   <ion-content class="product-card product-structure-scroll accordionProductos">
+    @if(noProductsAlertShown){
+    <ion-item>
+      <ion-label class="ion-text-center" style="color: red;">
+        {{orderServ.getTag("DENARIO_SIN_RESULTADOS")}}
+      </ion-label>
+    </ion-item>
+    } 
     <ion-accordion-group expand="inset" [multiple]="false" #accordionGroup>
       <ion-accordion class="product-structure-title accordionPedidos" *ngFor="let product of orderUtilList; index as i"
         [disabled]="disableProduct(product)"

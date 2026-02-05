@@ -61,6 +61,7 @@ export class InventarioProductListComponent implements OnInit {
   searchSub: any;
   searchTextChanged: any;
   private subs = new Subscription();
+  noProductsAlertShown = false;
 
   constructor(
     private cd: ChangeDetectorRef,
@@ -87,7 +88,9 @@ export class InventarioProductListComponent implements OnInit {
         this.coProductStructureListString = this.productStructureService.coProductStructureListString;
         this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
           this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault).then(() => {
+            this.noProductsAlertShown = false;
             this.inventariosLogicService.newClientStock.productList = this.productService.productList;
+            this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
             /* this.inventariosLogicService.setVariablesMap(); */
           });
       }
@@ -103,7 +106,9 @@ export class InventarioProductListComponent implements OnInit {
         this.empresaSeleccionada.idEnterprise,
         this.empresaSeleccionada.coCurrencyDefault,).then(() => {*/
       this.inventariosLogicService.showProductList = data;
+      this.noProductsAlertShown = false;
       this.inventariosLogicService.newClientStock.productList = this.productService.productList;
+      this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
       //  });
     });
 
@@ -115,8 +120,10 @@ export class InventarioProductListComponent implements OnInit {
         this.inventariosLogicService.cliente.idClient,
         this.inventariosLogicService.cliente.idList,
         0).then(() => {
+          this.noProductsAlertShown = false;
           this.inventariosLogicService.showProductList = data;
           this.inventariosLogicService.newClientStock.productList = this.productService.productList;
+          this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
         }
         )
     });
@@ -129,8 +136,10 @@ export class InventarioProductListComponent implements OnInit {
         this.inventariosLogicService.cliente.idClient,
         this.inventariosLogicService.cliente.idList,
         0).then(() => {
+          this.noProductsAlertShown = false;
           this.inventariosLogicService.showProductList = true;
           this.inventariosLogicService.newClientStock.productList = this.productService.productList;
+          this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
         }
         )
     });

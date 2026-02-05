@@ -20,5 +20,8 @@
         <!-- si cliente _NO_ usa HTTPS, va aqui -->
         <!-- tambien va aqui cualquier servidor de prueba -->
         <domain includeSubdomains="true">denariopremium.com</domain>
+        <domain includeSubdomains="true">denariodemo.ddns.net</domain>
+        <domain includeSubdomains="true">190.6.31.99</domain>
+
     </domain-config>
 </network-security-config>

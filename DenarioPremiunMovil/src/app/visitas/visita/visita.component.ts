@@ -42,7 +42,7 @@ import { ClientesDatabaseServicesService } from 'src/app/services/clientes/clien
   standalone: false
 })
 export class VisitaComponent implements OnInit {
-  //injects 
+  //injects
   adjuntoService = inject(AdjuntoService);
   dateServ = inject(DateServiceService);
   visitServ = inject(VisitasService);
@@ -59,6 +59,7 @@ export class VisitaComponent implements OnInit {
   clientLogic = inject(ClientLogicService);
   clientLocationServ = inject(ClientLocationService);
   clientDBServ = inject(ClientesDatabaseServicesService);
+  messageAlert!: MessageAlert;
 
   segment = 'default';
   fechaMinima = this.dateServ.hoyISO();
@@ -326,9 +327,9 @@ export class VisitaComponent implements OnInit {
     this.setButtonsSalvar();
 
     if (!this.visitServ.userMustActivateGPS &&
-      ( this.visitServ.visit.stVisit === VISIT_STATUS_NOT_VISITED ||
+      (this.visitServ.visit.stVisit === VISIT_STATUS_NOT_VISITED ||
         this.visitServ.visit.stVisit === VISIT_STATUS_SAVED)) {
-      //si esta desactivado, se hace el chequeo suave de fondo. 
+      //si esta desactivado, se hace el chequeo suave de fondo.
       //no bloqueamos si coords esta vacio
       if (this.visitServ.coordenadas == "") {
         this.geoServ.getCurrentPosition().then(coords => {
@@ -413,7 +414,7 @@ export class VisitaComponent implements OnInit {
       this.hasClient = true;
       //SI no hay cliente anterior, y no seleccionó el mismo anterior, y hay eventos o Adjuntos, deberia resetear
       if (this.clienteAnterior.idClient != null && cliente.idClient != this.clienteAnterior.idClient && (this.listaEventos.length > 0 || this.adjuntoService.hasItems())) {
-        //si hay un cliente anterior debo preguntarle al usuario 
+        //si hay un cliente anterior debo preguntarle al usuario
         //si quiere cambiar (y resetear la visita)
         //o regresar al cliente anterior
         this.setClientChangeOpen(true);
@@ -708,7 +709,7 @@ export class VisitaComponent implements OnInit {
   saveEventChanges() {
     var evento = this.listaEventos[this.eventoAEditar];
     /*  if (this.actividadSeleccionada != null && this.motivoSeleccionado != null) {
-    
+
        evento.evento = this.motivoSeleccionado;
        evento.actividad = this.actividadSeleccionada;
        evento.comentario = this.comentario;
@@ -749,7 +750,7 @@ export class VisitaComponent implements OnInit {
   }
 
   saveEvent() {
-    /* 
+    /*
         if (this.actividadSeleccionada && this.motivoSeleccionado) {
             var ev = {
               pos: this.listaEventos.length,
@@ -759,7 +760,7 @@ export class VisitaComponent implements OnInit {
               comentario: this.comentario,
               saved: false
             } as EventoVisita;
-      
+
             //console.log(ev);
             this.listaEventos.push(ev);
             this.resetEventSelect();
@@ -927,18 +928,18 @@ export class VisitaComponent implements OnInit {
   }
 
   async enviarVisita(isVisited: boolean) {
-      //revisamos que tengamos coordenadas
-      if (!this.visitServ.coordenadas || this.visitServ.coordenadas.length <= 0) {
-        await this.message.showLoading().then(async () => {
-          await this.geoServ.getCurrentPosition().then(coords => {
-            if (coords.length > 0) {
-              this.setCoordinates(coords);
-            }
-            this.message.hideLoading();
-          });
-
+    //revisamos que tengamos coordenadas
+    if (!this.visitServ.coordenadas || this.visitServ.coordenadas.length <= 0) {
+      await this.message.showLoading().then(async () => {
+        await this.geoServ.getCurrentPosition().then(coords => {
+          if (coords.length > 0) {
+            this.setCoordinates(coords);
+          }
+          this.message.hideLoading();
         });
-      }
+
+      });
+    }
     this.visitServ.visit.isVisited = isVisited;
     await this.saveVisit(true).then(async saved => {
       //console.log("insertadas las incidencias");
@@ -958,6 +959,20 @@ export class VisitaComponent implements OnInit {
         "visit"
       );
       transactions.push(tr);
+
+      if (localStorage.getItem("connected") == "true") {
+        this.messageAlert = new MessageAlert(
+          this.getTag('VIS_DENARIO')!,
+          this.getTag('VIS_DENARIO_TO_SEND')!,
+        );
+
+      } else {
+        this.messageAlert = new MessageAlert(
+          this.getTag('VIS_DENARIO')!,
+          this.getTag('VIS_DENARIO_TO_SEND_OFFLINE')!,
+        );
+      }
+      this.message.alertModal(this.messageAlert);
 
       this.servicesServ.insertPendingTransactionBatch(this.syncServ.getDatabase(), transactions).then(() => {
 

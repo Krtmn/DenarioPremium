@@ -20,6 +20,8 @@ PODS:
     - Capacitor
   - CapacitorNetwork (6.0.3):
     - Capacitor
+  - CapacitorShare (6.0.3):
+    - Capacitor
   - CapacitorStatusBar (6.0.2):
     - Capacitor
   - CapawesomeCapacitorFilePicker (6.2.0):
@@ -41,6 +43,7 @@ DEPENDENCIES:
   - "CapacitorKeyboard (from `../../node_modules/@capacitor/keyboard`)"
   - CapacitorNativeSettings (from `../../node_modules/capacitor-native-settings`)
   - "CapacitorNetwork (from `../../node_modules/@capacitor/network`)"
+  - "CapacitorShare (from `../../node_modules/@capacitor/share`)"
   - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
   - "CapawesomeCapacitorFilePicker (from `../../node_modules/@capawesome/capacitor-file-picker`)"
   - "CapawesomeCapacitorScreenOrientation (from `../../node_modules/@capawesome/capacitor-screen-orientation`)"
@@ -69,6 +72,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/capacitor-native-settings"
   CapacitorNetwork:
     :path: "../../node_modules/@capacitor/network"
+  CapacitorShare:
+    :path: "../../node_modules/@capacitor/share"
   CapacitorStatusBar:
     :path: "../../node_modules/@capacitor/status-bar"
   CapawesomeCapacitorFilePicker:
@@ -90,11 +95,12 @@ SPEC CHECKSUMS:
   CapacitorKeyboard: e89189ad398b815b6ff7e52271f0fb4f911a0a0a
   CapacitorNativeSettings: 453aa001834006fe051ffa8e5f0bdde7409ec69f
   CapacitorNetwork: ef75d8208f0974a2de3f98136bf9684524798f5c
+  CapacitorShare: d2a742baec21c8f3b92b361a2fbd2401cdd8288e
   CapacitorStatusBar: b16799a26320ffa52f6c8b01737d5a95bbb8f3eb
   CapawesomeCapacitorFilePicker: c40822f0a39f86855321943c7829d52bca7f01bd
   CapawesomeCapacitorScreenOrientation: df123192d85a280d308bcc4c14841b63cc307732
   CordovaPlugins: d39958e67bbe7626564411424f277be90326f166
 
-PODFILE CHECKSUM: 1c17594ef2f25c56768a514d8dd753a17c389fa0
+PODFILE CHECKSUM: fd657a8a961082142ae8b1fd09f5ea3457accd8a
 
 COCOAPODS: 1.16.2

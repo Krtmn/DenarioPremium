@@ -2432,7 +2432,7 @@ export class CobrosDocumentComponent implements OnInit {
   }
 
   setDiscountComment() {
-    this.validate();
+    //this.validate();
     let index = this.collectService.documentSaleOpen.positionCollecDetails;
     this.collectService.collection.collectionDetails[index].discountComment = this.discountComment;
     //this.disabledSaveButton = false;

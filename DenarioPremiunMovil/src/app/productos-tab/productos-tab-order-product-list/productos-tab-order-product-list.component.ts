@@ -74,6 +74,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   detailModal = false;
   discountModal = false;
   productoModal!: OrderUtil;
+  noProductsAlertShown = false;
 
   disablePriceListSelector = false;
   public imagesMap: { [imgName: string]: string } = {};
@@ -102,15 +103,19 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.ivaList = this.orderServ.ivaList;
     this.disablePriceListSelector = (!this.orderServ.userCanChangePriceListProduct);
     this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
+      this.noProductsAlertShown = false;
       this.warehouseList = this.orderServ.listaWarehouse;
       this.showProductList = true;
       this.nameProductStructure = '';
       this.productList = this.productService.productList;
+      
       this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
+      this.noProductsAlertShown = (this.orderUtilList.length == 0);
 
     });
 
     this.psClicked = this.productService.productStructureCLicked.subscribe((data) => {
+      this.noProductsAlertShown = false;
       this.showProductList = data;
       this.page = 0;
       this.modoLista = 'structure';
@@ -130,6 +135,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
               //probablemente muchos productos fueron eliminados, agregamos mas. 
               this.onIonInfinite(null);
             }
+            this.noProductsAlertShown = (this.orderUtilList.length == 0);
 
           });
       }
@@ -137,6 +143,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
     //caso featuredProduct:
     this.featuredPSClicked = this.productService.featuredStructureClicked.subscribe((showList) => {
+      this.noProductsAlertShown = false;
       this.showProductList = showList;
       this.nameProductStructure = this.productStructureService.nombreProductStructureSeleccionada;
       if (this.showProductList) {
@@ -153,11 +160,13 @@ export class ProductosTabOrderProductListComponent implements OnInit {
           this.orderServ.userCanChangeWarehouse, this.orderServ.cliente.idClient, this.orderServ.listaSeleccionada.idList, this.page).then(() => {
             this.productList = this.productService.productList;
             this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
+            this.noProductsAlertShown = (this.orderUtilList.length == 0);
           });
       }
     });
     //caso favorito:
     this.favoritePSClicked = this.productService.favoriteStructureClicked.subscribe((showList) => {
+      this.noProductsAlertShown = false;
       this.showProductList = showList;
       this.nameProductStructure = this.productStructureService.nombreProductStructureSeleccionada;
       if (this.showProductList) {
@@ -174,6 +183,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
           this.orderServ.userCanChangeWarehouse, this.orderServ.cliente.idClient, this.orderServ.listaSeleccionada.idList, this.page).then(() => {
             this.productList = this.productService.productList;
             this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
+            this.noProductsAlertShown = (this.orderUtilList.length == 0);
           });
       }
 
@@ -181,11 +191,13 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
     //caso carrito:
     this.carritoButtonClicked = this.productService.carritoButtonClicked.subscribe((showList) => {
+      this.noProductsAlertShown = false;
       this.showProductList = showList;
       this.modoLista = 'carrito';
       this.orderUtilList = this.orderServ.carrito;
       this.warehouseList = this.orderServ.listaWarehouse;
       this.nameProductStructure = this.orderServ.getTag("PED_CARRITO")
+      this.noProductsAlertShown = (this.orderUtilList.length == 0);
     });
 
     this.cantidadInputMode();
@@ -199,6 +211,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
           this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency,
           this.orderServ.userCanChangeWarehouse, this.orderServ.cliente.idClient, this.orderServ.listaSeleccionada.idList, this.page).then(() => {
             this.updateList(ev);
+            
           });
         break;
 
@@ -207,6 +220,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
           this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency,
           this.orderServ.userCanChangeWarehouse, this.orderServ.cliente.idClient, this.orderServ.listaSeleccionada.idList, this.page).then(() => {
             this.updateList(ev);
+            
           });
         break;
 
@@ -215,6 +229,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
           this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency,
           this.orderServ.userCanChangeWarehouse, this.orderServ.cliente.idClient, this.orderServ.listaSeleccionada.idList, this.page).then(() => {
             this.updateList(ev);
+            
           });
         break;
 
@@ -238,7 +253,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
         const item = tempList[i];
         this.orderUtilList.push(item);
       }
-
+      this.noProductsAlertShown = (this.orderUtilList.length == 0);
     }
     if (ev) {
       ev.target.complete(); //termina la animacion del infiniteScroll
