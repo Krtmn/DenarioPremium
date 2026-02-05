@@ -32,7 +32,7 @@ import { from } from 'rxjs';
 export class LoginComponent implements OnInit {
   public loginLogic = inject(LoginLogicService);
 
-  private messageService = inject(MessageService);
+
   private synchronization = inject(SynchronizationDBService);
   private globalConfig = inject(GlobalConfigService);
   private services = inject(ServicesService);
@@ -65,7 +65,7 @@ export class LoginComponent implements OnInit {
   async ngOnInit() {
     /* App.getInfo().then(async (res) => { */
     // preferir la versión real del paquete si está disponible, si no usar fallback
-    this.versionApp = "6.5.12";
+    this.versionApp = "6.6.3";
 
     const storedVersionApp = localStorage.getItem("versionApp");
     // primer arranque: guardamos la versionApp actual
@@ -183,7 +183,7 @@ export class LoginComponent implements OnInit {
           "Denario Premium",
           "Debe conectarse el celular a una red Wifi o señal de datos"
         );
-        this.messageService.alertModal(this.messageAlert);
+        this.message.alertModal(this.messageAlert);
       }
     });
 
@@ -202,7 +202,7 @@ export class LoginComponent implements OnInit {
         "Usuario y/o password no pueden ser vacios"
       );
       /* this.message.hideLoading(); */
-      this.messageService.alertModal(this.messageAlert);
+      this.message.alertModal(this.messageAlert);
     } else if (localStorage.getItem("login") != login && localStorage.getItem("login") != null) {
       this.message.hideLoading();
       this.messageAlert = new MessageAlert(
@@ -211,7 +211,7 @@ export class LoginComponent implements OnInit {
         " de aceptar la sincronización todos los datos anteriores serán borrados. ¿Está de acuerdo?"
       );
 
-      this.messageService.alertModalModule(this.messageAlert, "login");
+      this.message.alertModalModule(this.messageAlert, "login");
 
 
     } else if (conexion) {
@@ -248,7 +248,7 @@ export class LoginComponent implements OnInit {
                 "Denario Premium",
                 "Usuario y/o contraseña incorrectos."
               );
-              this.messageService.alertModal(this.messageAlert);
+              this.message.alertModal(this.messageAlert);
               break;
             case '403':
               let msj = "";
@@ -262,7 +262,7 @@ export class LoginComponent implements OnInit {
                 "Denario Premium",
                 msj
               );
-              this.messageService.alertModal(this.messageAlert);
+              this.message.alertModal(this.messageAlert);
               break;
             default: {
               this.message.hideLoading();
@@ -270,7 +270,7 @@ export class LoginComponent implements OnInit {
                 "Denario Premium",
                 "Ocurrió un error de comunicación con el servidor, verifique cobertura e intente nuevamente."
               );
-              this.messageService.alertModal(this.messageAlert);
+              this.message.alertModal(this.messageAlert);
             }
           }
 
@@ -285,7 +285,7 @@ export class LoginComponent implements OnInit {
             "Denario Premium",
             "Ocurrió un error de comunicación con el servidor, verifique cobertura e intente nuevamente."
           );
-          this.messageService.alertModal(this.messageAlert);
+          this.message.alertModal(this.messageAlert);
           /*           this.message.hideLoading();
            */
           console.error(e);
