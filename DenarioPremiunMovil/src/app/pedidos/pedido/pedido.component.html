@@ -187,6 +187,12 @@
                                             labelPlacement="stacked" [(ngModel)]="orderServ.listaSeleccionada"
                                             [compareWith]="listCompare"
                                             [disabled]="!orderServ.userCanChangePriceList || orderServ.openOrder">
+                                            @if(orderServ.listaSeleccionada?.idList === 0) {
+                                                <!-- Se muestra cuando Long borra las listas de precios y el movil no las consigue -->
+                                                <ion-select-option  [value]="orderServ.listaSeleccionada" disabled>
+                                                    N/A
+                                                </ion-select-option>
+                                            }
                                             <ion-select-option *ngFor="let list of orderServ.listaList"
                                                 [value]="list">{{ list.naList }}
                                             </ion-select-option>

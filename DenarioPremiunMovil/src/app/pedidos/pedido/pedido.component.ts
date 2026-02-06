@@ -1179,11 +1179,27 @@ export class PedidoComponent implements OnInit {
       if (this.orderServ.openOrder) {
         let idPriceList = this.orderServ.order.orderDetails[0].idPriceList
         let pl = this.orderServ.listaPricelist.filter((pl) => pl.idPriceList == idPriceList)
-        let idList = pl[0].idList;
-        list = this.orderServ.listaList.find((list) => list.idList == idList);
-        this.orderServ.listaSeleccionada = list!;
-        this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList);
-        this.listaAnterior = list!;
+        if(pl.length < 1) {
+          console.error("No se encontro pricelist del pedido");
+          if(this.orderServ.pedidoModificable){
+          console.log("Buscando lista por cliente, para que  el usuario pueda cambiarla"); 
+            list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
+          }
+        }else{
+          let idList = pl[0].idList;
+          list = this.orderServ.listaList.find((list) => list.idList == idList);
+        }
+        if(list){
+          this.orderServ.listaSeleccionada = list!;
+          if(list.idList > 0){
+            this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList);
+
+          }
+         this.listaAnterior = list!;
+        }else{
+          this.orderServ.listaSeleccionada = { idList: 0} as List;
+        }  
+
 
       } else {
         list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
