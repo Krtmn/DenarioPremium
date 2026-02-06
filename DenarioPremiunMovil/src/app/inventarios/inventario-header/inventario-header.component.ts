@@ -170,9 +170,11 @@ export class InventarioHeaderComponent implements OnInit {
 
 
       }
-      if (validate)
+      if (validate) {
+        this.inventariosLogicService.onStockValidToSend(true);
+        this.inventariosLogicService.onStockValidToSave(true);
         this.inventariosLogicService.showBackRoute('inventarios');
-      else {
+      } else {
         this.messageAlert = new MessageAlert(
           this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!,
           this.inventariosLogicService.inventarioTags.get('INV_MSJ_ERROR_TYPESTOCKS')!,
