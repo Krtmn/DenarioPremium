@@ -223,7 +223,9 @@ export class SynchronizationDBService {
         }
       })
 
-      promesa.then((value) => {
+      promesa.then(async (value) => {
+        await this.checkAndRunMigrations();
+
         this.inHome = false;
         if (conexion) {
           let variablesConfiguracion = JSON.parse(localStorage.getItem("globalConfiguration") || "[]");
