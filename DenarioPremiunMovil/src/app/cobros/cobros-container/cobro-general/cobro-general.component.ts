@@ -119,6 +119,7 @@ export class CobrosGeneralComponent implements OnInit {
           this.setChangesMade(true);
         })
       );
+
       this.initGeneralState();
     }
   }

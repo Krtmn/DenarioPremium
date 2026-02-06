@@ -9,7 +9,8 @@
 <div *ngIf="this.collectService.multiCurrency">
   <ion-item>
     <ion-label>
-      {{this.collectService.collectionTags.get('COB_MONEDA')}} Documento:
+      {{this.collectService.collectionTags.get('COB_MONEDA')}}
+      {{this.collectService.collectionTags.get('COB_DOCUMENTO')}}:
     </ion-label>
     <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.currencySelectedDocument"
       (ionChange)="onChangeCurrencyDoc($event)" labelPlacement="stacked">
@@ -54,8 +55,9 @@
 
       <ion-col
         *ngIf="this.collectService.historicPartialPayment && this.collectService.coTypeModule == '0' || this.collectService.coTypeModule == '4'"
-        class="titulosBold col" size="2">Pago<br>
-        Parcial</ion-col>
+        class="titulosBold col" size="2">{{this.collectService.collectionTags.get('COB_PAGO')}}<br>
+        {{this.collectService.collectionTags.get('COB_PARCIAL')}}
+      </ion-col>
 
       <ion-col class="titulosBold col" size="2">{{this.collectService.collectionTags.get('COB_TIPO')}} </ion-col>
       <ion-col class="titulosBold col" size="4">{{this.collectService.collectionTags.get('COB_NRO_DOCUMENTO')}}
@@ -75,7 +77,7 @@
 
       <ion-col *ngIf="this.collectService.multiCurrency && this.collectService.showConversion" size="6"
         class="titulosBold col">{{this.collectService.collectionTags.get('COB_MONTO')}}
-        Conversión
+        {{this.collectService.collectionTags.get('COB_CONVERSION')}}
       </ion-col>
 
       <ion-col size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_SALDO')}}
@@ -83,7 +85,7 @@
 
       <ion-col *ngIf="this.collectService.multiCurrency && this.collectService.showConversion" size="6"
         class="titulosBold col">{{this.collectService.collectionTags.get('COB_SALDO')}}
-        Conversión
+        {{this.collectService.collectionTags.get('COB_CONVERSION')}}
       </ion-col>
 
       <ion-col size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_FECHA_DOC')}}</ion-col>
@@ -333,18 +335,21 @@
                                   class="collect-discount-inputs" style="width:100%; padding:0 16px 8px 16px;">
                                   <ion-item lines="none"
                                     [ngClass]="{'input-rojo': isTempCollectDiscountFieldInvalid(d.idCollectDiscount,'nuCollectDiscount'), 'inp-write': isTempCollectDiscountFieldValid(d.idCollectDiscount,'nuCollectDiscount')}">
-                                    <ion-label position="floating">Tasa (%)</ion-label>
+                                    <ion-label
+                                      position="floating">{{this.collectService.collectionTags.get('COB_TASA_%')}}</ion-label>
                                     <ion-input type="number" [ngModel]="getNuCollectDiscount(d.idCollectDiscount)"
                                       (ngModelChange)="setNuCollectDiscount(d.idCollectDiscount, $event)" required
                                       max="{{100 - this.collectService.totalCollectDiscountsSelected}}">
                                     </ion-input>
                                   </ion-item>
                                   <div style="padding:4px 16px; font-size:0.9em; color:var(--ion-color-medium);">
-                                    Disponible: {{ 100 - (this.collectService.totalCollectDiscountsSelected || 0) }}%
+                                    {{this.collectService.collectionTags.get('COB_DISPONIBLE')}}: {{ 100 -
+                                    (this.collectService.totalCollectDiscountsSelected || 0) }}%
                                   </div>
                                   <ion-item lines="none"
                                     [ngClass]="{'input-rojo': isTempCollectDiscountFieldInvalid(d.idCollectDiscount,'naCollectDiscount'), 'inp-write': isTempCollectDiscountFieldValid(d.idCollectDiscount,'naCollectDiscount')}">
-                                    <ion-label position="floating">Nombre descuento</ion-label>
+                                    <ion-label
+                                      position="floating">{{this.collectService.collectionTags.get('COB_NOMBRE_DESCUENTO')}}</ion-label>
                                     <ion-input type="text" [ngModel]="getNaCollectDiscount(d.idCollectDiscount)"
                                       (ngModelChange)="setNaCollectDiscount(d.idCollectDiscount, $event)"
                                       required></ion-input>
@@ -399,23 +404,21 @@
                     </ion-input>
                   </ion-col>
 
-                  <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-                    <ion-grid class="ion-margin-top">
-                      <ion-row>
-                        <ion-col class="padding0" size="4" size-xs="4" size-sm="6" size-md="6">
-                          <ion-label>Falta Retención:
-                          </ion-label>
-                        </ion-col>
-                        <ion-col class="padding0" size="6" size-xs="8" size-sm="6" size-md="6">
-                          <!--   <ion-item> -->
-                          <ion-toggle [enableOnOffLabels]="true" [checked]="this.collectService.missingRetention"
-                            (ionChange)="missingRetention($event)">
-                          </ion-toggle>
-                          <!-- </ion-item> -->
-                        </ion-col>
-                      </ion-row>
-                    </ion-grid>
-                  </ion-col>
+                  <!-- MISSING RETENTION -->
+                  <ion-grid class="ion-margin-top">
+                    <ion-row class="missing-retention-row">
+                      <ion-col class="padding0 label-col" size="4" size-xs="4" size-sm="6" size-md="6">
+                        <ion-label>{{this.collectService.collectionTags.get('COB_MISSING_RETENTION')}}:
+                        </ion-label>
+                      </ion-col>
+                      <ion-col class="padding0 toggle-col" size="6" size-xs="8" size-sm="6" size-md="6">
+                        <ion-toggle [enableOnOffLabels]="true" [checked]="this.collectService.missingRetention"
+                          (ionChange)="missingRetention($event)">
+                        </ion-toggle>
+                      </ion-col>
+                    </ion-row>
+                  </ion-grid>
+                  <!-- MISSING RETENTION -->
 
                   <!-- DIFERENCIA DEVOLUCION/FALTANTE -->
                   <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
@@ -428,8 +431,10 @@
                   </ion-col>
                   <!-- DIFERENCIA DEVOLUCION/FALTANTE -->
 
-                  <!-- NRO COMPROBANTE RET -->
+
                   <!-- <div *ngIf="this.collectService.retencion"> -->
+                  @if(this.collectService.retencion){
+                  <!-- NRO COMPROBANTE RET -->
                   <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
                     *ngIf="this.collectService.retencion && this.collectService.formatRetention == 'number'">
                     <ion-input label="{{this.collectService.collectionTags.get('COB_NUMBER_COMPROBANTE_RETENTION')}}"
@@ -477,9 +482,6 @@
                     </ion-modal>
                   </ion-col>
                   <!-- FECHA COMP RET  -->
-
-
-
                   <!-- MONTO RET IVA-->
                   <ion-col *ngIf="this.collectService.retencion" size="12" size-xs="12" size-sm="12" size-md="12">
                     <ion-input label="{{this.collectService.collectionTags.get('COB_AMOUNT_RETENTION_IVA')}}"
@@ -503,7 +505,7 @@
                     </ion-input>
                   </ion-col>
                   <!-- MONTO RET ISLR--->
-
+                  }
                 </ion-list>
               </ion-col>
 
@@ -516,7 +518,6 @@
                     </ion-label>
                   </ion-col>
                   <ion-col class="padding0" size="6" size-xs="8" size-sm="6" size-md="6">
-                    <!--   <ion-item> -->
                     <ion-toggle [enableOnOffLabels]="true" checked="{{this.collectService.isPaymentPartial}}"
                       (ionChange)="partialPay($event)">
                     </ion-toggle>

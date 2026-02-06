@@ -200,6 +200,7 @@ export class CollectionService {
   public enableDifferenceCodes: boolean = false;
   public userCanSelectCollectDiscount: boolean = false;
   public missingRetention: boolean = false;
+  public canChangeRate: boolean = false;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;
@@ -339,10 +340,10 @@ export class CollectionService {
       this.currencySelector = this.currencyService.getCurrencyModule("cob").currencySelector.toString() === "true" ? true : false;
       this.disabledCurrency = this.currencyService.getCurrencyModule("cob").currencySelector.toString() === "true" ? false : true;
     }
-
     this.userCanAddRetention = this.globalConfig.get('userCanAddRetention') === 'true' ? true : false;
     this.enableDifferenceCodes = this.globalConfig.get('enableDifferenceCodes') === 'true' ? true : false;
     this.userCanSelectCollectDiscount = this.globalConfig.get('userCanSelectCollectDiscount') === 'true' ? true : false;
+    this.canChangeRate = this.globalConfig.get('canChangeRate') === 'true' ? true : false;
 
     this.showNuevaCuenta = this.clientBankAccount === true ? true : false;
 
@@ -1777,8 +1778,8 @@ export class CollectionService {
 
     //this.documentSales[index].nuAmountBase = nuAmountBase;
     //this.documentSalesBackup[index].nuAmountBase = nuAmountBase;
-   /*  this.documentSales[index].nuAmountDiscount = nuAmountDiscount;
-    this.documentSalesBackup[index].nuAmountDiscount = nuAmountDiscount; */
+    /*  this.documentSales[index].nuAmountDiscount = nuAmountDiscount;
+     this.documentSalesBackup[index].nuAmountDiscount = nuAmountDiscount; */
     this.documentSales[index].nuAmountPaid = nuAmountPaid;
     this.documentSalesBackup[index].nuAmountPaid = nuAmountPaid;
     this.documentSales[index].nuAmountRetention = nuAmountRetention;
@@ -3447,35 +3448,40 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
-    const insertCollectionDetailSQL = `
-  INSERT OR REPLACE INTO collection_details (
+    const insertCollectionDetailSQL = `INSERT OR REPLACE INTO collection_details (
     id_collection_detail,
-    co_collection,
-    co_document,
-    in_payment_partial,
-    nu_voucher_retention,
-    nu_amount_retention,
-    nu_amount_retention2,
-    nu_amount_paid,
-    nu_amount_paid_conversion,
-    nu_amount_discount,
-    nu_amount_discount_conversion,
-    nu_amount_doc,
-    nu_amount_doc_conversion,
-    da_document,
-    nu_balance_doc,
-    nu_balance_doc_conversion,
-    co_original,
-    co_type_doc,
-    id_document,
-    nu_amount_retention_iva_conversion,
-    nu_amount_retention_islr_conversion,
-    nu_amount_igtf,
-    nu_amount_igtf_conversion,
-    da_voucher,
-    missing_retention
-  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-`;
+      co_collection,
+      co_document,
+      in_payment_partial,
+      nu_voucher_retention,
+      nu_amount_retention,
+      nu_amount_retention2,
+      nu_amount_paid,
+      nu_amount_discount,
+      nu_amount_doc,
+      da_document,
+      nu_balance_doc,
+      nu_balance_doc_original,
+      co_original,
+      co_type_doc,
+      id_document,
+      nu_amount_doc_conversion,
+      nu_balance_doc_conversion,
+      nu_balance_doc_original_conversion,
+      nu_amount_retention_iva_conversion,
+      nu_amount_retention_islr_conversion,
+      nu_amount_discount_conversion,
+      nu_amount_paid_conversion,
+      nu_amount_igtf,
+      nu_amount_igtf_conversion,
+      da_voucher,
+      has_discount,
+      discount_comment,
+      nu_amount_collect_discount,
+      nu_amount_collect_discount_conversion,
+      nu_collect_discount,
+      missing_retention
+) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);`;
 
     const insertCollectionPaymentSQL = `
   INSERT OR REPLACE INTO collection_payments (
@@ -3591,6 +3597,11 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             collectionDetail.nuAmountIgtf,
             collectionDetail.nuAmountIgtfConversion,
             collectionDetail.daVoucher,
+            collectionDetail.hasDiscount,
+            collectionDetail.discountComment,
+            collectionDetail.nuAmountCollectDiscount,
+            collectionDetail.nuAmountCollectDiscountConversion,
+            collectionDetail.nuCollectDiscount,
             collectionDetail.missingRetention
           ]
         ]);
@@ -3691,40 +3702,40 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     })
 
     let statementsCollectionDetails = [];
-    const inserStatementCollectionDetail = "INSERT OR REPLACE INTO collection_details(" +
-      "id_collection_detail," +
-      "co_collection," +
-      "co_document," +
-      "in_payment_partial," +
-      "nu_voucher_retention," +
-      "nu_amount_retention," +
-      "nu_amount_retention2," +
-      "nu_amount_paid," +
-      "nu_amount_paid_conversion," +
-      "nu_amount_discount," +
-      "nu_amount_discount_conversion," +
-      "nu_amount_doc," +
-      "nu_amount_doc_conversion," +
-      "da_document," +
-      "nu_balance_doc," +
-      "nu_balance_doc_conversion," +
-      "nu_balance_doc_original," +
-      "nu_balance_doc_original_conversion," +
-      "co_original," +
-      "co_type_doc," +
-      "id_document," +
-      "nu_amount_retention_iva_conversion," +
-      "nu_amount_retention_islr_conversion," +
-      "nu_amount_igtf," +
-      "nu_amount_igtf_conversion," +
-      "da_voucher," +
-      "has_discount," +
-      "discount_comment," +
-      "nu_amount_collect_discount," +
-      "nu_collect_discount," +
-      "missing_retention," +
-      "nu_amount_collect_discount_conversion" +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    const inserStatementCollectionDetail = `INSERT OR REPLACE INTO collection_details (
+    id_collection_detail,
+      co_collection,
+      co_document,
+      in_payment_partial,
+      nu_voucher_retention,
+      nu_amount_retention,
+      nu_amount_retention2,
+      nu_amount_paid,
+      nu_amount_discount,
+      nu_amount_doc,
+      da_document,
+      nu_balance_doc,
+      nu_balance_doc_original,
+      co_original,
+      co_type_doc,
+      id_document,
+      nu_amount_doc_conversion,
+      nu_balance_doc_conversion,
+      nu_balance_doc_original_conversion,
+      nu_amount_retention_iva_conversion,
+      nu_amount_retention_islr_conversion,
+      nu_amount_discount_conversion,
+      nu_amount_paid_conversion,
+      nu_amount_igtf,
+      nu_amount_igtf_conversion,
+      da_voucher,
+      has_discount,
+      discount_comment,
+      nu_amount_collect_discount,
+      nu_amount_collect_discount_conversion,
+      nu_collect_discount,
+      missing_retention
+) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?); `;
 
     for (var i = 0; i < collectionDetail.length; i++) {
       statementsCollectionDetails.push([inserStatementCollectionDetail, [
@@ -3757,9 +3768,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         collectionDetail[i].hasDiscount,
         collectionDetail[i].discountComment,
         collectionDetail[i].nuAmountCollectDiscount,
+        collectionDetail[i].nuAmountCollectDiscountConversion,
         collectionDetail[i].nuCollectDiscount,
-        collectionDetail[i].missingRetention,
-        collectionDetail[i].nuAmountCollectDiscountConversion
+        collectionDetail[i].missingRetention
       ]]);
     }
 

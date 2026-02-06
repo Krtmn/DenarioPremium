@@ -1033,6 +1033,12 @@ export class CobrosDocumentComponent implements OnInit {
     } else {
       /*  this.collectService.mensaje = "NO SE QUE PONER ACA";
        this.alertMessageOpen = true; */
+      this.collectService.documentSaleOpen.nuAmountRetention = 0;
+      this.collectService.documentSaleOpen.nuAmountRetention2 = 0;
+      this.collectService.documentSaleOpen.nuVaucherRetention = "";
+      this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].nuAmountRetention = 0;
+      this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].nuAmountRetention2 = 0;
+      this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].nuVaucherRetention = "";
       this.disabledSaveButton = false;
     }
   }

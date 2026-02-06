@@ -175,3 +175,31 @@ ion-modal.collectDiscounts {
     color: #4caf50 !important;
   }
 }
+
+.missing-retention-row {
+  align-items: center;
+  flex-wrap: nowrap;
+  column-gap: 8px;
+}
+
+.missing-retention-row .label-col {
+  flex: 0 0 auto;
+  padding-right: 6px;
+}
+
+.missing-retention-row .label-col ion-label {
+  white-space: nowrap;
+  margin-right: 0;
+}
+
+.missing-retention-row .toggle-col {
+  flex: 0 0 auto;
+}
+
+ion-grid.ion-margin-top ion-row > ion-col.padding0:first-child {
+  flex: 0 0 auto;
+}
+
+ion-grid.ion-margin-top ion-row > ion-col.padding0:first-child ion-label {
+  white-space: nowrap;
+}
