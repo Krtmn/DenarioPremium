@@ -608,8 +608,9 @@ export class CobrosDocumentComponent implements OnInit {
   selectDocumentSale(documentSale: DocumentSale, indexDocumentSale: number, event: any) {
     documentSale.isSelected = event.detail.checked;
     console.log(indexDocumentSale);
-    if (documentSale.coDocumentSaleType == "NC" && this.collectService.collection.collectionDetails.length == 0) {
-
+    if (documentSale.nuAmountBase < 0 && this.collectService.collection.collectionDetails.length == 0) {
+      /*     if (documentSale.coDocumentSaleType == "NC" && this.collectService.collection.collectionDetails.length == 0) {
+       */
 
       //NO PERMITO SELECCIONAR DE PRIMERO UN DOCUMENTO DE TIPO NOTA DE CREDITO, ENVIO MENSAJE?
       if (documentSale.isSelected) {
