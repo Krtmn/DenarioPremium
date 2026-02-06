@@ -288,6 +288,7 @@
                   <!-- COMENTARIO -->
 
                   <!-- LISTA DESCUENTOS  userCanSelectCollectDiscount -->
+                  @if(!this.collectService.isPaymentPartial){
                   <ion-col *ngIf="this.collectService.userCanSelectCollectDiscount" size="12" size-xs="12" size-sm="12"
                     size-md="12">
                     <ion-button expand="block" size="small" (click)="openAssignDiscounts()" class="botonAddVerde">
@@ -379,6 +380,8 @@
                       </ng-template>
                     </ion-modal>
                   </ion-col>
+                  <!-- LISTA DESCUENTOS  userCanSelectCollectDiscount -->
+                  }
                   <ion-col *ngIf="this.collectService.selectedCollectDiscounts.length > 0" size="12" size-xs="12"
                     size-sm="12">
                     <ion-input label="Descuentos Seleccionados" label-placement="floating" fill="outline"
@@ -488,6 +491,9 @@
               </ion-col>
 
               <!-- PAGO PARCIAL CHECK-->
+              @if(!(this.collectService.selectedCollectDiscounts.length > 0) &&
+              this.collectService.userCanSelectCollectDiscount){
+
               <ion-grid class="ion-margin-top">
                 <ion-row>
                   <ion-col class="padding0" size="4" size-xs="4" size-sm="6" size-md="6">
@@ -505,6 +511,7 @@
                 </ion-row>
               </ion-grid>
               <!-- PAGO PARCIAL / MONTO A PAGARL-->
+              }
               <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                 <ion-input
                   label="{{this.collectService.collectionTags.get('COB_MONTO_PAGAR')}} {{this.collectService.collection.coCurrency}}"
