@@ -4,6 +4,7 @@ import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
 import { SynchronizationDBService } from '../services/synchronization/synchronization-db.service';
 import { ServicesService } from '../services/services.service';
 import { Client } from '../modelos/tables/client';
+import { CurrencyModules } from '../modelos/tables/currencyModules';
 
 @Injectable({
   providedIn: 'root'
@@ -21,6 +22,8 @@ export class ClienteSelectorService {
   public colorModulo: string = '';
 
   public nombreModulo: string = '';
+
+  public currencyModule : CurrencyModules = {} as CurrencyModules;
 
   ClientChanged = new Subject<Client>;
 

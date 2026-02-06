@@ -188,7 +188,7 @@
                                             [compareWith]="listCompare"
                                             [disabled]="!orderServ.userCanChangePriceList || orderServ.openOrder">
                                             @if(orderServ.listaSeleccionada?.idList === 0) {
-                                                <!-- Se muestra cuando Long borra las listas de precios y el movil no las consigue -->
+                                        <!-- Se muestra cuando Long borra las listas de precios y el movil no las consigue -->
                                                 <ion-select-option  [value]="orderServ.listaSeleccionada" disabled>
                                                     N/A
                                                 </ion-select-option>
