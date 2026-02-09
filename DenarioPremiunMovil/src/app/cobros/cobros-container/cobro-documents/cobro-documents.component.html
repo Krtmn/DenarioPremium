@@ -244,7 +244,7 @@
                   <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
                     *ngIf="this.collectService.historicoTasa && this.collectService.showConversion">
                     <ion-input
-                      label="{{this.collectService.collectionTags.get('COB_TASA')}} {{this.collectService.localCurrency.coCurrency}}:"
+                      label="{{this.collectService.collectionTags.get('COB_TASA_DIA')}} {{this.collectService.localCurrency.coCurrency}}:"
                       label-placement="floating" fill="outline" color="primary"
                       [value]="currencyService.formatNumber(collectService.documentSaleOpen.nuValueLocal)"
                       [readonly]="true">

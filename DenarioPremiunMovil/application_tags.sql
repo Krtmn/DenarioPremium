@@ -364,7 +364,7 @@ INSERT INTO public.application_tags(
 	('COB_STATUS_SENT', 'COB', 'COBROS', 'ESP', 'Enviado'),
 	('COB_TYPE_COBRO', 'COB', 'COBROS', 'ESP', 'Cobros'),
 	('COB_TYPE_ANTICIPO', 'COB', 'COBROS', 'ESP', 'Anticipo'),
-	('COB_TYPE_RETENCION', 'COB', 'COBROS', 'ESP', 'Retencion'),
+	('COB_TYPE_RETENCION', 'COB', 'COBROS', 'ESP', 'Retención'),
 	('COB_TYPE_IGTF', 'COB', 'COBROS', 'ESP', 'IGTF'),
 	('COB_DEV_STATUS', 'COB', 'COBROS', 'ESP', 'Estatus'),
 	('COB_DEV_STATUS', 'COB', 'COBROS', 'ENG', 'Status'),
@@ -377,7 +377,8 @@ INSERT INTO public.application_tags(
 	('COB_DEV_COMMENT', 'COB', 'COBROS', 'ESP', 'Motivo'),
 	('COB_COB_CHANGE_DATERATE', 'COB', 'COBROS', 'ESP', 'Está cambiando la fecha de la tasa, esto recalculará  los montos. ¿Desea continuar?'),
 	('COB_DENARIO_TO_SEND', 'COB', 'COBROS', 'ESP','Su Cobro será enviado'),
-  ('COB_DENARIO_TO_SEND_OFFLINE', 'COB', 'COBROS', 'ESP','Su Cobro será enviado al tener conexión de datos');
+  ('COB_DENARIO_TO_SEND_OFFLINE', 'COB', 'COBROS', 'ESP','Su Cobro será enviado al tener conexión de datos'),
+  ('COB_MISSING_RETENTION', 'COB', 'COBROS', 'ESP','Falta retención');
 
 
 -- VENDEDORES
