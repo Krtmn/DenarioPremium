@@ -101,6 +101,7 @@ export class MessageService {
   }
   alertModal(msj: MessageAlert) {
     // Encolar y procesar en serie
+    if(msj.message.length < 1) return; // evitar mensajes vacíos
     this.messageQueue.push({ type: 'alertModalMsj', payload: msj });
     this.processQueue();
   }

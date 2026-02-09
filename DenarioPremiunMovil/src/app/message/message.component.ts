@@ -107,9 +107,9 @@ export class MessageComponent implements OnInit, OnDestroy {
       this.setAlertMessage(true);
     })
 
-    this.closeAlertModal = this.messageService.closeAlertModalSubject.subscribe((() => {
+    this.closeAlertModal = this.messageService.closeAlertModalSubject.subscribe((() => {     
       this.alertMessageOpen = false;
-      //this.messageService.dismissAll();
+      this.messageService.dismissAll();
     }))
 
 
