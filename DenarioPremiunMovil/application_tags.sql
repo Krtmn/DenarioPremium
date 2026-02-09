@@ -253,6 +253,7 @@ INSERT INTO public.application_tags(
 	('COB_CLIENTE','COB','COBROS','ESP','Cliente'),
 	('COB_MONEDA','COB','COBROS','ESP','Moneda'),
 	('COB_TASA','COB','COBROS','ESP','Tasa'),
+	('COB_TASA_DIA','COB','COBROS','ESP','Tasa de cambio del día'),
 	('COB_FECHA_TASA','COB','COBROS','ESP','Fecha Tasa'),
 	('COB_FECHA_COBRO','COB','COBROS','ESP','Fecha Cobro'),
 	('COB_RESPONSABLE','COB','COBROS','ESP','Responsable'),
@@ -283,10 +284,9 @@ INSERT INTO public.application_tags(
 	('COB_DETALLE_DOCUMENTO','COB','COBROS','ESP','Detalle documento'),
 	('COB_TIPO_DOCUMENTO','COB','COBROS','ESP','Tipo documento'),
 	('COB_NRO_DOCUMENTO','COB','COBROS','ESP','Nro. documento'),
-	('COB_FECHA_EMISION','COB','COBROS','ESP','Fecha emisión'),
+	('COB_FECHA_EMISION','COB','COBROS','ESP','Fecha emisión factura'),
 	('COB_DIF_DEVOLUCION_FALTANTE','COB','COBROS','ESP','Dif. Devolución/Faltante'),
 	('COB_PAGO_PARCIAL','COB','COBROS','ESP','Pago parcial'),
-	('COB_MISSING_RETENTION','COB','COBROS','ESP','Falta retención'),
 	('COB_MONTO_PAGAR','COB','COBROS','ESP','Monto a pagar'),
 	('COB_NRO_DEPOSITO','COB','COBROS','ESP','Nro. Depósito'),
 	('COB_NRO_REFERENCIA','COB','COBROS','ESP','Nro. Referencia'),
@@ -377,13 +377,7 @@ INSERT INTO public.application_tags(
 	('COB_DEV_COMMENT', 'COB', 'COBROS', 'ESP', 'Motivo'),
 	('COB_COB_CHANGE_DATERATE', 'COB', 'COBROS', 'ESP', 'Está cambiando la fecha de la tasa, esto recalculará  los montos. ¿Desea continuar?'),
 	('COB_DENARIO_TO_SEND', 'COB', 'COBROS', 'ESP','Su Cobro será enviado'),
-  ('COB_DENARIO_TO_SEND_OFFLINE', 'COB', 'COBROS', 'ESP','Su Cobro será enviado al tener conexión de datos'),
-  ('COB_DISPONIBLE', 'COB', 'COBROS', 'ESP','Disponible'),
-  ('COB_TASA_%', 'COB', 'COBROS', 'ESP','Tasa (%)'),
-  ('COB_NOMBRE_DESCUENTO', 'COB', 'COBROS', 'ESP','Nombre descuento'),
-  ('COB_CONVERSION', 'COB', 'COBROS', 'ESP','Conversión'),
-  ('COB_PARCIAL', 'COB', 'COBROS', 'ESP','Parcial'),
-  ('COB_DOCUMENTO', 'COB', 'COBROS', 'ESP','Documento');
+  ('COB_DENARIO_TO_SEND_OFFLINE', 'COB', 'COBROS', 'ESP','Su Cobro será enviado al tener conexión de datos');
 
 
 -- VENDEDORES

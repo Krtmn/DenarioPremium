@@ -201,6 +201,7 @@ export class CollectionService {
   public userCanSelectCollectDiscount: boolean = false;
   public missingRetention: boolean = false;
   public canChangeRate: boolean = false;
+  public alWaysRetention: boolean = false;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;
@@ -344,6 +345,7 @@ export class CollectionService {
     this.enableDifferenceCodes = this.globalConfig.get('enableDifferenceCodes') === 'true' ? true : false;
     this.userCanSelectCollectDiscount = this.globalConfig.get('userCanSelectCollectDiscount') === 'true' ? true : false;
     this.canChangeRate = this.globalConfig.get('canChangeRate') === 'true' ? true : false;
+    this.alWaysRetention = this.globalConfig.get('alWaysRetention') === 'true' ? true : false;
 
     this.showNuevaCuenta = this.clientBankAccount === true ? true : false;
 
@@ -1615,7 +1617,7 @@ export class CollectionService {
     else
       this.disabledSelectCollectMethodDisabled = false;
 
-    this.missingRetention = false;
+    this.missingRetention = this.alWaysRetention;
 
 
     return collection = {
