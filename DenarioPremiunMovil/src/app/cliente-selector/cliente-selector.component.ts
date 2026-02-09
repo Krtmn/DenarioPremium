@@ -93,6 +93,9 @@ export class ClienteSelectorComponent implements OnInit {
   ngOnInit() {
     //console.log("Cliente selector ON");
     //this.dateToday = this.dateServ.onlyDateHoyISO();
+    if (this.service.currencyModule) {
+      this.loadCurrencyModule();
+    }
   }
 
   getTag(tagName: string) {
@@ -113,13 +116,9 @@ export class ClienteSelectorComponent implements OnInit {
 
     this.service.checkClient = checkClient;
     this.service.clienteAnterior = cliente;
-    var currencyModule = this.currencyService.getCurrencyModule(coModule);
-    if (currencyModule) {
-      this.showConversion = currencyModule.showConversion;
-      this.localCurrencyDefault = currencyModule.localCurrencyDefault;
-      if (currencyModule.idModule > 0) {
-        this.currencySwitchEnabled = true;
-      }
+    this.service.currencyModule = this.currencyService.getCurrencyModule(coModule);
+    if (this.service.currencyModule) {
+      this.loadCurrencyModule();
     }
     this.updateClientList(idEnterprise);
 
@@ -131,6 +130,15 @@ export class ClienteSelectorComponent implements OnInit {
 
     this.service.colorModulo = colorModulo;
     this.service.nombreModulo = nombreModulo;
+  }
+
+  loadCurrencyModule(){
+      //carga variables que dependen del currencyModule
+      this.showConversion = this.service.currencyModule.showConversion;
+      this.localCurrencyDefault = this.service.currencyModule.localCurrencyDefault;
+      if (this.service.currencyModule.idModule > 0) {
+        this.currencySwitchEnabled = true;
+      }
   }
 
   updateClientList(idEnterprise: number) {
