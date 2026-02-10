@@ -1034,10 +1034,8 @@ export class CobrosDocumentComponent implements OnInit {
 
     if (event.target.checked) {
       this.disabledSaveButton = true;
-      this.partialPay(true);
+
     } else {
-      /*  this.collectService.mensaje = "NO SE QUE PONER ACA";
-       this.alertMessageOpen = true; */
       this.collectService.documentSaleOpen.nuAmountRetention = 0;
       this.collectService.documentSaleOpen.nuAmountRetention2 = 0;
       this.collectService.documentSaleOpen.nuVaucherRetention = "";
@@ -1046,6 +1044,7 @@ export class CobrosDocumentComponent implements OnInit {
       this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].nuVaucherRetention = "";
       this.disabledSaveButton = false;
     }
+    this.partialPay(event);
   }
 
   partialPay(event: any) {

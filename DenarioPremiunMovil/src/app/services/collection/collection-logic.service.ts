@@ -2365,6 +2365,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
       for (let i = 0; i < data.rows.length; i++) {
         const row = data.rows.item(i);
+        row.missing_re
         if (this.mapDocumentsSales.has(row.id_document)) continue;
 
         const doc = this.mapRowToDocumentSale(row, isIgtf);
@@ -2495,6 +2496,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     doc.inPaymentPartial = false;
     doc.historicPaymentPartial = false;
     doc.isSave = false;
+    doc.missingRetention = this.missingRetention;
     return doc;
   }
 
@@ -2509,7 +2511,6 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       this.documentSales[index].isSave = detail.isSave;
       this.documentSalesBackup[index].isSave = detail.isSave;
       this.documentSalesBackup[index].daVoucher = detail.daVoucher!;
-      //this.documentSalesBackup[index].nuAmountDiscount = detail.nuAmountDiscount;
 
       if (this.collection.stDelivery != 3) {
         detail.nuBalanceDoc = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
