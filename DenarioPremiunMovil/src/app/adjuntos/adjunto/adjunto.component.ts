@@ -327,14 +327,27 @@ export class AdjuntoComponent implements OnInit {
     if (this.service.file != null) {
       // ya existe un archivo. Revisar que se hace en este caso
     } else {
+      const allowedMimeTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      ];
+      const allowedExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx'];
       const result = await FilePicker.pickFiles({
-        types: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+        types: allowedMimeTypes,
         limit: 1,
         readData: true
       });
       //console.log(result);
       var file = result.files[0];
+      const fileName = (file.name || '').toLowerCase();
+      const fileExtension = fileName.includes('.') ? fileName.split('.').pop() || '' : '';
+      if (!allowedMimeTypes.includes(file.mimeType || '') || !allowedExtensions.includes(fileExtension)) {
+        this.message.transaccionMsjModalNB(this.getTag('ADJ_ARCHIVO_TIPO_INVALIDO') || 'Tipo de archivo no permitido.');
+        return;
+      }
       var muyPesado = this.service.getFileWeight(file.data as string) > this.service.imageWeightLimit;
       if (muyPesado) {
         this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_ARCHIVO") + this.service.imageWeightLimit + " MB");
@@ -350,9 +363,6 @@ export class AdjuntoComponent implements OnInit {
       //console.log(this.service.file);
 
       this.onAttachmentChanged();
-
-
-
     }
   }
 
