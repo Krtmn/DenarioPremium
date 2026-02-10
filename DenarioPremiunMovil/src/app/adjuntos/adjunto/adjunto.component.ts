@@ -274,6 +274,7 @@ export class AdjuntoComponent implements OnInit {
     if (this.checkImgLimit()) {
       var remainingSlots = this.service.remainingFotos();
       this.disablePhotos = true; //deshabilita el boton de buscar fotos mientras se procesan las fotos
+      const allowedImageFormats = ['jpeg', 'jpg', 'png', 'heic', 'heif', 'webp'];
 
       //Buscamos las imagenes con el plugin
       const { photos } = await Camera.pickImages({
@@ -290,6 +291,17 @@ export class AdjuntoComponent implements OnInit {
 
       for (let i = 0; i < photos.length; i++) {
         const item = photos[i];
+        const format = (item.format || '').toLowerCase();
+        const webPath = (item.webPath || '').toLowerCase();
+        const extension = webPath.includes('.') ? webPath.split('.').pop() || '' : '';
+        if (!allowedImageFormats.includes(format) && !allowedImageFormats.includes(extension)) {
+          this.message.transaccionMsjModalNB(this.getTag('ADJ_ARCHIVO_TIPO_INVALIDO') || 'Tipo de archivo no permitido.');
+          this.service.processingPhotos--;
+          if (this.service.processingPhotos <= 0) {
+            this.disablePhotos = false;
+          }
+          continue;
+        }
         this.service.addImg(item).then(() => {
           this.checkCarousel();
           this.service.processingPhotos--; //disminuye la cantidad de fotos que se estan procesando actualmente
