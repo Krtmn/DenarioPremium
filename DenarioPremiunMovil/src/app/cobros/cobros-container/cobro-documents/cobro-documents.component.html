@@ -244,7 +244,7 @@
                   <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
                     *ngIf="this.collectService.historicoTasa && this.collectService.showConversion">
                     <ion-input
-                      label="{{this.collectService.collectionTags.get('COB_TASA_DIA')}} {{this.collectService.localCurrency.coCurrency}}:"
+                      label="{{this.collectService.collectionTags.get('COB_TASA_DIA')}}:"
                       label-placement="floating" fill="outline" color="primary"
                       [value]="currencyService.formatNumber(collectService.documentSaleOpen.nuValueLocal)"
                       [readonly]="true">
@@ -513,8 +513,7 @@
               </ion-col>
 
               <!-- PAGO PARCIAL CHECK-->
-              @if(!(this.collectService.selectedCollectDiscounts.length > 0) &&
-              this.collectService.userCanSelectCollectDiscount){
+              @if(this.collectService.selectedCollectDiscounts.length === 0){
 
               <ion-grid class="ion-margin-top">
                 <ion-row>
@@ -527,12 +526,13 @@
                     <ion-toggle [enableOnOffLabels]="true" checked="{{this.collectService.isPaymentPartial}}"
                       (ionChange)="partialPay($event)">
                     </ion-toggle>
-                    <!-- </ion-item> -->
                   </ion-col>
                 </ion-row>
               </ion-grid>
-              <!-- PAGO PARCIAL / MONTO A PAGARL-->
               }
+              <!-- PAGO PARCIAL / MONTO A PAGARL-->
+
+
               <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                 <ion-input
                   label="{{this.collectService.collectionTags.get('COB_MONTO_PAGAR')}} {{this.collectService.collection.coCurrency}}"

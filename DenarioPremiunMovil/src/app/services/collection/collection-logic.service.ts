@@ -1619,7 +1619,6 @@ export class CollectionService {
 
     this.missingRetention = this.alWaysRetention;
 
-
     return collection = {
       idUser: Number(localStorage.getItem("idUser")),
       coUser: localStorage.getItem("coUser")!,

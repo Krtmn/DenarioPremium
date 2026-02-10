@@ -578,6 +578,11 @@ export class CobrosDocumentComponent implements OnInit {
     else
       this.collectService.validNuRetention = true;
 
+    if (this.collectService.documentSaleOpen.missingRetention) {
+      let event = { target: { checked: true } };
+      this.partialPay(event)
+    }
+
 
     console.log(this.collectService.amountPaid, "AMOUNT PAID AL ABRIR")
   }
