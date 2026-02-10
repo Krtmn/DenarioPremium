@@ -243,8 +243,7 @@
                   <!-- TASA-->
                   <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
                     *ngIf="this.collectService.historicoTasa && this.collectService.showConversion">
-                    <ion-input
-                      label="{{this.collectService.collectionTags.get('COB_TASA_DIA')}}:"
+                    <ion-input label="{{this.collectService.collectionTags.get('COB_TASA_DIA')}}:"
                       label-placement="floating" fill="outline" color="primary"
                       [value]="currencyService.formatNumber(collectService.documentSaleOpen.nuValueLocal)"
                       [readonly]="true">
@@ -386,28 +385,32 @@
                     </ion-modal>
                   </ion-col>
                   <!-- LISTA DESCUENTOS  userCanSelectCollectDiscount -->
-                  }
+
                   <ion-col *ngIf="this.collectService.selectedCollectDiscounts.length > 0" size="12" size-xs="12"
                     size-sm="12">
-                    <ion-input label="Descuentos Seleccionados" label-placement="floating" fill="outline"
+                    <ion-input label="{{this.collectService.collectionTags.get('COB_SELEC_DESCUENTO')}}" label-placement="floating" fill="outline"
                       color="primary" type="text" [value]="getSelectedCollectDiscountsNames()" readonly>
                     </ion-input>
                   </ion-col>
                   <ion-col *ngIf="this.collectService.selectedCollectDiscounts.length > 0" size="12" size-xs="12"
                     size-sm="12">
-                    <ion-input label="Total Descuento" label-placement="floating" fill="outline" color="primary"
+                    <ion-input label="{{this.collectService.collectionTags.get('COB_TOTAL_DESCUENTO')}}" label-placement="floating" fill="outline" color="primary"
                       type="text" [value]="this.collectService.totalCollectDiscountsView" readonly>
                     </ion-input>
                   </ion-col>
                   <!-- LISTA DESCUENTOS -->
+                  <!-- COMENTARIO DESCUENTOS -->
                   <ion-col *ngIf="this.collectService.selectedCollectDiscounts.length > 0" size="12" size-xs="12"
                     size-sm="12">
-                    <ion-input label="Comentarios" label-placement="floating" fill="outline" color="primary" type="text"
+                    <ion-input label="{{this.collectService.collectionTags.get('COB_COMENTARIO')}}" label-placement="floating" fill="outline" color="primary" type="text"
                       [(ngModel)]="discountComment" (ngModelChange)="setDiscountComment()">
                     </ion-input>
                   </ion-col>
+                  <!-- COMENTARIO DESCUENTOS -->
+                  }
 
                   <!-- MISSING RETENTION -->
+                  @if(this.collectService.missingRetention){
                   <ion-grid class="ion-margin-top">
                     <ion-row class="missing-retention-row">
                       <ion-col class="padding0 label-col" size="4" size-xs="4" size-sm="6" size-md="6">
@@ -415,13 +418,14 @@
                         </ion-label>
                       </ion-col>
                       <ion-col class="padding0 toggle-col" size="6" size-xs="8" size-sm="6" size-md="6">
-                        <ion-toggle [enableOnOffLabels]="true" [checked]="this.collectService.missingRetention"
+                        <ion-toggle [enableOnOffLabels]="true" [checked]="this.collectService.missingRetentionValue"
                           (ionChange)="missingRetention($event)">
                         </ion-toggle>
                       </ion-col>
                     </ion-row>
                   </ion-grid>
                   <!-- MISSING RETENTION -->
+                  }
 
                   <!-- DIFERENCIA DEVOLUCION/FALTANTE -->
                   <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
@@ -443,7 +447,8 @@
                     <ion-input label="{{this.collectService.collectionTags.get('COB_NUMBER_COMPROBANTE_RETENTION')}}"
                       label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
                       [(ngModel)]="this.collectService.documentSaleOpen.nuVaucherRetention"
-                      (ionChange)="validateNuVaucherRetention(true)" [disabled]="this.collectService.missingRetention">
+                      (ionChange)="validateNuVaucherRetention(true)"
+                      [disabled]="this.collectService.missingRetentionValue">
                     </ion-input>
                   </ion-col>
                   <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
@@ -513,8 +518,8 @@
               </ion-col>
 
               <!-- PAGO PARCIAL CHECK-->
+              @if(this.collectService.enablePartialPayment){
               @if(this.collectService.selectedCollectDiscounts.length === 0){
-
               <ion-grid class="ion-margin-top">
                 <ion-row>
                   <ion-col class="padding0" size="4" size-xs="4" size-sm="6" size-md="6">
@@ -530,9 +535,9 @@
                 </ion-row>
               </ion-grid>
               }
+              }
+
               <!-- PAGO PARCIAL / MONTO A PAGARL-->
-
-
               <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                 <ion-input
                   label="{{this.collectService.collectionTags.get('COB_MONTO_PAGAR')}} {{this.collectService.collection.coCurrency}}"
@@ -540,7 +545,7 @@
                                     formatFromCents(centsAmountPaid) :
                                     currencyService.formatNumber(collectService.amountPaidDoc))" inputmode="numeric"
                   (keydown)="onAmountPaidKeyDown($event)" (focus)="onAmountPaidFocus()" (blur)="onAmountPaidBlur()"
-                  [readonly]="!collectService.isPaymentPartial" required class="customInput" [ngClass]="{'inp-write': !collectService.amountPaymentPartial, 'input-rojo':
+                  [readonly]="!collectService.enablePartialPayment" required class="customInput" [ngClass]="{'inp-write': !collectService.amountPaymentPartial, 'input-rojo':
                                     !collectService.amountPaid}" min="0">
                 </ion-input>
                 <ion-label *ngIf="!this.collectService.amountPaid" color="danger" class="campoObligatorio">
@@ -548,6 +553,7 @@
                 </ion-label>
               </ion-col>
               <!-- PAGO PARCIAL-->
+
               <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                 <ion-grid>
                   <ion-row>
@@ -655,7 +661,7 @@
 
               <!-- COMENTARIO-->
               <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-                <ion-input label="{{this.collectService.collectionTags.get('COB_COMENTARIO')}}"
+                <ion-input label="{{this.collectService.collectionTags.get('COB_COMENTARIO_DOCUMENTO')}}"
                   label-placement="floating" fill="outline" value="{{this.collectService.documentSaleOpen.txComment}}"
                   color="primary" [readonly]="true"></ion-input>
               </ion-col>

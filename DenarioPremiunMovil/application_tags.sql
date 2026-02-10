@@ -258,6 +258,7 @@ INSERT INTO public.application_tags(
 	('COB_FECHA_COBRO','COB','COBROS','ESP','Fecha Cobro'),
 	('COB_RESPONSABLE','COB','COBROS','ESP','Responsable'),
 	('COB_COMENTARIO','COB','COBROS','ESP','Comentario'),
+	('COB_COMENTARIO_DOCUMENTO','COB','COBROS','ESP','Comentario documento'),
 	('COB_RAZON_CAMBIO_TASA','COB','COBROS','ESP','Razon Cambio Tasa'),
 	('COB_MONTO_TOTAL','COB','COBROS','ESP','Monto total a pagar'),
 	('COB_EFECTIVO','COB','COBROS','ESP','Efectivo'),
@@ -378,7 +379,10 @@ INSERT INTO public.application_tags(
 	('COB_COB_CHANGE_DATERATE', 'COB', 'COBROS', 'ESP', 'Está cambiando la fecha de la tasa, esto recalculará  los montos. ¿Desea continuar?'),
 	('COB_DENARIO_TO_SEND', 'COB', 'COBROS', 'ESP','Su Cobro será enviado'),
   ('COB_DENARIO_TO_SEND_OFFLINE', 'COB', 'COBROS', 'ESP','Su Cobro será enviado al tener conexión de datos'),
-  ('COB_MISSING_RETENTION', 'COB', 'COBROS', 'ESP','Falta retención');
+  ('COB_MISSING_RETENTION', 'COB', 'COBROS', 'ESP','Falta retención'),
+  ('COB_TOTAL_DESCUENTO', 'COB', 'COBROS', 'ESP','Total Descuento'),
+  ('COB_SELEC_DESCUENTO', 'COB', 'COBROS', 'ESP','Descuentos Seleccionados'),
+  ('COB_ERROR_PARTIAL_PAY', 'COB', 'COBROS', 'ESP','Todos los documentos están marcados como pago parcial, el monto pagado debe ser igual al monto a pagar.'),
 
 
 -- VENDEDORES

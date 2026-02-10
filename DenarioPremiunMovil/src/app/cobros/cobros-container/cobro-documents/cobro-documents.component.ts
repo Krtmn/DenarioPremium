@@ -571,6 +571,11 @@ export class CobrosDocumentComponent implements OnInit {
 
       if (this.collectService.userCanSelectCollectDiscount)
         this.checkCollectDiscount();
+
+      if (this.collectService.alwaysPartialPayment) {
+        let event = { target: { checked: true } };
+        this.partialPay(event);
+      }
     }
 
     if (this.collectService.retencion)
@@ -637,6 +642,13 @@ export class CobrosDocumentComponent implements OnInit {
       this.collectService.documentSalesView[indexDocumentSale].isSelected = true;
       this.collectService.haveDocumentSale = true;
       this.collectService.disabledSelectCollectMethodDisabled = false;
+
+      if (this.collectService.alwaysPartialPayment) {
+        this.collectService.documentSales[indexDocumentSale].inPaymentPartial = true;
+        this.collectService.documentSalesBackup[indexDocumentSale].inPaymentPartial = true;
+        this.collectService.documentSalesView[indexDocumentSale].inPaymentPartial = true;
+      }
+
       this.initCollectionDetail(documentSale, indexDocumentSale);
     } else {
       //se reinician los valores del documento
@@ -755,7 +767,7 @@ export class CobrosDocumentComponent implements OnInit {
       coCollection: this.collectService.collection.coCollection,
       coDocument: documentSale.coDocument.toString(),
       idDocument: documentSale.idDocument,
-      inPaymentPartial: false,
+      inPaymentPartial: this.collectService.alwaysPartialPayment ? true : false,
       nuVoucherRetention: "",
       nuAmountRetention: 0, //iva
       nuAmountRetention2: 0, //islr
@@ -1024,7 +1036,7 @@ export class CobrosDocumentComponent implements OnInit {
 
   missingRetention(event: any) {
 
-    this.collectService.missingRetention = event.target.checked;
+    this.collectService.missingRetentionValue = event.target.checked;
     this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails]!.missingRetention = event.target.checked;
     this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails]!.inPaymentPartial = event.target.checked;
     this.collectService.isPaymentPartial = event.target.checked;
@@ -1062,11 +1074,20 @@ export class CobrosDocumentComponent implements OnInit {
       this.disabledSaveButton = true;
       this.collectService.isChangePaymentPartial = false;
 
-      if (this.collectService.historicPartialPayment &&
+      if (!this.collectService.enablePartialPayment && this.collectService.alwaysPartialPayment) {
+        //esto es para que los pagos siempre salgan como pago parcial y no modifiquen el monto
+        this.collectService.amountPaid = this.collectService.documentSaleOpen.nuBalance;
+        this.centsAmountPaid = Math.round((this.collectService.amountPaid ?? 0) * factor);
+        this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
+        this.collectService.amountPaidDoc = this.collectService.amountPaid;
+
+      } else if (this.collectService.historicPartialPayment &&
         this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].inPaymentPartial) {
         this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSJ_HAVE_PAYPARTIAL')!;
         this.alertMessageOpen2 = true;
       }
+
+
       return; // Early return, no más lógica abajo
     }
 

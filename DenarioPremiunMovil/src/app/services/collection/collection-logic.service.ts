@@ -200,8 +200,11 @@ export class CollectionService {
   public enableDifferenceCodes: boolean = false;
   public userCanSelectCollectDiscount: boolean = false;
   public missingRetention: boolean = false;
+  public missingRetentionValue: boolean = false;
   public canChangeRate: boolean = false;
-  public alWaysRetention: boolean = false;
+  public alwaysRetention: boolean = false;
+  public alwaysPartialPayment: boolean = false;
+  public enablePartialPayment: boolean = false;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;
@@ -345,7 +348,10 @@ export class CollectionService {
     this.enableDifferenceCodes = this.globalConfig.get('enableDifferenceCodes') === 'true' ? true : false;
     this.userCanSelectCollectDiscount = this.globalConfig.get('userCanSelectCollectDiscount') === 'true' ? true : false;
     this.canChangeRate = this.globalConfig.get('canChangeRate') === 'true' ? true : false;
-    this.alWaysRetention = this.globalConfig.get('alWaysRetention') === 'true' ? true : false;
+    this.missingRetention = this.globalConfig.get('missingRetention') === 'true' ? true : false;
+    this.alwaysRetention = this.globalConfig.get('alwaysRetention') === 'true' ? true : false;
+    this.alwaysPartialPayment = this.globalConfig.get('alwaysPartialPayment') === 'true' ? true : false;
+    this.enablePartialPayment = this.globalConfig.get('enablePartialPayment') === 'true' ? true : false;
 
     this.showNuevaCuenta = this.clientBankAccount === true ? true : false;
 
@@ -1235,11 +1241,22 @@ export class CollectionService {
 
       if (this.existPartialPayment) {
         if (allPaymentPartial && this.collection.collectionPayments.length > 0 && this.tabSelected == "pagos") {
-          if (this.montoTotalPagado == this.montoTotalPagar) {
+          if (this.alwaysPartialPayment) {
+            if (this.tolerancia0) {
+              this.checkTolerancia();
+            } else {
+              if (Math.abs(this.montoTotalPagado) == Math.abs(this.montoTotalPagar)) {
+                this.onCollectionValidToSend(true);
+              } else {
+                this.onCollectionValidToSend(false);
+                return;
+              }
+            }
+          } else if (this.montoTotalPagado == this.montoTotalPagar) {
             this.onCollectionValidToSend(true);
           } else {
             if (!this.messageSended) {
-              this.mensaje = "Todos los documentos están marcados como pago parcial, el monto pagado debe ser igual al monto a pagar.";
+              this.mensaje = this.collectionTags.get('COB_ERROR_PARTIAL_PAY')!;
 
               this.messageAlert = new MessageAlert(
                 this.collectionTags.get('COB_NOMBRE_MODULO')!,
@@ -1252,7 +1269,7 @@ export class CollectionService {
             this.onCollectionValidToSend(false);
             return;
           }
-        } else {
+        } else if (this.collection.collectionPayments.length > 0) {
           if (this.tolerancia0) {
             this.checkTolerancia();
           } else {
@@ -1292,8 +1309,10 @@ export class CollectionService {
 
   checkTolerancia() {
 
-    //TOLERANCIA0 TRUE PERMITO DIFERENCIA SE DEBEN VALIDAR LAS SIGUIENTES VARIABLES TipoTolerancia, RangoTolerancia, MonedaTolerancia
-    if (this.TipoTolerancia == 0) {
+    if (this.montoTotalPagado <= 0)
+      this.onCollectionValidToSend(false);
+    else if (this.TipoTolerancia == 0) {
+      //TOLERANCIA0 TRUE PERMITO DIFERENCIA SE DEBEN VALIDAR LAS SIGUIENTES VARIABLES TipoTolerancia, RangoTolerancia, MonedaTolerancia
       if (this.collection.coCurrency == this.MonedaTolerancia) {
         //COMO LA MONEDA DEL COBRO Y LA MONEDA DE LA TOLERANCIA SON IGUALES, ENTONCES COMPARO DIRECTAMENTE
         let amount = this.montoTotalPagado - this.montoTotalPagar;
@@ -1617,7 +1636,7 @@ export class CollectionService {
     else
       this.disabledSelectCollectMethodDisabled = false;
 
-    this.missingRetention = this.alWaysRetention;
+    this.missingRetentionValue = this.alwaysRetention;
 
     return collection = {
       idUser: Number(localStorage.getItem("idUser")),
@@ -2496,7 +2515,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     doc.inPaymentPartial = false;
     doc.historicPaymentPartial = false;
     doc.isSave = false;
-    doc.missingRetention = this.missingRetention;
+    doc.missingRetention = this.missingRetentionValue;
     return doc;
   }
 
