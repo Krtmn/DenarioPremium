@@ -506,8 +506,13 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     var stock = this.orderServ.listaStock.filter(s => s.idProduct == product.idProduct && s.idWarehouse == warehouse.idWarehouse)[0];
     product.idWarehouse = warehouse.idWarehouse;
     product.naWarehouse = warehouse.naWarehouse;
-    product.quStock = stock.quStock;
-    product.quStockAux = stock.quStock;
+    if (stock) {
+      product.quStock = stock.quStock;
+      product.quStockAux = stock.quStock;
+    } else {
+      product.quStock = 0;
+      product.quStockAux = 0;
+    }
 
     this.onProductQuantityChange(product);
     this.orderServ.alCarrito(product);
