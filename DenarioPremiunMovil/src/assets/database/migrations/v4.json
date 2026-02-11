@@ -1,0 +1,7 @@
+[
+  {
+    "sql": "ALTER TABLE collection_details ADD COLUMN missing_retention BOOLEAN DEFAULT FALSE;",
+    "description": "Se agrega la columna 'missing_retention' a la tabla 'collection_details' para indicar si falta la retención."
+  }
+]
+

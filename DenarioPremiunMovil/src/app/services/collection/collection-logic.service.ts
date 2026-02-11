@@ -199,6 +199,12 @@ export class CollectionService {
   public messageSended: boolean = false;
   public enableDifferenceCodes: boolean = false;
   public userCanSelectCollectDiscount: boolean = false;
+  public missingRetention: boolean = false;
+  public missingRetentionValue: boolean = false;
+  public canChangeRate: boolean = false;
+  public alwaysRetention: boolean = false;
+  public alwaysPartialPayment: boolean = false;
+  public enablePartialPayment: boolean = false;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;
@@ -238,6 +244,7 @@ export class CollectionService {
   public difference: number = 0;
   public totalCollectDiscounts: number = 0;
   public totalCollectDiscountsSelected: number = 0;
+  public totalHistoricPartialPayment: number = 0;
 
   public documentCurrency!: string;
   public dateTasa!: string;
@@ -338,10 +345,14 @@ export class CollectionService {
       this.currencySelector = this.currencyService.getCurrencyModule("cob").currencySelector.toString() === "true" ? true : false;
       this.disabledCurrency = this.currencyService.getCurrencyModule("cob").currencySelector.toString() === "true" ? false : true;
     }
-
     this.userCanAddRetention = this.globalConfig.get('userCanAddRetention') === 'true' ? true : false;
     this.enableDifferenceCodes = this.globalConfig.get('enableDifferenceCodes') === 'true' ? true : false;
     this.userCanSelectCollectDiscount = this.globalConfig.get('userCanSelectCollectDiscount') === 'true' ? true : false;
+    this.canChangeRate = this.globalConfig.get('canChangeRate') === 'true' ? true : false;
+    this.missingRetention = this.globalConfig.get('missingRetention') === 'true' ? true : false;
+    this.alwaysRetention = this.globalConfig.get('alwaysRetention') === 'true' ? true : false;
+    this.alwaysPartialPayment = this.globalConfig.get('alwaysPartialPayment') === 'true' ? true : false;
+    this.enablePartialPayment = this.globalConfig.get('enablePartialPayment') === 'true' ? true : false;
 
     this.showNuevaCuenta = this.clientBankAccount === true ? true : false;
 
@@ -809,14 +820,14 @@ export class CollectionService {
         monto += this.collection.collectionDetails[j].nuAmountPaid;
         montoConversion += this.collection.collectionDetails[j].nuAmountPaidConversion;
         montoTotalDiscounts += this.collection.collectionDetails[j].nuAmountRetention + this.collection.collectionDetails[j].nuAmountRetention2 + this.collection.collectionDetails[j].nuAmountDiscount;
-        this.montoTotalPagar = monto;
+        this.montoTotalPagar = monto - montoTotalDiscounts;
         this.montoTotalPagarConversion = montoConversion;
 
       }
     } else if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == 1) {
       monto = this.collection.nuAmountTotal;
       montoConversion = this.collection.nuAmountTotalConversion;
-      this.montoTotalPagar = monto;
+      this.montoTotalPagar = monto - montoTotalDiscounts;
       this.montoTotalPagarConversion = montoConversion;
       return;
     } else {
@@ -828,17 +839,16 @@ export class CollectionService {
             if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
               monto += this.documentSalesBackup[i].nuAmountPaid;
               montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuAmountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
-              montoTotalDiscounts += /* this.documentSalesBackup[i].nuAmountDiscount + */
-                this.collection.collectionDetails[pos].nuAmountCollectDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
-
+              montoTotalDiscounts = 0;
             }
           } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
             monto += this.documentSalesBackup[i].nuBalance;
             let pos = this.documentSales[i].positionCollecDetails;
             montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
-            montoTotalDiscounts += /* this.documentSalesBackup[i].nuAmountDiscount + */
-              this.collection.collectionDetails[pos].nuAmountCollectDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
-
+            montoTotalDiscounts += this.collection.collectionDetails[pos].nuAmountDiscount +
+              this.collection.collectionDetails[pos].nuAmountCollectDiscount +
+              this.documentSalesBackup[i].nuAmountRetention +
+              this.documentSalesBackup[i].nuAmountRetention2;
           }
         }
 
@@ -860,20 +870,17 @@ export class CollectionService {
         if (this.currencySelected.hardCurrency.toString() === "true")
           this.montoIgtfLocal = (this.montoIgtf * this.collection.nuValueLocal);
 
-        this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(monto));
+        this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(monto - montoTotalDiscounts));
       }
       else
         this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoIgtf)) + this.cleanFormattedNumber(this.currencyService.formatNumber(monto));
     } else {
-      this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(monto));
+      this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(monto - montoTotalDiscounts));
       this.montoIgtf = 0;
       this.montoIgtfConversion = 0;
     }
 
-    /* this.montoTotalDiscounts = montoTotalDiscounts;
-    this.montoTotalPagado = this.montoTotalPagado - montoTotalDiscounts;
-      console.log("MONTO nuDifference: ", this.collection.nuDifference);
-      console.log("MONTO montoTotalPagado: ", this.montoTotalPagado); */
+
     this.collection.nuAmountPaid = this.montoTotalPagar;
     this.collection.nuAmountPaidConversion = this.convertirMonto(this.montoTotalPagar, 0, this.collection.coCurrency);
     this.collection.nuAmountFinal = this.montoTotalPagar;
@@ -884,9 +891,9 @@ export class CollectionService {
 
     if (this.separateIgtf) {
       this.montoTotalPagarConversion = this.cleanFormattedNumber(this.currencyService.formatNumber(montoConversion));
-      this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado)) - this.cleanFormattedNumber(this.currencyService.formatNumber(monto));
+      this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado)) - this.cleanFormattedNumber(this.currencyService.formatNumber(monto - montoTotalDiscounts));
     } else {
-      this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado)) - this.cleanFormattedNumber(this.currencyService.formatNumber(monto + this.montoIgtf));
+      this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado)) - this.cleanFormattedNumber(this.currencyService.formatNumber(monto - montoTotalDiscounts + this.montoIgtf));
 
       this.montoTotalPagarConversion = this.cleanFormattedNumber(this.currencyService.formatNumber(montoConversion + this.montoIgtfConversion));
     }
@@ -1231,11 +1238,22 @@ export class CollectionService {
 
       if (this.existPartialPayment) {
         if (allPaymentPartial && this.collection.collectionPayments.length > 0 && this.tabSelected == "pagos") {
-          if (this.montoTotalPagado == this.montoTotalPagar) {
+          if (this.alwaysPartialPayment) {
+            if (this.tolerancia0) {
+              this.checkTolerancia();
+            } else {
+              if (Math.abs(this.montoTotalPagado) == Math.abs(this.montoTotalPagar)) {
+                this.onCollectionValidToSend(true);
+              } else {
+                this.onCollectionValidToSend(false);
+                return;
+              }
+            }
+          } else if (this.montoTotalPagado == this.montoTotalPagar) {
             this.onCollectionValidToSend(true);
           } else {
             if (!this.messageSended) {
-              this.mensaje = "Todos los documentos están marcados como pago parcial, el monto pagado debe ser igual al monto a pagar.";
+              this.mensaje = this.collectionTags.get('COB_ERROR_PARTIAL_PAY')!;
 
               this.messageAlert = new MessageAlert(
                 this.collectionTags.get('COB_NOMBRE_MODULO')!,
@@ -1248,7 +1266,7 @@ export class CollectionService {
             this.onCollectionValidToSend(false);
             return;
           }
-        } else {
+        } else if (this.collection.collectionPayments.length > 0) {
           if (this.tolerancia0) {
             this.checkTolerancia();
           } else {
@@ -1288,8 +1306,10 @@ export class CollectionService {
 
   checkTolerancia() {
 
-    //TOLERANCIA0 TRUE PERMITO DIFERENCIA SE DEBEN VALIDAR LAS SIGUIENTES VARIABLES TipoTolerancia, RangoTolerancia, MonedaTolerancia
-    if (this.TipoTolerancia == 0) {
+    if (this.montoTotalPagado <= 0)
+      this.onCollectionValidToSend(false);
+    else if (this.TipoTolerancia == 0) {
+      //TOLERANCIA0 TRUE PERMITO DIFERENCIA SE DEBEN VALIDAR LAS SIGUIENTES VARIABLES TipoTolerancia, RangoTolerancia, MonedaTolerancia
       if (this.collection.coCurrency == this.MonedaTolerancia) {
         //COMO LA MONEDA DEL COBRO Y LA MONEDA DE LA TOLERANCIA SON IGUALES, ENTONCES COMPARO DIRECTAMENTE
         let amount = this.montoTotalPagado - this.montoTotalPagar;
@@ -1613,6 +1633,7 @@ export class CollectionService {
     else
       this.disabledSelectCollectMethodDisabled = false;
 
+    this.missingRetentionValue = this.alwaysRetention;
 
     return collection = {
       idUser: Number(localStorage.getItem("idUser")),
@@ -2360,6 +2381,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
       for (let i = 0; i < data.rows.length; i++) {
         const row = data.rows.item(i);
+        row.missing_re
         if (this.mapDocumentsSales.has(row.id_document)) continue;
 
         const doc = this.mapRowToDocumentSale(row, isIgtf);
@@ -2397,7 +2419,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     const commonOrder = `ORDER BY CASE WHEN d.co_currency = "${this.enterpriseSelected.coCurrencyDefault}" THEN 0 ELSE 1 END, d.co_currency`;
 
     // module 0 and 2 are non-IGTF, but module 2 omits ds.st_document < 2
-    const includeDocStateFilter = true //moduleType === '0'; //DESCOMENTAR ACA SI SE CAMBIA LA LOGICA PARA RETENCIONES
+
+    const includeDocStateFilter = moduleType === '0';
+    const includeDocStateFilterRetenttion = moduleType === '2';
 
     if (moduleType === '0' || moduleType === '2' || moduleType === '4') {
       if (currencyIsEmpty) {
@@ -2409,8 +2433,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             'LEFT JOIN document_st ds ON d.co_document = ds.co_document ' +
             'WHERE (d.id_client = ? ' +
             (includeDocStateFilter ? 'AND ds.st_document < 2 ' : '') +
+            (includeDocStateFilterRetenttion ? 'AND ds.st_document < 3 ' : '') +
             'AND d.id_enterprise = ? AND d.co_document_sale_type != "IGTF") ' +
-            'OR d.co_document IN (SELECT co_document FROM collection_details WHERE co_collection= ?) ' +
+            'OR d.co_document IN (SELECT co_document FROM collection_details WHERE co_collection= ? ) ' +
             commonOrder
         };
       }
@@ -2487,6 +2512,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     doc.inPaymentPartial = false;
     doc.historicPaymentPartial = false;
     doc.isSave = false;
+    doc.missingRetention = this.missingRetentionValue;
     return doc;
   }
 
@@ -2501,7 +2527,6 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       this.documentSales[index].isSave = detail.isSave;
       this.documentSalesBackup[index].isSave = detail.isSave;
       this.documentSalesBackup[index].daVoucher = detail.daVoucher!;
-      //this.documentSalesBackup[index].nuAmountDiscount = detail.nuAmountDiscount;
 
       if (this.collection.stDelivery != 3) {
         detail.nuBalanceDoc = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
@@ -2713,6 +2738,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         if (ds && typeof ds.coDocument === 'string') docSalesViewMap.set(ds.coDocument, ds);
       });
 
+      this.totalHistoricPartialPayment = data.rows.length;
       for (let i = 0; i < data.rows.length; i++) {
         const coDoc = data.rows.item(i).co_document;
         const isPartial = data.rows.item(i).in_payment_partial === 'true';
@@ -2757,6 +2783,78 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       return Promise.resolve();
     });
   }
+
+  findIsMissingRetention(dbServ: SQLiteObject, idClient: number) {
+    const coDocuments = Array.from(this.mapDocumentsSales.values()).map(obj => obj.coDocument);
+    if (coDocuments.length === 0) return Promise.resolve();
+
+    const selectStatement = `
+    SELECT code.co_document, code.missing_retention
+    FROM collection_details code
+    JOIN collections co ON co.id_client = ?
+    WHERE code.missing_retention == 'true' AND code.co_document IN ('${coDocuments.join("', '")}')
+  `;
+
+    return dbServ.executeSql(selectStatement, [idClient]).then(data => {
+      // Crea un Map para acceso rápido por id_document (usar idDocument como clave numérica)
+      const docSalesMap = new Map<string, DocumentSale>();
+      this.documentSales.forEach(ds => {
+        if (ds && typeof ds.coDocument === 'string') docSalesMap.set(ds.coDocument, ds);
+      });
+      const docSalesBackupMap = new Map<string, DocumentSale>();
+      this.documentSalesBackup.forEach(ds => {
+        if (ds && typeof ds.coDocument === 'string') docSalesBackupMap.set(ds.coDocument, ds);
+      });
+      const docSalesViewMap = new Map<string, DocumentSale>();
+      this.documentSalesView.forEach(ds => {
+        if (ds && typeof ds.coDocument === 'string') docSalesViewMap.set(ds.coDocument, ds);
+      });
+
+      for (let i = 0; i < data.rows.length; i++) {
+        const coDoc = data.rows.item(i).co_document;
+        const missingRetention = data.rows.item(i).missing_retention === 'true';
+
+        // Actualiza los mapas indexados por coDocument
+        const ds = docSalesMap.get(coDoc);
+        if (ds) {
+          ds.missingRetention = missingRetention;
+        }
+        const dsView = docSalesViewMap.get(coDoc);
+        if (dsView) {
+          dsView.missingRetention = missingRetention;
+        }
+        const dsBackup = docSalesBackupMap.get(coDoc);
+        if (dsBackup) {
+          dsBackup.missingRetention = missingRetention;
+        }
+
+        // Sincronizar mapDocumentsSales (que está indexado por idDocument:number)
+        // buscando el idDocument desde el entry por coDocument
+        const source = ds ?? dsBackup ?? dsView;
+        if (source && source.idDocument != null) {
+          const id = source.idDocument;
+          if (this.mapDocumentsSales.has(id)) {
+            const mapped = this.mapDocumentsSales.get(id)!;
+            mapped.missingRetention = missingRetention;
+            this.mapDocumentsSales.set(id, mapped);
+          }
+        } else {
+          // fallback: buscar por valor si no encontramos source
+          for (const [id, val] of this.mapDocumentsSales.entries()) {
+            if (val && val.coDocument === coDoc) {
+              val.missingRetention = missingRetention;
+              this.mapDocumentsSales.set(id, val);
+              break;
+            }
+          }
+        }
+      }
+    }).catch(e => {
+      console.error('Error en findIsPaymentPartial:', e);
+      return Promise.resolve();
+    });
+  }
+
 
   getPaymentPartialByDocument(dbServ: SQLiteObject, coDocument: string) {
 
@@ -2907,6 +3005,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           nuAmountRetention: data.rows.item(0).nuAmountRetention == undefined ? 0 : data.rows.item(0).nuAmountRetention,
           nuAmountRetention2: data.rows.item(0).nuAmountRetention2 == undefined ? 0 : data.rows.item(0).nuAmountRetention2,
           daVoucher: data.rows.item(0).daVoucher == undefined ? "" : data.rows.item(0).daVoucher,
+          // ensure daUpdate is provided (DB column may be daUpdate or da_update) to satisfy the DocumentSale model
+          daUpdate: data.rows.item(0).daUpdate == undefined ? (data.rows.item(0).da_update == undefined ? "" : data.rows.item(0).da_update) : data.rows.item(0).daUpdate,
           nuVaucherRetention: data.rows.item(0).nuVaucherRetention == undefined ? "" : this.documentSales[index].nuVaucherRetention,
           igtfAmount: data.rows.item(0).igtfAmount == undefined ? 0 : this.documentSales[index].igtfAmount,
           txConversion: this.documentSales[index].txConversion,
@@ -2915,9 +3015,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           isSelected: this.documentSales[index].isSelected,
           isSave: false,
           colorRow: this.documentSales[index].colorRow,
-          daUpdate: this.documentSales[index].daUpdate,
+          missingRetention: this.documentSales[index].missingRetention,
         }
-
         this.documentSalesBackup[index] = Object.assign({}, this.documentSales[index]);
         this.documentSalesBackup[index].positionCollecDetails = -1;
 
@@ -3108,7 +3207,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       historicPaymentPartial: false,
       isSave: false,
       colorRow: "",
-      daUpdate: ""
+      daUpdate: "",
+      missingRetention: false,
     });
 
     this.insertDocumentSaleBatch(dbServ, igtfDocument).then((resp) => {
@@ -3279,8 +3379,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           console.log("COLLECTION INSERT", data);
 
           //cobro o igtf
-          if (collection.coType == '0' || collection.coType == '3' || collection.coType == '4') {
-            return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
+          if (collection.coType == '0' || collection.coType == '2' || collection.coType == '3' || collection.coType == '4') {
+            return this.updateDocumentSt(dbServ, this.documentSales, collection.coType).then((resp) => {
               console.log("TERMINE DOCUMENT ST")
               return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
                 return this.saveCollectionDetailDiscounts(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
@@ -3367,34 +3467,40 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
-    const insertCollectionDetailSQL = `
-  INSERT OR REPLACE INTO collection_details (
+    const insertCollectionDetailSQL = `INSERT OR REPLACE INTO collection_details (
     id_collection_detail,
-    co_collection,
-    co_document,
-    in_payment_partial,
-    nu_voucher_retention,
-    nu_amount_retention,
-    nu_amount_retention2,
-    nu_amount_paid,
-    nu_amount_paid_conversion,
-    nu_amount_discount,
-    nu_amount_discount_conversion,
-    nu_amount_doc,
-    nu_amount_doc_conversion,
-    da_document,
-    nu_balance_doc,
-    nu_balance_doc_conversion,
-    co_original,
-    co_type_doc,
-    id_document,
-    nu_amount_retention_iva_conversion,
-    nu_amount_retention_islr_conversion,
-    nu_amount_igtf,
-    nu_amount_igtf_conversion,
-    da_voucher
-  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-`;
+      co_collection,
+      co_document,
+      in_payment_partial,
+      nu_voucher_retention,
+      nu_amount_retention,
+      nu_amount_retention2,
+      nu_amount_paid,
+      nu_amount_paid_conversion,
+      nu_amount_discount,
+      nu_amount_discount_conversion,
+      nu_amount_doc,
+      nu_amount_doc_conversion,
+      da_document,
+      nu_balance_doc,
+      nu_balance_doc_conversion,
+      nu_balance_doc_original,
+      nu_balance_doc_original_conversion,
+      co_original,
+      co_type_doc,
+      id_document,
+      nu_amount_retention_iva_conversion,
+      nu_amount_retention_islr_conversion,
+      nu_amount_igtf,
+      nu_amount_igtf_conversion,
+      da_voucher,
+      has_discount,
+      discount_comment,
+      nu_amount_collect_discount,
+      nu_amount_collect_discount_conversion,
+      nu_collect_discount,
+      missing_retention
+) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);`;
 
     const insertCollectionPaymentSQL = `
   INSERT OR REPLACE INTO collection_payments (
@@ -3494,22 +3600,30 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             collectionDetail.nuAmountRetention,
             collectionDetail.nuAmountRetention2,
             collectionDetail.nuAmountPaid,
-            collectionDetail.nuAmountPaidConversion, // <-- Debe ir después de nu_amount_paid
+            collectionDetail.nuAmountPaidConversion,
             collectionDetail.nuAmountDiscount,
-            collectionDetail.nuAmountDiscountConversion, // <-- Debe ir después de nu_amount_discount
+            collectionDetail.nuAmountDiscountConversion,
             collectionDetail.nuAmountDoc,
-            collectionDetail.nuAmountDocConversion, // <-- Debe ir después de nu_amount_doc
+            collectionDetail.nuAmountDocConversion,
             collectionDetail.daDocument,
             collectionDetail.nuBalanceDoc,
             collectionDetail.nuBalanceDocConversion,
+            collectionDetail.nuBalanceDocOriginal,
+            collectionDetail.nuBalanceDocOriginalConversion,
             collectionDetail.coOriginal,
             collectionDetail.coTypeDoc,
             collectionDetail.idDocument,
-            collectionDetail.nuAmountRetentionConversion,
-            collectionDetail.nuAmountRetention2Conversion,
+            collectionDetail.nuAmountRetentionIvaConversion,
+            collectionDetail.nuAmountRetentionIslrConversion,
             collectionDetail.nuAmountIgtf,
             collectionDetail.nuAmountIgtfConversion,
-            collectionDetail.daVoucher
+            collectionDetail.daVoucher,
+            collectionDetail.hasDiscount,
+            collectionDetail.discountComment,
+            collectionDetail.nuAmountCollectDiscount,
+            collectionDetail.nuAmountCollectDiscountConversion,
+            collectionDetail.nuCollectDiscount,
+            collectionDetail.missingRetention
           ]
         ]);
 
@@ -3609,38 +3723,40 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     })
 
     let statementsCollectionDetails = [];
-    const inserStatementCollectionDetail = "INSERT OR REPLACE INTO collection_details(" +
-      "id_collection_detail," +
-      "co_collection," +
-      "co_document," +
-      "in_payment_partial," +
-      "nu_voucher_retention," +
-      "nu_amount_retention," +
-      "nu_amount_retention2," +
-      "nu_amount_paid," +
-      "nu_amount_paid_conversion," +
-      "nu_amount_discount," +
-      "nu_amount_discount_conversion," +
-      "nu_amount_doc," +
-      "nu_amount_doc_conversion," +
-      "da_document," +
-      "nu_balance_doc," +
-      "nu_balance_doc_conversion," +
-      "nu_balance_doc_original," +
-      "nu_balance_doc_original_conversion," +
-      "co_original," +
-      "co_type_doc," +
-      "id_document," +
-      "nu_amount_retention_iva_conversion," +
-      "nu_amount_retention_islr_conversion," +
-      "nu_amount_igtf," +
-      "nu_amount_igtf_conversion," +
-      "da_voucher," +
-      "has_discount," +
-      "discount_comment," +
-      "nu_amount_collect_discount," +
-      "nu_amount_collect_discount_conversion" +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    const inserStatementCollectionDetail = `INSERT OR REPLACE INTO collection_details (
+    id_collection_detail,
+      co_collection,
+      co_document,
+      in_payment_partial,
+      nu_voucher_retention,
+      nu_amount_retention,
+      nu_amount_retention2,
+      nu_amount_paid,
+      nu_amount_paid_conversion,
+      nu_amount_discount,
+      nu_amount_discount_conversion,
+      nu_amount_doc,
+      nu_amount_doc_conversion,
+      da_document,
+      nu_balance_doc,
+      nu_balance_doc_conversion,
+      nu_balance_doc_original,
+      nu_balance_doc_original_conversion,
+      co_original,
+      co_type_doc,
+      id_document,
+      nu_amount_retention_iva_conversion,
+      nu_amount_retention_islr_conversion,
+      nu_amount_igtf,
+      nu_amount_igtf_conversion,
+      da_voucher,
+      has_discount,
+      discount_comment,
+      nu_amount_collect_discount,
+      nu_amount_collect_discount_conversion,
+      nu_collect_discount,
+      missing_retention
+) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?); `;
 
     for (var i = 0; i < collectionDetail.length; i++) {
       statementsCollectionDetails.push([inserStatementCollectionDetail, [
@@ -3665,15 +3781,17 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         collectionDetail[i].coOriginal,
         collectionDetail[i].coTypeDoc,
         collectionDetail[i].idDocument,
-        collectionDetail[i].nuAmountRetentionConversion,
-        collectionDetail[i].nuAmountRetention2Conversion,
+        collectionDetail[i].nuAmountRetentionIvaConversion,
+        collectionDetail[i].nuAmountRetentionIslrConversion,
         collectionDetail[i].nuAmountIgtf,
         collectionDetail[i].nuAmountIgtfConversion,
         collectionDetail[i].daVoucher,
         collectionDetail[i].hasDiscount,
         collectionDetail[i].discountComment,
         collectionDetail[i].nuAmountCollectDiscount,
-        collectionDetail[i].nuAmountCollectDiscountConversion
+        collectionDetail[i].nuAmountCollectDiscountConversion,
+        collectionDetail[i].nuCollectDiscount,
+        collectionDetail[i].missingRetention
       ]]);
     }
 
@@ -3921,7 +4039,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       })
   }
 
-  updateDocumentSt(dbServ: SQLiteObject, documentSales: DocumentSale[]) {
+  updateDocumentSt(dbServ: SQLiteObject, documentSales: DocumentSale[], coType: string = "") {
     if (documentSales.length == 0) {
       return Promise.resolve(true);
     }
@@ -3945,10 +4063,17 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       for (var i = 0; i < documentSales.length; i++) {
         let stDelivery = 0;
         if (documentSales[i].isSelected) {
-          if (documentSales[i].inPaymentPartial)
+          if (coType == '2') {
+            //es retencion
+            //stDelivery = 3; colocar 3 si queremos que luego dfe una retencion el documento quede bloqueado, colocar 2 si queremos que quede disponible pero con la retencion pendiente
+            stDelivery = 2;
+          } else if (documentSales[i].missingRetention && !documentSales[i].inPaymentPartial) {
+            stDelivery = 2;
+          } else if (documentSales[i].inPaymentPartial)
             stDelivery = 0;
           else //if (this.sendCollection)
             stDelivery = 2;
+
           stamentenDocumentSt.push([updateStatement, [
             stDelivery,
             daUpdate,
@@ -4148,6 +4273,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           hasDiscount: res.rows.item(i).has_discount == "true" ? true : false,
           discountComment: res.rows.item(i).discount_comment == "" ? null : res.rows.item(i).discount_comment,
           nuAmountCollectDiscount: res.rows.item(i).nu_amount_collect_discount,
+          nuCollectDiscount: res.rows.item(i).nu_collect_discount,
+          missingRetention: res.rows.item(i).missing_retention == "true" ? true : false,
           nuAmountCollectDiscountConversion: res.rows.item(i).nu_amount_collect_discount_conversion,
           collectionDetailDiscounts: [] as CollectionDetailDiscounts[],
         })

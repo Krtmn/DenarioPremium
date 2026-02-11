@@ -145,6 +145,8 @@ export class CollectionDetail {
       obj['hasDiscount'],
       obj['discountComment'],
       obj['nuAmountCollectDiscount'],
+      obj['nuCollectDiscount'],
+      obj['missingRetention'],
       obj['nuAmountCollectDiscountConversion'],
       obj['collectionDetailDiscounts'],
     );
@@ -185,6 +187,8 @@ export class CollectionDetail {
     public hasDiscount: boolean = false,
     public discountComment: string | null = "",
     public nuAmountCollectDiscount: number = 0,
+    public nuCollectDiscount: number = 0,
+    public missingRetention: boolean = false,
     public nuAmountCollectDiscountConversion: number = 0,
     public collectionDetailDiscounts?: CollectionDetailDiscounts[],
   ) { }

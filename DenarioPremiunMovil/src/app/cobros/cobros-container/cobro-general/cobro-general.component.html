@@ -53,12 +53,12 @@
       <ion-col size="6" size-sm="12" size-xs="12"
         *ngIf="this.collectService.multiCurrency && this.collectService.showConversion && this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3 && this.collectService.collection.stCollection != 6">
         <ion-item>
-          <ion-label (click)="onOpenCalendar()">
+          <ion-label (click)="this.collectService.canChangeRate && onOpenCalendar()" [disabled]="!this.collectService.canChangeRate">
             {{this.collectService.collectionTags.get('COB_FECHA_TASA')}}
           </ion-label>
           <a>
             <ion-button (click)="setShowDateRateModal(true)" color="light" class="letrasFechasButton"
-              [disabled]="this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stCollection == 6">
+              [disabled]="this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stCollection == 6 || !this.collectService.canChangeRate">
               {{ bottonDateRateLabel() }}
             </ion-button>
           </a>
@@ -73,7 +73,7 @@
         </ion-label>
         <div class="listado-enterprise-selector ion-text-center">
           <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.rateSelected"
-            (ionChange)="onChangeRate($event)" disabled="{{this.collectService.isOpenCollect}}" interface="popover"
+            (ionChange)="onChangeRate($event)" [disabled]="this.collectService.isOpenCollect || !this.collectService.canChangeRate" interface="popover"
             labelPlacement="stacked">
             <ion-select-option *ngFor="let rate of this.collectService.rateList"
               [value]="rate">{{this.currencyServices.formatNumber(rate)}}
