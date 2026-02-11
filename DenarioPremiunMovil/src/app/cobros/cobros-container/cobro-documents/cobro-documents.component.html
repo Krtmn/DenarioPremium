@@ -261,6 +261,23 @@
                   </ion-col>
                   <!-- IGTF -->
 
+                  <!-- MONTO BASE -->
+                  <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                    <ion-input
+                      label="{{this.collectService.collectionTags.get('COB_BASE')}} {{this.collectService.collection.coCurrency}}"
+                      label-placement="floating" fill="outline" value="{{this.formatNumber(this.baseView)}}"
+                      color="primary" [readonly]="true"></ion-input>
+                  </ion-col>
+                  <!-- MONTO BASE -->
+                  <!-- MONTO BASE CONVERSION -->
+                  <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                    <ion-input
+                      label="{{this.collectService.collectionTags.get('COB_BASE')}} {{this.collectService.currencyConversion.coCurrency}}"
+                      label-placement="floating" fill="outline" value="{{this.formatNumber(this.baseConversionView)}}"
+                      color="primary" [readonly]="true"></ion-input>
+                  </ion-col>
+                  <!-- MONTO BASE CONVERSION -->
+
                   <!-- SALDO -->
                   <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                     <ion-input
@@ -279,13 +296,17 @@
                       color="primary" [readonly]="true"></ion-input>
                   </ion-col>
                   <!-- SALDO CONVERSION -->
+
                   <!-- COMENTARIO-->
+                  @if(this.collectService.documentSaleOpen.txComment != "" &&
+                  this.collectService.documentSaleOpen.txComment != null){
                   <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                     <ion-input label="{{this.collectService.collectionTags.get('COB_COMENTARIO')}}"
                       label-placement="floating" fill="outline"
                       value="{{this.collectService.documentSaleOpen.txComment}}" color="primary"
                       [readonly]="true"></ion-input>
                   </ion-col>
+                  }
                   <!-- COMENTARIO -->
 
                   <!-- LISTA DESCUENTOS  userCanSelectCollectDiscount -->
@@ -388,21 +409,24 @@
 
                   <ion-col *ngIf="this.collectService.selectedCollectDiscounts.length > 0" size="12" size-xs="12"
                     size-sm="12">
-                    <ion-input label="{{this.collectService.collectionTags.get('COB_SELEC_DESCUENTO')}}" label-placement="floating" fill="outline"
-                      color="primary" type="text" [value]="getSelectedCollectDiscountsNames()" readonly>
+                    <ion-input label="{{this.collectService.collectionTags.get('COB_SELEC_DESCUENTO')}}"
+                      label-placement="floating" fill="outline" color="primary" type="text"
+                      [value]="getSelectedCollectDiscountsNames()" readonly>
                     </ion-input>
                   </ion-col>
                   <ion-col *ngIf="this.collectService.selectedCollectDiscounts.length > 0" size="12" size-xs="12"
                     size-sm="12">
-                    <ion-input label="{{this.collectService.collectionTags.get('COB_TOTAL_DESCUENTO')}}" label-placement="floating" fill="outline" color="primary"
-                      type="text" [value]="this.collectService.totalCollectDiscountsView" readonly>
+                    <ion-input label="{{this.collectService.collectionTags.get('COB_TOTAL_DESCUENTO')}}"
+                      label-placement="floating" fill="outline" color="primary" type="text"
+                      [value]="this.collectService.totalCollectDiscountsView" readonly>
                     </ion-input>
                   </ion-col>
                   <!-- LISTA DESCUENTOS -->
                   <!-- COMENTARIO DESCUENTOS -->
                   <ion-col *ngIf="this.collectService.selectedCollectDiscounts.length > 0" size="12" size-xs="12"
                     size-sm="12">
-                    <ion-input label="{{this.collectService.collectionTags.get('COB_COMENTARIO')}}" label-placement="floating" fill="outline" color="primary" type="text"
+                    <ion-input label="{{this.collectService.collectionTags.get('COB_COMENTARIO')}}"
+                      label-placement="floating" fill="outline" color="primary" type="text"
                       [(ngModel)]="discountComment" (ngModelChange)="setDiscountComment()">
                     </ion-input>
                   </ion-col>
@@ -433,7 +457,7 @@
                       label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
                       [value]="displayDiscount || formatFromCents(centsDiscount)" (keydown)="onDiscountKeyDown($event)"
                       (focus)="onDiscountFocus()" (blur)="onDiscountBlur()" (paste)="onDiscountPaste($event)"
-                      (input)="onDiscountInput($event)">
+                      (input)="onDiscountInput($event)" [disabled]="this.collectService.amountPaid <= 0">
                     </ion-input>
                   </ion-col>
                   <!-- DIFERENCIA DEVOLUCION/FALTANTE -->

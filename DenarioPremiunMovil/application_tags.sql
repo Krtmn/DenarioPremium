@@ -383,6 +383,7 @@ INSERT INTO public.application_tags(
   ('COB_TOTAL_DESCUENTO', 'COB', 'COBROS', 'ESP','Total Descuento'),
   ('COB_SELEC_DESCUENTO', 'COB', 'COBROS', 'ESP','Descuentos Seleccionados'),
   ('COB_ERROR_PARTIAL_PAY', 'COB', 'COBROS', 'ESP','Todos los documentos están marcados como pago parcial, el monto pagado debe ser igual al monto a pagar.'),
+  ('COB_BASE', 'COB', 'COBROS', 'ESP','Monto base');
 
 
 -- VENDEDORES

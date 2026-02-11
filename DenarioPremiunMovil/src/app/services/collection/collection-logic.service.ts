@@ -244,6 +244,7 @@ export class CollectionService {
   public difference: number = 0;
   public totalCollectDiscounts: number = 0;
   public totalCollectDiscountsSelected: number = 0;
+  public totalHistoricPartialPayment: number = 0;
 
   public documentCurrency!: string;
   public dateTasa!: string;
@@ -819,14 +820,14 @@ export class CollectionService {
         monto += this.collection.collectionDetails[j].nuAmountPaid;
         montoConversion += this.collection.collectionDetails[j].nuAmountPaidConversion;
         montoTotalDiscounts += this.collection.collectionDetails[j].nuAmountRetention + this.collection.collectionDetails[j].nuAmountRetention2 + this.collection.collectionDetails[j].nuAmountDiscount;
-        this.montoTotalPagar = monto;
+        this.montoTotalPagar = monto - montoTotalDiscounts;
         this.montoTotalPagarConversion = montoConversion;
 
       }
     } else if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == 1) {
       monto = this.collection.nuAmountTotal;
       montoConversion = this.collection.nuAmountTotalConversion;
-      this.montoTotalPagar = monto;
+      this.montoTotalPagar = monto - montoTotalDiscounts;
       this.montoTotalPagarConversion = montoConversion;
       return;
     } else {
@@ -838,17 +839,16 @@ export class CollectionService {
             if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
               monto += this.documentSalesBackup[i].nuAmountPaid;
               montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuAmountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
-              montoTotalDiscounts += /* this.documentSalesBackup[i].nuAmountDiscount + */
-                this.collection.collectionDetails[pos].nuAmountCollectDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
-
+              montoTotalDiscounts = 0;
             }
           } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
             monto += this.documentSalesBackup[i].nuBalance;
             let pos = this.documentSales[i].positionCollecDetails;
             montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
-            montoTotalDiscounts += /* this.documentSalesBackup[i].nuAmountDiscount + */
-              this.collection.collectionDetails[pos].nuAmountCollectDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
-
+            montoTotalDiscounts += this.collection.collectionDetails[pos].nuAmountDiscount +
+              this.collection.collectionDetails[pos].nuAmountCollectDiscount +
+              this.documentSalesBackup[i].nuAmountRetention +
+              this.documentSalesBackup[i].nuAmountRetention2;
           }
         }
 
@@ -870,20 +870,17 @@ export class CollectionService {
         if (this.currencySelected.hardCurrency.toString() === "true")
           this.montoIgtfLocal = (this.montoIgtf * this.collection.nuValueLocal);
 
-        this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(monto));
+        this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(monto - montoTotalDiscounts));
       }
       else
         this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoIgtf)) + this.cleanFormattedNumber(this.currencyService.formatNumber(monto));
     } else {
-      this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(monto));
+      this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(monto - montoTotalDiscounts));
       this.montoIgtf = 0;
       this.montoIgtfConversion = 0;
     }
 
-    /* this.montoTotalDiscounts = montoTotalDiscounts;
-    this.montoTotalPagado = this.montoTotalPagado - montoTotalDiscounts;
-      console.log("MONTO nuDifference: ", this.collection.nuDifference);
-      console.log("MONTO montoTotalPagado: ", this.montoTotalPagado); */
+
     this.collection.nuAmountPaid = this.montoTotalPagar;
     this.collection.nuAmountPaidConversion = this.convertirMonto(this.montoTotalPagar, 0, this.collection.coCurrency);
     this.collection.nuAmountFinal = this.montoTotalPagar;
@@ -894,9 +891,9 @@ export class CollectionService {
 
     if (this.separateIgtf) {
       this.montoTotalPagarConversion = this.cleanFormattedNumber(this.currencyService.formatNumber(montoConversion));
-      this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado)) - this.cleanFormattedNumber(this.currencyService.formatNumber(monto));
+      this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado)) - this.cleanFormattedNumber(this.currencyService.formatNumber(monto - montoTotalDiscounts));
     } else {
-      this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado)) - this.cleanFormattedNumber(this.currencyService.formatNumber(monto + this.montoIgtf));
+      this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado)) - this.cleanFormattedNumber(this.currencyService.formatNumber(monto - montoTotalDiscounts + this.montoIgtf));
 
       this.montoTotalPagarConversion = this.cleanFormattedNumber(this.currencyService.formatNumber(montoConversion + this.montoIgtfConversion));
     }
@@ -2741,6 +2738,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         if (ds && typeof ds.coDocument === 'string') docSalesViewMap.set(ds.coDocument, ds);
       });
 
+      this.totalHistoricPartialPayment = data.rows.length;
       for (let i = 0; i < data.rows.length; i++) {
         const coDoc = data.rows.item(i).co_document;
         const isPartial = data.rows.item(i).in_payment_partial === 'true';
@@ -4067,8 +4065,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         if (documentSales[i].isSelected) {
           if (coType == '2') {
             //es retencion
-            stDelivery = 3;
-          } else if (documentSales[i].missingRetention) {
+            //stDelivery = 3; colocar 3 si queremos que luego dfe una retencion el documento quede bloqueado, colocar 2 si queremos que quede disponible pero con la retencion pendiente
+            stDelivery = 2;
+          } else if (documentSales[i].missingRetention && !documentSales[i].inPaymentPartial) {
             stDelivery = 2;
           } else if (documentSales[i].inPaymentPartial)
             stDelivery = 0;
