@@ -1082,14 +1082,14 @@ export class CobrosDocumentComponent implements OnInit {
       this.disabledSaveButton = true;
       this.collectService.isChangePaymentPartial = false;
 
-      if (!this.hasShownPartialPayMessage && this.collectService.totalHistoricPartialPayment > 0)
+      if (!this.hasShownPartialPayMessage && this.collectService.totalHistoricPartialPayment > 0 && this.collectService.coTypeModule == "0") {
         if (this.collectService.historicPartialPayment &&
           this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].inPaymentPartial) {
           this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSJ_HAVE_PAYPARTIAL')!;
           this.alertMessageOpen2 = true;
           this.hasShownPartialPayMessage = true;
         }
-
+      }
 
       return; // Early return, no más lógica abajo
     }
