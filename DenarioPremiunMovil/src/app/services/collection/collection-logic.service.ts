@@ -1774,8 +1774,8 @@ export class CollectionService {
 
     //this.documentSales[index].nuAmountBase = nuAmountBase;
     //this.documentSalesBackup[index].nuAmountBase = nuAmountBase;
-   /*  this.documentSales[index].nuAmountDiscount = nuAmountDiscount;
-    this.documentSalesBackup[index].nuAmountDiscount = nuAmountDiscount; */
+    /*  this.documentSales[index].nuAmountDiscount = nuAmountDiscount;
+     this.documentSalesBackup[index].nuAmountDiscount = nuAmountDiscount; */
     this.documentSales[index].nuAmountPaid = nuAmountPaid;
     this.documentSalesBackup[index].nuAmountPaid = nuAmountPaid;
     this.documentSales[index].nuAmountRetention = nuAmountRetention;
@@ -4124,7 +4124,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           nuAmountRetention2: res.rows.item(i).nu_amount_retention2,
           nuAmountRetentionConversion: res.rows.item(i).nu_amount_retention_iva_conversion,
           nuAmountRetentionIvaConversion: res.rows.item(i).nu_amount_retention_iva_conversion,
-          nuAmountRetention2Conversion: res.rows.item(i).nu_amount_retention_iva_conversion,
+          nuAmountRetention2Conversion: res.rows.item(i).nu_amount_retention_islr_conversion,
           nuAmountRetentionIslrConversion: res.rows.item(i).nu_amount_retention_islr_conversion,
           nuAmountPaid: res.rows.item(i).nu_amount_paid,
           nuAmountPaidConversion: res.rows.item(i).nu_amount_paid_conversion,
