@@ -769,12 +769,19 @@ export class CobrosDocumentComponent implements OnInit {
       }
     }
 
+    let inPaymentPartial = false;
+    let missingRetention = false;
+    if (this.collectService.coTypeModule != "2") {
+      inPaymentPartial = this.collectService.alwaysPartialPayment ? true : this.collectService.documentSaleOpen.inPaymentPartial ? true : false;
+      missingRetention = this.collectService.alwaysRetention ? true : this.collectService.documentSaleOpen.missingRetention ? true : false;
+    }
+
     this.collectService.collection.collectionDetails.push({
       //idCollectionDetail: null,
       coCollection: this.collectService.collection.coCollection,
       coDocument: documentSale.coDocument.toString(),
       idDocument: documentSale.idDocument,
-      inPaymentPartial: this.collectService.alwaysPartialPayment ? true : false,
+      inPaymentPartial: inPaymentPartial,
       nuVoucherRetention: "",
       nuAmountRetention: 0, //iva
       nuAmountRetention2: 0, //islr
@@ -805,7 +812,7 @@ export class CobrosDocumentComponent implements OnInit {
       discountComment: "",
       nuAmountCollectDiscount: 0,
       nuCollectDiscount: 0,
-      missingRetention: false,
+      missingRetention: missingRetention,
       nuAmountCollectDiscountConversion: 0,
     })
     this.collectService.documentSales[id].positionCollecDetails = this.collectService.collection.collectionDetails.length - 1;
@@ -997,27 +1004,32 @@ export class CobrosDocumentComponent implements OnInit {
       amountPaidConversion = cs.convertirMonto(amountPaidRetention, cs.collection.nuValueLocal, cs.documentSaleOpen.coCurrency);
       cs.amountPaidRetention = amountPaidRetention;
       cs.amountPaidConversion = amountPaidConversion;
-    }
 
-    if (cs.isPaymentPartial) {
-      let amount = documentSale.isSave ? documentSale.nuAmountPaid : this.valuePartialPayment;
-      cs.amountPaid = amount - sumRetentions;
-    } else {
-      // usar siempre originalBalance para calcular el nuevo monto al aplicar descuento/retenciones
-      cs.amountPaid = originalBalance - sumRetentions;
-    }
+      cs.amountPaid = sumRetentions;
 
-    // --- Ajustes finales ---
-    if (coTypeModule === '2') {
       cs.documentSaleOpen.nuAmountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaidRetention));
       cs.amountPaidDoc = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaidDoc));
       cs.amountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaid));
       cs.amountPaidRetention = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaidRetention));
+
     } else {
+      if (cs.isPaymentPartial) {
+        let amount = documentSale.isSave ? documentSale.nuAmountPaid : this.valuePartialPayment;
+        cs.amountPaid = amount - sumRetentions;
+      } else {
+        // usar siempre originalBalance para calcular el nuevo monto al aplicar descuento/retenciones
+        cs.amountPaid = originalBalance - sumRetentions;
+      }
+
       cs.amountPaidDoc = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaidDoc));
       cs.amountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaid));
       this.collectService.documentSaleOpen.igtfAmount = cs.amountPaid * (igtfSelected.price / 100);
+
     }
+
+
+
+
 
     this.displayAmountPaid = cs.amountPaid.toString();
 

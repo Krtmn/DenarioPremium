@@ -889,7 +889,11 @@ export class CollectionService {
     this.collection.nuAmountIgtf = this.montoIgtf;
     this.collection.nuAmountIgtfConversion = this.convertirMonto(this.montoIgtf, 0, this.collection.coCurrency);
 
-    if (this.separateIgtf) {
+    if (this.coTypeModule == "2") {
+      //es retencion
+      this.collection.nuDifference = 0;
+    }
+    else if (this.separateIgtf) {
       this.montoTotalPagarConversion = this.cleanFormattedNumber(this.currencyService.formatNumber(montoConversion));
       this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado)) - this.cleanFormattedNumber(this.currencyService.formatNumber(monto - montoTotalDiscounts));
     } else {

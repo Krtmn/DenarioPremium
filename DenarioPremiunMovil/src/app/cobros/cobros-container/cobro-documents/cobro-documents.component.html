@@ -297,17 +297,17 @@
                   </ion-col>
                   <!-- SALDO CONVERSION -->
 
-                  <!-- COMENTARIO-->
+                  <!-- COMENTARIO DOCUMENTO-->
                   @if(this.collectService.documentSaleOpen.txComment != "" &&
                   this.collectService.documentSaleOpen.txComment != null){
                   <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-                    <ion-input label="{{this.collectService.collectionTags.get('COB_COMENTARIO')}}"
+                    <ion-input label="{{this.collectService.collectionTags.get('COB_COMENTARIO_DOCUMENTO')}}"
                       label-placement="floating" fill="outline"
                       value="{{this.collectService.documentSaleOpen.txComment}}" color="primary"
                       [readonly]="true"></ion-input>
                   </ion-col>
                   }
-                  <!-- COMENTARIO -->
+                  <!-- COMENTARIO DOCUMENTO -->
 
                   <!-- LISTA DESCUENTOS  userCanSelectCollectDiscount -->
                   @if(!this.collectService.isPaymentPartial){
@@ -683,13 +683,16 @@
               </ion-col>
               <!-- SALDO CONVERSION -->
 
-              <!-- COMENTARIO-->
+              <!-- COMENTARIO DOCUMENTO-->
+              @if(this.collectService.documentSaleOpen.txComment != "" &&
+              this.collectService.documentSaleOpen.txComment != null){
               <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                 <ion-input label="{{this.collectService.collectionTags.get('COB_COMENTARIO_DOCUMENTO')}}"
                   label-placement="floating" fill="outline" value="{{this.collectService.documentSaleOpen.txComment}}"
                   color="primary" [readonly]="true"></ion-input>
               </ion-col>
-              <!-- COMENTARIO-->
+              }
+              <!-- COMENTARIO DOCUMENTO-->
 
               <!-- NRO COMPROBANTE RET -->
 
