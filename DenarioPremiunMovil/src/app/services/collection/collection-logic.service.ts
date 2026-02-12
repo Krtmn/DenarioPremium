@@ -347,7 +347,8 @@ export class CollectionService {
     }
     this.userCanAddRetention = this.globalConfig.get('userCanAddRetention') === 'true' ? true : false;
     this.enableDifferenceCodes = this.globalConfig.get('enableDifferenceCodes') === 'true' ? true : false;
-    this.userCanSelectCollectDiscount = this.globalConfig.get('userCanSelectCollectDiscount') === 'true' ? true : false;
+    const userCanSelectCollectDiscountValue = (this.globalConfig.get('userCanSelectCollectDiscount') || '').trim();
+    this.userCanSelectCollectDiscount = userCanSelectCollectDiscountValue === 'true' ? true : false;
     const canChangeRateValue = (this.globalConfig.get('canChangeRate') || '').trim();
     this.canChangeRate = canChangeRateValue === 'true' ? true : false;
     const missingRetentionValue = (this.globalConfig.get('missingRetention') || '').trim();
