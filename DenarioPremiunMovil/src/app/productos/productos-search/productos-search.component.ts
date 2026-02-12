@@ -11,7 +11,7 @@ import { ProductService } from 'src/app/services/products/product.service';
 export class ProductosSearchComponent{
   @Input()
   searchTags = new Map<string, string>([]);
-  router = inject(Router); 
+  router = inject(Router);
 
   @Input()
   mostrarVolver: Boolean = false;
@@ -26,17 +26,17 @@ export class ProductosSearchComponent{
   viewStructuresClicked: EventEmitter<Boolean> = new EventEmitter<Boolean>();
   @Output()
   searchTextChanged: EventEmitter<string> = new EventEmitter<string>();
-  
+
   productoService = inject(ProductService);
   @ViewChild('searchInput') searchInputEL!: ElementRef;
 
   ngOnInit() {
-    
+
   }
 
   onSearchClicked(){
-    this.searchText = this.searchInputEL.nativeElement.value;    
-    this.searchTextChanged.emit(this.searchText);    
+    this.searchText = this.searchInputEL.nativeElement.value;
+    this.searchTextChanged.emit(this.searchText);
     this.productoService.onProductSearch(this.searchText);
 
   }
@@ -48,6 +48,11 @@ export class ProductosSearchComponent{
   onSearchTextChanged(){
     this.searchTextChanged.emit(this.searchText);
     this.productoService.onProductSearch(this.searchText);
+  }
+
+  clearSearch(){
+    this.searchText = '';
+    this.onSearchTextChanged();
   }
 
 }

@@ -23,32 +23,33 @@
 
 }
 
+.search-input-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.clear-search {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 0;
+  line-height: 1;
+  color: #430197;
+}
+
+.clear-search[disabled] {
+  opacity: 0.4;
+}
+
 .iconobuscar{
   background-image: url("/assets/images/searchInput.svg");
   // background-size: 100% 101%;
   background-repeat: no-repeat;
   background-position: 10px center;
   background-size: 8%;
-}
-
-.search-input-wrapper {
-  position: relative;
-  width: 100%;
-}
-
-.search-input-action {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: transparent;
-  border: 0;
-  padding: 4px;
-  color: #430197;
-}
-
-.search-input-action:disabled {
-  opacity: 0.4;
 }
 
 // ion-button {
