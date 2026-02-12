@@ -162,6 +162,10 @@ ion-accordion.accordion-expanded {
   border: 1px solid #59b02d;
 }
 
+.tituloEstructura{
+  font-size: 12px;;
+}
+
 ion-accordion.accordion-expanding ion-item[slot='header'],
 ion-accordion.accordion-expanded ion-item[slot='header'] {
   --background: #59b02d;
