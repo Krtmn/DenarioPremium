@@ -5,7 +5,7 @@
         {{orderService.getTag("DENARIO_SIN_RESULTADOS")}}
       </ion-label>
     </ion-item>
-    } 
+    }
   <!--  Listado clickeable de productos  -->
   <div class="product-card" *ngIf="!selectedProduct">
     <ion-list class="espacioListasProductos" *ngFor="let product of productList | slice: startPro:endPro; index as i"
@@ -18,7 +18,7 @@
           @if(this.orderService.showProductImages){
           <ion-label fixed class="fixedLabel contenedorImgMargin">
             <img class="productImage" alt="" loading="lazy"
-              [src]="product.coProduct ? (imageServices.getImageObservable(product.coProduct) | async) : '../../../assets/images/nodisponible.png'" />
+              [src]="product.coProduct ? (imageServices.getImgForProduct(product.coProduct)) : '../../../assets/images/nodisponible.png'" />
           </ion-label>
         }
           <ion-label class="textList espaciotextoListaProduc">
@@ -39,23 +39,23 @@
               {{this.productTags.get('PROD_STOCK_PROD')}}: {{ this.productService.formatStock(product.stock, this.orderService.quUnitDecimals) }}</p>
             }
             @if(this.orderService.displayProductPoints){
-            <p class="espacioentrelineas"> 
+            <p class="espacioentrelineas">
               {{this.productTags.get('PROD_POINTS_PROD')}}: {{ product.points }}
             </p>
             }
             @if(this.orderService.productMinMul &&this.orderService.prodMinMulMap.has(product.idProduct)){
             @if( this.orderService.getProdMinMulByProduct(product.idProduct).quMinimum > 1 ){
             <p class="espacioentrelineas">
-              {{this.orderService.getTag('PED_MINIMO')}}: {{ this.orderService.getProdMinMulByProduct(product.idProduct).quMinimum }} 
+              {{this.orderService.getTag('PED_MINIMO')}}: {{ this.orderService.getProdMinMulByProduct(product.idProduct).quMinimum }}
             </p>
           }
           @if( this.orderService.getProdMinMulByProduct(product.idProduct).quMultiple > 1 ){
-            <p class="espacioentrelineas">  
+            <p class="espacioentrelineas">
               {{this.orderService.getTag('PED_MULTIPLO')}}: {{ this.orderService.getProdMinMulByProduct(product.idProduct).quMultiple }}
             </p>
             }
           }
-          
+
           </ion-label>
           <ion-note slot="end"><ion-icon class="icon-List2" name="chevron-forward-outline"></ion-icon></ion-note>
         </ion-item>

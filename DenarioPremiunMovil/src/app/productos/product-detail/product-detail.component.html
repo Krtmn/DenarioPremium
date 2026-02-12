@@ -10,7 +10,7 @@
                 <swiper-slide class="swiperSlide">
                   <div class="swiper-zoom-container">
                     <img class="sizeImgProduct"
-                      [src]="pSeleccionado.coProduct ? (imageServices.getImageObservable(pSeleccionado.coProduct) | async) : '../../../assets/images/nodisponible.png'" />
+                      [src]="pSeleccionado.coProduct ? (imageServices.getImgForProduct(pSeleccionado.coProduct)) : '../../../assets/images/nodisponible.png'" />
                   </div>
                 </swiper-slide>
               </swiper-container>
@@ -28,7 +28,7 @@
     </ion-row> -->
 
   </div>
-}
+  }
 
   <ion-grid>
     <ion-row>
@@ -85,16 +85,16 @@
               size-xs="4">{{this.productDetailTags.get('PROD_POINTS_PROD')}}</ion-col>
             <ion-col size="8" size-sm="8" size-xs="8">{{pSeleccionado.points}}</ion-col>
           </ion-row>
-        }
+          }
           <ion-row>
-            
+
             <ion-col class="tituloDetails titulosDetallesProductos" size="4" size-sm="4"
               size-xs="4">{{this.productDetailTags.get('PROD_PRICE_LIST_PROD')}}</ion-col>
             <ion-col size="8" size-sm="8" size-xs="8">
               <!--  Un Selector de listas de precio, por defecto na_list asc -->
               <div class="listado-price-list selectDetail">
                 <ion-select [(ngModel)]="listSeleccionada" (ionChange)="onListChanged(listSeleccionada.idList)"
-                [disabled]="!lists || lists.length === 1">
+                  [disabled]="!lists || lists.length === 1">
                   <ion-select-option *ngFor="let list of lists" [value]="list">{{ list.naList }}</ion-select-option>
                 </ion-select>
               </div>
@@ -112,7 +112,7 @@
               size-xs="4">{{this.productDetailTags.get('PROD_IVA')}}</ion-col>
             <ion-col size="8" size-sm="8" size-xs="8">{{formatNumber(pSeleccionado.nuTax)}} %</ion-col>
           </ion-row>
-        }
+          }
           <ion-row *ngIf="multiCurrency && showConversionInfo && pSeleccionado.priceHard">
             <ion-col class="tituloDetails" size="4" size-sm="4"
               size-xs="4">{{this.productDetailTags.get('PROD_PRICE_PROD')}}</ion-col>
@@ -139,7 +139,7 @@
               </div>
             </ion-col>
           </ion-row>
-        }
+          }
           @if(this.orderService.showStock){
           <ion-row>
             <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">
@@ -149,9 +149,9 @@
               {{this.productService.formatStock(pSeleccionado.stock, this.orderService.quUnitDecimals)}}
             </ion-col>
           </ion-row>
-        }
-         @if(this.orderService.productMinMul &&this.orderService.prodMinMulMap.has(pSeleccionado.idProduct)){
-         }
+          }
+          @if(this.orderService.productMinMul &&this.orderService.prodMinMulMap.has(pSeleccionado.idProduct)){
+          }
           @if( this.orderService.getProdMinMulByProduct(pSeleccionado.idProduct).quMinimum > 1 ){
           <ion-row>
             <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">
@@ -161,7 +161,7 @@
               {{ this.orderService.getProdMinMulByProduct(pSeleccionado.idProduct).quMinimum }}
             </ion-col>
           </ion-row>
-        }
+          }
           @if( this.orderService.getProdMinMulByProduct(pSeleccionado.idProduct).quMultiple > 1 ){
           <ion-row>
             <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">
@@ -171,8 +171,8 @@
               {{ this.orderService.getProdMinMulByProduct(pSeleccionado.idProduct).quMultiple }}
             </ion-col>
           </ion-row>
-        }
-         
+          }
+
         </ion-grid>
       </ion-col>
     </ion-row>
