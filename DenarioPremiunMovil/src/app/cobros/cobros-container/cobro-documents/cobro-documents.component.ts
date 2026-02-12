@@ -159,7 +159,7 @@ export class CobrosDocumentComponent implements OnInit {
     //days = hours * 24
     //var days = 86400000; /* 1000 * 60 * 60 * 24; */
 
-    return Math.round(((new Date()).getTime() - dateDoc) / 86400000);
+    return Math.abs(Math.round(((new Date()).getTime() - dateDoc) / 86400000));
   }
 
   getIgtfList() {
