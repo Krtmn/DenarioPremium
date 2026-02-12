@@ -43,6 +43,7 @@ export class ProductService {
   backButtonClicked = new Subject<Boolean>;
   favoriteStructureClicked = new Subject<Boolean>;
   carritoButtonClicked = new Subject<Boolean>();
+  returnBackClicked = new Subject<boolean>();
 
   searchTextChanged = new Subject<string>();
   searchStructures = false; //flag para saber si se busca en todas las estructuras.
@@ -97,6 +98,10 @@ export class ProductService {
 
   onBackButtonClicked() {
     this.backButtonClicked.next(true);
+  }
+
+  onReturnBackClicked() {
+    this.returnBackClicked.next(true);
   }
 
   getProductsByCoProductStructureAndIdEnterprise(dbServ: SQLiteObject, idProductStructures: number[], idEnterprise: number, coCurrency: string) {
@@ -762,13 +767,13 @@ export class ProductService {
             pd.rows.item(0).co_currency_default, // moneda de Lista de precio
             pd.rows.item(0).nu_price_opposite, // Precio en la monedaopuesta  de Lista de precio
             pd.rows.item(0).co_currency_opposite, // moneda opuesta de Lista de precio
-            /*            pd.rows.item(0).co_currency === this.currencyService.getLocalCurrency ? 
-                            this.currencyService.toHardCurrency(pd.rows.item(0).nu_price) : 
+            /*            pd.rows.item(0).co_currency === this.currencyService.getLocalCurrency ?
+                            this.currencyService.toHardCurrency(pd.rows.item(0).nu_price) :
                             this.currencyService.toLocalCurrency(pd.rows.item(0).nu_price), // Precio en la moneda opuesta a la lista de precio
-                        pd.rows.item(0).co_currency === this.currencyService.getLocalCurrency ? 
-                        this.currencyService.hardCurrency.coCurrency : 
+                        pd.rows.item(0).co_currency === this.currencyService.getLocalCurrency ?
+                        this.currencyService.hardCurrency.coCurrency :
                         this.currencyService.localCurrency.coCurrency, // moneda opuesta a la lista de precio */
-            this.currencyService.getLocalValue(),  // TASA            
+            this.currencyService.getLocalValue(),  // TASA
             pd.rows.item(0).qu_stock,
             pd.rows.item(0).co_enterprise,
             pd.rows.item(0).id_enterprise,

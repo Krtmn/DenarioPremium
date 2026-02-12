@@ -26,13 +26,21 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
   empresaSeleccionada!: Enterprise;
   @Input()
   pedido: Boolean = false;
+  @Input()
+  showBackButton: Boolean = false;
 
   searchText: string = '';
   productStructures: Boolean = false;
   disabledSearchButton: Boolean = false;
+  showBackIcon = false;
   productStructuresSub: any;
   //searchSub: any;
   backButtonSub: any;
+  productStructureClickedSub: any;
+  searchClickedSub: any;
+  featuredClickedSub: any;
+  favoriteClickedSub: any;
+  carritoClickedSub: any;
 
   constructor() { }
 
@@ -43,11 +51,34 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
 
     this.productStructuresSub = this.productStructureService.productStructures.subscribe((data) => {
       this.productStructures = data;
+      if (data) {
+        this.showBackIcon = false;
+      }
     });
 
     this.backButtonSub = this.productService.backButtonClicked.subscribe((data) => {
       this.searchText = '';
       this.onSearchTextChanged();
+    });
+
+    this.productStructureClickedSub = this.productService.productStructureCLicked.subscribe(() => {
+      this.showBackIcon = true;
+    });
+
+    this.searchClickedSub = this.productService.onSearchClicked.subscribe(() => {
+      this.showBackIcon = true;
+    });
+
+    this.featuredClickedSub = this.productService.featuredStructureClicked.subscribe(() => {
+      this.showBackIcon = true;
+    });
+
+    this.favoriteClickedSub = this.productService.favoriteStructureClicked.subscribe(() => {
+      this.showBackIcon = true;
+    });
+
+    this.carritoClickedSub = this.productService.carritoButtonClicked.subscribe(() => {
+      this.showBackIcon = true;
     });
 
     /*
@@ -61,6 +92,11 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
     this.productStructuresSub.unsubscribe();
     //this.searchSub.unsubscribe();
     this.backButtonSub.unsubscribe();
+    this.productStructureClickedSub.unsubscribe();
+    this.searchClickedSub.unsubscribe();
+    this.featuredClickedSub.unsubscribe();
+    this.favoriteClickedSub.unsubscribe();
+    this.carritoClickedSub.unsubscribe();
   }
 
   onSearchTextChanged() {
@@ -109,6 +145,11 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
       }
     }
 
+  }
+
+  onBackClicked() {
+    this.showBackIcon = false;
+    this.productService.onReturnBackClicked();
   }
 
 }

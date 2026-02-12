@@ -3,14 +3,20 @@
     <ion-row>
       <ion-col size="12" size-sm="12" size-xs="12">
         <!-- Este input es cuando estoy afuera de las estructuras y busco hacien click en buscar -->
-        <div class="search-input-wrap">
-          <input type="text" class="search-input inputsSearch iconobuscar" fill="outline" shape="round"
-            (input)="onSearchTextChanged()" (keyup.enter)="onSearchClicked()"
-            placeholder="{{this.productsTabTags.get('PROD_PLACEHOLDER_BUSCAR')}}" #searchInput
-            [(ngModel)]="searchText">
-          <button type="button" class="clear-search" (click)="clearSearch()" [disabled]="!searchText">
-            <ion-icon name="close-circle"></ion-icon>
-          </button>
+        <div class="search-row">
+          <ion-button fill="outline" size="small" shape="round" class="back-button" *ngIf="showBackButton && showBackIcon"
+            (click)="onBackClicked()" aria-label="Volver">
+            <ion-icon name="arrow-back-outline"></ion-icon>
+          </ion-button>
+          <div class="search-input-wrap">
+            <input type="text" class="search-input inputsSearch iconobuscar" fill="outline" shape="round"
+              (input)="onSearchTextChanged()" (keyup.enter)="onSearchClicked()"
+              placeholder="{{this.productsTabTags.get('PROD_PLACEHOLDER_BUSCAR')}}" #searchInput
+              [(ngModel)]="searchText">
+            <button type="button" class="clear-search" (click)="clearSearch()" [disabled]="!searchText">
+              <ion-icon name="close-circle"></ion-icon>
+            </button>
+          </div>
         </div>
         <!-- <input type="text" class="search-input inputsSearch" fill="outline" shape="round" placeholder="{{this.searchTags.get('PROD_PLACEHOLDER_BUSCAR')}}" #searchInput [(ngModel)]="searchText" *ngIf="showSearch && !productStructureSelected"> -->
       </ion-col>
