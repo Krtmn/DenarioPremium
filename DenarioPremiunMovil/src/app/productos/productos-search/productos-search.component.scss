@@ -27,6 +27,28 @@
   width: 100%;
 }
 
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-row .search-input-wrap {
+  flex: 1;
+}
+
+.back-button {
+  --padding-start: 4px;
+  --padding-end: 4px;
+  height: 36px;
+  min-height: 36px;
+  width: 28px;
+  min-width: 28px;
+  --border-width: 0;
+  --background: transparent;
+  --color: #430197;
+}
+
 .clear-search {
   position: absolute;
   right: 10px;
