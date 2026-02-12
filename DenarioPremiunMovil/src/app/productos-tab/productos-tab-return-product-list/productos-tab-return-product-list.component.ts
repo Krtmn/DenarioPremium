@@ -50,6 +50,7 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
   favClicked: any;
   searchSub: any;
   validateReturnSub: any;
+  returnBackSub: any;
   noProductsAlertShown = false;
   public imagesMap: { [imgName: string]: string } = {};
   constructor(private cd: ChangeDetectorRef,) { }
@@ -126,6 +127,14 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
         }
         )
     });
+
+    this.returnBackSub = this.productService.returnBackClicked.subscribe(() => {
+      if (this.returnLogic.validateReturn) {
+        this.onShowProductList();
+      } else {
+        this.onShowProductStructures();
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -134,6 +143,7 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
     this.validateReturnSub.unsubscribe();
     this.featClicked.unsubscribe();
     this.favClicked.unsubscribe();
+    this.returnBackSub.unsubscribe();
   }
 
   onShowProductStructures() {

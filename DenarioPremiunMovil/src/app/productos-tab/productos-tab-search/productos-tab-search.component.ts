@@ -26,6 +26,8 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
   empresaSeleccionada!: Enterprise;
   @Input()
   pedido: Boolean = false;
+  @Input()
+  showBackButton: Boolean = false;
 
   searchText: string = '';
   productStructures: Boolean = false;
@@ -109,6 +111,10 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
       }
     }
 
+  }
+
+  onBackClicked() {
+    this.productService.onReturnBackClicked();
   }
 
 }

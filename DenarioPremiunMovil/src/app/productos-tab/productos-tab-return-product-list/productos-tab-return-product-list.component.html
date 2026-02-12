@@ -1,11 +1,5 @@
 <div class="listado-product-structures" *ngIf="showProductList">
 
-  <ion-button fill="outline" size="small" color="dark" class="colorBorderBuscar" shape="round"
-    (click)="this.returnLogic.validateReturn ? onShowProductList() : onShowProductStructures()">
-    {{this.productsTabTags.get('PROD_VOLVER')}}
-    <ion-icon class="colorIconBuscar" slot="start" name="arrow-back-circle-sharp"></ion-icon>
-  </ion-button>
-
   <!--  Listado clickeable de productos  -->
   <div class="product-card product-structure-scroll2">
     @if(noProductsAlertShown){
@@ -14,7 +8,7 @@
         {{this.productsTabTags.get("DENARIO_SIN_RESULTADOS")}}
       </ion-label>
     </ion-item>
-    } 
+    }
     <ion-list class="espacioListasProductos" *ngFor="let product of productList; index as i"
       (click)="onSelectProductDev(product)">
       <div class="product-structure-title"
