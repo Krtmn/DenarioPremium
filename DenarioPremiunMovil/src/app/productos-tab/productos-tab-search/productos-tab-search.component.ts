@@ -1,4 +1,5 @@
 import { Component, Input, OnDestroy, OnInit, Output, EventEmitter, inject } from '@angular/core';
+import { Subject, debounceTime, distinctUntilChanged, filter } from 'rxjs';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { PedidosService } from 'src/app/pedidos/pedidos.service';
 import { ProductStructureService } from 'src/app/services/productStructures/product-structure.service';
@@ -29,6 +30,7 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
   searchText: string = '';
   productStructures: Boolean = false;
   disabledSearchButton: Boolean = false;
+  private searchInput$ = new Subject<string>();
 
 
   productStructuresSub: any;
@@ -51,6 +53,18 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
       this.onSearchTextChanged();
     });
 
+    this.searchInput$
+      .pipe(
+        debounceTime(350),
+        distinctUntilChanged(),
+        filter(text => text.trim().length > 0)
+      )
+      .subscribe(() => {
+        if (!this.disabledSearchButton) {
+          this.onSearchClicked();
+        }
+      });
+
     /*
     this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
       this.productStructures = true;
@@ -62,15 +76,17 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
     this.productStructuresSub.unsubscribe();
     //this.searchSub.unsubscribe();
     this.backButtonSub.unsubscribe();
+    this.searchInput$.complete();
   }
 
   onSearchTextChanged() {
     this.productService.searchTextChanged.next(this.searchText);
+    this.searchInput$.next(this.searchText);
   }
 
   onSearchClicked() {
     this.productStructureService.nombreProductStructureSeleccionada = '';
-    
+
     this.disabledSearchButton = true;
     if (this.productService.searchStructures) {
       //Buscar en estructuras de producto
