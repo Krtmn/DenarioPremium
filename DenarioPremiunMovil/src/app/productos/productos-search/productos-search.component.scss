@@ -4,7 +4,6 @@
 
 .fixedSearch{
   position: fixed;
-  margin-bottom: 300px;
   width: 100%;
   z-index: 10;
   background: #ffffff;
@@ -19,7 +18,29 @@
   border-radius: 25px;
   outline: none;
   padding-left: 50px;
+  padding-right: 40px;
 
+}
+
+.search-input-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.clear-search {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 0;
+  line-height: 1;
+  color: #430197;
+}
+
+.clear-search[disabled] {
+  opacity: 0.4;
 }
 
 .iconobuscar{
