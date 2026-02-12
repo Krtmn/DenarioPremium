@@ -429,11 +429,14 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       //this.accordionGroup.value = undefined;
     } else {
       //const nativeEl = this.accordionGroup;
+      //autofoco al abrir el producto seleccionado
+      /*
       if (this.accordionGroup.value !== prod.coProduct) {
         setTimeout(() => {
           this.quAmountInputs.toArray()[i].setFocus();
         }, 150);
       }
+      */
     }
   }
 

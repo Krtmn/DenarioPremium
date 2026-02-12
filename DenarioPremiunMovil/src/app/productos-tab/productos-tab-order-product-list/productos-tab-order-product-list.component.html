@@ -22,7 +22,7 @@
       </ion-label>
     </ion-item>
     }
-    <ion-accordion-group>
+    <ion-accordion-group #accordionGroup>
       <ion-accordion class="product-structure-title accordionPedidos" *ngFor="let product of orderUtilList; index as i"
         [disabled]="disableProduct(product)"
         toggleIcon="caret-down-circle" toggleIconSlot="end" [value]="product.coProduct">
