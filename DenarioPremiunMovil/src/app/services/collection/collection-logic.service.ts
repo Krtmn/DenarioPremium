@@ -348,11 +348,18 @@ export class CollectionService {
     this.userCanAddRetention = this.globalConfig.get('userCanAddRetention') === 'true' ? true : false;
     this.enableDifferenceCodes = this.globalConfig.get('enableDifferenceCodes') === 'true' ? true : false;
     this.userCanSelectCollectDiscount = this.globalConfig.get('userCanSelectCollectDiscount') === 'true' ? true : false;
-    this.canChangeRate = this.globalConfig.get('canChangeRate') === 'true' ? true : false;
-    this.missingRetention = this.globalConfig.get('missingRetention') === 'true' ? true : false;
-    this.alwaysRetention = this.globalConfig.get('alwaysRetention') === 'true' ? true : false;
-    this.alwaysPartialPayment = this.globalConfig.get('alwaysPartialPayment') === 'true' ? true : false;
-    this.enablePartialPayment = this.globalConfig.get('enablePartialPayment') === 'true' ? true : false;
+    const canChangeRateValue = (this.globalConfig.get('canChangeRate') || '').trim();
+    this.canChangeRate = canChangeRateValue === 'true' ? true : false;
+    const missingRetentionValue = (this.globalConfig.get('missingRetention') || '').trim();
+    this.missingRetention = missingRetentionValue === 'true' ? true : false;
+    const alwaysRetentionValue = (this.globalConfig.get('alwaysRetention') || '').trim();
+    this.alwaysRetention = alwaysRetentionValue === 'true' ? true : false;
+    const alwaysPartialPaymentValue = (this.globalConfig.get('alwaysPartialPayment') || '').trim();
+    this.alwaysPartialPayment = alwaysPartialPaymentValue === 'true' ? true : false;
+    const enablePartialPaymentValue = (this.globalConfig.get('enablePartialPayment') || '').trim();
+    this.enablePartialPayment = enablePartialPaymentValue === 'true' ? true : false;
+
+
 
     this.showNuevaCuenta = this.clientBankAccount === true ? true : false;
 
