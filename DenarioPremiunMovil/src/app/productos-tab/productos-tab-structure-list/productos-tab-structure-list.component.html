@@ -8,32 +8,29 @@
 
   <ion-grid>
     <ion-row>
-      
-    
+      <ion-col class="contadoresIcon" size="12" size-sm="12" size-xs="12">
+        <ion-tab-bar class="fondoVerde">
+          <ion-tab-button tab="1" (click)="onFavoriteProductSelected();">
+            <ion-icon name="heart"></ion-icon>
+            <ion-label>{{favoriteButtonLabel}}</ion-label>
+            <ion-badge color="danger">{{ favoriteButtonCount }}</ion-badge>
+          </ion-tab-button>
 
-      <ion-col class="contadoresIcon" size="12" size-sm="12" size-xs="12" >
-      <ion-tab-bar class="fondoVerde">
-  <ion-tab-button tab="1" (click)="onFavoriteProductSelected();">
-    <ion-icon name="heart"></ion-icon>
-    <ion-label>{{favoriteButtonLabel}}</ion-label>
-    <ion-badge color="danger">{{ favoriteButtonCount }}</ion-badge>
-  </ion-tab-button>
+          @if(featuredProducts) {
+          <ion-tab-button tab="2" (click)="onFeaturedProductSelected()">
+            <ion-icon name="star"></ion-icon>
+            <ion-label>{{featuredButtonLabel}}</ion-label>
+            <ion-badge color="danger">{{ featuredButtonCount }}</ion-badge>
+          </ion-tab-button>
+          }
+          @if(pedido){
+          <ion-tab-button tab="3" (click)="onCartSelected();">
+            <ion-icon name="cart"></ion-icon>
+            <ion-label>Carrito</ion-label>
+            <ion-badge color="danger">{{ this.orderServ.carrito.length }}</ion-badge>
+          </ion-tab-button> }
 
-  @if(featuredProducts) {
-  <ion-tab-button tab="2" (click)="onFeaturedProductSelected()">
-    <ion-icon name="star"></ion-icon>
-    <ion-label>{{featuredButtonLabel}}</ion-label>
-    <ion-badge color="danger">{{ featuredButtonCount }}</ion-badge>
-  </ion-tab-button>
-  }
-  @if(pedido){
-  <ion-tab-button tab="3" (click)="onCartSelected();">
-    <ion-icon name="cart"></ion-icon>
-    <ion-label>Carrito</ion-label>
-    <ion-badge color="danger">{{ this.orderServ.carrito.length }}</ion-badge>    
-  </ion-tab-button> }
-  
-</ion-tab-bar>
+        </ion-tab-bar>
       </ion-col>
 
     </ion-row>
@@ -42,9 +39,9 @@
         <!--  Un Selector de tipos de estrucutras, por defecto el nivel mas bajo -->
         <div class="listado-tps-selector ion-text-center">
           <ion-select [(ngModel)]="tpsSeleccionada" (ionChange)="onTypeProductStructureChanged($event)"
-          [compareWith]="tpsCompare"
-            *ngIf="productStructures" class="ion-text-center" interface="popover" labelPlacement="stacked">
-            <ion-select-option *ngFor="let tps of typeProductStructureList" [value]="tps" >{{ tps.naTypeProductStructure
+            [compareWith]="tpsCompare" *ngIf="productStructures" class="ion-text-center" interface="popover"
+            labelPlacement="stacked">
+            <ion-select-option *ngFor="let tps of typeProductStructureList" [value]="tps">{{ tps.naTypeProductStructure
               }}</ion-select-option>
           </ion-select>
         </div>
