@@ -3,20 +3,8 @@
     <ion-toolbar>
       <ion-grid>
         <ion-row>
-          <ion-col class="" size="4" size-sm="4" size-xs="4">
-            <!-- <ion-buttons slot="start"> -->
-            <ion-button fill="outline" class="colorBorderBuscar" size="small" shape="round"
-              (click)="onShowProductStructures()">
-              {{this.productsTabTags.get('PROD_VOLVER')}}
-              <!-- <ion-icon slot="start" name="search-outline"></ion-icon> -->
-              <ion-icon class="colorIconBuscar" slot="start" name="arrow-back-circle-sharp"></ion-icon>
-            </ion-button>
-            <!-- </ion-buttons> -->
-          </ion-col>
-          <ion-col class="paddingTopStructure" size="8" size-sm="8" size-xs="7" offset-xs="1">
-            <!-- <ion-title> -->
+          <ion-col class="paddingTopStructure" size="12" size-sm="12" size-xs="12">
             <ion-label>{{nameProductStructure}}</ion-label>
-            <!-- </ion-title> -->
           </ion-col>
         </ion-row>
       </ion-grid>
@@ -33,7 +21,7 @@
         {{orderServ.getTag("DENARIO_SIN_RESULTADOS")}}
       </ion-label>
     </ion-item>
-    } 
+    }
     <ion-accordion-group>
       <ion-accordion class="product-structure-title accordionPedidos" *ngFor="let product of orderUtilList; index as i"
         [disabled]="disableProduct(product)"
@@ -63,7 +51,7 @@
               }} {{
               product.coCurrency }} </p>
                         @if(this.orderServ.vatExemptProducts){
-            <p>{{orderServ.getTag("PED_IVA")}}: 
+            <p>{{orderServ.getTag("PED_IVA")}}:
               {{ product.nuTax }} %</p>            }
             <p>{{orderServ.getTag("PED_PRECIO+IVA")}}: {{formatNum(product.ivaProducto+product.discountedNuPrice)}} {{
               product.coCurrency }}</p>
@@ -177,7 +165,7 @@
                 </div>
 
               </ion-col>
-            
+
               <ion-col class="" size="2" size-sm="2" size-xs="2" *ngIf="product.discountList.length > 1">
                 <ion-button size="small" (click)="loadDiscount(product)">
                   <ion-icon name="information-circle-outline"></ion-icon>
@@ -192,7 +180,7 @@
                 <div class="listado-tps-selector ion-text-center">
                   <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
                     [value]="product.idWarehouse" interface="popover" labelPlacement="stacked"
-                    [placeholder]="orderServ.getTag('PED_PLACEHOLDER_ALMACEN')+':'" 
+                    [placeholder]="orderServ.getTag('PED_PLACEHOLDER_ALMACEN')+':'"
                     (ionChange)="onSelectWarehouse($event, product)" [disabled]="!orderServ.userCanChangeWarehouse">
                     <ion-select-option *ngFor="let wh of warehouseList" [value]="wh.idWarehouse">{{ wh.naWarehouse
                       }}</ion-select-option>
@@ -255,7 +243,7 @@
                   <p><span class="titulosBold">{{this.productsTabTags.get('PROD_PRICE_PROD')}}:</span> {{
                     productoModal.nuPrice ? productoModal.nuPrice : 'N/A' }} {{
                     productoModal.coCurrency }}</p>
-                  <p><span class="titulosBold">{{orderServ.getTag("PED_IVA")}}:</span> 
+                  <p><span class="titulosBold">{{orderServ.getTag("PED_IVA")}}:</span>
                     {{ productoModal.nuTax }} %</p>
                   <p><span class="titulosBold">{{orderServ.getTag("PED_PRECIO+IVA")}}:</span>{{formatNum(productoModal.ivaProducto+productoModal.discountedNuPrice)}} {{
               productoModal.coCurrency }}</p>

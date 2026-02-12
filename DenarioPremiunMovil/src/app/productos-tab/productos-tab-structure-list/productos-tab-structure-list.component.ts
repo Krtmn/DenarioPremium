@@ -54,6 +54,7 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
   sub: any;
   searchSub: any;
   validateReturnSub: any;
+  returnBackSub: any;
 
   constructor() {
     this.cdr = inject(ChangeDetectorRef);
@@ -87,13 +88,19 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
       this.productService.searchStructures = false;
     });
 
+    this.returnBackSub = this.productService.returnBackClicked.subscribe(() => {
+      if (this.devolucion) {
+        this.onReturnProductTab();
+      }
+    });
 
-    
+
+
     if (this.pedido) {
       //hacemos espacio para el boton de carrito
       this.buttonSize = 5;
     }
-    
+
 
   }
 
@@ -101,6 +108,7 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
     this.sub.unsubscribe();
     this.searchSub.unsubscribe();
     this.validateReturnSub.unsubscribe();
+    this.returnBackSub.unsubscribe();
   }
 
   getTypeProductStructures() {

@@ -60,6 +60,7 @@ export class InventarioProductListComponent implements OnInit {
   public imagesMap: { [imgName: string]: string } = {};
   searchSub: any;
   searchTextChanged: any;
+  returnBackSub: any;
   private subs = new Subscription();
   noProductsAlertShown = false;
 
@@ -143,6 +144,12 @@ export class InventarioProductListComponent implements OnInit {
         }
         )
     });
+
+      this.returnBackSub = this.productService.returnBackClicked.subscribe(() => {
+        if (this.inventariosLogicService.showProductList) {
+          this.onShowProductStructures();
+        }
+      });
     //}
   }
 
@@ -153,6 +160,7 @@ export class InventarioProductListComponent implements OnInit {
     this.favClicked.unsubscribe();
     this.subs.unsubscribe();
     this.searchTextChanged.unsubscribe();
+    this.returnBackSub.unsubscribe();
   }
 
   onShowProductStructures() {

@@ -4,7 +4,7 @@
       <ion-col size="12" size-sm="12" size-xs="12">
         <!-- Este input es cuando estoy afuera de las estructuras y busco hacien click en buscar -->
         <div class="search-row">
-          <ion-button fill="outline" size="small" shape="round" class="back-button" *ngIf="showBackButton"
+          <ion-button fill="outline" size="small" shape="round" class="back-button" *ngIf="showBackButton && showBackIcon"
             (click)="onBackClicked()" aria-label="Volver">
             <ion-icon name="arrow-back-outline"></ion-icon>
           </ion-button>

@@ -1,11 +1,5 @@
 <div class="listado-product-structures" *ngIf="inventariosLogicService.showProductList">
 
-  <ion-button fill="outline" class="colorBorderBuscar" size="small" shape="round" (click)="onShowProductStructures()">
-    {{this.productsTabTags.get('PROD_VOLVER')}}
-    <!-- <ion-icon slot="start" name="search-outline"></ion-icon> -->
-    <ion-icon class="colorIconBuscar" slot="start" name="arrow-back-circle-sharp"></ion-icon>
-  </ion-button>
-
   <!--  Listado clickeable de productos  -->
   <div class="product-card product-structure-scroll">
     @if(noProductsAlertShown){

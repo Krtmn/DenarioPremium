@@ -70,6 +70,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   searchTextChanged!: any;
   searchSub!: any;
+  returnBackSub!: any;
 
   detailModal = false;
   discountModal = false;
@@ -108,7 +109,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       this.showProductList = true;
       this.nameProductStructure = '';
       this.productList = this.productService.productList;
-      
+
       this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
       this.noProductsAlertShown = (this.orderUtilList.length == 0);
 
@@ -132,7 +133,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
             this.productList = this.productService.productList;
             this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
             if(this.orderUtilList.length < 20){
-              //probablemente muchos productos fueron eliminados, agregamos mas. 
+              //probablemente muchos productos fueron eliminados, agregamos mas.
               this.onIonInfinite(null);
             }
             this.noProductsAlertShown = (this.orderUtilList.length == 0);
@@ -200,6 +201,12 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       this.noProductsAlertShown = (this.orderUtilList.length == 0);
     });
 
+    this.returnBackSub = this.productService.returnBackClicked.subscribe(() => {
+      if (this.showProductList) {
+        this.onShowProductStructures();
+      }
+    });
+
     this.cantidadInputMode();
   }
 
@@ -211,7 +218,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
           this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency,
           this.orderServ.userCanChangeWarehouse, this.orderServ.cliente.idClient, this.orderServ.listaSeleccionada.idList, this.page).then(() => {
             this.updateList(ev);
-            
+
           });
         break;
 
@@ -220,7 +227,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
           this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency,
           this.orderServ.userCanChangeWarehouse, this.orderServ.cliente.idClient, this.orderServ.listaSeleccionada.idList, this.page).then(() => {
             this.updateList(ev);
-            
+
           });
         break;
 
@@ -229,7 +236,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
           this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency,
           this.orderServ.userCanChangeWarehouse, this.orderServ.cliente.idClient, this.orderServ.listaSeleccionada.idList, this.page).then(() => {
             this.updateList(ev);
-            
+
           });
         break;
 
@@ -296,6 +303,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.searchSub.unsubscribe();
     this.carritoButtonClicked.unsubscribe();
     this.searchTextChanged.unsubscribe();
+    this.returnBackSub.unsubscribe();
     this.subs.unsubscribe();
   }
 
