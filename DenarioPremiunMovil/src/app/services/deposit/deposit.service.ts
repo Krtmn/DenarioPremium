@@ -717,6 +717,7 @@ export class DepositService {
     let statementsDepositCollects = [];
     let insertStatement = 'INSERT OR REPLACE INTO deposit_collects (' +
       'id_deposit_collect,' +
+      'co_deposit_collect,' +
       'co_deposit,' +
       'co_collection, ' +
       'id_collection, ' +
@@ -724,11 +725,12 @@ export class DepositService {
       'nu_amount_total, ' +
       'nu_total_deposit' +
       ') VALUES (' +
-      '?,?,?,?,?,?,?)';
+      '?,?,?,?,?,?,?,?)';
 
     for (var i = 0; i < depositCollect.length; i++) {
       statementsDepositCollects.push([insertStatement, [
         0,
+        depositCollect[i].coDepositCollect,
         depositCollect[i].coDeposit,
         depositCollect[i].coCollection,
         depositCollect[i].idCollection,
@@ -789,6 +791,7 @@ export class DepositService {
       'SELECT * ' +
       'FROM deposit_collects dc JOIN collections c ON dc.co_collection = c.co_collection WHERE dc.co_deposit = ?'
     return dbServ.executeSql(selectStatement, [coDeposit]).then(res => {
+      this.deposit == undefined ? this.deposit = {} as Deposit : null;
       this.deposit.depositCollect = [] as DepositCollect[];
       let depositCollect = {} as DepositCollect
       let item;
@@ -822,11 +825,13 @@ export class DepositService {
       'SELECT id_collection FROM deposit_collects WHERE co_deposit = ?', [coDeposit
     ]).then(res => {
       let collectionIds = [];
-      if (res.rows.length > 0) {
-        //collection.idCollection = res.rows.item(0).id_collection;
-        collectionIds.push(res.rows.item(0).id_collection)
+      for (var i = 0; i < res.rows.length; i++) {
+        collectionIds.push(res.rows.item(i).id_collection)
       }
+      //collection.idCollection = res.rows.item(0).id_collection;
       return collectionIds;
+
+
     }).catch(e => {
       let deposit = {} as Deposit;
       console.log(e);

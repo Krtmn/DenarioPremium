@@ -408,13 +408,14 @@ export class AutoSendService implements OnInit {
             request.deposit.daDeposit.split("/")[0];
           */
 
-          this.depositService.getIdsDepositCollect(this.dbService.getDatabase(), coTransaction).then(collectionIds => {
-            request.collectionIds = collectionIds;
-            this.sendTransaction(request, type, coTransaction);
+          this.depositService.getDepositCollect(this.dbService.getDatabase(), coTransaction).then((collects) => {
+            //request.deposit?.depositCollect = collects || [];
+            this.depositService.getIdsDepositCollect(this.dbService.getDatabase(), coTransaction).then(collectionIds => {
+              request.collectionIds = collectionIds;
+              this.sendTransaction(request, type, coTransaction);
+            })
           })
         })
-
-
         break;
       }
 
