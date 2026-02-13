@@ -66,6 +66,7 @@ export class CobrosDocumentComponent implements OnInit {
   private discountKeyInFlight: boolean = false;
   private retentionKeyInFlight: boolean = false;
   private retention2KeyInFlight: boolean = false;
+  private amountPaidKeyInFlight: boolean = false;
   public disabledCollectDiscountButton: boolean = false;
   // When true, discount checkboxes should be disabled in the template
   public disableDiscountCheckboxes: boolean = false;
@@ -772,8 +773,9 @@ export class CobrosDocumentComponent implements OnInit {
     let inPaymentPartial = false;
     let missingRetention = false;
     if (this.collectService.coTypeModule != "2") {
-      inPaymentPartial = this.collectService.alwaysPartialPayment ? true : this.collectService.documentSaleOpen.inPaymentPartial ? true : false;
-      missingRetention = this.collectService.alwaysRetention ? true : this.collectService.documentSaleOpen.missingRetention ? true : false;
+      const open = this.collectService.documentSaleOpen;
+      inPaymentPartial = this.collectService.alwaysPartialPayment || !!open?.inPaymentPartial;
+      missingRetention = this.collectService.alwaysRetention || !!open?.missingRetention;
     }
 
     this.collectService.collection.collectionDetails.push({
@@ -1807,17 +1809,21 @@ export class CobrosDocumentComponent implements OnInit {
     this.ensureAmountPaidInit();
 
     if (/^\d$/.test(key)) {
+      this.amountPaidKeyInFlight = true;
       const digit = parseInt(key, 10);
       this.centsAmountPaid = Math.min(999999999999, (this.centsAmountPaid ?? 0) * 10 + digit);
       this.updateAmountPaidModel();
       ev.preventDefault();
+      setTimeout(() => { this.amountPaidKeyInFlight = false; }, 0);
       return;
     }
 
     if (key === 'Backspace') {
+      this.amountPaidKeyInFlight = true;
       this.centsAmountPaid = Math.floor((this.centsAmountPaid ?? 0) / 10);
       this.updateAmountPaidModel();
       ev.preventDefault();
+      setTimeout(() => { this.amountPaidKeyInFlight = false; }, 0);
       return;
     }
 
@@ -1844,6 +1850,36 @@ export class CobrosDocumentComponent implements OnInit {
     }
     // mantener la lógica existente
     if (typeof (this as any).setPartialPay === 'function') this.setPartialPay();
+  }
+
+  public onAmountPaidInput(ev: any): void {
+    if (this.amountPaidKeyInFlight) {
+      this.amountPaidKeyInFlight = false;
+      return;
+    }
+
+    try {
+      const inputChar = typeof ev?.data === 'string' ? ev.data : undefined;
+      const inputType = ev?.inputType ?? '';
+      const MAX_CENTS = 999999999999;
+
+      this.ensureAmountPaidInit();
+
+      if (inputType.includes('delete') || inputChar === null) {
+        this.centsAmountPaid = Math.trunc((this.centsAmountPaid ?? 0) / 10);
+      } else if (inputChar && /^\d$/.test(inputChar)) {
+        const digit = parseInt(inputChar, 10);
+        this.centsAmountPaid = Math.min(MAX_CENTS, (this.centsAmountPaid ?? 0) * 10 + digit);
+      } else {
+        const raw = ev?.target?.value ?? String(ev ?? '');
+        this.centsAmountPaid = this.parsePastedToCents(raw);
+      }
+
+      this.updateAmountPaidModel();
+      this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   private updateAmountPaidModel(): void {

@@ -358,7 +358,7 @@ export class CollectionService {
     const alwaysPartialPaymentValue = (this.globalConfig.get('alwaysPartialPayment') || '').trim();
     this.alwaysPartialPayment = alwaysPartialPaymentValue === 'true' ? true : false;
     const enablePartialPaymentValue = (this.globalConfig.get('enablePartialPayment') || '').trim();
-    this.enablePartialPayment = enablePartialPaymentValue === 'true' ? true : false;
+    this.enablePartialPayment = enablePartialPaymentValue === '' ? true : enablePartialPaymentValue === 'true' ? true : false;
 
 
 
