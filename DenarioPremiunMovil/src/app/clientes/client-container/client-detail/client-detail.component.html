@@ -12,6 +12,16 @@
   </ion-segment>
   <div [ngSwitch]="this.clientLogic.segment">
     <ion-card *ngSwitchCase="'default'">
+      <div class="saldo-legend" *ngIf="!this.clientLogic.esTransportista">
+        <span class="legend-item">
+          <span class="legend-dot legend-blue" aria-hidden="true"></span>
+          Documentos Vigentes
+        </span>
+        <span class="legend-item">
+          <span class="legend-dot legend-red" aria-hidden="true"></span>
+          Documentos Vencidos
+        </span>
+      </div>
       <ion-grid [fixed]="true" class="tablaInfoclients">
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_EMPRESA")}}:</ion-col>
@@ -123,6 +133,48 @@
       </ion-grid>
     </ion-card>
     <ion-card *ngSwitchCase="'docVentas'">
+      <div class="saldo-legend" *ngIf="document.length > 0">
+        <button class="legend-item legend-button" id="legendBlueHint" type="button">
+          <span class="legend-dot legend-blue" aria-hidden="true"></span>
+          Vigente
+          <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
+        </button>
+        <button class="legend-item legend-button" id="legendRedHint" type="button">
+          <span class="legend-dot legend-red" aria-hidden="true"></span>
+          Vencido
+          <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
+        </button>
+        <button class="legend-item legend-button" id="legendBlackHint" type="button">
+          <span class="legend-dot legend-black" aria-hidden="true"></span>
+          A favor
+          <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
+        </button>
+      </div>
+
+      <ion-popover trigger="legendBlueHint" triggerAction="click">
+        <ng-template>
+          <div class="legend-popover">
+            Documentos vigentes: El documento aun tiene días de vigencia.
+          </div>
+        </ng-template>
+      </ion-popover>
+
+      <ion-popover trigger="legendRedHint" triggerAction="click">
+        <ng-template>
+          <div class="legend-popover">
+            Documentos vencidos: El documento ha superado los días de vigencia.
+          </div>
+        </ng-template>
+      </ion-popover>
+
+      <ion-popover trigger="legendBlackHint" triggerAction="click">
+        <ng-template>
+          <div class="legend-popover">
+            Saldo a favor: El cliente tiene credito disponible.
+          </div>
+        </ng-template>
+      </ion-popover>
+
       <ion-grid class="tablaInfoClientes tablaDocVentasGrip" *ngIf="document.length > 0">
         <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
           @if(!clientLogic.fromSelector){

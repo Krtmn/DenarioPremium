@@ -35,6 +35,20 @@
                             (ionInput)="handleInput($event)"></ion-searchbar>
                     </ion-col>
                 </ion-row>
+                <ion-row *ngIf="!this.clientLogic.esTransportista">
+                    <ion-col>
+                        <div class="saldo-legend" aria-label="Leyenda de colores">
+                            <span class="legend-item">
+                                <span class="legend-dot legend-blue" aria-hidden="true"></span>
+                                Documentos Vigentes
+                            </span>
+                            <span class="legend-item">
+                                <span class="legend-dot legend-red" aria-hidden="true"></span>
+                                Documentos Vencidos
+                            </span>
+                        </div>
+                    </ion-col>
+                </ion-row>
             </ion-grid>
         </div>
         <ion-content>
