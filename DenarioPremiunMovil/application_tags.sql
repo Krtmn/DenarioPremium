@@ -383,7 +383,14 @@ INSERT INTO public.application_tags(
   ('COB_TOTAL_DESCUENTO', 'COB', 'COBROS', 'ESP','Total Descuento'),
   ('COB_SELEC_DESCUENTO', 'COB', 'COBROS', 'ESP','Descuentos Seleccionados'),
   ('COB_ERROR_PARTIAL_PAY', 'COB', 'COBROS', 'ESP','Todos los documentos están marcados como pago parcial, el monto pagado debe ser igual al monto a pagar.'),
-  ('COB_BASE', 'COB', 'COBROS', 'ESP','Monto base');
+  ('COB_BASE', 'COB', 'COBROS', 'ESP','Monto base'),
+  ('COB_DENARIO_TO_SEND_OFFLINE', 'COB', 'COBROS', 'ESP','Su Cobro será enviado al tener conexión de datos'),
+  ('COB_DISPONIBLE', 'COB', 'COBROS', 'ESP','Disponible'),
+  ('COB_TASA_%', 'COB', 'COBROS', 'ESP','Tasa (%)'),
+  ('COB_NOMBRE_DESCUENTO', 'COB', 'COBROS', 'ESP','Nombre descuento'),
+  ('COB_CONVERSION', 'COB', 'COBROS', 'ESP','Conversión'),
+  ('COB_PARCIAL', 'COB', 'COBROS', 'ESP','Parcial'),
+  ('COB_DOCUMENTO', 'COB', 'COBROS', 'ESP','Documento');
 
 
 -- VENDEDORES
