@@ -196,6 +196,9 @@ export class ReturnDatabaseService {
   }
 
   cleanString(str: string): string {
+    if (!str) {
+      return '';
+    }
     // Elimina espacios al principio y al final
     str = str.trim();
     // Elimina ;
