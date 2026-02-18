@@ -1462,19 +1462,7 @@ export class PedidoComponent implements OnInit {
 
   currencySelection() {
     //seleccion de moneda por defecto;
-    if (this.currencyServ.multimoneda) {
-      if (this.orderServ.currencyModuleEnabled && this.orderServ.currencyModule.idModule > 0) {
-        if (this.orderServ.currencyModule.localCurrencyDefault) {
-          this.orderServ.monedaSeleccionada = this.currencyServ.getLocalCurrency();
-        } else {
-          this.orderServ.monedaSeleccionada = this.currencyServ.getHardCurrency();
-        }
-      } else {
-        this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
-      }
-    } else {
-      this.orderServ.monedaSeleccionada = this.currencyServ.getLocalCurrency();
-    }
+    this.orderServ.currencySelection();
     this.monedaSeleccionada = this.orderServ.monedaSeleccionada;
     //this.onCurrencySelect();
   }

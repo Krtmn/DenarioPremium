@@ -127,7 +127,7 @@ export class PedidosService {
   //Pedido Sugerido
   public desdeSugerencia = false; //vienes desde el boton de pedido sugerido (inventario)
   public datosPedidoSugerido: SugerenciaPedido = {
-
+    empresa: { idEnterprise: 0, coEnterprise: '' } as Enterprise,
     cliente: { lbClient: this.getTag("PED_PLACEHOLDER_CLIENTE") } as Client,
     direccion: { idAddress: 0 } as AddresClient,
     productos: [],
@@ -564,7 +564,7 @@ export class PedidosService {
         };
         //PRECIO
         var price = 0;
-        if (priceListSeleccionado) {
+        if (priceListSeleccionado.idList) {
           item.coCurrency = priceListSeleccionado.coCurrency;
           price = this.conversionByPriceList ?
             priceListSeleccionado.nuPrice : this.conversionCurrency(priceListSeleccionado.nuPrice, item.coCurrency);
@@ -1384,7 +1384,10 @@ export class PedidosService {
 
     //creamos un pedido nuevo
     let cliente = this.datosPedidoSugerido.cliente;
+    this.cliente = cliente; //para que busque stock y precios con el cliente correcto, que es el que se selecciono en inventario
     let direccion = this.datosPedidoSugerido.direccion;
+    let empresa = this.datosPedidoSugerido.empresa;
+    this.empresaSeleccionada = empresa;
     let coOrder = this.dateService.generateCO(0);
     let ProductIds: number[] = this.datosPedidoSugerido.productos.map(p => p.idProduct);
     let productUnitIds: number[] = [];
@@ -1409,6 +1412,12 @@ export class PedidosService {
       productUnitIds, direccion.idAddress, ProductIds).then(result => {
         promedios = result;
       });
+
+    //mini setup de moneda para conversiones de precio
+     await this.currencyService.setup(this.dbServ.getDatabase())
+    this.currencyModule = this.currencyService.getCurrencyModule('ped');
+    this.currencySelection();
+
 
 
     await this.getOrderUtilsbyIdProduct(ProductIds, this.listaSeleccionada.idList).then(orderUtils => {
@@ -1571,6 +1580,22 @@ export class PedidosService {
       return '';
     } else {
       return coUser;
+    }
+  }
+
+  currencySelection(){
+    if (this.currencyService.multimoneda) {
+      if (this.currencyModuleEnabled && this.currencyModule.idModule > 0) {
+        if (this.currencyModule.localCurrencyDefault) {
+          this.monedaSeleccionada = this.currencyService.getLocalCurrency();
+        } else {
+          this.monedaSeleccionada = this.currencyService.getHardCurrency();
+        }
+      } else {
+        this.monedaSeleccionada = this.currencyService.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
+      }
+    } else {
+      this.monedaSeleccionada = this.currencyService.getLocalCurrency();
     }
   }
 

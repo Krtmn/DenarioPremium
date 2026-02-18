@@ -147,7 +147,7 @@ export class InventarioActividadesComponent implements OnInit {
     }
 
     this.orderServ.datosPedidoSugerido = {
-
+      empresa: this.inventariosLogicService.empresaSeleccionada,
       cliente: this.inventariosLogicService.cliente,
       direccion: direccion,
       productos: this.clientStocksTotal,
