@@ -612,7 +612,7 @@
                   inputmode="numeric" (keydown)="onAmountPaidKeyDown($event)" (focus)="onAmountPaidFocus()"
                   (blur)="onAmountPaidBlur()" (input)="onAmountPaidInput($event)" required class="customInput"
                   [ngClass]="{'inp-write': !collectService.amountPaymentPartial, 'input-rojo': !collectService.amountPaid}"
-                  min="0">
+                  min="0" [readonly]="!collectService.isPaymentPartial">
                 </ion-input>
                 <ion-label *ngIf="!this.collectService.amountPaid" color="danger" class="campoObligatorio">
                   Este campo es obligatorio
