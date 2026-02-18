@@ -3,6 +3,7 @@ import { ProductStructureUtil } from 'src/app/modelos/ProductStructureUtil';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { ProductStructure } from 'src/app/modelos/tables/productStructure';
 import { TypeProductStructure } from 'src/app/modelos/tables/typeProductStructure';
+import { PedidosService } from 'src/app/pedidos/pedidos.service';
 import { EnterpriseService } from 'src/app/services/enterprise/enterprise.service';
 import { ProductService } from 'src/app/services/products/product.service';
 import { ProductStructureService } from 'src/app/services/productStructures/product-structure.service';
@@ -20,6 +21,7 @@ export class ProductStructuresListComponent  implements OnInit {
   enterpriseService = inject(EnterpriseService);
   productService = inject(ProductService);
   dbServ = inject(SynchronizationDBService);
+  orderServ = inject(PedidosService);
 
   listaEmpresa: Enterprise[] = [];
   multiempresa: Boolean = false;
@@ -60,6 +62,8 @@ export class ProductStructuresListComponent  implements OnInit {
   onEnterpriseChanged(ev: any) {
     this.empresaSeleccionada = ev.target.value;
     this.productService.empresaSeleccionada = this.empresaSeleccionada;
+    this.orderServ.empresaSeleccionada = this.empresaSeleccionada;
+    this.orderServ.setup();
     this.tpsSeleccionada = {} as TypeProductStructure;
     this.getTypeProductStructures();
   }
