@@ -9,12 +9,12 @@
             <ion-icon name="arrow-back-outline"></ion-icon>
           </ion-button>
           <div class="search-input-wrap">
-            <input type="text" class="search-input inputsSearch iconobuscar" fill="outline" shape="round"
+            <input type="text" class="search-input inputsSearch " fill="outline" shape="round"
               (input)="onSearchTextChanged()" (keyup.enter)="onSearchClicked()"
               placeholder="{{this.productsTabTags.get('PROD_PLACEHOLDER_BUSCAR')}}" #searchInput
               [(ngModel)]="searchText">
-            <button type="button" class="clear-search" (click)="clearSearch()" [disabled]="!searchText">
-              <ion-icon name="close-circle"></ion-icon>
+            <button type="button" size="large" class="clear-search" (click)="onSearchClicked()" [disabled]="!searchText">
+              <ion-icon name="search-circle-sharp"></ion-icon>
             </button>
           </div>
         </div>
