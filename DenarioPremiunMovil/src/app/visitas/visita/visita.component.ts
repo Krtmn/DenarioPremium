@@ -1092,7 +1092,7 @@ export class VisitaComponent implements OnInit {
           role: 'confirm',
           handler: () => {
             this.saveLocation();
-            this.message.dismissAll();
+            //this.message.dismissAll();
           },
         }
       ]

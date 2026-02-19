@@ -12,6 +12,7 @@ import { MessageButton } from 'src/app/modelos/message-button';
   providedIn: 'root'
 })
 export class MessageService {
+  QUEUE_TIME = 100; //tiempo para procesar siguiente mensaje en la cola, en ms
 
   //transaccionMsj = new EventEmitter<string>;
   transaccionMsj = new Subject<string>;
@@ -161,12 +162,12 @@ export class MessageService {
     // Marcar como listo para siguiente y procesar cola
     this.showingMessage = false;
     // permitir que el cierre se complete en el DOM antes de disparar siguiente
-    setTimeout(() => this.processQueue(), 50);
+    setTimeout(() => this.processQueue(), this.QUEUE_TIME);
   }
   closeAlertModal2() {
     this.closeAlertModal2Subject.next(null);
     this.showingMessage = false;
-    setTimeout(() => this.processQueue(), 50);
+    setTimeout(() => this.processQueue(), this.QUEUE_TIME);
   }
   /*   closeConfirmSend() {
       this.closeConfirmSendSubject.next(null);
@@ -177,13 +178,13 @@ export class MessageService {
   closeModalLogin() {
     this.closeModalLoginSubject.next(null);
     this.showingMessage = false;
-    setTimeout(() => this.processQueue(), 50);
+    setTimeout(() => this.processQueue(), this.QUEUE_TIME);
   }
 
   closeCustomBtn() {
     this.closeModalCustomBtn.next(null);
     this.showingMessage = false;
-    setTimeout(() => this.processQueue(), 50);
+    setTimeout(() => this.processQueue(), this.QUEUE_TIME);
   }
 
   dismissAll() {
