@@ -4078,7 +4078,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           if (coType == '2') {
             //es retencion
             //stDelivery = 3; colocar 3 si queremos que luego dfe una retencion el documento quede bloqueado, colocar 2 si queremos que quede disponible pero con la retencion pendiente
-            stDelivery = 2;
+            stDelivery = 0;
           } else if (documentSales[i].missingRetention && !documentSales[i].inPaymentPartial) {
             stDelivery = 2;
           } else if (documentSales[i].inPaymentPartial)
