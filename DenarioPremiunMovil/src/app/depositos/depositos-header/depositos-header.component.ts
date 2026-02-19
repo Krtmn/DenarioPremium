@@ -200,6 +200,7 @@ export class DepositosHeaderComponent implements OnInit {
       this.depositService.deposit.stDeposit = this.DEPOSITO_STATUS_TO_SEND;
       this.depositService.saveDeposit(this.synchronizationServices.getDatabase(), this.depositService.deposit).then(resp => {
         console.log("DEPOSIT SAVE READY TO SEND");
+        this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.depositService.deposit.coDeposit, "depositos");
         this.depositService.sendDeposit.next(this.depositService.deposit.coDeposit);
       })
     });

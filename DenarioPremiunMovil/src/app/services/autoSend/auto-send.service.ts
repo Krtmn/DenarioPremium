@@ -739,7 +739,7 @@ export class AutoSendService implements OnInit {
           [idTransaction, DEPOSITO_STATUS_SENT, 1, coTransaction]
         ).then(res => {
           console.log("UPDATE EXITOSO ", res);
-          //this.adjuntoService.sendPhotos(idTransaction, "deposit", coTransaction);
+          this.adjuntoService.sendPhotos(this.dbService.getDatabase(), idTransaction, "depositos", coTransaction);
         }).catch(e => {
           console.log("UPDATE NO EXITOSO ", e);
         })
