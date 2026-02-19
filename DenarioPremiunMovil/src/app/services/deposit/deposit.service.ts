@@ -130,8 +130,17 @@ export class DepositService {
           result[i].coApplicationTag, result[i].tag
         )
       }
+      return this.services.getTags(dbServ, "DEN", "ESP").then(result => {
+      for (var i = 0; i < result.length; i++) {
+        this.depositTags.set(
+          result[i].coApplicationTag, result[i].tag
+        )
+      }
       return Promise.resolve(true);
-    })
+    });
+  
+      
+    });
   }
   getTagsDenario(dbServ: SQLiteObject) {
     return this.services.getTags(dbServ, "DEN", "ESP").then(result => {

@@ -609,7 +609,7 @@ export class PedidoComponent implements OnInit {
         role: 'confirm',
         handler: () => {
           console.log('Alert confirmed');
-          this.message.dismissAll();
+          //this.message.dismissAll();
           this.confirmSend();
 
 
