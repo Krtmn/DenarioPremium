@@ -378,7 +378,6 @@ INSERT INTO public.application_tags(
 	('COB_DEV_COMMENT', 'COB', 'COBROS', 'ESP', 'Motivo'),
 	('COB_COB_CHANGE_DATERATE', 'COB', 'COBROS', 'ESP', 'Está cambiando la fecha de la tasa, esto recalculará  los montos. ¿Desea continuar?'),
 	('COB_DENARIO_TO_SEND', 'COB', 'COBROS', 'ESP','Su Cobro será enviado'),
-  ('COB_DENARIO_TO_SEND_OFFLINE', 'COB', 'COBROS', 'ESP','Su Cobro será enviado al tener conexión de datos'),
   ('COB_MISSING_RETENTION', 'COB', 'COBROS', 'ESP','Falta retención'),
   ('COB_TOTAL_DESCUENTO', 'COB', 'COBROS', 'ESP','Total Descuento'),
   ('COB_SELEC_DESCUENTO', 'COB', 'COBROS', 'ESP','Descuentos Seleccionados'),
