@@ -228,6 +228,7 @@ INSERT INTO public.application_tags(
 	('CLI_CANCELAR','CLI','CLIENTES','ESP','Cancelar'),
 	('CLI_SELECTOR_HEADER','CLI','CLIENTES','ESP',''),
 	('CLI_HEADER_ALERTA', 'CLI', 'CLIENTES', 'ESP','¡Alerta!'),
+	('CLI_SEND_MSG', 'CLI', 'CLIENTES', 'ESP','El cliente potencial será enviado'),
 	('CLI_RESET_CONFIRMA', 'CLI', 'CLIENTES', 'ESP','Se ha detectado cambio del cliente por lo que debera iniciar nuevamente la transacción.');
 
 -- TAGS COBROS
@@ -378,7 +379,6 @@ INSERT INTO public.application_tags(
 	('COB_DEV_COMMENT', 'COB', 'COBROS', 'ESP', 'Motivo'),
 	('COB_COB_CHANGE_DATERATE', 'COB', 'COBROS', 'ESP', 'Está cambiando la fecha de la tasa, esto recalculará  los montos. ¿Desea continuar?'),
 	('COB_DENARIO_TO_SEND', 'COB', 'COBROS', 'ESP','Su Cobro será enviado'),
-  ('COB_DENARIO_TO_SEND_OFFLINE', 'COB', 'COBROS', 'ESP','Su Cobro será enviado al tener conexión de datos'),
   ('COB_MISSING_RETENTION', 'COB', 'COBROS', 'ESP','Falta retención'),
   ('COB_TOTAL_DESCUENTO', 'COB', 'COBROS', 'ESP','Total Descuento'),
   ('COB_SELEC_DESCUENTO', 'COB', 'COBROS', 'ESP','Descuentos Seleccionados'),

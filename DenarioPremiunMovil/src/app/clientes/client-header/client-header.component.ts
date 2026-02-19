@@ -9,6 +9,7 @@ import { PotentialClientDatabaseServicesService } from 'src/app/services/cliente
 import { ServicesService } from 'src/app/services/services.service';
 import { Platform, ModalController } from '@ionic/angular';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
+import { MessageService } from 'src/app/services/messageService/message.service';
 
 @Component({
   selector: 'app-client-header',
@@ -24,6 +25,7 @@ export class ClientesHeaderComponent implements OnInit {
   public potentialClientService = inject(PotentialClientDatabaseServicesService);
   public adjuntoService = inject(AdjuntoService);
   public modalCtrl = inject(ModalController);
+  public messageService = inject(MessageService);
 
   public subscriberShow: any;
   public subscriberDisabled: any;
@@ -168,6 +170,12 @@ export class ClientesHeaderComponent implements OnInit {
       if (ev.detail.role === 'confirm') {
         this.alertMessageOpen = false;
         this.potentialClientService.saveSendNewPotentialCliente(true)
+        this.messageService.alertModal(
+          {
+            header: this.clientLogic.clientTags.get('DENARIO_NOMBRE_APP')!,
+            message: this.clientLogic.clientTags.get('CLI_SEND_MSG')!,
+          }
+        );
 
       } else {
         this.alertMessageOpen = false;
