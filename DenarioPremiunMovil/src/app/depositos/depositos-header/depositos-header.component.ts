@@ -200,6 +200,12 @@ export class DepositosHeaderComponent implements OnInit {
       this.depositService.deposit.stDeposit = this.DEPOSITO_STATUS_TO_SEND;
       this.depositService.saveDeposit(this.synchronizationServices.getDatabase(), this.depositService.deposit).then(resp => {
         console.log("DEPOSIT SAVE READY TO SEND");
+        this.messageService.alertModal(
+          {
+            header: this.depositService.depositTags.get('DENARIO_NOMBRE_APP')!,
+            message: this.depositService.depositTags.get('DEP_SEND_MSG')!,
+          }
+        );
         this.depositService.sendDeposit.next(this.depositService.deposit.coDeposit);
       })
     });

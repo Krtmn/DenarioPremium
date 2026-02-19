@@ -228,6 +228,7 @@ INSERT INTO public.application_tags(
 	('CLI_CANCELAR','CLI','CLIENTES','ESP','Cancelar'),
 	('CLI_SELECTOR_HEADER','CLI','CLIENTES','ESP',''),
 	('CLI_HEADER_ALERTA', 'CLI', 'CLIENTES', 'ESP','¡Alerta!'),
+	('CLI_SEND_MSG', 'CLI', 'CLIENTES', 'ESP','El cliente potencial será enviado'),
 	('CLI_RESET_CONFIRMA', 'CLI', 'CLIENTES', 'ESP','Se ha detectado cambio del cliente por lo que debera iniciar nuevamente la transacción.');
 
 -- TAGS COBROS

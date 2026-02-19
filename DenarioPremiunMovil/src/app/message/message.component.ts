@@ -109,7 +109,7 @@ export class MessageComponent implements OnInit, OnDestroy {
 
     this.closeAlertModal = this.messageService.closeAlertModalSubject.subscribe((() => {     
       this.alertMessageOpen = false;
-      this.messageService.dismissAll();
+      //this.messageService.dismissAll();
     }))
 
 
@@ -229,7 +229,12 @@ export class MessageComponent implements OnInit, OnDestroy {
 
   setAlertMessage(isOpen: boolean) {
     this.alertMessageOpen = isOpen;
-    if (!isOpen) { this.messageService.closeAlertModal() }
+    
+    if (!isOpen) {
+      console.log("AutoCerrando alerta modal"); 
+      this.messageService.closeAlertModal() 
+    }
+    
   }
   setAlertMessage2(isOpen: boolean) {
     this.alertMessageOpen2 = isOpen;

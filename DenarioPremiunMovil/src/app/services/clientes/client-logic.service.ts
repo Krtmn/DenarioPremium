@@ -200,8 +200,15 @@ export class ClientLogicService {
           result[i].coApplicationTag, result[i].tag
         )
       }
+      return this.services.getTags(this.dbServ.getDatabase(), "DEN", "ESP").then(result => {
+      for (var i = 0; i < result.length; i++) {
+        this.clientTags.set(
+          result[i].coApplicationTag, result[i].tag
+        )
+      }
 
       return Promise.resolve(true);
+    });
     })
   }
 
