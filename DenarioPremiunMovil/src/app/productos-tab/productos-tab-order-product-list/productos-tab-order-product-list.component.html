@@ -130,12 +130,13 @@
 
 
               <!-- IVA -->
-              <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="orderServ.userCanSelectIVA">
+              @if(orderServ.userCanSelectIVA){
+              <ion-col class="" size="12" size-sm="12" size-xs="12" >
                 <ion-label>{{ orderServ.getTag("PED_IVA")}}</ion-label>
               </ion-col>
-              <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="orderServ.userCanSelectIVA">
+              <ion-col class="" size="12" size-sm="12" size-xs="12">
                 <div class="listado-tps-selector ion-text-center">
-                  <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
+                  <ion-select 
                     [value]="product.iva" interface="popover" labelPlacement="stacked"
                     [placeholder]="orderServ.getTag('PED_PLACEHOLDER_IVA')+':'"
                     (ionChange)="onSelectIVA($event, product)">
@@ -145,6 +146,7 @@
                 </div>
 
               </ion-col>
+            }
 
 
               <!-- DESCUENTO -->
@@ -173,10 +175,11 @@
               </ion-col>
             }
               <!-- ALMACEN -->
-              <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="orderServ.validateWarehouses">
+               @if(orderServ.validateWarehouses){
+              <ion-col class="" size="12" size-sm="12" size-xs="12" >
                 <ion-label>{{ orderServ.getTag("PED_ALMACEN")}}</ion-label>
               </ion-col>
-              <ion-col class="" size="12" size-sm="12" size-xs="12" *ngIf="orderServ.validateWarehouses">
+              <ion-col class="" size="12" size-sm="12" size-xs="12">
                 <div class="listado-tps-selector ion-text-center">
                   <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
                     [value]="product.idWarehouse" interface="popover" labelPlacement="stacked"
@@ -188,6 +191,7 @@
                 </div>
 
               </ion-col>
+            }
             </ion-row>
           </ion-grid>
 
@@ -317,21 +321,23 @@
                     </div>
                   </ion-col>
                   <!-- IVA -->
+                  @if(orderServ.userCanSelectIVA){
                   <ion-col size="12" size-sm="12" size-xs="12">
-                    <ion-label *ngIf="orderServ.userCanSelectIVA">{{ orderServ.getTag("PED_IVA")}}</ion-label>
+                    <ion-label>{{ orderServ.getTag("PED_IVA")}}</ion-label>
                   </ion-col>
-                  <ion-col size="12" size-sm="12" size-xs="12" *ngIf="orderServ.userCanSelectIVA">
+                  <ion-col size="12" size-sm="12" size-xs="12">
                     <div class="listado-tps-selector ion-text-center">
-                      <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
+                      <ion-select
                         [value]="productoModal.iva" interface="popover" labelPlacement="stacked"
                         [placeholder]="orderServ.getTag('PED_PLACEHOLDER_IVA')+':'"
                         (ionChange)="onSelectIVA($event, productoModal)">
-                        <ion-select-option *ngFor="let iva of ivaList" [value]="iva.idIvaList">IVA - {{ iva.priceIva
+                        <ion-select-option *ngFor="let iva of ivaList" [value]="iva.priceIva">IVA - {{ iva.priceIva
                           }}</ion-select-option>
                       </ion-select>
                     </div>
 
                   </ion-col>
+                }
                   <!-- DESCUENTO -->
                    @if(productoModal.discountList.length > 1){
                   <ion-col size="12" size-sm="12" size-xs="12">
@@ -351,8 +357,9 @@
                   </ion-col>
                 }
                   <!-- ALMACEN -->
+                   @if(orderServ.validateWarehouses){
                   <ion-col size="12" size-sm="12" size-xs="12">
-                    <ion-label *ngIf="orderServ.validateWarehouses">{{ orderServ.getTag("PED_ALMACEN")}}</ion-label>
+                    <ion-label>{{ orderServ.getTag("PED_ALMACEN")}}</ion-label>
                   </ion-col>
                   <ion-col size="12" size-sm="12" size-xs="12">
                     <div class="listado-tps-selector ion-text-center">
@@ -367,6 +374,7 @@
                     </div>
 
                   </ion-col>
+                }
                   <ion-col size="12" size-sm="12" size-xs="12">
                     <ion-note slot="end"><ion-icon class="icon-List2"
                         name="chevron-forward-outline"></ion-icon></ion-note>

@@ -178,15 +178,10 @@ export class ProductService {
             productUnitList: undefined,
             idProductStructure: item.id_product_structure,
             nuTax: item.nu_tax
-          };
+          } as ProductUtil;
           if (coCurrency != product.coCurrency) {
             //intercambiamos precios y monedas
-            let tempPrice = product.price;
-            let tempCurrency = product.coCurrency;
-            product.price = product.priceOpposite ? product.priceOpposite : 0;
-            product.coCurrency = product.coCurrencyOpposite;
-            product.priceOpposite = tempPrice;
-            product.coCurrencyOpposite = tempCurrency;
+            this.switchPrices(product);
           }
           this.productList.push(product);
         }
@@ -603,33 +598,49 @@ export class ProductService {
         console.log(e);
       })
     } else {
-      var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, (select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereTokens + " order by p.co_product";
+      var select = "select p.id_product, p.co_product, p.na_product, p.points, "+
+      "p.tx_description, p.id_product_structure, p.nu_tax, "+
+      "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list "+
+      "where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, "+
+      "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list "+
+      "where pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, "+
+      "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list "+
+      "where pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, "+
+      "(select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, "+
+      "p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereTokens + 
+      " order by p.co_product";
       return database.executeSql(select, params).then(result => {
         for (let i = 0; i < result.rows.length; i++) {
-          this.productList.push({
-            idProduct: result.rows.item(i).id_product,
-            coProduct: result.rows.item(i).co_product,
-            naProduct: result.rows.item(i).na_product,
-            points: result.rows.item(i).points,
-            txDescription: result.rows.item(i).tx_description,
-            idList: result.rows.item(i).id_list,
-            price: result.rows.item(i).nu_price,
-            coCurrency: result.rows.item(i).co_currency,
-            priceOpposite: result.rows.item(i).co_currency === this.currencyService.getLocalCurrency ?
-              this.currencyService.toHardCurrency(result.rows.item(i).nu_price) :
-              this.currencyService.toLocalCurrency(result.rows.item(i).nu_price), // Precio en la moneda opuesta a la lista de precio
-            coCurrencyOpposite: result.rows.item(i).co_currency === this.currencyService.getLocalCurrency ?
+          let item = result.rows.item(i);
+          let product = {
+            idProduct: item.id_product,
+            coProduct: item.co_product,
+            naProduct: item.na_product,
+            points: item.points,
+            txDescription: item.tx_description,
+            idList: item.id_list,
+            price: item.nu_price,
+            coCurrency: item.co_currency,
+            priceOpposite: item.co_currency === this.currencyService.getLocalCurrency ?
+              this.currencyService.toHardCurrency(item.nu_price) :
+              this.currencyService.toLocalCurrency(item.nu_price), // Precio en la moneda opuesta a la lista de precio
+            coCurrencyOpposite: item.co_currency === this.currencyService.getLocalCurrency ?
               this.currencyService.hardCurrency.coCurrency :
               this.currencyService.localCurrency.coCurrency, // moneda opuesta a la lista de precio,
-            stock: result.rows.item(i).qu_stock,
-            idEnterprise: result.rows.item(i).id_enterprise,
-            coEnterprise: result.rows.item(i).co_enterprise,
-            images: this.imageServices.mapImagesFiles.get(result.rows.item(i).co_product) === undefined ? '../../../assets/images/nodisponible.png' : this.imageServices.mapImagesFiles.get(result.rows.item(i).co_product)?.[0],
+            stock: item.qu_stock,
+            idEnterprise: item.id_enterprise,
+            coEnterprise: item.co_enterprise,
+            images: this.imageServices.mapImagesFiles.get(item.co_product) === undefined ? '../../../assets/images/nodisponible.png' : this.imageServices.mapImagesFiles.get(item.co_product)?.[0],
             typeStocks: undefined,
             productUnitList: undefined,
-            idProductStructure: result.rows.item(i).id_product_structure,
-            nuTax: result.rows.item(i).nu_tax
-          });
+            idProductStructure: item.id_product_structure,
+            nuTax: item.nu_tax
+          } as ProductUtil;
+          if (coCurrency != product.coCurrency) {
+              //intercambiamos precios y monedas
+              this.switchPrices(product);
+          }
+          this.productList.push(product);
         }
       }
       ).catch(e => {
@@ -957,5 +968,17 @@ export class ProductService {
 
   formatNumber(input: number) {
     return this.currencyService.formatNumber(input);
+  }
+
+  switchPrices(product: ProductUtil) {
+    //para el caso donde conversionByPriceList = false,
+    //si la moneda del producto no es la que se debe mostrar primero, se intercambian.
+    let tempPrice = product.price;
+    let tempCurrency = product.coCurrency;
+    product.price = product.priceOpposite ? product.priceOpposite : 0;
+    product.coCurrency = product.coCurrencyOpposite;
+    product.priceOpposite = tempPrice;
+    product.coCurrencyOpposite = tempCurrency;
+    
   }
 }
