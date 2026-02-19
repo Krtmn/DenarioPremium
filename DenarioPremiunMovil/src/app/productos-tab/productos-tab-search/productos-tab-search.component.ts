@@ -2,6 +2,7 @@ import { Component, Input, OnDestroy, OnInit, Output, EventEmitter, inject } fro
 import { Subject } from 'rxjs';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { PedidosService } from 'src/app/pedidos/pedidos.service';
+import { MessageService } from 'src/app/services/messageService/message.service';
 import { ProductStructureService } from 'src/app/services/productStructures/product-structure.service';
 import { ProductService } from 'src/app/services/products/product.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
@@ -20,6 +21,7 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
   productsTabTags = new Map<string, string>([]);
   productService = inject(ProductService);
   orderServ = inject(PedidosService);
+  message = inject(MessageService);
   @Input()
   showProductStructure: Boolean = false;
   @Input()
@@ -117,10 +119,12 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
     this.disabledSearchButton = true;
     if (this.productService.searchStructures) {
       //Buscar en estructuras de producto
-      if (this.pedido) {
+      this.message.showLoading();
+      if (this.pedido) {        
         this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency, this.orderServ.listaSeleccionada.idList).then(() => {
           this.productService.onProductTabSearchClicked();
           this.disabledSearchButton = false;
+          this.message.hideLoading();
         });
       } else {
         this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
@@ -129,6 +133,7 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
           this.empresaSeleccionada.coCurrencyDefault).then(() => {
             this.productService.onProductTabSearchClicked();
             this.disabledSearchButton = false;
+            this.message.hideLoading();
           });
       }
     } else {
