@@ -422,7 +422,7 @@ DELETE FROM public.application_tags WHERE co_module = 'INV';
 	('INV_GENERAL_TAB','INV','INVENTARIO','ESP','General'),
 	('INV_INVENTARIO_TAB','INV','INVENTARIO','ESP','Inventario'),
 	('INV_ACTIVIDADES_TAB','INV','INVENTARIO','ESP','Resumen'),
-	('INV_ADJUNTOS_TAB','INV','INVENTARIO','ESP','Adjunto'),
+	('INV_ADJUNTOS_TAB','INV','INVENTARIO','ESP','Adjuntos'),
 	('INV_COMENTARIO','INV','INVENTARIO','ESP','Comentario'),
 	('INV_FECHA','INV','INVENTARIO','ESP','Fecha'),
 	('INV_CLIENTSTOCK_TYPES','INV','INVENTARIO','ESP','Tipos de Inventario'),

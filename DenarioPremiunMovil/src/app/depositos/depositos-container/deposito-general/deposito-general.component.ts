@@ -1,10 +1,13 @@
 import { Component, OnInit, ViewChild, inject } from '@angular/core';
+import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 import { Currencies } from 'src/app/modelos/tables/currencies';
 import { DateServiceService } from 'src/app/services/dates/date-service.service';
 import { DepositService } from 'src/app/services/deposit/deposit.service';
 import { GeolocationService } from 'src/app/services/geolocation/geolocation.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
+import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
+import { COLOR_LILA, COLOR_VERDE } from 'src/app/utils/appConstants';
 
 @Component({
   selector: 'app-deposito-general',
@@ -18,6 +21,10 @@ export class DepositoGeneralComponent implements OnInit {
   public dateServ = inject(DateServiceService);
   private geoServ = inject(GeolocationService);
   db = inject(SynchronizationDBService)
+  private adjuntoService = inject(AdjuntoService);
+  private synchronizationServices = inject(SynchronizationDBService);
+  private globalConfig = inject(GlobalConfigService);
+
 
   @ViewChild('inputNuDocument', { static: false })
   inputNuDocument: any;
@@ -51,9 +58,13 @@ export class DepositoGeneralComponent implements OnInit {
   ngOnInit() {
     this.alertButtons[0].text = this.depositService.depositTagsDenario.get('DENARIO_BOTON_CANCELAR')!
     this.alertButtons[1].text = this.depositService.depositTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
+    this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", this.depositService.hideDeposit, COLOR_LILA);
+    this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.depositService.deposit.coDeposit, 'depositos');
+
     if (this.depositService.deposit.stDeposit == 1) {
       this.depositService.disabledEnterprise = true;
       this.depositService.disabledCurrency = true;
+
     } else {
       this.geoServ.getCurrentPosition().then(coords => {
         if (this.depositService.userMustActivateGPS) {
@@ -64,9 +75,6 @@ export class DepositoGeneralComponent implements OnInit {
         } else {
           this.depositService.deposit.coordenada = coords
         }
-
-
-
       });
     }
   }

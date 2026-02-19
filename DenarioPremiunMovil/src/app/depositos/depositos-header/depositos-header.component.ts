@@ -206,6 +206,7 @@ export class DepositosHeaderComponent implements OnInit {
             message: this.depositService.depositTags.get('DEP_SEND_MSG')!,
           }
         );
+        this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.depositService.deposit.coDeposit, "depositos");
         this.depositService.sendDeposit.next(this.depositService.deposit.coDeposit);
       })
     });
