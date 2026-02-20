@@ -10,7 +10,7 @@
           </ion-button>
           <div class="search-input-wrap">
             <input type="text" class="search-input inputsSearch " fill="outline" shape="round"
-              (input)="onSearchTextChanged()" (keyup.enter)="onSearchClicked()"
+              (input)="onSearchTextChanged()" (keydown.enter)="onSearchClicked($event)"
               placeholder="{{this.productsTabTags.get('PROD_PLACEHOLDER_BUSCAR')}}" #searchInput
               [(ngModel)]="searchText">
             <button type="button" slot="icon-only" size="large" class="clear-search" (click)="onSearchClicked()" [disabled]="!searchText">

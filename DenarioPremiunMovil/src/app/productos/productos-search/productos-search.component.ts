@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { ProductService } from 'src/app/services/products/product.service';
 
@@ -28,14 +28,17 @@ export class ProductosSearchComponent{
   searchTextChanged: EventEmitter<string> = new EventEmitter<string>();
 
   productoService = inject(ProductService);
-  @ViewChild('searchInput') searchInputEL!: ElementRef;
 
   ngOnInit() {
 
   }
 
-  onSearchClicked(){
-    this.searchText = this.searchInputEL.nativeElement.value;
+  onSearchClicked(event?: Event){
+    event?.preventDefault();
+    const inputElement = event?.target as HTMLInputElement | null;
+    if (inputElement) {
+      this.searchText = inputElement.value;
+    }
     this.searchTextChanged.emit(this.searchText);
     this.productoService.onProductSearch(this.searchText);
 

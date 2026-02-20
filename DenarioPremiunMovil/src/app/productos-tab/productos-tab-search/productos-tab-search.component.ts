@@ -110,7 +110,8 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
     this.onSearchTextChanged();
   }
 
-  onSearchClicked() {
+  onSearchClicked(event?: Event) {
+    event?.preventDefault();
     if (this.disabledSearchButton || this.searchText.trim().length === 0) {
       return;
     }
