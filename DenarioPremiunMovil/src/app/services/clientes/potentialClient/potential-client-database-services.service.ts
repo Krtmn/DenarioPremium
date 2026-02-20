@@ -37,7 +37,7 @@ export class PotentialClientDatabaseServicesService {
 
   getPotentialClient() {
     return this.dbServ.getDatabase().executeSql(
-      'SELECT * FROM potential_clients ORDER BY id DESC ', [
+      'SELECT * FROM potential_clients ORDER BY co_client DESC ', [
     ]).then(res => {
       let potentialClient: PotentialClient[] = [];
       for (var i = 0; i < res.rows.length; i++) {
