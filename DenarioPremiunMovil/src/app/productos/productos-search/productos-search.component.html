@@ -12,7 +12,7 @@
               <div class="search-input-wrap">
                 <input type="text" class="search-input inputsSearch" fill="outline" shape="round"
                   placeholder="{{this.searchTags.get('PROD_PLACEHOLDER_BUSCAR')}}" #searchInput
-                  [(ngModel)]="searchText" (input)="onSearchTextChanged()" (keyup.enter)="onSearchClicked()">
+                  [(ngModel)]="searchText" (input)="onSearchTextChanged()" (keydown.enter)="onSearchClicked($event)">
                 <button type="button" class="clear-search" (click)="clearSearch()" [disabled]="!searchText">
                   <ion-icon class="sizeIconSearch" name="close-circle"></ion-icon>
                 </button>
@@ -28,7 +28,7 @@
               <div class="search-input-wrap">
                 <input type="text" class="search-input inputsSearch" fill="outline" shape="round"
                   placeholder="{{this.searchTags.get('PROD_PLACEHOLDER_BUSCAR')}}" #searchInput
-                  [(ngModel)]="searchText" (keyup.enter)="onSearchClicked()">
+                  [(ngModel)]="searchText" (keydown.enter)="onSearchClicked($event)">
                 <button type="button" class="clear-search" (click)="onSearchClicked()" [disabled]="!searchText">
                   <ion-icon name="search-circle-sharp" class="sizeIconSearch"></ion-icon>
                 </button>
