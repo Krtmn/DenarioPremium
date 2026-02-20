@@ -581,7 +581,7 @@ export class CobrosDocumentComponent implements OnInit {
           this.collectService.documentSaleOpen.positionCollecDetails = i;
         }
       } else
-        this.collectService.isPaymentPartial = false;
+        this.collectService.isPaymentPartial = this.collectService.alwaysPartialPayment;
       // Force UI update after saldo y nuVaucherRetention
       this.cdr.detectChanges();
       this.collectService.cobrosComponent = false;
