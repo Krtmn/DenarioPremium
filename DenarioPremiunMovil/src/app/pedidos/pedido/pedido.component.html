@@ -488,7 +488,7 @@
 
                                             </ion-col>
                                             <ion-col size="12" size-xs="12">
-
+                                                <span class="titulosBold">{{ orderServ.getTag("DENARIO_TAG_NOMBRE")}}:</span>
                                                 {{item.naProduct}}
 
                                             </ion-col>
@@ -604,7 +604,7 @@
                                                         </div>
                                                         <div>
 
-                                                            {{item.naProduct}}
+                                                            {{ orderServ.getTag("DENARIO_TAG_NOMBRE")}}:{{item.naProduct}}
 
                                                         </div>
                                                         <div *ngIf="orderServ.validateWarehouses">

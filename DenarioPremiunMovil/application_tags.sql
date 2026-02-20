@@ -788,6 +788,7 @@ INSERT INTO public.application_tags(
 	('DENARIO_BOTON_OK','DEN','DENARIO','ESP','Ok'),
 	('DENARIO_BOTON_GUARDAR','DEN','DENARIO','ESP','Guardar'),
 	('DENARIO_HEADER_ALERTA', 'DEN', 'DENARIO', 'ESP','¡Alerta!'),
+	('DENARIO_TAG_NOMBRE','DEN','DENARIO','ESP','Nombre'),
 	('DENARIO_CAMPO_OBLIGATORIO', 'DEN', 'DENARIO', 'ESP','¡Campo Obligatorio!'),
 	('DENARIO_CAMBIO_DIRECCION', 'DEN', 'DENARIO', 'ESP','¿Seguro desea cambiar la sucursal del cliente?'),
 	('DENARIO_MSG_GPS', 'DEN', 'DENARIO', 'ESP', 'Para poder grabar la ubicación, te recomendamos activar el servicio de localización en tu dispositivo'),
