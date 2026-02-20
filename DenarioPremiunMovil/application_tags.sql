@@ -228,6 +228,7 @@ INSERT INTO public.application_tags(
 	('CLI_CANCELAR','CLI','CLIENTES','ESP','Cancelar'),
 	('CLI_SELECTOR_HEADER','CLI','CLIENTES','ESP',''),
 	('CLI_HEADER_ALERTA', 'CLI', 'CLIENTES', 'ESP','¡Alerta!'),
+	('CLI_SIN_RESULTADOS', 'CLI', 'CLIENTES', 'ESP','No hay clientes disponibles'),
 	('CLI_SEND_MSG', 'CLI', 'CLIENTES', 'ESP','El cliente potencial será enviado'),
 	('CLI_RESET_CONFIRMA', 'CLI', 'CLIENTES', 'ESP','Se ha detectado cambio del cliente por lo que deberá iniciar nuevamente la transacción.');
 
@@ -795,4 +796,5 @@ INSERT INTO public.application_tags(
 	('DENARIO_ERR_GPS', 'DEN', 'DENARIO', 'ESP', 'Falló la ubicación. Revise GPS.'),
 	('DENARIO_SELEC_FECHA', 'DEN', 'DENARIO', 'ESP', 'Seleccione una fecha'),
 	('DENARIO_SIN_RESULTADOS', 'DEN', 'DENARIO', 'ESP','No hay productos disponibles'),
+	('DENARIO_SIN_RESULTADOS', 'DEN', 'DENARIO', 'ENG','No products available'),
 	('DENARIO_ERROR_SYNCRO', 'DEN', 'DENARIO', 'ESP', 'No hay conexión a internet, no se puede sincronizar');

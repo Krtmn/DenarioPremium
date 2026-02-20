@@ -65,7 +65,7 @@ export class ClienteSelectorComponent implements OnInit {
 
   public btnCancelar: string = '';
 
-
+  public noClientsAlertShown = false;
 
 
 
@@ -96,6 +96,7 @@ export class ClienteSelectorComponent implements OnInit {
     if (this.service.currencyModule) {
       this.loadCurrencyModule();
     }
+    this.noClientsAlertShown = false;
   }
 
   getTag(tagName: string) {
@@ -232,7 +233,12 @@ export class ClienteSelectorComponent implements OnInit {
 
 
   handleInput(event: any) {
+    this.noClientsAlertShown = false;
     this.searchText = event.target.value.toLowerCase();
+    
+    let countCoClient = this.clientes.filter(c => c.coClient.toLowerCase().includes(this.searchText)).length;
+    let countLbClient = this.clientes.filter(c => c.lbClient.toLowerCase().includes(this.searchText)).length;
+    this.noClientsAlertShown = (countCoClient+countLbClient) == 0;
   }
 
   /*

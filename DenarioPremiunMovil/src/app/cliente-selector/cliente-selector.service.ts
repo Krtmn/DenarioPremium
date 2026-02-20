@@ -36,6 +36,13 @@ export class ClienteSelectorService {
           result[i].coApplicationTag, result[i].tag
         )
       }
+      this.servicesServ.getTags(this.db, "DEN", "ESP").then(result => {
+      for (var i = 0; i < result.length; i++) {
+        this.tags.set(
+          result[i].coApplicationTag, result[i].tag
+        )
+      }
+    });
 
     });
     //this.getModuleNames();

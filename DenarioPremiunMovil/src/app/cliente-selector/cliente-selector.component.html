@@ -35,7 +35,8 @@
                             (ionInput)="handleInput($event)"></ion-searchbar>
                     </ion-col>
                 </ion-row>
-                <ion-row *ngIf="!this.clientLogic.esTransportista">
+                @if(!this.clientLogic.esTransportista){
+                <ion-row>
                     <ion-col>
                         <div class="saldo-legend" aria-label="Leyenda de colores">
                             <span class="legend-item">
@@ -49,43 +50,53 @@
                         </div>
                     </ion-col>
                 </ion-row>
+                }
             </ion-grid>
         </div>
         <ion-content>
 
-            <ion-list *ngFor="let client of clientes;" button detail="false" (click)="selectClient(client)">
-                <div
-                    *ngIf="searchText === '' || client.coClient.toLowerCase().includes(searchText) || client.lbClient.toLowerCase().includes(searchText)">
-                    <div class="product-structure-title listaProductos">
-                        <ion-item button detail="false" class="listaItems">
-                            <ion-label>
-                                <p>{{ client.lbClient }}</p>
-                                <p>{{this.tags.get('CLI_CODIGO')}}: {{ client.coClient}}</p>
-                                <div *ngIf="!this.clientLogic.esTransportista">
-                                <p [ngStyle]="{color: client.countDueDate >0 ? 'Red' : 'Blue' }">
-                                    {{this.tags.get('CLI_SALDO')}} {{client.coCurrency}}: {{formatNum(client.saldo1)}}
-                                </p>
-                                <p [ngStyle]="{color: client.countDueDate >0 ? 'Red' : 'Blue' }"
-                                    *ngIf="multimoneda && showConversion">
-                                    {{this.tags.get('CLI_SALDO')}} {{oppositeCoCurrency(client.coCurrency)}}:
-                                    {{formatNum(client.saldo2)}}
-                                </p>
-                                </div>
-                                <p>
-                                    <ion-button class="masInfo" fill="clear"
-                                        (click)="this.clientLogic.showClientDetail($event, client)"
-                                        aria-label="Ver comentario">
-                                        Más detalles
-                                    </ion-button>
-                                </p>
-                            </ion-label>
-                            <ion-note slot="end">
-                                <ion-icon class="icon-List" name="chevron-forward-outline"></ion-icon>
-                            </ion-note>
-                        </ion-item>
-                    </div>
-
+            <ion-list button detail="false">
+                @if(noClientsAlertShown){
+                <ion-item>
+                    <ion-label class="ion-text-center" style="color: red;">
+                        {{this.getTag("CLI_SIN_RESULTADOS")}}
+                    </ion-label>
+                </ion-item>
+                }
+                @for (client of clientes; track client.coClient){
+                @if(searchText === '' || client.coClient.toLowerCase().includes(searchText) ||
+                client.lbClient.toLowerCase().includes(searchText)){
+                <div class="product-structure-title listaProductos">
+                    <ion-item button detail="false" class="listaItems" (click)="selectClient(client)">
+                        <ion-label>
+                            <p>{{ client.lbClient }}</p>
+                            <p>{{this.getTag('CLI_CODIGO')}}: {{ client.coClient}}</p>
+                            @if(!this.clientLogic.esTransportista){
+                            <p [ngStyle]="{color: client.countDueDate >0 ? 'Red' : 'Blue' }">
+                                {{this.getTag('CLI_SALDO')}} {{client.coCurrency}}: {{formatNum(client.saldo1)}}
+                            </p>
+                            @if(multimoneda && showConversion){
+                            <p [ngStyle]="{color: client.countDueDate >0 ? 'Red' : 'Blue' }">
+                                {{this.getTag('CLI_SALDO')}} {{oppositeCoCurrency(client.coCurrency)}}:
+                                {{formatNum(client.saldo2)}}
+                            </p>
+                            }
+                            }
+                            <p>
+                                <ion-button class="masInfo" fill="clear"
+                                    (click)="this.clientLogic.showClientDetail($event, client)"
+                                    aria-label="Ver comentario">
+                                    Más detalles
+                                </ion-button>
+                            </p>
+                        </ion-label>
+                        <ion-note slot="end">
+                            <ion-icon class="icon-List" name="chevron-forward-outline"></ion-icon>
+                        </ion-note>
+                    </ion-item>
                 </div>
+                }
+                }
             </ion-list>
 
             <!-- alerta de cambio de cliente-->
