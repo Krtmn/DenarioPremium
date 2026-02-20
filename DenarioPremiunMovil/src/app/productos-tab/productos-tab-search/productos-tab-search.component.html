@@ -13,8 +13,8 @@
               (input)="onSearchTextChanged()" (keyup.enter)="onSearchClicked()"
               placeholder="{{this.productsTabTags.get('PROD_PLACEHOLDER_BUSCAR')}}" #searchInput
               [(ngModel)]="searchText">
-            <button type="button" size="large" class="clear-search" (click)="onSearchClicked()" [disabled]="!searchText">
-              <ion-icon name="search-circle-sharp"></ion-icon>
+            <button type="button" slot="icon-only" size="large" class="clear-search" (click)="onSearchClicked()" [disabled]="!searchText">
+              <ion-icon name="search-circle-sharp" class="sizeIconSearch"></ion-icon>
             </button>
           </div>
         </div>
