@@ -2876,13 +2876,23 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "co.id_collection, " +
       "co.st_collection, " +
       "co.st_delivery, " +
-      "code.*, " +
-      "copa.nu_payment_doc, " +
-      "copa.co_payment_method " +
+      "code.co_document, " +
+      "code.nu_balance_doc, " +
+      "SUM(copa.nu_amount_partial) AS nu_amount_paid, " +
+      "GROUP_CONCAT(" +
+      "copa.co_payment_method || ': ' || " +
+      "CASE WHEN copa.nu_payment_doc IS NULL OR copa.nu_payment_doc = '' THEN 'No Ref' ELSE copa.nu_payment_doc END, " +
+      "'\n'" +
+      ") AS payment_refs, " +
+      "GROUP_CONCAT(" +
+      "copa.nu_amount_partial, " +
+      "'\n'" +
+      ") AS payment_details " +
       "FROM collections co " +
       "JOIN collection_details code  ON co.co_collection = code.co_collection " +
       "JOIN collection_payments copa ON co.co_collection = copa.co_collection " +
-      "WHERE code.co_document = ? AND code.in_payment_partial = 'true'";
+      "WHERE code.co_document = ? AND code.in_payment_partial = 'true' " +
+      "GROUP BY co.co_currency, co.da_collection, co.id_collection, co.st_collection, co.st_delivery, code.co_document, code.nu_balance_doc";
 
     return dbServ.executeSql(selectStatement, [coDocument]).then(data => {
       //return dbServ.executeSql(selectStatement, [this.mapDocumentsSales.get(idDocument)!.coDocument]).then(data => {
@@ -2898,10 +2908,12 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             coCurrency: data.rows.item(i).co_currency,
             nuAmountPaid: data.rows.item(i).nu_amount_paid,
             nuBalanceDoc: data.rows.item(i).nu_balance_doc,
-            coPaymentMethod: data.rows.item(i).co_payment_method,
+            coPaymentMethod: '',
+            paymentRefs: data.rows.item(i).payment_refs,
+            paymentDetails: data.rows.item(i).payment_details,
             stCollection: data.rows.item(i).st_collection,
             stDelivery: data.rows.item(i).st_delivery,
-            nuPaymentDoc: data.rows.item(i).nu_payment_doc == "" ? "No Ref" : data.rows.item(i).nu_payment_doc,
+            nuPaymentDoc: '',
             naStatus: item?.na_status!
           })
         }

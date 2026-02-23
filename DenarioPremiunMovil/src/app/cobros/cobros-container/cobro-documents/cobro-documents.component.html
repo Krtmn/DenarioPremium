@@ -895,8 +895,11 @@
                 <ion-col class="titulosBold col " size="4">
                   Moneda
                 </ion-col>
-                <ion-col class="titulosBold col borderSuperiorDerecho" size="4">
+                <ion-col class="titulosBold col" size="4">
                   Ref. Pago
+                </ion-col>
+                <ion-col class="titulosBold col borderSuperiorDerecho" size="4">
+                  Pago
                 </ion-col>
               </ion-row>
 
@@ -914,13 +917,16 @@
                   {{paymentPartials.daCollection.substring(0,10)}}
                 </ion-col>
                 <ion-col size="4" class="ion-text-center col">
-                  {{paymentPartials.nuAmountPaid}}
+                  {{formatNumber(Number(paymentPartials.nuAmountPaid))}}
                 </ion-col>
                 <ion-col size="4" class="ion-text-center col">
                   {{paymentPartials.coCurrency}}
                 </ion-col>
-                <ion-col size=" 4" class="ion-text-center col borderInferiorDerecho">
-                  {{paymentPartials.coPaymentMethod}} : {{paymentPartials.nuPaymentDoc}}
+                <ion-col size=" 4" class="ion-text-center col payment-details">
+                  {{paymentPartials.paymentRefs}}
+                </ion-col>
+                <ion-col size="4" class="ion-text-center col payment-details borderInferiorDerecho">
+                  {{formatMultiLineAmounts(paymentPartials.paymentDetails)}}
                 </ion-col>
               </ion-row>
             </ion-grid>

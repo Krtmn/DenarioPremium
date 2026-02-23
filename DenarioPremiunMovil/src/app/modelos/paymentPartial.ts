@@ -6,6 +6,8 @@ export class PaymentPartials {
         public nuAmountPaid: string,
         public nuBalanceDoc: string,
         public coPaymentMethod: string,
+        public paymentRefs: string,
+        public paymentDetails: string,
         public stCollection: string,
         public nuPaymentDoc: string,
         public stDelivery: string,

@@ -1516,6 +1516,17 @@ export class CobrosDocumentComponent implements OnInit {
     return this.currencyService.formatNumber(num);
   }
 
+  formatMultiLineAmounts(text: string | null | undefined): string {
+    if (!text) return '';
+    const lines = String(text).split('\n');
+    const formatted = lines.map(line => {
+      const value = Number(line);
+      if (!Number.isFinite(value)) return line;
+      return this.formatNumber(value);
+    });
+    return formatted.join('\n');
+  }
+
   getTasaByAmount(amount: number, nuValueLocal: number) {
     if (nuValueLocal == null) return this.formatNumber(amount);
     if (amount < 0) {

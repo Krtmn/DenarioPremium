@@ -229,6 +229,12 @@ ion-modal.collectDiscounts {
   max-width: 220px;
 }
 
+.payment-details {
+  white-space: pre-line;
+  text-align: left;
+  align-items: flex-start;
+}
+
 .missing-retention-row {
   align-items: center;
   flex-wrap: nowrap;
