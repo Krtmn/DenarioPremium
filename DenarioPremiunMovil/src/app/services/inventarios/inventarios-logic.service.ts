@@ -765,13 +765,14 @@ export class InventariosLogicService {
   }
 
   getAllClientStock(dbServ: SQLiteObject) {
-    let selectStatement = "SELECT "
-      + "id_client_stock as idClientStock, co_client_stock as coClientStock, id_user as idUser,"
-      + "co_user as coUser, id_client as idClient, co_client as coClient, id_address_client as idAddressClient,"
-      + "co_address_client as coAddressClient,coordenada, tx_comment as txComment,"
-      + "id_enterprise as idEnterprise, co_enterprise as coEnterprise, st_client_stock as stClientStock,"
-      + "da_client_stock as daClientStock, lb_client as lbClient, isSave, st_delivery as stDelivery "
-      + "FROM client_stocks ORDER BY st_delivery DESC, da_client_stock DESC";
+    let selectStatement = "SELECT cs.id_client_stock as idClientStock, cs.co_client_stock as coClientStock,"+ 
+    "cs.id_user as idUser,cs.co_user as coUser, cs.id_client as idClient, cs.co_client as coClient, "+
+    "cs.id_address_client as idAddressClient,cs.co_address_client as coAddressClient,cs.coordenada, "+
+    "cs.tx_comment as txComment,cs.id_enterprise as idEnterprise, cs.co_enterprise as coEnterprise, cs.st_client_stock as stClientStock,"+
+    "cs.da_client_stock as daClientStock, c.lb_client as lbClient, cs.isSave, cs.st_delivery as stDelivery "+
+    "FROM client_stocks cs "+
+    "join clients c on cs.id_client = c.id_client "+
+    "ORDER BY cs.st_delivery DESC, cs.da_client_stock DESC";
     return dbServ.executeSql(selectStatement, []).then(async data => {
       let promises: Promise<void>[] = [];
       let clientStock = [] as ClientStocks[];
