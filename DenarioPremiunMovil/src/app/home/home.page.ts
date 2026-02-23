@@ -57,6 +57,7 @@ export class HomePage implements OnInit {
   public fechaCreacion: string = "2000-01-01 00:00:00";
   public userMustActivateGPS: boolean = false;
 
+  public esVendedor: boolean = true;
   backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(1, () => {
     //console.log('backButton was called!');
     //de aqui no te vas
@@ -89,6 +90,9 @@ export class HomePage implements OnInit {
         this.user = {};
       }
     }
+
+    this.esVendedor = !this.user.transportista && !this.user.cliente 
+    && !this.user.promotor && !this.user.soporte;
 
     this.autoSend.ngOnInit();
 
