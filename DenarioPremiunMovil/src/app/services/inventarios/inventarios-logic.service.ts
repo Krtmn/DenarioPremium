@@ -714,11 +714,12 @@ export class InventariosLogicService {
   }
 
   getClientStockDetails(dbServ: SQLiteObject, coCLientStock: string) {
-    let selectClientStockDetail = "SELECT "
-      + "id_client_stock_detail as idClientStockDetail, co_client_stock_detail as coClientStockDetail, co_client_stock as coClientStock,"
-      + "co_product as coProduct, na_product as naProduct, id_product as idProduct, co_enterprise as coEnterprise,"
-      + "id_enterprise as idEnterprise, posicion, isSave as isSave "
-      + "FROM client_stocks_details WHERE co_client_stock = ?"
+    let selectClientStockDetail = "SELECT c.id_client_stock_detail as idClientStockDetail, c.co_client_stock_detail as coClientStockDetail, "+
+    "c.co_client_stock as coClientStock, c.co_product as coProduct, p.na_product as naProduct, c.id_product as idProduct, "+
+    "c.co_enterprise as coEnterprise,c.id_enterprise as idEnterprise, c.posicion, c.isSave as isSave "+
+    "FROM client_stocks_details c "+
+    "JOIN products p on p.id_product = c.id_product "+
+    "WHERE c.co_client_stock = ?"
 
     return dbServ.executeSql(selectClientStockDetail, [coCLientStock]).then(data => {
       //console.log(data);
