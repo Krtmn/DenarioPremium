@@ -74,7 +74,7 @@
                 <ion-input label="{{this.inventariosLogicService.inventarioTags.get('INV_COMENTARIO')}}:"
                     id="responsable" [(ngModel)]="txComment" #txCommentInput labelPlacement="floating" fill="outline"
                     placeholder="{{this.inventariosLogicService.inventarioTags.get('INV_COMENTARIO')}}:" maxlength="120"
-                    (ionChange)="setTXComment()"></ion-input>
+                    (ionChange)="setTXComment()" [readonly]="this.inventariosLogicService.newClientStock.stDelivery <= 2 || this.inventariosLogicService.newClientStock.stDelivery == null "></ion-input>
             </div>
         </ion-col>
         </ion-row>

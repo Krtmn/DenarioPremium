@@ -242,6 +242,12 @@ export class InventarioGeneralComponent implements OnInit {
                         this.message.hideLoading();
                       }
 
+                      if (clientStock.stDelivery == 1 || clientStock.stDelivery == null) {
+                        this.inventariosLogicService.getInfoUnit(this.dbServ.getDatabase(), clientStock).then(resp => {
+
+                        });
+                      }
+
                     })
                   }
                 }

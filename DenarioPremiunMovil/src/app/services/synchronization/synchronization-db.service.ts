@@ -1451,9 +1451,13 @@ export class SynchronizationDBService {
       return this.returnService.saveReturnBatch(this.database, arr);
     })
   }
+
   insertClientStockBatch(arr: ClientStocks[]) {
-    return this.clientStockService.saveClientStockBatch(this.database, arr);
+    return this.clientStockService.deleteClientStocksBatch(this.database, arr).then((r) => {
+      return this.clientStockService.saveClientStockBatch(this.database, arr);
+    })
   }
+
   insertDepositBatch(arr: Deposit[]) {
     return this.depositService.deleteDepositsBatch(this.database, arr).then((r) => {
       return this.depositService.saveDepositBatch(this.database, arr);

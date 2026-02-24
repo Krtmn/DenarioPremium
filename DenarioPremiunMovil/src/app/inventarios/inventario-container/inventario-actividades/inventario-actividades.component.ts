@@ -37,7 +37,7 @@ export class InventarioActividadesComponent implements OnInit {
   public router =  inject(Router);
 
   public message = inject(MessageService);
-  
+
   public DELIVERY_STATUS_SENT = DELIVERY_STATUS_SENT;// para usar en el html
 
   constructor() { }
@@ -57,10 +57,12 @@ export class InventarioActividadesComponent implements OnInit {
         clienStockTotal.idProduct = clientStockDetail.idProduct;
         clienStockTotal.coProduct = clientStockDetail.coProduct;
         clienStockTotal.naProduct = clientStockDetail.naProduct;
-        
+
         clienStockTotal.naUnit = detailUnit.naUnit;
         clienStockTotal.idUnit = detailUnit.idUnit;
         clienStockTotal.coUnit = detailUnit.coUnit;
+        clienStockTotal.daExpiration = detailUnit.daExpiration.split("T")[0];
+
 
         clienStockTotal.totalUnits += detailUnit.quStock;
         clienStockTotal.ubicacion = detailUnit.ubicacion;
@@ -73,7 +75,7 @@ export class InventarioActividadesComponent implements OnInit {
     });
 
 
-    
+
   }
   preguntarSugerirPedido(){
     let buttonsConfirmSend = [
@@ -82,7 +84,7 @@ export class InventarioActividadesComponent implements OnInit {
         role: 'cancel',
         handler: () => {
           console.log('Alert canceled');
-          
+
 
         },
       },
@@ -94,8 +96,8 @@ export class InventarioActividadesComponent implements OnInit {
           this.sugerirPedido();
           this.message.closeCustomBtn();
 
-          
-          
+
+
         },
       },
     ];
@@ -118,7 +120,7 @@ export class InventarioActividadesComponent implements OnInit {
     this.orderServ.openOrder = true;
     this.orderServ.pedidoModificable =  true;
 
-    
+
     let list = this.orderServ.listaList.find((list) => list.idList == this.inventariosLogicService.cliente.idList);
     if(list != undefined){
       this.orderServ.listaSeleccionada = list;
@@ -135,13 +137,13 @@ export class InventarioActividadesComponent implements OnInit {
       }else{
         console.log('no se consiguió la lista por segunda vez');
         list = {} as List;
-      }      
+      }
     }
     //guardar el stock actual
     var toSend =  false;
     if(this.inventariosLogicService.newClientStock.stDelivery != DELIVERY_STATUS_SENT){
       this.inventariosLogicService.saveClientStock(this.dbServ.getDatabase(),false);
-      this.adjuntoService.savePhotos(this.dbServ.getDatabase(), 
+      this.adjuntoService.savePhotos(this.dbServ.getDatabase(),
       this.inventariosLogicService.newClientStock.coClientStock, "inventarios");
       toSend= true;
     }
@@ -156,7 +158,7 @@ export class InventarioActividadesComponent implements OnInit {
       coClientStock: this.inventariosLogicService.newClientStock.coClientStock,
       idClientStock: this.inventariosLogicService.newClientStock.idClientStock,
     };
-    //ir a nuevo pedido 
+    //ir a nuevo pedido
     this.router.navigate(['pedido']);
     this.inventariosLogicService.isEdit = false;
     this.inventariosLogicService.showHeaderButtonsFunction(false);
@@ -170,7 +172,7 @@ export class InventarioActividadesComponent implements OnInit {
 
   deleteClientStock(index: number) {
     /* this.inventariosLogicService.variables.delete(this.clientStocksTotal[index].idProduct) */
-    //ELIMINO TODOS LOS REGISTROS DE ESE PRODUCTO     
+    //ELIMINO TODOS LOS REGISTROS DE ESE PRODUCTO
     let indexDetail = this.inventariosLogicService.productTypeStocksMap.get(this.inventariosLogicService.productSelected.idProduct);
     for (var i = 0; i < this.inventariosLogicService.typeStocks.length; i++) {
       if (this.inventariosLogicService.typeStocks[i].idProduct == this.clientStocksTotal[index].idProduct) {
@@ -189,10 +191,10 @@ export class InventarioActividadesComponent implements OnInit {
       this.inventariosLogicService.productTypeStocksMap.set(
         this.inventariosLogicService.newClientStock.clientStockDetails[i].idProduct, i);
     }
-    
+
     //revisamos si tenemos un inventario valido
     if (this.inventariosLogicService.newClientStock.clientStockDetails.length == 0) {
-      this.inventariosLogicService.cannotSendClientStock = true;      
+      this.inventariosLogicService.cannotSendClientStock = true;
     }
 
   }

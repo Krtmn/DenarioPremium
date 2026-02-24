@@ -408,6 +408,24 @@ export class InventariosLogicService {
     this.onStockValidToSave(true);
   }
 
+  deleteClientStocksBatch(dbServ: SQLiteObject, clientStocks: ClientStocks[]) {
+    let queries: any[] = [];
+    const deleteStatement = "DELETE FROM client_stocks WHERE co_client_stock = ?";
+    const deleteDetailsStatement = "DELETE FROM client_stocks_details WHERE co_client_stock = ?";
+
+    for (let i = 0; i < clientStocks.length; i++) {
+      let coClientStock = clientStocks[i].coClientStock;
+      queries.push([deleteDetailsStatement, [coClientStock]]);
+      queries.push([deleteStatement, [coClientStock]]);
+    }
+    return dbServ.sqlBatch(queries).then(() => {
+      console.log("[Deposit Service] deleteDepositsBatch exitoso");
+    }).catch(error => {
+      console.log("[Deposit Service] Error al ejecutar deleteDepositsBatch.");
+      console.log(error);
+    });
+  }
+
   saveClientStockBatch(dbServ: SQLiteObject, clientStocks: ClientStocks[]) {
     const insertClientStock = 'INSERT OR REPLACE INTO client_stocks ('
       + 'id_client_stock, co_client_stock, id_user, co_user, id_client, co_client, id_address_client,'
@@ -485,9 +503,9 @@ export class InventariosLogicService {
     var batch = [];
 
     if (send) {
-      this.newClientStock.stDelivery = DELIVERY_STATUS_SENT;
+      this.newClientStock.stDelivery = DELIVERY_STATUS_TO_SEND;
     } else {
-      this.newClientStock.stDelivery = 3;
+      this.newClientStock.stDelivery = DELIVERY_STATUS_SAVED;
     }
     this.newClientStock.hasAttachments = this.adjuntoService.hasItems();
     this.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
@@ -704,7 +722,8 @@ export class InventariosLogicService {
       console.log(clientStock);
       return this.getClientStockDetails(dbServ, clientStock.coClientStock).then(details => {
         clientStock.clientStockDetails = details;
-        return clientStock
+
+          return clientStock
       })
     }).catch(e => {
       console.log("Error al ejecutar getClientStock.");
@@ -713,13 +732,51 @@ export class InventariosLogicService {
     });
   }
 
+  getInfoUnit(dbServ: SQLiteObject, clientStock: ClientStocks) {
+    let selectStatement = "select u.co_unit as coUnit, u.na_unit as naUnit, pu.qu_unit as quUnit "
+      + "from product_units pu "
+      + "join units u on (u.id_unit = pu.id_unit or u.co_unit = pu.co_unit) "
+      + "where pu.id_product_unit = ? and u.id_enterprise = pu.id_enterprise";
+
+    let queries: Promise<void>[] = [];
+
+    for (let i = 0; i < clientStock.clientStockDetails.length; i++) {
+      for (let j = 0; j < clientStock.clientStockDetails[i].clientStockDetailUnits.length; j++) {
+        const detailUnit = clientStock.clientStockDetails[i].clientStockDetailUnits[j];
+        const idProductUnit = detailUnit.idProductUnit;
+
+        if (idProductUnit == null) {
+          continue;
+        }
+
+        let p = dbServ.executeSql(selectStatement, [idProductUnit]).then(result => {
+          if (result.rows.length > 0) {
+            detailUnit.coUnit = result.rows.item(0).coUnit;
+            detailUnit.naUnit = result.rows.item(0).naUnit;
+            detailUnit.quUnit = result.rows.item(0).quUnit;
+          }
+        });
+
+        queries.push(p);
+      }
+    }
+
+    return Promise.all(queries).then(() => {
+      return clientStock;
+    }).catch(e => {
+      console.log("Error al ejecutar getInfoUnit.");
+      console.log(e);
+      return clientStock;
+    });
+  }
+
   getClientStockDetails(dbServ: SQLiteObject, coCLientStock: string) {
-    let selectClientStockDetail = "SELECT c.id_client_stock_detail as idClientStockDetail, c.co_client_stock_detail as coClientStockDetail, "+
-    "c.co_client_stock as coClientStock, c.co_product as coProduct, p.na_product as naProduct, c.id_product as idProduct, "+
-    "c.co_enterprise as coEnterprise,c.id_enterprise as idEnterprise, c.posicion, c.isSave as isSave "+
-    "FROM client_stocks_details c "+
-    "JOIN products p on p.id_product = c.id_product "+
-    "WHERE c.co_client_stock = ?"
+    let selectClientStockDetail = "SELECT c.id_client_stock_detail as idClientStockDetail, c.co_client_stock_detail as coClientStockDetail, " +
+      "c.co_client_stock as coClientStock, c.co_product as coProduct, p.na_product as naProduct, c.id_product as idProduct, " +
+      "c.co_enterprise as coEnterprise,c.id_enterprise as idEnterprise, c.posicion, c.isSave as isSave " +
+      "FROM client_stocks_details c " +
+      "JOIN products p on p.id_product = c.id_product " +
+      "WHERE c.co_client_stock = ?"
 
     return dbServ.executeSql(selectClientStockDetail, [coCLientStock]).then(data => {
       //console.log(data);
@@ -766,14 +823,14 @@ export class InventariosLogicService {
   }
 
   getAllClientStock(dbServ: SQLiteObject) {
-    let selectStatement = "SELECT cs.id_client_stock as idClientStock, cs.co_client_stock as coClientStock,"+ 
-    "cs.id_user as idUser,cs.co_user as coUser, cs.id_client as idClient, cs.co_client as coClient, "+
-    "cs.id_address_client as idAddressClient,cs.co_address_client as coAddressClient,cs.coordenada, "+
-    "cs.tx_comment as txComment,cs.id_enterprise as idEnterprise, cs.co_enterprise as coEnterprise, cs.st_client_stock as stClientStock,"+
-    "cs.da_client_stock as daClientStock, c.lb_client as lbClient, cs.isSave, cs.st_delivery as stDelivery "+
-    "FROM client_stocks cs "+
-    "join clients c on cs.id_client = c.id_client "+
-    "ORDER BY cs.st_delivery DESC, cs.da_client_stock DESC";
+    let selectStatement = "SELECT cs.id_client_stock as idClientStock, cs.co_client_stock as coClientStock," +
+      "cs.id_user as idUser,cs.co_user as coUser, cs.id_client as idClient, cs.co_client as coClient, " +
+      "cs.id_address_client as idAddressClient,cs.co_address_client as coAddressClient,cs.coordenada, " +
+      "cs.tx_comment as txComment,cs.id_enterprise as idEnterprise, cs.co_enterprise as coEnterprise, cs.st_client_stock as stClientStock," +
+      "cs.da_client_stock as daClientStock, c.lb_client as lbClient, cs.isSave, cs.st_delivery as stDelivery " +
+      "FROM client_stocks cs " +
+      "join clients c on cs.id_client = c.id_client " +
+      "ORDER BY cs.st_delivery DESC, cs.da_client_stock DESC";
     return dbServ.executeSql(selectStatement, []).then(async data => {
       let promises: Promise<void>[] = [];
       let clientStock = [] as ClientStocks[];
