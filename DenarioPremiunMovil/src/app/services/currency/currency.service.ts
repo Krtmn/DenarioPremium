@@ -328,10 +328,22 @@ export class CurrencyService {
     //console.log("[CurrencyService] "+selectStatement);
     return db.executeSql(selectStatement, []).then((result: any) => {
       var relation: any;
+      var badRelation = false;
+
       if (result.rows.length > 0) {
         relation = result.rows.item(0).nu_exchange_rate;
-        this.currencyRelation = relation;
+        if(relation && !isNaN(relation)){
+          this.currencyRelation = relation;
+        }else{
+          badRelation = true;
+        }
+      }else{
+        badRelation = true;
+      }
 
+      if(badRelation){
+        console.warn("[CurrencyService] No se encontró una relación de moneda válida. Se asignará 1 por defecto.");
+        this.currencyRelation = 1;
       }
 
     })
