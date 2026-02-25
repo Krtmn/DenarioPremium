@@ -1,108 +1,105 @@
 <ion-modal [keepContentsMounted]="true" id="clienteSelectModal" trigger="clienteSelect" [isOpen]="isModalOpen"
-    willPresent="onModalOpen()">
-    <ng-template>
-        <div>
-            <ion-header :translucent="false">
-                <ion-toolbar class="{{ colorModulo }}">
-                    <!-- <ion-title class="{{ colorModulo }}"> -->
-                    <ion-grid>
-                        <ion-row>
-                            <ion-col size="1" size-sm="1" size-xs="2">
-                                <a>
-                                    <!-- <a routerLink="/visitas"> -->
-                                    <img (click)="closeModal()" class="fechaAtras" alt=""
-                                        src="../../../assets/images/flecha-blanca.png" />
-                                </a>
-                            </ion-col>
-                            <ion-col size="12" size-sm="6" size-xs="10">
-                                <h1 class="tituloModulos">{{ nombreModulo }}</h1>
-                            </ion-col>
+  willPresent="onModalOpen()">
+  <ng-template>
+    <div>
+      <ion-header :translucent="false">
+        <ion-toolbar class="{{ colorModulo }}">
+          <!-- <ion-title class="{{ colorModulo }}"> -->
+          <ion-grid>
+            <ion-row>
+              <ion-col size="1" size-sm="1" size-xs="2">
+                <a>
+                  <!-- <a routerLink="/visitas"> -->
+                  <img (click)="closeModal()" class="fechaAtras" alt=""
+                    src="../../../assets/images/flecha-blanca.png" />
+                </a>
+              </ion-col>
+              <ion-col size="12" size-sm="6" size-xs="10">
+                <h1 class="tituloModulos">{{ nombreModulo }}</h1>
+              </ion-col>
 
-                        </ion-row>
-                    </ion-grid>
-                </ion-toolbar>
-            </ion-header>
-            <ion-grid>
-                <ion-row>
-                    <ion-buttons slot="end">
-                        <ion-button (click)="closeModal()">CERRAR</ion-button>
-                    </ion-buttons>
-                </ion-row>
-                <ion-row>
-                    <ion-col>
-                        <ion-searchbar class="lupamorada" show-clear-button="always" search-icon="search-circle"
-                            clear-icon="trash-bin" placeholder="Clientes..."
-                            (ionInput)="handleInput($event)"></ion-searchbar>
-                    </ion-col>
-                </ion-row>
-                @if(!this.clientLogic.esTransportista){
-                <ion-row>
-                    <ion-col>
-                        <div class="saldo-legend" aria-label="Leyenda de colores">
-                            <span class="legend-item">
-                                <span class="legend-dot legend-blue" aria-hidden="true"></span>
-                                Documentos Vigentes
-                            </span>
-                            <span class="legend-item">
-                                <span class="legend-dot legend-red" aria-hidden="true"></span>
-                                Documentos Vencidos
-                            </span>
-                        </div>
-                    </ion-col>
-                </ion-row>
-                }
-            </ion-grid>
+            </ion-row>
+          </ion-grid>
+        </ion-toolbar>
+      </ion-header>
+      <ion-grid>
+        <ion-row>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeModal()">CERRAR</ion-button>
+          </ion-buttons>
+        </ion-row>
+        <ion-row>
+          <ion-col>
+            <ion-searchbar class="lupamorada" show-clear-button="always" search-icon="search-circle"
+              clear-icon="trash-bin" placeholder="Clientes..." (ionInput)="handleInput($event)"></ion-searchbar>
+          </ion-col>
+        </ion-row>
+        @if(!this.clientLogic.esTransportista){
+        <ion-row>
+          <ion-col>
+            <div class="saldo-legend" aria-label="Leyenda de colores">
+              <span class="legend-item">
+                <span class="legend-dot legend-blue" aria-hidden="true"></span>
+                {{this.getTag("DENARIO_DOC_VIGENTE")}} </span>
+              <span class="legend-item">
+                <span class="legend-dot legend-red" aria-hidden="true"></span>
+                {{this.getTag("DENARIO_DOC_VENCIDO")}}
+              </span>
+            </div>
+          </ion-col>
+        </ion-row>
+        }
+      </ion-grid>
+    </div>
+    <ion-content>
+
+      <ion-list button detail="false">
+        @if(noClientsAlertShown){
+        <ion-item>
+          <ion-label class="ion-text-center" style="color: red;">
+            {{this.getTag("CLI_SIN_RESULTADOS")}}
+          </ion-label>
+        </ion-item>
+        }
+        @for (client of clientes; track client.coClient){
+        @if(searchText === '' || client.coClient.toLowerCase().includes(searchText) ||
+        client.lbClient.toLowerCase().includes(searchText)){
+        <div class="product-structure-title listaProductos">
+          <ion-item button detail="false" class="listaItems" (click)="selectClient(client)">
+            <ion-label>
+              <p>{{ client.lbClient }}</p>
+              <p>{{this.getTag('CLI_CODIGO')}}: {{ client.coClient}}</p>
+              @if(!this.clientLogic.esTransportista){
+              <p [ngStyle]="{color: client.countDueDate >0 ? 'Red' : 'Blue' }">
+                {{this.getTag('CLI_SALDO')}} {{client.coCurrency}}: {{formatNum(client.saldo1)}}
+              </p>
+              @if(multimoneda && showConversion){
+              <p [ngStyle]="{color: client.countDueDate >0 ? 'Red' : 'Blue' }">
+                {{this.getTag('CLI_SALDO')}} {{oppositeCoCurrency(client.coCurrency)}}:
+                {{formatNum(client.saldo2)}}
+              </p>
+              }
+              }
+              <p>
+                <ion-button class="masInfo" fill="clear" (click)="this.clientLogic.showClientDetail($event, client)"
+                  aria-label="Ver comentario">
+                  Más detalles
+                </ion-button>
+              </p>
+            </ion-label>
+            <ion-note slot="end">
+              <ion-icon class="icon-List" name="chevron-forward-outline"></ion-icon>
+            </ion-note>
+          </ion-item>
         </div>
-        <ion-content>
+        }
+        }
+      </ion-list>
 
-            <ion-list button detail="false">
-                @if(noClientsAlertShown){
-                <ion-item>
-                    <ion-label class="ion-text-center" style="color: red;">
-                        {{this.getTag("CLI_SIN_RESULTADOS")}}
-                    </ion-label>
-                </ion-item>
-                }
-                @for (client of clientes; track client.coClient){
-                @if(searchText === '' || client.coClient.toLowerCase().includes(searchText) ||
-                client.lbClient.toLowerCase().includes(searchText)){
-                <div class="product-structure-title listaProductos">
-                    <ion-item button detail="false" class="listaItems" (click)="selectClient(client)">
-                        <ion-label>
-                            <p>{{ client.lbClient }}</p>
-                            <p>{{this.getTag('CLI_CODIGO')}}: {{ client.coClient}}</p>
-                            @if(!this.clientLogic.esTransportista){
-                            <p [ngStyle]="{color: client.countDueDate >0 ? 'Red' : 'Blue' }">
-                                {{this.getTag('CLI_SALDO')}} {{client.coCurrency}}: {{formatNum(client.saldo1)}}
-                            </p>
-                            @if(multimoneda && showConversion){
-                            <p [ngStyle]="{color: client.countDueDate >0 ? 'Red' : 'Blue' }">
-                                {{this.getTag('CLI_SALDO')}} {{oppositeCoCurrency(client.coCurrency)}}:
-                                {{formatNum(client.saldo2)}}
-                            </p>
-                            }
-                            }
-                            <p>
-                                <ion-button class="masInfo" fill="clear"
-                                    (click)="this.clientLogic.showClientDetail($event, client)"
-                                    aria-label="Ver comentario">
-                                    Más detalles
-                                </ion-button>
-                            </p>
-                        </ion-label>
-                        <ion-note slot="end">
-                            <ion-icon class="icon-List" name="chevron-forward-outline"></ion-icon>
-                        </ion-note>
-                    </ion-item>
-                </div>
-                }
-                }
-            </ion-list>
-
-            <!-- alerta de cambio de cliente-->
-            <ion-alert id="alertClientChange" [isOpen]="clientChangeOpen" header={{headerConfirm}}
-                message={{mensajeClientChange}} [buttons]="buttonsClientChange"
-                (didDismiss)="setClientChangeOpen(false)"></ion-alert>
-        </ion-content>
-    </ng-template>
+      <!-- alerta de cambio de cliente-->
+      <ion-alert id="alertClientChange" [isOpen]="clientChangeOpen" header={{headerConfirm}}
+        message={{mensajeClientChange}} [buttons]="buttonsClientChange"
+        (didDismiss)="setClientChangeOpen(false)"></ion-alert>
+    </ion-content>
+  </ng-template>
 </ion-modal>

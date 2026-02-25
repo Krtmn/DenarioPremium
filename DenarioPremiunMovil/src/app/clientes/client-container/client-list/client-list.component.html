@@ -10,11 +10,11 @@
     <div class="saldo-legend" *ngIf="!this.clientLogic.esTransportista">
       <span class="legend-item">
         <span class="legend-dot legend-blue" aria-hidden="true"></span>
-        Documentos Vigentes
+        {{this.clientLogic.clientTags.get('DENARIO_DOC_VIGENTE')}}
       </span>
       <span class="legend-item">
         <span class="legend-dot legend-red" aria-hidden="true"></span>
-        Documentos Vencidos
+        {{this.clientLogic.clientTags.get('DENARIO_DOC_VENCIDO')}}
       </span>
     </div>
     <ion-grid>

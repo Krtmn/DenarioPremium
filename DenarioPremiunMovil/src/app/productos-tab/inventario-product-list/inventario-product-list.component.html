@@ -1,5 +1,5 @@
-<div class="listado-product-structures" *ngIf="inventariosLogicService.showProductList">
-
+@if(inventariosLogicService.showProductList){
+<div class="listado-product-structures">
   <!--  Listado clickeable de productos  -->
   <div class="product-card product-structure-scroll">
     @if(noProductsAlertShown){
@@ -9,12 +9,11 @@
       </ion-label>
     </ion-item>
     }
-    <ion-list *ngFor="let product of inventariosLogicService.newClientStock.productList; index as pro"
-      (click)="onSelectProductInv(pro,product)">
-      <!-- <productos-tab-search [showProductStructure]="showProductStructure" [empresaSeleccionada]="empresaSeleccionada" [productsTabTags]="productsTabTags"></productos-tab-search> -->
-      <div class="product-structure-title"
-        *ngIf="searchText === '' || product.coProduct.toLowerCase().includes(searchText.toLowerCase()) || product.naProduct.toLowerCase().includes(searchText.toLowerCase())">
-        <!-- <ion-item button detail="true" *ngIf="i<10*indice"> -->
+    @for (product of inventariosLogicService.newClientStock.productList; track $index; let pro = $index) {
+    <ion-list (click)="onSelectProductInv(pro,product)">
+      @if(searchText === '' || product.coProduct.toLowerCase().includes(searchText.toLowerCase()) ||
+      product.naProduct.toLowerCase().includes(searchText.toLowerCase())){
+      <div class="product-structure-title">
         <ion-item button detail="false" [id]="'modalTypes'+product.idProduct">
           <ion-label fixed class="fixedLabel">
             <img class="productImage" alt=""
@@ -29,11 +28,9 @@
           </ion-note>
         </ion-item>
       </div>
-
-
-
+      }
     </ion-list>
+    }
   </div>
 </div>
-
-
+}
