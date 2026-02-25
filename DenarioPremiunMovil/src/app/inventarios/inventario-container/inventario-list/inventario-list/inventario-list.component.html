@@ -5,38 +5,45 @@
   <div class="clientStock-card">
     <ion-row>
       <ion-col class="" size="12" size-sm="12" size-xs="12">
-        <p *ngIf="valid">
+        @if(valid){
+        <p>
           {{this.inventariosLogicService.inventarioTags.get('INV_LIST_NOSTOCKS')}}
         </p>
-        <ion-list *ngFor="let list of this.inventariosLogicService.itemListClientStocks; index as i" button
-          detail="false">
-          <div
-            *ngIf="searchText === '' || list.coClient.toLowerCase().includes(searchText) || list.lbClient.toLowerCase().includes(searchText)">
-            <ion-item button detail="true">
-              <ion-label (click)="beforeOpenStock(i)">
-                <p>
-                  {{this.inventariosLogicService.inventarioTags.get('INV_NRO_REF')}}:
-                  {{list.idClientStock}}
-                </p>
-                <p>
-                  {{this.inventariosLogicService.inventarioTags.get('INV_CLIENTE')}}: {{ list.coClient
-                  }} - {{list.lbClient}}
-                </p>
-                <p>
-                  {{this.inventariosLogicService.inventarioTags.get('INV_DEV_STATUS')}}: {{
-                  getStatusOrderName(list.stDelivery, list.naStatus, list.idClientStock)}}
-                </p>
-                <p>
-                  {{this.inventariosLogicService.inventarioTags.get('INV_FECHA')}}:
-                  {{list.daClientStock.replace('T', ' ') | date: "dd/MM/yyyy hh:mm:ss"}}
-                </p>
-              </ion-label>
-              <ion-button *ngIf="list.stDelivery == 3" color="danger" (click)="deleteClientStock(i)"><ion-icon
-                  slot="icon-only" name="trash"></ion-icon>
-              </ion-button>
-            </ion-item>
-          </div>
+        }
+
+        @for (list of this.inventariosLogicService.itemListClientStocks; track $index; let i = $index) {
+        <ion-list button detail="false">
+        @if (searchText === '' || list.coClient.toLowerCase().includes(searchText) || list.lbClient.toLowerCase().includes(searchText) || list.idClientStock.toString().includes(searchText)) {
+        <div>
+          <ion-item button detail="true">
+            <ion-label (click)="beforeOpenStock(i)">
+              <p>
+                {{this.inventariosLogicService.inventarioTags.get('INV_NRO_REF')}}:
+                {{list.idClientStock}}
+              </p>
+              <p>
+                {{this.inventariosLogicService.inventarioTags.get('INV_CLIENTE')}}: {{ list.coClient
+                }} - {{list.lbClient}}
+              </p>
+              <p>
+                {{this.inventariosLogicService.inventarioTags.get('INV_DEV_STATUS')}}: {{
+                getStatusOrderName(list.stDelivery, list.naStatus, list.idClientStock)}}
+              </p>
+              <p>
+                {{this.inventariosLogicService.inventarioTags.get('INV_FECHA')}}:
+                {{list.daClientStock.replace('T', ' ') | date: "dd/MM/yyyy hh:mm:ss"}}
+              </p>
+            </ion-label>
+            @if (list.stDelivery == 3) {
+            <ion-button color="danger" (click)="deleteClientStock(i)"><ion-icon
+              slot="icon-only" name="trash"></ion-icon>
+            </ion-button>
+            }
+          </ion-item>
+        </div>
+          }
         </ion-list>
+          }
         <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)">
           <ion-infinite-scroll-content loadingText="Por favor espere..."
             loadingSpinner="bubbles"></ion-infinite-scroll-content>
@@ -45,4 +52,3 @@
     </ion-row>
   </div>
 </div>
-
