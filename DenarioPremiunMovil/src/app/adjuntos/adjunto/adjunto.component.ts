@@ -139,8 +139,8 @@ export class AdjuntoComponent implements OnInit {
 
 
   checkImgLimit() {
-    if (this.service.fotos.length >= this.service.totalPhoto) {
-      this.message.transaccionMsjModalNB(this.getTag("ADJ_MSJ_LIMITE") + this.service.totalPhoto);
+    if (this.service.fotos.length >= this.service.quAttach) {
+      this.message.transaccionMsjModalNB(this.getTag("ADJ_MSJ_LIMITE") + this.service.quAttach);
       return false;
     } else {
       return true;
@@ -163,8 +163,8 @@ export class AdjuntoComponent implements OnInit {
 
   }
 
-  deleteFile() {
-    this.service.file = null;
+  deleteFile() { //TODO: adaptar para multiples archivos
+    this.service.files = [];
     this.service.weightLimitExceeded = false;
     this.onAttachmentChanged();
 
@@ -336,7 +336,7 @@ export class AdjuntoComponent implements OnInit {
   }
 
   async buscarFile() {
-    if (this.service.file != null) {
+    if (this.service.files.length >= this.service.quFileAttach) {
       // ya existe un archivo. Revisar que se hace en este caso
     } else {
       const allowedMimeTypes = [
@@ -364,12 +364,12 @@ export class AdjuntoComponent implements OnInit {
       if (muyPesado) {
         this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_ARCHIVO") + this.service.imageWeightLimit + " MB");
       }
-      this.service.file = new Archivo(
+      this.service.files.push(new Archivo(
         file.mimeType,
         file.data as string,
         file.name as string,
         muyPesado
-      )
+      ))
 
       this.service.weightLimitExceeded = muyPesado;
       //console.log(this.service.file);
