@@ -66,8 +66,8 @@
                 <div [ngSwitch]="segment">
                     <!-- Pestana General-->
 
-                    <ion-card *ngSwitchCase="'default'">
-                        <ion-card-content>
+                    <div *ngSwitchCase="'default'">
+                        <div>
                             <!-- ### EMPRESA ### -->
                             <ion-col size="12" size-sm="12" size-xs="12">
                                 <ion-label>{{ orderServ.getTag("PED_EMPRESA")}}:</ion-label>
@@ -317,14 +317,13 @@
 
                             </div>
                             <!-- SELECTOR CLIENTE -->
-                            <!-- debe ir en el ion-card para que el trigger funcione -->
                             <app-cliente-selector #selectorCliente *ngIf="!viewOnly"
                                 (clienteSeleccionado)="setClientfromSelector($any($event))"></app-cliente-selector>
 
-                        </ion-card-content>
-                    </ion-card>
+                        </div>
+                    </div>
                     <!-- Pestana Pedido -->
-                    <ion-card *ngSwitchCase="'pedido'">
+                    <div *ngSwitchCase="'pedido'">
 
                         <!-- Tab de seleccionar productos marca Muten™  -->
                         <productos-tab [pedido]="true" [empresaSeleccionada]="empresaSeleccionada"
@@ -332,11 +331,11 @@
 
 
 
-                    </ion-card>
+                    </div>
                     <!-- Pestana Total-->
-                    <ion-card *ngSwitchCase="'total'" class="paddingPedidosTotal">
+                    <div *ngSwitchCase="'total'" class="paddingPedidosTotal">
 
-                        <ion-card-content>
+                        <div>
                             <div class="listado-product-structures pedidos">
                                 <ion-col size="12" size-sm="12" size-xs="12" id="globalDiscount"
                                     *ngIf="orderServ.userCanSelectGlobalDiscount">
@@ -473,7 +472,7 @@
                                 </ion-grid>
 
                             </div>
-                        </ion-card-content>
+                        </div>
 
                         <!--### Total por producto ###-->
                         <ion-accordion-group *ngIf="!orderServ.groupByTotalByLines">
@@ -676,16 +675,16 @@
                         </ion-accordion-group>
 
 
-                    </ion-card>
+                    </div>
                     <!-- fin pestaña total -->
 
 
                     <!-- Pestana Adjuntos -->
-                    <ion-card *ngSwitchCase="'adjuntos'">
-                        <ion-card-content>
+                    <div *ngSwitchCase="'adjuntos'">
+                        <div>
                             <app-adjunto #selectorAdjunto></app-adjunto>
-                        </ion-card-content>
-                    </ion-card>
+                        </div>
+                    </div>
 
 
 
@@ -695,7 +694,7 @@
                     <!-- Modal de Informacion de Cliente -->
                     <ion-modal [isOpen]="modalInfoClienteOpen" id="eventModal3">
                         <ng-template>
-                            <ion-card>
+                            <div>
                                 <ion-grid>
                                     <ion-row>
                                         <ion-col size="4" size-sm="4" size-xs="8" offset-sm="4" offset-xs="2">
@@ -794,7 +793,7 @@
 
                                 <ion-button (click)="modalInfoCliente(false)" size="small" expand="block">{{
                                     orderServ.getTag("PED_CERRAR") }}</ion-button>
-                            </ion-card>
+                            </div>
                         </ng-template>
                     </ion-modal>
                 </div>

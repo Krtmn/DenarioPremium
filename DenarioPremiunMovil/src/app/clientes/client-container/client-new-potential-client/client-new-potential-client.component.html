@@ -11,8 +11,8 @@
     </div>
 
     <div [ngSwitch]="segment">
-        <ion-card *ngSwitchCase="'default'">
-            <ion-card-content>
+        <div *ngSwitchCase="'default'">
+            <div>
                 <!-- <form [formGroup]="newPotentialClient" (ngSubmit)="validatePotentialClient(newPotentialClient)"> -->
                 <form [formGroup]="newPotentialClient">
                     <ion-grid>
@@ -163,16 +163,14 @@
                         </ion-row>
                     </ion-grid>
                 </form>
+            </div>
+        </div>
 
-            </ion-card-content>
-        </ion-card>
-
-        <!-- Pestana Adjuntos-->
-        <ion-card *ngSwitchCase="'adjuntos'">
-            <ion-card-content>
+        <div *ngSwitchCase="'adjuntos'">
+            <div>
                 <app-adjunto #selectorAdjuntos></app-adjunto>
-            </ion-card-content>
-        </ion-card>
+            </div>
+        </div>
     </div>
 
 </div>

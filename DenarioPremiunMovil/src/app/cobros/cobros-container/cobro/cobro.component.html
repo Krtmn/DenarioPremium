@@ -33,14 +33,14 @@
 
 <div [ngSwitch]="segment">
     <!-- Pestana General-->
-    <ion-card *ngSwitchCase="'default'">
+    <div *ngSwitchCase="'default'">
         <app-cobro-general></app-cobro-general>
-    </ion-card>
+    </div>
 
     <!-- Pestana documentos-->
-    <ion-card *ngSwitchCase="'documentos'">
+    <div *ngSwitchCase="'documentos'">
         <app-cobro-documents></app-cobro-documents>
-    </ion-card>
+    </div>
 
     <!-- Pestana Pagos-->
     <ion-grid *ngSwitchCase="'pagos'">
@@ -48,16 +48,16 @@
     </ion-grid>
 
     <!-- Pestana Total -->
-    <ion-card *ngSwitchCase="'total'">
+    <div *ngSwitchCase="'total'">
         <app-cobro-total></app-cobro-total>
-    </ion-card>
+    </div>
 
     <!-- Pestana Adjuntos -->
-    <ion-card *ngSwitchCase="'adjuntos'">
-        <ion-card-content>
+    <div *ngSwitchCase="'adjuntos'">
+        <div>
             <app-adjunto #selectorAdjunto></app-adjunto>
-        </ion-card-content>
-    </ion-card>
+        </div>
+    </div>
 
     <!-- Modal de seleccionar fecha -->
     <ion-modal [keepContentsMounted]="true" class="fechasModal">

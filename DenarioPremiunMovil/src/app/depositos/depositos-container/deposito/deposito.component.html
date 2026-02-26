@@ -26,25 +26,25 @@
 
 <div [ngSwitch]="segment">
   <!-- Pestana General-->
-  <ion-card *ngSwitchCase="'default'">
+  <div *ngSwitchCase="'default'">
     <app-deposito-general></app-deposito-general>
-  </ion-card>
+  </div>
 
   <!-- Pestana cobros-->
-  <ion-card *ngSwitchCase="'cobros'">
+  <div *ngSwitchCase="'cobros'">
     <app-deposito-cobros></app-deposito-cobros>
-  </ion-card>
+  </div>
 
   <!-- Pestana total-->
-  <ion-card *ngSwitchCase="'total'">
+  <div *ngSwitchCase="'total'">
     <app-deposito-total></app-deposito-total>
-  </ion-card>
+  </div>
 
   <!-- Pestana Adjuntos -->
-  <ion-card *ngSwitchCase="'adjuntos'">
-    <ion-card-content>
+  <div *ngSwitchCase="'adjuntos'">
+    <div>
       <app-adjunto #selectorAdjunto></app-adjunto>
-    </ion-card-content>
-  </ion-card>
+    </div>
+  </div>
 
 </div>

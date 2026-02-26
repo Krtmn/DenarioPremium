@@ -10,13 +10,13 @@
   </ion-fab-list>
 </ion-fab>
 
-<ion-card *ngIf="showCalculator" class="floating-calculator" role="dialog" aria-label="Calculadora">
+<div *ngIf="showCalculator" class="floating-calculator" role="dialog" aria-label="Calculadora">
 
-  <ion-card-header>
-    <ion-card-title class="ion-text-center">Calculadora</ion-card-title>
-  </ion-card-header>
+  <div>
+    <div class="ion-text-center">Calculadora</div>
+  </div>
 
-  <ion-card-content>
+  <div>
     <ion-grid>
       <ion-row *ngIf="companies && companies.length > 1">
         <ion-col size="4">
@@ -154,5 +154,5 @@
     </ion-grid>
 
 
-  </ion-card-content>
-</ion-card>
+  </div>
+</div>

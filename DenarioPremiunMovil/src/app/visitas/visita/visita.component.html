@@ -48,7 +48,7 @@
 
   <div [ngSwitch]="segment">
     <!-- Primera card: Empresa, Fecha y Cliente-->
-    <ion-card *ngSwitchCase="'default'">
+    <div *ngSwitchCase="'default'">
 
       <ion-grid>
         <ion-row>
@@ -120,7 +120,6 @@
 
       <div>
         <!-- Modal de seleccionar cliente -->
-        <!-- debe ir en el ion-card para que el trigger funcione -->
         <app-cliente-selector #selectorCliente *ngIf="!viewOnly && !fromWeb"
           (clienteSeleccionado)="setClientfromSelector($any($event))"></app-cliente-selector>
       </div>
@@ -144,11 +143,11 @@
         </ion-button>
       </ion-col>
 
-    </ion-card>
+    </div>
 
     <!--Segunda card: Actividades/ Eventos-->
-    <ion-card *ngSwitchCase="'actividades'">
-      <ion-card-header>
+    <div *ngSwitchCase="'actividades'">
+      <div>
 
         <ion-col size="6" size-sm="12" size-xs="12">
           <ion-button id="eventSelect" class="botonAddLila" expand="block" *ngIf="!viewOnly"
@@ -156,8 +155,8 @@
             getTag("VIS_BOTON_EVENTOS") }} </ion-button>
         </ion-col>
 
-      </ion-card-header>
-      <ion-card-content>
+      </div>
+      <div>
         @for(event of listaEventos; track event){
         <ion-list>
           <div>
@@ -177,7 +176,7 @@
           </div>
         </ion-list>
       }
-      </ion-card-content>
+      </div>
       <!--Segunda card: modal de  seleccionar evento -->
       <ion-modal [isOpen]="showEventModal" id="eventModal" size="cover"
         class="listado-product-structures modalActividades" (didDismiss)="setShowEventModal(false)"
@@ -251,14 +250,14 @@
 
         </ng-template>
       </ion-modal>
-    </ion-card>
+    </div>
 
     <!-- tercera card: Adjuntos -->
-    <ion-card *ngSwitchCase="'adjuntos'">
-      <ion-card-content>
+    <div *ngSwitchCase="'adjuntos'">
+      <div>
         <app-adjunto #selectorAdjunto></app-adjunto>
-      </ion-card-content>
-    </ion-card>
+      </div>
+    </div>
   </div>
 
   <!-- Modal de seleccionar fecha -->
