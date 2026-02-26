@@ -52,17 +52,17 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
 <div class="saldo-legend">
   <button class="legend-item legend-button" id="legendBlueHint" type="button">
     <span class="legend-dot legend-blue" aria-hidden="true"></span>
-      {{this.clientLogic.clientTags.get('DENARIO_VIGENTE')}}
+      {{this.collectService.collectionTagsDenario.get('DENARIO_VIGENTE')}}
     <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
   </button>
   <button class="legend-item legend-button" id="legendRedHint" type="button">
     <span class="legend-dot legend-red" aria-hidden="true"></span>
-      {{this.clientLogic.clientTags.get('DENARIO_VENCIDO')}}
+      {{this.collectService.collectionTagsDenario.get('DENARIO_VENCIDO')}}
     <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
   </button>
   <button class="legend-item legend-button" id="legendBlackHint" type="button">
     <span class="legend-dot legend-black" aria-hidden="true"></span>
-    {{this.clientLogic.clientTags.get('DENARIO_FAVOR')}}
+    {{this.collectService.collectionTagsDenario.get('DENARIO_FAVOR')}}
     <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
   </button>
 </div>
@@ -70,7 +70,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
 <ion-popover trigger="legendBlueHint" triggerAction="click">
   <ng-template>
     <div class="legend-popover">
-        {{this.clientLogic.clientTags.get('DENARIO_HINT_VIGENTE')}}
+        {{this.collectService.collectionTagsDenario.get('DENARIO_HINT_VIGENTE')}}
     </div>
   </ng-template>
 </ion-popover>
@@ -78,7 +78,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
 <ion-popover trigger="legendRedHint" triggerAction="click">
   <ng-template>
     <div class="legend-popover">
-      {{this.clientLogic.clientTags.get('DENARIO_HINT_VENCIDO')}}
+      {{this.collectService.collectionTagsDenario.get('DENARIO_HINT_VENCIDO')}}
     </div>
   </ng-template>
 </ion-popover>
@@ -86,7 +86,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
 <ion-popover trigger="legendBlackHint" triggerAction="click">
   <ng-template>
     <div class="legend-popover">
-        {{this.clientLogic.clientTags.get('DENARIO_HINT_FAVOR')}}
+        {{this.collectService.collectionTagsDenario.get('DENARIO_HINT_FAVOR')}}
     </div>
   </ng-template>
 </ion-popover>

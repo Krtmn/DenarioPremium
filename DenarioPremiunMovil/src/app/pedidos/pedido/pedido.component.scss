@@ -52,10 +52,16 @@
  }
 
  .fondoVerde {
-    background: #59b02d; 
+    background: #59b02d;
     --background: #59b02d;
     color: #fff !important;
 }
 
 .text-red { color: #c0392b !important; }
 .text-green { color: #59b02d !important; }
+
+.pdf-button-green {
+  --background: #59b02d;
+  --background-activated: #4f9a27;
+  --background-focused: #4f9a27;
+}
