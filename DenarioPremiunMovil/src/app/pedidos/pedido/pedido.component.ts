@@ -40,6 +40,7 @@ import { OrderUtil } from 'src/app/modelos/orderUtil';
 import { ClientChannelOrderType } from 'src/app/modelos/tables/clientChannelOrderType';
 import { OrderTypeProductStructure } from 'src/app/modelos/tables/orderTypeProductStructure';
 import { DistributionChannel } from 'src/app/modelos/tables/distributionChannel';
+import { PdfCreatorService } from 'src/app/services/pdf-creator/pdf-creator.service';
 
 @Component({
   selector: 'app-pedido',
@@ -64,6 +65,7 @@ export class PedidoComponent implements OnInit {
   public dbServ = inject(SynchronizationDBService);
   public services = inject(ServicesService);
   public autoSend = inject(AutoSendService);
+  private pdfCreator = inject(PdfCreatorService);
   messageAlert!: MessageAlert;
 
 
@@ -1179,26 +1181,26 @@ export class PedidoComponent implements OnInit {
       if (this.orderServ.openOrder) {
         let idPriceList = this.orderServ.order.orderDetails[0].idPriceList
         let pl = this.orderServ.listaPricelist.filter((pl) => pl.idPriceList == idPriceList)
-        if(pl.length < 1) {
+        if (pl.length < 1) {
           console.error("No se encontro pricelist del pedido");
-          if(this.orderServ.pedidoModificable){
-          console.log("Buscando lista por cliente, para que  el usuario pueda cambiarla"); 
+          if (this.orderServ.pedidoModificable) {
+            console.log("Buscando lista por cliente, para que  el usuario pueda cambiarla");
             list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
           }
-        }else{
+        } else {
           let idList = pl[0].idList;
           list = this.orderServ.listaList.find((list) => list.idList == idList);
         }
-        if(list){
+        if (list) {
           this.orderServ.listaSeleccionada = list!;
-          if(list.idList > 0){
+          if (list.idList > 0) {
             this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList);
 
           }
-         this.listaAnterior = list!;
-        }else{
-          this.orderServ.listaSeleccionada = { idList: 0} as List;
-        }  
+          this.listaAnterior = list!;
+        } else {
+          this.orderServ.listaSeleccionada = { idList: 0 } as List;
+        }
 
 
       } else {
@@ -1321,6 +1323,62 @@ export class PedidoComponent implements OnInit {
 
   formatNum(input: number) {
     return this.currencyServ.formatNumber(input);
+  }
+
+  canExportOrderSummaryPdf(): boolean {
+    const stDelivery = this.orderServ.order?.stDelivery;
+    return stDelivery > 1 || stDelivery === null;
+  }
+
+  async createOrderSummaryPdf() {
+    if (!this.canExportOrderSummaryPdf()) {
+      this.message.transaccionMsjModalNB('Solo se puede generar el PDF cuando el pedido esta enviado.');
+      return;
+    }
+
+    this.message.showLoading().then(async () => {
+      try {
+        const order = this.orderServ.order;
+        const coOrder = order?.coOrder || this.orderServ.coOrder || '';
+        const idOrder = this.orderServ.listaPedidos.findIndex(p => p.co_order === coOrder);
+        const safeCoOrder = (this.orderServ.coOrder || 'pedido').replace(/\s+/g, '_');
+        const currency = this.orderServ.monedaSeleccionada?.coCurrency || '';
+        const items = this.orderServ.carrito || [];
+
+        const rows = items.map(item => [
+          String(item.coProduct ?? ''),
+          String(item.naProduct ?? ''),
+          this.formatNum(Number(item.quAmount ?? 0)),
+          this.formatNum(Number(item.subtotal ?? 0))
+        ]);
+
+        await this.pdfCreator.createSummaryPdf({
+          title: `Resumen del pedido ${idOrder}`,
+          meta: [
+            { label: 'Empresa', value: this.empresaSeleccionada?.lbEnterprise || '' },
+            { label: 'Pedido', value: String(idOrder) },
+            { label: 'Cliente', value: this.orderServ.cliente?.lbClient || '' },
+            { label: 'Fecha', value: this.dateServ.formatComplete(this.fechaPedido) },
+            { label: 'Moneda', value: currency },
+            { label: 'Items', value: String(items.length) }
+          ],
+          columns: [
+            { label: 'Codigo', align: 'left' },
+            { label: 'Producto', align: 'left' },
+            { label: 'Cantidad', align: 'right' },
+            { label: 'Subtotal', align: 'right' }
+          ],
+          rows,
+          total: { label: 'Total', value: this.formatNum(Number(this.orderServ.totalPedido ?? 0)) + ' ' + currency },
+          fileName: `pedido_resumen_${idOrder}.pdf`
+        }, { action: 'share-save', orientation: 'portrait', scale: 1 });
+        this.message.transaccionMsjModalNB('PDF generado y guardado.');
+      } catch (err) {
+        console.error('Error creating order summary PDF', err);
+      } finally {
+        this.message.hideLoading();
+      }
+    });
   }
 
   onDateDispatchChange() {

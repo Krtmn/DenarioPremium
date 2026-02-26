@@ -1,9 +1,43 @@
 import { Injectable } from '@angular/core';
 import { FileOpener } from '@awesome-cordova-plugins/file-opener/ngx';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import jsPDF from 'jspdf';
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
+
+export type PdfSummaryAlign = 'left' | 'right' | 'center';
+
+export interface PdfSummaryColumn {
+  label: string;
+  align?: PdfSummaryAlign;
+}
+
+export interface PdfSummaryMeta {
+  label: string;
+  value: string;
+}
+
+export interface PdfSummaryTotal {
+  label: string;
+  value: string;
+}
+
+export interface PdfSummaryData {
+  title: string;
+  meta?: PdfSummaryMeta[];
+  columns: PdfSummaryColumn[];
+  rows: Array<Array<string | number>>;
+  total?: PdfSummaryTotal;
+  fileName?: string;
+}
+
+export interface PdfSummaryOptions {
+  action?: 'open' | 'save' | 'share' | 'share-save';
+  orientation?: 'portrait' | 'landscape';
+  scale?: number;
+  layoutScale?: number;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -11,10 +45,100 @@ import pdfFonts from 'pdfmake/build/vfs_fonts';
 
 export class PdfCreatorService {
 
-  constructor(private fileOpener: FileOpener) { 
+  constructor(private fileOpener: FileOpener) {
     pdfMake.vfs = pdfFonts.vfs;
 
    }
+
+  private escapeHtml(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  private buildSummaryHtml(data: PdfSummaryData): string {
+    const metaRows = data.meta || [];
+    const rowsHtml = data.rows.map((row, rowIndex) => {
+      const bg = rowIndex % 2 === 0 ? '#ffffff' : '#f7f8fa';
+      const cells = row.map((cell, idx) => {
+        const align = data.columns[idx]?.align || 'left';
+        const safeValue = this.escapeHtml(String(cell ?? ''));
+        return `<td style="text-align:${align}; padding: 8px 6px; border-bottom: 1px solid #e6e8eb;">${safeValue}</td>`;
+      }).join('');
+      return `<tr style="background:${bg};">${cells}</tr>`;
+    }).join('');
+
+    const metaHtml = metaRows.map((m) => {
+      const label = this.escapeHtml(m.label);
+      const value = this.escapeHtml(m.value);
+      return `
+        <tr>
+          <td style="padding: 6px 8px; color: #5b626a; width: 28%;"><strong>${label}:</strong></td>
+          <td style="padding: 6px 8px; color: #121417;">${value}</td>
+        </tr>`;
+    }).join('');
+
+    const headerHtml = data.columns.map(col => {
+      const align = col.align || 'left';
+      return `<th style="text-align:${align}; padding: 9px 6px; font-size: 11px; letter-spacing: 0.3px; text-transform: uppercase; color: #2b3137; background: #eef1f4; border-bottom: 1px solid #d9dde2;">${this.escapeHtml(col.label)}</th>`;
+    }).join('');
+
+    const totalHtml = data.total
+      ? `<div style="margin-top: 12px; padding: 10px 12px; background: #f3fbf6; border: 1px solid #d7efe1; text-align: right; font-size: 13px; border-radius: 6px;"><strong>${this.escapeHtml(data.total.label)}:</strong> ${this.escapeHtml(data.total.value)}</div>`
+      : '';
+
+    const safeTitle = this.escapeHtml(data.title);
+
+    return `
+      <div style="font-family: Arial, sans-serif; color: #121417; width: 100%;">
+        <div style="max-width: 760px; margin: 0 auto; text-align: left;">
+        <div style="background: #59b02d; color: #ffffff; padding: 14px 16px; border-radius: 8px 8px 0 0;">
+          <div style="font-size: 18px; font-weight: bold;">${safeTitle}</div>
+          <div style="font-size: 11px; opacity: 0.9; margin-top: 2px;">Generado desde la aplicacion</div>
+        </div>
+        <div style="border: 1px solid #e6e8eb; border-top: none; border-radius: 0 0 8px 8px; padding: 12px 14px;">
+          ${metaHtml ? `<table style="width: 100%; border-collapse: collapse; margin: 0 auto 12px auto; background: #ffffff; border: 1px solid #e6e8eb; border-radius: 6px;">${metaHtml}</table>` : ''}
+          <table style="width: 100%; border-collapse: collapse; margin: 0 auto; border: 1px solid #e6e8eb; border-radius: 6px; overflow: hidden;">
+            <thead>
+              <tr>${headerHtml}</tr>
+            </thead>
+            <tbody>
+              ${rowsHtml || '<tr><td colspan="100" style="padding: 8px 6px; color: #6b7280;">Sin items</td></tr>'}
+            </tbody>
+          </table>
+          ${totalHtml}
+        </div>
+        </div>
+      </div>
+    `;
+  }
+
+  async createSummaryPdf(data: PdfSummaryData, options?: PdfSummaryOptions) {
+    const html = this.buildSummaryHtml(data);
+    const doc = await this.generateWithJsPDF(html, {
+      orientation: options?.orientation ?? 'portrait',
+      scale: options?.scale ?? 1,
+      layoutScale: options?.layoutScale
+    });
+    const base64 = doc.output('datauristring');
+    const trimmed = base64.split(',')[1];
+    const result = await this.savePdf(trimmed, data.fileName || 'summary.pdf');
+
+    const action = options?.action ?? 'share';
+    if (action === 'open') {
+      this.openPdf(result.uri);
+    } else if (action === 'share' || action === 'share-save') {
+      await Share.share({
+        title: data.title,
+        url: result.uri
+      });
+    }
+
+    return result;
+  }
 
    /*
    async generateWithJsPDF(html: string): Promise<jsPDF> {
@@ -31,7 +155,7 @@ export class PdfCreatorService {
     });
 
     return doc;
-    
+
   }
     */
  // replace the existing generateWithJsPDF with this:
@@ -69,7 +193,7 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
    * (not only visible viewport) is captured. Returns a fully rendered jsPDF.
    *
    * Usage: pass the element reference (preferred) or HTML string.
-   */  
+   */
 // place inside PdfCreatorService in pdf-creator.service.ts
 // ...existing class code...
 async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'portrait' | 'landscape', scale?: number, layoutScale?: number }): Promise<jsPDF> {
@@ -99,7 +223,7 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
   const cloned = originalElement.cloneNode(true) as HTMLElement;
   this.inlineAllComputedStyles(originalElement, cloned);
 
-  
+
   // compute page width in CSS px
   const pageWidthPt = doc.internal.pageSize.getWidth(); // pdf pts
   const ptToPx = 96 / 72; // approx px per pt
@@ -288,7 +412,7 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
 
   return doc;
 }
- 
+
 
   generateWithPdfMake(content: any) {
     return pdfMake.createPdf({ content });
@@ -310,7 +434,13 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
       console.error('Error saving PDF file:', err);
       throw err;
     });
-    return result;
+
+    const uriResult = await Filesystem.getUri({
+      path: fileName,
+      directory: Directory.External
+    });
+
+    return { ...result, uri: uriResult.uri };
     //await this.openPdf(result.uri);
   }
 
