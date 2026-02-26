@@ -49,23 +49,32 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
 }
 
 @if(this.collectService.documentSalesBackup.length > 0){
-<div class="saldo-legend">
-  <button class="legend-item legend-button" id="legendBlueHint" type="button">
-    <span class="legend-dot legend-blue" aria-hidden="true"></span>
-      {{this.clientLogic.clientTags.get('DENARIO_VIGENTE')}}
-    <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
-  </button>
-  <button class="legend-item legend-button" id="legendRedHint" type="button">
-    <span class="legend-dot legend-red" aria-hidden="true"></span>
-      {{this.clientLogic.clientTags.get('DENARIO_VENCIDO')}}
-    <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
-  </button>
-  <button class="legend-item legend-button" id="legendBlackHint" type="button">
-    <span class="legend-dot legend-black" aria-hidden="true"></span>
-    {{this.clientLogic.clientTags.get('DENARIO_FAVOR')}}
-    <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
-  </button>
-</div>
+  <ion-grid>
+            <ion-row>
+              <ion-col size="12" size-sm="12" size-xs="12">
+                
+              <div class="saldo-legend">
+                  <button class="legend-item legend-button" id="legendBlueHint" type="button">
+                    <span class="legend-dot legend-blue" aria-hidden="true"></span>
+                      {{this.clientLogic.clientTags.get('DENARIO_VIGENTE')}}
+                    <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
+                  </button>
+                  <button class="legend-item legend-button" id="legendRedHint" type="button">
+                    <span class="legend-dot legend-red" aria-hidden="true"></span>
+                      {{this.clientLogic.clientTags.get('DENARIO_VENCIDO')}}
+                    <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
+                  </button>
+                  <button class="legend-item legend-button" id="legendBlackHint" type="button">
+                    <span class="legend-dot legend-black" aria-hidden="true"></span>
+                    {{this.clientLogic.clientTags.get('DENARIO_FAVOR')}}
+                    <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
+                  </button>
+                </div>
+                </ion-col>
+                
+            </ion-row>
+        </ion-grid>
+
 }
 <ion-popover trigger="legendBlueHint" triggerAction="click">
   <ng-template>

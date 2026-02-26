@@ -17,7 +17,11 @@
 .paddingPedidosTotal .hydrated {
   padding-top: 1px;
   padding-bottom: 1px;
-  font-size: 14px;
+  font-size: 12px;
+}
+
+.paddingPedidosTotal {
+  font-size: 12px;
 }
 .paddingPedidosTotal .paddingLefttotal {
   padding-left: 0;
@@ -59,3 +63,7 @@
 
 .text-red { color: #c0392b !important; }
 .text-green { color: #59b02d !important; }
+
+.titulototalesPedidos{
+    font-size: 16px;
+}
