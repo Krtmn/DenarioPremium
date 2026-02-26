@@ -104,6 +104,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.ivaList = this.orderServ.ivaList;
     this.disablePriceListSelector = (!this.orderServ.userCanChangePriceListProduct);
     this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
+      this.modoLista = 'search';
       this.noProductsAlertShown = false;
       this.warehouseList = this.orderServ.listaWarehouse;
       this.showProductList = true;
@@ -237,6 +238,15 @@ export class ProductosTabOrderProductListComponent implements OnInit {
           this.orderServ.userCanChangeWarehouse, this.orderServ.cliente.idClient, this.orderServ.listaSeleccionada.idList, this.page).then(() => {
             this.updateList(ev);
 
+          });
+        break;
+
+      case 'search':
+        this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(
+          this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise,
+          this.orderServ.monedaSeleccionada.coCurrency,
+          this.orderServ.listaSeleccionada.idList, this.page).then(() => {
+            this.updateList(ev);
           });
         break;
 

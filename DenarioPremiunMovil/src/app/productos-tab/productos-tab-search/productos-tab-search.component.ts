@@ -122,7 +122,10 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
       //Buscar en estructuras de producto
       this.message.showLoading();
       if (this.pedido) {        
-        this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency, this.orderServ.listaSeleccionada.idList).then(() => {
+        this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(
+          this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise, 
+          this.orderServ.monedaSeleccionada.coCurrency, 
+          this.orderServ.listaSeleccionada.idList, 0).then(() => {
           this.productService.onProductTabSearchClicked();
           this.disabledSearchButton = false;
           this.message.hideLoading();
@@ -140,7 +143,10 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
     } else {
       this.productStructureService.idProductStructureSeleccionada = 0;
       if (this.pedido) {
-        this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency, this.orderServ.listaSeleccionada.idList).then(() => {
+        this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(
+          this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise, 
+          this.orderServ.monedaSeleccionada.coCurrency, 
+          this.orderServ.listaSeleccionada.idList, 0).then(() => {
           this.productService.onProductTabSearchClicked();
           this.disabledSearchButton = false;
         });
