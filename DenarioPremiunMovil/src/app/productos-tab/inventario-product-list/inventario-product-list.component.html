@@ -9,28 +9,36 @@
       </ion-label>
     </ion-item>
     }
-    @for (product of inventariosLogicService.newClientStock.productList; track $index; let pro = $index) {
-    <ion-list (click)="onSelectProductInv(pro,product)">
-      @if(searchText === '' || product.coProduct.toLowerCase().includes(searchText.toLowerCase()) ||
-      product.naProduct.toLowerCase().includes(searchText.toLowerCase())){
-      <div class="product-structure-title">
-        <ion-item button detail="false" [id]="'modalTypes'+product.idProduct">
-          <ion-label fixed class="fixedLabel">
-            <img class="productImage" alt=""
-              [src]="product.coProduct ? (serviceImages.getImgForProduct(product.coProduct)) : '../../../assets/images/nodisponible.png'" />
-          </ion-label>
-          <ion-label class="textList">
-            <p>{{ product.naProduct }}</p>
-            <p>{{this.productsTabTags.get('PROD_COD_PROD')}}: {{ product.coProduct }}</p>
-          </ion-label>
-          <ion-note slot="end">
-            <ion-icon class="icon-List2" name="chevron-forward-outline"></ion-icon>
-          </ion-note>
-        </ion-item>
-      </div>
-      }
-    </ion-list>
-    }
+    <ion-content>
+      <ion-list>
+        @for (product of inventariosLogicService.newClientStock.productList; track $index; let pro = $index) {
+        @if(searchText === '' || product.coProduct.toLowerCase().includes(searchText.toLowerCase()) ||
+        product.naProduct.toLowerCase().includes(searchText.toLowerCase())){
+        <div class="product-structure-title" (click)="onSelectProductInv(pro,product)">
+          <ion-item button detail="false" [id]="'modalTypes'+product.idProduct">
+            <ion-label fixed class="fixedLabel">
+              <img class="productImage" alt=""
+                [src]="product.coProduct ? (serviceImages.getImgForProduct(product.coProduct)) : '../../../assets/images/nodisponible.png'" />
+            </ion-label>
+            <ion-label class="textList">
+              <p>{{ product.naProduct }}</p>
+              <p>{{this.productsTabTags.get('PROD_COD_PROD')}}: {{ product.coProduct }}</p>
+            </ion-label>
+            <ion-note slot="end">
+              <ion-icon class="icon-List2" name="chevron-forward-outline"></ion-icon>
+            </ion-note>
+          </ion-item>
+        </div>
+        }
+        }
+
+      </ion-list>
+      <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)">
+        <ion-infinite-scroll-content loadingText="Por favor espere..."
+          loadingSpinner="bubbles"></ion-infinite-scroll-content>
+      </ion-infinite-scroll>
+    </ion-content>
+
   </div>
 </div>
 }

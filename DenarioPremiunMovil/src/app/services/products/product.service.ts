@@ -48,7 +48,7 @@ export class ProductService {
   searchTextChanged = new Subject<string>();
   searchStructures = false; //flag para saber si se busca en todas las estructuras.
 
-  itemsXPagina = 20;
+  MAX_ITEMS_PER_PAGE = 50;
 
   constructor() { }
 
@@ -104,7 +104,7 @@ export class ProductService {
     this.returnBackClicked.next(true);
   }
 
-  getProductsByCoProductStructureAndIdEnterprise(dbServ: SQLiteObject, idProductStructures: number[], idEnterprise: number, coCurrency: string) {
+  getProductsByCoProductStructureAndIdEnterprise(dbServ: SQLiteObject, idProductStructures: number[], idEnterprise: number, coCurrency: string, page: number) {
     var database = dbServ;
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
@@ -114,7 +114,8 @@ export class ProductService {
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as nu_price_opposite, " +
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as co_currency_opposite, " +
-        " (select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE p.id_product_structure in ( " + idProductStructures + " ) ORDER BY p.nu_priority ASC;"
+        " (select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE p.id_product_structure in ( " + idProductStructures + 
+        " ) ORDER BY p.nu_priority ASC LIMIT " + this.MAX_ITEMS_PER_PAGE + " OFFSET " + (page * this.MAX_ITEMS_PER_PAGE) + ";";
       return database.executeSql(select, []).then(result => {
         this.productList = [];
         for (let i = 0; i < result.rows.length; i++) {
@@ -150,7 +151,8 @@ export class ProductService {
         "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, " +
         "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, " +
         "(select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, " +
-        'p.id_enterprise, p.co_enterprise FROM products p WHERE p.id_product_structure in ( ' + idProductStructures + ' ) AND p.id_enterprise = ? ORDER BY p.nu_priority ASC'
+        'p.id_enterprise, p.co_enterprise FROM products p WHERE p.id_product_structure in ( ' + idProductStructures + 
+        ' ) AND p.id_enterprise = ? ORDER BY p.nu_priority ASC  LIMIT ' + this.MAX_ITEMS_PER_PAGE + " OFFSET " + (page * this.MAX_ITEMS_PER_PAGE) + ";";
       return database.executeSql(select, [idEnterprise]).then(result => {
         this.productList = [];
         for (let i = 0; i < result.rows.length; i++) {
@@ -195,7 +197,7 @@ export class ProductService {
 
   getProductsByCoProductStructureAndIdEnterprisePaged(dbServ: SQLiteObject, idProductStructures: number[], idEnterprise: number, coCurrency: string, userCanChangeWarehouse: boolean, id_client: number, id_list: number, page: number,) {
     var database = dbServ;
-    var offset = page * this.itemsXPagina;
+    var offset = page * this.MAX_ITEMS_PER_PAGE;
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
       var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, " +
@@ -216,7 +218,7 @@ export class ProductService {
         select = select + 'AND p.id_product in (select s.id_product from stocks s where  s.id_warehouse = (SELECT id_warehouse FROM clients c WHERE c.id_client = ' + id_client + ' AND c.id_enterprise = p.id_enterprise)) ';
       }
       select = select + "ORDER BY p.nu_priority ASC  limit ? offset ?"
-      return database.executeSql(select, [this.itemsXPagina, offset]).then(result => {
+      return database.executeSql(select, [this.MAX_ITEMS_PER_PAGE, offset]).then(result => {
         this.productList = [];
         for (let i = 0; i < result.rows.length; i++) {
           this.productList.push({
@@ -262,7 +264,7 @@ export class ProductService {
         select = select + 'AND p.id_product in (select s.id_product from stocks s where  s.id_warehouse = (SELECT id_warehouse FROM clients c WHERE c.id_client = ' + id_client + ' AND c.id_enterprise = p.id_enterprise)) ';
       }
       select = select + 'AND p.id_enterprise = ? ORDER BY p.nu_priority ASC limit ? offset ?'
-      return database.executeSql(select, [idEnterprise, this.itemsXPagina, offset]).then(result => {
+      return database.executeSql(select, [idEnterprise, this.MAX_ITEMS_PER_PAGE, offset]).then(result => {
         this.productList = [];
         for (let i = 0; i < result.rows.length; i++) {
           this.productList.push({
@@ -300,7 +302,7 @@ export class ProductService {
 
   getFeaturedProducts(dbServ: SQLiteObject, idEnterprise: number, coCurrency: string, userCanChangeWarehouse: boolean, id_client: number, id_list: number, page: number) {
     var database = dbServ;
-    var offset = page * this.itemsXPagina;
+    var offset = page * this.MAX_ITEMS_PER_PAGE;
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
       var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, " +
@@ -321,7 +323,7 @@ export class ProductService {
         select = select + 'AND p.id_product in (select s.id_product from stocks s where  s.id_warehouse = (SELECT id_warehouse FROM clients c WHERE c.id_client = ' + id_client + ' AND c.id_enterprise = p.id_enterprise)) ';
       }
       select = select + " ORDER BY p.nu_priority ASC limit ? offset ?;"
-      return database.executeSql(select, [idEnterprise, this.itemsXPagina, offset]).then(result => {
+      return database.executeSql(select, [idEnterprise, this.MAX_ITEMS_PER_PAGE, offset]).then(result => {
         this.productList = [];
         for (let i = 0; i < result.rows.length; i++) {
           let item = result.rows.item(i);
@@ -370,7 +372,7 @@ export class ProductService {
         select = select + 'AND p.id_product in (select s.id_product from stocks s where  s.id_warehouse = (SELECT id_warehouse FROM clients c WHERE c.id_client = ' + id_client + ' AND c.id_enterprise = p.id_enterprise)) ';
       }
       select = select + 'ORDER BY p.nu_priority ASC limit ? offset ?'
-      return database.executeSql(select, [idEnterprise, this.itemsXPagina, offset]).then(result => {
+      return database.executeSql(select, [idEnterprise, this.MAX_ITEMS_PER_PAGE, offset]).then(result => {
         this.productList = [];
         for (let i = 0; i < result.rows.length; i++) {
           let item = result.rows.item(i);
@@ -426,7 +428,7 @@ export class ProductService {
 
   getFavoriteProducts(dbServ: SQLiteObject, idEnterprise: number, coCurrency: string, userCanChangeWarehouse: boolean, id_client: number, id_list: number, page: number) {
     var database = dbServ;
-    var offset = page * this.itemsXPagina;
+    var offset = page * this.MAX_ITEMS_PER_PAGE;
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
       var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, " +
@@ -449,7 +451,7 @@ export class ProductService {
       }
       select = select +
         'ORDER BY p.nu_priority ASC limit ? offset ?;'
-      return database.executeSql(select, [idEnterprise, this.itemsXPagina, offset]).then(result => {
+      return database.executeSql(select, [idEnterprise, this.MAX_ITEMS_PER_PAGE, offset]).then(result => {
         this.productList = [];
         for (let i = 0; i < result.rows.length; i++) {
           this.productList.push({
@@ -497,7 +499,7 @@ export class ProductService {
       }
       select = select +
         'ORDER BY p.nu_priority ASC limit ? offset ?';
-      return database.executeSql(select, [idEnterprise, this.itemsXPagina, offset]).then(result => {
+      return database.executeSql(select, [idEnterprise, this.MAX_ITEMS_PER_PAGE, offset]).then(result => {
         this.productList = [];
         for (let i = 0; i < result.rows.length; i++) {
           this.productList.push({
@@ -542,7 +544,7 @@ export class ProductService {
     return productListFilter;
   }
 
-  getProductsSearchedByCoProductAndNaProduct(dbServ: SQLiteObject, searchText: string, idEnterprise: number, coCurrency: string) {
+  getProductsSearchedByCoProductAndNaProduct(dbServ: SQLiteObject, searchText: string, idEnterprise: number, coCurrency: string, page: number) {
     var database = dbServ;
     this.productList = [];
 
@@ -561,13 +563,17 @@ export class ProductService {
     const whereTokens = tokenClauses.length ? tokenClauses.join(" AND ") + " AND p.id_enterprise = ?" : "p.id_enterprise = ?";
     params.push(idEnterprise);
 
+    //paginacion: limit y offset    
+    const offset = page * this.MAX_ITEMS_PER_PAGE;
+    params.push(this.MAX_ITEMS_PER_PAGE, offset);
+
     if (this.globalConfig.get("conversionByPriceList") == "true") {
       var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, " +
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as nu_price_opposite, " +
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as co_currency_opposite, " +
-        " (select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereTokens + " order by p.co_product";
+        " (select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereTokens + " order by p.co_product ASC limit ? offset ?";
       return database.executeSql(select, params).then(result => {
         for (let i = 0; i < result.rows.length; i++) {
           this.productList.push({
@@ -608,7 +614,7 @@ export class ProductService {
       "where pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, "+
       "(select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, "+
       "p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereTokens + 
-      " order by p.co_product";
+      " order by p.co_product ASC limit ? offset ?";
       return database.executeSql(select, params).then(result => {
         for (let i = 0; i < result.rows.length; i++) {
           let item = result.rows.item(i);
@@ -673,8 +679,8 @@ export class ProductService {
     }
 
     //limit and offset for pagination
-    var offset = page * this.itemsXPagina;
-    params.push(this.itemsXPagina, offset);
+    var offset = page * this.MAX_ITEMS_PER_PAGE;
+    params.push(this.MAX_ITEMS_PER_PAGE, offset);
     
 
     this.productList = [];
