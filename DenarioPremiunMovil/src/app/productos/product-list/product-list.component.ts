@@ -113,6 +113,7 @@ export class ProductListComponent implements OnInit {
             this.noProductsAlertShown = false;
             this.productList = this.filterProductList(this.productService.productList);
             this.noProductsAlertShown = this.productList.length === 0;
+            this.message.hideLoading();
           });
       }
     } else {
@@ -149,6 +150,7 @@ export class ProductListComponent implements OnInit {
           this.noProductsAlertShown = false;
           this.productList = this.filterProductList(this.productService.productList);
           this.noProductsAlertShown = this.productList.length === 0;
+          this.message.hideLoading();
         });
     }
   });
