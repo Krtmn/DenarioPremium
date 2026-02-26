@@ -88,7 +88,7 @@ export class InventarioProductListComponent implements OnInit {
         this.idProductStructureList = this.productStructureService.idProductStructureList;
         this.coProductStructureListString = this.productStructureService.coProductStructureListString;
         this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
-          this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault).then(() => {
+          this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault, 0).then(() => {
             this.noProductsAlertShown = false;
             this.inventariosLogicService.newClientStock.productList = this.productService.productList;
             this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
@@ -105,7 +105,7 @@ export class InventarioProductListComponent implements OnInit {
       /*this.productService.getProductsSearchedByCoProductAndNaProduct(
         this.searchText,
         this.empresaSeleccionada.idEnterprise,
-        this.empresaSeleccionada.coCurrencyDefault,).then(() => {*/
+        this.empresaSeleccionada.coCurrencyDefault, 0).then(() => {*/
       this.inventariosLogicService.showProductList = data;
       this.noProductsAlertShown = false;
       this.inventariosLogicService.newClientStock.productList = this.productService.productList;

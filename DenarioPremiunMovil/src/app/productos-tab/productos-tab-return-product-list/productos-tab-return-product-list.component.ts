@@ -74,7 +74,8 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
         this.idProductStructureList = this.productStructureService.idProductStructureList;
         this.coProductStructureListString = this.productStructureService.coProductStructureListString;
         this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
-          this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault).then(() => {
+          this.idProductStructureList, this.empresaSeleccionada.idEnterprise, 
+          this.empresaSeleccionada.coCurrencyDefault, 0).then(() => {
             this.productList = this.productService.productList;
             this.noProductsAlertShown = (this.productList.length == 0);
           });
