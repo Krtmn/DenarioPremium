@@ -181,19 +181,7 @@ export class ProductListComponent implements OnInit {
           (ev as InfiniteScrollCustomEvent).target.complete();
         });
       }
-    /*
-    setTimeout(() => {
-      console.log("cargando...")
 
-      if (this.endPro >= this.productList.length) {
-        this.infiniteScroll.disabled = true;
-      } else {
-        this.endPro += this.productService.MAX_ITEMS_PER_PAGE;
-      }
-
-      (ev as InfiniteScrollCustomEvent).target.complete();
-    }, 500);
-    */
   }
 
   onShowProductDetail(product: ProductUtil) {
