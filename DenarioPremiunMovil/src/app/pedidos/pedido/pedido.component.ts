@@ -41,6 +41,7 @@ import { ClientChannelOrderType } from 'src/app/modelos/tables/clientChannelOrde
 import { OrderTypeProductStructure } from 'src/app/modelos/tables/orderTypeProductStructure';
 import { DistributionChannel } from 'src/app/modelos/tables/distributionChannel';
 import { PdfCreatorService } from 'src/app/services/pdf-creator/pdf-creator.service';
+import { Share } from '@capacitor/share';
 
 @Component({
   selector: 'app-pedido',
@@ -1340,20 +1341,22 @@ export class PedidoComponent implements OnInit {
       try {
         const order = this.orderServ.order;
         const coOrder = order?.coOrder || this.orderServ.coOrder || '';
-        const idOrder = this.orderServ.listaPedidos.findIndex(p => p.co_order === coOrder);
-        const safeCoOrder = (this.orderServ.coOrder || 'pedido').replace(/\s+/g, '_');
+        const idOrder = this.orderServ.listaPedidos.find(p => p.co_order === coOrder)?.id_order ?? 0;
+        const daOrder = this.orderServ.listaPedidos.find(p => p.co_order === coOrder)?.da_order?.substring(0, 10) ?? '';
         const currency = this.orderServ.monedaSeleccionada?.coCurrency || '';
         const items = this.orderServ.carrito || [];
+
 
         const rows = items.map(item => [
           String(item.coProduct ?? ''),
           String(item.naProduct ?? ''),
           this.formatNum(Number(item.quAmount ?? 0)),
+          this.formatNum(Number(item.nuPrice ?? 0)),
           this.formatNum(Number(item.subtotal ?? 0))
         ]);
 
-        await this.pdfCreator.createSummaryPdf({
-          title: `Resumen del pedido ${idOrder}`,
+        const doc = await this.pdfCreator.generateSummaryPdfDoc({
+          title: `Resumen pedido`,
           meta: [
             { label: 'Empresa', value: this.empresaSeleccionada?.lbEnterprise || '' },
             { label: 'Pedido', value: String(idOrder) },
@@ -1363,16 +1366,34 @@ export class PedidoComponent implements OnInit {
             { label: 'Items', value: String(items.length) }
           ],
           columns: [
-            { label: 'Codigo', align: 'left' },
-            { label: 'Producto', align: 'left' },
-            { label: 'Cantidad', align: 'right' },
-            { label: 'Subtotal', align: 'right' }
+            { label: 'Código', align: 'left', width: '16%', noWrap: true },
+            { label: 'Producto', align: 'left', width: '50%', noWrap: true, maxLines: 2 },
+            { label: 'Cantidad', align: 'right', width: '12%', noWrap: true },
+            { label: 'Precio', align: 'right', width: '11%', noWrap: true },
+            { label: 'Subtotal', align: 'right', width: '11%', noWrap: true }
           ],
           rows,
           total: { label: 'Total', value: this.formatNum(Number(this.orderServ.totalPedido ?? 0)) + ' ' + currency },
-          fileName: `pedido_resumen_${idOrder}.pdf`
-        }, { action: 'share-save', orientation: 'portrait', scale: 1 });
-        this.message.transaccionMsjModalNB('PDF generado y guardado.');
+          fileName: `pedido_${idOrder}_${daOrder}.pdf`
+        }, { orientation: 'landscape', scale: 1, layoutScale: 1 });
+
+        const base64 = doc.output('datauristring');
+        const trimmed = base64.split(',')[1];
+        const fileName = `pedido_${idOrder}_${daOrder}.pdf`;
+        const result = await this.pdfCreator.savePdf(trimmed, fileName);
+
+
+        try {
+          await Share.share({
+            title: `pedido_${idOrder}_${daOrder}.pdf`,
+            files: [result.uri]
+          });
+
+
+        } catch (shareErr) {
+          console.error('Error sharing order summary PDF', shareErr);
+        }
+        //this.message.transaccionMsjModalNB('PDF generado y guardado.');
       } catch (err) {
         console.error('Error creating order summary PDF', err);
       } finally {

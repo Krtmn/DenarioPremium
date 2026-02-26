@@ -659,11 +659,14 @@
           <ion-card *ngSwitchCase="'adjuntos'">
             <ion-card-content>
               <app-adjunto #selectorAdjunto></app-adjunto>
-              <ion-button class="btnEnter btnBorder" shape="round" expand="block" (click)="createOrderSummaryPdf()"
-                [disabled]="!canExportOrderSummaryPdf()">
-                Generar PDF resumen
-              </ion-button>
             </ion-card-content>
+
+            @if(orderServ.order.stDelivery == 1 || orderServ.order.stDelivery == null){
+            <ion-button class="btnEnter btnBorder pdf-button-green" shape="round" expand="block"
+              (click)="createOrderSummaryPdf()" [disabled]="!canExportOrderSummaryPdf()">
+              Generar PDF
+            </ion-button>
+            }
           </ion-card>
 
 
