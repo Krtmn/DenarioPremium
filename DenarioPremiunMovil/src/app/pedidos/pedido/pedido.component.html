@@ -1,814 +1,795 @@
 <ion-header :translucent="false">
-    <ion-toolbar class="fondoVerde">
-        <!-- <ion-title class="fondoVerde"> -->
-        <ion-grid>
-            <ion-row>
-                <ion-col size="1" size-sm="1" size-xs="2">
-                    <a (click)="goBack()">
-                        <img class="fechaAtras" alt="" src="../../../assets/images/flecha-blanca.png" />
-                    </a>
-                </ion-col>
-                <ion-col size="9" size-sm="9" size-xs="6">
-                    <h1 class="tituloModulos"> {{ orderServ.getTag("PED_NOMBRE_MODULO")}} </h1>
-                </ion-col>
-                <ion-col size="1" size-sm="1" size-xs="2" *ngIf="!viewOnly">
-                    <ion-button class="imagenGuardar" (click)="saveButton()" [disabled]="orderServ.disableSaveButton"
-                        expand="block" fill="clear">
+  <ion-toolbar class="fondoVerde">
+    <!-- <ion-title class="fondoVerde"> -->
+    <ion-grid>
+      <ion-row>
+        <ion-col size="1" size-sm="1" size-xs="2">
+          <a (click)="goBack()">
+            <img class="fechaAtras" alt="" src="../../../assets/images/flecha-blanca.png" />
+          </a>
+        </ion-col>
+        <ion-col size="9" size-sm="9" size-xs="6">
+          <h1 class="tituloModulos"> {{ orderServ.getTag("PED_NOMBRE_MODULO")}} </h1>
+        </ion-col>
+        <ion-col size="1" size-sm="1" size-xs="2" *ngIf="!viewOnly">
+          <ion-button class="imagenGuardar" (click)="saveButton()" [disabled]="orderServ.disableSaveButton"
+            expand="block" fill="clear">
 
-                    </ion-button>
+          </ion-button>
 
-                </ion-col>
-                <ion-col size="1" size-sm="1" size-xs="2" *ngIf="!viewOnly">
-                    <ion-button class="imagenEnviar" (click)="sendButton()" [disabled]="orderServ.disableSendButton"
-                        expand="block" fill="clear">
+        </ion-col>
+        <ion-col size="1" size-sm="1" size-xs="2" *ngIf="!viewOnly">
+          <ion-button class="imagenEnviar" (click)="sendButton()" [disabled]="orderServ.disableSendButton"
+            expand="block" fill="clear">
 
-                    </ion-button>
-                </ion-col>
-                <ion-col offset-xs="2" size="1" size-sm="1" size-xs="2" *ngIf="viewOnly && orderServ.copiandoPedido">
-                    <ion-button class="imagenCopiar" (click)="copyButton()" expand="block" fill="clear">
-                    </ion-button>
-                </ion-col>
-            </ion-row>
-        </ion-grid>
-        <!-- </ion-title> -->
-    </ion-toolbar>
+          </ion-button>
+        </ion-col>
+        <ion-col offset-xs="2" size="1" size-sm="1" size-xs="2" *ngIf="viewOnly && orderServ.copiandoPedido">
+          <ion-button class="imagenCopiar" (click)="copyButton()" expand="block" fill="clear">
+          </ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+    <!-- </ion-title> -->
+  </ion-toolbar>
 </ion-header>
 
 <ion-content>
-    <ion-item-divider sticky>
-        <div class="cobroComponent">
-        <!-- <div class="cobroComponent" sticky-below-view> -->
-            <!-- SEGMENTOS -->
-            <ion-segment value="default" [(ngModel)]="segment" scrollable (click)="onTouchSegment()">
-                <ion-segment-button value="default">
-                    <ion-label>{{ orderServ.getTag("PED_TAB_GENERAL")}}</ion-label>
-                </ion-segment-button>
-
-                <ion-segment-button value="pedido" [disabled]="lockSegments" *ngIf="!viewOnly">
-                    <ion-label>{{ orderServ.getTag("PED_TAB_PEDIDO")}}</ion-label>
-                </ion-segment-button>
-                <ion-segment-button value="total" [disabled]="lockSegments">
-                    <ion-label>{{ orderServ.getTag("PED_TAB_TOTAL")}}</ion-label>
-                </ion-segment-button>
-                <ion-segment-button *ngIf="hideAdjunto" value="adjuntos" [disabled]="lockSegments">
-                    <ion-label>{{ orderServ.getTag("PED_TAB_ADJUNTO")}}</ion-label>
-                </ion-segment-button>
-
-            </ion-segment>
-        </div>
-    </ion-item-divider>
-    <ion-grid>
-        <ion-row>
-
-
-            <ion-col class="listado-product-structures pedidos" size="8" size-md="8" offset-md="2" size-sm="12"
-                size-xs="12">
-                <div [ngSwitch]="segment">
-                    <!-- Pestana General-->
-
-                    <div *ngSwitchCase="'default'">
-                        <div>
-                            <!-- ### EMPRESA ### -->
-                            <ion-col size="12" size-sm="12" size-xs="12">
-                                <ion-label>{{ orderServ.getTag("PED_EMPRESA")}}:</ion-label>
-                                <div class="listado-tps-selector ion-text-center">
-                                    <ion-select
-                                        [disabled]="(!orderServ.enterpriseEnabled) || orderServ.openOrder || !this.enterpriseServ.esMultiempresa()"
-                                        [(ngModel)]="empresaSeleccionada" (ionChange)="onEnterpriseSelect()"
-                                        interface="popover" labelPlacement="stacked">
-                                        <ion-select-option *ngFor="let emp of listaEmpresa" [value]="emp">{{
-                                            emp.lbEnterprise }}</ion-select-option>
-                                    </ion-select>
-                                </div>
-
-                            </ion-col>
-                            <!-- ### CLIENTE ### -->
-                            <ion-col size="12" size-sm="12" size-xs="12">
-                                <div id="inputClient">
-                                    <ion-input [label]="orderServ.getTag('PED_CLIENTE')+':'"
-                                        [ngClass]="{'inp-write': clientRedLabel}" label-placement="floating"
-                                        fill="outline" [disabled]="orderServ.openOrder"
-                                        value="{{ this.orderServ.cliente.lbClient }}" id="clienteSelect"
-                                        color="primary">
-                                    </ion-input>
-                                    <ion-label *ngIf="clientRedLabel" color="danger">
-                                        {{ orderServ.getTag('PED_CHECK_CLIENTE') }}
-                                    </ion-label>
-                                    <a *ngIf="this.orderServ.cliente.idClient != null"
-                                        (click)="modalInfoCliente(true)">{{
-                                        orderServ.getTag("PED_INFO_CLIENTE")}}</a>
-                                </div>
-                            </ion-col>
-
-
-                            <div *ngIf="hasClient">
-
-                                <!-- ### MONEDA ### -->
-                                <ion-col size="12" size-sm="12" size-xs="12">
-                                    <ion-label>{{ orderServ.getTag("PED_MONEDA")}}:</ion-label>
-                                    <div class="listado-tps-selector ion-text-center" id="inputCurrency">
-                                        <ion-select interface="popover" labelPlacement="stacked"
-                                            (ionChange)="onCurrencySelect()" id="currency"
-                                            [disabled]="disableCurrencySelector()" [(ngModel)]="monedaSeleccionada"
-                                            [compareWith]="currencyCompare">
-                                            <ion-select-option [value]="localCurrency">{{ localCurrency.coCurrency
-                                                }}</ion-select-option>
-                                            <ion-select-option [value]="hardCurrency">{{ hardCurrency.coCurrency
-                                                }}</ion-select-option>
-                                        </ion-select>
-                                    </div>
-                                </ion-col>
-
-                                <!-- ### TASA DE CAMBIO ### -->
-                                <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
-                                    <div id="inputTasa">
-                                        <ion-input [label]="orderServ.getTag('PED_TASA_CAMBIO')+':'"
-                                            label-placement="floating" fill="outline" [value]="tasaCambio" id="tasa"
-                                            color="primary" [readonly]="true"></ion-input>
-
-
-                                    </div>
-                                </ion-col>
-
-
-                                <!-- ### SUCURSAL ### -->
-                                <ion-col size="12" size-sm="12" size-xs="12">
-                                    <ion-label>{{ orderServ.getTag("PED_SUCURSAL")}}:</ion-label>
-                                    <div class="listado-tps-selector ion-text-center" id="inputAddress"
-                                        [ngClass]="{'inp-write2': addressRedLabel}">
-                                        <ion-select (ionChange)="onAddressChange()" [(ngModel)]="direccionCliente"
-                                            [disabled]=" (!orderServ.pedidoModificable) || (listaDirecciones.length < 1)"
-                                            labelPlacement="stacked">
-                                            <ion-select-option *ngFor="let dir of listaDirecciones" [value]="dir">{{
-                                                dir.txAddress
-                                                }}</ion-select-option>
-                                        </ion-select>
-                                        <ion-label *ngIf="addressRedLabel" color="danger" class="campoObligatorio">
-                                            {{ orderServ.getTag('DENARIO_CAMPO_OBLIGATORIO') }}
-                                        </ion-label>
-                                    </div>
-                                </ion-col>
-
-
-                                <!-- ### TIPO DE PEDIDO ### -->
-                                <ion-col size="12" size-sm="12" size-xs="12" *ngIf="orderServ.selectOrderType">
-                                    <ion-label>{{ orderServ.getTag("PED_TIPO_PEDIDO")}}:</ion-label>
-                                    <div class="listado-tps-selector ion-text-center" id="inputOrderType">
-                                        <ion-select (ionChange)="onOrderTypeChange()" [(ngModel)]="tipoOrden"
-                                            [disabled]="disableOrderTypeSelector()" interface="popover"
-                                            labelPlacement="stacked" [compareWith]="orderTypeCompare">
-                                            <ion-select-option *ngFor="let type of listaOrderTypes" [value]="type">
-                                                {{ type.naOrderType }}
-                                            </ion-select-option>
-                                        </ion-select>
-                                    </div>
-                                </ion-col>
-
-                                <!-- ### CANAL DE DISTRIBUCION ### -->
-                                <ion-col size="12" size-sm="12" size-xs="12" *ngIf="orderServ.userCanSelectChannel">
-                                    <ion-label>{{ orderServ.getTag("PED_CANAL_DISTRIBUCION")}}:</ion-label>
-                                    <div class="listado-tps-selector ion-text-center" id="inputDistChannel">
-                                        <ion-select (ionChange)="onChange()" [(ngModel)]="distChannel"
-                                            [disabled]="orderServ.openOrder" interface="popover"
-                                            labelPlacement="stacked">
-                                            <ion-select-option *ngFor="let channel of listaDistributionChannel"
-                                                [value]="channel">
-                                                {{ channel.shortNaChannel }}
-                                            </ion-select-option>
-                                        </ion-select>
-                                    </div>
-                                </ion-col>
-
-
-                                <!-- ### LISTA DE PRECIOS ### -->
-                                <ion-col size="12" size-sm="12" size-xs="12">
-                                    <ion-label>{{ orderServ.getTag("PED_LISTA_PRECIO")}}:</ion-label>
-                                    <div class="listado-tps-selector ion-text-center" id="inputPriceList">
-                                        <ion-select (ionChange)="onPricelistSelect()" interface="popover"
-                                            labelPlacement="stacked" [(ngModel)]="orderServ.listaSeleccionada"
-                                            [compareWith]="listCompare"
-                                            [disabled]="!orderServ.userCanChangePriceList || orderServ.openOrder">
-                                            @if(orderServ.listaSeleccionada && orderServ.listaSeleccionada.idList === 0) {
-                                        <!-- Se muestra cuando Long borra las listas de precios y el movil no las consigue -->
-                                                <ion-select-option  [value]="orderServ.listaSeleccionada" disabled>
-                                                    N/A
-                                                </ion-select-option>
-                                            }
-                                            <ion-select-option *ngFor="let list of orderServ.listaList"
-                                                [value]="list">{{ list.naList }}
-                                            </ion-select-option>
-                                        </ion-select>
-
-                                    </div>
-                                </ion-col>
-
-                                <!-- ### NUMERO DE ORDEN ### -->
-                                <ion-col size="12" size-sm="12" size-xs="12">
-                                    <div id="inputNuPurchase">
-                                        <ion-input [label]="orderServ.getTag('PED_NUMERO_ORDEN')+':'"
-                                            label-placement="floating" fill="outline" [(ngModel)]="nuPurchase"
-                                            id="nuPurchase" #nuPurchaseInput [ngClass]="{'inp-write': nuOrderRedLabel}"
-                                            (ionChange)="onNuOrderChange()" color="primary"
-                                            (ionInput)="onNuOrderInput()" [disabled]="!orderServ.pedidoModificable"
-                                            [required]="orderServ.validateNuOrder"></ion-input>
-                                        <ion-label *ngIf="nuOrderRedLabel" color="danger" class="campoObligatorio">
-                                            {{ orderServ.getTag('DENARIO_CAMPO_OBLIGATORIO') }}
-                                        </ion-label>
-                                    </div>
-                                </ion-col>
-
-                                <!-- ### FECHA DE PEDIDO ### -->
-                                <ion-col size="12" size-sm="12" size-xs="12">
-                                    <div id="inputDaOrder">
-                                        <ion-label>{{ orderServ.getTag("PED_DA_ORDER")}}</ion-label><br>
-                                        <ion-button color="light" disabled="true">
-                                            {{ dateServ.formatComplete(this.fechaPedido) }}
-                                        </ion-button>
-                                    </div>
-                                </ion-col>
-
-                                <!-- ### FECHA DE DESPACHO ### -->
-                                <ion-col size="12" size-sm="12" size-xs="12">
-                                    <!-- caso disableDaDispatch true -->
-                                    <div *ngIf="orderServ.disableDaDispatch">
-                                        <ion-label>{{ orderServ.getTag("PED_DA_DISPATCH")}}</ion-label><br>
-                                        <ion-button *ngIf="daDispatchChanged" [disabled]="!orderServ.pedidoModificable"
-                                            placeholder="holder" (click)="setOpenDaDispatchModal(true)" color="light">
-                                            {{ dateServ.formatShort(this.fechaDespacho) }}
-                                        </ion-button>
-                                        <ion-button color="light" *ngIf="!daDispatchChanged"
-                                            (click)="setOpenDaDispatchModal(true)" class="letrasFechasButton">
-                                            {{ orderServ.getTag('DENARIO_SELEC_FECHA')}}
-                                        </ion-button>
-                                    </div>
-                                    <div *ngIf="!orderServ.disableDaDispatch">
-                                        <!-- caso disableDaDispatch false -->
-                                        <ion-label>{{ orderServ.getTag("PED_DA_DISPATCH")}}</ion-label><br>
-                                        <ion-button [disabled]="!orderServ.pedidoModificable" placeholder="holder"
-                                            (click)="setOpenDaDispatchModal(true)" color="light"
-                                            class="letrasFechasButton">
-                                            {{ dateServ.formatShort(this.fechaDespacho) }}
-                                        </ion-button>
-                                    </div>
-                                </ion-col>
-
-                                <!-- Modal de seleccionar fecha despacho -->
-
-                                <ion-modal class="fechasModal" [keepContentsMounted]="true"
-                                    [isOpen]="openDaDispatchModal" (didDismiss)="setOpenDaDispatchModal(false)">
-                                    <ng-template>
-                                        <ion-datetime id="datetime-despacho" presentation="date"
-                                            [(ngModel)]="fechaDespacho"
-                                            [formatOptions]="{ date: dateServ.dateFormatOptionsShort }"
-                                            min="{{fechaMinima}}" show-default-buttons="true"
-                                            (ionChange)="onDateDispatchChange()" (ionCancel)="onDateDispatchCancel()"
-                                            [doneText]="orderServ.getTag('DENARIO_BOTON_ACEPTAR')"
-                                            [cancelText]="orderServ.disableDaDispatch ? orderServ.getTag('DENARIO_BOTON_BORRAR') : orderServ.getTag('DENARIO_BOTON_CANCELAR')">
-                                        </ion-datetime>
-                                    </ng-template>
-                                </ion-modal>
-
-                                <!-- ### RESPONSABLE ### -->
-                                <ion-col size="12" size-sm="12" size-xs="12">
-                                    <div id="inputNaResponsible">
-                                        <ion-input [label]="orderServ.getTag('PED_RESPONSABLE')+':'"
-                                            label-placement="floating" fill="outline" [(ngModel)]="naResponsible"
-                                            #naResponsibleInput id="naResponsible" (ionChange)="onChange()"
-                                            color="primary" (ionInput)="onNaResponsibleInput()"
-                                            [disabled]="!orderServ.pedidoModificable"></ion-input>
-                                    </div>
-                                </ion-col>
-
-                                <!-- ### COMENTARIO ### -->
-                                <ion-col size="12" size-sm="12" size-xs="12">
-                                    <div id="inputTxComment">
-                                        <ion-input [label]="orderServ.getTag('PED_COMENTARIO')+':'"
-                                            label-placement="floating" fill="outline" [(ngModel)]="txComment"
-                                            #txCommentInput id="txComment" (ionChange)="onChange()" color="primary"
-                                            (ionInput)="onTxCommentInput()"
-                                            [disabled]="!orderServ.pedidoModificable"></ion-input>
-                                    </div>
-                                </ion-col>
-
-                                <!-- ### CONDICION DE PAGO ###  -->
-                                <ion-col size="12" size-sm="12" size-xs="12">
-                                    <ion-label>{{ orderServ.getTag("PED_CONDICION_PAGO")}}:</ion-label>
-                                    <div class="listado-tps-selector ion-text-center" id="inputPaymentCondition">
-                                        <ion-select (ionChange)="onChange()" [(ngModel)]="paymentCondition"
-                                            interface="popover" [interfaceOptions]="paymentConditionInterfaceOptions"
-                                            [compareWith]="payCondCompare" labelPlacement="stacked"
-                                            [disabled]="!orderServ.userCanChangePaymentConditions || !orderServ.pedidoModificable">
-                                            <ion-select-option *ngFor="let pc of orderServ.listaPaymentCondition"
-                                                [value]="pc">{{
-                                                pc.naPaymentCondition }}</ion-select-option>
-                                        </ion-select>
-                                    </div>
-                                </ion-col>
-
-                                <!-- ### POR APROBAR ### -->
-                                <ion-col size="12" size-sm="12" size-xs="12">
-                                    <div id="inputinOrderReview">
-                                        <ion-checkbox (ionChange)="onChange()" [(ngModel)]="inOrderReview"
-                                            [disabled]="!orderServ.pedidoModificable" id="inOrderReview"
-                                            labelPlacement="start">{{
-                                            orderServ.getTag("PED_X_APROBAR")}}:</ion-checkbox>
-                                    </div>
-                                </ion-col>
-
-                            </div>
-                            <!-- SELECTOR CLIENTE -->
-                            <app-cliente-selector #selectorCliente *ngIf="!viewOnly"
-                                (clienteSeleccionado)="setClientfromSelector($any($event))"></app-cliente-selector>
-
-                        </div>
-                    </div>
-                    <!-- Pestana Pedido -->
-                    <div *ngSwitchCase="'pedido'">
-
-                        <!-- Tab de seleccionar productos marca Muten™  -->
-                        <productos-tab [pedido]="true" [empresaSeleccionada]="empresaSeleccionada"
-                            [productsTabTags]="productsTabTags"></productos-tab>
-
-
-
-                    </div>
-                    <!-- Pestana Total-->
-                    <div *ngSwitchCase="'total'" class="paddingPedidosTotal">
-
-                        <div>
-                            <div class="listado-product-structures pedidos">
-                                <ion-col size="12" size-sm="12" size-xs="12" id="globalDiscount"
-                                    *ngIf="orderServ.userCanSelectGlobalDiscount">
-                                    <ion-label>{{ orderServ.getTag('PED_GLOBAL_DC')}}:</ion-label>
-
-                                    <div class="listado-tps-selector ion-text-center">
-                                        <ion-select [okText]="orderServ.getTag('DENARIO_BOTON_ACEPTAR')"
-                                            [cancelText]="orderServ.getTag('DENARIO_BOTON_CANCELAR')"
-                                            (ionCancel)="onGlobalDiscountCancel()"
-                                            (ionChange)="onGlobalDiscountChange()" [(ngModel)]="orderServ.dctoGlobal">
-                                            <ion-select-option *ngFor="let gdc of orderServ.listaGlobalDiscount"
-                                                [value]="gdc.globalDiscount">{{ gdc.txDescription }}</ion-select-option>
-                                        </ion-select>
-                                    </div>
-
-                                </ion-col>
-
-                                <div *ngIf="orderServ.showCreditLimit"
-                                [ngClass]="{ 'text-green': orderServ.cliente.nuCreditLimit > orderServ.totalPedido,
-                                'text-red': orderServ.cliente.nuCreditLimit <= orderServ.totalPedido }">
-                                    <h3 class="titulototalesPedidos">{{ orderServ.getTag("PED_LIMITE_CREDITO")}}:
-                                        {{formatNum(orderServ.cliente.nuCreditLimit)}}</h3>
-                                </div>
-                                <div>
-                                    <h3 class="titulototalesPedidos">{{ orderServ.getTag("PED_TOTAL_ITEMS")}}: {{orderServ.carrito.length}}</h3>
-                                </div>
-
-                                <div *ngIf="orderServ.totalUnit">
-                                    <ion-accordion-group [multiple]="true">
-                                        <ion-accordion>
-                                            <ion-item slot="header" color="light">
-                                                <ion-label>{{ orderServ.getTag("PED_TOTAL_UNIDAD")}}</ion-label>
-                                            </ion-item>
-                                            <div slot="content">
-                                                <ion-list *ngFor="let unit of orderServ.totalUnidad">
-                                                    <ion-col size="12" size-sm="12" size-xs="12">
-                                                        <ion-item>
-                                                            {{ orderServ.getTag("PED_TAB_TOTAL")}} {{unit.naUnit}}:
-                                                            {{unit.quAmount}}
-                                                        </ion-item>
-                                                    </ion-col>
-                                                </ion-list>
-                                            </div>
-                                        </ion-accordion>
-                                    </ion-accordion-group>
-                                </div>
-
-                                <ion-grid>
-                                    <ion-row>
-
-                                        <ion-col size="12" size-sm="12" size-xs="12">
-                                            <ion-item *ngIf="orderServ.showTotalProductUnit">
-                                                <span class="titulosBold">{{ orderServ.getTag("PED_TAB_TOTAL")}}
-                                                    {{orderServ.nameTotalProductUnit}}:</span>
-                                                {{formatNum(orderServ.countTotalProductUnit)}}
-                                            </ion-item>
-                                        <div *ngIf="orderServ.codeTotalProductUnitMessageFlag" class="text-red">
-                                            {{ orderServ.getTag("PED_TOTAL_UNIDAD_NO_ENCONTRADA")}}
-                                        </div>
-                                        </ion-col>
-
-                                        <ion-col size="12" size-sm="12" size-xs="12">
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_BASE")}} {{
-                                                orderServ.monedaSeleccionada.coCurrency }}:</span>
-                                            {{ formatNum(orderServ.totalBase) }}
-                                        </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_BASE")}} {{
-                                                monedaOpuesta() }}:</span>
-                                            {{ formatNum(orderServ.totalBaseConv) }}
-                                        </ion-col>
-
-                                        <ion-col size="12" size-sm="12" size-xs="12"
-                                            *ngIf="orderServ.userCanSelectGlobalDiscount">
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_GLOBAL_DC")}} {{
-                                                orderServ.monedaSeleccionada.coCurrency }}:</span>
-                                            {{ formatNum(orderServ.totalGlobalDc) }}
-                                        </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12"
-                                            *ngIf="showConversion &&  orderServ.userCanSelectGlobalDiscount">
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_GLOBAL_DC")}} {{
-                                                monedaOpuesta() }}:</span>
-                                            {{formatNum(orderServ.totalGlobalDcConv) }}
-                                        </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12"
-                                            *ngIf="orderServ.totalDctoXProducto > 0">
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_PRODUCT_DC")}} {{
-                                                orderServ.monedaSeleccionada.coCurrency }}:</span>
-                                            {{ formatNum(orderServ.totalDctoXProducto) }}
-                                        </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12"
-                                            *ngIf="showConversion && (orderServ.totalDctoXProducto > 0)">
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_PRODUCT_DC")}} {{
-                                                monedaOpuesta() }}:</span>
-                                            {{ formatNum(orderServ.totalDctoXProductoConv) }}
-                                        </ion-col>
-
-                                        <div *ngIf="orderServ.userCanSelectIVA">
-                                            <ion-grid>
-                                                <ion-row>
-                                                    <ion-col size="12" size-xs="12" class="paddingLefttotal">
-                                                        <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_IVA")}}
-                                                            {{
-                                                            orderServ.monedaSeleccionada.coCurrency }}:</span>
-                                                        {{ formatNum(orderServ.orderIVA) }}
-                                                    </ion-col>
-                                                    <ion-col size="12" size-xs="12" class="paddingLefttotal"
-                                                        *ngIf="showConversion">
-                                                        <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_IVA")}}
-                                                            {{
-                                                            monedaOpuesta() }}:</span>
-                                                        {{ formatNum(orderServ.orderIVAConv) }}
-                                                    </ion-col>
-                                                </ion-row>
-                                            </ion-grid>
-                                        </div>
-
-                                        <ion-col size="12" size-sm="12" size-xs="12">
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_PEDIDO")}} {{
-                                                orderServ.monedaSeleccionada.coCurrency }}:</span>
-                                            {{ formatNum(orderServ.totalPedido) }}
-                                        </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_PEDIDO")}} {{
-                                                monedaOpuesta() }}:</span>
-                                            {{ formatNum(orderServ.totalPedidoConv) }}
-                                        </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_TASA")}}:</span>
-                                            {{ nuValueLocal }} {{ localCurrency.coCurrency }} = {{
-                                            currencyServ.currencyRelation }} {{ hardCurrency.coCurrency }}
-                                        </ion-col>
-                                    </ion-row>
-                                </ion-grid>
-
-                            </div>
-                        </div>
-
-                        <!--### Total por producto ###-->
-                        <ion-accordion-group *ngIf="!orderServ.groupByTotalByLines">
-                            <ion-accordion *ngFor="let item of orderServ.carrito;  index as i">
-                                <ion-item slot="header">
-                                    <!-- <ion-label> -->
-                                    <ion-grid>
-                                        <ion-row>
-                                            <ion-col size="12" size-xs="12">
-                                                <span class="titulosBold">{{ orderServ.getTag("PED_CODIGO")}}:</span>
-                                                {{ item.coProduct }}
-
-                                            </ion-col>
-                                            <ion-col size="12" size-xs="12">
-                                                <span class="titulosBold">{{ orderServ.getTag("DENARIO_TAG_NOMBRE")}}:</span>
-                                                {{item.naProduct}}
-
-                                            </ion-col>
-                                            <ion-col size="12" size-xs="12">
-                                                <div *ngFor="let unit of item.unitList">
-                                                    <span class="titulosBold">{{unit.naUnit}}:</span>
-                                                    {{unit.quAmount}}
-                                                </div>
-
-                                            </ion-col>
-                                            <ion-col size="12" size-xs="12">
-                                                <span class="titulosBold">{{ orderServ.getTag("PED_TAB_TOTAL")}}
-                                                    {{item.coCurrency}}:</span>
-                                                {{formatNum(item.subtotal)}}
-
-                                            </ion-col>
-                                            <ion-col size="12" size-xs="12" *ngIf="showConversion">
-                                                <span class="titulosBold">{{ orderServ.getTag("PED_TAB_TOTAL")}}
-                                                    {{item.oppositeCoCurrency}}:</span>
-                                                {{formatNum(item.subtotalConv)}}
-
-                                            </ion-col>
-                                        </ion-row>
-                                    </ion-grid>
-                                    <!-- </ion-label> -->
-                                </ion-item>
-                                <div slot="content">
-                                    <ion-list>
-                                        <ion-item>
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_PRECIO_LISTA")}}
-                                                {{item.coCurrency}}:</span>
-                                            {{formatNum(item.nuPrice)}}
-                                        </ion-item>
-                                        <ion-item *ngIf="showConversion">
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_PRECIO_LISTA")}}
-                                                {{item.oppositeCoCurrency}}:</span>
-                                            {{formatNum(item.oppositeNuPrice)}}
-                                        </ion-item>
-
-                                        <ion-item *ngIf="orderServ.validateWarehouses">
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_ALMACEN")}}:</span>
-                                            {{item.idWarehouse}} - {{item.naWarehouse}}
-                                        </ion-item>
-
-                                        <ion-item *ngIf="item.quDiscount > 0">
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_DC")}}
-                                                {{formatNum(item.quDiscount)}}%: </span>
-                                            {{ formatNum(item.nuPrice*item.quDiscount/100) }}
-                                            {{orderServ.monedaSeleccionada.coCurrency}}
-                                        </ion-item>
-                                        <ion-item *ngIf="item.quDiscount > 0">
-                                            <span class="titulosBold">{{orderServ.getTag("PED_MINUS_DC")}} </span>
-                                            {{formatNum(item.discountedNuPrice)}} {{
-                                            orderServ.monedaSeleccionada.coCurrency }}
-                                        </ion-item>
-                                        <ion-item *ngIf="item.ivaProducto > 0">
-                                            <span class="titulosBold">{{orderServ.getTag("PED_IVA")}}
-                                                {{formatNum(item.iva)}}%: </span>
-                                            {{formatNum(item.ivaProducto)}}
-                                            {{orderServ.monedaSeleccionada.coCurrency}}
-                                        </ion-item>
-                                        <ion-item *ngIf="item.ivaProducto > 0">
-                                            <span class="titulosBold"> {{orderServ.getTag("PED_PLUS_IVA")}}
-                                                {{formatNum(item.iva)}}%: </span>
-                                            {{formatNum(item.ivaProducto+item.discountedNuPrice)}}
-                                            {{orderServ.monedaSeleccionada.coCurrency}}
-                                        </ion-item>
-                                        <ion-item *ngIf="orderServ.pedidoModificable">
-                                            <ion-button color="danger" size="small"
-                                                (click)="orderServ.removeFromCarrito(item)">
-                                                <ion-icon slot="icon-only" name="trash"></ion-icon>
-                                                <!-- {{ orderServ.getTag("PED_BORRAR")}} -->
-                                            </ion-button>
-                                        </ion-item>
-                                    </ion-list>
-                                </div>
-
-                            </ion-accordion>
-
-                        </ion-accordion-group>
-
-
-                        <!-- ### Total por producto ###
-             caso groupByTotalBylines -->
-                        <ion-accordion-group *ngIf="orderServ.groupByTotalByLines">
-                            <ion-accordion-group>
-                                <ion-accordion *ngFor="let struct of orderServ.carritoWithLines;  index as h">
-                                    <ion-item slot="header">
-                                        <ion-label>
-                                            <div>
-                                                {{ orderServ.getTag("PED_LINEA")}}: {{struct.naLine}}
-                                            </div>
-                                            <div>
-                                                {{ orderServ.getTag("PED_CANTIDAD")}}: {{struct.items.length}}
-                                            </div>
-                                            <div>{{ orderServ.getTag("PED_TAB_TOTAL")}}
-                                                {{orderServ.monedaSeleccionada.coCurrency}}:
-                                                {{formatNum(struct.total)}}</div>
-                                            <div *ngIf="showConversion">{{
-                                                orderServ.getTag("PED_TAB_TOTAL")}} {{monedaOpuesta()}}:
-                                                {{formatNum(struct.totalConversion)}}</div>
-                                        </ion-label>
-                                    </ion-item>
-                                    <div slot="content">
-                                        <ion-accordion-group>
-                                            <ion-accordion *ngFor="let item of struct.items;  index as i">
-                                                <ion-item slot="header">
-                                                    <ion-label>
-                                                        <div>
-
-                                                            {{ orderServ.getTag("PED_CODIGO")}}: {{ item.coProduct }}
-
-                                                        </div>
-                                                        <div>
-
-                                                            {{ orderServ.getTag("DENARIO_TAG_NOMBRE")}}:{{item.naProduct}}
-
-                                                        </div>
-                                                        <div *ngIf="orderServ.validateWarehouses">
-
-                                                            {{ orderServ.getTag("PED_ALMACEN")}}: {{item.idWarehouse}} -
-                                                            {{item.naWarehouse}}
-
-                                                        </div>
-                                                        <div>
-
-                                                            {{ orderServ.getTag("PED_TAB_TOTAL")}} {{item.coCurrency}}:
-                                                            {{formatNum(item.subtotal)}}
-
-                                                        </div>
-                                                        <div *ngIf="showConversion">
-
-                                                            {{ orderServ.getTag("PED_TAB_TOTAL")}}
-                                                            {{item.oppositeCoCurrency}}:
-                                                            {{formatNum(item.subtotalConv)}}
-
-                                                        </div>
-                                                    </ion-label>
-                                                </ion-item>
-                                                <div slot="content">
-                                                    <ion-list>
-                                                        <ion-item>
-                                                            {{ orderServ.getTag("PED_PRECIO_LISTA")}}
-                                                            {{item.coCurrency}}: {{formatNum(item.nuPrice)}}
-                                                        </ion-item>
-                                                        <ion-item *ngIf="showConversion">
-                                                            {{ orderServ.getTag("PED_PRECIO_LISTA")}}
-                                                            {{item.oppositeCoCurrency}}:
-                                                            {{formatNum(item.oppositeNuPrice)}}
-                                                        </ion-item>
-                                                        <ion-item *ngFor="let unit of item.unitList">
-                                                            <div *ngIf="unit.quUnit > 0">
-                                                                {{unit.naUnit}}: {{unit.quAmount}}
-                                                            </div>
-                                                        </ion-item>
-                                                        <ion-item *ngIf="item.quDiscount > 0">
-                                                            {{ orderServ.getTag("PED_DC")}}
-                                                            {{formatNum(item.quDiscount)}}%:
-                                                            {{formatNum(item.nuPrice*item.quDiscount/100)}}
-                                                            {{orderServ.monedaSeleccionada.coCurrency}}
-                                                        </ion-item>
-                                                        <ion-item *ngIf="item.quDiscount > 0">
-                                                            {{orderServ.getTag("PED_MINUS_DC")}}
-                                                            {{formatNum(item.discountedNuPrice)}} {{
-                                                            orderServ.monedaSeleccionada.coCurrency }}
-                                                        </ion-item>
-                                                        <ion-item>
-                                                            <ion-button color="danger" size="small"
-                                                                (click)="orderServ.removeFromCarrito(item)">
-                                                                <ion-icon slot="icon-only" name="trash"></ion-icon>
-                                                                <!-- {{ orderServ.getTag("PED_BORRAR")}} -->
-                                                            </ion-button>
-                                                        </ion-item>
-                                                    </ion-list>
-                                                </div>
-
-                                            </ion-accordion>
-
-                                        </ion-accordion-group>
-                                    </div>
-                                </ion-accordion>
-                            </ion-accordion-group>
-
-
-                        </ion-accordion-group>
-
-
-                    </div>
-                    <!-- fin pestaña total -->
-
-
-                    <!-- Pestana Adjuntos -->
-                    <div *ngSwitchCase="'adjuntos'">
-                        <div>
-                            <app-adjunto #selectorAdjunto></app-adjunto>
-                        </div>
-                    </div>
-
-
-
-
-
-
-                    <!-- Modal de Informacion de Cliente -->
-                    <ion-modal [isOpen]="modalInfoClienteOpen" id="eventModal3">
-                        <ng-template>
-                            <div>
-                                <ion-grid>
-                                    <ion-row>
-                                        <ion-col size="4" size-sm="4" size-xs="8" offset-sm="4" offset-xs="2">
-                                            <img class="logo logoHome2" alt=""
-                                                src="../../../assets/images/logoPremium.svg" />
-                                        </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12">
-
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_EMPRESA")}}:</span> {{
-                                            empresaSeleccionada.lbEnterprise }}
-
-                                        </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12">
-
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_CLIENTE")}}:</span> {{
-                                            orderServ.cliente.lbClient }}
-
-                                        </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12">
-
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_CODIGO")}}:</span> {{
-                                            orderServ.cliente.coClient }}
-
-                                        </ion-col>
-
-                                        <ion-col size="12" size-sm="12" size-xs="12">
-
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_LISTA_PRECIO")}}:</span>
-                                            {{ getDefaultList() }}
-
-                                        </ion-col>
-
-                                        <ion-col size="12" size-sm="12" size-xs="12">
-
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_RIF")}}:</span> {{
-                                            orderServ.cliente.nuRif }}
-
-                                        </ion-col>
-
-                                        <ion-col size="12" size-sm="12" size-xs="12">
-
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_CONTACTO")}}:</span> {{
-                                            orderServ.cliente.naResponsible }}
-
-                                        </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12">
-
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_EMAIL")}}:</span> {{
-                                            orderServ.cliente.naEmail }}
-
-                                        </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12">
-
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_TELEFONO")}}:</span> {{
-                                            orderServ.cliente.nuPhone }}
-
-                                        </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12">
-
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_SALDO")}}:</span>
-                                            {{ formatNum(orderServ.cliente.saldo1) }} {{ orderServ.cliente.coCurrency
-                                            }}
-
-                                        </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12">
-
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_CREDITO")}}:</span>
-                                            {{formatNum(orderServ.cliente.nuCreditLimit)}} {{
-                                            orderServ.cliente.coCurrency
-                                            }}
-
-                                        </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
-
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_CREDITO")}} {{
-                                                currencyServ.oppositeCoCurrency(orderServ.cliente.coCurrency) }}:</span>
-                                            {{formatNum(currencyServ.toOppositeCurrency(orderServ.cliente.coCurrency
-                                            ,orderServ.cliente.nuCreditLimit))}}
-
-                                        </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12">
-
-                                            <span class="titulosBold">{{
-                                                orderServ.getTag("PED_CONDICION_PAGO")}}:</span>
-                                            {{ getNaPaymentCondition(orderServ.cliente.coPaymentCondition) }}
-
-                                        </ion-col>
-                                        <ion-col size="12" size-sm="12" size-xs="12">
-
-                                            <span class="titulosBold">{{ orderServ.getTag("PED_DIRECCION")}}:</span> {{
-                                            direccionCliente.txAddress }}
-
-                                        </ion-col>
-                                    </ion-row>
-                                </ion-grid>
-
-                                <ion-button (click)="modalInfoCliente(false)" size="small" expand="block">{{
-                                    orderServ.getTag("PED_CERRAR") }}</ion-button>
-                            </div>
-                        </ng-template>
-                    </ion-modal>
+  <ion-item-divider sticky>
+    <div class="cobroComponent">
+      <!-- <div class="cobroComponent" sticky-below-view> -->
+      <!-- SEGMENTOS -->
+      <ion-segment value="default" [(ngModel)]="segment" scrollable (click)="onTouchSegment()">
+        <ion-segment-button value="default">
+          <ion-label>{{ orderServ.getTag("PED_TAB_GENERAL")}}</ion-label>
+        </ion-segment-button>
+
+        <ion-segment-button value="pedido" [disabled]="lockSegments" *ngIf="!viewOnly">
+          <ion-label>{{ orderServ.getTag("PED_TAB_PEDIDO")}}</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="total" [disabled]="lockSegments">
+          <ion-label>{{ orderServ.getTag("PED_TAB_TOTAL")}}</ion-label>
+        </ion-segment-button>
+        <ion-segment-button *ngIf="hideAdjunto" value="adjuntos" [disabled]="lockSegments">
+          <ion-label>{{ orderServ.getTag("PED_TAB_ADJUNTO")}}</ion-label>
+        </ion-segment-button>
+
+      </ion-segment>
+    </div>
+  </ion-item-divider>
+  <ion-grid>
+    <ion-row>
+
+
+      <ion-col class="listado-product-structures pedidos" size="8" size-md="8" offset-md="2" size-sm="12" size-xs="12">
+        <div [ngSwitch]="segment">
+          <!-- Pestana General-->
+
+          <ion-card *ngSwitchCase="'default'">
+            <ion-card-content>
+              <!-- ### EMPRESA ### -->
+              <ion-col size="12" size-sm="12" size-xs="12">
+                <ion-label>{{ orderServ.getTag("PED_EMPRESA")}}:</ion-label>
+                <div class="listado-tps-selector ion-text-center">
+                  <ion-select
+                    [disabled]="(!orderServ.enterpriseEnabled) || orderServ.openOrder || !this.enterpriseServ.esMultiempresa()"
+                    [(ngModel)]="empresaSeleccionada" (ionChange)="onEnterpriseSelect()" interface="popover"
+                    labelPlacement="stacked">
+                    <ion-select-option *ngFor="let emp of listaEmpresa" [value]="emp">{{
+                      emp.lbEnterprise }}</ion-select-option>
+                  </ion-select>
                 </div>
-            </ion-col>
 
-           
+              </ion-col>
+              <!-- ### CLIENTE ### -->
+              <ion-col size="12" size-sm="12" size-xs="12">
+                <div id="inputClient">
+                  <ion-input [label]="orderServ.getTag('PED_CLIENTE')+':'" [ngClass]="{'inp-write': clientRedLabel}"
+                    label-placement="floating" fill="outline" [disabled]="orderServ.openOrder"
+                    value="{{ this.orderServ.cliente.lbClient }}" id="clienteSelect" color="primary">
+                  </ion-input>
+                  <ion-label *ngIf="clientRedLabel" color="danger">
+                    {{ orderServ.getTag('PED_CHECK_CLIENTE') }}
+                  </ion-label>
+                  <a *ngIf="this.orderServ.cliente.idClient != null" (click)="modalInfoCliente(true)">{{
+                    orderServ.getTag("PED_INFO_CLIENTE")}}</a>
+                </div>
+              </ion-col>
 
-            <!-- alerta de salvar o salir-->
-            <ion-alert id="alertSaveOrExit" [isOpen]="saveOrExitOpen"
-                [header]="orderServ.getTag('DENARIO_HEADER_ALERTA')" [buttons]="buttonsSalvar"
-                (didDismiss)="setsaveOrExitOpen(false)">
-            </ion-alert>
+
+              <div *ngIf="hasClient">
+
+                <!-- ### MONEDA ### -->
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <ion-label>{{ orderServ.getTag("PED_MONEDA")}}:</ion-label>
+                  <div class="listado-tps-selector ion-text-center" id="inputCurrency">
+                    <ion-select interface="popover" labelPlacement="stacked" (ionChange)="onCurrencySelect()"
+                      id="currency" [disabled]="disableCurrencySelector()" [(ngModel)]="monedaSeleccionada"
+                      [compareWith]="currencyCompare">
+                      <ion-select-option [value]="localCurrency">{{ localCurrency.coCurrency
+                        }}</ion-select-option>
+                      <ion-select-option [value]="hardCurrency">{{ hardCurrency.coCurrency
+                        }}</ion-select-option>
+                    </ion-select>
+                  </div>
+                </ion-col>
+
+                <!-- ### TASA DE CAMBIO ### -->
+                <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
+                  <div id="inputTasa">
+                    <ion-input [label]="orderServ.getTag('PED_TASA_CAMBIO')+':'" label-placement="floating"
+                      fill="outline" [value]="tasaCambio" id="tasa" color="primary" [readonly]="true"></ion-input>
 
 
-        </ion-row>
-    </ion-grid>
+                  </div>
+                </ion-col>
+
+
+                <!-- ### SUCURSAL ### -->
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <ion-label>{{ orderServ.getTag("PED_SUCURSAL")}}:</ion-label>
+                  <div class="listado-tps-selector ion-text-center" id="inputAddress"
+                    [ngClass]="{'inp-write2': addressRedLabel}">
+                    <ion-select (ionChange)="onAddressChange()" [(ngModel)]="direccionCliente"
+                      [disabled]=" (!orderServ.pedidoModificable) || (listaDirecciones.length < 1)"
+                      labelPlacement="stacked">
+                      <ion-select-option *ngFor="let dir of listaDirecciones" [value]="dir">{{
+                        dir.txAddress
+                        }}</ion-select-option>
+                    </ion-select>
+                    <ion-label *ngIf="addressRedLabel" color="danger" class="campoObligatorio">
+                      {{ orderServ.getTag('DENARIO_CAMPO_OBLIGATORIO') }}
+                    </ion-label>
+                  </div>
+                </ion-col>
+
+
+                <!-- ### TIPO DE PEDIDO ### -->
+                <ion-col size="12" size-sm="12" size-xs="12" *ngIf="orderServ.selectOrderType">
+                  <ion-label>{{ orderServ.getTag("PED_TIPO_PEDIDO")}}:</ion-label>
+                  <div class="listado-tps-selector ion-text-center" id="inputOrderType">
+                    <ion-select (ionChange)="onOrderTypeChange()" [(ngModel)]="tipoOrden"
+                      [disabled]="disableOrderTypeSelector()" interface="popover" labelPlacement="stacked"
+                      [compareWith]="orderTypeCompare">
+                      <ion-select-option *ngFor="let type of listaOrderTypes" [value]="type">
+                        {{ type.naOrderType }}
+                      </ion-select-option>
+                    </ion-select>
+                  </div>
+                </ion-col>
+
+                <!-- ### CANAL DE DISTRIBUCION ### -->
+                <ion-col size="12" size-sm="12" size-xs="12" *ngIf="orderServ.userCanSelectChannel">
+                  <ion-label>{{ orderServ.getTag("PED_CANAL_DISTRIBUCION")}}:</ion-label>
+                  <div class="listado-tps-selector ion-text-center" id="inputDistChannel">
+                    <ion-select (ionChange)="onChange()" [(ngModel)]="distChannel" [disabled]="orderServ.openOrder"
+                      interface="popover" labelPlacement="stacked">
+                      <ion-select-option *ngFor="let channel of listaDistributionChannel" [value]="channel">
+                        {{ channel.shortNaChannel }}
+                      </ion-select-option>
+                    </ion-select>
+                  </div>
+                </ion-col>
+
+
+                <!-- ### LISTA DE PRECIOS ### -->
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <ion-label>{{ orderServ.getTag("PED_LISTA_PRECIO")}}:</ion-label>
+                  <div class="listado-tps-selector ion-text-center" id="inputPriceList">
+                    <ion-select (ionChange)="onPricelistSelect()" interface="popover" labelPlacement="stacked"
+                      [(ngModel)]="orderServ.listaSeleccionada" [compareWith]="listCompare"
+                      [disabled]="!orderServ.userCanChangePriceList || orderServ.openOrder">
+                      @if(orderServ.listaSeleccionada && orderServ.listaSeleccionada.idList === 0) {
+                      <!-- Se muestra cuando Long borra las listas de precios y el movil no las consigue -->
+                      <ion-select-option [value]="orderServ.listaSeleccionada" disabled>
+                        N/A
+                      </ion-select-option>
+                      }
+                      <ion-select-option *ngFor="let list of orderServ.listaList" [value]="list">{{ list.naList }}
+                      </ion-select-option>
+                    </ion-select>
+
+                  </div>
+                </ion-col>
+
+                <!-- ### NUMERO DE ORDEN ### -->
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <div id="inputNuPurchase">
+                    <ion-input [label]="orderServ.getTag('PED_NUMERO_ORDEN')+':'" label-placement="floating"
+                      fill="outline" [(ngModel)]="nuPurchase" id="nuPurchase" #nuPurchaseInput
+                      [ngClass]="{'inp-write': nuOrderRedLabel}" (ionChange)="onNuOrderChange()" color="primary"
+                      (ionInput)="onNuOrderInput()" [disabled]="!orderServ.pedidoModificable"
+                      [required]="orderServ.validateNuOrder"></ion-input>
+                    <ion-label *ngIf="nuOrderRedLabel" color="danger" class="campoObligatorio">
+                      {{ orderServ.getTag('DENARIO_CAMPO_OBLIGATORIO') }}
+                    </ion-label>
+                  </div>
+                </ion-col>
+
+                <!-- ### FECHA DE PEDIDO ### -->
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <div id="inputDaOrder">
+                    <ion-label>{{ orderServ.getTag("PED_DA_ORDER")}}</ion-label><br>
+                    <ion-button color="light" disabled="true">
+                      {{ dateServ.formatComplete(this.fechaPedido) }}
+                    </ion-button>
+                  </div>
+                </ion-col>
+
+                <!-- ### FECHA DE DESPACHO ### -->
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <!-- caso disableDaDispatch true -->
+                  <div *ngIf="orderServ.disableDaDispatch">
+                    <ion-label>{{ orderServ.getTag("PED_DA_DISPATCH")}}</ion-label><br>
+                    <ion-button *ngIf="daDispatchChanged" [disabled]="!orderServ.pedidoModificable" placeholder="holder"
+                      (click)="setOpenDaDispatchModal(true)" color="light">
+                      {{ dateServ.formatShort(this.fechaDespacho) }}
+                    </ion-button>
+                    <ion-button color="light" *ngIf="!daDispatchChanged" (click)="setOpenDaDispatchModal(true)"
+                      class="letrasFechasButton">
+                      {{ orderServ.getTag('DENARIO_SELEC_FECHA')}}
+                    </ion-button>
+                  </div>
+                  <div *ngIf="!orderServ.disableDaDispatch">
+                    <!-- caso disableDaDispatch false -->
+                    <ion-label>{{ orderServ.getTag("PED_DA_DISPATCH")}}</ion-label><br>
+                    <ion-button [disabled]="!orderServ.pedidoModificable" placeholder="holder"
+                      (click)="setOpenDaDispatchModal(true)" color="light" class="letrasFechasButton">
+                      {{ dateServ.formatShort(this.fechaDespacho) }}
+                    </ion-button>
+                  </div>
+                </ion-col>
+
+                <!-- Modal de seleccionar fecha despacho -->
+
+                <ion-modal class="fechasModal" [keepContentsMounted]="true" [isOpen]="openDaDispatchModal"
+                  (didDismiss)="setOpenDaDispatchModal(false)">
+                  <ng-template>
+                    <ion-datetime id="datetime-despacho" presentation="date" [(ngModel)]="fechaDespacho"
+                      [formatOptions]="{ date: dateServ.dateFormatOptionsShort }" min="{{fechaMinima}}"
+                      show-default-buttons="true" (ionChange)="onDateDispatchChange()"
+                      (ionCancel)="onDateDispatchCancel()" [doneText]="orderServ.getTag('DENARIO_BOTON_ACEPTAR')"
+                      [cancelText]="orderServ.disableDaDispatch ? orderServ.getTag('DENARIO_BOTON_BORRAR') : orderServ.getTag('DENARIO_BOTON_CANCELAR')">
+                    </ion-datetime>
+                  </ng-template>
+                </ion-modal>
+
+                <!-- ### RESPONSABLE ### -->
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <div id="inputNaResponsible">
+                    <ion-input [label]="orderServ.getTag('PED_RESPONSABLE')+':'" label-placement="floating"
+                      fill="outline" [(ngModel)]="naResponsible" #naResponsibleInput id="naResponsible"
+                      (ionChange)="onChange()" color="primary" (ionInput)="onNaResponsibleInput()"
+                      [disabled]="!orderServ.pedidoModificable"></ion-input>
+                  </div>
+                </ion-col>
+
+                <!-- ### COMENTARIO ### -->
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <div id="inputTxComment">
+                    <ion-input [label]="orderServ.getTag('PED_COMENTARIO')+':'" label-placement="floating"
+                      fill="outline" [(ngModel)]="txComment" #txCommentInput id="txComment" (ionChange)="onChange()"
+                      color="primary" (ionInput)="onTxCommentInput()"
+                      [disabled]="!orderServ.pedidoModificable"></ion-input>
+                  </div>
+                </ion-col>
+
+                <!-- ### CONDICION DE PAGO ###  -->
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <ion-label>{{ orderServ.getTag("PED_CONDICION_PAGO")}}:</ion-label>
+                  <div class="listado-tps-selector ion-text-center" id="inputPaymentCondition">
+                    <ion-select (ionChange)="onChange()" [(ngModel)]="paymentCondition" interface="popover"
+                      [interfaceOptions]="paymentConditionInterfaceOptions" [compareWith]="payCondCompare"
+                      labelPlacement="stacked"
+                      [disabled]="!orderServ.userCanChangePaymentConditions || !orderServ.pedidoModificable">
+                      <ion-select-option *ngFor="let pc of orderServ.listaPaymentCondition" [value]="pc">{{
+                        pc.naPaymentCondition }}</ion-select-option>
+                    </ion-select>
+                  </div>
+                </ion-col>
+
+                <!-- ### POR APROBAR ### -->
+                <ion-col size="12" size-sm="12" size-xs="12">
+                  <div id="inputinOrderReview">
+                    <ion-checkbox (ionChange)="onChange()" [(ngModel)]="inOrderReview"
+                      [disabled]="!orderServ.pedidoModificable" id="inOrderReview" labelPlacement="start">{{
+                      orderServ.getTag("PED_X_APROBAR")}}:</ion-checkbox>
+                  </div>
+                </ion-col>
+
+              </div>
+              <!-- SELECTOR CLIENTE -->
+              <!-- debe ir en el ion-card para que el trigger funcione -->
+              <app-cliente-selector #selectorCliente *ngIf="!viewOnly"
+                (clienteSeleccionado)="setClientfromSelector($any($event))"></app-cliente-selector>
+
+            </ion-card-content>
+          </ion-card>
+          <!-- Pestana Pedido -->
+          <ion-card *ngSwitchCase="'pedido'">
+
+            <!-- Tab de seleccionar productos marca Muten™  -->
+            <productos-tab [pedido]="true" [empresaSeleccionada]="empresaSeleccionada"
+              [productsTabTags]="productsTabTags"></productos-tab>
+
+
+
+          </ion-card>
+          <!-- Pestana Total-->
+          <ion-card *ngSwitchCase="'total'" class="paddingPedidosTotal">
+
+            <ion-card-content>
+              <div class="listado-product-structures pedidos">
+                <ion-col size="12" size-sm="12" size-xs="12" id="globalDiscount"
+                  *ngIf="orderServ.userCanSelectGlobalDiscount">
+                  <ion-label>{{ orderServ.getTag('PED_GLOBAL_DC')}}:</ion-label>
+
+                  <div class="listado-tps-selector ion-text-center">
+                    <ion-select [okText]="orderServ.getTag('DENARIO_BOTON_ACEPTAR')"
+                      [cancelText]="orderServ.getTag('DENARIO_BOTON_CANCELAR')" (ionCancel)="onGlobalDiscountCancel()"
+                      (ionChange)="onGlobalDiscountChange()" [(ngModel)]="orderServ.dctoGlobal">
+                      <ion-select-option *ngFor="let gdc of orderServ.listaGlobalDiscount"
+                        [value]="gdc.globalDiscount">{{ gdc.txDescription }}</ion-select-option>
+                    </ion-select>
+                  </div>
+
+                </ion-col>
+
+                <div *ngIf="orderServ.showCreditLimit" [ngClass]="{ 'text-green': orderServ.cliente.nuCreditLimit > orderServ.totalPedido,
+                                'text-red': orderServ.cliente.nuCreditLimit <= orderServ.totalPedido }">
+                  <h3>{{ orderServ.getTag("PED_LIMITE_CREDITO")}}:
+                    {{formatNum(orderServ.cliente.nuCreditLimit)}}</h3>
+                </div>
+                <div>
+                  <h3>{{ orderServ.getTag("PED_TOTAL_ITEMS")}}: {{orderServ.carrito.length}}</h3>
+                </div>
+
+                <div *ngIf="orderServ.totalUnit">
+                  <ion-accordion-group [multiple]="true">
+                    <ion-accordion>
+                      <ion-item slot="header" color="light">
+                        <ion-label>{{ orderServ.getTag("PED_TOTAL_UNIDAD")}}</ion-label>
+                      </ion-item>
+                      <div slot="content">
+                        <ion-list *ngFor="let unit of orderServ.totalUnidad">
+                          <ion-col size="12" size-sm="12" size-xs="12">
+                            <ion-item>
+                              {{ orderServ.getTag("PED_TAB_TOTAL")}} {{unit.naUnit}}:
+                              {{unit.quAmount}}
+                            </ion-item>
+                          </ion-col>
+                        </ion-list>
+                      </div>
+                    </ion-accordion>
+                  </ion-accordion-group>
+                </div>
+
+                <ion-grid>
+                  <ion-row>
+
+                    <ion-col size="12" size-sm="12" size-xs="12">
+                      <ion-item *ngIf="orderServ.showTotalProductUnit">
+                        <span class="titulosBold">{{ orderServ.getTag("PED_TAB_TOTAL")}}
+                          {{orderServ.nameTotalProductUnit}}:</span>
+                        {{formatNum(orderServ.countTotalProductUnit)}}
+                      </ion-item>
+                      <div *ngIf="orderServ.codeTotalProductUnitMessageFlag" class="text-red">
+                        {{ orderServ.getTag("PED_TOTAL_UNIDAD_NO_ENCONTRADA")}}
+                      </div>
+                    </ion-col>
+
+                    <ion-col size="12" size-sm="12" size-xs="12">
+                      <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_BASE")}} {{
+                        orderServ.monedaSeleccionada.coCurrency }}:</span>
+                      {{ formatNum(orderServ.totalBase) }}
+                    </ion-col>
+                    <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
+                      <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_BASE")}} {{
+                        monedaOpuesta() }}:</span>
+                      {{ formatNum(orderServ.totalBaseConv) }}
+                    </ion-col>
+
+                    <ion-col size="12" size-sm="12" size-xs="12" *ngIf="orderServ.userCanSelectGlobalDiscount">
+                      <span class="titulosBold">{{ orderServ.getTag("PED_GLOBAL_DC")}} {{
+                        orderServ.monedaSeleccionada.coCurrency }}:</span>
+                      {{ formatNum(orderServ.totalGlobalDc) }}
+                    </ion-col>
+                    <ion-col size="12" size-sm="12" size-xs="12"
+                      *ngIf="showConversion &&  orderServ.userCanSelectGlobalDiscount">
+                      <span class="titulosBold">{{ orderServ.getTag("PED_GLOBAL_DC")}} {{
+                        monedaOpuesta() }}:</span>
+                      {{formatNum(orderServ.totalGlobalDcConv) }}
+                    </ion-col>
+                    <ion-col size="12" size-sm="12" size-xs="12" *ngIf="orderServ.totalDctoXProducto > 0">
+                      <span class="titulosBold">{{ orderServ.getTag("PED_PRODUCT_DC")}} {{
+                        orderServ.monedaSeleccionada.coCurrency }}:</span>
+                      {{ formatNum(orderServ.totalDctoXProducto) }}
+                    </ion-col>
+                    <ion-col size="12" size-sm="12" size-xs="12"
+                      *ngIf="showConversion && (orderServ.totalDctoXProducto > 0)">
+                      <span class="titulosBold">{{ orderServ.getTag("PED_PRODUCT_DC")}} {{
+                        monedaOpuesta() }}:</span>
+                      {{ formatNum(orderServ.totalDctoXProductoConv) }}
+                    </ion-col>
+
+                    <div *ngIf="orderServ.userCanSelectIVA">
+                      <ion-grid>
+                        <ion-row>
+                          <ion-col size="12" size-xs="12" class="paddingLefttotal">
+                            <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_IVA")}}
+                              {{
+                              orderServ.monedaSeleccionada.coCurrency }}:</span>
+                            {{ formatNum(orderServ.orderIVA) }}
+                          </ion-col>
+                          <ion-col size="12" size-xs="12" class="paddingLefttotal" *ngIf="showConversion">
+                            <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_IVA")}}
+                              {{
+                              monedaOpuesta() }}:</span>
+                            {{ formatNum(orderServ.orderIVAConv) }}
+                          </ion-col>
+                        </ion-row>
+                      </ion-grid>
+                    </div>
+
+                    <ion-col size="12" size-sm="12" size-xs="12">
+                      <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_PEDIDO")}} {{
+                        orderServ.monedaSeleccionada.coCurrency }}:</span>
+                      {{ formatNum(orderServ.totalPedido) }}
+                    </ion-col>
+                    <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
+                      <span class="titulosBold">{{ orderServ.getTag("PED_TOTAL_PEDIDO")}} {{
+                        monedaOpuesta() }}:</span>
+                      {{ formatNum(orderServ.totalPedidoConv) }}
+                    </ion-col>
+                    <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
+                      <span class="titulosBold">{{ orderServ.getTag("PED_TASA")}}:</span>
+                      {{ nuValueLocal }} {{ localCurrency.coCurrency }} = {{
+                      currencyServ.currencyRelation }} {{ hardCurrency.coCurrency }}
+                    </ion-col>
+                  </ion-row>
+                </ion-grid>
+
+              </div>
+            </ion-card-content>
+
+            <!--### Total por producto ###-->
+            <ion-accordion-group *ngIf="!orderServ.groupByTotalByLines">
+              <ion-accordion *ngFor="let item of orderServ.carrito;  index as i">
+                <ion-item slot="header">
+                  <!-- <ion-label> -->
+                  <ion-grid>
+                    <ion-row>
+                      <ion-col size="12" size-xs="12">
+                        <span class="titulosBold">{{ orderServ.getTag("PED_CODIGO")}}:</span>
+                        {{ item.coProduct }}
+
+                      </ion-col>
+                      <ion-col size="12" size-xs="12">
+                        <span class="titulosBold">{{ orderServ.getTag("DENARIO_TAG_NOMBRE")}}:</span>
+                        {{item.naProduct}}
+
+                      </ion-col>
+                      <ion-col size="12" size-xs="12">
+                        <div *ngFor="let unit of item.unitList">
+                          <span class="titulosBold">{{unit.naUnit}}:</span>
+                          {{unit.quAmount}}
+                        </div>
+
+                      </ion-col>
+                      <ion-col size="12" size-xs="12">
+                        <span class="titulosBold">{{ orderServ.getTag("PED_TAB_TOTAL")}}
+                          {{item.coCurrency}}:</span>
+                        {{formatNum(item.subtotal)}}
+
+                      </ion-col>
+                      <ion-col size="12" size-xs="12" *ngIf="showConversion">
+                        <span class="titulosBold">{{ orderServ.getTag("PED_TAB_TOTAL")}}
+                          {{item.oppositeCoCurrency}}:</span>
+                        {{formatNum(item.subtotalConv)}}
+
+                      </ion-col>
+                    </ion-row>
+                  </ion-grid>
+                  <!-- </ion-label> -->
+                </ion-item>
+                <div slot="content">
+                  <ion-list>
+                    <ion-item>
+                      <span class="titulosBold">{{ orderServ.getTag("PED_PRECIO_LISTA")}}
+                        {{item.coCurrency}}:</span>
+                      {{formatNum(item.nuPrice)}}
+                    </ion-item>
+                    <ion-item *ngIf="showConversion">
+                      <span class="titulosBold">{{ orderServ.getTag("PED_PRECIO_LISTA")}}
+                        {{item.oppositeCoCurrency}}:</span>
+                      {{formatNum(item.oppositeNuPrice)}}
+                    </ion-item>
+
+                    <ion-item *ngIf="orderServ.validateWarehouses">
+                      <span class="titulosBold">{{ orderServ.getTag("PED_ALMACEN")}}:</span>
+                      {{item.idWarehouse}} - {{item.naWarehouse}}
+                    </ion-item>
+
+                    <ion-item *ngIf="item.quDiscount > 0">
+                      <span class="titulosBold">{{ orderServ.getTag("PED_DC")}}
+                        {{formatNum(item.quDiscount)}}%: </span>
+                      {{ formatNum(item.nuPrice*item.quDiscount/100) }}
+                      {{orderServ.monedaSeleccionada.coCurrency}}
+                    </ion-item>
+                    <ion-item *ngIf="item.quDiscount > 0">
+                      <span class="titulosBold">{{orderServ.getTag("PED_MINUS_DC")}} </span>
+                      {{formatNum(item.discountedNuPrice)}} {{
+                      orderServ.monedaSeleccionada.coCurrency }}
+                    </ion-item>
+                    <ion-item *ngIf="item.ivaProducto > 0">
+                      <span class="titulosBold">{{orderServ.getTag("PED_IVA")}}
+                        {{formatNum(item.iva)}}%: </span>
+                      {{formatNum(item.ivaProducto)}}
+                      {{orderServ.monedaSeleccionada.coCurrency}}
+                    </ion-item>
+                    <ion-item *ngIf="item.ivaProducto > 0">
+                      <span class="titulosBold"> {{orderServ.getTag("PED_PLUS_IVA")}}
+                        {{formatNum(item.iva)}}%: </span>
+                      {{formatNum(item.ivaProducto+item.discountedNuPrice)}}
+                      {{orderServ.monedaSeleccionada.coCurrency}}
+                    </ion-item>
+                    <ion-item *ngIf="orderServ.pedidoModificable">
+                      <ion-button color="danger" size="small" (click)="orderServ.removeFromCarrito(item)">
+                        <ion-icon slot="icon-only" name="trash"></ion-icon>
+                        <!-- {{ orderServ.getTag("PED_BORRAR")}} -->
+                      </ion-button>
+                    </ion-item>
+                  </ion-list>
+                </div>
+
+              </ion-accordion>
+
+            </ion-accordion-group>
+
+
+            <!-- ### Total por producto ###
+             caso groupByTotalBylines -->
+            <ion-accordion-group *ngIf="orderServ.groupByTotalByLines">
+              <ion-accordion-group>
+                <ion-accordion *ngFor="let struct of orderServ.carritoWithLines;  index as h">
+                  <ion-item slot="header">
+                    <ion-label>
+                      <div>
+                        {{ orderServ.getTag("PED_LINEA")}}: {{struct.naLine}}
+                      </div>
+                      <div>
+                        {{ orderServ.getTag("PED_CANTIDAD")}}: {{struct.items.length}}
+                      </div>
+                      <div>{{ orderServ.getTag("PED_TAB_TOTAL")}}
+                        {{orderServ.monedaSeleccionada.coCurrency}}:
+                        {{formatNum(struct.total)}}</div>
+                      <div *ngIf="showConversion">{{
+                        orderServ.getTag("PED_TAB_TOTAL")}} {{monedaOpuesta()}}:
+                        {{formatNum(struct.totalConversion)}}</div>
+                    </ion-label>
+                  </ion-item>
+                  <div slot="content">
+                    <ion-accordion-group>
+                      <ion-accordion *ngFor="let item of struct.items;  index as i">
+                        <ion-item slot="header">
+                          <ion-label>
+                            <div>
+
+                              {{ orderServ.getTag("PED_CODIGO")}}: {{ item.coProduct }}
+
+                            </div>
+                            <div>
+
+                              {{ orderServ.getTag("DENARIO_TAG_NOMBRE")}}:{{item.naProduct}}
+
+                            </div>
+                            <div *ngIf="orderServ.validateWarehouses">
+
+                              {{ orderServ.getTag("PED_ALMACEN")}}: {{item.idWarehouse}} -
+                              {{item.naWarehouse}}
+
+                            </div>
+                            <div>
+
+                              {{ orderServ.getTag("PED_TAB_TOTAL")}} {{item.coCurrency}}:
+                              {{formatNum(item.subtotal)}}
+
+                            </div>
+                            <div *ngIf="showConversion">
+
+                              {{ orderServ.getTag("PED_TAB_TOTAL")}}
+                              {{item.oppositeCoCurrency}}:
+                              {{formatNum(item.subtotalConv)}}
+
+                            </div>
+                          </ion-label>
+                        </ion-item>
+                        <div slot="content">
+                          <ion-list>
+                            <ion-item>
+                              {{ orderServ.getTag("PED_PRECIO_LISTA")}}
+                              {{item.coCurrency}}: {{formatNum(item.nuPrice)}}
+                            </ion-item>
+                            <ion-item *ngIf="showConversion">
+                              {{ orderServ.getTag("PED_PRECIO_LISTA")}}
+                              {{item.oppositeCoCurrency}}:
+                              {{formatNum(item.oppositeNuPrice)}}
+                            </ion-item>
+                            <ion-item *ngFor="let unit of item.unitList">
+                              <div *ngIf="unit.quUnit > 0">
+                                {{unit.naUnit}}: {{unit.quAmount}}
+                              </div>
+                            </ion-item>
+                            <ion-item *ngIf="item.quDiscount > 0">
+                              {{ orderServ.getTag("PED_DC")}}
+                              {{formatNum(item.quDiscount)}}%:
+                              {{formatNum(item.nuPrice*item.quDiscount/100)}}
+                              {{orderServ.monedaSeleccionada.coCurrency}}
+                            </ion-item>
+                            <ion-item *ngIf="item.quDiscount > 0">
+                              {{orderServ.getTag("PED_MINUS_DC")}}
+                              {{formatNum(item.discountedNuPrice)}} {{
+                              orderServ.monedaSeleccionada.coCurrency }}
+                            </ion-item>
+                            <ion-item>
+                              <ion-button color="danger" size="small" (click)="orderServ.removeFromCarrito(item)">
+                                <ion-icon slot="icon-only" name="trash"></ion-icon>
+                                <!-- {{ orderServ.getTag("PED_BORRAR")}} -->
+                              </ion-button>
+                            </ion-item>
+                          </ion-list>
+                        </div>
+
+                      </ion-accordion>
+
+                    </ion-accordion-group>
+                  </div>
+                </ion-accordion>
+              </ion-accordion-group>
+
+
+            </ion-accordion-group>
+
+
+          </ion-card>
+          <!-- fin pestaña total -->
+
+
+          <!-- Pestana Adjuntos -->
+          <ion-card *ngSwitchCase="'adjuntos'">
+            <ion-card-content>
+              <app-adjunto #selectorAdjunto></app-adjunto>
+            </ion-card-content>
+
+            <!-- @if(orderServ.order.stDelivery == 1 || orderServ.order.stDelivery == null){
+            <ion-button class="btnEnter btnBorder pdf-button-green" shape="round" expand="block"
+              (click)="createOrderSummaryPdf()" [disabled]="!canExportOrderSummaryPdf()">
+              Generar PDF
+            </ion-button>
+            } -->
+          </ion-card>
+
+
+
+
+
+
+          <!-- Modal de Informacion de Cliente -->
+          <ion-modal [isOpen]="modalInfoClienteOpen" id="eventModal3">
+            <ng-template>
+              <ion-card>
+                <ion-grid>
+                  <ion-row>
+                    <ion-col size="4" size-sm="4" size-xs="8" offset-sm="4" offset-xs="2">
+                      <img class="logo logoHome2" alt="" src="../../../assets/images/logoPremium.svg" />
+                    </ion-col>
+                    <ion-col size="12" size-sm="12" size-xs="12">
+
+                      <span class="titulosBold">{{ orderServ.getTag("PED_EMPRESA")}}:</span> {{
+                      empresaSeleccionada.lbEnterprise }}
+
+                    </ion-col>
+                    <ion-col size="12" size-sm="12" size-xs="12">
+
+                      <span class="titulosBold">{{ orderServ.getTag("PED_CLIENTE")}}:</span> {{
+                      orderServ.cliente.lbClient }}
+
+                    </ion-col>
+                    <ion-col size="12" size-sm="12" size-xs="12">
+
+                      <span class="titulosBold">{{ orderServ.getTag("PED_CODIGO")}}:</span> {{
+                      orderServ.cliente.coClient }}
+
+                    </ion-col>
+
+                    <ion-col size="12" size-sm="12" size-xs="12">
+
+                      <span class="titulosBold">{{ orderServ.getTag("PED_LISTA_PRECIO")}}:</span>
+                      {{ getDefaultList() }}
+
+                    </ion-col>
+
+                    <ion-col size="12" size-sm="12" size-xs="12">
+
+                      <span class="titulosBold">{{ orderServ.getTag("PED_RIF")}}:</span> {{
+                      orderServ.cliente.nuRif }}
+
+                    </ion-col>
+
+                    <ion-col size="12" size-sm="12" size-xs="12">
+
+                      <span class="titulosBold">{{ orderServ.getTag("PED_CONTACTO")}}:</span> {{
+                      orderServ.cliente.naResponsible }}
+
+                    </ion-col>
+                    <ion-col size="12" size-sm="12" size-xs="12">
+
+                      <span class="titulosBold">{{ orderServ.getTag("PED_EMAIL")}}:</span> {{
+                      orderServ.cliente.naEmail }}
+
+                    </ion-col>
+                    <ion-col size="12" size-sm="12" size-xs="12">
+
+                      <span class="titulosBold">{{ orderServ.getTag("PED_TELEFONO")}}:</span> {{
+                      orderServ.cliente.nuPhone }}
+
+                    </ion-col>
+                    <ion-col size="12" size-sm="12" size-xs="12">
+
+                      <span class="titulosBold">{{ orderServ.getTag("PED_SALDO")}}:</span>
+                      {{ formatNum(orderServ.cliente.saldo1) }} {{ orderServ.cliente.coCurrency
+                      }}
+
+                    </ion-col>
+                    <ion-col size="12" size-sm="12" size-xs="12">
+
+                      <span class="titulosBold">{{ orderServ.getTag("PED_CREDITO")}}:</span>
+                      {{formatNum(orderServ.cliente.nuCreditLimit)}} {{
+                      orderServ.cliente.coCurrency
+                      }}
+
+                    </ion-col>
+                    <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
+
+                      <span class="titulosBold">{{ orderServ.getTag("PED_CREDITO")}} {{
+                        currencyServ.oppositeCoCurrency(orderServ.cliente.coCurrency) }}:</span>
+                      {{formatNum(currencyServ.toOppositeCurrency(orderServ.cliente.coCurrency
+                      ,orderServ.cliente.nuCreditLimit))}}
+
+                    </ion-col>
+                    <ion-col size="12" size-sm="12" size-xs="12">
+
+                      <span class="titulosBold">{{
+                        orderServ.getTag("PED_CONDICION_PAGO")}}:</span>
+                      {{ getNaPaymentCondition(orderServ.cliente.coPaymentCondition) }}
+
+                    </ion-col>
+                    <ion-col size="12" size-sm="12" size-xs="12">
+
+                      <span class="titulosBold">{{ orderServ.getTag("PED_DIRECCION")}}:</span> {{
+                      direccionCliente.txAddress }}
+
+                    </ion-col>
+                  </ion-row>
+                </ion-grid>
+
+                <ion-button (click)="modalInfoCliente(false)" size="small" expand="block">{{
+                  orderServ.getTag("PED_CERRAR") }}</ion-button>
+              </ion-card>
+            </ng-template>
+          </ion-modal>
+        </div>
+      </ion-col>
+
+
+
+      <!-- alerta de salvar o salir-->
+      <ion-alert id="alertSaveOrExit" [isOpen]="saveOrExitOpen" [header]="orderServ.getTag('DENARIO_HEADER_ALERTA')"
+        [buttons]="buttonsSalvar" (didDismiss)="setsaveOrExitOpen(false)">
+      </ion-alert>
+
+
+    </ion-row>
+  </ion-grid>
 
 </ion-content>

@@ -1,4 +1,5 @@
-import { ChangeDetectorRef, Component, Input, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { InfiniteScrollCustomEvent, IonInfiniteScroll } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 import { ProductUtil } from 'src/app/modelos/ProductUtil';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
@@ -52,6 +53,10 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
   validateReturnSub: any;
   returnBackSub: any;
   noProductsAlertShown = false;
+  page: number = 0;
+  @ViewChild(IonInfiniteScroll)
+  infiniteScroll!: IonInfiniteScroll;
+  searchTextChanged: any;
   public imagesMap: { [imgName: string]: string } = {};
   constructor(private cd: ChangeDetectorRef,) { }
 
@@ -73,12 +78,17 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
       if (this.showProductList) {
         this.idProductStructureList = this.productStructureService.idProductStructureList;
         this.coProductStructureListString = this.productStructureService.coProductStructureListString;
+        this.page = 0;
         this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
-          this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault).then(() => {
+          this.idProductStructureList, this.empresaSeleccionada.idEnterprise, 
+          this.empresaSeleccionada.coCurrencyDefault, 0).then(() => {
             this.productList = this.productService.productList;
             this.noProductsAlertShown = (this.productList.length == 0);
           });
       }
+    });
+    this.searchTextChanged = this.productService.searchTextChanged.subscribe((value) => {
+      this.searchText = value;
     });
 
     this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
@@ -86,6 +96,7 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
       this.showProductList = true;
       this.productList = this.productService.productList;
       this.noProductsAlertShown = (this.productList.length == 0);
+      this.page = 0;
 
     });
 
@@ -144,6 +155,8 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
     this.featClicked.unsubscribe();
     this.favClicked.unsubscribe();
     this.returnBackSub.unsubscribe();
+    this.searchTextChanged.unsubscribe();
+     this.subs.unsubscribe();
   }
 
   onShowProductStructures() {
@@ -164,4 +177,31 @@ export class ProductosTabReturnProductListComponent implements OnInit, OnDestroy
     this.returnLogic.addProductDev(prod);
     this.productStructureService.onReturnProductTabClicked();
   }
+
+  
+
+    onIonInfinite(ev: any) {
+      this.page++;
+      if (this.searchText) {
+        this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
+          this.searchText, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault, this.page).then(() => {
+            this.productList = [...this.productList, ...this.productService.productList];
+            if (this.productService.productList.length < this.productService.MAX_ITEMS_PER_PAGE) {
+              this.infiniteScroll.disabled = true;
+            }
+            (ev as InfiniteScrollCustomEvent).target.complete();
+          });
+      } else {
+        this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
+          this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault, this.page).then(() => {
+
+            this.productList = [...this.productList, ...this.productService.productList];
+            if (this.productService.productList.length < this.productService.MAX_ITEMS_PER_PAGE) {
+              this.infiniteScroll.disabled = true;
+            }
+            (ev as InfiniteScrollCustomEvent).target.complete();
+          });
+        }
+  
+    }
 }
