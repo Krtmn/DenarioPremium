@@ -29,6 +29,7 @@ export class AdjuntoService {
   public fotos: Foto[] = [];
 
   public files: Archivo[] = [];
+  public filenameSet = new Set<string>(); //para evitar archivos con el mismo nombre
   public firma: string = ""; //data de la firma en URL
   public signatureConfig: boolean = false; // si la firma esta habilitada en este modulo.
   public viewOnly: boolean = false;
@@ -40,8 +41,8 @@ export class AdjuntoService {
   public processingPhotos = 0; //cantidad de fotos que se estan procesando actualmente
   public processingFiles = 0; //cantidad de archivos que se estan procesando actualmente
 
-  imageWeightLimit = 30; //limite de peso de archivos, en MB
-
+  imageWeightLimit = 30; //limite de peso de imagenes, en MB
+  fileWeightLimit = 50; //limite de peso de archivos, en MB
   public showCamera = true;
   public userCanUploadFiles = true;
 
@@ -86,6 +87,19 @@ export class AdjuntoService {
     for (let i = 0; i < this.fotos.length; i++) {
       const f = this.fotos[i];
       if (this.getFileWeight(f.data as string) > this.imageWeightLimit) {
+        this.weightLimitExceeded = true;
+        break;
+      }
+    }
+  }
+
+  deleteFile(pos: number) {
+    this.filenameSet.delete(this.files[pos].naFile);
+    this.files.splice(pos, 1);
+    this.weightLimitExceeded = false;
+    for (let i = 0; i < this.files.length; i++) {
+      const f = this.files[i];
+      if (this.getFileWeight(f.data as string) > this.fileWeightLimit) {
         this.weightLimitExceeded = true;
         break;
       }
