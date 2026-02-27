@@ -64,7 +64,8 @@ export class ProductListComponent implements OnInit {
   defaultCurrency: string = '';
   startPro: number = 0;
   endPro: number = 20;
-  qtyPro: number = 20;
+  
+  page: number = 0;
 
   @Output()
   selectedProductChanged: EventEmitter<ProductDetail> = new EventEmitter<ProductDetail>();
@@ -108,17 +109,18 @@ export class ProductListComponent implements OnInit {
         this.productList = this.filterProductList(this.productService.productList);
       } else {
         this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
-          this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency).then(() => {
+          this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency, 0).then(() => {
             this.noProductsAlertShown = false;
             this.productList = this.filterProductList(this.productService.productList);
             this.noProductsAlertShown = this.productList.length === 0;
+            this.message.hideLoading();
           });
       }
     } else {
       this.idProductStructureList = this.productStructureService.idProductStructureList;
       this.coProductStructureListString = this.productStructureService.coProductStructureListString;
       this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
-        this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.defaultCurrency).then(() => {
+        this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.defaultCurrency, 0).then(() => {
           this.noProductsAlertShown = false;
           this.productList = this.filterProductList(this.productService.productList);
           this.noProductsAlertShown = this.productList.length === 0;
@@ -144,10 +146,11 @@ export class ProductListComponent implements OnInit {
     this.searchText = data;
     if (this.searchText) {
       this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
-        this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency).then(() => {
+        this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency, 0).then(() => {
           this.noProductsAlertShown = false;
           this.productList = this.filterProductList(this.productService.productList);
           this.noProductsAlertShown = this.productList.length === 0;
+          this.message.hideLoading();
         });
     }
   });
@@ -158,17 +161,29 @@ export class ProductListComponent implements OnInit {
   }
 
   onIonInfinite(ev: any) {
-    setTimeout(() => {
-      console.log("cargando...")
-
-      if (this.endPro >= this.productList.length) {
-        this.infiniteScroll.disabled = true;
-      } else {
-        this.endPro += this.qtyPro;
+    this.page++;
+    if (this.searchText) {
+      this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
+        this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency, this.page).then(() => {
+          const newProducts = this.filterProductList(this.productService.productList);
+          this.productList = [...this.productList, ...newProducts];
+          if (newProducts.length < this.productService.MAX_ITEMS_PER_PAGE) {
+            this.infiniteScroll.disabled = true;
+          }
+          (ev as InfiniteScrollCustomEvent).target.complete();
+        });
+    } else {
+      this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
+        this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.defaultCurrency, this.page).then(() => {
+          const newProducts = this.filterProductList(this.productService.productList);
+          this.productList = [...this.productList, ...newProducts];
+          if (newProducts.length < this.productService.MAX_ITEMS_PER_PAGE) {
+            this.infiniteScroll.disabled = true;
+          }
+          (ev as InfiniteScrollCustomEvent).target.complete();
+        });
       }
 
-      (ev as InfiniteScrollCustomEvent).target.complete();
-    }, 500);
   }
 
   onShowProductDetail(product: ProductUtil) {
