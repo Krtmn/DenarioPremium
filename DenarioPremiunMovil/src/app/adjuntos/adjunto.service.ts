@@ -67,6 +67,7 @@ export class AdjuntoService {
     this.fotos = [];
     this.firma = "";
     this.files = [];
+    this.filenameSet = new Set<string>();
     this.getTags(dbServ);
     this.signatureConfig = tieneFirma;
     this.viewOnly = viewOnly;
@@ -502,7 +503,8 @@ export class AdjuntoService {
         dbServ.executeSql(retrieveStatement, [naTransaction, coTransaction]).then(data => {
           console.log("[AdjuntoService] Enviando archivo");
           var file: string;
-          const item: TransactionFile = data.rows.item(0);
+          for (let i = 0; i < data.rows.length; i++) {
+          const item: TransactionFile = data.rows.item(i);
           if (data.rows.length > 0) {
             try {
               Filesystem.readFile({
@@ -511,7 +513,7 @@ export class AdjuntoService {
               }).then(f => {
                 file = f.data as string;
 
-                this.servicesServ.sendImage(naTransaction, idTransaction.toString(), '0', file, item.naFile, 'file', cantidad).then((resp) => {
+                this.servicesServ.sendImage(naTransaction, idTransaction.toString(), i.toString(), file, item.naFile, 'file', cantidad).then((resp) => {
                   let idTransaction = resp.name.split('_')[0];
                   let position = resp.name.split('_')[1].split(".")[0]
                   let type = resp.type;
@@ -519,12 +521,14 @@ export class AdjuntoService {
 
                   this.deletePendingTransactionAttachments(dbServ, idTransaction, position, type, naTransaction)
                 })
+              
 
               }).catch((error) => { console.log(error) });
             } catch (e) {
               console.log(e);
             }
           }
+        }
         });
 
 
