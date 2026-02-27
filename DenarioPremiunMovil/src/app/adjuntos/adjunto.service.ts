@@ -582,6 +582,15 @@ export class AdjuntoService {
       for (let i = 0; i < adjuntos.length; i++) {
         //chequear el tipo MIME de archivo para enviarlo
         var filename = adjuntos[i].naFile;
+        if(this.viewOnly){
+          //no hace falta cargar el archivo si solo se va a visualizar,
+          //  con el nombre es suficiente para mostrar el adjunto.
+          this.files.push(new Archivo(
+            this.getMIMEType(filename),
+            "",
+            filename
+          ));
+        }else{
         try {
           Filesystem.readFile({
             path: filename,
@@ -597,6 +606,8 @@ export class AdjuntoService {
           console.log(error);
         }
       }
+      console.log(this.files);
+    }
     })
   }
 

@@ -62,7 +62,7 @@
           </ion-accordion>
 
           @if(service.userCanUploadFiles){
-          <ion-accordion value="file" [disabled]="viewOnly && service.files.length == service.quFileAttach">
+          <ion-accordion value="file" [disabled]="viewOnly && service.files.length == 0">
             <ion-item slot="header" color="light">
               <ion-label>{{ getTag('ADJ_ACORDEON_ARCHIVO')}}</ion-label>
             </ion-item>
@@ -86,13 +86,12 @@
             </ion-label>
             }
             <ion-chip>
-                @if(!viewOnly){                
+              @if(!viewOnly){
               <ion-button color="danger" (click)="deleteFile(j)">
                 <ion-icon name="trash">
                 </ion-icon>
               </ion-button>
-            }
-
+              }
               <ion-label>
                 {{file.naFile}}
               </ion-label>
