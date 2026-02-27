@@ -163,8 +163,8 @@ export class AdjuntoComponent implements OnInit {
 
   }
 
-  deleteFile() { //TODO: adaptar para multiples archivos
-    this.service.files = [];
+  deleteFile(index: number) { //TODO: adaptar para multiples archivos
+    this.service.files.splice(index, 1);
     this.service.weightLimitExceeded = false;
     this.onAttachmentChanged();
 

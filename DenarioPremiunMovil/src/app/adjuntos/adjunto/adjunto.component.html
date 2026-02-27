@@ -80,7 +80,7 @@
                 {{ getTag('ADJ_NO_HAY_ARCHIVOS') }}
             </div>
             }
-            @for(file of service.files; track file.naFile){
+            @for(file of service.files; track file.naFile; let j = $index){
             @if(file.weightLimitExceeded){
             <ion-label color="danger">
               {{ getTag('ADJ_ELIMINE_ARCHIVO') }}
@@ -88,7 +88,7 @@
             }
             <ion-chip>
 
-              <ion-button color="danger" (click)="deleteFile()">
+              <ion-button color="danger" (click)="deleteFile(j)">
                 <ion-icon name="trash">
                 </ion-icon>
               </ion-button>
