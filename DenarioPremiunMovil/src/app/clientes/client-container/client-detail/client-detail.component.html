@@ -11,7 +11,7 @@
     }
   </ion-segment>
   <div [ngSwitch]="this.clientLogic.segment">
-    <ion-card *ngSwitchCase="'default'">
+    <div *ngSwitchCase="'default'">
       <div class="saldo-legend" *ngIf="!this.clientLogic.esTransportista">
         <span class="legend-item">
           <span class="legend-dot legend-blue" aria-hidden="true"></span>
@@ -131,8 +131,8 @@
           </ion-col>
         </ion-row>
       </ion-grid>
-    </ion-card>
-    <ion-card *ngSwitchCase="'docVentas'">
+    </div>
+    <div *ngSwitchCase="'docVentas'">
       <div class="saldo-legend" *ngIf="document.length > 0">
         <button class="legend-item legend-button" id="legendBlueHint" type="button">
           <span class="legend-dot legend-blue" aria-hidden="true"></span>
@@ -286,7 +286,7 @@
         </ion-row>
       </ion-grid>
 
-    </ion-card>
+    </div>
   </div>
   @if(!clientLogic.fromSelector){
   <ion-fab size="small" *ngIf="this.clientLogic.datos?.document?.length ?? 0" slot="fixed" vertical="bottom"

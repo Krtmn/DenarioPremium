@@ -7,16 +7,27 @@
         (ionInput)="handleInput($event)">
       </ion-searchbar>
     </div>
-    <div class="saldo-legend" *ngIf="!this.clientLogic.esTransportista">
-      <span class="legend-item">
-        <span class="legend-dot legend-blue" aria-hidden="true"></span>
-        {{this.clientLogic.clientTags.get('DENARIO_DOC_VIGENTE')}}
-      </span>
-      <span class="legend-item">
-        <span class="legend-dot legend-red" aria-hidden="true"></span>
-        {{this.clientLogic.clientTags.get('DENARIO_DOC_VENCIDO')}}
-      </span>
-    </div>
+
+      <ion-grid>
+            <ion-row>
+              <ion-col size="12" size-sm="12" size-xs="12">
+                
+                <div class="saldo-legend" *ngIf="!this.clientLogic.esTransportista">
+                  <span class="legend-item">
+                    <span class="legend-dot legend-blue" aria-hidden="true"></span>
+                    {{this.clientLogic.clientTags.get('DENARIO_DOC_VIGENTE')}}
+                  </span>
+                  <span class="legend-item">
+                    <span class="legend-dot legend-red" aria-hidden="true"></span>
+                    {{this.clientLogic.clientTags.get('DENARIO_DOC_VENCIDO')}}
+                  </span>
+                </div>
+              </ion-col>
+                
+            </ion-row>
+        </ion-grid>
+    
+    
     <ion-grid>
       <ion-row>
         <ion-col size="12" size-sm="12" size-xs="12" *ngIf="this.enterpriseServ.esMultiempresa()">
