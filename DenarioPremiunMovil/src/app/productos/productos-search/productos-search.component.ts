@@ -1,6 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { MessageService } from 'src/app/services/messageService/message.service';
 import { ProductService } from 'src/app/services/products/product.service';
 
 @Component({
@@ -13,7 +12,6 @@ export class ProductosSearchComponent{
   @Input()
   searchTags = new Map<string, string>([]);
   router = inject(Router);
-
 
   @Input()
   mostrarVolver: Boolean = false;
@@ -30,7 +28,6 @@ export class ProductosSearchComponent{
   searchTextChanged: EventEmitter<string> = new EventEmitter<string>();
 
   productoService = inject(ProductService);
-  messageService = inject(MessageService);
 
   ngOnInit() {
 
@@ -39,7 +36,6 @@ export class ProductosSearchComponent{
   onSearchClicked(event?: Event){
     event?.preventDefault();
     const inputElement = event?.target as HTMLInputElement | null;
-    this.messageService.showLoading();
     if (inputElement) {
       this.searchText = inputElement.value;
     }

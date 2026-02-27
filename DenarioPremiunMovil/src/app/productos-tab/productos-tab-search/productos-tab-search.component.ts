@@ -134,7 +134,7 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
         this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
           this.searchText,
           this.empresaSeleccionada.idEnterprise,
-          this.empresaSeleccionada.coCurrencyDefault, 0).then(() => {
+          this.empresaSeleccionada.coCurrencyDefault).then(() => {
             this.productService.onProductTabSearchClicked();
             this.disabledSearchButton = false;
             this.message.hideLoading();

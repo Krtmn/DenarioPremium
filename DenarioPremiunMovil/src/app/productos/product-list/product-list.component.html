@@ -8,7 +8,7 @@
     }
   <!--  Listado clickeable de productos  -->
   <div class="product-card" *ngIf="!selectedProduct">
-    <ion-list class="espacioListasProductos" *ngFor="let product of productList; index as i"
+    <ion-list class="espacioListasProductos" *ngFor="let product of productList | slice: startPro:endPro; index as i"
       (click)="onShowProductDetail(product)">
       <div class="product-structure-title">
         <!-- <div class="product-structure-title"

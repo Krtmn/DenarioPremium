@@ -14,12 +14,12 @@ import { Router } from '@angular/router';
 
 
 @Component({
-  selector: 'app-vendedores',
-  templateUrl: './vendedores.component.html',
-  styleUrls: ['./vendedores.component.scss'],
-  standalone: false
+    selector: 'app-vendedores',
+    templateUrl: './vendedores.component.html',
+    styleUrls: ['./vendedores.component.scss'],
+    standalone: false
 })
-export class VendedoresComponent implements OnInit {
+export class VendedoresComponent  implements OnInit {
   router = inject(Router);
   observador!: any;
   userInfo!: UserInfoView[];
@@ -30,113 +30,113 @@ export class VendedoresComponent implements OnInit {
   empresas: Enterprise[] = [];
   //empresaSeleccionada!: Enterprise;
 
-
+  
   public tags = new Map<string, string>([]);
   constructor(
     private services: ServicesService,
     private db: SynchronizationDBService,
     private message: MessageService,
-    private globalConfig: GlobalConfigService,
+    private globalConfig: GlobalConfigService,    
     private enterpriseServ: EnterpriseService,
     private cdr: ChangeDetectorRef,
     private platform: Platform,
-  ) {
+    ) {    
   }
 
   backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
-    //console.log('backButton was called!');
-    this.router.navigate(['home']);
-  });
-
-  ngOnInit() {
-    this.message.showLoading().then(() => {
-      this.getTags();  //buscamos los tags
-      this.infoVendedores = this.globalConfig.get("infoVendedores") === "true"; //chequeamos variable global infoVendedores
-      this.getEnterpriseInfo(); //buscamos info de empresas / multiempresas
-
-      if (this.infoVendedores) {
-        // metodo por defecto
-        this.getUserInfoBD();
-        this.message.hideLoading();
-
-      } else {
-        this.getUserInfo();
-      }
-
+      //console.log('backButton was called!');
+      this.router.navigate(['home']);
     });
 
+  ngOnInit() {
+    this.message.showLoading().then(()=>{
+      this.getTags();  //buscamos los tags
+      this.infoVendedores = this.globalConfig.get("infoVendedores") === "true"; //chequeamos variable global infoVendedores   
+      this.getEnterpriseInfo(); //buscamos info de empresas / multiempresas      
 
-
+      if(this.infoVendedores){
+        this.getUserInfo();
+     
+      }else{
+        // metodo por defecto        
+        this.getUserInfoBD();
+        this.message.hideLoading();  
+      }
+      
+    });
+    
+    
+        
 
   }
-
-  getTags() {
+  
+  getTags(){
     this.services.getTags(this.db.getDatabase(), "VND", "ESP").then(result => {
       for (var i = 0; i < result.length; i++) {
         this.tags.set(
           result[i].coApplicationTag, result[i].tag
         )
       }
-      if (this.tags) {
+      if(this.tags){
         console.log(this.tags);
-      }
-
+      }      
+      
     })
   }
 
-  getUserInfo() {
-    //obtiene la info del vendedor por el servicio
-    this.services.getUserInformation().then(obs => {
-      if (obs instanceof Observable) {
-        console.error("Error al obtener la info del vendedor: el servicio devolvio un Observable en vez de los datos esperados.");
-        this.message.hideLoading();
-        return;
-      }
+  getUserInfo(){
+    //obtiene la info del vendedor por el servicio      
+      this.services.getUserInformation().then(obs =>{
+        if(obs instanceof Observable){
+          console.error("Error al obtener la info del vendedor: el servicio devolvio un Observable en vez de los datos esperados.");
+          this.message.hideLoading();
+          return;
+        }
 
-      this.observador = obs.data;
-      this.userInfo = this.observador.userInfo;
-      //console.log("!!! USER INFO: ");
-      console.log(this.userInfo);
-    }).catch(e => {
-      console.error("Error al obtener la info del vendedor: ");
-      console.error(e);
-    }).finally(() => {
-      this.cdr.detectChanges();
-      this.message.hideLoading();
-    });
+        this.observador = obs.data; 
+        this.userInfo = this.observador.userInfo;
+        //console.log("!!! USER INFO: ");
+        console.log(this.userInfo);
+      }).catch(e => {
+        console.error("Error al obtener la info del vendedor: ");
+        console.error(e);
+      }).finally(() => {
+        this.cdr.detectChanges();
+        this.message.hideLoading();
+      });
 
   }
 
-  async getEnterpriseInfo() {
-    this.enterpriseServ.setup(this.db.getDatabase()).then(() => {
+   async getEnterpriseInfo(){
+      this.enterpriseServ.setup(this.db.getDatabase()).then(() =>{
       this.empresas = this.enterpriseServ.empresas;
 
     });
   }
 
-  onEnterpriseSelect() {
+  onEnterpriseSelect(){
     this.getUserInfoBD();
   }
 
-  async userInformationQuery(database: SQLiteObject) {
-    var selectStatement = "SELECT * FROM user_informations";
+  async userInformationQuery(database: SQLiteObject){
+    var selectStatement = "SELECT * FROM user_informations" ;
     console.log(selectStatement);
     return database.executeSql(selectStatement, [])
-      .catch(
-        err => console.log(err)
-      );
+    .catch(
+      err => console.log(err)
+    );
   }
 
-  getUserInfoBD() {
+  getUserInfoBD(){
     //obtiene la info del vendedor por la BD de la app.
     console.log("en userInfoBD");
     this.userInformationQuery(this.db.getDatabase()).then(
       (result) => {
         console.log("bdUserInfo: ");
-        if (result.rows.length > 0) {
+        if(result.rows.length > 0){
           var ui = result.rows.item(0);
           this.bdUserInfo = new UserInformation(
-            ui.id_user_information,
+            ui.id_user_information, 
             ui.co_user,
             ui.id_user,
             ui.title,
@@ -147,14 +147,14 @@ export class VendedoresComponent implements OnInit {
           console.log(this.bdUserInfo);
           this.cdr.detectChanges();
         }
-
+        
       }
     );
   }
 
-  showInfo(empresa: Enterprise, info: UserInfoView) {
+  showInfo(empresa: Enterprise, info: UserInfoView){
     return info.coEnterprise === empresa.coEnterprise;
-  }
+}
 
   ngOnDestroy() {
     this.backButtonSubscription.unsubscribe();
