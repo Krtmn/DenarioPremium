@@ -5,3 +5,6 @@
 .listado-clientes-selector, .listado-enterprise-selector, .listado-tps-selector {
     height: 40px;
 }
+.product-devolucion-scroll {
+    height: calc(120vh - 200px)!important;
+}
