@@ -58,6 +58,7 @@ export interface TablesLastUpdate {
   currencyModuleTableLastUpdate: string,
   differenceCodeTableLastUpdate: string,
   collectDiscountTableLastUpdate: string,
+  straightSwapTableLastUpdate: string,
   page: number
 
 }

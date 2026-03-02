@@ -77,6 +77,7 @@ import { CurrencyModules } from '../../modelos/tables/currencyModules';
 import { Modules } from '../../modelos/tables/modules';
 import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
 import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
+import { StraightSwap } from 'src/app/modelos/tables/straightSwap';
 
 @Injectable({
   providedIn: 'root'
@@ -1583,6 +1584,25 @@ export class SynchronizationDBService {
     }
     return this.database.sqlBatch(statements).then(res => {
       console.log("insert collect_discounts ready")
+      return res;
+    }).catch(e => {
+      console.log(e);
+    })
+  }
+
+  insertStraightSwapBatch(arr: StraightSwap[]) {
+    var statements = [];
+    let insertStatement = "INSERT OR REPLACE INTO straight_swap(" +
+      "id_swap, co_swap ,id_product, co_product, da_cambio, id_unit, co_unit, id_enterprise, co_enterprise" +
+      ") " +
+      "VALUES(?,?,?,?,?,?,?,?,?)"
+
+    for (var i = 0; i < arr.length; i++) {
+      statements.push([insertStatement, [arr[i].idSwap, arr[i].coSwap, arr[i].idProduct, arr[i].coProduct, arr[i].daCambio, arr[i].idUnit, arr[i].coUnit, arr[i].idEnterprise, arr[i].coEnterprise]])
+    }
+
+    return this.database.sqlBatch(statements).then(res => {
+      console.log("insert straight_swap ready")
       return res;
     }).catch(e => {
       console.log(e);

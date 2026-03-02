@@ -12,6 +12,7 @@ import { HttpClient } from '@angular/common/http';
 import createTables from 'src/assets/database/createTables.json';
 import { ImageServicesService } from '../services/imageServices/image-services.service';
 import { MessageAlert } from '../modelos/tables/messageAlert';
+import { StraightSwap } from '../modelos/tables/straightSwap';
 
 @Component({
   selector: 'app-synchronization',
@@ -132,7 +133,8 @@ export class SynchronizationComponent implements OnInit {
     73: 'modules',
     74: 'currencyModules',
     75: 'differenceCodes',
-    76: 'collectDiscounts'
+    76: 'collectDiscounts',
+    77: 'straight_swap',
   };
 
   /**
@@ -196,7 +198,8 @@ export class SynchronizationComponent implements OnInit {
     modules: 'Módulos',
     currencyModules: 'Monedas Módulos',
     differenceCodes: 'Códigos de Diferencia',
-    collectDiscounts: 'Descuentos de Cobro'
+    collectDiscounts: 'Descuentos de Cobro',
+    straight_swap: 'Cambio Por Cambio'
   };
 
   constructor(
@@ -637,6 +640,12 @@ export class SynchronizationComponent implements OnInit {
             break;
           }
 
+          case 77: {
+            this.tables.straightSwapTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
+
           default: {
             //statements;
             break;
@@ -848,6 +857,10 @@ export class SynchronizationComponent implements OnInit {
 
     if ([76].includes(tableId)) {
       return cfgTrue('userCanSelectCollectDiscount');
+    }
+
+    if ([77].includes(tableId)) {
+      return cfgTrue('suggestedOrderByDispatchAndReturn');
     }
 
     // Para cualquier otra tabla, por defecto sincronizamos
@@ -1287,6 +1300,13 @@ export class SynchronizationComponent implements OnInit {
       batchFn: this.synchronizationServices.insertCollectDiscountsBatch.bind(this.synchronizationServices),
       rowKey: 'collectDiscountTable',
       tableKey: 'collectDiscountTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
+      straight_swap: {
+      batchFn: this.synchronizationServices.insertStraightSwapBatch.bind(this.synchronizationServices),
+      rowKey: 'straightSwapTable',
+      tableKey: 'straightSwapTableLastUpdate',
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
     },
