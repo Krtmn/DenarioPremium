@@ -169,6 +169,7 @@ export class SynchronizationDBService {
       { "id": 74, "nameTable": "currencyModules" },
       { "id": 75, "nameTable": "differenceCodes" },
       { "id": 76, "nameTable": "collectDiscounts" },
+      { "id": 77, "nameTable": "straightSwap"}
     ]
   }
 
