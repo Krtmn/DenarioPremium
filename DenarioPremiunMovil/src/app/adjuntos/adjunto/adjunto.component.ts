@@ -139,8 +139,8 @@ export class AdjuntoComponent implements OnInit {
 
 
   checkImgLimit() {
-    if (this.service.fotos.length >= this.service.totalPhoto) {
-      this.message.transaccionMsjModalNB(this.getTag("ADJ_MSJ_LIMITE") + this.service.totalPhoto);
+    if (this.service.fotos.length >= this.service.quAttach) {
+      this.message.transaccionMsjModalNB(this.getTag("ADJ_MSJ_LIMITE") + this.service.quAttach);
       return false;
     } else {
       return true;
@@ -163,9 +163,9 @@ export class AdjuntoComponent implements OnInit {
 
   }
 
-  deleteFile() {
-    this.service.file = null;
-    this.service.weightLimitExceeded = false;
+  deleteFile(index: number) { 
+    //console.log("Eliminando archivo: ", this.service.files[index].naFile);
+    this.service.deleteFile(index);
     this.onAttachmentChanged();
 
   }
@@ -336,8 +336,9 @@ export class AdjuntoComponent implements OnInit {
   }
 
   async buscarFile() {
-    if (this.service.file != null) {
-      // ya existe un archivo. Revisar que se hace en este caso
+    if (this.service.files.length >= this.service.quFileAttach) {
+     // console.log("Limite de archivos alcanzado");
+      this.message.transaccionMsjModalNB(this.getTag("ADJ_LIMITE_ARCHIVOS") + this.service.quFileAttach);
     } else {
       const allowedMimeTypes = [
         'application/pdf',
@@ -352,24 +353,29 @@ export class AdjuntoComponent implements OnInit {
         limit: 1,
         readData: true
       });
-      //console.log(result);
+
       var file = result.files[0];
       const fileName = (file.name || '').toLowerCase();
+      if(this.service.filenameSet.has(fileName)){
+        this.message.transaccionMsjModalNB(this.getTag('ADJ_ARCHIVO_NOMBRE_DUPLICADO') || 'Ya has adjuntado un archivo con ese nombre. Por favor renombra el archivo e intenta de nuevo.');
+        return;
+      }
+      this.service.filenameSet.add(fileName);
       const fileExtension = fileName.includes('.') ? fileName.split('.').pop() || '' : '';
       if (!allowedMimeTypes.includes(file.mimeType || '') || !allowedExtensions.includes(fileExtension)) {
         this.message.transaccionMsjModalNB(this.getTag('ADJ_ARCHIVO_TIPO_INVALIDO') || 'Tipo de archivo no permitido.');
         return;
       }
-      var muyPesado = this.service.getFileWeight(file.data as string) > this.service.imageWeightLimit;
+      var muyPesado = this.service.getFileWeight(file.data as string) > this.service.fileWeightLimit;
       if (muyPesado) {
-        this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_ARCHIVO") + this.service.imageWeightLimit + " MB");
+        this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_ARCHIVO") + this.service.fileWeightLimit + " MB");
       }
-      this.service.file = new Archivo(
+      this.service.files.push(new Archivo(
         file.mimeType,
         file.data as string,
-        file.name as string,
+        fileName,
         muyPesado
-      )
+      ))
 
       this.service.weightLimitExceeded = muyPesado;
       //console.log(this.service.file);

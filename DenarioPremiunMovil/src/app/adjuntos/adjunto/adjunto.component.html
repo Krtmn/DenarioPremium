@@ -11,108 +11,136 @@
               <ion-grid>
                 <ion-row>
                   <ion-col size="12" size-sm="12" size-xs="12">
+                    @if(!viewOnly){
                     <ion-button expand="block" size="small" style="--background: {{colorBoton}}" (click)="buscarImg()"
-                      *ngIf="!viewOnly" [disabled]="disablePhotos">
+                      [disabled]="disablePhotos">
                       <ion-icon slot="start" name="search"></ion-icon>
                       {{ getTag('ADJ_BUSCAR_FOTO') }}
                     </ion-button>
+                    }
                   </ion-col>
-                  @if(service.showCamera){
+                  @if(service.showCamera && !viewOnly){
                   <ion-col size="12" size-sm="12" size-xs="12">
                     <ion-button expand="block" size="small" style="--background: {{colorBoton}}" (click)="tomarImg()"
-                      *ngIf="!viewOnly" [disabled]="disablePhotos">
+                      [disabled]="disablePhotos">
                       <ion-icon slot="start" name="camera"></ion-icon>
                       {{ getTag('ADJ_TOMAR_FOTO') }}
                     </ion-button>
                   </ion-col>
-                }
+                  }
                 </ion-row>
               </ion-grid>
 
-              <swiper-container slides-per-view="1" space-between="10" pagination="true" *ngIf="enableCarousel"
-                style="width: 100%;">
-                <swiper-slide *ngFor="let item of getFotos(); let i = index">
-                  <ion-label *ngIf="item.weightLimitExceeded" color="danger">
+              @if(enableCarousel){
+              <swiper-container slides-per-view="1" space-between="10" pagination="true" style="width: 100%;">
+                <swiper-slide>
+                  @for(item of getFotos(); track item.naImage ; let i = $index){
+                  @if(item.weightLimitExceeded){
+                  <ion-label color="danger">
                     {{ getTag('ADJ_ELIMINE_IMAGEN') }}
                   </ion-label>
+                  }
                   <ion-grid>
                     <ion-row>
                       <ion-col size="2" size-md="1" size-lg="1" size-xs="2">
-                        <ion-button color="danger" (click)="deleteImg(i)" *ngIf="!viewOnly">
+                        @if(!viewOnly){
+                        <ion-button color="danger" (click)="deleteImg(i)">
                           <ion-icon name="trash"></ion-icon>
                         </ion-button>
+                        }
                       </ion-col>
                       <ion-col size="10" size-md="11" size-lg="11" size-xs="10">
                         <ion-img class="sizeAdjFoto" [src]="getImgSrc(item)"></ion-img>
                       </ion-col>
                     </ion-row>
                   </ion-grid>
-
+                  }
                 </swiper-slide>
               </swiper-container>
+              }
             </div>
           </ion-accordion>
 
           @if(service.userCanUploadFiles){
-          <ion-accordion value="file" [disabled]="viewOnly && service.file == null">
+          <ion-accordion value="file" [disabled]="viewOnly && service.files.length == 0">
             <ion-item slot="header" color="light">
               <ion-label>{{ getTag('ADJ_ACORDEON_ARCHIVO')}}</ion-label>
             </ion-item>
-            <div slot="content" *ngIf="!viewOnly">
+            <div slot="content">
               <div>
-                <ion-button expand="block" style="--background: {{colorBoton}}" (click)="buscarFile()"
-                  *ngIf="!viewOnly && service.file == null">
+                @if(!viewOnly && service.files.length < service.quFileAttach){ <ion-button expand="block"
+                  style="--background: {{colorBoton}}" (click)="buscarFile()">
                   <ion-icon slot="start" name="search"></ion-icon>
                   {{ getTag('ADJ_SUBIR_ARCHIVO')}}
-                </ion-button>
+                  </ion-button>
+                  }
               </div>
-              <div *ngIf="service.file != null">
-                <ion-label *ngIf="service.file.weightLimitExceeded" color="danger">
-                  {{ getTag('ADJ_ELIMINE_ARCHIVO') }}
-                </ion-label>
-                <ion-button color="danger" (click)="deleteFile()" *ngIf="!viewOnly"><ion-icon
-                    name="trash"></ion-icon></ion-button>
-                {{service.file.naFile}}
-
-              </div>
+              @if(service.files.length <= 0){ <div class="ion-padding">
+                {{ getTag('ADJ_NO_HAY_ARCHIVOS') }}
             </div>
-            <div slot="content" *ngIf="viewOnly">
-              <div *ngIf="service.file != null">
-                {{service.file.naFile}}
-              </div>
-            </div>
-          </ion-accordion>
-        }
-           <!-- panel de firma -->
-           @if(service.signatureConfig){
-          <ion-accordion value="sign" [disabled]="viewOnly && service.firma === '' ">
-            <ion-item slot="header" color="light">
-              <ion-label>{{ getTag('ADJ_ACORDEON_FIRMA')}}</ion-label>
-            </ion-item>
-           
-           
-            <div slot="content" *ngIf="!viewOnly">
-              <signature-pad id="signaturePad" class="signPad" [options]="signaturePadOptions" (onEnd)="drawComplete()"
-                (onBegin)="drawStart()"></signature-pad>
-              <ion-grid>
-                <ion-row>
-                  <ion-col size="12" size-md="12" size-lg="12" size-xs="12">
-                    <ion-button expand="block" color="danger" (click)="drawClear()">{{
-                      getTag('DENARIO_BOTON_BORRAR')}}</ion-button>
-                  </ion-col>
-                </ion-row>
-              </ion-grid>
+            }
+            @for(file of service.files; track file.naFile; let j = $index){
+            @if(!viewOnly && file.weightLimitExceeded){
+            <ion-label color="danger">
+              {{ getTag('ADJ_ELIMINE_ARCHIVO') }}
+            </ion-label>
+            }
+            <ion-chip>
+              @if(!viewOnly){
+              <ion-button color="danger" (click)="deleteFile(j)">
+                <ion-icon name="trash">
+                </ion-icon>
+              </ion-button>
+              }
+              <ion-label>
+                {{file.naFile}}
+              </ion-label>
+            </ion-chip>
 
-            </div>
-            <div *ngIf="viewOnly && service.firma != '' " slot="content">
-              <ion-img class="sizeAdjFoto" [src]="getImgURL(service.firma)"></ion-img>
-            </div>
 
-          </ion-accordion>
-        }
 
-        </ion-accordion-group>
-      </ion-col>
-    </ion-row>
-  </ion-grid>
-  <div>
+
+            }
+
+</div>
+
+
+
+
+</ion-accordion>
+}
+<!-- panel de firma -->
+@if(service.signatureConfig){
+<ion-accordion value="sign" [disabled]="viewOnly && service.firma === '' ">
+  <ion-item slot="header" color="light">
+    <ion-label>{{ getTag('ADJ_ACORDEON_FIRMA')}}</ion-label>
+  </ion-item>
+
+  @if(!viewOnly){
+  <div slot="content">
+    <signature-pad id="signaturePad" class="signPad" [options]="signaturePadOptions" (onEnd)="drawComplete()"
+      (onBegin)="drawStart()"></signature-pad>
+    <ion-grid>
+      <ion-row>
+        <ion-col size="12" size-md="12" size-lg="12" size-xs="12">
+          <ion-button expand="block" color="danger" (click)="drawClear()">{{
+            getTag('DENARIO_BOTON_BORRAR')}}</ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+  </div>
+  }
+  @if(viewOnly && service.firma !== ''){
+  <div slot="content">
+    <ion-img class="sizeAdjFoto" [src]="getImgURL(service.firma)"></ion-img>
+  </div>
+  }
+</ion-accordion>
+}
+
+</ion-accordion-group>
+</ion-col>
+</ion-row>
+</ion-grid>
+</div>
