@@ -73,7 +73,11 @@ export class AdjuntoService {
     this.viewOnly = viewOnly;
     this.colorBoton = colorBoton;
     this.quAttach = +this.config.get('quAttach');
-    this.quFileAttach = +this.config.get('quFileAttach');
+    if(this.config.get('quFileAttach').length > 0){
+      this.quFileAttach = +this.config.get('quFileAttach');
+    }else{
+      this.quFileAttach = 1;
+    }    
     this.showCamera = this.config.get('showCamera') === 'true' ? true : false;
     this.userCanUploadFiles = this.config.get('userCanUploadFiles') === 'true' ? true : false;
     let weightLimit = this.config.get('imageWeightLimit');
