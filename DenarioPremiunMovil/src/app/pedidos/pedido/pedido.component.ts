@@ -1130,8 +1130,33 @@ export class PedidoComponent implements OnInit {
     return a && b ? a.idCurrency === b.idCurrency : a === b;
   }
 
-  setClientfromSelector(cliente: Client) {
+  setClientfromSelector(cliente: Client, skipDebtValidation: boolean = false) {
     if (cliente) {
+      if (!skipDebtValidation && Number(cliente.saldo1 ?? 0) > 0) {
+        this.message.alertCustomBtn(
+          {
+            header: this.orderServ.getTag('PED_NOMBRE_MODULO'),
+            message: 'Este cliente tiene deuda asociada, ¿Desea continuar con el pedido?'
+          } as MessageAlert,
+          [
+            {
+              text: this.orderServ.getTag('DENARIO_BOTON_CANCELAR'),
+              role: 'cancel',
+              handler: () => {
+              },
+            },
+            {
+              text: this.orderServ.getTag('DENARIO_BOTON_ACEPTAR'),
+              role: 'confirm',
+              handler: () => {
+                this.setClientfromSelector(cliente, true);
+              },
+            }
+          ]
+        );
+        return;
+      }
+
       this.orderServ.cliente = cliente;
       this.segmentLock();
       if (this.orderServ.carrito.length > 0 || this.adjuntoService.hasItems()) {
