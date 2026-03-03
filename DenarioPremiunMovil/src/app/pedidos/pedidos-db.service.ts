@@ -842,7 +842,7 @@ export class PedidosDbService {
       nuAmountTotalProductDiscountConversion: orderDB.nu_amount_total_product_discount_conversion,
       idDistributionChannel: orderDB.id_distribution_channel,
       coDistributionChannel: orderDB.co_distribution_channel,
-      stDelivery: orderDB.st_delivery,
+      stDelivery: orderDB.st_delivery == null ? 1 : orderDB.st_delivery,
       orderDetails: []
     };
     return order;

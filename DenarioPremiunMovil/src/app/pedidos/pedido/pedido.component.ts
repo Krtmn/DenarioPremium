@@ -128,6 +128,7 @@ export class PedidoComponent implements OnInit {
   public modalInfoClienteOpen: boolean = false;
   saveOrExitOpen = false;
   parteDecimal = 2;
+  public DELIVERY_STATUS_SENT = DELIVERY_STATUS_SENT;
 
   nuValueLocal = 0;
   tasaCambio = '0';// la tasa que se muestra en el input
