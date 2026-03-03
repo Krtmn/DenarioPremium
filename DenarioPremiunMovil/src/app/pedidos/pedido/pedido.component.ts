@@ -194,7 +194,7 @@ export class PedidoComponent implements OnInit {
         this.orderServ.empresaSeleccionada = this.empresaSeleccionada;
         this.orderServ.setup();
         this.tipoOrden = this.orderServ.listaOrderTypes.find((o) => o.idOrderType == this.orderServ.order.idOrderType)!;
-
+        this.inOrderReview = this.orderServ.order.inOrderReview;
         this.tipoOrdenAnterior = this.tipoOrden;
         if (!this.tipoOrden) {
           console.error('Tipo de orden original no encontrado: ' + this.orderServ.order.idOrderType);
@@ -1132,11 +1132,14 @@ export class PedidoComponent implements OnInit {
 
   setClientfromSelector(cliente: Client, skipDebtValidation: boolean = false) {
     if (cliente) {
-      if (!skipDebtValidation && Number(cliente.saldo1 ?? 0) > 0) {
+      if (!skipDebtValidation
+        && Number(cliente.saldo1 ?? 0) > 0
+        && this.orderServ.order?.stDelivery !== DELIVERY_STATUS_SENT
+        && this.orderServ.order?.stDelivery !== null) {
         this.message.alertCustomBtn(
           {
             header: this.orderServ.getTag('PED_NOMBRE_MODULO'),
-            message: 'Este cliente tiene deuda asociada, ¿Desea continuar con el pedido?'
+            message: this.orderServ.getTag('PED_DENARIO_CLIENT_DEUDA'),
           } as MessageAlert,
           [
             {

@@ -807,7 +807,7 @@ export class PedidosDbService {
       naResponsible: orderDB.na_responsible,
       idUser: orderDB.id_user,
       idOrderCreator: orderDB.id_order_creator,
-      inOrderReview: orderDB.in_order_review,
+      inOrderReview: orderDB.in_order_review === 'true'?true:false,
       nuAmountTotal: orderDB.nu_amount_total,
       nuAmountFinal: orderDB.nu_amount_final,
       coCurrency: orderDB.co_currency,
