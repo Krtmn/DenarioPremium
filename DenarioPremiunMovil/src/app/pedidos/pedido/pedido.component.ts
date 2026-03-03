@@ -94,6 +94,7 @@ export class PedidoComponent implements OnInit {
   public tipoOrdenAnterior!: OrderType;
   public listaAnterior!: List;
   public paymentCondition!: PaymentCondition;
+  public paymentConditionAnterior!: PaymentCondition;
 
   public hideAdjunto: boolean = true;
 
@@ -1232,6 +1233,7 @@ export class PedidoComponent implements OnInit {
       let payCond = this.orderServ.listaPaymentCondition.find((pc) => pc.idPaymentCondition == idPaymentCondition)
       if (payCond != undefined) {
         this.paymentCondition = payCond;
+        this.paymentConditionAnterior = payCond;
       }
 
       // Address Client
@@ -1550,5 +1552,42 @@ export class PedidoComponent implements OnInit {
   paymentConditionInterfaceOptions = {
     side: 'top',
     alignment: 'center'
+  }
+
+  changePaymentCondition() {
+    if (!this.paymentConditionAnterior || !this.paymentCondition) {
+      this.paymentConditionAnterior = this.paymentCondition;
+      return;
+    }
+
+    if (this.paymentConditionAnterior.idPaymentCondition === this.paymentCondition.idPaymentCondition) {
+      return;
+    }
+
+    const paymentConditionSeleccionada = this.paymentCondition;
+
+    this.message.alertCustomBtn({
+      header: this.orderServ.getTag('PED_NOMBRE_MODULO'),
+      message: this.orderServ.getTag('PED_CAMBIO_CONDICION_PAGO') || '¿Desea cambiar la condición de pago?'
+    } as MessageAlert,
+      [
+        {
+          text: this.orderServ.getTag('DENARIO_BOTON_CANCELAR'),
+          role: 'cancel',
+          handler: () => {
+            this.paymentCondition = this.paymentConditionAnterior;
+            this.orderServ.setChangesMade(false);
+          },
+        },
+        {
+          text: this.orderServ.getTag('DENARIO_BOTON_ACEPTAR'),
+          role: 'confirm',
+          handler: () => {
+            this.paymentConditionAnterior = paymentConditionSeleccionada;
+            this.onChange();
+          },
+        }
+      ]
+    );
   }
 }
