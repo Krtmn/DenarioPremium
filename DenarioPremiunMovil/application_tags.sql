@@ -391,7 +391,9 @@ INSERT INTO public.application_tags(
 	('COB_NOMBRE_DESCUENTO', 'COB', 'COBROS', 'ESP','Nombre del descuento'),
   ('COB_CONVERSION', 'COB', 'COBROS', 'ESP','Conversión'),
   ('COB_PARCIAL', 'COB', 'COBROS', 'ESP','Parcial'),
-  ('COB_DOCUMENTO', 'COB', 'COBROS', 'ESP','Documento');
+  ('COB_DOCUMENTO', 'COB', 'COBROS', 'ESP','Documento'),
+  ('COB_RET_MSJ_COLLECTION_NO_ATTACHMENTS', 'COB', 'COBROS', 'ESP', 'Para poder enviar el Cobro, debe agregar al menos un adjunto.');
+
 
 
 -- VENDEDORES
