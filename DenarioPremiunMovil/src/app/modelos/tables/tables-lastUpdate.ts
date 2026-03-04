@@ -59,6 +59,7 @@ export interface TablesLastUpdate {
   differenceCodeTableLastUpdate: string,
   collectDiscountTableLastUpdate: string,
   straightSwapTableLastUpdate: string,
+  returnCategoryTableLastUpdate: string,
   page: number
 
 }

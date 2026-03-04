@@ -135,6 +135,7 @@ export class SynchronizationComponent implements OnInit {
     75: 'differenceCodes',
     76: 'collectDiscounts',
     77: 'straight_swap',
+    78: 'return_category',
   };
 
   /**
@@ -199,7 +200,8 @@ export class SynchronizationComponent implements OnInit {
     currencyModules: 'Monedas Módulos',
     differenceCodes: 'Códigos de Diferencia',
     collectDiscounts: 'Descuentos de Cobro',
-    straight_swap: 'Cambio Por Cambio'
+    straight_swap: 'Cambio Por Cambio',
+    return_category: 'Categoría de Devolución'
   };
 
   constructor(
@@ -646,6 +648,12 @@ export class SynchronizationComponent implements OnInit {
             break;
           }
 
+          case 78: {
+            this.tables.returnCategoryTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
+
           default: {
             //statements;
             break;
@@ -859,7 +867,7 @@ export class SynchronizationComponent implements OnInit {
       return cfgTrue('userCanSelectCollectDiscount');
     }
 
-    if ([77].includes(tableId)) {
+    if ([77, 78].includes(tableId)) {
       return cfgTrue('suggestedOrderByDispatchAndReturn');
     }
 
@@ -1303,13 +1311,20 @@ export class SynchronizationComponent implements OnInit {
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
     },
-      straight_swap: {
+    straight_swap: {
       batchFn: this.synchronizationServices.insertStraightSwapBatch.bind(this.synchronizationServices),
       rowKey: 'straightSwapTable',
       tableKey: 'straightSwapTableLastUpdate',
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
     },
+    return_category: {
+      batchFn: this.synchronizationServices.insertReturnCategoryBatch.bind(this.synchronizationServices),
+      rowKey: 'returnCategoryTable',
+      tableKey: 'returnCategoryTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    }
   };
 
   /**

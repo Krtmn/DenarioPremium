@@ -78,6 +78,7 @@ import { Modules } from '../../modelos/tables/modules';
 import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
 import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
 import { StraightSwap } from 'src/app/modelos/tables/straightSwap';
+import { ReturnCategory } from 'src/app/modelos/tables/returnCategory';
 
 @Injectable({
   providedIn: 'root'
@@ -170,7 +171,8 @@ export class SynchronizationDBService {
       { "id": 74, "nameTable": "currencyModules" },
       { "id": 75, "nameTable": "differenceCodes" },
       { "id": 76, "nameTable": "collectDiscounts" },
-      { "id": 77, "nameTable": "straightSwap"}
+      { "id": 77, "nameTable": "straightSwap"},
+      { "id": 78, "nameTable": "returnCategory"}
     ]
   }
 
@@ -1603,6 +1605,25 @@ export class SynchronizationDBService {
 
     return this.database.sqlBatch(statements).then(res => {
       console.log("insert straight_swap ready")
+      return res;
+    }).catch(e => {
+      console.log(e);
+    })
+  }
+
+  insertReturnCategoryBatch(arr: ReturnCategory[]) {
+    var statements = [];
+    let insertStatement = "INSERT OR REPLACE INTO return_category(" +
+      "id_return_category, na_return_category ,add_suggestion, subtract_suggestion" +
+      ") " +
+      "VALUES(?,?,?,?)"
+
+    for (var i = 0; i < arr.length; i++) {
+      statements.push([insertStatement, [arr[i].idReturnCategory, arr[i].naReturnCategory, arr[i].addSuggestion, arr[i].subtractSuggestion]])
+    }
+
+    return this.database.sqlBatch(statements).then(res => {
+      console.log("insert return_category ready")
       return res;
     }).catch(e => {
       console.log(e);
