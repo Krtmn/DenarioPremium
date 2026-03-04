@@ -408,6 +408,14 @@ export class InventariosLogicService {
     this.onStockValidToSave(true);
   }
 
+  calcularTotalesSugerenciaPedido(){
+    //Inventario Inicial = Inventario anterior + Despacho + Cambio por cambio
+
+    //Venta = Inventario Inicial - Inventario actual - Devolución por distribución
+
+    //Pedido Sugerido = Venta/Dias desde ultima visita × Días hasta la próxima visita
+  }
+
   deleteClientStocksBatch(dbServ: SQLiteObject, clientStocks: ClientStocks[]) {
     let queries: any[] = [];
     const deleteStatement = "DELETE FROM client_stocks WHERE co_client_stock = ?";
