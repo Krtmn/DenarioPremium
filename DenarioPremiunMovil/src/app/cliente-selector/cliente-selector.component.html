@@ -30,8 +30,15 @@
         </ion-row>
         <ion-row>
           <ion-col>
-            <ion-searchbar class="lupamorada" show-clear-button="always" search-icon="search-circle"
-              clear-icon="trash-bin" placeholder="Clientes..." (ionInput)="handleInput($event)"></ion-searchbar>
+              <div class="search-input-wrap">
+                <input type="text" class="search-input inputsSearch" fill="outline" shape="round"
+                  placeholder="Clientes..."  #searchInput
+                  [(ngModel)]="searchText" (keydown.enter)="onSearchClicked($event)">
+                <button type="button" class="clear-search" (click)="onSearchClicked()" [disabled]="!searchText">
+                  <ion-icon name="search-circle-sharp" class="sizeIconSearch"></ion-icon>
+                </button>
+              </div>
+
           </ion-col>
         </ion-row>
         @if(!this.clientLogic.esTransportista){
@@ -62,8 +69,6 @@
         </ion-item>
         }
         @for (client of clientes; track client.coClient){
-        @if(searchText === '' || client.coClient.toLowerCase().includes(searchText) ||
-        client.lbClient.toLowerCase().includes(searchText)){
         <div class="product-structure-title listaProductos">
           <ion-item button detail="false" class="listaItems" (click)="selectClient(client)">
             <ion-label>
@@ -92,7 +97,6 @@
             </ion-note>
           </ion-item>
         </div>
-        }
         }
       </ion-list>
 
