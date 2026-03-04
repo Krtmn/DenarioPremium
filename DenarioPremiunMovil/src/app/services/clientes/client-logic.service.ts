@@ -225,7 +225,7 @@ export class ClientLogicService {
 
   getClients(idEnterprise: number) {
     this.clients = [] as Client[];
-    return this.clientesServices.getClients(idEnterprise)
+    return this.clientesServices.getClients(idEnterprise, 0)
       .then((result) => {
         this.clients = result;
         this.results = [...result];

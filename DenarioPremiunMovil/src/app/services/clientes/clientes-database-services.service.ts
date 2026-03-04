@@ -5,6 +5,7 @@ import { GlobalConfigService } from '../globalConfig/global-config.service';
 import { DocumentSale } from '../../modelos/tables/documentSale';
 import { SynchronizationDBService } from '../synchronization/synchronization-db.service';
 import { AddresClient } from 'src/app/modelos/tables/addresClient';
+import { MAX_ITEMS_PER_PAGE } from 'src/app/utils/appConstants';
 
 @Injectable({
   providedIn: 'root'
@@ -13,10 +14,13 @@ export class ClientesDatabaseServicesService {
   private globalConfig = inject(GlobalConfigService);
   public dbServ = inject(SynchronizationDBService)
 
+  MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por cada consulta a la base de datos (para evitar problemas de rendimiento)
+
   constructor() { }
 
-  getClients(idEnterprise: number) {
+  getClients(idEnterprise: number, page: number) {
     let selectStatement = "";
+    let offset = page * this.MAX_ITEMS_PER_PAGE;
     if (this.globalConfig.get("multiCurrency") == 'true') {
       if (this.globalConfig.get("conversionDocument") == 'true') {
         selectStatement = 'SELECT c.*, (SELECT p.na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1 ) na_price_list, ' +
@@ -37,7 +41,7 @@ export class ClientesDatabaseServicesService {
           'FROM clients c ' +
           'LEFT JOIN lists p ON p.id_list = c.id_list ' +
           'LEFT JOIN distribution_channels dc ON dc.id_channel = c.id_channel ' +
-          'WHERE c.id_enterprise = ?'
+          'WHERE c.id_enterprise = ? LIMIT ' + this.MAX_ITEMS_PER_PAGE + ' OFFSET ' + offset;  
 
       } else {
         selectStatement = 'SELECT c.*, (SELECT p.na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1 ) na_price_list, ' +
@@ -55,7 +59,7 @@ export class ClientesDatabaseServicesService {
           'FROM clients c ' +
           'LEFT JOIN lists p ON p.id_list = c.id_list ' +
           'LEFT JOIN distribution_channels dc ON dc.id_channel = c.id_channel ' +
-          'WHERE c.id_enterprise = ?'
+          'WHERE c.id_enterprise = ? ';
       }
     } else {
       selectStatement = 'SELECT c.*, (SELECT p.na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1 ) na_price_list, ' +
@@ -71,7 +75,7 @@ export class ClientesDatabaseServicesService {
         'FROM clients c ' +
         'LEFT JOIN lists p ON p.id_list = c.id_list ' +
         'LEFT JOIN distribution_channels dc ON dc.id_channel = c.id_channel ' +
-        'WHERE c.id_enterprise = ?'
+        'WHERE c.id_enterprise = ? ';
     }
 
     /* selectStatement = "SELECT * FROM clients" */
@@ -81,6 +85,8 @@ export class ClientesDatabaseServicesService {
       } else
         selectStatement += ' ORDER BY c.' + this.globalConfig.get("clientsOrderBy");
     }
+
+    selectStatement += ' LIMIT ' + this.MAX_ITEMS_PER_PAGE + ' OFFSET ' + offset;
 
     return this.dbServ.getDatabase().executeSql(selectStatement, [idEnterprise]).then(data => {
       let lists = [];
