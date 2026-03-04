@@ -100,6 +100,11 @@
       <ion-alert id="alertClientChange" [isOpen]="clientChangeOpen" header={{headerConfirm}}
         message={{mensajeClientChange}} [buttons]="buttonsClientChange"
         (didDismiss)="setClientChangeOpen(false)"></ion-alert>
+
+    <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)" [disabled]="scrollDisable">
+      <ion-infinite-scroll-content [loadingText]='this.getTag("DENARIO_SCROLL_TEXT")'
+        loadingSpinner="bubbles"></ion-infinite-scroll-content>
+    </ion-infinite-scroll>
     </ion-content>
   </ng-template>
 </ion-modal>

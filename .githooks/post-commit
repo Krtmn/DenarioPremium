@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+
+# Actualiza memory-bank/commit-log.md después de cada commit
+node "DenarioPremiunMovil/tools/update-memory-bank-commit-log.mjs" >/dev/null 2>&1 || true

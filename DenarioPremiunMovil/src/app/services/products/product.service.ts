@@ -14,6 +14,7 @@ import { GlobalConfigService } from '../globalConfig/global-config.service';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
 import { PedidosService } from 'src/app/pedidos/pedidos.service';
+import { MAX_ITEMS_PER_PAGE } from 'src/app/utils/appConstants';
 
 @Injectable({
   providedIn: 'root'
@@ -48,7 +49,7 @@ export class ProductService {
   searchTextChanged = new Subject<string>();
   searchStructures = false; //flag para saber si se busca en todas las estructuras.
 
-  MAX_ITEMS_PER_PAGE = 50;
+MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por cada consulta a la base de datos (para evitar problemas de rendimiento)
 
   constructor() { }
 

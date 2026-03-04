@@ -216,7 +216,7 @@ export class PedidosService {
 
   codeTotalProductUnitMessageFlag = false;
 
-   public prodMinMulMap: Map<number, { quMinimum: number; quMultiple: number }> = new Map<number, { quMinimum: number; quMultiple: number }>();
+  public prodMinMulMap: Map<number, { quMinimum: number; quMultiple: number }> = new Map<number, { quMinimum: number; quMultiple: number }>();
 
   /*  ClientChangeSubscription: Subscription = this.clientSelectorService.ClientChanged.subscribe(client => {    
       this.reset();
@@ -1375,7 +1375,7 @@ export class PedidosService {
   /*
     getSaldosCliente(id_client: number, co_currency: string){
       return this.db.getSaldosCliente(this.database, id_client,
-        this.currencyService.multimoneda ,co_currency);
+      this.currencyService.multimoneda ,co_currency);
     }
   
   */

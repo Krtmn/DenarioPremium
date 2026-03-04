@@ -39,7 +39,6 @@ export class ClienteSelectorComponent implements OnInit {
   public tags = new Map<string, string>([]);
   public clientes!: Client[]
   public searchText: string = '';
-  public indice!: number;
   public clientChangeOpen = false;
   public multimoneda: boolean = false;
   public cliente!: Client
@@ -67,6 +66,9 @@ export class ClienteSelectorComponent implements OnInit {
 
   public noClientsAlertShown = false;
 
+  public page = 0; // para paginacion de clientes.
+  public scrollDisable = false;
+  public idEnterprise!: number;
 
 
   @ViewChild(IonModal) modal!: IonModal;
@@ -121,6 +123,9 @@ export class ClienteSelectorComponent implements OnInit {
     if (this.service.currencyModule) {
       this.loadCurrencyModule();
     }
+    this.page = 0;
+    this.scrollDisable = false;
+    this.idEnterprise = idEnterprise;
     this.updateClientList(idEnterprise);
 
 
@@ -142,66 +147,36 @@ export class ClienteSelectorComponent implements OnInit {
       }
   }
 
-  updateClientList(idEnterprise: number) {
-    this.messageService.showLoading().then(() => {
-      this.clientServ.getClients(idEnterprise).then(result => {
+  updateClientList(idEnterprise: number): Promise<any> {
+    return this.messageService.showLoading().then(() => {
+      return this.clientServ.getClients(idEnterprise, this.page).then(result => {
+        if(this.page == 0) {
         this.clientes = [] as Client[];
         this.service.clientes = [] as Client[];
-        if (this.nombreModulo == 'Cobros') {
-          if (this.collectLogic.userCanCollectIva && this.collectLogic.cobro25) {
+        }
+
+        this.scrollDisable = result.length < this.clientServ.MAX_ITEMS_PER_PAGE;
+
+
+        if (this.currencyService.multimoneda) {
+          result = this.fixClientListSaldos(result);
+        }
+        
+        if (this.nombreModulo == 'Cobros' &&
+          this.collectLogic.userCanCollectIva &&
+          this.collectLogic.cobro25) {
             for (var i = 0; i < result.length; i++) {
               if (result[i].collectionIva) {
                 this.clientes.push(result[i]);
               }
             }
-          } else {
-            this.clientes = result;
-          }
-
         } else
-          this.clientes = result;
+          this.clientes = [...this.clientes, ...result];
         //this.service.clienteAnterior = null;
 
-        this.indice = 1;
         //console.log("[ClienteSelector] Lista de clientes actualizada");
         //mostrando los saldos correctamente
-        let saldoCliente = 0, saldoOpuesto = 0;
-        if (this.currencyService.multimoneda) {
-          for (let c = 0; c < this.clientes.length; c++) {
-            if (this.clientes[c].coCurrency == this.localCurrency.coCurrency) {
-              saldoCliente = this.clientes[c].saldo1 + this.currencyService.toLocalCurrency(this.clientes[c].saldo2);
-              saldoOpuesto = this.currencyService.toHardCurrency(saldoCliente);
-            } else {
-              saldoCliente = this.clientes[c].saldo1 + this.currencyService.toHardCurrency(this.clientes[c].saldo2);
-              saldoOpuesto = this.currencyService.toLocalCurrency(saldoCliente);
-            }
-            this.clientes[c].saldo1 = saldoCliente;
-            this.clientes[c].saldo2 = saldoOpuesto;
-
-            if (this.currencySwitchEnabled && this.localCurrencyDefault) {
-              //la primera moneda es la local
-              if (this.clientes[c].coCurrency != this.localCurrency.coCurrency) {
-                //cambiamos la moneda del cliente
-                this.clientes[c].coCurrency = this.oppositeCoCurrency(this.clientes[c].coCurrency);
-                var tempSaldo = this.clientes[c].saldo1;
-                this.clientes[c].saldo1 = this.clientes[c].saldo2;
-                this.clientes[c].saldo2 = tempSaldo;
-              }
-            } else {
-              //la primera moneda es la dura
-              if (this.clientes[c].coCurrency != this.hardCurrency.coCurrency) {
-                //cambiamos la moneda del cliente
-                this.clientes[c].coCurrency = this.oppositeCoCurrency(this.clientes[c].coCurrency);
-                var tempSaldo = this.clientes[c].saldo1;
-                this.clientes[c].saldo1 = this.clientes[c].saldo2;
-                this.clientes[c].saldo2 = tempSaldo;
-              }
-            }
-
-            saldoCliente = saldoOpuesto = 0;
-          }
-
-        }
+        
         //para usarlo luego
         this.service.clientes = this.clientes;
         this.service.checkClient = false;
@@ -209,6 +184,45 @@ export class ClienteSelectorComponent implements OnInit {
       })
     });
   }
+
+  fixClientListSaldos(result: any) {
+    let saldoCliente = 0, saldoOpuesto = 0;        
+          for (let c = 0; c < result.length; c++) {
+            if (result[c].coCurrency == this.localCurrency.coCurrency) {
+              saldoCliente = result[c].saldo1 + this.currencyService.toLocalCurrency(result[c].saldo2);
+              saldoOpuesto = this.currencyService.toHardCurrency(saldoCliente);
+            } else {
+              saldoCliente = result[c].saldo1 + this.currencyService.toHardCurrency(result[c].saldo2);
+              saldoOpuesto = this.currencyService.toLocalCurrency(saldoCliente);
+            }
+            result[c].saldo1 = saldoCliente;
+            result[c].saldo2 = saldoOpuesto;
+
+            if (this.currencySwitchEnabled && this.localCurrencyDefault) {
+              //la primera moneda es la local
+              if (result[c].coCurrency != this.localCurrency.coCurrency) {
+                //cambiamos la moneda del cliente
+                result[c].coCurrency = this.oppositeCoCurrency(result[c].coCurrency);
+                var tempSaldo = result[c].saldo1;
+                result[c].saldo1 = result[c].saldo2;
+                result[c].saldo2 = tempSaldo;
+              }
+            } else {
+              //la primera moneda es la dura
+              if (result[c].coCurrency != this.hardCurrency.coCurrency) {
+                //cambiamos la moneda del cliente
+                result[c].coCurrency = this.oppositeCoCurrency(result[c].coCurrency);
+                var tempSaldo = result[c].saldo1;
+                result[c].saldo1 = result[c].saldo2;
+                result[c].saldo2 = tempSaldo;
+              }
+            }
+
+            saldoCliente = saldoOpuesto = 0;
+          
+          }
+          return result;
+        }
 
   @Output() clienteSeleccionado: EventEmitter<Client> = new EventEmitter<Client>();
   selectClient(input: Client) {
@@ -253,12 +267,13 @@ export class ClienteSelectorComponent implements OnInit {
     //console.log("cerre el modal de cliente");
   }
 
+  /*
   onIonInfinite(ev: any) {
     this.indice++;
     setTimeout(() => {
       (ev as InfiniteScrollCustomEvent).target.complete();
     }, 800);
-  }
+  }*/
 
   oppositeCoCurrency(coCurrency: string) {
     return this.currencyService.oppositeCoCurrency(coCurrency);
@@ -318,6 +333,13 @@ export class ClienteSelectorComponent implements OnInit {
       }
     }
   ];
+onIonInfinite(ev: InfiniteScrollCustomEvent){
+  this.page++;
+  this.updateClientList(this.idEnterprise).then(() => {
+    (ev as InfiniteScrollCustomEvent).target.complete();
+    this.messageService.hideLoading();
+  });
+}
 
 
 }

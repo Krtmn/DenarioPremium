@@ -34,6 +34,8 @@ export const VISIT_STATUS_NOT_VISITED = 3;
 
 //FIN VALORES VISITA
 
+export const MAX_ITEMS_PER_PAGE = 50; // cantidad de registros a traer por cada consulta a la base de datos (para evitar problemas de rendimiento)
+
 //Valores de integracion (para tener en cuenta)
 /*
 1: aprobado - puede ser integrado
