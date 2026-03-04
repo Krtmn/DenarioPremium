@@ -774,14 +774,14 @@ export class SynchronizationDBService {
   insertReturnTypeBatch(arr: ReturnType[]) {
     var statements = [];
     let insertStatement = "INSERT OR REPLACE INTO return_types(" +
-      'id_type,na_type' +
+      'id_type,na_type,id_return_category' +
       ') ' +
-      'VALUES(?,?)'
+      'VALUES(?,?,?)'
 
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
-      statements.push([insertStatement, [obj.idType, obj.naType]]);
+      statements.push([insertStatement, [obj.idType, obj.naType, obj.idReturnCategory]]);
     }
 
     return this.database.sqlBatch(statements).then(res => {
