@@ -311,6 +311,10 @@ export class SynchronizationDBService {
 
   async checkAndRunMigrations() {
     try {
+      if (!Capacitor.isNativePlatform()) {
+        localStorage.setItem('db_version', String(this.CURRENT_DB_VERSION));
+        return;
+      }
       const storedVersion = Number(localStorage.getItem('db_version') || '1');
       if (storedVersion >= this.CURRENT_DB_VERSION) {
         return;

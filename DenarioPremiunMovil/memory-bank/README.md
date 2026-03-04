@@ -11,6 +11,7 @@ Este directorio concentra el contexto vivo del proyecto para acelerar onboarding
 - `active-context.md`: foco actual, pendientes y próximos pasos.
 - `decisions-log.md`: decisiones técnicas importantes (ADR ligero).
 - `progress-log.md`: hitos y cambios relevantes en el tiempo.
+- `commit-log.md`: bitácora automática por commit.
 
 ## Reglas de uso
 
@@ -18,6 +19,7 @@ Este directorio concentra el contexto vivo del proyecto para acelerar onboarding
 2. Registrar decisiones en `decisions-log.md` cuando impacten arquitectura o operación.
 3. Mantener `progress-log.md` con fecha y resumen breve por hito.
 4. Evitar secrets o credenciales en cualquier archivo del memory bank.
+5. El archivo `commit-log.md` se alimenta automáticamente por hook de git (`post-commit`).
 
 ## Última actualización
 
