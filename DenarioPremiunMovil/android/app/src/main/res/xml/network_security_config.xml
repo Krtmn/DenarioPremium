@@ -3,7 +3,7 @@
 <network-security-config>
     <domain-config cleartextTrafficPermitted="false">
         <!-- si cliente usa HTTPS, va aqui -->
-        <domain includeSubdomains="true">denario-mobile-dev.apps.kraftheinz.com</domain>
+        <domain includeSubdomains="true">denario.net</domain>
 
         <trust-anchors>
             <certificates src="system" />
@@ -15,15 +15,13 @@
         <domain includeSubdomains="true">192.168.0.186</domain>
         <!-- Kiberno - Richard -->
         <domain includeSubdomains="true">192.168.0.231</domain>
-        <!-- KIBERNO - DEMO -->
-        <domain includeSubdomains="true">denariodemo.ddns.net</domain>
+        <!-- Kiberno - Soporte -->
         <domain includeSubdomains="true">soportepremium.ddns.net</domain>
-        <domain includeSubdomains="true">denario.ddns.net</domain>
-        <domain includeSubdomains="true">44.220.87.219</domain>
-        <domain includeSubdomains="true">207.180.224.111</domain>
-        <domain includeSubdomains="true">44.198.167.32</domain>
-        <domain includeSubdomains="true">192.168.1.44</domain>
-        
+        <!-- si cliente _NO_ usa HTTPS, va aqui -->
+        <!-- tambien va aqui cualquier servidor de prueba -->
+        <domain includeSubdomains="true">denariopremium.com</domain>
+        <domain includeSubdomains="true">denariodemo.ddns.net</domain>
+        <domain includeSubdomains="true">190.6.31.99</domain>
 
     </domain-config>
 </network-security-config>
