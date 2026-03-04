@@ -198,6 +198,7 @@ export class InventariosLogicService {
     this.typeStocks = [] as Inventarios[];
     this.disabledEnterprise = this.globalConfig.get('enterpriseEnabled') === 'true' ? false : true;
     this.expirationBatch = this.globalConfig.get('expirationBatch') === 'true' ? true : false;
+    this.suggestedOrderByDispatchAndReturns = this.globalConfig.get("suggestedOrderByDispatchAndReturns")?.toLowerCase() === "true";
   }
 
   showBackRoute(route: string) {
@@ -409,11 +410,14 @@ export class InventariosLogicService {
   }
 
   calcularTotalesSugerenciaPedido(){
+    if(this.suggestedOrderByDispatchAndReturns){
     //Inventario Inicial = Inventario anterior + Despacho + Cambio por cambio
+    
 
     //Venta = Inventario Inicial - Inventario actual - Devolución por distribución
 
     //Pedido Sugerido = Venta/Dias desde ultima visita × Días hasta la próxima visita
+    }
   }
 
   deleteClientStocksBatch(dbServ: SQLiteObject, clientStocks: ClientStocks[]) {

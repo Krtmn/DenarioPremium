@@ -52,6 +52,7 @@ export class InventarioGeneralComponent implements OnInit {
   public txComment: string = ""
   public coordenada: string = ""
   public checkAddressClient!: boolean;
+
   public viewOnly: boolean = false;
   public changeClient: boolean = false;
   public newClient!: Client;
@@ -61,8 +62,8 @@ export class InventarioGeneralComponent implements OnInit {
   showDateModal: boolean = false;
   public alertButtons = [
     /*  {
-       text: '',
-       role: 'cancel'
+      text: '',
+      role: 'cancel'
      }, */
     {
       text: '',
@@ -161,8 +162,8 @@ export class InventarioGeneralComponent implements OnInit {
           //this.selectorCliente.setSkin(this.inventariosLogicService.inventarioTags.get('INV_NOMBRE_MODULO')!, "fondoAmarillo");
           this.selectorCliente.setup(this.inventariosLogicService.listaEmpresa[0].idEnterprise, "Inventarios", 'fondoAmarillo', null, false, 'inv');
           /*  this.clientService.getClientById(this.inventariosLogicService.newClientStock.idClient).then(client => {
-             this.inventariosLogicService.client = client;
-             this.selectorCliente.setup(this.inventariosLogicService.empresaSeleccionada.idEnterprise, "Inventarios", 'fondoVerde', client, false);
+            this.inventariosLogicService.client = client;
+            this.selectorCliente.setup(this.inventariosLogicService.empresaSeleccionada.idEnterprise, "Inventarios", 'fondoVerde', client, false);
 
 
            }) */
@@ -300,8 +301,8 @@ export class InventarioGeneralComponent implements OnInit {
     if (cliente) {
       if (cliente.idClient != this.inventariosLogicService.newClientStock.idClient && this.changeClient) {
         /*  this.inventariosLogicService.alertMessage = true;
-         this.inventariosLogicService.message = "Se ha detectado cambio del cliente por lo que debera iniciar nuevamente la transacción."
-         this.newClient = cliente; */
+        this.inventariosLogicService.message = "Se ha detectado cambio del cliente por lo que debera iniciar nuevamente la transacción."
+        this.newClient = cliente; */
       } else {
         this.message.showLoading().then(() => {
           this.changeClient = true;
