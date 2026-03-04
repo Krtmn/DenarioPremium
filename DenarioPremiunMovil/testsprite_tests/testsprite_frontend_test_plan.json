@@ -1,0 +1,2150 @@
+[
+  {
+    "id": "TC001",
+    "title": "Login success with Remember Me enabled redirects to Home",
+    "description": "Verifies a user can log in with valid credentials, enable Remember Me, and land on the Home dashboard.",
+    "category": "User Login",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/login\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the login/username input field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password input field"
+      },
+      {
+        "type": "action",
+        "description": "Toggle \"remember me\" checkbox"
+      },
+      {
+        "type": "action",
+        "description": "Click Login button to submit"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Home\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "Invalid credentials show an error message",
+    "description": "Verifies incorrect username/password shows an invalid-credentials error and does not navigate to Home.",
+    "category": "User Login",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/login\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"not_a_real_user_12345\" into the login/username input field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"wrong_password\" into the password input field"
+      },
+      {
+        "type": "action",
+        "description": "Click Login button to submit"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"invalid\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/login\""
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Required field validation when username is missing",
+    "description": "Verifies the login form prevents submission and shows a validation message when username is empty.",
+    "category": "User Login",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password input field"
+      },
+      {
+        "type": "action",
+        "description": "Click Login button to submit"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"username\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/login\""
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Required field validation when password is missing",
+    "description": "Verifies the login form prevents submission and shows a validation message when password is empty.",
+    "category": "User Login",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the login/username input field"
+      },
+      {
+        "type": "action",
+        "description": "Click Login button to submit"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"password\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/login\""
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Password masking on the login screen",
+    "description": "Verifies the password field is present and appears as a password input (masked) to the user.",
+    "category": "User Login",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"password input field\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Type \"some_password_text\" into the password input field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"password input field\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"some_password_text\" is not visible"
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Remember Me toggle can be switched on and off before submit",
+    "description": "Verifies the Remember Me checkbox can be toggled multiple times without errors before submitting login.",
+    "category": "User Login",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"remember me checkbox\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Toggle \"remember me\" checkbox"
+      },
+      {
+        "type": "action",
+        "description": "Toggle \"remember me\" checkbox"
+      },
+      {
+        "type": "action",
+        "description": "Toggle \"remember me\" checkbox"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"remember me checkbox\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Navigate from Home to Pedidos via sidebar",
+    "description": "Verifies a logged-in user can open the Orders module by using the Home sidebar navigation.",
+    "category": "Home Navigation",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Sidebar menu\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Pedidos\" in the sidebar menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/pedidos\""
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Navigate from Home to Sincronización via sidebar",
+    "description": "Verifies a logged-in user can open the Synchronization module by using the Home sidebar navigation.",
+    "category": "Home Navigation",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Sincronización\" in the sidebar menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/synchronization\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page title contains \"Sincron\""
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Sidebar shows module items appropriate to logged-in user (smoke)",
+    "description": "Verifies the Home dashboard renders a visible sidebar with at least one expected module entry for a logged-in user.",
+    "category": "Home Navigation",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Sidebar menu\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Pedidos\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "After login, user can reach Home and see main dashboard content",
+    "description": "Verifies successful login lands on Home and key dashboard UI elements are visible.",
+    "category": "Home Navigation",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Home dashboard\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Sidebar menu\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Home sidebar navigation remains usable after scrolling",
+    "description": "Verifies sidebar navigation is still accessible after scrolling the Home dashboard content.",
+    "category": "Home Navigation",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Scroll to the bottom of the Home dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Sidebar menu\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Pedidos\" in the sidebar menu"
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Create a new order with at least one item and verify it appears in the orders list view",
+    "description": "Verifies a user can create an order by selecting products, adding items, saving, and then seeing the new order in the orders list view.",
+    "category": "Orders (Pedidos)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username or email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Pedidos\" in the main navigation menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/pedidos\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Create New Order\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/pedido\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the product search field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"a\" into the product search field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Product search results list\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first product in the search results"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Add item\" or \"Add\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Order items list\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the client selection field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Client selection list\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first client in the client selection list"
+      },
+      {
+        "type": "action",
+        "description": "Click on the payment terms field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Payment terms options\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first payment terms option"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Save\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/pedidosLista\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Orders list\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "View orders list from Pedidos entry screen",
+    "description": "Verifies the user can access and view the orders list from the Pedidos section.",
+    "category": "Orders (Pedidos)",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username or email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Pedidos\" in the main navigation menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/pedidos\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Orders list\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Attempt to save a new order without items and verify validation error is shown",
+    "description": "Verifies saving an order without adding items shows the 'Add at least one item' validation and stays on the order form.",
+    "category": "Orders (Pedidos)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username or email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Pedidos\" in the main navigation menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/pedidos\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Create New Order\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/pedido\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Save\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Add at least one item\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/pedido\""
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Search for products in the order form and verify results are displayed",
+    "description": "Verifies product search within the order form returns visible results that can be selected.",
+    "category": "Orders (Pedidos)",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username or email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Pedidos\" in the main navigation menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Create New Order\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/pedido\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the product search field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"a\" into the product search field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Product search results list\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first product in the search results"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Selected\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Add an item to an order and verify it appears in the order items list",
+    "description": "Verifies a user can add a searched product as an order item and see it listed in the order form.",
+    "category": "Orders (Pedidos)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username or email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Pedidos\" in the main navigation menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Create New Order\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/pedido\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the product search field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"a\" into the product search field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first product in the search results"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Add item\" or \"Add\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Order items list\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Order item row\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Save a new order and verify it is visible in Pedidos list view",
+    "description": "Verifies saving an order results in an entry shown in the orders list view screen.",
+    "category": "Orders (Pedidos)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username or email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Pedidos\" in the main navigation menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Create New Order\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/pedido\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the product search field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"a\" into the product search field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first product in the search results"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Add item\" or \"Add\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Save\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/pedidosLista\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Orders list\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "Search clients and open a client to view details",
+    "description": "Verifies that a user can search within the clients list and open a client to see the client detail screen.",
+    "category": "Clients (Clientes)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username or email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Clientes\" in the main menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/clientes\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"a\" into the clients search input"
+      }
+    ]
+  },
+  {
+    "id": "TC019",
+    "title": "From search results, open a client and verify details are shown",
+    "description": "Verifies that tapping a client from the filtered list opens the client detail view and displays identifying information.",
+    "category": "Clients (Clientes)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username or email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Clientes\" in the main menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/clientes\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"a\" into the clients search input"
+      },
+      {
+        "type": "action",
+        "description": "Click the first client entry in the clients list"
+      }
+    ]
+  },
+  {
+    "id": "TC020",
+    "title": "Client details screen shows core client information",
+    "description": "Verifies that the client detail view renders visible client information after selecting a client from the list.",
+    "category": "Clients (Clientes)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username or email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Clientes\" in the main menu"
+      },
+      {
+        "type": "action",
+        "description": "Click the first client entry in the clients list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Cliente\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Client details section\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC021",
+    "title": "Create a potential client with required fields and see it in the list",
+    "description": "Verifies that a user can create a potential client by filling required fields and saving, and then see it appear in the clients list.",
+    "category": "Clients (Clientes)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username or email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Clientes\" in the main menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/clientes\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create Potential Client\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Cliente potencial\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC022",
+    "title": "Save a new potential client and confirm success returns to clients list",
+    "description": "Verifies that saving a new potential client results in a visible confirmation and returns to a list where the new client can be found.",
+    "category": "Clients (Clientes)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username or email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Clientes\" in the main menu"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create Potential Client\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Cliente Potencial QA\" into the \"Name\" field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Save\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/clientes\""
+      }
+    ]
+  },
+  {
+    "id": "TC023",
+    "title": "Find the newly created potential client using search",
+    "description": "Verifies that a newly created potential client can be located from the clients list using the search input.",
+    "category": "Clients (Clientes)",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username or email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Clientes\" in the main menu"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create Potential Client\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Cliente Potencial QA\" into the \"Name\" field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Save\" button"
+      }
+    ]
+  },
+  {
+    "id": "TC024",
+    "title": "Attempt to create potential client with missing required fields shows validation errors",
+    "description": "Verifies that the form blocks saving and shows visible validation errors when required fields are not completed.",
+    "category": "Clients (Clientes)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username or email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Clientes\" in the main menu"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create Potential Client\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Save\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"required\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC025",
+    "title": "Validation errors remain until required fields are provided",
+    "description": "Verifies that after a failed save due to missing required fields, filling a required field reduces or clears the visible validation errors.",
+    "category": "Clients (Clientes)",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username or email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Clientes\" in the main menu"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create Potential Client\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Save\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Cliente Potencial QA\" into the \"Name\" field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"required\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC026",
+    "title": "Browse product list, search, and open product details",
+    "description": "Verifies that a user can browse the product list, filter via search, and open a product details view.",
+    "category": "Products (Productos)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Productos\" in the app navigation/menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/productos\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Ver lista\" or \"Lista de productos\" to open the product list"
+      }
+    ]
+  },
+  {
+    "id": "TC027",
+    "title": "Filter product list using search input",
+    "description": "Verifies that searching filters the visible product list results.",
+    "category": "Products (Productos)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Productos\" in the app navigation/menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Ver lista\" or \"Lista de productos\" to open the product list"
+      },
+      {
+        "type": "action",
+        "description": "Type \"a\" into the search products input"
+      }
+    ]
+  },
+  {
+    "id": "TC028",
+    "title": "Open product details from filtered results",
+    "description": "Verifies that selecting a product from filtered results navigates to a product details view.",
+    "category": "Products (Productos)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Productos\" in the app navigation/menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Ver lista\" or \"Lista de productos\" to open the product list"
+      },
+      {
+        "type": "action",
+        "description": "Type \"a\" into the search products input"
+      },
+      {
+        "type": "action",
+        "description": "Click the first visible product in the results list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Producto\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC029",
+    "title": "Search for a non-existent product shows no results state",
+    "description": "Verifies that searching for a product that does not exist displays a no-results message/state.",
+    "category": "Products (Productos)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Productos\" in the app navigation/menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Ver lista\" or \"Lista de productos\" to open the product list"
+      },
+      {
+        "type": "action",
+        "description": "Type \"ZZZ_NON_EXISTENT_PRODUCT_123\" into the search products input"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"No\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC030",
+    "title": "Clear search restores product list results",
+    "description": "Verifies the user can clear the search term and see the product list return to a non-empty state.",
+    "category": "Products (Productos)",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Productos\" in the app navigation/menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Ver lista\" or \"Lista de productos\" to open the product list"
+      },
+      {
+        "type": "action",
+        "description": "Type \"ZZZ_NON_EXISTENT_PRODUCT_123\" into the search products input"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"No\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Clear the search products input"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Product list\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC031",
+    "title": "Attempt to view product details when catalog/master data is unavailable",
+    "description": "Verifies the UI communicates that product data is unavailable and suggests synchronization when master data is not synced.",
+    "category": "Products (Productos)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Productos\" in the app navigation/menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Ver lista\" or \"Lista de productos\" to open the product list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Sincron\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC032",
+    "title": "Products entry screen provides access to product list view",
+    "description": "Verifies that the Productos entry screen exposes a clear path to the product list page.",
+    "category": "Products (Productos)",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Productos\" in the app navigation/menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/productos\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Product list\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC033",
+    "title": "Search input is present and usable on the product list view",
+    "description": "Verifies that the product list page exposes a search control the user can interact with.",
+    "category": "Products (Productos)",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Productos\" in the app navigation/menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Ver lista\" or \"Lista de productos\" to open the product list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Search\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Type \"test\" into the search products input"
+      }
+    ]
+  },
+  {
+    "id": "TC034",
+    "title": "Successful synchronization completes and shows Success status",
+    "description": "Verifies a user can trigger a sync and see the status progress from In progress to Success.",
+    "category": "Synchronization",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Synchronization\" in the app navigation menu"
+      },
+      {
+        "type": "action",
+        "description": "Click \"Trigger sync\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"In progress\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC035",
+    "title": "Sync screen shows initial status and guidance before running sync",
+    "description": "Verifies the Synchronization page loads and presents status information before a sync is started.",
+    "category": "Synchronization",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Login\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Synchronization\" in the app navigation menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page title contains \"Synchronization\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Trigger sync\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC036",
+    "title": "Create a new visit and confirm it appears in the visits list",
+    "description": "Verifies a user can create a visit, save it, and see it listed afterward.",
+    "category": "Visits (Visitas)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Visitas\" in the main navigation/menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Crear visita\" (Create Visit)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/visita\""
+      }
+    ]
+  },
+  {
+    "id": "TC037",
+    "title": "Save a visit with required details and verify it is stored and listed",
+    "description": "Verifies saving a visit persists it locally and shows it in the visits list view.",
+    "category": "Visits (Visitas)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Visitas\" in the main navigation/menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Crear visita\" (Create Visit)"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Visita de prueba\" into the visit description/notes field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Guardar\" (Save) button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/listaVisitas\""
+      }
+    ]
+  },
+  {
+    "id": "TC038",
+    "title": "Open the visits list from Visitas and verify list screen is displayed",
+    "description": "Verifies the user can reach the visits list view from the Visitas section.",
+    "category": "Visits (Visitas)",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Visitas\" in the main navigation/menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Lista de visitas\" (View visits list)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/listaVisitas\""
+      }
+    ]
+  },
+  {
+    "id": "TC039",
+    "title": "Attempt to save a visit without required fields and verify validation error",
+    "description": "Verifies required-field validation prevents saving and keeps the user on the visit form.",
+    "category": "Visits (Visitas)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Visitas\" in the main navigation/menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Crear visita\" (Create Visit)"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Guardar\" (Save) button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Requerido\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC040",
+    "title": "Validation failure keeps user on the visit form screen",
+    "description": "Verifies that after a validation error the user remains on /visita and does not navigate to the list.",
+    "category": "Visits (Visitas)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Visitas\" in the main navigation/menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Crear visita\" (Create Visit)"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Guardar\" (Save) button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/visita\""
+      }
+    ]
+  },
+  {
+    "id": "TC041",
+    "title": "Visitas entry screen shows options to create visit and view visits list",
+    "description": "Verifies the Visitas landing screen exposes primary actions for managing visits.",
+    "category": "Visits (Visitas)",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Visitas\" in the main navigation/menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Crear visita\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Lista de visitas\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC042",
+    "title": "Register a valid payment for a client from pending payments list",
+    "description": "Verifies a user can open Cobros, select a pending payment, register it with a valid amount and method, and see confirmation it is saved locally/pending sync.",
+    "category": "Payments (Cobros)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Cobros\" in the main menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Cobros\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC043",
+    "title": "View pending payments list in Cobros",
+    "description": "Verifies the pending payments list is visible and accessible from the Cobros screen.",
+    "category": "Payments (Cobros)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Cobros\" in the main menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Pagos pendientes\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC044",
+    "title": "Open a client pending payment from the pending list",
+    "description": "Verifies a user can select a client/pending item and reach the payment registration form/details screen.",
+    "category": "Payments (Cobros)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Cobros\" in the main menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first pending payment item in the list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Registrar pago\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC045",
+    "title": "Validation: negative payment amount is rejected",
+    "description": "Verifies entering a negative amount shows a validation error and does not register the payment.",
+    "category": "Payments (Cobros)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Cobros\" in the main menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first pending payment item in the list"
+      },
+      {
+        "type": "action",
+        "description": "Type \"-10\" into the payment amount field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Registrar pago\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"monto inválido\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC046",
+    "title": "Validation: empty payment amount is rejected",
+    "description": "Verifies leaving the amount empty shows a validation error and keeps the user on the payment form.",
+    "category": "Payments (Cobros)",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Cobros\" in the main menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first pending payment item in the list"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Registrar pago\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"El monto es requerido\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC047",
+    "title": "Register payment with method selection",
+    "description": "Verifies the user can select a payment method and register the payment successfully.",
+    "category": "Payments (Cobros)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Cobros\" in the main menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first pending payment item in the list"
+      },
+      {
+        "type": "action",
+        "description": "Type \"100\" into the payment amount field"
+      },
+      {
+        "type": "action",
+        "description": "Select \"Efectivo\" from the payment method dropdown"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Registrar pago\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Pago registrado\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC048",
+    "title": "After registering a payment, it appears as pending for sync in Synchronization screen",
+    "description": "Verifies that a locally-registered payment is visible as pending upload in the Synchronization area.",
+    "category": "Payments (Cobros)",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Login\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/home\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Cobros\" in the main menu"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first pending payment item in the list"
+      },
+      {
+        "type": "action",
+        "description": "Type \"75\" into the payment amount field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Registrar pago\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Pago registrado\" is visible"
+      }
+    ]
+  }
+]

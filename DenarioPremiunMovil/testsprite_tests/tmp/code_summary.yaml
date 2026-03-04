@@ -1,0 +1,191 @@
+version: "2"
+type: frontend
+tech_stack:
+  - TypeScript
+  - Angular 19
+  - Ionic 8
+  - Capacitor
+  - SQLite
+routes:
+  - path: /login
+    file: src/app/login/login.component.ts
+    auth_required: false
+    description: User login page
+  - path: /home
+    file: src/app/home/home.module.ts
+    auth_required: true
+    description: Home dashboard
+  - path: /vendedores
+    file: src/app/vendedores/vendedores.component.ts
+    auth_required: true
+    description: Sales representatives list
+  - path: /pedidos
+    file: src/app/pedidos/pedidos.component.ts
+    auth_required: true
+    description: Orders list
+  - path: /pedido
+    file: src/app/pedidos/pedido/pedido.component.ts
+    auth_required: true
+    description: Order form
+  - path: /pedidosLista
+    file: src/app/pedidos/pedidos-lista/pedidos-lista.component.ts
+    auth_required: true
+    description: Orders list view
+  - path: /clientes
+    file: src/app/clientes/clientes.component.ts
+    auth_required: true
+    description: Clients management
+  - path: /productos
+    file: src/app/productos/productos.component.ts
+    auth_required: true
+    description: Products catalog
+  - path: /productList
+    file: src/app/productos/product-list/product-list.component.ts
+    auth_required: true
+    description: Product list view
+  - path: /synchronization
+    file: src/app/synchronization/synchronization.component.ts
+    auth_required: true
+    description: Data synchronization
+  - path: /ayuda
+    file: src/app/ayuda/ayuda.component.ts
+    auth_required: true
+    description: Help section
+  - path: /visitas
+    file: src/app/visitas/visitas.component.ts
+    auth_required: true
+    description: Visits management
+  - path: /visita
+    file: src/app/visitas/visita/visita.component.ts
+    auth_required: true
+    description: Visit form
+  - path: /listaVisitas
+    file: src/app/visitas/lista-visita/lista-visita.component.ts
+    auth_required: true
+    description: Visits list
+  - path: /cobros
+    file: src/app/cobros/cobros.component.ts
+    auth_required: true
+    description: Payments collection
+  - path: /devoluciones
+    file: src/app/devoluciones/devoluciones.component.ts
+    auth_required: true
+    description: Returns management
+  - path: /inventarios
+    file: src/app/inventarios/inventarios.component.ts
+    auth_required: true
+    description: Inventory management
+  - path: /depositos
+    file: src/app/depositos/depositos.component.ts
+    auth_required: true
+    description: Deposits management
+features:
+  - name: User Login
+    description: Login with username and password, supports offline mode with SQLite
+    files:
+      - src/app/login/login.component.ts
+      - src/app/services/login/login-logic.service.ts
+      - src/app/services/services.service.ts
+    entry_route: /login
+    user_interactions:
+      - Fill login/username input field
+      - Fill password input field
+      - Toggle "remember me" checkbox
+      - Click Login button to submit
+      - See error message on invalid credentials
+      - See error when network unavailable
+    api_calls:
+      - method: POST
+        endpoint: WsUrl from env (login)
+    auth_required: false
+  - name: Home Navigation
+    description: Main dashboard after login
+    files:
+      - src/app/home/home.module.ts
+      - src/app/home-sidebar/home-sidebar.component.ts
+    entry_route: /home
+    user_interactions:
+      - Navigate to different sections via sidebar
+      - Access pedidos, clientes, productos, visitas, cobros, etc
+    api_calls: []
+    auth_required: true
+  - name: Orders (Pedidos)
+    description: Create and list orders
+    files:
+      - src/app/pedidos/pedidos.component.ts
+      - src/app/pedidos/pedido/pedido.component.ts
+      - src/app/pedidos/pedidos-lista/pedidos-lista.component.ts
+    entry_route: /pedidos
+    user_interactions:
+      - View orders list
+      - Create new order
+      - Search and select products
+      - Add items to order
+    api_calls: []
+    auth_required: true
+  - name: Clients (Clientes)
+    description: Manage clients and potential clients
+    files:
+      - src/app/clientes/clientes.component.ts
+      - src/app/clientes/client-container/client-detail/client-detail.component.ts
+    entry_route: /clientes
+    user_interactions:
+      - Search and view clients
+      - View client details
+      - Create potential clients
+    api_calls: []
+    auth_required: true
+  - name: Products (Productos)
+    description: Browse and search products
+    files:
+      - src/app/productos/productos.component.ts
+      - src/app/productos/product-list/product-list.component.ts
+    entry_route: /productos
+    user_interactions:
+      - Search products
+      - View product list
+      - View product details
+    api_calls: []
+    auth_required: true
+  - name: Synchronization
+    description: Sync data with backend
+    files:
+      - src/app/synchronization/synchronization.component.ts
+      - src/app/services/synchronization/synchronization-db.service.ts
+    entry_route: /synchronization
+    user_interactions:
+      - Trigger sync
+      - View sync status
+    api_calls:
+      - method: GET
+        endpoint: createTables.json and sync endpoints
+    auth_required: true
+  - name: Visits (Visitas)
+    description: Manage sales visits
+    files:
+      - src/app/visitas/visitas.component.ts
+      - src/app/visitas/visita/visita.component.ts
+    entry_route: /visitas
+    user_interactions:
+      - Create visit
+      - View visits list
+      - Add visit details
+    api_calls: []
+    auth_required: true
+  - name: Payments (Cobros)
+    description: Collect payments from clients
+    files:
+      - src/app/cobros/cobros.component.ts
+    entry_route: /cobros
+    user_interactions:
+      - View pending payments
+      - Register payment
+    api_calls: []
+    auth_required: true
+known_limitations:
+  - issue: App requires network for initial login; WsUrl loaded from window.__env
+    location: src/app/services/services.service.ts
+    impact: Tests may need mocked env or backend
+  - issue: Uses Capacitor and SQLite for mobile; some features may behave differently in browser
+    location: Multiple components
+    impact: Test in browser context may have limited coverage
