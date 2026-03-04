@@ -807,7 +807,7 @@ export class PedidosDbService {
       naResponsible: orderDB.na_responsible,
       idUser: orderDB.id_user,
       idOrderCreator: orderDB.id_order_creator,
-      inOrderReview: orderDB.in_order_review,
+      inOrderReview: orderDB.in_order_review === 'true'?true:false,
       nuAmountTotal: orderDB.nu_amount_total,
       nuAmountFinal: orderDB.nu_amount_final,
       coCurrency: orderDB.co_currency,
@@ -842,7 +842,7 @@ export class PedidosDbService {
       nuAmountTotalProductDiscountConversion: orderDB.nu_amount_total_product_discount_conversion,
       idDistributionChannel: orderDB.id_distribution_channel,
       coDistributionChannel: orderDB.co_distribution_channel,
-      stDelivery: orderDB.st_delivery,
+      stDelivery: orderDB.st_delivery == null ? 1 : orderDB.st_delivery,
       orderDetails: []
     };
     return order;

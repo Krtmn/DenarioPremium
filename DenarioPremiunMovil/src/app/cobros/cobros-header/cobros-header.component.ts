@@ -293,12 +293,6 @@ export class CobrosHeaderComponent implements OnInit {
       //ES UN COBRO, SE DEBE BUSCAR EN TODOS LOS DETAILS SI HAY RETENCIONES, SI HAY RETENCIONES HAY QUE BUSCAR
       // SI HAY ADJUNTOS, SI NO HAY, SE DEBE ENVIAR MSJ DE ALERTA Y
       //NO SE DEBE PERMITIR EL ENVIO HASTA QUE SE ADJUNTE AL MENOS UN DOCUMENTO
-
-      /*  if (!this.adjuntoService.hasItems()) {
-         //NO HAY ADJUNTOS
-         this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_MSJ_RETENTION_NO_ATTACHMENTS')!);
-         return;
-       } */
       try {
         const details = this.collectService.collection?.collectionDetails;
         const hasRetentions = Array.isArray(details) && details.some(d => {
@@ -306,6 +300,16 @@ export class CobrosHeaderComponent implements OnInit {
           const r2 = Number(d?.nuAmountRetention2 ?? 0);
           return (r1 > 0) || (r2 > 0);
         });
+
+
+        //NUEVA VALIDACION, SI LA CONFIGURACION DE LA EMPRESA INDICA QUE LOS COBROS REQUIEREN ADJUNTOS, SE VALIDA QUE HAYA ADJUNTOS INDEPENDIENTEMENTE DE SI HAY RETENCIONES O NO
+        if (this.collectService.requiredCollectionAttachments) {
+          if (!this.adjuntoService.hasItems()) {
+            //NO HAY ADJUNTOS
+            this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_RET_MSJ_COLLECTION_NO_ATTACHMENTS')!);
+            return;
+          }
+        }
 
         // Guardar resultado en el servicio para uso posterior y log para depuración
         //this.collectService.isRetention = !!hasRetentions;

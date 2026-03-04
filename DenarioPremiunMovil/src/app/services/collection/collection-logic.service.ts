@@ -205,6 +205,7 @@ export class CollectionService {
   public alwaysRetention: boolean = false;
   public alwaysPartialPayment: boolean = false;
   public enablePartialPayment: boolean = false;
+  public requiredCollectionAttachments: boolean = false;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;
@@ -359,6 +360,8 @@ export class CollectionService {
     this.alwaysPartialPayment = alwaysPartialPaymentValue === 'true' ? true : false;
     const enablePartialPaymentValue = (this.globalConfig.get('enablePartialPayment') || '').trim();
     this.enablePartialPayment = enablePartialPaymentValue === '' ? true : enablePartialPaymentValue === 'true' ? true : false;
+    const requiredCollectionAttachmentsValue = (this.globalConfig.get('requiredCollectionAttachments') || '').trim();
+    this.requiredCollectionAttachments = requiredCollectionAttachmentsValue === '' ? true : requiredCollectionAttachmentsValue === 'true' ? true : false;
 
 
 

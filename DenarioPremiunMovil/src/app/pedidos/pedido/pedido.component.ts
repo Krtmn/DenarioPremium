@@ -94,6 +94,7 @@ export class PedidoComponent implements OnInit {
   public tipoOrdenAnterior!: OrderType;
   public listaAnterior!: List;
   public paymentCondition!: PaymentCondition;
+  public paymentConditionAnterior!: PaymentCondition;
 
   public hideAdjunto: boolean = true;
 
@@ -127,6 +128,7 @@ export class PedidoComponent implements OnInit {
   public modalInfoClienteOpen: boolean = false;
   saveOrExitOpen = false;
   parteDecimal = 2;
+  public DELIVERY_STATUS_SENT = DELIVERY_STATUS_SENT;
 
   nuValueLocal = 0;
   tasaCambio = '0';// la tasa que se muestra en el input
@@ -193,7 +195,7 @@ export class PedidoComponent implements OnInit {
         this.orderServ.empresaSeleccionada = this.empresaSeleccionada;
         this.orderServ.setup();
         this.tipoOrden = this.orderServ.listaOrderTypes.find((o) => o.idOrderType == this.orderServ.order.idOrderType)!;
-
+        this.inOrderReview = this.orderServ.order.inOrderReview;
         this.tipoOrdenAnterior = this.tipoOrden;
         if (!this.tipoOrden) {
           console.error('Tipo de orden original no encontrado: ' + this.orderServ.order.idOrderType);
@@ -1129,8 +1131,36 @@ export class PedidoComponent implements OnInit {
     return a && b ? a.idCurrency === b.idCurrency : a === b;
   }
 
-  setClientfromSelector(cliente: Client) {
+  setClientfromSelector(cliente: Client, skipDebtValidation: boolean = false) {
     if (cliente) {
+      if (!skipDebtValidation
+        && Number(cliente.saldo1 ?? 0) > 0
+        && this.orderServ.order?.stDelivery !== DELIVERY_STATUS_SENT
+        && this.orderServ.order?.stDelivery !== null) {
+        this.message.alertCustomBtn(
+          {
+            header: this.orderServ.getTag('PED_NOMBRE_MODULO'),
+            message: this.orderServ.getTag('PED_DENARIO_CLIENT_DEUDA'),
+          } as MessageAlert,
+          [
+            {
+              text: this.orderServ.getTag('DENARIO_BOTON_CANCELAR'),
+              role: 'cancel',
+              handler: () => {
+              },
+            },
+            {
+              text: this.orderServ.getTag('DENARIO_BOTON_ACEPTAR'),
+              role: 'confirm',
+              handler: () => {
+                this.setClientfromSelector(cliente, true);
+              },
+            }
+          ]
+        );
+        return;
+      }
+
       this.orderServ.cliente = cliente;
       this.segmentLock();
       if (this.orderServ.carrito.length > 0 || this.adjuntoService.hasItems()) {
@@ -1232,6 +1262,7 @@ export class PedidoComponent implements OnInit {
       let payCond = this.orderServ.listaPaymentCondition.find((pc) => pc.idPaymentCondition == idPaymentCondition)
       if (payCond != undefined) {
         this.paymentCondition = payCond;
+        this.paymentConditionAnterior = payCond;
       }
 
       // Address Client
@@ -1550,5 +1581,42 @@ export class PedidoComponent implements OnInit {
   paymentConditionInterfaceOptions = {
     side: 'top',
     alignment: 'center'
+  }
+
+  changePaymentCondition() {
+    if (!this.paymentConditionAnterior || !this.paymentCondition) {
+      this.paymentConditionAnterior = this.paymentCondition;
+      return;
+    }
+
+    if (this.paymentConditionAnterior.idPaymentCondition === this.paymentCondition.idPaymentCondition) {
+      return;
+    }
+
+    const paymentConditionSeleccionada = this.paymentCondition;
+
+    this.message.alertCustomBtn({
+      header: this.orderServ.getTag('PED_NOMBRE_MODULO'),
+      message: this.orderServ.getTag('PED_CAMBIO_CONDICION_PAGO') || '¿Desea cambiar la condición de pago?'
+    } as MessageAlert,
+      [
+        {
+          text: this.orderServ.getTag('DENARIO_BOTON_CANCELAR'),
+          role: 'cancel',
+          handler: () => {
+            this.paymentCondition = this.paymentConditionAnterior;
+            this.orderServ.setChangesMade(false);
+          },
+        },
+        {
+          text: this.orderServ.getTag('DENARIO_BOTON_ACEPTAR'),
+          role: 'confirm',
+          handler: () => {
+            this.paymentConditionAnterior = paymentConditionSeleccionada;
+            this.onChange();
+          },
+        }
+      ]
+    );
   }
 }
