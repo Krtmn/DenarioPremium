@@ -78,6 +78,7 @@ export class InventarioActividadesComponent implements OnInit {
 
   }
   preguntarSugerirPedido(){
+    this.inventariosLogicService.calcularTotalesSugerenciaPedido();
     let buttonsConfirmSend = [
       {
         text: 'Cancelar',
