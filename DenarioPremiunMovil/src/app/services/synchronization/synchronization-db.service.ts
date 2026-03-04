@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http
 import { BehaviorSubject, fromEventPattern, identity, Observable, throwError, firstValueFrom } from 'rxjs';
 import { NavController } from '@ionic/angular';
 import { Platform } from '@ionic/angular';
+import { Capacitor } from '@capacitor/core';
 // import { SQLitePorter } from '@ionic-native/sqlite-porter';
 import { SQLite, SQLiteObject } from '@awesome-cordova-plugins/sqlite/ngx';
 import { ServicesService } from '../services.service';
@@ -77,6 +78,19 @@ import { CurrencyModules } from '../../modelos/tables/currencyModules';
 import { Modules } from '../../modelos/tables/modules';
 import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
 import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
+
+/** Mock SQLiteObject para navegador: retorna resultados vacíos y permite probar la app con TestSprite */
+function createMockSqliteObject(): SQLiteObject {
+  const emptyRows = {
+    length: 0,
+    item: (_i: number) => null
+  };
+  return {
+    executeSql: (_sql: string, _params?: any[]) =>
+      Promise.resolve({ rows: emptyRows, rowsAffected: 0 }),
+    sqlBatch: (_operations: any[]) => Promise.resolve([])
+  } as SQLiteObject;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -174,17 +188,26 @@ export class SynchronizationDBService {
 
   async initDb(user: User, conexion: Boolean) {
     this.databaseReady = new BehaviorSubject(false);
-    this.sqlite.create({
+    const createPromise = this.sqlite.create({
       name: 'denarioPremium',
       location: 'default'
-    }).then((db: SQLiteObject) => {
+    });
+    if (!createPromise) {
+      console.warn('SQLite no disponible (ejecutando en navegador). Usando mock para pruebas con TestSprite.');
+      this.database = createMockSqliteObject();
+      this.createTables(user, conexion);
+      return;
+    }
+    createPromise.then((db: SQLiteObject) => {
       this.database = db;
       this.createTables(user, conexion);
     }).catch(e => console.log(e));
   }
 
-  getDatabase() {
-
+  getDatabase(): SQLiteObject {
+    if (!this.database && !Capacitor.isNativePlatform()) {
+      return createMockSqliteObject();
+    }
     return this.database;
   }
 
