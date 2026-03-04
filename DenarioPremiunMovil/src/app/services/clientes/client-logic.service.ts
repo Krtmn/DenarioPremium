@@ -223,16 +223,29 @@ export class ClientLogicService {
     })
   }
 
-  getClients(idEnterprise: number) {
+  getClients(idEnterprise: number, page: number) {
+    if (page === 0) {
     this.clients = [] as Client[];
-    return this.clientesServices.getClients(idEnterprise, 0)
+    }
+    return this.clientesServices.getClients(idEnterprise, page)
       .then((result) => {
+        this.fixClientListSaldos(result);
+        if(page === 0) {
         this.clients = result;
+        } else {
+        this.clients = this.clients.concat(result);
+        }
         this.results = [...result];
 
         // Recorre todos los clientes y loggea si la moneda es distinta a la moneda local
-        if (this.localCurrencyDefault) {
-          for (const c of this.clients) {
+
+        return Promise.resolve(result.length < this.clientesServices.MAX_ITEMS_PER_PAGE);
+      });
+  }
+
+  fixClientListSaldos(clients: Client[]): Client[] {
+            if (this.localCurrencyDefault) {
+          for (const c of clients) {
             if (c.coCurrency !== this.localCurrency.coCurrency) {
               c.saldo1 = this.currencyService.toOppositeCurrency(c.coCurrency, c.saldo1);
               c.coCurrency = this.localCurrency.coCurrency;
@@ -240,16 +253,15 @@ export class ClientLogicService {
             }
           }
         } else {
-          for (const c of this.clients) {
+          for (const c of clients) {
             if (c.coCurrency !== this.hardCurrency.coCurrency) {
               c.coCurrency = this.hardCurrency.coCurrency;
               c.saldo1 = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.saldo1);
             }
           }
         }
-        return Promise.resolve(true)
-      });
-  }
+        return clients;
+      }
 
   // Reemplazar la función goToClient existente por esta versión async
   async goToClient(idClient: number): Promise<void> {

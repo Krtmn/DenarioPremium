@@ -39,6 +39,8 @@ export class ClientListComponent implements OnInit {
   public indice!: number;
   public clientDetailComponent: Boolean = false;
   public precision = this.currencyService.precision;
+  page = 0;
+  scrollDisable =  false;
 
   public dateToday: Date = (() => {
     const d = new Date();
@@ -66,13 +68,16 @@ export class ClientListComponent implements OnInit {
     this.clientDetailComponent = false;
     this.onChangeEnterprise();
     this.clientLogic.fromSelector = false; //indicamos que no venimos del selector de cliente, sino del listado de clientes
+    this.scrollDisable = false;
   }
 
-  onIonInfinite(ev: any) {
-    this.indice++;
-    setTimeout(() => {
+  onIonInfinite(ev: InfiniteScrollCustomEvent) {
+    this.page++;
+    this.clientLogic.getClients(this.clientLogic.empresaSeleccionada.idEnterprise, this.page).then(result => {
+      this.scrollDisable = result;
       (ev as InfiniteScrollCustomEvent).target.complete();
-    }, 800);
+      this.clientLogic.message.hideLoading();
+    });
   }
   handleInput(event: any) {
     this.searchText = event.target.value.toLowerCase();
@@ -88,9 +93,9 @@ export class ClientListComponent implements OnInit {
 
   onChangeEnterprise() {
     this.service.clientes = [] as Client[];
-    this.clientLogic.getClients(this.clientLogic.empresaSeleccionada.idEnterprise).then(result => {
+    this.clientLogic.getClients(this.clientLogic.empresaSeleccionada.idEnterprise, 0).then(result => {
 
-      this.indice = 1;
+      this.page = 0;
       if (this.currencyService.multimoneda) {
         let saldoCliente = 0, saldoOpuesto = 0;
         for (let c = 0; c < this.clientLogic.clients.length; c++) {

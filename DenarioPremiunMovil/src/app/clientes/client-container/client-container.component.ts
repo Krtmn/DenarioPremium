@@ -91,7 +91,7 @@ export class ClienteContainerComponent implements OnInit {
   clientList() {
     this.clientLogic.initService();
     this.messageService.showLoading().then(() => {
-      this.clientLogic.getClients(this.clientLogic.listaEmpresa[0].idEnterprise).then(resp => {
+      this.clientLogic.getClients(this.clientLogic.listaEmpresa[0].idEnterprise, 0).then(resp => {
         this.messageService.hideLoading();
         this.clientLogic.clientContainerComponent = false;
         this.clientLogic.clientListComponent = true;
