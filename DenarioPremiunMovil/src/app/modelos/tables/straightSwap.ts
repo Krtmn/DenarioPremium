@@ -10,6 +10,7 @@ export class StraightSwap {
         obj['coUnit'],
         obj['idEnterprise'],
         obj['coEnterprise'],
+        obj['quSwap'],
     );
 }
 
@@ -23,5 +24,6 @@ export class StraightSwap {
   public coUnit: string,
   public idEnterprise: number,
   public coEnterprise: string,
+  public quSwap: number,
   ) { }
 }

@@ -334,7 +334,7 @@
     "name": "straight_swap",
     "table": "straightSwap",
     "idName": "id_straight_swap",
-    "sql": "CREATE TABLE IF NOT EXISTS straight_swap ( id_swap integer NOT NULL, co_swap character varying(30), id_product integer NOT NULL, co_product character varying(30), da_cambio timestamp without time zone, id_unit integer NOT NULL, co_unit character varying(30), id_enterprise integer NOT NULL, co_enterprise character varying(30));"
+    "sql": "CREATE TABLE IF NOT EXISTS straight_swap ( id_swap integer NOT NULL, co_swap character varying(30), id_product integer NOT NULL, co_product character varying(30), da_cambio timestamp without time zone, id_unit integer NOT NULL, co_unit character varying(30), id_enterprise integer NOT NULL, co_enterprise character varying(30), qu_swap decimal(10,5));"
   },
   {
     "id":78,
