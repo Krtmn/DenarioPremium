@@ -11,6 +11,7 @@ import { ClientLogicService } from 'src/app/services/clientes/client-logic.servi
 import { ClientesDatabaseServicesService } from 'src/app/services/clientes/clientes-database-services.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { EnterpriseService } from 'src/app/services/enterprise/enterprise.service';
+import { MessageService } from 'src/app/services/messageService/message.service';
 import { ServicesService } from 'src/app/services/services.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
@@ -27,6 +28,8 @@ export class ClientListComponent implements OnInit {
   public clientLogic = inject(ClientLogicService);
   private service = inject(ClienteSelectorService);
 
+  private messageService = inject(MessageService);
+
   public listaEmpresa: Enterprise[] = [];
   public prueba!: string[];
   public clients!: any[];
@@ -39,7 +42,6 @@ export class ClientListComponent implements OnInit {
   public indice!: number;
   public clientDetailComponent: Boolean = false;
   public precision = this.currencyService.precision;
-  page = 0;
   scrollDisable =  false;
 
   public dateToday: Date = (() => {
@@ -72,12 +74,22 @@ export class ClientListComponent implements OnInit {
   }
 
   onIonInfinite(ev: InfiniteScrollCustomEvent) {
-    this.page++;
-    this.clientLogic.getClients(this.clientLogic.empresaSeleccionada.idEnterprise, this.page).then(result => {
+    this.clientLogic.clientListPage++;
+    if(this.clientLogic.clientListSearchMode) {
+      this.clientLogic.searchClients(this.clientLogic.empresaSeleccionada.idEnterprise, this.searchText).then(result => {
+        this.onIonInfiniteFinish(ev, result);
+      });
+    } else {
+    this.clientLogic.getClients(this.clientLogic.empresaSeleccionada.idEnterprise).then(result => {
+      this.onIonInfiniteFinish(ev, result);
+    });
+  }
+  }
+
+  onIonInfiniteFinish(ev: InfiniteScrollCustomEvent, result: boolean) {
       this.scrollDisable = result;
       (ev as InfiniteScrollCustomEvent).target.complete();
       this.clientLogic.message.hideLoading();
-    });
   }
   handleInput(event: any) {
     this.searchText = event.target.value.toLowerCase();
@@ -90,12 +102,29 @@ export class ClientListComponent implements OnInit {
     return this.currencyService.formatNumber(num);
   }
 
+    onSearchClicked(event?: Event) {
+    event?.preventDefault();
+    const inputElement = event?.target as HTMLInputElement | null;
+    this.messageService.showLoading();
+    if (inputElement) {
+      this.searchText = inputElement.value;
+    }
+    this.clientLogic.clientListPage = 0;
+    if (this.searchText.trim() == '') {
+      //poner la lista de clientes normal
+    } else {
+      this.clientLogic.searchClients(this.clientLogic.empresaSeleccionada.idEnterprise, this.searchText).then(result => {
+        this.messageService.hideLoading();
+        this.scrollDisable = result;
+      });
+    }
+    }
 
   onChangeEnterprise() {
     this.service.clientes = [] as Client[];
-    this.clientLogic.getClients(this.clientLogic.empresaSeleccionada.idEnterprise, 0).then(result => {
+    this.clientLogic.clientListPage = 0;
+    this.clientLogic.getClients(this.clientLogic.empresaSeleccionada.idEnterprise).then(result => {
 
-      this.page = 0;
       if (this.currencyService.multimoneda) {
         let saldoCliente = 0, saldoOpuesto = 0;
         for (let c = 0; c < this.clientLogic.clients.length; c++) {

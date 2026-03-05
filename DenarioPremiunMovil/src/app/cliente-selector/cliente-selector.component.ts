@@ -39,6 +39,7 @@ export class ClienteSelectorComponent implements OnInit {
   public tags = new Map<string, string>([]);
   public clientes!: Client[]
   public searchText: string = '';
+  public searchMode: boolean = false;
   public clientChangeOpen = false;
   public multimoneda: boolean = false;
   public cliente!: Client
@@ -130,6 +131,17 @@ export class ClienteSelectorComponent implements OnInit {
 
 
   }
+
+  onModalOpen() {
+    //console.log("modal abierto");
+    this.searchMode = false;
+    this.searchText = '';
+    this.scrollDisable = false;
+    this.clientes = this.service.clientes;
+    if (this.clientes.length == 0) {
+      this.updateClientList(this.idEnterprise);
+    }
+  }
   setSkin(nombreModulo: string, colorModulo: string) {
     this.colorModulo = colorModulo;
     this.nombreModulo = nombreModulo;
@@ -138,91 +150,104 @@ export class ClienteSelectorComponent implements OnInit {
     this.service.nombreModulo = nombreModulo;
   }
 
-  loadCurrencyModule(){
-      //carga variables que dependen del currencyModule
-      this.showConversion = this.service.currencyModule.showConversion;
-      this.localCurrencyDefault = this.service.currencyModule.localCurrencyDefault;
-      if (this.service.currencyModule.idModule > 0) {
-        this.currencySwitchEnabled = true;
-      }
+  loadCurrencyModule() {
+    //carga variables que dependen del currencyModule
+    this.showConversion = this.service.currencyModule.showConversion;
+    this.localCurrencyDefault = this.service.currencyModule.localCurrencyDefault;
+    if (this.service.currencyModule.idModule > 0) {
+      this.currencySwitchEnabled = true;
+    }
   }
 
   updateClientList(idEnterprise: number): Promise<any> {
+
     return this.messageService.showLoading().then(() => {
-      return this.clientServ.getClients(idEnterprise, this.page).then(result => {
-        if(this.page == 0) {
-        this.clientes = [] as Client[];
-        this.service.clientes = [] as Client[];
-        }
-
-        this.scrollDisable = result.length < this.clientServ.MAX_ITEMS_PER_PAGE;
-
-
-        if (this.currencyService.multimoneda) {
-          result = this.fixClientListSaldos(result);
-        }
-        
-        if (this.nombreModulo == 'Cobros' &&
-          this.collectLogic.userCanCollectIva &&
-          this.collectLogic.cobro25) {
-            for (var i = 0; i < result.length; i++) {
-              if (result[i].collectionIva) {
-                this.clientes.push(result[i]);
-              }
-            }
-        } else
-          this.clientes = [...this.clientes, ...result];
-        //this.service.clienteAnterior = null;
-
-        //console.log("[ClienteSelector] Lista de clientes actualizada");
-        //mostrando los saldos correctamente
-        
-        //para usarlo luego
-        this.service.clientes = this.clientes;
-        this.service.checkClient = false;
-        this.messageService.hideLoading();
-      })
+      return this.getClients(idEnterprise).then(() => {
+        //console.log("Clientes cargados");
+      });
     });
   }
 
-  fixClientListSaldos(result: any) {
-    let saldoCliente = 0, saldoOpuesto = 0;        
-          for (let c = 0; c < result.length; c++) {
-            if (result[c].coCurrency == this.localCurrency.coCurrency) {
-              saldoCliente = result[c].saldo1 + this.currencyService.toLocalCurrency(result[c].saldo2);
-              saldoOpuesto = this.currencyService.toHardCurrency(saldoCliente);
-            } else {
-              saldoCliente = result[c].saldo1 + this.currencyService.toHardCurrency(result[c].saldo2);
-              saldoOpuesto = this.currencyService.toLocalCurrency(saldoCliente);
-            }
-            result[c].saldo1 = saldoCliente;
-            result[c].saldo2 = saldoOpuesto;
+  getClients(idEnterprise: number): Promise<any> {
+    this.searchMode = false;
+    return this.clientServ.getClients(idEnterprise, this.page).then(result => {
+      this.handleUpdateClientList(result);
+    });
+  }
 
-            if (this.currencySwitchEnabled && this.localCurrencyDefault) {
-              //la primera moneda es la local
-              if (result[c].coCurrency != this.localCurrency.coCurrency) {
-                //cambiamos la moneda del cliente
-                result[c].coCurrency = this.oppositeCoCurrency(result[c].coCurrency);
-                var tempSaldo = result[c].saldo1;
-                result[c].saldo1 = result[c].saldo2;
-                result[c].saldo2 = tempSaldo;
-              }
-            } else {
-              //la primera moneda es la dura
-              if (result[c].coCurrency != this.hardCurrency.coCurrency) {
-                //cambiamos la moneda del cliente
-                result[c].coCurrency = this.oppositeCoCurrency(result[c].coCurrency);
-                var tempSaldo = result[c].saldo1;
-                result[c].saldo1 = result[c].saldo2;
-                result[c].saldo2 = tempSaldo;
-              }
-            }
+  searchClients(idEnterprise: number, searchText: string): Promise<any> {
+    this.searchMode = true;
+    return this.messageService.showLoading().then(() => {
+      return this.clientServ.searchClients(idEnterprise, searchText, this.page).then(result => {
+        this.handleUpdateClientList(result);
+      });
+    });
+  }
 
-            saldoCliente = saldoOpuesto = 0;
-          
-          }
-          return result;
+  handleUpdateClientList(result: Client[]) {
+    this.scrollDisable = result.length < this.clientServ.MAX_ITEMS_PER_PAGE;
+    if (this.page == 0) {
+      this.clientes = [] as Client[];
+      this.service.clientes = [] as Client[];
+    }
+    if (this.nombreModulo == 'Cobros' &&
+      this.collectLogic.userCanCollectIva &&
+      this.collectLogic.cobro25) {
+      for (var i = 0; i < result.length; i++) {
+        if (result[i].collectionIva) {
+          this.clientes.push(result[i]);
         }
+      }
+    } else
+      this.clientes = [...this.clientes, ...result];
+    //console.log("[ClienteSelector] Lista de clientes actualizada");       
+    this.noClientsAlertShown = this.clientes.length == 0;
+    //para usarlo luego
+    if (!this.searchMode) {
+      this.service.clientes = this.clientes;
+    }
+    this.service.checkClient = false;
+    this.messageService.hideLoading();
+  }
+  fixClientListSaldos(result: any) {
+    //mostrando los saldos correctamente
+    let saldoCliente = 0, saldoOpuesto = 0;
+    for (let c = 0; c < result.length; c++) {
+      if (result[c].coCurrency == this.localCurrency.coCurrency) {
+        saldoCliente = result[c].saldo1 + this.currencyService.toLocalCurrency(result[c].saldo2);
+        saldoOpuesto = this.currencyService.toHardCurrency(saldoCliente);
+      } else {
+        saldoCliente = result[c].saldo1 + this.currencyService.toHardCurrency(result[c].saldo2);
+        saldoOpuesto = this.currencyService.toLocalCurrency(saldoCliente);
+      }
+      result[c].saldo1 = saldoCliente;
+      result[c].saldo2 = saldoOpuesto;
+
+      if (this.currencySwitchEnabled && this.localCurrencyDefault) {
+        //la primera moneda es la local
+        if (result[c].coCurrency != this.localCurrency.coCurrency) {
+          //cambiamos la moneda del cliente
+          result[c].coCurrency = this.oppositeCoCurrency(result[c].coCurrency);
+          var tempSaldo = result[c].saldo1;
+          result[c].saldo1 = result[c].saldo2;
+          result[c].saldo2 = tempSaldo;
+        }
+      } else {
+        //la primera moneda es la dura
+        if (result[c].coCurrency != this.hardCurrency.coCurrency) {
+          //cambiamos la moneda del cliente
+          result[c].coCurrency = this.oppositeCoCurrency(result[c].coCurrency);
+          var tempSaldo = result[c].saldo1;
+          result[c].saldo1 = result[c].saldo2;
+          result[c].saldo2 = tempSaldo;
+        }
+      }
+
+      saldoCliente = saldoOpuesto = 0;
+
+    }
+    return result;
+  }
 
   @Output() clienteSeleccionado: EventEmitter<Client> = new EventEmitter<Client>();
   selectClient(input: Client) {
@@ -247,12 +272,15 @@ export class ClienteSelectorComponent implements OnInit {
 
 
   handleInput(event: any) {
+
+    //no se usa por ahora
     this.noClientsAlertShown = false;
     this.searchText = event.target.value.toLowerCase();
-    
+
+
     let countCoClient = this.clientes.filter(c => c.coClient.toLowerCase().includes(this.searchText)).length;
     let countLbClient = this.clientes.filter(c => c.lbClient.toLowerCase().includes(this.searchText)).length;
-    this.noClientsAlertShown = (countCoClient+countLbClient) == 0;
+    this.noClientsAlertShown = (countCoClient + countLbClient) == 0;
   }
 
   /*
@@ -333,13 +361,36 @@ export class ClienteSelectorComponent implements OnInit {
       }
     }
   ];
-onIonInfinite(ev: InfiniteScrollCustomEvent){
-  this.page++;
-  this.updateClientList(this.idEnterprise).then(() => {
-    (ev as InfiniteScrollCustomEvent).target.complete();
-    this.messageService.hideLoading();
-  });
-}
+
+  onSearchClicked(event?: Event) {
+    event?.preventDefault();
+    const inputElement = event?.target as HTMLInputElement | null;
+    this.messageService.showLoading();
+    if (inputElement) {
+      this.searchText = inputElement.value;
+    }
+    this.page = 0;
+    if (this.searchText.trim() == '') {
+      this.onModalOpen();
+    } else {
+      this.searchClients(this.idEnterprise, this.searchText);
+    }
+
+
+  }
+  onIonInfinite(ev: InfiniteScrollCustomEvent) {
+    this.page++;
+    if (this.searchMode) {
+      this.searchClients(this.idEnterprise, this.searchText).then(() => {
+        (ev as InfiniteScrollCustomEvent).target.complete();
+        this.messageService.hideLoading();
+      });
+    } else {
+      this.getClients(this.idEnterprise).then(() => {
+        (ev as InfiniteScrollCustomEvent).target.complete();
+      });
+    }
+  }
 
 
 }
