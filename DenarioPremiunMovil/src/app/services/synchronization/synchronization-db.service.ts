@@ -108,7 +108,7 @@ export class SynchronizationDBService {
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
-  private CURRENT_DB_VERSION: number = 4;
+  private CURRENT_DB_VERSION: number = 5;
 
   constructor(
     private navController: NavController,
@@ -467,7 +467,7 @@ export class SynchronizationDBService {
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
-      statements.push([insertStatement, [obj.idBank, obj.coEnterprise, obj.idEnterprise, obj.naBank, obj.coBank]])
+      statements.push([insertStatement, [obj.idBank, obj.coEnterprise, obj.idEnterprise, obj.nameBank, obj.coBank]])
     }
 
     return this.database.sqlBatch(statements).then(res => {

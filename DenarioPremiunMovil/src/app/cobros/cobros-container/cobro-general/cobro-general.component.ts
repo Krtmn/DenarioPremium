@@ -373,6 +373,7 @@ export class CobrosGeneralComponent implements OnInit {
             nombreBanco: payment.naBank,
             numeroTransferencia: payment.nuPaymentDoc,
             numeroCuenta: payment.nuClientBankAccount,
+            numeroCuentaCliente: payment.newNuClientBankAccount,
             monto: payment.nuAmountPartial,
             montoConversion: payment.nuAmountPartialConversion,
             fecha: payment.daValue!,
@@ -383,6 +384,7 @@ export class CobrosGeneralComponent implements OnInit {
             disabled: false,
             bancoReceptor: this.getBancoReceptor(payment.nuClientBankAccount),
             showDateModal: false,
+            showNuevaCuenta: false,
           };
           const cuenta = bankAccounts.find(b => b.idBank == newPagoTransferencia.idBanco);
           if (cuenta) {
@@ -417,7 +419,7 @@ export class CobrosGeneralComponent implements OnInit {
         }
         case 'ch': {
           const newPagoCheque: PagoCheque = {
-            idBank: payment.idBank,
+            idBanco: payment.idBank,
             nombreBanco: payment.naBank,
             fecha: payment.daValue!,
             monto: payment.nuAmountPartial,
@@ -432,6 +434,7 @@ export class CobrosGeneralComponent implements OnInit {
             bancoReceptor: new BancoReceptor(),
             showDateVenceModal: false,
             showDateValorModal: false,
+            showNuevaCuenta: false,
           };
           this.collectService.pagoCheque.push(newPagoCheque);
           break;
@@ -1098,10 +1101,18 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   onChangeEnterprise() {
-    console.log("asd");
-    this.collectService.alertMessageChangeEnterprise = true;
+    if (this.collectService.collection.collectionDetails.length > 0 || this.collectService.collection.collectionPayments.length > 0 || this.collectService.nameClient != "") {
+      this.collectService.alertMessageChangeEnterprise = true;
+
+      this.collectService.mensaje = "Se ha detectado cambio de Empresa por lo que debera iniciar nuevamente la transacción.";
+    } else {
+      this.collectService.cobroValid = false;
+      this.collectService.changeClient = false;
+      this.collectService.newCollect = true;
+      this.onEnterpriseSelect();
+    }
     this.collectService.changeEnterprise = true;
-    this.collectService.mensaje = "Se ha detectado cambio de Empresa por lo que debera iniciar nuevamente la transacción.";
+
   }
 
   setShowDateRateModal(show: boolean) {

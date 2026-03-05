@@ -218,6 +218,7 @@ export class CollectionPayment {
       obj['isAnticipoPrepaid'],
       obj['idDifferenceCode'],
       obj['coDifferenceCode'],
+      obj['nuBankAccount'],
 
     );
   }
@@ -243,7 +244,8 @@ export class CollectionPayment {
     public isSave: boolean = true, // true se guarda el pedido, false se actualiza
     public isAnticipoPrepaid: boolean = false, // true se guarda el pedido, false se actualiza
     public idDifferenceCode: number | null = 0,
-    public coDifferenceCode: string | null = ""
+    public coDifferenceCode: string | null = "",
+    public nuBankAccount: string | null = ""
 
 
   ) { }

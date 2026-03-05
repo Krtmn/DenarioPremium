@@ -1,0 +1,7 @@
+[
+  {
+    "sql": "ALTER TABLE collection_payments ADD COLUMN nu_bank_account VARCHAR(50);",
+    "description": "Se agrega la columna 'nu_bank_account' a la tabla 'collection_payments' para almacenar el número de cuenta bancaria."
+  }
+]
+

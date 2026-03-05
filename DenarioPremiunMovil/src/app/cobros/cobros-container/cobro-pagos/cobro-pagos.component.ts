@@ -399,6 +399,25 @@ export class CobroPagosComponent implements OnInit {
 
   selectBankAccount(index: number, type: string,) {
 
+    const applyDateToPayment = (posCollectionPayment: number, setFecha: (v: string) => void) => {
+      const payment = this.collectService.collection.collectionPayments![posCollectionPayment]!;
+
+      if (this.collectService.validateCollectionDate) {
+        const dateRate = this.collectService.dateRate + " 00:00:00";
+        setFecha(dateRate);
+        payment.daCollectionPayment = dateRate;
+        payment.daValue = dateRate;
+        this.collectService.enableDate = true;
+      } else {
+        const today = this.dateServ.hoyISO();
+        setFecha(today);
+        const formatted = today.split("T")[0] + " " + today.split("T")[1];
+        payment.daCollectionPayment = formatted;
+        payment.daValue = formatted;
+        this.collectService.enableDate = false;
+      }
+    };
+
     switch (type) {
       case "ef": {
         this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[index].posCollectionPayment]!.coCollection! = this.collectService.collection.coCollection;
@@ -408,66 +427,42 @@ export class CobroPagosComponent implements OnInit {
       }
 
       case "ch": {
+        const pos = this.collectService.pagoCheque[index].posCollectionPayment;
+        const payment = this.collectService.collection.collectionPayments![pos]!;
+        const selectedBank = this.collectService.bankAccountSelected?.[pos];
+
+        if (selectedBank) {
+          this.collectService.pagoCheque[index].idBanco = selectedBank.idBank;
+          this.collectService.pagoCheque[index].nombreBanco = selectedBank.nameBank;
+        }
 
         if (this.collectService.clientBankAccount) {
           if (this.collectService.pagoCheque[index].nombreBanco == "Nueva Cuenta") {
-            this.collectService.showNuevaCuenta = true;
+            this.collectService.pagoCheque[index].showNuevaCuenta = true;
           } else {
-            this.collectService.showNuevaCuenta = false;
-            this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.coClientBankAccount!
+            this.collectService.pagoCheque[index].showNuevaCuenta = false;
+            payment.coClientBankAccount!
               = this.collectService.pagoCheque[index].nombreBanco;
 
-            this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.newNuClientBankAccount = "";
+            payment.newNuClientBankAccount = "";
           }
         } else {
-          this.collectService.showNuevaCuenta = false;
+          this.collectService.pagoCheque[index].showNuevaCuenta = false;
         }
 
-        if (this.collectService.validateCollectionDate) {
-          //LA FECHA DE LOS PAGOS DEBE SER LA MISMA QUE LA FECHA DE LA TASA
-          this.collectService.pagoCheque[index].fecha = this.collectService.dateRate + " 00:00:00";
-
-          this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.daCollectionPayment!
-            = this.collectService.dateRate + " 00:00:00";
-
-          this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.daValue!
-            = this.collectService.dateRate + " 00:00:00";
-
-          this.collectService.enableDate = true;
-
-        } else {
-          this.collectService.pagoCheque[index].fecha = this.dateServ.hoyISO();
-
-          this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.daCollectionPayment!
-            = this.collectService.pagoCheque[index].fecha.split("T")[0] + " " + this.collectService.pagoCheque[index].fecha.split("T")[1];
-
-          this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.daValue!
-            = this.collectService.pagoCheque[index].fecha.split("T")[0] + " " + this.collectService.pagoCheque[index].fecha.split("T")[1];
-
-          this.collectService.enableDate = false;
-
-        }
+        applyDateToPayment(pos, (v) => this.collectService.pagoCheque[index].fecha = v);
         this.collectService.pagoCheque[index].fechaValor = this.dateServ.hoyISO();
         this.collectService.pagoCheque[index].disabled = false;
 
-
-        this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.coCollection!
-          = this.collectService.collection.coCollection;
-
-
-        this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.coClientBankAccount
+        payment.coCollection = this.collectService.collection.coCollection;
+        payment.coClientBankAccount
           = this.collectService.pagoCheque[index].nombreBanco;
 
-        this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.naBank
+        payment.naBank
           = this.collectService.pagoCheque[index].nombreBanco;
 
-        this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.nuClientBankAccount
-          = this.collectService.pagoCheque[index].nombreBanco;
-
-        this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.coPaymentMethod
-          = type;
-
-        this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.coType = type;
+        payment.coPaymentMethod = type;
+        payment.coType = type;
 
 
         this.validatePayment("ch", index);
@@ -476,42 +471,24 @@ export class CobroPagosComponent implements OnInit {
       }
 
       case "de": {
-        console.log(this.collectService.bankAccountSelected);
-        this.collectService.pagoDeposito[index].idBanco = this.collectService.bankAccountSelected[this.collectService.pagoDeposito[index].posCollectionPayment].idBank;
-        this.collectService.pagoDeposito[index].nombreBanco = this.collectService.bankAccountSelected[this.collectService.pagoDeposito[index].posCollectionPayment].nameBank;
-        this.collectService.pagoDeposito[index].numeroCuenta = this.collectService.bankAccountSelected[this.collectService.pagoDeposito[index].posCollectionPayment].nuAccount;
+        const pos = this.collectService.pagoDeposito[index].posCollectionPayment;
+        const payment = this.collectService.collection.collectionPayments![pos]!;
+        const selectedBank = this.collectService.bankAccountSelected?.[pos];
 
-        if (this.collectService.validateCollectionDate) {
-          //LA FECHA DE LOS PAGOS DEBE SER LA MISMA QUE LA FECHA DE LA TASA
-          this.collectService.pagoDeposito[index].fecha = this.collectService.dateRate + " 00:00:00";
-
-          this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.daCollectionPayment!
-            = this.collectService.dateRate + " 00:00:00";
-
-          this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.daValue!
-            = this.collectService.dateRate + " 00:00:00";
-
-          this.collectService.enableDate = true;
-
-        } else {
-          this.collectService.pagoDeposito[index].fecha = this.dateServ.hoyISO();
-
-          this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.daCollectionPayment!
-            = this.collectService.pagoDeposito[index].fecha.split("T")[0] + " " + this.collectService.pagoDeposito[index].fecha.split("T")[1];
-
-          this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.daValue!
-            = this.collectService.pagoDeposito[index].fecha.split("T")[0] + " " + this.collectService.pagoDeposito[index].fecha.split("T")[1];
-
-          this.collectService.enableDate = false;
-
+        if (selectedBank) {
+          this.collectService.pagoDeposito[index].idBanco = selectedBank.idBank;
+          this.collectService.pagoDeposito[index].nombreBanco = selectedBank.nameBank;
+          this.collectService.pagoDeposito[index].numeroCuenta = selectedBank.nuAccount;
         }
 
-        this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.coCollection! = this.collectService.collection.coCollection;
-        this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.coPaymentMethod = type;
-        this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.idBank = this.collectService.pagoDeposito[index].idBanco;
-        this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.naBank = this.collectService.pagoDeposito[index].nombreBanco;
-        this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.nuClientBankAccount = this.collectService.pagoDeposito[index].numeroCuenta;
-        this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.coType = type;
+        applyDateToPayment(pos, (v) => this.collectService.pagoDeposito[index].fecha = v);
+
+        payment.coCollection = this.collectService.collection.coCollection;
+        payment.coPaymentMethod = type;
+        payment.idBank = this.collectService.pagoDeposito[index].idBanco;
+        payment.naBank = this.collectService.pagoDeposito[index].nombreBanco;
+        payment.nuClientBankAccount = this.collectService.pagoDeposito[index].numeroCuenta;
+        payment.coType = type;
 
         this.collectService.pagoDeposito[index].disabled = false;
         this.validatePayment("de", index);
@@ -519,61 +496,32 @@ export class CobroPagosComponent implements OnInit {
       }
 
       case "tr": {
-        this.collectService.pagoTransferencia[index].idBanco = this.collectService.bankAccountSelected[this.collectService.pagoTransferencia[index].posCollectionPayment].idBank;
-        this.collectService.pagoTransferencia[index].nombreBanco = this.collectService.bankAccountSelected[this.collectService.pagoTransferencia[index].posCollectionPayment].nameBank;
-        this.collectService.pagoTransferencia[index].numeroCuenta = this.collectService.bankAccountSelected[this.collectService.pagoTransferencia[index].posCollectionPayment].nuAccount;
+        const pos = this.collectService.pagoTransferencia[index].posCollectionPayment;
+        const payment = this.collectService.collection.collectionPayments![pos]!;
+        const selectedClientBank = this.collectService.clientBankAccountSelected?.[pos];
+
+        this.collectService.pagoTransferencia[index].numeroCuentaCliente = selectedClientBank?.nuAccount;
         //
         if (this.collectService.clientBankAccount) {
-          if (this.collectService.pagoTransferencia[index].numeroCuenta == "Nueva Cuenta") {
-            this.collectService.showNuevaCuenta = true;
+          if (this.collectService.pagoTransferencia[index].numeroCuentaCliente == "Nueva Cuenta") {
+            payment.coClientBankAccount = selectedClientBank?.nuAccount;
+            this.collectService.pagoTransferencia[index].showNuevaCuenta = true;
           } else {
-            this.collectService.showNuevaCuenta = false;
-            this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.coClientBankAccount!
-              = this.collectService.pagoTransferencia[index].nombreBanco;
-
-            this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.newNuClientBankAccount = "";
+            this.collectService.pagoTransferencia[index].showNuevaCuenta = false;
+            payment.nuClientBankAccount = selectedClientBank?.nuAccount;
+            payment.coClientBankAccount = selectedClientBank?.coClientBankAccount;
+            payment.newNuClientBankAccount = "";
           }
         } else {
-          this.collectService.showNuevaCuenta = false;
+          this.collectService.pagoTransferencia[index].showNuevaCuenta = false;
         }
 
-
-
-
-        if (this.collectService.validateCollectionDate) {
-          //LA FECHA DE LOS PAGOS DEBE SER LA MISMA QUE LA FECHA DE LA TASA
-          this.collectService.pagoTransferencia[index].fecha = this.collectService.dateRate + " 00:00:00";
-
-          this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daCollectionPayment!
-            = this.collectService.dateRate + " 00:00:00";
-
-          this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daValue!
-            = this.collectService.dateRate + " 00:00:00";
-
-          this.collectService.enableDate = true;
-
-        } else {
-
-
-          this.collectService.pagoTransferencia[index].fecha = this.dateServ.hoyISO();
-
-          this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daCollectionPayment!
-            = this.collectService.pagoTransferencia[index].fecha.split("T")[0] + " " + this.collectService.pagoTransferencia[index].fecha.split("T")[1];
-
-          this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daValue!
-            = this.collectService.pagoTransferencia[index].fecha.split("T")[0] + " " + this.collectService.pagoTransferencia[index].fecha.split("T")[1];
-
-          this.collectService.enableDate = false;
-
-        }
-
-        this.collectService.pagoTransferencia[index].fecha = this.dateServ.hoyISO();
+        applyDateToPayment(pos, (v) => this.collectService.pagoTransferencia[index].fecha = v);
         this.collectService.pagoTransferencia[index].disabled = false;
 
-        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.coCollection! = this.collectService.collection.coCollection;
-        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.coPaymentMethod = type;
-
-        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.coType = type
+        payment.coCollection = this.collectService.collection.coCollection;
+        payment.coPaymentMethod = type;
+        payment.coType = type
 
 
         this.validatePayment("tr", index);
@@ -581,6 +529,16 @@ export class CobroPagosComponent implements OnInit {
       }
 
       case "ot": {
+        const pos = this.collectService.pagoOtros[index].posCollectionPayment;
+        const payment = this.collectService.collection.collectionPayments![pos]!;
+
+        applyDateToPayment(pos, (v) => this.collectService.pagoOtros[index].fecha = v);
+
+        this.collectService.pagoOtros[index].disabled = false;
+        payment.coCollection = this.collectService.collection.coCollection;
+        payment.coPaymentMethod = type;
+        payment.coType = type;
+
         this.validatePayment("ot", index);
         break;
       }
@@ -1002,7 +960,7 @@ export class CobroPagosComponent implements OnInit {
         this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.coPaymentMethod = type;
         this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.idBank = this.collectService.pagoTransferencia[index].idBanco;
         this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.naBank = this.collectService.pagoTransferencia[index].nombreBanco;
-        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.nuClientBankAccount = this.collectService.pagoTransferencia[index].numeroCuenta;
+        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.nuBankAccount = this.collectService.pagoTransferencia[index].numeroCuenta;
         this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.coType = type;
 
 
@@ -1174,7 +1132,7 @@ export class CobroPagosComponent implements OnInit {
     cleaned = cleaned.replace(/,/g, '.');
     // Remove any characters except digits, dot and minus
     cleaned = cleaned.replace(/[^0-9.-]/g, '');
-    if (cleaned === '' || cleaned === '.' || cleaned === '-' ) return 0;
+    if (cleaned === '' || cleaned === '.' || cleaned === '-') return 0;
     const n = Number(cleaned);
     if (isNaN(n)) return 0;
     return Math.round(n * this.getMultiplier());

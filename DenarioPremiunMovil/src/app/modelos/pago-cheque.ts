@@ -4,7 +4,7 @@ export class PagoCheque {
 
     static pagoChequeJson(obj: PagoCheque) {
         return new PagoCheque(
-            obj['idBank'],
+            obj['idBanco'],
             obj['nombreBanco'],
             obj['fecha'],
             obj['monto'],
@@ -17,11 +17,12 @@ export class PagoCheque {
             obj['anticipoPrepaid'],
             obj['disabled'],
             obj['bancoReceptor'],
+            obj['showNuevaCuenta'],
         );
     }
 
     constructor(
-        public idBank: number = 0,
+        public idBanco: number = 0,
         public nombreBanco: string = "",
         public fecha: string = "",
         public monto: number = 0,
@@ -35,7 +36,8 @@ export class PagoCheque {
         public disabled: boolean = true,
         public bancoReceptor: BancoReceptor = new BancoReceptor,
 //booleanos para controlar la visualizacion de los modales
-        public showDateVenceModal: boolean = false, 
+        public showDateVenceModal: boolean = false,
         public showDateValorModal: boolean = false,
+        public showNuevaCuenta: boolean = false,
     ) { }
 }

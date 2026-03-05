@@ -13,6 +13,7 @@ export class BankAccount {
             obj['coEnterprise'],
             obj['idEnterprise'],
             obj['nameBank'],
+            obj['coClientBankAccount'],
         );
     }
 
@@ -28,5 +29,6 @@ export class BankAccount {
         public coEnterprise: string,
         public idEnterprise: number,
         public nameBank: string,
+        public coClientBankAccount: string,
     ) { }
 }

@@ -165,19 +165,19 @@
                             <ion-item>
                                 <div class="listado-enterprise-selector ion-text-center">
                                     <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
-                                        class="ion-text-center always-flip" [(ngModel)]="cheque.nombreBanco"
+                                        class="ion-text-center always-flip" [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoCheque[ch].posCollectionPayment] "
                                         (ionChange)="selectBankAccount(ch,'ch')" interface="alert"
                                         labelPlacement="stacked">
                                         <ion-select-option
                                             *ngFor="let bank of this.collectService.listBanks; trackBy: trackByIndex"
-                                            [value]="bank.coBank">{{ bank.naBank }}
+                                            [value]="bank">{{ bank.nameBank }}
                                         </ion-select-option>
                                     </ion-select>
                                 </div>
                             </ion-item>
                         </ion-col>
                         <!-- clientBankAccount -->
-                        <ion-col size="6" size-sm="12" size-xs="12" *ngIf="this.collectService.showNuevaCuenta">
+                        <ion-col size="6" size-sm="12" size-xs="12" *ngIf="cheque.showNuevaCuenta">
                             <ion-item disabled="{{cheque.disabled}}">
                                 <ion-input label="{{this.collectService.collectionTags.get('COB_NUEVA_CUENTA')}}"
                                     [(ngModel)]="cheque.nuevaCuenta" label-placement="floating" fill="outline"
@@ -393,19 +393,19 @@
                             <ion-item>
                                 <div class="listado-enterprise-selector ion-text-center">
                                     <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
-                                        class="ion-text-center always-flip" [(ngModel)]="transferencia.numeroCuenta"
+                                        class="ion-text-center always-flip" [(ngModel)]="this.collectService.clientBankAccountSelected[this.collectService.pagoTransferencia[tr].posCollectionPayment] "
                                         (ionChange)="selectBankAccount(tr,'tr')" interface="alert"
                                         labelPlacement="stacked">
                                         <ion-select-option
                                             *ngFor="let bank of this.collectService.clientBankAccounts; trackBy: trackByIndex"
-                                            [value]="bank.coBank">{{ bank.naBank }} -
+                                            [value]="bank">{{ bank.naBank }} -
                                             {{bank.nuAccount}}
                                         </ion-select-option>
                                     </ion-select>
                                 </div>
                             </ion-item>
                         </ion-col>
-                        <ion-col size="6" size-sm="12" size-xs="12" *ngIf="this.collectService.showNuevaCuenta">
+                        <ion-col size="6" size-sm="12" size-xs="12" *ngIf="transferencia.showNuevaCuenta">
                             <ion-item disabled="{{transferencia.disabled}}">
                                 <ion-input label="{{this.collectService.collectionTags.get('COB_NUEVA_CUENTA')}}"
                                     [(ngModel)]="transferencia.nuevaCuenta" label-placement="floating" fill="outline"
