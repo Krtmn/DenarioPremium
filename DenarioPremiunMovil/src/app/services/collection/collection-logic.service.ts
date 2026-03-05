@@ -1,3 +1,4 @@
+import { COLLECT_STATUS_SAVED } from './../../utils/appConstants';
 import { Position } from '@capacitor/geolocation';
 import { Injectable, Injector, inject } from '@angular/core';
 import { Subject } from 'rxjs';
@@ -309,7 +310,8 @@ export class CollectionService {
 
   public COLLECT_STATUS_TO_SEND = COLLECT_STATUS_TO_SEND;
   public COLLECT_STATUS_NEW = COLLECT_STATUS_NEW;
-
+  public COLLECT_STATUS_SAVED = COLLECT_STATUS_SAVED;
+  public COLLECT_STATUS_SENT = COLLECT_STATUS_SENT;
   initLogicService() {
     //this.coTypeModule = '0';
     //this.titleModule = this.collectionTags.get('COB_NOMBRE_MODULO')!;
@@ -741,7 +743,7 @@ export class CollectionService {
       /* this.fechaMayor = yearMayor + "-" + monthMayor + "-" + diaMayor + " " + hora.split(" ")[1]; */
       this.dateRate = yearMayor + "-" + monthMayor + "-" + diaMayor + " " + hora.split(" ")[1];
 
-      if (this.collection.stDelivery == 3) {
+      if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED) {
         this.dateRateVisual = this.collection.daRate + "T00:00:00";
       } else
         this.dateRateVisual = yearMayor + "-" + monthMayor + "-" + diaMayor + "T00:00:00";
@@ -796,7 +798,7 @@ export class CollectionService {
       return Promise.resolve(true);
     } else {
       //no tengo tasa para ese dia
-      if (this.collection.stDelivery == 1) {
+      if (this.collection.stDelivery == this.COLLECT_STATUS_SENT ) {
         this.rateSelected = this.collection.nuValueLocal;
         this.historicoTasa = true;
       } else {
@@ -812,21 +814,24 @@ export class CollectionService {
   }
 
   async calculatePayment(type: string, index: number) {
-    if (this.collection.collectionDetails.length == 0) {
-      this.montoTotalPagado = 0;
-      this.montoTotalPagadoConversion = 0;
-      this.montoTotalPagar = 0;
-      this.montoTotalDiscounts = 0;
-      this.onCollectionValidToSend(false);
-      this.onCollectionValidToSave(true);
-      return;
-    }
+
     this.montoTotalPagar = 0;
     let monto = 0;
     let montoConversion = 0;
     let montoTotalDiscounts = 0;
+    this.montoTotalPagado = 0;
+    this.montoTotalPagadoConversion = 0;
+    this.montoTotalPagar = 0;
+    this.montoTotalDiscounts = 0;
 
-    if (this.collection.stDelivery == 3) {
+    if (this.collection.collectionDetails.length == 0) {
+      this.onCollectionValidToSend(false);
+      this.onCollectionValidToSave(true);
+      return;
+    }
+
+
+    if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED) {
       for (var j = 0; j < this.collection.collectionDetails.length; j++) {
         monto += this.collection.collectionDetails[j].nuAmountPaid;
         montoConversion += this.collection.collectionDetails[j].nuAmountPaidConversion;
@@ -835,7 +840,7 @@ export class CollectionService {
         this.montoTotalPagarConversion = montoConversion;
 
       }
-    } else if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == 1) {
+    } else if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collection.stDelivery == null) {
       monto = this.collection.nuAmountTotal;
       montoConversion = this.collection.nuAmountTotalConversion;
       this.montoTotalPagar = monto - montoTotalDiscounts;
@@ -1569,7 +1574,7 @@ export class CollectionService {
       if (this.onChangeClient)
         this.cobroValid = true;
 
-      if (this.collection.stDelivery == 3 || this.collection.stDelivery == 1)
+      if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED || this.collection.stDelivery == this.COLLECT_STATUS_SENT )
         this.cobroValid = true;
 
       this.onCollectionValidToSave(true);
@@ -1577,7 +1582,7 @@ export class CollectionService {
       if (this.onChangeClient)
         this.cobroValid = true;
     }
-    if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == 1)
+    if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == this.COLLECT_STATUS_SENT )
       this.cobroValid = true;
 
     this.validCollection.next(valid);
@@ -1604,7 +1609,7 @@ export class CollectionService {
 
     if (this.globalConfig.get("requiredComment") === 'true' ? true : false) {
       if (this.collection.txComment.trim() == "") {
-        if (this.collection.stDelivery == 3)
+        if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED)
           banderaRequiredComment = true;
         else
           banderaRequiredComment = false;
