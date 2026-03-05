@@ -15,6 +15,7 @@ import { DELIVERY_STATUS_SENT } from 'src/app/utils/appConstants';
 import { Client } from 'src/app/modelos/tables/client';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
+import { ProductSuggestedUtil } from 'src/app/modelos/ProductSuggestedUtil';
 
 
 @Component({
@@ -78,7 +79,7 @@ export class InventarioActividadesComponent implements OnInit {
 
   }
   preguntarSugerirPedido(){
-    this.inventariosLogicService.calcularTotalesSugerenciaPedido();
+    this.inventariosLogicService.calcularTotalesSugerenciaPedido(this.dbServ.getDatabase());
     let buttonsConfirmSend = [
       {
         text: 'Cancelar',
@@ -154,6 +155,7 @@ export class InventarioActividadesComponent implements OnInit {
       cliente: this.inventariosLogicService.cliente,
       direccion: direccion,
       productos: this.clientStocksTotal,
+      productUtils: [] as ProductSuggestedUtil[],
       list: JSON.parse(JSON.stringify(list)),
       enviar: toSend,
       coClientStock: this.inventariosLogicService.newClientStock.coClientStock,

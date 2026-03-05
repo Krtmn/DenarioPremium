@@ -22,6 +22,9 @@ import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { ItemListaInventarios } from 'src/app/inventarios/item-lista-inventarios';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
+import { ProductSuggestedUtil, UnitSuggestedUtil } from 'src/app/modelos/ProductSuggestedUtil';
+import { PedidosDbService } from 'src/app/pedidos/pedidos-db.service';
+import { StraightSwap } from 'src/app/modelos/tables/straightSwap';
 
 
 @Injectable({
@@ -35,6 +38,7 @@ export class InventariosLogicService {
   public globalConfig = inject(GlobalConfigService);
   public adjuntoService = inject(AdjuntoService);
   public historyTransaction = inject(HistoryTransaction);
+  public orderDbServ = inject(PedidosDbService);
 
 
   public initInventario: Boolean = true;
@@ -63,6 +67,7 @@ export class InventariosLogicService {
   public disabledEnterprise: boolean = false;
   public userMustActivateGPS: boolean = false;
   public expirationBatch: boolean = false;
+  public suggestedOrderByDispatchAndReturns: boolean = false;
 
 
   public enterpriseClientStock: Enterprise = {} as Enterprise;
@@ -409,15 +414,108 @@ export class InventariosLogicService {
     this.onStockValidToSave(true);
   }
 
-  calcularTotalesSugerenciaPedido(){
+  async calcularTotalesSugerenciaPedido(dbServ: SQLiteObject) {
+    let idEnterprise = this.newClientStock.idEnterprise;
+    let idClient = this.newClientStock.idClient;
+    let idAddressClient = this.newClientStock.idAddressClient;
+    //inicializamos el map de totales para cada producto
+    let mapProducts = this.getMappedProductUtils();
+    //despacho se usa en ambos casos
+    let idProductUnits = [];
+    let idProducts = [];
+    let idUnits = [];
+    for (const [idProduct, mapUnits] of mapProducts) {
+      idProducts.push(idProduct);
+      for (const [idUnit, unitUtil] of mapUnits) {
+        idProductUnits.push(unitUtil.idProductUnit);
+        idUnits.push(idUnit);
+      }
+    }
+    let listAvgProduct = await this.orderDbServ.getClientAvgStock(dbServ, idEnterprise, idClient, idProductUnits, idAddressClient, idProducts);
+    for (var i = 0; i < listAvgProduct.length; i++) {
+      let idProduct = listAvgProduct[i].idProduct;
+      let idProductUnit = listAvgProduct[i].idProductUnit;
+      let quAvg = listAvgProduct[i].average;
+      let mapUnits = mapProducts.get(idProduct);
+      if(mapUnits != undefined){
+        //me toca hacerlo de esta forma porque los avg no tienen idunit, sino idproductunit.
+        for (const [idUnit, unitUtil] of mapUnits) {
+          if(unitUtil.idProductUnit == idProductUnit){
+            unitUtil.dispatchedStock = quAvg;
+            break;
+          }
+        }
+      }
+    }
     if(this.suggestedOrderByDispatchAndReturns){
     //Inventario Inicial = Inventario anterior + Despacho + Cambio por cambio
-    
+    //inventario anterior
+    let previousCS = await this.getPreviousClientStock(dbServ, idClient, this.newClientStock.daClientStock);
+    if (previousCS == null) {
+      //si no hay previo, se asume que el inventario inicial es 0, por lo que no se hace nada
+    }else{
+      for (var i = 0; i < previousCS.clientStockDetails.length; i++) {
+        for (var j = 0; j < previousCS.clientStockDetails[i].clientStockDetailUnits.length; j++) {
+          let idProduct = previousCS.clientStockDetails[i].idProduct;
+          let idUnit = previousCS.clientStockDetails[i].clientStockDetailUnits[j].idUnit;
+          let quStock = previousCS.clientStockDetails[i].clientStockDetailUnits[j].quStock;
+          let mapUnits = mapProducts.get(idProduct);
+          if(mapUnits != undefined){
+            let unitUtil = mapUnits.get(idUnit);
+            if(unitUtil != undefined){
+              unitUtil.previousStock = quStock;
+            }
+          }
+        }
+      }
+    }
+    //despacho
+    //hecho arriba
+
+    //Cambio por cambio
+    let straightSwaps = await this.getStraightSwapsByClientStock(dbServ, idProducts, idUnits, idEnterprise);
+    for (var i = 0; i < straightSwaps.length; i++) {
+      let idProduct = straightSwaps[i].idProduct;
+      let idUnit = straightSwaps[i].idUnit;
+      let quStock = straightSwaps[i].quSwap;
+      let mapUnits = mapProducts.get(idProduct);
+      if(mapUnits != undefined){
+        let unitUtil = mapUnits.get(idUnit);
+        if(unitUtil != undefined){
+          unitUtil.straightSwapStock = quStock;
+        }
+      }
+    }
 
     //Venta = Inventario Inicial - Inventario actual - Devolución por distribución
 
     //Pedido Sugerido = Venta/Dias desde ultima visita × Días hasta la próxima visita
+    }else{
+      //version anterior que solo usa average diario de venta
     }
+  }
+
+  getMappedProductUtils() {
+    let mapProducts = new Map<number, Map<number, UnitSuggestedUtil>>();
+    for (var i = 0; i < this.newClientStock.clientStockDetails.length; i++) {
+      let mapUnits = new Map<number, UnitSuggestedUtil>();
+      for (var j = 0; j < this.newClientStock.clientStockDetails[i].clientStockDetailUnits.length; j++) {
+        let unitSuggestedUtil: UnitSuggestedUtil = {
+          idUnit: this.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].idUnit,
+          idProductUnit: this.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].idProductUnit,
+          quUnitSuggested: 0,
+          previousStock: 0,
+          currentStock: this.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].quStock,
+          dispatchedStock: 0,
+          straightSwapStock: 0,
+          returnedStock: 0
+        }
+        
+        mapUnits.set(this.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].idUnit, unitSuggestedUtil);
+      }
+      mapProducts.set(this.newClientStock.clientStockDetails[i].idProduct, mapUnits);
+    }
+    return mapProducts;
   }
 
   deleteClientStocksBatch(dbServ: SQLiteObject, clientStocks: ClientStocks[]) {
@@ -744,6 +842,27 @@ export class InventariosLogicService {
     });
   }
 
+  getPreviousClientStock(dbServ: SQLiteObject, idClient: number, daClientStock: string) {
+    let selectStatement = "SELECT id_client_stock co_client_stock, id_user, co_user, id_client, co_client, "+
+      "id_address_client, co_address_client, coordenada, tx_comment, id_enterprise, co_enterprise, "+
+      "da_client_stock, st_client_stock, lb_client, isSave, nu_attachments, has_attachments, st_delivery "+
+      "FROM client_stocks WHERE id_client = ? AND da_client_stock < ? ORDER BY da_client_stock DESC LIMIT 1";
+
+    return dbServ.executeSql(selectStatement, [idClient, daClientStock]).then(result => {
+      if(result.rows.length > 0){
+        let clientStock = result.rows.item(0) as ClientStocks;
+        return this.getClientStockDetails(dbServ, clientStock.coClientStock).then(details => {
+          clientStock.clientStockDetails = details;
+          return clientStock;
+        })
+      }else{
+        //no hay previous client stock
+        return null;
+      }
+  });
+  }
+
+
   getInfoUnit(dbServ: SQLiteObject, clientStock: ClientStocks) {
     let selectStatement = "select u.co_unit as coUnit, u.na_unit as naUnit, pu.qu_unit as quUnit "
       + "from product_units pu "
@@ -922,6 +1041,33 @@ export class InventariosLogicService {
     });
   }
 
+  getStraightSwapsByClientStock(dbServ: SQLiteObject, idProducts: number[], idUnits: number[], idEnterprise: number) {
+    let select = "select ss.id_swap, ss.co_swap, ss.id_product, ss.id_unit, ss.co_product, "+
+    "ss.co_unit, ss.id_enterprise, ss.co_enterprise, ss.da_cambio, ss.qu_swap from straight_swaps ss "+
+    "where ss.id_product IN ("+idProducts.join(",")+") and ss.id_unit IN ("+idUnits.join(",")+") and ss.id_enterprise = "+idEnterprise;
+
+    return dbServ.executeSql(select, []).then(data => {
+      let straightSwaps: StraightSwap[] = [];
+      for (var i = 0; i < data.rows.length; i++) {
+        let item = data.rows.item(i);
+        let straightSwap: StraightSwap = {
+          idSwap: item.id_swap,
+          coSwap: item.co_swap,
+          idProduct: item.id_product, 
+          idUnit: item.id_unit,
+          coProduct: item.co_product,
+          coUnit: item.co_unit,
+          idEnterprise: item.id_enterprise,
+          coEnterprise: item.co_enterprise,
+          daCambio: item.da_cambio,
+          quSwap: item.qu_swap,
+        };
+
+        straightSwaps.push(straightSwap);
+      }
+      return straightSwaps;
+  });
+}
   onShowProductStructures() {
     this.showProductList = false;
     this.productStructureService.onAddProductCLicked();

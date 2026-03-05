@@ -1,4 +1,5 @@
 import { ClientStockTotal } from "./client-stock-total";
+import { ProductSuggestedUtil } from "./ProductSuggestedUtil";
 import { AddresClient } from "./tables/addresClient";
 import { Client } from "./tables/client";
 import { ClientStocks } from "./tables/client-stocks";
@@ -12,6 +13,7 @@ export class SugerenciaPedido {
             obj['cliente'],
             obj['direccion'],
             obj['productos'],
+            obj['productUtils'],
             obj['list'],
             obj['enviar'],
             obj['coClientStock'],
@@ -25,6 +27,7 @@ export class SugerenciaPedido {
         public cliente: Client = {} as Client,
         public direccion: AddresClient = {} as AddresClient,
         public productos: ClientStockTotal[] = [],
+        public productUtils: ProductSuggestedUtil[] = [],
         public list: List,
         public enviar: boolean,
         public coClientStock: string,

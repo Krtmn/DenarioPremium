@@ -46,6 +46,7 @@ import { ClientAvgProduct } from '../modelos/tables/clientAvgProduct';
 import { ClientStocks } from '../modelos/tables/client-stocks';
 import { HistoryTransaction } from '../services/historyTransaction/historyTransaction';
 import { CurrencyModules } from '../modelos/tables/currencyModules';
+import { ProductSuggestedUtil } from '../modelos/ProductSuggestedUtil';
 
 
 
@@ -131,6 +132,7 @@ export class PedidosService {
     cliente: { lbClient: this.getTag("PED_PLACEHOLDER_CLIENTE") } as Client,
     direccion: { idAddress: 0 } as AddresClient,
     productos: [],
+    productUtils: [] as ProductSuggestedUtil[],
     list: {} as List,
     enviar: false,
     coClientStock: "",
