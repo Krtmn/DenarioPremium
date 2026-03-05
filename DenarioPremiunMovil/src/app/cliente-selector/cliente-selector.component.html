@@ -1,5 +1,5 @@
 <ion-modal [keepContentsMounted]="true" id="clienteSelectModal" trigger="clienteSelect" [isOpen]="isModalOpen"
-  willPresent="onModalOpen()">
+  (willPresent)="onModalOpen()">
   <ng-template>
     <div>
       <ion-header :translucent="false">
@@ -30,14 +30,14 @@
         </ion-row>
         <ion-row>
           <ion-col>
-              <div class="search-input-wrap">
-                <input type="text" class="search-input inputsSearch" fill="outline" shape="round"
-                  placeholder="Clientes..."  #searchInput
-                  [(ngModel)]="searchText" (keydown.enter)="onSearchClicked($event)">
-                <button type="button" class="clear-search" (click)="onSearchClicked()" [disabled]="!searchText">
-                  <ion-icon name="search-circle-sharp" class="sizeIconSearch"></ion-icon>
-                </button>
-              </div>
+            <div class="search-input-wrap">
+              <input type="text" class="search-input inputsSearch" fill="outline" shape="round"
+                placeholder="Clientes..." #searchInput [(ngModel)]="searchText"
+                (keydown.enter)="onSearchClicked($event)">
+              <button type="button" class="clear-search" (click)="onSearchClicked()" [disabled]="!searchText">
+                <ion-icon name="search-circle-sharp" class="sizeIconSearch"></ion-icon>
+              </button>
+            </div>
 
           </ion-col>
         </ion-row>
@@ -105,10 +105,10 @@
         message={{mensajeClientChange}} [buttons]="buttonsClientChange"
         (didDismiss)="setClientChangeOpen(false)"></ion-alert>
 
-    <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)" [disabled]="scrollDisable">
-      <ion-infinite-scroll-content [loadingText]='this.getTag("DENARIO_SCROLL_TEXT")'
-        loadingSpinner="bubbles"></ion-infinite-scroll-content>
-    </ion-infinite-scroll>
+      <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)" [disabled]="scrollDisable">
+        <ion-infinite-scroll-content [loadingText]='this.getTag("DENARIO_SCROLL_TEXT")'
+          loadingSpinner="bubbles"></ion-infinite-scroll-content>
+      </ion-infinite-scroll>
     </ion-content>
   </ng-template>
 </ion-modal>

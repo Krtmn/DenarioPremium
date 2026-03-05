@@ -131,6 +131,17 @@ export class ClienteSelectorComponent implements OnInit {
 
 
   }
+
+  onModalOpen() {
+    //console.log("modal abierto");
+    this.searchMode = false;
+    this.searchText = '';
+    this.scrollDisable = false;
+    this.clientes = this.service.clientes;
+    if (this.clientes.length == 0) {
+      this.updateClientList(this.idEnterprise);
+    }
+  }
   setSkin(nombreModulo: string, colorModulo: string) {
     this.colorModulo = colorModulo;
     this.nombreModulo = nombreModulo;
@@ -149,11 +160,18 @@ export class ClienteSelectorComponent implements OnInit {
   }
 
   updateClientList(idEnterprise: number): Promise<any> {
-    this.searchMode = false;
+
     return this.messageService.showLoading().then(() => {
-      return this.clientServ.getClients(idEnterprise, this.page).then(result => {
-        this.handleUpdateClientList(result);
-      })
+      return this.getClients(idEnterprise).then(() => {
+        //console.log("Clientes cargados");
+      });
+    });
+  }
+
+  getClients(idEnterprise: number): Promise<any> {
+    this.searchMode = false;
+    return this.clientServ.getClients(idEnterprise, this.page).then(result => {
+      this.handleUpdateClientList(result);
     });
   }
 
@@ -183,9 +201,11 @@ export class ClienteSelectorComponent implements OnInit {
     } else
       this.clientes = [...this.clientes, ...result];
     //console.log("[ClienteSelector] Lista de clientes actualizada");       
-
+    this.noClientsAlertShown = this.clientes.length == 0;
     //para usarlo luego
-    this.service.clientes = this.clientes;
+    if (!this.searchMode) {
+      this.service.clientes = this.clientes;
+    }
     this.service.checkClient = false;
     this.messageService.hideLoading();
   }
@@ -252,13 +272,11 @@ export class ClienteSelectorComponent implements OnInit {
 
 
   handleInput(event: any) {
+
+    //no se usa por ahora
     this.noClientsAlertShown = false;
     this.searchText = event.target.value.toLowerCase();
-    
-    if(this.searchText.trim() == ''){
-      this.updateClientList(this.idEnterprise);
-      return;
-    }
+
 
     let countCoClient = this.clientes.filter(c => c.coClient.toLowerCase().includes(this.searchText)).length;
     let countLbClient = this.clientes.filter(c => c.lbClient.toLowerCase().includes(this.searchText)).length;
@@ -353,8 +371,8 @@ export class ClienteSelectorComponent implements OnInit {
     }
     this.page = 0;
     if (this.searchText.trim() == '') {
-      this.updateClientList(this.idEnterprise);
-    } else{
+      this.onModalOpen();
+    } else {
       this.searchClients(this.idEnterprise, this.searchText);
     }
 
@@ -368,9 +386,8 @@ export class ClienteSelectorComponent implements OnInit {
         this.messageService.hideLoading();
       });
     } else {
-      this.updateClientList(this.idEnterprise).then(() => {
+      this.getClients(this.idEnterprise).then(() => {
         (ev as InfiniteScrollCustomEvent).target.complete();
-        this.messageService.hideLoading();
       });
     }
   }
