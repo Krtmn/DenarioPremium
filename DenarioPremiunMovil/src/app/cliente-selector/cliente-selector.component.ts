@@ -190,6 +190,7 @@ export class ClienteSelectorComponent implements OnInit {
       this.clientes = [] as Client[];
       this.service.clientes = [] as Client[];
     }
+    this.fixClientListSaldos(result);
     if (this.nombreModulo == 'Cobros' &&
       this.collectLogic.userCanCollectIva &&
       this.collectLogic.cobro25) {
@@ -200,7 +201,7 @@ export class ClienteSelectorComponent implements OnInit {
       }
     } else
       this.clientes = [...this.clientes, ...result];
-    //console.log("[ClienteSelector] Lista de clientes actualizada");       
+    //console.log("[ClienteSelector] Lista de clientes actualizada");
     this.noClientsAlertShown = this.clientes.length == 0;
     //para usarlo luego
     if (!this.searchMode) {
