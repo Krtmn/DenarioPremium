@@ -95,6 +95,9 @@ export class ClientLogicService {
   public nameModule: string = "";
   public segment = 'default';
 
+  clientListPage = 0;
+  clientListSearchMode = false;
+
   public dateToday: Date = (() => {
     const d = new Date();
     d.setDate(d.getDate());
@@ -223,25 +226,39 @@ export class ClientLogicService {
     })
   }
 
-  getClients(idEnterprise: number, page: number) {
-    if (page === 0) {
-    this.clients = [] as Client[];
-    }
-    return this.clientesServices.getClients(idEnterprise, page)
+  getClients(idEnterprise: number) {
+    this.clientListSearchMode = false;
+    return this.clientesServices.getClients(idEnterprise, this.clientListPage)
       .then((result) => {
-        this.fixClientListSaldos(result);
-        if(page === 0) {
-        this.clients = result;
+        return this.updateClientListAfterEdit(result);
+      });
+  }
+
+  searchClients(idEnterprise: number, searchText: string) {
+    this.clientListSearchMode = true;
+    return this.clientesServices.searchClients(idEnterprise, searchText, this.clientListPage).then((result) => {
+      return this.updateClientListAfterEdit(result);
+    });
+  }
+
+  updateClientListAfterEdit(clients: Client[]) {
+    if (this.clientListPage === 0) {
+      this.clients = [] as Client[];
+    }
+    this.fixClientListSaldos(clients);
+        if(this.clientListPage === 0) {
+        this.clients = clients;
         } else {
-        this.clients = this.clients.concat(result);
+        this.clients = this.clients.concat(clients);
         }
-        this.results = [...result];
+        this.results = [...clients];
 
         // Recorre todos los clientes y loggea si la moneda es distinta a la moneda local
 
-        return Promise.resolve(result.length < this.clientesServices.MAX_ITEMS_PER_PAGE);
-      });
+        return Promise.resolve(clients.length < this.clientesServices.MAX_ITEMS_PER_PAGE);
   }
+
+
 
   fixClientListSaldos(clients: Client[]): Client[] {
             if (this.localCurrencyDefault) {

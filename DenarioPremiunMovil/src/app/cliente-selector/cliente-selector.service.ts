@@ -23,7 +23,7 @@ export class ClienteSelectorService {
 
   public nombreModulo: string = '';
 
-  public currencyModule : CurrencyModules = {} as CurrencyModules;
+  public currencyModule: CurrencyModules = {} as CurrencyModules;
 
   ClientChanged = new Subject<Client>;
 
@@ -37,33 +37,33 @@ export class ClienteSelectorService {
         )
       }
       this.servicesServ.getTags(this.db, "DEN", "ESP").then(result => {
-      for (var i = 0; i < result.length; i++) {
-        this.tags.set(
-          result[i].coApplicationTag, result[i].tag
-        )
-      }
-    });
+        for (var i = 0; i < result.length; i++) {
+          this.tags.set(
+            result[i].coApplicationTag, result[i].tag
+          )
+        }
+      });
 
     });
     //this.getModuleNames();
 
-   }
+  }
 
-   onCLientChanged(client: Client){
+  onCLientChanged(client: Client) {
     //console.log("[Cliente-Selector] que mamadera de gallo es esa de cambiar cliente..... que va");
     this.ClientChanged.next(client);
-   }
+  }
 
-   /*
-   getModuleNames(){
-    const selectStatement = 'Select * from modules';
-    return this.db.executeSql(selectStatement, []).then(result => {
-      this.moduleNames = new Map<string, string>();
-      for (let i = 0; i < result.rows.length; i++) {
-        this.moduleNames.set(result.rows.item(i).na_module, result.rows.item(i).co_module);
-      }      
-      return this.moduleNames;
-    });
-   }
-    */
+  /*
+  getModuleNames(){
+   const selectStatement = 'Select * from modules';
+   return this.db.executeSql(selectStatement, []).then(result => {
+     this.moduleNames = new Map<string, string>();
+     for (let i = 0; i < result.rows.length; i++) {
+       this.moduleNames.set(result.rows.item(i).na_module, result.rows.item(i).co_module);
+     }      
+     return this.moduleNames;
+   });
+  }
+   */
 }
