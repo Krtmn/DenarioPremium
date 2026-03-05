@@ -2,10 +2,13 @@
 
   <div class="client-card">
     <div class="sticky-searchbar">
-      <ion-searchbar class="lupamorada" show-clear-button="always" search-icon="search-circle" clear-icon="trash-bin"
-        placeholder="{{this.clientLogic.clientTags.get('CLI_PLACEHOLDER')}}" [debounce]="1000"
-        (ionInput)="handleInput($event)">
-      </ion-searchbar>
+    <div class="search-input-wrap">
+        <input type="text" class="search-input inputsSearch" fill="outline" shape="round" placeholder="Clientes..."
+            #searchInput [(ngModel)]="searchText" (keydown.enter)="onSearchClicked($event)">
+        <button type="button" class="clear-search" (click)="onSearchClicked()" [disabled]="!searchText">
+            <ion-icon name="search-circle-sharp" class="sizeIconSearch"></ion-icon>
+        </button>
+    </div>
     </div>
 
       <ion-grid>
@@ -45,8 +48,7 @@
         <ion-col class="" size="12" size-sm="12" size-xs="12">
           <ion-list *ngFor="let client of this.clientLogic.clients ;index as i" button detail="false"
             (click)="clientLogic.goToClient(client.idClient)">
-            <div
-              *ngIf="searchText === '' || client.coClient.toLowerCase().includes(searchText) || client.lbClient.toLowerCase().includes(searchText)">
+            <div>
               <div class="product-structure-title listaProductos">
                 <ion-item button detail="false" class="listaItems">
                   <ion-label>
