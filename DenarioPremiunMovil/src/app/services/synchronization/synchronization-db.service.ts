@@ -467,7 +467,7 @@ export class SynchronizationDBService {
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
-      statements.push([insertStatement, [obj.idBank, obj.coEnterprise, obj.idEnterprise, obj.nameBank, obj.coBank]])
+      statements.push([insertStatement, [obj.idBank, obj.coEnterprise, obj.idEnterprise, obj.naBank, obj.coBank]])
     }
 
     return this.database.sqlBatch(statements).then(res => {

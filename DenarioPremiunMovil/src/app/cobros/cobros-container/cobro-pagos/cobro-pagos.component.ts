@@ -433,7 +433,7 @@ export class CobroPagosComponent implements OnInit {
 
         if (selectedBank) {
           this.collectService.pagoCheque[index].idBanco = selectedBank.idBank;
-          this.collectService.pagoCheque[index].nombreBanco = selectedBank.nameBank;
+          this.collectService.pagoCheque[index].nombreBanco = selectedBank.naBank;
         }
 
         if (this.collectService.clientBankAccount) {
@@ -477,7 +477,7 @@ export class CobroPagosComponent implements OnInit {
 
         if (selectedBank) {
           this.collectService.pagoDeposito[index].idBanco = selectedBank.idBank;
-          this.collectService.pagoDeposito[index].nombreBanco = selectedBank.nameBank;
+          this.collectService.pagoDeposito[index].nombreBanco = selectedBank.naBank;
           this.collectService.pagoDeposito[index].numeroCuenta = selectedBank.nuAccount;
         }
 
@@ -509,7 +509,7 @@ export class CobroPagosComponent implements OnInit {
           } else {
             this.collectService.pagoTransferencia[index].showNuevaCuenta = false;
             payment.nuClientBankAccount = selectedClientBank?.nuAccount;
-            payment.coClientBankAccount = selectedClientBank?.coClientBankAccount;
+            payment.coClientBankAccount = selectedClientBank?.coClientBankAccount == null ? selectedClientBank?.coBank : selectedClientBank?.coClientBankAccount;
             payment.newNuClientBankAccount = "";
           }
         } else {
@@ -926,7 +926,7 @@ export class CobroPagosComponent implements OnInit {
 
       case "tr": {
         this.collectService.pagoTransferencia[index].idBanco = this.collectService.bankAccountSelected[this.collectService.pagoTransferencia[index].posCollectionPayment].idBank;
-        this.collectService.pagoTransferencia[index].nombreBanco = this.collectService.bankAccountSelected[this.collectService.pagoTransferencia[index].posCollectionPayment].nameBank;
+        this.collectService.pagoTransferencia[index].nombreBanco = this.collectService.bankAccountSelected[this.collectService.pagoTransferencia[index].posCollectionPayment].naBank;
         this.collectService.pagoTransferencia[index].numeroCuenta = this.collectService.bankAccountSelected[this.collectService.pagoTransferencia[index].posCollectionPayment].nuAccount;
         //
         if (this.collectService.validateCollectionDate) {

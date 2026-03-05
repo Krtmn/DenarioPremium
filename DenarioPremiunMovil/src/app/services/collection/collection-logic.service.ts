@@ -2360,7 +2360,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         this.listBanks.push({
           idBank: 0,
           coBank: "Nueva Cuenta",
-          nameBank: "Nueva Cuenta",
+          naBank: "Nueva Cuenta",
           coEnterprise: this.collection.coEnterprise,
           idEnterprise: this.collection.idEnterprise
         });
@@ -2370,7 +2370,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         this.listBanks.push({
           idBank: item.id_bank,
           coBank: item.co_bank,
-          nameBank: item.na_bank,
+          naBank: item.na_bank,
           coEnterprise: item.co_enterprise,
           idEnterprise: item.id_enterprise,
         });
@@ -3165,7 +3165,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
                 idCurrency: data.rows.item(i).id_currency,
                 coEnterprise: data.rows.item(i).co_enterprise,
                 idEnterprise: data.rows.item(i).id_enterprise,
-                nameBank: data.rows.item(i).na_bank,
+                naBank: data.rows.item(i).na_bank,
                 coClientBankAccount: data.rows.item(i).co_client_bank_account,
               })
             }
@@ -3192,7 +3192,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
                 idCurrency: data.rows.item(i).id_currency,
                 coEnterprise: data.rows.item(i).co_enterprise,
                 idEnterprise: data.rows.item(i).id_enterprise,
-                nameBank: data.rows.item(i).na_bank,
+                naBank: data.rows.item(i).na_bank,
                 coClientBankAccount: data.rows.item(i).co_client_bank_account,
               })
             }
@@ -3911,8 +3911,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "co_type," +
       "id_difference_code," +
       "co_difference_code," +
-      "nu_bank_account"
-    ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "nu_bank_account" +
+      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     for (var i = 0; i < collectionPayment.length; i++) {
       statementsCollectionPayment.push([insertStatement, [

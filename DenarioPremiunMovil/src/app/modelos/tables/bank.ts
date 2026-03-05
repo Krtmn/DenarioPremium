@@ -4,7 +4,7 @@ export class Bank {
         return new Bank(
             obj['idBank'],
             obj['coBank'],
-            obj['nameBank'],
+            obj['naBank'],
             obj['coEnterprise'],
             obj['idEnterprise'],
         );
@@ -13,7 +13,7 @@ export class Bank {
     constructor(
         public idBank: number,
         public coBank: string,
-        public nameBank: string,
+        public naBank: string,
         public coEnterprise: string,
         public idEnterprise: number,
     ) { }

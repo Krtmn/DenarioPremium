@@ -1,600 +1,564 @@
 <ion-row>
-    <div *ngIf="this.collectService.coTypeModule != '1'">
-        <ion-item-divider class="stickyTotal colorText" sticky>
-            <ion-row>
-                <ion-col size="12" class="titulosBold">
-                    <ion-label>{{this.collectService.collectionTags.get('COB_MONTO_TOTAL')}}
-                        {{this.collectService.collection.coCurrency}}:
-                        {{this.currencyService.formatNumber(this.collectService.montoTotalPagar)}}
-                    </ion-label>
-                </ion-col>
-                <ion-col size="12" class="titulosBold"
-                    [ngStyle]="{color: this.collectService.collection.nuDifference >= 0 ? 'Blue' : 'Red' }">
-                    {{this.collectService.collectionTags.get('COB_DIFERENCIA')}}
-                    {{this.collectService.collection.coCurrency}}:
-                    {{this.currencyService.formatNumber(this.collectService.collection.nuDifference)}}
-                </ion-col>
-            </ion-row>
-        </ion-item-divider>
-    </div>
-    <!-- BOTON PARA ABRIL MODAL METODOS DE PAGO-->
-    <ion-col size="6" size-sm="12" size-xs="12">
-        <ion-item>
-            <ion-grid>
-                <ion-row>
-                    <ion-col size="6" size-sm="12" size-xs="12">
-                        <ion-button id="eventSelect" class="botonAddVerde" expand="block"
-                            (click)="setShowEventModal(true)"
-                            [disabled]="this.collectService.disabledSelectCollectMethodDisabled">
-                            Agregar método de pago
-                            <!-- {{this.collectService.collectionTags.get('COB_ADD_METODO_PAGO')}} -->
-                        </ion-button>
-                    </ion-col>
-                </ion-row>
-            </ion-grid>
-        </ion-item>
-    </ion-col>
-    <!-- BOTON PARA ABRIL MODAL METODOS DE PAGO-->
-    <!-- MODAL PARA LOS TIPOS DE PAGO-->
-    <ion-modal [isOpen]="showEventModal" (didDismiss)="setShowEventModal(false)" id="eventModal" size="cover"
-        class="listado-product-structures modalActividades" backdrop-dismiss="false">
-        <ng-template>
-            <ion-grid class="contenedorModalActividades">
-                <ion-row>
-                    <ion-col class="" size="12" size-sm="12" size-xs="12">
-                        <ion-text>
-                            <h1 class="ion-text-center">
-                                {{this.collectService.collectionTags.get('COB_SELECTOR_METODO_COBRO')}}</h1>
-                        </ion-text>
-                    </ion-col>
-                    <ion-col class="" size="12" size-sm="12" size-xs="12">
-                        <ion-list>
-                            <ion-item
-                                *ngFor="let tipoPago of this.collectService.tiposPago; index as type; trackBy: trackByIndex">
-                                <ion-checkbox slot="start" [checked]="tipoPago.selected"
-                                    (ionChange)="onSelectTipoPago(tipoPago,type)"></ion-checkbox>
-                                <ion-label class="titulosBold">{{tipoPago.name}}</ion-label>
-                            </ion-item>
-                        </ion-list>
-                    </ion-col>
-                    <ion-col class="" size="3" size-sm="6" size-xs="6">
-                        <ion-button expand="block" size="small" color="light" (click)="setShowEventModal(false)">
-                            {{this.collectService.collectionTagsDenario.get('DENARIO_BOTON_CANCELAR')}}
-                        </ion-button>
-                    </ion-col>
-                    <ion-col class="" size="3" size-sm="6" size-xs="6">
-                        <ion-button expand="block" size="small" class="botonAddVerde" (click)="onAceptarTiposPago()">
-                            {{this.collectService.collectionTagsDenario.get('DENARIO_BOTON_AGREGAR')}}</ion-button>
-                    </ion-col>
-                </ion-row>
-            </ion-grid>
-        </ng-template>
-    </ion-modal>
-    <!-- MODAL PARA LOS TIPOS DE PAGO-->
-
-    <ion-col size="6" size-sm="12" size-xs="12" class="pagos-scroll">
-        <ion-accordion-group>
-            <!-- EFECTIVO -->
-            <ion-list *ngFor="let efectivo of this.collectService.pagoEfectivo; index as ef; trackBy: trackByIndex">
-                <ion-accordion
-                    *ngIf="this.collectService.tipoPagoEfectivo && this.collectService.pagoEfectivo.length > 0"
-                    [value]="'efectivo'+ef">
-
-                    <ion-item slot="header" color="light">
-                        <ion-label>
-                            {{this.collectService.collectionTags.get('COB_EFECTIVO')}}
-                        </ion-label>
-                    </ion-item>
-
-                    <div class="ion-padding" slot="content">
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item>
-                                <ion-input label="{{this.collectService.collectionTags.get('COB_LABEL_NRO_RECIBO')}}:"
-                                    label-placement="floating" fill="outline" color="primary"
-                                    [(ngModel)]="efectivo.nuRecibo" value="{{efectivo.nuRecibo}}"
-                                    (ionBlur)="setNroTransanccion(efectivo.nuRecibo,ef,'ef')" class="customInput">
-                                </ion-input>
-                            </ion-item>
-                        </ion-col>
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item>
-                                <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}"
-                                    label-placement="floating" fill="outline" color="primary" type="text"
-                                    inputmode="numeric" [value]="getDisplay(efectivo, ef,'ef') || '0,00'"
-                                    (keydown)="onMontoKeyDown($event, efectivo, ef,'ef')" (ionInput)="onMontoInput($event, efectivo, ef,'ef')"
-                                    (focus)="onMontoFocus(efectivo, ef,'ef')" (blur)="onMontoBlur(efectivo, ef,'ef')"
-                                    class="customInput" [ngClass]="{'inp-write': !efectivo.monto}">
-
-                                </ion-input>
-                            </ion-item>
-                        </ion-col>
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item disabled="{{this.collectService.enableDate}}">
-                                <ion-label>{{this.collectService.collectionTags.get('COB_FECHA')}}</ion-label>
-                                <a (click)="onOpenCalendar(ef, 'ef')">
-                                    <ion-button (click)="setShowDateEfectivoModal(ef, true)" color="light"
-                                        class="letrasFechasButton"
-                                        [disabled]="this.collectService.validateCollectionDate">
-                                        {{ dateServ.formatShort(efectivo.fecha) }}
-                                    </ion-button>
-                                </a>
-                                <a (click)="onOpenCalendar(ef,'ef')">
-                                    <ion-icon slot="end" src="../../../assets/icon/calendar-outline.svg"></ion-icon>
-                                </a>
-                                <ion-modal [keepContentsMounted]="true" [isOpen]="efectivo.showDateModal"
-                                    (didDismiss)="setShowDateEfectivoModal(ef, false)" class="fechasModal">
-                                    <ng-template>
-                                        <ion-datetime [id]="'fechaEfectivo'+ef" presentation="date"
-                                            [(ngModel)]="efectivo.fecha.split(' ')[0]"
-                                            (ngModelChange)="onFechaValorChange($event, ef,'ef')"
-                                            [showDefaultButtons]="true"
-                                            doneText="{{this.collectService.collectionTags.get('COB_ACEPTAR')}}"
-                                            cancelText="{{this.collectService.collectionTags.get('COB_CANCELAR')}}"
-                                            min="{{this.collectService.fechaMenor}}"
-                                            max="{{this.collectService.fechaMayor}}"
-                                            [disabled]="this.collectService.validateCollectionDate">
-                                        </ion-datetime>
-                                    </ng-template>
-                                </ion-modal>
-                            </ion-item>
-                        </ion-col>
-                        <ion-item>
-                            <ion-button color="danger" (click)="deleteTipoPago(ef,'ef')"><ion-icon
-                                    name="trash"></ion-icon></ion-button>
-                        </ion-item>
-                        <ion-label *ngIf="efectivo.anticipoPrepaid" color="primary">
-                            {{this.collectService.collectionTags.get('COB_LABEL_ANTICIPO_AUTOMATICO')}}
-                        </ion-label>
-                    </div>
-
-                </ion-accordion>
+  <div *ngIf="this.collectService.coTypeModule != '1'">
+    <ion-item-divider class="stickyTotal colorText" sticky>
+      <ion-row>
+        <ion-col size="12" class="titulosBold">
+          <ion-label>{{this.collectService.collectionTags.get('COB_MONTO_TOTAL')}}
+            {{this.collectService.collection.coCurrency}}:
+            {{this.currencyService.formatNumber(this.collectService.montoTotalPagar)}}
+          </ion-label>
+        </ion-col>
+        <ion-col size="12" class="titulosBold"
+          [ngStyle]="{color: this.collectService.collection.nuDifference >= 0 ? 'Blue' : 'Red' }">
+          {{this.collectService.collectionTags.get('COB_DIFERENCIA')}}
+          {{this.collectService.collection.coCurrency}}:
+          {{this.currencyService.formatNumber(this.collectService.collection.nuDifference)}}
+        </ion-col>
+      </ion-row>
+    </ion-item-divider>
+  </div>
+  <!-- BOTON PARA ABRIL MODAL METODOS DE PAGO-->
+  <ion-col size="6" size-sm="12" size-xs="12">
+    <ion-item>
+      <ion-grid>
+        <ion-row>
+          <ion-col size="6" size-sm="12" size-xs="12">
+            <ion-button id="eventSelect" class="botonAddVerde" expand="block" (click)="setShowEventModal(true)"
+              [disabled]="this.collectService.disabledSelectCollectMethodDisabled">
+              Agregar método de pago
+              <!-- {{this.collectService.collectionTags.get('COB_ADD_METODO_PAGO')}} -->
+            </ion-button>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </ion-item>
+  </ion-col>
+  <!-- BOTON PARA ABRIL MODAL METODOS DE PAGO-->
+  <!-- MODAL PARA LOS TIPOS DE PAGO-->
+  <ion-modal [isOpen]="showEventModal" (didDismiss)="setShowEventModal(false)" id="eventModal" size="cover"
+    class="listado-product-structures modalActividades" backdrop-dismiss="false">
+    <ng-template>
+      <ion-grid class="contenedorModalActividades">
+        <ion-row>
+          <ion-col class="" size="12" size-sm="12" size-xs="12">
+            <ion-text>
+              <h1 class="ion-text-center">
+                {{this.collectService.collectionTags.get('COB_SELECTOR_METODO_COBRO')}}</h1>
+            </ion-text>
+          </ion-col>
+          <ion-col class="" size="12" size-sm="12" size-xs="12">
+            <ion-list>
+              <ion-item *ngFor="let tipoPago of this.collectService.tiposPago; index as type; trackBy: trackByIndex">
+                <ion-checkbox slot="start" [checked]="tipoPago.selected"
+                  (ionChange)="onSelectTipoPago(tipoPago,type)"></ion-checkbox>
+                <ion-label class="titulosBold">{{tipoPago.name}}</ion-label>
+              </ion-item>
             </ion-list>
-            <!-- EFECTIVO -->
+          </ion-col>
+          <ion-col class="" size="3" size-sm="6" size-xs="6">
+            <ion-button expand="block" size="small" color="light" (click)="setShowEventModal(false)">
+              {{this.collectService.collectionTagsDenario.get('DENARIO_BOTON_CANCELAR')}}
+            </ion-button>
+          </ion-col>
+          <ion-col class="" size="3" size-sm="6" size-xs="6">
+            <ion-button expand="block" size="small" class="botonAddVerde" (click)="onAceptarTiposPago()">
+              {{this.collectService.collectionTagsDenario.get('DENARIO_BOTON_AGREGAR')}}</ion-button>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </ng-template>
+  </ion-modal>
+  <!-- MODAL PARA LOS TIPOS DE PAGO-->
 
-            <!-- CHEQUE -->
-            <ion-list *ngFor="let cheque of collectService.pagoCheque; index as ch; trackBy: trackByIndex">
-                <ion-accordion *ngIf="this.collectService.tipoPagoCheque && this.collectService.pagoCheque.length > 0"
-                    [value]="'cheque'+ch">
-                    <ion-item slot="header" color="light">
-                        <ion-label> {{this.collectService.collectionTags.get('COB_CHEQUE')}}</ion-label>
-                    </ion-item>
+  <ion-col size="6" size-sm="12" size-xs="12" class="pagos-scroll">
+    <ion-accordion-group>
+      <!-- EFECTIVO -->
+      <ion-list *ngFor="let efectivo of this.collectService.pagoEfectivo; index as ef; trackBy: trackByIndex">
+        <ion-accordion *ngIf="this.collectService.tipoPagoEfectivo && this.collectService.pagoEfectivo.length > 0"
+          [value]="'efectivo'+ef">
 
-                    <div class="ion-padding" slot="content">
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_EMISOR')}}</ion-label>
-                            <ion-item>
-                                <div class="listado-enterprise-selector ion-text-center">
-                                    <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
-                                        class="ion-text-center always-flip" [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoCheque[ch].posCollectionPayment] "
-                                        (ionChange)="selectBankAccount(ch,'ch')" interface="alert"
-                                        labelPlacement="stacked">
-                                        <ion-select-option
-                                            *ngFor="let bank of this.collectService.listBanks; trackBy: trackByIndex"
-                                            [value]="bank">{{ bank.nameBank }}
-                                        </ion-select-option>
-                                    </ion-select>
-                                </div>
-                            </ion-item>
-                        </ion-col>
-                        <!-- clientBankAccount -->
-                        <ion-col size="6" size-sm="12" size-xs="12" *ngIf="cheque.showNuevaCuenta">
-                            <ion-item disabled="{{cheque.disabled}}">
-                                <ion-input label="{{this.collectService.collectionTags.get('COB_NUEVA_CUENTA')}}"
-                                    [(ngModel)]="cheque.nuevaCuenta" label-placement="floating" fill="outline"
-                                    (ionBlur)="setNuevaCuenta(cheque.nuevaCuenta,ch,'ch')"
-                                    value="{{cheque.nuevaCuenta}}" color="primary" class="customInput"></ion-input>
-                            </ion-item>
-                        </ion-col>
-                        <!-- clientBankAccount -->
+          <ion-item slot="header" color="light">
+            <ion-label>
+              {{this.collectService.collectionTags.get('COB_EFECTIVO')}}
+            </ion-label>
+          </ion-item>
 
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item disabled="{{this.collectService.enableDate}}">
-                                <ion-label>{{this.collectService.collectionTags.get('COB_FECHA')}}</ion-label>
-                                <a>
-                                    <ion-button (click)="setShowDateChequeVenceModal(ch, true)" color="light"
-                                        [disabled]="this.collectService.validateCollectionDate">
-                                        {{ dateServ.formatShort(cheque.fecha) }}
-                                    </ion-button>
-                                </a>
-                                <a>
-                                    <ion-icon slot="end" src="../../../assets/icon/calendar-outline.svg"></ion-icon>
-                                </a>
-                                <ion-modal [keepContentsMounted]="true" [isOpen]="cheque.showDateVenceModal"
-                                    (didDismiss)="setShowDateChequeVenceModal(ch, false)" class="fechasModal">
-                                    <ng-template>
-                                        <ion-datetime [id]="'fechaVenceCheque'+ch" presentation="date"
-                                            [(ngModel)]="cheque.fecha.split(' ')[0]" [showDefaultButtons]="true"
-                                            (ngModelChange)="onFechaChange($event, ch,'ch')"
-                                            doneText="{{this.collectService.collectionTags.get('COB_ACEPTAR')}}"
-                                            cancelText="{{this.collectService.collectionTags.get('COB_CANCELAR')}}"
-                                            min="{{this.collectService.fechaMenor}}"
-                                            max="{{this.collectService.fechaMayor}}"
-                                            [disabled]="this.collectService.validateCollectionDate">
-                                        </ion-datetime>
-                                    </ng-template>
-                                </ion-modal>
-                            </ion-item>
-                        </ion-col>
+          <div class="ion-padding" slot="content">
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-item>
+                <ion-input label="{{this.collectService.collectionTags.get('COB_LABEL_NRO_RECIBO')}}:"
+                  label-placement="floating" fill="outline" color="primary" [(ngModel)]="efectivo.nuRecibo"
+                  value="{{efectivo.nuRecibo}}" (ionBlur)="setNroTransanccion(efectivo.nuRecibo,ef,'ef')"
+                  class="customInput">
+                </ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-item>
+                <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}" label-placement="floating"
+                  fill="outline" color="primary" type="text" inputmode="numeric"
+                  [value]="getDisplay(efectivo, ef,'ef') || '0,00'"
+                  (keydown)="onMontoKeyDown($event, efectivo, ef,'ef')"
+                  (ionInput)="onMontoInput($event, efectivo, ef,'ef')" (focus)="onMontoFocus(efectivo, ef,'ef')"
+                  (blur)="onMontoBlur(efectivo, ef,'ef')" class="customInput"
+                  [ngClass]="{'inp-write': !efectivo.monto}">
 
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item disabled="{{this.collectService.enableDate}}">
-                                <ion-label>{{this.collectService.collectionTags.get('COB_FECHA_VALOR')}}</ion-label>
-                                <a>
-                                    <ion-button (click)="setShowDateChequeValorModal(ch, true)" color="light"
-                                        class="letrasFechasButton"
-                                        [disabled]="this.collectService.validateCollectionDate">
-                                        {{ dateServ.formatShort(cheque.fechaValor) }}
-                                    </ion-button>
-                                </a>
-                                <a>
-                                    <ion-icon slot="end" src="../../../assets/icon/calendar-outline.svg"></ion-icon>
-                                </a>
-                                <ion-modal [keepContentsMounted]="true" [isOpen]="cheque.showDateValorModal"
-                                    (didDismiss)="setShowDateChequeValorModal(ch, false)" class="fechasModal">
-                                    <ng-template>
-                                        <ion-datetime [id]="'fechaValorCheque'+ch" presentation="date"
-                                            [(ngModel)]="cheque.fechaValor.split(' ')[0]"
-                                            (ngModelChange)="onFechaValorChange($event, ch,'ch')"
-                                            [showDefaultButtons]="true"
-                                            doneText="{{this.collectService.collectionTags.get('COB_ACEPTAR')}}"
-                                            cancelText="{{this.collectService.collectionTags.get('COB_CANCELAR')}}"
-                                            min="{{this.collectService.fechaMenor}}"
-                                            max="{{this.collectService.fechaMayor}}"
-                                            [disabled]="this.collectService.validateCollectionDate">
-                                        </ion-datetime>
-                                    </ng-template>
-                                </ion-modal>
-                            </ion-item>
-                        </ion-col>
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item disabled="{{cheque.disabled}}">
-                                <ion-input label="{{this.collectService.collectionTags.get('COB_NRO_CHEQUE')}}"
-                                    label-placement="floating" fill="outline" color="primary"
-                                    [(ngModel)]="cheque.numeroCheque" value="{{cheque.numeroCheque}}"
-                                    (ionBlur)="setNroTransanccion(cheque.numeroCheque,ch,'ch')" class="customInput"
-                                    [ngClass]="{'inp-write': !cheque.numeroCheque}"></ion-input>
-                            </ion-item>
-                        </ion-col>
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item disabled="{{cheque.disabled}}">
-                                <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}"
-                                    label-placement="floating" fill="outline" color="primary" type="text"
-                                    inputmode="numeric" [value]="getDisplay(cheque, ch, 'ch') || '0,00'"
-                                    (keydown)="onMontoKeyDown($event, cheque, ch, 'ch')" (ionInput)="onMontoInput($event, cheque, ch, 'ch')"
-                                    (focus)="onMontoFocus(cheque, ch, 'ch')" (blur)="onMontoBlur(cheque, ch, 'ch')"
-                                    class="customInput" [ngClass]="{'inp-write': !cheque.monto}">
-                                </ion-input>
-                            </ion-item>
-                        </ion-col>
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item>
-                                <ion-button color="danger" (click)="deleteTipoPago(ch,'ch')"><ion-icon
-                                        name="trash"></ion-icon></ion-button>
-                            </ion-item>
-                        </ion-col>
+                </ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-item disabled="{{this.collectService.enableDate}}">
+                <ion-label>{{this.collectService.collectionTags.get('COB_FECHA')}}</ion-label>
+                <a (click)="onOpenCalendar(ef, 'ef')">
+                  <ion-button (click)="setShowDateEfectivoModal(ef, true)" color="light" class="letrasFechasButton"
+                    [disabled]="this.collectService.validateCollectionDate">
+                    {{ dateServ.formatShort(efectivo.fecha) }}
+                  </ion-button>
+                </a>
+                <a (click)="onOpenCalendar(ef,'ef')">
+                  <ion-icon slot="end" src="../../../assets/icon/calendar-outline.svg"></ion-icon>
+                </a>
+                <ion-modal [keepContentsMounted]="true" [isOpen]="efectivo.showDateModal"
+                  (didDismiss)="setShowDateEfectivoModal(ef, false)" class="fechasModal">
+                  <ng-template>
+                    <ion-datetime [id]="'fechaEfectivo'+ef" presentation="date"
+                      [(ngModel)]="efectivo.fecha.split(' ')[0]" (ngModelChange)="onFechaValorChange($event, ef,'ef')"
+                      [showDefaultButtons]="true" doneText="{{this.collectService.collectionTags.get('COB_ACEPTAR')}}"
+                      cancelText="{{this.collectService.collectionTags.get('COB_CANCELAR')}}"
+                      min="{{this.collectService.fechaMenor}}" max="{{this.collectService.fechaMayor}}"
+                      [disabled]="this.collectService.validateCollectionDate">
+                    </ion-datetime>
+                  </ng-template>
+                </ion-modal>
+              </ion-item>
+            </ion-col>
+            <ion-item>
+              <ion-button color="danger" (click)="deleteTipoPago(ef,'ef')"><ion-icon
+                  name="trash"></ion-icon></ion-button>
+            </ion-item>
+            <ion-label *ngIf="efectivo.anticipoPrepaid" color="primary">
+              {{this.collectService.collectionTags.get('COB_LABEL_ANTICIPO_AUTOMATICO')}}
+            </ion-label>
+          </div>
 
-                        <ion-label *ngIf="cheque.anticipoPrepaid" color="primary">
-                            {{this.collectService.collectionTags.get('COB_LABEL_ANTICIPO_AUTOMATICO')}}
-                        </ion-label>
-                    </div>
-                </ion-accordion>
-            </ion-list>
+        </ion-accordion>
+      </ion-list>
+      <!-- EFECTIVO -->
 
-            <!-- CHEQUE -->
+      <!-- CHEQUE -->
+      <ion-list *ngFor="let cheque of collectService.pagoCheque; index as ch; trackBy: trackByIndex">
+        <ion-accordion *ngIf="this.collectService.tipoPagoCheque && this.collectService.pagoCheque.length > 0"
+          [value]="'cheque'+ch">
+          <ion-item slot="header" color="light">
+            <ion-label> {{this.collectService.collectionTags.get('COB_CHEQUE')}}</ion-label>
+          </ion-item>
 
-            <!-- DEPOSITO -->
-            <ion-list *ngFor="let deposito of collectService.pagoDeposito; index as de; trackBy: trackByIndex">
-                <ion-accordion *ngIf="this.collectService.tipoPagoDeposito  && collectService.pagoDeposito.length > 0"
-                    [value]="'deposito'+de">
-                    <ion-item slot="header" color="light">
-                        <ion-label> {{this.collectService.collectionTags.get('COB_DEPOSITO')}}</ion-label>
-                    </ion-item>
-                    <div class="ion-padding" slot="content">
-                        <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_RECEPTOR')}}</ion-label>
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item>
-                                <div class="listado-enterprise-selector ion-text-center">
-                                    <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
-                                        class="ion-text-center always-flip"
-                                        [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoDeposito[de].posCollectionPayment] "
-                                        (ionChange)="selectBankAccount(de, 'de')" interface="alert"
-                                        labelPlacement="stacked">
-                                        <ion-select-option
-                                            *ngFor="let listBankAccount of this.collectService.listBankAccounts; trackBy: trackByIndex"
-                                            [value]="listBankAccount">{{ listBankAccount.nameBank }} -
-                                            {{listBankAccount.nuAccount}}
-                                        </ion-select-option>
-                                    </ion-select>
-                                </div>
+          <div class="ion-padding" slot="content">
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_EMISOR')}}</ion-label>
+              <ion-item>
+                <div class="listado-enterprise-selector ion-text-center">
+                  <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
+                    class="ion-text-center always-flip"
+                    [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoCheque[ch].posCollectionPayment] "
+                    (ionChange)="selectBankAccount(ch,'ch')" interface="alert" labelPlacement="stacked">
+                    <ion-select-option *ngFor="let bank of this.collectService.listBanks; trackBy: trackByIndex"
+                      [value]="bank">{{ bank.naBank }}
+                    </ion-select-option>
+                  </ion-select>
+                </div>
+              </ion-item>
+            </ion-col>
+            <!-- clientBankAccount -->
+            <ion-col size="6" size-sm="12" size-xs="12" *ngIf="cheque.showNuevaCuenta">
+              <ion-item disabled="{{cheque.disabled}}">
+                <ion-input label="{{this.collectService.collectionTags.get('COB_NUEVA_CUENTA')}}"
+                  [(ngModel)]="cheque.nuevaCuenta" label-placement="floating" fill="outline"
+                  (ionBlur)="setNuevaCuenta(cheque.nuevaCuenta,ch,'ch')" value="{{cheque.nuevaCuenta}}" color="primary"
+                  class="customInput"></ion-input>
+              </ion-item>
+            </ion-col>
+            <!-- clientBankAccount -->
 
-                            </ion-item>
-                        </ion-col>
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item disabled="{{deposito.disabled}}">
-                                <ion-input label="{{this.collectService.collectionTags.get('COB_NRO_DEPOSITO')}}"
-                                    label-placement="floating" fill="outline" color="primary"
-                                    [(ngModel)]="deposito.numeroDeposito" value="{{deposito.numeroDeposito}}"
-                                    (ionBlur)="setNroTransanccion(deposito.numeroDeposito,de,'de')" class="customInput"
-                                    [ngClass]="{'inp-write': !deposito.numeroDeposito}"></ion-input>
-                            </ion-item>
-                        </ion-col>
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item disabled="{{deposito.disabled}}">
-                                <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}"
-                                    label-placement="floating" fill="outline" color="primary" type="text"
-                                    inputmode="numeric" [value]="getDisplay(deposito, de,'de') || '0,00'"
-                                    (keydown)="onMontoKeyDown($event, deposito, de,'de')" (ionInput)="onMontoInput($event, deposito, de,'de')"
-                                    (focus)="onMontoFocus(deposito, de,'de')" (blur)="onMontoBlur(deposito, de,'de')"
-                                    class="customInput" [ngClass]="{'inp-write': !deposito.monto}">
-                                </ion-input>
-                            </ion-item>
-                        </ion-col>
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-item disabled="{{this.collectService.enableDate}}">
+                <ion-label>{{this.collectService.collectionTags.get('COB_FECHA')}}</ion-label>
+                <a>
+                  <ion-button (click)="setShowDateChequeVenceModal(ch, true)" color="light"
+                    [disabled]="this.collectService.validateCollectionDate">
+                    {{ dateServ.formatShort(cheque.fecha) }}
+                  </ion-button>
+                </a>
+                <a>
+                  <ion-icon slot="end" src="../../../assets/icon/calendar-outline.svg"></ion-icon>
+                </a>
+                <ion-modal [keepContentsMounted]="true" [isOpen]="cheque.showDateVenceModal"
+                  (didDismiss)="setShowDateChequeVenceModal(ch, false)" class="fechasModal">
+                  <ng-template>
+                    <ion-datetime [id]="'fechaVenceCheque'+ch" presentation="date"
+                      [(ngModel)]="cheque.fecha.split(' ')[0]" [showDefaultButtons]="true"
+                      (ngModelChange)="onFechaChange($event, ch,'ch')"
+                      doneText="{{this.collectService.collectionTags.get('COB_ACEPTAR')}}"
+                      cancelText="{{this.collectService.collectionTags.get('COB_CANCELAR')}}"
+                      min="{{this.collectService.fechaMenor}}" max="{{this.collectService.fechaMayor}}"
+                      [disabled]="this.collectService.validateCollectionDate">
+                    </ion-datetime>
+                  </ng-template>
+                </ion-modal>
+              </ion-item>
+            </ion-col>
 
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item disabled="{{this.collectService.enableDate}}">
-                                <ion-label>{{this.collectService.collectionTags.get('COB_FECHA')}}</ion-label>
-                                <a (click)="onOpenCalendar(de, 'de')">
-                                    <ion-button (click)="setShowDateDepositoModal(de, true)" color="light"
-                                        class="letrasFechasButton"
-                                        [disabled]="this.collectService.validateCollectionDate">
-                                        {{ dateServ.formatShort(deposito.fecha) }}
-                                    </ion-button>
-                                </a>
-                                <a (click)="onOpenCalendar(de,'de')">
-                                    <ion-icon slot="end" src="../../../assets/icon/calendar-outline.svg"></ion-icon>
-                                </a>
-                                <ion-modal [keepContentsMounted]="true" [isOpen]="deposito.showDateModal"
-                                    (didDismiss)="setShowDateDepositoModal(de, false)" class="fechasModal">
-                                    <ng-template>
-                                        <ion-datetime [id]="'fechaDeposito'+de" presentation="date"
-                                            [(ngModel)]="deposito.fecha.split(' ')[0]"
-                                            (ngModelChange)="onFechaValorChange($event, de,'de')"
-                                            [showDefaultButtons]="true"
-                                            doneText="{{this.collectService.collectionTags.get('COB_ACEPTAR')}}"
-                                            cancelText="{{this.collectService.collectionTags.get('COB_CANCELAR')}}"
-                                            min="{{this.collectService.fechaMenor}}"
-                                            max="{{this.collectService.fechaMayor}}"
-                                            [disabled]="this.collectService.validateCollectionDate">
-                                        </ion-datetime>
-                                    </ng-template>
-                                </ion-modal>
-                            </ion-item>
-                        </ion-col>
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item>
-                                <ion-button color="danger" (click)="deleteTipoPago(de,'de')"><ion-icon
-                                        name="trash"></ion-icon></ion-button>
-                            </ion-item>
-                        </ion-col>
-                        <ion-label *ngIf="deposito.anticipoPrepaid" color="primary">
-                            {{this.collectService.collectionTags.get('COB_LABEL_ANTICIPO_AUTOMATICO')}}
-                        </ion-label>
-                    </div>
-                </ion-accordion>
-            </ion-list>
-            <!-- DEPOSITO -->
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-item disabled="{{this.collectService.enableDate}}">
+                <ion-label>{{this.collectService.collectionTags.get('COB_FECHA_VALOR')}}</ion-label>
+                <a>
+                  <ion-button (click)="setShowDateChequeValorModal(ch, true)" color="light" class="letrasFechasButton"
+                    [disabled]="this.collectService.validateCollectionDate">
+                    {{ dateServ.formatShort(cheque.fechaValor) }}
+                  </ion-button>
+                </a>
+                <a>
+                  <ion-icon slot="end" src="../../../assets/icon/calendar-outline.svg"></ion-icon>
+                </a>
+                <ion-modal [keepContentsMounted]="true" [isOpen]="cheque.showDateValorModal"
+                  (didDismiss)="setShowDateChequeValorModal(ch, false)" class="fechasModal">
+                  <ng-template>
+                    <ion-datetime [id]="'fechaValorCheque'+ch" presentation="date"
+                      [(ngModel)]="cheque.fechaValor.split(' ')[0]"
+                      (ngModelChange)="onFechaValorChange($event, ch,'ch')" [showDefaultButtons]="true"
+                      doneText="{{this.collectService.collectionTags.get('COB_ACEPTAR')}}"
+                      cancelText="{{this.collectService.collectionTags.get('COB_CANCELAR')}}"
+                      min="{{this.collectService.fechaMenor}}" max="{{this.collectService.fechaMayor}}"
+                      [disabled]="this.collectService.validateCollectionDate">
+                    </ion-datetime>
+                  </ng-template>
+                </ion-modal>
+              </ion-item>
+            </ion-col>
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-item disabled="{{cheque.disabled}}">
+                <ion-input label="{{this.collectService.collectionTags.get('COB_NRO_CHEQUE')}}"
+                  label-placement="floating" fill="outline" color="primary" [(ngModel)]="cheque.numeroCheque"
+                  value="{{cheque.numeroCheque}}" (ionBlur)="setNroTransanccion(cheque.numeroCheque,ch,'ch')"
+                  class="customInput" [ngClass]="{'inp-write': !cheque.numeroCheque}"></ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-item disabled="{{cheque.disabled}}">
+                <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}" label-placement="floating"
+                  fill="outline" color="primary" type="text" inputmode="numeric"
+                  [value]="getDisplay(cheque, ch, 'ch') || '0,00'" (keydown)="onMontoKeyDown($event, cheque, ch, 'ch')"
+                  (ionInput)="onMontoInput($event, cheque, ch, 'ch')" (focus)="onMontoFocus(cheque, ch, 'ch')"
+                  (blur)="onMontoBlur(cheque, ch, 'ch')" class="customInput" [ngClass]="{'inp-write': !cheque.monto}">
+                </ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-item>
+                <ion-button color="danger" (click)="deleteTipoPago(ch,'ch')"><ion-icon
+                    name="trash"></ion-icon></ion-button>
+              </ion-item>
+            </ion-col>
 
-            <!-- TRANSFERENCIAS -->
-            <ion-list
-                *ngFor="let transferencia of this.collectService.pagoTransferencia; index as tr; trackBy: trackByIndex">
-                <ion-accordion
-                    *ngIf="this.collectService.tipoPagoTransferencia  && this.collectService.pagoTransferencia.length > 0"
-                    [value]="'transferencia'+tr">
-                    <ion-item slot="header" color="light">
-                        <ion-label>
-                            {{this.collectService.collectionTags.get('COB_TRANSFERENCIA')}}</ion-label>
-                    </ion-item>
+            <ion-label *ngIf="cheque.anticipoPrepaid" color="primary">
+              {{this.collectService.collectionTags.get('COB_LABEL_ANTICIPO_AUTOMATICO')}}
+            </ion-label>
+          </div>
+        </ion-accordion>
+      </ion-list>
 
-                    <div class="ion-padding" slot="content">
+      <!-- CHEQUE -->
 
-                        <!-- clientBankAccount -->
-                        <ion-col size="6" size-sm="12" size-xs="12" *ngIf="this.collectService.clientBankAccount">
-                            <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_EMISOR')}}</ion-label>
-                            <ion-item>
-                                <div class="listado-enterprise-selector ion-text-center">
-                                    <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
-                                        class="ion-text-center always-flip" [(ngModel)]="this.collectService.clientBankAccountSelected[this.collectService.pagoTransferencia[tr].posCollectionPayment] "
-                                        (ionChange)="selectBankAccount(tr,'tr')" interface="alert"
-                                        labelPlacement="stacked">
-                                        <ion-select-option
-                                            *ngFor="let bank of this.collectService.clientBankAccounts; trackBy: trackByIndex"
-                                            [value]="bank">{{ bank.naBank }} -
-                                            {{bank.nuAccount}}
-                                        </ion-select-option>
-                                    </ion-select>
-                                </div>
-                            </ion-item>
-                        </ion-col>
-                        <ion-col size="6" size-sm="12" size-xs="12" *ngIf="transferencia.showNuevaCuenta">
-                            <ion-item disabled="{{transferencia.disabled}}">
-                                <ion-input label="{{this.collectService.collectionTags.get('COB_NUEVA_CUENTA')}}"
-                                    [(ngModel)]="transferencia.nuevaCuenta" label-placement="floating" fill="outline"
-                                    (ionBlur)="setNuevaCuenta(transferencia.nuevaCuenta,tr,'tr')"
-                                    value="{{transferencia.nuevaCuenta}}" color="primary"
-                                    class="customInput"></ion-input>
-                            </ion-item>
-                        </ion-col>
-                        <!-- clientBankAccount -->
+      <!-- DEPOSITO -->
+      <ion-list *ngFor="let deposito of collectService.pagoDeposito; index as de; trackBy: trackByIndex">
+        <ion-accordion *ngIf="this.collectService.tipoPagoDeposito  && collectService.pagoDeposito.length > 0"
+          [value]="'deposito'+de">
+          <ion-item slot="header" color="light">
+            <ion-label> {{this.collectService.collectionTags.get('COB_DEPOSITO')}}</ion-label>
+          </ion-item>
+          <div class="ion-padding" slot="content">
+            <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_RECEPTOR')}}</ion-label>
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-item>
+                <div class="listado-enterprise-selector ion-text-center">
+                  <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
+                    class="ion-text-center always-flip"
+                    [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoDeposito[de].posCollectionPayment] "
+                    (ionChange)="selectBankAccount(de, 'de')" interface="alert" labelPlacement="stacked">
+                    <ion-select-option
+                      *ngFor="let listBankAccount of this.collectService.listBankAccounts; trackBy: trackByIndex"
+                      [value]="listBankAccount">{{ listBankAccount.naBank }} -
+                      {{listBankAccount.nuAccount}}
+                    </ion-select-option>
+                  </ion-select>
+                </div>
 
-                        <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_RECEPTOR')}}</ion-label>
-                        <ion-item>
-                            <div class="listado-enterprise-selector ion-text-center">
-                                <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
-                                    class="ion-text-center always-flip"
-                                    [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoTransferencia[tr].posCollectionPayment] "
-                                    (ionChange)="selectListBankAccount(tr, 'tr')" interface="alert"
-                                    labelPlacement="stacked">
-                                    <ion-select-option
-                                        *ngFor="let listBankAccount of this.collectService.listBankAccounts; trackBy: trackByIndex"
-                                        [value]="listBankAccount">{{ listBankAccount.nameBank }} -
-                                        {{listBankAccount.nuAccount}}
-                                    </ion-select-option>
-                                </ion-select>
-                            </div>
-                        </ion-item>
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item disabled="{{transferencia.disabled}}">
-                                <ion-input label="{{this.collectService.collectionTags.get('COB_NRO_REFERENCIA')}}"
-                                    label-placement="floating" fill="outline" color="primary"
-                                    [(ngModel)]="transferencia.numeroTransferencia"
-                                    value="{{transferencia.numeroTransferencia}}"
-                                    (ionBlur)="setNroTransanccion(transferencia.numeroTransferencia,tr,'tr')"
-                                    class="customInput"
-                                    [ngClass]="{'inp-write': !transferencia.numeroTransferencia}"></ion-input>
-                            </ion-item>
-                        </ion-col>
-                        <ion-col size="6" size-sm="12" size-xs="12">
+              </ion-item>
+            </ion-col>
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-item disabled="{{deposito.disabled}}">
+                <ion-input label="{{this.collectService.collectionTags.get('COB_NRO_DEPOSITO')}}"
+                  label-placement="floating" fill="outline" color="primary" [(ngModel)]="deposito.numeroDeposito"
+                  value="{{deposito.numeroDeposito}}" (ionBlur)="setNroTransanccion(deposito.numeroDeposito,de,'de')"
+                  class="customInput" [ngClass]="{'inp-write': !deposito.numeroDeposito}"></ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-item disabled="{{deposito.disabled}}">
+                <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}" label-placement="floating"
+                  fill="outline" color="primary" type="text" inputmode="numeric"
+                  [value]="getDisplay(deposito, de,'de') || '0,00'"
+                  (keydown)="onMontoKeyDown($event, deposito, de,'de')"
+                  (ionInput)="onMontoInput($event, deposito, de,'de')" (focus)="onMontoFocus(deposito, de,'de')"
+                  (blur)="onMontoBlur(deposito, de,'de')" class="customInput"
+                  [ngClass]="{'inp-write': !deposito.monto}">
+                </ion-input>
+              </ion-item>
+            </ion-col>
 
-                            <ion-item [disabled]="transferencia.disabled">
-                                <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}"
-                                    label-placement="floating" fill="outline" color="primary" type="text"
-                                    inputmode="numeric" [value]="getDisplay(transferencia, tr, 'tr') || '0,00'"
-                                    (keydown)="onMontoKeyDown($event, transferencia, tr, 'tr')" (ionInput)="onMontoInput($event, transferencia, tr, 'tr')"
-                                    (focus)="onMontoFocus(transferencia, tr, 'tr')"
-                                    (blur)="onMontoBlur(transferencia, tr, 'tr')" class="customInput"
-                                    [ngClass]="{'inp-write': !transferencia.monto}">
-                                </ion-input>
-                            </ion-item>
-                        </ion-col>
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item disabled="{{this.collectService.enableDate}}">
-                                <ion-label>{{this.collectService.collectionTags.get('COB_FECHA')}}</ion-label>
-                                <a (click)="onOpenCalendar(tr, 'tr')">
-                                    <ion-button (click)="setShowDateTransferenciaModal(tr, true)" color="light"
-                                        class="letrasFechasButton"
-                                        [disabled]="this.collectService.validateCollectionDate">
-                                        {{ dateServ.formatShort(transferencia.fecha) }}
-                                    </ion-button>
-                                </a>
-                                <a (click)="onOpenCalendar(tr,'tr')">
-                                    <ion-icon slot="end" src="../../../assets/icon/calendar-outline.svg"></ion-icon>
-                                </a>
-                                <ion-modal [keepContentsMounted]="true" [isOpen]="transferencia.showDateModal"
-                                    (didDismiss)="setShowDateTransferenciaModal(tr, false)" class="fechasModal">
-                                    <ng-template>
-                                        <ion-datetime [id]="'fechaTransferencia'+tr" presentation="date"
-                                            [(ngModel)]="transferencia.fecha.split(' ')[0]"
-                                            (ngModelChange)="onFechaValorChange($event, tr,'tr')"
-                                            [showDefaultButtons]="true"
-                                            doneText="{{this.collectService.collectionTags.get('COB_ACEPTAR')}}"
-                                            cancelText="{{this.collectService.collectionTags.get('COB_CANCELAR')}}"
-                                            min="{{this.collectService.fechaMenor}}"
-                                            max="{{this.collectService.fechaMayor}}"
-                                            [disabled]="this.collectService.validateCollectionDate">
-                                        </ion-datetime>
-                                    </ng-template>
-                                </ion-modal>
-                            </ion-item>
-                        </ion-col>
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-item disabled="{{this.collectService.enableDate}}">
+                <ion-label>{{this.collectService.collectionTags.get('COB_FECHA')}}</ion-label>
+                <a (click)="onOpenCalendar(de, 'de')">
+                  <ion-button (click)="setShowDateDepositoModal(de, true)" color="light" class="letrasFechasButton"
+                    [disabled]="this.collectService.validateCollectionDate">
+                    {{ dateServ.formatShort(deposito.fecha) }}
+                  </ion-button>
+                </a>
+                <a (click)="onOpenCalendar(de,'de')">
+                  <ion-icon slot="end" src="../../../assets/icon/calendar-outline.svg"></ion-icon>
+                </a>
+                <ion-modal [keepContentsMounted]="true" [isOpen]="deposito.showDateModal"
+                  (didDismiss)="setShowDateDepositoModal(de, false)" class="fechasModal">
+                  <ng-template>
+                    <ion-datetime [id]="'fechaDeposito'+de" presentation="date"
+                      [(ngModel)]="deposito.fecha.split(' ')[0]" (ngModelChange)="onFechaValorChange($event, de,'de')"
+                      [showDefaultButtons]="true" doneText="{{this.collectService.collectionTags.get('COB_ACEPTAR')}}"
+                      cancelText="{{this.collectService.collectionTags.get('COB_CANCELAR')}}"
+                      min="{{this.collectService.fechaMenor}}" max="{{this.collectService.fechaMayor}}"
+                      [disabled]="this.collectService.validateCollectionDate">
+                    </ion-datetime>
+                  </ng-template>
+                </ion-modal>
+              </ion-item>
+            </ion-col>
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-item>
+                <ion-button color="danger" (click)="deleteTipoPago(de,'de')"><ion-icon
+                    name="trash"></ion-icon></ion-button>
+              </ion-item>
+            </ion-col>
+            <ion-label *ngIf="deposito.anticipoPrepaid" color="primary">
+              {{this.collectService.collectionTags.get('COB_LABEL_ANTICIPO_AUTOMATICO')}}
+            </ion-label>
+          </div>
+        </ion-accordion>
+      </ion-list>
+      <!-- DEPOSITO -->
 
-                        <ion-item>
-                            <ion-button color="danger" (click)="deleteTipoPago(tr,'tr')"><ion-icon
-                                    name="trash"></ion-icon></ion-button>
-                        </ion-item>
-                        <ion-label *ngIf="transferencia.anticipoPrepaid" color="primary">
-                            {{this.collectService.collectionTags.get('COB_LABEL_ANTICIPO_AUTOMATICO')}}
-                        </ion-label>
-                    </div>
-                </ion-accordion>
-            </ion-list>
-            <!-- TRANSFERENCIAS -->
+      <!-- TRANSFERENCIAS -->
+      <ion-list *ngFor="let transferencia of this.collectService.pagoTransferencia; index as tr; trackBy: trackByIndex">
+        <ion-accordion
+          *ngIf="this.collectService.tipoPagoTransferencia  && this.collectService.pagoTransferencia.length > 0"
+          [value]="'transferencia'+tr">
+          <ion-item slot="header" color="light">
+            <ion-label>
+              {{this.collectService.collectionTags.get('COB_TRANSFERENCIA')}}</ion-label>
+          </ion-item>
 
-            <!-- OTROS -->
-            <ion-list *ngFor="let otros of this.collectService.pagoOtros; index as ot; trackBy: trackByIndex">
-                <ion-accordion *ngIf="this.collectService.pagoOtros && this.collectService.pagoOtros.length > 0"
-                    value="otros">
-                    <ion-item slot="header" color="light">
-                        <ion-label> {{this.collectService.collectionTags.get('COB_OTROS')}}</ion-label>
-                    </ion-item>
-                    <div class="ion-padding" slot="content">
-                        <ion-col size="6" size-sm="12" size-xs="12" *ngIf="this.collectService.enableDifferenceCodes">
-                            <div class="listado-enterprise-selector ion-text-center">
-                                <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
-                                    class="ion-text-center always-flip" [(ngModel)]="otros.differenceCode"
-                                    (ionChange)="selectDifferenceCode(ot)" interface="alert" labelPlacement="stacked">
-                                    <ion-select-option
-                                        *ngFor="let differenceCode of this.collectService.differenceCode; trackBy: trackByIndex"
-                                        [value]="differenceCode">{{ differenceCode.coDifferenceCode }} -
-                                        {{differenceCode.naDifferenceCode}}
-                                    </ion-select-option>
-                                </ion-select>
-                            </div>
-                        </ion-col>
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item>
-                                <ion-input label="{{this.collectService.collectionTags.get('COB_OTROS_ESPECIFIQUE')}}:"
-                                    label-placement="floating" fill="outline" color="primary" [(ngModel)]="otros.nombre"
-                                    value="{{otros.nombre}}" (ionBlur)="setNroTransanccion(otros.nombre,ot,'ot')"
-                                    [ngClass]="{'inp-write': !otros.nombre}" class="customInput"></ion-input>
-                            </ion-item>
-                        </ion-col>
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item>
-                                <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}"
-                                    label-placement="floating" fill="outline" color="primary" type="text"
-                                    inputmode="numeric" [value]="getDisplay(otros, ot,'ot') || '0,00'"
-                                    (keydown)="onMontoKeyDown($event, otros, ot, 'ot')" (ionInput)="onMontoInput($event, otros, ot, 'ot')"
-                                    (focus)="onMontoFocus(otros, ot, 'ot')" (blur)="onMontoBlur(otros, ot, 'ot')"
-                                    class="customInput" [ngClass]="{'inp-write': !otros.monto}">
-                                </ion-input>
-                            </ion-item>
-                        </ion-col>
-                        <ion-col size="6" size-sm="12" size-xs="12">
-                            <ion-item disabled="{{this.collectService.enableDate}}">
-                                <ion-label>{{this.collectService.collectionTags.get('COB_FECHA')}}</ion-label>
-                                <a (click)="onOpenCalendar(ot, 'ot')">
-                                    <ion-button (click)="setShowDateOtrosModal(ot, true)" color="light"
-                                        class="letrasFechasButton"
-                                        [disabled]="this.collectService.validateCollectionDate">
-                                        {{ dateServ.formatShort(otros.fecha) }}
-                                    </ion-button>
-                                </a>
-                                <a (click)="onOpenCalendar(ot,'ot')">
-                                    <ion-icon slot="end" src="../../../assets/icon/calendar-outline.svg"></ion-icon>
-                                </a>
-                                <ion-modal [keepContentsMounted]="true" [isOpen]="otros.showDateModal"
-                                    (didDismiss)="setShowDateOtrosModal(ot, false)" class="fechasModal">
-                                    <ng-template>
-                                        <ion-datetime [id]="'fechaOtros'+ot" presentation="date"
-                                            [(ngModel)]="otros.fecha.split(' ')[0]"
-                                            (ngModelChange)="onFechaValorChange($event, ot,'ot')"
-                                            [showDefaultButtons]="true"
-                                            doneText="{{this.collectService.collectionTags.get('COB_ACEPTAR')}}"
-                                            cancelText="{{this.collectService.collectionTags.get('COB_CANCELAR')}}"
-                                            min="{{this.collectService.fechaMenor}}"
-                                            max="{{this.collectService.fechaMayor}}"
-                                            [disabled]="this.collectService.validateCollectionDate">
-                                        </ion-datetime>
-                                    </ng-template>
-                                </ion-modal>
-                            </ion-item>
-                        </ion-col>
-                        <ion-button color="danger" (click)="deleteTipoPago(ot,'ot')"><ion-icon
-                                name="trash"></ion-icon></ion-button>
+          <div class="ion-padding" slot="content">
 
-                        <ion-label *ngIf="otros.anticipoPrepaid" color="primary">
-                            {{this.collectService.collectionTags.get('COB_LABEL_ANTICIPO_AUTOMATICO')}}
-                        </ion-label>
-                    </div>
-                </ion-accordion>
-            </ion-list>
-            <!-- OTROS -->
+            <!-- clientBankAccount -->
+            <ion-col size="6" size-sm="12" size-xs="12" *ngIf="this.collectService.clientBankAccount">
+              <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_EMISOR')}}</ion-label>
+              <ion-item>
+                <div class="listado-enterprise-selector ion-text-center">
+                  <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
+                    class="ion-text-center always-flip"
+                    [(ngModel)]="this.collectService.clientBankAccountSelected[this.collectService.pagoTransferencia[tr].posCollectionPayment] "
+                    (ionChange)="selectBankAccount(tr,'tr')" interface="alert" labelPlacement="stacked">
+                    <ion-select-option
+                      *ngFor="let bank of this.collectService.clientBankAccounts; trackBy: trackByIndex"
+                      [value]="bank">{{ bank.naBank }} - {{bank.nuAccount}}
+                    </ion-select-option>
+                  </ion-select>
+                </div>
+              </ion-item>
+            </ion-col>
+            <ion-col size="6" size-sm="12" size-xs="12" *ngIf="transferencia.showNuevaCuenta">
+              <ion-item disabled="{{transferencia.disabled}}">
+                <ion-input label="{{this.collectService.collectionTags.get('COB_NUEVA_CUENTA')}}"
+                  [(ngModel)]="transferencia.nuevaCuenta" label-placement="floating" fill="outline"
+                  (ionBlur)="setNuevaCuenta(transferencia.nuevaCuenta,tr,'tr')" value="{{transferencia.nuevaCuenta}}"
+                  color="primary" class="customInput"></ion-input>
+              </ion-item>
+            </ion-col>
+            <!-- clientBankAccount -->
 
-        </ion-accordion-group>
+            <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_RECEPTOR')}}</ion-label>
+            <ion-item>
+              <div class="listado-enterprise-selector ion-text-center">
+                <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
+                  class="ion-text-center always-flip"
+                  [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoTransferencia[tr].posCollectionPayment] "
+                  (ionChange)="selectListBankAccount(tr, 'tr')" interface="alert" labelPlacement="stacked">
+                  <ion-select-option
+                    *ngFor="let listBankAccount of this.collectService.listBankAccounts; trackBy: trackByIndex"
+                    [value]="listBankAccount">{{ listBankAccount.naBank }} -
+                    {{listBankAccount.nuAccount}}
+                  </ion-select-option>
+                </ion-select>
+              </div>
+            </ion-item>
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-item disabled="{{transferencia.disabled}}">
+                <ion-input label="{{this.collectService.collectionTags.get('COB_NRO_REFERENCIA')}}"
+                  label-placement="floating" fill="outline" color="primary"
+                  [(ngModel)]="transferencia.numeroTransferencia" value="{{transferencia.numeroTransferencia}}"
+                  (ionBlur)="setNroTransanccion(transferencia.numeroTransferencia,tr,'tr')" class="customInput"
+                  [ngClass]="{'inp-write': !transferencia.numeroTransferencia}"></ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="6" size-sm="12" size-xs="12">
 
-        <!-- <ion-button size="small" fill="outline" expand="block" (click)="imprimir()"></ion-button> -->
-    </ion-col>
+              <ion-item [disabled]="transferencia.disabled">
+                <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}" label-placement="floating"
+                  fill="outline" color="primary" type="text" inputmode="numeric"
+                  [value]="getDisplay(transferencia, tr, 'tr') || '0,00'"
+                  (keydown)="onMontoKeyDown($event, transferencia, tr, 'tr')"
+                  (ionInput)="onMontoInput($event, transferencia, tr, 'tr')"
+                  (focus)="onMontoFocus(transferencia, tr, 'tr')" (blur)="onMontoBlur(transferencia, tr, 'tr')"
+                  class="customInput" [ngClass]="{'inp-write': !transferencia.monto}">
+                </ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-item disabled="{{this.collectService.enableDate}}">
+                <ion-label>{{this.collectService.collectionTags.get('COB_FECHA')}}</ion-label>
+                <a (click)="onOpenCalendar(tr, 'tr')">
+                  <ion-button (click)="setShowDateTransferenciaModal(tr, true)" color="light" class="letrasFechasButton"
+                    [disabled]="this.collectService.validateCollectionDate">
+                    {{ dateServ.formatShort(transferencia.fecha) }}
+                  </ion-button>
+                </a>
+                <a (click)="onOpenCalendar(tr,'tr')">
+                  <ion-icon slot="end" src="../../../assets/icon/calendar-outline.svg"></ion-icon>
+                </a>
+                <ion-modal [keepContentsMounted]="true" [isOpen]="transferencia.showDateModal"
+                  (didDismiss)="setShowDateTransferenciaModal(tr, false)" class="fechasModal">
+                  <ng-template>
+                    <ion-datetime [id]="'fechaTransferencia'+tr" presentation="date"
+                      [(ngModel)]="transferencia.fecha.split(' ')[0]"
+                      (ngModelChange)="onFechaValorChange($event, tr,'tr')" [showDefaultButtons]="true"
+                      doneText="{{this.collectService.collectionTags.get('COB_ACEPTAR')}}"
+                      cancelText="{{this.collectService.collectionTags.get('COB_CANCELAR')}}"
+                      min="{{this.collectService.fechaMenor}}" max="{{this.collectService.fechaMayor}}"
+                      [disabled]="this.collectService.validateCollectionDate">
+                    </ion-datetime>
+                  </ng-template>
+                </ion-modal>
+              </ion-item>
+            </ion-col>
+
+            <ion-item>
+              <ion-button color="danger" (click)="deleteTipoPago(tr,'tr')"><ion-icon
+                  name="trash"></ion-icon></ion-button>
+            </ion-item>
+            <ion-label *ngIf="transferencia.anticipoPrepaid" color="primary">
+              {{this.collectService.collectionTags.get('COB_LABEL_ANTICIPO_AUTOMATICO')}}
+            </ion-label>
+          </div>
+        </ion-accordion>
+      </ion-list>
+      <!-- TRANSFERENCIAS -->
+
+      <!-- OTROS -->
+      <ion-list *ngFor="let otros of this.collectService.pagoOtros; index as ot; trackBy: trackByIndex">
+        <ion-accordion *ngIf="this.collectService.pagoOtros && this.collectService.pagoOtros.length > 0" value="otros">
+          <ion-item slot="header" color="light">
+            <ion-label> {{this.collectService.collectionTags.get('COB_OTROS')}}</ion-label>
+          </ion-item>
+          <div class="ion-padding" slot="content">
+            <ion-col size="6" size-sm="12" size-xs="12" *ngIf="this.collectService.enableDifferenceCodes">
+              <div class="listado-enterprise-selector ion-text-center">
+                <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
+                  class="ion-text-center always-flip" [(ngModel)]="otros.differenceCode"
+                  (ionChange)="selectDifferenceCode(ot)" interface="alert" labelPlacement="stacked">
+                  <ion-select-option
+                    *ngFor="let differenceCode of this.collectService.differenceCode; trackBy: trackByIndex"
+                    [value]="differenceCode">{{ differenceCode.coDifferenceCode }} -
+                    {{differenceCode.naDifferenceCode}}
+                  </ion-select-option>
+                </ion-select>
+              </div>
+            </ion-col>
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-item>
+                <ion-input label="{{this.collectService.collectionTags.get('COB_OTROS_ESPECIFIQUE')}}:"
+                  label-placement="floating" fill="outline" color="primary" [(ngModel)]="otros.nombre"
+                  value="{{otros.nombre}}" (ionBlur)="setNroTransanccion(otros.nombre,ot,'ot')"
+                  [ngClass]="{'inp-write': !otros.nombre}" class="customInput"></ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-item>
+                <ion-input label="{{collectService.collectionTags.get('COB_MONTO')}}" label-placement="floating"
+                  fill="outline" color="primary" type="text" inputmode="numeric"
+                  [value]="getDisplay(otros, ot,'ot') || '0,00'" (keydown)="onMontoKeyDown($event, otros, ot, 'ot')"
+                  (ionInput)="onMontoInput($event, otros, ot, 'ot')" (focus)="onMontoFocus(otros, ot, 'ot')"
+                  (blur)="onMontoBlur(otros, ot, 'ot')" class="customInput" [ngClass]="{'inp-write': !otros.monto}">
+                </ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-item disabled="{{this.collectService.enableDate}}">
+                <ion-label>{{this.collectService.collectionTags.get('COB_FECHA')}}</ion-label>
+                <a (click)="onOpenCalendar(ot, 'ot')">
+                  <ion-button (click)="setShowDateOtrosModal(ot, true)" color="light" class="letrasFechasButton"
+                    [disabled]="this.collectService.validateCollectionDate">
+                    {{ dateServ.formatShort(otros.fecha) }}
+                  </ion-button>
+                </a>
+                <a (click)="onOpenCalendar(ot,'ot')">
+                  <ion-icon slot="end" src="../../../assets/icon/calendar-outline.svg"></ion-icon>
+                </a>
+                <ion-modal [keepContentsMounted]="true" [isOpen]="otros.showDateModal"
+                  (didDismiss)="setShowDateOtrosModal(ot, false)" class="fechasModal">
+                  <ng-template>
+                    <ion-datetime [id]="'fechaOtros'+ot" presentation="date" [(ngModel)]="otros.fecha.split(' ')[0]"
+                      (ngModelChange)="onFechaValorChange($event, ot,'ot')" [showDefaultButtons]="true"
+                      doneText="{{this.collectService.collectionTags.get('COB_ACEPTAR')}}"
+                      cancelText="{{this.collectService.collectionTags.get('COB_CANCELAR')}}"
+                      min="{{this.collectService.fechaMenor}}" max="{{this.collectService.fechaMayor}}"
+                      [disabled]="this.collectService.validateCollectionDate">
+                    </ion-datetime>
+                  </ng-template>
+                </ion-modal>
+              </ion-item>
+            </ion-col>
+            <ion-button color="danger" (click)="deleteTipoPago(ot,'ot')"><ion-icon name="trash"></ion-icon></ion-button>
+
+            <ion-label *ngIf="otros.anticipoPrepaid" color="primary">
+              {{this.collectService.collectionTags.get('COB_LABEL_ANTICIPO_AUTOMATICO')}}
+            </ion-label>
+          </div>
+        </ion-accordion>
+      </ion-list>
+      <!-- OTROS -->
+
+    </ion-accordion-group>
+
+    <!-- <ion-button size="small" fill="outline" expand="block" (click)="imprimir()"></ion-button> -->
+  </ion-col>
 </ion-row>
 <!-- <ion-button color="danger" (click)="print()"></ion-button> -->
 
 
 <!-- alerta de envio-->
 <ion-alert [isOpen]="this.collectService.alertMessageOpen"
-    header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}" message={{this.collectService.mensaje}}
-    [buttons]="alertButtons" (didDismiss)="setResult($event)"></ion-alert>
+  header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}" message={{this.collectService.mensaje}}
+  [buttons]="alertButtons" (didDismiss)="setResult($event)"></ion-alert>
 
 <!-- alerta de envio-->
 <ion-alert [isOpen]="this.alertMessageOpen" header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}"
-    message={{this.collectService.mensaje}} [buttons]="alertButtons" (didDismiss)="setResult($event)"></ion-alert>
-
-
+  message={{this.collectService.mensaje}} [buttons]="alertButtons" (didDismiss)="setResult($event)"></ion-alert>

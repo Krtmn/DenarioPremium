@@ -1176,7 +1176,7 @@ export class CobrosGeneralComponent implements OnInit {
         idBankAccount: bancoReceptor.idBankAccount,
         idCurrency: bancoReceptor.idCurrency,
         idEnterprise: bancoReceptor.idEnterprise,
-        nameBank: bancoReceptor.nameBank,
+        naBank: bancoReceptor.naBank,
         nuAccount: bancoReceptor.nuAccount,
       }
     } else {
