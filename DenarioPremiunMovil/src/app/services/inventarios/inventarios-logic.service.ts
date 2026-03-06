@@ -419,8 +419,9 @@ export class InventariosLogicService {
     let idClient = this.newClientStock.idClient;
     let idAddressClient = this.newClientStock.idAddressClient;
     //inicializamos el map de totales para cada producto
+    //esto incluye stock actual.
     let mapProducts = this.getMappedProductUtils();
-    //despacho se usa en ambos casos
+    
     let idProductUnits = [];
     let idProducts = [];
     let idUnits = [];
@@ -431,6 +432,7 @@ export class InventariosLogicService {
         idUnits.push(idUnit);
       }
     }
+    //despacho se usa en ambos casos, por eso se calcula antes del if
     let listAvgProduct = await this.orderDbServ.getClientAvgStock(dbServ, idEnterprise, idClient, idProductUnits, idAddressClient, idProducts);
     for (var i = 0; i < listAvgProduct.length; i++) {
       let idProduct = listAvgProduct[i].idProduct;
@@ -470,10 +472,11 @@ export class InventariosLogicService {
       }
     }
     //despacho
-    //hecho arriba
+    //hecho antes del if porque se usa para el calculo de sugeridos en ambos casos
 
     //Cambio por cambio
-    let straightSwaps = await this.getStraightSwapsByClientStock(dbServ, idProducts, idUnits, idEnterprise);
+    let straightSwaps = await this.getStraightSwapsByClientStock(dbServ, idProducts, 
+      idUnits, idEnterprise, idClient, idAddressClient);
     for (var i = 0; i < straightSwaps.length; i++) {
       let idProduct = straightSwaps[i].idProduct;
       let idUnit = straightSwaps[i].idUnit;
@@ -1043,10 +1046,12 @@ export class InventariosLogicService {
     });
   }
 
-  getStraightSwapsByClientStock(dbServ: SQLiteObject, idProducts: number[], idUnits: number[], idEnterprise: number) {
+  getStraightSwapsByClientStock(dbServ: SQLiteObject, idProducts: number[], idUnits: number[], idEnterprise: number, idClient: number, idAddressClient: number) {
     let select = "select ss.id_swap, ss.co_swap, ss.id_product, ss.id_unit, ss.co_product, "+
-    "ss.co_unit, ss.id_enterprise, ss.co_enterprise, ss.da_cambio, ss.qu_swap from straight_swaps ss "+
-    "where ss.id_product IN ("+idProducts.join(",")+") and ss.id_unit IN ("+idUnits.join(",")+") and ss.id_enterprise = "+idEnterprise;
+    "ss.co_unit, ss.id_enterprise, ss.co_enterprise, ss.da_cambio, ss.qu_swap, ss.id_client, ss.id_address_client, "+
+    "ss.co_client, ss.co_address_client from straight_swaps ss "+
+    "where ss.id_product IN ("+idProducts.join(",")+") and ss.id_unit IN ("+idUnits.join(",")+
+    ") and ss.id_enterprise = "+idEnterprise+" and ss.id_client = "+idClient+" and ss.id_address_client = "+idAddressClient;
 
     return dbServ.executeSql(select, []).then(data => {
       let straightSwaps: StraightSwap[] = [];
@@ -1063,6 +1068,10 @@ export class InventariosLogicService {
           coEnterprise: item.co_enterprise,
           daCambio: item.da_cambio,
           quSwap: item.qu_swap,
+          idClient: item.id_client,
+          idAddressClient: item.id_address_client,
+          coClient: item.co_client,
+          coAddressClient: item.co_address_client
         };
 
         straightSwaps.push(straightSwap);
