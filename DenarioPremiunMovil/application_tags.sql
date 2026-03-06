@@ -481,7 +481,9 @@ DELETE FROM public.application_tags WHERE co_module = 'INV';
 	('INV_ADD_TYPE', 'INV', 'INVENTARIO', 'ENG','Add Stock Type'),
 	('INV_DEV_STATUS', 'INV', 'INVENTARIO', 'ENG','Status'),
   ('INV_SEND_STOCK_MSG','INV','INVENTARIO','ESP','El Inventario será enviado'),
-  ('INV_MSJ_ERROR_NOTSIGNAL','INV','INVENTARIO','ESP','¡Su Inventario será enviado al tener conexión de datos!');
+  ('INV_MSJ_ERROR_NOTSIGNAL','INV','INVENTARIO','ESP','¡Su Inventario será enviado al tener conexión de datos!'),
+  ('INV_DIAS_ULTIMO_INVENTARIO','INV','INVENTARIO','ESP','Días desde último Inventario'),
+  ('INV_DIAS_SIGUIENTE_INVENTARIO','INV','INVENTARIO','ESP','Días para siguiente Inventario');
 
 
 -- PRODUCTOS

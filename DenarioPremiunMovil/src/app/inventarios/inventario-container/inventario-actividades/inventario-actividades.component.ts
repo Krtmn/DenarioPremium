@@ -78,8 +78,8 @@ export class InventarioActividadesComponent implements OnInit {
 
 
   }
-  preguntarSugerirPedido(){
-    this.inventariosLogicService.calcularTotalesSugerenciaPedido(this.dbServ.getDatabase());
+  async preguntarSugerirPedido(){
+    await this.inventariosLogicService.calcularTotalesSugerenciaPedido(this.dbServ.getDatabase());
     let buttonsConfirmSend = [
       {
         text: 'Cancelar',

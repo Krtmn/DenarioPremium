@@ -68,7 +68,10 @@ export class InventariosLogicService {
   public disabledEnterprise: boolean = false;
   public userMustActivateGPS: boolean = false;
   public expirationBatch: boolean = false;
-  public suggestedOrderByDispatchAndReturns: boolean = false;
+  public suggestedOrderByDispatchAndReturn: boolean = false;
+  public daysSinceLastInventory: number = 1;
+  public daysUntilNextInventory: number = 1;
+  public productsSuggested: ProductSuggestedUtil[] = [];
 
 
   public enterpriseClientStock: Enterprise = {} as Enterprise;
@@ -204,7 +207,7 @@ export class InventariosLogicService {
     this.typeStocks = [] as Inventarios[];
     this.disabledEnterprise = this.globalConfig.get('enterpriseEnabled') === 'true' ? false : true;
     this.expirationBatch = this.globalConfig.get('expirationBatch') === 'true' ? true : false;
-    this.suggestedOrderByDispatchAndReturns = this.globalConfig.get("suggestedOrderByDispatchAndReturns")?.toLowerCase() === "true";
+    this.suggestedOrderByDispatchAndReturn = this.globalConfig.get("suggestedOrderByDispatchAndReturn")?.toLowerCase() === "true";
   }
 
   showBackRoute(route: string) {
@@ -450,8 +453,8 @@ export class InventariosLogicService {
         }
       }
     }
-    if(this.suggestedOrderByDispatchAndReturns){
-    //Inventario Inicial = Inventario anterior + Despacho + Cambio por cambio
+    if(this.suggestedOrderByDispatchAndReturn){
+
     //inventario anterior
     let previousCS = await this.getPreviousClientStock(dbServ, idClient, this.newClientStock.daClientStock);
     if (previousCS == null) {
@@ -490,7 +493,6 @@ export class InventariosLogicService {
         }
       }
     }
-    //Venta = Inventario Inicial - Inventario actual - Devolución por distribución
 
     //inventario inicial se calcula con el paso anterior
     //inventario actual se agregó antes del if porque se necesita para ambos casos
@@ -509,8 +511,18 @@ export class InventariosLogicService {
       }
     }
     //Pedido Sugerido = Venta/Dias desde ultima visita × Días hasta la próxima visita
-
-
+    for(const [idProduct, mapUnits] of mapProducts){
+      for(const [idUnit, unitUtil] of mapUnits){
+      //Inventario Inicial = Inventario anterior + Despacho + Cambio por cambio
+        unitUtil.initialStock = unitUtil.previousStock + unitUtil.dispatchedStock + unitUtil.straightSwapStock;
+        //Venta = Inventario Inicial - Inventario actual - Devolución por distribución
+        unitUtil.soldUnits = unitUtil.initialStock - unitUtil.currentStock - unitUtil.returnedStock;
+        //Pedido Sugerido = Venta/Dias desde ultima visita × Días hasta la próxima visita
+        unitUtil.estimatedDailyUnits = unitUtil.soldUnits / this.daysSinceLastInventory;
+        unitUtil.quUnitSuggested = Math.round(unitUtil.estimatedDailyUnits * this.daysUntilNextInventory);
+      }
+    }
+    this.productsSuggested = this.mapProductsToProductSuggestedUtil(mapProducts);
     }else{
       //version anterior que solo usa average diario de venta
     }
@@ -541,6 +553,21 @@ export class InventariosLogicService {
       mapProducts.set(this.newClientStock.clientStockDetails[i].idProduct, mapUnits);
     }
     return mapProducts;
+  }
+
+  mapProductsToProductSuggestedUtil(mapProducts: Map<number, Map<number, UnitSuggestedUtil>>): ProductSuggestedUtil[] {
+    let productsSuggested: ProductSuggestedUtil[] = [];
+    for (const [idProduct, mapUnits] of mapProducts) {
+      let productSuggested: ProductSuggestedUtil = {
+        idProduct: idProduct,
+        unitsSuggested: []
+      }
+      for (const [idUnit, unitUtil] of mapUnits) {
+        productSuggested.unitsSuggested.push(unitUtil);
+      }
+      productsSuggested.push(productSuggested);
+    }
+    return productsSuggested;
   }
 
   deleteClientStocksBatch(dbServ: SQLiteObject, clientStocks: ClientStocks[]) {
@@ -1069,7 +1096,7 @@ export class InventariosLogicService {
   getStraightSwapsByClientStock(dbServ: SQLiteObject, idProducts: number[], idUnits: number[], idEnterprise: number, idClient: number, idAddressClient: number) {
     let select = "select ss.id_swap, ss.co_swap, ss.id_product, ss.id_unit, ss.co_product, "+
     "ss.co_unit, ss.id_enterprise, ss.co_enterprise, ss.da_cambio, ss.qu_swap, ss.id_client, ss.id_address_client, "+
-    "ss.co_client, ss.co_address_client from straight_swaps ss "+
+    "ss.co_client, ss.co_address_client from straight_swap ss "+
     "where ss.id_product IN ("+idProducts.join(",")+") and ss.id_unit IN ("+idUnits.join(",")+
     ") and ss.id_enterprise = "+idEnterprise+" and ss.id_client = "+idClient+" and ss.id_address_client = "+idAddressClient;
 
@@ -1106,7 +1133,7 @@ getReturnsByDistribution(dbServ: SQLiteObject, idProducts: number[], idUnits: nu
   "(select rt.id_type from return_types rt where rt.id_return_category in "+
     "(select rc.id_return_category from return_category rc where rc.subtract_suggestion = true) )"+
   "and r.id_client = "+idClient+" and r.id_enterprise = "+idEnterprise+") "+
-"and rd.id_product IN ("+idProducts.join(",")+") and rd.id_unit IN ("+idUnits.join(",")+")";
+"and rd.id_product IN ("+idProducts.join(",")+") and rd.id_measure_unit IN ("+idUnits.join(",")+")";
 
   return dbServ.executeSql(select, []).then(data => {
     let returnDetails: ReturnDetail[] = [];

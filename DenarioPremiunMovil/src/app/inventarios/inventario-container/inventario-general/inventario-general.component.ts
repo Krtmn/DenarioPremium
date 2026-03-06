@@ -281,6 +281,18 @@ export class InventarioGeneralComponent implements OnInit {
     })
   }
 
+  setDaysSinceLastInventory(){
+    if(this.inventariosLogicService.daysSinceLastInventory < 1){
+      this.inventariosLogicService.daysSinceLastInventory = 1;
+    }
+  }
+
+  setDaysUntilNextInventory(){
+    if(this.inventariosLogicService.daysUntilNextInventory < 1){
+      this.inventariosLogicService.daysUntilNextInventory = 1;
+    }
+  }
+
   onEnterpriseSelect() {
     this.inventariosLogicService.onStockValidToSave(false);
     this.inventariosLogicService.onStockValidToSend(false);
