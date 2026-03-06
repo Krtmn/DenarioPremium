@@ -2,5 +2,13 @@
     {
         "sql":"ALTER TABLE return_types ADD COLUMN id_return_category integer;",
         "description":"Se agrega la columna 'id_return_category' a la tabla 'return_types' para establecer una relación con la categoría de devolución."
+    },
+    {
+        "sql": "ALTER TABLE client_stocks ADD COLUMN days_since_last INTEGER;",
+        "description": "Se agrega la columna 'days_since_last' a la tabla 'client_stocks' para almacenar los días desde el último inventario."
+    },
+    {
+        "sql":" ALTER TABLE client_stocks ADD COLUMN days_until_next INTEGER;",
+        "description":"Se agrega la columna 'days_until_next' a la tabla 'client_stocks' para almacenar los días hasta el próximo inventario."
     }
 ]

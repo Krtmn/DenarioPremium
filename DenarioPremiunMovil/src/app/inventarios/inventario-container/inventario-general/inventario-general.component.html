@@ -79,8 +79,9 @@
           <div id="diasDesdeUltimoInventario">
             <ion-input fill="outline" type="number"
               label="{{this.inventariosLogicService.inventarioTags.get('INV_DIAS_ULTIMO_INVENTARIO')}}"
-              labelPlacement="floating" [(ngModel)]="this.inventariosLogicService.daysSinceLastInventory"
-              (ionChange)="setDaysSinceLastInventory()">
+              labelPlacement="floating" [(ngModel)]="daysSinceLastInventory"
+              (ionChange)="setDaysSinceLastInventory()"
+              [readonly]="this.inventariosLogicService.newClientStock.stDelivery == 1 || this.inventariosLogicService.newClientStock.stDelivery == 2|| this.inventariosLogicService.newClientStock.stDelivery == null ">
             </ion-input>
           </div>
         </ion-col>
@@ -89,8 +90,9 @@
           <div id="diasHastaSiguienteInventario">
             <ion-input fill="outline" type="number"
               label="{{this.inventariosLogicService.inventarioTags.get('INV_DIAS_SIGUIENTE_INVENTARIO')}}"
-              labelPlacement="floating" [(ngModel)]="this.inventariosLogicService.daysUntilNextInventory"
-              (ionChange)="setDaysUntilNextInventory()">
+              labelPlacement="floating" [(ngModel)]="daysUntilNextInventory"
+              (ionChange)="setDaysUntilNextInventory() "
+              [readonly]="this.inventariosLogicService.newClientStock.stDelivery == 1 || this.inventariosLogicService.newClientStock.stDelivery == 2|| this.inventariosLogicService.newClientStock.stDelivery == null ">
             </ion-input>
           </div>
         </ion-col>

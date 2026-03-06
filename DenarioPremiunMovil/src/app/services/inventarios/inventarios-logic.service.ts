@@ -69,8 +69,6 @@ export class InventariosLogicService {
   public userMustActivateGPS: boolean = false;
   public expirationBatch: boolean = false;
   public suggestedOrderByDispatchAndReturn: boolean = false;
-  public daysSinceLastInventory: number = 1;
-  public daysUntilNextInventory: number = 1;
   public productsSuggested: ProductSuggestedUtil[] = [];
 
 
@@ -454,7 +452,8 @@ export class InventariosLogicService {
       }
     }
     if(this.suggestedOrderByDispatchAndReturn){
-
+    let daysSinceLastInventory = this.newClientStock.daysSinceLast;
+    let daysUntilNextInventory = this.newClientStock.daysUntilNext;
     //inventario anterior
     let previousCS = await this.getPreviousClientStock(dbServ, idClient, this.newClientStock.daClientStock);
     if (previousCS == null) {
@@ -518,8 +517,11 @@ export class InventariosLogicService {
         //Venta = Inventario Inicial - Inventario actual - Devolución por distribución
         unitUtil.soldUnits = unitUtil.initialStock - unitUtil.currentStock - unitUtil.returnedStock;
         //Pedido Sugerido = Venta/Dias desde ultima visita × Días hasta la próxima visita
-        unitUtil.estimatedDailyUnits = unitUtil.soldUnits / this.daysSinceLastInventory;
-        unitUtil.quUnitSuggested = Math.round(unitUtil.estimatedDailyUnits * this.daysUntilNextInventory);
+        unitUtil.estimatedDailyUnits = unitUtil.soldUnits / daysSinceLastInventory;
+        unitUtil.quUnitSuggested = Math.round(unitUtil.estimatedDailyUnits * daysUntilNextInventory);
+        if(unitUtil.quUnitSuggested < 0){
+          unitUtil.quUnitSuggested = 0;
+        }
       }
     }
     this.productsSuggested = this.mapProductsToProductSuggestedUtil(mapProducts);
@@ -676,16 +678,17 @@ export class InventariosLogicService {
     insertStatement = 'INSERT OR REPLACE INTO client_stocks ('
       + 'id_client_stock, co_client_stock, id_user, co_user, id_client, co_client, id_address_client,'
       + 'co_address_client,coordenada, tx_comment,'
-      + 'id_enterprise, co_enterprise, st_client_stock, da_client_stock, lb_client, isSave, nu_attachments, has_attachments, st_delivery'
-      + ') VALUES ('
-      + '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+      + 'id_enterprise, co_enterprise, st_client_stock, da_client_stock, lb_client, isSave, nu_attachments, has_attachments, st_delivery,'
+      + ' days_since_last, days_until_next) VALUES ('
+      + '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
 
     var q = [insertStatement,
       [this.newClientStock.idClientStock, this.newClientStock.coClientStock, this.newClientStock.idUser, this.newClientStock.coUser,
       this.newClientStock.idClient, this.newClientStock.coClient, this.newClientStock.idAddressClient, this.newClientStock.coAddressClient,
       this.newClientStock.coordenada, this.newClientStock.txComment, this.newClientStock.idEnterprise, this.newClientStock.coEnterprise,
       this.newClientStock.stClientStock, this.newClientStock.daClientStock, this.newClientStock.lbClient, this.newClientStock.isSave,
-      this.newClientStock.nuAttachments, this.newClientStock.hasAttachments, this.newClientStock.stDelivery]
+      this.newClientStock.nuAttachments, this.newClientStock.hasAttachments, this.newClientStock.stDelivery,
+      this.newClientStock.daysSinceLast, this.newClientStock.daysUntilNext]
     ];
     batch.push(q);
 
@@ -876,7 +879,9 @@ export class InventariosLogicService {
       + "id_client_stock as idClientStock, co_client_stock as coClientStock, id_user as idUser, co_user as coUser,"
       + "id_client as idClient, co_client as coClient, id_address_client as idAddressClient, co_address_client as coAddressClient,"
       + "coordenada, tx_comment as txComment, id_enterprise as idEnterprise, co_enterprise as coEnterprise,"
-      + "da_client_stock as daClientStock, st_client_stock as stClientStock, lb_client as lbClient, isSave as isSave, nu_attachments as nuAttachments, has_attachments as hasAttachments, st_delivery as stDelivery "
+      + "da_client_stock as daClientStock, st_client_stock as stClientStock, lb_client as lbClient, isSave as isSave, "+
+      "nu_attachments as nuAttachments, has_attachments as hasAttachments, st_delivery as stDelivery, "+
+      "days_since_last as daysSinceLast, days_until_next as daysUntilNext "
       + "FROM client_stocks WHERE co_client_stock = ?"
 
     return dbServ.executeSql(selectClientStock, [coClientStock]).then(result => {
@@ -1010,7 +1015,7 @@ export class InventariosLogicService {
       "cs.id_user as idUser,cs.co_user as coUser, cs.id_client as idClient, cs.co_client as coClient, " +
       "cs.id_address_client as idAddressClient,cs.co_address_client as coAddressClient,cs.coordenada, " +
       "cs.tx_comment as txComment,cs.id_enterprise as idEnterprise, cs.co_enterprise as coEnterprise, cs.st_client_stock as stClientStock," +
-      "cs.da_client_stock as daClientStock, c.lb_client as lbClient, cs.isSave, cs.st_delivery as stDelivery " +
+      "cs.da_client_stock as daClientStock, c.lb_client as lbClient, cs.isSave, cs.st_delivery as stDelivery, cs.days_since_last as daysSinceLast, cs.days_until_next as daysUntilNext " +
       "FROM client_stocks cs " +
       "join clients c on cs.id_client = c.id_client " +
       "ORDER BY cs.st_delivery DESC, cs.da_client_stock DESC";
@@ -1033,7 +1038,7 @@ export class InventariosLogicService {
             stClientStock: item.stClientStock,
             daClientStock: item.daClientStock,
             naStatus: status,
-            stDelivery: item.stDelivery
+            stDelivery: item.stDelivery,
           };
           this.itemListClientStocks.push(itemClientStock);
         });

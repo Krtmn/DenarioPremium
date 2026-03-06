@@ -60,6 +60,8 @@ export class InventarioGeneralComponent implements OnInit {
   public direccionAnterior!: number;
   public coDireccionAnterior!: string;
   showDateModal: boolean = false;
+  daysSinceLastInventory: number = 1;
+  daysUntilNextInventory: number = 1;
   public alertButtons = [
     /*  {
       text: '',
@@ -133,6 +135,8 @@ export class InventarioGeneralComponent implements OnInit {
       this.inventariosLogicService.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
     }
     this.txComment = this.inventariosLogicService.newClientStock.txComment;
+    this.daysSinceLastInventory = this.inventariosLogicService.newClientStock.daysSinceLast;
+    this.daysUntilNextInventory = this.inventariosLogicService.newClientStock.daysUntilNext;
   }
 
 
@@ -172,6 +176,8 @@ export class InventarioGeneralComponent implements OnInit {
         this.orderServ.setup();
         //ESTO ES PARA CUANDO CAMBIE DE PESTANAS, RECUPERAR LA INFORMACION YA COLOCADA
         this.txComment = this.inventariosLogicService.newClientStock.txComment;
+        this.daysSinceLastInventory = this.inventariosLogicService.newClientStock.daysSinceLast;
+        this.daysUntilNextInventory = this.inventariosLogicService.newClientStock.daysUntilNext;
         if (this.inventariosLogicService.newClientStock.idClient == undefined) {
 
           //ESTOY REALIZANDO UN INVENTARIO DESDE 0
@@ -282,14 +288,20 @@ export class InventarioGeneralComponent implements OnInit {
   }
 
   setDaysSinceLastInventory(){
-    if(this.inventariosLogicService.daysSinceLastInventory < 1){
-      this.inventariosLogicService.daysSinceLastInventory = 1;
+    if(this.daysSinceLastInventory < 1){
+      this.inventariosLogicService.newClientStock.daysSinceLast = 1;
+      this.daysSinceLastInventory = 1;
+    }else{
+      this.inventariosLogicService.newClientStock.daysSinceLast = this.daysSinceLastInventory;
     }
   }
 
   setDaysUntilNextInventory(){
-    if(this.inventariosLogicService.daysUntilNextInventory < 1){
-      this.inventariosLogicService.daysUntilNextInventory = 1;
+    if(this.daysUntilNextInventory < 1){
+      this.inventariosLogicService.newClientStock.daysUntilNext = 1;
+      this.daysUntilNextInventory = 1;
+    }else{
+      this.inventariosLogicService.newClientStock.daysUntilNext = this.daysUntilNextInventory;
     }
   }
 
