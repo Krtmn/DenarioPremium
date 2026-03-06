@@ -25,6 +25,7 @@ import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
 import { ProductSuggestedUtil, UnitSuggestedUtil } from 'src/app/modelos/ProductSuggestedUtil';
 import { PedidosDbService } from 'src/app/pedidos/pedidos-db.service';
 import { StraightSwap } from 'src/app/modelos/tables/straightSwap';
+import { ReturnDetail } from 'src/app/modelos/tables/ReturnDetail';
 
 
 @Injectable({
@@ -489,10 +490,27 @@ export class InventariosLogicService {
         }
       }
     }
-
     //Venta = Inventario Inicial - Inventario actual - Devolución por distribución
 
+    //inventario inicial se calcula con el paso anterior
+    //inventario actual se agregó antes del if porque se necesita para ambos casos
+    //devolución por distribución
+    let returnsByDistribution = await this.getReturnsByDistribution(dbServ, idProducts, idUnits, idEnterprise, idClient);
+    for (var i = 0; i < returnsByDistribution.length; i++) {
+      let idProduct = returnsByDistribution[i].idProduct;
+      let idUnit = returnsByDistribution[i].idUnit;
+      let quStock = returnsByDistribution[i].quProduct;
+      let mapUnits = mapProducts.get(idProduct);
+      if(mapUnits != undefined){
+        let unitUtil = mapUnits.get(idUnit);
+        if(unitUtil != undefined){
+          unitUtil.returnedStock = quStock;
+        }
+      }
+    }
     //Pedido Sugerido = Venta/Dias desde ultima visita × Días hasta la próxima visita
+
+
     }else{
       //version anterior que solo usa average diario de venta
     }
@@ -513,7 +531,9 @@ export class InventariosLogicService {
           straightSwapStock: 0,
           returnedStock: 0,
           initialStock: 0,
-          estimatedDailyUnits: 0
+          estimatedDailyUnits: 0,
+          soldUnits: 0
+
         }
         
         mapUnits.set(this.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].idUnit, unitSuggestedUtil);
@@ -1079,6 +1099,46 @@ export class InventariosLogicService {
       return straightSwaps;
   });
 }
+
+getReturnsByDistribution(dbServ: SQLiteObject, idProducts: number[], idUnits: number[], idEnterprise: number, idClient: number){
+  let select = "select *  from return_details rd where id_return in "+
+"(SELECT r.id_return from returns r where r.id_type in "+
+  "(select rt.id_type from return_types rt where rt.id_return_category in "+
+    "(select rc.id_return_category from return_category rc where rc.subtract_suggestion = true) )"+
+  "and r.id_client = "+idClient+" and r.id_enterprise = "+idEnterprise+") "+
+"and rd.id_product IN ("+idProducts.join(",")+") and rd.id_unit IN ("+idUnits.join(",")+")";
+
+  return dbServ.executeSql(select, []).then(data => {
+    let returnDetails: ReturnDetail[] = [];
+    for (var i = 0; i < data.rows.length; i++) {
+      let item = data.rows.item(i);
+      let returnDetail: ReturnDetail = {
+        coReturnDetail: item.co_return_detail,
+        idReturn: item.id_return,
+        idProduct: item.id_product,
+        idUnit: item.id_unit,
+        coProduct: item.co_product,
+        coMeasureUnit: item.co_measure_unit,
+        coReturn: item.co_return,
+        naProduct: item.na_product,
+        quProduct: item.qu_product,
+        naMeasureUnit: item.na_measure_unit,
+        productUnits: [],
+        validateProductUnits: [],
+        unit: undefined,
+        nuLote: item.nu_lote,
+        daDueDate: item.da_due_date,
+        coDocument: item.co_document,
+        idMotive: item.id_motive,
+        showDateModal: false        
+      };
+
+      returnDetails.push(returnDetail);
+    }
+    return returnDetails;
+  });
+}
+
   onShowProductStructures() {
     this.showProductList = false;
     this.productStructureService.onAddProductCLicked();
