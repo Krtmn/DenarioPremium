@@ -154,12 +154,14 @@ export class InventarioActividadesComponent implements OnInit {
       empresa: this.inventariosLogicService.empresaSeleccionada,
       cliente: this.inventariosLogicService.cliente,
       direccion: direccion,
-      productos: this.clientStocksTotal,
       productUtils: [] as ProductSuggestedUtil[],
       list: JSON.parse(JSON.stringify(list)),
       enviar: toSend,
       coClientStock: this.inventariosLogicService.newClientStock.coClientStock,
       idClientStock: this.inventariosLogicService.newClientStock.idClientStock,
+      idProducts: this.inventariosLogicService.idProductsSuggested,
+      idUnits: this.inventariosLogicService.idUnitsSuggested,
+      idProductUnits: this.inventariosLogicService.idProductsUnitsSuggested,
     };
     //ir a nuevo pedido
     this.router.navigate(['pedido']);

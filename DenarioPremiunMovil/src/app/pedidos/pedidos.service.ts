@@ -131,12 +131,14 @@ export class PedidosService {
     empresa: { idEnterprise: 0, coEnterprise: '' } as Enterprise,
     cliente: { lbClient: this.getTag("PED_PLACEHOLDER_CLIENTE") } as Client,
     direccion: { idAddress: 0 } as AddresClient,
-    productos: [],
     productUtils: [] as ProductSuggestedUtil[],
     list: {} as List,
     enviar: false,
     coClientStock: "",
     idClientStock: 0,
+    idProducts: [],
+    idUnits: [],
+    idProductUnits: [],
   }
 
   coClientStockAEnviar = '';
@@ -1391,36 +1393,25 @@ export class PedidosService {
     let empresa = this.datosPedidoSugerido.empresa;
     this.empresaSeleccionada = empresa;
     let coOrder = this.dateService.generateCO(0);
-    let ProductIds: number[] = this.datosPedidoSugerido.productos.map(p => p.idProduct);
-    let productUnitIds: number[] = [];
+    let ProductIds: number[] = this.datosPedidoSugerido.idProducts;
     let errorMsgFlag = false;
+    //let productUnitIds = this.datosPedidoSugerido.idProductUnits;
+    //mini setup de moneda para conversiones de precio
+    await this.currencyService.setup(this.dbServ.getDatabase())
+    this.currencyModule = this.currencyService.getCurrencyModule('ped');
+    this.currencySelection();
     //console.log('LISTA UNIT INFO');
     //console.log(JSON.stringify(this.listaUnitInfo));
-    for (let i = 0; i < this.datosPedidoSugerido.productos.length; i++) {
-      const product = this.datosPedidoSugerido.productos[i];
-      const unitInfo = this.listaUnitInfo.find(u => (u.coUnit === product.coUnit) && (u.idProduct == product.idProduct));
-      //console.log('unitInfo: '+JSON.stringify(unitInfo));
-      //console.log('product: '+JSON.stringify(product));
-      if (unitInfo != undefined) {
-        productUnitIds.push(unitInfo.idProductUnit);
-      }
-    }
-
     this.listaSeleccionada = this.datosPedidoSugerido.list;
 
     //buscamos los promedios de ese cliente:
+    /*esto lo calculo en inventario-logic, para mostrarlo en el modal de totales de inventario
     let promedios: ClientAvgProduct[];
     await this.getClientAvgStock(this.empresaSeleccionada.idEnterprise, cliente.idClient,
       productUnitIds, direccion.idAddress, ProductIds).then(result => {
         promedios = result;
       });
-
-    //mini setup de moneda para conversiones de precio
-    await this.currencyService.setup(this.dbServ.getDatabase())
-    this.currencyModule = this.currencyService.getCurrencyModule('ped');
-    this.currencySelection();
-
-
+      */
 
     await this.getOrderUtilsbyIdProduct(ProductIds, this.listaSeleccionada.idList).then(orderUtils => {
       let details: OrderDetail[] = [];
@@ -1473,22 +1464,26 @@ export class PedidosService {
         "stDelivery": DELIVERY_STATUS_NEW
       }
 
-      for (let i = 0; i < this.datosPedidoSugerido.productos.length; i++) {
-        let product = this.datosPedidoSugerido.productos[i];
+      for (let i = 0; i < this.datosPedidoSugerido.productUtils.length; i++) {
+        let product = this.datosPedidoSugerido.productUtils[i];
         let item = orderUtils.filter(x => x.idProduct == product.idProduct)[0];
         let detailUnits: OrderDetailUnit[] = [];
         let coOrderDetail = this.dateService.generateCO(i);
         if ((item != undefined) && (item.nuPrice > 0)) {
           for (let j = 0; j < item.unitList.length; j++) {
             let unit = item.unitList[j];
-            let quOrder = 0;
+            let suggestedUnit = this.datosPedidoSugerido.productUtils[i].unitsSuggested.filter(u => u.idUnit == unit.idUnit)[0];
+            
+            let quOrder = suggestedUnit ? suggestedUnit.quUnitSuggested : 0;
+            /*
             let promedio = promedios.find(x => (x.idProduct == unit.idProduct) && (x.idProductUnit == unit.idProductUnit));
             if (promedio == undefined) {
               quOrder = product.totalUnits;
             } else {
               quOrder = promedio.average - product.totalUnits;
             }
-            let quSuggested = quOrder;
+            */
+            let quSuggested = 0;
             if (item.quMultiple > 1) {
               //caso productMinMul
               let n = quOrder % item.quMultiple;
@@ -1498,6 +1493,7 @@ export class PedidosService {
                 quSuggested = item.quMultiple - n + quOrder;
               }
             }
+            quSuggested = quOrder;
 
 
             let detailunit: OrderDetailUnit = {
@@ -1519,8 +1515,8 @@ export class PedidosService {
             "idOrderDetail": 0,
             "coOrderDetail": coOrderDetail,
             "coOrder": coOrder,
-            "coProduct": product.coProduct,
-            "naProduct": product.naProduct,
+            "coProduct": item.coProduct,
+            "naProduct": item.naProduct,
             "idProduct": product.idProduct,
             "nuPriceBase": item.nuPrice,
             "nuAmountTotal": 0,

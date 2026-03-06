@@ -70,6 +70,9 @@ export class InventariosLogicService {
   public expirationBatch: boolean = false;
   public suggestedOrderByDispatchAndReturn: boolean = false;
   public productsSuggested: ProductSuggestedUtil[] = [];
+  public idProductsSuggested: number[] = [];
+  public idProductsUnitsSuggested: number[] = [];
+  public idUnitsSuggested: number[] = [];
 
 
   public enterpriseClientStock: Enterprise = {} as Enterprise;
@@ -524,10 +527,26 @@ export class InventariosLogicService {
         }
       }
     }
-    this.productsSuggested = this.mapProductsToProductSuggestedUtil(mapProducts);
+
     }else{
       //version anterior que solo usa average diario de venta
+    for(const [idProduct, mapUnits] of mapProducts){
+      for(const [idUnit, unitUtil] of mapUnits){
+        if(unitUtil.dispatchedStock > 0){
+          unitUtil.quUnitSuggested = unitUtil.dispatchedStock - unitUtil.currentStock;
+          if(unitUtil.quUnitSuggested < 0){
+            unitUtil.quUnitSuggested = 0;
+          }
+        }else{
+          unitUtil.quUnitSuggested = unitUtil.currentStock;
+        }
+      }
     }
+    }
+    this.productsSuggested = this.mapProductsToProductSuggestedUtil(mapProducts);
+    this.idProductsSuggested = idProducts;
+    this.idProductsUnitsSuggested = idProductUnits;
+    this.idUnitsSuggested = idUnits;
   }
 
   getMappedProductUtils() {

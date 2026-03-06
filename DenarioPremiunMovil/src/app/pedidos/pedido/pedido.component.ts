@@ -1211,6 +1211,10 @@ export class PedidoComponent implements OnInit {
       let list: List | undefined;
       if (this.orderServ.openOrder) {
         let idPriceList = this.orderServ.order.orderDetails[0].idPriceList
+        if (!idPriceList) {
+          console.error("El pedido no tiene pricelist asignada en los detalles");
+          list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
+        }else{
         let pl = this.orderServ.listaPricelist.filter((pl) => pl.idPriceList == idPriceList)
         if (pl.length < 1) {
           console.error("No se encontro pricelist del pedido");
@@ -1232,18 +1236,17 @@ export class PedidoComponent implements OnInit {
         } else {
           this.orderServ.listaSeleccionada = { idList: 0 } as List;
         }
-
-
+      }
       } else {
         list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
-
+      }
 
         if (list != undefined) {
           this.orderServ.listaSeleccionada = list;
           this.listaAnterior = list;
           this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList)
         }
-      }
+      
 
 
       //Payment Condition

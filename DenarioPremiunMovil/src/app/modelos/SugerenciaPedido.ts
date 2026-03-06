@@ -12,7 +12,6 @@ export class SugerenciaPedido {
             obj['empresa'],
             obj['cliente'],
             obj['direccion'],
-            obj['productos'],
             obj['productUtils'],
             obj['list'],
             obj['enviar'],
@@ -26,11 +25,14 @@ export class SugerenciaPedido {
         public empresa: Enterprise,
         public cliente: Client = {} as Client,
         public direccion: AddresClient = {} as AddresClient,
-        public productos: ClientStockTotal[] = [],
         public productUtils: ProductSuggestedUtil[] = [],
         public list: List,
         public enviar: boolean,
         public coClientStock: string,
-        public idClientStock: number | null
+        public idClientStock: number | null,
+        public idProducts: number[] = [],
+        public idUnits: number[] = [],
+        public idProductUnits: number[] = [],
+
     ){}
 }
