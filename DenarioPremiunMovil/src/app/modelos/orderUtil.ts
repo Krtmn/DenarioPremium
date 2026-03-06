@@ -22,7 +22,7 @@ export class OrderUtil {
       obj['quDiscount'],
       obj['coCurrency'],
       obj['oppositeCoCurrency'],
-      obj['quStock'], 
+      obj['quStock'],
       obj['quStockAux'],
       obj['nuAmountDiscount'],
       obj['idDiscount'],
@@ -31,7 +31,7 @@ export class OrderUtil {
       obj['taxedNuPrice'],
       obj['idWarehouse'],
       obj['prevWarehouse'],
-      obj['coWarehouse'],     
+      obj['coWarehouse'],
       obj['naWarehouse'],
       obj['discountList'],
       obj['imagenProduct'],
@@ -78,7 +78,7 @@ export class OrderUtil {
 	public quStock: number,
 	public quStockAux: number,
 	public nuAmountDiscount: number,
-	public idDiscount: number,
+	public idDiscount: number | null,
 	public iva: number,
 	public ivaProducto: number,
 	public taxedNuPrice: number,
@@ -94,7 +94,7 @@ export class OrderUtil {
 	public idProductStructure: number,
 	public idPriceList: number,
   public coPriceList: string,
-	public unitList: UnitInfo[], 
+	public unitList: UnitInfo[],
 	public idUnit: number,
 	public inCart: boolean,
 	public txDescription: string,
@@ -107,7 +107,7 @@ export class OrderUtil {
   public idList : number,
   //el total de productos en unidades. ej 1 docena + 1 unidad => totalunit = 13
   public totalEnUnidades: number,
-  public nuTax: number, 
+  public nuTax: number,
 
   ) { }
 }

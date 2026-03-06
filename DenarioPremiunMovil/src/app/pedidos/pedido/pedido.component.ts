@@ -645,7 +645,11 @@ export class PedidoComponent implements OnInit {
     for (let i = 0; i < this.orderServ.carrito.length; i++) {
       const item = this.orderServ.carrito[i];
       let coOrderDetail = this.dateServ.generateCO(i);
-      let tieneDescuento = (item.idDiscount != null && item.idDiscount > 0);
+      let tieneDescuento = false;
+      if (this.orderServ.setProductDiscount) {
+        tieneDescuento = item.idDiscount! > 0
+      } else
+        tieneDescuento = (item.idDiscount != null && item.idDiscount > 0);
 
       let units: OrderDetailUnit[] = [];
       for (let j = 0; j < item.unitList.length; j++) {
@@ -674,7 +678,7 @@ export class PedidoComponent implements OnInit {
           this.dateServ.generateCO(i),
           coOrderDetail,
           0,
-          item.idDiscount,
+          item.idDiscount!,
           item.quDiscount,
           item.discountedNuPrice,
           empresa.coEnterprise,
@@ -699,7 +703,7 @@ export class PedidoComponent implements OnInit {
         item.iva,
         tieneDescuento ? item.nuAmountDiscount : 0,
         tieneDescuento ? '' : '', //TODO Agregar coDiscount a Dicsount, ffs
-        tieneDescuento ? item.idDiscount : 0,
+        tieneDescuento ? item.idDiscount! : 0,
         item.coPriceList,
         item.idPriceList,
         i,

@@ -479,7 +479,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     const raw = e?.detail?.value;
 
     if (raw === '' || raw === null || raw === undefined) {
-      product.idDiscount = 0;
+      product.idDiscount = null;
       product.quDiscount = 0;
       this.orderServ.alCarrito(product);
       this.cd.detectChanges();
@@ -498,7 +498,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       }
 
       const manualDiscount = Math.min(max, Math.max(1, parsed));
-      product.idDiscount = manualDiscount;
+      product.idDiscount = null;
       product.quDiscount = manualDiscount;
       this.orderServ.alCarrito(product);
       this.cd.detectChanges();
