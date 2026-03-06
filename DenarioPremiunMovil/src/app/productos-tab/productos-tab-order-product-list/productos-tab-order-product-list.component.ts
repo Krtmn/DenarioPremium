@@ -133,7 +133,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
           this.orderServ.userCanChangeWarehouse, this.orderServ.cliente.idClient, this.orderServ.listaSeleccionada.idList, this.page).then(() => {
             this.productList = this.productService.productList;
             this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
-            if(this.orderUtilList.length < 20){
+            if (this.orderUtilList.length < 20) {
               //probablemente muchos productos fueron eliminados, agregamos mas.
               this.onIonInfinite(null);
             }
@@ -498,7 +498,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       }
 
       const manualDiscount = Math.min(max, Math.max(1, parsed));
-      product.idDiscount = 0;
+      product.idDiscount = manualDiscount;
       product.quDiscount = manualDiscount;
       this.orderServ.alCarrito(product);
       this.cd.detectChanges();
@@ -576,7 +576,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     if (!this.orderServ.stock0 && (prod.quStockAux <= 0)) {
       var stocks = this.orderServ.listaStock.filter(s => s.idProduct == prod.idProduct)
       //si el warehouse seleccionado tiene 0 stock, comprobamos si hay stock en otro warehouse
-      if(!this.orderServ.userCanChangeWarehouse){
+      if (!this.orderServ.userCanChangeWarehouse) {
         return true;
       }
       for (let i = 0; i < stocks.length; i++) {
@@ -601,7 +601,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   quStock(prod: OrderUtil) {
     let stock = prod.quStock;
     let unit = prod.unitList.filter(u => prod.idUnit == u.idUnit)[0];
-    if(this.orderServ.quUnitDecimals){
+    if (this.orderServ.quUnitDecimals) {
       return this.formatNum(stock / unit.quUnit);
     }
     return Math.floor(stock / unit.quUnit).toString();
