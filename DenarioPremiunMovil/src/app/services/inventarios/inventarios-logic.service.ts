@@ -508,7 +508,9 @@ export class InventariosLogicService {
           currentStock: this.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].quStock,
           dispatchedStock: 0,
           straightSwapStock: 0,
-          returnedStock: 0
+          returnedStock: 0,
+          initialStock: 0,
+          estimatedDailyUnits: 0
         }
         
         mapUnits.set(this.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].idUnit, unitSuggestedUtil);

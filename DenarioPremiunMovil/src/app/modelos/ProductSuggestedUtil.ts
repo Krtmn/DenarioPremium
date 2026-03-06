@@ -24,6 +24,8 @@ export class UnitSuggestedUtil {
             obj['dispatchedStock'],
             obj['straightSwapStock'],
             obj['returnedStock'],
+            obj['initialStock'],
+            obj['estimatedDailyUnits']
         );
     }
     
@@ -36,5 +38,7 @@ export class UnitSuggestedUtil {
         public dispatchedStock: number,
         public straightSwapStock: number,
         public returnedStock: number,
+        public initialStock: number,
+        public estimatedDailyUnits: number
     ) { }
 }

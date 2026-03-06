@@ -11,6 +11,10 @@ export class StraightSwap {
         obj['idEnterprise'],
         obj['coEnterprise'],
         obj['quSwap'],
+        obj['idClient'],
+        obj['idAddressClient'],
+        obj['coClient'],
+        obj['coAddressClient']
     );
 }
 
@@ -25,5 +29,10 @@ export class StraightSwap {
   public idEnterprise: number,
   public coEnterprise: string,
   public quSwap: number,
+  public idClient: number,
+  public idAddressClient: number,
+  public coClient: string,
+  public coAddressClient: string
+  
   ) { }
 }
