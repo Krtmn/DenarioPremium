@@ -136,7 +136,7 @@ INSERT INTO public.application_tags(
   ('PED_DENARIO', 'PED', 'PEDIDOS', 'ESP','Denario Pedidos'),
 	('PED_DENARIO_TO_SEND', 'PED', 'PEDIDOS', 'ESP','Su Pedido será enviado'),
   ('PED_DENARIO_TO_SEND_OFFLINE', 'PED', 'PEDIDOS', 'ESP','Su Pedido será enviado al tener conexión de datos'),
-  ('PED_DENARIO_CLIENT_DEUDA', 'PED', 'PEDIDOS', 'ESP','Este cliente tiene deuda asociada, ¿Desea continuar con el pedido?'),
+  ('PED_DENARIO_CLIENT_DEUDA', 'PED', 'PEDIDOS', 'ESP','Este cliente tiene deuda vencida, ¿Desea continuar con el pedido?'),
   ('PED_CAMBIO_CONDICION_PAGO', 'PED', 'PEDIDOS', 'ESP','¿Desea cambiar la condición de pago?');
 
 

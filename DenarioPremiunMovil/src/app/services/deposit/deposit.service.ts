@@ -138,8 +138,8 @@ export class DepositService {
       }
       return Promise.resolve(true);
     });
-  
-      
+
+
     });
   }
   getTagsDenario(dbServ: SQLiteObject) {
@@ -431,7 +431,7 @@ export class DepositService {
       'bank_accounts.id_currency as idCurrency,' +
       'bank_accounts.co_enterprise as coEnterprise,' +
       'bank_accounts.id_enterprise as idEnterprise,' +
-      'banks.na_bank as nameBank ' +
+      'banks.na_bank as naBank ' +
       'FROM bank_accounts, banks ' +
       'WHERE bank_accounts.id_enterprise = ? ' +
       'AND bank_accounts.co_currency = ? ' +

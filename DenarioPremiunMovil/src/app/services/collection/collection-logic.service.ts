@@ -94,6 +94,7 @@ export class CollectionService {
   public pagoOtros: PagoOtros[] = [];
   public tiposPago: TiposPago[] = [];
   public bankAccountSelected!: BankAccount[];
+  public clientBankAccountSelected!: BankAccount[];
   public paymentPartials: PaymentPartials[] = [];
   public itemListaCobros: ItemListaCobros[] = [];
   public coDocumentToUpdate: string[] = [];
@@ -367,7 +368,7 @@ export class CollectionService {
 
 
 
-    this.showNuevaCuenta = this.clientBankAccount === true ? true : false;
+    //this.showNuevaCuenta = this.clientBankAccount === true ? true : false;
 
     this.changeClient = false;
     this.newCollect = true;
@@ -798,7 +799,7 @@ export class CollectionService {
       return Promise.resolve(true);
     } else {
       //no tengo tasa para ese dia
-      if (this.collection.stDelivery == this.COLLECT_STATUS_SENT ) {
+      if (this.collection.stDelivery == this.COLLECT_STATUS_SENT) {
         this.rateSelected = this.collection.nuValueLocal;
         this.historicoTasa = true;
       } else {
@@ -819,12 +820,12 @@ export class CollectionService {
     let monto = 0;
     let montoConversion = 0;
     let montoTotalDiscounts = 0;
-    this.montoTotalPagado = 0;
-    this.montoTotalPagadoConversion = 0;
     this.montoTotalPagar = 0;
     this.montoTotalDiscounts = 0;
 
     if (this.collection.collectionDetails.length == 0) {
+      this.montoTotalPagado = 0;
+      this.montoTotalPagadoConversion = 0;
       this.onCollectionValidToSend(false);
       this.onCollectionValidToSave(true);
       return;
@@ -1574,7 +1575,7 @@ export class CollectionService {
       if (this.onChangeClient)
         this.cobroValid = true;
 
-      if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED || this.collection.stDelivery == this.COLLECT_STATUS_SENT )
+      if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED || this.collection.stDelivery == this.COLLECT_STATUS_SENT)
         this.cobroValid = true;
 
       this.onCollectionValidToSave(true);
@@ -1582,7 +1583,7 @@ export class CollectionService {
       if (this.onChangeClient)
         this.cobroValid = true;
     }
-    if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == this.COLLECT_STATUS_SENT )
+    if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == this.COLLECT_STATUS_SENT)
       this.cobroValid = true;
 
     this.validCollection.next(valid);
@@ -1632,6 +1633,7 @@ export class CollectionService {
     this.pagoOtros = [] as PagoOtros[];
     this.lengthMethodPaid = -1;
     this.bankAccountSelected = [] as BankAccount[];
+    this.clientBankAccountSelected = [] as BankAccount[];
     this.collectionIsSave = false;
     this.igtfList = [] as IgtfList[];
     this.igtfSelected = {} as IgtfList;
@@ -3093,8 +3095,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
   }
 
   getAllClientBankAccountByEnterprise(dbServ: SQLiteObject, idEnterprise: number, coClient: string,) {
-    return dbServ.executeSql('SELECT * FROM client_bank_accounts, banks WHERE client_bank_accounts.id_enterprise = ? ' +
-      'AND client_bank_accounts.co_bank = banks.co_bank AND client_bank_accounts.co_client = ?',
+    return dbServ.executeSql('SELECT DISTINCT cba.*, b.id_bank, b.na_bank FROM client_bank_accounts cba ' +
+      'JOIN banks b ON cba.co_bank = b.co_bank AND cba.id_enterprise = b.id_enterprise ' +
+      'WHERE cba.id_enterprise = ? AND cba.co_client = ?',
       [idEnterprise, coClient]).then(data => {
         let clientBankAccounts: ClientBankAccount[] = [];
 
@@ -3162,7 +3165,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
                 idCurrency: data.rows.item(i).id_currency,
                 coEnterprise: data.rows.item(i).co_enterprise,
                 idEnterprise: data.rows.item(i).id_enterprise,
-                nameBank: data.rows.item(i).na_bank
+                naBank: data.rows.item(i).na_bank,
+                coClientBankAccount: data.rows.item(i).co_client_bank_account,
               })
             }
 
@@ -3188,7 +3192,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
                 idCurrency: data.rows.item(i).id_currency,
                 coEnterprise: data.rows.item(i).co_enterprise,
                 idEnterprise: data.rows.item(i).id_enterprise,
-                nameBank: data.rows.item(i).na_bank
+                naBank: data.rows.item(i).na_bank,
+                coClientBankAccount: data.rows.item(i).co_client_bank_account,
               })
             }
 
@@ -3550,8 +3555,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     nu_collection_payment,
     nu_amount_partial,
     nu_amount_partial_conversion,
-    co_type
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    co_type,
+    nu_bank_account
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
     const insertCollectionDetailDiscountSQL = `
   INSERT OR REPLACE INTO collection_detail_discounts (
@@ -3697,7 +3703,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             collectionPayment.nuCollectionPayment,
             collectionPayment.nuAmountPartial,
             collectionPayment.nuAmountPartialConversion,
-            collectionPayment.coType
+            collectionPayment.coType,
+            collectionPayment.nuBankAccount
           ]
         ]);
       }
@@ -3903,8 +3910,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "nu_amount_partial_conversion, " +
       "co_type," +
       "id_difference_code," +
-      "co_difference_code" +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "co_difference_code," +
+      "nu_bank_account" +
+      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     for (var i = 0; i < collectionPayment.length; i++) {
       statementsCollectionPayment.push([insertStatement, [
@@ -3924,7 +3932,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         collectionPayment[i].nuAmountPartialConversion,
         collectionPayment[i].coType,
         collectionPayment[i].idDifferenceCode,
-        collectionPayment[i].coDifferenceCode
+        collectionPayment[i].coDifferenceCode,
+        collectionPayment[i].nuBankAccount,
       ]]);
     }
 
@@ -4042,8 +4051,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "nu_collection_payment," +
       "nu_amount_partial," +
       "nu_amount_partial_conversion," +
-      "co_type" +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "co_type," +
+      "nu_bank_account" +
+      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
     return dbServ.executeSql(insertStatement,
       [
         0,
@@ -4060,7 +4070,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].nuCollectionPayment,
         collection.nuDifference,
         collection.nuDifferenceConversion,
-        this.anticipoAutomatico[0].type,
+        this.anticipoAutomatico[0].type, ,
+        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].nuBankAccount
       ]).then(data => {
         console.log("SE CREO COLLECTION PAYMENTS AUTOMATICO POR EL ANTICIPO");
         this.saveSendCollection(newCoCollection);
@@ -4386,6 +4397,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           isAnticipoPrepaid: false,
           idDifferenceCode: this.enableDifferenceCodes ? res.rows.item(i).id_difference_code : 0,
           coDifferenceCode: this.enableDifferenceCodes ? res.rows.item(i).co_difference_code : "",
+          nuBankAccount: res.rows.item(i).nu_bank_account,
         })
       }
       return collectionPayments;

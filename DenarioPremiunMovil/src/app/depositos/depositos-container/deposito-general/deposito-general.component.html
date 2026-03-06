@@ -54,7 +54,7 @@
           placeholder="{{this.depositService.depositTags.get('DEP_PLACEHOLDER_LISTBANK')}}" (ionChange)="onBankSelect()"
           [(ngModel)]="this.depositService.bankSelected" [disabled]="this.depositService.hideDeposit">
           <ion-select-option *ngFor="let bank of this.depositService.bankList" [value]="bank">
-            {{bank.nameBank}} - *** {{bank.nuAccount.substring(13)}}
+            {{bank.naBank}} - *** {{bank.nuAccount.substring(13)}}
           </ion-select-option>
         </ion-select>
       </div>

@@ -1,6 +1,8 @@
 [
-    {
-        "sql":"ALTER TABLE return_types ADD COLUMN id_return_category integer;",
-        "description":"Se agrega la columna 'id_return_category' a la tabla 'return_types' para establecer una relación con la categoría de devolución."
-    }
+  {
+    "sql": "ALTER TABLE collection_payments ADD COLUMN nu_bank_account VARCHAR(50);",
+    "description": "Se agrega la columna 'nu_bank_account' a la tabla 'collection_payments' para almacenar el número de cuenta bancaria."
+  }
 ]
+
+

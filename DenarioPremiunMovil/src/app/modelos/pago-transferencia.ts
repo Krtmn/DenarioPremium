@@ -7,6 +7,7 @@ export class PagoTransferencia {
             obj['nombreBanco'],
             obj['numeroTransferencia'],
             obj['numeroCuenta'],
+            obj['numeroCuentaCliente'],
             obj['monto'],
             obj['montoConversion'],
             obj['fecha'],
@@ -15,7 +16,8 @@ export class PagoTransferencia {
             obj['type'],
             obj['anticipoPrepaid'],
             obj['disabled'],
-            obj['bancoReceptor']
+            obj['bancoReceptor'],
+            obj['showNuevaCuenta']
         );
     }
 
@@ -24,6 +26,7 @@ export class PagoTransferencia {
         public nombreBanco: string = "",
         public numeroTransferencia: string = "",
         public numeroCuenta: string = "",
+        public numeroCuentaCliente: string = "",
         public monto: number = 0,
         public montoConversion: number = 0,
         public fecha: string = "",
@@ -35,6 +38,7 @@ export class PagoTransferencia {
         public bancoReceptor: BancoReceptor = new BancoReceptor,
         //booleanos para controlar la visualizacion de los modales
         public showDateModal: boolean = false,
+        public showNuevaCuenta: boolean = false,
     ) { }
 }
 
