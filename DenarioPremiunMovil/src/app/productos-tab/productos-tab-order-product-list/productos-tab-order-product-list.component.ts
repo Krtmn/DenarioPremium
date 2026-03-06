@@ -475,7 +475,36 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.orderServ.alCarrito(product);
   }
 
+  onManualDiscountChange(e: any, product: OrderUtil) {
+    const raw = e?.detail?.value;
+
+    if (raw === '' || raw === null || raw === undefined) {
+      product.idDiscount = 0;
+      product.quDiscount = 0;
+      this.orderServ.alCarrito(product);
+      this.cd.detectChanges();
+      return;
+    }
+
+    this.onSelectDiscount({ detail: { manualDiscount: raw } }, product);
+  }
+
   onSelectDiscount(e: any, product: OrderUtil) {
+    if (e?.detail?.manualDiscount !== undefined) {
+      const max = Math.max(1, Number(this.orderServ.setMaxProductDiscount) || 1);
+      const parsed = Number(e.detail.manualDiscount);
+      if (Number.isNaN(parsed)) {
+        return;
+      }
+
+      const manualDiscount = Math.min(max, Math.max(1, parsed));
+      product.idDiscount = 0;
+      product.quDiscount = manualDiscount;
+      this.orderServ.alCarrito(product);
+      this.cd.detectChanges();
+      return;
+    }
+
     // Prefer event value but fallback to the model (keeps it in-sync when ngModel changed it).
     const raw = (e && e.detail && (e.detail.value !== undefined)) ? e.detail.value : product.idDiscount;
     // Ensure a numeric primitive (0 stays 0, '0' -> 0)
