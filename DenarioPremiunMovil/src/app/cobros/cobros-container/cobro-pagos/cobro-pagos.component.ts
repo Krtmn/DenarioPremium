@@ -9,6 +9,7 @@ import { PagoCheque } from 'src/app/modelos/pago-cheque';
 import { PagoDeposito } from 'src/app/modelos/pago-deposito';
 import { PagoTransferencia } from 'src/app/modelos/pago-transferencia';
 import { PagoOtros } from 'src/app/modelos/pago-otros';
+import { PagoMovil } from 'src/app/modelos/pago-movil';
 import { DateServiceService } from 'src/app/services/dates/date-service.service';
 import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
 
@@ -162,6 +163,19 @@ export class CobroPagosComponent implements OnInit {
         break;
       }
 
+      case "pm": {
+        let newPagoMovil: PagoMovil = new PagoMovil;
+        newPagoMovil.posCollectionPayment = this.collectService.collection.collectionPayments!.length - 1;
+        if (this.collectService.validateCollectionDate) {
+          newPagoMovil.fecha = daRate;
+        } else {
+          newPagoMovil.fecha = this.dateServ.hoyISO();
+        }
+        this.collectService.pagoMovil.push(newPagoMovil);
+        newPago = newPagoMovil;
+        break;
+      }
+
       case "ot": {
         // PagoOtros requires constructor args; bypass strict constructor signature by casting to any
         let newPagoOtros: PagoOtros = new (PagoOtros as any)();
@@ -207,16 +221,17 @@ export class CobroPagosComponent implements OnInit {
     this.collectService.anticipoAutomatico = [];
 
     // Diccionario para mapear tipo a arrays y propiedades
-    type TipoPagoKey = 'ef' | 'ch' | 'de' | 'tr' | 'ot';
+    type TipoPagoKey = 'ef' | 'ch' | 'de' | 'tr' | 'pm' | 'ot';
     const map: Record<TipoPagoKey, any[]> = {
       ef: this.collectService.pagoEfectivo,
       ch: this.collectService.pagoCheque,
       de: this.collectService.pagoDeposito,
       tr: this.collectService.pagoTransferencia,
+      pm: this.collectService.pagoMovil,
       ot: this.collectService.pagoOtros,
     };
 
-    if (!['ef', 'ch', 'de', 'tr', 'ot'].includes(type)) return;
+    if (!['ef', 'ch', 'de', 'tr', 'pm', 'ot'].includes(type)) return;
     const pagoArray = map[type as TipoPagoKey];
     if (!pagoArray) return;
     if (!pagoArray[index]) return;
@@ -265,6 +280,7 @@ export class CobroPagosComponent implements OnInit {
       this.collectService.pagoCheque,
       this.collectService.pagoDeposito,
       this.collectService.pagoTransferencia,
+      this.collectService.pagoMovil,
       this.collectService.pagoOtros
     ];
 
@@ -317,6 +333,13 @@ export class CobroPagosComponent implements OnInit {
       case "tr": {
         this.collectService.pagoTransferencia[index].fecha = fecha;
         this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daCollectionPayment = fecha.split("T")[0] + " " + fecha.split("T")[1];;
+        this.collectService.validateToSend();
+        break;
+      }
+
+      case "pm": {
+        this.collectService.pagoMovil[index].fecha = fecha;
+        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.daCollectionPayment = fecha.split("T")[0] + " " + fecha.split("T")[1];
         this.collectService.validateToSend();
         break;
       }
@@ -378,6 +401,19 @@ export class CobroPagosComponent implements OnInit {
 
 
         this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daCollectionPayment = fecha.split("T")[0] + " " + fecha.split("T")[1];;
+        this.collectService.validateToSend();
+        break;
+      }
+
+      case "pm": {
+        if (this.collectService.validateCollectionDate) {
+          this.collectService.pagoMovil[index].fecha = this.collectService.dateRate + " 00:00:00";
+        } else {
+          this.collectService.pagoMovil[index].fecha = fecha + " 00:00:00";
+          fecha = fecha + " 00:00:00";
+        }
+
+        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.daCollectionPayment = fecha.split("T")[0] + " " + fecha.split("T")[1];
         this.collectService.validateToSend();
         break;
       }
@@ -528,6 +564,28 @@ export class CobroPagosComponent implements OnInit {
         break;
       }
 
+      case "pm": {
+        const pos = this.collectService.pagoMovil[index].posCollectionPayment;
+        const payment = this.collectService.collection.collectionPayments![pos]!;
+        const selectedBank = this.collectService.bankAccountSelected?.[pos];
+
+        if (selectedBank) {
+          this.collectService.pagoMovil[index].idBancoEmisor = selectedBank.idBank;
+          this.collectService.pagoMovil[index].nombreBancoEmisor = selectedBank.naBank;
+        }
+
+        applyDateToPayment(pos, (v) => this.collectService.pagoMovil[index].fecha = v);
+        this.collectService.pagoMovil[index].disabled = false;
+
+        payment.coCollection = this.collectService.collection.coCollection;
+        payment.coPaymentMethod = type;
+        payment.coType = type;
+
+        this.syncPagoMovilDocumento(index);
+        this.validatePayment("pm", index);
+        break;
+      }
+
       case "ot": {
         const pos = this.collectService.pagoOtros[index].posCollectionPayment;
         const payment = this.collectService.collection.collectionPayments![pos]!;
@@ -573,6 +631,14 @@ export class CobroPagosComponent implements OnInit {
         this.collectService.pagoTransferencia[i].fecha = this.dateServ.hoyISO();
         this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[i].posCollectionPayment]!.daCollectionPayment
           = this.collectService.pagoTransferencia[i].fecha.split("T")[0] + " " + this.collectService.pagoTransferencia[i].fecha.split("T")[1];;
+        this.collectService.validateToSend();
+        break;
+      }
+
+      case "pm": {
+        this.collectService.pagoMovil[i].fecha = this.dateServ.hoyISO();
+        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[i].posCollectionPayment]!.daCollectionPayment
+          = this.collectService.pagoMovil[i].fecha.split("T")[0] + " " + this.collectService.pagoMovil[i].fecha.split("T")[1];
         this.collectService.validateToSend();
         break;
       }
@@ -641,6 +707,18 @@ export class CobroPagosComponent implements OnInit {
         this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.nuAmountPartialConversion
           = this.collectService.convertirMonto(monto, 0, this.collectService.collection.coCurrency);
         this.validatePayment("tr", index);
+        break;
+      }
+
+      case "pm": {
+        this.collectService.pagoMovil[index].monto = monto;
+        this.collectService.pagoMovil[index].montoConversion = this.collectService.convertirMonto(monto, 0, this.collectService.collection.coCurrency);
+        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.nuAmountPartial = monto;
+        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.nuAmountPartialConversion
+          = this.collectService.convertirMonto(monto, 0, this.collectService.collection.coCurrency);
+        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.coType = type;
+        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.coPaymentMethod = type;
+        this.validatePayment("pm", index);
         break;
       }
 
@@ -717,6 +795,14 @@ export class CobroPagosComponent implements OnInit {
         break;
       }
 
+      case "pm": {
+        const onlyNumbers = (nroTrans || '').replace(/\D/g, '');
+        this.collectService.pagoMovil[index].numeroReferencia = onlyNumbers;
+        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.nuPaymentDoc = onlyNumbers;
+        this.validatePayment("pm", index);
+        break;
+      }
+
       case "ot": {
         this.collectService.pagoOtros[index].nombre = nroTrans;
         this.collectService.collection.collectionPayments![this.collectService.pagoOtros[index].posCollectionPayment]!.nuPaymentDoc = nroTrans;
@@ -729,6 +815,33 @@ export class CobroPagosComponent implements OnInit {
 
     this.collectService.validateReferencePayment();
 
+  }
+
+  setTipoDocumentoPagoMovil(index: number, tipo: 'V' | 'J' | 'G') {
+    this.collectService.pagoMovil[index].tipoDocumento = tipo;
+    this.syncPagoMovilDocumento(index);
+    this.validatePayment('pm', index);
+  }
+
+  onPagoMovilNumeroDocumentoInput(index: number, value: string) {
+    const onlyNumbers = (value || '').replace(/\D/g, '');
+    this.collectService.pagoMovil[index].numeroDocumento = onlyNumbers;
+    this.syncPagoMovilDocumento(index);
+    this.validatePayment('pm', index);
+  }
+
+  onPagoMovilReferenciaInput(index: number, value: string) {
+    const onlyNumbers = (value || '').replace(/\D/g, '');
+    this.collectService.pagoMovil[index].numeroReferencia = onlyNumbers;
+    this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.nuPaymentDoc = onlyNumbers;
+    this.validatePayment('pm', index);
+  }
+
+  private syncPagoMovilDocumento(index: number) {
+    const pago = this.collectService.pagoMovil[index];
+    const payment = this.collectService.collection.collectionPayments?.[pago.posCollectionPayment];
+    if (!payment) return;
+    payment.coClientBankAccount = `${pago.tipoDocumento}-${pago.numeroDocumento || ''}`;
   }
 
   setNuevaCuenta(dato: string, index: number, type: string) {
@@ -755,6 +868,11 @@ export class CobroPagosComponent implements OnInit {
       case "tr": {
         this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.newNuClientBankAccount = dato;
         //this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.nuClientBankAccount = dato;;
+        break;
+      }
+
+      case "pm": {
+        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.newNuClientBankAccount = dato;
         break;
       }
 
@@ -888,6 +1006,24 @@ export class CobroPagosComponent implements OnInit {
         break;
       }
 
+      case "pm": {
+        if (this.collectService.pagoMovil[index].monto >= 0) {
+          this.collectService.calcularMontos(type, index).then(() => {
+            if (this.collectService.pagoMovil[index].fecha != ""
+              && this.collectService.pagoMovil[index].nombreBancoEmisor != ""
+              && this.collectService.pagoMovil[index].nombreBancoDestino != ""
+              && this.collectService.pagoMovil[index].numeroDocumento != ""
+              && this.collectService.pagoMovil[index].numeroReferencia != "") {
+              if (this.collectService.createAutomatedPrepaid)
+                this.checkCreateAutomatedPrepaid();
+
+              this.collectService.validateToSend();
+            }
+          })
+        }
+        break;
+      }
+
       case "ot": {
         if (this.collectService.pagoOtros[index].monto >= 0) {
           this.collectService.calcularMontos(type, index).then(resp => {
@@ -970,6 +1106,41 @@ export class CobroPagosComponent implements OnInit {
         break;
       }
 
+      case "pm": {
+        const pago = this.collectService.pagoMovil[index];
+        const pos = pago.posCollectionPayment;
+        const selectedDestBank = this.collectService.clientBankAccountSelected?.[pos];
+        if (!selectedDestBank) break;
+
+        pago.idBancoDestino = selectedDestBank.idBank;
+        pago.nombreBancoDestino = selectedDestBank.naBank;
+        pago.numeroCuentaDestino = selectedDestBank.nuAccount;
+
+        if (this.collectService.validateCollectionDate) {
+          pago.fecha = this.collectService.dateRate + " 00:00:00";
+          this.collectService.collection.collectionPayments![pos]!.daCollectionPayment = this.collectService.dateRate + " 00:00:00";
+          this.collectService.collection.collectionPayments![pos]!.daValue = this.collectService.dateRate + " 00:00:00";
+          this.collectService.enableDate = true;
+        } else {
+          pago.fecha = this.dateServ.hoyISO();
+          this.collectService.collection.collectionPayments![pos]!.daCollectionPayment = pago.fecha.split("T")[0] + " " + pago.fecha.split("T")[1];
+          this.collectService.collection.collectionPayments![pos]!.daValue = pago.fecha.split("T")[0] + " " + pago.fecha.split("T")[1];
+          this.collectService.enableDate = false;
+        }
+
+        pago.disabled = false;
+        this.collectService.collection.collectionPayments![pos]!.coCollection = this.collectService.collection.coCollection;
+        this.collectService.collection.collectionPayments![pos]!.coPaymentMethod = type;
+        this.collectService.collection.collectionPayments![pos]!.idBank = pago.idBancoDestino;
+        this.collectService.collection.collectionPayments![pos]!.naBank = pago.nombreBancoDestino;
+        this.collectService.collection.collectionPayments![pos]!.nuBankAccount = pago.numeroCuentaDestino;
+        this.collectService.collection.collectionPayments![pos]!.coType = type;
+
+        this.syncPagoMovilDocumento(index);
+        this.validatePayment("pm", index);
+        break;
+      }
+
       case "ot": {
 
         break;
@@ -1011,6 +1182,11 @@ export class CobroPagosComponent implements OnInit {
   setShowDateTransferenciaModal(i: number, val: boolean) {
     let transferencia = this.collectService.pagoTransferencia[i];
     transferencia.showDateModal = val;
+  }
+
+  setShowDatePagoMovilModal(i: number, val: boolean) {
+    let pagoMovil = this.collectService.pagoMovil[i];
+    pagoMovil.showDateModal = val;
   }
 
   setShowDateEfectivoModal(i: number, val: boolean) {
@@ -1070,6 +1246,13 @@ export class CobroPagosComponent implements OnInit {
         if (value) {
           this.collectService.pagoTransferencia[index].fecha = value.split('T')[0];
           this.getFechaValor(this.collectService.pagoTransferencia[index].fecha, index, 'tr');
+        }
+        break
+      }
+      case "pm": {
+        if (value) {
+          this.collectService.pagoMovil[index].fecha = value.split('T')[0];
+          this.getFechaValor(this.collectService.pagoMovil[index].fecha, index, 'pm');
         }
         break
       }

@@ -23,6 +23,7 @@ import { PagoTransferencia } from 'src/app/modelos/pago-transferencia';
 import { PagoDeposito } from 'src/app/modelos/pago-deposito';
 import { PagoCheque } from 'src/app/modelos/pago-cheque';
 import { PagoOtros } from 'src/app/modelos/pago-otros';
+import { PagoMovil } from 'src/app/modelos/pago-movil';
 import { IonInput } from '@ionic/angular/directives/proxies';
 import { ClienteSelectorService } from 'src/app/cliente-selector/cliente-selector.service';
 import { BankAccount } from 'src/app/modelos/tables/bankAccount';
@@ -392,6 +393,40 @@ export class CobrosGeneralComponent implements OnInit {
             newPagoTransferencia.disabled = false;
           }
           this.collectService.pagoTransferencia.push(newPagoTransferencia);
+          break;
+        }
+        case 'pm': {
+          const newPagoMovil: PagoMovil = {
+            idBancoEmisor: 0,
+            nombreBancoEmisor: '',
+            idBancoDestino: payment.idBank,
+            nombreBancoDestino: payment.naBank,
+            numeroCuentaDestino: payment.nuBankAccount ?? '',
+            tipoDocumento: ((payment.coClientBankAccount || 'V').split('-')[0] as 'V' | 'J' | 'G') || 'V',
+            numeroDocumento: ((payment.coClientBankAccount || '').split('-')[1] || '').replace(/\D/g, ''),
+            numeroReferencia: (payment.nuPaymentDoc || '').replace(/\D/g, ''),
+            monto: payment.nuAmountPartial,
+            montoConversion: payment.nuAmountPartialConversion,
+            fecha: payment.daValue!,
+            posCollectionPayment: i,
+            type: 'pm',
+            anticipoPrepaid: payment.isAnticipoPrepaid,
+            disabled: false,
+            showDateModal: false,
+          };
+
+          const bancoEmisor = this.collectService.listBanks?.find(b => b.naBank === payment.coClientBankAccount);
+          if (bancoEmisor) {
+            newPagoMovil.idBancoEmisor = bancoEmisor.idBank;
+            newPagoMovil.nombreBancoEmisor = bancoEmisor.naBank;
+          }
+
+          const bancoDestino = bankAccounts.find(b => b.idBank == newPagoMovil.idBancoDestino && b.nuAccount == newPagoMovil.numeroCuentaDestino);
+          if (bancoDestino) {
+            this.collectService.clientBankAccountSelected[newPagoMovil.posCollectionPayment] = bancoDestino as any;
+          }
+
+          this.collectService.pagoMovil.push(newPagoMovil);
           break;
         }
         case 'de': {

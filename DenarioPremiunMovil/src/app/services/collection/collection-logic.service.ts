@@ -21,6 +21,7 @@ import { DateServiceService } from '../dates/date-service.service';
 import { PagoDeposito } from 'src/app/modelos/pago-deposito';
 import { PagoEfectivo } from 'src/app/modelos/pago-efectivo';
 import { PagoOtros } from 'src/app/modelos/pago-otros';
+import { PagoMovil } from 'src/app/modelos/pago-movil';
 import { PagoTransferencia } from 'src/app/modelos/pago-transferencia';
 import { TiposPago } from 'src/app/modelos/tipos-pago';
 import { CurrencyService } from '../currency/currency.service';
@@ -91,6 +92,7 @@ export class CollectionService {
   public pagoCheque: PagoCheque[] = [];
   public pagoDeposito: PagoDeposito[] = [];
   public pagoTransferencia: PagoTransferencia[] = [];
+  public pagoMovil: PagoMovil[] = [];
   public pagoOtros: PagoOtros[] = [];
   public tiposPago: TiposPago[] = [];
   public bankAccountSelected!: BankAccount[];
@@ -121,6 +123,7 @@ export class CollectionService {
   public tipoPagoDeposito!: boolean;
   public tipoPagoTransferencia!: boolean;
   public tipoPagoOtros!: boolean;
+  public tipoPagoPagoMovil!: boolean;
   public haveRate: boolean = false;
   public initCollect: boolean = true;
   public showHeaderButtons: Boolean = false;
@@ -213,6 +216,7 @@ export class CollectionService {
   public totalCheque: number = 0;
   public totalDeposito: number = 0;
   public totalTransferencia: number = 0;
+  public totalPagoMovil: number = 0;
   public totalOtros: number = 0;
   public coTypeModule!: string;
   public lengthMethodPaid: number = -1;
@@ -409,56 +413,42 @@ export class CollectionService {
   }
 
   loadPaymentMethods() {
-    //CARGAMOS LOS TIPOS DE PAGO DEPENDIENDO DE LAS VARIABLES DE CONFIGURACION
-
+    // Cargamos los tipos de pago según la configuración de la app.
     this.pagoEfectivo = [] as PagoEfectivo[];
     this.pagoCheque = [] as PagoCheque[];
     this.pagoDeposito = [] as PagoDeposito[];
     this.pagoTransferencia = [] as PagoTransferencia[];
+    this.pagoMovil = [] as PagoMovil[];
     this.pagoOtros = [] as PagoOtros[];
     this.tiposPago = [] as TiposPago[];
 
-    this.tipoPagoEfectivo = this.globalConfig.get('colletionPayment').split("-")[0] === 'true' ? true : false;
-    this.tipoPagoCheque = this.globalConfig.get('colletionPayment').split("-")[1] === 'true' ? true : false;
-    this.tipoPagoDeposito = this.globalConfig.get('colletionPayment').split("-")[2] === 'true' ? true : false;
-    this.tipoPagoTransferencia = this.globalConfig.get('colletionPayment').split("-")[3] === 'true' ? true : false;
-    this.tipoPagoOtros = this.globalConfig.get('colletionPayment').split("-")[4] === 'true' ? true : false;
+    const paymentConfigRaw = (this.globalConfig.get('colletionPayment') || '').trim();
+    const configFlags = paymentConfigRaw.split('-').map(flag => flag.trim().toLowerCase() === 'true');
+    const getFlag = (index: number) => configFlags[index] === true;
 
-    if (this.tipoPagoEfectivo) {
-      this.tiposPago.push({
-        type: "ef",
-        name: "Efectivo",
+    this.tipoPagoEfectivo = getFlag(0);
+    this.tipoPagoCheque = getFlag(1);
+    this.tipoPagoDeposito = getFlag(2);
+    this.tipoPagoTransferencia = getFlag(3);
+    this.tipoPagoOtros = getFlag(4);
+    this.tipoPagoPagoMovil = getFlag(5);
+
+    const paymentTypeDefinitions: Array<{ enabled: boolean; type: string; name: string }> = [
+      { enabled: this.tipoPagoEfectivo, type: 'ef', name: 'Efectivo' },
+      { enabled: this.tipoPagoCheque, type: 'ch', name: 'Cheque' },
+      { enabled: this.tipoPagoDeposito, type: 'de', name: 'Depósito' },
+      { enabled: this.tipoPagoTransferencia, type: 'tr', name: 'Transferencia' },
+      { enabled: this.tipoPagoOtros, type: 'ot', name: 'Otros' },
+      { enabled: this.tipoPagoPagoMovil, type: 'pm', name: 'Pago Móvil' },
+    ];
+
+    this.tiposPago = paymentTypeDefinitions
+      .filter(paymentType => paymentType.enabled)
+      .map(paymentType => ({
+        type: paymentType.type,
+        name: paymentType.name,
         selected: false
-      });
-    }
-    if (this.tipoPagoCheque) {
-      this.tiposPago.push({
-        type: "ch",
-        name: "Cheque",
-        selected: false
-      });
-    }
-    if (this.tipoPagoDeposito) {
-      this.tiposPago.push({
-        type: "de",
-        name: "Depósito",
-        selected: false
-      });
-    }
-    if (this.tipoPagoTransferencia) {
-      this.tiposPago.push({
-        type: "tr",
-        name: "Transferencia",
-        selected: false
-      });
-    }
-    if (this.tipoPagoOtros) {
-      this.tiposPago.push({
-        type: "ot",
-        name: "Otros",
-        selected: false
-      });
-    }
+      }));
 
     return Promise.resolve(true);
   }
@@ -1007,6 +997,15 @@ export class CollectionService {
       }
     }
 
+    if (this.tipoPagoPagoMovil && this.pagoMovil.length > 0) {
+      for (let pm in this.pagoMovil) {
+        if (this.pagoMovil[pm].anticipoPrepaid) {
+          this.pagoMovil[pm].anticipoPrepaid = false;
+          break;
+        }
+      }
+    }
+
     if (this.tipoPagoOtros && this.pagoOtros.length > 0) {
       for (let ef in this.pagoOtros) {
         if (this.pagoOtros[ef].anticipoPrepaid) {
@@ -1018,7 +1017,7 @@ export class CollectionService {
   }
 
   setAutomatedPrepaid(type: string, index: number) {
-    if (this.pagoOtros.length === 0 && this.pagoCheque.length === 0 && this.pagoDeposito.length === 0 && this.pagoTransferencia.length === 0 && this.pagoEfectivo.length === 0)
+    if (this.pagoOtros.length === 0 && this.pagoCheque.length === 0 && this.pagoDeposito.length === 0 && this.pagoTransferencia.length === 0 && this.pagoMovil.length === 0 && this.pagoEfectivo.length === 0)
       this.disabledSelectCollectMethodDisabled = false;
     else
       this.disabledSelectCollectMethodDisabled = true;
@@ -1049,6 +1048,13 @@ export class CollectionService {
         this.anticipoAutomatico = [] as PagoTransferencia[];
         this.anticipoAutomatico.push(this.pagoTransferencia[index]);
         this.pagoTransferencia[index].anticipoPrepaid = true;
+        break;
+      }
+
+      case "pm": {
+        this.anticipoAutomatico = [] as PagoMovil[];
+        this.anticipoAutomatico.push(this.pagoMovil[index]);
+        this.pagoMovil[index].anticipoPrepaid = true;
         break;
       }
 
@@ -1134,6 +1140,13 @@ export class CollectionService {
       for (let tr = 0; tr < this.pagoTransferencia.length; tr++) {
         this.totalTransferencia += this.pagoTransferencia[tr].monto;
         this.montoTotalPagado += this.pagoTransferencia[tr].monto;
+      }
+    }
+    if (this.tipoPagoPagoMovil) {
+      this.totalPagoMovil = 0;
+      for (let pm = 0; pm < this.pagoMovil.length; pm++) {
+        this.totalPagoMovil += this.pagoMovil[pm].monto;
+        this.montoTotalPagado += this.pagoMovil[pm].monto;
       }
     }
     if (this.tipoPagoOtros) {
@@ -1630,6 +1643,7 @@ export class CollectionService {
     this.pagoCheque = [] as PagoCheque[];
     this.pagoDeposito = [] as PagoDeposito[];
     this.pagoTransferencia = [] as PagoTransferencia[];
+    this.pagoMovil = [] as PagoMovil[];
     this.pagoOtros = [] as PagoOtros[];
     this.lengthMethodPaid = -1;
     this.bankAccountSelected = [] as BankAccount[];
@@ -1925,6 +1939,13 @@ export class CollectionService {
       if (Array.isArray(this.pagoTransferencia)) {
         for (let i = 0; i < this.pagoTransferencia.length; i++) {
           this.pagoTransferencia[i].fecha = fecha;
+        }
+      }
+
+      // Actualizar pagoMovil[].fecha
+      if (Array.isArray(this.pagoMovil)) {
+        for (let i = 0; i < this.pagoMovil.length; i++) {
+          this.pagoMovil[i].fecha = fecha;
         }
       }
 
