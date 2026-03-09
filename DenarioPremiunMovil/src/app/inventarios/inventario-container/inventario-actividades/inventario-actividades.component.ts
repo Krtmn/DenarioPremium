@@ -82,13 +82,15 @@ public modalCtrl = inject(ModalController);
   async preguntarSugerirPedido(){
     await this.inventariosLogicService.calcularTotalesSugerenciaPedido(this.dbServ.getDatabase());
     
-        const modal = await this.modalCtrl.create({
+      const modal = await this.modalCtrl.create({
       component: InventarioSugeridoPreviewComponent,
       cssClass: 'inventario-sugerido-modal',
       componentProps: {
         productsSuggested: this.inventariosLogicService.productsSuggested,
         clientStockDetails: this.inventariosLogicService.newClientStock.clientStockDetails,
-        inventarioTags: this.inventariosLogicService.inventarioTags
+        inventarioTags: this.inventariosLogicService.inventarioTags,
+        diasDesdeUltimoInventario: this.inventariosLogicService.newClientStock.daysSinceLast,
+        diasHastaSiguienteInventario: this.inventariosLogicService.newClientStock.daysUntilNext
       }
     });
 

@@ -8,8 +8,19 @@
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
-
-<ion-content class="ion-padding">
+<ion-content>
+  <ion-grid>
+  <ion-row>
+    <ion-col>
+      Dias desde último inventario: {{ diasDesdeUltimoInventario }}
+      <br>
+    </ion-col>
+    <ion-col>
+      Dias hasta siguiente inventario: {{ diasHastaSiguienteInventario }}
+      <br>     
+    </ion-col>
+  </ion-row>
+</ion-grid>
   @if(productsSuggested.length > 0){
   <ion-list>
     <ion-accordion-group>
@@ -26,6 +37,12 @@
           <ion-item >
             <ion-label>
               {{ getUnitName(product.idProduct, unit.idUnit) }}: {{ unit.quUnitSuggested }}
+              <ion-grid>
+                <ion-row>
+                  <ion-col>Inv. Inicial: {{unit.initialStock}}</ion-col>
+                  <ion-col>Venta: {{unit.soldUnits}}</ion-col>
+                </ion-row>
+              </ion-grid>
             </ion-label>
           </ion-item>
         }
@@ -36,6 +53,7 @@
   </ion-list>
 }@else{
   <ng-template #emptyState>
+    <!-- No deberia aparecer esto, ya que el boton para traer este modal solo se habilita si hay productos sugeridos -->
     <ion-item>
       <ion-label>No hay productos sugeridos.</ion-label>
     </ion-item>

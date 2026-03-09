@@ -13,6 +13,8 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
   @Input() productsSuggested: ProductSuggestedUtil[] = [];
   @Input() clientStockDetails: ClientStocksDetail[] = [];
   @Input() inventarioTags: Map<string, string> = new Map<string, string>();
+  @Input() diasDesdeUltimoInventario: number = 0;
+  @Input() diasHastaSiguienteInventario: number = 0;
 
   private modalCtrl = inject(ModalController);
 
