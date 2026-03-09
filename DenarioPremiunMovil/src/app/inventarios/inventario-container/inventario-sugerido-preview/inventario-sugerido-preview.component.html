@@ -10,9 +10,11 @@
 </ion-header>
 
 <ion-content class="ion-padding">
-  <ion-list *ngIf="productsSuggested.length > 0; else emptyState">
+  @if(productsSuggested.length > 0){
+  <ion-list>
     <ion-accordion-group>
-      <ion-accordion *ngFor="let product of productsSuggested">
+      @for(product of productsSuggested; track product.idProduct){
+      <ion-accordion>
         <ion-item slot="header" color="light">
           <ion-label>
             <h2>{{ getProductCode(product.idProduct) }} - {{ getProductName(product.idProduct) }}</h2>
@@ -20,21 +22,25 @@
         </ion-item>
 
         <div slot="content" class="ion-padding">
-          <ion-item *ngFor="let unit of product.unitsSuggested">
+          @for(unit of product.unitsSuggested; track unit.idUnit){
+          <ion-item >
             <ion-label>
               {{ getUnitName(product.idProduct, unit.idUnit) }}: {{ unit.quUnitSuggested }}
             </ion-label>
           </ion-item>
+        }
         </div>
       </ion-accordion>
+    }
     </ion-accordion-group>
   </ion-list>
-
+}@else{
   <ng-template #emptyState>
     <ion-item>
       <ion-label>No hay productos sugeridos.</ion-label>
     </ion-item>
   </ng-template>
+}
 </ion-content>
 
 <ion-footer>
