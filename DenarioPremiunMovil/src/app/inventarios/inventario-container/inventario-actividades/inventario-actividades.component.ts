@@ -16,7 +16,8 @@ import { Client } from 'src/app/modelos/tables/client';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { ProductSuggestedUtil } from 'src/app/modelos/ProductSuggestedUtil';
-
+import { ModalController } from '@ionic/angular';
+import { InventarioSugeridoPreviewComponent } from '../inventario-sugerido-preview/inventario-sugerido-preview.component';
 
 @Component({
     selector: 'app-inventario-actividades',
@@ -36,7 +37,7 @@ export class InventarioActividadesComponent implements OnInit {
   public adjuntoService = inject(AdjuntoService)
   public clientStocksTotal: ClientStockTotal[] = [];
   public router =  inject(Router);
-
+public modalCtrl = inject(ModalController);
   public message = inject(MessageService);
 
   public DELIVERY_STATUS_SENT = DELIVERY_STATUS_SENT;// para usar en el html
@@ -80,6 +81,25 @@ export class InventarioActividadesComponent implements OnInit {
   }
   async preguntarSugerirPedido(){
     await this.inventariosLogicService.calcularTotalesSugerenciaPedido(this.dbServ.getDatabase());
+    
+        const modal = await this.modalCtrl.create({
+      component: InventarioSugeridoPreviewComponent,
+      cssClass: 'inventario-sugerido-modal',
+      componentProps: {
+        productsSuggested: this.inventariosLogicService.productsSuggested,
+        clientStockDetails: this.inventariosLogicService.newClientStock.clientStockDetails,
+        inventarioTags: this.inventariosLogicService.inventarioTags
+      }
+    });
+
+    await modal.present();
+
+    const { role } = await modal.onDidDismiss();
+    if (role === 'confirm') {
+      await this.sugerirPedido();
+    }
+  }
+  /*
     let buttonsConfirmSend = [
       {
         text: 'Cancelar',
@@ -109,7 +129,8 @@ export class InventarioActividadesComponent implements OnInit {
     } as MessageAlert;
 
     this.message.alertCustomBtn(message ,buttonsConfirmSend);
-  }
+    
+  }*/
 
   async sugerirPedido(){
 

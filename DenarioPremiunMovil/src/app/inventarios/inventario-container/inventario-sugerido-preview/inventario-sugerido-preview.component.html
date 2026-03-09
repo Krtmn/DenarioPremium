@@ -1,0 +1,46 @@
+<ion-header>
+  <ion-toolbar color="light">
+    <ion-title>{{ inventarioTags.get('INV_PED_SUG') || 'Pedido sugerido' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="close()">
+        {{ inventarioTags.get('DENARIO_BOTON_CANCELAR') || 'Cerrar' }}
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-list *ngIf="productsSuggested.length > 0; else emptyState">
+    <ion-accordion-group>
+      <ion-accordion *ngFor="let product of productsSuggested">
+        <ion-item slot="header" color="light">
+          <ion-label>
+            <h2>{{ getProductCode(product.idProduct) }} - {{ getProductName(product.idProduct) }}</h2>
+          </ion-label>
+        </ion-item>
+
+        <div slot="content" class="ion-padding">
+          <ion-item *ngFor="let unit of product.unitsSuggested">
+            <ion-label>
+              {{ getUnitName(product.idProduct, unit.idUnit) }}: {{ unit.quUnitSuggested }}
+            </ion-label>
+          </ion-item>
+        </div>
+      </ion-accordion>
+    </ion-accordion-group>
+  </ion-list>
+
+  <ng-template #emptyState>
+    <ion-item>
+      <ion-label>No hay productos sugeridos.</ion-label>
+    </ion-item>
+  </ng-template>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-button expand="block" class="botonAddAmarillo" (click)="confirm()">
+      {{ inventarioTags.get('DENARIO_BOTON_ACEPTAR') || 'Aceptar' }}
+    </ion-button>
+  </ion-toolbar>
+</ion-footer>
