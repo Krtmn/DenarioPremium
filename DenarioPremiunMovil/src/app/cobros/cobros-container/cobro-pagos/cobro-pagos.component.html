@@ -48,11 +48,14 @@
           </ion-col>
           <ion-col class="" size="12" size-sm="12" size-xs="12">
             <ion-list>
-              <ion-item *ngFor="let tipoPago of this.collectService.tiposPago; index as type; trackBy: trackByIndex">
+              @for (tipoPago of this.collectService.tiposPago; track trackByIndex($index, tipoPago); let type = $index)
+              {
+              <ion-item>
                 <ion-checkbox slot="start" [checked]="tipoPago.selected"
                   (ionChange)="onSelectTipoPago(tipoPago,type)"></ion-checkbox>
                 <ion-label class="titulosBold">{{tipoPago.name}}</ion-label>
               </ion-item>
+              }
             </ion-list>
           </ion-col>
           <ion-col class="" size="3" size-sm="6" size-xs="6">
@@ -73,7 +76,8 @@
   <ion-col size="6" size-sm="12" size-xs="12" class="pagos-scroll">
     <ion-accordion-group>
       <!-- EFECTIVO -->
-      <ion-list *ngFor="let efectivo of this.collectService.pagoEfectivo; index as ef; trackBy: trackByIndex">
+      @for (efectivo of this.collectService.pagoEfectivo; track trackByIndex($index, efectivo); let ef = $index) {
+      <ion-list>
         <ion-accordion *ngIf="this.collectService.tipoPagoEfectivo && this.collectService.pagoEfectivo.length > 0"
           [value]="'efectivo'+ef">
 
@@ -143,11 +147,12 @@
 
         </ion-accordion>
       </ion-list>
+      }
       <!-- EFECTIVO -->
 
       <!-- PAGO MOVIL-->
-
-      <ion-list *ngFor="let pagoMovil of this.collectService.pagoMovil; index as pm; trackBy: trackByIndex">
+      @for (pagoMovil of this.collectService.pagoMovil; track trackByIndex($index, pagoMovil); let pm = $index) {
+      <ion-list>
         <ion-accordion *ngIf="this.collectService.tipoPagoPagoMovil && this.collectService.pagoMovil.length > 0"
           [value]="'pagoMovil'+pm">
           <ion-item slot="header" color="light">
@@ -155,12 +160,34 @@
           </ion-item>
 
           <div class="ion-padding" slot="content">
+
+            <ion-col size="6" size-sm="12" size-xs="12">
+              <ion-label>Numero de Telefono</ion-label>
+              <ion-item>
+                <div class="listado-enterprise-selector ion-text-center" style="width: 35%; margin-right: 8px;">
+                  <ion-select class="ion-text-center always-flip" interface="alert" labelPlacement="stacked"
+                    [(ngModel)]="pagoMovil.codigoTelefono">
+                    <ion-select-option value="0414">0414</ion-select-option>
+                    <ion-select-option value="0424">0424</ion-select-option>
+                  </ion-select>
+                </div>
+                <ion-input label="Número" label-placement="floating" fill="outline" color="primary" type="text"
+                  inputmode="numeric" pattern="[0-9]*" maxlength="7" [(ngModel)]="pagoMovil.numeroTelefono"
+                  (ionInput)="onPagoMovilTelefonoInput(pm, $any($event.target).value)"
+                  (ionBlur)="onPagoMovilTelefonoInput(pm, pagoMovil.numeroTelefono)" class="customInput"
+                  [ngClass]="{'inp-write': !pagoMovil.numeroTelefono}">
+                </ion-input>
+              </ion-item>
+            </ion-col>
+
+
             <ion-col size="6" size-sm="12" size-xs="12">
               <ion-label>Cédula o RIF</ion-label>
               <ion-item>
                 <div class="listado-enterprise-selector ion-text-center" style="width: 35%; margin-right: 8px;">
                   <ion-select class="ion-text-center always-flip" interface="alert" labelPlacement="stacked"
-                    [(ngModel)]="pagoMovil.tipoDocumento" (ionChange)="setTipoDocumentoPagoMovil(pm, $event.detail.value)">
+                    [(ngModel)]="pagoMovil.tipoDocumento"
+                    (ionChange)="setTipoDocumentoPagoMovil(pm, $event.detail.value)">
                     <ion-select-option value="V">V</ion-select-option>
                     <ion-select-option value="J">J</ion-select-option>
                     <ion-select-option value="G">G</ion-select-option>
@@ -176,33 +203,38 @@
             </ion-col>
 
             <ion-col size="6" size-sm="12" size-xs="12">
-              <ion-label>Banco Emisor</ion-label>
+              <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_EMISOR')}}</ion-label>
               <ion-item>
                 <div class="listado-enterprise-selector ion-text-center">
                   <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
                     class="ion-text-center always-flip"
                     [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoMovil[pm].posCollectionPayment]"
                     (ionChange)="selectBankAccount(pm, 'pm')" interface="alert" labelPlacement="stacked">
-                    <ion-select-option *ngFor="let bank of this.collectService.listBanks; trackBy: trackByIndex"
-                      [value]="bank">{{ bank.naBank }}
+                    @for (bank of this.collectService.listBanks; track trackByIndex($index, bank)) {
+                    <ion-select-option [value]="bank">{{ bank.naBank }}
                     </ion-select-option>
+                    }
                   </ion-select>
                 </div>
               </ion-item>
             </ion-col>
 
+
+
             <ion-col size="6" size-sm="12" size-xs="12">
-              <ion-label>Banco destino</ion-label>
+              <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_DESTINO')}}</ion-label>
               <ion-item>
                 <div class="listado-enterprise-selector ion-text-center">
                   <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
                     class="ion-text-center always-flip"
                     [(ngModel)]="this.collectService.clientBankAccountSelected[this.collectService.pagoMovil[pm].posCollectionPayment]"
                     (ionChange)="selectListBankAccount(pm, 'pm')" interface="alert" labelPlacement="stacked">
-                    <ion-select-option
-                      *ngFor="let listBankAccount of this.collectService.listBankAccounts; trackBy: trackByIndex"
-                      [value]="listBankAccount">{{ listBankAccount.naBank }} - {{listBankAccount.nuAccount}}
+                    @for (listBankAccount of this.collectService.listBankAccounts; track trackByIndex($index,
+                    listBankAccount)) {
+                    <ion-select-option [value]="listBankAccount">{{ listBankAccount.naBank }} -
+                      {{listBankAccount.nuAccount}}
                     </ion-select-option>
+                    }
                   </ion-select>
                 </div>
               </ion-item>
@@ -260,7 +292,8 @@
             </ion-col>
 
             <ion-item>
-              <ion-button color="danger" (click)="deleteTipoPago(pm,'pm')"><ion-icon name="trash"></ion-icon></ion-button>
+              <ion-button color="danger" (click)="deleteTipoPago(pm,'pm')"><ion-icon
+                  name="trash"></ion-icon></ion-button>
             </ion-item>
 
             <ion-label *ngIf="pagoMovil.anticipoPrepaid" color="primary">
@@ -269,11 +302,13 @@
           </div>
         </ion-accordion>
       </ion-list>
+      }
 
       <!-- PAGO MOVIL-->
 
       <!-- CHEQUE -->
-      <ion-list *ngFor="let cheque of collectService.pagoCheque; index as ch; trackBy: trackByIndex">
+      @for (cheque of collectService.pagoCheque; track trackByIndex($index, cheque); let ch = $index) {
+      <ion-list>
         <ion-accordion *ngIf="this.collectService.tipoPagoCheque && this.collectService.pagoCheque.length > 0"
           [value]="'cheque'+ch">
           <ion-item slot="header" color="light">
@@ -289,9 +324,10 @@
                     class="ion-text-center always-flip"
                     [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoCheque[ch].posCollectionPayment] "
                     (ionChange)="selectBankAccount(ch,'ch')" interface="alert" labelPlacement="stacked">
-                    <ion-select-option *ngFor="let bank of this.collectService.listBanks; trackBy: trackByIndex"
-                      [value]="bank">{{ bank.naBank }}
+                    @for (bank of this.collectService.listBanks; track trackByIndex($index, bank)) {
+                    <ion-select-option [value]="bank">{{ bank.naBank }}
                     </ion-select-option>
+                    }
                   </ion-select>
                 </div>
               </ion-item>
@@ -393,11 +429,13 @@
           </div>
         </ion-accordion>
       </ion-list>
+      }
 
       <!-- CHEQUE -->
 
       <!-- DEPOSITO -->
-      <ion-list *ngFor="let deposito of collectService.pagoDeposito; index as de; trackBy: trackByIndex">
+      @for (deposito of collectService.pagoDeposito; track trackByIndex($index, deposito); let de = $index) {
+      <ion-list>
         <ion-accordion *ngIf="this.collectService.tipoPagoDeposito  && collectService.pagoDeposito.length > 0"
           [value]="'deposito'+de">
           <ion-item slot="header" color="light">
@@ -412,11 +450,12 @@
                     class="ion-text-center always-flip"
                     [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoDeposito[de].posCollectionPayment] "
                     (ionChange)="selectBankAccount(de, 'de')" interface="alert" labelPlacement="stacked">
-                    <ion-select-option
-                      *ngFor="let listBankAccount of this.collectService.listBankAccounts; trackBy: trackByIndex"
-                      [value]="listBankAccount">{{ listBankAccount.naBank }} -
+                    @for (listBankAccount of this.collectService.listBankAccounts; track trackByIndex($index,
+                    listBankAccount)) {
+                    <ion-select-option [value]="listBankAccount">{{ listBankAccount.naBank }} -
                       {{listBankAccount.nuAccount}}
                     </ion-select-option>
+                    }
                   </ion-select>
                 </div>
 
@@ -481,10 +520,13 @@
           </div>
         </ion-accordion>
       </ion-list>
+      }
       <!-- DEPOSITO -->
 
       <!-- TRANSFERENCIAS -->
-      <ion-list *ngFor="let transferencia of this.collectService.pagoTransferencia; index as tr; trackBy: trackByIndex">
+      @for (transferencia of this.collectService.pagoTransferencia; track trackByIndex($index, transferencia); let tr =
+      $index) {
+      <ion-list>
         <ion-accordion
           *ngIf="this.collectService.tipoPagoTransferencia  && this.collectService.pagoTransferencia.length > 0"
           [value]="'transferencia'+tr">
@@ -504,10 +546,10 @@
                     class="ion-text-center always-flip"
                     [(ngModel)]="this.collectService.clientBankAccountSelected[this.collectService.pagoTransferencia[tr].posCollectionPayment] "
                     (ionChange)="selectBankAccount(tr,'tr')" interface="alert" labelPlacement="stacked">
-                    <ion-select-option
-                      *ngFor="let bank of this.collectService.clientBankAccounts; trackBy: trackByIndex"
-                      [value]="bank">{{ bank.naBank }} - {{bank.nuAccount}}
+                    @for (bank of this.collectService.clientBankAccounts; track trackByIndex($index, bank)) {
+                    <ion-select-option [value]="bank">{{ bank.naBank }} - {{bank.nuAccount}}
                     </ion-select-option>
+                    }
                   </ion-select>
                 </div>
               </ion-item>
@@ -529,11 +571,12 @@
                   class="ion-text-center always-flip"
                   [(ngModel)]="this.collectService.bankAccountSelected[this.collectService.pagoTransferencia[tr].posCollectionPayment] "
                   (ionChange)="selectListBankAccount(tr, 'tr')" interface="alert" labelPlacement="stacked">
-                  <ion-select-option
-                    *ngFor="let listBankAccount of this.collectService.listBankAccounts; trackBy: trackByIndex"
-                    [value]="listBankAccount">{{ listBankAccount.naBank }} -
+                  @for (listBankAccount of this.collectService.listBankAccounts; track trackByIndex($index,
+                  listBankAccount)) {
+                  <ion-select-option [value]="listBankAccount">{{ listBankAccount.naBank }} -
                     {{listBankAccount.nuAccount}}
                   </ion-select-option>
+                  }
                 </ion-select>
               </div>
             </ion-item>
@@ -597,10 +640,12 @@
           </div>
         </ion-accordion>
       </ion-list>
+      }
       <!-- TRANSFERENCIAS -->
 
       <!-- OTROS -->
-      <ion-list *ngFor="let otros of this.collectService.pagoOtros; index as ot; trackBy: trackByIndex">
+      @for (otros of this.collectService.pagoOtros; track trackByIndex($index, otros); let ot = $index) {
+      <ion-list>
         <ion-accordion *ngIf="this.collectService.pagoOtros && this.collectService.pagoOtros.length > 0" value="otros">
           <ion-item slot="header" color="light">
             <ion-label> {{this.collectService.collectionTags.get('COB_OTROS')}}</ion-label>
@@ -611,11 +656,12 @@
                 <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
                   class="ion-text-center always-flip" [(ngModel)]="otros.differenceCode"
                   (ionChange)="selectDifferenceCode(ot)" interface="alert" labelPlacement="stacked">
-                  <ion-select-option
-                    *ngFor="let differenceCode of this.collectService.differenceCode; trackBy: trackByIndex"
-                    [value]="differenceCode">{{ differenceCode.coDifferenceCode }} -
+                  @for (differenceCode of this.collectService.differenceCode; track trackByIndex($index,
+                  differenceCode)) {
+                  <ion-select-option [value]="differenceCode">{{ differenceCode.coDifferenceCode }} -
                     {{differenceCode.naDifferenceCode}}
                   </ion-select-option>
+                  }
                 </ion-select>
               </div>
             </ion-col>
@@ -671,6 +717,7 @@
           </div>
         </ion-accordion>
       </ion-list>
+      }
       <!-- OTROS -->
 
     </ion-accordion-group>

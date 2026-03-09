@@ -404,6 +404,8 @@ export class CobrosGeneralComponent implements OnInit {
             numeroCuentaDestino: payment.nuBankAccount ?? '',
             tipoDocumento: ((payment.coClientBankAccount || 'V').split('-')[0] as 'V' | 'J' | 'G') || 'V',
             numeroDocumento: ((payment.coClientBankAccount || '').split('-')[1] || '').replace(/\D/g, ''),
+            codigoTelefono: payment.coClientBankAccount?.includes('0414') ? '0414' : '0424',
+            numeroTelefono: ((payment.coClientBankAccount || '').split('-')[1] || '').replace(/\D/g, ''),
             numeroReferencia: (payment.nuPaymentDoc || '').replace(/\D/g, ''),
             monto: payment.nuAmountPartial,
             montoConversion: payment.nuAmountPartialConversion,

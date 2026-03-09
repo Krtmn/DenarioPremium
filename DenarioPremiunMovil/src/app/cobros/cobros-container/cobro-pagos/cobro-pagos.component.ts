@@ -837,6 +837,11 @@ export class CobroPagosComponent implements OnInit {
     this.validatePayment('pm', index);
   }
 
+  onPagoMovilTelefonoInput(index: number, value: string) {
+    const onlyNumbers = (value || '').replace(/\D/g, '').slice(0, 7);
+    this.collectService.pagoMovil[index].numeroTelefono = onlyNumbers;
+  }
+
   private syncPagoMovilDocumento(index: number) {
     const pago = this.collectService.pagoMovil[index];
     const payment = this.collectService.collection.collectionPayments?.[pago.posCollectionPayment];
