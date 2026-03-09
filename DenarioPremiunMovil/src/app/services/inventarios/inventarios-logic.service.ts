@@ -437,6 +437,10 @@ export class InventariosLogicService {
         idUnits.push(idUnit);
       }
     }
+    if(idUnits[0] == undefined){
+      //cuando carga un inventario guardado no trae los idUnits, por lo que se deben cargar con base en los idProductUnits
+      idUnits = await this.getIdUnitsByProductUnit(dbServ, idProductUnits);
+    }
     //despacho se usa en ambos casos, por eso se calcula antes del if
     let listAvgProduct = await this.orderDbServ.getClientAvgStock(dbServ, idEnterprise, idClient, idProductUnits, idAddressClient, idProducts);
     for (var i = 0; i < listAvgProduct.length; i++) {
@@ -589,6 +593,17 @@ export class InventariosLogicService {
       productsSuggested.push(productSuggested);
     }
     return productsSuggested;
+  }
+
+  getIdUnitsByProductUnit(dbServ: SQLiteObject, idProductUnits: number[]) {
+    let idUnits: number[] = [];
+    let selectStatement = `SELECT id_unit FROM product_units WHERE id_product_unit IN (${idProductUnits.join(",")})`;
+    return dbServ.executeSql(selectStatement, []).then(result => {
+      for (var i = 0; i < result.rows.length; i++) {
+        idUnits.push(result.rows.item(i).id_unit);
+      }
+      return idUnits;
+    });
   }
 
   deleteClientStocksBatch(dbServ: SQLiteObject, clientStocks: ClientStocks[]) {
