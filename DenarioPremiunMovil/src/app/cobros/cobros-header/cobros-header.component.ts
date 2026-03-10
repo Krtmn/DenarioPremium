@@ -270,7 +270,7 @@ export class CobrosHeaderComponent implements OnInit {
       } else {
         this.messageAlert = new MessageAlert(
           this.collectService.collectionTags.get('COB_HEADER_MESSAGE')!,
-          this.collectService.collectionTags.get('DENARIO_DEV_TO_SEND_OFFLINE')!,
+          this.collectService.collectionTags.get('COB_DENARIO_TO_SEND_OFFLINE')!,
         );
 
       }
