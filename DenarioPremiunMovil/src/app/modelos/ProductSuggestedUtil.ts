@@ -17,6 +17,7 @@ export class UnitSuggestedUtil {
     static returnUnitSuggestedJson(obj: UnitSuggestedUtil) {
         return new UnitSuggestedUtil(
             obj['idUnit'],
+            obj['coUnit'],
             obj['idProductUnit'],
             obj['quUnitSuggested'],
             obj['previousStock'],
@@ -32,6 +33,7 @@ export class UnitSuggestedUtil {
     
     constructor(
         public idUnit: number,
+        public coUnit: string,
         public idProductUnit: number,
         public quUnitSuggested: number,
         public previousStock: number,

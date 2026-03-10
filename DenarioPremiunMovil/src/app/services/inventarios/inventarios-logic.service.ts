@@ -430,11 +430,13 @@ export class InventariosLogicService {
     let idProductUnits = [];
     let idProducts = [];
     let idUnits = [];
+    let coUnits = [];
     for (const [idProduct, mapUnits] of mapProducts) {
       idProducts.push(idProduct);
       for (const [idProductUnit, unitUtil] of mapUnits) {
         idProductUnits.push(idProductUnit);
         idUnits.push(unitUtil.idUnit);
+        coUnits.push(unitUtil.coUnit);
       }
     }
     if(idUnits[0] == undefined){
@@ -501,22 +503,24 @@ export class InventariosLogicService {
     //inventario inicial se calcula con el paso anterior
     //inventario actual se agregó antes del if porque se necesita para ambos casos
     //devolución por distribución
-    let returnsByDistribution = await this.getReturnsByDistribution(dbServ, idProducts, idUnits, idEnterprise, idClient);
+    let returnsByDistribution = await this.getReturnsByDistribution(dbServ, idProducts, coUnits, idEnterprise, idClient);
+    if(typeof returnsByDistribution != "undefined"){
     for (var i = 0; i < returnsByDistribution.length; i++) {
       let idProduct = returnsByDistribution[i].idProduct;
-      let idUnit = returnsByDistribution[i].idUnit;
+      let coUnit = returnsByDistribution[i].coMeasureUnit;
       let quStock = returnsByDistribution[i].quProduct;
       let mapUnits = mapProducts.get(idProduct);
       if(mapUnits != undefined){
         //como el return es por unidad y no por product unit, se busca la unidad dentro de las unidades del producto para asignar la devolución
         for(const [idProductUnit, unitUtil] of mapUnits){
-          if(unitUtil.idUnit == idUnit){
+          if(unitUtil.coUnit == coUnit){
           unitUtil.returnedStock = quStock;
           break;
         }
       }
     }
   }
+}
     //Pedido Sugerido = Venta/Dias desde ultima visita × Días hasta la próxima visita
     for(const [idProduct, mapUnits] of mapProducts){
       for(const [idProductUnit, unitUtil] of mapUnits){
@@ -562,6 +566,7 @@ export class InventariosLogicService {
         let unitSuggestedUtil: UnitSuggestedUtil = {
           idUnit: this.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].idUnit,
           idProductUnit: this.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].idProductUnit,
+          coUnit: this.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].coUnit,
           quUnitSuggested: 0,
           previousStock: 0,
           currentStock: this.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].quStock,
@@ -1239,15 +1244,15 @@ export class InventariosLogicService {
   });
 }
 
-getReturnsByDistribution(dbServ: SQLiteObject, idProducts: number[], idUnits: number[], idEnterprise: number, idClient: number){
-  let select = "select *  from return_details rd where id_return in "+
+getReturnsByDistribution(dbServ: SQLiteObject, idProducts: number[], coUnits: String[], idEnterprise: number, idClient: number){
+let select = "select *  from return_details rd where id_return in "+
 "(SELECT r.id_return from returns r where r.id_type in "+
   "(select rt.id_type from return_types rt where rt.id_return_category in "+
-    "(select rc.id_return_category from return_category rc where rc.subtract_suggestion = true) )"+
+    "(select rc.id_return_category from return_category rc where rc.subtract_suggestion = 'true') )"+
   "and r.id_client = "+idClient+" and r.id_enterprise = "+idEnterprise+") "+
-"and rd.id_product IN ("+idProducts.join(",")+") and rd.id_measure_unit IN ("+idUnits.join(",")+")";
+"and rd.id_product IN ("+idProducts.join(",")+") and rd.co_measure_unit IN (?)";
 
-  return dbServ.executeSql(select, []).then(data => {
+  return dbServ.executeSql(select, [coUnits.join(",")]).then(data => {
     let returnDetails: ReturnDetail[] = [];
     for (var i = 0; i < data.rows.length; i++) {
       let item = data.rows.item(i);
@@ -1275,6 +1280,9 @@ getReturnsByDistribution(dbServ: SQLiteObject, idProducts: number[], idUnits: nu
       returnDetails.push(returnDetail);
     }
     return returnDetails;
+  }).catch(e => {
+    console.log("Error al ejecutar getReturnsByDistribution.");
+    console.log(e.message);
   });
 }
 
