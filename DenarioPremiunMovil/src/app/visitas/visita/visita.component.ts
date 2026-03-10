@@ -370,6 +370,8 @@ export class VisitaComponent implements OnInit {
 
 
   iniciarVisita() {
+    // Limpiamos coordenadas previas para evitar arrastre entre visitas.
+    this.visitServ.coordenadas = "";
     if (this.visitServ.userMustActivateGPS) {
       //en este caso no se puede continuar si no hay coordenadas
       this.geoServ.getCurrentPosition().then(coords => {
