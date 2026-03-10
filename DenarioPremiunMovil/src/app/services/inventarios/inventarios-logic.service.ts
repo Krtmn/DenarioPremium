@@ -432,9 +432,9 @@ export class InventariosLogicService {
     let idUnits = [];
     for (const [idProduct, mapUnits] of mapProducts) {
       idProducts.push(idProduct);
-      for (const [idUnit, unitUtil] of mapUnits) {
-        idProductUnits.push(unitUtil.idProductUnit);
-        idUnits.push(idUnit);
+      for (const [idProductUnit, unitUtil] of mapUnits) {
+        idProductUnits.push(idProductUnit);
+        idUnits.push(unitUtil.idUnit);
       }
     }
     if(idUnits[0] == undefined){
@@ -449,13 +449,11 @@ export class InventariosLogicService {
       let quAvg = listAvgProduct[i].average;
       let mapUnits = mapProducts.get(idProduct);
       if(mapUnits != undefined){
-        //me toca hacerlo de esta forma porque los avg no tienen idunit, sino idproductunit.
-        for (const [idUnit, unitUtil] of mapUnits) {
-          if(unitUtil.idProductUnit == idProductUnit){
-            unitUtil.dispatchedStock = quAvg;
-            break;
-          }
+        let unitUtil = mapUnits.get(idProductUnit);
+        if(unitUtil != undefined){
+          unitUtil.dispatchedStock = quAvg;
         }
+        
       }
     }
     if(this.suggestedOrderByDispatchAndReturn){
@@ -469,11 +467,11 @@ export class InventariosLogicService {
       for (var i = 0; i < previousCS.clientStockDetails.length; i++) {
         for (var j = 0; j < previousCS.clientStockDetails[i].clientStockDetailUnits.length; j++) {
           let idProduct = previousCS.clientStockDetails[i].idProduct;
-          let idUnit = previousCS.clientStockDetails[i].clientStockDetailUnits[j].idUnit;
+          let idProductUnit = previousCS.clientStockDetails[i].clientStockDetailUnits[j].idProductUnit;
           let quStock = previousCS.clientStockDetails[i].clientStockDetailUnits[j].quStock;
           let mapUnits = mapProducts.get(idProduct);
           if(mapUnits != undefined){
-            let unitUtil = mapUnits.get(idUnit);
+            let unitUtil = mapUnits.get(idProductUnit);
             if(unitUtil != undefined){
               unitUtil.previousStock = quStock;
             }
@@ -489,11 +487,11 @@ export class InventariosLogicService {
       idUnits, idEnterprise, idClient, idAddressClient);
     for (var i = 0; i < straightSwaps.length; i++) {
       let idProduct = straightSwaps[i].idProduct;
-      let idUnit = straightSwaps[i].idUnit;
+      let idProductUnit = straightSwaps[i].idProductUnit;
       let quStock = straightSwaps[i].quSwap;
       let mapUnits = mapProducts.get(idProduct);
       if(mapUnits != undefined){
-        let unitUtil = mapUnits.get(idUnit);
+        let unitUtil = mapUnits.get(idProductUnit);
         if(unitUtil != undefined){
           unitUtil.straightSwapStock = quStock;
         }
@@ -510,15 +508,18 @@ export class InventariosLogicService {
       let quStock = returnsByDistribution[i].quProduct;
       let mapUnits = mapProducts.get(idProduct);
       if(mapUnits != undefined){
-        let unitUtil = mapUnits.get(idUnit);
-        if(unitUtil != undefined){
+        //como el return es por unidad y no por product unit, se busca la unidad dentro de las unidades del producto para asignar la devolución
+        for(const [idProductUnit, unitUtil] of mapUnits){
+          if(unitUtil.idUnit == idUnit){
           unitUtil.returnedStock = quStock;
+          break;
         }
       }
     }
+  }
     //Pedido Sugerido = Venta/Dias desde ultima visita × Días hasta la próxima visita
     for(const [idProduct, mapUnits] of mapProducts){
-      for(const [idUnit, unitUtil] of mapUnits){
+      for(const [idProductUnit, unitUtil] of mapUnits){
       //Inventario Inicial = Inventario anterior + Despacho + Cambio por cambio
         unitUtil.initialStock = unitUtil.previousStock + unitUtil.dispatchedStock + unitUtil.straightSwapStock;
         //Venta = Inventario Inicial - Inventario actual - Devolución por distribución
@@ -535,7 +536,7 @@ export class InventariosLogicService {
     }else{
       //version anterior que solo usa average diario de venta
     for(const [idProduct, mapUnits] of mapProducts){
-      for(const [idUnit, unitUtil] of mapUnits){
+      for(const [idProductUnit, unitUtil] of mapUnits){
         if(unitUtil.dispatchedStock > 0){
           unitUtil.quUnitSuggested = unitUtil.dispatchedStock - unitUtil.currentStock;
           if(unitUtil.quUnitSuggested < 0){
@@ -573,7 +574,7 @@ export class InventariosLogicService {
 
         }
         
-        mapUnits.set(this.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].idUnit, unitSuggestedUtil);
+        mapUnits.set(this.newClientStock.clientStockDetails[i].clientStockDetailUnits[j].idProductUnit, unitSuggestedUtil);
       }
       mapProducts.set(this.newClientStock.clientStockDetails[i].idProduct, mapUnits);
     }
@@ -933,41 +934,50 @@ export class InventariosLogicService {
     });
   }
 
-  getPreviousClientStockUnits(dbServ: SQLiteObject, idClient: number, daClientStock: string) {
-    let selectStatement = "SELECT * from client_stocks_details_units where co_client_stock_detail in "+
-      "(SELECT co_client_stock_detail FROM client_stocks_details where co_client_stock in "+
-      "(SELECT co_client_stock FROM client_stocks "+
-      "WHERE id_client = ? AND da_client_stock < ? ORDER BY da_client_stock DESC LIMIT 1))";
+  getPreviousClientStock(dbServ: SQLiteObject, idClient: number, daClientStock: string) {
+    let selectStatement = "SELECT * "+
+      "FROM client_stocks WHERE id_client = ? AND da_client_stock < ? ORDER BY da_client_stock DESC LIMIT 1";
 
     return dbServ.executeSql(selectStatement, [idClient, daClientStock]).then(result => {
-      let units: ClientStocksDetailUnits[] = [];
-      for(var i = 0; i < result.rows.length; i++){
-        let item = result.rows.item(i);
-        let unit: ClientStocksDetailUnits = {
-          idClientStockDetailUnit: item.id_client_stock_detail_unit,
-          coClientStockDetailUnit: item.co_client_stock_detail_unit,
-          coClientStockDetail: item.co_client_stock_detail,
-          idProductUnit: item.id_product_unit,
-          coUnit: item.co_unit,
-          idUnit: item.id_unit,
-          quStock: item.qu_stock,
-          coProductUnit: item.co_product_unit,
-          coEnterprise: item.co_enterprise,
+      if(result.rows.length > 0){
+        let item = result.rows.item(0);
+        let clientStock: ClientStocks = {
+          idClientStock: item.id_client_stock,
+          coClientStock: item.co_client_stock,
+          idUser: item.id_user,
+          coUser: item.co_user,
+          idClient: item.id_client,
+          coClient: item.co_client,
+          idAddressClient: item.id_address_client,
+          coAddressClient: item.co_address_client,
+          coordenada: item.coordenada,
+          txComment: item.tx_comment,
           idEnterprise: item.id_enterprise,
-          quUnit: item.qu_unit,
-          naUnit: item.na_unit,
-          ubicacion: item.ubicacion,
-          posicion: item.posicion,
-          nuBatch: item.nu_batch,
-          daExpiration: item.da_expiration,
+          coEnterprise: item.co_enterprise,
+          daClientStock: item.da_client_stock,
+          stClientStock: item.st_client_stock,
+          lbClient: item.lb_client,
           isSave: item.isSave,
-          quSuggested: 0,
-          isEdit: false
-        };
-        units.push(unit);
+          nuAttachments: item.nu_attachments,
+          hasAttachments: item.has_attachments,
+          stDelivery: item.st_delivery,
+          daysSinceLast: item.days_since_last,
+          daysUntilNext: item.days_until_next,
+          lbEnterprise: item.lb_enterprise,
+          clientStockDetails: [],
+          isEdit: false,
+          productList: []
+
+
+        }
+        return this.getClientStockDetails(dbServ, clientStock.coClientStock).then(details => {
+          clientStock.clientStockDetails = details;
+          return clientStock;
+        })
+      }else{
+        //no hay previous client stock
+        return null;
       }
-      return units;
-    
   });
   }
 
@@ -1020,19 +1030,62 @@ export class InventariosLogicService {
 
     return dbServ.executeSql(selectClientStockDetail, [coCLientStock]).then(data => {
       //console.log(data);
+      let listCoDetails: string[] = [];
       let clientStockDetails: ClientStocksDetail[] = []
       for (let i = 0; i < data.rows.length; i++) {
         const item = data.rows.item(i);
         clientStockDetails.push(item);
         clientStockDetails[i].clientStockDetailUnits = [] as ClientStocksDetailUnits[]
+        listCoDetails.push(item.coClientStockDetail);
       }
-      return clientStockDetails;
-
+      return this.getClientStockDetailUnitsByCoDetail(dbServ, listCoDetails).then(units => {
+        for (let i = 0; i < clientStockDetails.length; i++) {
+          clientStockDetails[i].clientStockDetailUnits = units.filter(u => u.coClientStockDetail === clientStockDetails[i].coClientStockDetail);
+        }
+        return clientStockDetails;
+      });
     }).catch(e => {
       console.log("Error al ejecutar getClientStockDetails.");
       console.log(e);
       return [];
     });
+  }
+
+  getClientStockDetailUnitsByCoDetail(dbServ: SQLiteObject, coClientStockDetails: String[]) {
+    let select = "Select * from client_stocks_details_units where co_client_stock_detail in (" 
+    + coClientStockDetails.join(",") + ")";
+    return dbServ.executeSql(select, []).then(data => {
+      let clientStockDetailUnits: ClientStocksDetailUnits[] = [];
+      let item = data.rows.item(0);
+      for (let i = 0; i < data.rows.length; i++) {
+        let unit: ClientStocksDetailUnits = {
+          idClientStockDetailUnit: data.rows.item(i).id_client_stock_detail_unit,
+          coClientStockDetailUnit: data.rows.item(i).co_client_stock_detail_unit,
+          coClientStockDetail: data.rows.item(i).co_client_stock_detail,
+          coProductUnit: data.rows.item(i).co_product_unit,
+          coUnit: data.rows.item(i).co_unit,
+          idProductUnit: data.rows.item(i).id_product_unit,
+          naUnit: data.rows.item(i).na_unit,
+          quStock: data.rows.item(i).qu_stock,
+          coEnterprise: data.rows.item(i).co_enterprise,
+          quUnit: data.rows.item(i).qu_unit,
+          ubicacion: data.rows.item(i).ubicacion,
+          idEnterprise: data.rows.item(i).id_enterprise,
+          daExpiration: data.rows.item(i).da_expiration,
+          nuBatch: data.rows.item(i).nu_batch,
+          posicion: data.rows.item(i).posicion,
+          isSave: data.rows.item(i).isSave,
+          idUnit: 0,
+          quSuggested: 0,
+          isEdit: false
+
+        }
+        clientStockDetailUnits.push(unit);
+
+
+        }
+        return clientStockDetailUnits;
+      });
   }
 
   getClientStockDetailsUnits(dbServ: SQLiteObject, coClientStocksDetail: string, index: number) {
@@ -1175,7 +1228,9 @@ export class InventariosLogicService {
           idClient: item.id_client,
           idAddressClient: item.id_address_client,
           coClient: item.co_client,
-          coAddressClient: item.co_address_client
+          coAddressClient: item.co_address_client,
+          idProductUnit: item.id_product_unit,
+          coProductUnit: item.co_product_unit,
         };
 
         straightSwaps.push(straightSwap);
