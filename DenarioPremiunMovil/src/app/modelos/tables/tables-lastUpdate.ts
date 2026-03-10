@@ -59,6 +59,7 @@ export interface TablesLastUpdate {
   differenceCodeTableLastUpdate: string,
   collectDiscountTableLastUpdate: string,
   typeDocumentTableLastUpdate: string,
+  codePhoneNumberTableLastUpdate: string,
   page: number
 
 }

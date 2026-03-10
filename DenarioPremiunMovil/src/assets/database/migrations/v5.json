@@ -6,6 +6,9 @@
   {
     "sql": "CREATE TABLE IF NOT EXISTS type_document(id_type_document INTEGER PRIMARY KEY, co_type_document VARCHAR(50), na_type_document VARCHAR(50));",
     "description": "Se crea la tabla 'type_document' si no existe."
-}
+  },
+  {
+    "sql": "CREATE TABLE IF NOT EXISTS code_phone_number(id_code_phone_number INTEGER PRIMARY KEY, co_code_phone_number VARCHAR(50), na_code_phone_number VARCHAR(50));",
+    "description": "Se crea la tabla 'code_phone_number' si no existe."
+  }
 ]
-
