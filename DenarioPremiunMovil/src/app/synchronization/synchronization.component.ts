@@ -132,7 +132,8 @@ export class SynchronizationComponent implements OnInit {
     73: 'modules',
     74: 'currencyModules',
     75: 'differenceCodes',
-    76: 'collectDiscounts'
+    76: 'collectDiscounts',
+    79: 'typeDocument'
   };
 
   /**
@@ -196,7 +197,8 @@ export class SynchronizationComponent implements OnInit {
     modules: 'Módulos',
     currencyModules: 'Monedas Módulos',
     differenceCodes: 'Códigos de Diferencia',
-    collectDiscounts: 'Descuentos de Cobro'
+    collectDiscounts: 'Descuentos de Cobro',
+    typeDocument: 'Tipo de Documento',
   };
 
   constructor(
@@ -633,6 +635,11 @@ export class SynchronizationComponent implements OnInit {
           }
           case 76: {
             this.tables.collectDiscountTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
+          case 79: {
+            this.tables.typeDocumentTableLastUpdate = result[i].last_update;
             this.tables.page = 0;
             break;
           }
@@ -1287,6 +1294,13 @@ export class SynchronizationComponent implements OnInit {
       batchFn: this.synchronizationServices.insertCollectDiscountsBatch.bind(this.synchronizationServices),
       rowKey: 'collectDiscountTable',
       tableKey: 'collectDiscountTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
+    typeDocument: {
+      batchFn: this.synchronizationServices.insertTypeDocumentBatch.bind(this.synchronizationServices),
+      rowKey: 'typeDocumentTable',
+      tableKey: 'typeDocumentTableLastUpdate',
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
     },

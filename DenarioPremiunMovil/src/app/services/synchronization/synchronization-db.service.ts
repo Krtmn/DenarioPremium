@@ -78,6 +78,7 @@ import { CurrencyModules } from '../../modelos/tables/currencyModules';
 import { Modules } from '../../modelos/tables/modules';
 import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
 import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
+import { TypeDocument } from 'src/app/modelos/tables/typeDocument';
 
 /** Mock SQLiteObject para navegador: retorna resultados vacíos y permite probar la app con TestSprite */
 function createMockSqliteObject(): SQLiteObject {
@@ -183,6 +184,7 @@ export class SynchronizationDBService {
       { "id": 74, "nameTable": "currencyModules" },
       { "id": 75, "nameTable": "differenceCodes" },
       { "id": 76, "nameTable": "collectDiscounts" },
+      { "id": 79, "nameTable": "typeDocument" }
     ]
   }
 
@@ -1609,6 +1611,25 @@ export class SynchronizationDBService {
     }
     return this.database.sqlBatch(statements).then(res => {
       console.log("insert collect_discounts ready")
+      return res;
+    }).catch(e => {
+      console.log(e);
+    })
+  }
+  insertTypeDocumentBatch(arr: TypeDocument[]) {
+    var statements = [];
+    let insertStatement = "INSERT OR REPLACE INTO type_document(" +
+      "id_type_document, co_type_document, na_type_document" +
+      ") " +
+      "VALUES(?,?,?)"
+
+    for (var i = 0; i < arr.length; i++) {
+      statements.push([insertStatement, [arr[i].idTypeDocument,
+      arr[i].coTypeDocument, arr[i].naTypeDocument]
+      ])
+    }
+    return this.database.sqlBatch(statements).then(res => {
+      console.log("insert type_document ready")
       return res;
     }).catch(e => {
       console.log(e);
