@@ -370,11 +370,13 @@ export class VisitaComponent implements OnInit {
 
 
   iniciarVisita() {
+    // Limpiamos coordenadas previas para evitar arrastre entre visitas.
+    this.visitServ.coordenadas = "";
     if (this.visitServ.userMustActivateGPS) {
       //en este caso no se puede continuar si no hay coordenadas
       this.geoServ.getCurrentPosition().then(coords => {
         if (coords.length > 0) {
-          this.setCoordinates(coords);
+
           this.segment = 'actividades';
         } else {
           console.log("no hay coordenadas, locacion debe estar inactiva");
@@ -382,6 +384,7 @@ export class VisitaComponent implements OnInit {
           this.initVisitRedMsg = this.getTag("DENARIO_ERR_GPS");
           this.initVisitRedLabel = true;
         }
+        this.setCoordinates(coords);
       });
     } else {
       //si no es obligatorio, puede iniciar sin coords y se buscan en el fondo.

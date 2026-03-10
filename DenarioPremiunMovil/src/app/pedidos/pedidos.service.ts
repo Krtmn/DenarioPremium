@@ -151,12 +151,12 @@ export class PedidosService {
 
   //totalizacion
 
-  totalBase = 0; // suma de los precios de los productos  
+  totalBase = 0; // suma de los precios de los productos
   finalPedido = 0; //total base - descuento global - descuento x productos
   totalPedido = 0; // final pedido + IVA
   totalDctoXProducto = 0; //suma de los montos de los descuentos de productos
   dctoGlobal = 0; //% del descuento global, si hay alguno
-  totalGlobalDc = 0;   //cuanto se ha descontado por descuentos globales  
+  totalGlobalDc = 0;   //cuanto se ha descontado por descuentos globales
   orderIVA = 0;
 
   //versiones multimoneda
@@ -201,6 +201,8 @@ export class PedidosService {
   public nameTotalProductUnit = "";
   public featuredProducts!: boolean;
   public nameProductLine = '';
+  public setProductDiscount: boolean = false;
+  public setMaxProductDiscount: number = 0;
 
   public groupByTotalByLines!: boolean;
 
@@ -222,9 +224,9 @@ export class PedidosService {
 
   public prodMinMulMap: Map<number, { quMinimum: number; quMultiple: number }> = new Map<number, { quMinimum: number; quMultiple: number }>();
 
-  /*  ClientChangeSubscription: Subscription = this.clientSelectorService.ClientChanged.subscribe(client => {    
+  /*  ClientChangeSubscription: Subscription = this.clientSelectorService.ClientChanged.subscribe(client => {
       this.reset();
-      //this.cliente = client;    
+      //this.cliente = client;
     })
   */
 
@@ -263,12 +265,12 @@ export class PedidosService {
     this.getPaymentConditions(idEnterprise).then(data => { this.listaPaymentCondition = data; })
     this.getIVAList().then(data => { this.ivaList = data; });
     this.getProducts(idEnterprise).then(data => { this.listaProductos = data; });
-   
+
     this.getDiscounts(idEnterprise).then(data => { this.listaDiscount = data; });
     this.getPricelists(idEnterprise).then(data => { this.listaPricelist = data; });
     this.getStocks(idEnterprise).then(data => { this.listaStock = data; });
-    this.getUnitInfo(idEnterprise).then(data => { 
-      this.listaUnitInfo = data; 
+    this.getUnitInfo(idEnterprise).then(data => {
+      this.listaUnitInfo = data;
     if(this.showTotalProductUnit){
       //buscamos el nombre de la unidad para mostrar en el total
       this.nameTotalProductUnit = this.listaUnitInfo.filter(u => u.coUnit == this.codeTotalProductUnit)[0]?.naUnit || '';
@@ -286,8 +288,8 @@ export class PedidosService {
       this.getDistributionChannels(idEnterprise).then(data => { this.distributionChannels = data; });
     }
     if (this.productMinMul) {
-      this.getProductMinMulList(idEnterprise).then(data => { 
-        this.listaProdMinMul = data 
+      this.getProductMinMulList(idEnterprise).then(data => {
+        this.listaProdMinMul = data
         this.fillProdMinMulMap();
       });
     }
@@ -302,7 +304,7 @@ export class PedidosService {
   }
     fillProdMinMulMap() {
       this.listaProdMinMul.forEach((value) => {
-        this.prodMinMulMap.set(value.idProduct, 
+        this.prodMinMulMap.set(value.idProduct,
           { quMinimum: value.quMinimum, quMultiple: value.quMultiple });
       });
     }
@@ -368,7 +370,7 @@ export class PedidosService {
     this.userCanSelectProductDiscount = this.config.get("userCanSelectProductDiscount").toLowerCase() === 'true';
     this.showTransactionCurrency = this.config.get("showTransactionCurrency").toLowerCase() === 'true'; //eliminada, se usa currencyModule
     this.validateNuOrder = this.config.get("validateNuOrder").toLowerCase() === 'true';
-    this.userCanSelectGlobalDiscount = this.config.get("userCanSelectGlobalDiscount").toLowerCase() === 'true'; 
+    this.userCanSelectGlobalDiscount = this.config.get("userCanSelectGlobalDiscount").toLowerCase() === 'true';
     this.selectOrderType = this.config.get("selectOrderType").toLowerCase() === 'true';
     this.userCanSelectChannel = this.config.get("userCanSelectChannel").toLowerCase() === 'true';
     this.validateWarehouses = this.config.get("validateWarehouses").toLowerCase() === 'true';
@@ -386,13 +388,17 @@ export class PedidosService {
     this.currencyModuleEnabled = this.config.get("currencyModule").toLowerCase() === "true";
     this.vatExemptProducts = this.config.get("vatExemptProducts").toLowerCase() === "true";
     this.displayProductPoints = this.config.get("displayProductPoints").toLowerCase() === "true";
-    
+
     //string
     this.codeTotalProductUnit = this.config.get("codeTotalProductUnit");
     this.nameProductLine = this.config.get("nameProductLine");
 
     //numerico
     this.parteDecimal = +this.config.get('parteDecimal');
+    {
+      const rawMaxDiscount = Number(this.config.get('setMaxProductDiscount'));
+      this.setMaxProductDiscount = (Number.isFinite(rawMaxDiscount) && rawMaxDiscount >= 1) ? rawMaxDiscount : 1;
+    }
 
     //currencyModule
     if (this.currencyModuleEnabled) {
@@ -429,6 +435,9 @@ export class PedidosService {
     }else{
       this.hideStock0 = this.config.get("hideStock0").toLowerCase() === "true";
     }
+
+    this.setProductDiscount = this.config.get("setProductDiscount").toLowerCase() === "true";
+    this.setMaxProductDiscount = Number(this.config.get("setMaxProductDiscount"));
 
   }
 
@@ -671,7 +680,7 @@ export class PedidosService {
         if (priceListSeleccionado.idList != null) {
           discountList = this.listaDiscount.filter(d => d.idProduct == item.idProduct && d.idList == priceListSeleccionado.idList);
         }
-        //descuento que representa que no hay descuento seleccionado       
+        //descuento que representa que no hay descuento seleccionado
         discountList.unshift({
           idDiscount: 0,
           idPriceList: 0,
@@ -759,8 +768,8 @@ export class PedidosService {
   }
 
   productSummary() {
-    /*  
-      Esta Funcion totaliza los productos en el carrito. 
+    /*
+      Esta Funcion totaliza los productos en el carrito.
       se debe ejecutar cada vez que hay un cambio en el pedido
     */
     //reset
@@ -783,7 +792,7 @@ export class PedidosService {
     //[groupByTotalByLines]
     this.carritoWithLines = [];
 
-    //assist 
+    //assist
     let curItem = 0;
     let dc = 0;
     let dcItem = 0;
@@ -878,12 +887,12 @@ export class PedidosService {
               this.countTotalProductUnit += unit.quAmount * unit.quUnit;
               }else{
               this.countTotalProductUnit += unit.quAmount / masterUnit.quUnit;
-            }              
+            }
             }else{
               //no se encontro la unidad maestra,  hay que mostrar mensajito
               this.codeTotalProductUnitMessageFlag = true;
             }
-            
+
           }
         }
         item.totalEnUnidades += unit.quUnit * unit.quAmount;
@@ -899,6 +908,16 @@ export class PedidosService {
       if (item.idDiscount && item.idDiscount > 0) {
         let selectedDiscount = this.listaDiscount.filter(d => d.idDiscount === item.idDiscount)[0];
         dc = selectedDiscount.quDiscount;
+        dcItem = (curItem * (dc / 100));
+        this.totalDctoXProducto = this.totalDctoXProducto + dcItem;
+        curItem = curItem - dcItem;
+        item.quDiscount = dc;
+        item.nuAmountDiscount = dcItem;
+        item.discountedNuPrice = item.nuPrice - (item.nuPrice * (dc / 100));
+
+      } else if (this.setProductDiscount && item.quDiscount && item.quDiscount > 0) {
+        const maxManualDiscount = Math.max(1, this.setMaxProductDiscount || 1);
+        dc = Math.min(maxManualDiscount, Math.max(1, Number(item.quDiscount)));
         dcItem = (curItem * (dc / 100));
         this.totalDctoXProducto = this.totalDctoXProducto + dcItem;
         curItem = curItem - dcItem;
@@ -1057,7 +1076,7 @@ export class PedidosService {
     /*
      * Convierte los precios de los productos a la moneda del pedido para usar con
      * conversionByPriceList = false
-     * 
+     *
      */
     if (coCurrency == null || coCurrency.trim() == '') {
       console.error("[conversionCurrency] Currency not specified");
@@ -1381,7 +1400,7 @@ export class PedidosService {
       return this.db.getSaldosCliente(this.database, id_client,
       this.currencyService.multimoneda ,co_currency);
     }
-  
+
   */
 
   async sugerirPedido() {
@@ -1600,7 +1619,7 @@ export class PedidosService {
   /*   getStatusPedidos(idOrder: number) {
       //trae los estados de pedidos que se pueden usar en la app
       return this.historyTransaction.getStatusTransaction(this.database, 2, idOrder);
-  
+
     } */
 
 

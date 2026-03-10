@@ -133,7 +133,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
           this.orderServ.userCanChangeWarehouse, this.orderServ.cliente.idClient, this.orderServ.listaSeleccionada.idList, this.page).then(() => {
             this.productList = this.productService.productList;
             this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
-            if(this.orderUtilList.length < 20){
+            if (this.orderUtilList.length < 20) {
               //probablemente muchos productos fueron eliminados, agregamos mas.
               this.onIonInfinite(null);
             }
@@ -475,7 +475,36 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.orderServ.alCarrito(product);
   }
 
+  onManualDiscountChange(e: any, product: OrderUtil) {
+    const raw = e?.detail?.value;
+
+    if (raw === '' || raw === null || raw === undefined) {
+      product.idDiscount = null;
+      product.quDiscount = 0;
+      this.orderServ.alCarrito(product);
+      this.cd.detectChanges();
+      return;
+    }
+
+    this.onSelectDiscount({ detail: { manualDiscount: raw } }, product);
+  }
+
   onSelectDiscount(e: any, product: OrderUtil) {
+    if (e?.detail?.manualDiscount !== undefined) {
+      const max = Math.max(1, Number(this.orderServ.setMaxProductDiscount) || 1);
+      const parsed = Number(e.detail.manualDiscount);
+      if (Number.isNaN(parsed)) {
+        return;
+      }
+
+      const manualDiscount = Math.min(max, Math.max(1, parsed));
+      product.idDiscount = null;
+      product.quDiscount = manualDiscount;
+      this.orderServ.alCarrito(product);
+      this.cd.detectChanges();
+      return;
+    }
+
     // Prefer event value but fallback to the model (keeps it in-sync when ngModel changed it).
     const raw = (e && e.detail && (e.detail.value !== undefined)) ? e.detail.value : product.idDiscount;
     // Ensure a numeric primitive (0 stays 0, '0' -> 0)
@@ -547,7 +576,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     if (!this.orderServ.stock0 && (prod.quStockAux <= 0)) {
       var stocks = this.orderServ.listaStock.filter(s => s.idProduct == prod.idProduct)
       //si el warehouse seleccionado tiene 0 stock, comprobamos si hay stock en otro warehouse
-      if(!this.orderServ.userCanChangeWarehouse){
+      if (!this.orderServ.userCanChangeWarehouse) {
         return true;
       }
       for (let i = 0; i < stocks.length; i++) {
@@ -572,7 +601,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   quStock(prod: OrderUtil) {
     let stock = prod.quStock;
     let unit = prod.unitList.filter(u => prod.idUnit == u.idUnit)[0];
-    if(this.orderServ.quUnitDecimals){
+    if (this.orderServ.quUnitDecimals) {
       return this.formatNum(stock / unit.quUnit);
     }
     return Math.floor(stock / unit.quUnit).toString();

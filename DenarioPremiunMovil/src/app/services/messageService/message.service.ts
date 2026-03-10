@@ -54,14 +54,14 @@ export class MessageService {
 
   async showLoading() {
     /*
-    Muestra una pantalla de carga. 
-  
+    Muestra una pantalla de carga.
+
     Para usar esta pantalla se debe usar la promesa devuelta por esta funcion.
     y realizar todo el proceso que requiere esta ventana de carga dentro del .then() de esta promesa.
-  
+
     Al terminar, usar hideLoading() de este servicio para cerrar el pop-up.
-  
-    Si no es usado de esta forma, es posible que se intente ocultar 
+
+    Si no es usado de esta forma, es posible que se intente ocultar
     un loading screen que aun no existe.
     */
     const loading = await this.loadingCtrl.create({
@@ -102,7 +102,8 @@ export class MessageService {
   }
   alertModal(msj: MessageAlert) {
     // Encolar y procesar en serie
-    if(msj.message.length < 1) return; // evitar mensajes vacíos
+    if (!msj) return; // evita null/undefined
+    if (!msj.message || msj.message.trim().length < 1) return; // evitar mensajes vacíos
     this.messageQueue.push({ type: 'alertModalMsj', payload: msj });
     this.processQueue();
   }
