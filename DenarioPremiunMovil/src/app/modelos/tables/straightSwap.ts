@@ -8,13 +8,16 @@ export class StraightSwap {
         obj['daCambio'],
         obj['idUnit'],
         obj['coUnit'],
+        obj['idProductUnit'],
+        obj['coProductUnit'],
         obj['idEnterprise'],
         obj['coEnterprise'],
         obj['quSwap'],
         obj['idClient'],
         obj['idAddressClient'],
         obj['coClient'],
-        obj['coAddressClient']
+        obj['coAddressClient'],
+
     );
 }
 
@@ -26,6 +29,8 @@ export class StraightSwap {
   public daCambio: string,
   public idUnit: number,
   public coUnit: string,
+  public idProductUnit: number,
+  public coProductUnit: string,
   public idEnterprise: number,
   public coEnterprise: string,
   public quSwap: number,
