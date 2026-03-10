@@ -186,7 +186,13 @@ export class ClientesHeaderComponent implements OnInit {
       if (ev.detail.role === 'confirm') {
         this.alertMessageOpen = false;
 
-        this.locationService.saveLocation()
+        this.locationService.saveLocation();
+        this.messageService.alertModal(
+          {
+            header: this.clientLogic.clientTags.get('DENARIO_NOMBRE_APP')!,
+            message: this.clientLogic.clientTags.get('CLI_SEND_MSG')!,
+          }
+        );
 
       } else {
         this.alertMessageOpen = false;
