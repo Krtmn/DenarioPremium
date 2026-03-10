@@ -2,6 +2,7 @@ import { Component, Input, OnInit, inject } from '@angular/core';
 import { ModalController } from '@ionic/angular';
 import { ProductSuggestedUtil } from 'src/app/modelos/ProductSuggestedUtil';
 import { ClientStocksDetail } from 'src/app/modelos/tables/client-stocks';
+import { CurrencyService } from 'src/app/services/currency/currency.service';
 
 @Component({
   selector: 'app-inventario-sugerido-preview',
@@ -18,6 +19,7 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
 
   disableOrderButton = true;
   private modalCtrl = inject(ModalController);
+  private currencyService = inject(CurrencyService);
 
   constructor() {}
 
@@ -46,6 +48,10 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
   getUnitName(idProduct: number, idUnit: number): string {
     const detail = this.clientStockDetails.find(p => p.idProduct === idProduct);
     return detail?.clientStockDetailUnits.find(u => u.idUnit === idUnit)?.naUnit || '-';
+  }
+
+  formatNumber(value: number) {
+    return this.currencyService.formatNumber(value);
   }
 
   close(): void {
