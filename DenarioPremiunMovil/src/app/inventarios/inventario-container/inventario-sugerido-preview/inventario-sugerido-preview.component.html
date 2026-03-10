@@ -84,7 +84,7 @@
 
 <ion-footer>
   <ion-toolbar>
-    <ion-button expand="block" class="botonAddAmarillo" (click)="confirm()">
+    <ion-button [disabled]="disableOrderButton" expand="block" class="botonAddAmarillo" (click)="confirm()">
       {{ inventarioTags.get('DENARIO_BOTON_ACEPTAR') || 'Aceptar' }}
     </ion-button>
   </ion-toolbar>

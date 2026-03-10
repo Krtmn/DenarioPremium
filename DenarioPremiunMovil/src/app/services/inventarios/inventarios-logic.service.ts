@@ -933,23 +933,41 @@ export class InventariosLogicService {
     });
   }
 
-  getPreviousClientStock(dbServ: SQLiteObject, idClient: number, daClientStock: string) {
-    let selectStatement = "SELECT id_client_stock co_client_stock, id_user, co_user, id_client, co_client, "+
-      "id_address_client, co_address_client, coordenada, tx_comment, id_enterprise, co_enterprise, "+
-      "da_client_stock, st_client_stock, lb_client, isSave, nu_attachments, has_attachments, st_delivery "+
-      "FROM client_stocks WHERE id_client = ? AND da_client_stock < ? ORDER BY da_client_stock DESC LIMIT 1";
+  getPreviousClientStockUnits(dbServ: SQLiteObject, idClient: number, daClientStock: string) {
+    let selectStatement = "SELECT * from client_stocks_details_units where co_client_stock_detail in "+
+      "(SELECT co_client_stock_detail FROM client_stocks_details where co_client_stock in "+
+      "(SELECT co_client_stock FROM client_stocks "+
+      "WHERE id_client = ? AND da_client_stock < ? ORDER BY da_client_stock DESC LIMIT 1))";
 
     return dbServ.executeSql(selectStatement, [idClient, daClientStock]).then(result => {
-      if(result.rows.length > 0){
-        let clientStock = result.rows.item(0) as ClientStocks;
-        return this.getClientStockDetails(dbServ, clientStock.coClientStock).then(details => {
-          clientStock.clientStockDetails = details;
-          return clientStock;
-        })
-      }else{
-        //no hay previous client stock
-        return null;
+      let units: ClientStocksDetailUnits[] = [];
+      for(var i = 0; i < result.rows.length; i++){
+        let item = result.rows.item(i);
+        let unit: ClientStocksDetailUnits = {
+          idClientStockDetailUnit: item.id_client_stock_detail_unit,
+          coClientStockDetailUnit: item.co_client_stock_detail_unit,
+          coClientStockDetail: item.co_client_stock_detail,
+          idProductUnit: item.id_product_unit,
+          coUnit: item.co_unit,
+          idUnit: item.id_unit,
+          quStock: item.qu_stock,
+          coProductUnit: item.co_product_unit,
+          coEnterprise: item.co_enterprise,
+          idEnterprise: item.id_enterprise,
+          quUnit: item.qu_unit,
+          naUnit: item.na_unit,
+          ubicacion: item.ubicacion,
+          posicion: item.posicion,
+          nuBatch: item.nu_batch,
+          daExpiration: item.da_expiration,
+          isSave: item.isSave,
+          quSuggested: 0,
+          isEdit: false
+        };
+        units.push(unit);
       }
+      return units;
+    
   });
   }
 

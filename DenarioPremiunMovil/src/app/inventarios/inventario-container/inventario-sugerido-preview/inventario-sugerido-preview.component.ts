@@ -16,11 +16,24 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
   @Input() diasDesdeUltimoInventario: number = 0;
   @Input() diasHastaSiguienteInventario: number = 0;
 
+  disableOrderButton = true;
   private modalCtrl = inject(ModalController);
 
   constructor() {}
 
-  ngOnInit() {}
+  ngOnInit() {
+    for(let product of this.productsSuggested) {
+      for(let unit of product.unitsSuggested) {
+        if(unit.quUnitSuggested && unit.quUnitSuggested > 0) {
+          this.disableOrderButton = false;
+          break;
+        }
+      }
+      if(!this.disableOrderButton) {
+        break;
+      }
+    }
+  }
 
   getProductName(idProduct: number): string {
     return this.clientStockDetails.find(p => p.idProduct === idProduct)?.naProduct || '-';
