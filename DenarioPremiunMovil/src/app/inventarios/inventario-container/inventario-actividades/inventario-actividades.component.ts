@@ -177,7 +177,7 @@ public modalCtrl = inject(ModalController);
       empresa: this.inventariosLogicService.empresaSeleccionada,
       cliente: this.inventariosLogicService.cliente,
       direccion: direccion,
-      productUtils: [] as ProductSuggestedUtil[],
+      productUtils: this.inventariosLogicService.productsSuggested,
       list: JSON.parse(JSON.stringify(list)),
       enviar: toSend,
       coClientStock: this.inventariosLogicService.newClientStock.coClientStock,

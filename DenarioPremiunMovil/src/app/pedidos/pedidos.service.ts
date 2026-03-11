@@ -1491,17 +1491,12 @@ export class PedidosService {
         if ((item != undefined) && (item.nuPrice > 0)) {
           for (let j = 0; j < item.unitList.length; j++) {
             let unit = item.unitList[j];
-            let suggestedUnit = this.datosPedidoSugerido.productUtils[i].unitsSuggested.filter(u => u.idUnit == unit.idUnit)[0];
+            let suggestedUnit = this.datosPedidoSugerido.productUtils[i].unitsSuggested.filter(u => u.coUnit == unit.coUnit)[0];
             
             let quOrder = suggestedUnit ? suggestedUnit.quUnitSuggested : 0;
-            /*
-            let promedio = promedios.find(x => (x.idProduct == unit.idProduct) && (x.idProductUnit == unit.idProductUnit));
-            if (promedio == undefined) {
-              quOrder = product.totalUnits;
-            } else {
-              quOrder = promedio.average - product.totalUnits;
+            if(quOrder == 0){
+              continue; //si no hay cantidad sugerida, no agregamos la unidad al pedido
             }
-            */
             let quSuggested = 0;
             if (item.quMultiple > 1) {
               //caso productMinMul
