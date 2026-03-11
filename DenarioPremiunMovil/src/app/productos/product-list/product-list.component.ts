@@ -106,12 +106,14 @@ export class ProductListComponent implements OnInit {
     }
     if (this.searchText) {
       if (this.productService.productList.length > 0) {
-        this.productList = this.filterProductList(this.productService.productList);
+        //this.productList = this.filterProductList(this.productService.productList);
+        this.productList = this.productService.productList;
       } else {
         this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
           this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency, 0).then(() => {
             this.noProductsAlertShown = false;
-            this.productList = this.filterProductList(this.productService.productList);
+            //this.productList = this.filterProductList(this.productService.productList);
+            this.productList = this.productService.productList;
             this.noProductsAlertShown = this.productList.length === 0;
             this.message.hideLoading();
           });
@@ -122,13 +124,17 @@ export class ProductListComponent implements OnInit {
       this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
         this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.defaultCurrency, 0).then(() => {
           this.noProductsAlertShown = false;
-          this.productList = this.filterProductList(this.productService.productList);
+          //this.productList = this.filterProductList(this.productService.productList);
+          this.productList = this.productService.productList;
           this.noProductsAlertShown = this.productList.length === 0;
         });
     }
   }
 
   filterProductList(list: ProductUtil[]) {
+    //No se usa por los momentos.
+    //Esta funcion filtra productos sin stock y productos sin precio, dependiendo de la configuracion seteada en PedidosService. 
+    //Se dejo por si en algun momento se quiere volver a usar esta funcionalidad sin tener que reescribirla.
     if (this.orderService.hideStock0){
       list = list.filter(product => product.stock && product.stock > 0);
     }
@@ -148,7 +154,8 @@ export class ProductListComponent implements OnInit {
       this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
         this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency, 0).then(() => {
           this.noProductsAlertShown = false;
-          this.productList = this.filterProductList(this.productService.productList);
+          //this.productList = this.filterProductList(this.productService.productList);
+          this.productList = this.productService.productList;
           this.noProductsAlertShown = this.productList.length === 0;
           this.message.hideLoading();
         });
@@ -165,7 +172,8 @@ export class ProductListComponent implements OnInit {
     if (this.searchText) {
       this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
         this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency, this.page).then(() => {
-          const newProducts = this.filterProductList(this.productService.productList);
+          //const newProducts = this.filterProductList(this.productService.productList);
+          const newProducts = this.productService.productList;
           this.productList = [...this.productList, ...newProducts];
           if (newProducts.length < this.productService.MAX_ITEMS_PER_PAGE) {
             this.infiniteScroll.disabled = true;
@@ -175,7 +183,8 @@ export class ProductListComponent implements OnInit {
     } else {
       this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
         this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.defaultCurrency, this.page).then(() => {
-          const newProducts = this.filterProductList(this.productService.productList);
+          //const newProducts = this.filterProductList(this.productService.productList);
+          const newProducts = this.productService.productList;
           this.productList = [...this.productList, ...newProducts];
           if (newProducts.length < this.productService.MAX_ITEMS_PER_PAGE) {
             this.infiniteScroll.disabled = true;
