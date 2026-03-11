@@ -86,6 +86,28 @@ export class CobrosGeneralComponent implements OnInit {
     return st === this.COLLECT_STATUS_TO_SEND || st === 1 || st === 6;
   }
 
+  get showDateRateSection(): boolean {
+    const stCollection = Number(this.collectService?.collection?.stCollection);
+    return this.collectService.multiCurrency
+      && this.collectService.showConversion
+      && stCollection !== 2
+      && stCollection !== 3
+      && stCollection !== 6;
+  }
+
+  get isDateRateLabelDisabled(): boolean {
+    return !this.collectService.canChangeRate;
+  }
+
+  get isDateRateButtonDisabled(): boolean {
+    const stDelivery = Number(this.collectService?.collection?.stDelivery);
+    const stCollection = Number(this.collectService?.collection?.stCollection);
+    return stDelivery === this.COLLECT_STATUS_TO_SEND
+      || stDelivery === this.COLLECT_STATUS_SENT
+      || stCollection === 6
+      || !this.collectService.canChangeRate;
+  }
+
   public alertButtons = [
     { text: '', role: 'confirm' },
   ];
