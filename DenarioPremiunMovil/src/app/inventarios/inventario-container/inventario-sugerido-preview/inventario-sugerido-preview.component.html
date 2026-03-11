@@ -36,7 +36,7 @@
           @for(unit of product.unitsSuggested; track unit.idUnit){
           <ion-item >
             <ion-label>
-              Sugerido {{ getUnitName(product.idProduct, unit.idUnit) }}: {{ unit.quUnitSuggested }}
+              Sugerido {{ getUnitName(product.idProduct, unit.idUnit) }}: {{ formatNumber(unit.quUnitSuggested) }}
               <ion-grid>
                 <ion-row>
                   <ion-col>Inv. Inicial</ion-col>
@@ -45,10 +45,10 @@
                   <ion-col>Cambio por Cambio</ion-col>                    
                 </ion-row>
                 <ion-row>
-                  <ion-col>{{unit.initialStock}}</ion-col>
-                  <ion-col>{{unit.previousStock}}</ion-col>
-                  <ion-col>{{unit.dispatchedStock}}</ion-col>
-                  <ion-col>{{unit.straightSwapStock}}</ion-col>
+                  <ion-col>{{formatNumber(unit.initialStock)}}</ion-col>
+                  <ion-col>{{formatNumber(unit.previousStock)}}</ion-col>
+                  <ion-col>{{formatNumber(unit.dispatchedStock)}}</ion-col>
+                  <ion-col>{{formatNumber(unit.straightSwapStock)}}</ion-col>
                 </ion-row>
                 <ion-row>
                   <ion-col>Venta</ion-col>
@@ -57,13 +57,13 @@
                   <ion-col>Dev. Distribución</ion-col>
                 </ion-row>
                 <ion-row>
-                  <ion-col>{{unit.soldUnits}}</ion-col>
-                  <ion-col>{{unit.initialStock}}</ion-col>
-                  <ion-col>{{unit.currentStock}}</ion-col>
-                  <ion-col>{{unit.returnedStock}}</ion-col>
+                  <ion-col>{{formatNumber(unit.soldUnits)}}</ion-col>
+                  <ion-col>{{formatNumber(unit.initialStock)}}</ion-col>
+                  <ion-col>{{formatNumber(unit.currentStock)}}</ion-col>
+                  <ion-col>{{formatNumber(unit.returnedStock)}}</ion-col>
                 </ion-row>
               </ion-grid>
-              <ion-item>Ventas Diarias Estimadas: {{ formatNumber(unit.estimatedDailyUnits) }}</ion-item>
+              <ion-item>Ventas Diarias Estimadas: {{ formatDecimal(unit.estimatedDailyUnits) }}</ion-item>
             </ion-label>
           </ion-item>
         }
