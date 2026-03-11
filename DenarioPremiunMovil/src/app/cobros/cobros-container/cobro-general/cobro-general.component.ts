@@ -1020,7 +1020,7 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   onDateRateClick() {
-    if (!this.collectService.canChangeRate) {
+    if (this.collectService.canChangeRate) {
       this.onOpenCalendar();
     }
   }
