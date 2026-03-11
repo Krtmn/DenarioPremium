@@ -53,7 +53,7 @@
       <ion-col size="6" size-sm="12" size-xs="12"
         *ngIf="this.collectService.multiCurrency && this.collectService.showConversion && this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3 && this.collectService.collection.stCollection != 6">
         <ion-item>
-          <ion-label (click)="!this.collectService.canChangeRate && onOpenCalendar()" [disabled]="this.collectService.canChangeRate">
+          <ion-label (click)="onDateRateClick()" [disabled]="this.collectService.canChangeRate">
             {{this.collectService.collectionTags.get('COB_FECHA_TASA')}}
           </ion-label>
           <a>

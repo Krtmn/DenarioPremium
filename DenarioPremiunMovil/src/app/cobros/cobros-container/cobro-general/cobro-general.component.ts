@@ -1019,6 +1019,12 @@ export class CobrosGeneralComponent implements OnInit {
     }
   }
 
+  onDateRateClick() {
+    if (!this.collectService.canChangeRate) {
+      this.onOpenCalendar();
+    }
+  }
+
   onChangeTxConversion(event: any) {
     if (event.target.value.trim() != "") {
       this.collectService.collection.txConversion = this.collectService.cleanString(event.target.value.trim());
