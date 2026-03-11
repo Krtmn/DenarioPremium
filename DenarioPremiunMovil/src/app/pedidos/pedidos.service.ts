@@ -1566,7 +1566,7 @@ export class PedidosService {
       pedido.nuDetails = details.length;
       this.order = pedido;
       //reseteamos al estado natural
-      this.desdeSugerencia = false;
+      //this.desdeSugerencia = false;
       if (this.datosPedidoSugerido.enviar) {
         //para enviarlo luego
         this.coClientStockAEnviar = this.datosPedidoSugerido.coClientStock;

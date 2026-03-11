@@ -1213,6 +1213,11 @@ export class PedidoComponent implements OnInit {
 
       // Lista
       let list: List | undefined;
+      if(this.orderServ.desdeSugerencia){
+        //en la sugerencia ya tenemos una lista definida, asi que la usamos y listo, no hay que andar buscando ni nada raro
+        this.orderServ.desdeSugerencia = false;
+        list = this.orderServ.datosPedidoSugerido.list;
+      } else{
       if (this.orderServ.openOrder) {
         let idPriceList = this.orderServ.order.orderDetails[0].idPriceList
         if (!idPriceList) {
@@ -1244,6 +1249,7 @@ export class PedidoComponent implements OnInit {
       } else {
         list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
       }
+    }
 
         if (list != undefined) {
           this.orderServ.listaSeleccionada = list;
