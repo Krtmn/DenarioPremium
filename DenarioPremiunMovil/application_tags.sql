@@ -483,7 +483,17 @@ DELETE FROM public.application_tags WHERE co_module = 'INV';
   ('INV_SEND_STOCK_MSG','INV','INVENTARIO','ESP','El Inventario será enviado'),
   ('INV_MSJ_ERROR_NOTSIGNAL','INV','INVENTARIO','ESP','¡Su Inventario será enviado al tener conexión de datos!'),
   ('INV_DIAS_ULTIMO_INVENTARIO','INV','INVENTARIO','ESP','Días desde último Inventario'),
-  ('INV_DIAS_SIGUIENTE_INVENTARIO','INV','INVENTARIO','ESP','Días para siguiente Inventario');
+  ('INV_DIAS_SIGUIENTE_INVENTARIO','INV','INVENTARIO','ESP','Días para siguiente Inventario'),
+  ('INV_SUGERIDO','INV','INVENTARIO','ESP','Sugerido'),
+  ('INV_INVENTARIO_INICIAL','INV','INVENTARIO','ESP','Inv. Inicial'),
+  ('INV_INVENTARIO_ACTUAL','INV','INVENTARIO','ESP','Inv. Actual'),
+  ('INV_INVENTARIO_ANTERIOR','INV','INVENTARIO','ESP','Inv. Anterior'),
+  ('INV_DESPACHO','INV','INVENTARIO','ESP','Despacho'),
+  ('INV_CAMBIO_POR_CAMBIO','INV','INVENTARIO','ESP','Cambio por cambio'),
+  ('INV_VENTA','INV','INVENTARIO','ESP','Venta'),
+  ('INV_DEV_DISTRIBUCION','INV','INVENTARIO','ESP','Distribución'),
+  ('INV_VENTAS_DIARIAS','INV','INVENTARIO','ESP','Ventas Diarias Estimadas');
+  
 
 
 -- PRODUCTOS

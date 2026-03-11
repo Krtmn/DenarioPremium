@@ -12,11 +12,11 @@
   <ion-grid class="tableClientDocumentSale">
   <ion-row>
     <ion-col>
-      Dias desde último inventario: {{ diasDesdeUltimoInventario }}
+      {{ inventarioTags.get('INV_DIAS_ULTIMO_INVENTARIO') || 'Dias desde último inventario' }}: {{ diasDesdeUltimoInventario }}
       <br>
     </ion-col>
     <ion-col>
-      Dias hasta siguiente inventario: {{ diasHastaSiguienteInventario }}
+      {{ inventarioTags.get('INV_DIAS_SIGUIENTE_INVENTARIO') || 'Dias hasta siguiente inventario' }}: {{ diasHastaSiguienteInventario }}
       <br>     
     </ion-col>
   </ion-row>
@@ -36,14 +36,14 @@
           @for(unit of product.unitsSuggested; track unit.idUnit){
           <ion-item >
             <ion-label>
-              Sugerido {{ getUnitName(product.idProduct, unit.idUnit) }}: {{ formatNumber(unit.quUnitSuggested) }}
+              {{ inventarioTags.get('INV_SUGERIDO') || 'Sugerido' }} {{ getUnitName(product.idProduct, unit.idUnit) }}: {{ formatNumber(unit.quUnitSuggested) }}
               @if(suggestedOrderByDispatchAndReturn) {
               <ion-grid class="tableClientDocumentSale">
                 <ion-row>
-                  <ion-col class="tituloDetails">Inv. Inicial</ion-col>
-                  <ion-col class="tituloDetails">Inv. Anterior</ion-col>
-                  <ion-col class="tituloDetails">Despacho</ion-col>
-                  <ion-col class="tituloDetails">Cambio por Cambio</ion-col>                    
+                  <ion-col class="tituloDetails">{{ inventarioTags.get('INV_INVENTARIO_INICIAL') || 'Inv. Inicial' }}</ion-col>
+                  <ion-col class="tituloDetails">{{ inventarioTags.get('INV_INVENTARIO_ANTERIOR') || 'Inv. Anterior' }}</ion-col>
+                  <ion-col class="tituloDetails">{{ inventarioTags.get('INV_DESPACHO') || 'Despacho' }}</ion-col>
+                  <ion-col class="tituloDetails">{{ inventarioTags.get('INV_CAMBIO_POR_CAMBIO') || 'Cambio por Cambio' }}</ion-col>                    
                 </ion-row>
                 <ion-row>
                   <ion-col class="ion-align-items-start">{{formatNumber(unit.initialStock)}}</ion-col>
@@ -52,10 +52,10 @@
                   <ion-col class="ion-align-items-start">{{formatNumber(unit.straightSwapStock)}}</ion-col>
                 </ion-row>
                 <ion-row>
-                  <ion-col class="tituloDetails">Venta</ion-col>
-                  <ion-col class="tituloDetails">Inv. Inicial</ion-col>
-                  <ion-col class="tituloDetails">Inv. Actual</ion-col>
-                  <ion-col class="tituloDetails">Dev. Distribución</ion-col>
+                  <ion-col class="tituloDetails">{{ inventarioTags.get('INV_VENTA') || 'Venta' }}</ion-col>
+                  <ion-col class="tituloDetails">{{ inventarioTags.get('INV_INVENTARIO_INICIAL') || 'Inv. Inicial' }}</ion-col>
+                  <ion-col class="tituloDetails">{{ inventarioTags.get('INV_INVENTARIO_ACTUAL') || 'Inv. Actual' }}</ion-col>
+                  <ion-col class="tituloDetails">{{ inventarioTags.get('INV_DEV_DISTRIBUCION') || 'Dev. Distribución' }}</ion-col>
                 </ion-row>
                 <ion-row>
                   <ion-col class="ion-align-items-start">{{formatNumber(unit.soldUnits)}}</ion-col>
@@ -64,11 +64,11 @@
                   <ion-col class="ion-align-items-start">{{formatNumber(unit.returnedStock)}}</ion-col>
                 </ion-row>
               </ion-grid>
-              <ion-item>Ventas Diarias Estimadas: {{ formatDecimal(unit.estimatedDailyUnits) }}</ion-item>
+              <ion-item>{{ inventarioTags.get('INV_VENTAS_DIARIAS') || 'Ventas Diarias Estimadas' }}: {{ formatDecimal(unit.estimatedDailyUnits) }}</ion-item>
             }@else{
                 <ion-row>
-                  <ion-col class="tituloDetails">Inv. Actual</ion-col>
-                  <ion-col class="tituloDetails">Despacho</ion-col>
+                  <ion-col class="tituloDetails">{{ inventarioTags.get('INV_INVENTARIO_ACTUAL') || 'Inv. Actual' }}</ion-col>
+                  <ion-col class="tituloDetails">{{ inventarioTags.get('INV_DESPACHO') || 'Despacho' }}</ion-col>
                 </ion-row>
                 <ion-row>
                   <ion-col class="ion-align-items-start">{{formatNumber(unit.currentStock)}}</ion-col>
