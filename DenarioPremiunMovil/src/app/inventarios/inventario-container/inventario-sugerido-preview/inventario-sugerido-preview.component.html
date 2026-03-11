@@ -37,6 +37,7 @@
           <ion-item >
             <ion-label>
               Sugerido {{ getUnitName(product.idProduct, unit.idUnit) }}: {{ formatNumber(unit.quUnitSuggested) }}
+              @if(suggestedOrderByDispatchAndReturn) {
               <ion-grid>
                 <ion-row>
                   <ion-col>Inv. Inicial</ion-col>
@@ -64,6 +65,16 @@
                 </ion-row>
               </ion-grid>
               <ion-item>Ventas Diarias Estimadas: {{ formatDecimal(unit.estimatedDailyUnits) }}</ion-item>
+            }@else{
+                <ion-row>
+                  <ion-col>Inv. Actual</ion-col>
+                  <ion-col>Despacho</ion-col>
+                </ion-row>
+                <ion-row>
+                  <ion-col>{{formatNumber(unit.currentStock)}}</ion-col>
+                  <ion-col>{{formatNumber(unit.dispatchedStock)}}</ion-col>
+                </ion-row>
+            }
             </ion-label>
           </ion-item>
         }

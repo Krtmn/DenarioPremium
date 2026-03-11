@@ -24,11 +24,13 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
   private config = inject(GlobalConfigService);
 
   quUnitDecimals = false;
+  suggestedOrderByDispatchAndReturn = false;
 
   constructor() {}
 
   ngOnInit() {
     this.quUnitDecimals = this.config.get("quUnitDecimals").toLocaleLowerCase() === 'true';
+    this.suggestedOrderByDispatchAndReturn = this.config.get("suggestedOrderByDispatchAndReturn").toLocaleLowerCase() === 'true';
     for(let product of this.productsSuggested) {
       for(let unit of product.unitsSuggested) {
         if(unit.quUnitSuggested && unit.quUnitSuggested > 0) {
