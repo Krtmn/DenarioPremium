@@ -1622,12 +1622,12 @@ export class SynchronizationDBService {
   insertStraightSwapBatch(arr: StraightSwap[]) {
     var statements = [];
     let insertStatement = "INSERT OR REPLACE INTO straight_swap(" +
-      "id_swap, co_swap ,id_product, co_product, da_cambio, id_unit, co_unit, id_product_unit, co_product_unit, id_enterprise, co_enterprise" +
+      "id_swap, co_swap, id_client, co_client, id_address_client, co_address_client, id_enterprise, co_enterprise, id_product, co_product, id_product_unit, co_product_unit, id_unit, co_unit, da_cambio, qu_swap" +
       ") " +
-      "VALUES(?,?,?,?,?,?,?,?,?,?,?)"
+      "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 
     for (var i = 0; i < arr.length; i++) {
-      statements.push([insertStatement, [arr[i].idSwap, arr[i].coSwap, arr[i].idProduct, arr[i].coProduct, arr[i].daCambio, arr[i].idUnit, arr[i].coUnit, arr[i].idProductUnit, arr[i].coProductUnit, arr[i].idEnterprise, arr[i].coEnterprise]])
+      statements.push([insertStatement, [arr[i].idSwap, arr[i].coSwap, arr[i].idClient, arr[i].coClient, arr[i].idAddressClient, arr[i].coAddressClient, arr[i].idEnterprise, arr[i].coEnterprise, arr[i].idProduct, arr[i].coProduct, arr[i].idProductUnit, arr[i].coProductUnit, arr[i].idUnit, arr[i].coUnit, arr[i].daCambio, arr[i].quSwap]])
     }
 
     return this.database.sqlBatch(statements).then(res => {

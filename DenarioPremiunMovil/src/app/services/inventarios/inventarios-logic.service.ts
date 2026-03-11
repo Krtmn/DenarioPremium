@@ -1209,9 +1209,7 @@ export class InventariosLogicService {
   }
 
   getStraightSwapsByClientStock(dbServ: SQLiteObject, idProducts: number[], idUnits: number[], idEnterprise: number, idClient: number, idAddressClient: number) {
-    let select = "select ss.id_swap, ss.co_swap, ss.id_product, ss.id_unit, ss.co_product, "+
-    "ss.co_unit, ss.id_enterprise, ss.co_enterprise, ss.da_cambio, ss.qu_swap, ss.id_client, ss.id_address_client, "+
-    "ss.co_client, ss.co_address_client from straight_swap ss "+
+    let select = "select * from straight_swap ss "+
     "where ss.id_product IN ("+idProducts.join(",")+") and ss.id_unit IN ("+idUnits.join(",")+
     ") and ss.id_enterprise = "+idEnterprise+" and ss.id_client = "+idClient+" and ss.id_address_client = "+idAddressClient;
 
