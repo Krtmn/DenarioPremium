@@ -3,6 +3,7 @@ import { Observable, Subject, map, finalize, concatMap, timer, from } from 'rxjs
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { CapacitorHttp, HttpOptions, HttpResponse, HttpHeaders } from '@capacitor/core';
+import { Device } from '@capacitor/device';
 
 import { PendingTransaction } from 'src/app/modelos/tables/pendingTransactions';
 import { SynchronizationDBService } from '../synchronization/synchronization-db.service';
@@ -506,8 +507,28 @@ export class AutoSendService implements OnInit {
     }
   }
 
-  sendTransaction(request: any, type: string, coTransaction: string) {
+  async sendTransaction(request: any, type: string, coTransaction: string) {
     if (localStorage.getItem("connected") == "true") {
+
+      try {
+        const deviceInfo = await Device.getInfo();
+        const deviceId = await Device.getId();
+        request.transactionDeviceAuth = {
+          "deviceUUID": deviceId.identifier,
+          "devicePlatform": deviceInfo.platform,
+          "deviceModel": deviceInfo.model,
+          "deviceVersion": deviceInfo.name,
+          "appVersion": localStorage.getItem("versionApp"),
+          "dbVersion": localStorage.getItem("db_version"),
+          "idTransaction": null,
+          "coTransaction": coTransaction,
+          "typeTransaction": type
+        };
+      } catch (error) {
+        console.log('No se pudo obtener info del dispositivo para autoenvio', error);
+      }
+
+
       this.callService(request, type, coTransaction).subscribe({
         next: (result) => {
           console.log(result);

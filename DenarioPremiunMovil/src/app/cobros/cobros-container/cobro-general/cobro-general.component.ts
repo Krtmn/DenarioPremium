@@ -119,7 +119,11 @@ export class CobrosGeneralComponent implements OnInit {
 
   constructor(private clientSelectorService: ClienteSelectorService) { }
 
-  ngOnInit() {
+  async ngOnInit() {
+    await Promise.all([
+      this.collectService.loadTypeDocumentList(this.synchronizationServices.getDatabase()),
+      this.collectService.loadCodePhoneNumberList(this.synchronizationServices.getDatabase())
+    ]);
 
     if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == 1 || this.collectService.collection.stDelivery == 6) {
       //ES UN COBRO ENVIADO, NO DEBO HACER NADA, SOLO MOSTRAR LA DATA
@@ -418,16 +422,36 @@ export class CobrosGeneralComponent implements OnInit {
           break;
         }
         case 'pm': {
+          const fallbackType = this.collectService.typeDocumentList[0]?.coTypeDocument || 'V';
+          const fallbackPhoneCode = this.collectService.codePhoneNumberList[0]?.coCodePhoneNumber || '0414';
+          const rawLegacyDocument = (payment.coClientBankAccount || '').trim();
+          const legacyDocumentParts = rawLegacyDocument.split('-');
+          const rawPhone = (payment.nuPhoneNumber || '').replace(/\D/g, '');
+          const typeById = this.collectService.typeDocumentList.find(
+            typeDocument => typeDocument.idTypeDocument === payment.idTypeDocument
+          );
+          const phoneCodeById = this.collectService.codePhoneNumberList.find(
+            codePhoneNumber => codePhoneNumber.idCodePhoneNumber === payment.idCodePhoneNumber
+          );
+          const phoneCodeByPrefix = this.collectService.codePhoneNumberList.find(
+            codePhoneNumber => rawPhone.startsWith(codePhoneNumber.coCodePhoneNumber)
+          );
+          const selectedPhoneCode = phoneCodeById?.coCodePhoneNumber
+            || phoneCodeByPrefix?.coCodePhoneNumber
+            || fallbackPhoneCode;
+          const phoneNumber = payment.nuPhoneNumber
+            ? (phoneCodeByPrefix ? rawPhone.slice(phoneCodeByPrefix.coCodePhoneNumber.length) : rawPhone)
+            : '';
           const newPagoMovil: PagoMovil = {
             idBancoEmisor: 0,
             nombreBancoEmisor: '',
             idBancoDestino: payment.idBank,
             nombreBancoDestino: payment.naBank,
             numeroCuentaDestino: payment.nuBankAccount ?? '',
-            tipoDocumento: ((payment.coClientBankAccount || 'V').split('-')[0] as 'V' | 'J' | 'G') || 'V',
-            numeroDocumento: ((payment.coClientBankAccount || '').split('-')[1] || '').replace(/\D/g, ''),
-            codigoTelefono: payment.coClientBankAccount?.includes('0414') ? '0414' : '0424',
-            numeroTelefono: ((payment.coClientBankAccount || '').split('-')[1] || '').replace(/\D/g, ''),
+            tipoDocumento: typeById?.coTypeDocument || legacyDocumentParts[0] || fallbackType,
+            numeroDocumento: (payment.nuDocument || legacyDocumentParts[1] || '').replace(/\D/g, ''),
+            codigoTelefono: selectedPhoneCode,
+            numeroTelefono: phoneNumber,
             numeroReferencia: (payment.nuPaymentDoc || '').replace(/\D/g, ''),
             monto: payment.nuAmountPartial,
             montoConversion: payment.nuAmountPartialConversion,
@@ -439,7 +463,9 @@ export class CobrosGeneralComponent implements OnInit {
             showDateModal: false,
           };
 
-          const bancoEmisor = this.collectService.listBanks?.find(b => b.naBank === payment.coClientBankAccount);
+          const bancoEmisor = this.collectService.listBanks?.find(
+            b => b.coBank === payment.coClientBankAccount || b.naBank === payment.coClientBankAccount
+          );
           if (bancoEmisor) {
             newPagoMovil.idBancoEmisor = bancoEmisor.idBank;
             newPagoMovil.nombreBancoEmisor = bancoEmisor.naBank;

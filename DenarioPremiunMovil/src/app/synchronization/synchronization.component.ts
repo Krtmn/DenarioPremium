@@ -134,7 +134,7 @@ export class SynchronizationComponent implements OnInit {
     75: 'differenceCodes',
     76: 'collectDiscounts',
     79: 'typeDocument',
-    80: 'codePhoneNumber'
+    80: 'codePhoneNumber',
   };
 
   /**
@@ -200,7 +200,7 @@ export class SynchronizationComponent implements OnInit {
     differenceCodes: 'Códigos de Diferencia',
     collectDiscounts: 'Descuentos de Cobro',
     typeDocument: 'Tipo de Documento',
-    codePhoneNumber: 'Código de Número Telefónico'
+    codePhoneNumber: 'Código de Número Telefónico',
   };
 
   constructor(

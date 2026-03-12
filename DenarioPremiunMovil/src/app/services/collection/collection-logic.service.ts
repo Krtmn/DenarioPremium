@@ -39,6 +39,8 @@ import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
 import { ClientLogicService } from '../clientes/client-logic.service';
 import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
+import { TypeDocument } from 'src/app/modelos/tables/typeDocument';
+import { CodePhoneNumber } from 'src/app/modelos/tables/codePhoneNumber';
 
 
 @Injectable({
@@ -107,6 +109,8 @@ export class CollectionService {
   public differenceCode: DifferenceCode[] = [];
   public differenceCodeSelected: DifferenceCode[] = [];
   public collectDiscounts: CollectDiscounts[] = [];
+  public typeDocumentList: TypeDocument[] = [];
+  public codePhoneNumberList: CodePhoneNumber[] = [];
   public tempSelectedCollectDiscounts: CollectDiscounts[] = [];
   public prevSelectedCollectDiscounts: CollectDiscounts[] = [];
   public selectedCollectDiscounts: number[] = [];
@@ -211,6 +215,8 @@ export class CollectionService {
   public alwaysPartialPayment: boolean = false;
   public enablePartialPayment: boolean = false;
   public requiredCollectionAttachments: boolean = false;
+  private typeDocumentListLoaded: boolean = false;
+  private codePhoneNumberListLoaded: boolean = false;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;
@@ -3577,8 +3583,15 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     nu_amount_partial,
     nu_amount_partial_conversion,
     co_type,
-    nu_bank_account
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    id_difference_code,
+    co_difference_code,
+    nu_bank_account,
+    id_type_document,
+    nu_document,
+    id_code_phone_number,
+    nu_phone_number
+
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
     const insertCollectionDetailDiscountSQL = `
   INSERT OR REPLACE INTO collection_detail_discounts (
@@ -3725,7 +3738,13 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             collectionPayment.nuAmountPartial,
             collectionPayment.nuAmountPartialConversion,
             collectionPayment.coType,
-            collectionPayment.nuBankAccount
+            collectionPayment.idDifferenceCode,
+            collectionPayment.coDifferenceCode,
+            collectionPayment.nuBankAccount,
+            collectionPayment.idTypeDocument,
+            collectionPayment.nuDocument,
+            collectionPayment.idCodePhoneNumber,
+            collectionPayment.nuPhoneNumber,
           ]
         ]);
       }
@@ -3932,8 +3951,12 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "co_type," +
       "id_difference_code," +
       "co_difference_code," +
-      "nu_bank_account" +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "nu_bank_account," +
+      "id_type_document," +
+      "nu_document," +
+      "id_code_phone_number," +
+      "nu_phone_number" +
+      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     for (var i = 0; i < collectionPayment.length; i++) {
       statementsCollectionPayment.push([insertStatement, [
@@ -3955,6 +3978,10 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         collectionPayment[i].idDifferenceCode,
         collectionPayment[i].coDifferenceCode,
         collectionPayment[i].nuBankAccount,
+        collectionPayment[i].idTypeDocument,
+        collectionPayment[i].nuDocument,
+        collectionPayment[i].idCodePhoneNumber,
+        collectionPayment[i].nuPhoneNumber,
       ]]);
     }
 
@@ -4073,26 +4100,39 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "nu_amount_partial," +
       "nu_amount_partial_conversion," +
       "co_type," +
-      "nu_bank_account" +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "id_difference_code," +
+      "co_difference_code," +
+      "nu_bank_account," +
+      "id_type_document," +
+      "nu_document," +
+      "id_code_phone_number," +
+      "nu_phone_number" +
+      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    const sourcePayment = collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment];
     return dbServ.executeSql(insertStatement,
       [
         0,
         newCoCollection,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].idCollectionDetail,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].coPaymentMethod,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].idBank,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].nuPaymentDoc,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].naBank,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].coClientBankAccount,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].nuClientBankAccount,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].daValue,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].daCollectionPayment,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].nuCollectionPayment,
+        sourcePayment.idCollectionDetail,
+        sourcePayment.coPaymentMethod,
+        sourcePayment.idBank,
+        sourcePayment.nuPaymentDoc,
+        sourcePayment.naBank,
+        sourcePayment.coClientBankAccount,
+        sourcePayment.nuClientBankAccount,
+        sourcePayment.daValue,
+        sourcePayment.daCollectionPayment,
+        sourcePayment.nuCollectionPayment,
         collection.nuDifference,
         collection.nuDifferenceConversion,
-        this.anticipoAutomatico[0].type, ,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].nuBankAccount
+        this.anticipoAutomatico[0].type,
+        sourcePayment.idDifferenceCode,
+        sourcePayment.coDifferenceCode,
+        sourcePayment.nuBankAccount,
+        sourcePayment.idTypeDocument,
+        sourcePayment.nuDocument,
+        sourcePayment.idCodePhoneNumber,
+        sourcePayment.nuPhoneNumber,
       ]).then(data => {
         console.log("SE CREO COLLECTION PAYMENTS AUTOMATICO POR EL ANTICIPO");
         this.saveSendCollection(newCoCollection);
@@ -4419,6 +4459,12 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           idDifferenceCode: this.enableDifferenceCodes ? res.rows.item(i).id_difference_code : 0,
           coDifferenceCode: this.enableDifferenceCodes ? res.rows.item(i).co_difference_code : "",
           nuBankAccount: res.rows.item(i).nu_bank_account,
+          idTypeDocument: res.rows.item(i).id_type_document,
+          nuDocument: res.rows.item(i).nu_document,
+          idCodePhoneNumber: res.rows.item(i).id_code_phone_number ?? res.rows.item(i).id_code_phone_number,
+          nuPhoneNumber: res.rows.item(i).nu_phone_number ?? res.rows.item(i).nu_phone_number,
+
+
         })
       }
       return collectionPayments;
@@ -4610,6 +4656,114 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       return Promise.resolve(true);
     })
   }
+
+  loadTypeDocumentList(dbServ: SQLiteObject, forceReload: boolean = false) {
+    if (this.typeDocumentListLoaded && !forceReload) {
+      return Promise.resolve(this.typeDocumentList);
+    }
+
+    return this.getTypeDocument(dbServ).then((list: TypeDocument[]) => {
+      this.typeDocumentList = list || [];
+      this.typeDocumentListLoaded = true;
+
+      if (this.typeDocumentList.length > 0) {
+        const defaultType = this.typeDocumentList[0].coTypeDocument;
+        this.pagoMovil.forEach(pm => {
+          if (!pm.tipoDocumento) {
+            pm.tipoDocumento = defaultType as any;
+          }
+        });
+      }
+
+      return Promise.resolve(this.typeDocumentList);
+    }).catch(e => {
+      console.log(e);
+      this.typeDocumentList = [];
+      return Promise.resolve(this.typeDocumentList);
+    })
+  }
+
+  getTypeDocument(dbServ: SQLiteObject, idTypeDocument?: number) {
+    let selectStatement = 'SELECT * FROM type_document';
+    const params: any[] = [];
+
+    if (idTypeDocument != null) {
+      selectStatement += ' WHERE id_type_document = ?';
+      params.push(idTypeDocument);
+    }
+
+    selectStatement += ' ORDER BY id_type_document ASC';
+
+    return dbServ.executeSql(selectStatement, params).then(res => {
+      let typeDocuments: TypeDocument[] = [];
+      for (var i = 0; i < res.rows.length; i++) {
+        typeDocuments.push({
+          idTypeDocument: res.rows.item(i).id_type_document,
+          coTypeDocument: res.rows.item(i).co_type_document,
+          naTypeDocument: res.rows.item(i).na_type_document,
+        } as TypeDocument)
+      }
+      return Promise.resolve(typeDocuments);
+    }).catch(e => {
+      console.log(e);
+      return Promise.resolve([] as TypeDocument[]);
+    })
+  }
+
+  loadCodePhoneNumberList(dbServ: SQLiteObject, forceReload: boolean = false) {
+    if (this.codePhoneNumberListLoaded && !forceReload) {
+      return Promise.resolve(this.codePhoneNumberList);
+    }
+
+    return this.getCodePhoneNumber(dbServ).then((list: CodePhoneNumber[]) => {
+      this.codePhoneNumberList = list || [];
+      this.codePhoneNumberListLoaded = true;
+
+      if (this.codePhoneNumberList.length > 0) {
+        const defaultCode = this.codePhoneNumberList[0].coCodePhoneNumber;
+        this.pagoMovil.forEach(pm => {
+          if (!pm.codigoTelefono) {
+            pm.codigoTelefono = defaultCode as any;
+          }
+        });
+      }
+
+      return Promise.resolve(this.codePhoneNumberList);
+    }).catch(e => {
+      console.log(e);
+      this.codePhoneNumberList = [];
+      return Promise.resolve(this.codePhoneNumberList);
+    })
+  }
+
+  getCodePhoneNumber(dbServ: SQLiteObject, idCodePhoneNumber?: number) {
+    let selectStatement = 'SELECT * FROM code_phone_number';
+    const params: any[] = [];
+
+    if (idCodePhoneNumber != null) {
+      selectStatement += ' WHERE id_code_phone_number = ?';
+      params.push(idCodePhoneNumber);
+    }
+
+    selectStatement += ' ORDER BY id_code_phone_number ASC';
+
+    return dbServ.executeSql(selectStatement, params).then(res => {
+      let codePhoneNumbers: CodePhoneNumber[] = [];
+      for (var i = 0; i < res.rows.length; i++) {
+        codePhoneNumbers.push({
+          idCodePhoneNumber: res.rows.item(i).id_code_phone_number,
+          coCodePhoneNumber: res.rows.item(i).co_code_phone_number,
+          naCodePhoneNumber: res.rows.item(i).na_code_phone_number,
+        } as CodePhoneNumber)
+      }
+      return Promise.resolve(codePhoneNumbers);
+    }).catch(e => {
+      console.log(e);
+      return Promise.resolve([] as CodePhoneNumber[]);
+    })
+  }
+
+
 
 
   ///////////////////QUERYS////////////////

@@ -156,19 +156,21 @@
         <ion-accordion *ngIf="this.collectService.tipoPagoPagoMovil && this.collectService.pagoMovil.length > 0"
           [value]="'pagoMovil'+pm">
           <ion-item slot="header" color="light">
-            <ion-label>Pago Móvil</ion-label>
+            <ion-label>{{this.collectService.collectionTags.get('COB_PAGO_MOVIL')}}</ion-label>
           </ion-item>
 
           <div class="ion-padding" slot="content">
 
             <ion-col size="6" size-sm="12" size-xs="12">
-              <ion-label>Numero de Telefono</ion-label>
-              <ion-item>
-                <div class="listado-enterprise-selector ion-text-center" style="width: 35%; margin-right: 8px;">
+              <ion-label>{{this.collectService.collectionTags.get('COB_NUMERO_TELEFONO')}}</ion-label>
+              <ion-item class="pm-inline-item">
+                <div class="listado-enterprise-selector ion-text-center pm-prefix-selector">
                   <ion-select class="ion-text-center always-flip" interface="alert" labelPlacement="stacked"
-                    [(ngModel)]="pagoMovil.codigoTelefono">
-                    <ion-select-option value="0414">0414</ion-select-option>
-                    <ion-select-option value="0424">0424</ion-select-option>
+                    [(ngModel)]="pagoMovil.codigoTelefono"
+                    (ionChange)="setCodigoTelefonoPagoMovil(pm, $event.detail.value)">
+                    @for (codePhoneNumber of collectService.codePhoneNumberList; track trackByIndex($index, codePhoneNumber)) {
+                    <ion-select-option [value]="codePhoneNumber.coCodePhoneNumber">{{codePhoneNumber.coCodePhoneNumber}}</ion-select-option>
+                    }
                   </ion-select>
                 </div>
                 <ion-input label="Número" label-placement="floating" fill="outline" color="primary" type="text"
@@ -182,15 +184,15 @@
 
 
             <ion-col size="6" size-sm="12" size-xs="12">
-              <ion-label>Cédula o RIF</ion-label>
-              <ion-item>
-                <div class="listado-enterprise-selector ion-text-center" style="width: 35%; margin-right: 8px;">
+              <ion-label>{{this.collectService.collectionTags.get('COB_TIPO_DOCUMENTO')}}</ion-label>
+              <ion-item class="pm-inline-item">
+                <div class="listado-enterprise-selector ion-text-center pm-prefix-selector">
                   <ion-select class="ion-text-center always-flip" interface="alert" labelPlacement="stacked"
                     [(ngModel)]="pagoMovil.tipoDocumento"
                     (ionChange)="setTipoDocumentoPagoMovil(pm, $event.detail.value)">
-                    <ion-select-option value="V">V</ion-select-option>
-                    <ion-select-option value="J">J</ion-select-option>
-                    <ion-select-option value="G">G</ion-select-option>
+                    @for (typeDocument of collectService.typeDocumentList; track trackByIndex($index, typeDocument)) {
+                    <ion-select-option [value]="typeDocument.coTypeDocument">{{typeDocument.coTypeDocument}}</ion-select-option>
+                    }
                   </ion-select>
                 </div>
                 <ion-input label="Número" label-placement="floating" fill="outline" color="primary" type="text"

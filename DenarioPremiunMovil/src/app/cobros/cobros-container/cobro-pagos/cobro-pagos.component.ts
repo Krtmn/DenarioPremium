@@ -166,12 +166,20 @@ export class CobroPagosComponent implements OnInit {
       case "pm": {
         let newPagoMovil: PagoMovil = new PagoMovil;
         newPagoMovil.posCollectionPayment = this.collectService.collection.collectionPayments!.length - 1;
+        if (this.collectService.typeDocumentList.length > 0) {
+          newPagoMovil.tipoDocumento = this.collectService.typeDocumentList[0].coTypeDocument as any;
+        }
+        if (this.collectService.codePhoneNumberList.length > 0) {
+          newPagoMovil.codigoTelefono = this.collectService.codePhoneNumberList[0].coCodePhoneNumber as any;
+        }
         if (this.collectService.validateCollectionDate) {
           newPagoMovil.fecha = daRate;
         } else {
           newPagoMovil.fecha = this.dateServ.hoyISO();
         }
         this.collectService.pagoMovil.push(newPagoMovil);
+        this.syncPagoMovilDocumento(this.collectService.pagoMovil.length - 1);
+        this.syncPagoMovilTelefono(this.collectService.pagoMovil.length - 1);
         newPago = newPagoMovil;
         break;
       }
@@ -580,8 +588,11 @@ export class CobroPagosComponent implements OnInit {
         payment.coCollection = this.collectService.collection.coCollection;
         payment.coPaymentMethod = type;
         payment.coType = type;
+        payment.coClientBankAccount = selectedBank?.coBank ?? selectedBank?.naBank ?? '';
+        payment.nuClientBankAccount = selectedBank?.naBank ?? '';
 
         this.syncPagoMovilDocumento(index);
+        this.syncPagoMovilTelefono(index);
         this.validatePayment("pm", index);
         break;
       }
@@ -817,9 +828,15 @@ export class CobroPagosComponent implements OnInit {
 
   }
 
-  setTipoDocumentoPagoMovil(index: number, tipo: 'V' | 'J' | 'G') {
+  setTipoDocumentoPagoMovil(index: number, tipo: string) {
     this.collectService.pagoMovil[index].tipoDocumento = tipo;
     this.syncPagoMovilDocumento(index);
+    this.validatePayment('pm', index);
+  }
+
+  setCodigoTelefonoPagoMovil(index: number, codigo: string) {
+    this.collectService.pagoMovil[index].codigoTelefono = codigo;
+    this.syncPagoMovilTelefono(index);
     this.validatePayment('pm', index);
   }
 
@@ -838,15 +855,35 @@ export class CobroPagosComponent implements OnInit {
   }
 
   onPagoMovilTelefonoInput(index: number, value: string) {
-    const onlyNumbers = (value || '').replace(/\D/g, '').slice(0, 7);
+    const onlyNumbers = (value || '').replace(/\D/g, '').slice(0, 8);
     this.collectService.pagoMovil[index].numeroTelefono = onlyNumbers;
+    this.syncPagoMovilTelefono(index);
+    this.validatePayment('pm', index);
   }
 
   private syncPagoMovilDocumento(index: number) {
     const pago = this.collectService.pagoMovil[index];
     const payment = this.collectService.collection.collectionPayments?.[pago.posCollectionPayment];
     if (!payment) return;
-    payment.coClientBankAccount = `${pago.tipoDocumento}-${pago.numeroDocumento || ''}`;
+    const selectedTypeDocument = this.collectService.typeDocumentList.find(
+      typeDocument => typeDocument.coTypeDocument === pago.tipoDocumento
+    );
+
+    payment.idTypeDocument = selectedTypeDocument?.idTypeDocument ?? null;
+    payment.nuDocument = pago.numeroDocumento || '';
+  }
+
+  private syncPagoMovilTelefono(index: number) {
+    const pago = this.collectService.pagoMovil[index];
+    const payment = this.collectService.collection.collectionPayments?.[pago.posCollectionPayment];
+    if (!payment) return;
+
+    const selectedCodePhone = this.collectService.codePhoneNumberList.find(
+      codePhoneNumber => codePhoneNumber.coCodePhoneNumber === pago.codigoTelefono
+    );
+
+    payment.idCodePhoneNumber = selectedCodePhone?.idCodePhoneNumber ?? null;
+    payment.nuPhoneNumber = pago.numeroTelefono || '';
   }
 
   setNuevaCuenta(dato: string, index: number, type: string) {

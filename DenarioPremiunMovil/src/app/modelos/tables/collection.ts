@@ -219,6 +219,10 @@ export class CollectionPayment {
       obj['idDifferenceCode'],
       obj['coDifferenceCode'],
       obj['nuBankAccount'],
+      obj['idTypeDocument'],
+      obj['nuDocument'],
+      obj['idCodePhoneNumber'],
+      obj['nuPhoneNumber']
 
     );
   }
@@ -245,7 +249,12 @@ export class CollectionPayment {
     public isAnticipoPrepaid: boolean = false, // true se guarda el pedido, false se actualiza
     public idDifferenceCode: number | null = 0,
     public coDifferenceCode: string | null = "",
-    public nuBankAccount: string | null = ""
+    public nuBankAccount: string | null = "",
+    public idTypeDocument: number | null = null,
+    public nuDocument: string | null = "",
+    public idCodePhoneNumber: number | null = null,
+    public nuPhoneNumber: string | null = ""
+
 
 
   ) { }
