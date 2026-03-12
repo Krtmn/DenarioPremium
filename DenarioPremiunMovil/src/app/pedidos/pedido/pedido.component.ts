@@ -647,7 +647,7 @@ export class PedidoComponent implements OnInit {
       let coOrderDetail = this.dateServ.generateCO(i);
       let tieneDescuento = false;
       if (this.orderServ.setProductDiscount) {
-        tieneDescuento = item.idDiscount! > 0
+        tieneDescuento = item.idDiscount == null ? true : false;
       } else
         tieneDescuento = (item.idDiscount != null && item.idDiscount > 0);
 

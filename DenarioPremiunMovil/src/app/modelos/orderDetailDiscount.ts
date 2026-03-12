@@ -19,7 +19,7 @@ export class OrderDetailDiscount {
         public coOrderDetailDiscount: string,
         public coOrderDetail: string,
         public idOrderDetail: number | null,
-        public idDiscount: number,
+        public idDiscount: number | null,
         public quDiscount: number,
         public nuPriceFinal: number,
         public coEnterprise: string,

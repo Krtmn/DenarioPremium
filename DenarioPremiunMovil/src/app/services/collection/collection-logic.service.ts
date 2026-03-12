@@ -758,7 +758,7 @@ export class CollectionService {
     /* this.valueTasa = this.mapFechas.get(fecha.split("T")[0])!; */
 
     this.conversionTypes.find((ct) => {
-      if (fecha.substring(0, 10) == ct.dateConversion.split("T")[0]) {
+      if (fecha.substring(0, 10) == ct.dateConversion.substring(0, 10)) {
         this.rateList.push(ct.nuValueLocal);
       }
     })
