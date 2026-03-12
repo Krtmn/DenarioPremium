@@ -168,8 +168,10 @@
                   <ion-select class="ion-text-center always-flip" interface="alert" labelPlacement="stacked"
                     [(ngModel)]="pagoMovil.codigoTelefono"
                     (ionChange)="setCodigoTelefonoPagoMovil(pm, $event.detail.value)">
-                    @for (codePhoneNumber of collectService.codePhoneNumberList; track trackByIndex($index, codePhoneNumber)) {
-                    <ion-select-option [value]="codePhoneNumber.coCodePhoneNumber">{{codePhoneNumber.coCodePhoneNumber}}</ion-select-option>
+                    @for (codePhoneNumber of collectService.codePhoneNumberList; track trackByIndex($index,
+                    codePhoneNumber)) {
+                    <ion-select-option
+                      [value]="codePhoneNumber.coCodePhoneNumber">{{codePhoneNumber.coCodePhoneNumber}}</ion-select-option>
                     }
                   </ion-select>
                 </div>
@@ -191,7 +193,8 @@
                     [(ngModel)]="pagoMovil.tipoDocumento"
                     (ionChange)="setTipoDocumentoPagoMovil(pm, $event.detail.value)">
                     @for (typeDocument of collectService.typeDocumentList; track trackByIndex($index, typeDocument)) {
-                    <ion-select-option [value]="typeDocument.coTypeDocument">{{typeDocument.coTypeDocument}}</ion-select-option>
+                    <ion-select-option
+                      [value]="typeDocument.coTypeDocument">{{typeDocument.coTypeDocument}}</ion-select-option>
                     }
                   </ion-select>
                 </div>
@@ -220,8 +223,6 @@
                 </div>
               </ion-item>
             </ion-col>
-
-
 
             <ion-col size="6" size-sm="12" size-xs="12">
               <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_DESTINO')}}</ion-label>
