@@ -136,6 +136,8 @@ export class SynchronizationComponent implements OnInit {
     76: 'collectDiscounts',
     77: 'straight_swap',
     78: 'return_category',
+    79: 'typeDocument',
+    80: 'codePhoneNumber',
   };
 
   /**
@@ -201,7 +203,9 @@ export class SynchronizationComponent implements OnInit {
     differenceCodes: 'Códigos de Diferencia',
     collectDiscounts: 'Descuentos de Cobro',
     straight_swap: 'Cambio Por Cambio',
-    return_category: 'Categoría de Devolución'
+    return_category: 'Categoría de Devolución',
+    typeDocument: 'Tipo de Documento',
+    codePhoneNumber: 'Código de Número Telefónico',
   };
 
   constructor(
@@ -638,6 +642,16 @@ export class SynchronizationComponent implements OnInit {
           }
           case 76: {
             this.tables.collectDiscountTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
+          case 79: {
+            this.tables.typeDocumentTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
+          case 80: {
+            this.tables.codePhoneNumberTableLastUpdate = result[i].last_update;
             this.tables.page = 0;
             break;
           }
@@ -1324,7 +1338,21 @@ export class SynchronizationComponent implements OnInit {
       tableKey: 'returnCategoryTableLastUpdate',
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
-    }
+    },
+    typeDocument: {
+      batchFn: this.synchronizationServices.insertTypeDocumentBatch.bind(this.synchronizationServices),
+      rowKey: 'typeDocumentTable',
+      tableKey: 'typeDocumentTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
+    codePhoneNumber: {
+      batchFn: this.synchronizationServices.insertCodePhoneNumberBatch.bind(this.synchronizationServices),
+      rowKey: 'codePhoneNumberTable',
+      tableKey: 'codePhoneNumberTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
   };
 
   /**

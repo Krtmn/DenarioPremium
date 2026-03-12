@@ -23,6 +23,7 @@ import { PagoTransferencia } from 'src/app/modelos/pago-transferencia';
 import { PagoDeposito } from 'src/app/modelos/pago-deposito';
 import { PagoCheque } from 'src/app/modelos/pago-cheque';
 import { PagoOtros } from 'src/app/modelos/pago-otros';
+import { PagoMovil } from 'src/app/modelos/pago-movil';
 import { IonInput } from '@ionic/angular/directives/proxies';
 import { ClienteSelectorService } from 'src/app/cliente-selector/cliente-selector.service';
 import { BankAccount } from 'src/app/modelos/tables/bankAccount';
@@ -86,6 +87,28 @@ export class CobrosGeneralComponent implements OnInit {
     return st === this.COLLECT_STATUS_TO_SEND || st === 1 || st === 6;
   }
 
+  get showDateRateSection(): boolean {
+    const stCollection = Number(this.collectService?.collection?.stCollection);
+    return this.collectService.multiCurrency
+      && this.collectService.showConversion
+      && stCollection !== 2
+      && stCollection !== 3
+      && stCollection !== 6;
+  }
+
+  get isDateRateLabelDisabled(): boolean {
+    return !this.collectService.canChangeRate;
+  }
+
+  get isDateRateButtonDisabled(): boolean {
+    const stDelivery = Number(this.collectService?.collection?.stDelivery);
+    const stCollection = Number(this.collectService?.collection?.stCollection);
+    return stDelivery === this.COLLECT_STATUS_TO_SEND
+      || stDelivery === this.COLLECT_STATUS_SENT
+      || stCollection === 6
+      || !this.collectService.canChangeRate;
+  }
+
   public alertButtons = [
     { text: '', role: 'confirm' },
   ];
@@ -96,7 +119,11 @@ export class CobrosGeneralComponent implements OnInit {
 
   constructor(private clientSelectorService: ClienteSelectorService) { }
 
-  ngOnInit() {
+  async ngOnInit() {
+    await Promise.all([
+      this.collectService.loadTypeDocumentList(this.synchronizationServices.getDatabase()),
+      this.collectService.loadCodePhoneNumberList(this.synchronizationServices.getDatabase())
+    ]);
 
     if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == 1 || this.collectService.collection.stDelivery == 6) {
       //ES UN COBRO ENVIADO, NO DEBO HACER NADA, SOLO MOSTRAR LA DATA
@@ -392,6 +419,64 @@ export class CobrosGeneralComponent implements OnInit {
             newPagoTransferencia.disabled = false;
           }
           this.collectService.pagoTransferencia.push(newPagoTransferencia);
+          break;
+        }
+        case 'pm': {
+          const fallbackType = this.collectService.typeDocumentList[0]?.coTypeDocument || 'V';
+          const fallbackPhoneCode = this.collectService.codePhoneNumberList[0]?.coCodePhoneNumber || '0414';
+          const rawLegacyDocument = (payment.coClientBankAccount || '').trim();
+          const legacyDocumentParts = rawLegacyDocument.split('-');
+          const rawPhone = (payment.nuPhoneNumber || '').replace(/\D/g, '');
+          const typeById = this.collectService.typeDocumentList.find(
+            typeDocument => typeDocument.idTypeDocument === payment.idTypeDocument
+          );
+          const phoneCodeById = this.collectService.codePhoneNumberList.find(
+            codePhoneNumber => codePhoneNumber.idCodePhoneNumber === payment.idCodePhoneNumber
+          );
+          const phoneCodeByPrefix = this.collectService.codePhoneNumberList.find(
+            codePhoneNumber => rawPhone.startsWith(codePhoneNumber.coCodePhoneNumber)
+          );
+          const selectedPhoneCode = phoneCodeById?.coCodePhoneNumber
+            || phoneCodeByPrefix?.coCodePhoneNumber
+            || fallbackPhoneCode;
+          const phoneNumber = payment.nuPhoneNumber
+            ? (phoneCodeByPrefix ? rawPhone.slice(phoneCodeByPrefix.coCodePhoneNumber.length) : rawPhone)
+            : '';
+          const newPagoMovil: PagoMovil = {
+            idBancoEmisor: 0,
+            nombreBancoEmisor: '',
+            idBancoDestino: payment.idBank,
+            nombreBancoDestino: payment.naBank,
+            numeroCuentaDestino: payment.nuBankAccount ?? '',
+            tipoDocumento: typeById?.coTypeDocument || legacyDocumentParts[0] || fallbackType,
+            numeroDocumento: (payment.nuDocument || legacyDocumentParts[1] || '').replace(/\D/g, ''),
+            codigoTelefono: selectedPhoneCode,
+            numeroTelefono: phoneNumber,
+            numeroReferencia: (payment.nuPaymentDoc || '').replace(/\D/g, ''),
+            monto: payment.nuAmountPartial,
+            montoConversion: payment.nuAmountPartialConversion,
+            fecha: payment.daValue!,
+            posCollectionPayment: i,
+            type: 'pm',
+            anticipoPrepaid: payment.isAnticipoPrepaid,
+            disabled: false,
+            showDateModal: false,
+          };
+
+          const bancoEmisor = this.collectService.listBanks?.find(
+            b => b.coBank === payment.coClientBankAccount || b.naBank === payment.coClientBankAccount
+          );
+          if (bancoEmisor) {
+            newPagoMovil.idBancoEmisor = bancoEmisor.idBank;
+            newPagoMovil.nombreBancoEmisor = bancoEmisor.naBank;
+          }
+
+          const bancoDestino = bankAccounts.find(b => b.idBank == newPagoMovil.idBancoDestino && b.nuAccount == newPagoMovil.numeroCuentaDestino);
+          if (bancoDestino) {
+            this.collectService.clientBankAccountSelected[newPagoMovil.posCollectionPayment] = bancoDestino as any;
+          }
+
+          this.collectService.pagoMovil.push(newPagoMovil);
           break;
         }
         case 'de': {
@@ -1016,6 +1101,12 @@ export class CobrosGeneralComponent implements OnInit {
     if (this.collectService.collection.stDelivery != this.COLLECT_STATUS_TO_SEND && this.collectService.collection.stDelivery != 1) {
       this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual.split("T")[0]);
       this.collectService.calculatePayment("", 0);
+    }
+  }
+
+  onDateRateClick() {
+    if (this.collectService.canChangeRate) {
+      this.onOpenCalendar();
     }
   }
 

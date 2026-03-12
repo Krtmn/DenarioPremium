@@ -80,6 +80,9 @@ import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
 import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
 import { StraightSwap } from 'src/app/modelos/tables/straightSwap';
 import { ReturnCategory } from 'src/app/modelos/tables/returnCategory';
+import { CodePhoneNumber } from 'src/app/modelos/tables/codePhoneNumber';
+import { TypeDocument } from 'src/app/modelos/tables/typeDocument';
+
 
 /** Mock SQLiteObject para navegador: retorna resultados vacíos y permite probar la app con TestSprite */
 function createMockSqliteObject(): SQLiteObject {
@@ -186,7 +189,9 @@ export class SynchronizationDBService {
       { "id": 75, "nameTable": "differenceCodes" },
       { "id": 76, "nameTable": "collectDiscounts" },
       { "id": 77, "nameTable": "straightSwap"},
-      { "id": 78, "nameTable": "returnCategory"}
+      { "id": 78, "nameTable": "returnCategory"},
+      { "id": 79, "nameTable": "typeDocument" },
+      { "id": 80, "nameTable": "codePhoneNumber" }
     ]
   }
 
@@ -1632,6 +1637,25 @@ export class SynchronizationDBService {
 
     return this.database.sqlBatch(statements).then(res => {
       console.log("insert straight_swap ready")
+            return res;
+    }).catch(e => {
+      console.log(e);
+    })
+  }
+  insertTypeDocumentBatch(arr: TypeDocument[]) {
+    var statements = [];
+    let insertStatement = "INSERT OR REPLACE INTO type_document(" +
+      "id_type_document, co_type_document, na_type_document" +
+      ") " +
+      "VALUES(?,?,?)"
+
+    for (var i = 0; i < arr.length; i++) {
+      statements.push([insertStatement, [arr[i].idTypeDocument,
+      arr[i].coTypeDocument, arr[i].naTypeDocument]
+      ])
+    }
+    return this.database.sqlBatch(statements).then(res => {
+      console.log("insert type_document ready")
       return res;
     }).catch(e => {
       console.log(e);
@@ -1651,6 +1675,25 @@ export class SynchronizationDBService {
 
     return this.database.sqlBatch(statements).then(res => {
       console.log("insert return_category ready")
+            return res;
+    }).catch(e => {
+      console.log(e);
+    })
+  }
+  insertCodePhoneNumberBatch(arr: CodePhoneNumber[]) {
+    var statements = [];
+    let insertStatement = "INSERT OR REPLACE INTO code_phone_number(" +
+      "id_code_phone_number, co_code_phone_number, na_code_phone_number" +
+      ") " +
+      "VALUES(?,?,?)"
+
+    for (var i = 0; i < arr.length; i++) {
+      statements.push([insertStatement, [arr[i].idCodePhoneNumber,
+      arr[i].coCodePhoneNumber, arr[i].naCodePhoneNumber]
+      ])
+    }
+    return this.database.sqlBatch(statements).then(res => {
+      console.log("insert code_phone_number ready")
       return res;
     }).catch(e => {
       console.log(e);
