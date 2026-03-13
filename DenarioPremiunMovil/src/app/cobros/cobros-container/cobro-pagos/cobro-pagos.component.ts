@@ -903,18 +903,19 @@ export class CobroPagosComponent implements OnInit {
 
       case "de": {
         this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.newNuClientBankAccount = dato;
-        //this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.nuClientBankAccount = dato;
+        this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.nuClientBankAccount = dato;
         break
       }
 
       case "tr": {
         this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.newNuClientBankAccount = dato;
-        //this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.nuClientBankAccount = dato;;
+        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.nuClientBankAccount = dato;;
         break;
       }
 
       case "pm": {
         this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.newNuClientBankAccount = dato;
+        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.nuClientBankAccount = dato;
         break;
       }
 

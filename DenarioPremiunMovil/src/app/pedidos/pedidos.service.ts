@@ -267,10 +267,10 @@ export class PedidosService {
     this.getStocks(idEnterprise).then(data => { this.listaStock = data; });
     this.getUnitInfo(idEnterprise).then(data => {
       this.listaUnitInfo = data;
-    if(this.showTotalProductUnit){
-      //buscamos el nombre de la unidad para mostrar en el total
-      this.nameTotalProductUnit = this.listaUnitInfo.filter(u => u.coUnit == this.codeTotalProductUnit)[0]?.naUnit || '';
-    }
+      if (this.showTotalProductUnit) {
+        //buscamos el nombre de la unidad para mostrar en el total
+        this.nameTotalProductUnit = this.listaUnitInfo.filter(u => u.coUnit == this.codeTotalProductUnit)[0]?.naUnit || '';
+      }
     });
 
     if (this.validateWarehouses) {
@@ -298,12 +298,12 @@ export class PedidosService {
     }
 
   }
-    fillProdMinMulMap() {
-      this.listaProdMinMul.forEach((value) => {
-        this.prodMinMulMap.set(value.idProduct,
-          { quMinimum: value.quMinimum, quMultiple: value.quMultiple });
-      });
-    }
+  fillProdMinMulMap() {
+    this.listaProdMinMul.forEach((value) => {
+      this.prodMinMulMap.set(value.idProduct,
+        { quMinimum: value.quMinimum, quMultiple: value.quMultiple });
+    });
+  }
 
   getProdMinMulByProduct(idProduct: number): { quMinimum: number; quMultiple: number } {
     return this.prodMinMulMap.get(idProduct) || { quMinimum: 1, quMultiple: 1 };
@@ -417,18 +417,18 @@ export class PedidosService {
       this.userCanChangePriceListProduct = false;
     }
 
-    if(this.vatExemptProducts){
+    if (this.vatExemptProducts) {
       //si estan mandando el iva por productos, no tiene sentido que el usuario pueda cambiarlo
       //posiblemente en el futuro se quite el selector de iva (?).
       this.userCanSelectIVA = false;
-    }else{
+    } else {
       this.userCanSelectIVA = this.config.get("userCanSelectIVA").toLowerCase() === 'true';
     }
 
-    if(this.stock0){
+    if (this.stock0) {
       //si puedo tomar productos con stock 0, no tiene sentido ocultarlos
       this.hideStock0 = false;
-    }else{
+    } else {
       this.hideStock0 = this.config.get("hideStock0").toLowerCase() === "true";
     }
 
@@ -603,14 +603,14 @@ export class PedidosService {
         //IVA
         let ivaProducto = 0;
         let iva = 0;
-        if(this.vatExemptProducts){
+        if (this.vatExemptProducts) {
           //el iva viene del producto
-          ivaProducto = price*item.nuTax/100;
+          ivaProducto = price * item.nuTax / 100;
           iva = item.nuTax;
-        }else{
+        } else {
           //viene de la lista de iva
           iva = this.ivaList.length > 0 ? this.ivaList[0].priceIva : 0,
-          ivaProducto = price * iva / 100;
+            ivaProducto = price * iva / 100;
         }
         //STOCK Y WAREHOUSES
         const stockList = this.listaStock.filter(s => s.idProduct == item.idProduct);
@@ -627,7 +627,7 @@ export class PedidosService {
         }
         var warehouseClient: Warehouse = {} as Warehouse;
         if (this.validateWarehouses) {
-          if(this.userCanChangeWarehouse && stock.quStock == 0){
+          if (this.userCanChangeWarehouse && stock.quStock == 0) {
             //si wh no tiene stock, buscamos otro wh con el mayor stock
             stockList.sort((a, b) => b.quStock - a.quStock);
             stock = stockList[0];
@@ -636,7 +636,7 @@ export class PedidosService {
           if (stock.quStock == 0) {
             //ninguno tiene stock
             console.log('stock tiene 0 unidades');
-            if(this.hideStock0){
+            if (this.hideStock0) {
               //si esta variable esta activa, no mostramos productos sin stockcld
               continue;
             }
@@ -653,7 +653,7 @@ export class PedidosService {
             //esto implica que el warehouse del stock no esta en la lista de warehouses. no deberia ocurrir nunca.
             console.log('producto  ' + item.naProduct + ' no tiene warehouse');
           }
-        }else{
+        } else {
           //no se validan almacenes, ponemos valores que no exploten el WS
           warehouseClient.idWarehouse = 0;
           warehouseClient.coWarehouse = '';
@@ -862,7 +862,7 @@ export class PedidosService {
       item.totalEnUnidades = 0;
       let masterUnit = {} as UnitInfo;
       this.codeTotalProductUnitMessageFlag = false;
-      if(this.showTotalProductUnit){
+      if (this.showTotalProductUnit) {
         //[showTotalProductUnit] unidad que se usara para hacer calculos de totalizacion
         masterUnit = item.unitList.find(u => u.coUnit == this.codeTotalProductUnit)!;
       }
@@ -877,14 +877,14 @@ export class PedidosService {
             this.countTotalProductUnit += unit.quAmount;
             //this.nameTotalProductUnit = unit.naUnit;
           } else {
-            if(masterUnit != undefined){
-              if(masterUnit.quUnit == 1){
+            if (masterUnit != undefined) {
+              if (masterUnit.quUnit == 1) {
                 //caso ideal, la unidad maestra es la unidad base (1)
-              this.countTotalProductUnit += unit.quAmount * unit.quUnit;
-              }else{
-              this.countTotalProductUnit += unit.quAmount / masterUnit.quUnit;
-            }
-            }else{
+                this.countTotalProductUnit += unit.quAmount * unit.quUnit;
+              } else {
+                this.countTotalProductUnit += unit.quAmount / masterUnit.quUnit;
+              }
+            } else {
               //no se encontro la unidad maestra,  hay que mostrar mensajito
               this.codeTotalProductUnitMessageFlag = true;
             }
@@ -901,7 +901,15 @@ export class PedidosService {
       //Descuento
       dc = 0;
       dcItem = 0;
-      if (item.idDiscount && item.idDiscount > 0) {
+      if (this.setProductDiscount) {
+        dc = item.quDiscount;
+        dcItem = (curItem * (dc / 100));
+        this.totalDctoXProducto = this.totalDctoXProducto + dcItem;
+        curItem = curItem - dcItem;
+        item.quDiscount = dc;
+        item.nuAmountDiscount = dcItem;
+        item.discountedNuPrice = item.nuPrice - (item.nuPrice * (dc / 100));
+      } else if (item.idDiscount && item.idDiscount > 0) {
         let selectedDiscount = this.listaDiscount.filter(d => d.idDiscount === item.idDiscount)[0];
         dc = selectedDiscount.quDiscount;
         dcItem = (curItem * (dc / 100));
@@ -934,7 +942,7 @@ export class PedidosService {
       //IVA
       iva = 0;
       ivaItem = 0;
-      if(this.vatExemptProducts && item.nuTax!= null){
+      if (this.vatExemptProducts && item.nuTax != null) {
         item.iva = item.nuTax;
       }
       if (item.iva != null) {
@@ -1602,7 +1610,7 @@ export class PedidosService {
     }
   }
 
-  currencySelection(){
+  currencySelection() {
     if (this.currencyService.multimoneda) {
       if (this.currencyModuleEnabled && this.currencyModule.idModule > 0) {
         if (this.currencyModule.localCurrencyDefault) {
