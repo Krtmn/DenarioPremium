@@ -31,6 +31,7 @@ export class PriceListService {
           naList: result.rows.item(i).na_list,
           idEnterprise: result.rows.item(i).id_enterprise,
           coEnterprise: result.rows.item(i).co_enterprise,
+          showOnly: result.rows.item(i).show_only
         });
       }
     }
