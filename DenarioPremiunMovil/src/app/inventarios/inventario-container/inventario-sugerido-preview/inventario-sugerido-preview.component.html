@@ -1,6 +1,6 @@
-<ion-header>
-  <ion-toolbar color="light">
-    <ion-title>{{ inventarioTags.get('INV_PED_SUG') || 'Pedido sugerido' }}</ion-title>
+<ion-header :translucent="true">
+    <ion-toolbar class="fondoAmarillo">
+    <ion-title class="tituloModulos">{{ inventarioTags.get('INV_PED_SUG') || 'Pedido sugerido' }}</ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="close()">
         {{ inventarioTags.get('DENARIO_BOTON_CANCELAR') || 'Cerrar' }}
@@ -26,7 +26,7 @@
     <ion-accordion-group>
       @for(product of productsSuggested; track product.idProduct){
       <ion-accordion>
-        <ion-item slot="header" color="light">
+        <ion-item slot="header" >
           <ion-label>
             <h2>{{ getProductCode(product.idProduct) }} - {{ getProductName(product.idProduct) }}</h2>
           </ion-label>
@@ -38,32 +38,48 @@
             <ion-label>
               Sugerido {{ getUnitName(product.idProduct, unit.idUnit) }}: {{ formatNumber(unit.quUnitSuggested) }}
               @if(suggestedOrderByDispatchAndReturn) {
-              <ion-grid class="tableClientDocumentSale">
-                <ion-row>
-                  <ion-col class="tituloDetails">Inv. Inicial</ion-col>
-                  <ion-col class="tituloDetails">Inv. Anterior</ion-col>
-                  <ion-col class="tituloDetails">Despacho</ion-col>
-                  <ion-col class="tituloDetails">Cambio por Cambio</ion-col>                    
-                </ion-row>
-                <ion-row>
-                  <ion-col class="ion-align-items-start">{{formatNumber(unit.initialStock)}}</ion-col>
-                  <ion-col class="ion-align-items-start">{{formatNumber(unit.previousStock)}}</ion-col>
-                  <ion-col class="ion-align-items-start">{{formatNumber(unit.dispatchedStock)}}</ion-col>
-                  <ion-col class="ion-align-items-start">{{formatNumber(unit.straightSwapStock)}}</ion-col>
-                </ion-row>
-                <ion-row>
-                  <ion-col class="tituloDetails">Venta</ion-col>
-                  <ion-col class="tituloDetails">Inv. Inicial</ion-col>
-                  <ion-col class="tituloDetails">Inv. Actual</ion-col>
-                  <ion-col class="tituloDetails">Dev. Distribución</ion-col>
-                </ion-row>
-                <ion-row>
-                  <ion-col class="ion-align-items-start">{{formatNumber(unit.soldUnits)}}</ion-col>
-                  <ion-col class="ion-align-items-start">{{formatNumber(unit.initialStock)}}</ion-col>
-                  <ion-col class="ion-align-items-start">{{formatNumber(unit.currentStock)}}</ion-col>
-                  <ion-col class="ion-align-items-start">{{formatNumber(unit.returnedStock)}}</ion-col>
-                </ion-row>
-              </ion-grid>
+
+                <ion-grid>
+                  <ion-row>
+                    <ion-col>
+                      
+                    </ion-col>
+                  </ion-row>
+                </ion-grid>
+
+                <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
+    <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
+       <ion-col class="titulosBold col borderSuperiorIzquierdo ion-text-center" size="6">Inv. Inicial</ion-col>
+                  <ion-col class="titulosBold col ion-text-center" size="6">Inv. Anterior</ion-col>
+                  <ion-col class="titulosBold col ion-text-center" size="6">Despacho</ion-col>
+                  <ion-col class="titulosBold col borderSuperiorDerecho ion-text-center" size="7">Cambio por Cambio</ion-col> 
+    </ion-row>
+
+    <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
+      <ion-col size="6" class="ion-text-center col ">{{formatNumber(unit.initialStock)}}</ion-col>
+      <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.previousStock)}}</ion-col>
+      <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.dispatchedStock)}}</ion-col>
+      <ion-col size="7" class="ion-text-center col borderInferiorDerecho">{{formatNumber(unit.straightSwapStock)}}</ion-col>
+    </ion-row>
+  </ion-grid>
+
+
+                <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
+    <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
+       <ion-col class="titulosBold col borderSuperiorIzquierdo ion-text-center" size="6">Venta</ion-col>
+                  <ion-col class="titulosBold col ion-text-center" size="6">Inv. Inicial</ion-col>
+                  <ion-col class="titulosBold col ion-text-center" size="6">Inv. Actual</ion-col>
+                  <ion-col class="titulosBold col borderSuperiorDerecho ion-text-center" size="7">Dev. Distribución</ion-col> 
+    </ion-row>
+
+    <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
+      <ion-col size="6" class="ion-text-center col ">{{formatNumber(unit.soldUnits)}}</ion-col>
+      <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.initialStock)}}</ion-col>
+      <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.currentStock)}}</ion-col>
+      <ion-col size="7" class="ion-text-center col borderInferiorDerecho">{{formatNumber(unit.returnedStock)}}</ion-col>
+    </ion-row>
+  </ion-grid>
+              
               <ion-item>Ventas Diarias Estimadas: {{ formatDecimal(unit.estimatedDailyUnits) }}</ion-item>
             }@else{
                 <ion-row>
