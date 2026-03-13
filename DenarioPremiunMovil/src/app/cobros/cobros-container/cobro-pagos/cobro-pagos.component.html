@@ -176,7 +176,7 @@
                   </ion-select>
                 </div>
                 <ion-input label="Número" label-placement="floating" fill="outline" color="primary" type="text"
-                  inputmode="numeric" pattern="[0-9]*" maxlength="7" [(ngModel)]="pagoMovil.numeroTelefono"
+                  inputmode="numeric" pattern="[0-9]*" maxlength="7" minlength="7" [(ngModel)]="pagoMovil.numeroTelefono"
                   (ionInput)="onPagoMovilTelefonoInput(pm, $any($event.target).value)"
                   (ionBlur)="onPagoMovilTelefonoInput(pm, pagoMovil.numeroTelefono)" class="customInput"
                   [ngClass]="{'inp-write': !pagoMovil.numeroTelefono}">
@@ -199,7 +199,7 @@
                   </ion-select>
                 </div>
                 <ion-input label="Número" label-placement="floating" fill="outline" color="primary" type="text"
-                  inputmode="numeric" pattern="[0-9]*" [(ngModel)]="pagoMovil.numeroDocumento"
+                  inputmode="numeric" pattern="[0-9]*" minlength="6" [(ngModel)]="pagoMovil.numeroDocumento"
                   (ionInput)="onPagoMovilNumeroDocumentoInput(pm, $any($event.target).value)"
                   (ionBlur)="onPagoMovilNumeroDocumentoInput(pm, pagoMovil.numeroDocumento)" class="customInput"
                   [ngClass]="{'inp-write': !pagoMovil.numeroDocumento}">
@@ -225,7 +225,7 @@
             </ion-col>
 
             <ion-col size="6" size-sm="12" size-xs="12">
-              <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_DESTINO')}}</ion-label>
+              <ion-label>{{this.collectService.collectionTags.get('COB_BANCO_RECEPTOR')}}</ion-label>
               <ion-item>
                 <div class="listado-enterprise-selector ion-text-center">
                   <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
