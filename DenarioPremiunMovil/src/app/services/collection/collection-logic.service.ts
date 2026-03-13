@@ -199,6 +199,7 @@ export class CollectionService {
   public MonedaToleranciaIsHard: boolean = false;
   public automatedPrepaid: boolean = false;
   public existPartialPayment: boolean = false;
+  public allPaymentPartial: boolean = false;
   public disabledSelectCollectMethodDisabled: boolean = true;
   public collectValidTabs: boolean = true;
   public calculateDifference: boolean = false;
@@ -1192,6 +1193,24 @@ export class CollectionService {
   }
 
   async validateToSend() {
+
+    if (this.alwaysPartialPayment && this.allPaymentPartial) {
+      if (!this.messageSended) {
+        this.mensaje = this.collectionTags.get('COB_ERROR_PARTIAL_PAY')!;
+
+        this.messageAlert = new MessageAlert(
+          this.collectionTags.get('COB_NOMBRE_MODULO')!,
+          this.mensaje,
+        );
+        this.messageService.alertModal(this.messageAlert);
+        this.messageSended = true;
+
+        /* setTimeout(() => {
+          this.messageSended = false;
+        }, 1000); */
+      }
+    }
+
     this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagar));
     this.montoTotalPagado = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado));
 
@@ -1249,9 +1268,9 @@ export class CollectionService {
       // Existencia: true si hay al menos uno marcado
       this.existPartialPayment = onlyPaymentPartial > 0;
 
-      let allPaymentPartial = false;
+      this.allPaymentPartial = false;
       if (onlyPaymentPartial == this.collection.collectionDetails.length)
-        allPaymentPartial = true;
+        this.allPaymentPartial = true;
 
       if (this.enableDifferenceCodes) {
         const payments = Array.isArray(this.collection.collectionPayments) ? this.collection.collectionPayments : [];
@@ -1277,7 +1296,9 @@ export class CollectionService {
       }
 
       if (this.existPartialPayment) {
-        if (allPaymentPartial && this.collection.collectionPayments.length > 0 && this.tabSelected == "pagos") {
+        if (this.alwaysPartialPayment) {
+          this.checkTolerancia();
+        } else if (this.allPaymentPartial && this.collection.collectionPayments.length > 0 && this.tabSelected == "pagos") {
           if (this.alwaysPartialPayment) {
             if (this.tolerancia0) {
               this.checkTolerancia();
@@ -1292,17 +1313,6 @@ export class CollectionService {
           } else if (this.montoTotalPagado == this.montoTotalPagar) {
             this.onCollectionValidToSend(true);
           } else {
-            if (!this.messageSended) {
-              this.mensaje = this.collectionTags.get('COB_ERROR_PARTIAL_PAY')!;
-
-              this.messageAlert = new MessageAlert(
-                this.collectionTags.get('COB_NOMBRE_MODULO')!,
-                this.mensaje,
-              );
-              this.messageService.alertModal(this.messageAlert);
-              this.messageSended = true;
-            }
-
             this.onCollectionValidToSend(false);
             return;
           }
@@ -1346,7 +1356,28 @@ export class CollectionService {
 
   checkTolerancia() {
 
-    if (this.montoTotalPagado <= 0)
+    if (this.alwaysPartialPayment && this.existPartialPayment) {
+      if (this.montoTotalPagado != this.montoTotalPagar) {
+        this.onCollectionValidToSend(false);
+        if (!this.messageSended) {
+          this.mensaje = this.collectionTags.get('COB_ERROR_PARTIAL_PAY')!;
+
+          this.messageAlert = new MessageAlert(
+            this.collectionTags.get('COB_NOMBRE_MODULO')!,
+            this.mensaje,
+          );
+          this.messageService.alertModal(this.messageAlert);
+          this.messageSended = true;
+          /*  setTimeout(() => {
+             this.messageSended = false;
+           }, 1000); */
+
+        }
+      } else {
+        this.onCollectionValidToSend(true);
+      }
+      return;
+    } else if (this.montoTotalPagado <= 0)
       this.onCollectionValidToSend(false);
     else if (this.TipoTolerancia == 0) {
       //TOLERANCIA0 TRUE PERMITO DIFERENCIA SE DEBEN VALIDAR LAS SIGUIENTES VARIABLES TipoTolerancia, RangoTolerancia, MonedaTolerancia

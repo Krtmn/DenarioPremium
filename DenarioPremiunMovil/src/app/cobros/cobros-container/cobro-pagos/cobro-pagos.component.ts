@@ -87,6 +87,7 @@ export class CobroPagosComponent implements OnInit {
     this.collectService.collection.collectionPayments[this.collectService.collection.collectionPayments.length - 1].coCollection = this.collectService.collection.coCollection;
     this.collectService.tiposPago.forEach(tp => tp.selected = false);
 
+
     // Normalize dateRate: if it's in 'YYYY-MM-DD' form, append ' 00:00:00'.
     // If it's already 'YYYY-MM-DD HH:MM:SS' keep as-is.
     const rawDateRate = (this.collectService.dateRate || '').toString().trim();
@@ -915,7 +916,7 @@ export class CobroPagosComponent implements OnInit {
 
       case "pm": {
         this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.newNuClientBankAccount = dato;
-        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.nuClientBankAccount = dato;
+        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.nuClientBankAccount = dato;;
         break;
       }
 
