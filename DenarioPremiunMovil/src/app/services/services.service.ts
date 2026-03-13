@@ -75,7 +75,7 @@ export class ServicesService {
 
   }
 
-  async onLogin(_login: Login, deviceInfo: any, deviceId: any) {
+  async onLogin(_login: Login, deviceInfo: any, deviceId: any,) {
     if (localStorage.getItem("lastUpdate") == null)
       localStorage.setItem("lastUpdate", "2000-01-01 00:00:00.000");
 
@@ -91,7 +91,7 @@ export class ServicesService {
         "devicePlatform": deviceInfo.platform,
         "deviceModel": deviceInfo.model,
         "deviceVersion": deviceInfo.name,
-        "appVersion": "3.8"
+        "appVersion": localStorage.getItem("versionApp")
       }
     };
 

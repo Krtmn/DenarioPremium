@@ -2,7 +2,30 @@
   {
     "sql": "ALTER TABLE collection_payments ADD COLUMN nu_bank_account VARCHAR(50);",
     "description": "Se agrega la columna 'nu_bank_account' a la tabla 'collection_payments' para almacenar el número de cuenta bancaria."
+  },
+  {
+    "sql": "ALTER TABLE collection_payments ADD COLUMN id_type_document INTEGER;",
+    "description": "Se agrega la columna 'id_type_document' a la tabla 'collection_payments' para almacenar el ID del tipo de documento."
+  },
+  {
+    "sql": "ALTER TABLE collection_payments ADD COLUMN nu_document VARCHAR(50);",
+    "description": "Se agrega la columna 'nu_document' a la tabla 'collection_payments' para almacenar el número de documento."
+  },
+  {
+    "sql": "ALTER TABLE collection_payments ADD COLUMN id_code_phone_number INTEGER;",
+    "description": "Se agrega la columna 'id_code_phone_number' a la tabla 'collection_payments' para almacenar el ID del código de número de teléfono."
+  },
+  {
+    "sql": "ALTER TABLE collection_payments ADD COLUMN nu_phone_number VARCHAR(50);",
+    "description": "Se agrega la columna 'nu_phone_number' a la tabla 'collection_payments' para almacenar el número de teléfono."
+  },
+  {
+    "sql": "CREATE TABLE IF NOT EXISTS type_document(id_type_document INTEGER PRIMARY KEY, co_type_document VARCHAR(50), na_type_document VARCHAR(50));",
+    "description": "Se crea la tabla 'type_document' si no existe."
+  },
+
+  {
+    "sql": "CREATE TABLE IF NOT EXISTS code_phone_number(id_code_phone_number INTEGER PRIMARY KEY, co_code_phone_number VARCHAR(50), na_code_phone_number VARCHAR(50));",
+    "description": "Se crea la tabla 'code_phone_number' si no existe."
   }
 ]
-
-

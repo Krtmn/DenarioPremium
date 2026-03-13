@@ -60,6 +60,8 @@ export interface TablesLastUpdate {
   collectDiscountTableLastUpdate: string,
   straightSwapTableLastUpdate: string,
   returnCategoryTableLastUpdate: string,
+  typeDocumentTableLastUpdate: string,
+  codePhoneNumberTableLastUpdate: string,
   page: number
 
 }

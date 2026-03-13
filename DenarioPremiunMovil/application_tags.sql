@@ -308,6 +308,7 @@ INSERT INTO public.application_tags(
 	('COB_TOTAL_CHEQUES','COB','COBROS','ESP','Total Cheques'),
 	('COB_TOTAL_DEPOSITOS','COB','COBROS','ESP','Total Depósitos'),
 	('COB_TOTAL_TRANSFERENCIAS','COB','COBROS','ESP','Total Transferencias'),
+	('COB_TOTAL_PAGO_MOVIL','COB','COBROS','ESP','Total Cobros'),
 	('COB_TOTAL_OTROS','COB','COBROS','ESP','Total Otros'),
 	('COB_TOTAL_GENERAL','COB','COBROS','ESP','Total General'),
 	('COB_SELECTOR_METODO_COBRO','COB','COBROS','ESP','Seleccione método de cobro...'),
@@ -394,7 +395,9 @@ INSERT INTO public.application_tags(
   ('COB_CONVERSION', 'COB', 'COBROS', 'ESP','Conversión'),
   ('COB_PARCIAL', 'COB', 'COBROS', 'ESP','Parcial'),
   ('COB_DOCUMENTO', 'COB', 'COBROS', 'ESP','Documento'),
-  ('COB_RET_MSJ_COLLECTION_NO_ATTACHMENTS', 'COB', 'COBROS', 'ESP', 'Para poder enviar el Cobro, debe agregar al menos un adjunto.');
+  ('COB_RET_MSJ_COLLECTION_NO_ATTACHMENTS', 'COB', 'COBROS', 'ESP', 'Para poder enviar el Cobro, debe agregar al menos un adjunto.'),
+  ('COB_PAGO_MOVIL', 'COB', 'COBROS', 'ESP', 'Pago Móvil'),
+  ('COB_NUMERO_TELEFONO', 'COB', 'COBROS', 'ESP', 'Nº de Teléfono');
 
 
 
@@ -483,7 +486,17 @@ DELETE FROM public.application_tags WHERE co_module = 'INV';
   ('INV_SEND_STOCK_MSG','INV','INVENTARIO','ESP','El Inventario será enviado'),
   ('INV_MSJ_ERROR_NOTSIGNAL','INV','INVENTARIO','ESP','¡Su Inventario será enviado al tener conexión de datos!'),
   ('INV_DIAS_ULTIMO_INVENTARIO','INV','INVENTARIO','ESP','Días desde último Inventario'),
-  ('INV_DIAS_SIGUIENTE_INVENTARIO','INV','INVENTARIO','ESP','Días para siguiente Inventario');
+  ('INV_DIAS_SIGUIENTE_INVENTARIO','INV','INVENTARIO','ESP','Días para siguiente Inventario'),
+  ('INV_SUGERIDO','INV','INVENTARIO','ESP','Sugerido'),
+  ('INV_INVENTARIO_INICIAL','INV','INVENTARIO','ESP','Inv. Inicial'),
+  ('INV_INVENTARIO_ACTUAL','INV','INVENTARIO','ESP','Inv. Actual'),
+  ('INV_INVENTARIO_ANTERIOR','INV','INVENTARIO','ESP','Inv. Anterior'),
+  ('INV_DESPACHO','INV','INVENTARIO','ESP','Despacho'),
+  ('INV_CAMBIO_POR_CAMBIO','INV','INVENTARIO','ESP','Cambio por cambio'),
+  ('INV_VENTA','INV','INVENTARIO','ESP','Venta'),
+  ('INV_DEV_DISTRIBUCION','INV','INVENTARIO','ESP','Distribución'),
+  ('INV_VENTAS_DIARIAS','INV','INVENTARIO','ESP','Ventas Diarias Estimadas');
+  
 
 
 -- PRODUCTOS
