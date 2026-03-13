@@ -426,7 +426,7 @@ export class PedidoComponent implements OnInit {
           let dc = item.discountList.find((d) => d.idDiscount == detail.idDiscount)!;
           if (this.orderServ.setProductDiscount) {
             item.idDiscount = null;
-            item.quDiscount = detail.orderDetailDiscount[0].quDiscount;
+            item.quDiscount = detail.orderDetailDiscount?.[0]?.quDiscount ?? 0;
           } else if (dc != undefined) {
             item.idDiscount = detail.idDiscount;
             item.quDiscount = dc.quDiscount;
