@@ -1,5 +1,6 @@
 import { Discount } from "./tables/discount";
 import { List } from "./tables/list";
+import { PriceList } from "./tables/priceList";
 import { UnitInfo } from "./unitInfo";
 
 
@@ -108,6 +109,7 @@ export class OrderUtil {
   //el total de productos en unidades. ej 1 docena + 1 unidad => totalunit = 13
   public totalEnUnidades: number,
   public nuTax: number,
+  public listaModalList: {list: List, pricelist: PriceList}[] = [],
 
   ) { }
 }

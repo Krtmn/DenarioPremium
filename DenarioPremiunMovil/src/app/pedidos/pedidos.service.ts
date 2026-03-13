@@ -617,6 +617,16 @@ export class PedidosService {
             continue;
           }
         }
+        let listaModalList: {list: List, pricelist: PriceList}[] = [];
+        if(this.priceListInfoModal && this.listaInfoModalPricelist.length > 0){
+          let modalPl = this.listaInfoModalPricelist.filter(pl => pl.idProduct == item.idProduct);
+          modalPl.forEach(pl => {
+            let list = this.listaInfoModalList.filter(l => l.idList == pl.idList)[0];
+            if(list){
+              listaModalList.push({list: list, pricelist: pl});
+            }
+          });
+        }
         //FIN LISTA DE PRECIOS
         //IVA
         let ivaProducto = 0;
@@ -772,7 +782,8 @@ export class PedidosService {
           "subtotal": 0,
           "subtotalConv": 0,
           "totalEnUnidades": 0,
-          "nuTax": item.nuTax
+          "nuTax": item.nuTax,
+          "listaModalList": listaModalList
         }
         orderUtils.push(ou);
 
