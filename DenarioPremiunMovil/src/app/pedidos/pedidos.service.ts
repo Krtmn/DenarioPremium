@@ -86,9 +86,11 @@ export class PedidosService {
   public listaDiscount: Discount[] = [];
   public listaGlobalDiscount: GlobalDiscount[] = [];
   public listaPricelist: PriceList[] = [];
+  public listaInfoModalPricelist: PriceList[] = [];
   public listaPriceListFiltrada: PriceList[] = [];
   public listaPedidos: ItemListaPedido[] = [];
   public listaList: List[] = [];
+  public listaInfoModalList: List[] = [];
   public ivaList: IvaList[] = [];
   public carrito: OrderUtil[] = [];
   public carritoWithLines: { //carrito especial para groupByTotalByLines
@@ -215,8 +217,10 @@ export class PedidosService {
   public hideStock0: boolean = false;
 
   public displayProductPoints = false;
+  public priceListInfoModal = false;
 
   codeTotalProductUnitMessageFlag = false;
+
 
   public prodMinMulMap: Map<number, { quMinimum: number; quMultiple: number }> = new Map<number, { quMinimum: number; quMultiple: number }>();
 
@@ -257,13 +261,15 @@ export class PedidosService {
     }
     */
     this.getOrderTypes(coEnterprise).then(data => { this.listaOrderTypes = data; });
-    this.getLists(idEnterprise).then(data => { this.listaList = data; });
+    this.getLists(idEnterprise).then(data => { 
+      this.listaList = data;
+      let idLists = this.listaList.map(l => l.idList);
+      this.getPricelists(idEnterprise, idLists).then(data => { this.listaPricelist = data; }); 
+    });
     this.getPaymentConditions(idEnterprise).then(data => { this.listaPaymentCondition = data; })
     this.getIVAList().then(data => { this.ivaList = data; });
     this.getProducts(idEnterprise).then(data => { this.listaProductos = data; });
-
-    this.getDiscounts(idEnterprise).then(data => { this.listaDiscount = data; });
-    this.getPricelists(idEnterprise).then(data => { this.listaPricelist = data; });
+    this.getDiscounts(idEnterprise).then(data => { this.listaDiscount = data; });    
     this.getStocks(idEnterprise).then(data => { this.listaStock = data; });
     this.getUnitInfo(idEnterprise).then(data => {
       this.listaUnitInfo = data;
@@ -295,6 +301,17 @@ export class PedidosService {
         this.getParentStructures();
 
       });
+    }
+
+    if(this.priceListInfoModal){
+      //para el modal de informacion de listas de precio
+      this.getListForInfoModal(idEnterprise).then(data => { 
+      this.listaInfoModalList = data;
+      let idLists = this.listaInfoModalList.map(l => l.idList);
+      this.getPricelists(idEnterprise, idLists).then(data => { 
+        this.listaInfoModalPricelist = data; 
+      }); 
+    });
     }
 
   }
@@ -384,6 +401,7 @@ export class PedidosService {
     this.currencyModuleEnabled = this.config.get("currencyModule").toLowerCase() === "true";
     this.vatExemptProducts = this.config.get("vatExemptProducts").toLowerCase() === "true";
     this.displayProductPoints = this.config.get("displayProductPoints").toLowerCase() === "true";
+    this.priceListInfoModal = this.config.get("priceListInfoModal").toLowerCase() === "true";
 
     //string
     this.codeTotalProductUnit = this.config.get("codeTotalProductUnit");
@@ -1102,8 +1120,8 @@ export class PedidosService {
 
 
 
-  getPricelists(idEnterprise: number) {
-    return this.db.getPricelists(this.database, idEnterprise);
+  getPricelists(idEnterprise: number, idLists: number[]) {
+    return this.db.getPricelists(this.database, idEnterprise, idLists);
   }
 
   getOrderTypes(coEnterprise: string) {
@@ -1118,6 +1136,9 @@ export class PedidosService {
     return this.db.getLists(this.database, idEnterprise);
   }
 
+  getListForInfoModal(idEnterprise: number) {
+    return this.db.getListForInfoModal(this.database, idEnterprise);
+  }
   getPriceListbyEnterprise(idEnterprise: number) {
     return this.db.getPriceListbyEnterprise(this.database, idEnterprise);
   }
