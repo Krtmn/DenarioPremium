@@ -1140,7 +1140,7 @@ export class PedidoComponent implements OnInit {
 
   setClientfromSelector(cliente: Client, skipDebtValidation: boolean = false) {
     if (cliente) {
-      if (!skipDebtValidation
+      if (!skipDebtValidation && !this.orderServ.openOrder
         && Number(cliente.saldo1 ?? 0) > 0
         && this.orderServ.order?.stDelivery !== DELIVERY_STATUS_SENT
         && this.orderServ.order?.stDelivery !== null) {
