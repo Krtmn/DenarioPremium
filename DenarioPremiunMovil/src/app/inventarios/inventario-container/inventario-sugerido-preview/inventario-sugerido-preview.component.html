@@ -1,9 +1,16 @@
 <ion-header :translucent="true">
     <ion-toolbar class="fondoAmarillo">
-    <ion-title class="tituloModulos">{{ inventarioTags.get('INV_PED_SUG') || 'Pedido sugerido' }}</ion-title>
+      <ion-grid>
+        <ion-row>
+          <ion-col size="12">
+            <ion-title class="tituloModulos">{{ inventarioTags.get('INV_PED_SUG') || 'Pedido sugerido' }}</ion-title>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    
     <ion-buttons slot="end">
-      <ion-button (click)="close()">
-        {{ inventarioTags.get('DENARIO_BOTON_CANCELAR') || 'Cerrar' }}
+      <ion-button (click)="close()" fill="clear" size="large" color="light">
+        <ion-icon slot="icon-only" ios="close" md="close"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -11,11 +18,11 @@
 <ion-content class="client-document-sale">
   <ion-grid class="tableClientDocumentSale">
   <ion-row>
-    <ion-col>
+    <ion-col size="12">
       {{ inventarioTags.get('INV_DIAS_ULTIMO_INVENTARIO') || 'Dias desde último inventario' }}: {{ diasDesdeUltimoInventario }}
       <br>
     </ion-col>
-    <ion-col>
+    <ion-col size="12">
       {{ inventarioTags.get('INV_DIAS_SIGUIENTE_INVENTARIO') || 'Dias hasta siguiente inventario' }}: {{ diasHastaSiguienteInventario }}
       <br>     
     </ion-col>
@@ -23,7 +30,7 @@
 </ion-grid>
   @if(productsSuggested.length > 0){
   <ion-list>
-    <ion-accordion-group>
+    <ion-accordion-group expand="inset">
       @for(product of productsSuggested; track product.idProduct){
       <ion-accordion>
         <ion-item slot="header" >
@@ -52,14 +59,14 @@
        <ion-col class="titulosBold col borderSuperiorIzquierdo ion-text-center" size="6">{{ inventarioTags.get('INV_INVENTARIO_INICIAL') || 'Inv. Inicial' }}</ion-col>
                   <ion-col class="titulosBold col ion-text-center" size="6">{{ inventarioTags.get('INV_INVENTARIO_ANTERIOR') || 'Inv. Anterior' }}</ion-col>
                   <ion-col class="titulosBold col ion-text-center" size="6">{{ inventarioTags.get('INV_DESPACHO') || 'Despacho' }}</ion-col>
-                  <ion-col class="titulosBold col borderSuperiorDerecho ion-text-center" size="7">{{ inventarioTags.get('INV_CAMBIO_POR_CAMBIO') || 'Cambio por Cambio' }}</ion-col> 
+                  <ion-col class="titulosBold col borderSuperiorDerecho ion-text-center" size="8">{{ inventarioTags.get('INV_CAMBIO_POR_CAMBIO') || 'Cambio por Cambio' }}</ion-col> 
     </ion-row>
 
     <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
-      <ion-col size="6" class="ion-text-center col ">{{formatNumber(unit.initialStock)}}</ion-col>
+      <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.initialStock)}}</ion-col>
       <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.previousStock)}}</ion-col>
       <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.dispatchedStock)}}</ion-col>
-      <ion-col size="7" class="ion-text-center col borderInferiorDerecho">{{formatNumber(unit.straightSwapStock)}}</ion-col>
+      <ion-col size="8" class="ion-text-center col">{{formatNumber(unit.straightSwapStock)}}</ion-col>
     </ion-row>
   </ion-grid>
 
@@ -73,10 +80,10 @@
     </ion-row>
 
     <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
-      <ion-col size="6" class="ion-text-center col ">{{formatNumber(unit.soldUnits)}}</ion-col>
+      <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.soldUnits)}}</ion-col>
       <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.initialStock)}}</ion-col>
       <ion-col size="6" class="ion-text-center col">{{formatNumber(unit.currentStock)}}</ion-col>
-      <ion-col size="7" class="ion-text-center col borderInferiorDerecho">{{formatNumber(unit.returnedStock)}}</ion-col>
+      <ion-col size="7" class="ion-text-center col">{{formatNumber(unit.returnedStock)}}</ion-col>
     </ion-row>
   </ion-grid>
               
