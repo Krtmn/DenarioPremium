@@ -12,7 +12,7 @@
               <div class="search-input-wrap">
                 <input type="text" class="search-input inputsSearch" fill="outline" shape="round"
                   placeholder="{{this.searchTags.get('PROD_PLACEHOLDER_BUSCAR')}}" #searchInput
-                  [(ngModel)]="searchText" (input)="onSearchTextChanged()" (keydown.enter)="onSearchClicked($event)">
+                  [(ngModel)]="searchText" (keydown.enter)="onSearchClicked($event)">
                 <button type="button" class="clear-search" (click)="clearSearch()" [disabled]="!searchText">
                   <ion-icon class="sizeIconSearch" name="close-circle"></ion-icon>
                 </button>
