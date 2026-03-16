@@ -461,6 +461,7 @@ export class InventariosLogicService {
     if(this.suggestedOrderByDispatchAndReturn){
     let daysSinceLastInventory = this.newClientStock.daysSinceLast;
     let daysUntilNextInventory = this.newClientStock.daysUntilNext;
+    let dateLastInventory =  this.dateServ.pastDaysISO(daysSinceLastInventory);
     //inventario anterior
     let previousCS = await this.getPreviousClientStock(dbServ, idClient, this.newClientStock.daClientStock);
     if (previousCS == null) {
@@ -486,7 +487,7 @@ export class InventariosLogicService {
 
     //Cambio por cambio
     let straightSwaps = await this.getStraightSwapsByClientStock(dbServ, idProducts, 
-      idUnits, idEnterprise, idClient, idAddressClient);
+      idUnits, idEnterprise, idClient, idAddressClient, dateLastInventory);
     for (var i = 0; i < straightSwaps.length; i++) {
       let idProduct = straightSwaps[i].idProduct;
       let idProductUnit = straightSwaps[i].idProductUnit;
@@ -503,7 +504,7 @@ export class InventariosLogicService {
     //inventario inicial se calcula con el paso anterior
     //inventario actual se agregó antes del if porque se necesita para ambos casos
     //devolución por distribución
-    let returnsByDistribution = await this.getReturnsByDistribution(dbServ, idProducts, coUnits, idEnterprise, idClient);
+    let returnsByDistribution = await this.getReturnsByDistribution(dbServ, idProducts, coUnits, idEnterprise, idClient, dateLastInventory);
     if(typeof returnsByDistribution != "undefined"){
     for (var i = 0; i < returnsByDistribution.length; i++) {
       let idProduct = returnsByDistribution[i].idProduct;
@@ -1208,10 +1209,10 @@ export class InventariosLogicService {
     });
   }
 
-  getStraightSwapsByClientStock(dbServ: SQLiteObject, idProducts: number[], idUnits: number[], idEnterprise: number, idClient: number, idAddressClient: number) {
+  getStraightSwapsByClientStock(dbServ: SQLiteObject, idProducts: number[], idUnits: number[], idEnterprise: number, idClient: number, idAddressClient: number, dateLastInventory: string) {
     let select = "select * from straight_swap ss "+
     "where ss.id_product IN ("+idProducts.join(",")+") and ss.id_unit IN ("+idUnits.join(",")+
-    ") and ss.id_enterprise = "+idEnterprise+" and ss.id_client = "+idClient+" and ss.id_address_client = "+idAddressClient;
+    ") and ss.id_enterprise = "+idEnterprise+" and ss.id_client = "+idClient+" and ss.id_address_client = "+idAddressClient+" and ss.da_cambio > '"+dateLastInventory+"'";
 
     return dbServ.executeSql(select, []).then(data => {
       let straightSwaps: StraightSwap[] = [];
@@ -1242,12 +1243,12 @@ export class InventariosLogicService {
   });
 }
 
-getReturnsByDistribution(dbServ: SQLiteObject, idProducts: number[], coUnits: String[], idEnterprise: number, idClient: number){
+getReturnsByDistribution(dbServ: SQLiteObject, idProducts: number[], coUnits: String[], idEnterprise: number, idClient: number, dateLastInventory: string) {
 let select = "select *  from return_details rd where id_return in "+
 "(SELECT r.id_return from returns r where r.id_type in "+
   "(select rt.id_type from return_types rt where rt.id_return_category in "+
     "(select rc.id_return_category from return_category rc where rc.subtract_suggestion = 'true') )"+
-  "and r.id_client = "+idClient+" and r.id_enterprise = "+idEnterprise+") "+
+  "and r.id_client = "+idClient+" and r.id_enterprise = "+idEnterprise+" and r.da_return > '"+dateLastInventory+"') "+
 "and rd.id_product IN ("+idProducts.join(",")+") and rd.co_measure_unit IN (?)";
 
   return dbServ.executeSql(select, [coUnits.join(",")]).then(data => {
