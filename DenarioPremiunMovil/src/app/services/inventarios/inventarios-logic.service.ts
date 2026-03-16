@@ -463,7 +463,7 @@ export class InventariosLogicService {
     let daysUntilNextInventory = this.newClientStock.daysUntilNext;
     let dateLastInventory =  this.dateServ.pastDaysISO(daysSinceLastInventory);
     //inventario anterior
-    let previousCS = await this.getPreviousClientStock(dbServ, idClient, this.newClientStock.daClientStock);
+    let previousCS = await this.getPreviousClientStock(dbServ, idClient, idAddressClient);
     if (previousCS == null) {
       //si no hay previo, se asume que el inventario inicial es 0, por lo que no se hace nada
     }else{
@@ -940,11 +940,11 @@ export class InventariosLogicService {
     });
   }
 
-  getPreviousClientStock(dbServ: SQLiteObject, idClient: number, daClientStock: string) {
+  getPreviousClientStock(dbServ: SQLiteObject, idClient: number, idAddressClient: number) {
     let selectStatement = "SELECT * "+
-      "FROM client_stocks WHERE id_client = ? AND da_client_stock < ? ORDER BY da_client_stock DESC LIMIT 1";
+      "FROM client_stocks WHERE id_client = ? AND id_address_client = ? ORDER BY da_client_stock DESC LIMIT 1";
 
-    return dbServ.executeSql(selectStatement, [idClient, daClientStock]).then(result => {
+    return dbServ.executeSql(selectStatement, [idClient, idAddressClient]).then(result => {
       if(result.rows.length > 0){
         let item = result.rows.item(0);
         let clientStock: ClientStocks = {
