@@ -373,6 +373,25 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                 <!-- MONTO IVA CONVERSION -->
                 }
 
+                @if(this.totalView >0){
+                <!-- MONTO TOTAL -->
+                <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                  <ion-input
+                    label="{{this.collectService.collectionTags.get('COB_TOTAL')}} {{this.collectService.collection.coCurrency}}"
+                    label-placement="floating" fill="outline" value="{{this.formatNumber(this.totalView)}}"
+                    color="primary" [readonly]="true"></ion-input>
+                </ion-col>
+                <!-- MONTO TOTAL -->
+                <!-- MONTO TOTAL CONVERSION -->
+                <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+                  <ion-input
+                    label="{{this.collectService.collectionTags.get('COB_TOTAL')}} {{this.collectService.currencyConversion.coCurrency}}"
+                    label-placement="floating" fill="outline" value="{{this.formatNumber(this.totalViewConversion)}}"
+                    color="primary" [readonly]="true"></ion-input>
+                </ion-col>
+                <!-- MONTO TOTAL CONVERSION -->
+                }
+
                 <!-- SALDO -->
                 <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                   <ion-input
