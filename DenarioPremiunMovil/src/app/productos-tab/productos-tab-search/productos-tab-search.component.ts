@@ -116,49 +116,40 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
       return;
     }
     this.productStructureService.nombreProductStructureSeleccionada = '';
+    if (this.productService.searchStructures) {
+      //reseteamos la seleccion de estructura de producto
+      this.productStructureService.idProductStructureList = [];
+    }
 
     this.disabledSearchButton = true;
-    if (!this.productService.searchStructures) {
-      //Buscar en estructura de producto
-      this.message.showLoading();
-      if (this.pedido) {        
-        this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(
-          this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise, 
-          this.orderServ.monedaSeleccionada.coCurrency, 
-          this.orderServ.listaSeleccionada.idList, 0).then(() => {
+
+    //Buscar en estructura de producto
+    this.message.showLoading();
+    if (this.pedido) {
+      //hay que filtrar por lista de precios si estamos en pedido
+      this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(
+        this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise,
+        this.orderServ.monedaSeleccionada.coCurrency,
+        this.orderServ.listaSeleccionada.idList, 0).then(() => {
           this.productService.onProductTabSearchClicked();
           this.disabledSearchButton = false;
           this.message.hideLoading();
         });
-      } else {
-        //buscar en una especifica
-        this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
-          this.searchText,
-          this.empresaSeleccionada.idEnterprise,
-          this.empresaSeleccionada.coCurrencyDefault, 0).then(() => {
-            this.productService.onProductTabSearchClicked();
-            this.disabledSearchButton = false;
-            this.message.hideLoading();
-          });
-      }
     } else {
-      this.productStructureService.idProductStructureList = [];
-      if (this.pedido) {
-        this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(
-          this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise, 
-          this.orderServ.monedaSeleccionada.coCurrency, 
-          this.orderServ.listaSeleccionada.idList, 0).then(() => {
+      //busqueda normal sin filtrar por lista de precios
+      this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
+        this.searchText,
+        this.empresaSeleccionada.idEnterprise,
+        this.empresaSeleccionada.coCurrencyDefault, 0).then(() => {
           this.productService.onProductTabSearchClicked();
           this.disabledSearchButton = false;
+          this.message.hideLoading();
         });
-      } else {
-        //Buscar en estructuras de producto?
-        this.disabledSearchButton = false;
-        this.productService.onProductTabSearchClicked();
-      }
     }
 
   }
+
+
 
   onBackClicked() {
     this.showBackIcon = false;
