@@ -118,8 +118,8 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
     this.productStructureService.nombreProductStructureSeleccionada = '';
 
     this.disabledSearchButton = true;
-    if (this.productService.searchStructures) {
-      //Buscar en estructuras de producto
+    if (!this.productService.searchStructures) {
+      //Buscar en estructura de producto
       this.message.showLoading();
       if (this.pedido) {        
         this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(
@@ -131,6 +131,7 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
           this.message.hideLoading();
         });
       } else {
+        //buscar en una especifica
         this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
           this.searchText,
           this.empresaSeleccionada.idEnterprise,
@@ -141,7 +142,7 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
           });
       }
     } else {
-      this.productStructureService.idProductStructureSeleccionada = 0;
+      this.productStructureService.idProductStructureList = [];
       if (this.pedido) {
         this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(
           this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise, 

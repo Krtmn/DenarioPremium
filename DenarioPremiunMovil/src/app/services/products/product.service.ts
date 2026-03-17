@@ -561,8 +561,13 @@ MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por ca
     }
 
     // always filter by enterprise
-    const whereTokens = tokenClauses.length ? tokenClauses.join(" AND ") + " AND p.id_enterprise = ?" : "p.id_enterprise = ?";
+    var whereTokens = tokenClauses.length ? tokenClauses.join(" AND ") + " AND p.id_enterprise = ?" : "p.id_enterprise = ?";
     params.push(idEnterprise);
+
+    if (this.psService && this.psService.idProductStructureList.length > 0) {
+      whereTokens += " AND p.id_product_structure IN (" + this.psService.idProductStructureList.map(() => '?').join(',') + ")";
+      params.push(... this.psService.idProductStructureList);
+    }
 
     //paginacion: limit y offset
     const offset = page * this.MAX_ITEMS_PER_PAGE;
@@ -674,9 +679,9 @@ MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por ca
     params.push(idEnterprise);
 
     // if a product structure selection exists, add it (numeric)
-    if (this.psService && this.psService.idProductStructureSeleccionada > 0) {
-      whereClause += " AND p.id_product_structure = ?";
-      params.push(this.psService.idProductStructureSeleccionada);
+    if (this.psService && this.psService.idProductStructureList.length > 0) {
+      whereClause += " AND p.id_product_structure IN (" + this.psService.idProductStructureList.map(() => '?').join(',') + ")";
+      params.push(...this.psService.idProductStructureList);
     }
 
     //limit and offset for pagination

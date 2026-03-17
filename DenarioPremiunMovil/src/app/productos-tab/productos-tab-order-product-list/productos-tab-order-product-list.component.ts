@@ -420,7 +420,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.productService.searchStructures = true;
     this.productService.onBackButtonClicked();
     this.productStructureService.onAddProductCLicked();
-    this.productStructureService.idProductStructureSeleccionada = 0;
+    this.productStructureService.idProductStructureList = [];
     this.productStructureService.nombreProductStructureSeleccionada = '';
   }
 
