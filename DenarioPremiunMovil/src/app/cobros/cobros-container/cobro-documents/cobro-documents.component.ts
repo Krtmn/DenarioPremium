@@ -79,6 +79,10 @@ export class CobrosDocumentComponent implements OnInit {
   public baseView: number = 0;
   public baseConversionView: number = 0;
   public valuePartialPayment: number = 0;
+  public discountView: number = 0;
+  public discountViewConversion: number = 0;
+  public ivaView: number = 0;
+  public ivaViewConversion: number = 0;
 
 
   public COLLECT_STATUS_SAVED = COLLECT_STATUS_SAVED;
@@ -205,8 +209,6 @@ export class CobrosDocumentComponent implements OnInit {
     let newSaldoConversion = "0";
     let newSaldoView = "0";
     let newSaldoConversionView = "0";
-    let baseView = "0";
-    let baseViewConversion = "0";
 
     const commit = () => {
       this.saldo = newSaldo;
