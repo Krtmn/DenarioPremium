@@ -60,10 +60,12 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
 
     this.backButtonSub = this.productService.backButtonClicked.subscribe((data) => {
       this.searchText = '';
+      this.productService.searchStructures = true;
       this.onSearchTextChanged();
     });
 
     this.productStructureClickedSub = this.productService.productStructureCLicked.subscribe(() => {
+      this.productService.searchStructures = false;
       this.showBackIcon = true;
     });
 
