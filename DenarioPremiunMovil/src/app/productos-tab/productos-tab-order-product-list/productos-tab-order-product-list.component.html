@@ -420,19 +420,25 @@
   <ion-modal id="eventModal2" size="cover" class="listado-product-structures modalActividades" [isOpen]="discountModal"
     (didDismiss)="showDiscountModal(false)">
     <ng-template>
-      <h1 class="ion-text-center"> Descuentos </h1>
+      <ion-card>
+      <ion-card-title class="ion-text-center modal-price-list-title"> Descuentos </ion-card-title>
       <ion-list>
         @for(dc of productoModal.discountList; track dc.idDiscount){
           @if(dc.quDiscount > 0){
           <ion-item>
+            <ion-card-content>
             <div>
-              {{orderServ.getTag("PED_DC")}} {{dc.quDiscount }}% {{orderServ.getTag("PED_DESDE")}} {{dc.quVolIni}}
-              {{dc.coUnit}}
+              {{orderServ.getTag("PED_DC")}}
+              <span class="modal-price-list-name"> {{dc.quDiscount }}%  </span>
+              {{orderServ.getTag("PED_DESDE")}}
+              <span class="modal-price-list-name"> {{dc.quVolIni}} {{dc.coUnit}} </span>           
             </div>
+            </ion-card-content>
           </ion-item>
         }
       }
       </ion-list>
+      </ion-card>
     </ng-template>
   </ion-modal>
   <!-- modal de info de lista de precios -->
