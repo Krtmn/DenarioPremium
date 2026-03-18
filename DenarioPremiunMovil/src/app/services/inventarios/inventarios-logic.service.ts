@@ -443,21 +443,8 @@ export class InventariosLogicService {
       //cuando carga un inventario guardado no trae los idUnits, por lo que se deben cargar con base en los idProductUnits
       idUnits = await this.getIdUnitsByProductUnit(dbServ, idProductUnits);
     }
-    //despacho se usa en ambos casos, por eso se calcula antes del if
-    let listAvgProduct = await this.orderDbServ.getClientAvgStock(dbServ, idEnterprise, idClient, idProductUnits, idAddressClient, idProducts);
-    for (var i = 0; i < listAvgProduct.length; i++) {
-      let idProduct = listAvgProduct[i].idProduct;
-      let idProductUnit = listAvgProduct[i].idProductUnit;
-      let quAvg = listAvgProduct[i].average;
-      let mapUnits = mapProducts.get(idProduct);
-      if(mapUnits != undefined){
-        let unitUtil = mapUnits.get(idProductUnit);
-        if(unitUtil != undefined){
-          unitUtil.dispatchedStock = quAvg;
-        }
-        
-      }
-    }
+
+  
     if(this.suggestedOrderByDispatchAndReturn){
     let daysSinceLastInventory = this.newClientStock.daysSinceLast;
     let daysUntilNextInventory = this.newClientStock.daysUntilNext;
@@ -466,7 +453,12 @@ export class InventariosLogicService {
     let previousCS = await this.getPreviousClientStock(dbServ, idClient, idAddressClient);
     if (previousCS == null) {
       //si no hay previo, se asume que el inventario inicial es 0, por lo que no se hace nada
+      this.newClientStock.daysSinceLast = daysSinceLastInventory = 1;
     }else{
+      //tomamos la fecha del inventario anterior para calcular los días desde el último inventario,
+      daysSinceLastInventory = this.dateServ.daysSince(previousCS.daClientStock);
+      this.newClientStock.daysSinceLast = daysSinceLastInventory;
+
       for (var i = 0; i < previousCS.clientStockDetails.length; i++) {
         for (var j = 0; j < previousCS.clientStockDetails[i].clientStockDetailUnits.length; j++) {
           let idProduct = previousCS.clientStockDetails[i].idProduct;
@@ -540,6 +532,20 @@ export class InventariosLogicService {
 
     }else{
       //version anterior que solo usa average diario de venta
+    let listAvgProduct = await this.orderDbServ.getClientAvgStock(dbServ, idEnterprise, idClient, idProductUnits, idAddressClient, idProducts);
+    for (var i = 0; i < listAvgProduct.length; i++) {
+      let idProduct = listAvgProduct[i].idProduct;
+      let idProductUnit = listAvgProduct[i].idProductUnit;
+      let quAvg = listAvgProduct[i].average;
+      let mapUnits = mapProducts.get(idProduct);
+      if(mapUnits != undefined){
+        let unitUtil = mapUnits.get(idProductUnit);
+        if(unitUtil != undefined){
+          unitUtil.dispatchedStock = quAvg;
+        }
+        
+      }
+    }
     for(const [idProduct, mapUnits] of mapProducts){
       for(const [idProductUnit, unitUtil] of mapUnits){
         if(unitUtil.dispatchedStock > 0){

@@ -174,6 +174,20 @@ export class DateServiceService {
     return min.substring(0, 10) <= date.substring(0, 10);
   }
 
+  daysSince(input: string) {
+    //devuelve cuantos dias han pasado desde la fecha recibida hasta hoy
+    //si la fecha es futura, devuelve un numero negativo
+    var d = this.dateFrom(input);
+    var today = new Date();
+    var msPerDay = 24 * 60 * 60 * 1000;
+
+    //Comparamos solo la parte de fecha para evitar errores por horas/minutos y cambios de DST
+    var fromUtc = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+    var toUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+
+    return Math.floor((toUtc - fromUtc) / msPerDay);
+  }
+
 
 
 

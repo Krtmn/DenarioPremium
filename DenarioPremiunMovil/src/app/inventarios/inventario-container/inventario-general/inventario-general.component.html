@@ -75,6 +75,7 @@
         </ion-col>
         @if(this.inventariosLogicService.suggestedOrderByDispatchAndReturn){
         <!-- Dias desde ultimo Inventario -->
+        @if(false){
         <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
           <div id="diasDesdeUltimoInventario">
             <ion-input fill="outline" type="number"
@@ -85,6 +86,7 @@
             </ion-input>
           </div>
         </ion-col>
+      }
         <!-- Dias hasta siguiente inventario -->
         <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
           <div id="diasHastaSiguienteInventario">
