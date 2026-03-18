@@ -438,17 +438,18 @@
   <!-- modal de info de lista de precios -->
   <ion-modal id="eventModal3" size="cover" class="listado-product-structures modalActividades" [isOpen]="priceListInfoModal" (didDismiss)="showPriceListInfoModal(false)">
     <ng-template>
-      <h3 class="ion-text-center">{{ productoModal.coProduct }}</h3>
-      <h2 class="ion-text-center"> {{productoModal.naProduct}} </h2>
-      <ion-list>
+      <ion-card>
+        <ion-card-title class="ion-text-center modal-price-list-title" > {{productoModal.naProduct}}  </ion-card-title>
+        <ion-card-subtitle class="ion-text-center modal-price-list-title">{{ productoModal.coProduct }} </ion-card-subtitle>      <ion-list class="modal-price-list">
       @for(pli of productoModal.listaModalList; track pli.pricelist.idPriceList){
         <ion-item>
-          <div>  
-            {{pli.list.naList}}: {{pli.pricelist.nuPrice ? formatNum(pli.pricelist.nuPrice) : 'N/A'}} {{productoModal.coCurrency}}
-          </div>
+          <ion-card-content>
+            <span class="modal-price-list-name">{{pli.list.naList}}</span>: {{pli.pricelist.nuPrice ? formatNum(pli.pricelist.nuPrice) : 'N/A'}} {{productoModal.coCurrency}}
+          </ion-card-content>
         </ion-item>
       }
       </ion-list>
+      </ion-card>
     </ng-template>
   </ion-modal>
 </div>

@@ -40,10 +40,6 @@
 
 }
 
-.listado-product-structures{
-  // margin-top: 40px;
-}
-
 .product-structure-title .ion-accordion-toggle-icon{
   display: none!important;
 }
@@ -144,7 +140,31 @@ ion-modal#eventModal3 {
   --height: fit-content;
   --border-radius: 6px;
   --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
+  --background: transparent;
 }
+
+ion-modal#eventModal3::part(content) {
+  background: transparent;
+}
+
+ion-modal#eventModal3 ion-card {
+  margin: 0;
+  padding-top: 6px;
+}
+
+ion-modal#eventModal3 .modal-price-list-title {
+  color: #000000;
+}
+
+ion-modal#eventModal3 .modal-price-list-name {
+  color: #000000;
+  font-weight: 700;
+}
+
+ion-modal#eventModal3 .modal-price-list ion-item div {
+  width: 100%;
+}
+
 ion-modal#eventModal .contenedorModalActividades{
   padding: 5%;
 }
