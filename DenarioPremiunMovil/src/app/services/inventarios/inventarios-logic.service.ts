@@ -26,6 +26,7 @@ import { ProductSuggestedUtil, UnitSuggestedUtil } from 'src/app/modelos/Product
 import { PedidosDbService } from 'src/app/pedidos/pedidos-db.service';
 import { StraightSwap } from 'src/app/modelos/tables/straightSwap';
 import { ReturnDetail } from 'src/app/modelos/tables/ReturnDetail';
+import { InvoiceDetailUnit } from 'src/app/modelos/tables/invoiceDetailUnit';
 
 
 @Injectable({
@@ -474,8 +475,9 @@ export class InventariosLogicService {
         }
       }
     }
-    //despacho
-    //hecho antes del if porque se usa para el calculo de sugeridos en ambos casos
+    //despacho por ultima facturacion
+    let dispatchsByLastInvoice = await this.getInvoicesDetailUnitsByIdProductUnit(dbServ, idProductUnits);
+    
 
     //Cambio por cambio
     let straightSwaps = await this.getStraightSwapsByClientStock(dbServ, idProducts, 
@@ -517,6 +519,10 @@ export class InventariosLogicService {
     //Pedido Sugerido = Venta/Dias desde ultima visita × Días hasta la próxima visita
     for(const [idProduct, mapUnits] of mapProducts){
       for(const [idProductUnit, unitUtil] of mapUnits){
+        let dispatched = dispatchsByLastInvoice.find(d => d.idProductUnit == idProductUnit);
+        if(dispatched != undefined){
+          unitUtil.dispatchedStock = dispatched.quInvoice;
+        }
       //Inventario Inicial = Inventario anterior + Despacho + Cambio por cambio
         unitUtil.initialStock = unitUtil.previousStock + unitUtil.dispatchedStock + unitUtil.straightSwapStock;
         //Venta = Inventario Inicial - Inventario actual - Devolución por distribución
@@ -1247,6 +1253,34 @@ export class InventariosLogicService {
       }
       return straightSwaps;
   });
+}
+
+getInvoicesDetailUnitsByIdProductUnit(dbServ: SQLiteObject, idProductUnits: number[]) {
+  let select = "SELECT * FROM ("+
+      "SELECT *, ROW_NUMBER() OVER (PARTITION BY id_product_unit ORDER BY id_invoice_detail_unit DESC) as rn "+
+      "FROM invoice_detail_units "+
+      "WHERE id_product_unit IN ("+idProductUnits.join(",")+")"+
+    ") WHERE rn = 1;";
+    return dbServ.executeSql(select, []).then(data => {
+      let invoiceDetailUnits: InvoiceDetailUnit[] = [];
+      for (var i = 0; i < data.rows.length; i++) {
+        let item = data.rows.item(i);
+        let invoiceDetailUnit: InvoiceDetailUnit = {
+          idInvoiceDetailUnit: item.id_invoice_detail_unit,
+          coInvoiceDetailUnit: item.co_invoice_detail_unit,
+          idProductUnit: item.id_product_unit,
+          coProductUnit: item.co_product_unit,
+          idInvoiceDetail: item.id_invoice_detail,
+          coInvoiceDetail: item.co_invoice_detail,
+          quInvoice: item.qu_invoice,
+          coEnterprise: item.co_enterprise,
+          idEnterprise: item.id_enterprise 
+        };
+        invoiceDetailUnits.push(invoiceDetailUnit);
+      }
+      return invoiceDetailUnits;
+    });
+
 }
 
 getReturnsByDistribution(dbServ: SQLiteObject, idProducts: number[], coUnits: String[], idEnterprise: number, idClient: number, dateLastInventory: string) {
