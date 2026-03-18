@@ -17,7 +17,11 @@
 .paddingPedidosTotal .hydrated {
   padding-top: 1px;
   padding-bottom: 1px;
-  font-size: 14px;
+  font-size: 12px;
+}
+
+.paddingPedidosTotal {
+  font-size: 12px;
 }
 .paddingPedidosTotal .paddingLefttotal {
   padding-left: 0;
@@ -59,3 +63,17 @@
 
 .text-red { color: #c0392b !important; }
 .text-green { color: #59b02d !important; }
+
+.titulototalesPedidos{
+    font-size: 16px;
+}
+.pdf-button-green {
+  --background: #59b02d;
+  --background-activated: #4f9a27;
+  --background-focused: #4f9a27;
+}
+.paddingPedidosTotal h3{
+  font-size: 16px;
+  margin-top: 0px;
+  margin-bottom: 5px;
+}

@@ -107,7 +107,14 @@ export class DateServiceService {
     //esta funcion remueve la hora
     var r = new Date();
     //r.setHours(0, 0, 0, 0); //esto jode cuando se usa para comparar fechas en españa. yo tampoco se porqué.
-    return r.toISOString().substring(0, 10);
+
+    // Usamos los componentes locales (getFullYear, getMonth, getDate) en lugar de toISOString
+    // para evitar que la conversión a UTC cambie el día si es tarde en la noche.
+    const year = r.getFullYear();
+    const month = (r.getMonth() + 1).toString().padStart(2, '0');
+    const day = r.getDate().toString().padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
   }
 
   hoyISOFullTime() {
@@ -123,7 +130,7 @@ export class DateServiceService {
     return s;
     //return r.toISOString().substring(0,19).replace("T"," "); << esto da una hora UTC, o sea, 4 horas en el futuro (en vzla)
 
-    //NOTA: con los cambios que se han hecho, ya no es ISO, 
+    //NOTA: con los cambios que se han hecho, ya no es ISO,
     //pero si le cambio el nombre a estas alturas rompo todo el proyecto,
     // si lo vuelvo ISO, el webService no lo acepta.
   }

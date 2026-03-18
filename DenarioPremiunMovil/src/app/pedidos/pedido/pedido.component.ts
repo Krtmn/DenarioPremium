@@ -40,6 +40,8 @@ import { OrderUtil } from 'src/app/modelos/orderUtil';
 import { ClientChannelOrderType } from 'src/app/modelos/tables/clientChannelOrderType';
 import { OrderTypeProductStructure } from 'src/app/modelos/tables/orderTypeProductStructure';
 import { DistributionChannel } from 'src/app/modelos/tables/distributionChannel';
+import { PdfCreatorService } from 'src/app/services/pdf-creator/pdf-creator.service';
+import { Share } from '@capacitor/share';
 
 @Component({
   selector: 'app-pedido',
@@ -64,6 +66,9 @@ export class PedidoComponent implements OnInit {
   public dbServ = inject(SynchronizationDBService);
   public services = inject(ServicesService);
   public autoSend = inject(AutoSendService);
+  private pdfCreator = inject(PdfCreatorService);
+  messageAlert!: MessageAlert;
+
 
   public geoServ = inject(GeolocationService);
 
@@ -89,6 +94,7 @@ export class PedidoComponent implements OnInit {
   public tipoOrdenAnterior!: OrderType;
   public listaAnterior!: List;
   public paymentCondition!: PaymentCondition;
+  public paymentConditionAnterior!: PaymentCondition;
 
   public hideAdjunto: boolean = true;
 
@@ -122,6 +128,7 @@ export class PedidoComponent implements OnInit {
   public modalInfoClienteOpen: boolean = false;
   saveOrExitOpen = false;
   parteDecimal = 2;
+  public DELIVERY_STATUS_SENT = DELIVERY_STATUS_SENT;
 
   nuValueLocal = 0;
   tasaCambio = '0';// la tasa que se muestra en el input
@@ -146,7 +153,7 @@ export class PedidoComponent implements OnInit {
     //this.orderServ.reset();
 
     this.setClientfromSelector(client);
-    //como estamos recien reseteados, no hay necesidad de chequear 
+    //como estamos recien reseteados, no hay necesidad de chequear
     this.clienteSelectorService.checkClient = false;
 
   })
@@ -188,7 +195,7 @@ export class PedidoComponent implements OnInit {
         this.orderServ.empresaSeleccionada = this.empresaSeleccionada;
         this.orderServ.setup();
         this.tipoOrden = this.orderServ.listaOrderTypes.find((o) => o.idOrderType == this.orderServ.order.idOrderType)!;
-
+        this.inOrderReview = this.orderServ.order.inOrderReview;
         this.tipoOrdenAnterior = this.tipoOrden;
         if (!this.tipoOrden) {
           console.error('Tipo de orden original no encontrado: ' + this.orderServ.order.idOrderType);
@@ -307,7 +314,7 @@ export class PedidoComponent implements OnInit {
 
   abrirPedido() {
     //esta funcion toma un pedido guardado o enviado y lo pone para modificarlo o mostrarlo respectivamente
-    //mini reset 
+    //mini reset
     this.orderServ.carrito = [];
     //[groupByTotalByLines]
     this.orderServ.carritoWithLines = [];
@@ -329,7 +336,7 @@ export class PedidoComponent implements OnInit {
     // Direccion de cliente: hecho en setup empresa, setClientFromSelector(c);
     // Tipo de orden: hecho en setup empresa
     // Lista de precio: hecho en setup empresa, setClientFromSelector(c);
-    //Numero de pedido: 
+    //Numero de pedido:
 
     this.nuPurchase = this.orderServ.order.nuPurchase === null ?
       '' : this.orderServ.order.nuPurchase;
@@ -400,9 +407,9 @@ export class PedidoComponent implements OnInit {
               unitUtil.quAmount = unit.quOrder;
               if (unitUtil.idUnit === item.idUnit) {
                 item.quAmount = unitUtil.quAmount;
-              }else{
+              } else {
                 //si es la unica unidad, la seleccionamos tambien
-                if(detail.orderDetailUnit.length == 1){
+                if (detail.orderDetailUnit.length == 1) {
                   item.quAmount = unitUtil.quAmount;
                   item.idUnit = unitUtil.idUnit;
                 }
@@ -417,7 +424,10 @@ export class PedidoComponent implements OnInit {
           item.iva = detail.iva;
           //descuentos
           let dc = item.discountList.find((d) => d.idDiscount == detail.idDiscount)!;
-          if (dc != undefined) {
+          if (this.orderServ.setProductDiscount) {
+            item.idDiscount = null;
+            item.quDiscount = detail.orderDetailDiscount?.[0]?.quDiscount ?? 0;
+          } else if (dc != undefined) {
             item.idDiscount = detail.idDiscount;
             item.quDiscount = dc.quDiscount;
           } else {
@@ -505,7 +515,7 @@ export class PedidoComponent implements OnInit {
 
   saveButton() {
     if (this.orderServ.changesMade) {
-      this.saveOrder(DELIVERY_STATUS_SAVED).then(s => {
+      this.saveOrder(3).then(s => {
         this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_AVISO_GUARDADO")); //TAG THIS
         this.orderServ.disableSendButton = false;
       });
@@ -535,6 +545,20 @@ export class PedidoComponent implements OnInit {
               type: "clientStock"
             })
           }
+
+          if (localStorage.getItem("connected") == "true") {
+            this.messageAlert = new MessageAlert(
+              this.orderServ.getTag('PED_DENARIO')!,
+              this.orderServ.getTag('PED_DENARIO_TO_SEND')!,
+            );
+
+          } else {
+            this.messageAlert = new MessageAlert(
+              this.orderServ.getTag('PED_DENARIO')!,
+              this.orderServ.getTag('PED_DENARIO_TO_SEND_OFFLINE')!,
+            );
+          }
+          this.message.alertModal(this.messageAlert);
           this.services.insertPendingTransactionBatch(this.dbServ.getDatabase(), transactions).then(() => {
             this.autoSend.ngOnInit();
           });
@@ -593,7 +617,7 @@ export class PedidoComponent implements OnInit {
         role: 'confirm',
         handler: () => {
           console.log('Alert confirmed');
-          this.message.dismissAll();
+          //this.message.dismissAll();
           this.confirmSend();
 
 
@@ -624,7 +648,11 @@ export class PedidoComponent implements OnInit {
     for (let i = 0; i < this.orderServ.carrito.length; i++) {
       const item = this.orderServ.carrito[i];
       let coOrderDetail = this.dateServ.generateCO(i);
-      let tieneDescuento = (item.idDiscount != null && item.idDiscount > 0);
+      let tieneDescuento = false;
+      if (this.orderServ.setProductDiscount) {
+        tieneDescuento = item.idDiscount == null ? true : false;
+      } else
+        tieneDescuento = (item.idDiscount != null && item.idDiscount > 0);
 
       let units: OrderDetailUnit[] = [];
       for (let j = 0; j < item.unitList.length; j++) {
@@ -653,7 +681,7 @@ export class PedidoComponent implements OnInit {
           this.dateServ.generateCO(i),
           coOrderDetail,
           0,
-          item.idDiscount,
+          item.idDiscount!,
           item.quDiscount,
           item.discountedNuPrice,
           empresa.coEnterprise,
@@ -678,7 +706,7 @@ export class PedidoComponent implements OnInit {
         item.iva,
         tieneDescuento ? item.nuAmountDiscount : 0,
         tieneDescuento ? '' : '', //TODO Agregar coDiscount a Dicsount, ffs
-        tieneDescuento ? item.idDiscount : 0,
+        tieneDescuento ? item.idDiscount! : 0,
         item.coPriceList,
         item.idPriceList,
         i,
@@ -959,7 +987,11 @@ export class PedidoComponent implements OnInit {
 
 
     } else {
-      //no se hace nada, solo el onchange() 
+      //no se hace nada, solo el onchange()
+      this.orderServ.tipoOrden = this.tipoOrden;
+      this.tipoOrdenAnterior = this.tipoOrden;
+      this.tipoOrden = this.orderServ.tipoOrden;
+
     }
     this.onChange();
   }
@@ -1106,8 +1138,36 @@ export class PedidoComponent implements OnInit {
     return a && b ? a.idCurrency === b.idCurrency : a === b;
   }
 
-  setClientfromSelector(cliente: Client) {
+  setClientfromSelector(cliente: Client, skipDebtValidation: boolean = false) {
     if (cliente) {
+      if (!skipDebtValidation && !this.orderServ.openOrder
+        && Number(cliente.saldo1 ?? 0) > 0
+        && this.orderServ.order?.stDelivery !== DELIVERY_STATUS_SENT
+        && this.orderServ.order?.stDelivery !== null) {
+        this.message.alertCustomBtn(
+          {
+            header: this.orderServ.getTag('PED_NOMBRE_MODULO'),
+            message: this.orderServ.getTag('PED_DENARIO_CLIENT_DEUDA'),
+          } as MessageAlert,
+          [
+            {
+              text: this.orderServ.getTag('DENARIO_BOTON_CANCELAR'),
+              role: 'cancel',
+              handler: () => {
+              },
+            },
+            {
+              text: this.orderServ.getTag('DENARIO_BOTON_ACEPTAR'),
+              role: 'confirm',
+              handler: () => {
+                this.setClientfromSelector(cliente, true);
+              },
+            }
+          ]
+        );
+        return;
+      }
+
       this.orderServ.cliente = cliente;
       this.segmentLock();
       if (this.orderServ.carrito.length > 0 || this.adjuntoService.hasItems()) {
@@ -1155,11 +1215,41 @@ export class PedidoComponent implements OnInit {
 
 
       // Lista
-      let list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
-      if (list != undefined) {
-        this.orderServ.listaSeleccionada = list;
-        this.listaAnterior = list;
-        this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList)
+      let list: List | undefined;
+      if (this.orderServ.openOrder) {
+        let idPriceList = this.orderServ.order.orderDetails[0].idPriceList
+        let pl = this.orderServ.listaPricelist.filter((pl) => pl.idPriceList == idPriceList)
+        if (pl.length < 1) {
+          console.error("No se encontro pricelist del pedido");
+          if (this.orderServ.pedidoModificable) {
+            console.log("Buscando lista por cliente, para que  el usuario pueda cambiarla");
+            list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
+          }
+        } else {
+          let idList = pl[0].idList;
+          list = this.orderServ.listaList.find((list) => list.idList == idList);
+        }
+        if (list) {
+          this.orderServ.listaSeleccionada = list!;
+          if (list.idList > 0) {
+            this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList);
+
+          }
+          this.listaAnterior = list!;
+        } else {
+          this.orderServ.listaSeleccionada = { idList: 0 } as List;
+        }
+
+
+      } else {
+        list = this.orderServ.listaList.find((list) => list.idList == cliente.idList);
+
+
+        if (list != undefined) {
+          this.orderServ.listaSeleccionada = list;
+          this.listaAnterior = list;
+          this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == list?.idList)
+        }
       }
 
 
@@ -1179,6 +1269,7 @@ export class PedidoComponent implements OnInit {
       let payCond = this.orderServ.listaPaymentCondition.find((pc) => pc.idPaymentCondition == idPaymentCondition)
       if (payCond != undefined) {
         this.paymentCondition = payCond;
+        this.paymentConditionAnterior = payCond;
       }
 
       // Address Client
@@ -1271,6 +1362,82 @@ export class PedidoComponent implements OnInit {
 
   formatNum(input: number) {
     return this.currencyServ.formatNumber(input);
+  }
+
+  canExportOrderSummaryPdf(): boolean {
+    const stDelivery = this.orderServ.order?.stDelivery;
+    return stDelivery == 1 || stDelivery === null;
+  }
+
+  async createOrderSummaryPdf() {
+    if (!this.canExportOrderSummaryPdf()) {
+      this.message.transaccionMsjModalNB('Solo se puede generar el PDF cuando el pedido esta enviado.');
+      return;
+    }
+
+    this.message.showLoading().then(async () => {
+      try {
+        const order = this.orderServ.order;
+        const coOrder = order?.coOrder || this.orderServ.coOrder || '';
+        const idOrder = this.orderServ.listaPedidos.find(p => p.co_order === coOrder)?.id_order ?? 0;
+        const daOrder = this.orderServ.listaPedidos.find(p => p.co_order === coOrder)?.da_order?.substring(0, 10) ?? '';
+        const currency = this.orderServ.monedaSeleccionada?.coCurrency || '';
+        const items = this.orderServ.carrito || [];
+
+
+        const rows = items.map(item => [
+          String(item.coProduct ?? ''),
+          String(item.naProduct ?? ''),
+          this.formatNum(Number(item.quAmount ?? 0)),
+          this.formatNum(Number(item.nuPrice ?? 0)),
+          this.formatNum(Number(item.subtotal ?? 0))
+        ]);
+
+        const doc = await this.pdfCreator.generateSummaryPdfDoc({
+          title: `Resumen pedido`,
+          meta: [
+            { label: 'Empresa', value: this.empresaSeleccionada?.lbEnterprise || '' },
+            { label: 'Pedido', value: String(idOrder) },
+            { label: 'Cliente', value: this.orderServ.cliente?.lbClient || '' },
+            { label: 'Fecha', value: this.dateServ.formatComplete(this.fechaPedido) },
+            { label: 'Moneda', value: currency },
+            { label: 'Items', value: String(items.length) }
+          ],
+          columns: [
+            { label: 'Código', align: 'left', width: '18%', noWrap: true, maxLines: 1 },
+            { label: 'Producto', align: 'left', width: '42%', noWrap: false, maxLines: 3 },
+            { label: 'Cantidad', align: 'right', width: '12%', noWrap: true },
+            { label: 'Precio', align: 'right', width: '14%', noWrap: true },
+            { label: 'Subtotal', align: 'right', width: '14%', noWrap: true }
+          ],
+          rows,
+          total: { label: 'Total', value: this.formatNum(Number(this.orderServ.totalPedido ?? 0)) + ' ' + currency },
+          fileName: `pedido_${idOrder}_${daOrder}.pdf`
+        }, { orientation: 'landscape', scale: 1, layoutScale: 1 });
+
+        const base64 = doc.output('datauristring');
+        const trimmed = base64.split(',')[1];
+        const fileName = `pedido_${idOrder}_${daOrder}.pdf`;
+        const result = await this.pdfCreator.savePdf(trimmed, fileName);
+
+
+        try {
+          await Share.share({
+            title: `pedido_${idOrder}_${daOrder}.pdf`,
+            url: result.uri
+          });
+
+
+        } catch (shareErr) {
+          console.error('Error sharing order summary PDF', shareErr);
+        }
+        //this.message.transaccionMsjModalNB('PDF generado y guardado.');
+      } catch (err) {
+        console.error('Error creating order summary PDF', err);
+      } finally {
+        this.message.hideLoading();
+      }
+    });
   }
 
   onDateDispatchChange() {
@@ -1412,19 +1579,7 @@ export class PedidoComponent implements OnInit {
 
   currencySelection() {
     //seleccion de moneda por defecto;
-    if (this.currencyServ.multimoneda) {
-      if (this.orderServ.currencyModuleEnabled && this.orderServ.currencyModule.idModule > 0) {
-        if (this.orderServ.currencyModule.localCurrencyDefault) {
-          this.orderServ.monedaSeleccionada = this.currencyServ.getLocalCurrency();
-        } else {
-          this.orderServ.monedaSeleccionada = this.currencyServ.getHardCurrency();
-        }
-      } else {
-        this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
-      }
-    } else {
-      this.orderServ.monedaSeleccionada = this.currencyServ.getLocalCurrency();
-    }
+    this.orderServ.currencySelection();
     this.monedaSeleccionada = this.orderServ.monedaSeleccionada;
     //this.onCurrencySelect();
   }
@@ -1433,5 +1588,42 @@ export class PedidoComponent implements OnInit {
   paymentConditionInterfaceOptions = {
     side: 'top',
     alignment: 'center'
+  }
+
+  changePaymentCondition() {
+    if (!this.paymentConditionAnterior || !this.paymentCondition) {
+      this.paymentConditionAnterior = this.paymentCondition;
+      return;
+    }
+
+    if (this.paymentConditionAnterior.idPaymentCondition === this.paymentCondition.idPaymentCondition) {
+      return;
+    }
+
+    const paymentConditionSeleccionada = this.paymentCondition;
+
+    this.message.alertCustomBtn({
+      header: this.orderServ.getTag('PED_NOMBRE_MODULO'),
+      message: this.orderServ.getTag('PED_CAMBIO_CONDICION_PAGO') || '¿Desea cambiar la condición de pago?'
+    } as MessageAlert,
+      [
+        {
+          text: this.orderServ.getTag('DENARIO_BOTON_CANCELAR'),
+          role: 'cancel',
+          handler: () => {
+            this.paymentCondition = this.paymentConditionAnterior;
+            this.orderServ.setChangesMade(false);
+          },
+        },
+        {
+          text: this.orderServ.getTag('DENARIO_BOTON_ACEPTAR'),
+          role: 'confirm',
+          handler: () => {
+            this.paymentConditionAnterior = paymentConditionSeleccionada;
+            this.onChange();
+          },
+        }
+      ]
+    );
   }
 }

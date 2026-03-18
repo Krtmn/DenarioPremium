@@ -16,10 +16,10 @@ import { SynchronizationDBService } from 'src/app/services/synchronization/synch
 import { COLOR_AMARILLO, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 
 @Component({
-    selector: 'devoluciones-header',
-    templateUrl: './devoluciones-header.component.html',
-    styleUrls: ['./devoluciones-header.component.scss'],
-    standalone: false
+  selector: 'devoluciones-header',
+  templateUrl: './devoluciones-header.component.html',
+  styleUrls: ['./devoluciones-header.component.scss'],
+  standalone: false
 })
 export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
 
@@ -97,7 +97,7 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
     this.subscriptionAttachmentChanged = this.adjuntoService.AttachmentChanged.subscribe(() => {
       //this.returnLogic.setChange(true, true); //dupe
       this.returnLogic.updateSendButtonState();
-  });
+    });
 
     this.alertButtons = [
       {
@@ -149,7 +149,7 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
 
 
   onBackClicked() {
-    if (this.returnLogic.returnChanged) {
+    if (this.returnLogic.returnChanged && this.returnLogic.newReturn.stDelivery == 3) {
       this.saveOrExitOpen = true;
     } else {
       this.returnLogic.showBackRoute('devoluciones');
@@ -157,10 +157,10 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
     }
   }
 
-    backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
-      //console.log('backButton was called!');
-      this.onBackClicked();
-    });
+  backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
+    //console.log('backButton was called!');
+    this.onBackClicked();
+  });
 
   saveSendNewReturn(send: Boolean) {
     this.returnLogic.newReturn.details = this.returnLogic.productList;
@@ -172,12 +172,12 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
       // SOLO SE VA A GUARDAR LA DEVOLUCION, NO SERA ENVIADA
       this.messageService.showLoading().then(() => {
         console.log('daReturn ' + this.returnLogic.newReturn.daReturn);
-        this.returnLogic.newReturn.stDelivery = DELIVERY_STATUS_SAVED;
+        this.returnLogic.newReturn.stDelivery = 3;
         this.returnLogic.newReturn.hasAttachments = this.adjuntoService.hasItems();
         this.returnLogic.newReturn.nuAttachments = this.adjuntoService.getNuAttachment();
-        this.returnDatabaseService.saveReturn(this.synchronizationServices.getDatabase(),this.returnLogic.newReturn).then(async () => {
+        this.returnDatabaseService.saveReturn(this.synchronizationServices.getDatabase(), this.returnLogic.newReturn).then(async () => {
           //aqui voy a llamar a insertar los detalles
-          this.returnDatabaseService.saveReturnDetails(this.synchronizationServices.getDatabase(),this.returnLogic.newReturn.details).then(() => {
+          this.returnDatabaseService.saveReturnDetails(this.synchronizationServices.getDatabase(), this.returnLogic.newReturn.details).then(() => {
             this.messageAlert = new MessageAlert(
               this.headerTags.get('DENARIO_DEV')!,
               this.headerTags.get('DENARIO_DEV_TO_SAVE')!,
@@ -195,13 +195,13 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
     }
   }
 
-  sendReturn(dbServ:SQLiteObject) {
+  sendReturn(dbServ: SQLiteObject) {
     let pendingTransaction = {} as PendingTransaction;
     this.returnLogic.newReturn.stDelivery = DELIVERY_STATUS_TO_SEND;
     this.returnLogic.newReturn.hasAttachments = this.adjuntoService.hasItems();
     this.returnLogic.newReturn.nuAttachments = this.adjuntoService.getNuAttachment();
     this.messageService.showLoading().then(() => {
-        this.returnDatabaseService.saveReturn(dbServ,this.returnLogic.newReturn).then(async () => {
+      this.returnDatabaseService.saveReturn(dbServ, this.returnLogic.newReturn).then(async () => {
 
         //guardamos y enviamos adjuntos
         await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.returnLogic.newReturn.coReturn,
@@ -210,9 +210,9 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
           });
 
         //aqui voy a llamar a insertar los detalles
-        this.returnDatabaseService.saveReturnDetails(dbServ,this.returnLogic.newReturn.details).then(() => {
+        this.returnDatabaseService.saveReturnDetails(dbServ, this.returnLogic.newReturn.details).then(() => {
 
-          // COMO SE VA A ENVIAR, DESPUES DE GUARDAR LA DEVOLUCION SE VA 
+          // COMO SE VA A ENVIAR, DESPUES DE GUARDAR LA DEVOLUCION SE VA
           pendingTransaction.coTransaction = this.returnLogic.newReturn.coReturn;
           pendingTransaction.idTransaction = this.returnLogic.newReturn.idReturn;
           pendingTransaction.type = "return";
@@ -247,7 +247,7 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
 
   }
 
-  saveAndExit(dbServ:SQLiteObject) {
+  saveAndExit(dbServ: SQLiteObject) {
     this.messageService.showLoading().then(() => {
       this.returnLogic.newReturn.details = this.returnLogic.productList;
       // SOLO SE VA A GUARDAR LA DEVOLUCION, NO SERA ENVIADA
@@ -255,21 +255,21 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
       this.returnLogic.newReturn.stDelivery = DELIVERY_STATUS_SAVED;
       this.returnLogic.newReturn.hasAttachments = this.adjuntoService.hasItems();
       this.returnLogic.newReturn.nuAttachments = this.adjuntoService.getNuAttachment();
-      this.returnDatabaseService.saveReturn(dbServ,this.returnLogic.newReturn).then(async () => {
+      this.returnDatabaseService.saveReturn(dbServ, this.returnLogic.newReturn).then(async () => {
         //guardo adjuntos
         await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.returnLogic.newReturn.coReturn,
           "devoluciones");
 
         //primero debo eliminar detalles si hay
-        this.returnDatabaseService.deleteReturnDetails(dbServ,this.returnLogic.newReturn.coReturn).then();
+        this.returnDatabaseService.deleteReturnDetails(dbServ, this.returnLogic.newReturn.coReturn).then();
         // inserto los detalles finales
-        this.returnDatabaseService.saveReturnDetails(dbServ,this.returnLogic.newReturn.details).then();
+        this.returnDatabaseService.saveReturnDetails(dbServ, this.returnLogic.newReturn.details).then();
         this.returnLogic.setChange(false, false);
         this.returnLogic.showBackRoute('devoluciones');
         this.messageService.hideLoading();
       }).catch(err => console.log('saveReturn: ' + err));
     });
-    
+
   }
 
   setResult(ev: any) {

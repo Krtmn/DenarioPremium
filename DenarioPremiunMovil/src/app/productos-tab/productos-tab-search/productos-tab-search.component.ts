@@ -1,6 +1,8 @@
 import { Component, Input, OnDestroy, OnInit, Output, EventEmitter, inject } from '@angular/core';
+import { Subject } from 'rxjs';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { PedidosService } from 'src/app/pedidos/pedidos.service';
+import { MessageService } from 'src/app/services/messageService/message.service';
 import { ProductStructureService } from 'src/app/services/productStructures/product-structure.service';
 import { ProductService } from 'src/app/services/products/product.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
@@ -19,21 +21,28 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
   productsTabTags = new Map<string, string>([]);
   productService = inject(ProductService);
   orderServ = inject(PedidosService);
+  message = inject(MessageService);
   @Input()
   showProductStructure: Boolean = false;
   @Input()
   empresaSeleccionada!: Enterprise;
   @Input()
   pedido: Boolean = false;
+  @Input()
+  showBackButton: Boolean = false;
 
   searchText: string = '';
   productStructures: Boolean = false;
   disabledSearchButton: Boolean = false;
-
-
+  showBackIcon = false;
   productStructuresSub: any;
   //searchSub: any;
   backButtonSub: any;
+  productStructureClickedSub: any;
+  searchClickedSub: any;
+  featuredClickedSub: any;
+  favoriteClickedSub: any;
+  carritoClickedSub: any;
 
   constructor() { }
 
@@ -44,11 +53,36 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
 
     this.productStructuresSub = this.productStructureService.productStructures.subscribe((data) => {
       this.productStructures = data;
+      if (data) {
+        this.showBackIcon = false;
+      }
     });
 
     this.backButtonSub = this.productService.backButtonClicked.subscribe((data) => {
       this.searchText = '';
+      this.productService.searchStructures = true;
       this.onSearchTextChanged();
+    });
+
+    this.productStructureClickedSub = this.productService.productStructureCLicked.subscribe(() => {
+      this.productService.searchStructures = false;
+      this.showBackIcon = true;
+    });
+
+    this.searchClickedSub = this.productService.onSearchClicked.subscribe(() => {
+      this.showBackIcon = true;
+    });
+
+    this.featuredClickedSub = this.productService.featuredStructureClicked.subscribe(() => {
+      this.showBackIcon = true;
+    });
+
+    this.favoriteClickedSub = this.productService.favoriteStructureClicked.subscribe(() => {
+      this.showBackIcon = true;
+    });
+
+    this.carritoClickedSub = this.productService.carritoButtonClicked.subscribe(() => {
+      this.showBackIcon = true;
     });
 
     /*
@@ -62,46 +96,66 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
     this.productStructuresSub.unsubscribe();
     //this.searchSub.unsubscribe();
     this.backButtonSub.unsubscribe();
+    this.productStructureClickedSub.unsubscribe();
+    this.searchClickedSub.unsubscribe();
+    this.featuredClickedSub.unsubscribe();
+    this.favoriteClickedSub.unsubscribe();
+    this.carritoClickedSub.unsubscribe();
   }
 
   onSearchTextChanged() {
     this.productService.searchTextChanged.next(this.searchText);
   }
 
-  onSearchClicked() {
+  clearSearch() {
+    this.searchText = '';
+    this.onSearchTextChanged();
+  }
+
+  onSearchClicked(event?: Event) {
+    event?.preventDefault();
+    if (this.disabledSearchButton || this.searchText.trim().length === 0) {
+      return;
+    }
     this.productStructureService.nombreProductStructureSeleccionada = '';
-    
-    this.disabledSearchButton = true;
     if (this.productService.searchStructures) {
-      //Buscar en estructuras de producto
-      if (this.pedido) {
-        this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency, this.orderServ.listaSeleccionada.idList).then(() => {
-          this.productService.onProductTabSearchClicked();
-          this.disabledSearchButton = false;
-        });
-      } else {
-        this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
-          this.searchText,
-          this.empresaSeleccionada.idEnterprise,
-          this.empresaSeleccionada.coCurrencyDefault).then(() => {
-            this.productService.onProductTabSearchClicked();
-            this.disabledSearchButton = false;
-          });
-      }
-    } else {
-      this.productStructureService.idProductStructureSeleccionada = 0;
-      if (this.pedido) {
-        this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency, this.orderServ.listaSeleccionada.idList).then(() => {
-          this.productService.onProductTabSearchClicked();
-          this.disabledSearchButton = false;
-        });
-      } else {
-        //Buscar en estructuras de producto?
-        this.disabledSearchButton = false;
-        this.productService.onProductTabSearchClicked();
-      }
+      //reseteamos la seleccion de estructura de producto
+      this.productStructureService.idProductStructureList = [];
     }
 
+    this.disabledSearchButton = true;
+
+    //Buscar en estructura de producto
+    this.message.showLoading();
+    if (this.pedido) {
+      //hay que filtrar por lista de precios si estamos en pedido
+      this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(
+        this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise,
+        this.orderServ.monedaSeleccionada.coCurrency,
+        this.orderServ.listaSeleccionada.idList, 0).then(() => {
+          this.productService.onProductTabSearchClicked();
+          this.disabledSearchButton = false;
+          this.message.hideLoading();
+        });
+    } else {
+      //busqueda normal sin filtrar por lista de precios
+      this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
+        this.searchText,
+        this.empresaSeleccionada.idEnterprise,
+        this.empresaSeleccionada.coCurrencyDefault, 0).then(() => {
+          this.productService.onProductTabSearchClicked();
+          this.disabledSearchButton = false;
+          this.message.hideLoading();
+        });
+    }
+
+  }
+
+
+
+  onBackClicked() {
+    this.showBackIcon = false;
+    this.productService.onReturnBackClicked();
   }
 
 }

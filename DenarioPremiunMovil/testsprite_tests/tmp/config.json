@@ -1,0 +1,18 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:4200/",
+  "executionArgs": {
+    "projectName": "DenarioPremiunMovil",
+    "projectPath": "c:\\Users\\franc\\Documents\\Repositorios\\DenarioPremiumMovil\\DenarioPremiunMovil",
+    "testIds": [],
+    "additionalInstruction": "Ionic/Angular mobile app",
+    "serverMode": "development",
+    "envs": {
+      "API_KEY": "sk-user-uzCEGpcrkc-z_yzln5tNMix-d17M53eBf7pSloO6ExpKbUtu8m_N6sB7XfIiFNfacXQRfN3EqpbqWdbOMRzBVQiKG2INmjPx28huia_45MaLJQ88H66fWb9BeTSSB2P23Dw"
+    }
+  },
+  "serverPort": 50632,
+  "proxy": "http://272aaf30-4308-4408-aeac-73ed4c44427c:ax5MPmBmpqJ5pSDynPxYUzyYWqjLycRK@tun.testsprite.com:8080"
+}

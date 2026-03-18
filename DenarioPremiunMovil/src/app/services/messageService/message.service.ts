@@ -12,6 +12,7 @@ import { MessageButton } from 'src/app/modelos/message-button';
   providedIn: 'root'
 })
 export class MessageService {
+  QUEUE_TIME = 100; //tiempo para procesar siguiente mensaje en la cola, en ms
 
   //transaccionMsj = new EventEmitter<string>;
   transaccionMsj = new Subject<string>;
@@ -53,14 +54,14 @@ export class MessageService {
 
   async showLoading() {
     /*
-    Muestra una pantalla de carga. 
-  
+    Muestra una pantalla de carga.
+
     Para usar esta pantalla se debe usar la promesa devuelta por esta funcion.
     y realizar todo el proceso que requiere esta ventana de carga dentro del .then() de esta promesa.
-  
+
     Al terminar, usar hideLoading() de este servicio para cerrar el pop-up.
-  
-    Si no es usado de esta forma, es posible que se intente ocultar 
+
+    Si no es usado de esta forma, es posible que se intente ocultar
     un loading screen que aun no existe.
     */
     const loading = await this.loadingCtrl.create({
@@ -101,6 +102,8 @@ export class MessageService {
   }
   alertModal(msj: MessageAlert) {
     // Encolar y procesar en serie
+    if (!msj) return; // evita null/undefined
+    if (!msj.message || msj.message.trim().length < 1) return; // evitar mensajes vacíos
     this.messageQueue.push({ type: 'alertModalMsj', payload: msj });
     this.processQueue();
   }
@@ -160,12 +163,12 @@ export class MessageService {
     // Marcar como listo para siguiente y procesar cola
     this.showingMessage = false;
     // permitir que el cierre se complete en el DOM antes de disparar siguiente
-    setTimeout(() => this.processQueue(), 50);
+    setTimeout(() => this.processQueue(), this.QUEUE_TIME);
   }
   closeAlertModal2() {
     this.closeAlertModal2Subject.next(null);
     this.showingMessage = false;
-    setTimeout(() => this.processQueue(), 50);
+    setTimeout(() => this.processQueue(), this.QUEUE_TIME);
   }
   /*   closeConfirmSend() {
       this.closeConfirmSendSubject.next(null);
@@ -176,13 +179,13 @@ export class MessageService {
   closeModalLogin() {
     this.closeModalLoginSubject.next(null);
     this.showingMessage = false;
-    setTimeout(() => this.processQueue(), 50);
+    setTimeout(() => this.processQueue(), this.QUEUE_TIME);
   }
 
   closeCustomBtn() {
     this.closeModalCustomBtn.next(null);
     this.showingMessage = false;
-    setTimeout(() => this.processQueue(), 50);
+    setTimeout(() => this.processQueue(), this.QUEUE_TIME);
   }
 
   dismissAll() {

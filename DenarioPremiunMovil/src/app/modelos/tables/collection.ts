@@ -41,6 +41,8 @@ export class Collection {
       obj['nuAmountIgtfConversion'],
       obj['nuAmountPaid'],
       obj['nuAmountPaidConversion'],
+      obj['nuAmountDiscountTotal'],
+      obj['nuAmountDiscountTotalConversion'],
       obj['hasIGTF'],
       obj['document'],
       obj['coordenada'],
@@ -92,6 +94,8 @@ export class Collection {
     public nuAmountIgtfConversion: number = 0,
     public nuAmountPaid: number = 0,
     public nuAmountPaidConversion: number = 0,
+    public nuAmountDiscountTotal: number = 0,
+    public nuAmountDiscountTotalConversion: number = 0,
     public hasIGTF: boolean = false,
     public document: DocumentSale | undefined,
     public coordenada: string = "",
@@ -128,6 +132,8 @@ export class CollectionDetail {
       obj['daDocument'],
       obj['nuBalanceDoc'],
       obj['nuBalanceDocConversion'],
+      obj['nuBalanceDocOriginal'],
+      obj['nuBalanceDocOriginalConversion'],
       obj['coOriginal'],
       obj['coTypeDoc'],
       obj['nuValueLocal'],
@@ -140,6 +146,8 @@ export class CollectionDetail {
       obj['discountComment'],
       obj['nuAmountCollectDiscount'],
       obj['nuCollectDiscount'],
+      obj['missingRetention'],
+      obj['nuAmountCollectDiscountConversion'],
       obj['collectionDetailDiscounts'],
     );
   }
@@ -166,6 +174,8 @@ export class CollectionDetail {
     public daDocument: string = "",
     public nuBalanceDoc: number = 0,
     public nuBalanceDocConversion: number = 0,
+    public nuBalanceDocOriginal: number = 0,
+    public nuBalanceDocOriginalConversion: number = 0,
     public coOriginal: string = "",
     public coTypeDoc: string = "",
     public nuValueLocal: number = 0,
@@ -178,6 +188,8 @@ export class CollectionDetail {
     public discountComment: string | null = "",
     public nuAmountCollectDiscount: number = 0,
     public nuCollectDiscount: number = 0,
+    public missingRetention: boolean = false,
+    public nuAmountCollectDiscountConversion: number = 0,
     public collectionDetailDiscounts?: CollectionDetailDiscounts[],
   ) { }
 }
@@ -206,6 +218,11 @@ export class CollectionPayment {
       obj['isAnticipoPrepaid'],
       obj['idDifferenceCode'],
       obj['coDifferenceCode'],
+      obj['nuBankAccount'],
+      obj['idTypeDocument'],
+      obj['nuDocument'],
+      obj['idCodePhoneNumber'],
+      obj['nuPhoneNumber']
 
     );
   }
@@ -231,7 +248,13 @@ export class CollectionPayment {
     public isSave: boolean = true, // true se guarda el pedido, false se actualiza
     public isAnticipoPrepaid: boolean = false, // true se guarda el pedido, false se actualiza
     public idDifferenceCode: number | null = 0,
-    public coDifferenceCode: string | null = ""
+    public coDifferenceCode: string | null = "",
+    public nuBankAccount: string | null = "",
+    public idTypeDocument: number | null = null,
+    public nuDocument: string | null = "",
+    public idCodePhoneNumber: number | null = null,
+    public nuPhoneNumber: string | null = ""
+
 
 
   ) { }
@@ -246,6 +269,10 @@ export class CollectionDetailDiscounts {
       obj['nuCollectDiscountOther'],
       obj['naCollectDiscountOther'],
       obj['coCollection'],
+      obj['coDocument'],
+      obj['nuAmountCollectDiscountOther'],
+      obj['nuAmountCollectDiscountOtherConversion'],
+      obj['posicion'],
     );
   }
 
@@ -256,6 +283,10 @@ export class CollectionDetailDiscounts {
     public nuCollectDiscountOther: number | null = null,
     public naCollectDiscountOther: string | null = "",
     public coCollection: string = "",
+    public coDocument: string = "",
+    public nuAmountCollectDiscountOther: number = 0,
+    public nuAmountCollectDiscountOtherConversion: number = 0,
+    public posicion: number = 0,
 
   ) { }
 }

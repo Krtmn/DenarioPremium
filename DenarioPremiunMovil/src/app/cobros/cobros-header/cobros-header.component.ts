@@ -4,6 +4,7 @@ import { Platform } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { Collection } from 'src/app/modelos/tables/collection';
+import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
@@ -26,6 +27,8 @@ export class CobrosHeaderComponent implements OnInit {
   public adjuntoService = inject(AdjuntoService);
   public synchronizationServices = inject(SynchronizationDBService);
   public messageService = inject(MessageService);
+  messageAlert!: MessageAlert;
+
 
 
   public textSave: String = '';
@@ -81,8 +84,8 @@ export class CobrosHeaderComponent implements OnInit {
         this.messageService.showLoading().then(() => {
           this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
           this.alertMessageOpen = true;
-          this.collectService.collection.stDelivery = 1;
-          this.collectService.collection.stCollection = this.COLLECT_STATUS_SAVED;
+          this.collectService.collection.stDelivery = 3;
+          this.collectService.collection.stCollection = 3;
           this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, true).then(async response => {
             await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
             console.log(response);
@@ -259,6 +262,19 @@ export class CobrosHeaderComponent implements OnInit {
     if (send) {
       this.collectService.sendCollection = true;
       this.collectService.saveSendCollection(coCollection);
+      if (localStorage.getItem("connected") == "true") {
+        this.messageAlert = new MessageAlert(
+          this.collectService.collectionTags.get('COB_HEADER_MESSAGE')!,
+          this.collectService.collectionTags.get('COB_DENARIO_TO_SEND')!,
+        );
+      } else {
+        this.messageAlert = new MessageAlert(
+          this.collectService.collectionTags.get('COB_HEADER_MESSAGE')!,
+          this.collectService.collectionTags.get('COB_DENARIO_TO_SEND_OFFLINE')!,
+        );
+
+      }
+      this.messageService.alertModal(this.messageAlert);
     }
 
   }
@@ -277,12 +293,6 @@ export class CobrosHeaderComponent implements OnInit {
       //ES UN COBRO, SE DEBE BUSCAR EN TODOS LOS DETAILS SI HAY RETENCIONES, SI HAY RETENCIONES HAY QUE BUSCAR
       // SI HAY ADJUNTOS, SI NO HAY, SE DEBE ENVIAR MSJ DE ALERTA Y
       //NO SE DEBE PERMITIR EL ENVIO HASTA QUE SE ADJUNTE AL MENOS UN DOCUMENTO
-
-      /*  if (!this.adjuntoService.hasItems()) {
-         //NO HAY ADJUNTOS
-         this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_MSJ_RETENTION_NO_ATTACHMENTS')!);
-         return;
-       } */
       try {
         const details = this.collectService.collection?.collectionDetails;
         const hasRetentions = Array.isArray(details) && details.some(d => {
@@ -290,6 +300,16 @@ export class CobrosHeaderComponent implements OnInit {
           const r2 = Number(d?.nuAmountRetention2 ?? 0);
           return (r1 > 0) || (r2 > 0);
         });
+
+
+        //NUEVA VALIDACION, SI LA CONFIGURACION DE LA EMPRESA INDICA QUE LOS COBROS REQUIEREN ADJUNTOS, SE VALIDA QUE HAYA ADJUNTOS INDEPENDIENTEMENTE DE SI HAY RETENCIONES O NO
+        if (this.collectService.requiredCollectionAttachments) {
+          if (!this.adjuntoService.hasItems()) {
+            //NO HAY ADJUNTOS
+            this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_RET_MSJ_COLLECTION_NO_ATTACHMENTS')!);
+            return;
+          }
+        }
 
         // Guardar resultado en el servicio para uso posterior y log para depuración
         //this.collectService.isRetention = !!hasRetentions;
@@ -344,8 +364,8 @@ export class CobrosHeaderComponent implements OnInit {
         })
       } else {
         //salvo
-        this.collectService.collection.stDelivery = 1;
-        this.collectService.collection.stCollection = this.COLLECT_STATUS_SAVED;
+        this.collectService.collection.stDelivery = 3;
+        this.collectService.collection.stCollection = 3;
         this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(async response => {
           await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
           console.log(response);

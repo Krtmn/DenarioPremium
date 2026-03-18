@@ -13,6 +13,7 @@ export class ClientStockTotal {
             obj['totalExh'],
             obj['totalDep'],
             obj['ubicacion'],
+            obj['daExpiration'],
         );
     }
 
@@ -29,6 +30,7 @@ export class ClientStockTotal {
         public totalExh: number = 0,
         public totalDep: number = 0,
         public ubicacion: string = "",
+        public daExpiration: string = "",
 
     ) { }
 }

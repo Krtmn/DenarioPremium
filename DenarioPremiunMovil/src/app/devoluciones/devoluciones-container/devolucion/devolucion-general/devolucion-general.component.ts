@@ -81,7 +81,7 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
         //this.selectorCliente.setSkin('Devoluciones', 'fondoAmarillo');
 
         this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
-          this.returnLogic.tags.get('DEV_NOMBRE_MODULO')!, 'fondoAmarillo', null, this.returnLogic.validateClient, 'dev' );
+          this.returnLogic.tags.get('DEV_NOMBRE_MODULO')!, 'fondoAmarillo', null, this.returnLogic.validateClient, 'dev');
         this.returnLogic.bloquearFactura = false;
         this.returnLogic.newReturn.coReturn = this.dateServ.generateCO(0);
         this.returnLogic.newReturn.idType = this.returnLogic.returnTypes[0].idType;

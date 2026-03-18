@@ -8,6 +8,7 @@ import { CurrencyModules } from 'src/app/modelos/tables/currencyModules';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { Product } from 'src/app/modelos/tables/product';
 import { ProductStructure } from 'src/app/modelos/tables/productStructure';
+import { PedidosService } from 'src/app/pedidos/pedidos.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
@@ -34,7 +35,7 @@ export class ProductListComponent implements OnInit {
   message = inject(MessageService);
   imageServices = inject(ImageServicesService);
   currencyService = inject(CurrencyService);
-
+  orderService = inject(PedidosService);
   config = inject(GlobalConfigService);
 
   public imagesMap: { [imgName: string]: string } = {};
@@ -50,7 +51,7 @@ export class ProductListComponent implements OnInit {
   searchText: string = '';
   showConversionInfo: Boolean = false;
   localCurrencyDefault: Boolean = true;
-
+  noProductsAlertShown = false;
 
   productList: ProductUtil[] = [];
   productListView: ProductUtil[] = [];
@@ -63,7 +64,8 @@ export class ProductListComponent implements OnInit {
   defaultCurrency: string = '';
   startPro: number = 0;
   endPro: number = 20;
-  qtyPro: number = 20;
+  
+  page: number = 0;
 
   @Output()
   selectedProductChanged: EventEmitter<ProductDetail> = new EventEmitter<ProductDetail>();
@@ -77,7 +79,7 @@ export class ProductListComponent implements OnInit {
 
   ngOnInit() {
 
-    this.productService.showStock = this.productService.globalConfig.get("showStock") == "true" ? true : false;
+    //this.productService.showStock = this.productService.globalConfig.get("showStock") == "true" ? true : false;
 
     this.subs.add(
       this.imageServices.imageLoaded$.subscribe(({ imgName, imgSrc }) => {
@@ -87,7 +89,9 @@ export class ProductListComponent implements OnInit {
     );
 
     // Reemite imágenes cacheadas (si existen)
-    this.imageServices.emitCachedImages();
+    if(this.orderService.showProductImages){
+      this.imageServices.emitCachedImages();
+    }
     this.currencyModuleEnabled = this.config.get("currencyModule").toLowerCase() === "true";
     var currencyModule: CurrencyModules = this.currencyService.getCurrencyModule('pro');
     this.showConversionInfo = currencyModule.showConversion;
@@ -102,29 +106,58 @@ export class ProductListComponent implements OnInit {
     }
     if (this.searchText) {
       if (this.productService.productList.length > 0) {
+        //this.productList = this.filterProductList(this.productService.productList);
         this.productList = this.productService.productList;
       } else {
         this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
-          this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency).then(() => {
+          this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency, 0).then(() => {
+            this.noProductsAlertShown = false;
+            //this.productList = this.filterProductList(this.productService.productList);
             this.productList = this.productService.productList;
+            this.noProductsAlertShown = this.productList.length === 0;
+            this.message.hideLoading();
           });
       }
     } else {
       this.idProductStructureList = this.productStructureService.idProductStructureList;
       this.coProductStructureListString = this.productStructureService.coProductStructureListString;
       this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
-        this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.defaultCurrency).then(() => {
+        this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.defaultCurrency, 0).then(() => {
+          this.noProductsAlertShown = false;
+          //this.productList = this.filterProductList(this.productService.productList);
           this.productList = this.productService.productList;
+          this.noProductsAlertShown = this.productList.length === 0;
         });
     }
+  }
+
+  filterProductList(list: ProductUtil[]) {
+    //No se usa por los momentos.
+    //Esta funcion filtra productos sin stock y productos sin precio, dependiendo de la configuracion seteada en PedidosService. 
+    //Se dejo por si en algun momento se quiere volver a usar esta funcionalidad sin tener que reescribirla.
+    if (this.orderService.hideStock0){
+      list = list.filter(product => product.stock && product.stock > 0);
+    }
+    if( this.orderService.hideProdWithoutPrice){
+      const distinctIds = new Set<number>(
+        this.orderService.listaPricelist.map(pl => pl.idProduct)
+      );
+      list = list.filter(product => distinctIds.has(product.idProduct));
+    }
+
+    return list;
   }
 
   searchSubscription: Subscription = this.productService.productoSearch.subscribe((data) => {
     this.searchText = data;
     if (this.searchText) {
       this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
-        this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency).then(() => {
+        this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency, 0).then(() => {
+          this.noProductsAlertShown = false;
+          //this.productList = this.filterProductList(this.productService.productList);
           this.productList = this.productService.productList;
+          this.noProductsAlertShown = this.productList.length === 0;
+          this.message.hideLoading();
         });
     }
   });
@@ -135,17 +168,31 @@ export class ProductListComponent implements OnInit {
   }
 
   onIonInfinite(ev: any) {
-    setTimeout(() => {
-      console.log("cargando...")
-
-      if (this.endPro >= this.productList.length) {
-        this.infiniteScroll.disabled = true;
-      } else {
-        this.endPro += this.qtyPro;
+    this.page++;
+    if (this.searchText) {
+      this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
+        this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency, this.page).then(() => {
+          //const newProducts = this.filterProductList(this.productService.productList);
+          const newProducts = this.productService.productList;
+          this.productList = [...this.productList, ...newProducts];
+          if (newProducts.length < this.productService.MAX_ITEMS_PER_PAGE) {
+            this.infiniteScroll.disabled = true;
+          }
+          (ev as InfiniteScrollCustomEvent).target.complete();
+        });
+    } else {
+      this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
+        this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.defaultCurrency, this.page).then(() => {
+          //const newProducts = this.filterProductList(this.productService.productList);
+          const newProducts = this.productService.productList;
+          this.productList = [...this.productList, ...newProducts];
+          if (newProducts.length < this.productService.MAX_ITEMS_PER_PAGE) {
+            this.infiniteScroll.disabled = true;
+          }
+          (ev as InfiniteScrollCustomEvent).target.complete();
+        });
       }
 
-      (ev as InfiniteScrollCustomEvent).target.complete();
-    }, 500);
   }
 
   onShowProductDetail(product: ProductUtil) {

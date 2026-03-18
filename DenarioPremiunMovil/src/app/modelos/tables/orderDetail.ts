@@ -29,7 +29,7 @@ export class OrderDetail {
             obj['nuAmountTotalConversion'],
             obj['orderDetailUnit'],
             obj['orderDetailDiscount'],
-                    
+
         );
     }
     constructor(
@@ -49,7 +49,7 @@ export class OrderDetail {
         public iva: number,
         public nuDiscountTotal: number,
         public coDiscount: string,
-        public idDiscount: number,
+        public idDiscount: number ,
         public coPriceList: string,
         public idPriceList: number,
         public posicion: number,

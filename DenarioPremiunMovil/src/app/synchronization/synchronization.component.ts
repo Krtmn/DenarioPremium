@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { NavController, Platform } from '@ionic/angular';
-import { of, Observable, Subscription } from 'rxjs';
+import { of, Observable, Subscription, from } from 'rxjs';
 import { SynchronizationDBService } from '../services/synchronization/synchronization-db.service';
 import { ServicesService } from '../services/services.service';
 import { TablesLastUpdate } from '../modelos/tables/tables-lastUpdate';
@@ -11,6 +11,7 @@ import { MessageService } from '../services/messageService/message.service';
 import { HttpClient } from '@angular/common/http';
 import createTables from 'src/assets/database/createTables.json';
 import { ImageServicesService } from '../services/imageServices/image-services.service';
+import { MessageAlert } from '../modelos/tables/messageAlert';
 
 @Component({
   selector: 'app-synchronization',
@@ -26,6 +27,7 @@ export class SynchronizationComponent implements OnInit {
   private message = inject(MessageService);
   private imageServices = inject(ImageServicesService);
 
+  public messageAlert!: MessageAlert;
   private sqlTableMap: Record<string, { table: string, id: string, idName: string }> = {};
   private tableKeyOrder: number[] = []; // Orden de sincronización de tablas
   private selectedTableIds: number[] | null = null;
@@ -131,7 +133,9 @@ export class SynchronizationComponent implements OnInit {
     73: 'modules',
     74: 'currencyModules',
     75: 'differenceCodes',
-    76: 'collectDiscounts'
+    76: 'collectDiscounts',
+    79: 'typeDocument',
+    80: 'codePhoneNumber',
   };
 
   /**
@@ -195,7 +199,9 @@ export class SynchronizationComponent implements OnInit {
     modules: 'Módulos',
     currencyModules: 'Monedas Módulos',
     differenceCodes: 'Códigos de Diferencia',
-    collectDiscounts: 'Descuentos de Cobro'
+    collectDiscounts: 'Descuentos de Cobro',
+    typeDocument: 'Tipo de Documento',
+    codePhoneNumber: 'Código de Número Telefónico',
   };
 
   constructor(
@@ -219,6 +225,7 @@ export class SynchronizationComponent implements OnInit {
    * Inicializa el componente, obtiene el orden de tablas y gestiona la navegación.
    */
   ngOnInit() {
+<<<<<<< HEAD
     this.generateSqlTableMap();
     this.message.hideLoading();
 
@@ -226,10 +233,25 @@ export class SynchronizationComponent implements OnInit {
       .map(Number)
       .sort((a, b) => a - b);
     this.currentTableIndex = 0;
+=======
+    if (localStorage.getItem("connectionType") == "wifi" || localStorage.getItem("connectionType") == "cellular") {
+      //HAY CONEXION
+      this.generateSqlTableMap();
+      this.N = Object.keys(this.tableKeyMap).length;
+      this.PROGRESS = 1 / this.N;
+      this.BUFF = 1 / this.N;
 
-    //con esta funcion definimos que tabla se sincroniza primero
-    this.adjustTableOrderDependency(63, 68); //queremos que la tabla 63 se sincronice desues que la 68
+      this.message.hideLoading();
+      this.tableKeyOrder = Object.keys(this.tableKeyMap)
+        .map(Number)
+        .sort((a, b) => a - b);
+      this.currentTableIndex = 0;
+>>>>>>> main
 
+      //con esta funcion definimos que tabla se sincroniza primero
+      this.adjustTableOrderDependency(63, 68); //queremos que la tabla 63 se sincronice desues que la 68
+
+<<<<<<< HEAD
     this.applyTableFilters();
 
     this.sub = this.route.params.subscribe(
@@ -240,9 +262,26 @@ export class SynchronizationComponent implements OnInit {
           this.alertMessageOpenSend = true;
         } else {
           this.sincronice();
+=======
+      this.sub = this.route.params.subscribe(
+        params => {
+          this.id = params['sincronizar'];
+          if (this.id == 'sincronizar') {
+            // Mostrar modal para preguntar si quiere sincronizar
+            this.alertMessageOpenSend = true;
+          } else {
+            this.sincronice();
+          }
+>>>>>>> main
         }
-      }
-    );
+      );
+    } else {
+      this.messageAlert = new MessageAlert(
+        "Denario Premium",
+        "No hay conexión a internet, por favor conectese a una red Wifi o señal de datos para sincronizar."
+      );
+      this.message.alertModal(this.messageAlert);
+    }
   }
 
   private applyTableFilters() {
@@ -652,6 +691,16 @@ export class SynchronizationComponent implements OnInit {
             this.tables.page = 0;
             break;
           }
+          case 79: {
+            this.tables.typeDocumentTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
+          case 80: {
+            this.tables.codePhoneNumberTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
 
           default: {
             //statements;
@@ -701,6 +750,28 @@ export class SynchronizationComponent implements OnInit {
       }
 
       // Filtra las tablas si el usuario es transportista
+<<<<<<< HEAD
+=======
+      if (this.user.transportista) {
+        // IDs de tablas que NO quieres sincronizar para transportista
+/*         const tablasTransportista = [1, 3, 5, 6, 8, 9, 10, 15, 23, 32, 33, 42, 43, 44, 46, 48, 50]; // ejemplo, ajusta según tu lógica
+ */        const tablasTransportista = [1, 3, 5, 8, 9, 10, 15, 23, 32, 33, 42, 43, 44, 46, 48, 50]; // ejemplo, ajusta según tu lógica
+        this.tableKeyOrder = this.tableKeyOrder.filter(id => tablasTransportista.includes(id));
+        this.N = Object.keys(this.tableKeyMap).length;
+        this.PROGRESS = 1 / this.N;
+        this.BUFF = 1 / this.N;
+      }
+
+      ///DEFINIR QUE TABLAS LLEVA EL ROL CLIENTE
+      if (this.user.cliente) {
+        const tablasCliente = [1, 3, 5, 7, 8, 13, 15, 23, 25, 32, 34, 35, 37, 39, 42, 43, 44, 46, 50, 52, 53, 54, 55, 60, 61, 62, 63, 64, 69, 70, 71, 72, 72, 74]; // ejemplo, ajusta según tu lógica
+        this.tableKeyOrder = this.tableKeyOrder.filter(id => tablasCliente.includes(id));
+        this.N = Object.keys(this.tableKeyMap).length;
+        this.PROGRESS = 1 / this.N;
+        this.BUFF = 1 / this.N;
+      }
+
+>>>>>>> main
       const tableId = this.tableKeyOrder[this.currentTableIndex];
       const key = this.tableKeyMap[tableId];
 
@@ -726,9 +797,9 @@ export class SynchronizationComponent implements OnInit {
           // Muestra el nombre amigable de la tabla que se está sincronizando
           this.synchronizationServices.tablaSincronizando = `- ${this.tableLabelMap[key] || key}`;
 
-          this.services.getSync(JSON.stringify(tabla)).subscribe({
+          from(this.services.getSync(JSON.stringify(tabla))).subscribe({
             next: (result) => {
-              const resTable = (result as any)[rowKey];
+              const resTable = (result.data as any)[rowKey];
               const sqlInfo = this.sqlTableMap[key];
 
               if (!resTable) {
@@ -750,7 +821,7 @@ export class SynchronizationComponent implements OnInit {
                 });
               } else if (resTable.row != null) {
                 // 3. Si hay datos, inserta y sigue
-                this.insertTable(key, result).then(response => {
+                this.insertTable(key, result.data).then(response => {
                   if (response) {
                     this.syncNextTable(response);
                   } else if (resTable.numberOfPages == resTable.page) {
@@ -1284,6 +1355,20 @@ export class SynchronizationComponent implements OnInit {
       batchFn: this.synchronizationServices.insertCollectDiscountsBatch.bind(this.synchronizationServices),
       rowKey: 'collectDiscountTable',
       tableKey: 'collectDiscountTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
+    typeDocument: {
+      batchFn: this.synchronizationServices.insertTypeDocumentBatch.bind(this.synchronizationServices),
+      rowKey: 'typeDocumentTable',
+      tableKey: 'typeDocumentTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
+    codePhoneNumber: {
+      batchFn: this.synchronizationServices.insertCodePhoneNumberBatch.bind(this.synchronizationServices),
+      rowKey: 'codePhoneNumberTable',
+      tableKey: 'codePhoneNumberTableLastUpdate',
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
     },

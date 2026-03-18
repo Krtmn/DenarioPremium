@@ -71,6 +71,7 @@ $fondoLila: #430197;
     overflow-x: scroll !important;
     overflow-y: hidden;
     color: #000000;
+    font-size: 12px;
 }
 
 
@@ -174,4 +175,91 @@ ion-modal.collectDiscounts {
   ion-label {
     color: #4caf50 !important;
   }
+}
+
+.saldo-legend {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+  color: #333;
+  margin: 4px 0 8px 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-button {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-blue {
+  background: #2f6fdd;
+}
+
+.legend-red {
+  background: #d64545;
+}
+
+.legend-black {
+  background: #000000;
+}
+
+.legend-popover {
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #222;
+  max-width: 220px;
+}
+
+.payment-details {
+  white-space: pre-line;
+  text-align: left;
+  align-items: flex-start;
+}
+
+.missing-retention-row {
+  align-items: center;
+  flex-wrap: nowrap;
+  column-gap: 8px;
+}
+
+.missing-retention-row .label-col {
+  flex: 0 0 auto;
+  padding-right: 6px;
+}
+
+.missing-retention-row .label-col ion-label {
+  white-space: nowrap;
+  margin-right: 0;
+}
+
+.missing-retention-row .toggle-col {
+  flex: 0 0 auto;
+}
+
+ion-grid.ion-margin-top ion-row > ion-col.padding0:first-child {
+  flex: 0 0 auto;
+}
+
+ion-grid.ion-margin-top ion-row > ion-col.padding0:first-child ion-label {
+  white-space: nowrap;
 }

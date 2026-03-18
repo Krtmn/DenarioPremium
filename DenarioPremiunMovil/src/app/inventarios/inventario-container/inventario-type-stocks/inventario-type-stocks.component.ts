@@ -45,7 +45,7 @@ export class InventarioTypeStocksComponent implements OnInit {
     this.inventariosLogicService.typeExh = false;
     this.inventariosLogicService.typeDep = false;
 
-    //ELIMINO TODOS LOS REGISTROS DE ESE PRODUCTO     
+    //ELIMINO TODOS LOS REGISTROS DE ESE PRODUCTO
 
     let indexClientStockDetail = this.inventariosLogicService.productTypeStocksMap.get(this.inventariosLogicService.productSelected.idProduct)
     if (this.inventariosLogicService.newClientStock.clientStockDetails[indexClientStockDetail!] != undefined) {
@@ -260,12 +260,12 @@ export class InventarioTypeStocksComponent implements OnInit {
       return;
     }
     let length = 0
-        for (var i = 0; i < this.inventariosLogicService.typeStocks.length; i++) {
-          if (this.inventariosLogicService.typeStocks[i].idProduct == idP) {
-            length++;
-          }
-        }
-        length--;
+    for (var i = 0; i < this.inventariosLogicService.typeStocks.length; i++) {
+      if (this.inventariosLogicService.typeStocks[i].idProduct == idP) {
+        length++;
+      }
+    }
+    length--;
     this.inventariosLogicService.typeStocks[indexType].validateLote = true;
     this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits[length].nuBatch = lote.target.value;
 
@@ -313,6 +313,12 @@ export class InventarioTypeStocksComponent implements OnInit {
         //this.setExistCantidad(cantidad.target.value, indexProduct, indexType, type);
       }
 
+      if (!this.expirationBatch) {
+        this.inventariosLogicService.onStockValidToSend(true);
+        this.inventariosLogicService.onStockValidToSave(true);
+      }
+
+
     } else {
       //NO PUEDE COLOCAR CANTIDAD MENOR A 0
       console.warn("CANTIDAD MENOR A 0 NO ES PERMITIDA");
@@ -340,13 +346,9 @@ export class InventarioTypeStocksComponent implements OnInit {
       .showDateModalDep = val;
   }
   selectProducUnit(e: any, index: number, type: string) {
-    let indexDetail = this.inventariosLogicService.productTypeStocksMap.get(this.inventariosLogicService.productSelected.idProduct)
-    for (var i = 0; i < this.inventariosLogicService.typeStocks.length; i++) {
-      if (this.inventariosLogicService.typeStocks[i].idProduct == this.inventariosLogicService.productSelected.idProduct) {
-        this.inventariosLogicService.typeStocks[i].unidad = e.target.value
-        /* this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits![index].daExpiration = e.target.value */
-        this.inventariosLogicService.isEdit = true;
-      }
+    if (this.inventariosLogicService.typeStocks[index] != undefined) {
+      this.inventariosLogicService.typeStocks[index].unidad = e.target.value;
+      this.inventariosLogicService.isEdit = true;
     }
     this.inventariosLogicService.unitSelected = e.target.value
   }

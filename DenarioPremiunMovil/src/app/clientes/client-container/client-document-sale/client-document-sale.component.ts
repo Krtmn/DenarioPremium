@@ -24,7 +24,7 @@ export class ClientDocumentSaleComponent implements OnInit {
 
     getDaDueDate(daDueDate: string) {
     let dateDoc = new Date(daDueDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$2/$1/$3")).getTime();
-    return Math.round(((new Date()).getTime() - dateDoc) / 86400000);
+    return Math.abs(Math.round(((new Date()).getTime() - dateDoc) / 86400000));
   }
 
     convertirMonto(monto: number, rate: number, currency: string) {

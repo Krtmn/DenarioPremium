@@ -1,16 +1,24 @@
 <div class="produt-search" *ngIf="productStructures">
   <ion-grid>
     <ion-row>
-      <ion-col class="ion-margin-top" size="12" size-sm="12" size-xs="12">
+      <ion-col size="12" size-sm="12" size-xs="12">
         <!-- Este input es cuando estoy afuera de las estructuras y busco hacien click en buscar -->
-        <input type="text" class="search-input inputsSearch iconobuscar" fill="outline" shape="round" (input)="onSearchTextChanged()"
-          placeholder="{{this.productsTabTags.get('PROD_PLACEHOLDER_BUSCAR')}}" #searchInput [(ngModel)]="searchText">
+        <div class="search-row">
+          <ion-button fill="outline" size="small" shape="round" class="back-button" *ngIf="showBackButton && showBackIcon"
+            (click)="onBackClicked()" aria-label="Volver">
+            <ion-icon name="arrow-back-outline"></ion-icon>
+          </ion-button>
+          <div class="search-input-wrap">
+            <input type="text" class="search-input inputsSearch " fill="outline" shape="round"
+              (input)="onSearchTextChanged()" (keydown.enter)="onSearchClicked($event)"
+              placeholder="{{this.productsTabTags.get('PROD_PLACEHOLDER_BUSCAR')}}" #searchInput
+              [(ngModel)]="searchText">
+            <button type="button" slot="icon-only" size="large" class="clear-search" (click)="onSearchClicked()" [disabled]="!searchText">
+              <ion-icon name="search-circle-sharp" class="sizeIconSearch"></ion-icon>
+            </button>
+          </div>
+        </div>
         <!-- <input type="text" class="search-input inputsSearch" fill="outline" shape="round" placeholder="{{this.searchTags.get('PROD_PLACEHOLDER_BUSCAR')}}" #searchInput [(ngModel)]="searchText" *ngIf="showSearch && !productStructureSelected"> -->
-        <ion-button fill="outline" size="small" class="colorBorderBuscar sizebutton" shape="round"
-          [disabled]="!searchText || disabledSearchButton" (click)="onSearchClicked()" color="dark">
-          {{this.productsTabTags.get('PROD_BUSCAR')}}
-          <ion-icon slot="start" class="colorIconBuscar" name="search-circle-sharp"></ion-icon>
-        </ion-button>
       </ion-col>
     </ion-row>
   </ion-grid>

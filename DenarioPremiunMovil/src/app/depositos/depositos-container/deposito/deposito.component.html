@@ -1,6 +1,6 @@
 <ion-item-divider class="segmentWidth" sticky>
   <div class="cobroComponent" sticky-below-view>
-    <ion-segment value="default" [(ngModel)]="segment" >
+    <ion-segment value="default" [(ngModel)]="segment">
       <ion-segment-button value="default" (click)="onChangeTab('general')">
         <ion-label>{{this.depositService.depositTags.get('DEP_PESTANA_GENERAL')}}</ion-label>
       </ion-segment-button>
@@ -14,6 +14,11 @@
         <ion-label>{{this.depositService.depositTags.get('DEP_PESTANA_TOTAL')}}</ion-label>
       </ion-segment-button>
 
+      <ion-segment-button value="adjuntos" [disabled]="!this.depositService.depositValid"
+        (click)="onChangeTab('adjuntos')">
+        <ion-label>{{this.depositService.depositTags.get('DEP_PESTANA_ADJUNTOS')}}</ion-label>
+      </ion-segment-button>
+
     </ion-segment>
   </div>
 </ion-item-divider>
@@ -21,18 +26,25 @@
 
 <div [ngSwitch]="segment">
   <!-- Pestana General-->
-  <ion-card *ngSwitchCase="'default'">
+  <div *ngSwitchCase="'default'">
     <app-deposito-general></app-deposito-general>
-  </ion-card>
+  </div>
 
   <!-- Pestana cobros-->
-  <ion-card *ngSwitchCase="'cobros'">
+  <div *ngSwitchCase="'cobros'">
     <app-deposito-cobros></app-deposito-cobros>
-  </ion-card>
+  </div>
 
   <!-- Pestana total-->
-  <ion-card *ngSwitchCase="'total'">
+  <div *ngSwitchCase="'total'">
     <app-deposito-total></app-deposito-total>
-  </ion-card>
+  </div>
+
+  <!-- Pestana Adjuntos -->
+  <div *ngSwitchCase="'adjuntos'">
+    <div>
+      <app-adjunto #selectorAdjunto></app-adjunto>
+    </div>
+  </div>
 
 </div>

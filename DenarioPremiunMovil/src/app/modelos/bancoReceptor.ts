@@ -10,7 +10,7 @@ export class BancoReceptor {
             obj['idBankAccount'],
             obj['idCurrency'],
             obj['idEnterprise'],
-            obj['nameBank'],
+            obj['naBank'],
             obj['nuAccount'],
         );
     }
@@ -25,7 +25,7 @@ export class BancoReceptor {
         public idBankAccount: number = 0,
         public idCurrency: number = 0,
         public idEnterprise: number = 0,
-        public nameBank: string = "",
+        public naBank: string = "",
         public nuAccount: string = "",
     ) { }
 }

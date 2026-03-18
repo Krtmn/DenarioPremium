@@ -11,8 +11,8 @@ import pdfFonts from 'pdfmake/build/vfs_fonts';
 
 export class PdfCreatorService {
 
-  constructor(private fileOpener: FileOpener) { 
-    pdfMake.vfs = pdfFonts.vfs;
+  constructor(private fileOpener: FileOpener) {
+    pdfMake['vfs'] = pdfFonts['vfs'] as unknown as { [file: string]: string };
 
    }
 
@@ -31,7 +31,7 @@ export class PdfCreatorService {
     });
 
     return doc;
-    
+
   }
     */
  // replace the existing generateWithJsPDF with this:
@@ -69,7 +69,7 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
    * (not only visible viewport) is captured. Returns a fully rendered jsPDF.
    *
    * Usage: pass the element reference (preferred) or HTML string.
-   */  
+   */
 // place inside PdfCreatorService in pdf-creator.service.ts
 // ...existing class code...
 async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'portrait' | 'landscape', scale?: number, layoutScale?: number }): Promise<jsPDF> {
@@ -82,12 +82,28 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
     orientation: opts?.orientation ?? 'landscape'
   });
 
+  // compute page width in CSS px before measuring any HTML so string-based sources
+  // can be laid out at the final export width instead of their intrinsic narrow width.
+  const pageWidthPt = doc.internal.pageSize.getWidth();
+  const ptToPx = 96 / 72;
+  const pageWidthPx = Math.round(pageWidthPt * ptToPx);
+  const layoutScale = typeof opts?.layoutScale === 'number' ? opts.layoutScale : 1;
+  const targetCloneWidthPx = Math.round(pageWidthPx * layoutScale);
+
   // prepare original element (wrap string if needed)
   let originalElement: HTMLElement;
   let removeOriginalWrapper = false;
   if (typeof source === 'string') {
     const wrapper = document.createElement('div');
     wrapper.innerHTML = source;
+    wrapper.style.width = `${targetCloneWidthPx}px`;
+    wrapper.style.maxWidth = `${targetCloneWidthPx}px`;
+    wrapper.style.boxSizing = 'border-box';
+    wrapper.style.position = 'absolute';
+    wrapper.style.left = '-20000px';
+    wrapper.style.top = '0';
+    wrapper.style.visibility = 'hidden';
+    wrapper.style.pointerEvents = 'none';
     document.body.appendChild(wrapper);
     originalElement = wrapper;
     removeOriginalWrapper = true;
@@ -95,22 +111,17 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
     originalElement = source as HTMLElement;
   }
 
+  // ensure layout metrics reflect the final width before copying computed styles.
+  await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+
   // clone & inline styles
   const cloned = originalElement.cloneNode(true) as HTMLElement;
   this.inlineAllComputedStyles(originalElement, cloned);
 
-  
-  // compute page width in CSS px
-  const pageWidthPt = doc.internal.pageSize.getWidth(); // pdf pts
-  const ptToPx = 96 / 72; // approx px per pt
-  const pageWidthPx = Math.round(pageWidthPt * ptToPx);
-
-  // layoutScale: scale the clone's layout width (default 1 = page width)
-  const layoutScale = typeof opts?.layoutScale === 'number' ? opts!.layoutScale : 1;
-  const targetCloneWidthPx = Math.round(pageWidthPx * layoutScale);
-
   // set cloned layout width (this affects how table columns wrap/size)
   cloned.style.width = `${targetCloneWidthPx}px`;
+  cloned.style.minWidth = `${targetCloneWidthPx}px`;
+  cloned.style.maxWidth = `${targetCloneWidthPx}px`;
   cloned.style.maxHeight = 'none';
   cloned.style.overflow = 'visible';
   cloned.style.boxSizing = 'border-box';
@@ -288,7 +299,351 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
 
   return doc;
 }
- 
+
+  async generateSummaryPdfDoc(data: {
+    title: string;
+    meta?: Array<{ label: string; value: string }>;
+    columns: Array<{ label: string; align?: 'left' | 'center' | 'right'; width?: string; noWrap?: boolean; maxLines?: number }>;
+    rows: Array<Array<string>>;
+    total?: { label: string; value: string };
+    fileName?: string;
+  }, opts?: { orientation?: 'portrait' | 'landscape', scale?: number, layoutScale?: number }): Promise<jsPDF> {
+    const doc = new jsPDF({
+      format: 'letter',
+      unit: 'pt',
+      orientation: opts?.orientation ?? 'landscape'
+    });
+
+    const headerColor: [number, number, number] = [89, 176, 45];
+    const headerBorderColor: [number, number, number] = [159, 205, 138];
+    const bodyBorderColor: [number, number, number] = [216, 229, 208];
+    const altRowColor: [number, number, number] = [247, 251, 243];
+    const totalColor: [number, number, number] = [237, 247, 230];
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const marginX = 28;
+    const topMargin = 24;
+    const bottomMargin = 28;
+    const usableWidth = pageWidth - marginX * 2;
+    const rowPaddingX = 10;
+    const rowPaddingY = 8;
+    const lineHeight = 14;
+    const tableHeaderHeight = 34;
+
+    const normalizedWidths = this.normalizeSummaryColumnWidths(data.columns, usableWidth);
+    let cursorY = topMargin;
+    let pageNumber = 1;
+
+    const drawPageHeader = (continued = false) => {
+      doc.setFillColor(...headerColor);
+      doc.roundedRect(marginX, cursorY, usableWidth, 56, 8, 8, 'F');
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(24);
+      doc.text(this.escapePdfText(data.title), marginX + 16, cursorY + 24);
+      cursorY += 74;
+    };
+
+    const drawMeta = () => {
+      const meta = data.meta ?? [];
+      if (meta.length === 0) {
+        return;
+      }
+
+      const metaGap = 14;
+      const metaColumns = 2;
+      const metaWidth = (usableWidth - metaGap) / metaColumns;
+      const labelWidth = 92;
+      const chunkedMeta: Array<Array<{ label: string; value: string } | undefined>> = [];
+
+      for (let i = 0; i < meta.length; i += metaColumns) {
+        chunkedMeta.push([meta[i], meta[i + 1]]);
+      }
+
+      chunkedMeta.forEach(row => {
+        const heights = row.map(item => {
+          if (!item) {
+            return 0;
+          }
+
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(12);
+          const valueLines = doc.splitTextToSize(this.escapePdfText(item.value), metaWidth - labelWidth - 22);
+          return Math.max(28, valueLines.length * lineHeight + rowPaddingY * 2);
+        });
+
+        const metaRowHeight = Math.max(...heights, 28);
+
+        if (cursorY + metaRowHeight > pageHeight - bottomMargin) {
+          doc.addPage();
+          pageNumber += 1;
+          cursorY = topMargin;
+          drawPageHeader(true);
+        }
+
+        row.forEach((item, index) => {
+          if (!item) {
+            return;
+          }
+
+          const x = marginX + index * (metaWidth + metaGap);
+          doc.setDrawColor(...bodyBorderColor);
+          doc.setFillColor(251, 253, 249);
+          doc.roundedRect(x, cursorY, metaWidth, metaRowHeight, 6, 6, 'FD');
+
+          doc.setTextColor(47, 58, 47);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(12);
+          doc.text(this.escapePdfText(item.label), x + 10, cursorY + 17);
+
+          doc.setTextColor(32, 32, 32);
+          doc.setFont('helvetica', 'normal');
+          const valueLines = doc.splitTextToSize(this.escapePdfText(item.value), metaWidth - labelWidth - 22);
+          doc.text(valueLines, x + labelWidth, cursorY + 17);
+        });
+
+        cursorY += metaRowHeight + 10;
+      });
+    };
+
+    const drawTableHeader = () => {
+      let cellX = marginX;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      data.columns.forEach((column, index) => {
+        const cellWidth = normalizedWidths[index];
+        doc.setFillColor(...headerColor);
+        doc.setDrawColor(...headerBorderColor);
+        doc.rect(cellX, cursorY, cellWidth, tableHeaderHeight, 'FD');
+        doc.setTextColor(255, 255, 255);
+        const align = column.align ?? 'left';
+        const textX = this.getAlignedTextX(cellX, cellWidth, align, rowPaddingX);
+        doc.text(this.escapePdfText(column.label), textX, cursorY + 21, { align: align as 'left' | 'center' | 'right' });
+        cellX += cellWidth;
+      });
+      cursorY += tableHeaderHeight;
+    };
+
+    const ensureTableSpace = (requiredHeight: number) => {
+      if (cursorY + requiredHeight <= pageHeight - bottomMargin) {
+        return;
+      }
+
+      doc.addPage();
+      pageNumber += 1;
+      cursorY = topMargin;
+      drawPageHeader(true);
+      drawTableHeader();
+    };
+
+    drawPageHeader(false);
+    drawMeta();
+    drawTableHeader();
+
+    data.rows.forEach((row, rowIndex) => {
+      const preparedCells = row.map((cell, columnIndex) => {
+        const column = data.columns[columnIndex] ?? {};
+        const cellWidth = normalizedWidths[columnIndex];
+        const availableWidth = Math.max(20, cellWidth - rowPaddingX * 2);
+        let lines = column.noWrap
+          ? [this.escapePdfText(cell ?? '')]
+          : doc.splitTextToSize(this.escapePdfText(cell ?? ''), availableWidth);
+
+        if (column.maxLines && lines.length > column.maxLines) {
+          lines = lines.slice(0, column.maxLines);
+          const lastIndex = lines.length - 1;
+          lines[lastIndex] = `${String(lines[lastIndex]).replace(/\s+$/g, '')}...`;
+        }
+
+        return lines;
+      });
+
+      const rowHeight = Math.max(
+        30,
+        ...preparedCells.map(lines => lines.length * lineHeight + rowPaddingY * 2)
+      );
+
+      ensureTableSpace(rowHeight);
+
+      let cellX = marginX;
+      preparedCells.forEach((lines, columnIndex) => {
+        const column = data.columns[columnIndex] ?? {};
+        const cellWidth = normalizedWidths[columnIndex];
+        doc.setFillColor(...(rowIndex % 2 === 0 ? [255, 255, 255] as [number, number, number] : altRowColor));
+        doc.setDrawColor(...bodyBorderColor);
+        doc.rect(cellX, cursorY, cellWidth, rowHeight, 'FD');
+        doc.setTextColor(32, 32, 32);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(12);
+        const align = column.align ?? 'left';
+        const textX = this.getAlignedTextX(cellX, cellWidth, align, rowPaddingX);
+        doc.text(lines, textX, cursorY + 16, { align: align as 'left' | 'center' | 'right' });
+        cellX += cellWidth;
+      });
+
+      cursorY += rowHeight;
+    });
+
+    if (data.total) {
+      const totalLabelWidth = normalizedWidths.slice(0, Math.max(1, normalizedWidths.length - 1)).reduce((sum, width) => sum + width, 0);
+      const totalValueWidth = normalizedWidths[normalizedWidths.length - 1] ?? usableWidth;
+      const totalHeight = 36;
+
+      ensureTableSpace(totalHeight);
+
+      doc.setDrawColor(184, 217, 167);
+      doc.setFillColor(...totalColor);
+      doc.rect(marginX, cursorY, totalLabelWidth, totalHeight, 'FD');
+      doc.rect(marginX + totalLabelWidth, cursorY, totalValueWidth, totalHeight, 'FD');
+      doc.setTextColor(29, 53, 21);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(15);
+      doc.text(this.escapePdfText(data.total.label), marginX + totalLabelWidth - 10, cursorY + 23, { align: 'right' });
+      doc.text(this.escapePdfText(data.total.value), marginX + totalLabelWidth + totalValueWidth - 10, cursorY + 23, { align: 'right' });
+      cursorY += totalHeight;
+    }
+
+    if (pageNumber > 1) {
+      const totalPages = doc.getNumberOfPages();
+      for (let page = 1; page <= totalPages; page++) {
+        doc.setPage(page);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(110, 110, 110);
+        doc.text(`Pagina ${page} de ${totalPages}`, pageWidth - marginX, pageHeight - 10, { align: 'right' });
+      }
+    }
+
+    return doc;
+  }
+
+  private normalizeSummaryColumnWidths(columns: Array<{ width?: string }>, usableWidth: number): number[] {
+    const widths = columns.map(column => {
+      if (!column.width) {
+        return 0;
+      }
+
+      const value = Number.parseFloat(column.width.replace('%', ''));
+      return Number.isFinite(value) ? value : 0;
+    });
+
+    const totalPercent = widths.reduce((sum, width) => sum + width, 0);
+    if (totalPercent <= 0) {
+      return columns.map(() => usableWidth / Math.max(1, columns.length));
+    }
+
+    return widths.map(width => (usableWidth * width) / totalPercent);
+  }
+
+  private getAlignedTextX(cellX: number, cellWidth: number, align: 'left' | 'center' | 'right', paddingX: number): number {
+    if (align === 'right') {
+      return cellX + cellWidth - paddingX;
+    }
+
+    if (align === 'center') {
+      return cellX + cellWidth / 2;
+    }
+
+    return cellX + paddingX;
+  }
+
+  private escapePdfText(input: string): string {
+    return String(input ?? '')
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2013\u2014]/g, '-')
+      .replace(/\u2026/g, '...');
+  }
+
+  private buildSummaryHtml(data: {
+    title: string;
+    meta?: Array<{ label: string; value: string }>;
+    columns: Array<{ label: string; align?: 'left' | 'center' | 'right'; width?: string; noWrap?: boolean; maxLines?: number }>;
+    rows: Array<Array<string>>;
+    total?: { label: string; value: string };
+  }): string {
+    const headerColor = '#59b02d';
+    const metaRows = (data.meta ?? [])
+      .map(m => `
+        <div style="display:table-row;">
+          <div style="display:table-cell; width:140px; padding:8px 12px; font-weight:700; color:#2f3a2f; vertical-align:top; border-bottom:1px solid #dfe7da;">${this.escapeHtml(m.label)}</div>
+          <div style="display:table-cell; padding:8px 12px; color:#202020; vertical-align:top; border-bottom:1px solid #dfe7da;">${this.escapeHtml(m.value)}</div>
+        </div>
+      `)
+      .join('');
+
+    const headerCells = data.columns
+      .map(col => {
+        const align = col.align ?? 'left';
+        const width = col.width ? `width:${col.width};` : '';
+        return `
+          <th style="${width} text-align:${align}; padding:12px 14px; border:1px solid #9fcd8a; background:${headerColor}; color:#ffffff; font-weight:700; font-size:13px; line-height:1.2;">${this.escapeHtml(col.label)}</th>
+        `;
+      })
+      .join('');
+
+    const bodyRows = data.rows
+      .map((row, rowIndex) => {
+        const rowBackground = rowIndex % 2 === 0 ? '#ffffff' : '#f7fbf3';
+        const cells = row.map((cell, idx) => {
+          const col = data.columns[idx] ?? {};
+          const align = col.align ?? 'left';
+          const width = col.width ? `width:${col.width};` : '';
+          const noWrap = col.noWrap ? 'white-space:nowrap;' : '';
+          const maxLines = col.maxLines ? `display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:${col.maxLines}; overflow:hidden;` : '';
+          const wordBreak = col.noWrap ? '' : 'word-break:break-word; overflow-wrap:anywhere;';
+          return `
+            <td style="${width} text-align:${align}; padding:12px 14px; border:1px solid #d8e5d0; background:${rowBackground}; font-size:13px; line-height:1.3; vertical-align:top; ${noWrap} ${wordBreak} ${maxLines}">${this.escapeHtml(cell ?? '')}</td>
+          `;
+        }).join('');
+        return `<tr>${cells}</tr>`;
+      })
+      .join('');
+
+    const totalRow = data.total
+      ? `
+        <tr>
+          <td colspan="${Math.max(1, data.columns.length - 1)}" style="text-align:right; padding:14px; border:1px solid #b8d9a7; font-weight:700; font-size:16px; background:#edf7e6; color:#1d3515;">${this.escapeHtml(data.total.label)}</td>
+          <td style="text-align:right; padding:14px; border:1px solid #b8d9a7; font-weight:700; font-size:16px; background:#edf7e6; color:#1d3515; white-space:nowrap;">${this.escapeHtml(data.total.value)}</td>
+        </tr>
+      `
+      : '';
+
+    return `
+      <div style="font-family: Arial, sans-serif; color:#222; width:100%; box-sizing:border-box; padding:18px 22px 22px; background:#ffffff;">
+        <div style="width:100%; box-sizing:border-box; padding:16px 18px; margin-bottom:18px; background:${headerColor}; color:#ffffff; border-radius:8px;">
+          <div style="font-size:24px; font-weight:700; line-height:1.2; margin:0;">${this.escapeHtml(data.title)}</div>
+
+        </div>
+        ${metaRows ? `
+          <div style="display:table; width:100%; table-layout:fixed; margin-bottom:18px; font-size:13px; border:1px solid #dfe7da; border-radius:8px; overflow:hidden; background:#fbfdf9;">
+            ${metaRows}
+          </div>
+        ` : ''}
+        <table style="border-collapse:collapse; width:100%; table-layout:fixed; font-size:13px;">
+          <thead>
+            <tr>${headerCells}</tr>
+          </thead>
+          <tbody>
+            ${bodyRows}
+            ${totalRow}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  private escapeHtml(input: string): string {
+    return String(input ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
 
   generateWithPdfMake(content: any) {
     return pdfMake.createPdf({ content });

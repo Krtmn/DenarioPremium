@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-import { BehaviorSubject, fromEventPattern, identity, Observable, throwError } from 'rxjs';
+import { BehaviorSubject, fromEventPattern, identity, Observable, throwError, firstValueFrom } from 'rxjs';
 import { NavController } from '@ionic/angular';
 import { Platform } from '@ionic/angular';
+import { Capacitor } from '@capacitor/core';
 // import { SQLitePorter } from '@ionic-native/sqlite-porter';
 import { SQLite, SQLiteObject } from '@awesome-cordova-plugins/sqlite/ngx';
 import { ServicesService } from '../services.service';
@@ -77,6 +78,21 @@ import { CurrencyModules } from '../../modelos/tables/currencyModules';
 import { Modules } from '../../modelos/tables/modules';
 import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
 import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
+import { TypeDocument } from 'src/app/modelos/tables/typeDocument';
+import { CodePhoneNumber } from 'src/app/modelos/tables/codePhoneNumber';
+
+/** Mock SQLiteObject para navegador: retorna resultados vacíos y permite probar la app con TestSprite */
+function createMockSqliteObject(): SQLiteObject {
+  const emptyRows = {
+    length: 0,
+    item: (_i: number) => null
+  };
+  return {
+    executeSql: (_sql: string, _params?: any[]) =>
+      Promise.resolve({ rows: emptyRows, rowsAffected: 0 }),
+    sqlBatch: (_operations: any[]) => Promise.resolve([])
+  } as SQLiteObject;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -94,7 +110,7 @@ export class SynchronizationDBService {
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
-
+  private CURRENT_DB_VERSION: number = 6;
 
   constructor(
     private navController: NavController,
@@ -169,22 +185,33 @@ export class SynchronizationDBService {
       { "id": 74, "nameTable": "currencyModules" },
       { "id": 75, "nameTable": "differenceCodes" },
       { "id": 76, "nameTable": "collectDiscounts" },
+      { "id": 79, "nameTable": "typeDocument" },
+      { "id": 80, "nameTable": "codePhoneNumber" }
     ]
   }
 
   async initDb(user: User, conexion: Boolean) {
     this.databaseReady = new BehaviorSubject(false);
-    this.sqlite.create({
+    const createPromise = this.sqlite.create({
       name: 'denarioPremium',
       location: 'default'
-    }).then((db: SQLiteObject) => {
+    });
+    if (!createPromise) {
+      console.warn('SQLite no disponible (ejecutando en navegador). Usando mock para pruebas con TestSprite.');
+      this.database = createMockSqliteObject();
+      this.createTables(user, conexion);
+      return;
+    }
+    createPromise.then((db: SQLiteObject) => {
       this.database = db;
       this.createTables(user, conexion);
     }).catch(e => console.log(e));
   }
 
-  getDatabase() {
-
+  getDatabase(): SQLiteObject {
+    if (!this.database && !Capacitor.isNativePlatform()) {
+      return createMockSqliteObject();
+    }
     return this.database;
   }
 
@@ -223,7 +250,9 @@ export class SynchronizationDBService {
         }
       })
 
-      promesa.then((value) => {
+      promesa.then(async (value) => {
+        await this.checkAndRunMigrations();
+
         this.inHome = false;
         if (conexion) {
           let variablesConfiguracion = JSON.parse(localStorage.getItem("globalConfiguration") || "[]");
@@ -268,12 +297,68 @@ export class SynchronizationDBService {
               result[i].coApplicationTag, result[i].tag
             )
           }
-          this.router.navigate(['home']);
+          this.services.getTags(this.getDatabase(), "DEN", "ESP").then(result => {
+            for (var i = 0; i < result.length; i++) {
+              this.services.tags.set(
+                result[i].coApplicationTag, result[i].tag
+              )
+            }
+            this.router.navigate(['home']);
+          })
+
         });
 
       }
     }
 
+  }
+
+  async checkAndRunMigrations() {
+    try {
+      if (!Capacitor.isNativePlatform()) {
+        localStorage.setItem('db_version', String(this.CURRENT_DB_VERSION));
+        return;
+      }
+      const storedVersion = Number(localStorage.getItem('db_version') || '1');
+      if (storedVersion >= this.CURRENT_DB_VERSION) {
+        return;
+      }
+      for (let v = storedVersion + 1; v <= this.CURRENT_DB_VERSION; v++) {
+        await this.runMigrationForVersion(v);
+        localStorage.setItem('db_version', String(v));
+        console.log(`Database migrated to v${v}`);
+      }
+    } catch (e) {
+      console.log('checkAndRunMigrations error', e);
+    }
+  }
+
+  private async runMigrationForVersion(version: number) {
+    try {
+      const migrations = await this.loadMigrationFile(version);
+      if (!migrations || migrations.length === 0) return;
+      for (const m of migrations) {
+        if (typeof m === 'string') {
+          await this.database.executeSql(m, []);
+        } else if (m && m.sql) {
+          const params = m.params || [];
+          await this.database.executeSql(m.sql, params);
+        }
+      }
+    } catch (e) {
+      console.log(`runMigrationForVersion v${version} error`, e);
+    }
+  }
+
+  private async loadMigrationFile(version: number): Promise<any[]> {
+    try {
+      const url = 'assets/database/migrations/v' + version + '.json';
+      const obs = this.http.get<any[]>(url);
+      return await firstValueFrom(obs);
+    } catch (e) {
+      console.log('loadMigrationFile error', e);
+      return [];
+    }
   }
 
   getDataBaseState() {
@@ -566,14 +651,14 @@ export class SynchronizationDBService {
   insertListBatch(arr: List[]) {
     var statements = [];
     let insertStatement = "INSERT OR REPLACE INTO lists(" +
-      'id_list,co_list,na_list,co_enterprise,id_enterprise' +
+      'id_list,co_list,na_list,co_enterprise,id_enterprise,show_only' +
       ') ' +
-      'VALUES(?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?)'
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
       statements.push([insertStatement, [obj.idList, obj.coList, obj.naList,
-      obj.coEnterprise, obj.idEnterprise]])
+      obj.coEnterprise, obj.idEnterprise, obj.showOnly]])
     }
 
     return this.database.sqlBatch(statements).then(res => {
@@ -1393,13 +1478,21 @@ export class SynchronizationDBService {
 
   }
   insertReturnBatch(arr: Return[]) {
-    return this.returnService.saveReturnBatch(this.database, arr);
+    return this.returnService.deleteReturnsBatch(this.database, arr).then((r) => {
+      return this.returnService.saveReturnBatch(this.database, arr);
+    })
   }
+
   insertClientStockBatch(arr: ClientStocks[]) {
-    return this.clientStockService.saveClientStockBatch(this.database, arr);
+    return this.clientStockService.deleteClientStocksBatch(this.database, arr).then((r) => {
+      return this.clientStockService.saveClientStockBatch(this.database, arr);
+    })
   }
+
   insertDepositBatch(arr: Deposit[]) {
-    return this.depositService.saveDepositBatch(this.database, arr);
+    return this.depositService.deleteDepositsBatch(this.database, arr).then((r) => {
+      return this.depositService.saveDepositBatch(this.database, arr);
+    })
   }
 
   deleteDataTable(arr: number[], nameTable: string, nameId: string) {
@@ -1520,6 +1613,44 @@ export class SynchronizationDBService {
     }
     return this.database.sqlBatch(statements).then(res => {
       console.log("insert collect_discounts ready")
+      return res;
+    }).catch(e => {
+      console.log(e);
+    })
+  }
+  insertTypeDocumentBatch(arr: TypeDocument[]) {
+    var statements = [];
+    let insertStatement = "INSERT OR REPLACE INTO type_document(" +
+      "id_type_document, co_type_document, na_type_document" +
+      ") " +
+      "VALUES(?,?,?)"
+
+    for (var i = 0; i < arr.length; i++) {
+      statements.push([insertStatement, [arr[i].idTypeDocument,
+      arr[i].coTypeDocument, arr[i].naTypeDocument]
+      ])
+    }
+    return this.database.sqlBatch(statements).then(res => {
+      console.log("insert type_document ready")
+      return res;
+    }).catch(e => {
+      console.log(e);
+    })
+  }
+  insertCodePhoneNumberBatch(arr: CodePhoneNumber[]) {
+    var statements = [];
+    let insertStatement = "INSERT OR REPLACE INTO code_phone_number(" +
+      "id_code_phone_number, co_code_phone_number, na_code_phone_number" +
+      ") " +
+      "VALUES(?,?,?)"
+
+    for (var i = 0; i < arr.length; i++) {
+      statements.push([insertStatement, [arr[i].idCodePhoneNumber,
+      arr[i].coCodePhoneNumber, arr[i].naCodePhoneNumber]
+      ])
+    }
+    return this.database.sqlBatch(statements).then(res => {
+      console.log("insert code_phone_number ready")
       return res;
     }).catch(e => {
       console.log(e);

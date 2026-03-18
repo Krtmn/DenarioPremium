@@ -118,3 +118,158 @@ ion-select::part(container) {
   padding-top: 8px;
   padding-bottom: 8px;
 }
+
+  .saldo-legend {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    align-items: center;
+    font-size: 12px;
+    color: #333;
+    margin: 4px 0 8px 0;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .legend-button {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .legend-blue {
+    background: #2f6fdd;
+  }
+
+  .legend-red {
+    background: #d64545;
+  }
+
+  .legend-popover {
+    padding: 10px 12px;
+    font-size: 12px;
+    color: #222;
+    max-width: 220px;
+  }
+
+  .search-button, .structures-button{
+  font-size: 16px;
+}
+
+.fixedSearch{
+  position: fixed;
+  margin-bottom: 300px;
+  width: 100%;
+  z-index: 10;
+  background: #ffffff;
+}
+// productos
+.inputsSearch, .inputsSearch:focus {
+  height: 40px;
+  width: 100%;
+  position: relative;
+  padding: 6px;
+  border: 1px solid #430197;
+  border-radius: 25px;
+  outline: none;
+  padding-left: 20px;
+  padding-right: 40px;
+
+}
+
+.search-input-wrap {
+  position: relative;
+  width: 90%;
+  margin-left: 5%;
+}
+
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-row .search-input-wrap {
+  flex: 1;
+}
+
+.back-button {
+  --padding-start: 4px;
+  --padding-end: 4px;
+  height: 36px;
+  min-height: 36px;
+  width: 28px;
+  min-width: 28px;
+  --border-width: 0;
+  --background: transparent;
+  --color: #430197;
+}
+
+.clear-search {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 0;
+  line-height: 1;
+  color: #430197;
+}
+
+.clear-search[disabled] {
+  opacity: 0.4;
+}
+
+.iconobuscar{
+  background-image: url("/assets/images/searchInput.svg");
+  // background-size: 100% 101%;
+  background-repeat: no-repeat;
+  background-position: 10px center;
+  background-size: 8%;
+}
+
+// ion-button {
+//   --border-color: #430197;
+//   --color: #430197;
+// }
+/*.input-fill-outline.has-focus
+{
+  border:solid 2px red;
+  border-radius: 30px;
+}*/
+.input-fill-outline.input-shape-round {
+  --border-color: blue;
+  --border-radius: 40px;
+
+}
+
+.buttonSearchProductos{
+  color: #fff;
+  background: #430197;
+  border-radius: 25px;
+  padding: 4px;
+  height: 24px;
+}
+
+.sizeIconSearch{
+  font-size: 30px;
+
+}
+

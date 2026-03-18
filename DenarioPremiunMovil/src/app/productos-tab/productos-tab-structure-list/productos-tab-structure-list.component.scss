@@ -91,7 +91,7 @@ ion-grid, ion-row {
     padding-bottom: 2px;
     top: 8px;
     min-width: 12px;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: bold;
 }
 
@@ -105,12 +105,19 @@ ion-tab-bar.fondoVerde {
   /* opcionales: bordes/sombra/espaciado */
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-  padding: 6px;
+  padding: 2px 4px;
+  --height: 44px;
 }
 
 /* controlar color de badges, iconos y seleccionados */
 ion-tab-bar.fondoVerde ion-tab-button {
   --color: rgba(255,255,255,0.85);
   --color-selected: #ffffff;
+  --padding-start: 6px;
+  --padding-end: 6px;
+  --padding-top: 4px;
+  --padding-bottom: 4px;
+  min-height: 36px;
+  font-size: 12px;
 }
 

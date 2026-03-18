@@ -20,7 +20,7 @@
         <!--  Un Selector de tipos de estrucutras, por defecto el nivel mas bajo -->
         <div class="listado-tps-selector ion-text-center">
           <ion-select [(ngModel)]="tpsSeleccionada" (ionChange)="onTypeProductStructureChanged($event)"
-            class="ion-text-center">
+            class="ion-text-center always-flip" interface="popover" labelPlacement="stacked">
             <!-- <ion-select *ngIf="multiempresa" [(ngModel)]="empresaSeleccionada"> -->
             <ion-select-option *ngFor="let tps of typeProductStructureList" [value]="tps">{{ tps.naTypeProductStructure
               }}</ion-select-option>

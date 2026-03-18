@@ -95,6 +95,9 @@ export class ClientLogicService {
   public nameModule: string = "";
   public segment = 'default';
 
+  clientListPage = 0;
+  clientListSearchMode = false;
+
   public dateToday: Date = (() => {
     const d = new Date();
     d.setDate(d.getDate());
@@ -200,8 +203,15 @@ export class ClientLogicService {
           result[i].coApplicationTag, result[i].tag
         )
       }
+      return this.services.getTags(this.dbServ.getDatabase(), "DEN", "ESP").then(result => {
+      for (var i = 0; i < result.length; i++) {
+        this.clientTags.set(
+          result[i].coApplicationTag, result[i].tag
+        )
+      }
 
       return Promise.resolve(true);
+    });
     })
   }
 
@@ -217,15 +227,42 @@ export class ClientLogicService {
   }
 
   getClients(idEnterprise: number) {
-    this.clients = [] as Client[];
-    return this.clientesServices.getClients(idEnterprise)
+    this.clientListSearchMode = false;
+    return this.clientesServices.getClients(idEnterprise, this.clientListPage)
       .then((result) => {
-        this.clients = result;
-        this.results = [...result];
+        return this.updateClientListAfterEdit(result);
+      });
+  }
+
+  searchClients(idEnterprise: number, searchText: string) {
+    this.clientListSearchMode = true;
+    return this.clientesServices.searchClients(idEnterprise, searchText, this.clientListPage).then((result) => {
+      return this.updateClientListAfterEdit(result);
+    });
+  }
+
+  updateClientListAfterEdit(clients: Client[]) {
+    if (this.clientListPage === 0) {
+      this.clients = [] as Client[];
+    }
+    this.fixClientListSaldos(clients);
+        if(this.clientListPage === 0) {
+        this.clients = clients;
+        } else {
+        this.clients = this.clients.concat(clients);
+        }
+        this.results = [...clients];
 
         // Recorre todos los clientes y loggea si la moneda es distinta a la moneda local
-        if (this.localCurrencyDefault) {
-          for (const c of this.clients) {
+
+        return Promise.resolve(clients.length < this.clientesServices.MAX_ITEMS_PER_PAGE);
+  }
+
+
+
+  fixClientListSaldos(clients: Client[]): Client[] {
+            if (this.localCurrencyDefault) {
+          for (const c of clients) {
             if (c.coCurrency !== this.localCurrency.coCurrency) {
               c.saldo1 = this.currencyService.toOppositeCurrency(c.coCurrency, c.saldo1);
               c.coCurrency = this.localCurrency.coCurrency;
@@ -233,16 +270,15 @@ export class ClientLogicService {
             }
           }
         } else {
-          for (const c of this.clients) {
+          for (const c of clients) {
             if (c.coCurrency !== this.hardCurrency.coCurrency) {
               c.coCurrency = this.hardCurrency.coCurrency;
               c.saldo1 = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.saldo1);
             }
           }
         }
-        return Promise.resolve(true)
-      });
-  }
+        return clients;
+      }
 
   // Reemplazar la función goToClient existente por esta versión async
   async goToClient(idClient: number): Promise<void> {

@@ -2,7 +2,7 @@
     {{this.productsTabTags.get('ADD_PRODUCT')}}
 </ion-button>
 
-<productos-tab-search [showProductStructure]="showProductStructure" [empresaSeleccionada]="empresaSeleccionada" [productsTabTags]="productsTabTags" [pedido]="pedido"></productos-tab-search>
+<productos-tab-search [showProductStructure]="showProductStructure" [empresaSeleccionada]="empresaSeleccionada" [productsTabTags]="productsTabTags" [pedido]="pedido" [showBackButton]="devolucion || pedido || inventario"></productos-tab-search>
 
 <productos-tab-structure-list [showProductStructure]="showProductStructure" [empresaSeleccionada]="empresaSeleccionada" [productsTabTags]="productsTabTags" [devolucion]="devolucion" [pedido]="pedido"></productos-tab-structure-list>
 

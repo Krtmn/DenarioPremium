@@ -1,5 +1,6 @@
-import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { MessageService } from 'src/app/services/messageService/message.service';
 import { ProductService } from 'src/app/services/products/product.service';
 
 @Component({
@@ -11,7 +12,8 @@ import { ProductService } from 'src/app/services/products/product.service';
 export class ProductosSearchComponent{
   @Input()
   searchTags = new Map<string, string>([]);
-  router = inject(Router); 
+  router = inject(Router);
+
 
   @Input()
   mostrarVolver: Boolean = false;
@@ -26,17 +28,22 @@ export class ProductosSearchComponent{
   viewStructuresClicked: EventEmitter<Boolean> = new EventEmitter<Boolean>();
   @Output()
   searchTextChanged: EventEmitter<string> = new EventEmitter<string>();
-  
+
   productoService = inject(ProductService);
-  @ViewChild('searchInput') searchInputEL!: ElementRef;
+  messageService = inject(MessageService);
 
   ngOnInit() {
-    
+
   }
 
-  onSearchClicked(){
-    this.searchText = this.searchInputEL.nativeElement.value;    
-    this.searchTextChanged.emit(this.searchText);    
+  onSearchClicked(event?: Event){
+    event?.preventDefault();
+    const inputElement = event?.target as HTMLInputElement | null;
+    this.messageService.showLoading();
+    if (inputElement) {
+      this.searchText = inputElement.value;
+    }
+    this.searchTextChanged.emit(this.searchText);
     this.productoService.onProductSearch(this.searchText);
 
   }
@@ -48,6 +55,11 @@ export class ProductosSearchComponent{
   onSearchTextChanged(){
     this.searchTextChanged.emit(this.searchText);
     this.productoService.onProductSearch(this.searchText);
+  }
+
+  clearSearch(){
+    this.searchText = '';
+    this.onSearchTextChanged();
   }
 
 }

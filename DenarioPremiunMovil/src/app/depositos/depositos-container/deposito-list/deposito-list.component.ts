@@ -77,7 +77,7 @@ export class DepositoListComponent implements OnInit {
           })
         }
       } else {
-        //se actualiza coordenadas si no estan vacias. 
+        //se actualiza coordenadas si no estan vacias.
         this.geoLoc.getCurrentPosition().then(xy => {
           if (xy.length > 0) {
             this.depositService.coordenadas = xy;
@@ -94,8 +94,8 @@ export class DepositoListComponent implements OnInit {
     console.log("OPEN", coDeposit, index);
     this.messageService.hideLoading();
     //si el estado es por enviar o enviado entonces no se pueden editar cobros
-    if (this.depositService.listDeposits[index].stDeposit >= 2) {
-      //por enviar o enviado entones ocultamos la pestaña de cobros     
+    if (this.depositService.listDeposits[index].stDeposit == 1 && this.depositService.listDeposits[index].stDelivery != 3) {
+      //por enviar o enviado entones ocultamos la pestaña de cobros
       this.depositService.hideDeposit = true;
       this.depositService.deposit = this.depositService.listDeposits[index];
       this.depositService.getDepositCollect(this.db.getDatabase(), this.depositService.deposit.coDeposit).then(resp => {
@@ -156,14 +156,17 @@ export class DepositoListComponent implements OnInit {
   }
 
   getStatusOrderName(stDeposito: number, stDelivery: number, naStatus: any) {
-    if (stDeposito != 0) {
-      if (naStatus == null || naStatus === undefined) {
-        return this.getStatus(stDelivery, naStatus);
+    if (typeof naStatus === 'object') {
+      return naStatus.na_status;
+    } else
+      if (stDeposito != 0) {
+        if (naStatus == null || naStatus === undefined) {
+          return this.getStatus(stDelivery, naStatus);
+        }
+        return naStatus;
+      } else {
+        this.getStatus(stDelivery, naStatus);
       }
-      return naStatus;
-    } else {
-      this.getStatus(stDelivery, naStatus);
-    }
   }
 
   getStatus(status: number, naStatus: any): string {

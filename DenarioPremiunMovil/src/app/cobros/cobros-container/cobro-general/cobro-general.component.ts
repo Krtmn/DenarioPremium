@@ -23,6 +23,7 @@ import { PagoTransferencia } from 'src/app/modelos/pago-transferencia';
 import { PagoDeposito } from 'src/app/modelos/pago-deposito';
 import { PagoCheque } from 'src/app/modelos/pago-cheque';
 import { PagoOtros } from 'src/app/modelos/pago-otros';
+import { PagoMovil } from 'src/app/modelos/pago-movil';
 import { IonInput } from '@ionic/angular/directives/proxies';
 import { ClienteSelectorService } from 'src/app/cliente-selector/cliente-selector.service';
 import { BankAccount } from 'src/app/modelos/tables/bankAccount';
@@ -83,7 +84,29 @@ export class CobrosGeneralComponent implements OnInit {
   // True cuando el cobro ya fue enviado/por enviar o status 6
   get isSentDelivery(): boolean {
     const st = Number(this.collectService?.collection?.stDelivery);
-    return st === this.COLLECT_STATUS_TO_SEND || st === this.COLLECT_STATUS_SENT || st === 6;
+    return st === this.COLLECT_STATUS_TO_SEND || st === 1 || st === 6;
+  }
+
+  get showDateRateSection(): boolean {
+    const stCollection = Number(this.collectService?.collection?.stCollection);
+    return this.collectService.multiCurrency
+      && this.collectService.showConversion
+      && stCollection !== 2
+      && stCollection !== 3
+      && stCollection !== 6;
+  }
+
+  get isDateRateLabelDisabled(): boolean {
+    return !this.collectService.canChangeRate;
+  }
+
+  get isDateRateButtonDisabled(): boolean {
+    const stDelivery = Number(this.collectService?.collection?.stDelivery);
+    const stCollection = Number(this.collectService?.collection?.stCollection);
+    return stDelivery === this.COLLECT_STATUS_TO_SEND
+      || stDelivery === this.COLLECT_STATUS_SENT
+      || stCollection === 6
+      || !this.collectService.canChangeRate;
   }
 
   public alertButtons = [
@@ -96,9 +119,13 @@ export class CobrosGeneralComponent implements OnInit {
 
   constructor(private clientSelectorService: ClienteSelectorService) { }
 
-  ngOnInit() {
+  async ngOnInit() {
+    await Promise.all([
+      this.collectService.loadTypeDocumentList(this.synchronizationServices.getDatabase()),
+      this.collectService.loadCodePhoneNumberList(this.synchronizationServices.getDatabase())
+    ]);
 
-    if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stDelivery == 6) {
+    if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == 1 || this.collectService.collection.stDelivery == 6) {
       //ES UN COBRO ENVIADO, NO DEBO HACER NADA, SOLO MOSTRAR LA DATA
       this.setSendedCollection();
     } else {
@@ -119,6 +146,7 @@ export class CobrosGeneralComponent implements OnInit {
           this.setChangesMade(true);
         })
       );
+
       this.initGeneralState();
     }
   }
@@ -137,6 +165,8 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.montoTotalPagadoConversion = this.collectService.collection.nuAmountTotalConversion;
 
     this.initializeCurrenciesAndRates();
+    this.collectService.loadPaymentMethods();
+    this.loadPayments();
     this.clientService.getClientById(this.collectService.collection.idClient).then(client => {
       this.collectService.client = client;
       this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", true, COLOR_VERDE);
@@ -176,10 +206,10 @@ export class CobrosGeneralComponent implements OnInit {
     //this.collectService.disabledCurrency = true;
     this.collectService.cobroValid = true;
 
-    if (Number(this.collectService.collection.stDelivery) > this.COLLECT_STATUS_SAVED) {
-      this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", true, COLOR_VERDE);
+    if (Number(this.collectService.collection.stDelivery) == 3) {
+      this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", false, COLOR_VERDE);
       this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, 'cobros');
-      if (Number(this.collectService.collection.stDelivery) === this.COLLECT_STATUS_SENT)
+      if (Number(this.collectService.collection.stDelivery) === 1)
         this.collectService.onCollectionValid(true);
     }
 
@@ -328,6 +358,8 @@ export class CobrosGeneralComponent implements OnInit {
           if (this.collectService.historicPartialPayment) {
             this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
           }
+          this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
+
         });
         this.updateSelectedCurrency(this.collectService.collection.idCurrency);
         //this.collectService.disabledCurrency = true;
@@ -346,7 +378,7 @@ export class CobrosGeneralComponent implements OnInit {
     const bankAccounts = this.collectService.listBankAccounts;
     for (let i = 0; i < payments.length; i++) {
       const payment = payments[i];
-      switch (payment.coType) {
+      switch (payment.coPaymentMethod) {
         case 'ef': {
           const newPagoEfectivo: PagoEfectivo = {
             monto: payment.nuAmountPartial,
@@ -368,6 +400,7 @@ export class CobrosGeneralComponent implements OnInit {
             nombreBanco: payment.naBank,
             numeroTransferencia: payment.nuPaymentDoc,
             numeroCuenta: payment.nuClientBankAccount,
+            numeroCuentaCliente: payment.newNuClientBankAccount,
             monto: payment.nuAmountPartial,
             montoConversion: payment.nuAmountPartialConversion,
             fecha: payment.daValue!,
@@ -378,6 +411,7 @@ export class CobrosGeneralComponent implements OnInit {
             disabled: false,
             bancoReceptor: this.getBancoReceptor(payment.nuClientBankAccount),
             showDateModal: false,
+            showNuevaCuenta: false,
           };
           const cuenta = bankAccounts.find(b => b.idBank == newPagoTransferencia.idBanco);
           if (cuenta) {
@@ -385,6 +419,64 @@ export class CobrosGeneralComponent implements OnInit {
             newPagoTransferencia.disabled = false;
           }
           this.collectService.pagoTransferencia.push(newPagoTransferencia);
+          break;
+        }
+        case 'pm': {
+          const fallbackType = this.collectService.typeDocumentList[0]?.coTypeDocument || 'V';
+          const fallbackPhoneCode = this.collectService.codePhoneNumberList[0]?.coCodePhoneNumber || '0414';
+          const rawLegacyDocument = (payment.coClientBankAccount || '').trim();
+          const legacyDocumentParts = rawLegacyDocument.split('-');
+          const rawPhone = (payment.nuPhoneNumber || '').replace(/\D/g, '');
+          const typeById = this.collectService.typeDocumentList.find(
+            typeDocument => typeDocument.idTypeDocument === payment.idTypeDocument
+          );
+          const phoneCodeById = this.collectService.codePhoneNumberList.find(
+            codePhoneNumber => codePhoneNumber.idCodePhoneNumber === payment.idCodePhoneNumber
+          );
+          const phoneCodeByPrefix = this.collectService.codePhoneNumberList.find(
+            codePhoneNumber => rawPhone.startsWith(codePhoneNumber.coCodePhoneNumber)
+          );
+          const selectedPhoneCode = phoneCodeById?.coCodePhoneNumber
+            || phoneCodeByPrefix?.coCodePhoneNumber
+            || fallbackPhoneCode;
+          const phoneNumber = payment.nuPhoneNumber
+            ? (phoneCodeByPrefix ? rawPhone.slice(phoneCodeByPrefix.coCodePhoneNumber.length) : rawPhone)
+            : '';
+          const newPagoMovil: PagoMovil = {
+            idBancoEmisor: 0,
+            nombreBancoEmisor: '',
+            idBancoDestino: payment.idBank,
+            nombreBancoDestino: payment.naBank,
+            numeroCuentaDestino: payment.nuBankAccount ?? '',
+            tipoDocumento: typeById?.coTypeDocument || legacyDocumentParts[0] || fallbackType,
+            numeroDocumento: (payment.nuDocument || legacyDocumentParts[1] || '').replace(/\D/g, ''),
+            codigoTelefono: selectedPhoneCode,
+            numeroTelefono: phoneNumber,
+            numeroReferencia: (payment.nuPaymentDoc || '').replace(/\D/g, ''),
+            monto: payment.nuAmountPartial,
+            montoConversion: payment.nuAmountPartialConversion,
+            fecha: payment.daValue!,
+            posCollectionPayment: i,
+            type: 'pm',
+            anticipoPrepaid: payment.isAnticipoPrepaid,
+            disabled: false,
+            showDateModal: false,
+          };
+
+          const bancoEmisor = this.collectService.listBanks?.find(
+            b => b.coBank === payment.coClientBankAccount || b.naBank === payment.coClientBankAccount
+          );
+          if (bancoEmisor) {
+            newPagoMovil.idBancoEmisor = bancoEmisor.idBank;
+            newPagoMovil.nombreBancoEmisor = bancoEmisor.naBank;
+          }
+
+          const bancoDestino = bankAccounts.find(b => b.idBank == newPagoMovil.idBancoDestino && b.nuAccount == newPagoMovil.numeroCuentaDestino);
+          if (bancoDestino) {
+            this.collectService.clientBankAccountSelected[newPagoMovil.posCollectionPayment] = bancoDestino as any;
+          }
+
+          this.collectService.pagoMovil.push(newPagoMovil);
           break;
         }
         case 'de': {
@@ -412,7 +504,7 @@ export class CobrosGeneralComponent implements OnInit {
         }
         case 'ch': {
           const newPagoCheque: PagoCheque = {
-            idBank: payment.idBank,
+            idBanco: payment.idBank,
             nombreBanco: payment.naBank,
             fecha: payment.daValue!,
             monto: payment.nuAmountPartial,
@@ -427,6 +519,7 @@ export class CobrosGeneralComponent implements OnInit {
             bancoReceptor: new BancoReceptor(),
             showDateVenceModal: false,
             showDateValorModal: false,
+            showNuevaCuenta: false,
           };
           this.collectService.pagoCheque.push(newPagoCheque);
           break;
@@ -540,6 +633,8 @@ export class CobrosGeneralComponent implements OnInit {
                 if (this.collectService.historicPartialPayment) {
                   this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
                 }
+                this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
+
               });
           // }
 
@@ -627,7 +722,7 @@ export class CobrosGeneralComponent implements OnInit {
     //SE BUSCA LA MONEDA
     this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise).then(r => {
 
-      if (this.collectService.collection.stDelivery === this.COLLECT_STATUS_SENT) {
+      if (this.collectService.collection.stDelivery === 1) {
         this.collectService.rateSelected = this.collectService.collection.nuValueLocal;
         this.collectService.historicoTasa = true;
       } else if (this.collectService.historicoTasa) {
@@ -672,6 +767,8 @@ export class CobrosGeneralComponent implements OnInit {
                 if (this.collectService.userCanSelectCollectDiscount) {
                   this.collectService.getCollectDiscounts(this.synchronizationServices.getDatabase());
                 }
+                this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
+
               });
           })
 
@@ -865,6 +962,7 @@ export class CobrosGeneralComponent implements OnInit {
             else
               this.collectService.documentsSaleComponent = false;
 
+            this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
             this.loadPayments();
           })
 
@@ -894,8 +992,7 @@ export class CobrosGeneralComponent implements OnInit {
         if (this.collectService.historicPartialPayment) {
           this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
         }
-
-
+        this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
       });
 
     this.collectService.collection.nuAmountFinal = 0;
@@ -1001,9 +1098,15 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   onOpenCalendar() {
-    if (this.collectService.collection.stDelivery != this.COLLECT_STATUS_TO_SEND && this.collectService.collection.stDelivery != this.COLLECT_STATUS_SENT) {
+    if (this.collectService.collection.stDelivery != this.COLLECT_STATUS_TO_SEND && this.collectService.collection.stDelivery != 1) {
       this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual.split("T")[0]);
       this.collectService.calculatePayment("", 0);
+    }
+  }
+
+  onDateRateClick() {
+    if (this.collectService.canChangeRate) {
+      this.onOpenCalendar();
     }
   }
 
@@ -1089,10 +1192,18 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   onChangeEnterprise() {
-    console.log("asd");
-    this.collectService.alertMessageChangeEnterprise = true;
+    if (this.collectService.collection.collectionDetails.length > 0 || this.collectService.collection.collectionPayments.length > 0 || this.collectService.nameClient != "") {
+      this.collectService.alertMessageChangeEnterprise = true;
+
+      this.collectService.mensaje = "Se ha detectado cambio de Empresa por lo que debera iniciar nuevamente la transacción.";
+    } else {
+      this.collectService.cobroValid = false;
+      this.collectService.changeClient = false;
+      this.collectService.newCollect = true;
+      this.onEnterpriseSelect();
+    }
     this.collectService.changeEnterprise = true;
-    this.collectService.mensaje = "Se ha detectado cambio de Empresa por lo que debera iniciar nuevamente la transacción.";
+
   }
 
   setShowDateRateModal(show: boolean) {
@@ -1117,7 +1228,7 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   bottonDateRateLabel() {
-    if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT) {
+    if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == 1) {
       // normalizar a formato con espacio en vez de 'T'
       if (this.collectService.collection.daRate) {
         this.collectService.dateRateVisual = this.collectService.collection.daRate.replace('T', ' ');
@@ -1156,7 +1267,7 @@ export class CobrosGeneralComponent implements OnInit {
         idBankAccount: bancoReceptor.idBankAccount,
         idCurrency: bancoReceptor.idCurrency,
         idEnterprise: bancoReceptor.idEnterprise,
-        nameBank: bancoReceptor.nameBank,
+        naBank: bancoReceptor.naBank,
         nuAccount: bancoReceptor.nuAccount,
       }
     } else {

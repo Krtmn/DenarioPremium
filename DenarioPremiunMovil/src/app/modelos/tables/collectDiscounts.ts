@@ -1,3 +1,4 @@
+import { Position } from '@capacitor/geolocation';
 export class CollectDiscounts {
 
   static CollectDiscountsJson(obj: CollectDiscounts) {
@@ -6,6 +7,9 @@ export class CollectDiscounts {
       obj['nuCollectDiscount'],
       obj['naCollectDiscount'],
       obj['requireInput'],
+      obj['nuAmountCollectDiscount'],
+      obj['nuAmountCollectDiscountConversion'],
+      obj['position'],
     );
   }
 
@@ -14,6 +18,9 @@ export class CollectDiscounts {
     public nuCollectDiscount: number,
     public naCollectDiscount: string,
     public requireInput: boolean,
+    public nuAmountCollectDiscount: number,
+    public nuAmountCollectDiscountConversion: number,
+    public position: number,
 
   ) { }
 }

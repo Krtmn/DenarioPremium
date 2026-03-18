@@ -11,10 +11,10 @@ import { SynchronizationDBService } from 'src/app/services/synchronization/synch
 
 
 @Component({
-    selector: 'devolucion-list',
-    templateUrl: './devolucion-list.component.html',
-    styleUrls: ['./devolucion-list.component.scss'],
-    standalone: false
+  selector: 'devolucion-list',
+  templateUrl: './devolucion-list.component.html',
+  styleUrls: ['./devolucion-list.component.scss'],
+  standalone: false
 })
 export class DevolucionListComponent implements OnInit {
   returnLogic = inject(ReturnLogicService);
@@ -40,14 +40,14 @@ export class DevolucionListComponent implements OnInit {
       this.returnLogic.getReturnList().then(() => {
         this.returnList = this.returnLogic.returnList;
       })
-      this.returnLogic.newReturn.coordenada = "";
-      if (this.returnLogic.userMustActivateGPS) {
+    this.returnLogic.newReturn.coordenada = "";
+    if (this.returnLogic.userMustActivateGPS) {
       this.geoLoc.getCurrentPosition().then(xy => {
         if (xy.length > 0) {
           this.returnLogic.newReturn.coordenada = xy;
         }
       })
-    } 
+    }
   }
 
   public buttonsDelete = [
@@ -68,17 +68,17 @@ export class DevolucionListComponent implements OnInit {
   ];
 
   onReturnSelected(coReturnSelected: string, stDelivery: number) {
-    if (this.returnLogic.userMustActivateGPS && (stDelivery === DELIVERY_STATUS_SAVED)) {
-      if(this.returnLogic.newReturn.coordenada && this.returnLogic.newReturn.coordenada.length > 0){
+    if (this.returnLogic.userMustActivateGPS && (stDelivery === 3)) {
+      if (this.returnLogic.newReturn.coordenada && this.returnLogic.newReturn.coordenada.length > 0) {
         this.returnLogic.findReturnSelected(coReturnSelected);
       } else {
-      this.geoLoc.getCurrentPosition().then(xy => {
-        if (xy.length > 0) {
-          this.returnLogic.newReturn.coordenada = xy;
-          this.returnLogic.findReturnSelected(coReturnSelected);
-        }
-      })
-    }
+        this.geoLoc.getCurrentPosition().then(xy => {
+          if (xy.length > 0) {
+            this.returnLogic.newReturn.coordenada = xy;
+            this.returnLogic.findReturnSelected(coReturnSelected);
+          }
+        })
+      }
     } else {
       this.returnLogic.findReturnSelected(coReturnSelected);
     }
@@ -111,23 +111,26 @@ export class DevolucionListComponent implements OnInit {
   }
 
   getStatusOrderName(status: number, naStatus: any) {
-    switch (status) {
-      case DELIVERY_STATUS_SAVED: return this.tags.get('DENARIO_DEV_SAVED')! == undefined ? "Guardado" : this.tags.get('DENARIO_DEV_SAVED')!;
-      case DELIVERY_STATUS_TO_SEND: return this.tags.get('DENARIO_DEV_TO_BE_SENDED')! == undefined ? "Por enviar" : this.tags.get('DENARIO_DEV_TO_BE_SENDED')!;
-      case DELIVERY_STATUS_SENT: return this.tags.get('DENARIO_DEV_SENDED')! == undefined ? "Enviado" : this.tags.get('DENARIO_DEV_SENDED')!;
-      case 6:
-        // naStatus puede ser string o un objeto => normalizar a string
-        if (naStatus == null) return 'Enviado';
-        if (typeof naStatus === 'string') {
-          return naStatus;
-        }
-        if (typeof naStatus === 'object') {
-          // intenta varias propiedades comunes
-          return naStatus.na_status;
-        }
-        return String(naStatus);
+    if (typeof naStatus === 'object') {
+      return naStatus.na_status;
+    } else
+      switch (status) {
+        case 3: return this.tags.get('DENARIO_DEV_SAVED')! == undefined ? "Guardado" : this.tags.get('DENARIO_DEV_SAVED')!;
+        case DELIVERY_STATUS_TO_SEND: return this.tags.get('DENARIO_DEV_TO_BE_SENDED')! == undefined ? "Por enviar" : this.tags.get('DENARIO_DEV_TO_BE_SENDED')!;
+        case 1: return this.tags.get('DENARIO_DEV_SENDED')! == undefined ? "Enviado" : this.tags.get('DENARIO_DEV_SENDED')!;
+        case 6:
+          // naStatus puede ser string o un objeto => normalizar a string
+          if (naStatus == null) return 'Enviado';
+          if (typeof naStatus === 'string') {
+            return naStatus;
+          }
+          if (typeof naStatus === 'object') {
+            // intenta varias propiedades comunes
+            return naStatus.na_status;
+          }
+          return String(naStatus);
 
-      default: return '';
-    }
+        default: return '';
+      }
   }
 }

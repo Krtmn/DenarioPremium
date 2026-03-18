@@ -1,5 +1,5 @@
 
-import { ChangeDetectorRef, Component, Input, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit, ViewChild, inject } from '@angular/core';
 import { ProductUtil } from 'src/app/modelos/ProductUtil';
 import { Inventarios } from 'src/app/modelos/inventarios';
 import { ClientStocksDetailUnits, ClientStocksDetail, ClientStocks } from 'src/app/modelos/tables/client-stocks';
@@ -16,6 +16,7 @@ import { ServicesService } from 'src/app/services/services.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED } from 'src/app/utils/appConstants'
 import { Subscription } from 'rxjs/internal/Subscription';
+import { InfiniteScrollCustomEvent, IonInfiniteScroll } from '@ionic/angular';
 
 @Component({
   selector: 'inventario-product-list',
@@ -44,6 +45,8 @@ export class InventarioProductListComponent implements OnInit {
   public serviceImages = inject(ImageServicesService);
   public messageAlert!: MessageAlert;
 
+  page: number = 0;
+
   public clientStocksTags = new Map<string, string>([]);
   public showReturnDetail: Boolean = true;
   public psClicked!: any;
@@ -60,7 +63,12 @@ export class InventarioProductListComponent implements OnInit {
   public imagesMap: { [imgName: string]: string } = {};
   searchSub: any;
   searchTextChanged: any;
+  returnBackSub: any;
   private subs = new Subscription();
+  noProductsAlertShown = false;
+  
+  @ViewChild(IonInfiniteScroll)
+  infiniteScroll!: IonInfiniteScroll;
 
   constructor(
     private cd: ChangeDetectorRef,
@@ -85,9 +93,12 @@ export class InventarioProductListComponent implements OnInit {
       if (this.inventariosLogicService.showProductList) {
         this.idProductStructureList = this.productStructureService.idProductStructureList;
         this.coProductStructureListString = this.productStructureService.coProductStructureListString;
+        this.page = 0;
         this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
-          this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault).then(() => {
+          this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault, 0).then(() => {
+            this.noProductsAlertShown = false;
             this.inventariosLogicService.newClientStock.productList = this.productService.productList;
+            this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
             /* this.inventariosLogicService.setVariablesMap(); */
           });
       }
@@ -101,9 +112,12 @@ export class InventarioProductListComponent implements OnInit {
       /*this.productService.getProductsSearchedByCoProductAndNaProduct(
         this.searchText,
         this.empresaSeleccionada.idEnterprise,
-        this.empresaSeleccionada.coCurrencyDefault,).then(() => {*/
+        this.empresaSeleccionada.coCurrencyDefault, 0).then(() => {*/
+        this.page = 0;
       this.inventariosLogicService.showProductList = data;
+      this.noProductsAlertShown = false;
       this.inventariosLogicService.newClientStock.productList = this.productService.productList;
+      this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
       //  });
     });
 
@@ -115,8 +129,10 @@ export class InventarioProductListComponent implements OnInit {
         this.inventariosLogicService.cliente.idClient,
         this.inventariosLogicService.cliente.idList,
         0).then(() => {
+          this.noProductsAlertShown = false;
           this.inventariosLogicService.showProductList = data;
           this.inventariosLogicService.newClientStock.productList = this.productService.productList;
+          this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
         }
         )
     });
@@ -129,11 +145,19 @@ export class InventarioProductListComponent implements OnInit {
         this.inventariosLogicService.cliente.idClient,
         this.inventariosLogicService.cliente.idList,
         0).then(() => {
+          this.noProductsAlertShown = false;
           this.inventariosLogicService.showProductList = true;
           this.inventariosLogicService.newClientStock.productList = this.productService.productList;
+          this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
         }
         )
     });
+
+      this.returnBackSub = this.productService.returnBackClicked.subscribe(() => {
+        if (this.inventariosLogicService.showProductList) {
+          this.onShowProductStructures();
+        }
+      });
     //}
   }
 
@@ -144,6 +168,7 @@ export class InventarioProductListComponent implements OnInit {
     this.favClicked.unsubscribe();
     this.subs.unsubscribe();
     this.searchTextChanged.unsubscribe();
+    this.returnBackSub.unsubscribe();
   }
 
   onShowProductStructures() {
@@ -252,6 +277,33 @@ export class InventarioProductListComponent implements OnInit {
     console.log(this.inventariosLogicService.newClientStock)
     //console.log(this.serviceImages.mapImages)
   }
+
+   onIonInfinite(ev: any) {
+      this.page++;
+      if (this.searchText) {
+        this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
+          this.searchText, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault, this.page).then(() => {
+
+            this.inventariosLogicService.newClientStock.productList = 
+            [...this.inventariosLogicService.newClientStock.productList, ...this.productService.productList];
+            if (this.productService.productList.length < this.productService.MAX_ITEMS_PER_PAGE) {
+              this.infiniteScroll.disabled = true;
+            }
+            (ev as InfiniteScrollCustomEvent).target.complete();
+          });
+      } else {
+        this.productService.getProductsByCoProductStructureAndIdEnterprise(this.db.getDatabase(),
+          this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault, this.page).then(() => {
+
+            this.inventariosLogicService.newClientStock.productList = [...this.inventariosLogicService.newClientStock.productList, ...this.productService.productList];
+            if (this.productService.productList.length < this.productService.MAX_ITEMS_PER_PAGE) {
+              this.infiniteScroll.disabled = true;
+            }
+            (ev as InfiniteScrollCustomEvent).target.complete();
+          });
+        }
+
+    }
 
 
 }

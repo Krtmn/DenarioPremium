@@ -10,6 +10,7 @@ import { Archivo } from 'src/app/modelos/archivo';
 import { IonModal } from '@ionic/angular';
 import { register } from 'swiper/element/bundle';
 import { Swiper } from 'swiper/types';
+import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
 
 
@@ -32,6 +33,8 @@ export class AdjuntoComponent implements OnInit {
 
   public message = inject(MessageService);
   public service = inject(AdjuntoService);
+
+
 
 
   @ViewChild(SignaturePad) signaturePad!: SignaturePad;
@@ -60,30 +63,30 @@ export class AdjuntoComponent implements OnInit {
   ngAfterViewInit() {
 
     //window.dispatchEvent(new Event('resize'));
-    //this.checkCarousel(); 
-    //console.log('SignaturePad:', this.signaturePad); 
-    if(this.service.signatureConfig){    
+    //this.checkCarousel();
+    //console.log('SignaturePad:', this.signaturePad);
+    if (this.service.signatureConfig) {
       this.signaturePad.set('minWidth', 3); // set szimek/signature_pad options at runtime
       if (this.service.firma.length > 0 && this.signaturePad != undefined) {
         this.reloadSignature() //recarga la firma
       }
-    // Workaround: Add native pointer event listeners to the canvas
-    setTimeout(() => {
-      const canvas = document.querySelector('#signaturePad canvas');
-      if (canvas) {
-        canvas.addEventListener('pointerup', () => {
-          //console.log('Native pointerup detected');
-          this.drawComplete();
-        });
-        canvas.addEventListener('pointerdown', () => {
-          //console.log('Native pointerdown detected');
-          this.drawStart();
-        });
-      }
-    }, 0);
+      // Workaround: Add native pointer event listeners to the canvas
+      setTimeout(() => {
+        const canvas = document.querySelector('#signaturePad canvas');
+        if (canvas) {
+          canvas.addEventListener('pointerup', () => {
+            //console.log('Native pointerup detected');
+            this.drawComplete();
+          });
+          canvas.addEventListener('pointerdown', () => {
+            //console.log('Native pointerdown detected');
+            this.drawStart();
+          });
+        }
+      }, 0);
 
-    this.canvasResize();
-  }
+      this.canvasResize();
+    }
   }
 
   canvasResize() {
@@ -136,8 +139,8 @@ export class AdjuntoComponent implements OnInit {
 
 
   checkImgLimit() {
-    if (this.service.fotos.length >= this.service.totalPhoto) {
-      this.message.transaccionMsjModalNB(this.getTag("ADJ_MSJ_LIMITE") + this.service.totalPhoto);
+    if (this.service.fotos.length >= this.service.quAttach) {
+      this.message.transaccionMsjModalNB(this.getTag("ADJ_MSJ_LIMITE") + this.service.quAttach);
       return false;
     } else {
       return true;
@@ -160,9 +163,9 @@ export class AdjuntoComponent implements OnInit {
 
   }
 
-  deleteFile() {
-    this.service.file = null;
-    this.service.weightLimitExceeded = false;
+  deleteFile(index: number) { 
+    //console.log("Eliminando archivo: ", this.service.files[index].naFile);
+    this.service.deleteFile(index);
     this.onAttachmentChanged();
 
   }
@@ -271,6 +274,7 @@ export class AdjuntoComponent implements OnInit {
     if (this.checkImgLimit()) {
       var remainingSlots = this.service.remainingFotos();
       this.disablePhotos = true; //deshabilita el boton de buscar fotos mientras se procesan las fotos
+      const allowedImageFormats = ['jpeg', 'jpg', 'png', 'heic', 'heif', 'webp'];
 
       //Buscamos las imagenes con el plugin
       const { photos } = await Camera.pickImages({
@@ -287,6 +291,17 @@ export class AdjuntoComponent implements OnInit {
 
       for (let i = 0; i < photos.length; i++) {
         const item = photos[i];
+        const format = (item.format || '').toLowerCase();
+        const webPath = (item.webPath || '').toLowerCase();
+        const extension = webPath.includes('.') ? webPath.split('.').pop() || '' : '';
+        if (!allowedImageFormats.includes(format) && !allowedImageFormats.includes(extension)) {
+          this.message.transaccionMsjModalNB(this.getTag('ADJ_ARCHIVO_TIPO_INVALIDO') || 'Tipo de archivo no permitido.');
+          this.service.processingPhotos--;
+          if (this.service.processingPhotos <= 0) {
+            this.disablePhotos = false;
+          }
+          continue;
+        }
         this.service.addImg(item).then(() => {
           this.checkCarousel();
           this.service.processingPhotos--; //disminuye la cantidad de fotos que se estan procesando actualmente
@@ -321,37 +336,58 @@ export class AdjuntoComponent implements OnInit {
   }
 
   async buscarFile() {
-    if (this.service.file != null) {
-      // ya existe un archivo. Revisar que se hace en este caso
+    if (this.service.files.length >= this.service.quFileAttach) {
+     // console.log("Limite de archivos alcanzado");
+      this.message.transaccionMsjModalNB(this.getTag("ADJ_LIMITE_ARCHIVOS") + this.service.quFileAttach);
     } else {
+      const allowedMimeTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      ];
+      const allowedExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx'];
       const result = await FilePicker.pickFiles({
-        types: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+        types: allowedMimeTypes,
         limit: 1,
         readData: true
       });
-      //console.log(result);
+
       var file = result.files[0];
-      var muyPesado = this.service.getFileWeight(file.data as string) > this.service.imageWeightLimit;
-      if (muyPesado) {
-        this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_ARCHIVO") + this.service.imageWeightLimit + " MB");
+      const fileName = (file.name || '').toLowerCase();
+      if(this.service.filenameSet.has(fileName)){
+        this.message.transaccionMsjModalNB(this.getTag('ADJ_ARCHIVO_NOMBRE_DUPLICADO') || 'Ya has adjuntado un archivo con ese nombre. Por favor renombra el archivo e intenta de nuevo.');
+        return;
       }
-        this.service.file = new Archivo(
-          file.mimeType,
-          file.data as string,
-          file.name as string,
-          muyPesado
-        )
+      this.service.filenameSet.add(fileName);
+      const fileExtension = fileName.includes('.') ? fileName.split('.').pop() || '' : '';
+      if (!allowedMimeTypes.includes(file.mimeType || '') || !allowedExtensions.includes(fileExtension)) {
+        this.message.transaccionMsjModalNB(this.getTag('ADJ_ARCHIVO_TIPO_INVALIDO') || 'Tipo de archivo no permitido.');
+        return;
+      }
+      var muyPesado = this.service.getFileWeight(file.data as string) > this.service.fileWeightLimit;
+      if (muyPesado) {
+        this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_ARCHIVO") + this.service.fileWeightLimit + " MB");
+      }
+      this.service.files.push(new Archivo(
+        file.mimeType,
+        file.data as string,
+        fileName,
+        muyPesado
+      ))
 
-        this.service.weightLimitExceeded = muyPesado;
-        //console.log(this.service.file);
+      this.service.weightLimitExceeded = muyPesado;
+      //console.log(this.service.file);
 
-        this.onAttachmentChanged();
-      
-
-
+      this.onAttachmentChanged();
     }
   }
 
+  deletePendingTransactionAttachments(idTransaction: number, position: number, type: string, naTransaction: string) {
+    const dbService = inject(SynchronizationDBService).getDatabase();
+    console.log("ESTA FOTO SE ENVIO ", idTransaction, position, type, naTransaction, "SE ELIMINA DE LA TABLA DE ADJUNTOS PENDIENTES");
+    this.service.deletePendingTransactionAttachments(dbService, idTransaction, position, type, naTransaction)
+  }
 
 }

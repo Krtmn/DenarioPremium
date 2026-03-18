@@ -1,3 +1,4 @@
+import { COLLECT_STATUS_SAVED } from './../../utils/appConstants';
 import { Position } from '@capacitor/geolocation';
 import { Injectable, Injector, inject } from '@angular/core';
 import { Subject } from 'rxjs';
@@ -20,6 +21,7 @@ import { DateServiceService } from '../dates/date-service.service';
 import { PagoDeposito } from 'src/app/modelos/pago-deposito';
 import { PagoEfectivo } from 'src/app/modelos/pago-efectivo';
 import { PagoOtros } from 'src/app/modelos/pago-otros';
+import { PagoMovil } from 'src/app/modelos/pago-movil';
 import { PagoTransferencia } from 'src/app/modelos/pago-transferencia';
 import { TiposPago } from 'src/app/modelos/tipos-pago';
 import { CurrencyService } from '../currency/currency.service';
@@ -30,13 +32,15 @@ import { ClientBankAccount } from 'src/app/modelos/tables/clientBankAccount';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { ItemListaCobros } from 'src/app/cobros/item-lista-cobros';
-import { COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW } from 'src/app/utils/appConstants';
+import { COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW } from 'src/app/utils/appConstants';
 import { TransactionStatuses } from '../../modelos/tables/transactionStatuses';
 import { MessageService } from '../messageService/message.service';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
 import { ClientLogicService } from '../clientes/client-logic.service';
 import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
+import { TypeDocument } from 'src/app/modelos/tables/typeDocument';
+import { CodePhoneNumber } from 'src/app/modelos/tables/codePhoneNumber';
 
 
 @Injectable({
@@ -90,9 +94,11 @@ export class CollectionService {
   public pagoCheque: PagoCheque[] = [];
   public pagoDeposito: PagoDeposito[] = [];
   public pagoTransferencia: PagoTransferencia[] = [];
+  public pagoMovil: PagoMovil[] = [];
   public pagoOtros: PagoOtros[] = [];
   public tiposPago: TiposPago[] = [];
   public bankAccountSelected!: BankAccount[];
+  public clientBankAccountSelected!: BankAccount[];
   public paymentPartials: PaymentPartials[] = [];
   public itemListaCobros: ItemListaCobros[] = [];
   public coDocumentToUpdate: string[] = [];
@@ -103,6 +109,8 @@ export class CollectionService {
   public differenceCode: DifferenceCode[] = [];
   public differenceCodeSelected: DifferenceCode[] = [];
   public collectDiscounts: CollectDiscounts[] = [];
+  public typeDocumentList: TypeDocument[] = [];
+  public codePhoneNumberList: CodePhoneNumber[] = [];
   public tempSelectedCollectDiscounts: CollectDiscounts[] = [];
   public prevSelectedCollectDiscounts: CollectDiscounts[] = [];
   public selectedCollectDiscounts: number[] = [];
@@ -119,6 +127,7 @@ export class CollectionService {
   public tipoPagoDeposito!: boolean;
   public tipoPagoTransferencia!: boolean;
   public tipoPagoOtros!: boolean;
+  public tipoPagoPagoMovil!: boolean;
   public haveRate: boolean = false;
   public initCollect: boolean = true;
   public showHeaderButtons: Boolean = false;
@@ -190,6 +199,7 @@ export class CollectionService {
   public MonedaToleranciaIsHard: boolean = false;
   public automatedPrepaid: boolean = false;
   public existPartialPayment: boolean = false;
+  public allPaymentPartial: boolean = false;
   public disabledSelectCollectMethodDisabled: boolean = true;
   public collectValidTabs: boolean = true;
   public calculateDifference: boolean = false;
@@ -199,11 +209,21 @@ export class CollectionService {
   public messageSended: boolean = false;
   public enableDifferenceCodes: boolean = false;
   public userCanSelectCollectDiscount: boolean = false;
+  public missingRetention: boolean = false;
+  public missingRetentionValue: boolean = false;
+  public canChangeRate: boolean = false;
+  public alwaysRetention: boolean = false;
+  public alwaysPartialPayment: boolean = false;
+  public enablePartialPayment: boolean = false;
+  public requiredCollectionAttachments: boolean = false;
+  private typeDocumentListLoaded: boolean = false;
+  private codePhoneNumberListLoaded: boolean = false;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;
   public totalDeposito: number = 0;
   public totalTransferencia: number = 0;
+  public totalPagoMovil: number = 0;
   public totalOtros: number = 0;
   public coTypeModule!: string;
   public lengthMethodPaid: number = -1;
@@ -238,6 +258,7 @@ export class CollectionService {
   public difference: number = 0;
   public totalCollectDiscounts: number = 0;
   public totalCollectDiscountsSelected: number = 0;
+  public totalHistoricPartialPayment: number = 0;
 
   public documentCurrency!: string;
   public dateTasa!: string;
@@ -298,11 +319,11 @@ export class CollectionService {
     },
   ];
 
-  public COLLECT_STATUS_SAVED = COLLECT_STATUS_SAVED;
-  public COLLECT_STATUS_SENT = COLLECT_STATUS_SENT;
+
   public COLLECT_STATUS_TO_SEND = COLLECT_STATUS_TO_SEND;
   public COLLECT_STATUS_NEW = COLLECT_STATUS_NEW;
-
+  public COLLECT_STATUS_SAVED = COLLECT_STATUS_SAVED;
+  public COLLECT_STATUS_SENT = COLLECT_STATUS_SENT;
   initLogicService() {
     //this.coTypeModule = '0';
     //this.titleModule = this.collectionTags.get('COB_NOMBRE_MODULO')!;
@@ -339,12 +360,26 @@ export class CollectionService {
       this.currencySelector = this.currencyService.getCurrencyModule("cob").currencySelector.toString() === "true" ? true : false;
       this.disabledCurrency = this.currencyService.getCurrencyModule("cob").currencySelector.toString() === "true" ? false : true;
     }
-
     this.userCanAddRetention = this.globalConfig.get('userCanAddRetention') === 'true' ? true : false;
     this.enableDifferenceCodes = this.globalConfig.get('enableDifferenceCodes') === 'true' ? true : false;
-    this.userCanSelectCollectDiscount = this.globalConfig.get('userCanSelectCollectDiscount') === 'true' ? true : false;
+    const userCanSelectCollectDiscountValue = (this.globalConfig.get('userCanSelectCollectDiscount') || '').trim();
+    this.userCanSelectCollectDiscount = userCanSelectCollectDiscountValue === 'true' ? true : false;
+    const canChangeRateValue = (this.globalConfig.get('canChangeRate') || '').trim();
+    this.canChangeRate = canChangeRateValue === 'true' ? true : false;
+    const missingRetentionValue = (this.globalConfig.get('missingRetention') || '').trim();
+    this.missingRetention = missingRetentionValue === 'true' ? true : false;
+    const alwaysRetentionValue = (this.globalConfig.get('alwaysRetention') || '').trim();
+    this.alwaysRetention = alwaysRetentionValue === 'true' ? true : false;
+    const alwaysPartialPaymentValue = (this.globalConfig.get('alwaysPartialPayment') || '').trim();
+    this.alwaysPartialPayment = alwaysPartialPaymentValue === 'true' ? true : false;
+    const enablePartialPaymentValue = (this.globalConfig.get('enablePartialPayment') || '').trim();
+    this.enablePartialPayment = enablePartialPaymentValue === '' ? true : enablePartialPaymentValue === 'true' ? true : false;
+    const requiredCollectionAttachmentsValue = (this.globalConfig.get('requiredCollectionAttachments') || '').trim();
+    this.requiredCollectionAttachments = requiredCollectionAttachmentsValue === '' ? true : requiredCollectionAttachmentsValue === 'true' ? true : false;
 
-    this.showNuevaCuenta = this.clientBankAccount === true ? true : false;
+
+
+    //this.showNuevaCuenta = this.clientBankAccount === true ? true : false;
 
     this.changeClient = false;
     this.newCollect = true;
@@ -385,56 +420,42 @@ export class CollectionService {
   }
 
   loadPaymentMethods() {
-    //CARGAMOS LOS TIPOS DE PAGO DEPENDIENDO DE LAS VARIABLES DE CONFIGURACION
-
+    // Cargamos los tipos de pago según la configuración de la app.
     this.pagoEfectivo = [] as PagoEfectivo[];
     this.pagoCheque = [] as PagoCheque[];
     this.pagoDeposito = [] as PagoDeposito[];
     this.pagoTransferencia = [] as PagoTransferencia[];
+    this.pagoMovil = [] as PagoMovil[];
     this.pagoOtros = [] as PagoOtros[];
     this.tiposPago = [] as TiposPago[];
 
-    this.tipoPagoEfectivo = this.globalConfig.get('colletionPayment').split("-")[0] === 'true' ? true : false;
-    this.tipoPagoCheque = this.globalConfig.get('colletionPayment').split("-")[1] === 'true' ? true : false;
-    this.tipoPagoDeposito = this.globalConfig.get('colletionPayment').split("-")[2] === 'true' ? true : false;
-    this.tipoPagoTransferencia = this.globalConfig.get('colletionPayment').split("-")[3] === 'true' ? true : false;
-    this.tipoPagoOtros = this.globalConfig.get('colletionPayment').split("-")[4] === 'true' ? true : false;
+    const paymentConfigRaw = (this.globalConfig.get('colletionPayment') || '').trim();
+    const configFlags = paymentConfigRaw.split('-').map(flag => flag.trim().toLowerCase() === 'true');
+    const getFlag = (index: number) => configFlags[index] === true;
 
-    if (this.tipoPagoEfectivo) {
-      this.tiposPago.push({
-        type: "ef",
-        name: "Efectivo",
+    this.tipoPagoEfectivo = getFlag(0);
+    this.tipoPagoCheque = getFlag(1);
+    this.tipoPagoDeposito = getFlag(2);
+    this.tipoPagoTransferencia = getFlag(3);
+    this.tipoPagoOtros = getFlag(4);
+    this.tipoPagoPagoMovil = getFlag(5);
+
+    const paymentTypeDefinitions: Array<{ enabled: boolean; type: string; name: string }> = [
+      { enabled: this.tipoPagoEfectivo, type: 'ef', name: 'Efectivo' },
+      { enabled: this.tipoPagoCheque, type: 'ch', name: 'Cheque' },
+      { enabled: this.tipoPagoDeposito, type: 'de', name: 'Depósito' },
+      { enabled: this.tipoPagoTransferencia, type: 'tr', name: 'Transferencia' },
+      { enabled: this.tipoPagoOtros, type: 'ot', name: 'Otros' },
+      { enabled: this.tipoPagoPagoMovil, type: 'pm', name: 'Pago Móvil' },
+    ];
+
+    this.tiposPago = paymentTypeDefinitions
+      .filter(paymentType => paymentType.enabled)
+      .map(paymentType => ({
+        type: paymentType.type,
+        name: paymentType.name,
         selected: false
-      });
-    }
-    if (this.tipoPagoCheque) {
-      this.tiposPago.push({
-        type: "ch",
-        name: "Cheque",
-        selected: false
-      });
-    }
-    if (this.tipoPagoDeposito) {
-      this.tiposPago.push({
-        type: "de",
-        name: "Depósito",
-        selected: false
-      });
-    }
-    if (this.tipoPagoTransferencia) {
-      this.tiposPago.push({
-        type: "tr",
-        name: "Transferencia",
-        selected: false
-      });
-    }
-    if (this.tipoPagoOtros) {
-      this.tiposPago.push({
-        type: "ot",
-        name: "Otros",
-        selected: false
-      });
-    }
+      }));
 
     return Promise.resolve(true);
   }
@@ -720,7 +741,7 @@ export class CollectionService {
       /* this.fechaMayor = yearMayor + "-" + monthMayor + "-" + diaMayor + " " + hora.split(" ")[1]; */
       this.dateRate = yearMayor + "-" + monthMayor + "-" + diaMayor + " " + hora.split(" ")[1];
 
-      if (this.collection.stDelivery == COLLECT_STATUS_SAVED) {
+      if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED) {
         this.dateRateVisual = this.collection.daRate + "T00:00:00";
       } else
         this.dateRateVisual = yearMayor + "-" + monthMayor + "-" + diaMayor + "T00:00:00";
@@ -744,7 +765,7 @@ export class CollectionService {
     /* this.valueTasa = this.mapFechas.get(fecha.split("T")[0])!; */
 
     this.conversionTypes.find((ct) => {
-      if (fecha.substring(0, 10) == ct.dateConversion.split("T")[0]) {
+      if (fecha.substring(0, 10) == ct.dateConversion.substring(0, 10)) {
         this.rateList.push(ct.nuValueLocal);
       }
     })
@@ -772,6 +793,11 @@ export class CollectionService {
           this.documentSalesView[i].nuValueLocal = this.rateSelected;
         }
       }
+         this.unlockTabs().then((resp) => {
+/*           this.mensaje = "No hay tasa para la fecha seleccionada";
+          this.alertMessageOpen = true; */
+          this.onCollectionValid(resp);
+        })
       return Promise.resolve(true);
     } else {
       //no tengo tasa para ese dia
@@ -791,33 +817,36 @@ export class CollectionService {
   }
 
   async calculatePayment(type: string, index: number) {
-    if (this.collection.collectionDetails.length == 0) {
-      this.montoTotalPagado = 0;
-      this.montoTotalPagadoConversion = 0;
-      this.montoTotalPagar = 0;
-      this.montoTotalDiscounts = 0;
-      this.onCollectionValidToSend(false);
-      this.onCollectionValidToSave(true);
-      return;
-    }
+
     this.montoTotalPagar = 0;
     let monto = 0;
     let montoConversion = 0;
     let montoTotalDiscounts = 0;
+    this.montoTotalPagar = 0;
+    this.montoTotalDiscounts = 0;
+
+    if (this.collection.collectionDetails.length == 0) {
+      this.montoTotalPagado = 0;
+      this.montoTotalPagadoConversion = 0;
+      this.onCollectionValidToSend(false);
+      this.onCollectionValidToSave(true);
+      return;
+    }
+
 
     if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED) {
       for (var j = 0; j < this.collection.collectionDetails.length; j++) {
         monto += this.collection.collectionDetails[j].nuAmountPaid;
         montoConversion += this.collection.collectionDetails[j].nuAmountPaidConversion;
         montoTotalDiscounts += this.collection.collectionDetails[j].nuAmountRetention + this.collection.collectionDetails[j].nuAmountRetention2 + this.collection.collectionDetails[j].nuAmountDiscount;
-        this.montoTotalPagar = monto;
+        this.montoTotalPagar = monto - montoTotalDiscounts;
         this.montoTotalPagarConversion = montoConversion;
 
       }
-    } else if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == this.COLLECT_STATUS_SENT) {
+    } else if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collection.stDelivery == null) {
       monto = this.collection.nuAmountTotal;
       montoConversion = this.collection.nuAmountTotalConversion;
-      this.montoTotalPagar = monto;
+      this.montoTotalPagar = monto - montoTotalDiscounts;
       this.montoTotalPagarConversion = montoConversion;
       return;
     } else {
@@ -825,17 +854,20 @@ export class CollectionService {
         for (var i = 0; i < this.documentSales.length; i++) {
           //for (var j = 0; j < this.collection.collectionDetails.length; j++) {
           if (this.documentSales[i].isSave) {
+            let pos = this.documentSales[i].positionCollecDetails;
             if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
               monto += this.documentSalesBackup[i].nuAmountPaid;
               montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuAmountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
-              montoTotalDiscounts += this.documentSalesBackup[i].nuAmountDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
-
+              montoTotalDiscounts = 0;
             }
           } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
             monto += this.documentSalesBackup[i].nuBalance;
+            let pos = this.documentSales[i].positionCollecDetails;
             montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
-            montoTotalDiscounts += this.documentSalesBackup[i].nuAmountDiscount + this.documentSalesBackup[i].nuAmountRetention + this.documentSalesBackup[i].nuAmountRetention2;
-
+            montoTotalDiscounts += this.collection.collectionDetails[pos].nuAmountDiscount +
+              this.collection.collectionDetails[pos].nuAmountCollectDiscount +
+              this.documentSalesBackup[i].nuAmountRetention +
+              this.documentSalesBackup[i].nuAmountRetention2;
           }
         }
 
@@ -857,20 +889,17 @@ export class CollectionService {
         if (this.currencySelected.hardCurrency.toString() === "true")
           this.montoIgtfLocal = (this.montoIgtf * this.collection.nuValueLocal);
 
-        this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(monto));
+        this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(monto - montoTotalDiscounts));
       }
       else
         this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoIgtf)) + this.cleanFormattedNumber(this.currencyService.formatNumber(monto));
     } else {
-      this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(monto));
+      this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(monto - montoTotalDiscounts));
       this.montoIgtf = 0;
       this.montoIgtfConversion = 0;
     }
 
-    /* this.montoTotalDiscounts = montoTotalDiscounts;
-    this.montoTotalPagado = this.montoTotalPagado - montoTotalDiscounts;
-      console.log("MONTO nuDifference: ", this.collection.nuDifference);
-      console.log("MONTO montoTotalPagado: ", this.montoTotalPagado); */
+
     this.collection.nuAmountPaid = this.montoTotalPagar;
     this.collection.nuAmountPaidConversion = this.convertirMonto(this.montoTotalPagar, 0, this.collection.coCurrency);
     this.collection.nuAmountFinal = this.montoTotalPagar;
@@ -879,11 +908,15 @@ export class CollectionService {
     this.collection.nuAmountIgtf = this.montoIgtf;
     this.collection.nuAmountIgtfConversion = this.convertirMonto(this.montoIgtf, 0, this.collection.coCurrency);
 
-    if (this.separateIgtf) {
+    if (this.coTypeModule == "2") {
+      //es retencion
+      this.collection.nuDifference = 0;
+    }
+    else if (this.separateIgtf) {
       this.montoTotalPagarConversion = this.cleanFormattedNumber(this.currencyService.formatNumber(montoConversion));
-      this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado)) - this.cleanFormattedNumber(this.currencyService.formatNumber(monto));
+      this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado)) - this.cleanFormattedNumber(this.currencyService.formatNumber(monto - montoTotalDiscounts));
     } else {
-      this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado)) - this.cleanFormattedNumber(this.currencyService.formatNumber(monto + this.montoIgtf));
+      this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado)) - this.cleanFormattedNumber(this.currencyService.formatNumber(monto - montoTotalDiscounts + this.montoIgtf));
 
       this.montoTotalPagarConversion = this.cleanFormattedNumber(this.currencyService.formatNumber(montoConversion + this.montoIgtfConversion));
     }
@@ -976,6 +1009,15 @@ export class CollectionService {
       }
     }
 
+    if (this.tipoPagoPagoMovil && this.pagoMovil.length > 0) {
+      for (let pm in this.pagoMovil) {
+        if (this.pagoMovil[pm].anticipoPrepaid) {
+          this.pagoMovil[pm].anticipoPrepaid = false;
+          break;
+        }
+      }
+    }
+
     if (this.tipoPagoOtros && this.pagoOtros.length > 0) {
       for (let ef in this.pagoOtros) {
         if (this.pagoOtros[ef].anticipoPrepaid) {
@@ -987,7 +1029,7 @@ export class CollectionService {
   }
 
   setAutomatedPrepaid(type: string, index: number) {
-    if (this.pagoOtros.length === 0 && this.pagoCheque.length === 0 && this.pagoDeposito.length === 0 && this.pagoTransferencia.length === 0 && this.pagoEfectivo.length === 0)
+    if (this.pagoOtros.length === 0 && this.pagoCheque.length === 0 && this.pagoDeposito.length === 0 && this.pagoTransferencia.length === 0 && this.pagoMovil.length === 0 && this.pagoEfectivo.length === 0)
       this.disabledSelectCollectMethodDisabled = false;
     else
       this.disabledSelectCollectMethodDisabled = true;
@@ -1018,6 +1060,13 @@ export class CollectionService {
         this.anticipoAutomatico = [] as PagoTransferencia[];
         this.anticipoAutomatico.push(this.pagoTransferencia[index]);
         this.pagoTransferencia[index].anticipoPrepaid = true;
+        break;
+      }
+
+      case "pm": {
+        this.anticipoAutomatico = [] as PagoMovil[];
+        this.anticipoAutomatico.push(this.pagoMovil[index]);
+        this.pagoMovil[index].anticipoPrepaid = true;
         break;
       }
 
@@ -1105,6 +1154,13 @@ export class CollectionService {
         this.montoTotalPagado += this.pagoTransferencia[tr].monto;
       }
     }
+    if (this.tipoPagoPagoMovil) {
+      this.totalPagoMovil = 0;
+      for (let pm = 0; pm < this.pagoMovil.length; pm++) {
+        this.totalPagoMovil += this.pagoMovil[pm].monto;
+        this.montoTotalPagado += this.pagoMovil[pm].monto;
+      }
+    }
     if (this.tipoPagoOtros) {
       this.totalOtros = 0;
       for (let otros = 0; otros < this.pagoOtros.length; otros++) {
@@ -1142,6 +1198,24 @@ export class CollectionService {
   }
 
   async validateToSend() {
+
+    if (this.alwaysPartialPayment && this.allPaymentPartial) {
+      if (!this.messageSended) {
+        this.mensaje = this.collectionTags.get('COB_ERROR_PARTIAL_PAY')!;
+
+        this.messageAlert = new MessageAlert(
+          this.collectionTags.get('COB_NOMBRE_MODULO')!,
+          this.mensaje,
+        );
+        this.messageService.alertModal(this.messageAlert);
+        this.messageSended = true;
+
+        /* setTimeout(() => {
+          this.messageSended = false;
+        }, 1000); */
+      }
+    }
+
     this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagar));
     this.montoTotalPagado = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado));
 
@@ -1199,9 +1273,9 @@ export class CollectionService {
       // Existencia: true si hay al menos uno marcado
       this.existPartialPayment = onlyPaymentPartial > 0;
 
-      let allPaymentPartial = false;
+      this.allPaymentPartial = false;
       if (onlyPaymentPartial == this.collection.collectionDetails.length)
-        allPaymentPartial = true;
+        this.allPaymentPartial = true;
 
       if (this.enableDifferenceCodes) {
         const payments = Array.isArray(this.collection.collectionPayments) ? this.collection.collectionPayments : [];
@@ -1227,25 +1301,27 @@ export class CollectionService {
       }
 
       if (this.existPartialPayment) {
-        if (allPaymentPartial && this.collection.collectionPayments.length > 0 && this.tabSelected == "pagos") {
-          if (this.montoTotalPagado == this.montoTotalPagar) {
+        if (this.alwaysPartialPayment) {
+          this.checkTolerancia();
+        } else if (this.allPaymentPartial && this.collection.collectionPayments.length > 0 && this.tabSelected == "pagos") {
+          if (this.alwaysPartialPayment) {
+            if (this.tolerancia0) {
+              this.checkTolerancia();
+            } else {
+              if (Math.abs(this.montoTotalPagado) == Math.abs(this.montoTotalPagar)) {
+                this.onCollectionValidToSend(true);
+              } else {
+                this.onCollectionValidToSend(false);
+                return;
+              }
+            }
+          } else if (this.montoTotalPagado == this.montoTotalPagar) {
             this.onCollectionValidToSend(true);
           } else {
-            if (!this.messageSended) {
-              this.mensaje = "Todos los documentos están marcados como pago parcial, el monto pagado debe ser igual al monto a pagar.";
-
-              this.messageAlert = new MessageAlert(
-                this.collectionTags.get('COB_NOMBRE_MODULO')!,
-                this.mensaje,
-              );
-              this.messageService.alertModal(this.messageAlert);
-              this.messageSended = true;
-            }
-
             this.onCollectionValidToSend(false);
             return;
           }
-        } else {
+        } else if (this.collection.collectionPayments.length > 0) {
           if (this.tolerancia0) {
             this.checkTolerancia();
           } else {
@@ -1285,8 +1361,31 @@ export class CollectionService {
 
   checkTolerancia() {
 
-    //TOLERANCIA0 TRUE PERMITO DIFERENCIA SE DEBEN VALIDAR LAS SIGUIENTES VARIABLES TipoTolerancia, RangoTolerancia, MonedaTolerancia
-    if (this.TipoTolerancia == 0) {
+    if (this.alwaysPartialPayment && this.existPartialPayment) {
+      if (this.montoTotalPagado != this.montoTotalPagar) {
+        this.onCollectionValidToSend(false);
+        if (!this.messageSended) {
+          this.mensaje = this.collectionTags.get('COB_ERROR_PARTIAL_PAY')!;
+
+          this.messageAlert = new MessageAlert(
+            this.collectionTags.get('COB_NOMBRE_MODULO')!,
+            this.mensaje,
+          );
+          this.messageService.alertModal(this.messageAlert);
+          this.messageSended = true;
+          /*  setTimeout(() => {
+             this.messageSended = false;
+           }, 1000); */
+
+        }
+      } else {
+        this.onCollectionValidToSend(true);
+      }
+      return;
+    } else if (this.montoTotalPagado <= 0)
+      this.onCollectionValidToSend(false);
+    else if (this.TipoTolerancia == 0) {
+      //TOLERANCIA0 TRUE PERMITO DIFERENCIA SE DEBEN VALIDAR LAS SIGUIENTES VARIABLES TipoTolerancia, RangoTolerancia, MonedaTolerancia
       if (this.collection.coCurrency == this.MonedaTolerancia) {
         //COMO LA MONEDA DEL COBRO Y LA MONEDA DE LA TOLERANCIA SON IGUALES, ENTONCES COMPARO DIRECTAMENTE
         let amount = this.montoTotalPagado - this.montoTotalPagar;
@@ -1586,9 +1685,11 @@ export class CollectionService {
     this.pagoCheque = [] as PagoCheque[];
     this.pagoDeposito = [] as PagoDeposito[];
     this.pagoTransferencia = [] as PagoTransferencia[];
+    this.pagoMovil = [] as PagoMovil[];
     this.pagoOtros = [] as PagoOtros[];
     this.lengthMethodPaid = -1;
     this.bankAccountSelected = [] as BankAccount[];
+    this.clientBankAccountSelected = [] as BankAccount[];
     this.collectionIsSave = false;
     this.igtfList = [] as IgtfList[];
     this.igtfSelected = {} as IgtfList;
@@ -1610,6 +1711,7 @@ export class CollectionService {
     else
       this.disabledSelectCollectMethodDisabled = false;
 
+    this.missingRetentionValue = this.alwaysRetention;
 
     return collection = {
       idUser: Number(localStorage.getItem("idUser")),
@@ -1644,6 +1746,8 @@ export class CollectionService {
       nuAmountTotalConversion: 0,
       nuAmountPaid: 0,
       nuAmountPaidConversion: 0,
+      nuAmountDiscountTotal: 0,
+      nuAmountDiscountTotalConversion: 0,
       nuDifference: 0,
       nuDifferenceConversion: 0,
       nuIgtf: 0,
@@ -1767,10 +1871,10 @@ export class CollectionService {
       inPaymentPartial = this.collection.collectionDetails[positionCollecDetails].inPaymentPartial,
       isSave = this.collection.collectionDetails[positionCollecDetails].isSave;
 
-    this.documentSales[index].nuAmountBase = nuAmountBase;
-    this.documentSalesBackup[index].nuAmountBase = nuAmountBase;
-    this.documentSales[index].nuAmountDiscount = nuAmountDiscount;
-    this.documentSalesBackup[index].nuAmountDiscount = nuAmountDiscount;
+    //this.documentSales[index].nuAmountBase = nuAmountBase;
+    //this.documentSalesBackup[index].nuAmountBase = nuAmountBase;
+    /*  this.documentSales[index].nuAmountDiscount = nuAmountDiscount;
+     this.documentSalesBackup[index].nuAmountDiscount = nuAmountDiscount; */
     this.documentSales[index].nuAmountPaid = nuAmountPaid;
     this.documentSalesBackup[index].nuAmountPaid = nuAmountPaid;
     this.documentSales[index].nuAmountRetention = nuAmountRetention;
@@ -1803,22 +1907,24 @@ export class CollectionService {
     this.documentSalesBackup[idx].isSave = true;
     this.documentSales[idx].nuAmountPaid = this.amountPaid;
     this.documentSalesBackup[idx].nuAmountPaid = this.amountPaid;
-    this.documentSales[idx].nuAmountBase = this.amountPaid;
-    this.documentSalesBackup[idx].nuAmountBase = this.amountPaid;
-    this.documentSales[idx].nuAmountDiscount = open.nuAmountDiscount;
-    this.documentSalesBackup[idx].nuAmountDiscount = open.nuAmountDiscount;
+    //this.documentSales[idx].nuAmountBase = this.amountPaid;
+    //this.documentSalesBackup[idx].nuAmountBase = this.amountPaid;
+    /* this.documentSales[idx].nuAmountDiscount = open.nuAmountDiscount;
+    this.documentSalesBackup[idx].nuAmountDiscount = open.nuAmountDiscount; */
 
     // Copia a collectionDetails
     const detail = this.collection.collectionDetails[detailIdx];
     if (detail) {
+      // Preservar los saldos originales para no mutarlos durante las actualizaciones
+      const originalBalance = detail.nuBalanceDocOriginal;
+      const originalBalanceConversion = detail.nuBalanceDocOriginalConversion;
 
       detail.nuAmountPaid = this.amountPaid
       detail.nuAmountPaidConversion = this.convertirMonto(this.amountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
       detail.nuBalanceDoc = open.nuBalance;
       detail.nuBalanceDocConversion = this.convertirMonto(open.nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
       detail.daVoucher = open.daVoucher;
-      detail.nuAmountDiscount = open.nuAmountDiscount;
-      detail.nuAmountDiscountConversion = this.convertirMonto(open.nuAmountDiscount, this.collection.nuValueLocal, this.collection.coCurrency);
+      detail.nuAmountDiscountConversion = this.convertirMonto(detail.nuAmountDiscount, this.collection.nuValueLocal, this.collection.coCurrency);
       detail.nuAmountRetention = open.nuAmountRetention;
       detail.nuAmountRetentionConversion = this.convertirMonto(open.nuAmountRetention, this.collection.nuValueLocal, this.collection.coCurrency);
       detail.nuAmountRetention2 = open.nuAmountRetention2;
@@ -1826,6 +1932,10 @@ export class CollectionService {
       detail.nuVoucherRetention = open.nuVaucherRetention;
       detail.nuValueLocal = open.nuValueLocal;
       detail.isSave = true;
+
+      // Restablecer explícitamente los montos originales para garantizar que no se alteren
+      detail.nuBalanceDocOriginal = originalBalance;
+      detail.nuBalanceDocOriginalConversion = originalBalanceConversion;
 
       // ...otros campos...
     }
@@ -1871,6 +1981,13 @@ export class CollectionService {
       if (Array.isArray(this.pagoTransferencia)) {
         for (let i = 0; i < this.pagoTransferencia.length; i++) {
           this.pagoTransferencia[i].fecha = fecha;
+        }
+      }
+
+      // Actualizar pagoMovil[].fecha
+      if (Array.isArray(this.pagoMovil)) {
+        for (let i = 0; i < this.pagoMovil.length; i++) {
+          this.pagoMovil[i].fecha = fecha;
         }
       }
 
@@ -2274,9 +2391,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
   getStatus(status: number, naStatus: any): string {
     switch (status) {
-      case COLLECT_STATUS_SAVED: return this.collectionTags.get("COB_STATUS_SAVED")!;
+      case 3: return this.collectionTags.get("COB_STATUS_SAVED")!;
       case COLLECT_STATUS_TO_SEND: return this.collectionTags.get("COB_STATUS_TO_SEND")!;
-      case COLLECT_STATUS_SENT:
+      case 1:
         return naStatus == null ? this.collectionTags.get("COB_STATUS_SENT")! : naStatus;
       case 6:
         // naStatus puede ser string o un objeto => normalizar a string
@@ -2349,6 +2466,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
       for (let i = 0; i < data.rows.length; i++) {
         const row = data.rows.item(i);
+        row.missing_re
         if (this.mapDocumentsSales.has(row.id_document)) continue;
 
         const doc = this.mapRowToDocumentSale(row, isIgtf);
@@ -2386,9 +2504,11 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     const commonOrder = `ORDER BY CASE WHEN d.co_currency = "${this.enterpriseSelected.coCurrencyDefault}" THEN 0 ELSE 1 END, d.co_currency`;
 
     // module 0 and 2 are non-IGTF, but module 2 omits ds.st_document < 2
-    const includeDocStateFilter = true //moduleType === '0'; //DESCOMENTAR ACA SI SE CAMBIA LA LOGICA PARA RETENCIONES
 
-    if (moduleType === '0' || moduleType === '2') {
+    const includeDocStateFilter = moduleType === '0';
+    const includeDocStateFilterRetenttion = moduleType === '2';
+
+    if (moduleType === '0' || moduleType === '2' || moduleType === '4') {
       if (currencyIsEmpty) {
         return {
           isIgtf: false,
@@ -2398,8 +2518,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             'LEFT JOIN document_st ds ON d.co_document = ds.co_document ' +
             'WHERE (d.id_client = ? ' +
             (includeDocStateFilter ? 'AND ds.st_document < 2 ' : '') +
+            (includeDocStateFilterRetenttion ? 'AND ds.st_document < 3 ' : '') +
             'AND d.id_enterprise = ? AND d.co_document_sale_type != "IGTF") ' +
-            'OR d.co_document IN (SELECT co_document FROM collection_details WHERE co_collection= ?) ' +
+            'OR d.co_document IN (SELECT co_document FROM collection_details WHERE co_collection= ? ) ' +
             commonOrder
         };
       }
@@ -2448,7 +2569,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     doc.coDocumentSaleType = row.co_document_sale_type;
     doc.daDocument = row.da_document;
     doc.daDueDate = row.da_due_date;
-    doc.nuAmountBase = row.na_amount_base == null ? 0 : row.na_amount_base;
+    doc.nuAmountBase = row.nu_amount_base == null ? 0 : row.nu_amount_base;
     doc.nuAmountDiscount = row.nu_amount_discount == null ? 0 : row.nu_amount_discount;
     doc.nuAmountTax = row.nu_amount_tax == null ? 0 : row.nu_amount_tax;
     doc.nuAmountTotal = row.nu_amount_total == null ? 0 : row.nu_amount_total;
@@ -2476,6 +2597,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     doc.inPaymentPartial = false;
     doc.historicPaymentPartial = false;
     doc.isSave = false;
+    doc.missingRetention = this.missingRetentionValue;
     return doc;
   }
 
@@ -2490,9 +2612,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       this.documentSales[index].isSave = detail.isSave;
       this.documentSalesBackup[index].isSave = detail.isSave;
       this.documentSalesBackup[index].daVoucher = detail.daVoucher!;
-      this.documentSalesBackup[index].nuAmountDiscount = detail.nuAmountDiscount;
 
-      if (this.collection.stDelivery != this.COLLECT_STATUS_SAVED) {
+      if (this.collection.stDelivery != 3) {
         detail.nuBalanceDoc = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
         detail.nuBalanceDocConversion = doc.nuBalance;
         detail.nuAmountPaid = this.convertirMonto(doc.nuBalance, this.collection.nuValueLocal, doc.coCurrency);
@@ -2541,7 +2662,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
         // normalizar campos numéricos
         this.ensureNumber(doc, 'nuAmountBase');
-        this.ensureNumber(doc, 'nuAmountDiscount');
+        // this.ensureNumber(doc, 'nuAmountDiscount');
         this.ensureNumber(doc, 'nuAmountTax');
         this.ensureNumber(doc, 'nuAmountTotal');
         this.ensureNumber(doc, 'nuBalance');
@@ -2553,7 +2674,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         // collection hard, doc local -> convertir local -> hard
         if (collectionIsHard && doc.coCurrency === local.coCurrency) {
           doc.nuAmountBase = await this.convertAmount(doc.nuAmountBase, 'local', 'hard', coTypeDoc, rateForDoc);
-          doc.nuAmountDiscount = await this.convertAmount(doc.nuAmountDiscount, 'local', 'hard', coTypeDoc, rateForDoc);
+          //doc.nuAmountDiscount = await this.convertAmount(doc.nuAmountDiscount, 'local', 'hard', coTypeDoc, rateForDoc);
           doc.nuAmountTax = await this.convertAmount(doc.nuAmountTax, 'local', 'hard', coTypeDoc, rateForDoc);
           doc.nuAmountTotal = await this.convertAmount(doc.nuAmountTotal, 'local', 'hard', coTypeDoc, rateForDoc);
           doc.nuBalance = await this.convertAmount(doc.nuBalance, 'local', 'hard', coTypeDoc, rateForDoc);
@@ -2564,7 +2685,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         // collection local, doc hard -> convertir hard -> local
         if (collectionIsLocal && doc.coCurrency === hard.coCurrency) {
           doc.nuAmountBase = await this.convertAmount(doc.nuAmountBase, 'hard', 'local', coTypeDoc, rateForDoc);
-          doc.nuAmountDiscount = await this.convertAmount(doc.nuAmountDiscount, 'hard', 'local', coTypeDoc, rateForDoc);
+          //doc.nuAmountDiscount = await this.convertAmount(doc.nuAmountDiscount, 'hard', 'local', coTypeDoc, rateForDoc);
           doc.nuAmountTax = await this.convertAmount(doc.nuAmountTax, 'hard', 'local', coTypeDoc, rateForDoc);
           doc.nuAmountTotal = await this.convertAmount(doc.nuAmountTotal, 'hard', 'local', coTypeDoc, rateForDoc);
           doc.nuBalance = await this.convertAmount(doc.nuBalance, 'hard', 'local', coTypeDoc, rateForDoc);
@@ -2578,7 +2699,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             // copia profunda de los campos actualizados
             this.documentSalesBackup[idxBackup] = Object.assign({}, this.documentSalesBackup[idxBackup], {
               nuAmountBase: doc.nuAmountBase,
-              nuAmountDiscount: doc.nuAmountDiscount,
+              //nuAmountDiscount: doc.nuAmountDiscount,
               nuAmountTax: doc.nuAmountTax,
               nuAmountTotal: doc.nuAmountTotal,
               nuBalance: doc.nuBalance,
@@ -2620,7 +2741,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
       // normalizar campos numéricos
       this.ensureNumber(doc, 'nuAmountBase');
-      this.ensureNumber(doc, 'nuAmountDiscount');
+      //this.ensureNumber(doc, 'nuAmountDiscount');
       this.ensureNumber(doc, 'nuAmountTax');
       this.ensureNumber(doc, 'nuAmountTotal');
       this.ensureNumber(doc, 'nuBalance');
@@ -2631,7 +2752,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       // collection hard, doc local -> convertir local -> hard
       if (collectionIsHard && doc.coCurrency === local.coCurrency) {
         doc.nuAmountBase = await this.convertAmount(doc.nuAmountBase, 'local', 'hard', coTypeDoc, rateForDoc);
-        doc.nuAmountDiscount = await this.convertAmount(doc.nuAmountDiscount, 'local', 'hard', coTypeDoc, rateForDoc);
+        //doc.nuAmountDiscount = await this.convertAmount(doc.nuAmountDiscount, 'local', 'hard', coTypeDoc, rateForDoc);
         doc.nuAmountTax = await this.convertAmount(doc.nuAmountTax, 'local', 'hard', coTypeDoc, rateForDoc);
         doc.nuAmountTotal = await this.convertAmount(doc.nuAmountTotal, 'local', 'hard', coTypeDoc, rateForDoc);
         doc.nuBalance = await this.convertAmount(doc.nuBalance, 'local', 'hard', coTypeDoc, rateForDoc);
@@ -2642,7 +2763,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       // collection local, doc hard -> convertir hard -> local
       if (collectionIsLocal && doc.coCurrency === hard.coCurrency) {
         doc.nuAmountBase = await this.convertAmount(doc.nuAmountBase, 'hard', 'local', coTypeDoc, rateForDoc);
-        doc.nuAmountDiscount = await this.convertAmount(doc.nuAmountDiscount, 'hard', 'local', coTypeDoc, rateForDoc);
+        //doc.nuAmountDiscount = await this.convertAmount(doc.nuAmountDiscount, 'hard', 'local', coTypeDoc, rateForDoc);
         doc.nuAmountTax = await this.convertAmount(doc.nuAmountTax, 'hard', 'local', coTypeDoc, rateForDoc);
         doc.nuAmountTotal = await this.convertAmount(doc.nuAmountTotal, 'hard', 'local', coTypeDoc, rateForDoc);
         doc.nuBalance = await this.convertAmount(doc.nuBalance, 'hard', 'local', coTypeDoc, rateForDoc);
@@ -2656,7 +2777,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           // copia profunda de los campos actualizados
           this.documentSalesBackup[idxBackup] = Object.assign({}, this.documentSalesBackup[idxBackup], {
             nuAmountBase: doc.nuAmountBase,
-            nuAmountDiscount: doc.nuAmountDiscount,
+            //nuAmountDiscount: doc.nuAmountDiscount,
             nuAmountTax: doc.nuAmountTax,
             nuAmountTotal: doc.nuAmountTotal,
             nuBalance: doc.nuBalance,
@@ -2702,6 +2823,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         if (ds && typeof ds.coDocument === 'string') docSalesViewMap.set(ds.coDocument, ds);
       });
 
+      this.totalHistoricPartialPayment = data.rows.length;
       for (let i = 0; i < data.rows.length; i++) {
         const coDoc = data.rows.item(i).co_document;
         const isPartial = data.rows.item(i).in_payment_partial === 'true';
@@ -2747,6 +2869,78 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     });
   }
 
+  findIsMissingRetention(dbServ: SQLiteObject, idClient: number) {
+    const coDocuments = Array.from(this.mapDocumentsSales.values()).map(obj => obj.coDocument);
+    if (coDocuments.length === 0) return Promise.resolve();
+
+    const selectStatement = `
+    SELECT code.co_document, code.missing_retention
+    FROM collection_details code
+    JOIN collections co ON co.id_client = ?
+    WHERE code.missing_retention == 'true' AND code.co_document IN ('${coDocuments.join("', '")}')
+  `;
+
+    return dbServ.executeSql(selectStatement, [idClient]).then(data => {
+      // Crea un Map para acceso rápido por id_document (usar idDocument como clave numérica)
+      const docSalesMap = new Map<string, DocumentSale>();
+      this.documentSales.forEach(ds => {
+        if (ds && typeof ds.coDocument === 'string') docSalesMap.set(ds.coDocument, ds);
+      });
+      const docSalesBackupMap = new Map<string, DocumentSale>();
+      this.documentSalesBackup.forEach(ds => {
+        if (ds && typeof ds.coDocument === 'string') docSalesBackupMap.set(ds.coDocument, ds);
+      });
+      const docSalesViewMap = new Map<string, DocumentSale>();
+      this.documentSalesView.forEach(ds => {
+        if (ds && typeof ds.coDocument === 'string') docSalesViewMap.set(ds.coDocument, ds);
+      });
+
+      for (let i = 0; i < data.rows.length; i++) {
+        const coDoc = data.rows.item(i).co_document;
+        const missingRetention = data.rows.item(i).missing_retention === 'true';
+
+        // Actualiza los mapas indexados por coDocument
+        const ds = docSalesMap.get(coDoc);
+        if (ds) {
+          ds.missingRetention = missingRetention;
+        }
+        const dsView = docSalesViewMap.get(coDoc);
+        if (dsView) {
+          dsView.missingRetention = missingRetention;
+        }
+        const dsBackup = docSalesBackupMap.get(coDoc);
+        if (dsBackup) {
+          dsBackup.missingRetention = missingRetention;
+        }
+
+        // Sincronizar mapDocumentsSales (que está indexado por idDocument:number)
+        // buscando el idDocument desde el entry por coDocument
+        const source = ds ?? dsBackup ?? dsView;
+        if (source && source.idDocument != null) {
+          const id = source.idDocument;
+          if (this.mapDocumentsSales.has(id)) {
+            const mapped = this.mapDocumentsSales.get(id)!;
+            mapped.missingRetention = missingRetention;
+            this.mapDocumentsSales.set(id, mapped);
+          }
+        } else {
+          // fallback: buscar por valor si no encontramos source
+          for (const [id, val] of this.mapDocumentsSales.entries()) {
+            if (val && val.coDocument === coDoc) {
+              val.missingRetention = missingRetention;
+              this.mapDocumentsSales.set(id, val);
+              break;
+            }
+          }
+        }
+      }
+    }).catch(e => {
+      console.error('Error en findIsPaymentPartial:', e);
+      return Promise.resolve();
+    });
+  }
+
+
   getPaymentPartialByDocument(dbServ: SQLiteObject, coDocument: string) {
 
     let selectStatement = "SELECT " +
@@ -2755,13 +2949,23 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "co.id_collection, " +
       "co.st_collection, " +
       "co.st_delivery, " +
-      "code.*, " +
-      "copa.nu_payment_doc, " +
-      "copa.co_payment_method " +
+      "code.co_document, " +
+      "code.nu_balance_doc, " +
+      "SUM(copa.nu_amount_partial) AS nu_amount_paid, " +
+      "GROUP_CONCAT(" +
+      "copa.co_payment_method || ': ' || " +
+      "CASE WHEN copa.nu_payment_doc IS NULL OR copa.nu_payment_doc = '' THEN 'No Ref' ELSE copa.nu_payment_doc END, " +
+      "'\n'" +
+      ") AS payment_refs, " +
+      "GROUP_CONCAT(" +
+      "copa.nu_amount_partial, " +
+      "'\n'" +
+      ") AS payment_details " +
       "FROM collections co " +
       "JOIN collection_details code  ON co.co_collection = code.co_collection " +
       "JOIN collection_payments copa ON co.co_collection = copa.co_collection " +
-      "WHERE code.co_document = ? AND code.in_payment_partial = 'true'";
+      "WHERE code.co_document = ? AND code.in_payment_partial = 'true' " +
+      "GROUP BY co.co_currency, co.da_collection, co.id_collection, co.st_collection, co.st_delivery, code.co_document, code.nu_balance_doc";
 
     return dbServ.executeSql(selectStatement, [coDocument]).then(data => {
       //return dbServ.executeSql(selectStatement, [this.mapDocumentsSales.get(idDocument)!.coDocument]).then(data => {
@@ -2777,10 +2981,12 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             coCurrency: data.rows.item(i).co_currency,
             nuAmountPaid: data.rows.item(i).nu_amount_paid,
             nuBalanceDoc: data.rows.item(i).nu_balance_doc,
-            coPaymentMethod: data.rows.item(i).co_payment_method,
+            coPaymentMethod: '',
+            paymentRefs: data.rows.item(i).payment_refs,
+            paymentDetails: data.rows.item(i).payment_details,
             stCollection: data.rows.item(i).st_collection,
             stDelivery: data.rows.item(i).st_delivery,
-            nuPaymentDoc: data.rows.item(i).nu_payment_doc == "" ? "No Ref" : data.rows.item(i).nu_payment_doc,
+            nuPaymentDoc: '',
             naStatus: item?.na_status!
           })
         }
@@ -2896,6 +3102,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           nuAmountRetention: data.rows.item(0).nuAmountRetention == undefined ? 0 : data.rows.item(0).nuAmountRetention,
           nuAmountRetention2: data.rows.item(0).nuAmountRetention2 == undefined ? 0 : data.rows.item(0).nuAmountRetention2,
           daVoucher: data.rows.item(0).daVoucher == undefined ? "" : data.rows.item(0).daVoucher,
+          // ensure daUpdate is provided (DB column may be daUpdate or da_update) to satisfy the DocumentSale model
+          daUpdate: data.rows.item(0).daUpdate == undefined ? (data.rows.item(0).da_update == undefined ? "" : data.rows.item(0).da_update) : data.rows.item(0).daUpdate,
           nuVaucherRetention: data.rows.item(0).nuVaucherRetention == undefined ? "" : this.documentSales[index].nuVaucherRetention,
           igtfAmount: data.rows.item(0).igtfAmount == undefined ? 0 : this.documentSales[index].igtfAmount,
           txConversion: this.documentSales[index].txConversion,
@@ -2904,9 +3112,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           isSelected: this.documentSales[index].isSelected,
           isSave: false,
           colorRow: this.documentSales[index].colorRow,
-          daUpdate: this.documentSales[index].daUpdate,
+          missingRetention: this.documentSales[index].missingRetention,
         }
-
         this.documentSalesBackup[index] = Object.assign({}, this.documentSales[index]);
         this.documentSalesBackup[index].positionCollecDetails = -1;
 
@@ -2951,8 +3158,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
   }
 
   getAllClientBankAccountByEnterprise(dbServ: SQLiteObject, idEnterprise: number, coClient: string,) {
-    return dbServ.executeSql('SELECT * FROM client_bank_accounts, banks WHERE client_bank_accounts.id_enterprise = ? ' +
-      'AND client_bank_accounts.co_bank = banks.co_bank AND client_bank_accounts.co_client = ?',
+    return dbServ.executeSql('SELECT DISTINCT cba.*, b.id_bank, b.na_bank FROM client_bank_accounts cba ' +
+      'JOIN banks b ON cba.co_bank = b.co_bank AND cba.id_enterprise = b.id_enterprise ' +
+      'WHERE cba.id_enterprise = ? AND cba.co_client = ?',
       [idEnterprise, coClient]).then(data => {
         let clientBankAccounts: ClientBankAccount[] = [];
 
@@ -3020,7 +3228,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
                 idCurrency: data.rows.item(i).id_currency,
                 coEnterprise: data.rows.item(i).co_enterprise,
                 idEnterprise: data.rows.item(i).id_enterprise,
-                nameBank: data.rows.item(i).na_bank
+                naBank: data.rows.item(i).na_bank,
+                coClientBankAccount: data.rows.item(i).co_client_bank_account,
               })
             }
 
@@ -3046,7 +3255,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
                 idCurrency: data.rows.item(i).id_currency,
                 coEnterprise: data.rows.item(i).co_enterprise,
                 idEnterprise: data.rows.item(i).id_enterprise,
-                nameBank: data.rows.item(i).na_bank
+                naBank: data.rows.item(i).na_bank,
+                coClientBankAccount: data.rows.item(i).co_client_bank_account,
               })
             }
 
@@ -3097,7 +3307,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       historicPaymentPartial: false,
       isSave: false,
       colorRow: "",
-      daUpdate: ""
+      daUpdate: "",
+      missingRetention: false,
     });
 
     this.insertDocumentSaleBatch(dbServ, igtfDocument).then((resp) => {
@@ -3176,6 +3387,13 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       this.collection.nuAmountFinal = this.montoTotalPagar;
       this.collection.nuAmountFinalConversion = this.convertirMonto(this.collection.nuAmountFinal, 0, this.collection.coCurrency);
 
+
+      const details = this.collection?.collectionDetails ?? [];
+      const nuAmountDiscountTotal = details.reduce((sum, detail) => sum + Number(detail?.nuAmountCollectDiscount ?? 0), 0);
+      const nuAmountDiscountTotalConversion = details.reduce((sum, detail) => sum + Number(detail?.nuAmountCollectDiscountConversion ?? 0), 0);
+
+
+
       const deleteCollectionSQL = 'DELETE FROM collections WHERE co_collection = ?';
       const deleteCollectionDetailsSQL = 'DELETE FROM collection_details WHERE co_collection = ?';
       const deleteCollectionDetailsDiscountSQL = 'DELETE FROM collection_detail_discounts WHERE co_collection = ?';
@@ -3211,11 +3429,14 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           "nu_amount_igtf_conversion," +
           "nu_amount_final," +
           "nu_amount_final_conversion," +
+          "nu_amount_discount_total," +
+          "nu_amount_discount_total_conversion," +
           "nu_igtf," +
           "hasIGTF," +
           "nu_attachments," +
           "has_attachments" +
-          ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+          ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
         return dbServ.executeSql(insertCollection,
           [
             0,
@@ -3246,6 +3467,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             collection.nuAmountIgtfConversion,
             collection.nuAmountFinal,
             collection.nuAmountFinalConversion,
+            nuAmountDiscountTotal,
+            nuAmountDiscountTotalConversion,
             collection.nuIgtf,
             collection.hasIGTF,
             collection.nuAttachments,
@@ -3256,8 +3479,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           console.log("COLLECTION INSERT", data);
 
           //cobro o igtf
-          if (collection.coType == '0' || collection.coType == '3' || collection.coType == '4') {
-            return this.updateDocumentSt(dbServ, this.documentSales).then((resp) => {
+          if (collection.coType == '0' || collection.coType == '2' || collection.coType == '3' || collection.coType == '4') {
+            return this.updateDocumentSt(dbServ, this.documentSales, collection.coType).then((resp) => {
               console.log("TERMINE DOCUMENT ST")
               return this.saveCollectionDetail(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
                 return this.saveCollectionDetailDiscounts(dbServ, this.collection.collectionDetails, this.collection.coCollection).then(resp => {
@@ -3336,40 +3559,48 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     nu_amount_igtf_conversion,
     nu_amount_final,
     nu_amount_final_conversion,
+    nu_amount_discount_total,
+    nu_amount_discount_total_conversion,
     hasIGTF,
     nu_attachments,
     has_attachments
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
-    const insertCollectionDetailSQL = `
-  INSERT OR REPLACE INTO collection_details (
+    const insertCollectionDetailSQL = `INSERT OR REPLACE INTO collection_details (
     id_collection_detail,
-    co_collection,
-    co_document,
-    in_payment_partial,
-    nu_voucher_retention,
-    nu_amount_retention,
-    nu_amount_retention2,
-    nu_amount_paid,
-    nu_amount_paid_conversion,
-    nu_amount_discount,
-    nu_amount_discount_conversion,
-    nu_amount_doc,
-    nu_amount_doc_conversion,
-    da_document,
-    nu_balance_doc,
-    nu_balance_doc_conversion,
-    co_original,
-    co_type_doc,
-    id_document,
-    nu_amount_retention_iva_conversion,
-    nu_amount_retention_islr_conversion,
-    nu_amount_igtf,
-    nu_amount_igtf_conversion,
-    da_voucher
-  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-`;
+      co_collection,
+      co_document,
+      in_payment_partial,
+      nu_voucher_retention,
+      nu_amount_retention,
+      nu_amount_retention2,
+      nu_amount_paid,
+      nu_amount_paid_conversion,
+      nu_amount_discount,
+      nu_amount_discount_conversion,
+      nu_amount_doc,
+      nu_amount_doc_conversion,
+      da_document,
+      nu_balance_doc,
+      nu_balance_doc_conversion,
+      nu_balance_doc_original,
+      nu_balance_doc_original_conversion,
+      co_original,
+      co_type_doc,
+      id_document,
+      nu_amount_retention_iva_conversion,
+      nu_amount_retention_islr_conversion,
+      nu_amount_igtf,
+      nu_amount_igtf_conversion,
+      da_voucher,
+      has_discount,
+      discount_comment,
+      nu_amount_collect_discount,
+      nu_amount_collect_discount_conversion,
+      nu_collect_discount,
+      missing_retention
+) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);`;
 
     const insertCollectionPaymentSQL = `
   INSERT OR REPLACE INTO collection_payments (
@@ -3387,8 +3618,16 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     nu_collection_payment,
     nu_amount_partial,
     nu_amount_partial_conversion,
-    co_type
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    co_type,
+    id_difference_code,
+    co_difference_code,
+    nu_bank_account,
+    id_type_document,
+    nu_document,
+    id_code_phone_number,
+    nu_phone_number
+
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
     const insertCollectionDetailDiscountSQL = `
   INSERT OR REPLACE INTO collection_detail_discounts (
@@ -3396,11 +3635,20 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     id_collection_detail,
     nu_collect_discount_other,
     na_collect_discount_other,
-    co_collection
-  ) VALUES (?,?,?,?,?)
+    co_collection,
+    co_document,
+    nu_amount_collect_discount_other,
+    nu_amount_collect_discount_other_conversion,
+    posicion
+  ) VALUES (?,?,?,?,?,?,?,?,?)
     `
 
     let queries: any[] = []//(string | (string | number | boolean)[])[] = [];
+
+    const details = this.collection?.collectionDetails ?? [];
+    const nuAmountDiscountTotal = details.reduce((sum, detail) => sum + Number(detail?.nuAmountCollectDiscount ?? 0), 0);
+    const nuAmountDiscountTotalConversion = details.reduce((sum, detail) => sum + Number(detail?.nuAmountCollectDiscountConversion ?? 0), 0);
+
 
     for (var co = 0; co < collection.length; co++) {
       const collect = collection[co];
@@ -3413,7 +3661,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           collect.coClient,
           collect.naClient,
           collect.stCollection,
-          collect.stDelivery == null ? this.COLLECT_STATUS_SENT : collect.stDelivery,
+          1,
           collect.daCollection,
           collect.daRate,
           collect.naResponsible,
@@ -3435,6 +3683,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           collect.nuAmountIgtfConversion,
           collect.nuAmountFinal,
           collect.nuAmountFinalConversion,
+          nuAmountDiscountTotal,
+          nuAmountDiscountTotalConversion,
           collect.hasIGTF,
           collect.nuAttachments,
           collect.hasAttachments,
@@ -3458,22 +3708,30 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             collectionDetail.nuAmountRetention,
             collectionDetail.nuAmountRetention2,
             collectionDetail.nuAmountPaid,
-            collectionDetail.nuAmountPaidConversion, // <-- Debe ir después de nu_amount_paid
+            collectionDetail.nuAmountPaidConversion,
             collectionDetail.nuAmountDiscount,
-            collectionDetail.nuAmountDiscountConversion, // <-- Debe ir después de nu_amount_discount
+            collectionDetail.nuAmountDiscountConversion,
             collectionDetail.nuAmountDoc,
-            collectionDetail.nuAmountDocConversion, // <-- Debe ir después de nu_amount_doc
+            collectionDetail.nuAmountDocConversion,
             collectionDetail.daDocument,
             collectionDetail.nuBalanceDoc,
             collectionDetail.nuBalanceDocConversion,
+            collectionDetail.nuBalanceDocOriginal,
+            collectionDetail.nuBalanceDocOriginalConversion,
             collectionDetail.coOriginal,
             collectionDetail.coTypeDoc,
             collectionDetail.idDocument,
-            collectionDetail.nuAmountRetentionConversion,
-            collectionDetail.nuAmountRetention2Conversion,
+            collectionDetail.nuAmountRetentionIvaConversion,
+            collectionDetail.nuAmountRetentionIslrConversion,
             collectionDetail.nuAmountIgtf,
             collectionDetail.nuAmountIgtfConversion,
-            collectionDetail.daVoucher
+            collectionDetail.daVoucher,
+            collectionDetail.hasDiscount,
+            collectionDetail.discountComment,
+            collectionDetail.nuAmountCollectDiscount,
+            collectionDetail.nuAmountCollectDiscountConversion,
+            collectionDetail.nuCollectDiscount,
+            collectionDetail.missingRetention
           ]
         ]);
 
@@ -3481,11 +3739,17 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           for (var coDetailDiscount = 0; coDetailDiscount < collectionDetail.collectionDetailDiscounts!.length; coDetailDiscount++) {
             const collectionDetailDiscount = collectionDetail.collectionDetailDiscounts![coDetailDiscount];
             queries.push([insertCollectionDetailDiscountSQL,
-              collectionDetailDiscount.idCollectionDetailDiscount,
-              collectionDetailDiscount.idCollectionDetail,
-              collectionDetailDiscount.nuCollectDiscountOther,
-              collectionDetailDiscount.naCollectDiscountOther,
-              collectionDetail.coCollection,
+              [
+                collectionDetailDiscount.idCollectionDetailDiscount,
+                collectionDetailDiscount.idCollectionDetail,
+                collectionDetailDiscount.nuCollectDiscountOther,
+                collectionDetailDiscount.naCollectDiscountOther,
+                collectionDetail.coCollection,
+                collectionDetail.coDocument,
+                collectionDetailDiscount.nuAmountCollectDiscountOther,
+                collectionDetailDiscount.nuAmountCollectDiscountOtherConversion,
+                collectionDetailDiscount.posicion
+              ]
             ]);
           }
         }
@@ -3509,7 +3773,14 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
             collectionPayment.nuCollectionPayment,
             collectionPayment.nuAmountPartial,
             collectionPayment.nuAmountPartialConversion,
-            collectionPayment.coType
+            collectionPayment.coType,
+            collectionPayment.idDifferenceCode,
+            collectionPayment.coDifferenceCode,
+            collectionPayment.nuBankAccount,
+            collectionPayment.idTypeDocument,
+            collectionPayment.nuDocument,
+            collectionPayment.idCodePhoneNumber,
+            collectionPayment.nuPhoneNumber,
           ]
         ]);
       }
@@ -3567,36 +3838,40 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     })
 
     let statementsCollectionDetails = [];
-    const inserStatementCollectionDetail = "INSERT OR REPLACE INTO collection_details(" +
-      "id_collection_detail," +
-      "co_collection," +
-      "co_document," +
-      "in_payment_partial," +
-      "nu_voucher_retention," +
-      "nu_amount_retention," +
-      "nu_amount_retention2," +
-      "nu_amount_paid," +
-      "nu_amount_paid_conversion," +
-      "nu_amount_discount," +
-      "nu_amount_discount_conversion," +
-      "nu_amount_doc," +
-      "nu_amount_doc_conversion," +
-      "da_document," +
-      "nu_balance_doc," +
-      "nu_balance_doc_conversion," +
-      "co_original," +
-      "co_type_doc," +
-      "id_document," +
-      "nu_amount_retention_iva_conversion," +
-      "nu_amount_retention_islr_conversion," +
-      "nu_amount_igtf," +
-      "nu_amount_igtf_conversion," +
-      "da_voucher," +
-      "has_discount," +
-      "discount_comment," +
-      "nu_amount_collect_discount," +
-      "nu_collect_discount" +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    const inserStatementCollectionDetail = `INSERT OR REPLACE INTO collection_details (
+    id_collection_detail,
+      co_collection,
+      co_document,
+      in_payment_partial,
+      nu_voucher_retention,
+      nu_amount_retention,
+      nu_amount_retention2,
+      nu_amount_paid,
+      nu_amount_paid_conversion,
+      nu_amount_discount,
+      nu_amount_discount_conversion,
+      nu_amount_doc,
+      nu_amount_doc_conversion,
+      da_document,
+      nu_balance_doc,
+      nu_balance_doc_conversion,
+      nu_balance_doc_original,
+      nu_balance_doc_original_conversion,
+      co_original,
+      co_type_doc,
+      id_document,
+      nu_amount_retention_iva_conversion,
+      nu_amount_retention_islr_conversion,
+      nu_amount_igtf,
+      nu_amount_igtf_conversion,
+      da_voucher,
+      has_discount,
+      discount_comment,
+      nu_amount_collect_discount,
+      nu_amount_collect_discount_conversion,
+      nu_collect_discount,
+      missing_retention
+) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?); `;
 
     for (var i = 0; i < collectionDetail.length; i++) {
       statementsCollectionDetails.push([inserStatementCollectionDetail, [
@@ -3616,18 +3891,22 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         collectionDetail[i].daDocument,
         collectionDetail[i].nuBalanceDoc,
         collectionDetail[i].nuBalanceDocConversion,
+        collectionDetail[i].nuBalanceDocOriginal,
+        collectionDetail[i].nuBalanceDocOriginalConversion,
         collectionDetail[i].coOriginal,
         collectionDetail[i].coTypeDoc,
         collectionDetail[i].idDocument,
-        collectionDetail[i].nuAmountRetentionConversion,
-        collectionDetail[i].nuAmountRetention2Conversion,
+        collectionDetail[i].nuAmountRetentionIvaConversion,
+        collectionDetail[i].nuAmountRetentionIslrConversion,
         collectionDetail[i].nuAmountIgtf,
         collectionDetail[i].nuAmountIgtfConversion,
         collectionDetail[i].daVoucher,
         collectionDetail[i].hasDiscount,
         collectionDetail[i].discountComment,
         collectionDetail[i].nuAmountCollectDiscount,
-        collectionDetail[i].nuCollectDiscount
+        collectionDetail[i].nuAmountCollectDiscountConversion,
+        collectionDetail[i].nuCollectDiscount,
+        collectionDetail[i].missingRetention
       ]]);
     }
 
@@ -3646,8 +3925,12 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "id_collect_discount," +
       "nu_collect_discount_other," +
       "na_collect_discount_other," +
-      "co_collection" +
-      ") VALUES (?,?,?,?,?)";
+      "co_collection," +
+      "co_document," +
+      "nu_amount_collect_discount_other," +
+      "nu_amount_collect_discount_other_conversion," +
+      "posicion" +
+      ") VALUES (?,?,?,?,?,?,?,?,?)";
 
     for (var i = 0; i < collectionDetail.length; i++) {
       for (var j = 0; j < collectionDetail[i].collectionDetailDiscounts!?.length; j++) {
@@ -3656,7 +3939,11 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           collectionDetail[i].collectionDetailDiscounts![j].idCollectDiscount,
           collectionDetail[i].collectionDetailDiscounts![j].nuCollectDiscountOther,
           collectionDetail[i].collectionDetailDiscounts![j].naCollectDiscountOther,
-          coCollection
+          coCollection,
+          collectionDetail[i].collectionDetailDiscounts![j].coDocument,
+          collectionDetail[i].collectionDetailDiscounts![j].nuAmountCollectDiscountOther,
+          collectionDetail[i].collectionDetailDiscounts![j].nuAmountCollectDiscountOtherConversion,
+          collectionDetail[i].collectionDetailDiscounts![j].posicion
         ]]);
       }
 
@@ -3699,8 +3986,13 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "nu_amount_partial_conversion, " +
       "co_type," +
       "id_difference_code," +
-      "co_difference_code" +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "co_difference_code," +
+      "nu_bank_account," +
+      "id_type_document," +
+      "nu_document," +
+      "id_code_phone_number," +
+      "nu_phone_number" +
+      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     for (var i = 0; i < collectionPayment.length; i++) {
       statementsCollectionPayment.push([insertStatement, [
@@ -3720,7 +4012,12 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         collectionPayment[i].nuAmountPartialConversion,
         collectionPayment[i].coType,
         collectionPayment[i].idDifferenceCode,
-        collectionPayment[i].coDifferenceCode
+        collectionPayment[i].coDifferenceCode,
+        collectionPayment[i].nuBankAccount,
+        collectionPayment[i].idTypeDocument,
+        collectionPayment[i].nuDocument,
+        collectionPayment[i].idCodePhoneNumber,
+        collectionPayment[i].nuPhoneNumber,
       ]]);
     }
 
@@ -3767,11 +4064,13 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "nu_amount_igtf_conversion," +
       "nu_amount_final," +
       "nu_amount_final_conversion," +
+      "nu_amount_discount_total," +
+      "nu_amount_discount_total_conversion," +
       "nu_igtf," +
       "hasIGTF," +
       "nu_attachments," +
-      "has_attachments," +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "has_attachments" +
+      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
 
     let newCoCollection = this.dateServ.generateCO(0);
@@ -3805,10 +4104,12 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         0,//collection.nuAmountIgtfConversion,
         collection.nuDifference,//collection.nuAmountFinal,
         collection.nuDifferenceConversion,//collection.nuAmountFinalConversion,
+        collection.nuAmountDiscountTotal,//collection.nuAmountDiscountTotal,
+        collection.nuAmountDiscountTotalConversion,//collection.nuAmountDiscountTotalConversion,
         collection.nuIgtf,
         collection.hasIGTF,
         collection.nuAttachments,
-        collection.hasAttachments,
+        collection.hasAttachments
       ]).then(data => {
         console.log("CREE ANTICIPO AUTOMATICO, DEBO CREAR EL PAYMENT")
         return this.createAnticipoCollectionPayment(dbServ, collection, newCoCollection);
@@ -3834,25 +4135,40 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "nu_collection_payment," +
       "nu_amount_partial," +
       "nu_amount_partial_conversion," +
-      "co_type" +
-      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "co_type," +
+      "id_difference_code," +
+      "co_difference_code," +
+      "nu_bank_account," +
+      "id_type_document," +
+      "nu_document," +
+      "id_code_phone_number," +
+      "nu_phone_number" +
+      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    const sourcePayment = collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment];
     return dbServ.executeSql(insertStatement,
       [
         0,
         newCoCollection,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].idCollectionDetail,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].coPaymentMethod,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].idBank,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].nuPaymentDoc,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].naBank,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].coClientBankAccount,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].nuClientBankAccount,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].daValue,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].daCollectionPayment,
-        collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment].nuCollectionPayment,
+        sourcePayment.idCollectionDetail,
+        sourcePayment.coPaymentMethod,
+        sourcePayment.idBank,
+        sourcePayment.nuPaymentDoc,
+        sourcePayment.naBank,
+        sourcePayment.coClientBankAccount,
+        sourcePayment.nuClientBankAccount,
+        sourcePayment.daValue,
+        sourcePayment.daCollectionPayment,
+        sourcePayment.nuCollectionPayment,
         collection.nuDifference,
         collection.nuDifferenceConversion,
         this.anticipoAutomatico[0].type,
+        sourcePayment.idDifferenceCode,
+        sourcePayment.coDifferenceCode,
+        sourcePayment.nuBankAccount,
+        sourcePayment.idTypeDocument,
+        sourcePayment.nuDocument,
+        sourcePayment.idCodePhoneNumber,
+        sourcePayment.nuPhoneNumber,
       ]).then(data => {
         console.log("SE CREO COLLECTION PAYMENTS AUTOMATICO POR EL ANTICIPO");
         this.saveSendCollection(newCoCollection);
@@ -3863,7 +4179,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       })
   }
 
-  updateDocumentSt(dbServ: SQLiteObject, documentSales: DocumentSale[]) {
+  updateDocumentSt(dbServ: SQLiteObject, documentSales: DocumentSale[], coType: string = "") {
     if (documentSales.length == 0) {
       return Promise.resolve(true);
     }
@@ -3887,10 +4203,17 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       for (var i = 0; i < documentSales.length; i++) {
         let stDelivery = 0;
         if (documentSales[i].isSelected) {
-          if (documentSales[i].inPaymentPartial)
+          if (coType == '2') {
+            //es retencion
+            //stDelivery = 3; colocar 3 si queremos que luego dfe una retencion el documento quede bloqueado, colocar 2 si queremos que quede disponible pero con la retencion pendiente
+            stDelivery = 0;
+          } else if (documentSales[i].missingRetention && !documentSales[i].inPaymentPartial) {
+            stDelivery = 2;
+          } else if (documentSales[i].inPaymentPartial)
             stDelivery = 0;
           else //if (this.sendCollection)
             stDelivery = 2;
+
           stamentenDocumentSt.push([updateStatement, [
             stDelivery,
             daUpdate,
@@ -4023,6 +4346,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         collection.nuAmountIgtfConversion = res.rows.item(0).nu_amount_igtf_conversion == null ? 0 : res.rows.item(0).nu_amount_igtf_conversion;
         collection.nuAmountPaid = res.rows.item(0).nu_amount_paid == null ? 0 : res.rows.item(0).nu_amount_paid;
         collection.nuAmountPaidConversion = res.rows.item(0).nu_amount_paid_conversion == null ? 0 : res.rows.item(0).nu_amount_paid_conversion;
+        collection.nuAmountDiscountTotal = res.rows.item(0).nu_amount_discount_total == null ? 0 : res.rows.item(0).nu_amount_discount_total;
+        collection.nuAmountDiscountTotalConversion = res.rows.item(0).nu_amount_discount_total_conversion == null ? 0 : res.rows.item(0).nu_amount_discount_total_conversion;
         collection.hasIGTF = res.rows.item(0).hasIGTF == undefined ? false : res.rows.item(0).hasIGTF;
         //collection.daVoucher = res.rows.item(0).daVoucher;
         collection.document = {} as DocumentSale;
@@ -4049,7 +4374,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
   getCollectionDetails(dbServ: SQLiteObject, coCollection: string) {
     return dbServ.executeSql(
-      'SELECT * FROM collection_details WHERE co_collection=?', [coCollection
+      'SELECT * FROM collection_details WHERE co_collection = ?', [coCollection
     ]).then(res => {
       let collectionDetails: CollectionDetail[] = [];
       for (var i = 0; i < res.rows.length; i++) {
@@ -4064,7 +4389,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           nuAmountRetention2: res.rows.item(i).nu_amount_retention2,
           nuAmountRetentionConversion: res.rows.item(i).nu_amount_retention_iva_conversion,
           nuAmountRetentionIvaConversion: res.rows.item(i).nu_amount_retention_iva_conversion,
-          nuAmountRetention2Conversion: res.rows.item(i).nu_amount_retention_iva_conversion,
+          nuAmountRetention2Conversion: res.rows.item(i).nu_amount_retention_islr_conversion,
           nuAmountRetentionIslrConversion: res.rows.item(i).nu_amount_retention_islr_conversion,
           nuAmountPaid: res.rows.item(i).nu_amount_paid,
           nuAmountPaidConversion: res.rows.item(i).nu_amount_paid_conversion,
@@ -4075,6 +4400,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           daDocument: res.rows.item(i).da_document,
           nuBalanceDoc: res.rows.item(i).nu_balance_doc,
           nuBalanceDocConversion: res.rows.item(i).nu_balance_doc_conversion,
+          nuBalanceDocOriginal: res.rows.item(i).nu_balance_doc_original,
+          nuBalanceDocOriginalConversion: res.rows.item(i).nu_balance_doc_original_conversion,
           coOriginal: res.rows.item(i).co_original,
           coTypeDoc: res.rows.item(i).co_type_doc,
           nuValueLocal: res.rows.item(i).nu_value_local,
@@ -4087,6 +4414,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           discountComment: res.rows.item(i).discount_comment == "" ? null : res.rows.item(i).discount_comment,
           nuAmountCollectDiscount: res.rows.item(i).nu_amount_collect_discount,
           nuCollectDiscount: res.rows.item(i).nu_collect_discount,
+          missingRetention: res.rows.item(i).missing_retention == "true" ? true : false,
+          nuAmountCollectDiscountConversion: res.rows.item(i).nu_amount_collect_discount_conversion,
           collectionDetailDiscounts: [] as CollectionDetailDiscounts[],
         })
       }
@@ -4100,25 +4429,29 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
   getCollectionDetailsDiscounts(dbServ: SQLiteObject, coCollection: string) {
     return dbServ.executeSql(
-      'SELECT * FROM collection_detail_discounts WHERE co_collection = ?', [coCollection
-    ]).then(res => {
-      let CollectionDetailDiscounts: CollectionDetailDiscounts[] = [];
-      for (var i = 0; i < res.rows.length; i++) {
-        CollectionDetailDiscounts.push({
-          idCollectionDetailDiscount: res.rows.item(i).id_collection_detail_discount,
-          idCollectionDetail: res.rows.item(i).id_collection_detail,
-          idCollectDiscount: res.rows.item(i).id_collect_discount,
-          nuCollectDiscountOther: res.rows.item(i).nu_collect_discount_other == undefined ? null : res.rows.item(i).nu_collect_discount_other,
-          naCollectDiscountOther: res.rows.item(i).na_collect_discount_other == undefined ? null : res.rows.item(i).na_collect_discount_other,
-          coCollection: res.rows.item(i).co_collection,
-        })
-      }
-      return CollectionDetailDiscounts;
-    }).catch(e => {
-      let collectionDetails: CollectionDetail[] = [];
-      console.log(e);
-      return collectionDetails;
-    })
+      'SELECT * FROM collection_detail_discounts WHERE co_collection = ?',
+      [coCollection]).then(res => {
+        let CollectionDetailDiscounts: CollectionDetailDiscounts[] = [];
+        for (var i = 0; i < res.rows.length; i++) {
+          CollectionDetailDiscounts.push({
+            idCollectionDetailDiscount: res.rows.item(i).id_collection_detail_discount,
+            idCollectionDetail: res.rows.item(i).id_collection_detail,
+            idCollectDiscount: res.rows.item(i).id_collect_discount,
+            nuCollectDiscountOther: res.rows.item(i).nu_collect_discount_other == undefined ? null : res.rows.item(i).nu_collect_discount_other,
+            naCollectDiscountOther: res.rows.item(i).na_collect_discount_other == undefined ? null : res.rows.item(i).na_collect_discount_other,
+            coCollection: res.rows.item(i).co_collection,
+            coDocument: res.rows.item(i).co_document,
+            nuAmountCollectDiscountOther: res.rows.item(i).nu_amount_collect_discount_other == undefined ? null : res.rows.item(i).nu_amount_collect_discount_other,
+            nuAmountCollectDiscountOtherConversion: res.rows.item(i).nu_amount_collect_discount_other_conversion == undefined ? null : res.rows.item(i).nu_amount_collect_discount_other_conversion,
+            posicion: res.rows.item(i).posicion == undefined ? null : res.rows.item(i).posicion,
+          })
+        }
+        return CollectionDetailDiscounts;
+      }).catch(e => {
+        let collectionDetails: CollectionDetail[] = [];
+        console.log(e);
+        return collectionDetails;
+      })
   }
 
   getCollectionPayments(dbServ: SQLiteObject, coCollection: string) {
@@ -4161,6 +4494,13 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           isAnticipoPrepaid: false,
           idDifferenceCode: this.enableDifferenceCodes ? res.rows.item(i).id_difference_code : 0,
           coDifferenceCode: this.enableDifferenceCodes ? res.rows.item(i).co_difference_code : "",
+          nuBankAccount: res.rows.item(i).nu_bank_account,
+          idTypeDocument: res.rows.item(i).id_type_document,
+          nuDocument: res.rows.item(i).nu_document,
+          idCodePhoneNumber: res.rows.item(i).id_code_phone_number ?? res.rows.item(i).id_code_phone_number,
+          nuPhoneNumber: res.rows.item(i).nu_phone_number ?? res.rows.item(i).nu_phone_number,
+
+
         })
       }
       return collectionPayments;
@@ -4180,7 +4520,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       this.itemListaCobros = [] as ItemListaCobros[];
       const res = await dbServ.executeSql(
         //'SELECT c.* FROM collections c ORDER BY c.st_delivery ASC, c.st_collection ASC,  c.da_collection ASC, c.id_collection DESC;', []
-        'SELECT c.* FROM collections c ORDER BY c.st_delivery ASC, c.da_collection DESC, c.st_collection ASC, c.id_collection DESC; ', []
+        'SELECT c.* FROM collections c ORDER BY c.st_delivery DESC, c.da_collection DESC, c.st_collection ASC, c.id_collection DESC; ', []
       );
 
       const promises: Promise<void>[] = [];
@@ -4202,7 +4542,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         respCollect.idEnterprise = res.rows.item(i).id_enterprise;
         respCollect.coEnterprise = res.rows.item(i).co_enterprise;
         respCollect.stCollection = res.rows.item(i).st_collection;
-        respCollect.stDelivery = res.rows.item(i).st_delivery == null ? this.COLLECT_STATUS_SENT : res.rows.item(i).st_delivery;
+        respCollect.stDelivery = res.rows.item(i).st_delivery == null ? 1 : res.rows.item(i).st_delivery;
         respCollect.isEdit = 0;
         respCollect.isEditTotal = 0;
         respCollect.isSave = 1;
@@ -4341,6 +4681,9 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           nuCollectDiscount: res.rows.item(i).nu_collect_discount,
           naCollectDiscount: res.rows.item(i).na_collect_discount,
           requireInput: res.rows.item(i).require_input == "true" ? true : false,
+          nuAmountCollectDiscount: 0,
+          nuAmountCollectDiscountConversion: 0,
+          position: 0,
         })
       }
       return Promise.resolve(true);
@@ -4349,6 +4692,114 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       return Promise.resolve(true);
     })
   }
+
+  loadTypeDocumentList(dbServ: SQLiteObject, forceReload: boolean = false) {
+    if (this.typeDocumentListLoaded && !forceReload) {
+      return Promise.resolve(this.typeDocumentList);
+    }
+
+    return this.getTypeDocument(dbServ).then((list: TypeDocument[]) => {
+      this.typeDocumentList = list || [];
+      this.typeDocumentListLoaded = true;
+
+      if (this.typeDocumentList.length > 0) {
+        const defaultType = this.typeDocumentList[0].coTypeDocument;
+        this.pagoMovil.forEach(pm => {
+          if (!pm.tipoDocumento) {
+            pm.tipoDocumento = defaultType as any;
+          }
+        });
+      }
+
+      return Promise.resolve(this.typeDocumentList);
+    }).catch(e => {
+      console.log(e);
+      this.typeDocumentList = [];
+      return Promise.resolve(this.typeDocumentList);
+    })
+  }
+
+  getTypeDocument(dbServ: SQLiteObject, idTypeDocument?: number) {
+    let selectStatement = 'SELECT * FROM type_document';
+    const params: any[] = [];
+
+    if (idTypeDocument != null) {
+      selectStatement += ' WHERE id_type_document = ?';
+      params.push(idTypeDocument);
+    }
+
+    selectStatement += ' ORDER BY id_type_document ASC';
+
+    return dbServ.executeSql(selectStatement, params).then(res => {
+      let typeDocuments: TypeDocument[] = [];
+      for (var i = 0; i < res.rows.length; i++) {
+        typeDocuments.push({
+          idTypeDocument: res.rows.item(i).id_type_document,
+          coTypeDocument: res.rows.item(i).co_type_document,
+          naTypeDocument: res.rows.item(i).na_type_document,
+        } as TypeDocument)
+      }
+      return Promise.resolve(typeDocuments);
+    }).catch(e => {
+      console.log(e);
+      return Promise.resolve([] as TypeDocument[]);
+    })
+  }
+
+  loadCodePhoneNumberList(dbServ: SQLiteObject, forceReload: boolean = false) {
+    if (this.codePhoneNumberListLoaded && !forceReload) {
+      return Promise.resolve(this.codePhoneNumberList);
+    }
+
+    return this.getCodePhoneNumber(dbServ).then((list: CodePhoneNumber[]) => {
+      this.codePhoneNumberList = list || [];
+      this.codePhoneNumberListLoaded = true;
+
+      if (this.codePhoneNumberList.length > 0) {
+        const defaultCode = this.codePhoneNumberList[0].coCodePhoneNumber;
+        this.pagoMovil.forEach(pm => {
+          if (!pm.codigoTelefono) {
+            pm.codigoTelefono = defaultCode as any;
+          }
+        });
+      }
+
+      return Promise.resolve(this.codePhoneNumberList);
+    }).catch(e => {
+      console.log(e);
+      this.codePhoneNumberList = [];
+      return Promise.resolve(this.codePhoneNumberList);
+    })
+  }
+
+  getCodePhoneNumber(dbServ: SQLiteObject, idCodePhoneNumber?: number) {
+    let selectStatement = 'SELECT * FROM code_phone_number';
+    const params: any[] = [];
+
+    if (idCodePhoneNumber != null) {
+      selectStatement += ' WHERE id_code_phone_number = ?';
+      params.push(idCodePhoneNumber);
+    }
+
+    selectStatement += ' ORDER BY id_code_phone_number ASC';
+
+    return dbServ.executeSql(selectStatement, params).then(res => {
+      let codePhoneNumbers: CodePhoneNumber[] = [];
+      for (var i = 0; i < res.rows.length; i++) {
+        codePhoneNumbers.push({
+          idCodePhoneNumber: res.rows.item(i).id_code_phone_number,
+          coCodePhoneNumber: res.rows.item(i).co_code_phone_number,
+          naCodePhoneNumber: res.rows.item(i).na_code_phone_number,
+        } as CodePhoneNumber)
+      }
+      return Promise.resolve(codePhoneNumbers);
+    }).catch(e => {
+      console.log(e);
+      return Promise.resolve([] as CodePhoneNumber[]);
+    })
+  }
+
+
 
 
   ///////////////////QUERYS////////////////

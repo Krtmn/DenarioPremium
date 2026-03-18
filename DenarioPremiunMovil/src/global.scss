@@ -56,10 +56,10 @@ $fondoLogin: url("/assets/images/home-denario.jpg");
     padding-top: 20%;
 }
 
-/* ion-segment {
+ ion-segment {
     --height: 40px;
     height: 40px;
-} */
+} 
 
 ion-item-divider {
     height: 40px;
@@ -99,6 +99,7 @@ ion-item-divider {
     ion-label {
         margin-top: 0px;
         margin-bottom: 6px;
+        font-size: 12px;
     }
 }
 
@@ -140,7 +141,7 @@ ion-select::part(text) {
     display: block;
     position: absolute;
     left: 10%;
-    font-size: 12px;
+    font-size: 11px;
     right: 10%;
 }
 
@@ -867,9 +868,9 @@ ion-grid, ion-row {
 }
 
 .product-structure-scroll {
-  height: calc(90vh - 270px); // Ajusta 270px según el alto real de lo fijo arriba (botones, selectores, etc)
-  overflow-y: auto;
-  min-height: 0;
+    height: calc(93vh - 270px); // Ajusta 270px según el alto real de lo fijo arriba (botones, selectores, etc)
+    overflow-y: auto;
+    min-height: 0;
 }
 
 .pagos-scroll {
@@ -890,7 +891,7 @@ ion-grid, ion-row {
 }
 
 .product-structure-scroll2 {
-  height: calc(90vh - 270px); // Ajusta 270px según el alto real de lo fijo arriba (botones, selectores, etc)
+  height: calc(100vh - 200px); // Ajusta 270px según el alto real de lo fijo arriba (botones, selectores, etc)
   overflow-y: auto;
   min-height: 0;
 }
@@ -928,4 +929,24 @@ textarea {
     -ms-user-select: text;
     -moz-user-select: text;
     -webkit-touch-callout: default;
+}
+
+.sizeIconSearch{
+  font-size: 30px;
+
+}
+
+.contenidoProductos {
+    p{
+        font-size: 12px;
+        font-weight: bold;
+        margin-top: 0;
+    }
+    ion-label {
+        font-size: 12px;
+    }
+}
+
+.input-wrapper .native-input{
+    font-size: 14px;
 }

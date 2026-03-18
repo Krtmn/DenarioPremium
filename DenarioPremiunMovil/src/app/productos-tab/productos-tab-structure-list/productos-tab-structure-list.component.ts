@@ -54,6 +54,7 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
   sub: any;
   searchSub: any;
   validateReturnSub: any;
+  returnBackSub: any;
 
   constructor() {
     this.cdr = inject(ChangeDetectorRef);
@@ -87,13 +88,19 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
       this.productService.searchStructures = false;
     });
 
+    this.returnBackSub = this.productService.returnBackClicked.subscribe(() => {
+      if (this.devolucion) {
+        this.onReturnProductTab();
+      }
+    });
 
-    
+
+
     if (this.pedido) {
       //hacemos espacio para el boton de carrito
       this.buttonSize = 5;
     }
-    
+
 
   }
 
@@ -101,6 +108,7 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
     this.sub.unsubscribe();
     this.searchSub.unsubscribe();
     this.validateReturnSub.unsubscribe();
+    this.returnBackSub.unsubscribe();
   }
 
   getTypeProductStructures() {
@@ -165,7 +173,7 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
   onProductStructureSelected(productStructure: ProductStructure) {
     this.psSeleccionada = productStructure;
     this.productStructureService.nombreProductStructureSeleccionada = productStructure.naProductStructure;
-    this.productStructureService.idProductStructureSeleccionada = productStructure.idProductStructure;
+    this.productService.searchStructures = false;
 
     let psu: ProductStructureUtil = new ProductStructureUtil(
       this.empresaSeleccionada,
@@ -185,14 +193,14 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
   onFeaturedProductSelected() {
     this.productStructures = false;
     this.productStructureService.nombreProductStructureSeleccionada = this.featuredButtonLabel.split('(')[0];
-    this.productStructureService.idProductStructureSeleccionada = 0;
+    this.productStructureService.idProductStructureList = [];
     this.productService.onFeaturedStructureClicked();
   }
 
   onFavoriteProductSelected() {
     this.productStructures = false;
     this.productStructureService.nombreProductStructureSeleccionada = this.favoriteButtonLabel.split('(')[0];
-    this.productStructureService.idProductStructureSeleccionada = 0;
+    this.productStructureService.idProductStructureList = [];
     this.productService.onFavoriteStructureClicked();
   }
 

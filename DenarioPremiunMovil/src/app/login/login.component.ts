@@ -20,6 +20,7 @@ import { ImageServicesService } from '../services/imageServices/image-services.s
 import { Imagenes } from '../modelos/imagenes';
 import { ScreenOrientation, OrientationType } from '@capawesome/capacitor-screen-orientation';
 import { Keyboard } from '@capacitor/keyboard';
+import { from } from 'rxjs';
 
 
 @Component({
@@ -31,7 +32,7 @@ import { Keyboard } from '@capacitor/keyboard';
 export class LoginComponent implements OnInit {
   public loginLogic = inject(LoginLogicService);
 
-  private messageService = inject(MessageService);
+
   private synchronization = inject(SynchronizationDBService);
   private globalConfig = inject(GlobalConfigService);
   private services = inject(ServicesService);
@@ -64,7 +65,7 @@ export class LoginComponent implements OnInit {
   async ngOnInit() {
     /* App.getInfo().then(async (res) => { */
     // preferir la versión real del paquete si está disponible, si no usar fallback
-    this.versionApp = "6.5.12";
+    this.versionApp = "6.6.8";
 
     if (localStorage.getItem("tokenExpired") === "true") {
       localStorage.removeItem("tokenExpired");
@@ -86,20 +87,21 @@ export class LoginComponent implements OnInit {
       if (this.compareSemVer(this.versionApp, storedVersionApp) > 0) {
         try {
           const createTables$ = await this.synchronization.getCreateTables();
-          createTables$.subscribe((createTablesRes) => {
-            this.loginLogic.dropTables(createTablesRes).then((dropRes: any) => {
-              // limpia y vuelve a dejar guardada la nueva versiónApp
-              let connected = localStorage.getItem("connected");
-              let connectionType = localStorage.getItem("connectionType");
-              localStorage.clear();
-              localStorage.setItem("versionApp", this.versionApp);
-              localStorage.setItem("connected", String(connected));
-              localStorage.setItem("connectionType", String(connectionType));
+          createTables$.subscribe(async (createTablesRes) => {
+            //this.loginLogic.dropTables(createTablesRes).then((dropRes: any) => {
+            // limpia y vuelve a dejar guardada la nueva versiónApp
+            let connected = localStorage.getItem("connected");
+            let connectionType = localStorage.getItem("connectionType");
+            await this.synchronization.checkAndRunMigrations();
+            //localStorage.clear();
+            localStorage.setItem("versionApp", this.versionApp);
+            localStorage.setItem("connected", String(connected));
+            localStorage.setItem("connectionType", String(connectionType));
 
-              this.initLogin();
-            }).catch(err => {
+            this.initLogin();
+            /* }).catch(err => {
               console.error('dropTables error', err);
-            });
+            }); */
           }, (err: any) => {
             console.error('getCreateTables subscribe error', err);
           });
@@ -136,7 +138,8 @@ export class LoginComponent implements OnInit {
       localStorage.setItem("password", f.value.password);
 
       (await this.synchronization.getCreateTables()).subscribe((res) => {
-        this.loginLogic.dropTables(res).then((res: any) => {
+        this.loginLogic.dropTables(res).then(async (res: any) => {
+          await this.synchronization.checkAndRunMigrations();
           console.log(res)
           console.log(f);
           localStorage.removeItem("lastUpdate")
@@ -191,7 +194,7 @@ export class LoginComponent implements OnInit {
           "Denario Premium",
           "Debe conectarse el celular a una red Wifi o señal de datos"
         );
-        this.messageService.alertModal(this.messageAlert);
+        this.message.alertModal(this.messageAlert);
       }
     });
 
@@ -210,7 +213,7 @@ export class LoginComponent implements OnInit {
         "Usuario y/o password no pueden ser vacios"
       );
       /* this.message.hideLoading(); */
-      this.messageService.alertModal(this.messageAlert);
+      this.message.alertModal(this.messageAlert);
     } else if (localStorage.getItem("login") != login && localStorage.getItem("login") != null) {
       this.message.hideLoading();
       this.messageAlert = new MessageAlert(
@@ -219,41 +222,67 @@ export class LoginComponent implements OnInit {
         " de aceptar la sincronización todos los datos anteriores serán borrados. ¿Está de acuerdo?"
       );
 
-      this.messageService.alertModalModule(this.messageAlert, "login");
+      this.message.alertModalModule(this.messageAlert, "login");
 
 
     } else if (conexion) {
-      this.subs = this.services.onLogin(f.value, deviceInfo, deviceId).subscribe({
+      this.subs = from(this.services.onLogin(f.value, deviceInfo, deviceId)).subscribe({
         next: (result) => {
-          if (result.errorCode == '000') {
-            if (localStorage.getItem("recuerdame") == "true") {
+          switch (result.data.errorCode) {
+            case '000':
+              if (localStorage.getItem("recuerdame") == "true") {
 
-              localStorage.setItem("password", f.value.password);
-            } else {
+                localStorage.setItem("password", f.value.password);
+              } else {
 
-              localStorage.removeItem("password");
+                localStorage.removeItem("password");
+              }
+
+              localStorage.setItem("login", login);
+              localStorage.setItem("token", result.data.jwtAuthResponse.tokenDeAcceso);
+              localStorage.setItem("lastUpdate", result.data.lastUpdate);
+              if (result.data.cliente)
+                this.globalConfig.setVars(result.data.variablesConfiguracionCliente)
+              else
+                this.globalConfig.setVars(result.data.variablesConfiguracion)
+
+              //localStorage.setItem("globalConfiguration", JSON.stringify(result.variablesConfiguracion));
+              localStorage.setItem("idUser", result.data.idUser.toString());
+              localStorage.setItem("coUser", result.data.coUser);
+              this.user = result.data;
+              localStorage.setItem("user", JSON.stringify(this.user));
+              this.synchronization.initDb(this.user, conexion);
+              break;
+            case '104':
+              this.message.hideLoading();
+              this.messageAlert = new MessageAlert(
+                "Denario Premium",
+                "Usuario y/o contraseña incorrectos."
+              );
+              this.message.alertModal(this.messageAlert);
+              break;
+            case '403':
+              let msj = "";
+              if (result.data.errorMessage != null && result.data.errorMessage != undefined)
+                msj = result.data.errorMessage;
+              else
+                msj = "Acceso no autorizado. Por favor, contacte al administrador.";
+
+              this.message.hideLoading();
+              this.messageAlert = new MessageAlert(
+                "Denario Premium",
+                msj
+              );
+              this.message.alertModal(this.messageAlert);
+              break;
+            default: {
+              this.message.hideLoading();
+              this.messageAlert = new MessageAlert(
+                "Denario Premium",
+                "Ocurrió un error de comunicación con el servidor, verifique cobertura e intente nuevamente."
+              );
+              this.message.alertModal(this.messageAlert);
             }
-
-            localStorage.setItem("login", login);
-            localStorage.setItem("token", result.jwtAuthResponse.tokenDeAcceso);
-            localStorage.setItem("lastUpdate", result.lastUpdate);
-            this.globalConfig.setVars(result.variablesConfiguracion)
-            //localStorage.setItem("globalConfiguration", JSON.stringify(result.variablesConfiguracion));
-            localStorage.setItem("idUser", result.idUser.toString());
-            localStorage.setItem("coUser", result.coUser);
-
-            this.user = result;
-            localStorage.setItem("user", JSON.stringify(this.user));
-            this.synchronization.initDb(this.user, conexion);
-
-
-          } else if (result.errorCode == '104') {
-            this.message.hideLoading();
-            this.messageAlert = new MessageAlert(
-              "Denario Premium",
-              "Usuario y/o contraseña incorrectos."
-            );
-            this.messageService.alertModal(this.messageAlert);
           }
 
         },
@@ -267,7 +296,7 @@ export class LoginComponent implements OnInit {
             "Denario Premium",
             "Ocurrió un error de comunicación con el servidor, verifique cobertura e intente nuevamente."
           );
-          this.messageService.alertModal(this.messageAlert);
+          this.message.alertModal(this.messageAlert);
           /*           this.message.hideLoading();
            */
           console.error(e);

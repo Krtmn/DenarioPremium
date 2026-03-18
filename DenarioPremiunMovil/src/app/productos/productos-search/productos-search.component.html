@@ -4,20 +4,37 @@
           <!-- <ion-col class="ion-margin-top" size="12" size-sm="12" size-xs="12"> -->
           <ion-col class="" size="12" size-sm="12" size-xs="12">
             <!-- Este input es cuando estoy dentro de la estructura y busco a medida que escribo -->
-            <input type="text" class="search-input inputsSearch iconobuscar" fill="outline" shape="round" placeholder="{{this.searchTags.get('PROD_PLACEHOLDER_BUSCAR')}}" #searchInput [(ngModel)]="searchText" (input)="onSearchTextChanged()" *ngIf="showSearch && productStructureSelected">
+            <div class="search-row" *ngIf="showSearch && productStructureSelected">
+              <ion-button fill="outline" size="small" color="dark" shape="round" class="back-button"
+                *ngIf="mostrarVolver" (click)="onReturnStructures()" aria-label="Volver">
+                <ion-icon name="arrow-back-outline"></ion-icon>
+              </ion-button>
+              <div class="search-input-wrap">
+                <input type="text" class="search-input inputsSearch" fill="outline" shape="round"
+                  placeholder="{{this.searchTags.get('PROD_PLACEHOLDER_BUSCAR')}}" #searchInput
+                  [(ngModel)]="searchText" (keydown.enter)="onSearchClicked($event)">
+                <button type="button" class="clear-search" (click)="clearSearch()" [disabled]="!searchText">
+                  <ion-icon class="sizeIconSearch" name="close-circle"></ion-icon>
+                </button>
+              </div>
+            </div>
             <!-- <input type="text" class="search-input inputsSearch" fill="outline" shape="round" placeholder="{{this.searchTags.get('PROD_PLACEHOLDER_BUSCAR')}}" #searchInput [(ngModel)]="searchText" (input)="onSearchTextChanged()" *ngIf="showSearch && productStructureSelected"> -->
             <!-- Este input es cuando estoy afuera de las estructuras y busco hacien click en buscar -->
-            <input type="text" class="search-input inputsSearch iconobuscar" fill="outline" shape="round" placeholder="{{this.searchTags.get('PROD_PLACEHOLDER_BUSCAR')}}" #searchInput [(ngModel)]="searchText" *ngIf="showSearch && !productStructureSelected">
+            <div class="search-row" *ngIf="showSearch && !productStructureSelected">
+              <ion-button fill="outline" size="small" color="dark" shape="round" class="back-button"
+                *ngIf="mostrarVolver" (click)="onReturnStructures()" aria-label="Volver">
+                <ion-icon name="arrow-back-outline"></ion-icon>
+              </ion-button>
+              <div class="search-input-wrap">
+                <input type="text" class="search-input inputsSearch" fill="outline" shape="round"
+                  placeholder="{{this.searchTags.get('PROD_PLACEHOLDER_BUSCAR')}}" #searchInput
+                  [(ngModel)]="searchText" (keydown.enter)="onSearchClicked($event)">
+                <button type="button" class="clear-search" (click)="onSearchClicked()" [disabled]="!searchText">
+                  <ion-icon name="search-circle-sharp" class="sizeIconSearch"></ion-icon>
+                </button>
+              </div>
+            </div>
             <!-- <input type="text" class="search-input inputsSearch" fill="outline" shape="round" placeholder="{{this.searchTags.get('PROD_PLACEHOLDER_BUSCAR')}}" #searchInput [(ngModel)]="searchText" *ngIf="showSearch && !productStructureSelected"> -->
-            <ion-button fill="outline" size="small" class="sizebutton" color="dark" shape="round" [disabled]="!searchText" (click)="onSearchClicked()" *ngIf="showSearch && !productStructureSelected">
-              {{this.searchTags.get('PROD_BUSCAR')}}
-              <ion-icon slot="start" class="colorIconBuscar" name="search-circle-sharp"></ion-icon>
-            </ion-button>
-
-            <ion-button fill="outline" size="small" color="dark" shape="round" *ngIf="mostrarVolver" (click)="onReturnStructures()">
-              {{this.searchTags.get('PROD_VOLVER')}}
-              <ion-icon class="colorIconBuscar" slot="start" name="arrow-back-circle-sharp"></ion-icon>
-            </ion-button>
             <!-- <button class="search-button buttonSearchProductos" [disabled]="!searchText" (click)="onSearchClicked()" *ngIf="showSearch && !productStructureSelected">Buscar<ion-icon name="search-outline"></ion-icon></button>
             <button class="structures-button buttonSearchProductos" *ngIf="mostrarVolver" (click)="onReturnStructures()">Buscar<ion-icon name="search-outline"></ion-icon></button> -->
             <!-- <button class="search-button buttonSearchProductos" [disabled]="!searchText" (click)="onSearchClicked()" *ngIf="showSearch && !productStructureSelected"><ion-icon name="search-outline"></ion-icon></button>

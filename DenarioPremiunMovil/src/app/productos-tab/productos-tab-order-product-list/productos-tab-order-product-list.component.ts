@@ -70,15 +70,19 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   searchTextChanged!: any;
   searchSub!: any;
+  returnBackSub!: any;
 
   detailModal = false;
   discountModal = false;
   productoModal!: OrderUtil;
+  noProductsAlertShown = false;
 
   disablePriceListSelector = false;
   public imagesMap: { [imgName: string]: string } = {};
   private subs = new Subscription();
 
+  priceListColSize = 12;
+  priceListInfoModal = false;
 
   constructor(
 
@@ -88,6 +92,11 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   ngOnInit() {
     console.log('Estoy en Pedido');
+
+    if (this.orderServ.priceListInfoModal) {
+      //hay que hacer espacio para el boton de info del pricelist
+      this.priceListColSize = 10;
+    }
     this.subs.add(
       this.imageServices.imageLoaded$.subscribe(({ imgName, imgSrc }) => {
         this.imagesMap[imgName] = imgSrc;
@@ -102,15 +111,20 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.ivaList = this.orderServ.ivaList;
     this.disablePriceListSelector = (!this.orderServ.userCanChangePriceListProduct);
     this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
+      this.modoLista = 'search';
+      this.noProductsAlertShown = false;
       this.warehouseList = this.orderServ.listaWarehouse;
       this.showProductList = true;
       this.nameProductStructure = '';
       this.productList = this.productService.productList;
+
       this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
+      this.noProductsAlertShown = (this.orderUtilList.length == 0);
 
     });
 
     this.psClicked = this.productService.productStructureCLicked.subscribe((data) => {
+      this.noProductsAlertShown = false;
       this.showProductList = data;
       this.page = 0;
       this.modoLista = 'structure';
@@ -126,10 +140,11 @@ export class ProductosTabOrderProductListComponent implements OnInit {
           this.orderServ.userCanChangeWarehouse, this.orderServ.cliente.idClient, this.orderServ.listaSeleccionada.idList, this.page).then(() => {
             this.productList = this.productService.productList;
             this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
-            if(this.orderUtilList.length < 20){
-              //probablemente muchos productos fueron eliminados, agregamos mas. 
+            if (this.orderUtilList.length < 20) {
+              //probablemente muchos productos fueron eliminados, agregamos mas.
               this.onIonInfinite(null);
             }
+            this.noProductsAlertShown = (this.orderUtilList.length == 0);
 
           });
       }
@@ -137,6 +152,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
     //caso featuredProduct:
     this.featuredPSClicked = this.productService.featuredStructureClicked.subscribe((showList) => {
+      this.noProductsAlertShown = false;
       this.showProductList = showList;
       this.nameProductStructure = this.productStructureService.nombreProductStructureSeleccionada;
       if (this.showProductList) {
@@ -153,11 +169,13 @@ export class ProductosTabOrderProductListComponent implements OnInit {
           this.orderServ.userCanChangeWarehouse, this.orderServ.cliente.idClient, this.orderServ.listaSeleccionada.idList, this.page).then(() => {
             this.productList = this.productService.productList;
             this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
+            this.noProductsAlertShown = (this.orderUtilList.length == 0);
           });
       }
     });
     //caso favorito:
     this.favoritePSClicked = this.productService.favoriteStructureClicked.subscribe((showList) => {
+      this.noProductsAlertShown = false;
       this.showProductList = showList;
       this.nameProductStructure = this.productStructureService.nombreProductStructureSeleccionada;
       if (this.showProductList) {
@@ -174,6 +192,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
           this.orderServ.userCanChangeWarehouse, this.orderServ.cliente.idClient, this.orderServ.listaSeleccionada.idList, this.page).then(() => {
             this.productList = this.productService.productList;
             this.orderUtilList = this.orderServ.productListToOrderUtil(this.productList);
+            this.noProductsAlertShown = (this.orderUtilList.length == 0);
           });
       }
 
@@ -181,11 +200,19 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
     //caso carrito:
     this.carritoButtonClicked = this.productService.carritoButtonClicked.subscribe((showList) => {
+      this.noProductsAlertShown = false;
       this.showProductList = showList;
       this.modoLista = 'carrito';
       this.orderUtilList = this.orderServ.carrito;
       this.warehouseList = this.orderServ.listaWarehouse;
       this.nameProductStructure = this.orderServ.getTag("PED_CARRITO")
+      this.noProductsAlertShown = (this.orderUtilList.length == 0);
+    });
+
+    this.returnBackSub = this.productService.returnBackClicked.subscribe(() => {
+      if (this.showProductList) {
+        this.onShowProductStructures();
+      }
     });
 
     this.cantidadInputMode();
@@ -199,6 +226,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
           this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency,
           this.orderServ.userCanChangeWarehouse, this.orderServ.cliente.idClient, this.orderServ.listaSeleccionada.idList, this.page).then(() => {
             this.updateList(ev);
+
           });
         break;
 
@@ -207,6 +235,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
           this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency,
           this.orderServ.userCanChangeWarehouse, this.orderServ.cliente.idClient, this.orderServ.listaSeleccionada.idList, this.page).then(() => {
             this.updateList(ev);
+
           });
         break;
 
@@ -214,6 +243,16 @@ export class ProductosTabOrderProductListComponent implements OnInit {
         this.productService.getFeaturedProducts(this.db.getDatabase(),
           this.empresaSeleccionada.idEnterprise, this.orderServ.monedaSeleccionada.coCurrency,
           this.orderServ.userCanChangeWarehouse, this.orderServ.cliente.idClient, this.orderServ.listaSeleccionada.idList, this.page).then(() => {
+            this.updateList(ev);
+
+          });
+        break;
+
+      case 'search':
+        this.productService.getProductsSearchedByCoProductAndNaProductAndIdList(
+          this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise,
+          this.orderServ.monedaSeleccionada.coCurrency,
+          this.orderServ.listaSeleccionada.idList, this.page).then(() => {
             this.updateList(ev);
           });
         break;
@@ -238,7 +277,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
         const item = tempList[i];
         this.orderUtilList.push(item);
       }
-
+      this.noProductsAlertShown = (this.orderUtilList.length == 0);
     }
     if (ev) {
       ev.target.complete(); //termina la animacion del infiniteScroll
@@ -281,6 +320,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.searchSub.unsubscribe();
     this.carritoButtonClicked.unsubscribe();
     this.searchTextChanged.unsubscribe();
+    this.returnBackSub.unsubscribe();
     this.subs.unsubscribe();
   }
 
@@ -369,6 +409,15 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.discountModal = val;
   }
 
+  loadPriceListInfo(prod: OrderUtil) {
+    this.productoModal = prod;
+    this.showPriceListInfoModal(true);
+  }
+
+  showPriceListInfoModal(val: boolean) {
+    this.priceListInfoModal = val;
+  }
+
   autoDiscount(prod: OrderUtil) {
     for (let i = 0; i < prod.discountList.length; i++) {
       if (prod.quAmount >= prod.discountList[i].quVolIni && prod.quAmount <= prod.discountList[i].quVolFin) {
@@ -387,7 +436,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.productService.searchStructures = true;
     this.productService.onBackButtonClicked();
     this.productStructureService.onAddProductCLicked();
-    this.productStructureService.idProductStructureSeleccionada = 0;
+    this.productStructureService.idProductStructureList = [];
     this.productStructureService.nombreProductStructureSeleccionada = '';
   }
 
@@ -401,16 +450,19 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   onSelectProductPed(i: number, prod: OrderUtil) {
 
-    if (!this.orderServ.stock0 && (prod.quStockAux < 1)) {
+    if (!this.orderServ.stock0 && (prod.quStockAux <= 0)) {
       this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_STOCK0"));
       //this.accordionGroup.value = undefined;
     } else {
       //const nativeEl = this.accordionGroup;
+      //autofoco al abrir el producto seleccionado
+      /*
       if (this.accordionGroup.value !== prod.coProduct) {
         setTimeout(() => {
           this.quAmountInputs.toArray()[i].setFocus();
         }, 150);
       }
+      */
     }
   }
 
@@ -439,7 +491,36 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.orderServ.alCarrito(product);
   }
 
+  onManualDiscountChange(e: any, product: OrderUtil) {
+    const raw = e?.detail?.value;
+
+    if (raw === '' || raw === null || raw === undefined) {
+      product.idDiscount = null;
+      product.quDiscount = 0;
+      this.orderServ.alCarrito(product);
+      this.cd.detectChanges();
+      return;
+    }
+
+    this.onSelectDiscount({ detail: { manualDiscount: raw } }, product);
+  }
+
   onSelectDiscount(e: any, product: OrderUtil) {
+    if (e?.detail?.manualDiscount !== undefined) {
+      const max = Math.max(1, Number(this.orderServ.setMaxProductDiscount) || 1);
+      const parsed = Number(e.detail.manualDiscount);
+      if (Number.isNaN(parsed)) {
+        return;
+      }
+
+      const manualDiscount = Math.min(max, Math.max(1, parsed));
+      product.idDiscount = null;
+      product.quDiscount = manualDiscount;
+      this.orderServ.alCarrito(product);
+      this.cd.detectChanges();
+      return;
+    }
+
     // Prefer event value but fallback to the model (keeps it in-sync when ngModel changed it).
     const raw = (e && e.detail && (e.detail.value !== undefined)) ? e.detail.value : product.idDiscount;
     // Ensure a numeric primitive (0 stays 0, '0' -> 0)
@@ -491,8 +572,13 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     var stock = this.orderServ.listaStock.filter(s => s.idProduct == product.idProduct && s.idWarehouse == warehouse.idWarehouse)[0];
     product.idWarehouse = warehouse.idWarehouse;
     product.naWarehouse = warehouse.naWarehouse;
-    product.quStock = stock.quStock;
-    product.quStockAux = stock.quStock;
+    if (stock) {
+      product.quStock = stock.quStock;
+      product.quStockAux = stock.quStock;
+    } else {
+      product.quStock = 0;
+      product.quStockAux = 0;
+    }
 
     this.onProductQuantityChange(product);
     this.orderServ.alCarrito(product);
@@ -503,9 +589,12 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     if (!prod.nuPrice) {
       return true;
     }
-    if (!this.orderServ.stock0 && (prod.quStockAux < 1)) {
+    if (!this.orderServ.stock0 && (prod.quStockAux <= 0)) {
       var stocks = this.orderServ.listaStock.filter(s => s.idProduct == prod.idProduct)
       //si el warehouse seleccionado tiene 0 stock, comprobamos si hay stock en otro warehouse
+      if (!this.orderServ.userCanChangeWarehouse) {
+        return true;
+      }
       for (let i = 0; i < stocks.length; i++) {
         if (stocks[i].quStock > 0) {
           return false;
@@ -528,7 +617,10 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   quStock(prod: OrderUtil) {
     let stock = prod.quStock;
     let unit = prod.unitList.filter(u => prod.idUnit == u.idUnit)[0];
-    return Math.floor(stock / unit.quUnit);
+    if (this.orderServ.quUnitDecimals) {
+      return this.formatNum(stock / unit.quUnit);
+    }
+    return Math.floor(stock / unit.quUnit).toString();
   }
 
 

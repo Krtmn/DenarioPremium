@@ -77,6 +77,13 @@ export class ProductosTabComponent implements OnInit, OnDestroy {
         )
       }
     });
+    this.services.getTags(this.db.getDatabase(), "DEN", "ESP").then(result => {
+      for (var i = 0; i < result.length; i++) {
+        this.productsTabTags.set(
+          result[i].coApplicationTag, result[i].tag
+        )
+      }
+    });
   }
 
   ngOnDestroy(): void {

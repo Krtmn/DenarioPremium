@@ -54,10 +54,13 @@ export class HomePage implements OnInit {
   public ruta!: string;
   public modulos!: { id: number, name: string | undefined; imgIcon: string; routerLink: string; letterColor: string; }[];
   public modulosTransportista!: { id: number, name: string | undefined; imgIcon: string; routerLink: string; letterColor: string; }[];
+  public modulosCliente!: { id: number, name: string | undefined; imgIcon: string; routerLink: string; letterColor: string; }[];
+  public modulosPromotor!: { id: number, name: string | undefined; imgIcon: string; routerLink: string; letterColor: string; }[];
   /* public modulos: any[] = []; */
   public fechaCreacion: string = "2000-01-01 00:00:00";
   public userMustActivateGPS: boolean = false;
 
+  public esVendedor: boolean = true;
   backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(1, () => {
     //console.log('backButton was called!');
     //de aqui no te vas
@@ -90,6 +93,9 @@ export class HomePage implements OnInit {
         this.user = {};
       }
     }
+
+    this.esVendedor = !this.user.transportista && !this.user.cliente 
+    && !this.user.promotor && !this.user.soporte;
 
     this.autoSend.ngOnInit();
 
@@ -201,26 +207,28 @@ export class HomePage implements OnInit {
     if (userStr) {
       try {
         this.user = JSON.parse(userStr);
+        if (this.user.cliente) {
+          //Clientes, Pedidos, Productos y Sincronizar
+          this.modulosCliente = this.modulos.filter(m => m.id === 7 || m.id === 2 || m.id === 8 || m.id === 10);
+          const desiredOrder = [7, 2, 8, 10];
+          this.modulosCliente.sort((a, b) => desiredOrder.indexOf(a.id) - desiredOrder.indexOf(b.id));
+        }
         if (this.user.transportista) {
+          //Despachos, Clientes y Sincronizar
           this.modulosTransportista = this.modulos.filter(m => m.id === 0 || m.id === 8 || m.id === 10);
 
           this.imageServices.getServerPdfList().then(obs => {
             obs.subscribe({
               complete: () => {
-                /* if (this.imageServices.downloadFileList.length > 0) { */
-                // Navega primero
-                // a la página de inicio y luego descarga las imágenes
-                /* this.router.navigate(['home']).then(() => {
-                  //this.imageServices.download(this.imageServices.downloadFileList);
-                  this.imageServices.downloadWithConcurrency(this.imageServices.downloadFileList);
-                }); */
-                /* } else {
-                  this.router.navigate(['home']);
-                } */
+
                 this.getListFilesPremiumDispatch();
               }
             });
           });
+        }
+        if (this.user.promotor) {
+          //Visitas, Inventario Productos, Clientes y Sincronizar
+          this.modulosPromotor = this.modulos.filter(m => m.id === 0 || m.id === 1 ||  m.id === 7 || m.id === 8 ||m.id === 10);
         }
       } catch (e) {
         this.user = {};
@@ -257,7 +265,7 @@ export class HomePage implements OnInit {
       if (localStorage.getItem("connected") === "false") {
         var msj = this.services.tags.get("DENARIO_ERROR_SYNCRO");
         if (msj === undefined) {
-          msj = "";
+          msj = "No hay conexión a internet, no se puede sincronizar";
         }
         this.messageService.transaccionMsjModalNB(msj);
 

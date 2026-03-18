@@ -20,32 +20,32 @@
     <ion-grid>
       <ion-row>
         <ion-col size="8" size-md="8" offset-md="2" size-sm="12" size-xs="12">
-          <ion-card *ngSwitchCase="'default'">
-              <ion-card-content>
+          <div *ngSwitchCase="'default'">
+              <div>
                   <app-inventario-general></app-inventario-general>
-              </ion-card-content>
-          </ion-card>
+              </div>
+          </div>
 
           <!-- Pestana inventario-->
-          <ion-card *ngSwitchCase="'inventario'">
-              <ion-card-content>
+          <div *ngSwitchCase="'inventario'">
+              <div>
                   <app-inventario-inventario></app-inventario-inventario>
-              </ion-card-content>
-          </ion-card>
+              </div>
+          </div>
 
           <!-- Pestana actividades-->
-          <ion-card *ngSwitchCase="'actividades'">
-              <ion-card-content>
+          <div *ngSwitchCase="'actividades'">
+              <div>
                   <app-inventario-actividades></app-inventario-actividades>
-              </ion-card-content>
-          </ion-card>
+              </div>
+          </div>
 
           <!-- Pestana Adjuntos -->
-          <ion-card *ngSwitchCase="'adjuntos'">
-              <ion-card-content>
+          <div *ngSwitchCase="'adjuntos'">
+              <div>
                   <app-adjunto #selectorAdjunto></app-adjunto>
-              </ion-card-content>
-          </ion-card>
+              </div>
+          </div>
 
         </ion-col>
       </ion-row>

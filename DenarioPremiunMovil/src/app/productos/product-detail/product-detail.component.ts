@@ -16,6 +16,7 @@ import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { ProductService } from 'src/app/services/products/product.service';
 import { ProductPriceUtil } from 'src/app/modelos/ProductPriceUtil';
 import { CurrencyModules } from 'src/app/modelos/tables/currencyModules';
+import { PedidosService } from 'src/app/pedidos/pedidos.service';
 
 register();
 
@@ -33,6 +34,7 @@ export class ProductDetailComponent implements OnInit {
   imageServices = inject(ImageServicesService);
   globalConfig = inject(GlobalConfigService);
   currencyService = inject(CurrencyService);
+  orderService = inject(PedidosService);
 
   @Input()
   productDetailTags = new Map<string, string>([]);
@@ -70,10 +72,12 @@ export class ProductDetailComponent implements OnInit {
       this.lists = this.priceListService.productlists;
       this.listSeleccionada = this.lists[0];
     });
+    if(this.orderService.validateWarehouses){
     this.stockService.getWarehousesByIdProduct(this.pSeleccionado.idProduct).then(() => {
       this.warehouses = this.stockService.productWarehouses;
       this.warehouseSeleccionado = this.warehouses[0];
     });
+    }
     this.checkReorderPrices();
     //console.log('pSeleccionado: ' + JSON.stringify(this.pSeleccionado));
   }
