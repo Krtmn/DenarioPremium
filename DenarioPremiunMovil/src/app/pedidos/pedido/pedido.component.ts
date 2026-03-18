@@ -537,6 +537,10 @@ export class PedidoComponent implements OnInit {
           );
           transactions.push(tr);
 
+          this.orderServ.updateStocks(order).then(() => {
+            console.log("Stocks actualizados");
+          });
+
           if (this.orderServ.coClientStockAEnviar.length > 1) {
             //si venimos de inventario, enviamos el inventario tambien.
             transactions.push({
