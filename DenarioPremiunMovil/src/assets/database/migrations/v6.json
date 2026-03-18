@@ -1,0 +1,6 @@
+[
+    {
+        "sql": "ALTER TABLE lists ADD COLUMN show_only boolean DEFAULT FALSE;",
+        "description": "Se agrega la columna 'show_only' a la tabla 'lists' para indicar si solo se debe mostrar."
+    }
+]

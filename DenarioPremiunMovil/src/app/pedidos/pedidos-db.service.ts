@@ -39,11 +39,11 @@ export class PedidosDbService {
 
   constructor() { }
 
-  getPricelists(db: SQLiteObject, idEnterprise: number) {
+  getPricelists(db: SQLiteObject, idEnterprise: number, idLists: number[]) {
     let query = "SELECT id_price_list as idPriceList, co_price_list as coPriceList, id_product as idProduct," +
       "id_list as idList, nu_measure_unit_price as nuMeasureUnitPrice, nu_price as nuPrice, co_currency as coCurrency, " +
       "id_currency as idCurrency, co_enterprise as coEnterprise, id_enterprise as idEnterprise " +
-      "FROM price_lists WHERE id_enterprise = ? ";
+      "FROM price_lists WHERE id_enterprise = ? AND id_list IN (" + idLists.join(",") + ")";
 
     return db.executeSql(query, [idEnterprise]).then(data => {
       let list: PriceList[] = [];
@@ -165,14 +165,41 @@ export class PedidosDbService {
   }
 
   getLists(db: SQLiteObject, idEnterprise: number) {
-    let query = "SELECT id_list as idList, co_list as coList, na_list as naList, " +
-      "co_enterprise as coEnterprise, id_enterprise as idEnterprise " +
-      "from lists where id_enterprise = ?"
-
+    //este trae todas las listas que se usan realmente en los pedidos.
+    let query = "SELECT * from lists where id_enterprise = ? and show_only = 'false'"
     return db.executeSql(query, [idEnterprise]).then(data => {
       let list: List[] = [];
       for (let i = 0; i < data.rows.length; i++) {
-        list.push(data.rows.item(i));
+        let item = data.rows.item(i)
+        list.push({
+          idList: item.id_list,
+          coList: item.co_list,
+          naList: item.na_list,
+          idEnterprise: item.id_enterprise,
+          coEnterprise: item.co_enterprise,
+          showOnly: item.show_only
+        });
+      }
+      return list;
+    })
+  }
+
+
+  getListForInfoModal(db: SQLiteObject, idEnterprise: number) {
+    //este trae listsas que se muestran en el modal. Solo las que tienen show_only = true
+        let query = "SELECT * from lists where id_enterprise = ? and show_only = 'true'"
+    return db.executeSql(query, [idEnterprise]).then(data => {
+      let list: List[] = [];
+      for (let i = 0; i < data.rows.length; i++) {
+        let item = data.rows.item(i)
+        list.push({
+          idList: item.id_list,
+          coList: item.co_list,
+          naList: item.na_list,
+          idEnterprise: item.id_enterprise,
+          coEnterprise: item.co_enterprise,
+          showOnly: item.show_only
+        });
       }
       return list;
     })

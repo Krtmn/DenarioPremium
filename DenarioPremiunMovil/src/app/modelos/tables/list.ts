@@ -7,6 +7,7 @@ export class List {
             obj['naList'],
             obj['coEnterprise'],
             obj['idEnterprise'],
+            obj['showOnly']
 
         );
     }
@@ -17,6 +18,7 @@ export class List {
         public naList: string,
         public coEnterprise: string,
         public idEnterprise: number,
+        public showOnly: boolean
 
     ) { }
 }

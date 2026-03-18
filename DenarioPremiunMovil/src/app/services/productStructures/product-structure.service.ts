@@ -19,7 +19,8 @@ export class ProductStructureService {
   public idProductStructureList: number[] = [] 
   public coProductStructureListString: string = "";
   public nombreProductStructureSeleccionada = "";
-  public idProductStructureSeleccionada = 0;
+
+
 
 
   productStructures = new Subject<Boolean>;
@@ -107,5 +108,9 @@ export class ProductStructureService {
       console.log(e);
     })
   }
+
+
+
+
 
 }

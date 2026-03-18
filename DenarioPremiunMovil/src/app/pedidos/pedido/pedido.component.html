@@ -561,33 +561,33 @@
             </ion-accordion-group>
 
 
-            <!-- ### Total por producto ###
+                        <!-- ### Total por producto ###
              caso groupByTotalBylines -->
-            <ion-accordion-group *ngIf="orderServ.groupByTotalByLines">
-              <ion-accordion-group>
-                <ion-accordion *ngFor="let struct of orderServ.carritoWithLines;  index as h">
-                  <ion-item slot="header">
-                    <ion-label>
-                      <div>
-                        {{ orderServ.getTag("PED_LINEA")}}: {{struct.naLine}}
-                      </div>
-                      <div>
-                        {{ orderServ.getTag("PED_CANTIDAD")}}: {{struct.items.length}}
-                      </div>
-                      <div>{{ orderServ.getTag("PED_TAB_TOTAL")}}
-                        {{orderServ.monedaSeleccionada.coCurrency}}:
-                        {{formatNum(struct.total)}}</div>
-                      <div *ngIf="showConversion">{{
-                        orderServ.getTag("PED_TAB_TOTAL")}} {{monedaOpuesta()}}:
-                        {{formatNum(struct.totalConversion)}}</div>
-                    </ion-label>
-                  </ion-item>
-                  <div slot="content">
-                    <ion-accordion-group>
-                      <ion-accordion *ngFor="let item of struct.items;  index as i">
-                        <ion-item slot="header">
-                          <ion-label>
-                            <div>
+                        <ion-accordion-group *ngIf="orderServ.groupByTotalByLines">
+                            <ion-accordion-group>
+                                <ion-accordion *ngFor="let struct of orderServ.carritoWithLines;  index as h">
+                                    <ion-item slot="header">
+                                        <ion-label>
+                                            <div>
+                                                {{ orderServ.getTag("PED_LINEA")}}: {{struct.naLine}}
+                                            </div>
+                                            <div>
+                                                {{ orderServ.getTag("PED_CANTIDAD")}}: {{struct.items.length}}
+                                            </div>
+                                            <div>{{ orderServ.getTag("PED_TAB_TOTAL")}}
+                                                {{orderServ.monedaSeleccionada.coCurrency}}:
+                                                {{formatNum(struct.total)}}</div>
+                                            <div *ngIf="showConversion">{{
+                                                orderServ.getTag("PED_TAB_TOTAL")}} {{monedaOpuesta()}}:
+                                                {{formatNum(struct.totalConversion)}}</div>
+                                        </ion-label>
+                                    </ion-item>
+                                    <div slot="content">
+                                        <ion-accordion-group>
+                                            <ion-accordion *ngFor="let item of struct.items;  index as i">
+                                                <ion-item slot="header">
+                                                    <ion-label>
+                                                        <div>
 
                               {{ orderServ.getTag("PED_CODIGO")}}: {{ item.coProduct }}
 

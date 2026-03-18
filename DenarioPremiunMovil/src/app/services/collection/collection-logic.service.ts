@@ -793,6 +793,11 @@ export class CollectionService {
           this.documentSalesView[i].nuValueLocal = this.rateSelected;
         }
       }
+         this.unlockTabs().then((resp) => {
+/*           this.mensaje = "No hay tasa para la fecha seleccionada";
+          this.alertMessageOpen = true; */
+          this.onCollectionValid(resp);
+        })
       return Promise.resolve(true);
     } else {
       //no tengo tasa para ese dia
