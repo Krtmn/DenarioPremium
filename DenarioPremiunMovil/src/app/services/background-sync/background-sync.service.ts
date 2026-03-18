@@ -108,11 +108,15 @@ export class BackgroundSyncService {
       payload['tableIds'] = this.backgroundTableIds;
     }
 
+    const authOptions = this.services.getHttpOptionsAuthorization();
     const response = await firstValueFrom(
       this.http.post<{ changes?: boolean; hasChanges?: boolean; syncRequired?: boolean }>(
         url,
         payload,
-        this.services.getHttpOptionsAuthorization()
+        {
+          headers: authOptions.headers as Record<string, string>,
+          responseType: 'json'
+        }
       )
     );
 

@@ -109,6 +109,38 @@ export class AutoSendService implements OnInit {
     })
   }
 
+  async runPendingQueue(): Promise<void> {
+    if (this.isProcessingPending) {
+      return;
+    }
+
+    this.isProcessingPending = true;
+    try {
+      const pending = await this.getPendingTransaction();
+      this.pendingTransaction = pending;
+      if (pending.length > 0) {
+        this.funcObsQueueCount = pending.length;
+        this.initTransaction(pending);
+      }
+
+      const pendingAttachments = await this.getPendingTransactionsAttachments();
+      this.pendingTransactionsAttachments = pendingAttachments;
+      if (pendingAttachments.length > 0) {
+        const counts = new Map<string, number>();
+        pendingAttachments.forEach(att => {
+          counts.set(att.coTransaction, (counts.get(att.coTransaction) ?? 0) + 1);
+        });
+        pendingAttachments.forEach(att => {
+          att.cantidad = counts.get(att.coTransaction) ?? 0;
+        });
+
+        this.adjuntoService.sendPendingPhotos(this.dbService.getDatabase(), pendingAttachments);
+      }
+    } finally {
+      this.isProcessingPending = false;
+    }
+  }
+
   public addFuncObs() {
     const currentCount = this.funcObsQueueCount;
     console.log('[QUEUING]', currentCount)
