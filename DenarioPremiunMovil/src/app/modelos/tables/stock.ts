@@ -11,6 +11,7 @@ export class Stock {
             obj['daUpdateStock'],
             obj['coEnterprise'],
             obj['idEnterprise'],
+            obj['coUnit']
 
         );
     }
@@ -25,6 +26,7 @@ export class Stock {
         public daUpdateStock: string = "",
         public coEnterprise: string = "",
         public idEnterprise: number = 0,
+        public coUnit: string = "",
 
     ) { }
 }

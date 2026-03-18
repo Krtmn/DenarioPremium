@@ -672,15 +672,15 @@ export class SynchronizationDBService {
     var statements = [];
     let insertStatement = "INSERT OR REPLACE INTO stocks(" +
       'id_stock,id_product,co_product,qu_stock,id_warehouse,' +
-      'co_warehouse,da_update_stock,co_enterprise,id_enterprise' +
+      'co_warehouse,da_update_stock,co_enterprise,id_enterprise,co_unit' +
       ') ' +
-      'VALUES(?,?,?,?,?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?,?,?,?,?)'
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
       statements.push([insertStatement, [obj.idStock, obj.idProduct, obj.coProduct,
       obj.quStock, obj.idWarehouse, obj.coWarehouse,
-      obj.daUpdateStock, obj.coEnterprise, obj.idEnterprise]]);
+      obj.daUpdateStock, obj.coEnterprise, obj.idEnterprise, obj.coUnit]]);
     }
 
     return this.database.sqlBatch(statements).then(res => {
