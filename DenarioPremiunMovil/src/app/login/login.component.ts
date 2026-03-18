@@ -74,7 +74,7 @@ export class LoginComponent implements OnInit {
         "Denario Premium",
         "Tu sesión expiró. Vuelve a iniciar sesión para continuar sincronizando."
       );
-      this.messageService.alertModal(this.messageAlert);
+      this.message.alertModal(this.messageAlert);
     }
 
     const storedVersionApp = localStorage.getItem("versionApp");
