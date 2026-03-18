@@ -27,7 +27,7 @@ import { PedidosDbService } from 'src/app/pedidos/pedidos-db.service';
 import { StraightSwap } from 'src/app/modelos/tables/straightSwap';
 import { ReturnDetail } from 'src/app/modelos/tables/ReturnDetail';
 import { InvoiceDetailUnit } from 'src/app/modelos/tables/invoiceDetailUnit';
-import { InvoiceDetailUnit } from 'src/app/modelos/tables/invoiceDetailUnit';
+
 
 
 @Injectable({
