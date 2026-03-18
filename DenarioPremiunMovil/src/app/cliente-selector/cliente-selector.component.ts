@@ -191,16 +191,34 @@ export class ClienteSelectorComponent implements OnInit {
       this.service.clientes = [] as Client[];
     }
     this.fixClientListSaldos(result);
-    if (this.nombreModulo == 'Cobros' &&
-      this.collectLogic.userCanCollectIva &&
-      this.collectLogic.cobro25) {
-      for (var i = 0; i < result.length; i++) {
-        if (result[i].collectionIva) {
-          this.clientes.push(result[i]);
+
+    if (this.nombreModulo == 'Cobros') {
+      result.sort((a, b) => {
+        const totalA = (a.saldo1 ?? 0) + (a.saldo2 ?? 0);
+        const totalB = (b.saldo1 ?? 0) + (b.saldo2 ?? 0);
+
+        const groupA = totalA > 0 ? 0 : totalA == 0 ? 1 : 2;
+        const groupB = totalB > 0 ? 0 : totalB == 0 ? 1 : 2;
+
+        if (groupA != groupB) {
+          return groupA - groupB;
         }
+
+        return totalB - totalA;
+      });
+
+      if (this.collectLogic.userCanCollectIva && this.collectLogic.cobro25) {
+        for (let i = 0; i < result.length; i++) {
+          if (result[i].collectionIva) {
+            this.clientes.push(result[i]);
+          }
+        }
+      } else {
+        this.clientes = [...this.clientes, ...result];
       }
-    } else
+    } else {
       this.clientes = [...this.clientes, ...result];
+    }
     //console.log("[ClienteSelector] Lista de clientes actualizada");
     this.noClientsAlertShown = this.clientes.length == 0;
     //para usarlo luego
