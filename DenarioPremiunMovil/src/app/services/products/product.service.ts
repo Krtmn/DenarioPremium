@@ -105,6 +105,28 @@ MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por ca
     this.returnBackClicked.next(true);
   }
 
+  private getProductsOrderByClause(): string {
+    const fallback = 'p.na_product ASC';
+    const configuredOrder = (this.globalConfig.get('productsOrderBy') || '').toString().trim();
+
+    if (!configuredOrder) {
+      return fallback;
+    }
+
+    const normalizedOrder = configuredOrder.replace(/^order\s+by\s+/i, '').trim();
+    const validOrderRegex = /^p\.(na_product|co_product)(\s+(asc|desc))?$/i;
+
+    if (!validOrderRegex.test(normalizedOrder)) {
+      return fallback;
+    }
+
+    if (/\s+(asc|desc)$/i.test(normalizedOrder)) {
+      return normalizedOrder;
+    }
+
+    return normalizedOrder + ' ASC';
+  }
+
   getProductsByCoProductStructureAndIdEnterprise(dbServ: SQLiteObject, idProductStructures: number[], idEnterprise: number, coCurrency: string, page: number) {
     var database = dbServ;
     this.productList = [];
@@ -115,8 +137,8 @@ MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por ca
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as nu_price_opposite, " +
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as co_currency_opposite, " +
-        " (select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE p.id_product_structure in ( " + idProductStructures + 
-        " ) ORDER BY p.nu_priority ASC LIMIT " + this.MAX_ITEMS_PER_PAGE + " OFFSET " + (page * this.MAX_ITEMS_PER_PAGE) + ";";
+        " (select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE p.id_product_structure in ( " + idProductStructures +
+        " ) ORDER BY " + this.getProductsOrderByClause() + " LIMIT " + this.MAX_ITEMS_PER_PAGE + " OFFSET " + (page * this.MAX_ITEMS_PER_PAGE) + ";";
       return database.executeSql(select, []).then(result => {
         this.productList = [];
         for (let i = 0; i < result.rows.length; i++) {
@@ -152,8 +174,8 @@ MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por ca
         "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as nu_price, " +
         "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, " +
         "(select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse limit 1) as qu_stock, " +
-        'p.id_enterprise, p.co_enterprise FROM products p WHERE p.id_product_structure in ( ' + idProductStructures + 
-        ' ) AND p.id_enterprise = ? ORDER BY p.nu_priority ASC  LIMIT ' + this.MAX_ITEMS_PER_PAGE + " OFFSET " + (page * this.MAX_ITEMS_PER_PAGE) + ";";
+        'p.id_enterprise, p.co_enterprise FROM products p WHERE p.id_product_structure in ( ' + idProductStructures +
+        ' ) AND p.id_enterprise = ? ORDER BY ' + this.getProductsOrderByClause() + ' LIMIT ' + this.MAX_ITEMS_PER_PAGE + " OFFSET " + (page * this.MAX_ITEMS_PER_PAGE) + ";";
       return database.executeSql(select, [idEnterprise]).then(result => {
         this.productList = [];
         for (let i = 0; i < result.rows.length; i++) {
@@ -218,7 +240,7 @@ MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por ca
         //filtramos que solo aparezcan los productos del almacen del cliente
         select = select + 'AND p.id_product in (select s.id_product from stocks s where  s.id_warehouse = (SELECT id_warehouse FROM clients c WHERE c.id_client = ' + id_client + ' AND c.id_enterprise = p.id_enterprise)) ';
       }
-      select = select + "ORDER BY p.nu_priority ASC  limit ? offset ?"
+      select = select + "ORDER BY " + this.getProductsOrderByClause() + " limit ? offset ?"
       return database.executeSql(select, [this.MAX_ITEMS_PER_PAGE, offset]).then(result => {
         this.productList = [];
         for (let i = 0; i < result.rows.length; i++) {
@@ -264,7 +286,7 @@ MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por ca
         //filtramos que solo aparezcan los productos del almacen del cliente
         select = select + 'AND p.id_product in (select s.id_product from stocks s where  s.id_warehouse = (SELECT id_warehouse FROM clients c WHERE c.id_client = ' + id_client + ' AND c.id_enterprise = p.id_enterprise)) ';
       }
-      select = select + 'AND p.id_enterprise = ? ORDER BY p.nu_priority ASC limit ? offset ?'
+      select = select + 'AND p.id_enterprise = ? ORDER BY ' + this.getProductsOrderByClause() + ' limit ? offset ?'
       return database.executeSql(select, [idEnterprise, this.MAX_ITEMS_PER_PAGE, offset]).then(result => {
         this.productList = [];
         for (let i = 0; i < result.rows.length; i++) {
@@ -323,7 +345,7 @@ MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por ca
         //filtramos que solo aparezcan los productos del almacen del cliente
         select = select + 'AND p.id_product in (select s.id_product from stocks s where  s.id_warehouse = (SELECT id_warehouse FROM clients c WHERE c.id_client = ' + id_client + ' AND c.id_enterprise = p.id_enterprise)) ';
       }
-      select = select + " ORDER BY p.nu_priority ASC limit ? offset ?;"
+      select = select + " ORDER BY " + this.getProductsOrderByClause() + " limit ? offset ?;"
       return database.executeSql(select, [idEnterprise, this.MAX_ITEMS_PER_PAGE, offset]).then(result => {
         this.productList = [];
         for (let i = 0; i < result.rows.length; i++) {
@@ -372,7 +394,7 @@ MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por ca
         //filtramos que solo aparezcan los productos del almacen del cliente
         select = select + 'AND p.id_product in (select s.id_product from stocks s where  s.id_warehouse = (SELECT id_warehouse FROM clients c WHERE c.id_client = ' + id_client + ' AND c.id_enterprise = p.id_enterprise)) ';
       }
-      select = select + 'ORDER BY p.nu_priority ASC limit ? offset ?'
+      select = select + 'ORDER BY ' + this.getProductsOrderByClause() + ' limit ? offset ?'
       return database.executeSql(select, [idEnterprise, this.MAX_ITEMS_PER_PAGE, offset]).then(result => {
         this.productList = [];
         for (let i = 0; i < result.rows.length; i++) {
@@ -451,7 +473,7 @@ MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por ca
         select = select + 'AND p.id_product in (select s.id_product from stocks s where  s.id_warehouse = (SELECT id_warehouse FROM clients c WHERE c.id_client = ' + id_client + ' AND c.id_enterprise = p.id_enterprise)) ';
       }
       select = select +
-        'ORDER BY p.nu_priority ASC limit ? offset ?;'
+        'ORDER BY ' + this.getProductsOrderByClause() + ' limit ? offset ?;'
       return database.executeSql(select, [idEnterprise, this.MAX_ITEMS_PER_PAGE, offset]).then(result => {
         this.productList = [];
         for (let i = 0; i < result.rows.length; i++) {
@@ -499,7 +521,7 @@ MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por ca
         select = select + 'AND p.id_product in (select s.id_product from stocks s where  s.id_warehouse = (SELECT id_warehouse FROM clients c WHERE c.id_client = ' + id_client + ' AND c.id_enterprise = p.id_enterprise)) ';
       }
       select = select +
-        'ORDER BY p.nu_priority ASC limit ? offset ?';
+        'ORDER BY ' + this.getProductsOrderByClause() + ' limit ? offset ?';
       return database.executeSql(select, [idEnterprise, this.MAX_ITEMS_PER_PAGE, offset]).then(result => {
         this.productList = [];
         for (let i = 0; i < result.rows.length; i++) {
@@ -561,12 +583,19 @@ MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por ca
     }
 
     // always filter by enterprise
-    const whereTokens = tokenClauses.length ? tokenClauses.join(" AND ") + " AND p.id_enterprise = ?" : "p.id_enterprise = ?";
+    var whereTokens = tokenClauses.length ? tokenClauses.join(" AND ") + " AND p.id_enterprise = ?" : "p.id_enterprise = ?";
     params.push(idEnterprise);
 
-    //paginacion: limit y offset    
+    if (this.psService && this.psService.idProductStructureList.length > 0) {
+      whereTokens += " AND p.id_product_structure IN (" + this.psService.idProductStructureList.map(() => '?').join(',') + ")";
+      params.push(... this.psService.idProductStructureList);
+    }
+
+    //paginacion: limit y offset
     const offset = page * this.MAX_ITEMS_PER_PAGE;
     params.push(this.MAX_ITEMS_PER_PAGE, offset);
+
+    let orderByClause = this.getProductsOrderByClause();
 
     if (this.globalConfig.get("conversionByPriceList") == "true") {
       var select = "select p.id_product, p.co_product, p.na_product, p.points, p.tx_description, p.id_product_structure, p.nu_tax, (select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product order by l.na_list limit 1) as id_list, " +
@@ -574,7 +603,7 @@ MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por ca
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as nu_price_opposite, " +
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product order by l.na_list limit 1) as co_currency_opposite, " +
-        " (select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereTokens + " order by p.co_product ASC limit ? offset ?";
+        " (select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereTokens + " " + orderByClause + " limit ? offset ?";
       return database.executeSql(select, params).then(result => {
         for (let i = 0; i < result.rows.length; i++) {
           this.productList.push({
@@ -614,7 +643,7 @@ MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por ca
       "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list "+
       "where pl.id_product = p.id_product order by l.na_list limit 1) as co_currency, "+
       "(select s.qu_stock from stocks s where s.id_product = p.id_product) as qu_stock, "+
-      "p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereTokens + 
+      "p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereTokens +
       " order by p.co_product ASC limit ? offset ?";
       return database.executeSql(select, params).then(result => {
         for (let i = 0; i < result.rows.length; i++) {
@@ -674,15 +703,17 @@ MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por ca
     params.push(idEnterprise);
 
     // if a product structure selection exists, add it (numeric)
-    if (this.psService && this.psService.idProductStructureSeleccionada > 0) {
-      whereClause += " AND p.id_product_structure = ?";
-      params.push(this.psService.idProductStructureSeleccionada);
+    if (this.psService && this.psService.idProductStructureList.length > 0) {
+      whereClause += " AND p.id_product_structure IN (" + this.psService.idProductStructureList.map(() => '?').join(',') + ")";
+      params.push(...this.psService.idProductStructureList);
     }
 
     //limit and offset for pagination
     var offset = page * this.MAX_ITEMS_PER_PAGE;
     params.push(this.MAX_ITEMS_PER_PAGE, offset);
-    
+
+    let orderByClause = this.getProductsOrderByClause();
+
 
     this.productList = [];
     if (this.globalConfig.get("conversionByPriceList") == "true") {
@@ -691,7 +722,7 @@ MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por ca
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price_opposite, " +
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency_opposite, " +
-        " (select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereClause + " order by p.co_product ASC limit ? offset ?";
+        " (select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereClause + " " + orderByClause + " limit ? offset ?";
       return database.executeSql(select, params).then(result => {
         for (let i = 0; i < result.rows.length; i++) {
           this.productList.push({
@@ -991,6 +1022,6 @@ MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por ca
     product.coCurrency = product.coCurrencyOpposite;
     product.priceOpposite = tempPrice;
     product.coCurrencyOpposite = tempCurrency;
-    
+
   }
 }

@@ -42,26 +42,39 @@
           <ion-label class="textList">
             <p>{{ product.naProduct }}</p>
             <p>{{this.productsTabTags.get('PROD_COD_PROD')}}: {{ product.coProduct }}</p>
-            <p *ngIf="(product.txPacking) && (product.txPacking !== 'NULL')">{{ product.txPacking }}</p>
-            <p *ngIf="(product.txDimension) && (product.txDimension) !== 'NULL' ">{{ product.txDimension }}</p>
+            @if((product.txPacking) && (product.txPacking !== 'NULL')){
+            <p>{{ product.txPacking }}</p>
+            }
+            @if((product.txDimension) && (product.txDimension) !== 'NULL' ){
+            <p>{{ product.txDimension }}</p>
+            }
             <p>{{this.productsTabTags.get('PROD_PRICE_PROD')}}: {{ product.nuPrice ? formatNum(product.nuPrice) : 'N/A'
               }} {{
               product.coCurrency }} </p>
             @if(this.orderServ.vatExemptProducts){
             <p>{{orderServ.getTag("PED_IVA")}}:
               {{ product.nuTax }} %</p> }
+            @if((product.ivaProducto+product.discountedNuPrice) != product.nuPrice){
             <p>{{orderServ.getTag("PED_PRECIO+IVA")}}: {{formatNum(product.ivaProducto+product.discountedNuPrice)}} {{
-              product.coCurrency }}</p>
-            <p *ngIf="orderServ.showStock">{{this.productsTabTags.get('PROD_STOCK_PROD')}}: {{ product.quStock > 0 ?
-              quStock(product) :
-              0 }}</p>
+              product.coCurrency }}</p>}
             @if(orderServ.displayProductPoints){
             <p>{{this.productsTabTags.get('PROD_POINTS_PROD')}}: {{ product.quPoints }}</p>
             }
-            <p *ngIf="orderServ.productMinMul && product.quMinimum > 1">{{ orderServ.getTag("PED_MINIMO")}}: {{
+            @if(orderServ.productMinMul){
+            @if(product.quMinimum > 1){
+            <p>{{ orderServ.getTag("PED_MINIMO")}}: {{
               product.quMinimum }}</p>
-            <p *ngIf="orderServ.productMinMul && product.quMultiple > 1">{{ orderServ.getTag("PED_MULTIPLO")}}: {{
+            }
+            @if(product.quMultiple > 1){
+            <p>{{ orderServ.getTag("PED_MULTIPLO")}}: {{
               product.quMultiple }}</p>
+            }
+            }
+            @if(orderServ.showStock){
+            <p>{{this.productsTabTags.get('PROD_STOCK_PROD')}}: {{ product.quStock > 0 ?
+              quStock(product) :
+              0 }}</p>
+            }
 
 
           </ion-label>
@@ -119,8 +132,9 @@
                     [value]="product.idUnit" interface="popover" labelPlacement="stacked"
                     [placeholder]="orderServ.getTag('PED_PLACEHOLDER_UNIDAD')+':'"
                     (ionChange)="onSelectUnit($event, product)">
-                    <ion-select-option *ngFor="let unit of product.unitList" [value]="unit.idUnit">{{ unit.naUnit
-                      }}</ion-select-option>
+                    @for(unit of product.unitList; track unit.idUnit){
+                    <ion-select-option [value]="unit.idUnit">{{ unit.naUnit }}</ion-select-option>
+                    }
                   </ion-select>
                 </div>
               </ion-col>
@@ -258,26 +272,34 @@
                     productoModal.coCurrency }}</p>
                   <p><span class="titulosBold">{{orderServ.getTag("PED_IVA")}}:</span>
                     {{ productoModal.nuTax }} %</p>
+                  @if((productoModal.ivaProducto+productoModal.discountedNuPrice) != productoModal.nuPrice){
                   <p><span
                       class="titulosBold">{{orderServ.getTag("PED_PRECIO+IVA")}}:</span>{{formatNum(productoModal.ivaProducto+productoModal.discountedNuPrice)}}
                     {{
-                    productoModal.coCurrency }}</p>
-                  <p *ngIf="orderServ.showStock"><span
-                      class="titulosBold">{{this.productsTabTags.get('PROD_STOCK_PROD')}}:</span> {{
-                    productoModal.quStock
-                    > 0 ? quStock(productoModal) :
-                    0 }}</p>
+                    productoModal.coCurrency }}</p>}
                   @if(orderServ.displayProductPoints){
                   <p><span class="titulosBold">{{this.productsTabTags.get('PROD_POINTS_PROD')}}:</span> {{
                     productoModal.quPoints }}</p>
                   }
-                  <p *ngIf="orderServ.productMinMul && productoModal.quMinimum > 1"><span class="titulosBold">{{
+                  @if(orderServ.productMinMul){
+                  @if(productoModal.quMinimum > 1){
+                  <p><span class="titulosBold">{{
                       orderServ.getTag("PED_MINIMO")}}:</span> {{ productoModal.quMinimum }}</p>
-                  <p *ngIf="orderServ.productMinMul && productoModal.quMultiple > 1"><span class="titulosBold">{{
-                      orderServ.getTag("PED_MULTIPLO")}}:</span> {{ productoModal.quMultiple }}</p>
-                  @if(this.orderServ.vatExemptProducts){
-
                   }
+                  @if(productoModal.quMultiple > 1){
+                  <p><span class="titulosBold">{{
+                      orderServ.getTag("PED_MULTIPLO")}}:</span> {{ productoModal.quMultiple }}</p>
+                  }
+                  }
+                  @if(this.orderServ.vatExemptProducts){
+                  <p><span class="titulosBold">{{orderServ.getTag("PED_IVA")}}: </span>
+                    {{ productoModal.nuTax }} %</p>
+                  }
+                  @if(orderServ.showStock){
+                  <p><span class="titulosBold">{{this.productsTabTags.get('PROD_STOCK_PROD')}}:</span> {{
+                    productoModal.quStock
+                    > 0 ? quStock(productoModal) :
+                    0 }}</p>}
 
                 </ion-col>
               </ion-row>
