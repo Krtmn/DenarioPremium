@@ -424,7 +424,10 @@ export class PedidoComponent implements OnInit {
           item.iva = detail.iva;
           //descuentos
           let dc = item.discountList.find((d) => d.idDiscount == detail.idDiscount)!;
-          if (dc != undefined) {
+          if (this.orderServ.setProductDiscount) {
+            item.idDiscount = null;
+            item.quDiscount = detail.orderDetailDiscount?.[0]?.quDiscount ?? 0;
+          } else if (dc != undefined) {
             item.idDiscount = detail.idDiscount;
             item.quDiscount = dc.quDiscount;
           } else {
@@ -1137,7 +1140,7 @@ export class PedidoComponent implements OnInit {
 
   setClientfromSelector(cliente: Client, skipDebtValidation: boolean = false) {
     if (cliente) {
-      if (!skipDebtValidation
+      if (!skipDebtValidation && !this.orderServ.openOrder
         && Number(cliente.saldo1 ?? 0) > 0
         && this.orderServ.order?.stDelivery !== DELIVERY_STATUS_SENT
         && this.orderServ.order?.stDelivery !== null) {
@@ -1363,7 +1366,7 @@ export class PedidoComponent implements OnInit {
 
   canExportOrderSummaryPdf(): boolean {
     const stDelivery = this.orderServ.order?.stDelivery;
-    return stDelivery > 1 || stDelivery === null;
+    return stDelivery == 1 || stDelivery === null;
   }
 
   async createOrderSummaryPdf() {
@@ -1401,11 +1404,11 @@ export class PedidoComponent implements OnInit {
             { label: 'Items', value: String(items.length) }
           ],
           columns: [
-            { label: 'Código', align: 'left', width: '16%', noWrap: true },
-            { label: 'Producto', align: 'left', width: '50%', noWrap: true, maxLines: 2 },
+            { label: 'Código', align: 'left', width: '18%', noWrap: true, maxLines: 1 },
+            { label: 'Producto', align: 'left', width: '42%', noWrap: false, maxLines: 3 },
             { label: 'Cantidad', align: 'right', width: '12%', noWrap: true },
-            { label: 'Precio', align: 'right', width: '11%', noWrap: true },
-            { label: 'Subtotal', align: 'right', width: '11%', noWrap: true }
+            { label: 'Precio', align: 'right', width: '14%', noWrap: true },
+            { label: 'Subtotal', align: 'right', width: '14%', noWrap: true }
           ],
           rows,
           total: { label: 'Total', value: this.formatNum(Number(this.orderServ.totalPedido ?? 0)) + ' ' + currency },
@@ -1421,7 +1424,7 @@ export class PedidoComponent implements OnInit {
         try {
           await Share.share({
             title: `pedido_${idOrder}_${daOrder}.pdf`,
-            files: [result.uri]
+            url: result.uri
           });
 
 

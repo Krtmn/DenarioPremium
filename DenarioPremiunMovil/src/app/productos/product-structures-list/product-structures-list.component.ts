@@ -48,6 +48,9 @@ export class ProductStructuresListComponent  implements OnInit {
         }else{
           this.empresaSeleccionada = this.productService.empresaSeleccionada;
         }
+        //reseteamos busqueda.
+        this.productService.searchStructures = true;
+        this.productStructureService.idProductStructureList = [];
         this.multiempresa = this.enterpriseService.esMultiempresa();    
         this.getTypeProductStructures();
        }); 

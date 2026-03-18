@@ -79,14 +79,17 @@ export class CobrosDocumentComponent implements OnInit {
   public baseView: number = 0;
   public baseConversionView: number = 0;
   public valuePartialPayment: number = 0;
-
+  public discountView: number = 0;
+  public discountViewConversion: number = 0;
+  public ivaView: number = 0;
+  public ivaViewConversion: number = 0;
+  public totalView: number = 0;
+  public totalViewConversion: number = 0;
 
   public COLLECT_STATUS_SAVED = COLLECT_STATUS_SAVED;
   public COLLECT_STATUS_SENT = COLLECT_STATUS_SENT;
   public COLLECT_STATUS_TO_SEND = COLLECT_STATUS_TO_SEND;
   public COLLECT_STATUS_NEW = COLLECT_STATUS_NEW;
-
-
 
   public alertButtons = [
     /*  {
@@ -205,8 +208,6 @@ export class CobrosDocumentComponent implements OnInit {
     let newSaldoConversion = "0";
     let newSaldoView = "0";
     let newSaldoConversionView = "0";
-    let baseView = "0";
-    let baseViewConversion = "0";
 
     const commit = () => {
       this.saldo = newSaldo;
@@ -218,11 +219,23 @@ export class CobrosDocumentComponent implements OnInit {
         this.saldoConversionView = this.collectService.convertirMonto(docOriginal.nuBalance, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
         this.baseView = docOriginal.nuAmountBase;
         this.baseConversionView = this.collectService.convertirMonto(docOriginal.nuAmountBase, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
+        this.discountView = docOriginal.nuAmountDiscount ?? 0;
+        this.discountViewConversion = this.collectService.convertirMonto(docOriginal.nuAmountDiscount ?? 0, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
+        this.ivaView = docOriginal.nuAmountTax ?? 0;
+        this.ivaViewConversion = this.collectService.convertirMonto(docOriginal.nuAmountTax ?? 0, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
+        this.totalView = docOriginal.nuAmountTotal ?? 0;
+        this.totalViewConversion = this.collectService.convertirMonto(docOriginal.nuAmountTotal ?? 0, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
       } else {
         this.saldoConversionView = (docOriginal.nuBalance);
         this.saldoView = this.collectService.convertirMonto(docOriginal.nuBalance, this.collectService.collection.nuValueLocal, docOriginal.coCurrency);
         this.baseConversionView = (docOriginal.nuAmountBase);
         this.baseView = this.collectService.convertirMonto(docOriginal.nuAmountBase, this.collectService.collection.nuValueLocal, docOriginal.coCurrency);
+        this.discountViewConversion = (docOriginal.nuAmountDiscount ?? 0);
+        this.discountView = this.collectService.convertirMonto(docOriginal.nuAmountDiscount ?? 0, this.collectService.collection.nuValueLocal, docOriginal.coCurrency);
+        this.ivaViewConversion = (docOriginal.nuAmountTax ?? 0);
+        this.ivaView = this.collectService.convertirMonto(docOriginal.nuAmountTax ?? 0, this.collectService.collection.nuValueLocal, docOriginal.coCurrency);
+        this.totalViewConversion = (docOriginal.nuAmountTotal ?? 0);
+        this.totalView = this.collectService.convertirMonto(docOriginal.nuAmountTotal ?? 0, this.collectService.collection.nuValueLocal, docOriginal.coCurrency);
       }
       return true;
     };
