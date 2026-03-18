@@ -109,7 +109,7 @@
               <ion-col class="" size="12" size-sm="12" size-xs="12">
                 <ion-label>{{ orderServ.getTag("PED_LISTA_PRECIO")}}</ion-label>
               </ion-col>
-              <ion-col class="" size="12" size-sm="12" size-xs="12">
+              <ion-col class="" size="{{priceListColSize}}" size-sm="{{priceListColSize}}" size-xs="{{priceListColSize}}">
                 <div class="listado-tps-selector ion-text-center">
                   <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
                     [value]="product.idList" [disabled]="disablePriceListSelector"
@@ -120,6 +120,13 @@
                   </ion-select>
                 </div>
               </ion-col>
+              @if(orderServ.priceListInfoModal){
+              <ion-col class="" size="2" size-sm="2" size-xs="2">
+                <ion-button size="small" (click)="loadPriceListInfo(product)">
+                  <ion-icon name="information-circle-outline"></ion-icon>
+                </ion-button>
+              </ion-col>
+            }
 
 
               <!-- UNIDAD -->
@@ -178,12 +185,14 @@
 
               </ion-col>
 
-              <ion-col class="" size="2" size-sm="2" size-xs="2" *ngIf="product.discountList.length > 1">
+              @if(product.discountList.length > 1){
+              <ion-col class="" size="2" size-sm="2" size-xs="2">
                 <ion-button size="small" (click)="loadDiscount(product)">
                   <ion-icon name="information-circle-outline"></ion-icon>
                 </ion-button>
               </ion-col>
               }
+            }
 
               <!-- DESCUENTO MANUAL -->
               @if(orderServ.setProductDiscount){
@@ -326,7 +335,7 @@
                   <ion-col size="12" size-sm="12" size-xs="12">
                     <ion-label>{{ orderServ.getTag("PED_LISTA_PRECIO")}}</ion-label>
                   </ion-col>
-                  <ion-col size="12" size-sm="12" size-xs="12">
+                  <ion-col size="{{priceListColSize}}" size-sm="{{priceListColSize}}" size-xs="{{priceListColSize}}">
                     <div class="listado-tps-selector ion-text-center">
                       <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
                         [value]="productoModal.idList" interface="popover" labelPlacement="stacked"
@@ -336,8 +345,14 @@
                           price.naList }}</ion-select-option>
                       </ion-select>
                     </div>
-
                   </ion-col>
+                @if(orderServ.priceListInfoModal){
+                  <ion-col class="" size="2" size-sm="2" size-xs="2">
+                    <ion-button size="small" (click)="loadPriceListInfo(productoModal)">
+                      <ion-icon name="information-circle-outline"></ion-icon>
+                    </ion-button>
+                  </ion-col>
+                }
                   <!-- UNIDAD -->
                   <ion-col size="12" size-sm="12" size-xs="12">
                     <ion-label>{{ orderServ.getTag("PED_UNIDAD")}}</ion-label>
@@ -427,15 +442,42 @@
   <ion-modal id="eventModal2" size="cover" class="listado-product-structures modalActividades" [isOpen]="discountModal"
     (didDismiss)="showDiscountModal(false)">
     <ng-template>
-      <h1 class="ion-text-center"> Descuentos </h1>
+      <ion-card>
+      <ion-card-title class="ion-text-center modal-price-list-title"> Descuentos </ion-card-title>
       <ion-list>
-        <ion-item *ngFor="let dc of productoModal.discountList">
-          <div *ngIf="dc.quDiscount > 0">
-            {{orderServ.getTag("PED_DC")}} {{dc.quDiscount }}% {{orderServ.getTag("PED_DESDE")}} {{dc.quVolIni}}
-            {{dc.coUnit}}
-          </div>
-        </ion-item>
+        @for(dc of productoModal.discountList; track dc.idDiscount){
+          @if(dc.quDiscount > 0){
+          <ion-item>
+            <ion-card-content>
+            <div>
+              {{orderServ.getTag("PED_DC")}}
+              <span class="modal-price-list-name"> {{dc.quDiscount }}%  </span>
+              {{orderServ.getTag("PED_DESDE")}}
+              <span class="modal-price-list-name"> {{dc.quVolIni}} {{dc.coUnit}} </span>           
+            </div>
+            </ion-card-content>
+          </ion-item>
+        }
+      }
       </ion-list>
+      </ion-card>
+    </ng-template>
+  </ion-modal>
+  <!-- modal de info de lista de precios -->
+  <ion-modal id="eventModal3" size="cover" class="listado-product-structures modalActividades" [isOpen]="priceListInfoModal" (didDismiss)="showPriceListInfoModal(false)">
+    <ng-template>
+      <ion-card>
+        <ion-card-title class="ion-text-center modal-price-list-title" > {{productoModal.naProduct}}  </ion-card-title>
+        <ion-card-subtitle class="ion-text-center modal-price-list-title">{{ productoModal.coProduct }} </ion-card-subtitle>      <ion-list class="modal-price-list">
+      @for(pli of productoModal.listaModalList; track pli.pricelist.idPriceList){
+        <ion-item>
+          <ion-card-content>
+            <span class="modal-price-list-name">{{pli.list.naList}}</span>: {{pli.pricelist.nuPrice ? formatNum(pli.pricelist.nuPrice) : 'N/A'}} {{productoModal.coCurrency}}
+          </ion-card-content>
+        </ion-item>
+      }
+      </ion-list>
+      </ion-card>
     </ng-template>
   </ion-modal>
 </div>

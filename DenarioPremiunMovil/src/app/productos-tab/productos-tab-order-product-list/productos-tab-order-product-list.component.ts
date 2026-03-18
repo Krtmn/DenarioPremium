@@ -81,6 +81,8 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   public imagesMap: { [imgName: string]: string } = {};
   private subs = new Subscription();
 
+  priceListColSize = 12;
+  priceListInfoModal = false;
 
   constructor(
 
@@ -90,6 +92,11 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   ngOnInit() {
     console.log('Estoy en Pedido');
+
+    if (this.orderServ.priceListInfoModal) {
+      //hay que hacer espacio para el boton de info del pricelist
+      this.priceListColSize = 10;
+    }
     this.subs.add(
       this.imageServices.imageLoaded$.subscribe(({ imgName, imgSrc }) => {
         this.imagesMap[imgName] = imgSrc;
@@ -400,6 +407,15 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   showDiscountModal(val: boolean) {
     this.discountModal = val;
+  }
+
+  loadPriceListInfo(prod: OrderUtil) {
+    this.productoModal = prod;
+    this.showPriceListInfoModal(true);
+  }
+
+  showPriceListInfoModal(val: boolean) {
+    this.priceListInfoModal = val;
   }
 
   autoDiscount(prod: OrderUtil) {

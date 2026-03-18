@@ -110,7 +110,7 @@ export class SynchronizationDBService {
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
-  private CURRENT_DB_VERSION: number = 5;
+  private CURRENT_DB_VERSION: number = 6;
 
   constructor(
     private navController: NavController,
@@ -651,14 +651,14 @@ export class SynchronizationDBService {
   insertListBatch(arr: List[]) {
     var statements = [];
     let insertStatement = "INSERT OR REPLACE INTO lists(" +
-      'id_list,co_list,na_list,co_enterprise,id_enterprise' +
+      'id_list,co_list,na_list,co_enterprise,id_enterprise,show_only' +
       ') ' +
-      'VALUES(?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?)'
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
       statements.push([insertStatement, [obj.idList, obj.coList, obj.naList,
-      obj.coEnterprise, obj.idEnterprise]])
+      obj.coEnterprise, obj.idEnterprise, obj.showOnly]])
     }
 
     return this.database.sqlBatch(statements).then(res => {
