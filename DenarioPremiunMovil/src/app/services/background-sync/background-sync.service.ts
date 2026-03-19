@@ -14,7 +14,7 @@ import { ServicesService } from '../services.service';
 export class BackgroundSyncService {
   private started = false;
   private syncing = false;
-  private readonly intervalMs = 20 * 1000; // 20 seconds for rapid polling during dev
+  private readonly intervalMs = 5 * 60 * 1000; // 5 minutes
   private timerId?: ReturnType<typeof setInterval>;
   // Tablas a sincronizar en segundo plano (IDs de tableKeyMap en synchronization.component)
   private readonly backgroundTableIds = [6, 13, 23, 25]; //document_sales, price_lists, lists, stocks
@@ -166,7 +166,7 @@ export class BackgroundSyncService {
         const sqlInfo = this.sqlTableMap[key as string];
 
         if (!resTable) {
-          console.error(`[BackgroundSync] No data for key=${key} (tableId=${tableId})`);
+          //console.error(`[BackgroundSync] No data for key=${key} (tableId=${tableId})`);
           break;
         }
 
