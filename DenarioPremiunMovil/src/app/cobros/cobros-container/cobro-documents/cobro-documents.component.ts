@@ -642,7 +642,7 @@ export class CobrosDocumentComponent implements OnInit {
   selectDocumentSale(documentSale: DocumentSale, indexDocumentSale: number, event: any) {
     documentSale.isSelected = event.detail.checked;
     console.log(indexDocumentSale);
-    if (documentSale.nuBalance < 0 && this.collectService.collection.collectionDetails.length == 0) {
+    if (documentSale.nuBalance < 0 && this.collectService.collection.collectionDetails.length == 0 && this.collectService.coTypeModule == '0') {
       /*     if (documentSale.coDocumentSaleType == "NC" && this.collectService.collection.collectionDetails.length == 0) {
        */
 
