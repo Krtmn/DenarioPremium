@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges, ViewChild, inject } from '@angular/core';
 import { ProductUtil } from 'src/app/modelos/ProductUtil';
 import { Inventarios } from 'src/app/modelos/inventarios';
 import { ClientStocksDetail, ClientStocksDetailUnits } from 'src/app/modelos/tables/client-stocks';
@@ -12,7 +12,7 @@ import { InventariosLogicService } from 'src/app/services/inventarios/inventario
   styleUrls: ['./inventario-type-stocks.component.scss'],
   standalone: false
 })
-export class InventarioTypeStocksComponent implements OnInit {
+export class InventarioTypeStocksComponent implements OnInit, OnChanges {
 
 
   public inventariosLogicService = inject(InventariosLogicService)
@@ -30,12 +30,122 @@ export class InventarioTypeStocksComponent implements OnInit {
   public typeStockMethod: string = "";
   public expirationBatch: Boolean = false;
   public showEventModal: Boolean = false;
+  public showCompactDateModal = false;
+  @Input()
+  initialTypeStock: 'exh' | 'dep' | '' = '';
+  @Input()
+  showTypePicker = true;
 
 
   constructor() { }
 
   ngOnInit() {
     this.expirationBatch = this.globalConfig.get('expirationBatch') === 'true' ? true : false;
+    this.ensureInitialTypeStock();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['initialTypeStock'] && !changes['initialTypeStock'].firstChange) {
+      this.ensureInitialTypeStock();
+    }
+  }
+
+  private ensureInitialTypeStock() {
+    const selectedProduct = this.inventariosLogicService.productSelected;
+    const typeToSet = this.initialTypeStock || this.inventariosLogicService.selectedInventoryType;
+
+    if (!selectedProduct?.idProduct || !typeToSet) {
+      return;
+    }
+
+    const existsForType = this.inventariosLogicService.typeStocks.some(typeStock =>
+      typeStock.idProduct === selectedProduct.idProduct && typeStock.tipo === typeToSet
+    );
+
+    if (!existsForType) {
+      this.addClientStocktMethod(
+        typeToSet,
+        this.inventariosLogicService.typeStocks.length,
+        selectedProduct
+      );
+    }
+  }
+
+  get compactTypeStock(): 'exh' | 'dep' {
+    const type = this.initialTypeStock || this.inventariosLogicService.selectedInventoryType;
+    return type === 'dep' ? 'dep' : 'exh';
+  }
+
+  get compactTypeStockLabel(): string {
+    if (this.compactTypeStock === 'dep') {
+      return this.inventariosLogicService.inventarioTags.get('INV_TYPESTOCK_DEP') || 'Deposito';
+    }
+    return this.inventariosLogicService.inventarioTags.get('INV_TYPESTOCK_EXH') || 'Exhibicion';
+  }
+
+  get currentTypeStock(): Inventarios | undefined {
+    const currentIndex = this.getCurrentTypeStockIndex();
+    if (currentIndex < 0) {
+      return undefined;
+    }
+    return this.inventariosLogicService.typeStocks[currentIndex];
+  }
+
+  private getCurrentTypeStockIndex(): number {
+    const productId = this.inventariosLogicService.productSelected?.idProduct;
+    if (!productId) {
+      return -1;
+    }
+
+    return this.inventariosLogicService.typeStocks.findIndex(typeStock =>
+      typeStock.idProduct === productId && typeStock.tipo === this.compactTypeStock
+    );
+  }
+
+  onCompactCantidadChange(event: any) {
+    const currentIndex = this.getCurrentTypeStockIndex();
+    const productId = this.inventariosLogicService.productSelected?.idProduct;
+    if (currentIndex < 0 || !productId) {
+      return;
+    }
+
+    const value = event?.detail?.value ?? event?.target?.value;
+    this.setCantidad({ target: { value } }, productId, currentIndex, this.compactTypeStock);
+  }
+
+  onCompactLoteChange(event: any) {
+    const currentIndex = this.getCurrentTypeStockIndex();
+    const productId = this.inventariosLogicService.productSelected?.idProduct;
+    if (currentIndex < 0 || !productId) {
+      return;
+    }
+
+    const value = event?.detail?.value ?? event?.target?.value;
+    this.setLote({ target: { value } }, currentIndex, productId, this.compactTypeStock);
+  }
+
+  onCompactUnidadChange(unit: any) {
+    const currentIndex = this.getCurrentTypeStockIndex();
+    if (currentIndex < 0) {
+      return;
+    }
+
+    this.selectProducUnit({ target: { value: unit } }, currentIndex, this.compactTypeStock);
+  }
+
+  onCompactFechaChange(fecha: string) {
+    const currentIndex = this.getCurrentTypeStockIndex();
+    const productId = this.inventariosLogicService.productSelected?.idProduct;
+    if (currentIndex < 0 || !productId || !fecha) {
+      return;
+    }
+
+    this.inventariosLogicService.typeStocks[currentIndex].fechaVencimiento = fecha;
+    this.getFechaValor(fecha, currentIndex, productId, this.compactTypeStock);
+  }
+
+  setShowCompactDateModal(value: boolean) {
+    this.showCompactDateModal = value;
   }
 
 

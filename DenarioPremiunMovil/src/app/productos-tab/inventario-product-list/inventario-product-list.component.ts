@@ -17,6 +17,14 @@ import { SynchronizationDBService } from 'src/app/services/synchronization/synch
 import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND, VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED } from 'src/app/utils/appConstants'
 import { Subscription } from 'rxjs/internal/Subscription';
 import { InfiniteScrollCustomEvent, IonInfiniteScroll } from '@ionic/angular';
+import { Unit } from 'src/app/modelos/tables/unit';
+
+interface InventoryLotRow {
+  cantidad: number | null;
+  lote: string;
+  fechaVencimiento: string;
+  unidad: Unit | null;
+}
 
 @Component({
   selector: 'inventario-product-list',
@@ -59,6 +67,12 @@ export class InventarioProductListComponent implements OnInit {
   public loteSeleccionado!: string;
   public showProductStructure: Boolean = true;
   public esconder: Boolean = false;
+  public showTypeStocksModal = false;
+  public selectedInventoryType: 'exh' | 'dep' = 'exh';
+  public inventoryFilter: 'all' | 'inventoried' = 'all';
+  public inventoryRows: InventoryLotRow[] = [];
+  public expirationBatch = false;
+  public inventoriedProductLocations = new Map<number, Set<'exh' | 'dep'>>();
   public typeStockMethod: string = "";
   public imagesMap: { [imgName: string]: string } = {};
   searchSub: any;
@@ -66,7 +80,7 @@ export class InventarioProductListComponent implements OnInit {
   returnBackSub: any;
   private subs = new Subscription();
   noProductsAlertShown = false;
-  
+
   @ViewChild(IonInfiniteScroll)
   infiniteScroll!: IonInfiniteScroll;
 
@@ -76,6 +90,8 @@ export class InventarioProductListComponent implements OnInit {
   }
 
   ngOnInit() {
+
+    this.expirationBatch = this.globalConfig.get('expirationBatch') === 'true';
 
     this.subs.add(
       this.serviceImages.imageLoaded$.subscribe(({ imgName, imgSrc }) => {
@@ -99,6 +115,7 @@ export class InventarioProductListComponent implements OnInit {
             this.noProductsAlertShown = false;
             this.inventariosLogicService.newClientStock.productList = this.productService.productList;
             this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
+            this.refreshInventoriedProducts();
             /* this.inventariosLogicService.setVariablesMap(); */
           });
       }
@@ -118,6 +135,7 @@ export class InventarioProductListComponent implements OnInit {
       this.noProductsAlertShown = false;
       this.inventariosLogicService.newClientStock.productList = this.productService.productList;
       this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
+      this.refreshInventoriedProducts();
       //  });
     });
 
@@ -133,6 +151,7 @@ export class InventarioProductListComponent implements OnInit {
           this.inventariosLogicService.showProductList = data;
           this.inventariosLogicService.newClientStock.productList = this.productService.productList;
           this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
+          this.refreshInventoriedProducts();
         }
         )
     });
@@ -149,6 +168,7 @@ export class InventarioProductListComponent implements OnInit {
           this.inventariosLogicService.showProductList = true;
           this.inventariosLogicService.newClientStock.productList = this.productService.productList;
           this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
+          this.refreshInventoriedProducts();
         }
         )
     });
@@ -183,89 +203,283 @@ export class InventarioProductListComponent implements OnInit {
     this.inventariosLogicService.productSelected = prod;
     this.inventariosLogicService.productSelectedIndex = index;
     this.inventariosLogicService.productSelected.images = this.serviceImages.getImgForProduct(prod.coProduct) ?? undefined;
-    let newTypeStock = false;
     this.esconder = true;
-    this.inventariosLogicService.typeExh = false;
-    this.inventariosLogicService.typeDep = false;
-    let indexDetail = this.inventariosLogicService.productTypeStocksMap.get(this.inventariosLogicService.productSelected.idProduct)
-
-    if (this.inventariosLogicService.newClientStock.stDelivery == DELIVERY_STATUS_SAVED) {
-      //ES UN INVENTARIO GUARDADO
-      if (this.inventariosLogicService.newClientStock.clientStockDetails == undefined
-        || this.inventariosLogicService.newClientStock.clientStockDetails.length == 0) {
-        this.inventariosLogicService.productTypeStocksMap.set(this.inventariosLogicService.productSelected.idProduct, 0);
-        newTypeStock = true;
-      } else if (indexDetail == undefined) {
-        this.inventariosLogicService.productTypeStocksMap.set(this.inventariosLogicService.productSelected.idProduct,
-          this.inventariosLogicService.newClientStock.clientStockDetails.length);
-
-        newTypeStock = true;
-      } else {
-        newTypeStock = false;
-
-      }
-    } else if (this.inventariosLogicService.newClientStock.clientStockDetails == undefined) {
-      this.inventariosLogicService.productTypeStocksMap.set(this.inventariosLogicService.productSelected.idProduct, 0);
-      newTypeStock = true;
-    } else if (this.inventariosLogicService.newClientStock.clientStockDetails.length == 0) {
-      //ES UN INVENTARIO NUEVO
-      /* this.inventariosLogicService.newClientStock.clientStockDetails[index] = [] as Inventarios[]; */
-      this.inventariosLogicService.productTypeStocksMap.set(this.inventariosLogicService.productSelected.idProduct, 0);
-      newTypeStock = true;
-    } else if (this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!] == undefined) {
-      //NO EXISTE ESTE DETAIL
-      //NO TENGO EL PRODUCTO
-      this.inventariosLogicService.productTypeStocksMap.set(this.inventariosLogicService.productSelected.idProduct,
-        this.inventariosLogicService.newClientStock.clientStockDetails.length);
-      newTypeStock = true
-    } else if (this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].idProduct == prod.idProduct) {
-      //YA TENGO EL PRODUCTO
-      newTypeStock = false;
-    } else {
-      //NO TENGO EL PRODUCTO
-      this.inventariosLogicService.productTypeStocksMap.set(this.inventariosLogicService.productSelected.idProduct,
-        this.inventariosLogicService.newClientStock.clientStockDetails.length);
-      newTypeStock = true
-    }
+    this.inventariosLogicService.selectedInventoryType = this.selectedInventoryType;
 
     this.message.showLoading().then(() => {
-      if (newTypeStock) {
-        /* for (var i = 0; i < this.inventariosLogicService.newClientStock.productList[index].typeStocks!.length; i++)
-          if (this.inventariosLogicService.newClientStock.productList[index].typeStocks![i].tipo == 'exh')
-            this.inventariosLogicService.typeExh = true;
-          else
-            this.inventariosLogicService.typeDep = true; */
+      this.productService.getUnitsByIdProductOrderByCoPrimaryUnit(this.db.getDatabase(), prod.idProduct).then(() => {
+        const units = this.productService.unitsByProduct || [];
+        this.inventariosLogicService.newClientStock.productList[index].productUnitList = units;
+        this.inventariosLogicService.unitSelected = units[0];
+        this.inventariosLogicService.showHeaderButtonsFunction(false);
+        this.loadInventoryRowsForSelectedProduct(units);
+        this.showTypeStocksModal = true;
+        this.message.hideLoading();
+      });
+    })
+  }
 
+  private loadInventoryRowsForSelectedProduct(units: Unit[]) {
+    const selectedProduct = this.inventariosLogicService.productSelected;
+    const detail = this.inventariosLogicService.newClientStock.clientStockDetails?.find(d => d.idProduct === selectedProduct.idProduct);
+    const location = this.selectedInventoryType;
 
-        this.productService.getUnitsByIdProductOrderByCoPrimaryUnit(this.db.getDatabase(), prod.idProduct).then(() => {
-          this.inventariosLogicService.newClientStock.productList[index].productUnitList = this.productService.unitsByProduct;
-          this.inventariosLogicService.unitSelected = this.productService.unitsByProduct[0];
-          this.inventariosLogicService.showHeaderButtonsFunction(false);
-          this.inventariosLogicService.inventarioComp = false;
-          this.inventariosLogicService.typeStocksComponent = true;
-          this.inventariosLogicService.isEdit = true;
-          this.message.hideLoading();
-        });
-      } else {
-        this.productService.getUnitsByIdProductOrderByCoPrimaryUnit(this.db.getDatabase(), prod.idProduct).then(() => {
+    if (!detail?.clientStockDetailUnits?.length) {
+      this.inventoryRows = [this.createEmptyInventoryRow(units[0] || null)];
+      return;
+    }
 
-          for (var i = 0; i < this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits.length; i++)
-            if (this.inventariosLogicService.newClientStock.clientStockDetails[indexDetail!].clientStockDetailUnits[i].ubicacion == 'exh')
-              this.inventariosLogicService.typeExh = true;
-            else
-              this.inventariosLogicService.typeDep = true;
+    const rows = detail.clientStockDetailUnits
+      .filter(unit => unit.ubicacion === location)
+      .map(unit => {
+        const matchedUnit = units.find(u => u.idProductUnit === unit.idProductUnit) || units[0] || null;
+        return {
+          cantidad: unit.quStock,
+          lote: unit.nuBatch || '',
+          fechaVencimiento: unit.daExpiration || this.dateServ.hoyISO(),
+          unidad: matchedUnit,
+        } as InventoryLotRow;
+      });
 
-          this.inventariosLogicService.newClientStock.productList[index].productUnitList = this.productService.unitsByProduct;
-          this.inventariosLogicService.unitSelected = this.productService.unitsByProduct[0];
+    this.inventoryRows = rows.length ? rows : [this.createEmptyInventoryRow(units[0] || null)];
+  }
 
-          this.inventariosLogicService.showHeaderButtonsFunction(false);
-          this.inventariosLogicService.inventarioComp = false;
-          this.inventariosLogicService.typeStocksComponent = true;
-          this.message.hideLoading();
+  private createEmptyInventoryRow(defaultUnit: Unit | null): InventoryLotRow {
+    return {
+      cantidad: null,
+      lote: '',
+      fechaVencimiento: this.dateServ.hoyISO(),
+      unidad: defaultUnit,
+    };
+  }
 
+  addInventoryRow() {
+    const defaultUnit = this.inventariosLogicService.productSelected?.productUnitList?.[0] || null;
+    this.inventoryRows.push(this.createEmptyInventoryRow(defaultUnit));
+  }
+
+  removeInventoryRow(index: number) {
+    if (this.inventoryRows.length === 1) {
+      return;
+    }
+    this.inventoryRows.splice(index, 1);
+  }
+
+  saveInventoryRows() {
+    const cleanRows = this.inventoryRows.filter(row =>
+      row.cantidad !== null || row.lote.trim().length > 0 || !!row.unidad
+    );
+
+    if (cleanRows.length === 0) {
+      this.showValidationMessage('Debe ingresar al menos un registro de inventario.');
+      return;
+    }
+
+    const invalid = cleanRows.some(row => {
+      const invalidQuantity = !row.cantidad || Number(row.cantidad) <= 0;
+      const invalidUnit = !row.unidad;
+      const invalidBatch = this.expirationBatch && !row.lote.trim();
+      const invalidDate = !row.fechaVencimiento;
+      return invalidQuantity || invalidUnit || invalidBatch || invalidDate;
+    });
+
+    if (invalid) {
+      this.showValidationMessage('Complete cantidad, unidad, fecha y lote para continuar.');
+      return;
+    }
+
+    this.applyRowsToInventory(cleanRows);
+    this.inventariosLogicService.updateHeaderButtons();
+    this.inventariosLogicService.isEdit = true;
+    this.closeTypeStocksModal();
+  }
+
+  private showValidationMessage(message: string) {
+    this.messageAlert = new MessageAlert(
+      this.productsTabTags.get('INV_HEADER_MESSAGE') || 'Inventario',
+      message,
+    );
+    this.message.alertModal(this.messageAlert);
+  }
+
+  private applyRowsToInventory(rows: InventoryLotRow[]) {
+    const selectedProduct = this.inventariosLogicService.productSelected;
+    const location = this.selectedInventoryType;
+
+    this.inventariosLogicService.typeStocks = this.inventariosLogicService.typeStocks.filter(typeStock =>
+      !(typeStock.idProduct === selectedProduct.idProduct && typeStock.tipo === location)
+    );
+
+    let detail = this.inventariosLogicService.newClientStock.clientStockDetails.find(d => d.idProduct === selectedProduct.idProduct);
+    if (!detail) {
+      detail = {} as ClientStocksDetail;
+      detail.idClientStockDetail = 0;
+      detail.coClientStockDetail = this.dateServ.generateCO(0);
+      detail.coClientStock = this.inventariosLogicService.newClientStock.coClientStock;
+      detail.idProduct = selectedProduct.idProduct;
+      detail.coProduct = selectedProduct.coProduct;
+      detail.naProduct = selectedProduct.naProduct;
+      detail.coEnterprise = this.inventariosLogicService.newClientStock.coEnterprise;
+      detail.idEnterprise = this.inventariosLogicService.newClientStock.idEnterprise;
+      detail.posicion = 0;
+      detail.isEdit = true;
+      detail.isSave = true;
+      detail.clientStockDetailUnits = [] as ClientStocksDetailUnits[];
+      this.inventariosLogicService.newClientStock.clientStockDetails.push(detail);
+    }
+
+    detail.clientStockDetailUnits = (detail.clientStockDetailUnits || []).filter(unit => unit.ubicacion !== location);
+
+    rows.forEach((row, idx) => {
+      const unit = row.unidad!;
+
+      const typeStock = {} as Inventarios;
+      typeStock.tipo = location;
+      typeStock.idProduct = selectedProduct.idProduct;
+      typeStock.fechaVencimiento = row.fechaVencimiento;
+      typeStock.validateCantidad = Number(row.cantidad) > 0;
+      typeStock.validateLote = this.expirationBatch ? row.lote.trim().length > 0 : true;
+      typeStock.showDateModalDep = false;
+      typeStock.showDateModalExh = false;
+      typeStock.clientStockDetail = [detail];
+      typeStock.cantidad = Number(row.cantidad);
+      typeStock.lote = row.lote;
+      typeStock.unidad = unit.naUnit;
+      this.inventariosLogicService.typeStocks.push(typeStock);
+
+      const detailUnit = {} as ClientStocksDetailUnits;
+      detailUnit.idClientStockDetailUnit = 0;
+      detailUnit.coClientStockDetailUnit = this.dateServ.generateCO(1);
+      detailUnit.coClientStockDetail = detail!.coClientStockDetail;
+      detailUnit.idProductUnit = unit.idProductUnit;
+      detailUnit.coProductUnit = unit.coProductUnit;
+      detailUnit.idUnit = unit.idUnit;
+      detailUnit.coUnit = unit.coUnit;
+      detailUnit.quUnit = unit.quUnit;
+      detailUnit.naUnit = unit.naUnit;
+      detailUnit.quStock = Number(row.cantidad);
+      detailUnit.quSuggested = 0;
+      detailUnit.coEnterprise = this.inventariosLogicService.newClientStock.coEnterprise;
+      detailUnit.idEnterprise = this.inventariosLogicService.newClientStock.idEnterprise;
+      detailUnit.ubicacion = location;
+      detailUnit.isEdit = true;
+      detailUnit.isSave = true;
+      detailUnit.posicion = idx;
+      detailUnit.nuBatch = row.lote.trim();
+      detailUnit.daExpiration = row.fechaVencimiento;
+      detail.clientStockDetailUnits.push(detailUnit);
+    });
+
+    const detailIndex = this.inventariosLogicService.newClientStock.clientStockDetails.findIndex(d => d.idProduct === selectedProduct.idProduct);
+    if (detailIndex >= 0) {
+      this.inventariosLogicService.productTypeStocksMap.set(selectedProduct.idProduct, detailIndex);
+    }
+
+    this.inventariosLogicService.typeExh = this.inventariosLogicService.typeStocks.some(stock => stock.tipo === 'exh');
+    this.inventariosLogicService.typeDep = this.inventariosLogicService.typeStocks.some(stock => stock.tipo === 'dep');
+    this.inventariosLogicService.onStockValidToSave(true);
+    this.inventariosLogicService.onStockValidToSend(true);
+    this.refreshInventoriedProducts();
+  }
+
+  refreshInventoriedProducts() {
+    this.inventoriedProductLocations.clear();
+    const details = this.inventariosLogicService.newClientStock.clientStockDetails || [];
+
+    details.forEach(detail => {
+      if (detail?.idProduct && detail.clientStockDetailUnits?.length) {
+        detail.clientStockDetailUnits.forEach(unit => {
+          if (Number(unit.quStock) <= 0) {
+            return;
+          }
+
+          const normalizedLocation = this.normalizeInventoryLocation(unit.ubicacion);
+          if (!normalizedLocation) {
+            return;
+          }
+
+          const currentLocations = this.inventoriedProductLocations.get(detail.idProduct) || new Set<'exh' | 'dep'>();
+          currentLocations.add(normalizedLocation);
+          this.inventoriedProductLocations.set(detail.idProduct, currentLocations);
         });
       }
-    })
+    });
+  }
+
+  private normalizeInventoryLocation(value: string | undefined | null): 'exh' | 'dep' | null {
+    const location = (value || '').toLowerCase();
+    if (location === 'exh' || location.includes('exhib')) {
+      return 'exh';
+    }
+    if (location === 'dep' || location.includes('depo')) {
+      return 'dep';
+    }
+    return null;
+  }
+
+  isProductInventoried(product: ProductUtil): boolean {
+    const locations = this.inventoriedProductLocations.get(product.idProduct);
+    return !!locations && locations.size > 0;
+  }
+
+  isProductInventoriedBySelectedType(product: ProductUtil): boolean {
+    const locations = this.inventoriedProductLocations.get(product.idProduct);
+    return !!locations && locations.has(this.selectedInventoryType);
+  }
+
+  getInventoryLocationLabel(product: ProductUtil): string {
+    const locations = this.inventoriedProductLocations.get(product.idProduct);
+    if (!locations || locations.size === 0) {
+      return '';
+    }
+
+    const labels: string[] = [];
+    if (locations.has('exh')) {
+      labels.push(this.productsTabTags.get('INV_TYPESTOCK_EXH') || 'Exhibicion');
+    }
+    if (locations.has('dep')) {
+      labels.push(this.productsTabTags.get('INV_TYPESTOCK_DEP') || 'Deposito');
+    }
+
+    return labels.join(' / ');
+  }
+
+  onInventoryTypeChanged(type: string | number | undefined | null) {
+    const normalizedType: 'exh' | 'dep' = type === 'dep' ? 'dep' : 'exh';
+    this.selectedInventoryType = normalizedType;
+    this.inventariosLogicService.selectedInventoryType = normalizedType;
+  }
+
+  onInventoryFilterChanged(value: string | number | undefined | null) {
+    const filter = value === 'inventoried' ? 'inventoried' : 'all';
+    this.inventoryFilter = filter;
+  }
+
+  getVisibleProducts(): ProductUtil[] {
+    const productList = this.inventariosLogicService.newClientStock.productList || [];
+    const search = (this.searchText || '').trim().toLowerCase();
+
+    return productList.filter(product => {
+      const matchSearch = !search
+        || product.coProduct.toLowerCase().includes(search)
+        || product.naProduct.toLowerCase().includes(search);
+
+      if (!matchSearch) {
+        return false;
+      }
+
+      const isInventoried = this.isProductInventoriedBySelectedType(product);
+      if (this.inventoryFilter === 'inventoried') {
+        return isInventoried;
+      }
+
+      return true;
+    });
+  }
+
+  closeTypeStocksModal() {
+    this.showTypeStocksModal = false;
+    this.inventoryRows = [];
   }
 
   compareWith(o1: any, o2: any) {
@@ -284,7 +498,7 @@ export class InventarioProductListComponent implements OnInit {
         this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
           this.searchText, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault, this.page).then(() => {
 
-            this.inventariosLogicService.newClientStock.productList = 
+            this.inventariosLogicService.newClientStock.productList =
             [...this.inventariosLogicService.newClientStock.productList, ...this.productService.productList];
             if (this.productService.productList.length < this.productService.MAX_ITEMS_PER_PAGE) {
               this.infiniteScroll.disabled = true;

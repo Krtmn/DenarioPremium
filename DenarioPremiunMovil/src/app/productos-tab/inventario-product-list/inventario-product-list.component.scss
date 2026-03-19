@@ -33,3 +33,177 @@
   margin: 0;
 
 }
+
+.inventory-type-selector {
+  background: #f4f6f9;
+  border-bottom: 1px solid #dfe3e8;
+}
+
+.selector-title {
+  color: #4d4d4d;
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.inventory-filter-title {
+  margin-top: 10px;
+}
+
+.inventory-type-selector ion-segment {
+  --background: #e9edf3;
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.inventory-type-selector ion-segment-button {
+  --border-radius: 10px;
+  min-height: 36px;
+}
+
+.inventory-type-selector ion-segment-button ion-label {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.inventory-filter-segment {
+  margin-top: 2px;
+}
+
+.inventory-filter-segment ion-segment-button ion-label {
+  font-size: 11px;
+}
+
+.product-location-chip {
+  color: #2a5fa8;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.product-inventoried-chip {
+  color: #2f7d32;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+ion-modal.inventory-type-stocks-modal {
+  --width: min(620px, 94vw);
+  --height: min(640px, 84vh);
+  --border-radius: 18px;
+}
+
+.inventory-modal-toolbar {
+  --background: #daab19;
+  --color: #202020;
+  --min-height: 54px;
+}
+
+.inventory-modal-title {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.modal-product-name {
+  color: #1f1f1f;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 auto;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-icon-btn {
+  --border-radius: 12px;
+  --padding-end: 8px;
+  --padding-start: 8px;
+  height: 34px;
+  width: 34px;
+}
+
+.header-icon-btn ion-icon {
+  font-size: 18px;
+}
+
+.close-btn {
+  --color: #4e4e4e;
+}
+
+.save-btn {
+  --background: #59b02d;
+  --background-hover: #59b02d;
+  --background-activated: #4f9d28;
+  --color: #ffffff;
+}
+
+ion-modal.inventory-type-stocks-modal ion-content.compact-modal-content {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+}
+
+.compact-capture-list {
+  background: transparent;
+  padding-bottom: 6px;
+}
+
+.capture-row-card {
+  border: 1px solid #e3e6eb;
+  border-radius: 12px;
+  box-shadow: none;
+  margin: 8px 0;
+}
+
+.capture-row-card ion-card-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.capture-row-card ion-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  margin-bottom: 6px;
+}
+
+.add-lot-button {
+  --background: #59b02d;
+  --background-hover: #59b02d;
+  --background-activated: #4f9d28;
+  --color: #ffffff;
+  --padding-end: 10px;
+  --padding-start: 10px;
+  height: 36px;
+  margin-top: 6px;
+  width: 36px;
+}
+
+.add-lot-button ion-icon {
+  font-size: 18px;
+}
+
+.add-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.row-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.delete-row-btn {
+  --color: #d62828;
+}
+
+.delete-row-btn ion-icon {
+  font-size: 18px;
+}

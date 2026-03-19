@@ -1,4 +1,89 @@
-<ion-grid>
+<ion-grid *ngIf="!showTypePicker">
+  <ion-row>
+    <ion-col size="12">
+      <div class="product-card compact-stock-card">
+        <div class="compact-header">
+          <img class="compact-product-image" alt="" src="{{inventariosLogicService.productSelected.images}}" />
+          <div>
+            <p class="compact-product-name">{{inventariosLogicService.productSelected.naProduct}}</p>
+            <ion-chip color="primary" outline="true">
+              <ion-label>{{compactTypeStockLabel}}</ion-label>
+            </ion-chip>
+          </div>
+        </div>
+
+        <ion-list lines="none" *ngIf="currentTypeStock as typeStock">
+          <ion-item>
+            <ion-input
+              label="{{this.inventariosLogicService.inventarioTags.get('INV_CANTIDAD') || 'Cantidad'}}"
+              label-placement="stacked"
+              type="number"
+              fill="outline"
+              min="1"
+              [value]="typeStock.cantidad"
+              (ionChange)="onCompactCantidadChange($event)">
+            </ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-select
+              label="{{this.inventariosLogicService.inventarioTags.get('INV_SELECTOR_PLACEHOLDER') || 'Unidad'}}"
+              label-placement="stacked"
+              interface="popover"
+              [ngModel]="typeStock.unidad || inventariosLogicService.productSelected.productUnitList?.[0]"
+              (ngModelChange)="onCompactUnidadChange($event)">
+              <ion-select-option
+                *ngFor="let producUnit of inventariosLogicService.productSelected.productUnitList"
+                [value]="producUnit">
+                {{ producUnit.naUnit }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item>
+            <ion-input
+              label="{{this.inventariosLogicService.inventarioTags.get('INV_LOTE') || 'Lote'}}"
+              label-placement="stacked"
+              fill="outline"
+              [value]="typeStock.lote"
+              (ionChange)="onCompactLoteChange($event)">
+            </ion-input>
+          </ion-item>
+
+          <ion-item lines="none" class="compact-date-item">
+            <ion-label>
+              {{this.inventariosLogicService.inventarioTags.get('INV_FECHAVENCIMIENTO') || 'Fecha de vencimiento'}}
+            </ion-label>
+            <ion-button fill="outline" size="small" (click)="setShowCompactDateModal(true)">
+              {{ dateServ.formatShort(typeStock.fechaVencimiento) }}
+            </ion-button>
+          </ion-item>
+        </ion-list>
+
+        <ion-text color="danger" *ngIf="!currentTypeStock">
+          <p class="ion-text-center">No se pudo cargar el formulario de inventario para este producto.</p>
+        </ion-text>
+      </div>
+    </ion-col>
+  </ion-row>
+
+  <ion-modal [keepContentsMounted]="true" class="fechasModal" [isOpen]="showCompactDateModal"
+    (didDismiss)="setShowCompactDateModal(false)">
+    <ng-template>
+      <ion-datetime
+        presentation="date"
+        [ngModel]="currentTypeStock?.fechaVencimiento"
+        (ngModelChange)="onCompactFechaChange($event)"
+        [showDefaultButtons]="true"
+        max="2100-12-31T23:59:59"
+        doneText="{{this.inventariosLogicService.inventarioTags.get('INV_BOTON_ACEPTAR')}}"
+        cancelText="{{this.inventariosLogicService.inventarioTags.get('INV_BOTON_CANCELAR')}}">
+      </ion-datetime>
+    </ng-template>
+  </ion-modal>
+</ion-grid>
+
+<ion-grid *ngIf="showTypePicker">
   <ion-row>
     <ion-col size="12" size-sm="12" size-xs="12">
       <div class="product-card listado-product-structures">
@@ -27,7 +112,7 @@
                     </div>
                 </ion-col> -->
         <!-- BOTON PARA ABRIL MODAL TIPOS DE STOCK-->
-        <ion-col size="6" size-sm="12" size-xs="12">
+        <ion-col size="6" size-sm="12" size-xs="12" *ngIf="showTypePicker">
           <ion-item>
             <ion-grid>
               <ion-row>
@@ -156,7 +241,7 @@
                               <ion-select
                                 placeholder="{{this.inventariosLogicService.inventarioTags.get('INV_SELECTOR_PLACEHOLDER')}}"
                                 class="ion-text-center always-flip"
-                                [ngModel]="typeStockExh.unidad || inventariosLogicService.productSelected?.productUnitList?.[0]"
+                                [ngModel]="typeStockExh.unidad || inventariosLogicService.productSelected.productUnitList?.[0]"
                                 (ngModelChange)="typeStockExh.unidad = $event; selectProducUnit({ target: { value: $event } },exh,'exh')">
                                 <ion-select-option
                                   *ngFor="let producUnit of inventariosLogicService.productSelected.productUnitList"
@@ -258,7 +343,7 @@
                             <div class="listado-enterprise-selector ion-text-center">
                               <ion-select
                                 placeholder="{{this.inventariosLogicService.inventarioTags.get('INV_SELECTOR_PLACEHOLDER')}}"
-                                class="ion-text-center always-flip"  [ngModel]="typeStockDep.unidad || inventariosLogicService.productSelected?.productUnitList?.[0]"
+                                class="ion-text-center always-flip"  [ngModel]="typeStockDep.unidad || inventariosLogicService.productSelected.productUnitList?.[0]"
                                 (ngModelChange)="typeStockDep.unidad = $event; selectProducUnit({ target: { value: $event } },dep,'dep')">
                                 <ion-select-option
                                   *ngFor="let producUnit of inventariosLogicService.productSelected.productUnitList"

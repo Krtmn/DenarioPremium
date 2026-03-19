@@ -91,6 +91,7 @@ export class InventariosLogicService {
   public inventarioSent: Boolean = false;
   public showProductList: Boolean = false;
   public isEdit: Boolean = false;
+  public selectedInventoryType: 'exh' | 'dep' = 'exh';
 
   public message!: string;
 
@@ -196,6 +197,7 @@ export class InventariosLogicService {
     this.newClientStock.productList = [] as ProductUtil[];
     this.productTypeStocksMap = new Map<number, number>();
     this.typeStocks = [] as Inventarios[];
+    this.selectedInventoryType = 'exh';
     this.disabledEnterprise = this.globalConfig.get('enterpriseEnabled') === 'true' ? false : true;
     this.expirationBatch = this.globalConfig.get('expirationBatch') === 'true' ? true : false;
   }

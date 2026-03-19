@@ -214,3 +214,41 @@ ion-button#eventSelect {
   margin-left: auto;
   margin-right: auto;
 }
+
+.compact-stock-card {
+  border: 1px solid #e2e6eb;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.compact-header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.compact-product-image {
+  border-radius: 10px;
+  height: 54px;
+  object-fit: cover;
+  width: 54px;
+}
+
+.compact-product-name {
+  color: #20242a;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.compact-stock-card ion-item {
+  --inner-padding-end: 0;
+  --padding-start: 0;
+  margin-bottom: 8px;
+}
+
+.compact-date-item {
+  align-items: center;
+  --min-height: 40px;
+}
