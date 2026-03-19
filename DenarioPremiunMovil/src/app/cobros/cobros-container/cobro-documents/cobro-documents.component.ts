@@ -654,7 +654,7 @@ export class CobrosDocumentComponent implements OnInit {
         }, 300);
 
         this.alertMessageOpen = true;
-        this.collectService.mensaje = "El primer documento a seleccionar no puede ser Nota de Crédito";
+        this.collectService.mensaje = "El primer documento a seleccionar no puede tener monto negativo";
       }
 
     } else if (documentSale.isSelected) {
