@@ -537,6 +537,12 @@ export class PedidoComponent implements OnInit {
           );
           transactions.push(tr);
 
+          if (this.orderServ.validateWarehouses && this.orderServ.validStock) {
+            this.orderServ.updateStocks(order).then(() => {
+              console.log("Stocks actualizados");
+            });
+          }
+
           if (this.orderServ.coClientStockAEnviar.length > 1) {
             //si venimos de inventario, enviamos el inventario tambien.
             transactions.push({
@@ -565,6 +571,7 @@ export class PedidoComponent implements OnInit {
           this.orderServ.disableSendButton = false;
           this.message.hideLoading();
           this.router.navigate(['pedidos']);
+
         });
       });
 
@@ -1140,10 +1147,12 @@ export class PedidoComponent implements OnInit {
 
   setClientfromSelector(cliente: Client, skipDebtValidation: boolean = false) {
     if (cliente) {
+
       if (!skipDebtValidation && !this.orderServ.openOrder
-        && Number(cliente.saldo1 ?? 0) > 0
+        && Number((cliente.saldo1 ?? 0) + (cliente.saldo2 ?? 0)) > 0
         && this.orderServ.order?.stDelivery !== DELIVERY_STATUS_SENT
-        && this.orderServ.order?.stDelivery !== null) {
+        && this.orderServ.order?.stDelivery !== null
+        && cliente.countDueDate > 0) {
         this.message.alertCustomBtn(
           {
             header: this.orderServ.getTag('PED_NOMBRE_MODULO'),
@@ -1625,5 +1634,15 @@ export class PedidoComponent implements OnInit {
         }
       ]
     );
+  }
+
+  getDaDueDate(daDueDate: string) {
+    let dateDoc = new Date(daDueDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$2/$1/$3")).getTime();
+    //minutes = 1000*60
+    //hours = minutes * 60
+    //days = hours * 24
+    //var days = 86400000; /* 1000 * 60 * 60 * 24; */
+
+    return Math.abs(Math.round(((new Date()).getTime() - dateDoc) / 86400000));
   }
 }
