@@ -336,15 +336,25 @@ export class PedidosDbService {
   }
 
   getStocks(db: SQLiteObject, idEnterprise: number) {
-    let query = "SELECT id_stock as idStock, id_product AS idProduct, co_product as coProduct, " +
-      "qu_stock as quStock, id_warehouse as idWarehouse, co_warehouse as coWarehouse, " +
-      "da_update_stock as daUpdateStock, co_enterprise as coEnterprise, id_enterprise as idEnterprise" +
-      " from stocks where id_enterprise = ?"
+    let query = "SELECT * from stocks where id_enterprise = ?"
 
     return db.executeSql(query, [idEnterprise]).then(data => {
       let list: Stock[] = [];
       for (let i = 0; i < data.rows.length; i++) {
-        list.push(data.rows.item(i));
+        let item = data.rows.item(i);
+        let stock: Stock = {
+          idStock: item.id_stock,
+          idProduct: item.id_product,
+          coProduct: item.co_product,
+          quStock: item.qu_stock,
+          idWarehouse: item.id_warehouse,
+          coWarehouse: item.co_warehouse,
+          daUpdateStock: item.da_update_stock,
+          coEnterprise: item.co_enterprise,
+          idEnterprise: item.id_enterprise,
+          coUnit: item.co_unit
+        }
+        list.push(stock);
       }
       return list;
     })

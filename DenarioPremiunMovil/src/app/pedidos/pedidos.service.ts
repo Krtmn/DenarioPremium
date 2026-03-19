@@ -1658,6 +1658,27 @@ export class PedidosService {
     }
   }
 
+  updateStocks(order: Orders){
+    //actualiza los stocks de los productos del pedido, se usa para actualizar el stock luego de enviar un pedido
+    let stocksToUpdate: Stock[] = [];
+    for (let i = 0; i < order.orderDetails.length; i++) {
+      const detail = order.orderDetails[i];
+      for (let j = 0; j < detail.orderDetailUnit.length; j++) {
+        const unit = detail.orderDetailUnit[j];
+        let stockToUpdate = this.listaStock.find(s => s.idWarehouse == detail.idWarehouse && s.idProduct == detail.idProduct && s.idEnterprise == detail.idEnterprise && s.coUnit == unit.coUnit);
+        if (stockToUpdate) {
+          let quStock = stockToUpdate.quStock - unit.quOrder;
+          if(quStock <= 0){
+            quStock = 0;
+          }
+          stockToUpdate.quStock = quStock;
+          stocksToUpdate.push(stockToUpdate);
+        }    
+      }
+    }
+    return this.dbServ.insertStockBatch(stocksToUpdate);
+  }
+
   /*   getStatusPedidos(idOrder: number) {
       //trae los estados de pedidos que se pueden usar en la app
       return this.historyTransaction.getStatusTransaction(this.database, 2, idOrder);
