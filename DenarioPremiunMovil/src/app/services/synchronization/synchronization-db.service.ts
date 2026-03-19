@@ -658,6 +658,9 @@ export class SynchronizationDBService {
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
+      if(obj.showOnly == null || obj.showOnly == undefined){
+        obj.showOnly = false
+      }
       statements.push([insertStatement, [obj.idList, obj.coList, obj.naList,
       obj.coEnterprise, obj.idEnterprise, obj.showOnly]])
     }

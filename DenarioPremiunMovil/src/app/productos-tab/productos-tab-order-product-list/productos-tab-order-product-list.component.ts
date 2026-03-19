@@ -572,6 +572,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     var stock = this.orderServ.listaStock.filter(s => s.idProduct == product.idProduct && s.idWarehouse == warehouse.idWarehouse)[0];
     product.idWarehouse = warehouse.idWarehouse;
     product.naWarehouse = warehouse.naWarehouse;
+    product.coWarehouse = warehouse.coWarehouse;
     if (stock) {
       product.quStock = stock.quStock;
       product.quStockAux = stock.quStock;
