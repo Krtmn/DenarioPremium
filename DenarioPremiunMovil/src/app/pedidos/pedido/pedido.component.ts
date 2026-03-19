@@ -537,9 +537,11 @@ export class PedidoComponent implements OnInit {
           );
           transactions.push(tr);
 
+          if(this.orderServ.validateWarehouses && this.orderServ.validStock){
           this.orderServ.updateStocks(order).then(() => {
             console.log("Stocks actualizados");
           });
+        }
 
           if (this.orderServ.coClientStockAEnviar.length > 1) {
             //si venimos de inventario, enviamos el inventario tambien.
@@ -569,6 +571,7 @@ export class PedidoComponent implements OnInit {
           this.orderServ.disableSendButton = false;
           this.message.hideLoading();
           this.router.navigate(['pedidos']);
+          
         });
       });
 
