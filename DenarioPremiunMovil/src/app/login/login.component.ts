@@ -82,7 +82,7 @@ export class LoginComponent implements OnInit {
             // limpia y vuelve a dejar guardada la nueva versiónApp
             let connected = localStorage.getItem("connected");
             let connectionType = localStorage.getItem("connectionType");
-            await this.synchronization.checkAndRunMigrations();
+            //await this.synchronization.checkAndRunMigrations();
             //localStorage.clear();
             localStorage.setItem("versionApp", this.versionApp);
             localStorage.setItem("connected", String(connected));

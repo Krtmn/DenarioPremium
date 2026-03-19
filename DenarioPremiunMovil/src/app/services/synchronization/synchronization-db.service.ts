@@ -273,6 +273,7 @@ export class SynchronizationDBService {
       });
     } else {
       if (conexion) {
+        await this.checkAndRunMigrations();
         console.log("YA LAS TABLAS ESTAN CREADAS", user);
         /*      if (localStorage.getItem("sincronizarHome") == "true") {
                localStorage.setItem("sincronizarHome", "false");
