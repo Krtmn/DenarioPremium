@@ -5,7 +5,6 @@
   display: block;
 }
 
-
 .textList p{
   color: #000;
   font-size: 12px;
@@ -37,6 +36,9 @@
 .inventory-type-selector {
   background: #f4f6f9;
   border-bottom: 1px solid #dfe3e8;
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 
 .selector-title {
@@ -76,6 +78,25 @@
   font-size: 11px;
 }
 
+.products-list-content {
+  --offset-bottom: 0 !important;
+  --padding-bottom: 0;
+}
+
+.products-list-content::part(scroll) {
+  padding-bottom: 0 !important;
+}
+
+.products-list-inner {
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.products-infinite-scroll {
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
 .product-location-chip {
   color: #2a5fa8;
   font-size: 11px;
@@ -103,20 +124,30 @@ ion-modal.inventory-type-stocks-modal {
 }
 
 .inventory-modal-title {
+  align-items: center;
+  display: flex;
+  justify-content: center;
   padding-left: 0;
   padding-right: 0;
 }
 
 .modal-product-name {
-  color: #1f1f1f;
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.2;
+  color: #ffffff;
+  display: -webkit-box;
+  font-size: 13px;
+  font-weight: bold;
+  font-family: sans-serif;
+  line-height: 1.15;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   margin: 0 auto;
-  max-width: 100%;
+  max-width: min(68vw, 420px);
   overflow: hidden;
+  text-transform: capitalize;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
 }
 
 .header-icon-btn {
@@ -136,9 +167,10 @@ ion-modal.inventory-type-stocks-modal {
 }
 
 .save-btn {
-  --background: #59b02d;
-  --background-hover: #59b02d;
-  --background-activated: #4f9d28;
+  --background: transparent;
+  --background-hover: transparent;
+  --background-activated: transparent;
+  --box-shadow: none;
   --color: #ffffff;
 }
 
@@ -147,6 +179,26 @@ ion-modal.inventory-type-stocks-modal ion-content.compact-modal-content {
   --padding-end: 8px;
   --padding-top: 10px;
   --padding-bottom: 10px;
+}
+
+.modal-type-selector {
+  margin: 4px 0 10px;
+}
+
+.modal-type-selector ion-segment {
+  --background: #eef2f7;
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.modal-type-selector ion-segment-button {
+  --border-radius: 10px;
+  min-height: 34px;
+}
+
+.modal-type-selector ion-segment-button ion-label {
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .compact-capture-list {
@@ -166,10 +218,52 @@ ion-modal.inventory-type-stocks-modal ion-content.compact-modal-content {
   font-weight: 700;
 }
 
+.capture-header-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
 .capture-row-card ion-item {
   --padding-start: 0;
   --inner-padding-end: 0;
   margin-bottom: 6px;
+}
+
+.capture-form-item {
+  --background: transparent;
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  margin-bottom: 10px;
+}
+
+.capture-input,
+.capture-select {
+  --background: #ffffff;
+  --border-color: #c9d2dc;
+  --border-color-focused: #1f2a44;
+  --border-radius: 10px;
+  --color: #1f2937;
+  --highlight-color-focused: #1f2a44;
+  --padding-bottom: 8px;
+  --padding-end: 10px;
+  --padding-start: 10px;
+  --padding-top: 8px;
+  font-size: 14px;
+}
+
+.capture-input::part(label),
+.capture-select::part(label) {
+  color: #344054;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.capture-input::part(placeholder),
+.capture-select::part(placeholder) {
+  color: #8a95a6;
+  opacity: 1;
 }
 
 .add-lot-button {
@@ -190,18 +284,16 @@ ion-modal.inventory-type-stocks-modal ion-content.compact-modal-content {
 
 .add-row-actions {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 4px;
-}
-
-.row-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 4px;
+  justify-content: center;
+  margin-top: 10px;
+  padding-bottom: 2px;
 }
 
 .delete-row-btn {
   --color: #d62828;
+  --padding-end: 4px;
+  --padding-start: 4px;
+  margin-inline-start: 0;
 }
 
 .delete-row-btn ion-icon {

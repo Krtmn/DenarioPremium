@@ -69,6 +69,8 @@ export class InventarioProductListComponent implements OnInit {
   public esconder: Boolean = false;
   public showTypeStocksModal = false;
   public selectedInventoryType: 'exh' | 'dep' = 'exh';
+  public modalInventoryType: 'exh' | 'dep' = 'exh';
+  public showModalTypeSelector = false;
   public inventoryFilter: 'all' | 'inventoried' = 'all';
   public inventoryRows: InventoryLotRow[] = [];
   public expirationBatch = false;
@@ -76,6 +78,7 @@ export class InventarioProductListComponent implements OnInit {
   public typeStockMethod: string = "";
   public imagesMap: { [imgName: string]: string } = {};
   searchSub: any;
+  inventoryTabSub: any;
   searchTextChanged: any;
   returnBackSub: any;
   private subs = new Subscription();
@@ -139,6 +142,20 @@ export class InventarioProductListComponent implements OnInit {
       //  });
     });
 
+    this.inventoryTabSub = this.productService.inventoryTabClicked.subscribe(() => {
+      this.inventoryFilter = 'inventoried';
+      this.inventariosLogicService.showProductList = true;
+      this.inventariosLogicService.onStockValidToSend(true);
+
+      const inventoriedProducts = this.buildInventoriedProductListFromDetails();
+      if (inventoriedProducts.length > 0) {
+        this.inventariosLogicService.newClientStock.productList = inventoriedProducts;
+      }
+
+      this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
+      this.refreshInventoriedProducts();
+    });
+
     this.featClicked = this.productService.featuredStructureClicked.subscribe((data) => {
       this.productService.getFeaturedProducts(this.db.getDatabase(),
         this.empresaSeleccionada.idEnterprise,
@@ -183,6 +200,7 @@ export class InventarioProductListComponent implements OnInit {
 
   ngOnDestroy(): void {
     this.searchSub.unsubscribe();
+    this.inventoryTabSub.unsubscribe();
     this.psClicked.unsubscribe();
     this.featClicked.unsubscribe();
     this.favClicked.unsubscribe();
@@ -209,6 +227,16 @@ export class InventarioProductListComponent implements OnInit {
     this.message.showLoading().then(() => {
       this.productService.getUnitsByIdProductOrderByCoPrimaryUnit(this.db.getDatabase(), prod.idProduct).then(() => {
         const units = this.productService.unitsByProduct || [];
+        const recordedLocations = this.getRecordedInventoryLocationsByProduct(prod.idProduct);
+        const hasBothRecordedTypes = recordedLocations.has('exh') && recordedLocations.has('dep');
+
+        // Regla principal: el modal sigue el tipo seleccionado en el filtro global.
+        this.modalInventoryType = this.selectedInventoryType;
+
+        // Solo mostramos selector de tipo en modal cuando estamos en Inventariados
+        // y el producto tiene ambos tipos registrados.
+        this.showModalTypeSelector = this.inventoryFilter === 'inventoried' && hasBothRecordedTypes;
+
         this.inventariosLogicService.newClientStock.productList[index].productUnitList = units;
         this.inventariosLogicService.unitSelected = units[0];
         this.inventariosLogicService.showHeaderButtonsFunction(false);
@@ -222,7 +250,7 @@ export class InventarioProductListComponent implements OnInit {
   private loadInventoryRowsForSelectedProduct(units: Unit[]) {
     const selectedProduct = this.inventariosLogicService.productSelected;
     const detail = this.inventariosLogicService.newClientStock.clientStockDetails?.find(d => d.idProduct === selectedProduct.idProduct);
-    const location = this.selectedInventoryType;
+    const location = this.modalInventoryType;
 
     if (!detail?.clientStockDetailUnits?.length) {
       this.inventoryRows = [this.createEmptyInventoryRow(units[0] || null)];
@@ -304,7 +332,7 @@ export class InventarioProductListComponent implements OnInit {
 
   private applyRowsToInventory(rows: InventoryLotRow[]) {
     const selectedProduct = this.inventariosLogicService.productSelected;
-    const location = this.selectedInventoryType;
+    const location = this.modalInventoryType;
 
     this.inventariosLogicService.typeStocks = this.inventariosLogicService.typeStocks.filter(typeStock =>
       !(typeStock.idProduct === selectedProduct.idProduct && typeStock.tipo === location)
@@ -406,6 +434,42 @@ export class InventarioProductListComponent implements OnInit {
     });
   }
 
+  private buildInventoriedProductListFromDetails(): ProductUtil[] {
+    const details = this.inventariosLogicService.newClientStock.clientStockDetails || [];
+    const currentProductList = this.inventariosLogicService.newClientStock.productList || [];
+    const currentById = new Map<number, ProductUtil>(currentProductList.map(p => [p.idProduct, p]));
+
+    return details
+      .filter(detail => (detail.clientStockDetailUnits || []).some(unit => Number(unit.quStock) > 0))
+      .map(detail => {
+        const existing = currentById.get(detail.idProduct);
+        if (existing) {
+          return existing;
+        }
+
+        return {
+          idProduct: detail.idProduct,
+          coProduct: detail.coProduct,
+          naProduct: detail.naProduct,
+          points: 0,
+          txDescription: '',
+          idList: 0,
+          price: 0,
+          coCurrency: this.empresaSeleccionada.coCurrencyDefault,
+          priceOpposite: 0,
+          coCurrencyOpposite: this.empresaSeleccionada.coCurrencyDefault,
+          stock: 0,
+          idEnterprise: detail.idEnterprise,
+          coEnterprise: detail.coEnterprise,
+          images: this.serviceImages.getImgForProduct(detail.coProduct) ?? '../../../assets/images/nodisponible.png',
+          typeStocks: undefined,
+          productUnitList: undefined,
+          idProductStructure: 0,
+          nuTax: 0,
+        } as ProductUtil;
+      });
+  }
+
   private normalizeInventoryLocation(value: string | undefined | null): 'exh' | 'dep' | null {
     const location = (value || '').toLowerCase();
     if (location === 'exh' || location.includes('exhib')) {
@@ -450,6 +514,34 @@ export class InventarioProductListComponent implements OnInit {
     this.inventariosLogicService.selectedInventoryType = normalizedType;
   }
 
+  onModalInventoryTypeChanged(type: string | number | undefined | null) {
+    const normalizedType: 'exh' | 'dep' = type === 'dep' ? 'dep' : 'exh';
+    this.modalInventoryType = normalizedType;
+    const units = this.inventariosLogicService.productSelected?.productUnitList || [];
+    this.loadInventoryRowsForSelectedProduct(units);
+  }
+
+  private getRecordedInventoryLocationsByProduct(idProduct: number): Set<'exh' | 'dep'> {
+    const locations = new Set<'exh' | 'dep'>();
+    const detail = this.inventariosLogicService.newClientStock.clientStockDetails?.find(d => d.idProduct === idProduct);
+
+    if (!detail?.clientStockDetailUnits?.length) {
+      return locations;
+    }
+
+    detail.clientStockDetailUnits.forEach(unit => {
+      if (Number(unit.quStock) <= 0) {
+        return;
+      }
+      const normalized = this.normalizeInventoryLocation(unit.ubicacion);
+      if (normalized) {
+        locations.add(normalized);
+      }
+    });
+
+    return locations;
+  }
+
   onInventoryFilterChanged(value: string | number | undefined | null) {
     const filter = value === 'inventoried' ? 'inventoried' : 'all';
     this.inventoryFilter = filter;
@@ -480,6 +572,7 @@ export class InventarioProductListComponent implements OnInit {
   closeTypeStocksModal() {
     this.showTypeStocksModal = false;
     this.inventoryRows = [];
+    this.showModalTypeSelector = false;
   }
 
   compareWith(o1: any, o2: any) {

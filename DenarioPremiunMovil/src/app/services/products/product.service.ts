@@ -43,6 +43,7 @@ export class ProductService {
   featuredStructureClicked = new Subject<Boolean>;
   backButtonClicked = new Subject<Boolean>;
   favoriteStructureClicked = new Subject<Boolean>;
+  inventoryTabClicked = new Subject<Boolean>;
   carritoButtonClicked = new Subject<Boolean>();
   returnBackClicked = new Subject<boolean>();
 
@@ -91,6 +92,10 @@ MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por ca
 
   onFavoriteStructureClicked() {
     this.favoriteStructureClicked.next(true);
+  }
+
+  onInventoryTabClicked() {
+    this.inventoryTabClicked.next(true);
   }
 
   onCarritoButtonClicked() {
