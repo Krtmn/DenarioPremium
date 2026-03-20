@@ -390,7 +390,8 @@ export class InventarioProductListComponent implements OnInit {
 
       const detailUnit = {} as ClientStocksDetailUnits;
       detailUnit.idClientStockDetailUnit = 0;
-      detailUnit.coClientStockDetailUnit = this.dateServ.generateCO(1);
+      // coClientStockDetailUnit is a PK in SQLite. It must be unique per row.
+      detailUnit.coClientStockDetailUnit = this.dateServ.generateCO(idx + 1);
       detailUnit.coClientStockDetail = detail!.coClientStockDetail;
       detailUnit.idProductUnit = unit.idProductUnit;
       detailUnit.coProductUnit = unit.coProductUnit;
