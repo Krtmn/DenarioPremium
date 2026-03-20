@@ -72,6 +72,7 @@ export class InventarioProductListComponent implements OnInit {
   public modalInventoryType: 'exh' | 'dep' = 'exh';
   public showModalTypeSelector = false;
   public inventoryFilter: 'all' | 'inventoried' = 'all';
+  public fullProductList: ProductUtil[] = [];
   public inventoryRows: InventoryLotRow[] = [];
   public expirationBatch = false;
   public inventoriedProductLocations = new Map<number, Set<'exh' | 'dep'>>();
@@ -110,6 +111,7 @@ export class InventarioProductListComponent implements OnInit {
     this.psClicked = this.productService.productStructureCLicked.subscribe((data) => {
       this.inventariosLogicService.showProductList = data;
       if (this.inventariosLogicService.showProductList) {
+        this.inventoryFilter = 'all';
         this.idProductStructureList = this.productStructureService.idProductStructureList;
         this.coProductStructureListString = this.productStructureService.coProductStructureListString;
         this.page = 0;
@@ -117,6 +119,7 @@ export class InventarioProductListComponent implements OnInit {
           this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault, 0).then(() => {
             this.noProductsAlertShown = false;
             this.inventariosLogicService.newClientStock.productList = this.productService.productList;
+            this.fullProductList = [...this.inventariosLogicService.newClientStock.productList];
             this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
             this.refreshInventoriedProducts();
             /* this.inventariosLogicService.setVariablesMap(); */
@@ -134,15 +137,22 @@ export class InventarioProductListComponent implements OnInit {
         this.empresaSeleccionada.idEnterprise,
         this.empresaSeleccionada.coCurrencyDefault, 0).then(() => {*/
         this.page = 0;
+      this.inventoryFilter = 'all';
       this.inventariosLogicService.showProductList = data;
       this.noProductsAlertShown = false;
       this.inventariosLogicService.newClientStock.productList = this.productService.productList;
+      this.fullProductList = [...this.inventariosLogicService.newClientStock.productList];
       this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
       this.refreshInventoriedProducts();
       //  });
     });
 
     this.inventoryTabSub = this.productService.inventoryTabClicked.subscribe(() => {
+      const currentProducts = this.inventariosLogicService.newClientStock.productList || [];
+      if (this.fullProductList.length === 0 && currentProducts.length > 0) {
+        this.fullProductList = [...currentProducts];
+      }
+
       this.inventoryFilter = 'inventoried';
       this.inventariosLogicService.showProductList = true;
       this.inventariosLogicService.onStockValidToSend(true);
@@ -165,8 +175,10 @@ export class InventarioProductListComponent implements OnInit {
         this.inventariosLogicService.cliente.idList,
         0).then(() => {
           this.noProductsAlertShown = false;
+          this.inventoryFilter = 'all';
           this.inventariosLogicService.showProductList = data;
           this.inventariosLogicService.newClientStock.productList = this.productService.productList;
+          this.fullProductList = [...this.inventariosLogicService.newClientStock.productList];
           this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
           this.refreshInventoriedProducts();
         }
@@ -182,8 +194,10 @@ export class InventarioProductListComponent implements OnInit {
         this.inventariosLogicService.cliente.idList,
         0).then(() => {
           this.noProductsAlertShown = false;
+          this.inventoryFilter = 'all';
           this.inventariosLogicService.showProductList = true;
           this.inventariosLogicService.newClientStock.productList = this.productService.productList;
+          this.fullProductList = [...this.inventariosLogicService.newClientStock.productList];
           this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
           this.refreshInventoriedProducts();
         }
@@ -239,7 +253,6 @@ export class InventarioProductListComponent implements OnInit {
 
         this.inventariosLogicService.newClientStock.productList[index].productUnitList = units;
         this.inventariosLogicService.unitSelected = units[0];
-        this.inventariosLogicService.showHeaderButtonsFunction(false);
         this.loadInventoryRowsForSelectedProduct(units);
         this.showTypeStocksModal = true;
         this.message.hideLoading();
@@ -543,8 +556,58 @@ export class InventarioProductListComponent implements OnInit {
   }
 
   onInventoryFilterChanged(value: string | number | undefined | null) {
+    const previousFilter = this.inventoryFilter;
     const filter = value === 'inventoried' ? 'inventoried' : 'all';
     this.inventoryFilter = filter;
+
+    if (filter === 'inventoried' && previousFilter === 'all') {
+      const currentProducts = this.inventariosLogicService.newClientStock.productList || [];
+      if (currentProducts.length > 0) {
+        this.fullProductList = [...currentProducts];
+      }
+    }
+
+    if (filter === 'all') {
+      if (this.fullProductList.length > 0) {
+        this.inventariosLogicService.newClientStock.productList = [...this.fullProductList];
+        this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
+        return;
+      }
+
+      if (this.idProductStructureList.length > 0) {
+        this.page = 0;
+        this.productService.getProductsByCoProductStructureAndIdEnterprise(
+          this.db.getDatabase(),
+          this.idProductStructureList,
+          this.empresaSeleccionada.idEnterprise,
+          this.empresaSeleccionada.coCurrencyDefault,
+          0
+        ).then(() => {
+          this.inventariosLogicService.newClientStock.productList = this.productService.productList;
+          this.fullProductList = [...this.inventariosLogicService.newClientStock.productList];
+          this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
+        });
+        return;
+      }
+
+      this.page = 0;
+      this.productService.getProductsSearchedByCoProductAndNaProduct(
+        this.db.getDatabase(),
+        '',
+        this.empresaSeleccionada.idEnterprise,
+        this.empresaSeleccionada.coCurrencyDefault,
+        0
+      ).then(() => {
+        this.inventariosLogicService.newClientStock.productList = this.productService.productList;
+        this.fullProductList = [...this.inventariosLogicService.newClientStock.productList];
+        this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
+      });
+      return;
+    }
+
+    const inventoriedProducts = this.buildInventoriedProductListFromDetails();
+    this.inventariosLogicService.newClientStock.productList = inventoriedProducts;
+    this.noProductsAlertShown = this.inventariosLogicService.newClientStock.productList.length === 0;
   }
 
   getVisibleProducts(): ProductUtil[] {
@@ -593,6 +656,9 @@ export class InventarioProductListComponent implements OnInit {
 
             this.inventariosLogicService.newClientStock.productList =
             [...this.inventariosLogicService.newClientStock.productList, ...this.productService.productList];
+            if (this.inventoryFilter === 'all') {
+              this.fullProductList = [...this.inventariosLogicService.newClientStock.productList];
+            }
             if (this.productService.productList.length < this.productService.MAX_ITEMS_PER_PAGE) {
               this.infiniteScroll.disabled = true;
             }
@@ -603,6 +669,9 @@ export class InventarioProductListComponent implements OnInit {
           this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.empresaSeleccionada.coCurrencyDefault, this.page).then(() => {
 
             this.inventariosLogicService.newClientStock.productList = [...this.inventariosLogicService.newClientStock.productList, ...this.productService.productList];
+            if (this.inventoryFilter === 'all') {
+              this.fullProductList = [...this.inventariosLogicService.newClientStock.productList];
+            }
             if (this.productService.productList.length < this.productService.MAX_ITEMS_PER_PAGE) {
               this.infiniteScroll.disabled = true;
             }

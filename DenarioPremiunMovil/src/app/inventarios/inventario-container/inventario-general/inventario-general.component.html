@@ -4,9 +4,9 @@
 
       <div class="listado-enterprise-selector ion-text-center">
         <!-- <ion-select [disabled]="!this.enterpriseServ.esMultiempresa()" [(ngModel)]="inventariosLogicService.empresaSeleccionada" (ionChange)="onEnterpriseSelect()" class="ion-text-center always-flip" toggleIcon="caret-down-sharp" interface="popover"> -->
-        <ion-select disabled="{{this.inventariosLogicService.disabledEnterprise}}"
+        <ion-select [disabled]="this.inventariosLogicService.disabledEnterprise === true || this.inventariosLogicService.inventarioSent === true"
           [(ngModel)]="this.inventariosLogicService.empresaSeleccionada" (ionChange)="onEnterpriseSelect()"
-          class="ion-text-center always-flip" interface="popover">
+          class="ion-text-center always-flip" interface="popover" >
           @for (emp of inventariosLogicService.listaEmpresa; track $index) {
             <ion-select-option [value]="emp">{{
               emp.lbEnterprise }}

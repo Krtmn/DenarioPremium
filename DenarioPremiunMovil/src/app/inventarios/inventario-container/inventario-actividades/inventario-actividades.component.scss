@@ -61,13 +61,13 @@ $colorLila: #430197;
   border-bottom-color: $colorLila;
 }
 
-.inventory-table th:first-child,
-.inventory-table td:first-child {
+.inventory-table th.col-sel,
+.inventory-table td.col-sel {
   min-width: 56px;
 }
 
-.inventory-table th:last-child,
-.inventory-table td:last-child {
+.inventory-table th.col-action,
+.inventory-table td.col-action {
   min-width: 70px;
 }
 

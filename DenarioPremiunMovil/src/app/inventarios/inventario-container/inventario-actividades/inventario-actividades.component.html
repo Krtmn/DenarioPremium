@@ -1,57 +1,67 @@
 <div class="resumen-inventario-container">
-  <div class="inventory-actions" *ngIf="inventoryRows.length > 0 && (this.inventariosLogicService.newClientStock.stDelivery == 0 || this.inventariosLogicService.newClientStock.stDelivery == 3)">
-    <ion-button size="small" color="danger" fill="outline" [disabled]="selectedRowsCount === 0" (click)="deleteSelectedRows()">
+  @if(canManageRows()) {
+  @if(inventoryRows.length > 0) {
+  <div class="inventory-actions">
+    <ion-button size="small" color="danger" fill="outline" [disabled]="selectedRowsCount === 0"
+      (click)="deleteSelectedRows()">
       <ion-icon slot="start" name="trash-outline"></ion-icon>
       Eliminar seleccionados ({{selectedRowsCount}})
     </ion-button>
   </div>
-
+  }
+  }
   <div class="inventory-table-wrapper" *ngIf="inventoryRows.length > 0">
     <table class="inventory-table">
       <thead>
         <tr>
-          <th>Sel</th>
+          @if(canManageRows()) {
+          <th class="col-sel">Sel</th>
+          }
           <th>{{this.inventariosLogicService.inventarioTags.get('INV_CODIGO') || 'Codigo'}}</th>
           <th>Producto</th>
           <th>Exhibicion</th>
           <th>Deposito</th>
-          <th>Accion</th>
+          @if(canManageRows()) {
+          <th class="col-action">Accion</th>
+          }
         </tr>
       </thead>
       <tbody>
         @for (row of inventoryRows; track row.rowId) {
-          <tr>
-            <td>
-              <ion-checkbox [(ngModel)]="row.selected"></ion-checkbox>
-            </td>
-            <td>{{row.coProduct}}</td>
-            <td>{{row.naProduct}}</td>
-            <td class="inventory-type-cell">
-              @if (row.exhEntries.length > 0) {
-                @for (entry of row.exhEntries; track $index) {
-                  <div class="inventory-entry-line">{{entry}}</div>
-                }
-              } @else {
-                -
-              }
-            </td>
-            <td class="inventory-type-cell">
-              @if (row.depEntries.length > 0) {
-                @for (entry of row.depEntries; track $index) {
-                  <div class="inventory-entry-line">{{entry}}</div>
-                }
-              } @else {
-                -
-              }
-            </td>
-            <td>
-              <ion-button fill="clear" color="danger"
-                *ngIf="this.inventariosLogicService.newClientStock.stDelivery == 0 || this.inventariosLogicService.newClientStock.stDelivery == 3"
-                (click)="deleteClientStockRow(row.rowId)">
-                <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
-              </ion-button>
-            </td>
-          </tr>
+        <tr>
+          @if(canManageRows()) {
+          <td class="col-sel">
+            <ion-checkbox [(ngModel)]="row.selected"></ion-checkbox>
+          </td>
+          }
+          <td>{{row.coProduct}}</td>
+          <td>{{row.naProduct}}</td>
+          <td class="inventory-type-cell">
+            @if (row.exhEntries.length > 0) {
+            @for (entry of row.exhEntries; track $index) {
+            <div class="inventory-entry-line">{{entry}}</div>
+            }
+            } @else {
+            -
+            }
+          </td>
+          <td class="inventory-type-cell">
+            @if (row.depEntries.length > 0) {
+            @for (entry of row.depEntries; track $index) {
+            <div class="inventory-entry-line">{{entry}}</div>
+            }
+            } @else {
+            -
+            }
+          </td>
+          @if(canManageRows()) {
+          <td class="col-action">
+            <ion-button fill="clear" color="danger" (click)="deleteClientStockRow(row.rowId)">
+              <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+            </ion-button>
+          </td>
+          }
+        </tr>
         }
       </tbody>
     </table>

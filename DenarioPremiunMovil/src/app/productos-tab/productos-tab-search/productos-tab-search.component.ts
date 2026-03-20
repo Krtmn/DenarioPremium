@@ -43,6 +43,7 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
   featuredClickedSub: any;
   favoriteClickedSub: any;
   carritoClickedSub: any;
+  inventoryClickedSub: any;
 
   constructor() { }
 
@@ -85,6 +86,10 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
       this.showBackIcon = true;
     });
 
+    this.inventoryClickedSub = this.productService.inventoryTabClicked.subscribe(() => {
+      this.showBackIcon = true;
+    });
+
     /*
     this.searchSub = this.productService.onSearchClicked.subscribe((data) => {
       this.productStructures = true;
@@ -101,6 +106,7 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
     this.featuredClickedSub.unsubscribe();
     this.favoriteClickedSub.unsubscribe();
     this.carritoClickedSub.unsubscribe();
+    this.inventoryClickedSub.unsubscribe();
   }
 
   onSearchTextChanged() {

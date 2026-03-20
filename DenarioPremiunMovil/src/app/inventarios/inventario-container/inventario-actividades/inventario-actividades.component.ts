@@ -11,7 +11,7 @@ import { Router } from '@angular/router';
 import { List } from 'src/app/modelos/tables/list';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
-import { DELIVERY_STATUS_SENT } from 'src/app/utils/appConstants';
+import { CLIENTSTOCK_STATUS_NEW, CLIENTSTOCK_STATUS_SAVED, CLIENTSTOCK_STATUS_SENT, CLIENTSTOCK_STATUS_TO_SEND, CLIENT_POTENTIAL_STATUS_NEW, CLIENT_POTENTIAL_STATUS_SENT, CLIENT_POTENTIAL_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 import { Client } from 'src/app/modelos/tables/client';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
@@ -45,6 +45,9 @@ export class InventarioActividadesComponent implements OnInit {
   public inventoryRows: InventoryRow[] = [];
   public router =  inject(Router);
   public message = inject(MessageService);
+
+  public CLIENTSTOCK_STATUS_SENT = CLIENTSTOCK_STATUS_SENT;
+  public CLIENTSTOCK_STATUS_TO_SEND = CLIENTSTOCK_STATUS_TO_SEND;
 
   ngOnInit() {
     this.rebuildTableData();
@@ -112,6 +115,29 @@ export class InventarioActividadesComponent implements OnInit {
     return this.inventoryRows.filter(row => row.selected).length;
   }
 
+  isInventoryReadOnlyStatus(): boolean {
+    const status = this.inventariosLogicService.newClientStock?.stDelivery;
+
+    switch (status) {
+      case null:
+        return false;
+      case CLIENTSTOCK_STATUS_SENT:
+        return false;
+      case CLIENTSTOCK_STATUS_TO_SEND:
+        return false;
+      case CLIENTSTOCK_STATUS_NEW:
+        return true;
+      case CLIENTSTOCK_STATUS_SAVED:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  canManageRows(): boolean {
+    return this.isInventoryReadOnlyStatus();
+  }
+
   preguntarSugerirPedido(){
     let buttonsConfirmSend = [
       {
@@ -176,7 +202,7 @@ export class InventarioActividadesComponent implements OnInit {
     }
     //guardar el stock actual
     var toSend =  false;
-    if(this.inventariosLogicService.newClientStock.stDelivery != DELIVERY_STATUS_SENT){
+    if(this.inventariosLogicService.newClientStock.stDelivery != CLIENTSTOCK_STATUS_SENT){
       this.inventariosLogicService.saveClientStock(this.dbServ.getDatabase(),false);
       this.adjuntoService.savePhotos(this.dbServ.getDatabase(),
       this.inventariosLogicService.newClientStock.coClientStock, "inventarios");
