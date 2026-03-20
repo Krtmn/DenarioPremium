@@ -13,9 +13,10 @@
   </ion-label>
   <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.currencySelectedDocument"
     (ionChange)="onChangeCurrencyDoc($event)" labelPlacement="stacked">
-    <ion-select-option *ngFor="let currency of this.collectService.currencyListDocument"
-      [value]="currency">{{currency.coCurrency}}
+    @for (currency of this.collectService.currencyListDocument; track $index) {
+    <ion-select-option [value]="currency">{{currency.coCurrency}}
     </ion-select-option>
+    }
   </ion-select>
 </ion-item>
 }
@@ -30,9 +31,11 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
   </ion-label>
   <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.igtfSelected"
     (ionChange)="onChangeIgtf($event)" labelPlacement="stacked">
-    <ion-select-option *ngFor="let igtf of this.collectService.igtfList" [value]="igtf">{{igtf.naIgtf}} -
+    @for (igtf of this.collectService.igtfList; track $index) {
+    <ion-select-option [value]="igtf">{{igtf.naIgtf}} -
       {{igtf.price}}%
     </ion-select-option>
+    }
   </ion-select>
 </ion-item>
 }
@@ -147,8 +150,8 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
       class="titulosBold col borderSuperiorDerecho">{{this.collectService.collectionTags.get('COB_COMENTARIO')}}
     </ion-col>
   </ion-row>
-  <ion-row *ngFor="let documentSale of this.collectService.documentSalesView;index as i"
-    class="tabladocumentSalesVenta tablaDocVentas row">
+  @for (documentSale of this.collectService.documentSalesView; track $index; let i = $index) {
+  <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
     @if(this.collectService.retentionDocTypeCR){
     <ion-col size="2" class="ion-text-center col borderInferiorIzquierdo">
       <ion-button (click)="openDocumentSale(i, $event)" size="small" disabled="{{!documentSale.isSelected}}">
@@ -167,7 +170,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
     <ion-col size="2" class="ion-text-center col">
       <ion-button (click)="openPartialPayment(documentSale.coDocument)" size="small"
         disabled="{{!documentSale.historicPaymentPartial}}">
-        <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
+        <ion-icon slot="icon-only" name="receipt-outline"></ion-icon>
       </ion-button>
     </ion-col>
     }
@@ -235,6 +238,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
       {{documentSale.txComment}}
     </ion-col>
   </ion-row>
+  }
 </ion-grid>
 }
 
@@ -298,24 +302,27 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                 <!-- FECHA EMISION -->
 
                 <!-- TASA-->
-                <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
-                  *ngIf="this.collectService.historicoTasa && this.collectService.showConversion">
+                @if(this.collectService.historicoTasa && this.collectService.showConversion){
+                <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                   <ion-input label="{{this.collectService.collectionTags.get('COB_TASA_DIA')}}:"
                     label-placement="floating" fill="outline" color="primary"
                     [value]="currencyService.formatNumber(collectService.documentSaleOpen.nuValueLocal)"
                     [readonly]="true">
                   </ion-input>
                 </ion-col>
+                }
                 <!-- TASA -->
 
                 <!-- IGTF-->
-                <ion-col
-                  *ngIf="this.collectService.igtfSelected.price > 0 && this.globalConfig.get('userCanSelectIGTF') === 'true' ? true: false">
+                @if(this.collectService.igtfSelected.price > 0 && this.globalConfig.get('userCanSelectIGTF') === 'true'
+                ? true: false){
+                <ion-col>
                   <ion-input label="IGTF {{this.collectService.currencyConversion.coCurrency}}"
                     label-placement="floating" fill="outline"
                     value="{{this.collectService.documentSaleOpen.igtfAmount}}" color="primary"
                     [(ngModel)]="this.collectService.documentSaleOpen.igtfAmount" [readonly]="true"></ion-input>
                 </ion-col>
+                }
                 <!-- IGTF -->
 
                 <!-- MONTO BASE -->
@@ -402,13 +409,14 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                 <!-- SALDO -->
 
                 <!-- SALDO CONVERSION-->
-                <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
-                  *ngIf="this.collectService.multiCurrency && this.collectService.showConversion">
+                @if(this.collectService.multiCurrency && this.collectService.showConversion){
+                <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                   <ion-input
                     label="{{this.collectService.collectionTags.get('COB_SALDO')}} {{this.collectService.currencyConversion.coCurrency}}"
                     label-placement="floating" fill="outline" value="{{this.formatNumber(this.saldoConversionView)}}"
                     color="primary" [readonly]="true"></ion-input>
                 </ion-col>
+                }
                 <!-- SALDO CONVERSION -->
 
                 <!-- COMENTARIO DOCUMENTO-->
@@ -424,8 +432,8 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
 
                 <!-- LISTA DESCUENTOS  userCanSelectCollectDiscount -->
                 @if(!this.collectService.isPaymentPartial){
-                <ion-col *ngIf="this.collectService.userCanSelectCollectDiscount" size="12" size-xs="12" size-sm="12"
-                  size-md="12">
+                @if(this.collectService.userCanSelectCollectDiscount){
+                <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                   <ion-button expand="block" size="small" (click)="openAssignDiscounts()" class="botonAddVerde">
                     {{ this.collectService.collectionTags.get('COB_DESCUENTOS') || 'Asignar descuento' }}
                   </ion-button>
@@ -454,42 +462,44 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                                   [checked]="tempSelectedCollectDiscounts?.includes(d.idCollectDiscount)"
                                   (ionChange)="toggleTempSelection(d.idCollectDiscount)"></ion-checkbox>
                               </ion-item> -->
-                            <ng-container *ngFor="let d of this.collectService.collectDiscounts">
-                              <ion-item>
-                                <ion-label>{{d.nuCollectDiscount}}% - {{d.naCollectDiscount}}</ion-label>
-                                <div slot="end" style="display:flex; align-items:center; gap:8px;">
-                                  <ion-badge color="primary"
-                                    *ngIf="getDiscountSelectionOrder(d.idCollectDiscount) as order">{{order}}</ion-badge>
-                                  <ion-checkbox [checked]="isCollectDiscountSelected(d.idCollectDiscount)"
-                                    (ionChange)="toggleTempSelection(d.idCollectDiscount)"></ion-checkbox>
-                                </div>
-                              </ion-item>
-
-                              <div *ngIf="isCollectDiscountSelected(d.idCollectDiscount) && d.requireInput === true"
-                                class="collect-discount-inputs" style="width:100%; padding:0 16px 8px 16px;">
-                                <ion-item lines="none"
-                                  [ngClass]="{'input-rojo': isTempCollectDiscountFieldInvalid(d.idCollectDiscount,'nuCollectDiscount'), 'inp-write': isTempCollectDiscountFieldValid(d.idCollectDiscount,'nuCollectDiscount')}">
-                                  <ion-label
-                                    position="floating">{{this.collectService.collectionTags.get('COB_TASA_%')}}</ion-label>
-                                  <ion-input type="number" [ngModel]="getNuCollectDiscount(d.idCollectDiscount)"
-                                    (ngModelChange)="setNuCollectDiscount(d.idCollectDiscount, $event)" required
-                                    max="{{100 - this.collectService.totalCollectDiscountsSelected}}">
-                                  </ion-input>
-                                </ion-item>
-                                <div style="padding:4px 16px; font-size:0.9em; color:var(--ion-color-medium);">
-                                  {{this.collectService.collectionTags.get('COB_DISPONIBLE')}}: {{ 100 -
-                                  (this.collectService.totalCollectDiscountsSelected || 0) }}%
-                                </div>
-                                <ion-item lines="none"
-                                  [ngClass]="{'input-rojo': isTempCollectDiscountFieldInvalid(d.idCollectDiscount,'naCollectDiscount'), 'inp-write': isTempCollectDiscountFieldValid(d.idCollectDiscount,'naCollectDiscount')}">
-                                  <ion-label
-                                    position="floating">{{this.collectService.collectionTags.get('COB_NOMBRE_DESCUENTO')}}</ion-label>
-                                  <ion-input type="text" [ngModel]="getNaCollectDiscount(d.idCollectDiscount)"
-                                    (ngModelChange)="setNaCollectDiscount(d.idCollectDiscount, $event)"
-                                    required></ion-input>
-                                </ion-item>
+                            @for (d of this.collectService.collectDiscounts; track $index) {
+                            <ion-item>
+                              <ion-label>{{d.nuCollectDiscount}}% - {{d.naCollectDiscount}}</ion-label>
+                              <div slot="end" style="display:flex; align-items:center; gap:8px;">
+                                @if(getDiscountSelectionOrder(d.idCollectDiscount); as order){
+                                <ion-badge color="primary">{{order}}</ion-badge>
+                                }
+                                <ion-checkbox [checked]="isCollectDiscountSelected(d.idCollectDiscount)"
+                                  (ionChange)="toggleTempSelection(d.idCollectDiscount)"></ion-checkbox>
                               </div>
-                            </ng-container>
+                            </ion-item>
+
+                            @if(isCollectDiscountSelected(d.idCollectDiscount) && d.requireInput === true){
+                            <div class="collect-discount-inputs" style="width:100%; padding:0 16px 8px 16px;">
+                              <ion-item lines="none"
+                                [ngClass]="{'input-rojo': isTempCollectDiscountFieldInvalid(d.idCollectDiscount,'nuCollectDiscount'), 'inp-write': isTempCollectDiscountFieldValid(d.idCollectDiscount,'nuCollectDiscount')}">
+                                <ion-label
+                                  position="floating">{{this.collectService.collectionTags.get('COB_TASA_%')}}</ion-label>
+                                <ion-input type="number" [ngModel]="getNuCollectDiscount(d.idCollectDiscount)"
+                                  (ngModelChange)="setNuCollectDiscount(d.idCollectDiscount, $event)" required
+                                  max="{{100 - this.collectService.totalCollectDiscountsSelected}}">
+                                </ion-input>
+                              </ion-item>
+                              <div style="padding:4px 16px; font-size:0.9em; color:var(--ion-color-medium);">
+                                {{this.collectService.collectionTags.get('COB_DISPONIBLE')}}: {{ 100 -
+                                (this.collectService.totalCollectDiscountsSelected || 0) }}%
+                              </div>
+                              <ion-item lines="none"
+                                [ngClass]="{'input-rojo': isTempCollectDiscountFieldInvalid(d.idCollectDiscount,'naCollectDiscount'), 'inp-write': isTempCollectDiscountFieldValid(d.idCollectDiscount,'naCollectDiscount')}">
+                                <ion-label
+                                  position="floating">{{this.collectService.collectionTags.get('COB_NOMBRE_DESCUENTO')}}</ion-label>
+                                <ion-input type="text" [ngModel]="getNaCollectDiscount(d.idCollectDiscount)"
+                                  (ngModelChange)="setNaCollectDiscount(d.idCollectDiscount, $event)"
+                                  required></ion-input>
+                              </ion-item>
+                            </div>
+                            }
+                            }
                           </ion-list>
                         </div>
                       </ion-content>
@@ -518,17 +528,17 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                     </ng-template>
                   </ion-modal>
                 </ion-col>
+                }
                 <!-- LISTA DESCUENTOS  userCanSelectCollectDiscount -->
 
-                <ion-col *ngIf="this.collectService.selectedCollectDiscounts.length > 0" size="12" size-xs="12"
-                  size-sm="12">
+                @if(this.collectService.selectedCollectDiscounts.length > 0){
+                <ion-col size="12" size-xs="12" size-sm="12">
                   <ion-input label="{{this.collectService.collectionTags.get('COB_SELEC_DESCUENTO')}}"
                     label-placement="floating" fill="outline" color="primary" type="text"
                     [value]="getSelectedCollectDiscountsNames()" readonly>
                   </ion-input>
                 </ion-col>
-                <ion-col *ngIf="this.collectService.selectedCollectDiscounts.length > 0" size="12" size-xs="12"
-                  size-sm="12">
+                <ion-col size="12" size-xs="12" size-sm="12">
                   <ion-input label="{{this.collectService.collectionTags.get('COB_TOTAL_DESCUENTO')}}"
                     label-placement="floating" fill="outline" color="primary" type="text"
                     [value]="this.collectService.totalCollectDiscountsView" readonly>
@@ -536,13 +546,13 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                 </ion-col>
                 <!-- LISTA DESCUENTOS -->
                 <!-- COMENTARIO DESCUENTOS -->
-                <ion-col *ngIf="this.collectService.selectedCollectDiscounts.length > 0" size="12" size-xs="12"
-                  size-sm="12">
+                <ion-col size="12" size-xs="12" size-sm="12">
                   <ion-input label="{{this.collectService.collectionTags.get('COB_COMENTARIO')}}"
                     label-placement="floating" fill="outline" color="primary" type="text" [(ngModel)]="discountComment"
                     (ngModelChange)="setDiscountComment()">
                   </ion-input>
                 </ion-col>
+                }
                 <!-- COMENTARIO DESCUENTOS -->
                 }
 
@@ -579,17 +589,23 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                 <!-- <div *ngIf="this.collectService.retencion"> -->
                 @if(this.collectService.retencion){
                 <!-- NRO COMPROBANTE RET -->
-                <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
-                  *ngIf="this.collectService.retencion && this.collectService.formatRetention == 'number'">
+                @if(this.collectService.retencion && this.collectService.formatRetention == 'number'){
+                <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                   <ion-input label="{{this.collectService.collectionTags.get('COB_NUMBER_COMPROBANTE_RETENTION')}}"
                     label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
                     [(ngModel)]="this.collectService.documentSaleOpen.nuVaucherRetention"
                     (ionChange)="validateNuVaucherRetention(true)"
                     [disabled]="this.collectService.missingRetentionValue">
                   </ion-input>
+                  @if(this.collectService.sizeRetention > 0){
+                  <ion-note color="danger">
+                    Debe tener {{this.collectService.sizeRetention}} caracteres.
+                  </ion-note>
+                  }
                 </ion-col>
-                <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
-                  *ngIf="this.collectService.retencion &&this.collectService.formatRetention != 'number'">
+                }
+                @if(this.collectService.retencion && this.collectService.formatRetention != 'number'){
+                <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                   <ion-input label="{{this.collectService.collectionTags.get('COB_NUMBER_COMPROBANTE_RETENTION')}}"
                     label-placement="floating" fill="outline" color="primary" type="text"
                     value="{{this.collectService.documentSaleOpen.nuVaucherRetention}}"
@@ -597,12 +613,20 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                     (ionChange)="validateNuVaucherRetention(true)"
                     [ngClass]="{'inp-write': this.collectService.validNuRetention}">
                   </ion-input>
+                  @if(this.collectService.sizeRetention > 0){
+                  <ion-note color="danger">
+                    Debe tener {{this.collectService.sizeRetention}} caracteres.
+                  </ion-note>
+                  }
                 </ion-col>
+                }
                 <!-- </div> -->
                 <!-- NRO COMPROBANTE RET -->
 
                 <!-- FECHA COMP RET -->
-                <ion-col *ngIf="this.collectService.retencion" size="12" size-xs="12" size-sm="12" size-md="12">
+                @if(this.collectService.retencion && this.collectService.documentSaleOpen.nuVaucherRetention != null &&
+                this.collectService.documentSaleOpen.nuVaucherRetention.toString().trim() !== ''){
+                <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                   <ion-input label="{{this.collectService.collectionTags.get('COB_DAVOUCHER')}}:"
                     [(ngModel)]="this.collectService.documentSaleOpen.daVoucher"
                     value="{{this.collectService.documentSaleOpen.daVoucher}}" label-placement="floating" fill="outline"
@@ -611,11 +635,12 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                                               'input-rojo': this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher
                                             }" [disabled]="!this.collectService.validNuRetention">
                   </ion-input>
-                  <ion-label
-                    *ngIf="this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher"
-                    color="danger" class="campoObligatorio">
+                  @if(this.collectService.documentSaleOpen.nuVaucherRetention &&
+                  !this.collectService.validateDaVoucher){
+                  <ion-label color="danger" class="campoObligatorio">
                     {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}
                   </ion-label>
+                  }
                   <ion-modal [keepContentsMounted]="true" [trigger]="'inputCalendar'" [initialBreakpoint]="0.65">
                     <ng-template>
                       <ion-datetime [id]="'calendar'" presentation="date" [(ngModel)]="daVoucher" value="{{fechaHoy}}"
@@ -626,9 +651,12 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                     </ng-template>
                   </ion-modal>
                 </ion-col>
+                }
                 <!-- FECHA COMP RET  -->
                 <!-- MONTO RET IVA-->
-                <ion-col *ngIf="this.collectService.retencion" size="12" size-xs="12" size-sm="12" size-md="12">
+                @if(this.collectService.retencion && this.collectService.documentSaleOpen.nuVaucherRetention != null &&
+                this.collectService.documentSaleOpen.nuVaucherRetention.toString().trim() !== ''){
+                <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                   <ion-input label="{{this.collectService.collectionTags.get('COB_AMOUNT_RETENTION_IVA')}}"
                     label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
                     [value]="displayRetention || formatFromCents(centsRetention)" (keydown)="onRetentionKeyDown($event)"
@@ -637,10 +665,13 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                     (input)="onRetentionInput($event)">
                   </ion-input>
                 </ion-col>
+                }
                 <!-- MONTO RET IVA--->
 
                 <!-- MONTO RET ISLR-->
-                <ion-col *ngIf="this.collectService.retencion" size="12" size-xs="12" size-sm="12" size-md="12">
+                @if(this.collectService.retencion && this.collectService.documentSaleOpen.nuVaucherRetention != null &&
+                this.collectService.documentSaleOpen.nuVaucherRetention.toString().trim() !== ''){
+                <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                   <ion-input label="{{this.collectService.collectionTags.get('COB_AMOUNT_RETENTION_ISLR')}}"
                     label-placement="floating" fill="outline" color="primary" type="text" inputmode="numeric"
                     [value]="displayRetention2 || formatFromCents(centsRetention2)"
@@ -649,6 +680,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                     (input)="onRetention2Input($event)">
                   </ion-input>
                 </ion-col>
+                }
                 <!-- MONTO RET ISLR--->
                 }
               </ion-list>
@@ -675,6 +707,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
             }
 
             <!-- PAGO PARCIAL / MONTO A PAGARL-->
+
             <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
               <ion-input
                 label="{{this.collectService.collectionTags.get('COB_MONTO_PAGAR')}} {{this.collectService.collection.coCurrency}}"
@@ -685,12 +718,17 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                 [ngClass]="{'inp-write': !collectService.amountPaymentPartial, 'input-rojo': !collectService.amountPaid}"
                 min="0" [readonly]="!collectService.isPaymentPartial">
               </ion-input>
-              <ion-label *ngIf="!this.collectService.amountPaid" color="danger" class="campoObligatorio">
+              @if(!this.collectService.amountPaid){
+              <ion-label color="danger" class="campoObligatorio">
                 Este campo es obligatorio
               </ion-label>
+              }
             </ion-col>
+
             <!-- PAGO PARCIAL-->
 
+            @if(this.collectService.documentSaleOpen.nuVaucherRetention != null &&
+            this.collectService.documentSaleOpen.nuVaucherRetention.toString().trim() !== ''){
             <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
               <ion-grid>
                 <ion-row>
@@ -708,6 +746,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                 </ion-row>
               </ion-grid>
             </ion-col>
+            }
           </ion-row>
         </ion-grid>
       </ion-content>
@@ -720,7 +759,8 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
 
 
 <!-- MODAL SI RETENCION-->
-<div *ngIf="this.collectService.coTypeModule == '2'">
+@if(this.collectService.coTypeModule == '2'){
+<div>
   <ion-modal [isOpen]="this.collectService.isOpen" id="eventModal" size="cover"
     class="listado-product-structures modalActividades" (didDismiss)="this.collectService.isOpen = false"
     backdrop-dismiss="false">
@@ -752,12 +792,15 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
         <ion-grid class="contenedorModalActividades">
           <ion-row>
             <!-- TIPO DOCUMENTO -->
+            @if(this.collectService.documentSaleOpen.nuVaucherRetention != null &&
+            this.collectService.documentSaleOpen.nuVaucherRetention.toString().trim() !== ''){
             <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
               <ion-input label="{{this.collectService.collectionTags.get('COB_TIPO_DOCUMENTO')}}"
                 label-placement="floating" fill="outline"
                 value="{{this.collectService.documentSaleOpen.coDocumentSaleType}}" color="primary"
                 [(ngModel)]="this.collectService.documentSaleOpen.coDocumentSaleType" [readonly]="true"></ion-input>
             </ion-col>
+            }
             <!-- TIPO DOCUMENTO -->
 
             <!-- NRO DOCUMENTO -->
@@ -789,13 +832,14 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
             <!-- SALDO -->
 
             <!-- SALDO CONVERSION-->
-            <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
-              *ngIf="this.collectService.multiCurrency && this.collectService.showConversion">
+            @if(this.collectService.multiCurrency && this.collectService.showConversion){
+            <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
               <ion-input
                 label="{{this.collectService.collectionTags.get('COB_SALDO')}} {{this.collectService.currencyConversion.coCurrency}}"
                 label-placement="floating" fill="outline" value="{{this.saldoConversion}}" color="primary"
                 [readonly]="true"></ion-input>
             </ion-col>
+            }
             <!-- SALDO CONVERSION -->
 
             <!-- COMENTARIO DOCUMENTO-->
@@ -811,17 +855,23 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
 
             <!-- NRO COMPROBANTE RET -->
 
-            <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
-              *ngIf="this.collectService.formatRetention == 'number'">
+            @if(this.collectService.formatRetention == 'number'){
+            <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
               <ion-input label="{{this.collectService.collectionTags.get('COB_NUMBER_COMPROBANTE_RETENTION')}}"
                 label-placement="floating" fill="outline" color="primary" type="number"
                 value="{{this.collectService.documentSaleOpen.nuVaucherRetention}}"
                 [(ngModel)]="this.collectService.documentSaleOpen.nuVaucherRetention"
                 (ionChange)="validateNuVaucherRetention(true)">
               </ion-input>
+              @if(this.collectService.sizeRetention > 0){
+              <ion-note color="danger">
+                Debe tener {{this.collectService.sizeRetention}} caracteres.
+              </ion-note>
+              }
             </ion-col>
-            <ion-col size="12" size-xs="12" size-sm="12" size-md="12"
-              *ngIf="this.collectService.formatRetention != 'number'">
+            }
+            @if(this.collectService.formatRetention != 'number'){
+            <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
               <ion-input label="{{this.collectService.collectionTags.get('COB_NUMBER_COMPROBANTE_RETENTION')}}"
                 label-placement="floating" fill="outline" color="primary" type="text"
                 value="{{this.collectService.documentSaleOpen.nuVaucherRetention}}"
@@ -829,7 +879,13 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                 (ionChange)="validateNuVaucherRetention(true)"
                 [ngClass]="{'inp-write': this.collectService.validNuRetention}">
               </ion-input>
+              @if(this.collectService.sizeRetention > 0){
+              <ion-note color="danger">
+                Debe tener {{this.collectService.sizeRetention}} caracteres.
+              </ion-note>
+              }
             </ion-col>
+            }
             <!-- NRO COMPROBANTE RET -->
 
             <!-- FECHA COMP RET -->
@@ -842,11 +898,11 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                                       'input-rojo': this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher
                                     }" [disabled]="!this.collectService.validNuRetention">
               </ion-input>
-              <ion-label
-                *ngIf="this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher"
-                color="danger" class="campoObligatorio">
+              @if(this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher){
+              <ion-label color="danger" class="campoObligatorio">
                 {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}
               </ion-label>
+              }
 
 
               <ion-modal [keepContentsMounted]="true" [trigger]="'inputCalendar'" [initialBreakpoint]="0.65">
@@ -917,10 +973,12 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
     </ng-template>
   </ion-modal>
 </div>
+}
 <!-- MODAL SI RETENCION-->
 
 <!-- MODAL PAYMENTPARTIAL-->
-<div *ngIf="this.collectService.coTypeModule == '0' || this.collectService.coTypeModule == '4'">
+@if(this.collectService.coTypeModule == '0' || this.collectService.coTypeModule == '4'){
+<div>
   <ion-modal [isOpen]="this.collectService.openPaymentPartial" id="eventModal" size="cover"
     class="listado-product-structures modalActividades" (didDismiss)="this.collectService.openPaymentPartial = false"
     backdrop-dismiss="false">
@@ -976,8 +1034,8 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
               </ion-col>
             </ion-row>
 
-            <ion-row *ngFor="let paymentPartials of this.collectService.paymentPartials;index as i"
-              class="tabladocumentSalesVenta tablaDocVentas row">
+            @for (paymentPartials of this.collectService.paymentPartials; track $index; let i = $index) {
+            <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
               <ion-col size="4" class="ion-text-center col borderInferiorIzquierdo">
                 {{paymentPartials.idCollection}}
               </ion-col>
@@ -1002,6 +1060,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                 {{formatMultiLineAmounts(paymentPartials.paymentDetails)}}
               </ion-col>
             </ion-row>
+            }
           </ion-grid>
         </ion-grid>
 
@@ -1009,6 +1068,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
     </ng-template>
   </ion-modal>
 </div>
+}
 <!-- MODAL PAYMENTPARTIAL-->
 }
 
