@@ -11,7 +11,7 @@ import { Router } from '@angular/router';
 import { List } from 'src/app/modelos/tables/list';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
-import { CLIENTSTOCK_STATUS_NEW, CLIENTSTOCK_STATUS_SAVED, CLIENTSTOCK_STATUS_SENT, CLIENTSTOCK_STATUS_TO_SEND, CLIENT_POTENTIAL_STATUS_NEW, CLIENT_POTENTIAL_STATUS_SENT, CLIENT_POTENTIAL_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { CLIENTSTOCK_STATUS_NEW, CLIENTSTOCK_STATUS_SAVED, CLIENTSTOCK_STATUS_SENT, CLIENTSTOCK_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 import { Client } from 'src/app/modelos/tables/client';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
@@ -225,7 +225,6 @@ export class InventarioActividadesComponent implements OnInit {
     this.inventariosLogicService.showHeaderButtonsFunction(false);
     this.inventariosLogicService.inventarioComp = false;
     this.inventariosLogicService.inventarioList = false;
-    this.inventariosLogicService.typeStocksComponent = false;
     this.inventariosLogicService.containerComp = true;
     this.message.closeCustomBtn();
 

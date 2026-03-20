@@ -27,10 +27,7 @@ export class InventarioComponent implements OnInit {
   }
 
   onChangeTab(tab: string) {
-    if (this.inventariosLogicService.typeStocksComponent) {
-      this.inventariosLogicService.onShowProductStructures()
-      this.inventariosLogicService.typeStocksComponent = false;
-    }
+
     this.segment = tab;
   }
 

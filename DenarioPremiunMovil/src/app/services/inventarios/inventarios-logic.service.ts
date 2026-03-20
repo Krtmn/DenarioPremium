@@ -42,7 +42,6 @@ export class InventariosLogicService {
   public inventarioComp: Boolean = false;
   public inventarioList: Boolean = false;
   public containerComp: Boolean = true;
-  public typeStocksComponent: Boolean = false;
   public showButtons = new Subject<Boolean>;
   public newClientStock: ClientStocks = {} as ClientStocks;
   public stockValid = new Subject<Boolean>;
