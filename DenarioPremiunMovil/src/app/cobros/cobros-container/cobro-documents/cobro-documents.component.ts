@@ -1113,9 +1113,15 @@ export class CobrosDocumentComponent implements OnInit {
       if (!this.hasShownPartialPayMessage && this.collectService.totalHistoricPartialPayment > 0 && this.collectService.coTypeModule == "0") {
         if (this.collectService.historicPartialPayment &&
           this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].inPaymentPartial) {
-          this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSJ_HAVE_PAYPARTIAL')!;
-          this.alertMessageOpen2 = true;
-          this.hasShownPartialPayMessage = true;
+
+          this.collectService.getPaymentPartialByDocument(this.synchronizationServices.getDatabase(), this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].coDocument).then(resp => {
+            if (this.collectService.paymentPartials.length > 0) {
+              this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSJ_HAVE_PAYPARTIAL')!;
+              this.alertMessageOpen2 = true;
+              this.hasShownPartialPayMessage = true;
+            }
+          })
+
         }
       }
 
