@@ -437,11 +437,12 @@ export class PedidoComponent implements OnInit {
           }
           //warehouse
           if (this.orderServ.validateWarehouses) {
-            let wh = this.orderServ.listaWarehouse.find((w) => w.coWarehouse == detail.coWarehouse)!;
+            let wh = this.orderServ.listaWarehouse.find((w) => w.idWarehouse == detail.idWarehouse)!;
             if (wh != undefined) {
               item.idWarehouse = wh.idWarehouse;
               item.prevWarehouse = wh.idWarehouse;
               item.naWarehouse = wh.naWarehouse;
+              item.coWarehouse = wh.coWarehouse;
             } else {
               console.error("No se consiguio Warehouse: " + detail.coWarehouse);
             }
