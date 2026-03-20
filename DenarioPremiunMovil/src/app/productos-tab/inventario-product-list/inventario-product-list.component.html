@@ -118,7 +118,8 @@
                 - {{i + 1}}
               </ion-card-title>
               @if(inventoryRows.length >= 1){
-              <ion-button class="delete-row-btn" fill="clear" (click)="removeInventoryRow(i)" aria-label="Eliminar lote">
+              <ion-button class="delete-row-btn" fill="clear" (click)="removeInventoryRow(i)"
+                aria-label="Eliminar lote">
                 <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
               </ion-button>
               }
@@ -134,8 +135,8 @@
                 placeholder="Ingresa lote" [(ngModel)]="row.lote"></ion-input>
             </ion-item>
             <ion-item class="capture-form-item" lines="none">
-              <ion-select class="capture-select" label="Unidad" labelPlacement="stacked" interface="popover"
-                placeholder="Selecciona unidad" [(ngModel)]="row.unidad">
+              <ion-select class="capture-select" labelPlacement="stacked" interface="popover" fill="outline"
+                [(ngModel)]="row.unidad">
                 @for (unit of inventariosLogicService.productSelected.productUnitList; track $index) {
                 <ion-select-option [value]="unit">{{ unit.naUnit }}</ion-select-option>
                 }

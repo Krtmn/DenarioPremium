@@ -79,6 +79,8 @@
 }
 
 .products-list-content {
+  height: max(45vh, calc(100vh - 320px));
+  --background: #ffffff;
   --offset-bottom: 0 !important;
   --padding-bottom: 0;
 }
@@ -298,4 +300,8 @@ ion-modal.inventory-type-stocks-modal ion-content.compact-modal-content {
 
 .delete-row-btn ion-icon {
   font-size: 18px;
+}
+
+.product-structure-scroll {
+    height: calc(93vh - 150px)!important;
 }
