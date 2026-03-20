@@ -220,36 +220,30 @@ export class InventarioGeneralComponent implements OnInit {
                 if (clientStock.clientStockDetails.length == 0) {
                   this.inventariosLogicService.newClientStock.clientStockDetails = [] as ClientStocksDetail[];
                 } else {
-                  for (var i = 0; i < clientStock.clientStockDetails.length; i++) {
+                  const detailUnitPromises = clientStock.clientStockDetails.map((detail, detailIndex) =>
+                    this.inventariosLogicService
+                      .getClientStockDetailsUnits(this.dbServ.getDatabase(), detail.coClientStockDetail, detailIndex)
+                      .then((data: readonly [number, ClientStocksDetailUnits[]] | never[]) => {
+                        const [index, detailUnits] = data;
+                        clientStock.clientStockDetails[index].clientStockDetailUnits = [...detailUnits];
+                      })
+                  );
 
-                    this.inventariosLogicService.getClientStockDetailsUnits(this.dbServ.getDatabase(), clientStock.clientStockDetails[i].coClientStockDetail, i).then(data => {
-                      console.log(data);
-                      let [index, object] = data
+                  Promise.all(detailUnitPromises).then(() => {
+                    this.inventariosLogicService.newClientStock.clientStockDetails = clientStock.clientStockDetails;
+                    this.inventariosLogicService.setVariablesMap();
+                    this.inventariosLogicService.onStockValidToSave(true);
+                    this.inventariosLogicService.onStockValidToSend(true);
 
-                      for (var j = 0; j < object.length; j++) {
-                        let arr = {} as ClientStocksDetailUnits;
-                        arr = object[j]
-
-                        clientStock.clientStockDetails[index].clientStockDetailUnits.push(arr);
-                      }
-                      console.log(clientStock.clientStockDetails[index]);
-                      if (index == clientStock.clientStockDetails.length - 1) {
-                        /* this.inventariosLogicService.newClientStock.clientStockDetails = [] as ClientStocksDetail[]; */
-                        this.inventariosLogicService.newClientStock.clientStockDetails = clientStock.clientStockDetails;
-                        this.inventariosLogicService.setVariablesMap();
-                        this.inventariosLogicService.onStockValidToSave(true);
-                        this.inventariosLogicService.onStockValidToSend(true);
+                    if (clientStock.stDelivery == 1 || clientStock.stDelivery == null) {
+                      this.inventariosLogicService.getInfoUnit(this.dbServ.getDatabase(), clientStock).then(() => {
                         this.message.hideLoading();
-                      }
+                      });
+                      return;
+                    }
 
-                      if (clientStock.stDelivery == 1 || clientStock.stDelivery == null) {
-                        this.inventariosLogicService.getInfoUnit(this.dbServ.getDatabase(), clientStock).then(resp => {
-
-                        });
-                      }
-
-                    })
-                  }
+                    this.message.hideLoading();
+                  });
                 }
 
 
