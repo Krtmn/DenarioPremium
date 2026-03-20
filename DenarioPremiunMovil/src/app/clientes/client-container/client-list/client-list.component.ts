@@ -112,6 +112,11 @@ export class ClientListComponent implements OnInit {
     this.clientLogic.clientListPage = 0;
     if (this.searchText.trim() == '') {
       //poner la lista de clientes normal
+      this.clientLogic.clientListPage = 0;
+      this.clientLogic.getClients(this.clientLogic.empresaSeleccionada.idEnterprise).then(result => {
+        this.messageService.hideLoading();
+        this.scrollDisable = result;
+      });
     } else {
       this.clientLogic.searchClients(this.clientLogic.empresaSeleccionada.idEnterprise, this.searchText).then(result => {
         this.messageService.hideLoading();
