@@ -793,11 +793,11 @@ export class CollectionService {
           this.documentSalesView[i].nuValueLocal = this.rateSelected;
         }
       }
-         this.unlockTabs().then((resp) => {
-/*           this.mensaje = "No hay tasa para la fecha seleccionada";
-          this.alertMessageOpen = true; */
-          this.onCollectionValid(resp);
-        })
+      this.unlockTabs().then((resp) => {
+        /*           this.mensaje = "No hay tasa para la fecha seleccionada";
+                  this.alertMessageOpen = true; */
+        this.onCollectionValid(resp);
+      })
       return Promise.resolve(true);
     } else {
       //no tengo tasa para ese dia
@@ -1199,20 +1199,18 @@ export class CollectionService {
 
   async validateToSend() {
 
-    if (this.alwaysPartialPayment && this.allPaymentPartial) {
-      if (!this.messageSended) {
-        this.mensaje = this.collectionTags.get('COB_ERROR_PARTIAL_PAY')!;
+    if (this.alwaysPartialPayment || this.allPaymentPartial) {
+      if (this.collection.collectionPayments?.length > 0 && this.montoTotalPagado != this.montoTotalPagar && this.montoTotalPagado > 0) {
+        if (!this.messageSended) {
+          this.mensaje = this.collectionTags.get('COB_ERROR_PARTIAL_PAY')!;
 
-        this.messageAlert = new MessageAlert(
-          this.collectionTags.get('COB_NOMBRE_MODULO')!,
-          this.mensaje,
-        );
-        this.messageService.alertModal(this.messageAlert);
-        this.messageSended = true;
-
-        /* setTimeout(() => {
-          this.messageSended = false;
-        }, 1000); */
+          this.messageAlert = new MessageAlert(
+            this.collectionTags.get('COB_NOMBRE_MODULO')!,
+            this.mensaje,
+          );
+          this.messageService.alertModal(this.messageAlert);
+          this.messageSended = true;
+        }
       }
     }
 
@@ -1364,7 +1362,7 @@ export class CollectionService {
     if (this.alwaysPartialPayment && this.existPartialPayment) {
       if (this.montoTotalPagado != this.montoTotalPagar) {
         this.onCollectionValidToSend(false);
-        if (!this.messageSended) {
+        /* if (!this.messageSended) {
           this.mensaje = this.collectionTags.get('COB_ERROR_PARTIAL_PAY')!;
 
           this.messageAlert = new MessageAlert(
@@ -1373,11 +1371,8 @@ export class CollectionService {
           );
           this.messageService.alertModal(this.messageAlert);
           this.messageSended = true;
-          /*  setTimeout(() => {
-             this.messageSended = false;
-           }, 1000); */
 
-        }
+        } */
       } else {
         this.onCollectionValidToSend(true);
       }
