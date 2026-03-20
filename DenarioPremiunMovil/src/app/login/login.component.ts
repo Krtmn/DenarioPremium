@@ -21,6 +21,7 @@ import { Imagenes } from '../modelos/imagenes';
 import { ScreenOrientation, OrientationType } from '@capawesome/capacitor-screen-orientation';
 import { Keyboard } from '@capacitor/keyboard';
 import { from } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
 
 @Component({
@@ -137,16 +138,28 @@ export class LoginComponent implements OnInit {
       localStorage.setItem("login", f.value.login.trim());
       localStorage.setItem("password", f.value.password);
 
-      (await this.synchronization.getCreateTables()).subscribe((res) => {
-        this.loginLogic.dropTables(res).then(async (res: any) => {
-          await this.synchronization.checkAndRunMigrations();
-          console.log(res)
-          console.log(f);
-          localStorage.removeItem("lastUpdate")
-          this.validateConnection(f)
-          //this.subsChangeUser.unsubscribe();
-        })
-      })
+      try {
+        const createTables$ = await this.synchronization.getCreateTables();
+        const tables = await firstValueFrom(createTables$);
+
+        await this.loginLogic.dropTables(tables);
+        // Las migraciones deben correr luego de recrear tablas en initDb/createTables.
+        // Reiniciamos la versión para forzar su ejecución en el flujo correcto.
+        localStorage.removeItem("db_version");
+
+        console.log('Cambio de usuario: tablas eliminadas. Migraciones pendientes al recrear BD.');
+        console.log(f);
+        localStorage.removeItem("lastUpdate");
+        this.validateConnection(f);
+      } catch (e) {
+        console.error('Error durante cambio de usuario (drop/migrations):', e);
+        this.message.hideLoading();
+        this.messageAlert = new MessageAlert(
+          "Denario Premium",
+          "No se pudo completar la preparación de base de datos para el cambio de usuario. Intente nuevamente."
+        );
+        this.message.alertModal(this.messageAlert);
+      }
     })
 
     this.deviceInfo = await Device.getInfo();

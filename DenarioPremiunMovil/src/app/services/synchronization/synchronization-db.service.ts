@@ -331,6 +331,7 @@ export class SynchronizationDBService {
       }
     } catch (e) {
       console.log('checkAndRunMigrations error', e);
+      throw e;
     }
   }
 
@@ -348,6 +349,7 @@ export class SynchronizationDBService {
       }
     } catch (e) {
       console.log(`runMigrationForVersion v${version} error`, e);
+      throw e;
     }
   }
 
