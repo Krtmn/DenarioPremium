@@ -300,9 +300,18 @@ export class InventarioProductListComponent implements OnInit {
   }
 
   removeInventoryRow(index: number) {
-    if (this.inventoryRows.length === 1) {
+    if (index < 0 || index >= this.inventoryRows.length) {
       return;
     }
+
+    if (this.inventoryRows.length === 1) {
+      const defaultUnit = this.inventariosLogicService.productSelected?.productUnitList?.[0]
+        || this.inventoryRows[0]?.unidad
+        || null;
+      this.inventoryRows = [this.createEmptyInventoryRow(defaultUnit)];
+      return;
+    }
+
     this.inventoryRows.splice(index, 1);
   }
 
