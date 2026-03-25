@@ -218,6 +218,7 @@ export class CollectionService {
   public requiredCollectionAttachments: boolean = false;
   private typeDocumentListLoaded: boolean = false;
   private codePhoneNumberListLoaded: boolean = false;
+  public enabledManualRate: boolean = false;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;
@@ -376,6 +377,8 @@ export class CollectionService {
     this.enablePartialPayment = enablePartialPaymentValue === '' ? true : enablePartialPaymentValue === 'true' ? true : false;
     const requiredCollectionAttachmentsValue = (this.globalConfig.get('requiredCollectionAttachments') || '').trim();
     this.requiredCollectionAttachments = requiredCollectionAttachmentsValue === '' ? true : requiredCollectionAttachmentsValue === 'true' ? true : false;
+    const enabledManualRateValue = (this.globalConfig.get('enabledManualRate') || '').trim();
+    this.enabledManualRate = enabledManualRateValue === '' ? true : enabledManualRateValue === 'true' ? true : false;
 
 
 
