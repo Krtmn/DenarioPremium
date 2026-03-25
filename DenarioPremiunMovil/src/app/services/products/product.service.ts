@@ -119,17 +119,23 @@ export class ProductService {
     }
 
     const normalizedOrder = configuredOrder.replace(/^order\s+by\s+/i, '').trim();
-    const validOrderRegex = /^p\.(na_product|co_product)(\s+(asc|desc))?$/i;
+    const [rawField, rawDirection] = normalizedOrder.split(/\s+/);
 
-    if (!validOrderRegex.test(normalizedOrder)) {
+    if (!rawField) {
       return fallback;
     }
 
-    if (/\s+(asc|desc)$/i.test(normalizedOrder)) {
-      return normalizedOrder;
+    const normalizedField = rawField.toLowerCase().replace(/^p\./, '');
+    if (normalizedField !== 'na_product' && normalizedField !== 'co_product') {
+      return fallback;
     }
 
-    return normalizedOrder + ' ASC';
+    const normalizedDirection = (rawDirection || 'ASC').toUpperCase();
+    if (normalizedDirection !== 'ASC' && normalizedDirection !== 'DESC') {
+      return fallback;
+    }
+
+    return `p.${normalizedField} ${normalizedDirection}`;
   }
 
   getProductsByCoProductStructureAndIdEnterprise(dbServ: SQLiteObject, idProductStructures: number[], idEnterprise: number, coCurrency: string, page: number) {
@@ -727,7 +733,7 @@ export class ProductService {
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price_opposite, " +
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency_opposite, " +
-        " (select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereClause + " " + orderByClause + " limit ? offset ?";
+        " (select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereClause + " ORDER BY " + orderByClause + " limit ? offset ?";
       return database.executeSql(select, params).then(result => {
         for (let i = 0; i < result.rows.length; i++) {
           this.productList.push({
@@ -762,7 +768,7 @@ export class ProductService {
         "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list," +
         "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price," +
         "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + "  order by l.na_list limit 1) as co_currency," +
-        "(select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereClause + " order by p.co_product ASC limit ? offset ?";
+        "(select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereClause + " ORDER BY " + orderByClause + " limit ? offset ?";
       return database.executeSql(select, params).then(result => {
         for (let i = 0; i < result.rows.length; i++) {
           this.productList.push({
