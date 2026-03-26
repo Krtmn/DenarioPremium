@@ -121,7 +121,7 @@ export class InventarioGeneralComponent implements OnInit {
       this.alertButtons2[1].text = this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
       //ESTO PARA HACER EL PROCESO DE CARGA 1 SOLA VEZ Y NO CADA VEZ QUE SE LE DE A LA PESTANA GENERAL
       this.initInventario()
-      this.adjuntoService.setup(this.dbServ.getDatabase(), this.config.get("signatureClientStocks") == "true", this.viewOnly, COLOR_AMARILLO);
+      this.adjuntoService.setup(this.dbServ.getDatabase(), this.config.get("signatureStock") == "true", this.viewOnly, COLOR_AMARILLO);
       this.daClientStock = this.dateServ.hoyISOFullTime();
       this.inventariosLogicService.alertMessage = false;
       this.inventariosLogicService.alertMessageOpen = false;
@@ -419,7 +419,7 @@ export class InventarioGeneralComponent implements OnInit {
       this.alertButtons[0].text = this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
       this.alertButtons2[0].text = this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_CANCELAR')!
       this.alertButtons2[1].text = this.inventariosLogicService.inventarioTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
-      this.adjuntoService.setup(this.dbServ.getDatabase(), this.config.get("signatureClientStocks") == "true", this.viewOnly, COLOR_AMARILLO);
+      this.adjuntoService.setup(this.dbServ.getDatabase(), this.config.get("signatureStock") == "true", this.viewOnly, COLOR_AMARILLO);
       this.daClientStock = this.dateServ.hoyISOFullTime();
       this.inventariosLogicService.alertMessage = false;
       this.inventariosLogicService.alertMessageOpen = false;
