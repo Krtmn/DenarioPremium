@@ -14,6 +14,7 @@ import { GlobalConfigService } from '../globalConfig/global-config.service';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
 import { PedidosService } from 'src/app/pedidos/pedidos.service';
+import { TextService } from '../text/text.service';
 import { MAX_ITEMS_PER_PAGE } from 'src/app/utils/appConstants';
 
 @Injectable({
@@ -26,6 +27,7 @@ export class ProductService {
   currencyService = inject(CurrencyService);
   globalConfig = inject(GlobalConfigService);
   psService = inject(ProductStructureService);
+  textService = inject(TextService);
 
   public productList: ProductUtil[] = [];
   public typeProductStructureList: TypeProductStructure[] = [];
@@ -583,8 +585,9 @@ export class ProductService {
     const tokenClauses: string[] = [];
     const params: any[] = [];
     for (const t of tokens) {
-      tokenClauses.push("(LOWER(p.co_product) LIKE ? OR LOWER(p.na_product) LIKE ?)");
-      params.push(`%${t}%`, `%${t}%`);
+      const pattern = this.textService.convertToSqliteAccentGlob(t);
+      tokenClauses.push("(p.co_product GLOB ? OR p.na_product GLOB ?)");
+      params.push(pattern, pattern);
     }
 
     // always filter by enterprise
@@ -699,8 +702,9 @@ export class ProductService {
     const tokenClauses: string[] = [];
     const params: any[] = [];
     for (const t of tokens) {
-      tokenClauses.push("(LOWER(p.co_product) LIKE ? OR LOWER(p.na_product) LIKE ?)");
-      params.push(`%${t}%`, `%${t}%`);
+      const pattern = this.textService.convertToSqliteAccentGlob(t);
+      tokenClauses.push("(p.co_product GLOB ? OR p.na_product GLOB ?)");
+      params.push(pattern, pattern);
     }
 
     // always filter by enterprise
