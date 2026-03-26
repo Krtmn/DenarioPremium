@@ -1006,6 +1006,54 @@ export class ProductService {
     })
   }
 
+  searchProductsByIdInvoiceAndSearchText(dbServ: SQLiteObject, idInvoice: number, searchText: string) {
+    var database = dbServ;
+    this.productList = [];
+    const tokens = (searchText || '').toString().trim().toLowerCase().split(/\s+/).filter(t => t.length > 0);
+    const tokenClauses: string[] = [];
+    const params: any[] = [];
+
+    params.push(idInvoice);
+    for (const t of tokens) {
+      const pattern = this.textService.convertToSqliteAccentGlob(t);
+      tokenClauses.push("(co_product GLOB ? OR na_product GLOB ?)");
+      params.push(pattern, pattern);
+    }
+    var whereClause = tokenClauses.length ? tokenClauses.join(" AND ") : "1";
+    var select = 'SELECT id_product, co_product, na_product, id_enterprise, co_enterprise, p.id_product_structure, p.nu_tax ' +
+      'FROM products p WHERE id_product IN ' +  
+      '(SELECT id_product FROM invoice_details WHERE id_invoice = ? ORDER BY id_product ASC) AND ' + whereClause;
+    return database.executeSql(select, params).then(result => {
+      for (let i = 0; i < result.rows.length; i++) {
+        this.productList.push({
+          idProduct: result.rows.item(i).id_product,
+          coProduct: result.rows.item(i).co_product,
+          naProduct: result.rows.item(i).na_product,
+          idEnterprise: result.rows.item(i).id_enterprise,
+          coEnterprise: result.rows.item(i).co_enterprise,
+          images: this.imageServices.mapImagesFiles.get(result.rows.item(i).co_product) === undefined ? '../../../assets/images/nodisponible.png' : this.imageServices.mapImagesFiles.get(result.rows.item(i).co_product)?.[0],
+          txDescription: '',
+          points: 0,
+          idList: 0,
+          price: 0,
+          coCurrency: '',
+          priceOpposite: 0,
+          coCurrencyOpposite: '',
+          stock: 0,
+          typeStocks: undefined,
+          productUnitList: undefined,
+          idProductStructure: result.rows.item(i).id_product_structure,
+          nuTax: result.rows.item(i).nu_tax
+        });
+      }
+    }).catch(e => {
+      this.productList = [];
+      console.log("[ProductService] Error al buscar productos.");
+      console.log(e);
+    });
+  }
+
+
   generarListIn(listaString: string[]) {
     let lista: string = "";
     for (var contador = 0; contador < listaString.length; contador++) {

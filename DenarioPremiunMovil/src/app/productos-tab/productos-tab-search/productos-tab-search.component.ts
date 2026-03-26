@@ -153,10 +153,14 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
       if(this.devolucion && this.returnLogic.requeridedNroFactura) {
         //si requeridedNroFactura es true, solo podemos mostrar los productos de esa factura.
         console.log('Buscando productos por factura ');
+        this.productService.searchProductsByIdInvoiceAndSearchText(this.db.getDatabase(), this.returnLogic.newReturn.idInvoice, this.searchText).then(() => {
+        this.returnLogic.validateReturnProductList = this.productService.productList;
+        this.returnLogic.productsByInvoice.next(true);
         this.message.hideLoading();
+        });
         
       }else{        
-      //busqueda normal sin filtrar por lista de precios
+      //busqueda normal sin filtrar por lista de precios ni factura
         this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
         this.searchText,
         this.empresaSeleccionada.idEnterprise,
