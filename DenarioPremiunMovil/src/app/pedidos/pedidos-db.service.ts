@@ -423,7 +423,7 @@ export class PedidosDbService {
       item.nuPriceBaseConversion, item.nuDiscountTotalConversion, item.nuAmountTotalConversion,]]);
 
       //query de discount
-      if (item.orderDetailDiscount && item.orderDetailDiscount[0].idDiscount != null) {
+      if (item.orderDetailDiscount && item.orderDetailDiscount[0].quDiscount != null) {
         queries.push([dcQuery, [item.orderDetailDiscount[0].idOrderDetailDiscount, item.orderDetailDiscount[0].coOrderDetailDiscount, item.orderDetailDiscount[0].coOrderDetail, item.orderDetailDiscount[0].idOrderDetail,
         item.orderDetailDiscount[0].idDiscount, item.orderDetailDiscount[0].quDiscount, item.orderDetailDiscount[0].nuPriceFinal,
         item.orderDetailDiscount[0].coEnterprise, item.orderDetailDiscount[0].idEnterprise,]]);
