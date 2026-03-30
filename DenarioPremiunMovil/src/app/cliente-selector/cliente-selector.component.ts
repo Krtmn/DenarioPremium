@@ -185,7 +185,9 @@ export class ClienteSelectorComponent implements OnInit {
       this.clientes = [] as Client[];
       this.service.clientes = [] as Client[];
     }
-    this.fixClientListSaldos(result);
+    if(this.multimoneda){
+      this.fixClientListSaldos(result);
+    }
 
     if (this.nombreModulo == 'Cobros') {
       result.sort((a, b) => {
