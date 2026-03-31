@@ -25,13 +25,13 @@
     @if (this.collectService.cobroValid) {
     <ion-col size="6" size-sm="12" size-xs="12">
       <ion-col size="6" size-sm="12" size-xs="12">
-        @if (this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3 &&
+        @if (this.collectService.collection.stCollection != this.COLLECT_STATUS_TO_SEND &&
         this.collectService.collection.stCollection != 6) {
         <ion-label>
           {{this.collectService.collectionTags.get('COB_MONEDA')}}:
         </ion-label>
         }
-        @if (this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3 &&
+        @if (this.collectService.collection.stCollection != this.COLLECT_STATUS_TO_SEND &&
         this.collectService.collection.stCollection != 6) {
         <div class="listado-enterprise-selector ion-text-center">
           <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.currencySelected"
@@ -43,9 +43,12 @@
           </ion-select>
         </div>
         }
-        @if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND ||
+        @if (
+        this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND ||
         this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT ||
-        this.collectService.collection.stCollection == 6) {
+        this.collectService.collection.stDelivery == this.COLLECT_STATUS_SAVED ||
+        this.collectService.collection.stCollection == 6
+        ) {
         <div>
           <ion-item>
             <ion-label>
@@ -58,7 +61,22 @@
 
       </ion-col>
 
-      @if (showDateRateSection) {
+      @if(enabledManualRate){
+      <ion-col size="6" size-sm="12" size-xs="12">
+        <ion-input type="number"
+          label="{{this.collectService.collectionTags.get('COB_TASA')}} {{this.collectService.localCurrency.coCurrency}}:"
+          label-placement="floating" fill="outline" min="{{lastRateValue || 0.01}}" step="0.01" [value]="rateSelected"
+          [disabled]="!enabledManualRate" (ionInput)="onManualRateInput($event)" (ionBlur)="onManualRateBlur()"
+          id="manualRateInput" color="primary" required inputmode="decimal"></ion-input>
+        @if (manualRateError) {
+        <ion-label color="danger" class="campoObligatorio">
+          {{ manualRateError }}
+        </ion-label>
+        }
+      </ion-col>
+      }
+
+      @if(!this.collectService.enabledManualRate){
       <ion-col size="6" size-sm="12" size-xs="12">
         <ion-item>
           <ion-label (click)="onDateRateClick()" [disabled]="isDateRateLabelDisabled">
@@ -70,11 +88,11 @@
           </ion-button>
         </ion-item>
       </ion-col>
-      }
+
 
       @if (this.collectService.multiCurrency && this.collectService.showConversion && this.collectService.haveRate &&
-      this.collectService.historicoTasa && this.collectService.collection.stCollection != 2 &&
-      this.collectService.collection.stCollection != 3 && this.collectService.collection.stCollection != 6) {
+      this.collectService.historicoTasa && this.collectService.collection.stCollection != this.COLLECT_STATUS_TO_SEND &&
+      this.collectService.collection.stCollection != 6) {
       <ion-col size="6" size-sm="12" size-xs="12">
         <ion-label>
           {{this.collectService.collectionTags.get('COB_TASA')}}
@@ -93,10 +111,14 @@
         </div>
       </ion-col>
       }
-      @if (this.collectService.multiCurrency && this.collectService.showConversion &&
-      (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND ||
+      @if ( this.collectService.multiCurrency && this.collectService.showConversion &&
+      (
+      this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND ||
       this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT ||
-      this.collectService.collection.stCollection == 6)) {
+      this.collectService.collection.stDelivery == this.COLLECT_STATUS_SAVED ||
+      this.collectService.collection.stCollection == 6
+      )
+      ) {
       <ion-col size="6" size-sm="12" size-xs="12">
         <ion-item>
           <ion-label>
@@ -117,7 +139,7 @@
           required="true" [ngClass]="{'inp-write': !this.collectService.collection.txConversion}"></ion-input>
       </ion-col>
       }
-
+      }
       <ion-col size="6" size-sm="12" size-xs="12">
         <ion-item>
           <ion-label>{{tagFecha()}}</ion-label>
@@ -131,8 +153,7 @@
       <ion-col size="6" size-sm="12" size-xs="12">
         <ion-input label="{{this.collectService.collectionTags.get('COB_RESPONSABLE')}}:"
           [(ngModel)]="this.collectService.collection.naResponsible" label-placement="floating" fill="outline"
-          maxlength="80" value=""
-          id="currency" color="primary" (ionChange)="setResponsible()"
+          maxlength="80" value="" id="currency" color="primary" (ionChange)="setResponsible()"
           [readonly]="this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stCollection == 6"
           [ngClass]="{
             'inp-write': !this.collectService.validComment && !isSentDelivery,
@@ -158,6 +179,7 @@
         <!-- <ion-button (click)="print()"></ion-button> -->
 
       </ion-col>
+
     </ion-col>
     }
 
