@@ -7,13 +7,15 @@ import { SynchronizationDBService } from '../synchronization/synchronization-db.
 import { AddresClient } from 'src/app/modelos/tables/addresClient';
 import { MAX_ITEMS_PER_PAGE } from 'src/app/utils/appConstants';
 import { Client } from 'src/app/modelos/tables/client';
+import { TextService } from '../text/text.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ClientesDatabaseServicesService {
   private globalConfig = inject(GlobalConfigService);
-  public dbServ = inject(SynchronizationDBService)
+  public dbServ = inject(SynchronizationDBService);
+  textService = inject(TextService);
 
   MAX_ITEMS_PER_PAGE = MAX_ITEMS_PER_PAGE; // cantidad de registros a traer por cada consulta a la base de datos (para evitar problemas de rendimiento)
 
@@ -166,8 +168,9 @@ export class ClientesDatabaseServicesService {
     const tokenClauses: string[] = [];
     const params: any[] = [];
     for (const t of tokens) {
-      tokenClauses.push("(LOWER(c.co_client) LIKE ? OR LOWER(c.lb_client) LIKE ?)");
-      params.push(`%${t}%`, `%${t}%`);
+      const pattern = this.textService.convertToSqliteAccentGlob(t);
+      tokenClauses.push("(c.co_client GLOB ? OR c.lb_client GLOB ?)");
+      params.push(pattern, pattern);
     }
 
     // always filter by enterprise

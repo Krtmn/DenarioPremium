@@ -6,7 +6,7 @@ import { MessageService } from 'src/app/services/messageService/message.service'
 import { ProductStructureService } from 'src/app/services/productStructures/product-structure.service';
 import { ProductService } from 'src/app/services/products/product.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
-
+import { ReturnLogicService } from 'src/app/services/returns/return-logic.service';
 @Component({
   selector: 'productos-tab-search',
   templateUrl: './productos-tab-search.component.html',
@@ -22,12 +22,16 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
   productService = inject(ProductService);
   orderServ = inject(PedidosService);
   message = inject(MessageService);
+
+  returnLogic = inject(ReturnLogicService);
   @Input()
   showProductStructure: Boolean = false;
   @Input()
   empresaSeleccionada!: Enterprise;
   @Input()
   pedido: Boolean = false;
+  @Input()
+  devolucion: Boolean = false;
   @Input()
   showBackButton: Boolean = false;
 
@@ -110,6 +114,8 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
   }
 
   onSearchTextChanged() {
+    //Cuidado al inabilitar esta funcion, ya que se sigue usando en ciertos casos
+    //Ejemplo: Devoluciones con requeridedNroFactura, para evitar hacer una busqueda compleja por factura.
     this.productService.searchTextChanged.next(this.searchText);
   }
 
@@ -144,18 +150,30 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
           this.message.hideLoading();
         });
     } else {
-      //busqueda normal sin filtrar por lista de precios
-      this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
+      if(this.devolucion && this.returnLogic.requeridedNroFactura) {
+        //si requeridedNroFactura es true, solo podemos mostrar los productos de esa factura.
+        console.log('Buscando productos por factura ');
+        this.productService.searchProductsByIdInvoiceAndSearchText(this.db.getDatabase(), this.returnLogic.newReturn.idInvoice, this.searchText).then(() => {
+        this.returnLogic.validateReturnProductList = this.productService.productList;
+        this.returnLogic.productsByInvoice.next(true);
+        this.message.hideLoading();
+        });
+        
+      }else{        
+      //busqueda normal sin filtrar por lista de precios ni factura
+        this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
         this.searchText,
         this.empresaSeleccionada.idEnterprise,
         this.empresaSeleccionada.coCurrencyDefault, 0).then(() => {
           this.productService.onProductTabSearchClicked();
           this.disabledSearchButton = false;
           this.message.hideLoading();
-        });
+        });   
+
     }
 
   }
+}
 
 
 

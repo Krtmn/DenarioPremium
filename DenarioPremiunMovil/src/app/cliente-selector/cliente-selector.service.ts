@@ -26,6 +26,7 @@ export class ClienteSelectorService {
   public currencyModule: CurrencyModules = {} as CurrencyModules;
 
   ClientChanged = new Subject<Client>;
+  idEnterprise: number = 0;
 
   constructor() {
     this.db = this.syncServ.getDatabase();

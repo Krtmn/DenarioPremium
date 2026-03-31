@@ -14,6 +14,7 @@ import { GlobalConfigService } from '../globalConfig/global-config.service';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
 import { PedidosService } from 'src/app/pedidos/pedidos.service';
+import { TextService } from '../text/text.service';
 import { MAX_ITEMS_PER_PAGE } from 'src/app/utils/appConstants';
 
 @Injectable({
@@ -26,6 +27,7 @@ export class ProductService {
   currencyService = inject(CurrencyService);
   globalConfig = inject(GlobalConfigService);
   psService = inject(ProductStructureService);
+  textService = inject(TextService);
 
   public productList: ProductUtil[] = [];
   public typeProductStructureList: TypeProductStructure[] = [];
@@ -119,23 +121,17 @@ export class ProductService {
     }
 
     const normalizedOrder = configuredOrder.replace(/^order\s+by\s+/i, '').trim();
-    const [rawField, rawDirection] = normalizedOrder.split(/\s+/);
+    const validOrderRegex = /^p\.(na_product|co_product)(\s+(asc|desc))?$/i;
 
-    if (!rawField) {
+    if (!validOrderRegex.test(normalizedOrder)) {
       return fallback;
     }
 
-    const normalizedField = rawField.toLowerCase().replace(/^p\./, '');
-    if (normalizedField !== 'na_product' && normalizedField !== 'co_product') {
-      return fallback;
+    if (/\s+(asc|desc)$/i.test(normalizedOrder)) {
+      return normalizedOrder;
     }
 
-    const normalizedDirection = (rawDirection || 'ASC').toUpperCase();
-    if (normalizedDirection !== 'ASC' && normalizedDirection !== 'DESC') {
-      return fallback;
-    }
-
-    return `p.${normalizedField} ${normalizedDirection}`;
+    return normalizedOrder + ' ASC';
   }
 
   getProductsByCoProductStructureAndIdEnterprise(dbServ: SQLiteObject, idProductStructures: number[], idEnterprise: number, coCurrency: string, page: number) {
@@ -589,8 +585,9 @@ export class ProductService {
     const tokenClauses: string[] = [];
     const params: any[] = [];
     for (const t of tokens) {
-      tokenClauses.push("(LOWER(p.co_product) LIKE ? OR LOWER(p.na_product) LIKE ?)");
-      params.push(`%${t}%`, `%${t}%`);
+      const pattern = this.textService.convertToSqliteAccentGlob(t);
+      tokenClauses.push("(p.co_product GLOB ? OR p.na_product GLOB ?)");
+      params.push(pattern, pattern);
     }
 
     // always filter by enterprise
@@ -705,8 +702,9 @@ export class ProductService {
     const tokenClauses: string[] = [];
     const params: any[] = [];
     for (const t of tokens) {
-      tokenClauses.push("(LOWER(p.co_product) LIKE ? OR LOWER(p.na_product) LIKE ?)");
-      params.push(`%${t}%`, `%${t}%`);
+      const pattern = this.textService.convertToSqliteAccentGlob(t);
+      tokenClauses.push("(p.co_product GLOB ? OR p.na_product GLOB ?)");
+      params.push(pattern, pattern);
     }
 
     // always filter by enterprise
@@ -723,7 +721,7 @@ export class ProductService {
     var offset = page * this.MAX_ITEMS_PER_PAGE;
     params.push(this.MAX_ITEMS_PER_PAGE, offset);
 
-    let orderByClause = this.getProductsOrderByClause();
+    let orderByClause = "ORDER BY " + this.getProductsOrderByClause();
 
 
     this.productList = [];
@@ -733,7 +731,7 @@ export class ProductService {
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency = '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency, " +
         " (select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price_opposite, " +
         " (select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.co_currency != '" + coCurrency + "' and pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as co_currency_opposite, " +
-        " (select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereClause + " ORDER BY " + orderByClause + " limit ? offset ?";
+        " (select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereClause + " " + orderByClause + " limit ? offset ?";
       return database.executeSql(select, params).then(result => {
         for (let i = 0; i < result.rows.length; i++) {
           this.productList.push({
@@ -768,7 +766,7 @@ export class ProductService {
         "(select pl.id_list from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as id_list," +
         "(select pl.nu_price from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + " order by l.na_list limit 1) as nu_price," +
         "(select pl.co_currency from price_lists pl join lists l on pl.id_list = l.id_list where pl.id_product = p.id_product and pl.id_list = " + id_list + "  order by l.na_list limit 1) as co_currency," +
-        "(select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereClause + " ORDER BY " + orderByClause + " limit ? offset ?";
+        "(select SUM(s.qu_stock) from stocks s where s.id_product = p.id_product) as qu_stock, p.id_enterprise, p.co_enterprise FROM products p WHERE " + whereClause + " " + orderByClause + " limit ? offset ?";
       return database.executeSql(select, params).then(result => {
         for (let i = 0; i < result.rows.length; i++) {
           this.productList.push({
@@ -1007,6 +1005,54 @@ export class ProductService {
       console.log(e);
     })
   }
+
+  searchProductsByIdInvoiceAndSearchText(dbServ: SQLiteObject, idInvoice: number, searchText: string) {
+    var database = dbServ;
+    this.productList = [];
+    const tokens = (searchText || '').toString().trim().toLowerCase().split(/\s+/).filter(t => t.length > 0);
+    const tokenClauses: string[] = [];
+    const params: any[] = [];
+
+    params.push(idInvoice);
+    for (const t of tokens) {
+      const pattern = this.textService.convertToSqliteAccentGlob(t);
+      tokenClauses.push("(co_product GLOB ? OR na_product GLOB ?)");
+      params.push(pattern, pattern);
+    }
+    var whereClause = tokenClauses.length ? tokenClauses.join(" AND ") : "1";
+    var select = 'SELECT id_product, co_product, na_product, id_enterprise, co_enterprise, p.id_product_structure, p.nu_tax ' +
+      'FROM products p WHERE id_product IN ' +  
+      '(SELECT id_product FROM invoice_details WHERE id_invoice = ? ORDER BY id_product ASC) AND ' + whereClause;
+    return database.executeSql(select, params).then(result => {
+      for (let i = 0; i < result.rows.length; i++) {
+        this.productList.push({
+          idProduct: result.rows.item(i).id_product,
+          coProduct: result.rows.item(i).co_product,
+          naProduct: result.rows.item(i).na_product,
+          idEnterprise: result.rows.item(i).id_enterprise,
+          coEnterprise: result.rows.item(i).co_enterprise,
+          images: this.imageServices.mapImagesFiles.get(result.rows.item(i).co_product) === undefined ? '../../../assets/images/nodisponible.png' : this.imageServices.mapImagesFiles.get(result.rows.item(i).co_product)?.[0],
+          txDescription: '',
+          points: 0,
+          idList: 0,
+          price: 0,
+          coCurrency: '',
+          priceOpposite: 0,
+          coCurrencyOpposite: '',
+          stock: 0,
+          typeStocks: undefined,
+          productUnitList: undefined,
+          idProductStructure: result.rows.item(i).id_product_structure,
+          nuTax: result.rows.item(i).nu_tax
+        });
+      }
+    }).catch(e => {
+      this.productList = [];
+      console.log("[ProductService] Error al buscar productos.");
+      console.log(e);
+    });
+  }
+
 
   generarListIn(listaString: string[]) {
     let lista: string = "";
