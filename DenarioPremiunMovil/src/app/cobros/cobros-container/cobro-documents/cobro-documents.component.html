@@ -334,12 +334,14 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                 </ion-col>
                 <!-- MONTO BASE -->
                 <!-- MONTO BASE CONVERSION -->
+                 @if(this.collectService.multiCurrency && this.collectService.showConversion){
                 <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                   <ion-input
                     label="{{this.collectService.collectionTags.get('COB_BASE')}} {{this.collectService.currencyConversion.coCurrency}}"
                     label-placement="floating" fill="outline" value="{{this.formatNumber(this.baseConversionView)}}"
                     color="primary" [readonly]="true"></ion-input>
                 </ion-col>
+              }
                 <!-- MONTO BASE CONVERSION -->
 
                 @if(this.discountView >0){
@@ -390,12 +392,14 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                 </ion-col>
                 <!-- MONTO TOTAL -->
                 <!-- MONTO TOTAL CONVERSION -->
+                 @if(this.collectService.multiCurrency && this.collectService.showConversion){
                 <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
                   <ion-input
                     label="{{this.collectService.collectionTags.get('COB_TOTAL')}} {{this.collectService.currencyConversion.coCurrency}}"
                     label-placement="floating" fill="outline" value="{{this.formatNumber(this.totalViewConversion)}}"
                     color="primary" [readonly]="true"></ion-input>
                 </ion-col>
+              }
                 <!-- MONTO TOTAL CONVERSION -->
                 }
 
