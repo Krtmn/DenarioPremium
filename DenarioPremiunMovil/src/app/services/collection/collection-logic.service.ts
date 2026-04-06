@@ -698,7 +698,7 @@ export class CollectionService {
     // Asigna el array con el objeto genérico y luego el contenido real
     this.currencyListDocument = [genericCurrency, ...this.currencyList];
     // Después de cargar currencyListDocument:
-    this.currencySelectedDocument = genericCurrency;
+    this.currencySelectedDocument = this.currencyListDocument.find(c => c.coCurrency === this.collection.coCurrency) ?? genericCurrency;
   }
 
   setCurrencyConversion() {
@@ -1272,8 +1272,9 @@ export class CollectionService {
       this.existPartialPayment = onlyPaymentPartial > 0;
 
       this.allPaymentPartial = false;
-      if (onlyPaymentPartial == this.collection.collectionDetails.length)
-        this.allPaymentPartial = true;
+      if (this.collection.collectionDetails.length > 0)
+        if (onlyPaymentPartial == this.collection.collectionDetails.length)
+          this.allPaymentPartial = true;
 
       if (this.enableDifferenceCodes) {
         const payments = Array.isArray(this.collection.collectionPayments) ? this.collection.collectionPayments : [];
@@ -2480,7 +2481,10 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       }
 
       this.documentSalesView = JSON.parse(JSON.stringify(this.documentSales));
-      this.convertDocumentSales();
+
+      if (this.multiCurrency)
+        this.convertDocumentSales();
+
       this.getColorRowDocumentSale();
       return this.documentSales;
     }).catch(() => Promise.resolve(this.documentSales));

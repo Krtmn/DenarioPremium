@@ -627,7 +627,7 @@ export class CobrosGeneralComponent implements OnInit {
               .then(() => {
 
               });
-          else
+          /* else
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient, this.collectService.currencySelectedDocument.coCurrency,
               this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
                 if (this.collectService.historicPartialPayment) {
@@ -635,7 +635,7 @@ export class CobrosGeneralComponent implements OnInit {
                 }
                 this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
 
-              });
+              }); */
           // }
 
           if (this.collectService.igtfList == null || this.collectService.igtfList.length == 0)
@@ -871,11 +871,13 @@ export class CobrosGeneralComponent implements OnInit {
       }
 
       // Convertir y recalcular (esperando a que terminen)
-      await this.collectService.convertDocumentSales();
-      await this.collectService.calculatePayment("", 0);
+      if (this.collectService.multiCurrency) {
+        await this.collectService.convertDocumentSales();
+        // Mantener conversion de moneda y actualización de UI
+        this.collectService.setCurrencyConversion();
+      }
 
-      // Mantener conversion de moneda y actualización de UI
-      this.collectService.setCurrencyConversion();
+      await this.collectService.calculatePayment("", 0);
 
       if (this.collectService.validateCollectionDate) {
         this.collectService.updateRateTiposPago();
