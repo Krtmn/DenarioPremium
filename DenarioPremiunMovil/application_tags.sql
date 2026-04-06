@@ -399,7 +399,8 @@ INSERT INTO public.application_tags(
   ('COB_PAGO_MOVIL', 'COB', 'COBROS', 'ESP', 'Pago Móvil'),
   ('COB_NUMERO_TELEFONO', 'COB', 'COBROS', 'ESP', 'Nº de Teléfono'),
   ('COB_DESCUENTO', 'COB', 'COBROS', 'ESP', 'Monto descuento'),
-  ('COB_IVA', 'COB', 'COBROS', 'ESP', 'Monto IVA');
+  ('COB_IVA', 'COB', 'COBROS', 'ESP', 'Monto IVA'),
+  ('COB_TOTAL', 'COB', 'COBROS', 'ESP', 'Monto Total');
 
 
 
