@@ -528,6 +528,8 @@ INSERT INTO public.application_tags(
 	('ADD_PRODUCT', 'PROD', 'DEVOLUCIONES', 'ENG', 'Add Product'),
 	('PROD_VOLVER', 'PROD', 'PRODUCTOS', 'ESP', 'Volver'),
 	('PROD_IVA', 'PROD', 'PRODUCTOS', 'ESP', 'IVA'),
+	('PROD_PRICE_WITH_IVA', 'PROD', 'PRODUCTOS', 'ESP', 'Precio + IVA'),
+	('PROD_PRICE_WITH_IVA', 'PROD', 'PRODUCTOS', 'ENG', 'Price + VAT'),
 	('PROD_VOLVER', 'PROD', 'PRODUCTOS', 'ENG', 'Back');
 
 -- DEVOLUCIONES
