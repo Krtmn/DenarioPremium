@@ -758,7 +758,6 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
   </ion-modal>
 </div>
 }
-
 <!-- MODAL SI ES COBROS  O IGTF-->
 
 
@@ -825,6 +824,99 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                 [readonly]="true"></ion-input>
             </ion-col>
             <!-- FECHA EMISION -->
+
+            <!-- TASA-->
+            @if(this.collectService.historicoTasa && this.collectService.showConversion){
+            <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+              <ion-input label="{{this.collectService.collectionTags.get('COB_TASA_DIA')}}:" label-placement="floating"
+                fill="outline" color="primary"
+                [value]="currencyService.formatNumber(collectService.documentSaleOpen.nuValueLocal)" [readonly]="true">
+              </ion-input>
+            </ion-col>
+            }
+            <!-- TASA -->
+
+            <!-- MONTO BASE -->
+            <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+              <ion-input
+                label="{{this.collectService.collectionTags.get('COB_BASE')}} {{this.collectService.collection.coCurrency}}"
+                label-placement="floating" fill="outline" value="{{this.formatNumber(this.baseView)}}" color="primary"
+                [readonly]="true"></ion-input>
+            </ion-col>
+            <!-- MONTO BASE -->
+            <!-- MONTO BASE CONVERSION -->
+            @if(this.collectService.multiCurrency && this.collectService.showConversion){
+            <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+              <ion-input
+                label="{{this.collectService.collectionTags.get('COB_BASE')}} {{this.collectService.currencyConversion.coCurrency}}"
+                label-placement="floating" fill="outline" value="{{this.formatNumber(this.baseConversionView)}}"
+                color="primary" [readonly]="true"></ion-input>
+            </ion-col>
+            }
+            <!-- MONTO BASE CONVERSION -->
+
+            @if(this.discountView >0){
+            <!-- MONTO DESCUENTO -->
+            <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+              <ion-input
+                label="{{this.collectService.collectionTags.get('COB_DESCUENTO')}} {{this.collectService.collection.coCurrency}}"
+                label-placement="floating" fill="outline" value="{{this.formatNumber(this.discountView)}}"
+                color="primary" [readonly]="true"></ion-input>
+            </ion-col>
+            <!-- MONTO DESCUENTO -->
+            <!-- MONTO DESCUENTO CONVERSION -->
+            @if(this.collectService.multiCurrency){
+            <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+              <ion-input
+                label="{{this.collectService.collectionTags.get('COB_DESCUENTO')}} {{this.collectService.currencyConversion.coCurrency}}"
+                label-placement="floating" fill="outline" value="{{this.formatNumber(this.discountViewConversion)}}"
+                color="primary" [readonly]="true"></ion-input>
+            </ion-col>
+            }
+            <!-- MONTO DESCUENTO CONVERSION -->
+            }
+
+            @if(this.ivaView >0){
+            <!-- MONTO IVA -->
+            <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+              <ion-input
+                label="{{this.collectService.collectionTags.get('COB_IVA')}} {{this.collectService.collection.coCurrency}}"
+                label-placement="floating" fill="outline" value="{{this.formatNumber(this.ivaView)}}" color="primary"
+                [readonly]="true"></ion-input>
+            </ion-col>
+            <!-- MONTO IVA -->
+            <!-- MONTO IVA CONVERSION -->
+            @if(this.collectService.multiCurrency){
+            <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+              <ion-input
+                label="{{this.collectService.collectionTags.get('COB_IVA')}} {{this.collectService.currencyConversion.coCurrency}}"
+                label-placement="floating" fill="outline" value="{{this.formatNumber(this.ivaViewConversion)}}"
+                color="primary" [readonly]="true"></ion-input>
+            </ion-col>
+            }
+            <!-- MONTO IVA CONVERSION -->
+            }
+
+            @if(this.totalView >0){
+            <!-- MONTO TOTAL -->
+            <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+              <ion-input
+                label="{{this.collectService.collectionTags.get('COB_TOTAL')}} {{this.collectService.collection.coCurrency}}"
+                label-placement="floating" fill="outline" value="{{this.formatNumber(this.totalView)}}" color="primary"
+                [readonly]="true"></ion-input>
+            </ion-col>
+            <!-- MONTO TOTAL -->
+            <!-- MONTO TOTAL CONVERSION -->
+            @if(this.collectService.multiCurrency && this.collectService.showConversion){
+            <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
+              <ion-input
+                label="{{this.collectService.collectionTags.get('COB_TOTAL')}} {{this.collectService.currencyConversion.coCurrency}}"
+                label-placement="floating" fill="outline" value="{{this.formatNumber(this.totalViewConversion)}}"
+                color="primary" [readonly]="true"></ion-input>
+            </ion-col>
+            }
+            <!-- MONTO TOTAL CONVERSION -->
+            }
 
             <!-- SALDO -->
             <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
