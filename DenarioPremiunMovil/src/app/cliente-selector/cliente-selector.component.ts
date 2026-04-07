@@ -189,7 +189,11 @@ export class ClienteSelectorComponent implements OnInit {
       this.fixClientListSaldos(result);
     }
 
-    if (this.nombreModulo == this.service.tags.get("COB_TYPE_COBRO")! || this.nombreModulo == this.service.tags.get("COB_TYPE_ANTICIPO")! || this.nombreModulo == this.service.tags.get("COB_TYPE_RETENCION")! || this.nombreModulo == this.service.tags.get("COB_TYPE_IGTF")!) {
+    if (this.nombreModulo == this.service.tags.get("COB_TYPE_COBRO")!
+      || this.nombreModulo == this.service.tags.get("COB_TYPE_ANTICIPO")!
+      || this.nombreModulo == this.service.tags.get("COB_TYPE_RETENCION")!
+      || this.nombreModulo == this.service.tags.get("COB_TYPE_IGTF")!
+      || this.nombreModulo == this.service.tags.get("COB_MODULE_COBRO25")!) {
       result.sort((a, b) => {
         const totalA = (a.saldo1 ?? 0) + (a.saldo2 ?? 0);
         const totalB = (b.saldo1 ?? 0) + (b.saldo2 ?? 0);
