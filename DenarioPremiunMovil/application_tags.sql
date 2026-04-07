@@ -397,7 +397,10 @@ INSERT INTO public.application_tags(
   ('COB_DOCUMENTO', 'COB', 'COBROS', 'ESP','Documento'),
   ('COB_RET_MSJ_COLLECTION_NO_ATTACHMENTS', 'COB', 'COBROS', 'ESP', 'Para poder enviar el Cobro, debe agregar al menos un adjunto.'),
   ('COB_PAGO_MOVIL', 'COB', 'COBROS', 'ESP', 'Pago Móvil'),
-  ('COB_NUMERO_TELEFONO', 'COB', 'COBROS', 'ESP', 'Nº de Teléfono');
+  ('COB_NUMERO_TELEFONO', 'COB', 'COBROS', 'ESP', 'Nº de Teléfono'),
+  ('COB_DESCUENTO', 'COB', 'COBROS', 'ESP', 'Monto descuento'),
+  ('COB_IVA', 'COB', 'COBROS', 'ESP', 'Monto IVA'),
+  ('COB_TOTAL', 'COB', 'COBROS', 'ESP', 'Monto Total');
 
 
 
@@ -528,6 +531,8 @@ INSERT INTO public.application_tags(
 	('ADD_PRODUCT', 'PROD', 'DEVOLUCIONES', 'ENG', 'Add Product'),
 	('PROD_VOLVER', 'PROD', 'PRODUCTOS', 'ESP', 'Volver'),
 	('PROD_IVA', 'PROD', 'PRODUCTOS', 'ESP', 'IVA'),
+	('PROD_PRICE_WITH_IVA', 'PROD', 'PRODUCTOS', 'ESP', 'Precio + IVA'),
+	('PROD_PRICE_WITH_IVA', 'PROD', 'PRODUCTOS', 'ENG', 'Price + VAT'),
 	('PROD_VOLVER', 'PROD', 'PRODUCTOS', 'ENG', 'Back');
 
 -- DEVOLUCIONES
