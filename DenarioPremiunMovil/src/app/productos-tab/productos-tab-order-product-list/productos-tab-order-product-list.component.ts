@@ -329,7 +329,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     if ((prod.discountList.length > 1)) {
       this.autoDiscount(prod);
     }
-    if (prod.quStock == 0) {
+    if (prod.quStock <= 0) {
       if (this.orderServ.stock0) {
         if (this.orderServ.validStock) {
           //mostramos error, pero dejamos agregar al carrito
@@ -356,7 +356,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     if (this.orderServ.validStock) {
       prod.quStock = prod.quStockAux - prod.quAmount;
     }
-    if (this.orderServ.validStock && (prod.quAmount > prod.quStockAux)) {
+    if (this.orderServ.validStock && !this.orderServ.stock0 &&(prod.quAmount > prod.quStockAux)) {
       this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_INVENTARIO"));
       prod.quAmount = 0;
     } else {
@@ -382,7 +382,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     if (this.orderServ.validStock) {
       prod.quStock = prod.quStockAux - prod.quAmount;
     }
-    if (this.orderServ.validStock && (prod.quAmount > prod.quStockAux)) {
+    if (this.orderServ.validStock && !this.orderServ.stock0 && (prod.quAmount > prod.quStockAux)) {
       this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_INVENTARIO"));
       prod.quAmount = 0;
     } else {
