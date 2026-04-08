@@ -1229,7 +1229,8 @@ export class CobrosDocumentComponent implements OnInit {
     // Si es pago parcial
     if (cs.isPaymentPartial) {
       let montoDoc = 0;
-      if (this.collectService.currencySelected.localCurrency.toString() === "true") {
+      montoDoc = this.collectService.documentSales[index].nuBalance;
+      /* if (this.collectService.currencySelected.localCurrency.toString() === "true") {
         if (this.collectService.currencySelected.coCurrency === doc.coCurrency) {
           //moneda del cobro loca, moneda del documento local
           montoDoc = this.collectService.documentSales[index].nuBalance;
@@ -1245,7 +1246,7 @@ export class CobrosDocumentComponent implements OnInit {
           //moneda del cobro hard, moneda en local
           montoDoc = this.collectService.toHard(this.collectService.documentSales[index].nuBalance);
         }
-      }
+      } */
       if (Math.abs(cs.amountPaid) >= this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(montoDoc))) {
         cs.mensaje = cs.collectionTags.get('COB_MSJ_PARTIALPAY_MAYOR_DOCAMOUNT')!;
         this.alertMessageOpen = true;
@@ -1258,26 +1259,27 @@ export class CobrosDocumentComponent implements OnInit {
       this.disabledSaveButton = false;
 
       let amountPaid = 0;
-      if (this.collectService.currencySelected.localCurrency.toString() == "true") {
-        //estoy en moneda local
-        if (this.collectService.currencySelected.coCurrency == doc.coCurrency) {
-          //moneda del documento es local
-          amountPaid = cs.amountPaid;
-        } else {
-          //moneda del documento es hard
-          amountPaid = cs.amountPaid / this.collectService.collection.nuValueLocal;
-        }
-      } else {
-        //estoy ne moneda hard
-        if (this.collectService.currencySelected.coCurrency == doc.coCurrency) {
-          //moneda del documento es hard
-          amountPaid = cs.amountPaid;
-        } else {
-          //moneda del documento es local
-          amountPaid = cs.amountPaid * this.collectService.collection.nuValueLocal;
-        }
-      }
-
+      /*  if (this.collectService.currencySelected.localCurrency.toString() == "true") {
+         //estoy en moneda local
+         if (this.collectService.currencySelected.coCurrency == doc.coCurrency) {
+           //moneda del documento es local
+           amountPaid = cs.amountPaid;
+         } else {
+           //moneda del documento es hard
+           amountPaid = cs.amountPaid / this.collectService.collection.nuValueLocal;
+         }
+       } else {
+         //estoy ne moneda hard
+         if (this.collectService.currencySelected.coCurrency == doc.coCurrency) {
+           //moneda del documento es hard
+           amountPaid = cs.amountPaid;
+         } else {
+           //moneda del documento es local
+           amountPaid = cs.amountPaid * this.collectService.collection.nuValueLocal;
+         }
+       }
+  */
+      amountPaid = cs.amountPaid;
       //cs.documentSales[index].nuBalance = amountPaid;
       cs.documentSales[index].nuAmountPaid = amountPaid;
       //cs.documentSalesBackup[index].nuBalance = amountPaid;
