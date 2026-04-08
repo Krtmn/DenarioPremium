@@ -198,10 +198,10 @@ export class ClienteSelectorComponent implements OnInit {
         const totalA = (a.saldo1 ?? 0) + (a.saldo2 ?? 0);
         const totalB = (b.saldo1 ?? 0) + (b.saldo2 ?? 0);
 
-        const groupA = totalA > 0 ? 0 : totalA == 0 ? 1 : 2;
-        const groupB = totalB > 0 ? 0 : totalB == 0 ? 1 : 2;
+        const groupA = (a.countDueDate ?? 0) > 0 ? 0 : 1;
+        const groupB = (b.countDueDate ?? 0) > 0 ? 0 : 1;
 
-        if (groupA != groupB) {
+        if (groupA !== groupB) {
           return groupA - groupB;
         }
 
@@ -229,6 +229,7 @@ export class ClienteSelectorComponent implements OnInit {
     this.service.checkClient = false;
     this.messageService.hideLoading();
   }
+
   fixClientListSaldos(result: any) {
     //mostrando los saldos correctamente
     let saldoCliente = 0, saldoOpuesto = 0;
