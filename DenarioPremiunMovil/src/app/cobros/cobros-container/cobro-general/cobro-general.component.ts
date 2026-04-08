@@ -165,6 +165,7 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.montoTotalPagado = this.collectService.collection.nuAmountTotal;
     this.collectService.montoTotalPagadoConversion = this.collectService.collection.nuAmountTotalConversion;
     this.dateCollect = this.collectService.collection.daCollection;
+    this.collectService.disabledInputClient = true;
     this.initializeCurrenciesAndRates();
     this.collectService.loadPaymentMethods();
     this.loadPayments();

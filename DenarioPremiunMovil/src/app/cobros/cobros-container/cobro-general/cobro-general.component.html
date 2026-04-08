@@ -25,18 +25,19 @@
     @if (this.collectService.cobroValid) {
     <ion-col size="6" size-sm="12" size-xs="12">
       <ion-col size="6" size-sm="12" size-xs="12">
-        @if (this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3 &&
-        this.collectService.collection.stCollection != 6) {
+        @if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_NEW ||
+      this.collectService.collection.stDelivery == this.COLLECT_STATUS_SAVED) {
         <ion-label>
           {{this.collectService.collectionTags.get('COB_MONEDA')}}:
         </ion-label>
         }
-        @if (this.collectService.collection.stCollection != 2 && this.collectService.collection.stCollection != 3 &&
-        this.collectService.collection.stCollection != 6) {
+        @if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_NEW ||
+        this.collectService.collection.stDelivery == this.COLLECT_STATUS_SAVED) {
         <div class="listado-enterprise-selector ion-text-center">
           <ion-select class="ion-text-center always-flip" [(ngModel)]="this.collectService.currencySelected"
             (ionChange)="onChangeCurrencyMsj($event)" disabled="{{this.collectService.disabledCurrency}}"
-            interface="popover" labelPlacement="stacked">
+            interface="popover" labelPlacement="stacked"
+            [disabled]="this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT">
             @for (currency of this.collectService.currencyList; track $index) {
             <ion-select-option [value]="currency">{{currency.coCurrency}}</ion-select-option>
             }
@@ -45,7 +46,7 @@
         }
         @if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND ||
         this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT ||
-        this.collectService.collection.stCollection == 6) {
+        this.collectService.collection.stDelivery == 6) {
         <div>
           <ion-item>
             <ion-label>
@@ -73,8 +74,8 @@
       }
 
       @if (this.collectService.multiCurrency && this.collectService.showConversion && this.collectService.haveRate &&
-      this.collectService.historicoTasa && this.collectService.collection.stCollection != 2 &&
-      this.collectService.collection.stCollection != 3 && this.collectService.collection.stCollection != 6) {
+      this.collectService.historicoTasa && (this.collectService.collection.stDelivery == this.COLLECT_STATUS_NEW ||
+      this.collectService.collection.stDelivery == this.COLLECT_STATUS_SAVED)) {
       <ion-col size="6" size-sm="12" size-xs="12">
         <ion-label>
           {{this.collectService.collectionTags.get('COB_TASA')}}
@@ -96,7 +97,7 @@
       @if (this.collectService.multiCurrency && this.collectService.showConversion &&
       (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND ||
       this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT ||
-      this.collectService.collection.stCollection == 6)) {
+      this.collectService.collection.stDelivery == 6)) {
       <ion-col size="6" size-sm="12" size-xs="12">
         <ion-item>
           <ion-label>
@@ -131,9 +132,8 @@
       <ion-col size="6" size-sm="12" size-xs="12">
         <ion-input label="{{this.collectService.collectionTags.get('COB_RESPONSABLE')}}:"
           [(ngModel)]="this.collectService.collection.naResponsible" label-placement="floating" fill="outline"
-          maxlength="80" value=""
-          id="currency" color="primary" (ionChange)="setResponsible()"
-          [readonly]="this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stCollection == 6"
+          maxlength="80" value="" id="currency" color="primary" (ionChange)="setResponsible()"
+          [readonly]="this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stDelivery == 6"
           [ngClass]="{
             'inp-write': !this.collectService.validComment && !isSentDelivery,
             'no-validate': isSentDelivery
@@ -147,7 +147,7 @@
             'inp-write': !this.collectService.validComment && !isSentDelivery,
             'no-validate': isSentDelivery
           }" [required]="this.collectService.requiredComment"
-          [readonly]="this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stCollection == 6">
+          [readonly]="this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stDelivery == 6">
         </ion-input>
         @if (this.collectService.collection.txComment.trim() == '' && this.collectService.requiredComment) {
         <ion-label color="danger" class="campoObligatorio">
