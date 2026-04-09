@@ -340,6 +340,9 @@ export class DepositService {
 
 
   convertirMonto(monto: number) {
+    if(!this.multiCurrency){
+      return monto.toFixed(this.parteDecimal);
+    }
     if (this.currencySelected.localCurrency.toString() === "true") {
       return (monto / this.deposit.nuValueLocal).toFixed(this.parteDecimal);
     } else {
