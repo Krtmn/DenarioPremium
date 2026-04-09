@@ -204,8 +204,8 @@ INSERT INTO public.application_tags(
 	('CLI_DETAIL_MONEDA_DOC','CLI','CLIENTES','ESP','Moneda Doc.'),
 	('CLI_DETAIL_TIPO','CLI','CLIENTES','ESP','Tipo'),
 	('CLI_DETAIL_TASA','CLI','CLIENTES','ESP','Tasa'),
-	('CLI_DETAIL_MONTO','CLI','CLIENTES','ESP','Monto'),
-	('CLI_DETAIL_MONTO_CONVERSION','CLI','CLIENTES','ESP','Monto Conversión'),
+	('CLI_DETAIL_MONTO','CLI','CLIENTES','ESP','Monto Total'),
+	('CLI_DETAIL_MONTO_CONVERSION','CLI','CLIENTES','ESP','Monto Total Conversión'),
 	('CLI_DETAIL_COORDENADA','CLI','CLIENTES','ESP','Coordenada'),
 	('CLI_LOCATION_ACEPTAR','CLI','CLIENTES','ESP','Aceptar'),
 	('CLI_DENARIO_HEADER','CLI','CLIENTES','ESP','Denario Clientes'),
@@ -232,7 +232,13 @@ INSERT INTO public.application_tags(
 	('CLI_HEADER_ALERTA', 'CLI', 'CLIENTES', 'ESP','¡Alerta!'),
 	('CLI_SIN_RESULTADOS', 'CLI', 'CLIENTES', 'ESP','No hay clientes disponibles'),
 	('CLI_SEND_MSG', 'CLI', 'CLIENTES', 'ESP','El cliente potencial será enviado'),
-	('CLI_RESET_CONFIRMA', 'CLI', 'CLIENTES', 'ESP','Se ha detectado cambio del cliente por lo que deberá iniciar nuevamente la transacción.');
+	('CLI_RESET_CONFIRMA', 'CLI', 'CLIENTES', 'ESP','Se ha detectado cambio del cliente por lo que deberá iniciar nuevamente la transacción.'),
+	('CLI_DETAIL_MONTO_BASE','CLI','CLIENTES','ESP','Monto Base'),
+	('CLI_DETAIL_MONTO_BASE_CONVERSION','CLI','CLIENTES','ESP','Monto Base Conversión'),
+	('CLI_DETAIL_MONTO_DESCUENTO','CLI','CLIENTES','ESP','Monto Descuento'),
+	('CLI_DETAIL_MONTO_DESCUENTO_CONVERSION','CLI','CLIENTES','ESP','Monto Descuento Conversión'),
+  ('CLI_DETAIL_MONTO_IVA','CLI','CLIENTES','ESP','Monto IVA'),
+  ('CLI_DETAIL_MONTO_IVA_CONVERSION','CLI','CLIENTES','ESP','Monto IVA Conversión');
 
 -- TAGS COBROS
 DELETE FROM public.application_tags WHERE co_module = 'COB';
