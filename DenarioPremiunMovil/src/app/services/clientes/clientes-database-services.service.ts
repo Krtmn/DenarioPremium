@@ -96,7 +96,7 @@ export class ClientesDatabaseServicesService {
           'FROM clients c ' +
           'LEFT JOIN lists p ON p.id_list = c.id_list ' +
           'LEFT JOIN distribution_channels dc ON dc.id_channel = c.id_channel ' +
-          'WHERE c.id_enterprise = ? LIMIT ' + this.MAX_ITEMS_PER_PAGE + ' OFFSET ' + offset;  
+          'WHERE c.id_enterprise = ? LIMIT ' + this.MAX_ITEMS_PER_PAGE + ' OFFSET ' + offset;
 
       } else {
         selectStatement = 'SELECT c.*, (SELECT p.na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1 ) na_price_list, ' +
@@ -148,7 +148,7 @@ export class ClientesDatabaseServicesService {
       return lists;
     })
 
-    
+
   }
 
   searchClients(idEnterprise: number, searchText: string, page: number) {
@@ -177,7 +177,7 @@ export class ClientesDatabaseServicesService {
     const whereTokens = tokenClauses.length ? tokenClauses.join(" AND ") + " AND c.id_enterprise = ?" : "c.id_enterprise = ?";
     params.push(idEnterprise);
 
-    //paginacion: limit y offset    
+    //paginacion: limit y offset
     params.push(this.MAX_ITEMS_PER_PAGE, offset);
 
   if (this.globalConfig.get("multiCurrency") == 'true') {
@@ -200,7 +200,7 @@ export class ClientesDatabaseServicesService {
           'FROM clients c ' +
           'LEFT JOIN lists p ON p.id_list = c.id_list ' +
           'LEFT JOIN distribution_channels dc ON dc.id_channel = c.id_channel ' +
-          'WHERE '+whereTokens+' '+orderBy+' LIMIT ? OFFSET ?';  
+          'WHERE '+whereTokens+' '+orderBy+' LIMIT ? OFFSET ?';
 
       } else {
         selectStatement = 'SELECT c.*, (SELECT p.na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1 ) na_price_list, ' +
@@ -218,7 +218,7 @@ export class ClientesDatabaseServicesService {
           'FROM clients c ' +
           'LEFT JOIN lists p ON p.id_list = c.id_list ' +
           'LEFT JOIN distribution_channels dc ON dc.id_channel = c.id_channel ' +
-          'WHERE '+whereTokens+' '+orderBy+' LIMIT ? OFFSET ?';  
+          'WHERE '+whereTokens+' '+orderBy+' LIMIT ? OFFSET ?';
       }
     } else {
       selectStatement = 'SELECT c.*, (SELECT p.na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1 ) na_price_list, ' +
@@ -530,7 +530,7 @@ export class ClientesDatabaseServicesService {
           coDocumentSaleType: data.rows.item(i).co_document_sale_type,
           daDocument: data.rows.item(i).da_document,
           daDueDate: data.rows.item(i).da_due_date,
-          nuAmountBase: data.rows.item(i).na_amoount_base,
+          nuAmountBase: data.rows.item(i).nu_amount_base,
           nuAmountDiscount: data.rows.item(i).nu_amount_discount,
           nuAmountTax: data.rows.item(i).nu_amount_tax,
           nuAmountTotal: data.rows.item(i).nu_amount_total,

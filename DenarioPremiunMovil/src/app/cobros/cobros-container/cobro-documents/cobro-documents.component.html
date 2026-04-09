@@ -125,11 +125,42 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
     }
 
     <!-- si la moneda del doc es local, primero se muestran los montos en local,  -->
-    <ion-col size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_MONTO')}}
+    <ion-col size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_BASE')}}
     </ion-col>
 
     @if(this.collectService.multiCurrency && this.collectService.showConversion){
-    <ion-col size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_MONTO')}}
+    <ion-col size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_BASE')}}
+      {{this.collectService.collectionTags.get('COB_CONVERSION')}}
+    </ion-col>
+    }
+
+    <!-- si la moneda del doc es local, primero se muestran los montos en local,  -->
+    <ion-col size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_IVA')}}
+    </ion-col>
+
+    @if(this.collectService.multiCurrency && this.collectService.showConversion){
+    <ion-col size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_IVA')}}
+      {{this.collectService.collectionTags.get('COB_CONVERSION')}}
+    </ion-col>
+    }
+
+    @if(this.discountView >0){
+    <!-- si la moneda del doc es local, primero se muestran los montos en local,  -->
+    <ion-col size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_DESCUENTO')}}
+    </ion-col>
+
+    @if(this.collectService.multiCurrency && this.collectService.showConversion){
+    <ion-col size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_DESCUENTO')}}
+      {{this.collectService.collectionTags.get('COB_CONVERSION')}}
+    </ion-col>
+    }
+    }
+    <!-- si la moneda del doc es local, primero se muestran los montos en local,  -->
+    <ion-col size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_TOTAL')}}
+    </ion-col>
+
+    @if(this.collectService.multiCurrency && this.collectService.showConversion){
+    <ion-col size="6" class="titulosBold col">{{this.collectService.collectionTags.get('COB_TOTAL')}}
       {{this.collectService.collectionTags.get('COB_CONVERSION')}}
     </ion-col>
     }
@@ -193,14 +224,63 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
       {{this.collectService.localCurrency.coCurrency}}
     </ion-col>
     }
+    <!-- MONTO BASE-->
+    <ion-col size="6" class="ion-text-center col" size="6" class="ion-text-center col"
+      [ngStyle]="{color: documentSale.colorRow }">
+      {{formatNumber((documentSale.nuAmountBase))}}
+      {{documentSale.coCurrency}}
+    </ion-col>
+    <!-- Monto BASE CONVERSION -->
+    @if(this.collectService.showConversion){
+    <ion-col size="6" class="ion-text-center col" size="6" class="ion-text-center col"
+      [ngStyle]="{color: documentSale.colorRow }">
+      {{formatNumber(this.collectService.convertirMonto(documentSale.nuAmountBase,
+      documentSale.nuValueLocal,documentSale.coCurrency))}}
+      {{oppositeCoCurrency(documentSale.coCurrency)}}
+    </ion-col>
+    }
 
-    <!-- MONTO -->
+    <!-- MONTO IVA-->
+    <ion-col size="6" class="ion-text-center col" size="6" class="ion-text-center col"
+      [ngStyle]="{color: documentSale.colorRow }">
+      {{formatNumber((documentSale.nuAmountTax))}}
+      {{documentSale.coCurrency}}
+    </ion-col>
+    <!-- Monto IVA CONVERSION -->
+    @if(this.collectService.showConversion){
+    <ion-col size="6" class="ion-text-center col" size="6" class="ion-text-center col"
+      [ngStyle]="{color: documentSale.colorRow }">
+      {{formatNumber(this.collectService.convertirMonto(documentSale.nuAmountTax,
+      documentSale.nuValueLocal,documentSale.coCurrency))}}
+      {{oppositeCoCurrency(documentSale.coCurrency)}}
+    </ion-col>
+    }
+
+    @if(this.discountView >0){
+    <!-- MONTO DESCUENTO-->
+    <ion-col size="6" class="ion-text-center col" size="6" class="ion-text-center col"
+      [ngStyle]="{color: documentSale.colorRow }">
+      {{formatNumber((documentSale.nuAmountDiscount))}}
+      {{documentSale.coCurrency}}
+    </ion-col>
+    <!-- Monto DESCUENTO CONVERSION -->
+    @if(this.collectService.showConversion){
+    <ion-col size="6" class="ion-text-center col" size="6" class="ion-text-center col"
+      [ngStyle]="{color: documentSale.colorRow }">
+      {{formatNumber(this.collectService.convertirMonto(documentSale.nuAmountDiscount,
+      documentSale.nuValueLocal,documentSale.coCurrency))}}
+      {{oppositeCoCurrency(documentSale.coCurrency)}}
+    </ion-col>
+    }
+    }
+
+    <!-- MONTO total-->
     <ion-col size="6" class="ion-text-center col" size="6" class="ion-text-center col"
       [ngStyle]="{color: documentSale.colorRow }">
       {{formatNumber((documentSale.nuAmountTotal))}}
       {{documentSale.coCurrency}}
     </ion-col>
-    <!-- Monto CONVERSION -->
+    <!-- Monto total CONVERSION -->
     @if(this.collectService.showConversion){
     <ion-col size="6" class="ion-text-center col" size="6" class="ion-text-center col"
       [ngStyle]="{color: documentSale.colorRow }">
