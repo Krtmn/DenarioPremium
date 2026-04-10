@@ -2500,7 +2500,11 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
   }): { query: string; params: any[]; isIgtf: boolean } {
     const { moduleType, currencyIsEmpty, idClient, coCurrency, idEnterprise, coCollection } = opts;
 
-    const commonOrder = `ORDER BY CASE WHEN d.co_currency = "${this.enterpriseSelected.coCurrencyDefault}" THEN 0 ELSE 1 END, d.co_currency`;
+    const commonOrder = `ORDER BY
+      CASE WHEN DATE(d.da_due_date) < DATE('now', 'localtime') THEN 0 ELSE 1 END ASC,
+      COALESCE(DATE(d.da_due_date), DATE('0001-01-01')) ASC,
+      CASE WHEN d.co_currency = "${this.enterpriseSelected.coCurrencyDefault}" THEN 0 ELSE 1 END,
+      d.co_currency`;
 
     // module 0 and 2 are non-IGTF, but module 2 omits ds.st_document < 2
 
@@ -2533,7 +2537,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           'WHERE (d.id_client = ? ' +
           (includeDocStateFilter ? 'AND ds.st_document < 2 ' : '') +
           'AND d.co_currency = ? AND d.id_enterprise = ? AND d.co_document_sale_type != "IGTF") ' +
-          'OR d.co_document IN (SELECT co_document FROM collection_details WHERE co_collection= ?);'
+          'OR d.co_document IN (SELECT co_document FROM collection_details WHERE co_collection= ? ) ' +
+          commonOrder
       };
     }
 
@@ -2545,7 +2550,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         query:
           'SELECT DISTINCT d.* FROM document_sales d ' +
           'LEFT JOIN document_st ds ON d.co_document = ds.co_document ' +
-          'WHERE d.id_client = ? AND ds.st_document < 2 AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF" '
+          'WHERE d.id_client = ? AND ds.st_document < 2 AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF" ' +
+          commonOrder
       };
     }
 
@@ -2555,7 +2561,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       query:
         'SELECT DISTINCT d.* FROM document_sales d ' +
         'LEFT JOIN document_st ds ON d.co_document = ds.co_document ' +
-        'WHERE d.id_client = ? AND ds.st_document < 2 AND d.co_currency = ?  AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF" '
+        'WHERE d.id_client = ? AND ds.st_document < 2 AND d.co_currency = ?  AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF" ' +
+        commonOrder
     };
   }
 
