@@ -14,7 +14,7 @@ import { ServicesService } from '../services.service';
 export class BackgroundSyncService {
   private started = false;
   private syncing = false;
-  private readonly intervalMs = 5 * 1000; // 5 minutes
+  private readonly intervalMs = 5 * 60 * 1000; // 5 minutes
   private timerId?: ReturnType<typeof setInterval>;
   // Tablas a sincronizar en segundo plano (IDs de tableKeyMap en synchronization.component)
   private readonly backgroundTableIds = [6, 13, 23, 25,33]; //document_sales, price_lists, lists, stocks
