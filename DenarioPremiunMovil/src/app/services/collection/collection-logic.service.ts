@@ -2123,7 +2123,7 @@ export class CollectionService {
       //DOCUMENTOS A BLOQUEAR
       const sqlBloquear = `SELECT DISTINCT(ds.co_document)
 FROM document_sales ds
-JOIN collection_details cd ON ds.co_document = cd.co_document
+JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_partial = 'false'
 JOIN collections c ON cd.co_collection = c.co_collection AND c.st_collection IN (1,3)
 JOIN transaction_statuses ts ON c.co_collection = ts.co_transaction AND ts.id_transaction_type = 3
 WHERE ts.da_transaction_statuses = (
@@ -2155,7 +2155,7 @@ AND ts.da_transaction_statuses > ds.da_update;`;
       this.coDocumentToUpdate = docsLock.slice();
       const sqlDesbloquear = `SELECT DISTINCT(ds.co_document)
 FROM document_sales ds
-JOIN collection_details cd ON ds.co_document = cd.co_document
+JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_partial = 'false'
 JOIN collections c ON cd.co_collection = c.co_collection AND c.st_collection IN (1,3)
 JOIN transaction_statuses ts ON c.co_collection = ts.co_transaction AND ts.id_transaction_type = 3
 WHERE ts.da_transaction_statuses = (
@@ -2227,7 +2227,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
       // preparar consulta IN (...) para obtener todos los co_document de una sola vez
       const placeholders = coTransactions.map(() => '?').join(',');
-      const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders}) AND in_payment_partial = 'false'`;
+      const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders})`;
 
       const res = await db.executeSql(sql, coTransactions);
       for (let i = 0; i < res.rows.length; i++) {
@@ -4203,15 +4203,15 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         let stDelivery = 0;
         if (documentSales[i].isSelected) {
           if (coType == '2') {
-            //es retencion
-            //stDelivery = 3; colocar 3 si queremos que luego dfe una retencion el documento quede bloqueado, colocar 2 si queremos que quede disponible pero con la retencion pendiente
+            //es una retencion, no debe marcar el documento como entregado
             stDelivery = 0;
-          } else if (documentSales[i].missingRetention && !documentSales[i].inPaymentPartial) {
-            stDelivery = 2;
-          } else if (documentSales[i].inPaymentPartial)
+          } else if (documentSales[i].inPaymentPartial) { // Prioridad al pago parcial
             stDelivery = 0;
-          else //if (this.sendCollection)
+          } else if (documentSales[i].missingRetention) { // Luego la retención
             stDelivery = 2;
+          } else {
+            stDelivery = 2;
+          }
 
           stamentenDocumentSt.push([updateStatement, [
             stDelivery,
