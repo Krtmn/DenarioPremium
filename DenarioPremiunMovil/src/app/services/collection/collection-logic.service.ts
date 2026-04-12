@@ -698,7 +698,7 @@ export class CollectionService {
     // Asigna el array con el objeto genérico y luego el contenido real
     this.currencyListDocument = [genericCurrency, ...this.currencyList];
     // Después de cargar currencyListDocument:
-    this.currencySelectedDocument = this.currencyListDocument.find(c => c.coCurrency === this.collection.coCurrency) ?? genericCurrency;
+    //this.currencySelectedDocument = this.currencyListDocument.find(c => c.coCurrency === this.collection.coCurrency) ?? genericCurrency;
   }
 
   setCurrencyConversion() {

@@ -761,6 +761,12 @@ export class CobrosGeneralComponent implements OnInit {
               //this.collectService.collection.nuValueLocal = 80;
             }
 
+            if (this.collectService.documentCurrency == undefined || this.collectService.documentCurrency == null || this.collectService.documentCurrency == "") {
+              this.collectService.documentCurrency = this.collectService.currencyListDocument[0].coCurrency;
+              this.collectService.currencySelectedDocument = this.collectService.currencyListDocument[0];
+            }
+
+
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
               this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
                 if (this.collectService.historicPartialPayment) {
