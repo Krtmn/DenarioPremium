@@ -608,6 +608,7 @@ export class AutoSendService implements OnInit {
             }
 
             this.deletePendingTransaction(result.coTransaction, result.type)
+            return;
           }
           if (result && result.errorCode == "066") {
             //que se baje de la mula, nojoda!
@@ -616,6 +617,15 @@ export class AutoSendService implements OnInit {
               result.errorMessage
             );
             this.messageService.alertModal(this.messageAlert);
+            return;
+          }
+          if (result && result.errorCode) {
+            this.messageAlert = new MessageAlert(
+              "Denario Premium",
+              result.errorMessage || "Ocurrió un error al enviar la transacción."
+            );
+            this.messageService.alertModal(this.messageAlert);
+            void this.handleFailedTransaction(coTransaction, type, request, result);
           }
         },
         complete: () => {
@@ -633,6 +643,42 @@ export class AutoSendService implements OnInit {
         },
       });
     }
+  }
+
+  private async handleFailedTransaction(coTransaction: string, type: string, request: any, result: any): Promise<void> {
+    try {
+      await this.insertFailedTransaction(
+        coTransaction,
+        type,
+        result?.errorCode ?? '',
+        result?.errorMessage ?? 'Transacción fallida sin mensaje de backend.',
+        request
+      );
+      await this.deletePendingTransaction(coTransaction, type);
+      await this.runPendingQueue();
+    } catch (e) {
+      console.log('Error al mover la transacción fallida fuera de la cola', e);
+    }
+  }
+
+  private insertFailedTransaction(
+    coTransaction: string,
+    type: string,
+    errorCode: string,
+    errorMessage: string,
+    request: any
+  ) {
+    let txObject = '{}';
+    try {
+      txObject = JSON.stringify(request ?? {});
+    } catch (e) {
+      txObject = JSON.stringify({ serializationError: true });
+    }
+
+    return this.dbService.getDatabase().executeSql(
+      'INSERT INTO failed_transactions(co_transaction, type, error_code, error_message, transaction_object, da_failed) VALUES(?,?,?,?,?,?)',
+      [coTransaction, type, errorCode, errorMessage, txObject, new Date().toISOString()]
+    );
   }
 
   callService(request: any, type: string, coTransaction: string) {
@@ -801,7 +847,7 @@ export class AutoSendService implements OnInit {
   }
 
   deletePendingTransaction(coTransaction: string, type: string) {
-    this.dbService.getDatabase().executeSql(
+    return this.dbService.getDatabase().executeSql(
       'DELETE FROM pending_transactions WHERE co_transaction = ? AND type = ?',
       [coTransaction, type]
     ).then(res => {
