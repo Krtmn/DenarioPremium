@@ -619,7 +619,7 @@ export class AutoSendService implements OnInit {
             this.messageService.alertModal(this.messageAlert);
             return;
           }
-          if (result && result.errorCode) {
+          if (result && this.isBadRequestResult(result)) {
             this.messageAlert = new MessageAlert(
               "Denario Premium",
               result.errorMessage || "Ocurrió un error al enviar la transacción."
@@ -643,6 +643,19 @@ export class AutoSendService implements OnInit {
         },
       });
     }
+  }
+
+  /** Solo errores HTTP 400 / Bad Request (cuerpo o código de negocio). */
+  private isBadRequestResult(result: any): boolean {
+    if (result.httpStatus === 400) {
+      return true;
+    }
+    const code = String(result.errorCode ?? '').trim();
+    if (code === '400') {
+      return true;
+    }
+    const msg = String(result.errorMessage ?? '').toLowerCase();
+    return msg.includes('bad request');
   }
 
   private async handleFailedTransaction(coTransaction: string, type: string, request: any, result: any): Promise<void> {
@@ -727,9 +740,22 @@ export class AutoSendService implements OnInit {
     return from(CapacitorHttp.post(opt))
       .pipe(
         map(resp => {
-          resp.data.coTransaction = coTransaction;
-          resp.data.type = type;
-          return resp.data;
+          if (resp.data && typeof resp.data === 'object' && !Array.isArray(resp.data)) {
+            resp.data.coTransaction = coTransaction;
+            resp.data.type = type;
+            resp.data.httpStatus = resp.status;
+            return resp.data;
+          }
+          return {
+            coTransaction,
+            type,
+            httpStatus: resp.status,
+            errorCode: String(resp.status),
+            errorMessage:
+              typeof resp.data === 'string'
+                ? resp.data
+                : 'Ocurrió un error al enviar la transacción.',
+          };
         })
       );
   }
