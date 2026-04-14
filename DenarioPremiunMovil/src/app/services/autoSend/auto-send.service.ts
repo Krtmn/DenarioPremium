@@ -608,7 +608,14 @@ export class AutoSendService implements OnInit {
             }
 
             this.deletePendingTransaction(result.coTransaction, result.type)
+            return;
           }
+
+          if (this.isBadRequestResponse(result)) {
+            this.handleBadRequestPendingTransaction(type, coTransaction, result);
+            return;
+          }
+
           if (result && result.errorCode == "066") {
             //que se baje de la mula, nojoda!
             this.messageAlert = new MessageAlert(
@@ -622,6 +629,10 @@ export class AutoSendService implements OnInit {
           console.info('complete');
         },
         error: (e) => {
+          if (this.isBadRequestError(e)) {
+            this.handleBadRequestPendingTransaction(type, coTransaction, e);
+            return;
+          }
           console.error(e);
           /*
           this.messageAlert = new MessageAlert(
@@ -633,6 +644,79 @@ export class AutoSendService implements OnInit {
         },
       });
     }
+  }
+
+  private isBadRequestResponse(result: any): boolean {
+    if (!result) {
+      return false;
+    }
+
+    const status = Number(result.status ?? result.statusCode ?? result.httpStatus);
+    if (status === 400) {
+      return true;
+    }
+
+    const errorCode = result.errorCode ?? result.code;
+    if (errorCode === 400) {
+      return true;
+    }
+
+    if (typeof errorCode === 'string') {
+      const normalizedCode = errorCode.toUpperCase();
+      if (normalizedCode === '400' || normalizedCode === 'BAD_REQUEST' || normalizedCode === 'ERR_BAD_REQUEST') {
+        return true;
+      }
+    }
+
+    const message = `${result.errorMessage ?? result.message ?? ''}`.toLowerCase();
+    return message.includes('bad request');
+  }
+
+  private isBadRequestError(error: any): boolean {
+    if (!error) {
+      return false;
+    }
+
+    const status = Number(error.status ?? error.statusCode ?? error?.error?.status ?? error?.error?.statusCode);
+    if (status === 400) {
+      return true;
+    }
+
+    const errorCode = error.code ?? error.errorCode ?? error?.error?.code ?? error?.error?.errorCode;
+    if (errorCode === 400) {
+      return true;
+    }
+
+    if (typeof errorCode === 'string') {
+      const normalizedCode = errorCode.toUpperCase();
+      if (normalizedCode === '400' || normalizedCode === 'BAD_REQUEST' || normalizedCode === 'ERR_BAD_REQUEST') {
+        return true;
+      }
+    }
+
+    const message = `${error.message ?? error?.error?.message ?? error?.error?.error ?? ''}`.toLowerCase();
+    return message.includes('bad request');
+  }
+
+  private handleBadRequestPendingTransaction(type: string, coTransaction: string, payload?: any): void {
+    console.warn(`[AutoSendService] Bad request detectado para transacción pendiente ${type}:${coTransaction}`, payload);
+
+    const pendingType = type;
+    const pendingTransaction = coTransaction;
+
+    if (pendingType === 'collect') {
+      this.collectionService.updateDocumentStForDelete(this.dbService.getDatabase(), pendingTransaction)
+        .then(() => {
+          this.deletePendingTransaction(pendingTransaction, pendingType);
+        })
+        .catch((error) => {
+          console.error(`[AutoSendService] Error al restaurar document_st para ${pendingTransaction}`, error);
+          this.deletePendingTransaction(pendingTransaction, pendingType);
+        });
+      return;
+    }
+
+    this.deletePendingTransaction(pendingTransaction, pendingType);
   }
 
   callService(request: any, type: string, coTransaction: string) {
