@@ -12,7 +12,7 @@
     </domain-config>
     <domain-config cleartextTrafficPermitted="true">
         <!-- Kiberno - Diego TESTING-->
-        <domain includeSubdomains="true">192.168.0.186</domain>
+        <domain includeSubdomains="true">192.168.0.107</domain>
         <!-- Kiberno - Richard -->
         <domain includeSubdomains="true">192.168.0.231</domain>
         <!-- Kiberno - Soporte -->
@@ -21,7 +21,7 @@
         <!-- tambien va aqui cualquier servidor de prueba -->
         <domain includeSubdomains="true">denariopremium.com</domain>
         <domain includeSubdomains="true">denariodemo.ddns.net</domain>
-        <domain includeSubdomains="true">190.6.31.99</domain>
+        <domain includeSubdomains="true">192.168.1.50</domain>
 
     </domain-config>
 </network-security-config>
