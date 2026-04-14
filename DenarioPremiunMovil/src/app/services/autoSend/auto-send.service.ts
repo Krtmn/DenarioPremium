@@ -620,11 +620,11 @@ export class AutoSendService implements OnInit {
             return;
           }
           if (result && this.isBadRequestResult(result)) {
-            this.messageAlert = new MessageAlert(
-              "Denario Premium",
-              result.errorMessage || "Ocurrió un error al enviar la transacción."
-            );
-            this.messageService.alertModal(this.messageAlert);
+            /*  this.messageAlert = new MessageAlert(
+               "Denario Premium",
+               result.errorMessage || "Ocurrió un error al enviar la transacción."
+             );
+             this.messageService.alertModal(this.messageAlert); */
             void this.handleFailedTransaction(coTransaction, type, request, result);
           }
         },
