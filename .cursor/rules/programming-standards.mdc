@@ -1,0 +1,40 @@
+---
+description: Estandares globales de programacion para trabajo asistido por IA
+alwaysApply: true
+---
+
+# Estandares Globales de Programacion
+
+## Alcance
+- Aplica a todo codigo generado o editado por la IA.
+- Stack objetivo: Angular 19, Ionic 8, TypeScript 5.8.
+
+## Diseno de Funciones
+- Mantener una sola responsabilidad por funcion.
+- Usar nombres claros: `verbo + contextoDeDominio` (ejemplo: `buildCollectionPayload`).
+- Tipar siempre parametros y retorno en TypeScript.
+- Preferir funciones puras; si hay efectos secundarios, aislarlos y hacerlos explicitos.
+- Reutilizar servicios/utilidades existentes antes de crear nuevos helpers.
+
+## Largo y Complejidad de Funciones
+- Largo objetivo: 20-40 lineas por funcion.
+- Maximo recomendado: 60 lineas; si se excede, extraer helpers privados.
+- Preferir una anidacion maxima de 2-3 niveles.
+- Usar guard clauses para reducir bloques `if/else` profundos.
+- Si la complejidad crece, dividir la logica en pasos pequenos y testeables.
+
+## Reglas de Compatibilidad de Sintaxis
+- Usar solo sintaxis compatible con TypeScript 5.8 y Angular 19.
+- Preferir `const` por defecto y `let` cuando haya reasignacion.
+- Usar caracteristicas modernas de TS cuando mejoren legibilidad: optional chaining, nullish coalescing, template literals, union types y `as const` cuando aplique.
+- Evitar patrones legacy o debiles: `var`, `any` sin tipado cuando sea evitable, callback pyramids y APIs deprecadas de Angular.
+
+## Reglas de Ejecucion para IA
+- Proponer por defecto cambios pequenos y verificables.
+- Mantener ediciones localizadas y evitar refactors amplios salvo pedido explicito.
+- Para funciones complejas, incluir un mini plan de extraccion en la descripcion del cambio.
+- Preservar la arquitectura y convenciones de nombres del modulo editado.
+
+## Ejemplo Rapido
+- Malo: una funcion de 120 lineas mezclando SQL, mapeo y alertas de UI.
+- Bueno: dividir en `fetchRows`, `mapRowsToModel` y `notifyResult`.

@@ -2165,7 +2165,11 @@ WHERE ts.da_transaction_statuses = (
     WHERE cd2.co_document = ds.co_document
       AND ts2.id_transaction_type = 3
 )
-AND ds.da_update >= ts.da_transaction_statuses ;`;
+AND ds.da_update >= ts.da_transaction_statuses
+UNION
+SELECT DISTINCT(ds.co_document)
+FROM document_sales ds
+JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_partial = 'true';`;
 
       try {
         const resDesbloq = await db.executeSql(sqlDesbloquear, []);
