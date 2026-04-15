@@ -646,6 +646,11 @@ export class CobrosGeneralComponent implements OnInit {
           this.setClientfromSelector(this.collectService.client);
         }
 
+        if (this.collectService.currencySelectedDocument == null || this.collectService.currencySelectedDocument == undefined) {
+          this.collectService.currencySelectedDocument = this.collectService.currencyListDocument[0];
+
+        }
+
       });
     }).catch(e => {
       console.log(e);
@@ -1361,7 +1366,7 @@ export class CobrosGeneralComponent implements OnInit {
       const nuValueLocalDoc = this.collectService.collection.nuValueLocal;
       let nuBalanceOriginal, nuBalanceOriginalConversion;
 
-      if (doc.isSave) {
+      /* if (doc.isSave) {
         let positionCollecDetails = doc.positionCollecDetails;
         nuAmountBalance = this.collectService.collection.collectionDetails[positionCollecDetails]?.nuBalanceDoc ?? 0;
         nuAmountBalanceConversion = this.collectService.collection.collectionDetails[positionCollecDetails]?.nuBalanceDocConversion ?? 0;
@@ -1369,23 +1374,23 @@ export class CobrosGeneralComponent implements OnInit {
         nuAmountTotalConversion = this.collectService.collection.collectionDetails[positionCollecDetails]?.nuAmountDocConversion ?? 0;
         nuBalanceOriginal = doc.nuBalance;
         nuBalanceOriginalConversion = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
+      } else { */
+      if (doc.coCurrency != this.collectService.collection.coCurrency) {
+        nuAmountBalance = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
+        nuAmountBalanceConversion = doc.nuBalance;
+        nuAmountTotal = this.collectService.convertirMonto(doc.nuAmountTotal, this.collectService.collection.nuValueLocal, doc.coCurrency);
+        nuAmountTotalConversion = doc.nuAmountTotal;
+        nuBalanceOriginalConversion = doc.nuBalance;
+        nuBalanceOriginal = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
       } else {
-        if (doc.coCurrency != this.collectService.collection.coCurrency) {
-          nuAmountBalance = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
-          nuAmountBalanceConversion = doc.nuBalance;
-          nuAmountTotal = this.collectService.convertirMonto(doc.nuAmountTotal, this.collectService.collection.nuValueLocal, doc.coCurrency);
-          nuAmountTotalConversion = doc.nuAmountTotal;
-          nuBalanceOriginalConversion = doc.nuBalance;
-          nuBalanceOriginal = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
-        } else {
-          nuAmountTotal = doc.nuAmountTotal;
-          nuAmountBalance = doc.nuBalance;
-          nuAmountBalanceConversion = this.collectService.convertirMonto(nuAmountBalance, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
-          nuAmountTotalConversion = this.collectService.convertirMonto(nuAmountTotal, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
-          nuBalanceOriginal = doc.nuBalance;
-          nuBalanceOriginalConversion = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
-        }
+        nuAmountTotal = doc.nuAmountTotal;
+        nuAmountBalance = doc.nuBalance;
+        nuAmountBalanceConversion = this.collectService.convertirMonto(nuAmountBalance, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
+        nuAmountTotalConversion = this.collectService.convertirMonto(nuAmountTotal, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
+        nuBalanceOriginal = doc.nuBalance;
+        nuBalanceOriginalConversion = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
       }
+      //}
 
       let inPaymentPartial = false;
       let missingRetention = false;
