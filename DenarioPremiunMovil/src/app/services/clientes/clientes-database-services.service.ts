@@ -162,6 +162,8 @@ export class ClientesDatabaseServicesService {
     if (this.globalConfig.get("clientsOrderBy") != '') {
       if (this.globalConfig.get("clientsOrderBy") == "na_client") {
         orderBy += ' ORDER BY c.' + "lb_client";
+      } else if (this.globalConfig.get("clientsOrderBy") == "mayor deuda vencida") {
+        selectStatement += '';
       } else
         orderBy += ' ORDER BY c.' + this.globalConfig.get("clientsOrderBy");
     }
