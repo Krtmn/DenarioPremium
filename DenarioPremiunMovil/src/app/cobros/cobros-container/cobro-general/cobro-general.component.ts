@@ -229,6 +229,10 @@ export class CobrosGeneralComponent implements OnInit {
       }
 
       this.collectService.changeEnterprise = false;
+      if (this.collectService.currencySelectedDocument == null || this.collectService.currencySelectedDocument == undefined) {
+        this.collectService.currencySelectedDocument = this.collectService.currencyListDocument[0];
+
+      }
 
 
     });
