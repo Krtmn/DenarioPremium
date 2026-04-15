@@ -137,7 +137,7 @@ export class ClientesDatabaseServicesService {
     if (this.globalConfig.get("clientsOrderBy") != '') {
       if (this.globalConfig.get("clientsOrderBy") == "na_client") {
         selectStatement += ' ORDER BY c.' + "lb_client";
-      } else if (this.globalConfig.get("clientsOrderBy") == "mayor deuda vencida") {
+      } else if (this.globalConfig.get("clientsOrderBy") == "due_date") {
         selectStatement += '';
       } else selectStatement += ' ORDER BY c.' + this.globalConfig.get("clientsOrderBy");
     }
@@ -162,7 +162,7 @@ export class ClientesDatabaseServicesService {
     if (this.globalConfig.get("clientsOrderBy") != '') {
       if (this.globalConfig.get("clientsOrderBy") == "na_client") {
         orderBy += ' ORDER BY c.' + "lb_client";
-      } else if (this.globalConfig.get("clientsOrderBy") == "mayor deuda vencida") {
+      } else if (this.globalConfig.get("clientsOrderBy") == "due_date") {
         selectStatement += '';
       } else
         orderBy += ' ORDER BY c.' + this.globalConfig.get("clientsOrderBy");
