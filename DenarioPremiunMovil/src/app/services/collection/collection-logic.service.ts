@@ -48,6 +48,10 @@ import { CodePhoneNumber } from 'src/app/modelos/tables/codePhoneNumber';
 })
 
 export class CollectionService {
+  // Getter para uso en template si es necesario
+  public getLastRateValue(): number {
+    return this.lastRateValue;
+  }
   public globalConfig = inject(GlobalConfigService);
   public services = inject(ServicesService);
   public dateServ = inject(DateServiceService);
@@ -218,6 +222,7 @@ export class CollectionService {
   public requiredCollectionAttachments: boolean = false;
   private typeDocumentListLoaded: boolean = false;
   private codePhoneNumberListLoaded: boolean = false;
+  public enabledManualRate: boolean = false;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;
@@ -376,6 +381,8 @@ export class CollectionService {
     this.enablePartialPayment = enablePartialPaymentValue === '' ? true : enablePartialPaymentValue === 'true' ? true : false;
     const requiredCollectionAttachmentsValue = (this.globalConfig.get('requiredCollectionAttachments') || '').trim();
     this.requiredCollectionAttachments = requiredCollectionAttachmentsValue === '' ? true : requiredCollectionAttachmentsValue === 'true' ? true : false;
+    const enabledManualRateValue = (this.globalConfig.get('enabledManualRate') || '').trim();
+    this.enabledManualRate = enabledManualRateValue === '' ? true : enabledManualRateValue === 'true' ? true : false;
 
 
 
@@ -770,34 +777,19 @@ export class CollectionService {
       }
     })
 
-    if (this.rateList.length > 0) {
+    if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED) {
+      this.historicoTasa = true;
+      this.rateSelected = this.collection.nuValueLocal;
+      this.haveRate = true;
+      this.updateRateDocument();
+      this.unlockTabsFunction(false);
+      return Promise.resolve(true);
+    } else if (this.rateList.length > 0) {
       this.historicoTasa = true;
       this.rateSelected = this.collection.nuValueLocal = this.rateList[0];
       this.haveRate = true;
-
-      // Propagar la tasa seleccionada a documentSales y documentSalesBackup
-      if (Array.isArray(this.documentSales) && this.documentSales.length > 0) {
-        for (let i = 0; i < this.documentSales.length; i++) {
-          this.documentSales[i].nuValueLocal = this.rateSelected;
-        }
-      }
-
-      if (Array.isArray(this.documentSalesBackup) && this.documentSalesBackup.length > 0) {
-        for (let i = 0; i < this.documentSalesBackup.length; i++) {
-          this.documentSalesBackup[i].nuValueLocal = this.rateSelected;
-        }
-      }
-
-      if (Array.isArray(this.documentSalesView) && this.documentSalesView.length > 0) {
-        for (let i = 0; i < this.documentSalesView.length; i++) {
-          this.documentSalesView[i].nuValueLocal = this.rateSelected;
-        }
-      }
-      this.unlockTabs().then((resp) => {
-        /*           this.mensaje = "No hay tasa para la fecha seleccionada";
-                  this.alertMessageOpen = true; */
-        this.onCollectionValid(resp);
-      })
+      this.updateRateDocument();
+      this.unlockTabsFunction(false);
       return Promise.resolve(true);
     } else {
       //no tengo tasa para ese dia
@@ -806,13 +798,42 @@ export class CollectionService {
         this.historicoTasa = true;
       } else {
         this.historicoTasa = false;
-        this.unlockTabs().then((resp) => {
-          this.mensaje = "No hay tasa para la fecha seleccionada";
-          this.alertMessageOpen = true;
-          this.onCollectionValid(resp);
-        })
+        this.unlockTabsFunction(true);
       }
       return Promise.resolve(true);
+    }
+  }
+
+  unlockTabsFunction(msj: boolean) {
+    this.unlockTabs().then((resp) => {
+      if (msj) {
+        this.mensaje = "No hay tasa para la fecha seleccionada";
+        this.alertMessageOpen = true;
+      }
+
+      this.onCollectionValid(resp);
+    })
+  }
+
+
+  updateRateDocument() {
+    // Propagar la tasa seleccionada a documentSales y documentSalesBackup
+    if (Array.isArray(this.documentSales) && this.documentSales.length > 0) {
+      for (let i = 0; i < this.documentSales.length; i++) {
+        this.documentSales[i].nuValueLocal = this.rateSelected;
+      }
+    }
+
+    if (Array.isArray(this.documentSalesBackup) && this.documentSalesBackup.length > 0) {
+      for (let i = 0; i < this.documentSalesBackup.length; i++) {
+        this.documentSalesBackup[i].nuValueLocal = this.rateSelected;
+      }
+    }
+
+    if (Array.isArray(this.documentSalesView) && this.documentSalesView.length > 0) {
+      for (let i = 0; i < this.documentSalesView.length; i++) {
+        this.documentSalesView[i].nuValueLocal = this.rateSelected;
+      }
     }
   }
 
@@ -1172,10 +1193,10 @@ export class CollectionService {
     this.montoTotalPagado = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado));
 
     if (this.collection.coCurrency == this.localCurrency.coCurrency) {
-      this.montoTotalPagadoConversion = this.currencyService.toHardCurrency(this.montoTotalPagado);
+      this.montoTotalPagadoConversion = this.convertirMonto(this.montoTotalPagado, 0, this.collection.coCurrency);
     } else {
 
-      this.montoTotalPagadoConversion = this.currencyService.toLocalCurrency(this.montoTotalPagado)
+      this.montoTotalPagadoConversion = this.convertirMonto(this.montoTotalPagado, 0, this.collection.coCurrency);
     }
 
     this.calculatePayment(type, index);
@@ -1430,14 +1451,14 @@ export class CollectionService {
             //LA MONEDA TOLERANCIA ES LOCA, PERO LA MONEDA DEL COBRO ES LA HARD, DEBO CONVERTIR LA TOLERANCIA A HARD
             let amount = this.montoTotalPagado - this.montoTotalPagar;
             if (amount > 0) {
-              if (amount < this.currencyService.toHardCurrency(this.RangoToleranciaPositiva))
+              if (amount < this.convertirMonto(this.RangoToleranciaPositiva, 0, this.collection.coCurrency))
                 this.onCollectionValidToSend(true);
               else {
                 this.onCollectionValidToSend(false);
                 return;
               }
             } else if (amount < 0) {
-              if (Math.abs(amount) < this.currencyService.toHardCurrency(this.RangoToleranciaPositiva))
+              if (Math.abs(amount) < this.convertirMonto(this.RangoToleranciaNegativa, 0, this.collection.coCurrency))
                 this.onCollectionValidToSend(true);
               else {
                 this.onCollectionValidToSend(false);
@@ -1472,14 +1493,14 @@ export class CollectionService {
             //LA MONEDA TOLERANCIA ES HARD, PERO LA MONEDA DEL COBRO ES LA HARD, DEBO CONVERTIR LA TOLERANCIA A LOCAL
             let amount = this.montoTotalPagado - this.montoTotalPagar;
             if (amount > 0) {
-              if (amount < this.currencyService.toLocalCurrency(this.RangoToleranciaPositiva))
+              if (amount < this.convertirMonto(this.RangoToleranciaPositiva, 0, this.collection.coCurrency))
                 this.onCollectionValidToSend(true);
               else {
                 this.onCollectionValidToSend(false);
                 return;
               }
             } else if (amount < 0) {
-              if ((Math.abs(amount)) > this.currencyService.toLocalCurrency(this.RangoToleranciaNegativa))
+              if ((Math.abs(amount)) > this.convertirMonto(this.RangoToleranciaNegativa, 0, this.collection.coCurrency))
                 this.onCollectionValidToSend(false);
               else {
                 this.onCollectionValidToSend(true);
@@ -2409,6 +2430,16 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
       default: return '';
     }
+  }
+
+  /**
+ * Devuelve la última tasa conocida (mayor de la lista o la seleccionada)
+ */
+  get lastRateValue(): number {
+    if (this.rateList && this.rateList.length > 0) {
+      return Math.max(...this.rateList);
+    }
+    return this.rateSelected || 0.01;
   }
 
   ///////////////////QUERYS////////////////
