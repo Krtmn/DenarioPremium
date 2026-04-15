@@ -24,13 +24,13 @@
 .espaciotextoListaProduc{
   margin-top: 10px;
 }
+
 .espacioentrelineas{
   line-height: .8rem;
-
 }
+
 .contenedorImgMargin{
   margin: 0;
-
 }
 
 .inventory-type-selector {
@@ -54,18 +54,21 @@
   margin-top: 10px;
 }
 
-.inventory-type-selector ion-segment {
+.inventory-type-selector ion-segment,
+.modal-type-selector ion-segment {
   --background: #e9edf3;
   border-radius: 12px;
   padding: 4px;
 }
 
-.inventory-type-selector ion-segment-button {
+.inventory-type-selector ion-segment-button,
+.modal-type-selector ion-segment-button {
   --border-radius: 10px;
   min-height: 36px;
 }
 
-.inventory-type-selector ion-segment-button ion-label {
+.inventory-type-selector ion-segment-button ion-label,
+.modal-type-selector ion-segment-button ion-label {
   font-size: 12px;
   font-weight: 700;
 }
@@ -89,28 +92,25 @@
   padding-bottom: 0 !important;
 }
 
-.products-list-inner {
-  margin-bottom: 0;
-  padding-bottom: 0;
-}
-
+.products-list-inner,
 .products-infinite-scroll {
   margin-bottom: 0;
   padding-bottom: 0;
 }
 
-.product-location-chip {
-  color: #2a5fa8;
+.product-location-chip,
+.product-inventoried-chip {
   font-size: 11px;
   font-weight: 700;
   margin-top: 4px;
 }
 
+.product-location-chip {
+  color: #2a5fa8;
+}
+
 .product-inventoried-chip {
   color: #2f7d32;
-  font-size: 11px;
-  font-weight: 700;
-  margin-top: 4px;
 }
 
 ion-modal.inventory-type-stocks-modal {
@@ -129,8 +129,7 @@ ion-modal.inventory-type-stocks-modal {
   align-items: center;
   display: flex;
   justify-content: center;
-  padding-left: 0;
-  padding-right: 0;
+  padding: 0;
 }
 
 .modal-product-name {
@@ -189,18 +188,10 @@ ion-modal.inventory-type-stocks-modal ion-content.compact-modal-content {
 
 .modal-type-selector ion-segment {
   --background: #eef2f7;
-  border-radius: 12px;
-  padding: 4px;
 }
 
 .modal-type-selector ion-segment-button {
-  --border-radius: 10px;
   min-height: 34px;
-}
-
-.modal-type-selector ion-segment-button ion-label {
-  font-size: 12px;
-  font-weight: 700;
 }
 
 .compact-capture-list {
@@ -280,10 +271,6 @@ ion-modal.inventory-type-stocks-modal ion-content.compact-modal-content {
   width: 36px;
 }
 
-.add-lot-button ion-icon {
-  font-size: 18px;
-}
-
 .add-row-actions {
   display: flex;
   justify-content: center;
@@ -298,7 +285,8 @@ ion-modal.inventory-type-stocks-modal ion-content.compact-modal-content {
   margin-inline-start: 0;
 }
 
-.delete-row-btn ion-icon {
+.delete-row-btn ion-icon,
+.add-lot-button ion-icon {
   font-size: 18px;
 }
 
