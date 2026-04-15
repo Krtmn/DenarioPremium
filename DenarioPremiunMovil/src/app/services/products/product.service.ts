@@ -114,14 +114,15 @@ export class ProductService {
 
   private getProductsOrderByClause(): string {
     const fallback = 'p.na_product ASC';
-    const configuredOrder = (this.globalConfig.get('productsOrderBy') || '').toString().trim();
+    let configuredOrder = (this.globalConfig.get('productsOrderBy') || '').toString().trim();
+
 
     if (!configuredOrder) {
       return fallback;
     }
 
-    const normalizedOrder = configuredOrder.replace(/^order\s+by\s+/i, '').trim();
-    const validOrderRegex = /^p\.(na_product|co_product)(\s+(asc|desc))?$/i;
+    const normalizedOrder = configuredOrder.toLowerCase();
+    const validOrderRegex = /^(na_product|co_product)$/i;
 
     if (!validOrderRegex.test(normalizedOrder)) {
       return fallback;
@@ -131,7 +132,7 @@ export class ProductService {
       return normalizedOrder;
     }
 
-    return normalizedOrder + ' ASC';
+    return 'p.'+normalizedOrder+' ASC';
   }
 
   getProductsByCoProductStructureAndIdEnterprise(dbServ: SQLiteObject, idProductStructures: number[], idEnterprise: number, coCurrency: string, page: number) {
