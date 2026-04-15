@@ -62,11 +62,12 @@ export class LoginComponent implements OnInit {
   public networkListener!: PluginListenerHandle;
   public isIOS: boolean = false; // <-- NUEVA PROPIEDAD
   public showFooter: boolean = true; // <-- NUEVA PROPIEDAD
+  public currentYear: number = new Date().getFullYear();
 
   async ngOnInit() {
     /* App.getInfo().then(async (res) => { */
     // preferir la versión real del paquete si está disponible, si no usar fallback
-    this.versionApp = "6.6.10";
+    this.versionApp = "6.6.11";
 
     if (localStorage.getItem("tokenExpired") === "true") {
       localStorage.removeItem("tokenExpired");

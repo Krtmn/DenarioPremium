@@ -10,6 +10,7 @@ import { CollectionService } from '../services/collection/collection-logic.servi
 import { MessageService } from '../services/messageService/message.service';
 import { ClientLogicService } from '../services/clientes/client-logic.service';
 import { ModalController } from '@ionic/angular';
+import { GlobalConfigService } from '../services/globalConfig/global-config.service';
 
 
 
@@ -30,6 +31,8 @@ export class ClienteSelectorComponent implements OnInit {
   private messageService = inject(MessageService);
   public clientLogic = inject(ClientLogicService);
   public modalCtrl = inject(ModalController);
+  private globalConfig = inject(GlobalConfigService);
+
 
   public tags = new Map<string, string>([]);
   public clientes!: Client[]
@@ -179,47 +182,32 @@ export class ClienteSelectorComponent implements OnInit {
     });
   }
 
-  handleUpdateClientList(result: Client[]) {
+  async handleUpdateClientList(result: Client[]) {
     this.scrollDisable = result.length < this.clientServ.MAX_ITEMS_PER_PAGE;
     if (this.page == 0) {
       this.clientes = [] as Client[];
       this.service.clientes = [] as Client[];
     }
+
+    if (this.collectLogic.userCanCollectIva && this.collectLogic.cobro25) {
+      for (let i = 0; i < result.length; i++) {
+        if (result[i].collectionIva) {
+          this.clientes.push(result[i]);
+        }
+      }
+    }
+
     if (this.multimoneda) {
       this.fixClientListSaldos(result);
     }
 
-    if (this.nombreModulo == this.service.tags.get("COB_TYPE_COBRO")!
-      || this.nombreModulo == this.service.tags.get("COB_TYPE_ANTICIPO")!
-      || this.nombreModulo == this.service.tags.get("COB_TYPE_RETENCION")!
-      || this.nombreModulo == this.service.tags.get("COB_TYPE_IGTF")!
-      || this.nombreModulo == this.service.tags.get("COB_MODULE_COBRO25")!) {
-      result.sort((a, b) => {
-        const totalA = (a.saldo1 ?? 0) + (a.saldo2 ?? 0);
-        const totalB = (b.saldo1 ?? 0) + (b.saldo2 ?? 0);
-
-        const groupA = (a.countDueDate ?? 0) > 0 ? 0 : 1;
-        const groupB = (b.countDueDate ?? 0) > 0 ? 0 : 1;
-
-        if (groupA !== groupB) {
-          return groupA - groupB;
-        }
-
-        return totalB - totalA;
-      });
-
-      if (this.collectLogic.userCanCollectIva && this.collectLogic.cobro25) {
-        for (let i = 0; i < result.length; i++) {
-          if (result[i].collectionIva) {
-            this.clientes.push(result[i]);
-          }
-        }
-      } else {
-        this.clientes = [...this.clientes, ...result];
-      }
-    } else {
-      this.clientes = [...this.clientes, ...result];
+    if (this.globalConfig.get("clientsOrderBy") == "mayor deuda vencida") {
+      await this.oderByDueDateAndSaldo(result);
     }
+
+
+    this.clientes = [...this.clientes, ...result];
+    //}
     //console.log("[ClienteSelector] Lista de clientes actualizada");
     this.noClientsAlertShown = this.clientes.length == 0;
     //para usarlo luego
@@ -228,6 +216,23 @@ export class ClienteSelectorComponent implements OnInit {
     }
     this.service.checkClient = false;
     this.messageService.hideLoading();
+  }
+
+
+  async oderByDueDateAndSaldo(clientes: Client[]) {
+    clientes.sort((a, b) => {
+      const totalA = (a.saldo1 ?? 0) + (a.saldo2 ?? 0);
+      const totalB = (b.saldo1 ?? 0) + (b.saldo2 ?? 0);
+
+      const groupA = (a.countDueDate ?? 0) > 0 ? 0 : 1;
+      const groupB = (b.countDueDate ?? 0) > 0 ? 0 : 1;
+
+      if (groupA !== groupB) {
+        return groupA - groupB;
+      }
+
+      return totalB - totalA;
+    });
   }
 
   fixClientListSaldos(result: any) {

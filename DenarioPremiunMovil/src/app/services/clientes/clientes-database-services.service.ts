@@ -25,53 +25,53 @@ export class ClientesDatabaseServicesService {
     let clients: Client[] = [];
     for (let i = 0; i < data.rows.length; i++) {
       clients.push({
-          idClient: data.rows.item(i).id_client,
-          coClient: data.rows.item(i).co_client,
-          lbClient: data.rows.item(i).lb_client,
-          naClient: data.rows.item(i).na_client,
-          nuRif: data.rows.item(i).nu_rif,
-          idChannel: data.rows.item(i).id_channel,
-          idWarehouse: data.rows.item(i).id_warehouse,
-          idHeadQuarter: 0,
-          idList: data.rows.item(i).id_list,
-          idPaymentCondition: data.rows.item(i).id_payment_condition,
-          coPaymentCondition: data.rows.item(i).co_payment_condition,
-          naPaymentCondition: data.rows.item(i).na_payment_condition,
-          inSuspension: data.rows.item(i).in_suspension,
-          quDiscount: data.rows.item(i).qu_discount,
-          naEmail: data.rows.item(i).na_email,
-          nuCreditLimit: data.rows.item(i).nu_credit_limit,
-          naWebSite: data.rows.item(i).na_web_site,
-          idCurrency: data.rows.item(i).id_currency,
-          coCurrency: data.rows.item(i).co_currency,
-          multimoneda: data.rows.item(i).multimoneda,
-          coEnterprise: data.rows.item(i).co_enterprise,
-          idEnterprise: data.rows.item(i).id_enterprise,
-          channel: data.rows.item(i).channel,
-          lblEnterprise: data.rows.item(i).lbl_enterprise,
-          naPriceList: data.rows.item(i).na_price_list,
-          naResponsible: data.rows.item(i).na_responsible,
-          nuPhone: data.rows.item(i).nu_phone,
-          saldo1: data.rows.item(i).saldo1 == null ? 0 : data.rows.item(i).saldo1,
-          saldo1Conver: data.rows.item(i).saldo1Conver == null ? 0 : data.rows.item(i).saldo1Conver,
-          saldo2: data.rows.item(i).saldo2 == null ? 0 : data.rows.item(i).saldo2,
-          saldo2Conver: data.rows.item(i).saldo2Conver == null ? 0 : data.rows.item(i).saldo2Conver,
-          txAddress: data.rows.item(i).tx_address,
-          coordenada: data.rows.item(i).coordenada,
-          editable: data.rows.item(i).editable,
-          idAddressClients: 0,
-          coAddressClients: "",
-          collectionIva: data.rows.item(i).collection_iva == "true" ? true : false,
-          txDescription1: data.rows.item(i).tx_description_1,
-          txDescription2: data.rows.item(i).tx_description_2,
-          daDocument: data.rows.item(i).daDocument,
-          daDueDate: data.rows.item(i).daDueDate,
-          countDueDate: data.rows.item(i).countDueDate,
-          colorRow: ""
-        });
-  }
+        idClient: data.rows.item(i).id_client,
+        coClient: data.rows.item(i).co_client,
+        lbClient: data.rows.item(i).lb_client,
+        naClient: data.rows.item(i).na_client,
+        nuRif: data.rows.item(i).nu_rif,
+        idChannel: data.rows.item(i).id_channel,
+        idWarehouse: data.rows.item(i).id_warehouse,
+        idHeadQuarter: 0,
+        idList: data.rows.item(i).id_list,
+        idPaymentCondition: data.rows.item(i).id_payment_condition,
+        coPaymentCondition: data.rows.item(i).co_payment_condition,
+        naPaymentCondition: data.rows.item(i).na_payment_condition,
+        inSuspension: data.rows.item(i).in_suspension,
+        quDiscount: data.rows.item(i).qu_discount,
+        naEmail: data.rows.item(i).na_email,
+        nuCreditLimit: data.rows.item(i).nu_credit_limit,
+        naWebSite: data.rows.item(i).na_web_site,
+        idCurrency: data.rows.item(i).id_currency,
+        coCurrency: data.rows.item(i).co_currency,
+        multimoneda: data.rows.item(i).multimoneda,
+        coEnterprise: data.rows.item(i).co_enterprise,
+        idEnterprise: data.rows.item(i).id_enterprise,
+        channel: data.rows.item(i).channel,
+        lblEnterprise: data.rows.item(i).lbl_enterprise,
+        naPriceList: data.rows.item(i).na_price_list,
+        naResponsible: data.rows.item(i).na_responsible,
+        nuPhone: data.rows.item(i).nu_phone,
+        saldo1: data.rows.item(i).saldo1 == null ? 0 : data.rows.item(i).saldo1,
+        saldo1Conver: data.rows.item(i).saldo1Conver == null ? 0 : data.rows.item(i).saldo1Conver,
+        saldo2: data.rows.item(i).saldo2 == null ? 0 : data.rows.item(i).saldo2,
+        saldo2Conver: data.rows.item(i).saldo2Conver == null ? 0 : data.rows.item(i).saldo2Conver,
+        txAddress: data.rows.item(i).tx_address,
+        coordenada: data.rows.item(i).coordenada,
+        editable: data.rows.item(i).editable,
+        idAddressClients: 0,
+        coAddressClients: "",
+        collectionIva: data.rows.item(i).collection_iva == "true" ? true : false,
+        txDescription1: data.rows.item(i).tx_description_1,
+        txDescription2: data.rows.item(i).tx_description_2,
+        daDocument: data.rows.item(i).daDocument,
+        daDueDate: data.rows.item(i).daDueDate,
+        countDueDate: data.rows.item(i).countDueDate,
+        colorRow: ""
+      });
+    }
     return clients;
-}
+  }
 
   getClients(idEnterprise: number, page: number) {
     let selectStatement = "";
@@ -137,8 +137,9 @@ export class ClientesDatabaseServicesService {
     if (this.globalConfig.get("clientsOrderBy") != '') {
       if (this.globalConfig.get("clientsOrderBy") == "na_client") {
         selectStatement += ' ORDER BY c.' + "lb_client";
-      } else
-        selectStatement += ' ORDER BY c.' + this.globalConfig.get("clientsOrderBy");
+      } else if (this.globalConfig.get("clientsOrderBy") == "mayor deuda vencida") {
+        selectStatement += '';
+      } else selectStatement += ' ORDER BY c.' + this.globalConfig.get("clientsOrderBy");
     }
 
     selectStatement += ' LIMIT ' + this.MAX_ITEMS_PER_PAGE + ' OFFSET ' + offset;
@@ -154,13 +155,15 @@ export class ClientesDatabaseServicesService {
   searchClients(idEnterprise: number, searchText: string, page: number) {
     let selectStatement = "";
     let offset = page * this.MAX_ITEMS_PER_PAGE;
-        // Normalize and split search text into tokens
+    // Normalize and split search text into tokens
     const tokens = (searchText || '').toString().trim().toLowerCase().split(/\s+/).filter(t => t.length > 0);
 
-      let orderBy = ' '
-      if (this.globalConfig.get("clientsOrderBy") != '') {
+    let orderBy = ' '
+    if (this.globalConfig.get("clientsOrderBy") != '') {
       if (this.globalConfig.get("clientsOrderBy") == "na_client") {
         orderBy += ' ORDER BY c.' + "lb_client";
+      } else if (this.globalConfig.get("clientsOrderBy") == "mayor deuda vencida") {
+        selectStatement += '';
       } else
         orderBy += ' ORDER BY c.' + this.globalConfig.get("clientsOrderBy");
     }
@@ -180,7 +183,7 @@ export class ClientesDatabaseServicesService {
     //paginacion: limit y offset
     params.push(this.MAX_ITEMS_PER_PAGE, offset);
 
-  if (this.globalConfig.get("multiCurrency") == 'true') {
+    if (this.globalConfig.get("multiCurrency") == 'true') {
       if (this.globalConfig.get("conversionDocument") == 'true') {
         selectStatement = 'SELECT c.*, (SELECT p.na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1 ) na_price_list, ' +
           '(SELECT na_channel FROM distribution_channels WHERE id_channel = c.id_channel LIMIT 1 ) channel, ' +
@@ -200,7 +203,7 @@ export class ClientesDatabaseServicesService {
           'FROM clients c ' +
           'LEFT JOIN lists p ON p.id_list = c.id_list ' +
           'LEFT JOIN distribution_channels dc ON dc.id_channel = c.id_channel ' +
-          'WHERE '+whereTokens+' '+orderBy+' LIMIT ? OFFSET ?';
+          'WHERE ' + whereTokens + ' ' + orderBy + ' LIMIT ? OFFSET ?';
 
       } else {
         selectStatement = 'SELECT c.*, (SELECT p.na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1 ) na_price_list, ' +
@@ -218,7 +221,7 @@ export class ClientesDatabaseServicesService {
           'FROM clients c ' +
           'LEFT JOIN lists p ON p.id_list = c.id_list ' +
           'LEFT JOIN distribution_channels dc ON dc.id_channel = c.id_channel ' +
-          'WHERE '+whereTokens+' '+orderBy+' LIMIT ? OFFSET ?';
+          'WHERE ' + whereTokens + ' ' + orderBy + ' LIMIT ? OFFSET ?';
       }
     } else {
       selectStatement = 'SELECT c.*, (SELECT p.na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1 ) na_price_list, ' +
@@ -234,7 +237,7 @@ export class ClientesDatabaseServicesService {
         'FROM clients c ' +
         'LEFT JOIN lists p ON p.id_list = c.id_list ' +
         'LEFT JOIN distribution_channels dc ON dc.id_channel = c.id_channel ' +
-        'WHERE '+whereTokens+' '+orderBy+' LIMIT ? OFFSET ?';
+        'WHERE ' + whereTokens + ' ' + orderBy + ' LIMIT ? OFFSET ?';
     }
     return this.dbServ.getDatabase().executeSql(selectStatement, params).then(data => {
       let lists = this.ClientBDtoClient(data);

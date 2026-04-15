@@ -9,6 +9,7 @@ import { ClientesDatabaseServicesService } from 'src/app/services/clientes/clien
 import { ClientLocationService } from 'src/app/services/clientes/locationClient/client-location.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { EnterpriseService } from 'src/app/services/enterprise/enterprise.service';
+import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { ServicesService } from 'src/app/services/services.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
@@ -26,6 +27,7 @@ export class ClienteContainerComponent implements OnInit {
   public services = inject(ServicesService);
   public messageService = inject(MessageService);
   public locationClient = inject(ClientLocationService)
+  private globalConfig = inject(GlobalConfigService);
 
   public subs: any;
   public empresaSeleccionada!: Enterprise;
@@ -90,16 +92,19 @@ export class ClienteContainerComponent implements OnInit {
 
   clientList() {
     this.clientLogic.initService();
-    this.messageService.showLoading().then(() => {
+    this.messageService.showLoading().then(async () => {
       this.clientLogic.clientListPage = 0;
-      this.clientLogic.getClients(this.clientLogic.listaEmpresa[0].idEnterprise).then(resp => {
+      this.clientLogic.getClients(this.clientLogic.listaEmpresa[0].idEnterprise).then(async resp => {
         this.messageService.hideLoading();
+
+
         this.clientLogic.clientContainerComponent = false;
         this.clientLogic.clientListComponent = true;
       });
     })
 
   }
+
 
   newPotentialClient() {
     this.clientLogic.potentialClient = {} as PotentialClient;

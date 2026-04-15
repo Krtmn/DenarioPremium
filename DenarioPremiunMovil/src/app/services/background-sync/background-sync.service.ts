@@ -17,15 +17,15 @@ export class BackgroundSyncService {
   private readonly intervalMs = 5 * 60 * 1000; // 5 minutes
   private timerId?: ReturnType<typeof setInterval>;
   // Tablas a sincronizar en segundo plano (IDs de tableKeyMap en synchronization.component)
-  private readonly backgroundTableIds = [6, 13, 23, 25]; //document_sales, price_lists, lists, stocks
+  private readonly backgroundTableIds = [6, 13, 23, 25,33]; //document_sales, price_lists, lists, stocks
   private sqlTableMap: Record<string, { table: string; id: string; idName: string }> = {};
   private tableKeyMap: Record<number, string> = {
     6: 'document_sales',
     13: 'price_lists',
     23: 'lists',
     25: 'stocks',
+    33: 'visits'
   };
-
   private autoSend = inject(AutoSendService);
   private services = inject(ServicesService);
   private synchronizationServices = inject(SynchronizationDBService)
@@ -162,7 +162,7 @@ export class BackgroundSyncService {
       while (morePages) {
         const tablaPayload: any = { [cfg.tableKey]: tableLastUpdate, page };
         const result = await firstValueFrom(this.services.getSync(JSON.stringify(tablaPayload)));
-        const resTable: any = (result as any)[cfg.rowKey];
+        const resTable: any = (result.data as any)[cfg.rowKey];
         const sqlInfo = this.sqlTableMap[key as string];
 
         if (!resTable) {
@@ -227,6 +227,13 @@ export class BackgroundSyncService {
       tableKey: 'stockTableLastUpdate',
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
-    }
+    },
+      visits: {
+      batchFn: this.synchronizationServices.insertVisitsBatch.bind(this.synchronizationServices),
+      rowKey: 'visitTable',
+      tableKey: 'visitTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
   };
 }

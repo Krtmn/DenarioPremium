@@ -14,7 +14,7 @@
               </ion-input>
             </ion-col>
             <ion-col size="6" size-sm="8" size-xs="10" offset-sm="2" offset-xs="1">
-              <ion-input placeholder="Password" class="colorInput" [type]="showPassword ? 'password' : 'text'"
+              <ion-input placeholder="Contraseña" class="colorInput" [type]="showPassword ? 'password' : 'text'"
                 formControlName="password" [(ngModel)]="loginDetail.password" required>
                 <img class="imageninput" alt="" src="../../../assets/images/iconoslogin.png" />
               </ion-input>
@@ -50,8 +50,8 @@
 <ion-footer class="footer ion-no-border" *ngIf="showFooter">
     <ion-toolbar>
         <ion-col size="8" size-sm="10" size-xs="10" offset-xs="1">
-            <p align="center" style="font-size: 14px; font-weight: normal; margin: 0;">Copyright &copy; 2025. All rights
-                reserved. <br /> POWERED BY <a href="http://www.kiberno.com/" style="color: #430197;">KIBERNO</a></p>
+            <p align="center" style="font-size: 14px; font-weight: normal; margin: 0;">&copy; {{ currentYear }}. Todos los derechos
+                reservados. <br /> DESARROLLADO POR <a href="http://www.kiberno.com/" style="color: #430197;">KIBERNO</a></p>
             <p align="center" style="font-size: 14px; font-weight: normal; margin: 0;">Versión {{versionApp}}</p>
         </ion-col>
     </ion-toolbar>

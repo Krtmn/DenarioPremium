@@ -204,14 +204,14 @@ export class ClientLogicService {
         )
       }
       return this.services.getTags(this.dbServ.getDatabase(), "DEN", "ESP").then(result => {
-      for (var i = 0; i < result.length; i++) {
-        this.clientTags.set(
-          result[i].coApplicationTag, result[i].tag
-        )
-      }
+        for (var i = 0; i < result.length; i++) {
+          this.clientTags.set(
+            result[i].coApplicationTag, result[i].tag
+          )
+        }
 
-      return Promise.resolve(true);
-    });
+        return Promise.resolve(true);
+      });
     })
   }
 
@@ -241,50 +241,69 @@ export class ClientLogicService {
     });
   }
 
-  updateClientListAfterEdit(clients: Client[]) {
+  async updateClientListAfterEdit(clients: Client[]) {
     if (this.clientListPage === 0) {
       this.clients = [] as Client[];
     }
     this.fixClientListSaldos(clients);
-        if(this.clientListPage === 0) {
-        this.clients = clients;
-        } else {
-        this.clients = this.clients.concat(clients);
-        }
-        this.results = [...clients];
+    if (this.clientListPage === 0) {
+      this.clients = clients;
+    } else {
+      this.clients = this.clients.concat(clients);
+    }
+    this.results = [...clients];
 
-        // Recorre todos los clientes y loggea si la moneda es distinta a la moneda local
+    // Recorre todos los clientes y loggea si la moneda es distinta a la moneda local
 
-        return Promise.resolve(clients.length < this.clientesServices.MAX_ITEMS_PER_PAGE);
+    if (this.globalConfig.get("clientsOrderBy") == "mayor deuda vencida") {
+      await this.oderByDueDateAndSaldo(this.clients);
+    }
+
+    return Promise.resolve(clients.length < this.clientesServices.MAX_ITEMS_PER_PAGE);
   }
 
 
+  async oderByDueDateAndSaldo(clientes: Client[]) {
+    clientes.sort((a, b) => {
+      const totalA = (a.saldo1 ?? 0) + (a.saldo2 ?? 0);
+      const totalB = (b.saldo1 ?? 0) + (b.saldo2 ?? 0);
+
+      const groupA = (a.countDueDate ?? 0) > 0 ? 0 : 1;
+      const groupB = (b.countDueDate ?? 0) > 0 ? 0 : 1;
+
+      if (groupA !== groupB) {
+        return groupA - groupB;
+      }
+
+      return totalB - totalA;
+    });
+  }
 
   fixClientListSaldos(clients: Client[]): Client[] {
-            if (this.localCurrencyDefault) {
-          for (const c of clients) {
-            if (c.coCurrency !== this.localCurrency.coCurrency) {
-              c.saldo1 = this.currencyService.toOppositeCurrency(c.coCurrency, c.saldo1);
-              c.coCurrency = this.localCurrency.coCurrency;
+    if (this.localCurrencyDefault) {
+      for (const c of clients) {
+        if (c.coCurrency !== this.localCurrency.coCurrency) {
+          c.saldo1 = this.currencyService.toOppositeCurrency(c.coCurrency, c.saldo1);
+          c.coCurrency = this.localCurrency.coCurrency;
 
-            }
-          }
-        } else {
-          for (const c of clients) {
-            if (c.coCurrency !== this.hardCurrency.coCurrency) {
-              c.coCurrency = this.hardCurrency.coCurrency;
-              c.saldo1 = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.saldo1);
-            }
-          }
         }
-        return clients;
       }
+    } else {
+      for (const c of clients) {
+        if (c.coCurrency !== this.hardCurrency.coCurrency) {
+          c.coCurrency = this.hardCurrency.coCurrency;
+          c.saldo1 = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, c.saldo1);
+        }
+      }
+    }
+    return clients;
+  }
 
   // Reemplazar la función goToClient existente por esta versión async
   async goToClient(idClient: number): Promise<void> {
     try {
       this.clientListComponent = false; // apagamos el componente client list
-      
+
       // 1) Obtener cliente
       const clientResult = await this.clientesServices.getClientById(Number(idClient));
       this.datos = {} as SelectedClient;
@@ -306,10 +325,10 @@ export class ClientLogicService {
 
       clientResult.editable = clientResult.editable == null ? false : (clientResult.editable.toString().toLowerCase() === 'true');
 
-      if(clientResult.coCurrency == null || clientResult.coCurrency.trim() === "") {
+      if (clientResult.coCurrency == null || clientResult.coCurrency.trim() === "") {
         clientResult.coCurrency = this.currencyService.getCurrencyById(clientResult.idCurrency).coCurrency;
       }
-      
+
       this.datos.client = clientResult;
 
       // 2) Obtener documentos de venta del cliente
