@@ -113,6 +113,7 @@ export class CobrosGeneralComponent implements OnInit {
 
     if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collectService.collection.stDelivery == 6) {
       //ES UN COBRO ENVIADO, NO DEBO HACER NADA, SOLO MOSTRAR LA DATA
+
       this.setSendedCollection();
     } else {
       this.subscriptions.push(
@@ -149,6 +150,8 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.montoTotalPagarConversion = this.collectService.collection.nuAmountFinalConversion;
     this.collectService.montoTotalPagado = this.collectService.collection.nuAmountTotal;
     this.collectService.montoTotalPagadoConversion = this.collectService.collection.nuAmountTotalConversion;
+    this.dateCollect = this.collectService.collection.daCollection;
+    this.collectService.disabledInputClient = true;
     this.collectService.rateSelected = this.collectService.collection.nuValueLocal;
     this.rateSelected = this.collectService.collection.nuValueLocal;
 
@@ -746,6 +749,12 @@ export class CobrosGeneralComponent implements OnInit {
               this.collectService.enterpriseEnabled = false;
               //this.collectService.collection.nuValueLocal = 80;
             }
+
+            if (this.collectService.documentCurrency == undefined || this.collectService.documentCurrency == null || this.collectService.documentCurrency == "") {
+              this.collectService.documentCurrency = this.collectService.currencyListDocument[0].coCurrency;
+              this.collectService.currencySelectedDocument = this.collectService.currencyListDocument[0];
+            }
+
 
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
               this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {

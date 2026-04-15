@@ -705,7 +705,7 @@ export class CollectionService {
     // Asigna el array con el objeto genérico y luego el contenido real
     this.currencyListDocument = [genericCurrency, ...this.currencyList];
     // Después de cargar currencyListDocument:
-    this.currencySelectedDocument = this.currencyListDocument.find(c => c.coCurrency === this.collection.coCurrency) ?? genericCurrency;
+    //this.currencySelectedDocument = this.currencyListDocument.find(c => c.coCurrency === this.collection.coCurrency) ?? genericCurrency;
   }
 
   setCurrencyConversion() {
@@ -2144,7 +2144,7 @@ export class CollectionService {
       //DOCUMENTOS A BLOQUEAR
       const sqlBloquear = `SELECT DISTINCT(ds.co_document)
 FROM document_sales ds
-JOIN collection_details cd ON ds.co_document = cd.co_document
+JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_partial = 'false'
 JOIN collections c ON cd.co_collection = c.co_collection AND c.st_collection IN (1,3)
 JOIN transaction_statuses ts ON c.co_collection = ts.co_transaction AND ts.id_transaction_type = 3
 WHERE ts.da_transaction_statuses = (
@@ -2176,7 +2176,7 @@ AND ts.da_transaction_statuses > ds.da_update;`;
       this.coDocumentToUpdate = docsLock.slice();
       const sqlDesbloquear = `SELECT DISTINCT(ds.co_document)
 FROM document_sales ds
-JOIN collection_details cd ON ds.co_document = cd.co_document
+JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_partial = 'false'
 JOIN collections c ON cd.co_collection = c.co_collection AND c.st_collection IN (1,3)
 JOIN transaction_statuses ts ON c.co_collection = ts.co_transaction AND ts.id_transaction_type = 3
 WHERE ts.da_transaction_statuses = (
@@ -2186,7 +2186,11 @@ WHERE ts.da_transaction_statuses = (
     WHERE cd2.co_document = ds.co_document
       AND ts2.id_transaction_type = 3
 )
-AND ds.da_update >= ts.da_transaction_statuses ;`;
+AND ds.da_update >= ts.da_transaction_statuses
+UNION
+SELECT DISTINCT(ds.co_document)
+FROM document_sales ds
+JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_partial = 'true';`;
 
       try {
         const resDesbloq = await db.executeSql(sqlDesbloquear, []);
@@ -2248,7 +2252,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
       // preparar consulta IN (...) para obtener todos los co_document de una sola vez
       const placeholders = coTransactions.map(() => '?').join(',');
-      const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders}) AND in_payment_partial = 'false'`;
+      const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders})`;
 
       const res = await db.executeSql(sql, coTransactions);
       for (let i = 0; i < res.rows.length; i++) {
@@ -2531,7 +2535,11 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
   }): { query: string; params: any[]; isIgtf: boolean } {
     const { moduleType, currencyIsEmpty, idClient, coCurrency, idEnterprise, coCollection } = opts;
 
-    const commonOrder = `ORDER BY CASE WHEN d.co_currency = "${this.enterpriseSelected.coCurrencyDefault}" THEN 0 ELSE 1 END, d.co_currency`;
+    const commonOrder = `ORDER BY
+      CASE WHEN DATE(d.da_due_date) < DATE('now', 'localtime') THEN 0 ELSE 1 END ASC,
+      COALESCE(DATE(d.da_due_date), DATE('0001-01-01')) ASC,
+      CASE WHEN d.co_currency = "${this.enterpriseSelected.coCurrencyDefault}" THEN 0 ELSE 1 END,
+      d.co_currency`;
 
     // module 0 and 2 are non-IGTF, but module 2 omits ds.st_document < 2
 
@@ -2564,7 +2572,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           'WHERE (d.id_client = ? ' +
           (includeDocStateFilter ? 'AND ds.st_document < 2 ' : '') +
           'AND d.co_currency = ? AND d.id_enterprise = ? AND d.co_document_sale_type != "IGTF") ' +
-          'OR d.co_document IN (SELECT co_document FROM collection_details WHERE co_collection= ?);'
+          'OR d.co_document IN (SELECT co_document FROM collection_details WHERE co_collection= ? ) ' +
+          commonOrder
       };
     }
 
@@ -2576,7 +2585,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         query:
           'SELECT DISTINCT d.* FROM document_sales d ' +
           'LEFT JOIN document_st ds ON d.co_document = ds.co_document ' +
-          'WHERE d.id_client = ? AND ds.st_document < 2 AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF" '
+          'WHERE d.id_client = ? AND ds.st_document < 2 AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF" ' +
+          commonOrder
       };
     }
 
@@ -2586,7 +2596,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       query:
         'SELECT DISTINCT d.* FROM document_sales d ' +
         'LEFT JOIN document_st ds ON d.co_document = ds.co_document ' +
-        'WHERE d.id_client = ? AND ds.st_document < 2 AND d.co_currency = ?  AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF" '
+        'WHERE d.id_client = ? AND ds.st_document < 2 AND d.co_currency = ?  AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF" ' +
+        commonOrder
     };
   }
 
@@ -4234,15 +4245,15 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         let stDelivery = 0;
         if (documentSales[i].isSelected) {
           if (coType == '2') {
-            //es retencion
-            //stDelivery = 3; colocar 3 si queremos que luego dfe una retencion el documento quede bloqueado, colocar 2 si queremos que quede disponible pero con la retencion pendiente
+            //es una retencion, no debe marcar el documento como entregado
             stDelivery = 0;
-          } else if (documentSales[i].missingRetention && !documentSales[i].inPaymentPartial) {
-            stDelivery = 2;
-          } else if (documentSales[i].inPaymentPartial)
+          } else if (documentSales[i].inPaymentPartial) { // Prioridad al pago parcial
             stDelivery = 0;
-          else //if (this.sendCollection)
+          } else if (documentSales[i].missingRetention) { // Luego la retención
             stDelivery = 2;
+          } else {
+            stDelivery = 2;
+          }
 
           stamentenDocumentSt.push([updateStatement, [
             stDelivery,

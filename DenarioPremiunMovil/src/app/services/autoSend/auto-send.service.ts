@@ -608,7 +608,14 @@ export class AutoSendService implements OnInit {
             }
 
             this.deletePendingTransaction(result.coTransaction, result.type)
+            return;
           }
+
+          if (this.isBadRequestResponse(result)) {
+            this.handleBadRequestPendingTransaction(type, coTransaction, result);
+            return;
+          }
+
           if (result && result.errorCode == "066") {
             //que se baje de la mula, nojoda!
             this.messageAlert = new MessageAlert(
@@ -616,12 +623,25 @@ export class AutoSendService implements OnInit {
               result.errorMessage
             );
             this.messageService.alertModal(this.messageAlert);
+            return;
+          }
+          if (result && this.isBadRequestResult(result)) {
+            /*  this.messageAlert = new MessageAlert(
+               "Denario Premium",
+               result.errorMessage || "Ocurrió un error al enviar la transacción."
+             );
+             this.messageService.alertModal(this.messageAlert); */
+            void this.handleFailedTransaction(coTransaction, type, request, result);
           }
         },
         complete: () => {
           console.info('complete');
         },
         error: (e) => {
+          if (this.isBadRequestError(e)) {
+            this.handleBadRequestPendingTransaction(type, coTransaction, e);
+            return;
+          }
           console.error(e);
           /*
           this.messageAlert = new MessageAlert(
@@ -633,6 +653,128 @@ export class AutoSendService implements OnInit {
         },
       });
     }
+  }
+
+  private isBadRequestResponse(result: any): boolean {
+    if (!result) {
+      return false;
+    }
+
+    const status = Number(result.status ?? result.statusCode ?? result.httpStatus);
+    if (status === 400) {
+      return true;
+    }
+
+    const errorCode = result.errorCode ?? result.code;
+    if (errorCode === 400) {
+      return true;
+    }
+
+    if (typeof errorCode === 'string') {
+      const normalizedCode = errorCode.toUpperCase();
+      if (normalizedCode === '400' || normalizedCode === 'BAD_REQUEST' || normalizedCode === 'ERR_BAD_REQUEST') {
+        return true;
+      }
+    }
+
+    const message = `${result.errorMessage ?? result.message ?? ''}`.toLowerCase();
+    return message.includes('bad request');
+  }
+
+  private isBadRequestError(error: any): boolean {
+    if (!error) {
+      return false;
+    }
+
+    const status = Number(error.status ?? error.statusCode ?? error?.error?.status ?? error?.error?.statusCode);
+    if (status === 400) {
+      return true;
+    }
+
+    const errorCode = error.code ?? error.errorCode ?? error?.error?.code ?? error?.error?.errorCode;
+    if (errorCode === 400) {
+      return true;
+    }
+
+    if (typeof errorCode === 'string') {
+      const normalizedCode = errorCode.toUpperCase();
+      if (normalizedCode === '400' || normalizedCode === 'BAD_REQUEST' || normalizedCode === 'ERR_BAD_REQUEST') {
+        return true;
+      }
+    }
+
+    const message = `${error.message ?? error?.error?.message ?? error?.error?.error ?? ''}`.toLowerCase();
+    return message.includes('bad request');
+  }
+
+  private handleBadRequestPendingTransaction(type: string, coTransaction: string, payload?: any): void {
+    console.warn(`[AutoSendService] Bad request detectado para transacción pendiente ${type}:${coTransaction}`, payload);
+
+    const pendingType = type;
+    const pendingTransaction = coTransaction;
+
+    if (pendingType === 'collect') {
+      this.collectionService.updateDocumentStForDelete(this.dbService.getDatabase(), pendingTransaction)
+        .then(() => {
+          this.deletePendingTransaction(pendingTransaction, pendingType);
+        })
+        .catch((error) => {
+          console.error(`[AutoSendService] Error al restaurar document_st para ${pendingTransaction}`, error);
+          this.deletePendingTransaction(pendingTransaction, pendingType);
+        });
+      return;
+    }
+
+    this.deletePendingTransaction(pendingTransaction, pendingType);
+  }
+
+  /** Solo errores HTTP 400 / Bad Request (cuerpo o código de negocio). */
+  private isBadRequestResult(result: any): boolean {
+    if (result.httpStatus === 400) {
+      return true;
+    }
+    const code = String(result.errorCode ?? '').trim();
+    if (code === '400') {
+      return true;
+    }
+    const msg = String(result.errorMessage ?? '').toLowerCase();
+    return msg.includes('bad request');
+  }
+
+  private async handleFailedTransaction(coTransaction: string, type: string, request: any, result: any): Promise<void> {
+    try {
+      await this.insertFailedTransaction(
+        coTransaction,
+        type,
+        result?.errorCode ?? '',
+        result?.errorMessage ?? 'Transacción fallida sin mensaje de backend.',
+        request
+      );
+      await this.deletePendingTransaction(coTransaction, type);
+      await this.runPendingQueue();
+    } catch (e) {
+      console.log('Error al mover la transacción fallida fuera de la cola', e);
+    }
+  }
+
+  private insertFailedTransaction(
+    coTransaction: string,
+    type: string,
+    errorCode: string,
+    errorMessage: string,
+    request: any
+  ) {
+    let txObject = '{}';
+    try {
+      txObject = JSON.stringify(request ?? {});
+    } catch (e) {
+      txObject = JSON.stringify({ serializationError: true });
+    }
+
+    return this.dbService.getDatabase().executeSql(
+      'INSERT INTO failed_transactions(co_transaction, type, error_code, error_message, transaction_object, da_failed) VALUES(?,?,?,?,?,?)',
+      [coTransaction, type, errorCode, errorMessage, txObject, new Date().toISOString()]
+    );
   }
 
   callService(request: any, type: string, coTransaction: string) {
@@ -681,9 +823,22 @@ export class AutoSendService implements OnInit {
     return from(CapacitorHttp.post(opt))
       .pipe(
         map(resp => {
-          resp.data.coTransaction = coTransaction;
-          resp.data.type = type;
-          return resp.data;
+          if (resp.data && typeof resp.data === 'object' && !Array.isArray(resp.data)) {
+            resp.data.coTransaction = coTransaction;
+            resp.data.type = type;
+            resp.data.httpStatus = resp.status;
+            return resp.data;
+          }
+          return {
+            coTransaction,
+            type,
+            httpStatus: resp.status,
+            errorCode: String(resp.status),
+            errorMessage:
+              typeof resp.data === 'string'
+                ? resp.data
+                : 'Ocurrió un error al enviar la transacción.',
+          };
         })
       );
   }
@@ -801,7 +956,7 @@ export class AutoSendService implements OnInit {
   }
 
   deletePendingTransaction(coTransaction: string, type: string) {
-    this.dbService.getDatabase().executeSql(
+    return this.dbService.getDatabase().executeSql(
       'DELETE FROM pending_transactions WHERE co_transaction = ? AND type = ?',
       [coTransaction, type]
     ).then(res => {

@@ -1,0 +1,6 @@
+[
+  {
+    "sql": "CREATE TABLE IF NOT EXISTS failed_transactions(id_failed_transaction INTEGER PRIMARY KEY AUTOINCREMENT, co_transaction VARCHAR(40), type VARCHAR(30), error_code VARCHAR(10), error_message VARCHAR(255), transaction_object TEXT, da_failed TIMESTAMP);",
+    "description": "Crea la tabla de transacciones fallidas para sacar de cola las que devuelven errores distintos de 000/066."
+  }
+]

@@ -1111,6 +1111,10 @@ export class PedidosService {
      * conversionByPriceList = false
      *
      */
+    if (!this.currencyService.multimoneda) {
+      //si no esta habilitada la multimoneda, no hacemos conversion
+      return price;
+    }
     if (coCurrency == null || coCurrency.trim() == '') {
       console.error("[conversionCurrency] Currency not specified");
       return 0;
