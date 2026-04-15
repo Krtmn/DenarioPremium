@@ -665,8 +665,9 @@ export class CobrosGeneralComponent implements OnInit {
 
   setChangesMade(value: boolean) {
     //ESTA FUNCION SE USARA PARA CONTROLAR SI PUEDO ENVIAR O GUARDAR, CVER QUE HAGO ACA
-    this.collectService.onCollectionValidToSave(true);
-    this.collectService.onCollectionValidToSend(true);
+    /* this.collectService.onCollectionValidToSave(true);
+    this.collectService.onCollectionValidToSend(true); */
+    this.collectService.validateToSend();
   }
 
 

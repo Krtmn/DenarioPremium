@@ -1275,7 +1275,10 @@ export class CollectionService {
       }
     } else {
 
-      await this.validateReferencePayment();
+      if (!(await this.validateReferencePayment())) {
+        this.onCollectionValidToSend(false);
+        return;
+      }
       //DEBO VALIDAR SI HAY ALGUN PAGO PARCIAL, EL MONTO DEBE PAGADO DEBE SER IGUAL AL MONTO A PAGAR
       let onlyPaymentPartial = 0;
       // Seguridad: normalizar array
@@ -1556,7 +1559,7 @@ export class CollectionService {
     // Si no hay colección o no hay pagos, no está válido para enviar
     if (!this.collection || !this.collection.collectionPayments || this.collection.collectionPayments.length <= 0) {
       this.onCollectionValidToSend(false);
-      return;
+      return false;
     }
 
     // Validar que todos los pagos tengan monto parcial válido (no null/empty/0/NaN)
@@ -1566,7 +1569,7 @@ export class CollectionService {
     });
     if (invalidAmount) {
       this.onCollectionValidToSend(false);
-      return;
+      return false;
     }
 
     // Validar referencias en pagos que no son efectivo
@@ -1594,9 +1597,9 @@ export class CollectionService {
 
     if (existePagoSinReferencia) {
       this.onCollectionValidToSend(false);
-      return;
+      return false;
     } else {
-      Promise.resolve(true);
+      return true;
     }
 
   }
