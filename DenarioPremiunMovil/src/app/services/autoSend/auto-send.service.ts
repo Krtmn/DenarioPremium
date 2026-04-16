@@ -660,25 +660,47 @@ export class AutoSendService implements OnInit {
       return false;
     }
 
+    // Detectar cualquier error de servidor (status >= 400)
     const status = Number(result.status ?? result.statusCode ?? result.httpStatus);
-    if (status === 400) {
+    if (!isNaN(status) && status >= 400) {
       return true;
     }
 
     const errorCode = result.errorCode ?? result.code;
-    if (errorCode === 400) {
+    if (!isNaN(Number(errorCode)) && Number(errorCode) >= 400) {
       return true;
     }
 
     if (typeof errorCode === 'string') {
       const normalizedCode = errorCode.toUpperCase();
-      if (normalizedCode === '400' || normalizedCode === 'BAD_REQUEST' || normalizedCode === 'ERR_BAD_REQUEST') {
+      if (
+        normalizedCode === '400' ||
+        normalizedCode === 'BAD_REQUEST' ||
+        normalizedCode === 'ERR_BAD_REQUEST' ||
+        normalizedCode.startsWith('ERR_') ||
+        normalizedCode.includes('ERROR') ||
+        normalizedCode.startsWith('5') // errores 5xx
+      ) {
         return true;
       }
     }
 
+    // Si el mensaje contiene palabras clave de error
     const message = `${result.errorMessage ?? result.message ?? ''}`.toLowerCase();
-    return message.includes('bad request');
+    if (
+      message.includes('bad request') ||
+      message.includes('error') ||
+      message.includes('fail') ||
+      message.includes('server') ||
+      message.includes('internal') ||
+      message.includes('not found') ||
+      message.includes('forbidden') ||
+      message.includes('unauthorized')
+    ) {
+      return true;
+    }
+
+    return false;
   }
 
   private isBadRequestError(error: any): boolean {

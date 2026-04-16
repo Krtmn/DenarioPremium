@@ -201,7 +201,7 @@ export class ClienteSelectorComponent implements OnInit {
       this.fixClientListSaldos(result);
     }
 
-    if (this.globalConfig.get("clientsOrderBy") == "mayor deuda vencida") {
+    if (this.globalConfig.get("clientsOrderBy") == "due_date") {
       await this.oderByDueDateAndSaldo(result);
     }
 
