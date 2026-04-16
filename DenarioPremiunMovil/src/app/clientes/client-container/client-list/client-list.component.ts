@@ -129,7 +129,7 @@ export class ClientListComponent implements OnInit {
     this.service.clientes = [] as Client[];
     this.clientLogic.clientListPage = 0;
     this.clientLogic.getClients(this.clientLogic.empresaSeleccionada.idEnterprise).then(result => {
-
+/*
       if (this.currencyService.multimoneda) {
         let saldoCliente = 0, saldoOpuesto = 0;
         for (let c = 0; c < this.clientLogic.clients.length; c++) {
@@ -145,6 +145,7 @@ export class ClientListComponent implements OnInit {
           saldoCliente = saldoOpuesto = 0;
         }
       }
+        */
       this.service.clientes = this.clientLogic.clients;
     })
   }
