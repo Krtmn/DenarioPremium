@@ -255,7 +255,7 @@ export class ClientLogicService {
 
     // Recorre todos los clientes y loggea si la moneda es distinta a la moneda local
 
-    if (this.globalConfig.get("clientsOrderBy") == "mayor deuda vencida") {
+    if (this.globalConfig.get("clientsOrderBy") == "due_date") {
       await this.oderByDueDateAndSaldo(this.clients);
     }
 
