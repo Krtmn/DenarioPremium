@@ -131,13 +131,13 @@ export class DepositService {
         )
       }
       return this.services.getTags(dbServ, "DEN", "ESP").then(result => {
-      for (var i = 0; i < result.length; i++) {
-        this.depositTags.set(
-          result[i].coApplicationTag, result[i].tag
-        )
-      }
-      return Promise.resolve(true);
-    });
+        for (var i = 0; i < result.length; i++) {
+          this.depositTags.set(
+            result[i].coApplicationTag, result[i].tag
+          )
+        }
+        return Promise.resolve(true);
+      });
 
 
     });
@@ -340,7 +340,7 @@ export class DepositService {
 
 
   convertirMonto(monto: number) {
-    if(!this.multiCurrency){
+    if (!this.multiCurrency) {
       return monto.toFixed(this.parteDecimal);
     }
     if (this.currencySelected.localCurrency.toString() === "true") {
@@ -356,7 +356,7 @@ export class DepositService {
     let total = 0;
     if (this.deposit && Array.isArray(this.deposit.depositCollect)) {
       for (const dc of this.deposit.depositCollect) {
-        const val = Number((dc as any).nuAmountTotal ?? (dc as any).nu_amount_total ?? 0);
+        const val = Number((dc as any).nuTotalDeposit ?? (dc as any).nu_total_deposit ?? 0);
         total += isNaN(val) ? 0 : val;
       }
     }

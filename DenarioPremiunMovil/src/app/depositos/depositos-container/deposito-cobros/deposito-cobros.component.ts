@@ -36,7 +36,7 @@ export class DepositoCobrosComponent implements OnInit {
         coDeposit: this.depositService.deposit.coDeposit,
         coDocument: cobroDetails.co_document,
         nuAmountTotal: cobroDetails.nu_amount_total,
-        nuTotalDeposit: cobroDetails.nu_total_deposit == undefined ? cobroDetails.nu_amount_total : cobroDetails.nu_total_deposit,
+        nuTotalDeposit: cobroDetails.total_deposit,
         coCollection: cobroDetails.co_collection,
         idCollection: cobroDetails.id_collection,
         st: 0,
@@ -47,8 +47,8 @@ export class DepositoCobrosComponent implements OnInit {
 
       indexDepositCollect = this.depositService.deposit.depositCollect.length - 1;
       this.depositService.deposit.nuValueLocal = cobroDetails.nu_value_local;
-      this.depositService.nuAmountDoc += cobroDetails.nu_total_deposit == null ? cobroDetails.nu_amount_total : cobroDetails.nu_total_deposit;
-      this.depositService.nuAmountDocConversion += cobroDetails.nu_total_deposit_conversion;
+      this.depositService.nuAmountDoc += cobroDetails.total_deposit;
+      this.depositService.nuAmountDocConversion += cobroDetails.total_deposit_conversion;
 
     } else {
       cobroDetails.inDepositCollect = false;
@@ -58,8 +58,8 @@ export class DepositoCobrosComponent implements OnInit {
         this.depositService.nuAmountDoc = 0;
         this.depositService.nuAmountDocConversion = 0;
       } else {
-        this.depositService.nuAmountDoc -= cobroDetails.nu_total_deposit == null ? cobroDetails.nu_amount_total : cobroDetails.nu_total_deposit;
-        this.depositService.nuAmountDocConversion -= cobroDetails.nu_total_deposit_conversion;
+        this.depositService.nuAmountDoc -= cobroDetails.total_deposit;
+        this.depositService.nuAmountDocConversion -= cobroDetails.total_deposit_conversion;
         this.depositService.nuAmountDoc = Number(this.depositService.nuAmountDoc.toFixed(this.depositService.parteDecimal));
         this.depositService.nuAmountDocConversion = Number(this.depositService.nuAmountDocConversion.toFixed(this.depositService.parteDecimal));
       }
