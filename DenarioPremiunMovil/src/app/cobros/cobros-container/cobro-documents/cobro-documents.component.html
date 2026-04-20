@@ -544,6 +544,15 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                         <!-- lista scrollable -->
                         <div style="max-height:60vh; overflow:auto;">
                           <ion-list>
+                            <ion-item>
+                              <ion-label position="stacked">
+                                {{ this.collectService.collectionTags.get('COB_DESCUENTO') || 'Descuento manual' }}
+                              </ion-label>
+                              <ion-input type="number" min="0" inputmode="decimal"
+                                [ngModel]="manualCollectDiscountAmount"
+                                (ngModelChange)="setManualCollectDiscountAmount($event)">
+                              </ion-input>
+                            </ion-item>
                             <!-- <ion-item *ngFor="let d of this.collectService.collectDiscounts">
                                 <ion-label>{{d.nuCollectDiscount}}% - {{d.naCollectDiscount}} </ion-label>
                                 <ion-checkbox slot="end"
@@ -619,7 +628,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
                 }
                 <!-- LISTA DESCUENTOS  userCanSelectCollectDiscount -->
 
-                @if(this.collectService.selectedCollectDiscounts.length > 0){
+                @if(this.hasSelectedOrManualCollectDiscounts()){
                 <ion-col size="12" size-xs="12" size-sm="12">
                   <ion-input label="{{this.collectService.collectionTags.get('COB_SELEC_DESCUENTO')}}"
                     label-placement="floating" fill="outline" color="primary" type="text"
@@ -776,7 +785,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
 
             <!-- PAGO PARCIAL CHECK-->
             @if(this.collectService.enablePartialPayment){
-            @if(this.collectService.selectedCollectDiscounts.length === 0){
+            @if(!this.hasSelectedOrManualCollectDiscounts()){
             <ion-grid class="ion-margin-top">
               <ion-row>
                 <ion-col class="padding0" size="4" size-xs="4" size-sm="6" size-md="6">
