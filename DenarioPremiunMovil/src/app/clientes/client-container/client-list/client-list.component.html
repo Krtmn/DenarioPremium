@@ -4,7 +4,7 @@
     <div class="sticky-searchbar">
     <div class="search-input-wrap">
         <input type="text" class="search-input inputsSearch" fill="outline" shape="round" placeholder="Clientes..."
-            #searchInput [(ngModel)]="searchText" (keydown.enter)="onSearchClicked($event)">
+        #searchInput [(ngModel)]="searchText" (keydown.enter)="onSearchEnter($event)">
         <button type="button" class="clear-search" (click)="onSearchClicked()" [disabled]="!searchText">
             <ion-icon name="search-circle-sharp" class="sizeIconSearch"></ion-icon>
         </button>

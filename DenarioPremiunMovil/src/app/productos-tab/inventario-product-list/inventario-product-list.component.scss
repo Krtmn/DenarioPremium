@@ -82,14 +82,18 @@
 }
 
 .products-list-content {
-  height: max(45vh, calc(100vh - 320px));
+  flex: 1 1 auto;
+  min-height: 0;
   --background: #ffffff;
   --offset-bottom: 0 !important;
   --padding-bottom: 0;
 }
 
 .products-list-content::part(scroll) {
+  overflow-y: auto;
   padding-bottom: 0 !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }
 
 .products-list-inner,
@@ -291,5 +295,8 @@ ion-modal.inventory-type-stocks-modal ion-content.compact-modal-content {
 }
 
 .product-structure-scroll {
-    height: calc(93vh - 150px)!important;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: calc(100vh - 240px) !important;
 }
