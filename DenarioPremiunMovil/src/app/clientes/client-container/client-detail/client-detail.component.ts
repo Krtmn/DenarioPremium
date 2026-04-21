@@ -32,6 +32,7 @@ export class ClienteComponent implements OnInit {
   public multiCurrency!: Boolean;
   public tagRif: string = "";
   public nuCreditLimitConversion: string = "";
+  public availableCreditConversion: string = "";
   public localCurrency = '';
   public hardCurrency = '';
   public decimales = 2;
@@ -77,10 +78,12 @@ export class ClienteComponent implements OnInit {
           //saldoOpuesto es ahora saldoFuerte
           //como es fijo, se hace antes del if.
           this.nuCreditLimitConversion = this.formatNumber(this.currencyService.toHardCurrency(this.client.nuCreditLimit));
+          this.availableCreditConversion = this.formatNumber(this.currencyService.toHardCurrency(this.getAvailableCredit()));
         } else {
           //this.saldoCliente = this.client.saldo1 + this.currencyService.toHardCurrency(this.client.saldo2);
           //this.saldoOpuesto = this.currencyService.toLocalCurrency(this.saldoCliente);
           this.nuCreditLimitConversion = this.formatNumber(this.currencyService.toLocalCurrency(this.client.nuCreditLimit));
+          this.availableCreditConversion = this.formatNumber(this.currencyService.toLocalCurrency(this.getAvailableCredit()));
         }
         //this.client.saldo1 = saldoCliente;
         //this.client.saldo2 = saldoOpuesto;
@@ -174,6 +177,10 @@ export class ClienteComponent implements OnInit {
 
   formatNumber(num: number) {
     return this.currencyService.formatNumber(num);
+  }
+
+  getAvailableCredit(): number {
+    return Number(this.client?.nuCreditLimit ?? 0) - Number(this.client?.saldo1 ?? 0);
   }
 
   getDaDueDate(daDueDate: string) {
