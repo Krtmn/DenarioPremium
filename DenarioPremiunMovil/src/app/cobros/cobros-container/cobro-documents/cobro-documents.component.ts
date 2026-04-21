@@ -1221,6 +1221,7 @@ export class CobrosDocumentComponent implements OnInit {
     const index = cs.indexDocumentSaleOpen;
     const parteDecimal = cs.parteDecimal;
     const docOriginal = cs.documentSalesBackup[index];
+    const isAlwaysPartialWithFixedMode = cs.alwaysPartialPayment && !cs.enablePartialPayment;
     // Asegura valores numéricos antes de operar
     this.collectService.ensureNumber(doc, 'nuAmountRetention');
     this.collectService.ensureNumber(doc, 'nuAmountRetention2');
@@ -1263,7 +1264,7 @@ export class CobrosDocumentComponent implements OnInit {
           montoDoc = this.collectService.toHard(this.collectService.documentSales[index].nuBalance);
         }
       } */
-      if (Math.abs(cs.amountPaid) >= this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(montoDoc))) {
+      if (!isAlwaysPartialWithFixedMode && Math.abs(cs.amountPaid) >= this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(montoDoc))) {
         cs.mensaje = cs.collectionTags.get('COB_MSJ_PARTIALPAY_MAYOR_DOCAMOUNT')!;
         this.alertMessageOpen = true;
         this.disabledSaveButton = true;
@@ -1316,13 +1317,13 @@ export class CobrosDocumentComponent implements OnInit {
         }
         if (doc.daVoucher === "") {
           this.disabledSaveButton = true;
-          if (Math.abs(cs.amountPaid) > doc.nuBalance || cs.amountPaid < 0) {
+          if ((!isAlwaysPartialWithFixedMode && Math.abs(cs.amountPaid) > doc.nuBalance) || cs.amountPaid < 0) {
             cs.mensaje = "El monto no puede ser mayor al monto del documento";
             this.alertMessageOpen = true;
           }
           return;
         }
-        if (Math.abs(cs.amountPaid) > doc.nuBalance || cs.amountPaid < 0) {
+        if ((!isAlwaysPartialWithFixedMode && Math.abs(cs.amountPaid) > doc.nuBalance) || cs.amountPaid < 0) {
           cs.mensaje = "El monto no puede ser mayor al monto del documento";
           this.alertMessageOpen = true;
           this.disabledSaveButton = true;
@@ -1337,7 +1338,7 @@ export class CobrosDocumentComponent implements OnInit {
     }
 
     // Si el monto pagado es mayor al saldo
-    if (Math.abs(cs.amountPaid) > Math.abs(doc.nuBalance)) {
+    if (!isAlwaysPartialWithFixedMode && Math.abs(cs.amountPaid) > Math.abs(doc.nuBalance)) {
       cs.mensaje = cs.isPaymentPartial
         ? cs.collectionTags.get('COB_MSJ_PARTIALPAY_MAYOR_DOCAMOUNT')!
         : cs.collectionTags.get('COB_MSJ_PAY_MAYOR_DOCAMOUNT')!;

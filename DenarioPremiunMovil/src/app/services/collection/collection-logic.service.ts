@@ -1219,8 +1219,9 @@ export class CollectionService {
   }
 
   async validateToSend() {
+    const isAlwaysPartialWithFixedMode = this.alwaysPartialPayment && !this.enablePartialPayment;
 
-    if (this.alwaysPartialPayment || this.allPaymentPartial) {
+    if (!isAlwaysPartialWithFixedMode && (this.alwaysPartialPayment || this.allPaymentPartial)) {
       if (this.collection.collectionPayments?.length > 0 && this.montoTotalPagado != this.montoTotalPagar && this.montoTotalPagado > 0) {
         if (!this.messageSended) {
           this.mensaje = this.collectionTags.get('COB_ERROR_PARTIAL_PAY')!;
@@ -1383,8 +1384,9 @@ export class CollectionService {
   }
 
   checkTolerancia() {
+    const isAlwaysPartialWithFixedMode = this.alwaysPartialPayment && !this.enablePartialPayment;
 
-    if (this.alwaysPartialPayment && this.existPartialPayment) {
+    if (this.alwaysPartialPayment && this.existPartialPayment && !isAlwaysPartialWithFixedMode) {
       if (this.montoTotalPagado != this.montoTotalPagar) {
         this.onCollectionValidToSend(false);
         /* if (!this.messageSended) {
