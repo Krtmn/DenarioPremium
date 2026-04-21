@@ -180,7 +180,7 @@ export class ClienteComponent implements OnInit {
   }
 
   getAvailableCredit(): number {
-    return Number(this.client?.nuCreditLimit ?? 0) - Number(this.client?.saldo1 ?? 0);
+    return Number(this.client?.nuCreditLimit ?? 0) - Number(this.client?.saldo1 + this.client?.saldo2);
   }
 
   getDaDueDate(daDueDate: string) {

@@ -133,21 +133,21 @@
         @if(client.editable){
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_COORDENADA")}}:</ion-col>
-          
-            @if(!this.clientLogic.fromSelector){
-            <!--si venimos del selector, no mostramos botones de coordenadas-->
-            @if(hayCoordenada(client.coordenada)){
-            <ion-button class="botonAddVerde" size="small" (click)="viewCoordenada(true,  client, 'client')">
-              <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
-            </ion-button>
-            }
-            @if(!hayCoordenada(client.coordenada)){
-            <ion-button class="botonAddVerde" size="small" (click)="viewCoordenada(false,client, 'client')">
-              <ion-icon slot="icon-only" name="add"></ion-icon>
-            </ion-button>
-            }
-            }
-            <ion-col>{{getCoordenada(client.coordenada)}}
+
+          @if(!this.clientLogic.fromSelector){
+          <!--si venimos del selector, no mostramos botones de coordenadas-->
+          @if(hayCoordenada(client.coordenada)){
+          <ion-button class="botonAddVerde" size="small" (click)="viewCoordenada(true,  client, 'client')">
+            <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
+          </ion-button>
+          }
+          @if(!hayCoordenada(client.coordenada)){
+          <ion-button class="botonAddVerde" size="small" (click)="viewCoordenada(false,client, 'client')">
+            <ion-icon slot="icon-only" name="add"></ion-icon>
+          </ion-button>
+          }
+          }
+          <ion-col>{{getCoordenada(client.coordenada)}}
           </ion-col>
         </ion-row>
         }
