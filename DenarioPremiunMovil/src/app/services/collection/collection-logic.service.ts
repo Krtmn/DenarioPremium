@@ -3011,7 +3011,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       "JOIN collection_details code  ON co.co_collection = code.co_collection " +
       "JOIN collection_payments copa ON co.co_collection = copa.co_collection " +
       "WHERE code.co_document = ? AND code.in_payment_partial = 'true' " +
-      "GROUP BY co.co_currency, co.da_collection, co.id_collection, co.st_collection, co.st_delivery, code.co_document, code.nu_balance_doc";
+      "GROUP BY co.co_currency, co.da_collection, co.id_collection, co.st_delivery, code.co_document, code.nu_balance_doc";
 
     return dbServ.executeSql(selectStatement, [coDocument]).then(data => {
       //return dbServ.executeSql(selectStatement, [this.mapDocumentsSales.get(idDocument)!.coDocument]).then(data => {
