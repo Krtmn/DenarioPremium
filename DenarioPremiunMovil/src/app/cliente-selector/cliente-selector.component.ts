@@ -189,24 +189,21 @@ export class ClienteSelectorComponent implements OnInit {
       this.service.clientes = [] as Client[];
     }
 
+    let clientsToShow = result;
     if (this.collectLogic.userCanCollectIva && this.collectLogic.cobro25) {
-      for (let i = 0; i < result.length; i++) {
-        if (result[i].collectionIva) {
-          this.clientes.push(result[i]);
-        }
-      }
+      clientsToShow = result.filter(client => client.collectionIva);
     }
 
     if (this.multimoneda) {
-      this.fixClientListSaldos(result);
+      this.fixClientListSaldos(clientsToShow);
     }
 
     if (this.globalConfig.get("clientsOrderBy") == "due_date") {
-      await this.oderByDueDateAndSaldo(result);
+      await this.oderByDueDateAndSaldo(clientsToShow);
     }
 
 
-    this.clientes = [...this.clientes, ...result];
+    this.clientes = [...this.clientes, ...clientsToShow];
     //}
     //console.log("[ClienteSelector] Lista de clientes actualizada");
     this.noClientsAlertShown = this.clientes.length == 0;
