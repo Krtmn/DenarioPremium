@@ -197,12 +197,10 @@ export class ProductService {
             idList: item.id_list,
             price: item.nu_price,
             coCurrency: item.co_currency,
-            priceOpposite: item.co_currency === this.currencyService.getLocalCurrency ?
+            priceOpposite: this.currencyService.isLocalCurrency(item.co_currency) ?
               this.currencyService.toHardCurrency(item.nu_price) :
               this.currencyService.toLocalCurrency(item.nu_price), // Precio en la moneda opuesta a la lista de precio
-            coCurrencyOpposite: item.co_currency === this.currencyService.getLocalCurrency ?
-              this.currencyService.hardCurrency.coCurrency :
-              this.currencyService.localCurrency.coCurrency, // moneda opuesta a la lista de precio,
+            coCurrencyOpposite: this.currencyService.oppositeCoCurrency(item.co_currency), // moneda opuesta a la lista de precio,
             stock: item.qu_stock,
             idEnterprise: item.id_enterprise,
             coEnterprise: item.co_enterprise,
@@ -868,13 +866,10 @@ export class ProductService {
             pd.rows.item(0).points,
             pd.rows.item(0).nu_price, // Precio en la moneda de Lista de precio
             pd.rows.item(0).co_currency, // moneda de Lista de precio
-            pd.rows.item(0).co_currency === this.currencyService.getLocalCurrency ?
+            this.currencyService.isLocalCurrency(pd.rows.item(0).co_currency) ?
               this.currencyService.toHardCurrency(pd.rows.item(0).nu_price) :
               this.currencyService.toLocalCurrency(pd.rows.item(0).nu_price), // Precio en la moneda opuesta a la lista de precio
-            pd.rows.item(0).co_currency === this.currencyService.getLocalCurrency ?
-              this.currencyService.hardCurrency.coCurrency :
-              this.currencyService.localCurrency.coCurrency, // moneda opuesta a la lista de precio
-            this.currencyService.getLocalValue(),  // TASA
+            this.currencyService.oppositeCoCurrency(pd.rows.item(0).co_currency),  // TASA
             pd.rows.item(0).qu_stock,
             pd.rows.item(0).co_enterprise,
             pd.rows.item(0).id_enterprise,
