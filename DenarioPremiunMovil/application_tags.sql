@@ -16,9 +16,6 @@ CREATE TABLE IF NOT EXISTS public.application_tags
 
 TABLESPACE pg_default;
 
-ALTER TABLE public.application_tags
-    OWNER to postgres;
-
 -- Trigger: application_tags
 
 -- DROP TRIGGER application_tags_da_update ON public.application_tags;
