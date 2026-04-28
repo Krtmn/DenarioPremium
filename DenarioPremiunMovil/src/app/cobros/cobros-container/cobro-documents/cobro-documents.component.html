@@ -51,7 +51,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
 </ion-item>
 }
 
-@if(this.collectService.documentSalesBackup.length > 0){
+@if(filteredDocumentsView.length > 0){
 <div class="saldo-legend">
   <button class="legend-item legend-button" id="legendBlueHint" type="button">
     <span class="legend-dot legend-blue" aria-hidden="true"></span>
@@ -95,7 +95,7 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
 </ion-popover>
 
 <!-- currencySelectDocument == MONEDA-->
-@if(this.collectService.documentSalesBackup.length > 0){
+@if(filteredDocumentsView.length > 0){
 <ion-grid class="tablaInfoClientes tablaDocVentasGrip">
   <!-- *ngIf="this.collectService.documentSalesBackup.length > 0  && this.collectService.currencySelectedDocument?.coCurrency == 'Moneda'"> -->
   <ion-row class="ion-text-nowrap tablaDocVentas row cabecera">
@@ -181,18 +181,18 @@ this.collectService.currencySelected.hardCurrency.toString() == 'true'){
       class="titulosBold col borderSuperiorDerecho">{{this.collectService.collectionTags.get('COB_COMENTARIO')}}
     </ion-col>
   </ion-row>
-  @for (documentSale of this.collectService.documentSalesView; track $index; let i = $index) {
+  @for (documentSale of filteredDocumentsView; track documentSale.idDocument) {
   <ion-row class="tabladocumentSalesVenta tablaDocVentas row">
     @if(this.collectService.retentionDocTypeCR){
     <ion-col size="2" class="ion-text-center col borderInferiorIzquierdo">
-      <ion-button (click)="openDocumentSale(i, $event)" size="small" disabled="{{!documentSale.isSelected}}">
+      <ion-button (click)="openDocumentSale(getSourceIndex(documentSale), $event)" size="small" disabled="{{!documentSale.isSelected}}">
         <!-- <ion-icon slot="icon-only" src=" ../../../assets/icon/search-circle-outline.svg"></ion-icon> -->
         <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
       </ion-button>
     </ion-col>
     }
     <ion-col size="2" class="ion-text-center col">
-      <ion-checkbox [(ngModel)]="documentSale.isSelected" (ionChange)="selectDocumentSale(documentSale,i,$event)">
+      <ion-checkbox [(ngModel)]="documentSale.isSelected" (ionChange)="selectDocumentSale(documentSale,getSourceIndex(documentSale),$event)">
       </ion-checkbox>
     </ion-col>
 

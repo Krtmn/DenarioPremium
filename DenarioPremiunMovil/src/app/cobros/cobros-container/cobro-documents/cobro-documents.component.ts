@@ -88,6 +88,7 @@ export class CobrosDocumentComponent implements OnInit {
   public ivaViewConversion: number = 0;
   public totalView: number = 0;
   public totalViewConversion: number = 0;
+  public filteredDocumentsView: DocumentSale[] = [];
 
 
   public alertButtons = [
@@ -122,31 +123,60 @@ export class CobrosDocumentComponent implements OnInit {
   }
   ngOnInit() {
     this.fechaHoy = this.dateServ.onlyDateHoyISO();
+    this.applyDocumentFilter(this.collectService.documentCurrency);
     // this.collectService.deepFreeze(this.collectService.documentSalesView);
   }
 
 
 
   onChangeCurrencyDoc(event: any) {
-    //debo llamar a getAllDocuments con la nueva moneda y refrescar todo
-    let docCurrency = "";
-    if (event.target.value.coCurrency == "Moneda") {
-      this.collectService.documentCurrency = this.collectService.currencySelected.coCurrency
-    } else {
-      docCurrency = event.target.value.coCurrency;
-      this.collectService.documentCurrency = event.target.value.coCurrency;
+    const selectedCurrency = event?.target?.value?.coCurrency ?? '';
+    const currencyToFilter = selectedCurrency === 'Moneda'
+      ? this.collectService.currencySelected.coCurrency
+      : selectedCurrency;
+
+    this.collectService.documentCurrency = currencyToFilter;
+    this.applyDocumentFilter(currencyToFilter);
+
+    if (this.collectService.historicPartialPayment) {
+      this.collectService.findIsPaymentPartial(
+        this.synchronizationServices.getDatabase(),
+        this.collectService.collection.idClient
+      ).then(() => {
+      });
+    }
+  }
+
+  private applyDocumentFilter(coCurrency: string): void {
+    const source = this.collectService.documentSalesView?.length
+      ? this.collectService.documentSalesView
+      : this.collectService.documentSales;
+
+    if (!Array.isArray(source) || source.length === 0) {
+      this.filteredDocumentsView = [];
+      this.collectService.documentsSaleComponent = false;
+      return;
     }
 
-    this.getDocumentsSale(this.collectService.collection.idClient, docCurrency,
-      this.collectService.collection.coCollection, this.collectService.collection.idEnterprise);
+    this.filteredDocumentsView = (!coCurrency || coCurrency === 'Moneda')
+      ? source
+      : source.filter(doc => doc.coCurrency === coCurrency);
+
+    this.collectService.documentsSaleComponent = this.filteredDocumentsView.length > 0;
+  }
+
+  public getSourceIndex(documentSale: DocumentSale): number {
+    const byId = this.collectService.documentSales.findIndex(d => d.idDocument === documentSale.idDocument);
+    if (byId >= 0) return byId;
+
+    return this.collectService.documentSales.findIndex(
+      d => d.coDocument === documentSale.coDocument && d.idEnterprise === documentSale.idEnterprise
+    );
   }
 
   getDocumentsSale(idClient: number, coCurrency: string, coCollection: string, idEnterprise: number) {
     this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), idClient, coCurrency, coCollection, idEnterprise).then(response => {
-      if (this.collectService.documentSales.length > 0)
-        this.collectService.documentsSaleComponent = true;
-      else
-        this.collectService.documentsSaleComponent = false;
+      this.applyDocumentFilter(this.collectService.documentCurrency || coCurrency);
 
       if (this.collectService.historicPartialPayment) {
         this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient).then(() => {
@@ -473,6 +503,7 @@ export class CobrosDocumentComponent implements OnInit {
   }
 
   async openDocumentSale(index: number, e: Event) {
+    if (index < 0) return;
     const factor = this.centsFactor();
 
     this.indexDocumentSaleOpen = index;
@@ -651,6 +682,7 @@ export class CobrosDocumentComponent implements OnInit {
   }
 
   selectDocumentSale(documentSale: DocumentSale, indexDocumentSale: number, event: any) {
+    if (indexDocumentSale < 0) return;
     documentSale.isSelected = event.detail.checked;
     console.log(indexDocumentSale);
     if (documentSale.nuBalance < 0 && this.collectService.collection.collectionDetails.length == 0 && this.collectService.coTypeModule == '0') {

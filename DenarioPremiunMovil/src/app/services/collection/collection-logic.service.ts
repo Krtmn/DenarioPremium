@@ -90,7 +90,7 @@ export class CollectionService {
   public localCurrency!: Currencies;
   public hardCurrency!: Currencies;
   public currencyList!: Currencies[];
-  public currencyListDocument!: Currencies[];
+  public currencyListDocument: Currencies[] = [];
   public enterpriseList: Enterprise[] = [];
   public currencySelectedDocument!: Currencies;
   public documentSaleOpen!: DocumentSale;
@@ -1735,6 +1735,9 @@ export class CollectionService {
 
     this.montoTotalPagar = 0;
     this.montoTotalPagarConversion = 0;
+    this.currencySelectedDocument = Array.isArray(this.currencyListDocument) && this.currencyListDocument.length > 0
+      ? this.currencyListDocument[0]
+      : {} as Currencies;
 
     if (this.coTypeModule == '0')
       this.disabledSelectCollectMethodDisabled = true;
