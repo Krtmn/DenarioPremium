@@ -12,7 +12,6 @@ import { PagoTransferencia } from 'src/app/modelos/pago-transferencia';
 import { PagoOtros } from 'src/app/modelos/pago-otros';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { BankAccount } from 'src/app/modelos/tables/bankAccount';
-import { COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW } from 'src/app/utils/appConstants';
 import { ClientLogicService } from 'src/app/services/clientes/client-logic.service';
 import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
 import { MessageService } from 'src/app/services/messageService/message.service';
@@ -90,10 +89,6 @@ export class CobrosDocumentComponent implements OnInit {
   public totalView: number = 0;
   public totalViewConversion: number = 0;
 
-  public COLLECT_STATUS_SAVED = COLLECT_STATUS_SAVED;
-  public COLLECT_STATUS_SENT = COLLECT_STATUS_SENT;
-  public COLLECT_STATUS_TO_SEND = COLLECT_STATUS_TO_SEND;
-  public COLLECT_STATUS_NEW = COLLECT_STATUS_NEW;
 
   public alertButtons = [
     /*  {
@@ -263,7 +258,7 @@ export class CobrosDocumentComponent implements OnInit {
     const backupBalance = Number(docBackup?.nuBalance ?? 0);
 
     if (!doc.isSave) {
-      if (this.collectService.collection.stDelivery == COLLECT_STATUS_SAVED) {
+      if (this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SAVED) {
         const indexCollectionDetail = doc.positionCollecDetails;
         const detail = JSON.parse(JSON.stringify(this.collectService.collection.collectionDetails?.[indexCollectionDetail] ?? null));
         if (detail) {

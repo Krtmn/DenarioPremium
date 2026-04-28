@@ -329,7 +329,15 @@ export class CollectionService {
   public COLLECT_STATUS_NEW = COLLECT_STATUS_NEW;
   public COLLECT_STATUS_SAVED = COLLECT_STATUS_SAVED;
   public COLLECT_STATUS_SENT = COLLECT_STATUS_SENT;
+
   initLogicService() {
+
+
+    this.COLLECT_STATUS_TO_SEND = COLLECT_STATUS_TO_SEND;
+    this.COLLECT_STATUS_NEW = COLLECT_STATUS_NEW;
+    this.COLLECT_STATUS_SAVED = COLLECT_STATUS_SAVED;
+    this.COLLECT_STATUS_SENT = COLLECT_STATUS_SENT;
+
     //this.coTypeModule = '0';
     //this.titleModule = this.collectionTags.get('COB_NOMBRE_MODULO')!;
     this.disabledClient = false;
