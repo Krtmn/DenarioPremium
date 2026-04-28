@@ -1506,14 +1506,14 @@ export class CollectionService {
             //LA MONEDA TOLERANCIA ES HARD, PERO LA MONEDA DEL COBRO ES LA HARD, DEBO CONVERTIR LA TOLERANCIA A LOCAL
             let amount = this.montoTotalPagado - this.montoTotalPagar;
             if (amount > 0) {
-              if (amount < this.convertirMonto(this.RangoToleranciaPositiva, 0, this.collection.coCurrency))
+              if (amount < this.convertirMonto(this.RangoToleranciaPositiva, 0, this.MonedaTolerancia))
                 this.onCollectionValidToSend(true);
               else {
                 this.onCollectionValidToSend(false);
                 return;
               }
             } else if (amount < 0) {
-              if ((Math.abs(amount)) > this.convertirMonto(this.RangoToleranciaNegativa, 0, this.collection.coCurrency))
+              if ((Math.abs(amount)) > this.convertirMonto(this.RangoToleranciaNegativa, 0, this.MonedaTolerancia))
                 this.onCollectionValidToSend(false);
               else {
                 this.onCollectionValidToSend(true);
