@@ -841,6 +841,7 @@ export class ProductService {
             pd.rows.item(0).id_enterprise,
             pd.rows.item(0).nu_tax
           )
+          console.log(this.productDetail);
         }
       }).catch(e => {
         this.productDetail = {} as ProductDetail;
@@ -852,7 +853,32 @@ export class ProductService {
         "(select s.qu_stock from stocks s join warehouses w on s.id_warehouse = w.id_warehouse where s.id_product = p.id_product order by w.na_warehouse asc limit 1) as qu_stock, p.co_enterprise, p.id_enterprise from products p join product_structures ps on p.id_product_structure = ps.id_product_structure join units u on p.co_primary_unit = u.co_unit and p.id_enterprise = u.id_enterprise where id_product = ?"
       return database.executeSql(select, [idProduct]).then(pd => {
         if (pd) {
-          this.productDetail = new ProductDetail(
+          this.productDetail = {
+            idProduct: pd.rows.item(0).id_product,
+            coProduct: pd.rows.item(0).co_product,
+            naProduct: pd.rows.item(0).na_product,
+            idProductStructure: pd.rows.item(0).id_product_structure,
+            coProductStructure: pd.rows.item(0).co_product_structure,
+            naProductStructure: pd.rows.item(0).na_product_structure,
+            txDescription: pd.rows.item(0).tx_description,
+            idUnit: pd.rows.item(0).id_unit,
+            coUnit: pd.rows.item(0).co_unit,
+            naUnit: pd.rows.item(0).na_unit,
+            points: pd.rows.item(0).points,
+            coEnterprise: pd.rows.item(0).co_enterprise,
+            idEnterprise: pd.rows.item(0).id_enterprise,
+            nuTax: pd.rows.item(0).nu_tax,
+            priceLocal: pd.rows.item(0).nu_price,
+            priceHard: this.currencyService.isLocalCurrency(pd.rows.item(0).co_currency) ?
+              this.currencyService.toHardCurrency(pd.rows.item(0).nu_price) :
+              this.currencyService.toLocalCurrency(pd.rows.item(0).nu_price),
+            coCurrencyHard: this.currencyService.oppositeCoCurrency(pd.rows.item(0).co_currency),
+            coCurrencyLocal:  pd.rows.item(0).co_currency,
+            conversion: this.currencyService.getLocalValue(),
+            stock: pd.rows.item(0).qu_stock
+          } as ProductDetail;
+          console.log(this.productDetail);
+          /*this.productDetail = new ProductDetail(
             pd.rows.item(0).id_product,
             pd.rows.item(0).co_product,
             pd.rows.item(0).na_product,
@@ -874,7 +900,7 @@ export class ProductService {
             pd.rows.item(0).co_enterprise,
             pd.rows.item(0).id_enterprise,
             pd.rows.item(0).nu_tax
-          )
+          )*/
         }
       }).catch(e => {
         this.productDetail = {} as ProductDetail;
