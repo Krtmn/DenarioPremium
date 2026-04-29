@@ -47,6 +47,7 @@ export class ProductDetailComponent implements OnInit {
   localCurrencyDefault: Boolean = true;
   showConversionInfo: Boolean = true;
   enableCurrencySwitch: Boolean = false;//Por si aun no tienen currencyModule activado
+  hideProductWarehouse: Boolean = false;
   listSeleccionada!: List;
   lists: List[] = [];
   warehouseSeleccionado!: Warehouse;
@@ -63,6 +64,7 @@ export class ProductDetailComponent implements OnInit {
     this.multiCurrency = this.globalConfig.get("multiCurrency") == "true";
     this.conversionByPriceList = this.globalConfig.get("conversionByPriceList").toLowerCase() === "true";
     this.currencyModuleEnabled = this.globalConfig.get("currencyModule").toLowerCase() === "true";
+    this.hideProductWarehouse = this.globalConfig.get("hideProductWarehouse") == "true";
     var currencyModule: CurrencyModules = this.currencyService.getCurrencyModule('pro');
     this.showConversionInfo = currencyModule.showConversion;
     this.localCurrencyDefault = currencyModule.localCurrencyDefault;
@@ -72,7 +74,7 @@ export class ProductDetailComponent implements OnInit {
       this.lists = this.priceListService.productlists;
       this.listSeleccionada = this.lists[0];
     });
-    if(this.orderService.validateWarehouses){
+    if(this.orderService.validateWarehouses && !this.hideProductWarehouse){
     this.stockService.getWarehousesByIdProduct(this.pSeleccionado.idProduct).then(() => {
       this.warehouses = this.stockService.productWarehouses;
       this.warehouseSeleccionado = this.warehouses[0];
