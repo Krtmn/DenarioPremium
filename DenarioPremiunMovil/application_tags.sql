@@ -16,9 +16,6 @@ CREATE TABLE IF NOT EXISTS public.application_tags
 
 TABLESPACE pg_default;
 
-ALTER TABLE public.application_tags
-    OWNER to postgres;
-
 -- Trigger: application_tags
 
 -- DROP TRIGGER application_tags_da_update ON public.application_tags;
@@ -192,6 +189,7 @@ INSERT INTO public.application_tags(
 	('CLI_DETAIL_SALDO','CLI','CLIENTES','ESP','Saldo'),
 	('CLI_DETAIL_SALDO_CONVERSION','CLI','CLIENTES','ESP','Saldo Conversión'),
 	('CLI_DETAIL_CREDITO','CLI','CLIENTES','ESP','Crédito'),
+	('CLI_DETAIL_CREDITO_DISPONIBLE','CLI','CLIENTES','ESP','Crédito Disp.'),
 	('CLI_DETAIL_CONDICION_PAGO','CLI','CLIENTES','ESP','Condición de Pago'),
 	('CLI_CO_DETAIL_DIRECCION','CLI','CLIENTES','ESP','Cód. Dirección'),
 	('CLI_DETAIL_DIRECCION','CLI','CLIENTES','ESP','Dirección'),
@@ -204,8 +202,8 @@ INSERT INTO public.application_tags(
 	('CLI_DETAIL_MONEDA_DOC','CLI','CLIENTES','ESP','Moneda Doc.'),
 	('CLI_DETAIL_TIPO','CLI','CLIENTES','ESP','Tipo'),
 	('CLI_DETAIL_TASA','CLI','CLIENTES','ESP','Tasa'),
-	('CLI_DETAIL_MONTO','CLI','CLIENTES','ESP','Monto'),
-	('CLI_DETAIL_MONTO_CONVERSION','CLI','CLIENTES','ESP','Monto Conversión'),
+	('CLI_DETAIL_MONTO','CLI','CLIENTES','ESP','Monto Total'),
+	('CLI_DETAIL_MONTO_CONVERSION','CLI','CLIENTES','ESP','Monto Total Conversión'),
 	('CLI_DETAIL_COORDENADA','CLI','CLIENTES','ESP','Coordenada'),
 	('CLI_LOCATION_ACEPTAR','CLI','CLIENTES','ESP','Aceptar'),
 	('CLI_DENARIO_HEADER','CLI','CLIENTES','ESP','Denario Clientes'),
@@ -232,7 +230,13 @@ INSERT INTO public.application_tags(
 	('CLI_HEADER_ALERTA', 'CLI', 'CLIENTES', 'ESP','¡Alerta!'),
 	('CLI_SIN_RESULTADOS', 'CLI', 'CLIENTES', 'ESP','No hay clientes disponibles'),
 	('CLI_SEND_MSG', 'CLI', 'CLIENTES', 'ESP','El cliente potencial será enviado'),
-	('CLI_RESET_CONFIRMA', 'CLI', 'CLIENTES', 'ESP','Se ha detectado cambio del cliente por lo que deberá iniciar nuevamente la transacción.');
+	('CLI_RESET_CONFIRMA', 'CLI', 'CLIENTES', 'ESP','Se ha detectado cambio del cliente por lo que deberá iniciar nuevamente la transacción.'),
+	('CLI_DETAIL_MONTO_BASE','CLI','CLIENTES','ESP','Monto Base'),
+	('CLI_DETAIL_MONTO_BASE_CONVERSION','CLI','CLIENTES','ESP','Monto Base Conversión'),
+	('CLI_DETAIL_MONTO_DESCUENTO','CLI','CLIENTES','ESP','Monto Descuento'),
+	('CLI_DETAIL_MONTO_DESCUENTO_CONVERSION','CLI','CLIENTES','ESP','Monto Descuento Conversión'),
+  ('CLI_DETAIL_MONTO_IVA','CLI','CLIENTES','ESP','Monto IVA'),
+  ('CLI_DETAIL_MONTO_IVA_CONVERSION','CLI','CLIENTES','ESP','Monto IVA Conversión');
 
 -- TAGS COBROS
 DELETE FROM public.application_tags WHERE co_module = 'COB';
@@ -397,7 +401,10 @@ INSERT INTO public.application_tags(
   ('COB_DOCUMENTO', 'COB', 'COBROS', 'ESP','Documento'),
   ('COB_RET_MSJ_COLLECTION_NO_ATTACHMENTS', 'COB', 'COBROS', 'ESP', 'Para poder enviar el Cobro, debe agregar al menos un adjunto.'),
   ('COB_PAGO_MOVIL', 'COB', 'COBROS', 'ESP', 'Pago Móvil'),
-  ('COB_NUMERO_TELEFONO', 'COB', 'COBROS', 'ESP', 'Nº de Teléfono');
+  ('COB_NUMERO_TELEFONO', 'COB', 'COBROS', 'ESP', 'Nº de Teléfono'),
+  ('COB_DESCUENTO', 'COB', 'COBROS', 'ESP', 'Monto descuento'),
+  ('COB_IVA', 'COB', 'COBROS', 'ESP', 'Monto IVA'),
+  ('COB_TOTAL', 'COB', 'COBROS', 'ESP', 'Monto Total');
 
 
 
@@ -540,6 +547,8 @@ INSERT INTO public.application_tags(
 	('ADD_PRODUCT', 'PROD', 'DEVOLUCIONES', 'ENG', 'Add Product'),
 	('PROD_VOLVER', 'PROD', 'PRODUCTOS', 'ESP', 'Volver'),
 	('PROD_IVA', 'PROD', 'PRODUCTOS', 'ESP', 'IVA'),
+	('PROD_PRICE_WITH_IVA', 'PROD', 'PRODUCTOS', 'ESP', 'Precio + IVA'),
+	('PROD_PRICE_WITH_IVA', 'PROD', 'PRODUCTOS', 'ENG', 'Price + VAT'),
 	('PROD_VOLVER', 'PROD', 'PRODUCTOS', 'ENG', 'Back');
 
 -- DEVOLUCIONES

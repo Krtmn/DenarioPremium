@@ -26,6 +26,7 @@ export class ClienteSelectorService {
   public currencyModule: CurrencyModules = {} as CurrencyModules;
 
   ClientChanged = new Subject<Client>;
+  idEnterprise: number = 0;
 
   constructor() {
     this.db = this.syncServ.getDatabase();
@@ -37,6 +38,13 @@ export class ClienteSelectorService {
         )
       }
       this.servicesServ.getTags(this.db, "DEN", "ESP").then(result => {
+        for (var i = 0; i < result.length; i++) {
+          this.tags.set(
+            result[i].coApplicationTag, result[i].tag
+          )
+        }
+      });
+      this.servicesServ.getTags(this.db, "COB", "ESP").then(result => {
         for (var i = 0; i < result.length; i++) {
           this.tags.set(
             result[i].coApplicationTag, result[i].tag
@@ -61,7 +69,7 @@ export class ClienteSelectorService {
      this.moduleNames = new Map<string, string>();
      for (let i = 0; i < result.rows.length; i++) {
        this.moduleNames.set(result.rows.item(i).na_module, result.rows.item(i).co_module);
-     }      
+     }
      return this.moduleNames;
    });
   }

@@ -43,6 +43,7 @@ export class ClientListComponent implements OnInit {
   public clientDetailComponent: Boolean = false;
   public precision = this.currencyService.precision;
   scrollDisable =  false;
+  private isSearching = false;
 
   public dateToday: Date = (() => {
     const d = new Date();
@@ -102,29 +103,54 @@ export class ClientListComponent implements OnInit {
     return this.currencyService.formatNumber(num);
   }
 
-    onSearchClicked(event?: Event) {
+  onSearchEnter(event: Event) {
     event?.preventDefault();
-    const inputElement = event?.target as HTMLInputElement | null;
-    this.messageService.showLoading();
+    event.stopPropagation();
+    void this.runSearch(event.target as HTMLInputElement | null);
+  }
+
+  onSearchClicked(event?: Event) {
+    event?.preventDefault();
+    void this.runSearch(event?.target as HTMLInputElement | null);
+  }
+
+  private async runSearch(inputElement?: HTMLInputElement | null) {
+    if (this.isSearching) {
+      return;
+    }
+
+    this.isSearching = true;
+
     if (inputElement) {
       this.searchText = inputElement.value;
+      inputElement.blur();
     }
+
+    this.searchText = (this.searchText || '').trim();
     this.clientLogic.clientListPage = 0;
-    if (this.searchText.trim() == '') {
-      //poner la lista de clientes normal
-    } else {
-      this.clientLogic.searchClients(this.clientLogic.empresaSeleccionada.idEnterprise, this.searchText).then(result => {
-        this.messageService.hideLoading();
-        this.scrollDisable = result;
-      });
+
+    await this.messageService.showLoading();
+
+    try {
+      if (this.searchText === '') {
+        this.scrollDisable = await this.clientLogic.getClients(this.clientLogic.empresaSeleccionada.idEnterprise);
+      } else {
+        this.scrollDisable = await this.clientLogic.searchClients(this.clientLogic.empresaSeleccionada.idEnterprise, this.searchText);
+      }
+    } catch (error) {
+      console.error('Error searching clients', error);
+      this.scrollDisable = true;
+    } finally {
+      this.isSearching = false;
+      this.messageService.hideLoading();
     }
-    }
+  }
 
   onChangeEnterprise() {
     this.service.clientes = [] as Client[];
     this.clientLogic.clientListPage = 0;
     this.clientLogic.getClients(this.clientLogic.empresaSeleccionada.idEnterprise).then(result => {
-
+/*
       if (this.currencyService.multimoneda) {
         let saldoCliente = 0, saldoOpuesto = 0;
         for (let c = 0; c < this.clientLogic.clients.length; c++) {
@@ -140,6 +166,7 @@ export class ClientListComponent implements OnInit {
           saldoCliente = saldoOpuesto = 0;
         }
       }
+        */
       this.service.clientes = this.clientLogic.clients;
     })
   }

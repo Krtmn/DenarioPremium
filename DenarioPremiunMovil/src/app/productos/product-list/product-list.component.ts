@@ -204,6 +204,14 @@ export class ProductListComponent implements OnInit {
     });
   }
 
+  getPrecioConIVA(precio: number, iva: number): string {
+    let precioConIVA = precio;
+    if (iva && iva > 0) {
+      precioConIVA = precio * (1 + iva / 100);
+    }
+    return this.formatNumber(precioConIVA);
+  }
+
   formatNumber(num: number) {
     return this.productService.formatNumber(num);
   }

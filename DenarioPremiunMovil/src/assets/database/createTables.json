@@ -552,5 +552,12 @@
     "table": "pendingTransactionsAttachments",
     "idName": "id_pending",
     "sql": "CREATE TABLE IF NOT EXISTS pending_transactions_attachments(id_pending INTEGER PRIMARY KEY AUTOINCREMENT, na_attachment VARCHAR(30), id_transaction INTEGER, co_transaction VARCHAR(40), type VARCHAR(30), na_transaction VARCHAR(30), position INTEGER);"
+  },
+  {
+    "id": 991189,
+    "name": "failed_transactions",
+    "table": "failedTransactions",
+    "idName": "id_failed_transaction",
+    "sql": "CREATE TABLE IF NOT EXISTS failed_transactions(id_failed_transaction INTEGER PRIMARY KEY AUTOINCREMENT, co_transaction VARCHAR(40), type VARCHAR(30), error_code VARCHAR(10), error_message VARCHAR(255), transaction_object TEXT, da_failed TIMESTAMP);"
   }
 ]

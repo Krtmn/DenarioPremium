@@ -29,7 +29,6 @@ import { ClienteSelectorService } from 'src/app/cliente-selector/cliente-selecto
 import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 import { BancoReceptor } from 'src/app/modelos/bancoReceptor';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
-import { COLLECT_STATUS_SAVED, COLLECT_STATUS_NEW, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 
 
 @Component({
@@ -76,38 +75,8 @@ export class CobrosGeneralComponent implements OnInit {
   private messageAlert!: MessageAlert;
   private coordenadas: string = "";
 
-  public COLLECT_STATUS_SAVED = COLLECT_STATUS_SAVED;
-  public COLLECT_STATUS_SENT = COLLECT_STATUS_SENT;
-  public COLLECT_STATUS_TO_SEND = COLLECT_STATUS_TO_SEND;
-  public COLLECT_STATUS_NEW = COLLECT_STATUS_NEW;
-
-  // True cuando el cobro ya fue enviado/por enviar o status 6
-  get isSentDelivery(): boolean {
-    const st = Number(this.collectService?.collection?.stDelivery);
-    return st === this.COLLECT_STATUS_TO_SEND || st === 1 || st === 6;
-  }
-
-  get showDateRateSection(): boolean {
-    const stCollection = Number(this.collectService?.collection?.stCollection);
-    return this.collectService.multiCurrency
-      && this.collectService.showConversion
-      && stCollection !== 2
-      && stCollection !== 3
-      && stCollection !== 6;
-  }
-
-  get isDateRateLabelDisabled(): boolean {
-    return !this.collectService.canChangeRate;
-  }
-
-  get isDateRateButtonDisabled(): boolean {
-    const stDelivery = Number(this.collectService?.collection?.stDelivery);
-    const stCollection = Number(this.collectService?.collection?.stCollection);
-    return stDelivery === this.COLLECT_STATUS_TO_SEND
-      || stDelivery === this.COLLECT_STATUS_SENT
-      || stCollection === 6
-      || !this.collectService.canChangeRate;
-  }
+  public manualRateError: string = '';
+  private lastManualRateValue: number = 0;
 
   public alertButtons = [
     { text: '', role: 'confirm' },
@@ -125,8 +94,20 @@ export class CobrosGeneralComponent implements OnInit {
       this.collectService.loadCodePhoneNumberList(this.synchronizationServices.getDatabase())
     ]);
 
-    if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == 1 || this.collectService.collection.stDelivery == 6) {
+    // Inicializar el valor del input manual de tasa solo si no hay valor previo
+    if (this.collectService.enabledManualRate) {
+      if (!this.collectService.rateSelected || this.collectService.rateSelected === 0) {
+        this.collectService.rateSelected = this.lastRateValue;
+        this.lastManualRateValue = this.lastRateValue;
+      } else {
+        // Mantener la tasa manual ya ingresada
+        this.lastManualRateValue = this.collectService.rateSelected;
+      }
+    }
+
+    if (this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SENT || this.collectService.collection.stDelivery == 6) {
       //ES UN COBRO ENVIADO, NO DEBO HACER NADA, SOLO MOSTRAR LA DATA
+
       this.setSendedCollection();
     } else {
       this.subscriptions.push(
@@ -163,6 +144,10 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.montoTotalPagarConversion = this.collectService.collection.nuAmountFinalConversion;
     this.collectService.montoTotalPagado = this.collectService.collection.nuAmountTotal;
     this.collectService.montoTotalPagadoConversion = this.collectService.collection.nuAmountTotalConversion;
+    this.dateCollect = this.collectService.collection.daCollection;
+    this.collectService.disabledInputClient = true;
+    this.collectService.rateSelected = this.collectService.collection.nuValueLocal;
+    this.rateSelected = this.collectService.collection.nuValueLocal;
 
     this.initializeCurrenciesAndRates();
     this.collectService.loadPaymentMethods();
@@ -206,10 +191,10 @@ export class CobrosGeneralComponent implements OnInit {
     //this.collectService.disabledCurrency = true;
     this.collectService.cobroValid = true;
 
-    if (Number(this.collectService.collection.stDelivery) == 3) {
+    if (Number(this.collectService.collection.stDelivery) == this.collectService.COLLECT_STATUS_SAVED) {
       this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", false, COLOR_VERDE);
       this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, 'cobros');
-      if (Number(this.collectService.collection.stDelivery) === 1)
+      if (Number(this.collectService.collection.stDelivery) === this.collectService.COLLECT_STATUS_SENT)
         this.collectService.onCollectionValid(true);
     }
 
@@ -238,6 +223,10 @@ export class CobrosGeneralComponent implements OnInit {
       }
 
       this.collectService.changeEnterprise = false;
+      if (this.collectService.currencySelectedDocument == null || this.collectService.currencySelectedDocument == undefined) {
+        this.collectService.currencySelectedDocument = this.collectService.currencyListDocument[0];
+
+      }
 
 
     });
@@ -627,7 +616,7 @@ export class CobrosGeneralComponent implements OnInit {
               .then(() => {
 
               });
-          else
+          /* else
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient, this.collectService.currencySelectedDocument.coCurrency,
               this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
                 if (this.collectService.historicPartialPayment) {
@@ -635,7 +624,7 @@ export class CobrosGeneralComponent implements OnInit {
                 }
                 this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
 
-              });
+              }); */
           // }
 
           if (this.collectService.igtfList == null || this.collectService.igtfList.length == 0)
@@ -655,6 +644,11 @@ export class CobrosGeneralComponent implements OnInit {
           this.setClientfromSelector(this.collectService.client);
         }
 
+        if (this.collectService.currencySelectedDocument == null || this.collectService.currencySelectedDocument == undefined) {
+          this.collectService.currencySelectedDocument = this.collectService.currencyListDocument[0];
+
+        }
+
       });
     }).catch(e => {
       console.log(e);
@@ -665,8 +659,9 @@ export class CobrosGeneralComponent implements OnInit {
 
   setChangesMade(value: boolean) {
     //ESTA FUNCION SE USARA PARA CONTROLAR SI PUEDO ENVIAR O GUARDAR, CVER QUE HAGO ACA
-    this.collectService.onCollectionValidToSave(true);
-    this.collectService.onCollectionValidToSend(true);
+    /* this.collectService.onCollectionValidToSave(true);
+    this.collectService.onCollectionValidToSend(true); */
+    this.collectService.validateToSend();
   }
 
 
@@ -722,7 +717,7 @@ export class CobrosGeneralComponent implements OnInit {
     //SE BUSCA LA MONEDA
     this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise).then(r => {
 
-      if (this.collectService.collection.stDelivery === 1) {
+      if (this.collectService.collection.stDelivery === this.collectService.COLLECT_STATUS_SENT) {
         this.collectService.rateSelected = this.collectService.collection.nuValueLocal;
         this.collectService.historicoTasa = true;
       } else if (this.collectService.historicoTasa) {
@@ -753,11 +748,17 @@ export class CobrosGeneralComponent implements OnInit {
             if (this.collectService.onChangeClient)
               this.collectService.onChangeClient = false;
 
-            if (this.collectService.collection.stDelivery >= this.COLLECT_STATUS_TO_SEND) {
+            if (this.collectService.collection.stDelivery >= this.collectService.COLLECT_STATUS_TO_SEND) {
               this.collectService.disabledInputClient = true;
               this.collectService.enterpriseEnabled = false;
               //this.collectService.collection.nuValueLocal = 80;
             }
+
+            if (this.collectService.documentCurrency == undefined || this.collectService.documentCurrency == null || this.collectService.documentCurrency == "") {
+              this.collectService.documentCurrency = this.collectService.currencyListDocument[0].coCurrency;
+              this.collectService.currencySelectedDocument = this.collectService.currencyListDocument[0];
+            }
+
 
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
               this.collectService.currencySelectedDocument.coCurrency, this.collectService.collection.coCollection, this.collectService.collection.idEnterprise).then(() => {
@@ -871,11 +872,13 @@ export class CobrosGeneralComponent implements OnInit {
       }
 
       // Convertir y recalcular (esperando a que terminen)
-      await this.collectService.convertDocumentSales();
-      await this.collectService.calculatePayment("", 0);
+      if (this.collectService.multiCurrency) {
+        await this.collectService.convertDocumentSales();
+        // Mantener conversion de moneda y actualización de UI
+        this.collectService.setCurrencyConversion();
+      }
 
-      // Mantener conversion de moneda y actualización de UI
-      this.collectService.setCurrencyConversion();
+      await this.collectService.calculatePayment("", 0);
 
       if (this.collectService.validateCollectionDate) {
         this.collectService.updateRateTiposPago();
@@ -1098,7 +1101,7 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   onOpenCalendar() {
-    if (this.collectService.collection.stDelivery != this.COLLECT_STATUS_TO_SEND && this.collectService.collection.stDelivery != 1) {
+    if (this.collectService.collection.stDelivery != this.collectService.COLLECT_STATUS_TO_SEND && this.collectService.collection.stDelivery != this.collectService.COLLECT_STATUS_SENT) {
       this.collectService.getDateRate(this.synchronizationServices.getDatabase(), this.collectService.dateRateVisual.split("T")[0]);
       this.collectService.calculatePayment("", 0);
     }
@@ -1228,13 +1231,13 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   bottonDateRateLabel() {
-    if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == 1) {
+    if (this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SENT) {
       // normalizar a formato con espacio en vez de 'T'
       if (this.collectService.collection.daRate) {
         this.collectService.dateRateVisual = this.collectService.collection.daRate.replace('T', ' ');
       }
       return this.dateServ.formatShort(this.collectService.dateRateVisual);
-    } else if (this.collectService.collection.stDelivery == this.COLLECT_STATUS_SAVED) {
+    } else if (this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SAVED) {
       if (this.collectService.collection.daRate) {
         this.collectService.dateRateVisual = this.collectService.collection.daRate.replace('T', ' ');
       }
@@ -1273,5 +1276,226 @@ export class CobrosGeneralComponent implements OnInit {
     } else {
       return new BancoReceptor();
     }
+  }
+
+
+  /**
+   * Valida y aplica la tasa manual al perder el foco (evento de ionBlur)
+   */
+  public onManualRateBlur(): void {
+    if (this.manualRateError) {
+      // No aplicar si hay error
+      return;
+    }
+    // Si la tasa cambió, recalcular montos
+    if (this.rateSelected !== this.lastManualRateValue) {
+      this.lastManualRateValue = this.rateSelected;
+      // Recalcular montos y documentos
+      if (typeof this.collectService.calculatePayment === 'function') {
+        this.collectService.calculatePayment('', 0);
+      }
+      if (typeof this.collectService.calcularMontos === 'function') {
+        this.collectService.calcularMontos('', 0);
+      }
+    }
+  }
+
+  /**
+   * Maneja el input de la tasa manual (evento de ionInput)
+   */
+  public onManualRateInput(event: any): void {
+    const value = parseFloat(event.target.value);
+    if (isNaN(value) || value <= 0) {
+      this.manualRateError = 'Ingrese un valor numérico mayor a 0';
+      return;
+    }
+    if (value < this.lastRateValue) {
+      this.manualRateError = `La tasa debe ser mayor o igual a ${this.lastRateValue}`;
+      return;
+    }
+    this.manualRateError = '';
+    this.rateSelected = value;
+    this.collectService.rateSelected = value;
+    this.collectService.collection.nuValueLocal = value;
+    this.collectService.haveRate = true;
+
+
+    if (Array.isArray(this.collectService.documentSalesView)) {
+      try {
+        const deep = this.collectService.documentSalesView.map(d => JSON.parse(JSON.stringify(d)));
+        this.collectService.documentSales = deep.map(d => ({ ...d }));
+        this.collectService.documentSalesBackup = deep.map(d => ({ ...d }));
+      } catch (e) {
+        // Fallback: copia superficial si falla la serialización
+        this.collectService.documentSales = [...this.collectService.documentSalesView];
+        this.collectService.documentSalesBackup = [...this.collectService.documentSalesView];
+        console.warn('No se pudo serializar documentSalesView para copia profunda, usando copia superficial', e);
+      }
+    } else {
+      this.collectService.documentSales = [];
+      this.collectService.documentSalesBackup = [];
+    }
+
+    this.rebuildCollectionDetails();
+
+    // Recalcular el monto a pagar
+    if (typeof this.collectService.calculatePayment === 'function') {
+      this.collectService.calculatePayment('', 0);
+    }
+
+
+
+    this.collectService.convertDocumentSales();
+    this.collectService.calcularMontos('', 0);
+    this.collectService.unlockTabs().then((resp) => {
+      this.collectService.onCollectionValid(resp);
+    });
+  }
+
+  /**
+   * Reconstruye collectionDetails a partir de los documentos seleccionados, emulando la lógica de initCollectionDetail.
+   */
+  private rebuildCollectionDetails(): void {
+    if (!Array.isArray(this.collectService.collection.collectionDetails)) return;
+    const selectedDocs = this.collectService.documentSalesView.filter(doc => doc.isSelected);
+    this.collectService.collection.collectionDetails = [];
+    selectedDocs.forEach((doc, idx) => {
+      let nuAmountTotal = 0, nuAmountBalance = 0, nuAmountTotalConversion = 0, nuAmountBalanceConversion = 0;
+      const coTypeDoc = doc.coDocumentSaleType;
+      const nuValueLocalDoc = this.collectService.collection.nuValueLocal;
+      let nuBalanceOriginal, nuBalanceOriginalConversion;
+
+      /* if (doc.isSave) {
+        let positionCollecDetails = doc.positionCollecDetails;
+        nuAmountBalance = this.collectService.collection.collectionDetails[positionCollecDetails]?.nuBalanceDoc ?? 0;
+        nuAmountBalanceConversion = this.collectService.collection.collectionDetails[positionCollecDetails]?.nuBalanceDocConversion ?? 0;
+        nuAmountTotal = this.collectService.collection.collectionDetails[positionCollecDetails]?.nuAmountDoc ?? 0;
+        nuAmountTotalConversion = this.collectService.collection.collectionDetails[positionCollecDetails]?.nuAmountDocConversion ?? 0;
+        nuBalanceOriginal = doc.nuBalance;
+        nuBalanceOriginalConversion = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
+      } else { */
+      if (doc.coCurrency != this.collectService.collection.coCurrency) {
+        nuAmountBalance = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
+        nuAmountBalanceConversion = doc.nuBalance;
+        nuAmountTotal = this.collectService.convertirMonto(doc.nuAmountTotal, this.collectService.collection.nuValueLocal, doc.coCurrency);
+        nuAmountTotalConversion = doc.nuAmountTotal;
+        nuBalanceOriginalConversion = doc.nuBalance;
+        nuBalanceOriginal = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
+      } else {
+        nuAmountTotal = doc.nuAmountTotal;
+        nuAmountBalance = doc.nuBalance;
+        nuAmountBalanceConversion = this.collectService.convertirMonto(nuAmountBalance, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
+        nuAmountTotalConversion = this.collectService.convertirMonto(nuAmountTotal, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency);
+        nuBalanceOriginal = doc.nuBalance;
+        nuBalanceOriginalConversion = this.collectService.convertirMonto(doc.nuBalance, this.collectService.collection.nuValueLocal, doc.coCurrency);
+      }
+      //}
+
+      let inPaymentPartial = false;
+      let missingRetention = false;
+      if (this.collectService.coTypeModule != "2") {
+        const open = this.collectService.documentSaleOpen;
+        inPaymentPartial = this.collectService.alwaysPartialPayment || !!open?.inPaymentPartial;
+        missingRetention = this.collectService.alwaysRetention || !!open?.missingRetention;
+      }
+
+      this.collectService.collection.collectionDetails.push({
+        coCollection: this.collectService.collection.coCollection,
+        coDocument: doc.coDocument.toString(),
+        idDocument: doc.idDocument,
+        inPaymentPartial: inPaymentPartial,
+        nuVoucherRetention: "",
+        nuAmountRetention: 0,
+        nuAmountRetention2: 0,
+        nuAmountRetentionConversion: 0,
+        nuAmountRetention2Conversion: 0,
+        nuAmountRetentionIslrConversion: 0,
+        nuAmountRetentionIvaConversion: 0,
+        nuAmountPaid: nuAmountBalance,
+        nuAmountPaidConversion: nuAmountBalanceConversion,
+        nuAmountDiscount: 0,
+        nuAmountDiscountConversion: 0,
+        nuAmountDoc: nuAmountTotal!,
+        nuAmountDocConversion: nuAmountTotalConversion,
+        daDocument: doc.daDocument,
+        nuBalanceDoc: nuAmountBalance!,
+        nuBalanceDocConversion: nuAmountBalanceConversion,
+        nuBalanceDocOriginal: nuBalanceOriginal!,
+        nuBalanceDocOriginalConversion: nuBalanceOriginalConversion!,
+        coOriginal: doc.coCurrency,
+        coTypeDoc: doc.coDocumentSaleType,
+        nuValueLocal: doc.nuValueLocal,
+        nuAmountIgtf: 0,
+        nuAmountIgtfConversion: 0,
+        st: 0,
+        isSave: false,
+        daVoucher: this.dateServ.onlyDateHoyISO(),
+        hasDiscount: false,
+        discountComment: "",
+        nuAmountCollectDiscount: 0,
+        nuCollectDiscount: 0,
+        missingRetention: missingRetention,
+        nuAmountCollectDiscountConversion: 0,
+      });
+      // Actualizar positionCollecDetails en los arrays de documentos
+      const newPos = this.collectService.collection.collectionDetails.length - 1;
+      this.collectService.documentSales[idx].positionCollecDetails = newPos;
+      this.collectService.documentSalesBackup[idx].positionCollecDetails = newPos;
+      this.collectService.documentSalesView[idx].positionCollecDetails = newPos;
+
+      if (this.collectService.coTypeModule == "3") {
+        this.collectService.collection.coOriginalCollection = doc.coCollection;
+      }
+    });
+  }
+
+  // Exponer enabledManualRate y rateSelected para el template
+  get enabledManualRate(): boolean {
+    return this.collectService.enabledManualRate;
+  }
+
+  get rateSelected(): number {
+    return this.collectService.rateSelected;
+  }
+  set rateSelected(val: number) {
+    this.collectService.rateSelected = val;
+  }
+  // True cuando el cobro ya fue enviado/por enviar o status 6
+  get isSentDelivery(): boolean {
+    const st = Number(this.collectService?.collection?.stDelivery);
+    return st === this.collectService.COLLECT_STATUS_TO_SEND || st === this.collectService.COLLECT_STATUS_SENT || st === 6;
+  }
+
+  get showDateRateSection(): boolean {
+    const stCollection = Number(this.collectService?.collection?.stCollection);
+    return this.collectService.multiCurrency
+      || this.collectService.showConversion
+      || stCollection !== this.collectService.COLLECT_STATUS_TO_SEND
+      || stCollection == this.collectService.COLLECT_STATUS_SAVED
+      || stCollection !== 6;
+  }
+
+  get isDateRateLabelDisabled(): boolean {
+    return !this.collectService.canChangeRate;
+  }
+
+  get isDateRateButtonDisabled(): boolean {
+    const stDelivery = Number(this.collectService?.collection?.stDelivery);
+    const stCollection = Number(this.collectService?.collection?.stCollection);
+    return stDelivery === this.collectService.COLLECT_STATUS_TO_SEND
+      || stDelivery === this.collectService.COLLECT_STATUS_SENT
+      || stCollection === 6
+      || !this.collectService.canChangeRate;
+  }
+
+  /**
+ * Última tasa conocida (para inicializar el input y validar mínimo)
+ * Se asume que la lógica ya la calcula y la deja en rateSelected o en rateList.
+ */
+  get lastRateValue(): number {
+    if (this.collectService.rateList && this.collectService.rateList.length > 0) {
+      return Math.max(...this.collectService.rateList);
+    }
+    return this.collectService.rateSelected || 0.01;
   }
 }

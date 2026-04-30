@@ -32,7 +32,7 @@ export class InventarioContainerComponent implements OnInit {
           this.inventariosLogicService.newClientStock.coordenada = xy;
         }
       })
-      
+
     }
     this.backRouteService();
   }
@@ -45,13 +45,7 @@ export class InventarioContainerComponent implements OnInit {
 
   backRouteService() {
     this.subs = this.inventariosLogicService.backRoute.subscribe((data: string) => {
-      console.log("estoy aca", data)
-      if (this.inventariosLogicService.typeStocksComponent) {
-        this.inventariosLogicService.onShowProductStructures()
-        this.inventariosLogicService.typeStocksComponent = false;
-        this.inventariosLogicService.showHeaderButtonsFunction(true);
-        this.inventariosLogicService.inventarioComp = true;
-      } else if (this.inventariosLogicService.inventarioComp) {
+     if (this.inventariosLogicService.inventarioComp) {
         this.inventariosLogicService.isEdit = false;
         this.inventariosLogicService.inventarioComp = false;
         this.inventariosLogicService.inventarioList = false;
@@ -79,7 +73,7 @@ export class InventarioContainerComponent implements OnInit {
   newStockButton(){
     if(this.inventariosLogicService.userMustActivateGPS){
       this.message.showLoading().then(() => {
-              if(!this.inventariosLogicService.newClientStock.coordenada || 
+              if(!this.inventariosLogicService.newClientStock.coordenada ||
         this.inventariosLogicService.newClientStock.coordenada.length < 1){
       this.geoLoc.getCurrentPosition().then(xy => {
         if(xy.length > 0){

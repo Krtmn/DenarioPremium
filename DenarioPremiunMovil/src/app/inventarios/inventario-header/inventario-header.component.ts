@@ -146,42 +146,7 @@ export class InventarioHeaderComponent implements OnInit {
 
   onBackClicked() {
 
-    if (this.inventariosLogicService.newClientStock.clientStockDetails != undefined)
-      for (i = 0; i < this.inventariosLogicService.newClientStock.clientStockDetails.length; i++) {
-        this.inventariosLogicService.productTypeStocksMap.set(
-          this.inventariosLogicService.newClientStock.clientStockDetails[i].idProduct, i);
-      }
-
-
-    if (this.inventariosLogicService.typeStocksComponent) {
-      let validate = true;
-      for (var i = 0; i < this.inventariosLogicService.typeStocks.length; i++) {
-        if (!this.inventariosLogicService.typeStocks[i].validateCantidad) {
-          validate = false
-          break;
-        }
-        if (this.inventariosLogicService.expirationBatch) {
-          //si esta variable es false, no hay lote que validar.
-          if (!this.inventariosLogicService.typeStocks[i].validateLote) {
-            validate = false;
-            break;
-          }
-        }
-
-
-      }
-      if (validate) {
-        this.inventariosLogicService.onStockValidToSend(true);
-        this.inventariosLogicService.onStockValidToSave(true);
-        this.inventariosLogicService.showBackRoute('inventarios');
-      } else {
-        this.messageAlert = new MessageAlert(
-          this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!,
-          this.inventariosLogicService.inventarioTags.get('INV_MSJ_ERROR_TYPESTOCKS')!,
-        );
-        this.messageService.alertModal(this.messageAlert);
-      }
-    } else if (this.inventariosLogicService.isEdit) {
+    if (this.inventariosLogicService.isEdit) {
       this.saveOrExitOpen = true;
     } else
       this.inventariosLogicService.showBackRoute('inventarios');

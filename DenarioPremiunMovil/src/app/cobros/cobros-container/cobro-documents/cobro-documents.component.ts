@@ -12,7 +12,6 @@ import { PagoTransferencia } from 'src/app/modelos/pago-transferencia';
 import { PagoOtros } from 'src/app/modelos/pago-otros';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { BankAccount } from 'src/app/modelos/tables/bankAccount';
-import { COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW } from 'src/app/utils/appConstants';
 import { ClientLogicService } from 'src/app/services/clientes/client-logic.service';
 import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
 import { MessageService } from 'src/app/services/messageService/message.service';
@@ -53,6 +52,10 @@ export class CobrosDocumentComponent implements OnInit {
   public nuCollectDiscount: number | undefined;
   public naCollectDiscount: string = '';
   public discountComment: string = '';
+  public manualCollectDiscountAmount: number = 0;
+  private manualCollectDiscountAmountBackup: number = 0;
+  private readonly MANUAL_COLLECT_DISCOUNT_ID = -1;
+  private readonly MANUAL_COLLECT_DISCOUNT_LABEL = 'Descuento manual';
 
   public assignDiscountsOpen: boolean = false;
 
@@ -85,11 +88,8 @@ export class CobrosDocumentComponent implements OnInit {
   public ivaViewConversion: number = 0;
   public totalView: number = 0;
   public totalViewConversion: number = 0;
+  public filteredDocumentsView: DocumentSale[] = [];
 
-  public COLLECT_STATUS_SAVED = COLLECT_STATUS_SAVED;
-  public COLLECT_STATUS_SENT = COLLECT_STATUS_SENT;
-  public COLLECT_STATUS_TO_SEND = COLLECT_STATUS_TO_SEND;
-  public COLLECT_STATUS_NEW = COLLECT_STATUS_NEW;
 
   public alertButtons = [
     /*  {
@@ -123,31 +123,60 @@ export class CobrosDocumentComponent implements OnInit {
   }
   ngOnInit() {
     this.fechaHoy = this.dateServ.onlyDateHoyISO();
+    this.applyDocumentFilter(this.collectService.documentCurrency);
     // this.collectService.deepFreeze(this.collectService.documentSalesView);
   }
 
 
 
   onChangeCurrencyDoc(event: any) {
-    //debo llamar a getAllDocuments con la nueva moneda y refrescar todo
-    let docCurrency = "";
-    if (event.target.value.coCurrency == "Moneda") {
-      this.collectService.documentCurrency = this.collectService.currencySelected.coCurrency
-    } else {
-      docCurrency = event.target.value.coCurrency;
-      this.collectService.documentCurrency = event.target.value.coCurrency;
+    const selectedCurrency = event?.target?.value?.coCurrency ?? '';
+    const currencyToFilter = selectedCurrency === 'Moneda'
+      ? this.collectService.currencySelected.coCurrency
+      : selectedCurrency;
+
+    this.collectService.documentCurrency = currencyToFilter;
+    this.applyDocumentFilter(currencyToFilter);
+
+    if (this.collectService.historicPartialPayment) {
+      this.collectService.findIsPaymentPartial(
+        this.synchronizationServices.getDatabase(),
+        this.collectService.collection.idClient
+      ).then(() => {
+      });
+    }
+  }
+
+  private applyDocumentFilter(coCurrency: string): void {
+    const source = this.collectService.documentSalesView?.length
+      ? this.collectService.documentSalesView
+      : this.collectService.documentSales;
+
+    if (!Array.isArray(source) || source.length === 0) {
+      this.filteredDocumentsView = [];
+      this.collectService.documentsSaleComponent = false;
+      return;
     }
 
-    this.getDocumentsSale(this.collectService.collection.idClient, docCurrency,
-      this.collectService.collection.coCollection, this.collectService.collection.idEnterprise);
+    this.filteredDocumentsView = (!coCurrency || coCurrency === 'Moneda')
+      ? source
+      : source.filter(doc => doc.coCurrency === coCurrency);
+
+    this.collectService.documentsSaleComponent = this.filteredDocumentsView.length > 0;
+  }
+
+  public getSourceIndex(documentSale: DocumentSale): number {
+    const byId = this.collectService.documentSales.findIndex(d => d.idDocument === documentSale.idDocument);
+    if (byId >= 0) return byId;
+
+    return this.collectService.documentSales.findIndex(
+      d => d.coDocument === documentSale.coDocument && d.idEnterprise === documentSale.idEnterprise
+    );
   }
 
   getDocumentsSale(idClient: number, coCurrency: string, coCollection: string, idEnterprise: number) {
     this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), idClient, coCurrency, coCollection, idEnterprise).then(response => {
-      if (this.collectService.documentSales.length > 0)
-        this.collectService.documentsSaleComponent = true;
-      else
-        this.collectService.documentsSaleComponent = false;
+      this.applyDocumentFilter(this.collectService.documentCurrency || coCurrency);
 
       if (this.collectService.historicPartialPayment) {
         this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient).then(() => {
@@ -259,7 +288,7 @@ export class CobrosDocumentComponent implements OnInit {
     const backupBalance = Number(docBackup?.nuBalance ?? 0);
 
     if (!doc.isSave) {
-      if (this.collectService.collection.stDelivery == COLLECT_STATUS_SAVED) {
+      if (this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SAVED) {
         const indexCollectionDetail = doc.positionCollecDetails;
         const detail = JSON.parse(JSON.stringify(this.collectService.collection.collectionDetails?.[indexCollectionDetail] ?? null));
         if (detail) {
@@ -474,6 +503,7 @@ export class CobrosDocumentComponent implements OnInit {
   }
 
   async openDocumentSale(index: number, e: Event) {
+    if (index < 0) return;
     const factor = this.centsFactor();
 
     this.indexDocumentSaleOpen = index;
@@ -504,9 +534,17 @@ export class CobrosDocumentComponent implements OnInit {
       if (this.collectService.userCanSelectCollectDiscount) {
         if (this.collectService.collection.collectionDetails[index]?.collectionDetailDiscounts &&
           this.collectService.collection.collectionDetails[index].collectionDetailDiscounts?.length > 0) {
-          const selectedIds = this.collectService.collection.collectionDetails[index].collectionDetailDiscounts!.map(cdd => cdd.idCollectDiscount);
+          const persistedDiscounts = this.collectService.collection.collectionDetails[index].collectionDetailDiscounts!;
+          this.manualCollectDiscountAmount = this.getManualCollectDiscountFromDetails(persistedDiscounts);
+          this.manualCollectDiscountAmountBackup = this.manualCollectDiscountAmount;
+          const selectedIds = persistedDiscounts
+            .map(cdd => Number(cdd.idCollectDiscount))
+            .filter(id => !Number.isNaN(id) && id > 0);
           this.collectService.selectedCollectDiscounts = selectedIds;
           this.setCollectionDetailDiscounts(index, selectedIds);
+        } else {
+          this.manualCollectDiscountAmount = 0;
+          this.manualCollectDiscountAmountBackup = 0;
         }
       }
 
@@ -625,6 +663,8 @@ export class CobrosDocumentComponent implements OnInit {
 
     if (idxDetail === -1) {
       this.collectService.selectedCollectDiscounts = [];
+      this.manualCollectDiscountAmount = 0;
+      this.manualCollectDiscountAmountBackup = 0;
       return;
     }
 
@@ -632,17 +672,20 @@ export class CobrosDocumentComponent implements OnInit {
     const discounts = Array.isArray(detail?.collectionDetailDiscounts)
       ? detail.collectionDetailDiscounts
       : [];
+    this.manualCollectDiscountAmount = this.getManualCollectDiscountFromDetails(discounts);
+    this.manualCollectDiscountAmountBackup = this.manualCollectDiscountAmount;
 
     const ids = discounts
       .map(d => Number(d.idCollectDiscount))
-      .filter(id => !Number.isNaN(id));
+      .filter(id => !Number.isNaN(id) && id > 0);
     this.collectService.selectedCollectDiscounts = Array.from(new Set(ids));
   }
 
   selectDocumentSale(documentSale: DocumentSale, indexDocumentSale: number, event: any) {
+    if (indexDocumentSale < 0) return;
     documentSale.isSelected = event.detail.checked;
     console.log(indexDocumentSale);
-    if (documentSale.nuBalance < 0 && this.collectService.collection.collectionDetails.length == 0) {
+    if (documentSale.nuBalance < 0 && this.collectService.collection.collectionDetails.length == 0 && this.collectService.coTypeModule == '0') {
       /*     if (documentSale.coDocumentSaleType == "NC" && this.collectService.collection.collectionDetails.length == 0) {
        */
 
@@ -654,7 +697,7 @@ export class CobrosDocumentComponent implements OnInit {
         }, 300);
 
         this.alertMessageOpen = true;
-        this.collectService.mensaje = "El primer documento a seleccionar no puede ser Nota de Crédito";
+        this.collectService.mensaje = "El primer documento a seleccionar no puede tener monto negativo";
       }
 
     } else if (documentSale.isSelected) {
@@ -889,10 +932,10 @@ export class CobrosDocumentComponent implements OnInit {
       }
 
       if (validate) {
-
-        if (this.collectService.coTypeModule == "0" && this.collectService.userCanSelectCollectDiscount && this.collectService.selectedCollectDiscounts.length > 0) {
+        const hasSelectedDiscounts = this.collectService.selectedCollectDiscounts.length > 0;
+        if (this.collectService.coTypeModule == "0" && this.collectService.userCanSelectCollectDiscount &&
+          (hasSelectedDiscounts || this.hasManualCollectDiscount())) {
           this.setCollectionDetailDiscounts(this.collectService.documentSaleOpen.positionCollecDetails!, this.collectService.selectedCollectDiscounts);
-
         }
         this.collectService.calculatePayment("", 0);
         this.cdr.detectChanges();
@@ -1113,9 +1156,15 @@ export class CobrosDocumentComponent implements OnInit {
       if (!this.hasShownPartialPayMessage && this.collectService.totalHistoricPartialPayment > 0 && this.collectService.coTypeModule == "0") {
         if (this.collectService.historicPartialPayment &&
           this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].inPaymentPartial) {
-          this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSJ_HAVE_PAYPARTIAL')!;
-          this.alertMessageOpen2 = true;
-          this.hasShownPartialPayMessage = true;
+
+          this.collectService.getPaymentPartialByDocument(this.synchronizationServices.getDatabase(), this.collectService.documentSales[this.collectService.indexDocumentSaleOpen].coDocument).then(resp => {
+            if (this.collectService.paymentPartials.length > 0) {
+              this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSJ_HAVE_PAYPARTIAL')!;
+              this.alertMessageOpen2 = true;
+              this.hasShownPartialPayMessage = true;
+            }
+          })
+
         }
       }
 
@@ -1199,6 +1248,7 @@ export class CobrosDocumentComponent implements OnInit {
     const index = cs.indexDocumentSaleOpen;
     const parteDecimal = cs.parteDecimal;
     const docOriginal = cs.documentSalesBackup[index];
+    const isAlwaysPartialWithFixedMode = cs.alwaysPartialPayment && !cs.enablePartialPayment;
     // Asegura valores numéricos antes de operar
     this.collectService.ensureNumber(doc, 'nuAmountRetention');
     this.collectService.ensureNumber(doc, 'nuAmountRetention2');
@@ -1223,7 +1273,8 @@ export class CobrosDocumentComponent implements OnInit {
     // Si es pago parcial
     if (cs.isPaymentPartial) {
       let montoDoc = 0;
-      if (this.collectService.currencySelected.localCurrency.toString() === "true") {
+      montoDoc = this.collectService.documentSales[index].nuBalance;
+      /* if (this.collectService.currencySelected.localCurrency.toString() === "true") {
         if (this.collectService.currencySelected.coCurrency === doc.coCurrency) {
           //moneda del cobro loca, moneda del documento local
           montoDoc = this.collectService.documentSales[index].nuBalance;
@@ -1239,8 +1290,8 @@ export class CobrosDocumentComponent implements OnInit {
           //moneda del cobro hard, moneda en local
           montoDoc = this.collectService.toHard(this.collectService.documentSales[index].nuBalance);
         }
-      }
-      if (Math.abs(cs.amountPaid) >= this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(montoDoc))) {
+      } */
+      if (!isAlwaysPartialWithFixedMode && Math.abs(cs.amountPaid) >= this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(montoDoc))) {
         cs.mensaje = cs.collectionTags.get('COB_MSJ_PARTIALPAY_MAYOR_DOCAMOUNT')!;
         this.alertMessageOpen = true;
         this.disabledSaveButton = true;
@@ -1252,26 +1303,27 @@ export class CobrosDocumentComponent implements OnInit {
       this.disabledSaveButton = false;
 
       let amountPaid = 0;
-      if (this.collectService.currencySelected.localCurrency.toString() == "true") {
-        //estoy en moneda local
-        if (this.collectService.currencySelected.coCurrency == doc.coCurrency) {
-          //moneda del documento es local
-          amountPaid = cs.amountPaid;
-        } else {
-          //moneda del documento es hard
-          amountPaid = cs.amountPaid / this.collectService.collection.nuValueLocal;
-        }
-      } else {
-        //estoy ne moneda hard
-        if (this.collectService.currencySelected.coCurrency == doc.coCurrency) {
-          //moneda del documento es hard
-          amountPaid = cs.amountPaid;
-        } else {
-          //moneda del documento es local
-          amountPaid = cs.amountPaid * this.collectService.collection.nuValueLocal;
-        }
-      }
-
+      /*  if (this.collectService.currencySelected.localCurrency.toString() == "true") {
+         //estoy en moneda local
+         if (this.collectService.currencySelected.coCurrency == doc.coCurrency) {
+           //moneda del documento es local
+           amountPaid = cs.amountPaid;
+         } else {
+           //moneda del documento es hard
+           amountPaid = cs.amountPaid / this.collectService.collection.nuValueLocal;
+         }
+       } else {
+         //estoy ne moneda hard
+         if (this.collectService.currencySelected.coCurrency == doc.coCurrency) {
+           //moneda del documento es hard
+           amountPaid = cs.amountPaid;
+         } else {
+           //moneda del documento es local
+           amountPaid = cs.amountPaid * this.collectService.collection.nuValueLocal;
+         }
+       }
+  */
+      amountPaid = cs.amountPaid;
       //cs.documentSales[index].nuBalance = amountPaid;
       cs.documentSales[index].nuAmountPaid = amountPaid;
       //cs.documentSalesBackup[index].nuBalance = amountPaid;
@@ -1292,13 +1344,13 @@ export class CobrosDocumentComponent implements OnInit {
         }
         if (doc.daVoucher === "") {
           this.disabledSaveButton = true;
-          if (Math.abs(cs.amountPaid) > doc.nuBalance || cs.amountPaid < 0) {
+          if ((!isAlwaysPartialWithFixedMode && Math.abs(cs.amountPaid) > doc.nuBalance) || cs.amountPaid < 0) {
             cs.mensaje = "El monto no puede ser mayor al monto del documento";
             this.alertMessageOpen = true;
           }
           return;
         }
-        if (Math.abs(cs.amountPaid) > doc.nuBalance || cs.amountPaid < 0) {
+        if ((!isAlwaysPartialWithFixedMode && Math.abs(cs.amountPaid) > doc.nuBalance) || cs.amountPaid < 0) {
           cs.mensaje = "El monto no puede ser mayor al monto del documento";
           this.alertMessageOpen = true;
           this.disabledSaveButton = true;
@@ -1313,7 +1365,7 @@ export class CobrosDocumentComponent implements OnInit {
     }
 
     // Si el monto pagado es mayor al saldo
-    if (Math.abs(cs.amountPaid) > Math.abs(doc.nuBalance)) {
+    if (!isAlwaysPartialWithFixedMode && Math.abs(cs.amountPaid) > Math.abs(doc.nuBalance)) {
       cs.mensaje = cs.isPaymentPartial
         ? cs.collectionTags.get('COB_MSJ_PARTIALPAY_MAYOR_DOCAMOUNT')!
         : cs.collectionTags.get('COB_MSJ_PAY_MAYOR_DOCAMOUNT')!;
@@ -2074,6 +2126,7 @@ export class CobrosDocumentComponent implements OnInit {
   }
 
   openAssignDiscounts() {
+    this.manualCollectDiscountAmountBackup = this.manualCollectDiscountAmount;
     // Normalize selectedCollectDiscounts into prevSelectedCollectDiscounts
     if (Array.isArray(this.collectService.selectedCollectDiscounts)) {
       this.collectService.prevSelectedCollectDiscounts = (this.collectService.selectedCollectDiscounts as any[]).map(item => {
@@ -2155,11 +2208,15 @@ export class CobrosDocumentComponent implements OnInit {
 
   getDiscountSelectionOrder(id: number): number | null {
     const idx = this.collectService.tempSelectedCollectDiscounts.findIndex(x => x.idCollectDiscount === id);
-    return idx >= 0 ? idx + 1 : null;
+    if (idx < 0) return null;
+    const manualOffset = this.hasManualCollectDiscount() ? 1 : 0;
+    return idx + 1 + manualOffset;
   }
 
   clearTempSelection() {
     this.collectService.tempSelectedCollectDiscounts = [];
+    this.manualCollectDiscountAmount = 0;
+    this.manualCollectDiscountAmountBackup = 0;
     let index = this.collectService.documentSaleOpen.positionCollecDetails;
 
     if (Number.isInteger(index) && index >= 0 && index < (this.collectService.collection.collectionDetails?.length ?? 0)) {
@@ -2173,6 +2230,7 @@ export class CobrosDocumentComponent implements OnInit {
   }
 
   async acceptCollectDiscounts() {
+    this.setManualCollectDiscountAmount(this.manualCollectDiscountAmount);
 
     this.collectService.selectedCollectDiscounts = this.collectService.tempSelectedCollectDiscounts.map(d => d.idCollectDiscount);
 
@@ -2202,20 +2260,27 @@ export class CobrosDocumentComponent implements OnInit {
       ? (this.collectService.collection.collectionDetails[idxDetail as number]?.collectionDetailDiscounts ?? [])
       : [];
 
-    const restored: CollectDiscounts[] = details.map(dd => {
-      const base = this.collectService.collectDiscounts.find(cd => cd.idCollectDiscount === dd.idCollectDiscount);
-      const merged: CollectDiscounts = {
-        ...(base || {} as any),
-        idCollectDiscount: dd.idCollectDiscount,
-        nuCollectDiscount: (dd as any).nuCollectDiscountOther ?? base?.nuCollectDiscount,
-        naCollectDiscount: (dd as any).naCollectDiscountOther ?? base?.naCollectDiscount,
-        nuAmountCollectDiscount: (dd as any).nuAmountCollectDiscountOther ?? base?.nuAmountCollectDiscount,
-      } as any;
-      return merged;
-    });
+    const restored: CollectDiscounts[] = details
+      .filter(dd => Number(dd?.idCollectDiscount) > 0)
+      .map(dd => {
+        const base = this.collectService.collectDiscounts.find(cd => cd.idCollectDiscount === dd.idCollectDiscount);
+        const merged: CollectDiscounts = {
+          ...(base || {} as any),
+          idCollectDiscount: dd.idCollectDiscount,
+          nuCollectDiscount: (dd as any).nuCollectDiscountOther ?? base?.nuCollectDiscount,
+          naCollectDiscount: (dd as any).naCollectDiscountOther ?? base?.naCollectDiscount,
+          nuAmountCollectDiscount: (dd as any).nuAmountCollectDiscountOther ?? base?.nuAmountCollectDiscount,
+        } as any;
+        return merged;
+      });
 
     this.collectService.tempSelectedCollectDiscounts = restored;
     this.collectService.prevSelectedCollectDiscounts = restored.map(d => ({ ...d }));
+    const manualFromDetails = this.getManualCollectDiscountFromDetails(details as CollectionDetailDiscounts[]);
+    this.manualCollectDiscountAmount = manualFromDetails > 0
+      ? manualFromDetails
+      : this.manualCollectDiscountAmountBackup;
+    this.manualCollectDiscountAmountBackup = this.manualCollectDiscountAmount;
     // Keep modal closed
     this.assignDiscountsOpen = false;
     this.cdr.detectChanges();
@@ -2269,6 +2334,30 @@ export class CobrosDocumentComponent implements OnInit {
       // aplicar descuentos secuencialmente, guardando el monto por iteración
       const calculatedDiscounts: CollectDiscounts[] = [];
       let discountTotal = 0;
+      const rawManualDiscount = Number(this.manualCollectDiscountAmount ?? 0);
+      const manualDiscount = Number.isFinite(rawManualDiscount) ? Math.max(0, rawManualDiscount) : 0;
+      const manualDiscountApplied = Math.min(manualDiscount, Math.max(0, runningBalance));
+
+      if (manualDiscountApplied > 0) {
+        detailBaseNew = Math.max(0, detailBaseNew - manualDiscountApplied);
+        discountTotal += manualDiscountApplied;
+        runningBalance = Number((runningBalance - manualDiscountApplied).toFixed(parteDecimal));
+        calculatedDiscounts.push({
+          idCollectDiscount: this.MANUAL_COLLECT_DISCOUNT_ID,
+          nuCollectDiscount: 0,
+          naCollectDiscount: this.MANUAL_COLLECT_DISCOUNT_LABEL,
+          requireInput: false,
+          nuAmountCollectDiscount: manualDiscountApplied,
+          nuAmountCollectDiscountConversion: this.collectService.convertirMonto(
+            manualDiscountApplied,
+            this.collectService.collection.nuValueLocal,
+            this.collectService.documentSaleOpen.coCurrency
+          ),
+          position: 1
+        } as CollectDiscounts);
+      }
+      this.manualCollectDiscountAmount = manualDiscountApplied;
+
       selectedIds.forEach(id => {
         const temp = this.collectService.tempSelectedCollectDiscounts.find(cd => cd.idCollectDiscount === id);
         const catalog = this.collectService.collectDiscounts.find(cd => cd.idCollectDiscount === id);
@@ -2284,7 +2373,11 @@ export class CobrosDocumentComponent implements OnInit {
         detailBaseNew -= step;
 
 
-        const entry: CollectDiscounts = { ...source, nuAmountCollectDiscount: step } as any;
+        const entry: CollectDiscounts = {
+          ...source,
+          nuAmountCollectDiscount: step,
+          position: calculatedDiscounts.length + 1
+        } as any;
         calculatedDiscounts.push(entry);
 
 
@@ -2320,6 +2413,7 @@ export class CobrosDocumentComponent implements OnInit {
       this.collectService.totalCollectDiscounts = discountTotal;
       this.collectService.totalCollectDiscountsSelected = totalDiscounts;
       this.collectService.totalCollectDiscountsView = this.formatNumber(discountTotal);
+      this.manualCollectDiscountAmountBackup = this.manualCollectDiscountAmount;
 
       // actualizar detalle de colección
       if (Number.isInteger(idxDetail) && (idxDetail as number) >= 0) {
@@ -2329,7 +2423,7 @@ export class CobrosDocumentComponent implements OnInit {
           nuAmountCollectDiscount: discountTotal,
           nuAmountCollectDiscountConversion: this.collectService.convertirMonto(discountTotal, this.collectService.collection.nuValueLocal, this.collectService.documentSaleOpen.coCurrency),
           nuCollectDiscount: totalDiscounts,
-          hasDiscount: totalDiscounts > 0,
+          hasDiscount: discountTotal > 0,
           nuAmountPaid: newBalance
         };
         const clonedDetails = [...this.collectService.collection.collectionDetails];
@@ -2397,6 +2491,29 @@ export class CobrosDocumentComponent implements OnInit {
       }
     });
 
+    if (this.hasManualCollectDiscount()) {
+      const currencyCode = this.collectService.documentSaleOpen?.coCurrency || this.collectService.collection.coCurrency;
+      const manualAmount = Number(this.manualCollectDiscountAmount ?? 0);
+      const manualDiscount: CollectionDetailDiscounts = {
+        idCollectionDetailDiscount: this.MANUAL_COLLECT_DISCOUNT_ID,
+        idCollectionDetail: idCollectionDetail!,
+        idCollectDiscount: this.MANUAL_COLLECT_DISCOUNT_ID,
+        coCollection: coCollection,
+        nuCollectDiscountOther: null,
+        naCollectDiscountOther: this.MANUAL_COLLECT_DISCOUNT_LABEL,
+        nuAmountCollectDiscountOther: manualAmount,
+        nuAmountCollectDiscountOtherConversion: this.collectService.convertirMonto(
+          manualAmount,
+          this.collectService.collection.nuValueLocal,
+          currencyCode
+        ),
+        posicion: this.detailCollectDiscountsPos + 1,
+        coDocument: coDocument
+      };
+      this.collectService.collection.collectionDetails[index].collectionDetailDiscounts!.push(manualDiscount);
+      this.detailCollectDiscountsPos++;
+    }
+
 
     this.collectService.tempSelectedCollectDiscounts = [];
     this.collectService.prevSelectedCollectDiscounts = [];
@@ -2409,9 +2526,12 @@ export class CobrosDocumentComponent implements OnInit {
       ? this.collectService.selectedCollectDiscounts
       : [];
 
-    if (ids.length === 0) return '';
+    const names: string[] = [];
+    if (this.hasManualCollectDiscount()) {
+      names.push(`${this.MANUAL_COLLECT_DISCOUNT_LABEL}: ${this.formatNumber(this.manualCollectDiscountAmount)}`);
+    }
 
-    const names = ids.map(id => {
+    const percentageNames = ids.map(id => {
       const d = this.collectService.collectDiscounts.find(cd => cd.idCollectDiscount === id);
       if (!d) return '';
       const rate = d.nuCollectDiscount != null ? String(d.nuCollectDiscount) : '';
@@ -2422,7 +2542,29 @@ export class CobrosDocumentComponent implements OnInit {
       return '';
     }).filter(n => !!n);
 
+    names.push(...percentageNames);
     return names.join(', ');
+  }
+
+  public setManualCollectDiscountAmount(value: any): void {
+    const parsed = Number(String(value ?? '').replace(',', '.'));
+    const cleanValue = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+    this.manualCollectDiscountAmount = cleanValue;
+  }
+
+  public hasSelectedOrManualCollectDiscounts(): boolean {
+    return this.collectService.selectedCollectDiscounts.length > 0 || this.hasManualCollectDiscount();
+  }
+
+  private hasManualCollectDiscount(): boolean {
+    return Number(this.manualCollectDiscountAmount ?? 0) > 0;
+  }
+
+  private getManualCollectDiscountFromDetails(discounts: CollectionDetailDiscounts[]): number {
+    const manualDiscount = discounts.find(d => Number(d?.idCollectDiscount) === this.MANUAL_COLLECT_DISCOUNT_ID);
+    if (!manualDiscount) return 0;
+    const amount = Number(manualDiscount.nuAmountCollectDiscountOther ?? 0);
+    return Number.isFinite(amount) ? Math.max(0, amount) : 0;
   }
 
   setNuCollectDiscount(idCollectDiscount: number, nuCollectDiscount: any) {

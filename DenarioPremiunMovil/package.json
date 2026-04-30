@@ -7,6 +7,8 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "ios:copy": "npm run build && npx cap copy ios",
+    "ios:sync": "npm run build && npx cap sync ios",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint"

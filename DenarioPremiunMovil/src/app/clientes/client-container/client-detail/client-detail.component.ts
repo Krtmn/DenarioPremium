@@ -12,6 +12,8 @@ import { ClientLogicService } from 'src/app/services/clientes/client-logic.servi
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { AddresClient } from 'src/app/modelos/tables/addresClient';
 
+type ClientWithBalanceAlias = Client & { saldo?: number };
+
 @Component({
   selector: 'app-client-detail',
   templateUrl: './client-detail.component.html',
@@ -32,6 +34,7 @@ export class ClienteComponent implements OnInit {
   public multiCurrency!: Boolean;
   public tagRif: string = "";
   public nuCreditLimitConversion: string = "";
+  public availableCreditConversion: string = "";
   public localCurrency = '';
   public hardCurrency = '';
   public decimales = 2;
@@ -64,43 +67,28 @@ export class ClienteComponent implements OnInit {
 
     this.selectedAddress = this.clientLogic.listaDirecciones.find(address => address.idAddress === this.client.idAddressClients)!;
 
+    this.localCurrency = this.currencyService.localCurrency.coCurrency;
     if (this.clientLogic.multiCurrency) {
-      if (this.currencyService.multimoneda) {
-        //arreglamos el saldo del cliente
-        //porque vergas saldo1 y saldo2 significan vainas distintas aqui y en la lista nunca sabré.
-        // Asumo que estaban rascaos cuando lo escribieron...
-        this.saldoLocal = 0, this.saldoFuerte = 0;
-          this.saldoLocal = this.client.saldo1 + this.currencyService.toLocalCurrency(this.client.saldo2);
-          this.saldoFuerte = this.currencyService.toHardCurrency(this.saldoLocal);
-        if (this.client.coCurrency === this.clientLogic.localCurrency.coCurrency) {
-          //saldoCliente es ahora saldoLocal
-          //saldoOpuesto es ahora saldoFuerte
-          //como es fijo, se hace antes del if.
-          this.nuCreditLimitConversion = this.formatNumber(this.currencyService.toHardCurrency(this.client.nuCreditLimit));
-        } else {
-          //this.saldoCliente = this.client.saldo1 + this.currencyService.toHardCurrency(this.client.saldo2);
-          //this.saldoOpuesto = this.currencyService.toLocalCurrency(this.saldoCliente);
-          this.nuCreditLimitConversion = this.formatNumber(this.currencyService.toLocalCurrency(this.client.nuCreditLimit));
-        }
-        //this.client.saldo1 = saldoCliente;
-        //this.client.saldo2 = saldoOpuesto;
-        //saldoCliente = saldoOpuesto = 0;
+      this.hardCurrency = this.currencyService.hardCurrency.coCurrency;
+    }
+    this.decimales = this.currencyService.precision;
 
-      }
-    } else {
-      this.client.saldo1 = this.client.saldo1;
+    this.initializeClientBalances();
+
+    if (this.clientLogic.multiCurrency && this.currencyService.multimoneda) {
+        if (this.client.coCurrency === this.clientLogic.localCurrency.coCurrency) {
+          this.nuCreditLimitConversion = this.formatNumber(this.currencyService.toHardCurrency(this.client.nuCreditLimit));
+          this.availableCreditConversion = this.formatNumber(this.currencyService.toHardCurrency(this.getAvailableCredit()));
+        } else {
+          this.nuCreditLimitConversion = this.formatNumber(this.currencyService.toLocalCurrency(this.client.nuCreditLimit));
+          this.availableCreditConversion = this.formatNumber(this.currencyService.toLocalCurrency(this.getAvailableCredit()));
+        }
     }
 
 
     this.document = this.clientLogic.datos.document;
 
     this.tagRif = this.globalConfig.get("tagRif")!;
-
-    this.localCurrency = this.currencyService.localCurrency.coCurrency;
-    if (this.clientLogic.multiCurrency)
-      this.hardCurrency = this.currencyService.hardCurrency.coCurrency;
-
-    this.decimales = this.currencyService.precision;
 
     this.subjectClientShareModalOpen = this.clientLogic.closeClientShareModal.subscribe((open: Boolean) => {
       this.clientShareModalOpen = false;
@@ -119,6 +107,30 @@ export class ClienteComponent implements OnInit {
     const s = String(value).trim();
     if (s === '' || s.toLowerCase() === 'null') return '';
     return s;
+  }
+
+  private initializeClientBalances(): void {
+    const saldo1 = this.getClientSaldo1();
+    const saldo2 = this.getClientSaldo2();
+
+    this.saldoLocal = saldo1;
+    this.saldoFuerte = saldo2;
+
+    if (!this.clientLogic.multiCurrency || !this.currencyService.multimoneda) {
+      return;
+    }
+
+    this.saldoLocal = saldo1 + this.currencyService.toLocalCurrency(saldo2);
+    this.saldoFuerte = this.currencyService.toHardCurrency(this.saldoLocal);
+  }
+
+  private getClientSaldo1(): number {
+    const client = this.client as ClientWithBalanceAlias;
+    return Number(client?.saldo1 ?? client?.saldo ?? 0);
+  }
+
+  private getClientSaldo2(): number {
+    return Number(this.client?.saldo2 ?? 0);
   }
 
   openDoc(idDocumento: number, index: number) {
@@ -174,6 +186,10 @@ export class ClienteComponent implements OnInit {
 
   formatNumber(num: number) {
     return this.currencyService.formatNumber(num);
+  }
+
+  getAvailableCredit(): number {
+    return Number(this.client?.nuCreditLimit ?? 0) - (this.getClientSaldo1() + this.getClientSaldo2());
   }
 
   getDaDueDate(daDueDate: string) {

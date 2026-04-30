@@ -49,7 +49,6 @@ export class InventariosLogicService {
   public inventarioComp: Boolean = false;
   public inventarioList: Boolean = false;
   public containerComp: Boolean = true;
-  public typeStocksComponent: Boolean = false;
   public showButtons = new Subject<Boolean>;
   public newClientStock: ClientStocks = {} as ClientStocks;
   public stockValid = new Subject<Boolean>;
@@ -103,6 +102,7 @@ export class InventariosLogicService {
   public inventarioSent: Boolean = false;
   public showProductList: Boolean = false;
   public isEdit: Boolean = false;
+  public selectedInventoryType: 'exh' | 'dep' = 'exh';
 
   public message!: string;
 
@@ -208,6 +208,7 @@ export class InventariosLogicService {
     this.newClientStock.productList = [] as ProductUtil[];
     this.productTypeStocksMap = new Map<number, number>();
     this.typeStocks = [] as Inventarios[];
+    this.selectedInventoryType = 'exh';
     this.disabledEnterprise = this.globalConfig.get('enterpriseEnabled') === 'true' ? false : true;
     this.expirationBatch = this.globalConfig.get('expirationBatch') === 'true' ? true : false;
     this.suggestedOrderByDispatchAndReturn = this.globalConfig.get("suggestedOrderByDispatchAndReturn")?.toLowerCase() === "true";

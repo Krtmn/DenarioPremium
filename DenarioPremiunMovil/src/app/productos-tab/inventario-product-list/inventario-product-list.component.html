@@ -2,18 +2,38 @@
 <div class="listado-product-structures">
   <!--  Listado clickeable de productos  -->
   <div class="product-card product-structure-scroll">
-    @if(noProductsAlertShown){
+    <div class="inventory-type-selector ion-padding-horizontal ion-padding-top">
+      <ion-label class="selector-title">Ubicacion del inventario</ion-label>
+      <ion-segment [value]="selectedInventoryType" (ionChange)="onInventoryTypeChanged($event.detail.value)">
+        <ion-segment-button value="exh">
+          <ion-label>{{this.productsTabTags.get('INV_TYPESTOCK_EXH') || 'Exhibicion'}}</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="dep">
+          <ion-label>{{this.productsTabTags.get('INV_TYPESTOCK_DEP') || 'Deposito'}}</ion-label>
+        </ion-segment-button>
+      </ion-segment>
+
+      <ion-label class="selector-title inventory-filter-title">Filtro de productos</ion-label>
+      <ion-segment class="inventory-filter-segment" [value]="inventoryFilter"
+        (ionChange)="onInventoryFilterChanged($event.detail.value)">
+        <ion-segment-button value="all">
+          <ion-label>Todos</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="inventoried">
+          <ion-label>Inventariados</ion-label>
+        </ion-segment-button>
+      </ion-segment>
+    </div>
+    @if(noProductsAlertShown || getVisibleProducts().length === 0){
     <ion-item>
       <ion-label class="ion-text-center" style="color: red;">
         {{this.productsTabTags.get("DENARIO_SIN_RESULTADOS")}}
       </ion-label>
     </ion-item>
     }
-    <ion-content>
-      <ion-list>
-        @for (product of inventariosLogicService.newClientStock.productList; track $index; let pro = $index) {
-        @if(searchText === '' || product.coProduct.toLowerCase().includes(searchText.toLowerCase()) ||
-        product.naProduct.toLowerCase().includes(searchText.toLowerCase())){
+    <ion-content class="products-list-content" [forceOverscroll]="false" scrollY="true">
+      <ion-list class="products-list-inner">
+        @for (product of getVisibleProducts(); track $index; let pro = $index) {
         <div class="product-structure-title" (click)="onSelectProductInv(pro,product)">
           <ion-item button detail="false" [id]="'modalTypes'+product.idProduct">
             <ion-label fixed class="fixedLabel">
@@ -23,6 +43,11 @@
             <ion-label class="textList">
               <p>{{ product.naProduct }}</p>
               <p>{{this.productsTabTags.get('PROD_COD_PROD')}}: {{ product.coProduct }}</p>
+              @if(isProductInventoried(product)){
+              <p class="product-inventoried-chip">
+                Inventariado: {{ getInventoryLocationLabel(product) }}
+              </p>
+              }
             </ion-label>
             <ion-note slot="end">
               <ion-icon class="icon-List2" name="chevron-forward-outline"></ion-icon>
@@ -30,10 +55,9 @@
           </ion-item>
         </div>
         }
-        }
 
       </ion-list>
-      <ion-infinite-scroll (ionInfinite)="onIonInfinite($event)">
+      <ion-infinite-scroll class="products-infinite-scroll" (ionInfinite)="onIonInfinite($event)">
         <ion-infinite-scroll-content loadingText="Por favor espere..."
           loadingSpinner="bubbles"></ion-infinite-scroll-content>
       </ion-infinite-scroll>
@@ -42,3 +66,106 @@
   </div>
 </div>
 }
+
+<ion-modal [isOpen]="showTypeStocksModal" (didDismiss)="closeTypeStocksModal()" class="inventory-type-stocks-modal"
+  backdrop-dismiss="false">
+  <ng-template>
+    <ion-header translucent>
+      <ion-toolbar class="inventory-modal-toolbar">
+        <ion-buttons slot="start">
+          <ion-button class="header-icon-btn close-btn" fill="clear" (click)="closeTypeStocksModal()"
+            aria-label="Cerrar modal">
+            <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+
+        <ion-title class="inventory-modal-title">
+          <div class="modal-product-name">
+            {{inventariosLogicService.productSelected.naProduct || 'Inventario'}}
+          </div>
+        </ion-title>
+
+        <ion-buttons slot="end">
+          <ion-button class="header-icon-btn save-btn" fill="clear" (click)="saveInventoryRows()"
+            aria-label="Guardar inventario">
+            <ion-icon slot="icon-only" name="checkmark-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="compact-modal-content">
+      @if(showModalTypeSelector){
+      <div class="modal-type-selector">
+        <ion-segment [value]="modalInventoryType" (ionChange)="onModalInventoryTypeChanged($event.detail.value)">
+          <ion-segment-button value="exh">
+            <ion-label>{{this.productsTabTags.get('INV_TYPESTOCK_EXH') || 'Exhibicion'}}</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="dep">
+            <ion-label>{{this.productsTabTags.get('INV_TYPESTOCK_DEP') || 'Deposito'}}</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+      </div>
+      }
+
+      <ion-list lines="none" class="compact-capture-list">
+        @for (row of inventoryRows; track $index; let i = $index) {
+        <ion-card class="capture-row-card">
+          <ion-card-header>
+            <div class="capture-header-row">
+              <ion-card-title>
+                {{modalInventoryType === 'exh' ? (this.productsTabTags.get('INV_TYPESTOCK_EXH') || 'Exhibicion') :
+                (this.productsTabTags.get('INV_TYPESTOCK_DEP') || 'Deposito')}}
+                - {{i + 1}}
+              </ion-card-title>
+              @if(inventoryRows.length >= 1){
+              <ion-button class="delete-row-btn" fill="clear" (click)="removeInventoryRow(i)"
+                aria-label="Eliminar lote">
+                <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+              </ion-button>
+              }
+            </div>
+          </ion-card-header>
+          <ion-card-content>
+            <ion-item class="capture-form-item" lines="none">
+              <ion-input class="capture-input" type="number" min="1" label="Cantidad" labelPlacement="stacked"
+                fill="outline" placeholder="Ingresa cantidad" [(ngModel)]="row.cantidad"></ion-input>
+            </ion-item>
+            <ion-item class="capture-form-item" lines="none">
+              <ion-input class="capture-input" label="Lote" labelPlacement="stacked" fill="outline"
+                placeholder="Ingresa lote" [(ngModel)]="row.lote"></ion-input>
+            </ion-item>
+            <ion-item class="capture-form-item" lines="none">
+              <ion-select class="capture-select" labelPlacement="stacked" interface="popover" fill="outline"
+                [(ngModel)]="row.unidad">
+                @for (unit of inventariosLogicService.productSelected.productUnitList; track $index) {
+                <ion-select-option [value]="unit">{{ unit.naUnit }}</ion-select-option>
+                }
+              </ion-select>
+            </ion-item>
+
+            <ion-item>
+              <ion-label>Fecha de vencimiento</ion-label>
+              <ion-datetime-button [datetime]="'expDate' + i"></ion-datetime-button>
+            </ion-item>
+            <ion-modal [keepContentsMounted]="true">
+              <ng-template>
+                <ion-datetime [id]="'expDate' + i" presentation="date" [(ngModel)]="row.fechaVencimiento"
+                  [showDefaultButtons]="true" max="2100-12-31T23:59:59"
+                  doneText="{{this.productsTabTags.get('INV_BOTON_ACEPTAR') || 'Aceptar'}}"
+                  cancelText="{{this.productsTabTags.get('INV_BOTON_CANCELAR') || 'Cancelar'}}"></ion-datetime>
+              </ng-template>
+            </ion-modal>
+
+          </ion-card-content>
+        </ion-card>
+        }
+      </ion-list>
+
+      <div class="add-row-actions">
+        <ion-button class="add-lot-button" shape="round" (click)="addInventoryRow()" aria-label="Agregar lote">
+          <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+        </ion-button>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>

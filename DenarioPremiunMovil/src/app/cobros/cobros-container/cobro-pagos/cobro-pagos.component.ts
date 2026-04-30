@@ -251,9 +251,9 @@ export class CobroPagosComponent implements OnInit {
     const monto = Number(removedPago.monto) || 0;
     this.collectService.montoTotalPagado -= monto;
     if (this.collectService.collection.coCurrency == this.collectService.localCurrency.coCurrency) {
-      this.collectService.montoTotalPagadoConversion = this.currencyService.toHardCurrency(this.collectService.montoTotalPagado);
+      this.collectService.montoTotalPagadoConversion = this.collectService.convertirMonto(this.collectService.montoTotalPagado,0, this.collectService.collection.coCurrency);
     } else {
-      this.collectService.montoTotalPagadoConversion = this.currencyService.toLocalCurrency(this.collectService.montoTotalPagado)
+      this.collectService.montoTotalPagadoConversion = this.collectService.convertirMonto(this.collectService.montoTotalPagado, 0, this.collectService.collection.coCurrency);
     }
 
     // Actualizar totales usando el monto del pago eliminado

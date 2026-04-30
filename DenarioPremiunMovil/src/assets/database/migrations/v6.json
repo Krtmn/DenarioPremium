@@ -1,14 +1,15 @@
 [
     {
-        "sql":"ALTER TABLE return_types ADD COLUMN id_return_category integer;",
-        "description":"Se agrega la columna 'id_return_category' a la tabla 'return_types' para establecer una relación con la categoría de devolución."
+        "sql": "ALTER TABLE lists ADD COLUMN show_only boolean DEFAULT FALSE;",
+        "description": "Se agrega la columna 'show_only' a la tabla 'lists' para indicar si solo se debe mostrar."
     },
     {
-        "sql": "ALTER TABLE client_stocks ADD COLUMN days_since_last INTEGER;",
-        "description": "Se agrega la columna 'days_since_last' a la tabla 'client_stocks' para almacenar los días desde el último inventario."
+        "sql": "ALTER TABLE stocks ADD COLUMN co_unit VARCHAR(80)",
+        "description": "Se agrega la columna 'co_unit' a la tabla 'stocks' para almacenar la unidad de medida del stock."
     },
     {
-        "sql":" ALTER TABLE client_stocks ADD COLUMN days_until_next INTEGER;",
-        "description":"Se agrega la columna 'days_until_next' a la tabla 'client_stocks' para almacenar los días hasta el próximo inventario."
+        "sql": "UPDATE versionsTables SET last_update = '1970-01-01 00:00:00.000'  WHERE name_table = 'stockTable'",
+        "description": "Se actualiza la fecha de última actualización de la tabla 'stockTable' para forzar una sincronización completa."
+
     }
 ]

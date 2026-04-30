@@ -487,21 +487,21 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
     });
 
     if (data.total) {
-      const totalLabelWidth = normalizedWidths.slice(0, Math.max(1, normalizedWidths.length - 1)).reduce((sum, width) => sum + width, 0);
-      const totalValueWidth = normalizedWidths[normalizedWidths.length - 1] ?? usableWidth;
-      const totalHeight = 36;
+      const totalText = this.escapePdfText(`${data.total.label}: ${data.total.value}`);
+      const totalTextWidth = Math.max(20, usableWidth - rowPaddingX * 2);
+      const totalLines = doc.splitTextToSize(totalText, totalTextWidth);
+      const totalHeight = Math.max(36, totalLines.length * lineHeight + rowPaddingY * 2);
 
       ensureTableSpace(totalHeight);
 
       doc.setDrawColor(184, 217, 167);
       doc.setFillColor(...totalColor);
-      doc.rect(marginX, cursorY, totalLabelWidth, totalHeight, 'FD');
-      doc.rect(marginX + totalLabelWidth, cursorY, totalValueWidth, totalHeight, 'FD');
+      doc.rect(marginX, cursorY, usableWidth, totalHeight, 'FD');
+
       doc.setTextColor(29, 53, 21);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(15);
-      doc.text(this.escapePdfText(data.total.label), marginX + totalLabelWidth - 10, cursorY + 23, { align: 'right' });
-      doc.text(this.escapePdfText(data.total.value), marginX + totalLabelWidth + totalValueWidth - 10, cursorY + 23, { align: 'right' });
+      doc.text(totalLines, marginX + usableWidth - rowPaddingX, cursorY + rowPaddingY + 12, { align: 'right' });
       cursorY += totalHeight;
     }
 
@@ -605,8 +605,9 @@ async generateWithJsPDF(source: HTMLElement | string, opts?: { orientation?: 'po
     const totalRow = data.total
       ? `
         <tr>
-          <td colspan="${Math.max(1, data.columns.length - 1)}" style="text-align:right; padding:14px; border:1px solid #b8d9a7; font-weight:700; font-size:16px; background:#edf7e6; color:#1d3515;">${this.escapeHtml(data.total.label)}</td>
-          <td style="text-align:right; padding:14px; border:1px solid #b8d9a7; font-weight:700; font-size:16px; background:#edf7e6; color:#1d3515; white-space:nowrap;">${this.escapeHtml(data.total.value)}</td>
+          <td colspan="${Math.max(1, data.columns.length)}" style="text-align:right; padding:14px; border:1px solid #b8d9a7; font-weight:700; font-size:16px; background:#edf7e6; color:#1d3515; word-break:break-word; overflow-wrap:anywhere;">
+            ${this.escapeHtml(`${data.total.label}: ${data.total.value}`)}
+          </td>
         </tr>
       `
       : '';

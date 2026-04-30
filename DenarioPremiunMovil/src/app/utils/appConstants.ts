@@ -5,6 +5,14 @@ export const DELIVERY_STATUS_SENT = 1;
 export const DELIVERY_STATUS_TO_SEND = 2;
 export const DELIVERY_STATUS_SAVED = 3;
 
+
+//Valores de status de envio (stDelivery)
+
+export const CLIENTSTOCK_STATUS_NEW = 0
+export const CLIENTSTOCK_STATUS_SENT = 1;
+export const CLIENTSTOCK_STATUS_TO_SEND = 2;
+export const CLIENTSTOCK_STATUS_SAVED = 3;
+
 //FIN VALORES ENVIO
 
 //Valores de status de envio (stDelivery)

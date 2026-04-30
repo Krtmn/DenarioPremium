@@ -87,7 +87,6 @@ import { DevolucionListComponent } from './devoluciones/devoluciones-container/d
 import { InventarioListComponent } from './inventarios/inventario-container/inventario-list/inventario-list/inventario-list.component';
 import { ClienteContainerComponent } from './clientes/client-container/client-container.component';
 import { InvoiceSelectorComponent } from './devoluciones/devoluciones-container/devolucion/devolucion-general/invoice-selector/invoice-selector.component';
-import { InventarioTypeStocksComponent } from './inventarios/inventario-container/inventario-type-stocks/inventario-type-stocks.component';
 import { DepositosContainerComponent } from './depositos/depositos-container/depositos-container/depositos-container.component';
 import { DepositService } from './services/deposit/deposit.service';
 import { DepositosComponent } from './depositos/depositos.component';
@@ -177,7 +176,6 @@ import { InventarioSugeridoPreviewComponent } from './inventarios/inventario-con
     InventarioActividadesComponent,
     InventarioProductListComponent,
     InventarioListComponent,
-    InventarioTypeStocksComponent,
     DepositosComponent,
     DepositosContainerComponent,
     DepositosHeaderComponent,

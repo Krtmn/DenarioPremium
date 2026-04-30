@@ -263,3 +263,12 @@ ion-grid.ion-margin-top ion-row > ion-col.padding0:first-child {
 ion-grid.ion-margin-top ion-row > ion-col.padding0:first-child ion-label {
   white-space: nowrap;
 }
+.tituloModulos {
+    color: #fff;
+    font-weight: 700;
+    font-family: sans-serif;
+    margin: 0;
+    font-size: 24px;
+    padding-top: 7px;
+    text-transform: capitalize !important;
+}

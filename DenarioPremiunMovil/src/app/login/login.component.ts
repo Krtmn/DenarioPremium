@@ -21,6 +21,7 @@ import { Imagenes } from '../modelos/imagenes';
 import { ScreenOrientation, OrientationType } from '@capawesome/capacitor-screen-orientation';
 import { Keyboard } from '@capacitor/keyboard';
 import { from } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
 
 @Component({
@@ -61,11 +62,22 @@ export class LoginComponent implements OnInit {
   public networkListener!: PluginListenerHandle;
   public isIOS: boolean = false; // <-- NUEVA PROPIEDAD
   public showFooter: boolean = true; // <-- NUEVA PROPIEDAD
+  public currentYear: number = new Date().getFullYear();
 
   async ngOnInit() {
     /* App.getInfo().then(async (res) => { */
     // preferir la versión real del paquete si está disponible, si no usar fallback
-    this.versionApp = "6.6.8";
+    this.versionApp = "6.6.12";
+
+    if (localStorage.getItem("tokenExpired") === "true") {
+      localStorage.removeItem("tokenExpired");
+      localStorage.removeItem("token");
+      this.messageAlert = new MessageAlert(
+        "Denario Premium",
+        "Tu sesión expiró. Vuelve a iniciar sesión para continuar sincronizando."
+      );
+      this.message.alertModal(this.messageAlert);
+    }
 
     const storedVersionApp = localStorage.getItem("versionApp");
     // primer arranque: guardamos la versionApp actual
@@ -82,7 +94,7 @@ export class LoginComponent implements OnInit {
             // limpia y vuelve a dejar guardada la nueva versiónApp
             let connected = localStorage.getItem("connected");
             let connectionType = localStorage.getItem("connectionType");
-            await this.synchronization.checkAndRunMigrations();
+            //await this.synchronization.checkAndRunMigrations();
             //localStorage.clear();
             localStorage.setItem("versionApp", this.versionApp);
             localStorage.setItem("connected", String(connected));
@@ -127,16 +139,28 @@ export class LoginComponent implements OnInit {
       localStorage.setItem("login", f.value.login.trim());
       localStorage.setItem("password", f.value.password);
 
-      (await this.synchronization.getCreateTables()).subscribe((res) => {
-        this.loginLogic.dropTables(res).then(async (res: any) => {
-          await this.synchronization.checkAndRunMigrations();
-          console.log(res)
-          console.log(f);
-          localStorage.removeItem("lastUpdate")
-          this.validateConnection(f)
-          //this.subsChangeUser.unsubscribe();
-        })
-      })
+      try {
+        const createTables$ = await this.synchronization.getCreateTables();
+        const tables = await firstValueFrom(createTables$);
+
+        await this.loginLogic.dropTables(tables);
+        // Las migraciones deben correr luego de recrear tablas en initDb/createTables.
+        // Reiniciamos la versión para forzar su ejecución en el flujo correcto.
+        localStorage.removeItem("db_version");
+
+        console.log('Cambio de usuario: tablas eliminadas. Migraciones pendientes al recrear BD.');
+        console.log(f);
+        localStorage.removeItem("lastUpdate");
+        this.validateConnection(f);
+      } catch (e) {
+        console.error('Error durante cambio de usuario (drop/migrations):', e);
+        this.message.hideLoading();
+        this.messageAlert = new MessageAlert(
+          "Denario Premium",
+          "No se pudo completar la preparación de base de datos para el cambio de usuario. Intente nuevamente."
+        );
+        this.message.alertModal(this.messageAlert);
+      }
     })
 
     this.deviceInfo = await Device.getInfo();

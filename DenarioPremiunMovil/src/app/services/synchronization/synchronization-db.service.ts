@@ -113,7 +113,7 @@ export class SynchronizationDBService {
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
-  private CURRENT_DB_VERSION: number = 6;
+  private CURRENT_DB_VERSION: number = 7;
 
   constructor(
     private navController: NavController,
@@ -278,6 +278,7 @@ export class SynchronizationDBService {
       });
     } else {
       if (conexion) {
+        await this.checkAndRunMigrations();
         console.log("YA LAS TABLAS ESTAN CREADAS", user);
         /*      if (localStorage.getItem("sincronizarHome") == "true") {
                localStorage.setItem("sincronizarHome", "false");
@@ -335,6 +336,7 @@ export class SynchronizationDBService {
       }
     } catch (e) {
       console.log('checkAndRunMigrations error', e);
+      throw e;
     }
   }
 
@@ -352,6 +354,7 @@ export class SynchronizationDBService {
       }
     } catch (e) {
       console.log(`runMigrationForVersion v${version} error`, e);
+      throw e;
     }
   }
 
@@ -656,14 +659,17 @@ export class SynchronizationDBService {
   insertListBatch(arr: List[]) {
     var statements = [];
     let insertStatement = "INSERT OR REPLACE INTO lists(" +
-      'id_list,co_list,na_list,co_enterprise,id_enterprise' +
+      'id_list,co_list,na_list,co_enterprise,id_enterprise,show_only' +
       ') ' +
-      'VALUES(?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?)'
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
+      if(obj.showOnly == null || obj.showOnly == undefined){
+        obj.showOnly = false
+      }
       statements.push([insertStatement, [obj.idList, obj.coList, obj.naList,
-      obj.coEnterprise, obj.idEnterprise]])
+      obj.coEnterprise, obj.idEnterprise, obj.showOnly]])
     }
 
     return this.database.sqlBatch(statements).then(res => {
@@ -677,15 +683,15 @@ export class SynchronizationDBService {
     var statements = [];
     let insertStatement = "INSERT OR REPLACE INTO stocks(" +
       'id_stock,id_product,co_product,qu_stock,id_warehouse,' +
-      'co_warehouse,da_update_stock,co_enterprise,id_enterprise' +
+      'co_warehouse,da_update_stock,co_enterprise,id_enterprise,co_unit' +
       ') ' +
-      'VALUES(?,?,?,?,?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?,?,?,?,?)'
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
       statements.push([insertStatement, [obj.idStock, obj.idProduct, obj.coProduct,
       obj.quStock, obj.idWarehouse, obj.coWarehouse,
-      obj.daUpdateStock, obj.coEnterprise, obj.idEnterprise]]);
+      obj.daUpdateStock, obj.coEnterprise, obj.idEnterprise, obj.coUnit]]);
     }
 
     return this.database.sqlBatch(statements).then(res => {

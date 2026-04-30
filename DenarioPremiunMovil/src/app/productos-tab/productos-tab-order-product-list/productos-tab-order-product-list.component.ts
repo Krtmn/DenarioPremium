@@ -81,6 +81,8 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   public imagesMap: { [imgName: string]: string } = {};
   private subs = new Subscription();
 
+  priceListColSize = 12;
+  priceListInfoModal = false;
 
   constructor(
 
@@ -90,6 +92,11 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   ngOnInit() {
     console.log('Estoy en Pedido');
+
+    if (this.orderServ.priceListInfoModal) {
+      //hay que hacer espacio para el boton de info del pricelist
+      this.priceListColSize = 10;
+    }
     this.subs.add(
       this.imageServices.imageLoaded$.subscribe(({ imgName, imgSrc }) => {
         this.imagesMap[imgName] = imgSrc;
@@ -322,7 +329,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     if ((prod.discountList.length > 1)) {
       this.autoDiscount(prod);
     }
-    if (prod.quStock == 0) {
+    if (prod.quStock <= 0) {
       if (this.orderServ.stock0) {
         if (this.orderServ.validStock) {
           //mostramos error, pero dejamos agregar al carrito
@@ -349,7 +356,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     if (this.orderServ.validStock) {
       prod.quStock = prod.quStockAux - prod.quAmount;
     }
-    if (this.orderServ.validStock && (prod.quAmount > prod.quStockAux)) {
+    if (this.orderServ.validStock && !this.orderServ.stock0 &&(prod.quAmount > prod.quStockAux)) {
       this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_INVENTARIO"));
       prod.quAmount = 0;
     } else {
@@ -375,7 +382,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     if (this.orderServ.validStock) {
       prod.quStock = prod.quStockAux - prod.quAmount;
     }
-    if (this.orderServ.validStock && (prod.quAmount > prod.quStockAux)) {
+    if (this.orderServ.validStock && !this.orderServ.stock0 && (prod.quAmount > prod.quStockAux)) {
       this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_ERROR_INVENTARIO"));
       prod.quAmount = 0;
     } else {
@@ -400,6 +407,15 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   showDiscountModal(val: boolean) {
     this.discountModal = val;
+  }
+
+  loadPriceListInfo(prod: OrderUtil) {
+    this.productoModal = prod;
+    this.showPriceListInfoModal(true);
+  }
+
+  showPriceListInfoModal(val: boolean) {
+    this.priceListInfoModal = val;
   }
 
   autoDiscount(prod: OrderUtil) {
@@ -556,6 +572,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     var stock = this.orderServ.listaStock.filter(s => s.idProduct == product.idProduct && s.idWarehouse == warehouse.idWarehouse)[0];
     product.idWarehouse = warehouse.idWarehouse;
     product.naWarehouse = warehouse.naWarehouse;
+    product.coWarehouse = warehouse.coWarehouse;
     if (stock) {
       product.quStock = stock.quStock;
       product.quStockAux = stock.quStock;

@@ -23,6 +23,12 @@
             <ion-label>Carrito</ion-label>
             <ion-badge color="danger">{{ this.orderServ.carrito.length }}</ion-badge>
           </ion-tab-button> }
+           @if(inventario){
+          <ion-tab-button tab="4" (click)="onInventorySelected();">
+            <ion-icon name="clipboard"></ion-icon>
+            <ion-label>Inventario</ion-label>
+            <ion-badge color="danger">{{ getInventoryCount() }}</ion-badge>
+          </ion-tab-button> }
 
         </ion-tab-bar>
       </ion-col>

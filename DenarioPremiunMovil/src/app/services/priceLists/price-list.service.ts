@@ -31,6 +31,7 @@ export class PriceListService {
           naList: result.rows.item(i).na_list,
           idEnterprise: result.rows.item(i).id_enterprise,
           coEnterprise: result.rows.item(i).co_enterprise,
+          showOnly: result.rows.item(i).show_only
         });
       }
     }
@@ -73,13 +74,12 @@ export class PriceListService {
           idProductQuery,
           data.rows.item(0).nu_price_default, // Precio de la lista de precio
           coCurrency, // moneda de la lista de precio
-          data.rows.item(0).co_currency === this.currencyService.getLocalCurrency ?
+          this.currencyService.isLocalCurrency(coCurrency) ?
             this.currencyService.toHardCurrency(data.rows.item(0).nu_price_default) :
             this.currencyService.toLocalCurrency(data.rows.item(0).nu_price_default), // Precio en la moneda opuesta a la lista de precio
-          data.rows.item(0).co_currency === this.currencyService.getLocalCurrency ?
-            this.currencyService.hardCurrency.coCurrency :
-            this.currencyService.localCurrency.coCurrency, // moneda opuesta a la lista de precio
+          this.currencyService.oppositeCoCurrency(coCurrency), // moneda opuesta a la lista de precio
         );
+        console.log('productPrice: ' + JSON.stringify(this.productPrice));
       }).catch(e => {
         console.log("[PriceListService] Error al cargar getPriceListByIdListAndIdProduct.");
         console.log(e);

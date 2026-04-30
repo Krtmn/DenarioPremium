@@ -91,6 +91,13 @@ export class CurrencyService {
     }).format(input);
   }
 
+  public isLocalCurrency(coCurrency: string): boolean {
+    return coCurrency === this.localCurrency.coCurrency;
+  }
+
+  public isHardCurrency(coCurrency: string): boolean {
+    return this.multimoneda && coCurrency === this.hardCurrency.coCurrency;
+  }
   getCurrencyModule(coModule: string): CurrencyModules {
     //Obtiene la configuración de moneda para un modulo segun su coModule
     var cm = this.currencyModulesMap.get(coModule);

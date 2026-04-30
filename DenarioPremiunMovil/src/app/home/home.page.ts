@@ -17,6 +17,7 @@ import { SynchronizationDBService } from '../services/synchronization/synchroniz
 import { SynchronizationComponent } from '../synchronization/synchronization.component';
 import { Subscription } from 'rxjs';
 import { EnterpriseService } from '../services/enterprise/enterprise.service';
+import { BackgroundSyncService } from '../services/background-sync/background-sync.service';
 
 @Component({
   selector: 'app-home',
@@ -37,6 +38,7 @@ export class HomePage implements OnInit {
   public synchronizationServices = inject(SynchronizationDBService)
   private router = inject(Router);
   private enterpriseService = inject(EnterpriseService);
+  private backgroundSync = inject(BackgroundSyncService);
 
   public sub!: object;
   public conexion!: string;
@@ -247,6 +249,9 @@ export class HomePage implements OnInit {
 
     this.alertButtonsSincronice[0].text = "Cancelar"
     this.alertButtonsSincronice[1].text = "Aceptar"
+
+    // Arranca la sincronización en background solo después de ingresar a Home
+    this.backgroundSync.start();
 
   }
 

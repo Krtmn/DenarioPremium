@@ -11,13 +11,22 @@ import { Router } from '@angular/router';
 import { List } from 'src/app/modelos/tables/list';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
-import { DELIVERY_STATUS_SENT } from 'src/app/utils/appConstants';
+import { CLIENTSTOCK_STATUS_NEW, CLIENTSTOCK_STATUS_SAVED, CLIENTSTOCK_STATUS_SENT, CLIENTSTOCK_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 import { Client } from 'src/app/modelos/tables/client';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { ProductSuggestedUtil } from 'src/app/modelos/ProductSuggestedUtil';
 import { ModalController } from '@ionic/angular';
 import { InventarioSugeridoPreviewComponent } from '../inventario-sugerido-preview/inventario-sugerido-preview.component';
+
+interface InventoryRow {
+  rowId: string;
+  coProduct: string;
+  naProduct: string;
+  exhEntries: string[];
+  depEntries: string[];
+  selected: boolean;
+}
 
 @Component({
     selector: 'app-inventario-actividades',
@@ -36,48 +45,74 @@ export class InventarioActividadesComponent implements OnInit {
   public dbServ = inject(SynchronizationDBService);
   public adjuntoService = inject(AdjuntoService)
   public clientStocksTotal: ClientStockTotal[] = [];
+  public inventoryRows: InventoryRow[] = [];
   public router =  inject(Router);
 public modalCtrl = inject(ModalController);
   public message = inject(MessageService);
 
-  public DELIVERY_STATUS_SENT = DELIVERY_STATUS_SENT;// para usar en el html
-
-  constructor() { }
+  public CLIENTSTOCK_STATUS_SENT = CLIENTSTOCK_STATUS_SENT;
+  public CLIENTSTOCK_STATUS_TO_SEND = CLIENTSTOCK_STATUS_TO_SEND;
 
   ngOnInit() {
-    this.inventariosLogicService.productTypeStocksMap.forEach((value, key) => {
-      console.log(key, value);
+    this.rebuildTableData();
+  }
+
+  private rebuildTableData() {
+    this.clientStocksTotal = [];
+    this.inventoryRows = [];
+    const groupedRows = new Map<string, InventoryRow>();
+
+    this.inventariosLogicService.newClientStock.clientStockDetails.forEach((clientStockDetail: any) => {
       let clienStockTotal = {} as ClientStockTotal;
       clienStockTotal.totalUnits = 0;
       clienStockTotal.totalExh = 0;
       clienStockTotal.totalDep = 0;
-      let clientStockDetail = this.inventariosLogicService.newClientStock.clientStockDetails[value];
-      for (var i = 0; i < clientStockDetail.clientStockDetailUnits.length; i++) {
-        let detailUnit = clientStockDetail.clientStockDetailUnits[i];
-        clienStockTotal.idEnterprise = clientStockDetail.idEnterprise;
-        clienStockTotal.coEnterprise = clientStockDetail.coEnterprise;
-        clienStockTotal.idProduct = clientStockDetail.idProduct;
-        clienStockTotal.coProduct = clientStockDetail.coProduct;
-        clienStockTotal.naProduct = clientStockDetail.naProduct;
+      clienStockTotal.idEnterprise = clientStockDetail.idEnterprise;
+      clienStockTotal.coEnterprise = clientStockDetail.coEnterprise;
+      clienStockTotal.idProduct = clientStockDetail.idProduct;
+      clienStockTotal.coProduct = clientStockDetail.coProduct;
+      clienStockTotal.naProduct = clientStockDetail.naProduct;
 
+      clientStockDetail.clientStockDetailUnits.forEach((detailUnit: any) => {
         clienStockTotal.naUnit = detailUnit.naUnit;
         clienStockTotal.idUnit = detailUnit.idUnit;
         clienStockTotal.coUnit = detailUnit.coUnit;
-        clienStockTotal.daExpiration = detailUnit.daExpiration.split("T")[0];
-
-
-        clienStockTotal.totalUnits += detailUnit.quStock;
+        clienStockTotal.daExpiration = (detailUnit.daExpiration || '').split('T')[0];
+        clienStockTotal.totalUnits += Number(detailUnit.quStock || 0);
         clienStockTotal.ubicacion = detailUnit.ubicacion;
-        if (clienStockTotal.ubicacion == "exh")
-          clienStockTotal.totalExh += Number(detailUnit.quStock);
-        else
-          clienStockTotal.totalDep += Number(detailUnit.quStock);
-      }
+
+        if (detailUnit.ubicacion === 'exh') {
+          clienStockTotal.totalExh += Number(detailUnit.quStock || 0);
+        } else {
+          clienStockTotal.totalDep += Number(detailUnit.quStock || 0);
+        }
+
+        const rowKey = clientStockDetail.coProduct;
+        if (!groupedRows.has(rowKey)) {
+          groupedRows.set(rowKey, {
+            rowId: rowKey,
+            coProduct: clientStockDetail.coProduct,
+            naProduct: clientStockDetail.naProduct,
+            exhEntries: [],
+            depEntries: [],
+            selected: false,
+          });
+        }
+
+        const groupedRow = groupedRows.get(rowKey)!;
+        const amountWithUnit = `${Number(detailUnit.quStock || 0)} ${detailUnit.naUnit || ''}`.trim();
+
+        if (detailUnit.ubicacion === 'exh') {
+          groupedRow.exhEntries.push(amountWithUnit);
+        } else {
+          groupedRow.depEntries.push(amountWithUnit);
+        }
+      });
+
       this.clientStocksTotal.push(clienStockTotal);
     });
 
-
-
+    this.inventoryRows = Array.from(groupedRows.values());
   }
   async preguntarSugerirPedido(){
     await this.inventariosLogicService.calcularTotalesSugerenciaPedido(this.dbServ.getDatabase());
@@ -102,6 +137,35 @@ public modalCtrl = inject(ModalController);
     }
   }
   /*
+
+  get selectedRowsCount() {
+    return this.inventoryRows.filter(row => row.selected).length;
+  }
+
+  isInventoryReadOnlyStatus(): boolean {
+    const status = this.inventariosLogicService.newClientStock?.stDelivery;
+
+    switch (status) {
+      case null:
+        return false;
+      case CLIENTSTOCK_STATUS_SENT:
+        return false;
+      case CLIENTSTOCK_STATUS_TO_SEND:
+        return false;
+      case CLIENTSTOCK_STATUS_NEW:
+        return true;
+      case CLIENTSTOCK_STATUS_SAVED:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  canManageRows(): boolean {
+    return this.isInventoryReadOnlyStatus();
+  }
+
+  preguntarSugerirPedido(){
     let buttonsConfirmSend = [
       {
         text: 'Cancelar',
@@ -166,7 +230,7 @@ public modalCtrl = inject(ModalController);
     }
     //guardar el stock actual
     var toSend =  false;
-    if(this.inventariosLogicService.newClientStock.stDelivery != DELIVERY_STATUS_SENT){
+    if(this.inventariosLogicService.newClientStock.stDelivery != CLIENTSTOCK_STATUS_SENT){
       this.inventariosLogicService.saveClientStock(this.dbServ.getDatabase(),false);
       this.adjuntoService.savePhotos(this.dbServ.getDatabase(),
       this.inventariosLogicService.newClientStock.coClientStock, "inventarios");
@@ -192,39 +256,58 @@ public modalCtrl = inject(ModalController);
     this.inventariosLogicService.showHeaderButtonsFunction(false);
     this.inventariosLogicService.inventarioComp = false;
     this.inventariosLogicService.inventarioList = false;
-    this.inventariosLogicService.typeStocksComponent = false;
     this.inventariosLogicService.containerComp = true;
     this.message.closeCustomBtn();
 
   }
 
   deleteClientStock(index: number) {
-    /* this.inventariosLogicService.variables.delete(this.clientStocksTotal[index].idProduct) */
-    //ELIMINO TODOS LOS REGISTROS DE ESE PRODUCTO
-    let indexDetail = this.inventariosLogicService.productTypeStocksMap.get(this.inventariosLogicService.productSelected.idProduct);
-    for (var i = 0; i < this.inventariosLogicService.typeStocks.length; i++) {
-      if (this.inventariosLogicService.typeStocks[i].idProduct == this.clientStocksTotal[index].idProduct) {
-        this.inventariosLogicService.typeStocks.splice(i, 1);
-        i--;
+    // Compatibilidad con llamadas existentes: elimina todas las filas de ese producto
+    const targetProduct = this.clientStocksTotal[index];
+    if (!targetProduct) {
+      return;
+    }
+    const rowIds = this.inventoryRows
+      .filter(row => row.coProduct === targetProduct.coProduct)
+      .map(row => row.rowId);
+    this.deleteRowsByIds(rowIds);
+  }
+
+  deleteClientStockRow(rowId: string) {
+    this.deleteRowsByIds([rowId]);
+  }
+
+  deleteSelectedRows() {
+    const rowIds = this.inventoryRows.filter(row => row.selected).map(row => row.rowId);
+    this.deleteRowsByIds(rowIds);
+  }
+
+  private deleteRowsByIds(rowIds: string[]) {
+    if (!rowIds.length) {
+      return;
+    }
+
+    rowIds.forEach((rowId) => {
+      const detailIndex = this.inventariosLogicService.newClientStock.clientStockDetails.findIndex(
+        detail => detail.coProduct === rowId
+      );
+
+      if (detailIndex >= 0) {
+        this.inventariosLogicService.newClientStock.clientStockDetails.splice(detailIndex, 1);
       }
-    }
+    });
 
-
-    /*     this.inventariosLogicService.productTypeStocksMap.delete(this.clientStocksTotal[index].idProduct); */
-    this.inventariosLogicService.newClientStock.clientStockDetails.splice(index!, 1);
-    this.clientStocksTotal.splice(index, 1)
-
+    this.inventariosLogicService.typeStocks = [];
+    this.inventariosLogicService.typeExh = false;
+    this.inventariosLogicService.typeDep = false;
     this.inventariosLogicService.productTypeStocksMap = new Map<number, number>();
-    for (i = 0; i < this.inventariosLogicService.newClientStock.clientStockDetails.length; i++) {
-      this.inventariosLogicService.productTypeStocksMap.set(
-        this.inventariosLogicService.newClientStock.clientStockDetails[i].idProduct, i);
-    }
+    this.inventariosLogicService.setVariablesMap();
 
-    //revisamos si tenemos un inventario valido
-    if (this.inventariosLogicService.newClientStock.clientStockDetails.length == 0) {
+    if (this.inventariosLogicService.newClientStock.clientStockDetails.length === 0) {
       this.inventariosLogicService.cannotSendClientStock = true;
     }
 
+    this.rebuildTableData();
   }
 
   imprimir() {

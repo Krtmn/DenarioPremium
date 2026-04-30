@@ -9,6 +9,7 @@ import { ProductStructureService } from 'src/app/services/productStructures/prod
 import { ProductService } from 'src/app/services/products/product.service';
 import { ReturnLogicService } from 'src/app/services/returns/return-logic.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
+import { InventariosLogicService } from 'src/app/services/inventarios/inventarios-logic.service';
 
 @Component({
   selector: 'productos-tab-structure-list',
@@ -23,6 +24,7 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
   productService = inject(ProductService);
   returnLogic = inject(ReturnLogicService);
   orderServ = inject(PedidosService);
+  inventariosLogicService = inject(InventariosLogicService);
   dbServ = inject(SynchronizationDBService);
   public config = inject(GlobalConfigService);
 
@@ -36,6 +38,8 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
   devolucion: Boolean = false;
   @Input()
   pedido: Boolean = false;
+  @Input()
+  inventario: Boolean = false;
 
   tpsSeleccionada!: TypeProductStructure;
   typeProductStructureList: TypeProductStructure[] = [];
@@ -44,7 +48,7 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
   featuredButtonCount = 0;
   favoriteButtonLabel = '';
   favoriteButtonCount = 0;
-//config options
+  //config options
   public featuredProducts: Boolean = false;
   public nameProductLine = '';
 
@@ -161,9 +165,9 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
     });
   }
 
-    tpsCompare(a: TypeProductStructure, b: TypeProductStructure) {
-      return a && b ? a.idTypeProductStructure === b.idTypeProductStructure : a === b;
-    }
+  tpsCompare(a: TypeProductStructure, b: TypeProductStructure) {
+    return a && b ? a.idTypeProductStructure === b.idTypeProductStructure : a === b;
+  }
 
   onTypeProductStructureChanged(ev: any) {
     this.tpsSeleccionada = ev.target.value;
@@ -207,6 +211,17 @@ export class ProductosTabStructureListComponent implements OnInit, OnDestroy {
   onCartSelected() {
     this.productStructures = false;
     this.productService.onCarritoButtonClicked();
+  }
+
+  onInventorySelected() {
+    this.productStructures = false;
+    this.productStructureService.nombreProductStructureSeleccionada = 'Inventario';
+    this.productService.searchStructures = false;
+    this.productService.onInventoryTabClicked();
+  }
+
+  getInventoryCount(): number {
+    return this.inventariosLogicService.newClientStock?.clientStockDetails?.length || 0;
   }
 
   onReturnProductTab() {

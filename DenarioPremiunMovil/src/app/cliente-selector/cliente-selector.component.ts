@@ -1,19 +1,17 @@
 import { Component, OnInit, EventEmitter, Output, ViewChild, inject } from '@angular/core';
 import { Client } from '../modelos/tables/client';
 import { InfiniteScrollCustomEvent, IonModal } from '@ionic/angular';
-import { ServicesService } from '../services/services.service';
 import { SynchronizationDBService } from '../services/synchronization/synchronization-db.service';
 import { ClientesDatabaseServicesService } from '../services/clientes/clientes-database-services.service';
 import { CurrencyService } from '../services/currency/currency.service';
 import { CurrencyEnterprise } from '../modelos/tables/currencyEnterprise';
 import { ClienteSelectorService } from './cliente-selector.service';
-import { InventariosLogicService } from '../services/inventarios/inventarios-logic.service';
 import { CollectionService } from '../services/collection/collection-logic.service';
 import { MessageService } from '../services/messageService/message.service';
 import { ClientLogicService } from '../services/clientes/client-logic.service';
 import { ModalController } from '@ionic/angular';
-import { ClienteComponent } from '../clientes/client-container/client-detail/client-detail.component';
-import { DateServiceService } from '../services/dates/date-service.service';
+import { GlobalConfigService } from '../services/globalConfig/global-config.service';
+
 
 
 @Component({
@@ -24,9 +22,7 @@ import { DateServiceService } from '../services/dates/date-service.service';
 })
 export class ClienteSelectorComponent implements OnInit {
 
-  //injects
-
-
+  //injectss
   private clientServ = inject(ClientesDatabaseServicesService);
   private dbServ = inject(SynchronizationDBService);
   private currencyService = inject(CurrencyService);
@@ -35,6 +31,8 @@ export class ClienteSelectorComponent implements OnInit {
   private messageService = inject(MessageService);
   public clientLogic = inject(ClientLogicService);
   public modalCtrl = inject(ModalController);
+  private globalConfig = inject(GlobalConfigService);
+
 
   public tags = new Map<string, string>([]);
   public clientes!: Client[]
@@ -69,7 +67,7 @@ export class ClienteSelectorComponent implements OnInit {
 
   public page = 0; // para paginacion de clientes.
   public scrollDisable = false;
-  public idEnterprise!: number;
+
 
 
   @ViewChild(IonModal) modal!: IonModal;
@@ -126,7 +124,7 @@ export class ClienteSelectorComponent implements OnInit {
     }
     this.page = 0;
     this.scrollDisable = false;
-    this.idEnterprise = idEnterprise;
+    this.service.idEnterprise = idEnterprise;
     this.updateClientList(idEnterprise);
 
 
@@ -139,7 +137,7 @@ export class ClienteSelectorComponent implements OnInit {
     this.scrollDisable = false;
     this.clientes = this.service.clientes;
     if (this.clientes.length == 0) {
-      this.updateClientList(this.idEnterprise);
+      this.updateClientList(this.service.idEnterprise);
     }
   }
   setSkin(nombreModulo: string, colorModulo: string) {
@@ -184,41 +182,29 @@ export class ClienteSelectorComponent implements OnInit {
     });
   }
 
-  handleUpdateClientList(result: Client[]) {
+  async handleUpdateClientList(result: Client[]) {
     this.scrollDisable = result.length < this.clientServ.MAX_ITEMS_PER_PAGE;
     if (this.page == 0) {
       this.clientes = [] as Client[];
       this.service.clientes = [] as Client[];
     }
-    this.fixClientListSaldos(result);
 
-    if (this.nombreModulo == 'Cobros') {
-      result.sort((a, b) => {
-        const totalA = (a.saldo1 ?? 0) + (a.saldo2 ?? 0);
-        const totalB = (b.saldo1 ?? 0) + (b.saldo2 ?? 0);
-
-        const groupA = totalA > 0 ? 0 : totalA == 0 ? 1 : 2;
-        const groupB = totalB > 0 ? 0 : totalB == 0 ? 1 : 2;
-
-        if (groupA != groupB) {
-          return groupA - groupB;
-        }
-
-        return totalB - totalA;
-      });
-
-      if (this.collectLogic.userCanCollectIva && this.collectLogic.cobro25) {
-        for (let i = 0; i < result.length; i++) {
-          if (result[i].collectionIva) {
-            this.clientes.push(result[i]);
-          }
-        }
-      } else {
-        this.clientes = [...this.clientes, ...result];
-      }
-    } else {
-      this.clientes = [...this.clientes, ...result];
+    let clientsToShow = result;
+    if (this.collectLogic.userCanCollectIva && this.collectLogic.cobro25) {
+      clientsToShow = result.filter(client => client.collectionIva);
     }
+
+    if (this.multimoneda) {
+      this.fixClientListSaldos(clientsToShow);
+    }
+
+    if (this.globalConfig.get("clientsOrderBy") == "due_date") {
+      await this.oderByDueDateAndSaldo(clientsToShow);
+    }
+
+
+    this.clientes = [...this.clientes, ...clientsToShow];
+    //}
     //console.log("[ClienteSelector] Lista de clientes actualizada");
     this.noClientsAlertShown = this.clientes.length == 0;
     //para usarlo luego
@@ -228,6 +214,24 @@ export class ClienteSelectorComponent implements OnInit {
     this.service.checkClient = false;
     this.messageService.hideLoading();
   }
+
+
+  async oderByDueDateAndSaldo(clientes: Client[]) {
+    clientes.sort((a, b) => {
+      const totalA = (a.saldo1 ?? 0) + (a.saldo2 ?? 0);
+      const totalB = (b.saldo1 ?? 0) + (b.saldo2 ?? 0);
+
+      const groupA = (a.countDueDate ?? 0) > 0 ? 0 : 1;
+      const groupB = (b.countDueDate ?? 0) > 0 ? 0 : 1;
+
+      if (groupA !== groupB) {
+        return groupA - groupB;
+      }
+
+      return totalB - totalA;
+    });
+  }
+
   fixClientListSaldos(result: any) {
     //mostrando los saldos correctamente
     let saldoCliente = 0, saldoOpuesto = 0;
@@ -392,7 +396,7 @@ export class ClienteSelectorComponent implements OnInit {
     if (this.searchText.trim() == '') {
       this.onModalOpen();
     } else {
-      this.searchClients(this.idEnterprise, this.searchText);
+      this.searchClients(this.service.idEnterprise, this.searchText);
     }
 
 
@@ -400,12 +404,12 @@ export class ClienteSelectorComponent implements OnInit {
   onIonInfinite(ev: InfiniteScrollCustomEvent) {
     this.page++;
     if (this.searchMode) {
-      this.searchClients(this.idEnterprise, this.searchText).then(() => {
+      this.searchClients(this.service.idEnterprise, this.searchText).then(() => {
         (ev as InfiniteScrollCustomEvent).target.complete();
         this.messageService.hideLoading();
       });
     } else {
-      this.getClients(this.idEnterprise).then(() => {
+      this.getClients(this.service.idEnterprise).then(() => {
         (ev as InfiniteScrollCustomEvent).target.complete();
       });
     }

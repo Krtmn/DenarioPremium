@@ -48,6 +48,10 @@ import { CodePhoneNumber } from 'src/app/modelos/tables/codePhoneNumber';
 })
 
 export class CollectionService {
+  // Getter para uso en template si es necesario
+  public getLastRateValue(): number {
+    return this.lastRateValue;
+  }
   public globalConfig = inject(GlobalConfigService);
   public services = inject(ServicesService);
   public dateServ = inject(DateServiceService);
@@ -86,7 +90,7 @@ export class CollectionService {
   public localCurrency!: Currencies;
   public hardCurrency!: Currencies;
   public currencyList!: Currencies[];
-  public currencyListDocument!: Currencies[];
+  public currencyListDocument: Currencies[] = [];
   public enterpriseList: Enterprise[] = [];
   public currencySelectedDocument!: Currencies;
   public documentSaleOpen!: DocumentSale;
@@ -218,6 +222,7 @@ export class CollectionService {
   public requiredCollectionAttachments: boolean = false;
   private typeDocumentListLoaded: boolean = false;
   private codePhoneNumberListLoaded: boolean = false;
+  public enabledManualRate: boolean = false;
 
   public totalEfectivo: number = 0;
   public totalCheque: number = 0;
@@ -324,7 +329,15 @@ export class CollectionService {
   public COLLECT_STATUS_NEW = COLLECT_STATUS_NEW;
   public COLLECT_STATUS_SAVED = COLLECT_STATUS_SAVED;
   public COLLECT_STATUS_SENT = COLLECT_STATUS_SENT;
+
   initLogicService() {
+
+
+    this.COLLECT_STATUS_TO_SEND = COLLECT_STATUS_TO_SEND;
+    this.COLLECT_STATUS_NEW = COLLECT_STATUS_NEW;
+    this.COLLECT_STATUS_SAVED = COLLECT_STATUS_SAVED;
+    this.COLLECT_STATUS_SENT = COLLECT_STATUS_SENT;
+
     //this.coTypeModule = '0';
     //this.titleModule = this.collectionTags.get('COB_NOMBRE_MODULO')!;
     this.disabledClient = false;
@@ -376,6 +389,8 @@ export class CollectionService {
     this.enablePartialPayment = enablePartialPaymentValue === '' ? true : enablePartialPaymentValue === 'true' ? true : false;
     const requiredCollectionAttachmentsValue = (this.globalConfig.get('requiredCollectionAttachments') || '').trim();
     this.requiredCollectionAttachments = requiredCollectionAttachmentsValue === '' ? true : requiredCollectionAttachmentsValue === 'true' ? true : false;
+    const enabledManualRateValue = (this.globalConfig.get('enabledManualRate') || '').trim();
+    this.enabledManualRate = enabledManualRateValue === '' ? true : enabledManualRateValue === 'true' ? true : false;
 
 
 
@@ -698,7 +713,7 @@ export class CollectionService {
     // Asigna el array con el objeto genérico y luego el contenido real
     this.currencyListDocument = [genericCurrency, ...this.currencyList];
     // Después de cargar currencyListDocument:
-    this.currencySelectedDocument = genericCurrency;
+    //this.currencySelectedDocument = this.currencyListDocument.find(c => c.coCurrency === this.collection.coCurrency) ?? genericCurrency;
   }
 
   setCurrencyConversion() {
@@ -770,34 +785,19 @@ export class CollectionService {
       }
     })
 
-    if (this.rateList.length > 0) {
+    if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED) {
+      this.historicoTasa = true;
+      this.rateSelected = this.collection.nuValueLocal;
+      this.haveRate = true;
+      this.updateRateDocument();
+      this.unlockTabsFunction(false);
+      return Promise.resolve(true);
+    } else if (this.rateList.length > 0) {
       this.historicoTasa = true;
       this.rateSelected = this.collection.nuValueLocal = this.rateList[0];
       this.haveRate = true;
-
-      // Propagar la tasa seleccionada a documentSales y documentSalesBackup
-      if (Array.isArray(this.documentSales) && this.documentSales.length > 0) {
-        for (let i = 0; i < this.documentSales.length; i++) {
-          this.documentSales[i].nuValueLocal = this.rateSelected;
-        }
-      }
-
-      if (Array.isArray(this.documentSalesBackup) && this.documentSalesBackup.length > 0) {
-        for (let i = 0; i < this.documentSalesBackup.length; i++) {
-          this.documentSalesBackup[i].nuValueLocal = this.rateSelected;
-        }
-      }
-
-      if (Array.isArray(this.documentSalesView) && this.documentSalesView.length > 0) {
-        for (let i = 0; i < this.documentSalesView.length; i++) {
-          this.documentSalesView[i].nuValueLocal = this.rateSelected;
-        }
-      }
-         this.unlockTabs().then((resp) => {
-/*           this.mensaje = "No hay tasa para la fecha seleccionada";
-          this.alertMessageOpen = true; */
-          this.onCollectionValid(resp);
-        })
+      this.updateRateDocument();
+      this.unlockTabsFunction(false);
       return Promise.resolve(true);
     } else {
       //no tengo tasa para ese dia
@@ -806,13 +806,42 @@ export class CollectionService {
         this.historicoTasa = true;
       } else {
         this.historicoTasa = false;
-        this.unlockTabs().then((resp) => {
-          this.mensaje = "No hay tasa para la fecha seleccionada";
-          this.alertMessageOpen = true;
-          this.onCollectionValid(resp);
-        })
+        this.unlockTabsFunction(true);
       }
       return Promise.resolve(true);
+    }
+  }
+
+  unlockTabsFunction(msj: boolean) {
+    this.unlockTabs().then((resp) => {
+      if (msj) {
+        this.mensaje = "No hay tasa para la fecha seleccionada";
+        this.alertMessageOpen = true;
+      }
+
+      this.onCollectionValid(resp);
+    })
+  }
+
+
+  updateRateDocument() {
+    // Propagar la tasa seleccionada a documentSales y documentSalesBackup
+    if (Array.isArray(this.documentSales) && this.documentSales.length > 0) {
+      for (let i = 0; i < this.documentSales.length; i++) {
+        this.documentSales[i].nuValueLocal = this.rateSelected;
+      }
+    }
+
+    if (Array.isArray(this.documentSalesBackup) && this.documentSalesBackup.length > 0) {
+      for (let i = 0; i < this.documentSalesBackup.length; i++) {
+        this.documentSalesBackup[i].nuValueLocal = this.rateSelected;
+      }
+    }
+
+    if (Array.isArray(this.documentSalesView) && this.documentSalesView.length > 0) {
+      for (let i = 0; i < this.documentSalesView.length; i++) {
+        this.documentSalesView[i].nuValueLocal = this.rateSelected;
+      }
     }
   }
 
@@ -1172,10 +1201,10 @@ export class CollectionService {
     this.montoTotalPagado = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado));
 
     if (this.collection.coCurrency == this.localCurrency.coCurrency) {
-      this.montoTotalPagadoConversion = this.currencyService.toHardCurrency(this.montoTotalPagado);
+      this.montoTotalPagadoConversion = this.convertirMonto(this.montoTotalPagado, 0, this.collection.coCurrency);
     } else {
 
-      this.montoTotalPagadoConversion = this.currencyService.toLocalCurrency(this.montoTotalPagado)
+      this.montoTotalPagadoConversion = this.convertirMonto(this.montoTotalPagado, 0, this.collection.coCurrency);
     }
 
     this.calculatePayment(type, index);
@@ -1198,21 +1227,20 @@ export class CollectionService {
   }
 
   async validateToSend() {
+    const isAlwaysPartialWithFixedMode = this.alwaysPartialPayment && !this.enablePartialPayment;
 
-    if (this.alwaysPartialPayment && this.allPaymentPartial) {
-      if (!this.messageSended) {
-        this.mensaje = this.collectionTags.get('COB_ERROR_PARTIAL_PAY')!;
+    if (!isAlwaysPartialWithFixedMode && (this.alwaysPartialPayment || this.allPaymentPartial)) {
+      if (this.collection.collectionPayments?.length > 0 && this.montoTotalPagado != this.montoTotalPagar && this.montoTotalPagado > 0) {
+        if (!this.messageSended) {
+          this.mensaje = this.collectionTags.get('COB_ERROR_PARTIAL_PAY')!;
 
-        this.messageAlert = new MessageAlert(
-          this.collectionTags.get('COB_NOMBRE_MODULO')!,
-          this.mensaje,
-        );
-        this.messageService.alertModal(this.messageAlert);
-        this.messageSended = true;
-
-        /* setTimeout(() => {
-          this.messageSended = false;
-        }, 1000); */
+          this.messageAlert = new MessageAlert(
+            this.collectionTags.get('COB_NOMBRE_MODULO')!,
+            this.mensaje,
+          );
+          this.messageService.alertModal(this.messageAlert);
+          this.messageSended = true;
+        }
       }
     }
 
@@ -1256,7 +1284,10 @@ export class CollectionService {
       }
     } else {
 
-      await this.validateReferencePayment();
+      if (!(await this.validateReferencePayment())) {
+        this.onCollectionValidToSend(false);
+        return;
+      }
       //DEBO VALIDAR SI HAY ALGUN PAGO PARCIAL, EL MONTO DEBE PAGADO DEBE SER IGUAL AL MONTO A PAGAR
       let onlyPaymentPartial = 0;
       // Seguridad: normalizar array
@@ -1274,8 +1305,9 @@ export class CollectionService {
       this.existPartialPayment = onlyPaymentPartial > 0;
 
       this.allPaymentPartial = false;
-      if (onlyPaymentPartial == this.collection.collectionDetails.length)
-        this.allPaymentPartial = true;
+      if (this.collection.collectionDetails.length > 0)
+        if (onlyPaymentPartial == this.collection.collectionDetails.length)
+          this.allPaymentPartial = true;
 
       if (this.enableDifferenceCodes) {
         const payments = Array.isArray(this.collection.collectionPayments) ? this.collection.collectionPayments : [];
@@ -1360,11 +1392,12 @@ export class CollectionService {
   }
 
   checkTolerancia() {
+    const isAlwaysPartialWithFixedMode = this.alwaysPartialPayment && !this.enablePartialPayment;
 
-    if (this.alwaysPartialPayment && this.existPartialPayment) {
+    if (this.alwaysPartialPayment && this.existPartialPayment && !isAlwaysPartialWithFixedMode) {
       if (this.montoTotalPagado != this.montoTotalPagar) {
         this.onCollectionValidToSend(false);
-        if (!this.messageSended) {
+        /* if (!this.messageSended) {
           this.mensaje = this.collectionTags.get('COB_ERROR_PARTIAL_PAY')!;
 
           this.messageAlert = new MessageAlert(
@@ -1373,11 +1406,8 @@ export class CollectionService {
           );
           this.messageService.alertModal(this.messageAlert);
           this.messageSended = true;
-          /*  setTimeout(() => {
-             this.messageSended = false;
-           }, 1000); */
 
-        }
+        } */
       } else {
         this.onCollectionValidToSend(true);
       }
@@ -1434,14 +1464,14 @@ export class CollectionService {
             //LA MONEDA TOLERANCIA ES LOCA, PERO LA MONEDA DEL COBRO ES LA HARD, DEBO CONVERTIR LA TOLERANCIA A HARD
             let amount = this.montoTotalPagado - this.montoTotalPagar;
             if (amount > 0) {
-              if (amount < this.currencyService.toHardCurrency(this.RangoToleranciaPositiva))
+              if (amount < this.convertirMonto(this.RangoToleranciaPositiva, 0, this.collection.coCurrency))
                 this.onCollectionValidToSend(true);
               else {
                 this.onCollectionValidToSend(false);
                 return;
               }
             } else if (amount < 0) {
-              if (Math.abs(amount) < this.currencyService.toHardCurrency(this.RangoToleranciaPositiva))
+              if (Math.abs(amount) < this.convertirMonto(this.RangoToleranciaNegativa, 0, this.collection.coCurrency))
                 this.onCollectionValidToSend(true);
               else {
                 this.onCollectionValidToSend(false);
@@ -1476,14 +1506,14 @@ export class CollectionService {
             //LA MONEDA TOLERANCIA ES HARD, PERO LA MONEDA DEL COBRO ES LA HARD, DEBO CONVERTIR LA TOLERANCIA A LOCAL
             let amount = this.montoTotalPagado - this.montoTotalPagar;
             if (amount > 0) {
-              if (amount < this.currencyService.toLocalCurrency(this.RangoToleranciaPositiva))
+              if (amount < this.convertirMonto(this.RangoToleranciaPositiva, 0, this.MonedaTolerancia))
                 this.onCollectionValidToSend(true);
               else {
                 this.onCollectionValidToSend(false);
                 return;
               }
             } else if (amount < 0) {
-              if ((Math.abs(amount)) > this.currencyService.toLocalCurrency(this.RangoToleranciaNegativa))
+              if ((Math.abs(amount)) > this.convertirMonto(this.RangoToleranciaNegativa, 0, this.MonedaTolerancia))
                 this.onCollectionValidToSend(false);
               else {
                 this.onCollectionValidToSend(true);
@@ -1539,7 +1569,7 @@ export class CollectionService {
     // Si no hay colección o no hay pagos, no está válido para enviar
     if (!this.collection || !this.collection.collectionPayments || this.collection.collectionPayments.length <= 0) {
       this.onCollectionValidToSend(false);
-      return;
+      return false;
     }
 
     // Validar que todos los pagos tengan monto parcial válido (no null/empty/0/NaN)
@@ -1549,7 +1579,7 @@ export class CollectionService {
     });
     if (invalidAmount) {
       this.onCollectionValidToSend(false);
-      return;
+      return false;
     }
 
     // Validar referencias en pagos que no son efectivo
@@ -1577,9 +1607,9 @@ export class CollectionService {
 
     if (existePagoSinReferencia) {
       this.onCollectionValidToSend(false);
-      return;
+      return false;
     } else {
-      Promise.resolve(true);
+      return true;
     }
 
   }
@@ -1705,6 +1735,9 @@ export class CollectionService {
 
     this.montoTotalPagar = 0;
     this.montoTotalPagarConversion = 0;
+    this.currencySelectedDocument = Array.isArray(this.currencyListDocument) && this.currencyListDocument.length > 0
+      ? this.currencyListDocument[0]
+      : {} as Currencies;
 
     if (this.coTypeModule == '0')
       this.disabledSelectCollectMethodDisabled = true;
@@ -2127,7 +2160,7 @@ export class CollectionService {
       //DOCUMENTOS A BLOQUEAR
       const sqlBloquear = `SELECT DISTINCT(ds.co_document)
 FROM document_sales ds
-JOIN collection_details cd ON ds.co_document = cd.co_document
+JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_partial = 'false'
 JOIN collections c ON cd.co_collection = c.co_collection AND c.st_collection IN (1,3)
 JOIN transaction_statuses ts ON c.co_collection = ts.co_transaction AND ts.id_transaction_type = 3
 WHERE ts.da_transaction_statuses = (
@@ -2159,7 +2192,7 @@ AND ts.da_transaction_statuses > ds.da_update;`;
       this.coDocumentToUpdate = docsLock.slice();
       const sqlDesbloquear = `SELECT DISTINCT(ds.co_document)
 FROM document_sales ds
-JOIN collection_details cd ON ds.co_document = cd.co_document
+JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_partial = 'false'
 JOIN collections c ON cd.co_collection = c.co_collection AND c.st_collection IN (1,3)
 JOIN transaction_statuses ts ON c.co_collection = ts.co_transaction AND ts.id_transaction_type = 3
 WHERE ts.da_transaction_statuses = (
@@ -2169,7 +2202,11 @@ WHERE ts.da_transaction_statuses = (
     WHERE cd2.co_document = ds.co_document
       AND ts2.id_transaction_type = 3
 )
-AND ds.da_update >= ts.da_transaction_statuses ;`;
+AND ds.da_update >= ts.da_transaction_statuses
+UNION
+SELECT DISTINCT(ds.co_document)
+FROM document_sales ds
+JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_partial = 'true';`;
 
       try {
         const resDesbloq = await db.executeSql(sqlDesbloquear, []);
@@ -2231,7 +2268,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
 
       // preparar consulta IN (...) para obtener todos los co_document de una sola vez
       const placeholders = coTransactions.map(() => '?').join(',');
-      const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders}) AND in_payment_partial = 'false'`;
+      const sql = `SELECT DISTINCT co_document FROM collection_details WHERE co_collection IN (${placeholders})`;
 
       const res = await db.executeSql(sql, coTransactions);
       for (let i = 0; i < res.rows.length; i++) {
@@ -2411,6 +2448,16 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
     }
   }
 
+  /**
+ * Devuelve la última tasa conocida (mayor de la lista o la seleccionada)
+ */
+  get lastRateValue(): number {
+    if (this.rateList && this.rateList.length > 0) {
+      return Math.max(...this.rateList);
+    }
+    return this.rateSelected || 0.01;
+  }
+
   ///////////////////QUERYS////////////////
 
   getAllBanks(dbServ: SQLiteObject, idEnterprise: number) {
@@ -2485,7 +2532,10 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       }
 
       this.documentSalesView = JSON.parse(JSON.stringify(this.documentSales));
-      this.convertDocumentSales();
+
+      if (this.multiCurrency)
+        this.convertDocumentSales();
+
       this.getColorRowDocumentSale();
       return this.documentSales;
     }).catch(() => Promise.resolve(this.documentSales));
@@ -2501,7 +2551,11 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
   }): { query: string; params: any[]; isIgtf: boolean } {
     const { moduleType, currencyIsEmpty, idClient, coCurrency, idEnterprise, coCollection } = opts;
 
-    const commonOrder = `ORDER BY CASE WHEN d.co_currency = "${this.enterpriseSelected.coCurrencyDefault}" THEN 0 ELSE 1 END, d.co_currency`;
+    const commonOrder = `ORDER BY
+      CASE WHEN DATE(d.da_due_date) < DATE('now', 'localtime') THEN 0 ELSE 1 END ASC,
+      COALESCE(DATE(d.da_due_date), DATE('0001-01-01')) ASC,
+      CASE WHEN d.co_currency = "${this.enterpriseSelected.coCurrencyDefault}" THEN 0 ELSE 1 END,
+      d.co_currency`;
 
     // module 0 and 2 are non-IGTF, but module 2 omits ds.st_document < 2
 
@@ -2534,7 +2588,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
           'WHERE (d.id_client = ? ' +
           (includeDocStateFilter ? 'AND ds.st_document < 2 ' : '') +
           'AND d.co_currency = ? AND d.id_enterprise = ? AND d.co_document_sale_type != "IGTF") ' +
-          'OR d.co_document IN (SELECT co_document FROM collection_details WHERE co_collection= ?);'
+          'OR d.co_document IN (SELECT co_document FROM collection_details WHERE co_collection= ? ) ' +
+          commonOrder
       };
     }
 
@@ -2546,7 +2601,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         query:
           'SELECT DISTINCT d.* FROM document_sales d ' +
           'LEFT JOIN document_st ds ON d.co_document = ds.co_document ' +
-          'WHERE d.id_client = ? AND ds.st_document < 2 AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF" '
+          'WHERE d.id_client = ? AND ds.st_document < 2 AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF" ' +
+          commonOrder
       };
     }
 
@@ -2556,7 +2612,8 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       query:
         'SELECT DISTINCT d.* FROM document_sales d ' +
         'LEFT JOIN document_st ds ON d.co_document = ds.co_document ' +
-        'WHERE d.id_client = ? AND ds.st_document < 2 AND d.co_currency = ?  AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF" '
+        'WHERE d.id_client = ? AND ds.st_document < 2 AND d.co_currency = ?  AND d.id_enterprise = ? AND d.co_document_sale_type = "IGTF" ' +
+        commonOrder
     };
   }
 
@@ -2965,7 +3022,7 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
       "JOIN collection_details code  ON co.co_collection = code.co_collection " +
       "JOIN collection_payments copa ON co.co_collection = copa.co_collection " +
       "WHERE code.co_document = ? AND code.in_payment_partial = 'true' " +
-      "GROUP BY co.co_currency, co.da_collection, co.id_collection, co.st_collection, co.st_delivery, code.co_document, code.nu_balance_doc";
+      "GROUP BY co.co_currency, co.da_collection, co.id_collection, co.st_delivery, code.co_document, code.nu_balance_doc";
 
     return dbServ.executeSql(selectStatement, [coDocument]).then(data => {
       //return dbServ.executeSql(selectStatement, [this.mapDocumentsSales.get(idDocument)!.coDocument]).then(data => {
@@ -4204,15 +4261,15 @@ AND ds.da_update >= ts.da_transaction_statuses ;`;
         let stDelivery = 0;
         if (documentSales[i].isSelected) {
           if (coType == '2') {
-            //es retencion
-            //stDelivery = 3; colocar 3 si queremos que luego dfe una retencion el documento quede bloqueado, colocar 2 si queremos que quede disponible pero con la retencion pendiente
+            //es una retencion, no debe marcar el documento como entregado
             stDelivery = 0;
-          } else if (documentSales[i].missingRetention && !documentSales[i].inPaymentPartial) {
-            stDelivery = 2;
-          } else if (documentSales[i].inPaymentPartial)
+          } else if (documentSales[i].inPaymentPartial) { // Prioridad al pago parcial
             stDelivery = 0;
-          else //if (this.sendCollection)
+          } else if (documentSales[i].missingRetention) { // Luego la retención
             stDelivery = 2;
+          } else {
+            stDelivery = 2;
+          }
 
           stamentenDocumentSt.push([updateStatement, [
             stDelivery,

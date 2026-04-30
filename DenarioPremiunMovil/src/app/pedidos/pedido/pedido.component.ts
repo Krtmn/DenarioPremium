@@ -437,11 +437,12 @@ export class PedidoComponent implements OnInit {
           }
           //warehouse
           if (this.orderServ.validateWarehouses) {
-            let wh = this.orderServ.listaWarehouse.find((w) => w.coWarehouse == detail.coWarehouse)!;
+            let wh = this.orderServ.listaWarehouse.find((w) => w.idWarehouse == detail.idWarehouse)!;
             if (wh != undefined) {
               item.idWarehouse = wh.idWarehouse;
               item.prevWarehouse = wh.idWarehouse;
               item.naWarehouse = wh.naWarehouse;
+              item.coWarehouse = wh.coWarehouse;
             } else {
               console.error("No se consiguio Warehouse: " + detail.coWarehouse);
             }
@@ -537,6 +538,12 @@ export class PedidoComponent implements OnInit {
           );
           transactions.push(tr);
 
+          if (this.orderServ.validateWarehouses && this.orderServ.validStock) {
+            this.orderServ.updateStocks(order).then(() => {
+              console.log("Stocks actualizados");
+            });
+          }
+
           if (this.orderServ.coClientStockAEnviar.length > 1) {
             //si venimos de inventario, enviamos el inventario tambien.
             transactions.push({
@@ -565,6 +572,7 @@ export class PedidoComponent implements OnInit {
           this.orderServ.disableSendButton = false;
           this.message.hideLoading();
           this.router.navigate(['pedidos']);
+
         });
       });
 
@@ -1140,10 +1148,12 @@ export class PedidoComponent implements OnInit {
 
   setClientfromSelector(cliente: Client, skipDebtValidation: boolean = false) {
     if (cliente) {
+
       if (!skipDebtValidation && !this.orderServ.openOrder
-        && Number(cliente.saldo1 ?? 0) > 0
+        && Number((cliente.saldo1 ?? 0) + (cliente.saldo2 ?? 0)) > 0
         && this.orderServ.order?.stDelivery !== DELIVERY_STATUS_SENT
-        && this.orderServ.order?.stDelivery !== null) {
+        && this.orderServ.order?.stDelivery !== null
+        && cliente.countDueDate > 0) {
         this.message.alertCustomBtn(
           {
             header: this.orderServ.getTag('PED_NOMBRE_MODULO'),
@@ -1393,14 +1403,53 @@ export class PedidoComponent implements OnInit {
         const currency = this.orderServ.monedaSeleccionada?.coCurrency || '';
         const items = this.orderServ.carrito || [];
 
+        const getLineGlobalDiscount = (item: any): number => {
+          if (Number(this.orderServ.dctoGlobal ?? 0) <= 0) return 0;
+          const quAmount = Number(item?.quAmount ?? 0);
+          const taxedPrice = Number(item?.taxedNuPrice ?? item?.nuPrice ?? 0);
+          const subtotal = Number(item?.subtotal ?? 0);
+          const beforeGlobal = quAmount * taxedPrice;
+          return Math.max(0, beforeGlobal - subtotal);
+        };
 
-        const rows = items.map(item => [
-          String(item.coProduct ?? ''),
-          String(item.naProduct ?? ''),
-          this.formatNum(Number(item.quAmount ?? 0)),
-          this.formatNum(Number(item.nuPrice ?? 0)),
-          this.formatNum(Number(item.subtotal ?? 0))
-        ]);
+        const getLineDiscount = (item: any): number => {
+          const productDiscount = Number(item?.nuAmountDiscount ?? 0);
+          const globalDiscount = getLineGlobalDiscount(item);
+          return Math.max(0, productDiscount + globalDiscount);
+        };
+
+        const hasDiscountColumn = items.some(item => getLineDiscount(item) > 0)
+          || Number(this.orderServ.totalGlobalDc ?? 0) > 0
+          || Number(this.orderServ.totalDctoXProducto ?? 0) > 0;
+
+        const rows = items.map(item => {
+          const row = [
+            String(item.coProduct ?? ''),
+            String(item.naProduct ?? ''),
+            this.formatNum(Number(item.quAmount ?? 0)),
+            this.formatNum(Number(item.nuPrice ?? 0))
+          ];
+
+          if (hasDiscountColumn) {
+            row.push(this.formatNum(getLineDiscount(item)));
+          }
+
+          row.push(this.formatNum(Number(item.subtotal ?? 0)));
+          return row;
+        });
+
+        const columns: Array<{ label: string; align?: 'left' | 'center' | 'right'; width?: string; noWrap?: boolean; maxLines?: number }> = [
+          { label: 'Código', align: 'left', width: hasDiscountColumn ? '18%' : '18%', noWrap: true, maxLines: 1 },
+          { label: 'Producto', align: 'left', width: hasDiscountColumn ? '38%' : '42%', noWrap: false, maxLines: 3 },
+          { label: 'Cantidad', align: 'right', width: hasDiscountColumn ? '11%' : '12%', noWrap: true },
+          { label: 'Precio', align: 'right', width: hasDiscountColumn ? '11%' : '14%', noWrap: true }
+        ];
+
+        if (hasDiscountColumn) {
+          columns.push({ label: 'Descuento', align: 'right', width: '11%', noWrap: true });
+        }
+
+        columns.push({ label: 'Subtotal', align: 'right', width: hasDiscountColumn ? '11%' : '14%', noWrap: true });
 
         const doc = await this.pdfCreator.generateSummaryPdfDoc({
           title: `Resumen pedido`,
@@ -1412,13 +1461,7 @@ export class PedidoComponent implements OnInit {
             { label: 'Moneda', value: currency },
             { label: 'Items', value: String(items.length) }
           ],
-          columns: [
-            { label: 'Código', align: 'left', width: '18%', noWrap: true, maxLines: 1 },
-            { label: 'Producto', align: 'left', width: '42%', noWrap: false, maxLines: 3 },
-            { label: 'Cantidad', align: 'right', width: '12%', noWrap: true },
-            { label: 'Precio', align: 'right', width: '14%', noWrap: true },
-            { label: 'Subtotal', align: 'right', width: '14%', noWrap: true }
-          ],
+          columns,
           rows,
           total: { label: 'Total', value: this.formatNum(Number(this.orderServ.totalPedido ?? 0)) + ' ' + currency },
           fileName: `pedido_${idOrder}_${daOrder}.pdf`
@@ -1634,5 +1677,15 @@ export class PedidoComponent implements OnInit {
         }
       ]
     );
+  }
+
+  getDaDueDate(daDueDate: string) {
+    let dateDoc = new Date(daDueDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$2/$1/$3")).getTime();
+    //minutes = 1000*60
+    //hours = minutes * 60
+    //days = hours * 24
+    //var days = 86400000; /* 1000 * 60 * 60 * 24; */
+
+    return Math.abs(Math.round(((new Date()).getTime() - dateDoc) / 86400000));
   }
 }
