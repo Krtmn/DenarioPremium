@@ -136,7 +136,7 @@ public modalCtrl = inject(ModalController);
       await this.sugerirPedido();
     }
   }
-  /*
+  
 
   get selectedRowsCount() {
     return this.inventoryRows.filter(row => row.selected).length;
@@ -164,7 +164,7 @@ public modalCtrl = inject(ModalController);
   canManageRows(): boolean {
     return this.isInventoryReadOnlyStatus();
   }
-
+/*
   preguntarSugerirPedido(){
     let buttonsConfirmSend = [
       {
@@ -196,8 +196,8 @@ public modalCtrl = inject(ModalController);
 
     this.message.alertCustomBtn(message ,buttonsConfirmSend);
     
-  }*/
-
+  }
+*/
   async sugerirPedido(){
 
     // this.orderServ.empresaSeleccionada = this.inventariosLogicService.empresaSeleccionada;
