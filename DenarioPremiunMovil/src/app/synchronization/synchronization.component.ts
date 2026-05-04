@@ -136,6 +136,7 @@ export class SynchronizationComponent implements OnInit {
     76: 'collectDiscounts',
     79: 'typeDocument',
     80: 'codePhoneNumber',
+    81: 'unit_pricelist',
   };
 
   /**
@@ -202,6 +203,7 @@ export class SynchronizationComponent implements OnInit {
     collectDiscounts: 'Descuentos de Cobro',
     typeDocument: 'Tipo de Documento',
     codePhoneNumber: 'Código de Número Telefónico',
+    unit_pricelist: 'Lista de Precio por Unidad',
   };
 
   constructor(
@@ -686,6 +688,11 @@ export class SynchronizationComponent implements OnInit {
             this.tables.page = 0;
             break;
           }
+          case 81: {
+            this.tables.unitPriceListTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
 
           default: {
             //statements;
@@ -900,6 +907,10 @@ export class SynchronizationComponent implements OnInit {
       return cfgTrue('userCanSelectCollectDiscount');
     }
 
+    if ([81].includes(tableId)) {
+      return cfgTrue('priceListByUnit');
+    }
+
     // Para cualquier otra tabla, por defecto sincronizamos
     return true;
   }
@@ -994,6 +1005,13 @@ export class SynchronizationComponent implements OnInit {
       batchFn: this.synchronizationServices.insertPriceListBatch.bind(this.synchronizationServices),
       rowKey: 'priceListTable',
       tableKey: 'priceListTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
+    unit_pricelist: {
+      batchFn: this.synchronizationServices.insertUnitPriceListBatch.bind(this.synchronizationServices),
+      rowKey: 'unitPriceListTable',
+      tableKey: 'unitPriceListTableLastUpdate',
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
     },

@@ -80,6 +80,7 @@ import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
 import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
 import { TypeDocument } from 'src/app/modelos/tables/typeDocument';
 import { CodePhoneNumber } from 'src/app/modelos/tables/codePhoneNumber';
+import { UnitPriceList } from 'src/app/modelos/tables/unitPriceList';
 
 /** Mock SQLiteObject para navegador: retorna resultados vacíos y permite probar la app con TestSprite */
 function createMockSqliteObject(): SQLiteObject {
@@ -186,7 +187,8 @@ export class SynchronizationDBService {
       { "id": 75, "nameTable": "differenceCodes" },
       { "id": 76, "nameTable": "collectDiscounts" },
       { "id": 79, "nameTable": "typeDocument" },
-      { "id": 80, "nameTable": "codePhoneNumber" }
+      { "id": 80, "nameTable": "codePhoneNumber" },
+      { "id": 81, "nameTable": "unit_pricelist" }
     ]
   }
 
@@ -1529,7 +1531,7 @@ export class SynchronizationDBService {
     let insertStatement = "INSERT OR REPLACE INTO conversion (id_conversion, co_conversion, na_conversion, primary_currency, id_enterprise) VALUES(?,?,?,?,?)";
 
     for (var i = 0; i < arr.length; i++) {
-      const item = arr[i] || {} as any;
+      const item: any = arr[i] || {};
       statements.push([
         insertStatement,
         [
@@ -1657,6 +1659,38 @@ export class SynchronizationDBService {
     }
     return this.database.sqlBatch(statements).then(res => {
       console.log("insert code_phone_number ready")
+      return res;
+    }).catch(e => {
+      console.log(e);
+    })
+  }
+
+  insertUnitPriceListBatch(arr: UnitPriceList[]) {
+    var statements = [];
+    let insertStatement = "INSERT OR REPLACE INTO unit_pricelist(" +
+      "id_unit_pricelist, co_unit_pricelist, id_unit, co_unit, id_list, co_list, co_enterprise, id_enterprise, da_update, co_operation" +
+      ") " +
+      "VALUES(?,?,?,?,?,?,?,?,?,?)"
+
+    for (var i = 0; i < arr.length; i++) {
+      const item: any = arr[i] || {};
+      statements.push([
+        insertStatement,
+        [
+          item.idUnitPriceList ?? item['idUnitPricelist'] ?? null,
+          item.coUnitPriceList ?? item['coUnitPricelist'] ?? null,
+          item.idUnit ?? null,
+          item.coUnit ?? null,
+          item.idList ?? null,
+          item.coList ?? null,
+          item.coEnterprise ?? null,
+          item.idEnterprise ?? null,
+        ]
+      ])
+    }
+
+    return this.database.sqlBatch(statements).then(res => {
+      console.log("insert unit_pricelist ready")
       return res;
     }).catch(e => {
       console.log(e);

@@ -330,6 +330,13 @@
     "sql": "CREATE TABLE IF NOT EXISTS collect_discounts ( id_collect_discount INTEGER PRIMARY KEY, nu_collect_discount NUMERIC(10,10), na_collect_discount VARCHAR(200), require_input BOOLEAN DEFAULT 0);"
   },
   {
+    "id": 81,
+    "name": "unit_pricelist",
+    "table": "unitPriceList",
+    "idName": "id_unit_pricelist",
+    "sql": "CREATE TABLE IF NOT EXISTS unit_pricelist ( id_unit_pricelist INTEGER PRIMARY KEY, co_unit_pricelist VARCHAR(30) NOT NULL, id_unit INTEGER NOT NULL, co_unit VARCHAR(30) NOT NULL, id_list INTEGER NOT NULL, co_list TEXT NOT NULL, co_enterprise TEXT NOT NULL, id_enterprise INTEGER NOT NULL);"
+  },
+  {
     "id": 9999999,
     "name": "versionsTables",
     "table": "versionsTables",
