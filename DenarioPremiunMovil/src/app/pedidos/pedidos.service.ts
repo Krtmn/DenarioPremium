@@ -654,8 +654,14 @@ export class PedidosService {
         var stock = stockList.filter(s => s.idWarehouse == this.cliente.idWarehouse)[0];
         //si el usuario no puede cambiar el warehouse,
         //se queda con el del cliente aunque no tenga stock
-        if (this.userCanChangeWarehouse && (stock == null || stock == undefined)) {
-          stock = stockList[0];
+        if (stock == null || stock == undefined) {
+          if(this.userCanChangeWarehouse){
+            stock = stockList[0];
+          }else{
+            console.log('stock del cliente no encontrado para producto ' + item.naProduct);
+            continue;
+          }
+          
         }
         var warehouseClient: Warehouse = {} as Warehouse;
         if (this.validateWarehouses) {
