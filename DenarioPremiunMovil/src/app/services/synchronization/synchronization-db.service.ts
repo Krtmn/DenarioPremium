@@ -111,7 +111,7 @@ export class SynchronizationDBService {
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
-  private CURRENT_DB_VERSION: number = 8;
+  private CURRENT_DB_VERSION: number = 9;
 
   constructor(
     private navController: NavController,
@@ -1668,15 +1668,14 @@ export class SynchronizationDBService {
   insertUnitPriceListBatch(arr: UnitPriceList[]) {
     var statements = [];
     let insertStatement = "INSERT OR REPLACE INTO unit_pricelist(" +
-      "id_unit_pricelist, co_unit_pricelist, id_unit, co_unit, id_list, co_list, co_enterprise, id_enterprise, da_update, co_operation" +
+      "id_unit_pricelist, co_unit_pricelist, id_unit, co_unit, id_list, co_list, co_enterprise, id_enterprise" +
       ") " +
-      "VALUES(?,?,?,?,?,?,?,?,?,?)"
+      "VALUES(?,?,?,?,?,?,?,?)"
 
     for (var i = 0; i < arr.length; i++) {
       statements.push([insertStatement, [arr[i].idUnitPriceList,
       arr[i].coUnitPriceList, arr[i].idUnit, arr[i].coUnit, arr[i].idList,
-      arr[i].coList, arr[i].coEnterprise, arr[i].idEnterprise, arr[i].daUpdate,
-      arr[i].coOperation]
+      arr[i].coList, arr[i].coEnterprise, arr[i].idEnterprise]
       ])
     }
     return this.database.sqlBatch(statements).then(res => {
