@@ -160,6 +160,7 @@ export class ClienteSelectorComponent implements OnInit {
   updateClientList(idEnterprise: number): Promise<any> {
 
     return this.messageService.showLoading().then(() => {
+      this.service.idEnterprise = idEnterprise;
       return this.getClients(idEnterprise).then(() => {
         //console.log("Clientes cargados");
       });
