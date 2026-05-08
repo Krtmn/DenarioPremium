@@ -908,7 +908,7 @@ export class SynchronizationComponent implements OnInit {
     }
 
     if ([81].includes(tableId)) {
-      return cfgTrue('priceListByUnit');
+      return cfgTrue('unitByPriceList');
     }
 
     // Para cualquier otra tabla, por defecto sincronizamos

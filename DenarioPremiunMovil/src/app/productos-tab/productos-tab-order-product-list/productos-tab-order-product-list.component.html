@@ -48,9 +48,16 @@
             @if((product.txDimension) && (product.txDimension) !== 'NULL' ){
             <p>{{ product.txDimension }}</p>
             }
+            @if(orderServ.unitByPriceList){
+              @for(price of product.nuPriceList; track price.idList){
+                <p>{{price.naList}}: {{ price.nuPrice ? formatNum(price.nuPrice) : 'N/A'
+              }} {{ product.coCurrency }} </p>
+              }
+            }@else{
             <p>{{this.productsTabTags.get('PROD_PRICE_PROD')}}: {{ product.nuPrice ? formatNum(product.nuPrice) : 'N/A'
               }} {{
               product.coCurrency }} </p>
+            }
             @if(this.orderServ.vatExemptProducts){
             <p>{{orderServ.getTag("PED_IVA")}}:
               {{ product.nuTax }} %</p> }
@@ -135,8 +142,8 @@
               </ion-col>
               <ion-col class="" size="12" size-sm="12" size-xs="12">
                 <div class="listado-tps-selector ion-text-center">
-                  <ion-select labelPlacement="stacked" interface="popover" labelPlacement="stacked"
-                    [value]="product.idUnit" interface="popover" labelPlacement="stacked"
+                  <ion-select labelPlacement="stacked" interface="popover" 
+                    [value]="product.idUnit" [disabled]= "orderServ.unitByPriceList"
                     [placeholder]="orderServ.getTag('PED_PLACEHOLDER_UNIDAD')+':'"
                     (ionChange)="onSelectUnit($event, product)">
                     @for(unit of product.unitList; track unit.idUnit){

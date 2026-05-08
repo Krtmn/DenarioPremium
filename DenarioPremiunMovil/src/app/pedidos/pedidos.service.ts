@@ -218,6 +218,7 @@ export class PedidosService {
 
   public displayProductPoints = false;
   public priceListInfoModal = false;
+  public unitByPriceList = false; //[unitByPriceList] muestra el precio de la otra unidad en el producto.
 
   codeTotalProductUnitMessageFlag = false;
 
@@ -402,7 +403,7 @@ export class PedidosService {
     this.vatExemptProducts = this.config.get("vatExemptProducts").toLowerCase() === "true";
     this.displayProductPoints = this.config.get("displayProductPoints").toLowerCase() === "true";
     this.priceListInfoModal = this.config.get("priceListInfoModal").toLowerCase() === "true";
-
+    this.unitByPriceList = this.config.get("unitByPriceList").toLowerCase() === "true";
     //string
     this.codeTotalProductUnit = this.config.get("codeTotalProductUnit");
     this.nameProductLine = this.config.get("nameProductLine");
@@ -591,6 +592,7 @@ export class PedidosService {
         };
         //PRECIO
         var price = 0;
+        var nuPriceList: {idList: number, naList: string, nuPrice: number}[] = [];
         if (priceListSeleccionado.idList) {
           item.coCurrency = priceListSeleccionado.coCurrency;
           price = this.conversionByPriceList ?
@@ -624,6 +626,17 @@ export class PedidosService {
             let list = this.listaInfoModalList.filter(l => l.idList == pl.idList)[0];
             if(list){
               listaModalList.push({list: list, pricelist: pl});
+            }
+          });
+        }
+        if(this.unitByPriceList){
+          //llenamos la lista a mostrar en el producto.
+          priceLists.forEach(pl => {
+            let list = this.listaList.filter(l => l.idList == pl.idList)[0];
+            if(list){
+              nuPriceList.push({idList: list.idList, 
+                                naList: list.naList, 
+                                nuPrice: pl.nuPrice});
             }
           });
         }
@@ -783,7 +796,9 @@ export class PedidosService {
           "subtotalConv": 0,
           "totalEnUnidades": 0,
           "nuTax": item.nuTax,
-          "listaModalList": listaModalList
+          "listaModalList": listaModalList,
+          "nuPriceList": nuPriceList
+
         }
         orderUtils.push(ou);
 
