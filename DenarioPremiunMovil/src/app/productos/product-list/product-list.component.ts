@@ -108,6 +108,9 @@ export class ProductListComponent implements OnInit {
       if (this.productService.productList.length > 0) {
         //this.productList = this.filterProductList(this.productService.productList);
         this.productList = this.productService.productList;
+        if(this.orderService.unitByPriceList){
+          this.fillListPrices(this.productList);
+        }
       } else {
         this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
           this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency, 0).then(() => {
@@ -126,6 +129,9 @@ export class ProductListComponent implements OnInit {
           this.noProductsAlertShown = false;
           //this.productList = this.filterProductList(this.productService.productList);
           this.productList = this.productService.productList;
+          if(this.orderService.unitByPriceList){
+            this.fillListPrices(this.productList);
+          }
           this.noProductsAlertShown = this.productList.length === 0;
         });
     }
@@ -156,6 +162,9 @@ export class ProductListComponent implements OnInit {
           this.noProductsAlertShown = false;
           //this.productList = this.filterProductList(this.productService.productList);
           this.productList = this.productService.productList;
+        if(this.orderService.unitByPriceList){
+          this.fillListPrices(this.productList);
+        }
           this.noProductsAlertShown = this.productList.length === 0;
           this.message.hideLoading();
         });
@@ -185,6 +194,9 @@ export class ProductListComponent implements OnInit {
         this.idProductStructureList, this.empresaSeleccionada.idEnterprise, this.defaultCurrency, this.page).then(() => {
           //const newProducts = this.filterProductList(this.productService.productList);
           const newProducts = this.productService.productList;
+          if(this.orderService.unitByPriceList){
+          this.fillListPrices(newProducts);
+        }
           this.productList = [...this.productList, ...newProducts];
           if (newProducts.length < this.productService.MAX_ITEMS_PER_PAGE) {
             this.infiniteScroll.disabled = true;
@@ -216,4 +228,34 @@ export class ProductListComponent implements OnInit {
     return this.productService.formatNumber(num);
   }
 
+  fillListPrices(products: ProductUtil[]) {
+    products.forEach(product => {
+      this.getPriceList(product);
+    });
+  }
+
+  getPriceList(product: ProductUtil) {
+    //[unitByPriceList] obtenemos el precio de la lista de  precios seleccionada para mostrarlo en la lista de productos, si es que la lista de precios esta activa y tiene un precio para ese producto.
+          //llenamos la lista a mostrar en el producto.
+          let nuPriceList: {idList: number, naList: string, nuPrice: number, coUnit: string}[] = [];
+          let priceLists = this.orderService.listaPricelist.filter(pl => pl.idProduct == product.idProduct);
+          priceLists.forEach(pl => {
+            let list = this.orderService.listaList.filter(l => l.idList == pl.idList)[0];
+            //buscamos el nombre de la unidad de la lista de precio
+            let idUnitPL = this.orderService.listaUnitPriceList.filter(u => u.idList == pl.idList)[0]?.idUnit;
+            let naUnit = this.orderService.listaUnitInfo.filter(u => u.idUnit == idUnitPL)[0]?.naUnit || '';
+            let coUnit = this.orderService.listaUnitInfo.filter(u => u.idUnit == idUnitPL)[0]?.coUnit || '';
+
+            if(list){
+              nuPriceList.push({
+                                idList: list.idList, 
+                                naList: list.naList, 
+                                nuPrice: pl.nuPrice,
+                                coUnit: coUnit
+                              });
+            }
+          });
+          product.listPrices = nuPriceList;
+        }
+  
 }

@@ -599,7 +599,7 @@ export class PedidosService {
         };
         //PRECIO
         var price = 0;
-        var nuPriceList: {idList: number, naList: string, nuPrice: number, naUnit: string, coUnit: string}[] = [];
+        var nuPriceList: {idList: number, naList: string, nuPrice: number, coUnit: string}[] = [];
         if (priceListSeleccionado.idList) {
           item.coCurrency = priceListSeleccionado.coCurrency;
           price = this.conversionByPriceList ?
@@ -650,7 +650,6 @@ export class PedidosService {
                                 idList: list.idList, 
                                 naList: list.naList, 
                                 nuPrice: pl.nuPrice,
-                                naUnit: naUnit,
                                 coUnit: coUnit
                               });
             }
