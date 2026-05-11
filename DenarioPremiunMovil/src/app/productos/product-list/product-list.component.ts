@@ -208,11 +208,14 @@ export class ProductListComponent implements OnInit {
   }
 
   onShowProductDetail(product: ProductUtil) {
-    console.log('Muthen 1');
+    console.log('Product selected: ' + product.naProduct);
     this.selectedProduct = product;
     this.productService.getProductDetailByIdProduct(this.db.getDatabase(), this.selectedProduct.idList, this.selectedProduct.idProduct, this.defaultCurrency).then(() => {
       this.productDetail = this.productService.productDetail;
       this.selectedProductChanged.emit(this.productDetail);
+      if(this.orderService.unitByPriceList){
+        this.productService.listPrices = product.listPrices;
+      }
     });
   }
 
@@ -235,17 +238,13 @@ export class ProductListComponent implements OnInit {
   }
 
   convertPrice(price: number, coCurrency: string){
-    if(this.currencyService.isLocalCurrency(coCurrency)){
-      return this.formatNumber(this.currencyService.toHardCurrency(price));
-    }else{
-      return this.formatNumber(this.currencyService.toLocalCurrency(price));
-    }
+    return this.currencyService.convertFrom(price, coCurrency);
   }
 
   getPriceList(product: ProductUtil) {
     //[unitByPriceList] obtenemos el precio de la lista de  precios seleccionada para mostrarlo en la lista de productos, si es que la lista de precios esta activa y tiene un precio para ese producto.
           //llenamos la lista a mostrar en el producto.
-          let nuPriceList: {idList: number, naList: string, nuPrice: number, coUnit: string}[] = [];
+          let nuPriceList: {idList: number, naList: string, nuPrice: number, coUnit: string, naUnit: string, coCurrency: string}[] = [];
           let priceLists = this.orderService.listaPricelist.filter(pl => pl.idProduct == product.idProduct);
           priceLists.forEach(pl => {
             let list = this.orderService.listaList.filter(l => l.idList == pl.idList)[0];
@@ -259,7 +258,9 @@ export class ProductListComponent implements OnInit {
                                 idList: list.idList, 
                                 naList: list.naList, 
                                 nuPrice: pl.nuPrice,
-                                coUnit: coUnit
+                                coUnit: coUnit,
+                                naUnit: naUnit,
+                                coCurrency: pl.coCurrency
                               });
             }
           });
