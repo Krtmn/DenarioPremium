@@ -234,6 +234,14 @@ export class ProductListComponent implements OnInit {
     });
   }
 
+  convertPrice(price: number, coCurrency: string){
+    if(this.currencyService.isLocalCurrency(coCurrency)){
+      return this.formatNumber(this.currencyService.toHardCurrency(price));
+    }else{
+      return this.formatNumber(this.currencyService.toLocalCurrency(price));
+    }
+  }
+
   getPriceList(product: ProductUtil) {
     //[unitByPriceList] obtenemos el precio de la lista de  precios seleccionada para mostrarlo en la lista de productos, si es que la lista de precios esta activa y tiene un precio para ese producto.
           //llenamos la lista a mostrar en el producto.

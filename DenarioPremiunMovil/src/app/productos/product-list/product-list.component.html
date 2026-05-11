@@ -26,15 +26,20 @@
               @for(price of product.listPrices; track price.idList){
                 <p class="espacioentrelineas">{{price.naList}} - {{price.coUnit}}: {{ price.nuPrice ? formatNumber(price.nuPrice) : 'N/A'
               }} {{ product.coCurrency }} </p>
+              @if(showConversionInfo){
+                <p class="espacioentrelineas">{{price.naList}} - {{price.coUnit}}: {{ price.nuPrice ? convertPrice(price.nuPrice, product.coCurrency) : 'N/A' }} {{ product.coCurrencyOpposite }} </p>
+              }
               }
             }
             @else{
             <p class="espacioentrelineas">{{this.productTags.get('PROD_PRICE_PROD')}}: {{ formatNumber(product.price) }}
               {{ product.coCurrency }}</p>
             
-            <p *ngIf="showConversionInfo && product.priceOpposite" class="espacioentrelineas">
+              @if(showConversionInfo && product.priceOpposite){
+            <p class="espacioentrelineas">
               {{this.productTags.get('PROD_PRICE_PROD')}}:
               {{ formatNumber(product.priceOpposite) }} {{product.coCurrencyOpposite }} </p>
+            }
             }
               @if(this.productService.vatExemptProducts){
             <p class="espacioentrelineas">
