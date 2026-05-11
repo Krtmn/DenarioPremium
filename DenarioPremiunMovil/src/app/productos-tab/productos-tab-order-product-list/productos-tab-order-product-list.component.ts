@@ -468,13 +468,17 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   onSelectPriceList(e: any, product: OrderUtil) {
     const idList = e.detail.value as number;
-
+    const selectEl = e?.target as HTMLIonSelectElement;
+      let prevList = product.idList;
       if(this.orderServ.unitByPriceList){
         //revisamos primero si tenemos esa unidad. Si no, mostramos error.
       let upl = this.orderServ.listaUnitPriceList.filter(u => u.idList == idList)[0];
       if(!upl){
         console.log("No se encontro unidad para la lista seleccionada");
         this.message.transaccionMsjModalNB("No se encontro unidad para la lista seleccionada");
+        product.idList = prevList; //volvemos a la lista anterior, ya que no se encontro unidad para la nueva lista
+        selectEl.value = prevList;
+        this.cd.detectChanges(); 
         return;
       }
       let unit = product.unitList.filter(u => u.idUnit == upl.idUnit)[0];
@@ -484,6 +488,9 @@ export class ProductosTabOrderProductListComponent implements OnInit {
       }else{
         console.log("No se encontro unidad para la lista de precio seleccionada");
         this.message.transaccionMsjModalNB("No se encontro unidad para la lista de precio seleccionada");
+        product.idList = prevList;
+        selectEl.value = prevList;
+        this.cd.detectChanges(); //volvemos a la lista anterior, ya que no se encontro unidad para la nueva lista
         return;
       }
     }

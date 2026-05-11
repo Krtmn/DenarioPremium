@@ -834,7 +834,7 @@ export class PedidosDbService {
   }
 
   getUnitPriceList(db: SQLiteObject, idEnterprise: number) {
-    let query = "SELECT * from units_pricelist where id_enterprise = ?";
+    let query = "SELECT * from unit_pricelist where id_enterprise = ?";
     return db.executeSql(query, [idEnterprise]).then(data => {
       let list: UnitPriceList[] = [];
       for (let i = 0; i < data.rows.length; i++) {
