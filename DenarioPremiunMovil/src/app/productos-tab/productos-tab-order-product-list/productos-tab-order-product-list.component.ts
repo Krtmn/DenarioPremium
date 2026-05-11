@@ -468,6 +468,25 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   onSelectPriceList(e: any, product: OrderUtil) {
     const idList = e.detail.value as number;
+
+      if(this.orderServ.unitByPriceList){
+        //revisamos primero si tenemos esa unidad. Si no, mostramos error.
+      let upl = this.orderServ.listaUnitPriceList.filter(u => u.idList == idList)[0];
+      if(!upl){
+        console.log("No se encontro unidad para la lista seleccionada");
+        this.message.transaccionMsjModalNB("No se encontro unidad para la lista seleccionada");
+        return;
+      }
+      let unit = product.unitList.filter(u => u.idUnit == upl.idUnit)[0];
+      if(unit){
+        product.idUnit = unit.idUnit;
+        this.selectUnitById(unit.idUnit, product);
+      }else{
+        console.log("No se encontro unidad para la lista de precio seleccionada");
+        this.message.transaccionMsjModalNB("No se encontro unidad para la lista de precio seleccionada");
+        return;
+      }
+    }
     product.idList = idList;
 
     let pricelist = this.orderServ.listaPricelist.filter(pl => pl.idProduct == product.idProduct && pl.idList == idList)[0];
@@ -475,12 +494,18 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     product.coPriceList = pricelist.coPriceList;
 
     product.nuPrice = pricelist.nuPrice;
+
+
     this.orderServ.alCarrito(product);
   }
 
   onSelectUnit(e: any, product: OrderUtil) {
     const unit = e.detail.value;
-    product.idUnit = unit;
+    this.selectUnitById(unit, product);
+  }
+
+  selectUnitById(unitId: number, product: OrderUtil) {
+    product.idUnit = unitId;
     this.orderServ.alCarrito(product);
     product.quAmount = 0;
   }

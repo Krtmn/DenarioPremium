@@ -46,6 +46,7 @@ import { ClientAvgProduct } from '../modelos/tables/clientAvgProduct';
 import { ClientStocks } from '../modelos/tables/client-stocks';
 import { HistoryTransaction } from '../services/historyTransaction/historyTransaction';
 import { CurrencyModules } from '../modelos/tables/currencyModules';
+import { UnitPriceList } from '../modelos/tables/unitPriceList';
 
 
 
@@ -91,6 +92,7 @@ export class PedidosService {
   public listaPedidos: ItemListaPedido[] = [];
   public listaList: List[] = [];
   public listaInfoModalList: List[] = [];
+  public listaUnitPriceList: UnitPriceList [] = [];
   public ivaList: IvaList[] = [];
   public carrito: OrderUtil[] = [];
   public carritoWithLines: { //carrito especial para groupByTotalByLines
@@ -313,6 +315,11 @@ export class PedidosService {
         this.listaInfoModalPricelist = data; 
       }); 
     });
+    }
+
+    if(this.unitByPriceList){
+      //para hacer el cambio automatico de unidad segun la lista de precio
+      this.getUnitPriceList(idEnterprise).then(data => { this.listaUnitPriceList = data; });
     }
 
   }
@@ -1176,6 +1183,10 @@ export class PedidosService {
 
   getListForInfoModal(idEnterprise: number) {
     return this.db.getListForInfoModal(this.database, idEnterprise);
+  }
+
+  getUnitPriceList(idEnterprise: number) {
+    return this.db.getUnitPriceList(this.database, idEnterprise);
   }
   getPriceListbyEnterprise(idEnterprise: number) {
     return this.db.getPriceListbyEnterprise(this.database, idEnterprise);
