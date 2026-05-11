@@ -50,7 +50,7 @@
             }
             @if(orderServ.unitByPriceList){
               @for(price of product.nuPriceList; track price.idList){
-                <p>{{price.naList}}: {{ price.nuPrice ? formatNum(price.nuPrice) : 'N/A'
+                <p>{{price.naList}} - {{price.coUnit}}: {{ price.nuPrice ? formatNum(price.nuPrice) : 'N/A'
               }} {{ product.coCurrency }} </p>
               }
             }@else{
@@ -122,8 +122,9 @@
                     [value]="product.idList" [disabled]="disablePriceListSelector"
                     [placeholder]="orderServ.getTag('PED_PLACEHOLDER_PRICELIST')+':'"
                     (ionChange)="onSelectPriceList($event, product)">
-                    <ion-select-option *ngFor="let price of product.listaList" [value]="price.idList">{{ price.naList
-                      }}</ion-select-option>
+                    <ion-select-option *ngFor="let price of product.listaList" [value]="price.idList">
+                      {{ orderServ.unitByPriceList ? price.naList + ' - ' + getNaUnitByPriceList(product, price.idList) : price.naList }}
+                    </ion-select-option>
                   </ion-select>
                 </div>
               </ion-col>
@@ -283,9 +284,16 @@
                   <p class="titulosBold"><span class="titulosBold">{{ productoModal.naProduct }}</span></p>
                   <p><span class="titulosBold">{{this.productsTabTags.get('PROD_COD_PROD')}}:</span> {{
                     productoModal.coProduct }}</p>
+                  @if(orderServ.unitByPriceList){
+                    @for(price of productoModal.nuPriceList; track price.idList){
+                      <p>{{price.naList}} - {{price.coUnit}}: {{ price.nuPrice ? formatNum(price.nuPrice) : 'N/A'
+                    }} {{ productoModal.coCurrency }} </p>
+                    }
+                  }@else{
                   <p><span class="titulosBold">{{this.productsTabTags.get('PROD_PRICE_PROD')}}:</span> {{
                     productoModal.nuPrice ? productoModal.nuPrice : 'N/A' }} {{
                     productoModal.coCurrency }}</p>
+                  }
                   <p><span class="titulosBold">{{orderServ.getTag("PED_IVA")}}:</span>
                     {{ productoModal.nuTax }} %</p>
                   @if((productoModal.ivaProducto+productoModal.discountedNuPrice) != productoModal.nuPrice){
@@ -348,8 +356,8 @@
                         [value]="productoModal.idList" interface="popover" labelPlacement="stacked"
                         [placeholder]="orderServ.getTag('PED_PLACEHOLDER_PRICELIST')+':'"
                         (ionChange)="onSelectPriceList($event, productoModal)">
-                        <ion-select-option *ngFor="let price of productoModal.listaList" [value]="price.idList">{{
-                          price.naList }}</ion-select-option>
+                        <ion-select-option *ngFor="let price of productoModal.listaList" [value]="price.idList">
+                          {{ orderServ.unitByPriceList ? price.naList + ' - ' + getNaUnitByPriceList(productoModal, price.idList) : price.naList }}</ion-select-option>
                       </ion-select>
                     </div>
                   </ion-col>

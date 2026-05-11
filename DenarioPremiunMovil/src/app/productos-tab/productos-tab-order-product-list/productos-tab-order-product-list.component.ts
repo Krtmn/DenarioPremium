@@ -583,6 +583,17 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   }
 
+  getNaUnitByPriceList(product: OrderUtil, idList: number): string {
+    let upl = this.orderServ.listaUnitPriceList.filter(u => u.idList == idList)[0];
+    if (upl) {
+      let unit = this.orderServ.listaUnitInfo.filter(u => u.idUnit == upl.idUnit)[0];
+      if (unit) {
+        return unit.naUnit;
+      }
+    }
+    return '';
+  }
+
   compareWithDiscount = (o1: any, o2: any) => {
     if (o1 === o2) return true;
     if ((o1 === null || o1 === undefined) && (o2 === null || o2 === undefined)) return true;

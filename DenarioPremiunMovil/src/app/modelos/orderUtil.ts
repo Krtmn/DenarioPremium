@@ -110,7 +110,7 @@ export class OrderUtil {
   public totalEnUnidades: number,
   public nuTax: number,
   public listaModalList: {list: List, pricelist: PriceList}[] = [],
-  public nuPriceList: {idList: number, naList: string, nuPrice: number}[] = [],
+  public nuPriceList: {idList: number, naList: string, nuPrice: number, naUnit: string, coUnit: string}[] = [],
 
   ) { }
 }

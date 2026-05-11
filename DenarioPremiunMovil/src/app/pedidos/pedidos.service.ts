@@ -599,7 +599,7 @@ export class PedidosService {
         };
         //PRECIO
         var price = 0;
-        var nuPriceList: {idList: number, naList: string, nuPrice: number}[] = [];
+        var nuPriceList: {idList: number, naList: string, nuPrice: number, naUnit: string, coUnit: string}[] = [];
         if (priceListSeleccionado.idList) {
           item.coCurrency = priceListSeleccionado.coCurrency;
           price = this.conversionByPriceList ?
@@ -640,10 +640,19 @@ export class PedidosService {
           //llenamos la lista a mostrar en el producto.
           priceLists.forEach(pl => {
             let list = this.listaList.filter(l => l.idList == pl.idList)[0];
+            //buscamos el nombre de la unidad de la lista de precio
+            let idUnitPL = this.listaUnitPriceList.filter(u => u.idList == pl.idList)[0]?.idUnit;
+            let naUnit = this.listaUnitInfo.filter(u => u.idUnit == idUnitPL)[0]?.naUnit || '';
+            let coUnit = this.listaUnitInfo.filter(u => u.idUnit == idUnitPL)[0]?.coUnit || '';
+
             if(list){
-              nuPriceList.push({idList: list.idList, 
+              nuPriceList.push({
+                                idList: list.idList, 
                                 naList: list.naList, 
-                                nuPrice: pl.nuPrice});
+                                nuPrice: pl.nuPrice,
+                                naUnit: naUnit,
+                                coUnit: coUnit
+                              });
             }
           });
         }
