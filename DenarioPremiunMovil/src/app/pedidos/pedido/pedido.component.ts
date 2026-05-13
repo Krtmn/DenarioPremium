@@ -356,6 +356,7 @@ export class PedidoComponent implements OnInit {
       }
 
       this.daDispatchChanged = false;
+      this.onDateDispatchChange();
     } else {
       //copio las fechas originales para mostrarlas
       this.fechaMinima = this.dateServ.toISOString(this.orderServ.order.daOrder);
@@ -364,6 +365,7 @@ export class PedidoComponent implements OnInit {
       }
       this.fechaPedido = this.orderServ.order.daOrder;
       this.daDispatchChanged = true;
+      this.onDateDispatchChange();
     }
     //responsable
     this.naResponsible = this.orderServ.order.naResponsible;
