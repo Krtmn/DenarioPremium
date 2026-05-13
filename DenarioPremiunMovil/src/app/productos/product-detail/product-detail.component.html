@@ -6,13 +6,25 @@
         <ion-col size="12" size-sm="12" size-xs="12">
           <div>
             <div>
-              <swiper-container [pagination]="true" navigation="false" class="mySwiper" zoom="true" loop="true">
+              <swiper-container [pagination]="true" navigation="false" class="mySwiper" zoom="true" [loop]="false"
+                [rewind]="productImages.length > 1" [watchOverflow]="true">
+                @if(productImages.length > 0){
+                @for(imgSrc of productImages; track imgSrc){
+                <swiper-slide class="swiperSlide">
+                  <div class="swiper-zoom-container">
+                    <img class="sizeImgProduct" [src]="imgSrc" />
+                  </div>
+                </swiper-slide>
+                }
+                }
+                @else {
                 <swiper-slide class="swiperSlide">
                   <div class="swiper-zoom-container">
                     <img class="sizeImgProduct"
                       [src]="pSeleccionado.coProduct ? (imageServices.getImgForProduct(pSeleccionado.coProduct)) : '../../../assets/images/nodisponible.png'" />
                   </div>
                 </swiper-slide>
+                }
               </swiper-container>
             </div>
           </div>
