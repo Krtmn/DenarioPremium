@@ -495,9 +495,16 @@ export class ImageServicesService {
     try {
       // 1) Buscar en cache por nombre de archivo (mapImagesFilesByFilename: filename -> base64)
       for (const [filename, base64] of this.mapImagesFilesByFilename.entries()) {
+        let fp = filename.split('_')[0];// obviamos sufijos tipo '12345_1.png' -> '12345'
+        fp = fp.split('.')[0]; //por si no tiene sufijos, '12345.png' -> '12345'
+        if (fp === productId && base64) {
+          return base64;
+        }
+        /* Esto falla si hay productos con codigos similares (ej: 12345 y 12345-1); mejor casamos con mapImages para obtener filename asociado a productId  
         if (filename.startsWith(productId) && base64) {
           return base64;
         }
+          */
       }
 
       // 2) Compatibilidad con estructura antigua: mapImagesFiles: Map<productKey, base64[]>
