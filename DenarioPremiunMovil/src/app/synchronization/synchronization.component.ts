@@ -12,6 +12,7 @@ import { HttpClient } from '@angular/common/http';
 import createTables from 'src/assets/database/createTables.json';
 import { ImageServicesService } from '../services/imageServices/image-services.service';
 import { MessageAlert } from '../modelos/tables/messageAlert';
+import { StraightSwap } from '../modelos/tables/straightSwap';
 
 @Component({
   selector: 'app-synchronization',
@@ -134,6 +135,8 @@ export class SynchronizationComponent implements OnInit {
     74: 'currencyModules',
     75: 'differenceCodes',
     76: 'collectDiscounts',
+    77: 'straight_swap',
+    78: 'return_category',
     79: 'typeDocument',
     80: 'codePhoneNumber',
     81: 'unit_pricelist',
@@ -201,6 +204,8 @@ export class SynchronizationComponent implements OnInit {
     currencyModules: 'Monedas Módulos',
     differenceCodes: 'Códigos de Diferencia',
     collectDiscounts: 'Descuentos de Cobro',
+    straight_swap: 'Cambio Por Cambio',
+    return_category: 'Categoría de Devolución',
     typeDocument: 'Tipo de Documento',
     codePhoneNumber: 'Código de Número Telefónico',
     unit_pricelist: 'Lista de Precio por Unidad',
@@ -678,6 +683,17 @@ export class SynchronizationComponent implements OnInit {
             this.tables.page = 0;
             break;
           }
+          case 77: {
+            this.tables.straightSwapTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
+
+          case 78: {
+            this.tables.returnCategoryTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
           case 79: {
             this.tables.typeDocumentTableLastUpdate = result[i].last_update;
             this.tables.page = 0;
@@ -905,6 +921,10 @@ export class SynchronizationComponent implements OnInit {
 
     if ([76].includes(tableId)) {
       return cfgTrue('userCanSelectCollectDiscount');
+    }
+
+    if ([77, 78].includes(tableId)) {
+      return cfgTrue('suggestedOrderByDispatchAndReturn');
     }
 
     if ([81].includes(tableId)) {
@@ -1348,6 +1368,20 @@ export class SynchronizationComponent implements OnInit {
       batchFn: this.synchronizationServices.insertCollectDiscountsBatch.bind(this.synchronizationServices),
       rowKey: 'collectDiscountTable',
       tableKey: 'collectDiscountTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
+    straight_swap: {
+      batchFn: this.synchronizationServices.insertStraightSwapBatch.bind(this.synchronizationServices),
+      rowKey: 'straightSwapTable',
+      tableKey: 'straightSwapTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
+    return_category: {
+      batchFn: this.synchronizationServices.insertReturnCategoryBatch.bind(this.synchronizationServices),
+      rowKey: 'returnCategoryTable',
+      tableKey: 'returnCategoryTableLastUpdate',
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
     },
