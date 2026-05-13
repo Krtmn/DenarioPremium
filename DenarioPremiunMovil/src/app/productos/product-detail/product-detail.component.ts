@@ -54,6 +54,7 @@ export class ProductDetailComponent implements OnInit {
   warehouses: Warehouse[] = [];
   //listPhotos: Imagenes[] = [];
   listPhotos: string[] = [];
+  listPrices?: {idList: number, naList: string, nuPrice: number, coUnit: string, naUnit: string, coCurrency: string}[] = [];
 
   public swiper!: Swiper;
 
@@ -80,6 +81,11 @@ export class ProductDetailComponent implements OnInit {
       this.warehouseSeleccionado = this.warehouses[0];
     });
     }
+
+    if(this.orderService.unitByPriceList){
+      this.listPrices = this.productService.listPrices;
+    }
+
     this.checkReorderPrices();
     //console.log('pSeleccionado: ' + JSON.stringify(this.pSeleccionado));
   }
@@ -98,7 +104,7 @@ export class ProductDetailComponent implements OnInit {
   checkReorderPrices(){
     if(this.localCurrencyDefault){
       //la local es la por defecto
-     if(this.pSeleccionado.coCurrencyLocal != this.currencyService.getLocalCurrency().coCurrency){
+    if(this.pSeleccionado.coCurrencyLocal != this.currencyService.getLocalCurrency().coCurrency){
       //vino la dura como local
         this.reorderPrices();
       }
@@ -129,6 +135,10 @@ export class ProductDetailComponent implements OnInit {
   }
   formatNumber(num: number) {
     return this.productService.formatNumber(num);
+  }
+
+  convertPrice(price: number, coCurrency: string) {
+    return this.currencyService.convertFrom(price, coCurrency);
   }
 
   /*  async getProductImages() {    

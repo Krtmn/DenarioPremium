@@ -344,6 +344,13 @@
     "sql": "CREATE TABLE return_category (id_return_category integer PRIMARY KEY, na_return_category VARCHAR(50) NOT NULL, add_suggestion BOOLEAN NOT NULL, subtract_suggestion BOOLEAN NOT NULL);"
   },
   {
+    "id": 81,
+    "name": "unit_pricelist",
+    "table": "unitPriceListTable",
+    "idName": "id_unit_pricelist",
+    "sql": "CREATE TABLE IF NOT EXISTS unit_pricelist (id_unit_pricelist INTEGER PRIMARY KEY AUTOINCREMENT, co_unit_pricelist VARCHAR(30), id_unit INTEGER NOT NULL, co_unit VARCHAR(30), id_list INTEGER NOT NULL, co_list TEXT, co_enterprise TEXT, id_enterprise INTEGER NOT NULL, da_update TIMESTAMP, co_operation CHAR(1));"
+  },
+  {
     "id": 9999999,
     "name": "versionsTables",
     "table": "versionsTables",

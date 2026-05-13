@@ -62,6 +62,7 @@ export interface TablesLastUpdate {
   returnCategoryTableLastUpdate: string,
   typeDocumentTableLastUpdate: string,
   codePhoneNumberTableLastUpdate: string,
+  unitPriceListTableLastUpdate: string,
   page: number
 
 }

@@ -468,6 +468,32 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   onSelectPriceList(e: any, product: OrderUtil) {
     const idList = e.detail.value as number;
+    const selectEl = e?.target as HTMLIonSelectElement;
+      let prevList = product.idList;
+      if(this.orderServ.unitByPriceList){
+        //revisamos primero si tenemos esa unidad. Si no, mostramos error.
+      let upl = this.orderServ.listaUnitPriceList.filter(u => u.idList == idList)[0];
+      if(!upl){
+        console.log("No se encontro unidad para la lista seleccionada");
+        this.message.transaccionMsjModalNB("No se encontro unidad para la lista seleccionada");
+        product.idList = prevList; //volvemos a la lista anterior, ya que no se encontro unidad para la nueva lista
+        selectEl.value = prevList;
+        this.cd.detectChanges(); 
+        return;
+      }
+      let unit = product.unitList.filter(u => u.idUnit == upl.idUnit)[0];
+      if(unit){
+        product.idUnit = unit.idUnit;
+        this.selectUnitById(unit.idUnit, product);
+      }else{
+        console.log("No se encontro unidad para la lista de precio seleccionada");
+        this.message.transaccionMsjModalNB("No se encontro unidad para la lista de precio seleccionada");
+        product.idList = prevList;
+        selectEl.value = prevList;
+        this.cd.detectChanges(); //volvemos a la lista anterior, ya que no se encontro unidad para la nueva lista
+        return;
+      }
+    }
     product.idList = idList;
 
     let pricelist = this.orderServ.listaPricelist.filter(pl => pl.idProduct == product.idProduct && pl.idList == idList)[0];
@@ -475,12 +501,18 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     product.coPriceList = pricelist.coPriceList;
 
     product.nuPrice = pricelist.nuPrice;
+
+
     this.orderServ.alCarrito(product);
   }
 
   onSelectUnit(e: any, product: OrderUtil) {
     const unit = e.detail.value;
-    product.idUnit = unit;
+    this.selectUnitById(unit, product);
+  }
+
+  selectUnitById(unitId: number, product: OrderUtil) {
+    product.idUnit = unitId;
     this.orderServ.alCarrito(product);
     product.quAmount = 0;
   }
@@ -549,6 +581,17 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.orderServ.alCarrito(product);
     this.cd.detectChanges();
 
+  }
+
+  getNaUnitByPriceList(product: OrderUtil, idList: number): string {
+    let upl = this.orderServ.listaUnitPriceList.filter(u => u.idList == idList)[0];
+    if (upl) {
+      let unit = this.orderServ.listaUnitInfo.filter(u => u.idUnit == upl.idUnit)[0];
+      if (unit) {
+        return unit.naUnit;
+      }
+    }
+    return '';
   }
 
   compareWithDiscount = (o1: any, o2: any) => {
