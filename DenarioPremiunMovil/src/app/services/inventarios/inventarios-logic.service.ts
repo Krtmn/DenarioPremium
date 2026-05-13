@@ -460,6 +460,9 @@ export class InventariosLogicService {
     }else{
       //tomamos la fecha del inventario anterior para calcular los días desde el último inventario,
       daysSinceLastInventory = this.dateServ.daysSince(previousCS.daClientStock);
+      if(daysSinceLastInventory <= 0){
+        daysSinceLastInventory = 1;
+      }
       this.newClientStock.daysSinceLast = daysSinceLastInventory;
 
       for (var i = 0; i < previousCS.clientStockDetails.length; i++) {
