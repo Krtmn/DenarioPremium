@@ -46,6 +46,7 @@ import { ClientAvgProduct } from '../modelos/tables/clientAvgProduct';
 import { ClientStocks } from '../modelos/tables/client-stocks';
 import { HistoryTransaction } from '../services/historyTransaction/historyTransaction';
 import { CurrencyModules } from '../modelos/tables/currencyModules';
+import { UnitPriceList } from '../modelos/tables/unitPriceList';
 
 
 
@@ -91,6 +92,7 @@ export class PedidosService {
   public listaPedidos: ItemListaPedido[] = [];
   public listaList: List[] = [];
   public listaInfoModalList: List[] = [];
+  public listaUnitPriceList: UnitPriceList [] = [];
   public ivaList: IvaList[] = [];
   public carrito: OrderUtil[] = [];
   public carritoWithLines: { //carrito especial para groupByTotalByLines
@@ -218,6 +220,7 @@ export class PedidosService {
 
   public displayProductPoints = false;
   public priceListInfoModal = false;
+  public unitByPriceList = false; //[unitByPriceList] muestra el precio de la otra unidad en el producto.
 
   codeTotalProductUnitMessageFlag = false;
 
@@ -314,6 +317,11 @@ export class PedidosService {
     });
     }
 
+    if(this.unitByPriceList){
+      //para hacer el cambio automatico de unidad segun la lista de precio
+      this.getUnitPriceList(idEnterprise).then(data => { this.listaUnitPriceList = data; });
+    }
+
   }
   fillProdMinMulMap() {
     this.listaProdMinMul.forEach((value) => {
@@ -402,7 +410,7 @@ export class PedidosService {
     this.vatExemptProducts = this.config.get("vatExemptProducts").toLowerCase() === "true";
     this.displayProductPoints = this.config.get("displayProductPoints").toLowerCase() === "true";
     this.priceListInfoModal = this.config.get("priceListInfoModal").toLowerCase() === "true";
-
+    this.unitByPriceList = this.config.get("unitByPriceList").toLowerCase() === "true";
     //string
     this.codeTotalProductUnit = this.config.get("codeTotalProductUnit");
     this.nameProductLine = this.config.get("nameProductLine");
@@ -591,6 +599,7 @@ export class PedidosService {
         };
         //PRECIO
         var price = 0;
+        var nuPriceList: {idList: number, naList: string, nuPrice: number, coUnit: string}[] = [];
         if (priceListSeleccionado.idList) {
           item.coCurrency = priceListSeleccionado.coCurrency;
           price = this.conversionByPriceList ?
@@ -624,6 +633,25 @@ export class PedidosService {
             let list = this.listaInfoModalList.filter(l => l.idList == pl.idList)[0];
             if(list){
               listaModalList.push({list: list, pricelist: pl});
+            }
+          });
+        }
+        if(this.unitByPriceList){
+          //llenamos la lista a mostrar en el producto.
+          priceLists.forEach(pl => {
+            let list = this.listaList.filter(l => l.idList == pl.idList)[0];
+            //buscamos el nombre de la unidad de la lista de precio
+            let idUnitPL = this.listaUnitPriceList.filter(u => u.idList == pl.idList)[0]?.idUnit;
+            let naUnit = this.listaUnitInfo.filter(u => u.idUnit == idUnitPL)[0]?.naUnit || '';
+            let coUnit = this.listaUnitInfo.filter(u => u.idUnit == idUnitPL)[0]?.coUnit || '';
+
+            if(list){
+              nuPriceList.push({
+                                idList: list.idList, 
+                                naList: list.naList, 
+                                nuPrice: pl.nuPrice,
+                                coUnit: coUnit
+                              });
             }
           });
         }
@@ -783,7 +811,9 @@ export class PedidosService {
           "subtotalConv": 0,
           "totalEnUnidades": 0,
           "nuTax": item.nuTax,
-          "listaModalList": listaModalList
+          "listaModalList": listaModalList,
+          "nuPriceList": nuPriceList
+
         }
         orderUtils.push(ou);
 
@@ -1161,6 +1191,10 @@ export class PedidosService {
 
   getListForInfoModal(idEnterprise: number) {
     return this.db.getListForInfoModal(this.database, idEnterprise);
+  }
+
+  getUnitPriceList(idEnterprise: number) {
+    return this.db.getUnitPriceList(this.database, idEnterprise);
   }
   getPriceListbyEnterprise(idEnterprise: number) {
     return this.db.getPriceListbyEnterprise(this.database, idEnterprise);

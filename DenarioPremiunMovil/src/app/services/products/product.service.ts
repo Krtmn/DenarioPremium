@@ -33,6 +33,7 @@ export class ProductService {
   public typeProductStructureList: TypeProductStructure[] = [];
   public coProductStructureList: string[] = [];
   public productDetail!: ProductDetail;
+  public listPrices?: {idList: number, naList: string, nuPrice: number, coUnit: string, naUnit: string, coCurrency: string}[];
   public empresaSeleccionada!: Enterprise;
   public listaEmpresa: Enterprise[] = [];
   public multiempresa: Boolean = false;
