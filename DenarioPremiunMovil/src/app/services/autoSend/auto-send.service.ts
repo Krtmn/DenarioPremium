@@ -493,6 +493,7 @@ export class AutoSendService implements OnInit {
         const promesa = new Promise<ClientStocks>((resolve, reject) => {
           this.inventariosLogicService.getClientStock(this.dbService.getDatabase(), coTransaction).then(clientStock => {
             console.log(clientStock);
+            /* ya se buscan los details en el getClientStock.
             for (var i = 0; i < clientStock.clientStockDetails.length; i++) {
               this.inventariosLogicService.getClientStockDetailsUnits(this.dbService.getDatabase(), clientStock.clientStockDetails[i].coClientStockDetail, i).then(data => {
                 console.log(data);
@@ -505,11 +506,12 @@ export class AutoSendService implements OnInit {
                 }
                 console.log(clientStock.clientStockDetails[index]);
                 if (index == clientStock.clientStockDetails.length - 1)
+                
                   resolve(clientStock)
               })
 
-            }
-
+            }*/
+            resolve(clientStock);
           }).catch(e => {
             console.log("Error al ejecutar getClientStock.");
             console.log(e);
