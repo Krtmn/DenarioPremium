@@ -10,15 +10,35 @@ if [ -z "$1" ]; then
 fi
 
 # Configuración de rutas (ajusta según tu entorno)
-ANDROID_DIR="/Users/luiscastillo/Documents/Repositorios/DenarioPremiunMovil/DenarioPremiunMovil/android"
-PROJECT_DIR="/Users/luiscastillo/Documents/Repositorios/DenarioPremiunMovil/DenarioPremiunMovil"
-APK_PATH="/Users/luiscastillo/Documents/Repositorios/DenarioPremiunMovil/DenarioPremiunMovil/android/app/build/outputs/apk/release/app-release.apk"
-SIGNED_APK_PATH="/Users/luiscastillo/Documents/Repositorios/DenarioPremiunMovil/DenarioPremiunMovil/android/app/build/outputs/apk/release/app-release-signed-unaligned.apk"
-ALIGNED_APK_PATH="/Users/luiscastillo/Documents/Repositorios/DenarioPremiunMovil/DenarioPremiunMovil/android/app/build/outputs/apk/release/app-release-signed.apk"
-KEYSTORE_PATH="/Users/luiscastillo/Documents/Repositorios/DenarioPremiunMovil/DenarioPremiunMovil/android/app/my-denarioPremium-key.keystore"
+PROJECT_ROOT="/Users/kiberno/Documents/Repositorios/DenarioPremiumMovil2026"
+PROJECT_DIR="$PROJECT_ROOT/DenarioPremiunMovil"
+ANDROID_DIR="$PROJECT_DIR/android"
+APK_PATH="$ANDROID_DIR/app/build/outputs/apk/release/app-release-unsigned.apk"
+SIGNED_APK_PATH="$ANDROID_DIR/app/build/outputs/apk/release/app-release-signed-unaligned.apk"
+ALIGNED_APK_PATH="$ANDROID_DIR/app/build/outputs/apk/release/app-release-signed.apk"
+KEYSTORE_PATH="$PROJECT_ROOT/my-denarioPremium-key.keystore"
 ALIAS="my-key-denariopremium"
 APK_NAME="$1"
-OUTPUT_DIR="/Users/luiscastillo/Documents/Apks/${APK_NAME}"
+OUTPUT_DIR="/Users/kiberno/Documents/APK/${APK_NAME}"
+
+ENV_FILE="$PROJECT_DIR/claves.env"
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  . <(tr -d '\r' < "$ENV_FILE")
+  set +a
+fi
+
+if [ -n "$ANDROID_KEYSTORE_PATH" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
+  KEYSTORE_PATH="$ANDROID_KEYSTORE_PATH"
+  KEYSTORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD"
+  ALIAS="$ANDROID_KEY_ALIAS"
+  KEY_PASSWORD="$ANDROID_KEY_PASSWORD"
+else
+  KEYSTORE_PATH="$HOME/.android/debug.keystore"
+  KEYSTORE_PASSWORD="android"
+  ALIAS="androiddebugkey"
+  KEY_PASSWORD="android"
+fi
 
 # 1. Compilar la app para producción
 cd "$PROJECT_DIR"
@@ -56,7 +76,7 @@ if [ -z "$APK_SIGNER_PATH" ]; then
   exit 1
 fi
 mkdir -p "$OUTPUT_DIR"
-$APK_SIGNER_PATH sign --ks "$KEYSTORE_PATH" --ks-pass pass:Peace4us2025* --ks-key-alias "$ALIAS" --out "$OUTPUT_DIR/$APK_NAME.apk" "$APK_PATH"
+$APK_SIGNER_PATH sign --ks "$KEYSTORE_PATH" --ks-pass "pass:$KEYSTORE_PASSWORD" --key-pass "pass:$KEY_PASSWORD" --ks-key-alias "$ALIAS" --out "$OUTPUT_DIR/$APK_NAME.apk" "$APK_PATH"
 if [ -f "$OUTPUT_DIR/$APK_NAME.apk.idsig" ]; then
   rm "$OUTPUT_DIR/$APK_NAME.apk.idsig"
 fi
