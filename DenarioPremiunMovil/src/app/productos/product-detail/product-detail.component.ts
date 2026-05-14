@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, inject } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges, inject } from '@angular/core';
 import { ProductListComponent } from '../product-list/product-list.component';
 import { Product } from 'src/app/modelos/tables/product';
 import { ProductDetail } from 'src/app/modelos/ProductDetail';
@@ -26,7 +26,7 @@ register();
     styleUrls: ['./product-detail.component.scss'],
     standalone: false
 })
-export class ProductDetailComponent implements OnInit {
+export class ProductDetailComponent implements OnInit, OnChanges {
 
   priceListService = inject(PriceListService);
   productService = inject(ProductService);
@@ -54,6 +54,7 @@ export class ProductDetailComponent implements OnInit {
   warehouses: Warehouse[] = [];
   //listPhotos: Imagenes[] = [];
   listPhotos: string[] = [];
+  productImages: string[] = [];
   listPrices?: {idList: number, naList: string, nuPrice: number, coUnit: string, naUnit: string, coCurrency: string}[] = [];
 
   public swiper!: Swiper;
@@ -86,8 +87,31 @@ export class ProductDetailComponent implements OnInit {
       this.listPrices = this.productService.listPrices;
     }
 
+    this.loadProductImages();
+
     this.checkReorderPrices();
     //console.log('pSeleccionado: ' + JSON.stringify(this.pSeleccionado));
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['pSeleccionado'] && this.pSeleccionado?.coProduct) {
+      this.loadProductImages();
+    }
+  }
+
+  private async loadProductImages(): Promise<void> {
+    const productId = this.pSeleccionado?.coProduct;
+    if (!productId) {
+      this.productImages = [];
+      return;
+    }
+
+    try {
+      this.productImages = await this.imageServices.getImagesForProduct(productId);
+    } catch (err) {
+      console.warn('[ProductDetail] failed loading product images for', productId, err);
+      this.productImages = [];
+    }
   }
 
   onListChanged(idList: number) {

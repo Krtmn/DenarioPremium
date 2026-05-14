@@ -653,8 +653,8 @@ export class InventariosLogicService {
       + 'id_client_stock, co_client_stock, id_user, co_user, id_client, co_client, id_address_client,'
       + 'co_address_client,coordenada, tx_comment,'
       + 'id_enterprise, co_enterprise, st_client_stock, da_client_stock, lb_client, isSave, nu_attachments, has_attachments, '
-      + 'st_delivery) VALUES ('
-      + '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+      + 'st_delivery, days_since_last, days_until_next) VALUES ('
+      + '?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
 
     const insertClientStocksDetails = "INSERT OR REPLACE INTO client_stocks_details ("
       + "id_client_stock_detail, co_client_stock_detail, co_client_stock, na_product, co_product, id_product,"
@@ -681,7 +681,7 @@ export class InventariosLogicService {
           clientStock.idClient, clientStock.coClient, clientStock.idAddressClient, clientStock.coAddressClient,
           clientStock.coordenada, clientStock.txComment, clientStock.idEnterprise, clientStock.coEnterprise,
           clientStock.stClientStock, clientStock.daClientStock, clientStock.lbClient, clientStock.isSave,
-          clientStock.nuAttachments, clientStock.hasAttachments, clientStock.stDelivery
+          clientStock.nuAttachments, clientStock.hasAttachments, clientStock.stDelivery, clientStock.daysSinceLast, clientStock.daysUntilNext
         ]
       ]);
 
