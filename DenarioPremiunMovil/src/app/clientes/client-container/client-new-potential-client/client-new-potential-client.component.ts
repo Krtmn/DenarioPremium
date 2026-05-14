@@ -165,7 +165,9 @@ export class NewPotentialClientComponent implements OnInit {
   }
 
   ngOnDestroy() {
-
+    if (this.subs) {
+      this.subs.unsubscribe();
+    }
   }
 
   async validatePotentialClient(potencialClient: FormGroup, saveSend: Boolean) {
