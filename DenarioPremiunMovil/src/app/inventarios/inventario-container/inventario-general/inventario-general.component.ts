@@ -125,7 +125,7 @@ export class InventarioGeneralComponent implements OnInit {
       //ESTO PARA HACER EL PROCESO DE CARGA 1 SOLA VEZ Y NO CADA VEZ QUE SE LE DE A LA PESTANA GENERAL
       this.initInventario()
       this.adjuntoService.setup(this.dbServ.getDatabase(), this.config.get("signatureStock") == "true", this.viewOnly, COLOR_AMARILLO);
-      this.daClientStock = this.dateServ.hoyISOFullTime();
+      //this.daClientStock = this.dateServ.hoyISOFullTime();
       this.inventariosLogicService.alertMessage = false;
       this.inventariosLogicService.alertMessageOpen = false;
       this.checkAddressClient = this.config.get("checkAddressClient").toLowerCase() === "true";
@@ -208,8 +208,9 @@ export class InventarioGeneralComponent implements OnInit {
             this.inventariosLogicService.getClientStock(this.dbServ.getDatabase(), this.inventariosLogicService.newClientStock.coClientStock).then(clientStock => {
               console.log(clientStock);
               if (clientStock != undefined) {
+                this.daClientStock = '';
                 if (clientStock.clientStockDetails.length == 0) {
-                  this.message.hideLoading();
+                  this.message.hideLoading();                  
                 }
 
                 for (var i = 0; i < this.inventariosLogicService.listaEmpresa.length; i++) {
