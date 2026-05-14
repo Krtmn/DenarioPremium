@@ -453,7 +453,7 @@ export class InventariosLogicService {
     let daysUntilNextInventory = this.newClientStock.daysUntilNext;
     let dateLastInventory =  this.dateServ.pastDaysISO(daysSinceLastInventory);
     //inventario anterior
-    let previousCS = await this.getPreviousClientStock(dbServ, idClient, idAddressClient);
+    let previousCS = await this.getPreviousClientStock(dbServ, idClient, idAddressClient, this.newClientStock.coClientStock);
     if (previousCS == null) {
       //si no hay previo, se asume que el inventario inicial es 0, por lo que no se hace nada
       this.newClientStock.daysSinceLast = daysSinceLastInventory = 1;
@@ -534,6 +534,9 @@ export class InventariosLogicService {
         unitUtil.soldUnits = unitUtil.initialStock - unitUtil.currentStock - unitUtil.returnedStock;
         //Pedido Sugerido = Venta/Dias desde ultima visita × Días hasta la próxima visita
         unitUtil.estimatedDailyUnits = unitUtil.soldUnits / daysSinceLastInventory;
+        if(unitUtil.estimatedDailyUnits < 0){
+          unitUtil.estimatedDailyUnits = 0;
+        }
         unitUtil.quUnitSuggested = Math.round(unitUtil.estimatedDailyUnits * daysUntilNextInventory);
         if(unitUtil.quUnitSuggested < 0){
           unitUtil.quUnitSuggested = 0;
@@ -957,11 +960,11 @@ export class InventariosLogicService {
     });
   }
 
-  getPreviousClientStock(dbServ: SQLiteObject, idClient: number, idAddressClient: number) {
-    let selectStatement = "SELECT * "+
-      "FROM client_stocks WHERE id_client = ? AND id_address_client = ? ORDER BY da_client_stock DESC LIMIT 1";
+  getPreviousClientStock(dbServ: SQLiteObject, idClient: number, idAddressClient: number, coClientStock: string) {
+    let selectStatement = 
+      "SELECT * FROM client_stocks WHERE id_client = ? AND id_address_client = ? AND co_client_stock < ? ORDER BY da_client_stock DESC LIMIT 1";
 
-    return dbServ.executeSql(selectStatement, [idClient, idAddressClient]).then(result => {
+    return dbServ.executeSql(selectStatement, [idClient, idAddressClient, coClientStock]).then(result => {
       if(result.rows.length > 0){
         let item = result.rows.item(0);
         let clientStock: ClientStocks = {
