@@ -99,7 +99,7 @@ export class NewPotentialClientComponent implements OnInit {
     naResponsible: new FormControl('', [Validators.required]),
     emClient: new FormControl('', [Validators.required, Validators.email, // Angular's built-in email validator
     Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/)]),
-    nuPhone: new FormControl('', [Validators.required]),
+    nuPhone: new FormControl('', [Validators.required, Validators.pattern(/^(?=(?:\D*\d){7,15}\D*$)(?:\+\d{1,3}[ .-]?)?(?:\(\d{2,4}\)|\d{2,4})(?:[ .-]?\d{2,4}){1,3}$/)]),
     naWebSite: new FormControl(''),
     coordenadaClient: new FormControl(''),
   });
