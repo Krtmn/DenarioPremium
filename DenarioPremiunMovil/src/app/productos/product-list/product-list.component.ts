@@ -156,6 +156,10 @@ export class ProductListComponent implements OnInit {
 
   searchSubscription: Subscription = this.productService.productoSearch.subscribe((data) => {
     this.searchText = data;
+    if (!this.searchText) {
+      this.message.hideLoading();
+      return;
+    }
     if (this.searchText) {
       this.productService.getProductsSearchedByCoProductAndNaProduct(this.db.getDatabase(),
         this.searchText, this.productService.empresaSeleccionada.idEnterprise, this.defaultCurrency, 0).then(() => {
