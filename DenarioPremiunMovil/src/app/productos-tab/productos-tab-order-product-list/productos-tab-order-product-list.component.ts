@@ -629,7 +629,29 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   }
 
+  private isDistinctItemsLimitActive(): boolean {
+    const t = this.orderServ.tipoOrden;
+    if (!t) {
+      return false;
+    }
+    const limitOn =
+      t.itemsLimit === true ||
+      (t.itemsLimit as unknown) === 1 ||
+      (t.itemsLimit as unknown) === '1';
+    if (!limitOn || t.quItems <= 0) {
+      return false;
+    }
+    return this.orderServ.carrito.length >= t.quItems;
+  }
+
+  private isProductInCarrito(prod: OrderUtil): boolean {
+    return this.orderServ.carrito.some((c) => c.idProduct === prod.idProduct);
+  }
+
   disableProduct(prod: OrderUtil) {
+    if (this.isDistinctItemsLimitActive() && !this.isProductInCarrito(prod)) {
+      return true;
+    }
     if (!prod.nuPrice) {
       return true;
     }
