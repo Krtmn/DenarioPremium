@@ -1297,9 +1297,9 @@ let select = "select *  from return_details rd where id_return in "+
   "(select rt.id_type from return_types rt where rt.id_return_category in "+
     "(select rc.id_return_category from return_category rc where rc.subtract_suggestion = 'true') )"+
   "and r.id_client = "+idClient+" and r.id_enterprise = "+idEnterprise+" and r.da_return > '"+dateLastInventory+"') "+
-"and rd.id_product IN ("+idProducts.join(",")+") and rd.co_measure_unit IN (?)";
+"and rd.id_product IN ("+idProducts.join(",")+") and rd.co_measure_unit IN ('"+coUnits.join("','")+"')";
 
-  return dbServ.executeSql(select, [coUnits.join(",")]).then(data => {
+  return dbServ.executeSql(select, []).then(data => {
     let returnDetails: ReturnDetail[] = [];
     for (var i = 0; i < data.rows.length; i++) {
       let item = data.rows.item(i);
