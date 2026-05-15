@@ -198,11 +198,11 @@ export class ClienteSelectorComponent implements OnInit {
     if (this.multimoneda) {
       this.fixClientListSaldos(clientsToShow);
     }
-
+/*
     if (this.globalConfig.get("clientsOrderBy") == "due_date") {
       await this.oderByDueDateAndSaldo(clientsToShow);
     }
-
+*/
 
     this.clientes = [...this.clientes, ...clientsToShow];
     //}
