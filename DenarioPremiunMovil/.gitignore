@@ -28,6 +28,11 @@ log.txt
 !/android/app/src/main/res/xml/
 !/android/app/src/main/res/xml/network_security_config.xml
 
+# iOS generated artifacts
+/ios/DerivedData/
+/ios/App/Pods/
+/ios/App/App/public/
+
 # Compiled output
 /dist
 /tmp
@@ -77,3 +82,8 @@ Thumbs.db
 
 # Ignore Gradle build output directory
 build
+/ios/App/App.xcodeproj/xcuserdata/
+/ios/App/App.xcworkspace/xcuserdata/
+
+# iOS native project (Capacitor/Xcode) - keep ignored
+/ios/**
