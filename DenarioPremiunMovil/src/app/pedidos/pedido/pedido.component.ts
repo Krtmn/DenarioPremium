@@ -997,11 +997,50 @@ export class PedidoComponent implements OnInit {
 
 
     } else {
-      //no se hace nada, solo el onchange()
-      this.orderServ.tipoOrden = this.tipoOrden;
-      this.tipoOrdenAnterior = this.tipoOrden;
-      this.tipoOrden = this.orderServ.tipoOrden;
-
+      const newType = this.tipoOrden;
+      const limitViolated =
+        !!newType?.itemsLimit &&
+        newType.quItems > 0 &&
+        this.orderServ.carrito.length > newType.quItems;
+      if (limitViolated) {
+        const buttonsItemsLimit = [
+          {
+            text: this.orderServ.getTag("DENARIO_BOTON_CANCELAR"),
+            role: 'cancel',
+            handler: () => {
+              this.orderServ.setChangesMade(false);
+              this.tipoOrden = this.tipoOrdenAnterior;
+            },
+          },
+          {
+            text: this.orderServ.getTag("DENARIO_BOTON_ACEPTAR"),
+            role: 'confirm',
+            handler: () => {
+              const empresa = this.orderServ.empresaSeleccionada;
+              const cliente = this.orderServ.cliente;
+              this.orderServ.tipoOrden = this.tipoOrden;
+              this.reset();
+              this.orderServ.empresaSeleccionada = empresa;
+              this.onEnterpriseSelect();
+              this.setClientfromSelector(cliente);
+              this.tipoOrden = this.orderServ.tipoOrden;
+              this.tipoOrdenAnterior = this.tipoOrden;
+            },
+          },
+        ];
+        this.message.alertCustomBtn(
+          {
+            header: this.orderServ.getTag("PED_NOMBRE_MODULO"),
+            message: this.orderServ.getTag("PED_RESET_ORDERTYPE_ITEMS_LIMIT"),
+          } as MessageAlert,
+          buttonsItemsLimit,
+        );
+      } else {
+        //no se hace nada, solo el onchange()
+        this.orderServ.tipoOrden = this.tipoOrden;
+        this.tipoOrdenAnterior = this.tipoOrden;
+        this.tipoOrden = this.orderServ.tipoOrden;
+      }
     }
     this.onChange();
   }

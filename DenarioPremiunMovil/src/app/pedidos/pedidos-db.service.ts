@@ -57,13 +57,18 @@ export class PedidosDbService {
 
   getOrderTypes(db: SQLiteObject, coEnterprise: string) {
     let query = "SELECT id_order_type as idOrderType, co_order_type as coOrderType, na_order_type as naOrderType, " +
-      "default_value as defaultValue, co_enterprise as coEnterprise " +
+      "default_value as defaultValue, co_enterprise as coEnterprise, id_enterprise as idEnterprise, " +
+      "items_limit as itemsLimit, qu_items as quItems " +
       "from order_types where co_enterprise = ? order by default_value DESC";
 
     return db.executeSql(query, [coEnterprise]).then(data => {
       let list: OrderType[] = [];
       for (let i = 0; i < data.rows.length; i++) {
-        list.push(data.rows.item(i));
+        const row = data.rows.item(i) as OrderType;
+        row.defaultValue = !!row.defaultValue;
+        row.itemsLimit = !!row.itemsLimit;
+        row.quItems = Number(row.quItems ?? 0);
+        list.push(row);
       }
       return list;
     })

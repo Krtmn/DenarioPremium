@@ -494,6 +494,8 @@ export class PedidosService {
       this.removeFromCarrito(prod);
       return;
     }
+    const t = this.tipoOrden;
+    const limitActive = !!(t && t.itemsLimit && t.quItems > 0);
     if (this.carrito.length < 1) {
       //si no hay elementos, no hay nada que chequear.
       prod.idInfo = 0;
@@ -510,6 +512,12 @@ export class PedidosService {
         item.idInfo = i;
       }
       if (!sustitucion) {
+        if (limitActive && t && this.carrito.length >= t.quItems) {
+          this.message.transaccionMsjModalNB(
+            this.getTag('PED_LIMITE_ITEMS_DISTINTOS') + String(t.quItems) + '.',
+          );
+          return;
+        }
         prod.idInfo = this.carrito.length;
         this.carrito.push(prod);
 
