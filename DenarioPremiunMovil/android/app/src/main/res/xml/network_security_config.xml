@@ -11,6 +11,7 @@
     <domain-config cleartextTrafficPermitted="false">
         <!-- si cliente usa HTTPS, va aqui -->
         <domain includeSubdomains="true">denario.net</domain>
+        <domain includeSubdomains="true">denario-mobile-dev.apps.kraftheinz.com</domain>
 
         <trust-anchors>
             <!-- CA empaquetada para compatibilidad en Android antiguos -->
@@ -19,15 +20,21 @@
             <certificates src="user" />
         </trust-anchors>
     </domain-config>
-    <domain-config cleartextTrafficPermitted="true">
 
+    <domain-config cleartextTrafficPermitted="true">
         <!-- si cliente _NO_ usa HTTPS, va aqui -->
+        <!-- Kiberno - Diego TESTING-->
+        <domain includeSubdomains="true">192.168.0.107</domain>
+        <domain includeSubdomains="true">192.168.0.153</domain>
+        <domain includeSubdomains="true">192.168.0.187</domain>
+        <!-- Kiberno - Richard -->
+        <domain includeSubdomains="true">192.168.0.231</domain>
+        <!-- Kiberno - Soporte -->
+        <domain includeSubdomains="true">soportepremium.ddns.net</domain>
         <!-- tambien va aqui cualquier servidor de prueba -->
         <domain includeSubdomains="true">denariopremium.com</domain>
         <domain includeSubdomains="true">denariodemo.ddns.net</domain>
         <domain includeSubdomains="true">denarioelyaque.ddns.net</domain>
         <domain includeSubdomains="true">denarioislacoche.ddns.net</domain>
-        <domain includeSubdomains="true">soportepremium.ddns.net</domain>
-
     </domain-config>
 </network-security-config>

@@ -1,14 +1,14 @@
 @echo off
 REM 0. Configuración de variables absolutas (ajustadas al usuario actual)
-set ANDROID_DIR=C:\Users\franc\Documents\Repositorios\DenarioPremiumMovil\DenarioPremiunMovil\android
-set PROJECT_DIR=C:\Users\franc\Documents\Repositorios\DenarioPremiumMovil\DenarioPremiunMovil
+set ANDROID_DIR=C:\Users\Admin\Documents\denarioPremiumMovil-IonicAngular\DenarioPremiunMovil\android
+set PROJECT_DIR=C:\Users\Admin\Documents\denarioPremiumMovil-IonicAngular\DenarioPremiunMovil
 set APK_PATH=%ANDROID_DIR%\app\build\outputs\apk\release\app-release-unsigned.apk
 set SIGNED_APK_PATH=%ANDROID_DIR%\app\build\outputs\apk\release\app-release-signed-unaligned.apk
 set ALIGNED_APK_PATH=%ANDROID_DIR%\app\build\outputs\apk\release\app-release-signed.apk
 set KEYSTORE_PATH=%PROJECT_DIR%\app\my-denarioPremium-key.keystore
 set ALIAS=my-key-denariopremium
 set APK_NAME=%1
-set OUTPUT_DIR=C:\Users\franc\Documents\Apks\%APK_NAME%
+set OUTPUT_DIR=C:\Apks\%APK_NAME%
 
 
 
