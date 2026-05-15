@@ -790,7 +790,10 @@ export class CobrosGeneralComponent implements OnInit {
                   this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
                 }
                 if (this.collectService.userCanSelectCollectDiscount) {
-                  this.collectService.getCollectDiscounts(this.synchronizationServices.getDatabase());
+                  this.collectService.getCollectDiscounts(
+                    this.synchronizationServices.getDatabase(),
+                    this.collectService.collection.idEnterprise
+                  );
                 }
                 this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
 

@@ -1619,13 +1619,17 @@ export class SynchronizationDBService {
   insertCollectDiscountsBatch(arr: CollectDiscounts[]) {
     var statements = [];
     let insertStatement = "INSERT OR REPLACE INTO collect_discounts(" +
-      "id_collect_discount, nu_collect_discount, na_collect_discount, require_input" +
+      "id_collect_discount, nu_collect_discount, na_collect_discount, require_input, id_enterprise" +
       ") " +
-      "VALUES(?,?,?,?)"
+      "VALUES(?,?,?,?,?)"
 
     for (var i = 0; i < arr.length; i++) {
-      statements.push([insertStatement, [arr[i].idCollectDiscount,
-      arr[i].nuCollectDiscount, arr[i].naCollectDiscount, arr[i].requireInput]
+      const row = arr[i] as CollectDiscounts & { id_enterprise?: number };
+      const idEnterpriseResolved =
+        row.idEnterprise ?? row.id_enterprise ?? null;
+      statements.push([insertStatement, [row.idCollectDiscount,
+      row.nuCollectDiscount, row.naCollectDiscount, row.requireInput,
+      idEnterpriseResolved]
       ])
     }
     return this.database.sqlBatch(statements).then(res => {

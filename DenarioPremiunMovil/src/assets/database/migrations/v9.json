@@ -19,5 +19,9 @@
     {
         "sql": "ALTER TABLE order_types ADD COLUMN qu_items INTEGER NOT NULL DEFAULT 0;",
         "description": "Se agrega la columna 'qu_items' a la tabla 'order_types' para la cantidad máxima de productos distintos cuando items_limit está activo."
+    },
+    {
+        "sql": "ALTER TABLE collect_discounts ADD COLUMN id_enterprise INTEGER;",
+        "description": "Se agrega la columna 'id_enterprise' a 'collect_discounts' para filtrar descuentos de cobro por empresa."
     }
 ]
