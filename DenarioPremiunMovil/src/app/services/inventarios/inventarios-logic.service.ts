@@ -451,7 +451,7 @@ export class InventariosLogicService {
     if(this.suggestedOrderByDispatchAndReturn){
     let daysSinceLastInventory = this.newClientStock.daysSinceLast;
     let daysUntilNextInventory = this.newClientStock.daysUntilNext;
-    let dateLastInventory =  this.dateServ.pastDaysISO(daysSinceLastInventory);
+
     //inventario anterior
     let previousCS = await this.getPreviousClientStock(dbServ, idClient, idAddressClient, this.newClientStock.coClientStock);
     if (previousCS == null) {
@@ -464,6 +464,7 @@ export class InventariosLogicService {
         daysSinceLastInventory = 1;
       }
       this.newClientStock.daysSinceLast = daysSinceLastInventory;
+      
 
       for (var i = 0; i < previousCS.clientStockDetails.length; i++) {
         for (var j = 0; j < previousCS.clientStockDetails[i].clientStockDetailUnits.length; j++) {
@@ -480,6 +481,7 @@ export class InventariosLogicService {
         }
       }
     }
+    let dateLastInventory =  this.dateServ.pastDaysISO(daysSinceLastInventory);
     //despacho por ultima facturacion
     let dispatchsByLastInvoice = await this.getInvoicesDetailUnitsByIdProductUnit(dbServ, idProductUnits);
     
