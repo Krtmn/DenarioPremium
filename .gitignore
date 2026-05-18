@@ -42,6 +42,7 @@ DenarioPremiunMovil/android_backup/res/xml/file_paths.xml
 claves.env
 DenarioPremiunMovil/claves.env
 GoogleService-Info.plist
+DenarioPremiunMovil/angular.json
 DenarioPremiunMovil/ios/
 !DenarioPremiunMovil/ios/
 !DenarioPremiunMovil/ios/App/
