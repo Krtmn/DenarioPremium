@@ -256,7 +256,7 @@ export class PedidosService {
     let coEnterprise = this.empresaSeleccionada.coEnterprise;
     this.getConfig();
     if (this.monedaSeleccionada == null) {
-      this.monedaSeleccionada = this.currencyService.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
+      this.currencySelection();
     }
 
     /*
@@ -1539,7 +1539,7 @@ export class PedidosService {
         "inOrderReview": false,
         "nuAmountTotal": 0,
         "nuAmountFinal": 0,
-        "coCurrency": this.empresaSeleccionada.coCurrencyDefault,
+        "coCurrency": this.monedaSeleccionada.coCurrency,
         "daDispatch": this.dateService.hoyISO(),
         "txComment": this.getTag('INV_PED_SUG'),
         "nuPurchase": "",
@@ -1555,8 +1555,8 @@ export class PedidosService {
         "stOrder": VISIT_STATUS_SAVED,
         "coordenada": this.coordenadas,
         "nuDiscount": 0,
-        "idCurrency": this.currencyService.getCurrency(this.empresaSeleccionada.coCurrencyDefault).idCurrency,
-        "idCurrencyConversion": this.currencyService.getOppositeCurrency(this.empresaSeleccionada.coCurrencyDefault).idCurrency,
+        "idCurrency": this.monedaSeleccionada.idCurrency,
+        "idCurrencyConversion": this.currencyService.getOppositeCurrency(this.monedaSeleccionada.coCurrency).idCurrency,
         "nuValueLocal": this.currencyService.localValue,
         "nuAmountTotalConversion": 0,
         "nuAmountFinalConversion": 0,
