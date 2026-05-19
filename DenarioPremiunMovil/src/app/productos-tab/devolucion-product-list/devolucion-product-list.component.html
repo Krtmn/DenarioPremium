@@ -30,7 +30,7 @@
                       <!-- <ion-input formControlName="coDocument" label="{{this.tags.get('DEV_DOC')}}" -->
                       <!-- <ion-input disabled="{{ this.returnLogic.returnSent || this.returnLogic.validateReturn}}" -->
                       <ion-input label="{{ tags.get('DEV_DOC') }}" #inputCoDocument label-placement="floating"
-                        [disabled]="this.returnLogic.returnSent"
+                        [disabled]="this.returnLogic.returnSent || returnLogic.validateReturn"
                         fill="outline" [(ngModel)]="product.coDocument" #inputDocument value="{{ product.coDocument }}"
                         [ngClass]="{ 'inp-write': !product.coDocument && returnLogic.requeridedNroFactura }" (ionInput)="inputCoDocument.value = cleanInput(inputCoDocument.value);
                         product.coDocument = cleanString(product.coDocument)" [required]="returnLogic.requeridedNroFactura ? true : false">
