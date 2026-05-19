@@ -469,8 +469,8 @@
                     </ion-col>
                     <ion-col size="12" size-sm="12" size-xs="12" *ngIf="showConversion">
                       <span class="titulosBold">{{ orderServ.getTag("PED_TASA")}}:</span>
-                      {{ nuValueLocal }} {{ localCurrency.coCurrency }} = {{
-                      currencyServ.currencyRelation }} {{ hardCurrency.coCurrency }}
+                      {{ tasaCambio }} {{ localCurrency.coCurrency }} = {{
+                      formatNum(currencyServ.currencyRelation) }} {{ hardCurrency.coCurrency }}
                     </ion-col>
                   </ion-row>
                 </ion-grid>
