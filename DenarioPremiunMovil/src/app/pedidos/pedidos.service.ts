@@ -488,6 +488,29 @@ export class PedidosService {
   }
 
 
+  private isDistinctItemsLimitConfigured(): boolean {
+    const t = this.tipoOrden;
+    if (!t || t.quItems <= 0) {
+      return false;
+    }
+    const raw = t.itemsLimit as boolean | number | string | undefined;
+    return raw === true || raw === 1 || raw === '1';
+  }
+
+  private notifyIfDistinctItemsLimitJustReached(distinctNewLineAdded: boolean): void {
+    if (!distinctNewLineAdded || !this.isDistinctItemsLimitConfigured()) {
+      return;
+    }
+    const t = this.tipoOrden;
+    if (!t || this.carrito.length !== t.quItems) {
+      return;
+    }
+    this.message.transaccionMsjModalNB(
+      this.getTag('PED_LIMITE_ITEMS_TOPE_ALCANZADO') +
+        `${this.carrito.length}/${t.quItems}.`,
+    );
+  }
+
   alCarrito(prod: OrderUtil) {
     let sustitucion = false;
     if (prod.quAmount <= 0) {
@@ -495,11 +518,12 @@ export class PedidosService {
       return;
     }
     const t = this.tipoOrden;
-    const limitActive = !!(t && t.itemsLimit && t.quItems > 0);
+    const limitActive = this.isDistinctItemsLimitConfigured();
     if (this.carrito.length < 1) {
       //si no hay elementos, no hay nada que chequear.
       prod.idInfo = 0;
       this.carrito.push(prod);
+      this.notifyIfDistinctItemsLimitJustReached(true);
     } else {
       //si el elemento existe, se sustituye
       for (let i = 0; i < this.carrito.length; i++) {
@@ -520,6 +544,7 @@ export class PedidosService {
         }
         prod.idInfo = this.carrito.length;
         this.carrito.push(prod);
+        this.notifyIfDistinctItemsLimitJustReached(true);
 
       }
     }

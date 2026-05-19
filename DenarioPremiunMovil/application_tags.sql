@@ -138,7 +138,9 @@ INSERT INTO public.application_tags(
   ('PED_LIMITE_ITEMS_DISTINTOS', 'PED', 'PEDIDOS', 'ESP', 'No puede agregar más productos distintos. El máximo para este tipo de pedido es '),
   ('PED_LIMITE_ITEMS_DISTINTOS', 'PED', 'PEDIDOS', 'ENG', 'You cannot add more distinct products. The maximum for this order type is '),
   ('PED_RESET_ORDERTYPE_ITEMS_LIMIT', 'PED', 'PEDIDOS', 'ESP', 'El tipo de pedido seleccionado admite menos productos distintos que los actuales. El pedido se reiniciará. ¿Desea continuar?'),
-  ('PED_RESET_ORDERTYPE_ITEMS_LIMIT', 'PED', 'PEDIDOS', 'ENG', 'The selected order type allows fewer distinct products than the current order. The order will be reset. Do you wish to continue?');
+  ('PED_RESET_ORDERTYPE_ITEMS_LIMIT', 'PED', 'PEDIDOS', 'ENG', 'The selected order type allows fewer distinct products than the current order. The order will be reset. Do you wish to continue?'),
+  ('PED_LIMITE_ITEMS_TOPE_ALCANZADO', 'PED', 'PEDIDOS', 'ESP', 'Alcanzó el máximo de productos distintos para este tipo de pedido: '),
+  ('PED_LIMITE_ITEMS_TOPE_ALCANZADO', 'PED', 'PEDIDOS', 'ENG', 'You reached the maximum distinct products for this order type: ');
 
 
 
