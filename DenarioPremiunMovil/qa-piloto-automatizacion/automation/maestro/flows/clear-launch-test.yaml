@@ -1,0 +1,7 @@
+appId: com.kiberno.denarioPremiumPro
+---
+- clearState
+- launchApp
+- extendedWaitUntil:
+    visible: "Aceptar"
+    timeout: 30000

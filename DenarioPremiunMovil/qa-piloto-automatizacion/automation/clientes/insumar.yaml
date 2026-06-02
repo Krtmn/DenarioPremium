@@ -1,0 +1,80 @@
+# insumar/perfil.yaml
+# Cliente actualmente en Isla Coche.
+# VGs parcialmente confirmadas — completar en primera corrida formal.
+
+cliente_id: insumar
+cliente_nombre: INSUMAR                   # TBD: confirmar nombre exacto en la app
+ws_url: "http://denarioislacoche.ddns.net:8081/PremiumWS/services/"
+apk_package: com.kiberno.denarioPremiumPro
+
+vgs:
+  multiCurrency: null                     # TBD
+  expirationBatch: null                   # TBD
+  suggestedOrderByDispatchAndReturn: null # TBD
+  requiredCollectionAttachments: false    # Confirmado: Insumar no requiere adjunto para cobros
+  requiredComment: null                   # TBD
+  validateReturn: null                    # TBD
+  signatureReturn: null                   # TBD
+  signatureCollection: null               # TBD
+  signatureVisit: null                    # TBD
+  userCanUploadFiles: null                # TBD
+  esVendedor: null                        # TBD
+  enterpriseEnabled: null                 # TBD
+  enabledManualRate: null                 # TBD
+  cobroPrepago: null                      # TBD
+  cobroRetencion: null                    # TBD
+  userCanSelectIGTF: null                 # TBD
+  userCanCollectIva: null                 # TBD
+  transportRole: null                     # TBD
+  userMustActivateGPS: null               # TBD
+
+modules:
+  login:
+    bad_password: Test-LOG-003
+    has_second_user: null                 # TBD
+
+  clientes:
+    cliente_busqueda: null                # TBD
+    cliente_detalle: null                 # TBD
+
+  pedidos:
+    cliente_test: null                    # TBD
+    estructura_producto: null             # TBD
+    alerta_deuda_vencida: null            # TBD
+
+  cobros:
+    cliente_test: null                    # TBD
+    cliente_code: null                    # TBD
+    metodo_pago: null                     # TBD
+    banco_deposito: null                  # TBD
+    smoke_na_estructural: []              # TBD según VGs activas
+
+  devoluciones:
+    cliente_test: null                    # TBD
+    factura_test: null                    # TBD
+    producto_test: null                   # TBD
+
+  inventarios:
+    cliente_test: null                    # TBD
+    cliente_code: null                    # TBD
+
+  depositos:
+    aplica: null                          # TBD
+    motivo_na: null
+
+  visitas:
+    cliente_test: null                    # TBD
+    smoke_na_estructural: []              # TBD
+
+  productos:
+    tipo_estructura_default: null         # TBD
+    texto_busqueda: null                  # TBD
+
+  vendedores:
+    aplica: null                          # TBD
+
+ultima_corrida:
+  run_id: null
+  fecha: null
+  nuevos_patrones: []
+  defectos_abiertos: []

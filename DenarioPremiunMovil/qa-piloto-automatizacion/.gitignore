@@ -1,0 +1,5 @@
+secrets/qa-credentials.env
+automation/reports/*.json
+automation/reports/*.log
+.env
+*.local

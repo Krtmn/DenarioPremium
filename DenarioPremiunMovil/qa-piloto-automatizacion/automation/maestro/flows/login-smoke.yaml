@@ -1,0 +1,59 @@
+appId: com.kiberno.denarioPremiumPro
+---
+# Piloto login: DM-LOG-002, DM-LOG-003, DM-LOG-001 (ejecutar tras pm clear en run-login-smoke.ps1)
+- launchApp
+- extendedWaitUntil:
+    visible: "ACEPTAR"
+    timeout: 30000
+
+# DM-LOG-002 — campos vacios
+- tapOn:
+    text: "ACEPTAR"
+    retryTapIfNoChange: false
+    waitToSettleTimeoutMs: 3000
+- extendedWaitUntil:
+    visible: "no pueden ser vacios"
+    timeout: 15000
+- tapOn: "OK"
+- extendedWaitUntil:
+    visible: "ACEPTAR"
+    timeout: 30000
+
+# DM-LOG-003 — credenciales incorrectas
+- tapOn:
+    id: "ion-input-0"
+- inputText: ${QA_USER}
+- tapOn:
+    id: "ion-input-1"
+- inputText: ${QA_BAD_PASSWORD}
+- hideKeyboard
+- tapOn:
+    text: "ACEPTAR"
+    retryTapIfNoChange: false
+    waitToSettleTimeoutMs: 5000
+- extendedWaitUntil:
+    visible: "incorrectos"
+    timeout: 90000
+- tapOn: "OK"
+- extendedWaitUntil:
+    visible: "ACEPTAR"
+    timeout: 30000
+
+# DM-LOG-001 — login exitoso
+- tapOn:
+    id: "ion-input-0"
+- eraseText: 50
+- inputText: ${QA_USER}
+- tapOn:
+    id: "ion-input-1"
+- eraseText: 50
+- inputText: ${QA_PASSWORD}
+- hideKeyboard
+- tapOn:
+    text: "ACEPTAR"
+    retryTapIfNoChange: false
+    waitToSettleTimeoutMs: 5000
+- extendedWaitUntil:
+    visible: "Visitas"
+    timeout: 180000
+- assertVisible: "Visitas"
