@@ -1,5 +1,5 @@
 <div class="productDetail">
-  @if(this.orderService.showProductImages){
+  @if(this.productService.catalogShowProductImages){
   <div class="productDetailImage">
     <ion-grid>
       <ion-row>
@@ -86,30 +86,31 @@
 
 
           </ion-row>
-          @if(this.orderService.displayProductPoints){
+          @if(this.productService.catalogDisplayProductPoints){
           <ion-row>
             <ion-col class="tituloDetails" size="4" size-sm="4"
               size-xs="4">{{this.productDetailTags.get('PROD_POINTS_PROD')}}</ion-col>
             <ion-col size="8" size-sm="8" size-xs="8">{{pSeleccionado.points}}</ion-col>
           </ion-row>
           }
-          @if(this.orderService.unitByPriceList){
-            @for(price of listPrices; track price.idList){          
-              <ion-row>
-                <ion-col class="tituloDetails" size="4" size-sm="4"
-                  size-xs="4">{{price.naList}} - {{price.naUnit}}</ion-col>
-                <ion-col size="8" size-sm="8" size-xs="8">{{price.nuPrice ? formatNumber(price.nuPrice) : 'N/A' }} {{ price.coCurrency }}</ion-col>
-              </ion-row>
-              @if(showConversionInfo){
-              <ion-row>
-                <ion-col class="tituloDetails" size="4" size-sm="4"
-                  size-xs="4">{{price.naList}} - {{price.naUnit}}</ion-col>
-                <ion-col size="8" size-sm="8" size-xs="8">{{price.nuPrice ? convertPrice(price.nuPrice, price.coCurrency) : 'N/A' }} {{ currencyService.oppositeCoCurrency(price.coCurrency) }}</ion-col>
-              </ion-row>
-              }
-            }
+          @if(this.productService.catalogUnitByPriceList){
+          @for(price of listPrices; track price.idList){
+          <ion-row>
+            <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">{{price.naList}} -
+              {{price.naUnit}}</ion-col>
+            <ion-col size="8" size-sm="8" size-xs="8">{{price.nuPrice ? formatNumber(price.nuPrice) : 'N/A' }} {{
+              price.coCurrency }}</ion-col>
+          </ion-row>
+          @if(showConversionInfo){
+          <ion-row>
+            <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">{{price.naList}} -
+              {{price.naUnit}}</ion-col>
+            <ion-col size="8" size-sm="8" size-xs="8">{{price.nuPrice ? convertPrice(price.nuPrice, price.coCurrency) :
+              'N/A' }} {{ currencyService.oppositeCoCurrency(price.coCurrency) }}</ion-col>
+          </ion-row>
           }
-          @else{
+          }
+          } @else{
           <ion-row>
             <ion-col class="tituloDetails" size="4" size-sm="4"
               size-xs="4">{{this.productDetailTags.get('PROD_UNIT_PROD')}}</ion-col>
@@ -136,6 +137,7 @@
             <ion-col size="8" size-sm="8" size-xs="8">{{formatNumber(pSeleccionado.priceLocal)}}
               {{pSeleccionado.coCurrencyLocal}}</ion-col>
           </ion-row>
+          @if(this.productService.userCanSelectIVA){
           @if(this.productService.vatExemptProducts){
           <ion-row>
             <ion-col class="tituloDetails" size="4" size-sm="4"
@@ -154,8 +156,9 @@
               size-xs="4">{{this.productDetailTags.get('PROD_CONV_PROD')}}</ion-col>
             <ion-col size="8" size-sm="8" size-xs="8">{{pSeleccionado.conversion}}</ion-col>
           </ion-row>
-        }
-          @if(this.orderService.validateWarehouses && !hideProductWarehouse){
+          }
+          }
+          @if(this.productService.catalogValidateWarehouses && !hideProductWarehouse){
           <ion-row>
             <ion-col class="tituloDetails titulosDetallesProductos" size="4" size-sm="4"
               size-xs="4">{{this.productDetailTags.get('PROD_WAREHOUSE_PROD')}}</ion-col>
@@ -171,35 +174,33 @@
             </ion-col>
           </ion-row>
           }
-          @if(this.orderService.showStock && !hideProductWarehouse){
+          @if(this.productService.catalogShowStock && !hideProductWarehouse){
           <ion-row>
             <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">
               {{this.productDetailTags.get('PROD_STOCK_PROD')}}
             </ion-col>
             <ion-col size="8" size-sm="8" size-xs="8">
-              {{this.productService.formatStock(pSeleccionado.stock, this.orderService.quUnitDecimals)}}
+              {{this.productService.formatStock(pSeleccionado.stock, this.productService.catalogQuUnitDecimals)}}
             </ion-col>
           </ion-row>
           }
-          @if(this.orderService.productMinMul &&this.orderService.prodMinMulMap.has(pSeleccionado.idProduct)){
-          }
-          @if( this.orderService.getProdMinMulByProduct(pSeleccionado.idProduct).quMinimum > 1 ){
+          @if(detailShowsMinimumQty(pSeleccionado.idProduct)){
           <ion-row>
             <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">
-              {{this.orderService.getTag('PED_MINIMO')}}
+              {{productService.getCatalogPresentationTag('PED_MINIMO')}}
             </ion-col>
             <ion-col size="8" size-sm="8" size-xs="8">
-              {{ this.orderService.getProdMinMulByProduct(pSeleccionado.idProduct).quMinimum }}
+              {{ detailMinQty(pSeleccionado.idProduct) }}
             </ion-col>
           </ion-row>
           }
-          @if( this.orderService.getProdMinMulByProduct(pSeleccionado.idProduct).quMultiple > 1 ){
+          @if(detailShowsMultipleQty(pSeleccionado.idProduct)){
           <ion-row>
             <ion-col class="tituloDetails" size="4" size-sm="4" size-xs="4">
-              {{this.orderService.getTag('PED_MULTIPLO')}}
+              {{productService.getCatalogPresentationTag('PED_MULTIPLO')}}
             </ion-col>
             <ion-col size="8" size-sm="8" size-xs="8">
-              {{ this.orderService.getProdMinMulByProduct(pSeleccionado.idProduct).quMultiple }}
+              {{ detailMulQty(pSeleccionado.idProduct) }}
             </ion-col>
           </ion-row>
           }

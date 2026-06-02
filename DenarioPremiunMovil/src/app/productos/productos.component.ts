@@ -7,7 +7,7 @@ import { Enterprise } from '../modelos/tables/enterprise';
 import { EnterpriseService } from '../services/enterprise/enterprise.service';
 import { ProductStructureUtil } from '../modelos/ProductStructureUtil';
 import { TypeProductStructure } from '../modelos/tables/typeProductStructure';
-import { ProductStructure} from '../modelos/tables/productStructure';
+import { ProductStructure } from '../modelos/tables/productStructure';
 import { ProductStructureService } from '../services/productStructures/product-structure.service';
 import { ProductListComponent } from './product-list/product-list.component';
 import { Product } from '../modelos/tables/product';
@@ -19,10 +19,10 @@ import { GlobalConfigService } from '../services/globalConfig/global-config.serv
 import { PedidosService } from '../pedidos/pedidos.service';
 
 @Component({
-    selector: 'app-productos',
-    templateUrl: './productos.component.html',
-    styleUrls: ['./productos.component.scss'],
-    standalone: false
+  selector: 'app-productos',
+  templateUrl: './productos.component.html',
+  styleUrls: ['./productos.component.scss'],
+  standalone: false
 })
 export class ProductosComponent {
 
@@ -61,12 +61,13 @@ export class ProductosComponent {
   ngOnInit() {
     this.productService.productList = [];
     this.message.showLoading().then(() => {
-      this.enterpriseService.setup(this.db.getDatabase()).then(() => {
+      this.enterpriseService.setup(this.db.getDatabase()).then(async () => {
         this.productService.listaEmpresa = this.enterpriseService.empresas;
         this.productService.empresaSeleccionada = this.productService.listaEmpresa[0];
         this.orderService.empresaSeleccionada = this.productService.listaEmpresa[0];
         this.productService.multiempresa = this.enterpriseService.esMultiempresa();
-        this.orderService.setup();
+        await this.orderService.setup();
+        this.productService.syncOrderPresentationFromPedidos(this.orderService);
       });
       this.currencyService.setup(this.db.getDatabase());
 
@@ -75,6 +76,7 @@ export class ProductosComponent {
       });
     });
     this.productService.vatExemptProducts = this.config.get("vatExemptProducts").toLowerCase() === "true";
+    this.productService.userCanSelectIVA = this.config.get("userCanSelectIVA").toLowerCase() === "true";
   }
 
   getTags(): Promise<void> {
@@ -88,10 +90,14 @@ export class ProductosComponent {
     });
   }
 
-  onSelectedProductStructure(psUtil: ProductStructureUtil) {
+  async onSelectedProductStructure(psUtil: ProductStructureUtil) {
     this.psSeleccionada = psUtil.productStructure;
     this.tpsSeleccionada = psUtil.typeProductStructure;
     this.empresaSeleccionada = psUtil.enterprise;
+    this.productService.empresaSeleccionada = this.empresaSeleccionada;
+    this.orderService.empresaSeleccionada = this.empresaSeleccionada;
+    await this.orderService.setup();
+    this.productService.syncOrderPresentationFromPedidos(this.orderService);
     this.psSelected = true;
     this.showProducts = true;
     this.showProductStructures = false;
@@ -113,12 +119,12 @@ export class ProductosComponent {
   }
 
   onBackClicked(verListaProductos: Boolean) {
-    if(this.showProductDetail){
+    if (this.showProductDetail) {
       this.showProductDetail = false;
       this.showProducts = true;
       return;
     }
-    if(this.showProducts){
+    if (this.showProducts) {
       this.showProducts = false;
       this.showProductStructures = true;
       return;
