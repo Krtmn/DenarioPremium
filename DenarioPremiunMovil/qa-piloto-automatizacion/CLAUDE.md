@@ -75,28 +75,48 @@ No escribir credenciales reales en guiones ni en chat.
 ## Automatización CDP (estado actual)
 
 - **Smoke completo:** 10 módulos, ~130 casos, Playwright MCP + CDP (`:9220`)
-- **Clientes activos:** Hidroponias · Insumar · Romher (template TBD)
-- **Orquestador:** `guiones-regresion/prompt-orquestador-smoke.md` — usar `QA_CLIENTE=<slug>`
+- **Clientes activos:** Hidroponias · Insumar · Romher (TBD)
+- **Orquestador:** `guiones-regresion/prompt-orquestador-smoke.md` — especificar `QA_CLIENTE=<slug>`
 - **Última corrida estable:** RUN_ID `20260529_145657_smoke-completo` (103 PASS / 3 FAIL)
-- **Pendiente:** Fase 2 (smoke extracts) · Fase 3 (orquestador refactor)
+- **Arquitectura:** 4 fases completadas ✅
 
-## Estructura de automatización (Fase 1 completada)
+## Estructura de automatización
 
 ```
 automation/
   cdp/
-    RUNTIME.md              ← reglas operativas (skills, anti-patrones, N/A vs FAIL)
-    denario-cdp-helpers.js  ← helpers canónicos (mockCameraAdjunto incluido)
+    RUNTIME.md              ← reglas operativas (SIEMPRE leer — reemplaza todo lo anterior)
+    denario-cdp-helpers.js  ← helpers canónicos + mockCameraAdjunto + fetchCreds desde archivo
   clientes/
-    _schema.yaml       ← esquema documentado
-    hidroponias.yaml   ← datos reales corridas 20260527/20260529
-    insumar.yaml       ← requiredCollectionAttachments=false confirmado
-    romher.yaml        ← template TBD (activo en El Yaque)
-  smoke/                    ← Fase 2 (pendiente)
+    _schema.yaml            ← esquema de perfil
+    hidroponias.yaml        ← VGs y datos reales (corridas 20260527/20260529)
+    insumar.yaml            ← requiredCollectionAttachments=false confirmado
+    romher.yaml             ← template TBD (activo en El Yaque)
+  smoke/
+    smoke-login.md          ← extract smoke por módulo (10 archivos)
+    smoke-clientes.md
+    smoke-pedidos.md
+    smoke-cobros.md         ← incluye lógica adjunto por VG
+    smoke-devoluciones.md
+    smoke-inventarios.md    ← incluye nota crítica fillNgModelKeyboard
+    smoke-depositos.md      ← verifica aplica=true antes de ejecutar
+    smoke-visitas.md        ← incluye notas DM-VIS-015/022/031
+    smoke-productos.md
+    smoke-vendedores.md
   reports/
-    lecciones-aprendidas-cdp.md
-    lecciones-DELTA.md      ← Fase 4 (pendiente)
+    lecciones-aprendidas-cdp.md  ← ARCHIVO HISTÓRICO (no leer en corridas)
+    lecciones-DELTA.md           ← novedades última corrida (resetear cada run)
+    smoke-*.md                   ← reportes de corridas anteriores
 ```
+
+## Flujo de una corrida
+
+1. Especificar `QA_CLIENTE` (ej. `hidroponias`)
+2. Verificar CDP activo en `:9220` y `secrets/qa-credentials.env` existe
+3. Pegar prompt del orquestador en sesión nueva de Claude Code
+4. El orquestador lee `RUNTIME.md` + `clientes/{QA_CLIENTE}.yaml` + `lecciones-DELTA.md`
+5. Lanza 10 agentes secuenciales — cada uno lee `RUNTIME.md` + `smoke-{modulo}.md`
+6. Al finalizar: reporte consolidado + actualizar `lecciones-DELTA.md` con novedades
 
 ---
 

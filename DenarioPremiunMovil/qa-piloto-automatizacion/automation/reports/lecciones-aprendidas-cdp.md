@@ -1,5 +1,10 @@
-# Lecciones Aprendidas — Automatización CDP Denario Premium Móvil
-## Primera barrida completa · 10 módulos · 2026-05-27/28
+# Lecciones Aprendidas — ARCHIVO HISTÓRICO
+## Automatización CDP Denario Premium Móvil · Primera barrida completa · 2026-05-27/28
+
+> **⚠ Este archivo es un archivo histórico — los agentes NO lo leen en corridas normales.**
+> Los patrones operativos vigentes están en `automation/cdp/RUNTIME.md` y `denario-cdp-helpers.js`.
+> Las novedades de la última corrida están en `automation/reports/lecciones-DELTA.md`.
+> Consultar este archivo solo para contexto histórico o investigación de regresiones.
 
 ---
 
@@ -31,7 +36,7 @@ El PID del WebView solo aparece ~3 segundos después del lanzamiento.
 ### El servidor de credenciales debe estar corriendo antes de iniciar
 ```powershell
 # en terminal separada:
-node DenarioPremiunMovil/qa-piloto-automatizacion/automation/maestro/temp-creds-server.js
+node <ruta-a-temp-creds-server.js>   # archivo fuera del repo — usar ubicación local disponible
 # verificar: curl http://127.0.0.1:19001 → debe devolver QA_USER= y QA_PASSWORD=
 ```
 

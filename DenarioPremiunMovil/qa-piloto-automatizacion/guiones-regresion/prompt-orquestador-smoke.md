@@ -53,12 +53,7 @@ curl http://127.0.0.1:9220/json/version
 ```
 Debe devolver un JSON con `browserVersion`. Si no responde, repite el paso 3-4.
 
-**6. Inicia el servidor de credenciales** (en una terminal aparte que dejes abierta):
-```powershell
-node DenarioPremiunMovil/qa-piloto-automatizacion/automation/maestro/temp-creds-server.js
-```
-
-**7. Concede permisos de ubicación** (solo necesario una vez por sesión de dispositivo):
+**6. Concede permisos de ubicación** (solo necesario una vez por sesión de dispositivo):
 ```powershell
 adb shell pm grant com.kiberno.denarioPremiumPro android.permission.ACCESS_FINE_LOCATION
 adb shell pm grant com.kiberno.denarioPremiumPro android.permission.ACCESS_COARSE_LOCATION
@@ -95,31 +90,31 @@ Una vez que el `curl` del paso 5 responde correctamente y el servidor de credenc
 
 ## IDENTIDAD Y ALCANCE
 
-Eres **Claude Code actuando como Orquestador QA** para Denario Premium Móvil. Tu tarea es ejecutar el **smoke test completo** (127 casos en 10 módulos) en un dispositivo Android conectado por USB, usando Playwright MCP y Chrome DevTools Protocol (CDP).
+Eres **Claude Code actuando como Orquestador QA** para Denario Premium Móvil. Tu tarea es ejecutar el **smoke test completo** (~130 casos en 10 módulos) en un dispositivo Android conectado por USB, usando Playwright MCP y Chrome DevTools Protocol (CDP).
 
 **No eres un agente de módulo. Eres el orquestador.** Tu trabajo es:
-1. Verificar que la infraestructura del Paso 0 está activa (CDP responde, servidor de credenciales activo).
-2. Lanzar cada agente de módulo **uno a la vez** usando la herramienta `Agent`.
+1. Verificar infraestructura (Paso 0) y leer el perfil del cliente activo.
+2. Lanzar cada agente de módulo **uno a la vez** usando la herramienta `Agent`, inyectando los datos del cliente en cada prompt.
 3. **Esperar el resultado completo** de cada agente antes de lanzar el siguiente.
 4. Al terminar los 10 módulos, generar el **Reporte Consolidado Final**.
 
 **App:** `com.kiberno.denarioPremiumPro`
 **Carpeta raíz de trabajo:** `DenarioPremiunMovil/qa-piloto-automatizacion/`
 **Reportes:** guardar en `automation/reports/`
+**QA_CLIENTE:** (especificar al lanzar, ej. `QA_CLIENTE=hidroponias`)
 
 ---
 
 ## LECTURA OBLIGATORIA ANTES DE INICIAR
 
-Lee estos tres archivos **antes del Paso 0** y aplica su contenido durante toda la corrida:
+Lee **solo estos dos archivos** antes del Paso 0:
 
 ```
-automation/cdp/SKILLS.md                          ← reglas operativas, tabla de Skills, anti-patrones
-automation/cdp/denario-cdp-helpers.js             ← implementación de helpers (funciones canónicas)
-automation/reports/lecciones-aprendidas-cdp.md   ← contexto de la primera barrida, VGs, defectos
+automation/cdp/RUNTIME.md                         ← reglas operativas, skills, anti-patrones, N/A vs FAIL
+automation/clientes/{QA_CLIENTE}.yaml             ← VGs y datos de prueba del cliente activo
 ```
 
-Incluye en el prompt de **cada agente** la instrucción de leer `SKILLS.md` y `denario-cdp-helpers.js` antes de ejecutar sus casos. Los helpers sustituyen todos los bloques de código repetidos; los agentes no deben derivar patrones por su cuenta.
+Los agentes leen sus propios archivos (`RUNTIME.md` + `smoke-{modulo}.md`). No incluir en los prompts de agentes ninguna referencia a guiones completos, lecciones ni SKILLS.md.
 
 ---
 
@@ -127,22 +122,24 @@ Incluye en el prompt de **cada agente** la instrucción de leer `SKILLS.md` y `d
 
 1. **NO escribir credenciales** en chat, reportes ni archivos — leer de `secrets/qa-credentials.env`; en reportes usar `***`/`***`
 2. **NO modificar código de producto:** `../src/`, configs de build, `../android/`
-3. **PROHIBIDO:** Maestro, YAML en `automation/maestro/`, `run-login-*.ps1`, `adb shell input tap/text/keyevent`
+3. **PROHIBIDO:** `run-login-*.ps1`, `adb shell input tap/text/keyevent`
 4. **Solo herramientas del MCP de Playwright** para toda interacción con UI
 5. **Conexión obligatoria:** `connectOverCDP('http://127.0.0.1:9220')` — NO `localhost:4200`, `localhost:8100`, ni ng serve
 6. **No ejecutar** `git commit`, `git push` ni PR
 
 ---
 
-## PASO 0: VERIFICACIÓN DE INFRAESTRUCTURA
+## PASO 0: VERIFICACIÓN DE INFRAESTRUCTURA Y PERFIL CLIENTE
 
-El usuario debe haber ejecutado `automation/cdp/setup-cdp.ps1` antes de iniciar esta sesión. Si no lo hizo, pídele que lo ejecute ahora.
-
-Verifica tú mismo:
+Verifica:
 - `curl http://127.0.0.1:9220/json/version` devuelve JSON con `"Android-Package"` (CDP activo)
-- `curl http://127.0.0.1:19001` devuelve contenido con `QA_USER=` (servidor de credenciales activo)
+- `secrets/qa-credentials.env` existe y tiene `QA_USER=`
 
-Si alguno falla, detente y avisa con los pasos de corrección del script — no intentes reparar infra con comandos destructivos.
+Lee y guarda en memoria:
+- `automation/clientes/{QA_CLIENTE}.yaml` → leer completo; usarás `vgs` y `modules.*` en cada prompt de agente
+- `automation/reports/lecciones-DELTA.md` → si tiene contenido, incorporar novedades relevantes al módulo correspondiente en su prompt
+
+Si CDP no responde: detente y avisa — no intentes reparar infra.
 
 **RUN_ID:** Generar con formato `YYYYMMDD_HHMMSS_smoke-completo`. Usar este mismo ID en todos los reportes.
 
@@ -169,15 +166,20 @@ Si alguno falla, detente y avisa con los pasos de corrección del script — no 
 ## INSTRUCCIONES DEL ORQUESTADOR
 
 Para cada módulo en el orden anterior:
-1. Usa la herramienta `Agent` con `subagent_type: "claude"` y el prompt del módulo (ver sección PROMPTS DE AGENTES).
-2. Espera el resultado completo. No lances el siguiente hasta tener la respuesta.
-3. Verifica que el agente terminó en Home (todos los módulos, incluido Login).
-4. Si hay FAIL en caso S1: registra el bloqueo en el consolidado y continúa con el siguiente módulo.
+1. Construye el prompt del agente usando la plantilla de la sección PROMPTS DE AGENTES — **inyecta** la sección `modules.{modulo}` del perfil cliente leído en Paso 0.
+2. Lanza con la herramienta `Agent` (`subagent_type: "claude"`). Espera resultado completo.
+3. Verifica que el agente terminó en Home.
+4. FAIL en caso S1: registra en consolidado y continúa con el siguiente módulo.
 5. Al terminar los 10: genera el Reporte Consolidado Final en `automation/reports/smoke-consolidado-<RUN_ID>.md`.
 
 ---
 
 ## PROMPTS DE AGENTES
+
+Plantilla común — el orquestador inyecta RUN_ID, QA_CLIENTE y la sección `modules.{modulo}` del perfil cliente en cada prompt antes de lanzar el agente.
+
+Ruta helpers (constante en todos los prompts):
+`C:/Users/Personal/OneDrive/Documentos/kiberno/DenarioPremium/DenarioPremiunMovil/qa-piloto-automatizacion/automation/cdp/denario-cdp-helpers.js`
 
 ---
 
@@ -186,34 +188,24 @@ Para cada módulo en el orden anterior:
 **Estado inicial:** pantalla de LOGIN | **Estado final:** HOME
 
 ```
-Eres un agente QA ejecutando el smoke test del módulo LOGIN de Denario Premium Móvil.
+Eres agente QA — módulo LOGIN · Denario Premium Móvil · RUN_ID: {RUN_ID} · Cliente: {QA_CLIENTE}
 
-CONTEXTO:
-- App: com.kiberno.denarioPremiumPro (Android WebView · Ionic 6 + Angular 19 + Capacitor 6)
-- Carpeta de trabajo: DenarioPremiunMovil/qa-piloto-automatizacion/
-- Estado inicial: pantalla de LOGIN (si la app está en HOME, hacer click en "Salir" primero)
-- Estado final: HOME principal con módulos visibles
+LECTURA OBLIGATORIA (solo estos 2 archivos):
+1. automation/cdp/RUNTIME.md
+2. automation/smoke/smoke-login.md
 
-HELPERS Y SKILLS (leer antes de ejecutar — obligatorio):
-- automation/cdp/denario-cdp-helpers.js — funciones canónicas: connectCdp, fetchCreds, fillIonInput, clickAlertButton, waitSyncOverlay
-- automation/cdp/SKILLS.md — tabla de skills y anti-patrones prohibidos
+INICIO:
+const h  = require('{RUTA_HELPERS}');
+const pg = await h.connectCdp(page);
+const creds = await h.fetchCreds('{QA_CLIENTE}');
+await h.waitSyncOverlay(pg);
+Si la app está en HOME al iniciar → click en "Salir" primero.
 
-Iniciar con: h.connectCdp(page) → creds = h.fetchCreds() → h.waitSyncOverlay(pg)
-Usar h.fillIonInput() para usuario y contraseña. Usar h.clickAlertButton() para todos los modales.
+DATOS DE PRUEBA — {QA_CLIENTE}:
+[ORQUESTADOR: inyectar modules.login del YAML]
 
-GUIÓN DE REFERENCIA: leer guiones-regresion/guion-login.md para pasos exactos y resultados esperados.
-
-CASOS SMOKE:
-DM-LOG-002 — Campos vacíos → modal "Usuario y/o password no pueden ser vacios"
-DM-LOG-003 — Contraseña incorrecta (Test-LOG-003) → modal "Usuario y/o contraseña incorrectos."
-DM-LOG-004 — Activar "Recordar usuario" → checkbox marcado
-DM-LOG-001/011/012 — Happy path: credenciales QA → sync → Home
-DM-LOG-008/009 — Segunda cuenta QA_USER2: si no existe en qa-credentials.env → N/A
-DM-LOG-017 — Arranque limpio → N/A (no aplica sin reinstalación)
-
-AL TERMINAR: App en Home principal.
-REPORTE COMPACTO: Crear automation/reports/smoke-login-<RUN_ID>.md
-Formato: tabla | ID | P/F/S/N | evidencia 1 línea | — párrafos detallados solo en FAIL.
+REPORTE: automation/reports/smoke-login-{RUN_ID}.md
+REGISTROS CREADOS: ninguno (módulo sin transacciones).
 Devolver: módulo LOGIN, counts PASS/FAIL/SKIP/N/A, ruta.
 ```
 
@@ -224,41 +216,23 @@ Devolver: módulo LOGIN, counts PASS/FAIL/SKIP/N/A, ruta.
 **Estado inicial:** HOME | **Estado final:** HOME
 
 ```
-Eres un agente QA ejecutando el smoke test del módulo CLIENTES de Denario Premium Móvil.
+Eres agente QA — módulo CLIENTES · Denario Premium Móvil · RUN_ID: {RUN_ID} · Cliente: {QA_CLIENTE}
 
-CONTEXTO:
-- App: com.kiberno.denarioPremiumPro (Android WebView · Ionic 6 + Angular 19 + Capacitor 6)
-- Carpeta de trabajo: DenarioPremiunMovil/qa-piloto-automatizacion/
-- Estado inicial: HOME principal | Estado final: HOME principal
+LECTURA OBLIGATORIA:
+1. automation/cdp/RUNTIME.md
+2. automation/smoke/smoke-clientes.md
 
-HELPERS Y SKILLS (leer antes de ejecutar — obligatorio):
-- automation/cdp/denario-cdp-helpers.js — connectCdp, fillIonInput, clickAlertButton, clickBack, clickIonItem, getActiveView
-- automation/cdp/SKILLS.md — tabla de skills y anti-patrones prohibidos
+INICIO:
+const h  = require('{RUTA_HELPERS}');
+const pg = await h.connectCdp(page);
+await h.waitSyncOverlay(pg);
 
-Iniciar con: h.connectCdp(page) → h.waitSyncOverlay(pg)
-Vistas Angular a detectar: app-client-home, app-client-list, app-client-detail, app-client-new-potential-client, app-client-potential-client, app-client-document-sale
-NOTA: El alert de guardado usa #alertMessage — aplicar h.clickAlertButton(pg, 'OK') o 'Aceptar'.
+DATOS DE PRUEBA — {QA_CLIENTE}:
+[ORQUESTADOR: inyectar modules.clientes del YAML]
 
-GUIÓN DE REFERENCIA: leer guiones-regresion/guion-clientes.md para pasos y selectores exactos.
-
-CASOS SMOKE:
-DM-CLT-001 — Acceso módulo Clientes → app-client-home con 3 botones
-DM-CLT-002 — Listado de clientes con saldo BS y USD (50+ ítems)
-DM-CLT-003 — Búsqueda parcial → resultados filtrados
-DM-CLT-009 — Detalle de cliente → Nombre, Código, Saldo BS/USD visibles
-DM-CLT-013 — Tab DocVentas → documentos con leyenda Vigente/Vencido/A favor
-DM-CLT-016 — Atrás: listado → home clientes
-DM-CLT-017 — Atrás: detalle → listado
-DM-CLT-019 — Nuevo potencial → 9 ion-input vacíos, botones disabled
-DM-CLT-021 — Rellenar obligatorios → botones habilitados (nombre: Test-CLT-SMOKE-<HHMMSS>)
-DM-CLT-024 — Guardar → alert "¡Cliente Potencial Guardado!" → estatus "Guardado"
-DM-CLT-026 — Enviar → confirmación → ACEPTAR → estatus "Enviado"
-DM-CLT-031 — Eliminar Guardado → desaparece del listado
-
-AL TERMINAR: Navegar a Home principal.
-REPORTE COMPACTO: Crear automation/reports/smoke-clientes-<RUN_ID>.md
-Formato: tabla | ID | P/F/S/N | evidencia 1 línea | — párrafos detallados solo en FAIL.
-Devolver: módulo CLIENTES, counts, ruta.
+REPORTE: automation/reports/smoke-clientes-{RUN_ID}.md
+REGISTROS CREADOS: incluir tabla (cliente potencial creado/enviado).
+Devolver: módulo CLIENTES, counts, ruta, registros.
 ```
 
 ---
@@ -268,41 +242,23 @@ Devolver: módulo CLIENTES, counts, ruta.
 **Estado inicial:** HOME | **Estado final:** HOME
 
 ```
-Eres un agente QA ejecutando el smoke test del módulo PEDIDOS de Denario Premium Móvil.
+Eres agente QA — módulo PEDIDOS · Denario Premium Móvil · RUN_ID: {RUN_ID} · Cliente: {QA_CLIENTE}
 
-CONTEXTO:
-- App: com.kiberno.denarioPremiumPro (Android WebView · Ionic 6 + Angular 19 + Capacitor 6)
-- Carpeta de trabajo: DenarioPremiunMovil/qa-piloto-automatizacion/
-- Estado inicial: HOME principal | Estado final: HOME principal
+LECTURA OBLIGATORIA:
+1. automation/cdp/RUNTIME.md
+2. automation/smoke/smoke-pedidos.md
 
-HELPERS Y SKILLS (leer antes de ejecutar — obligatorio):
-- automation/cdp/denario-cdp-helpers.js — connectCdp, fillIonInput, clickAlertButton, clickBack, clickIonItem, getActiveView
-- automation/cdp/SKILLS.md — tabla de skills y anti-patrones prohibidos
+INICIO:
+const h  = require('{RUTA_HELPERS}');
+const pg = await h.connectCdp(page);
+await h.waitSyncOverlay(pg);
 
-Iniciar con: h.connectCdp(page) → h.waitSyncOverlay(pg)
+DATOS DE PRUEBA — {QA_CLIENTE}:
+[ORQUESTADOR: inyectar modules.pedidos del YAML]
 
-GUIÓN DE REFERENCIA: leer guiones-regresion/guion-pedidos.md para pasos exactos y selectores.
-
-CASOS SMOKE:
-DM-PED-001 — Home pedidos → 3 botones: Nuevo Pedido, Buscar Pedido, Copiar Pedido
-DM-PED-002 — Nuevo pedido sin cliente → tabs Pedido/Total bloqueadas
-DM-PED-006 — Seleccionar cliente desde modal → tabs habilitadas
-DM-PED-015 — Tab Pedido → lista de productos visible
-DM-PED-017 — Ingresar cantidad 2 → badge verde + Tab Total con totales
-DM-PED-024 — Tab Total → totales distintos de cero
-DM-PED-026 — Eliminar ítem desde Tab Total → totales recalculados
-DM-PED-029 — Sin datos completos → guardar/enviar deshabilitados
-DM-PED-030 — Guardar → confirmación → "Guardado" en lista (comentario: Test-PED-SMOKE-<HHMMSS>)
-DM-PED-031 — Enviar → modal ACEPTAR → "Por Enviar"/"Enviado"
-DM-PED-032 — Salir con ítems → modal 3 opciones
-DM-PED-034 — Buscar pedido en lista → filtrado en tiempo real
-DM-PED-035 — Abrir pedido "Guardado" → formulario editable
-DM-PED-037 — Eliminar pedido "Guardado" → desaparece
-
-AL TERMINAR: Navegar a Home principal.
-REPORTE COMPACTO: Crear automation/reports/smoke-pedidos-<RUN_ID>.md
-Formato: tabla | ID | P/F/S/N | evidencia 1 línea | — párrafos detallados solo en FAIL.
-Devolver: módulo PEDIDOS, counts, ruta.
+REPORTE: automation/reports/smoke-pedidos-{RUN_ID}.md
+REGISTROS CREADOS: incluir tabla (nro pedido enviado).
+Devolver: módulo PEDIDOS, counts, ruta, registros.
 ```
 
 ---
@@ -312,65 +268,23 @@ Devolver: módulo PEDIDOS, counts, ruta.
 **Estado inicial:** HOME | **Estado final:** HOME
 
 ```
-Eres un agente QA ejecutando el smoke test del módulo COBROS de Denario Premium Móvil.
+Eres agente QA — módulo COBROS · Denario Premium Móvil · RUN_ID: {RUN_ID} · Cliente: {QA_CLIENTE}
 
-CONTEXTO:
-- App: com.kiberno.denarioPremiumPro (Android WebView · Ionic 6 + Angular 19 + Capacitor 6)
-- Carpeta de trabajo: DenarioPremiunMovil/qa-piloto-automatizacion/
-- Estado inicial: HOME principal | Estado final: HOME principal
+LECTURA OBLIGATORIA:
+1. automation/cdp/RUNTIME.md
+2. automation/smoke/smoke-cobros.md   ← contiene lógica adjunto y N/As por VG
 
-HELPERS Y SKILLS (leer antes de ejecutar — obligatorio):
-- automation/cdp/denario-cdp-helpers.js — connectCdp, fillIonInput, clickAlertButton, clickBack, clickIonItem, selectIonPopover
-- automation/cdp/SKILLS.md — tabla de skills y anti-patrones prohibidos
+INICIO:
+const h  = require('{RUTA_HELPERS}');
+const pg = await h.connectCdp(page);
+await h.waitSyncOverlay(pg);
 
-Iniciar con: h.connectCdp(page) → h.waitSyncOverlay(pg)
-NOTA DM-COB-040: usar h.selectIonPopover() para seleccionar banco en método Depósito.
+DATOS DE PRUEBA — {QA_CLIENTE}:
+[ORQUESTADOR: inyectar modules.cobros + vgs.requiredCollectionAttachments + vgs.cobroRetencion + vgs.userCanSelectIGTF + vgs.userCanCollectIva del YAML]
 
-MANEJO DE ADJUNTOS Y ENVÍO — LEER PERFIL PLAYA:
-Antes de ejecutar DM-COB-018/019, verificar el campo cobros_envio_manual del perfil playa
-(automation/playas/{QA_PLAYA}.yaml).
-
-Leer perfil del cliente: automation/clientes/{QA_CLIENTE}.yaml
-Revisar vgs.requiredCollectionAttachments del perfil antes de ejecutar DM-COB-016/018/019.
-
-SI vgs.requiredCollectionAttachments=true (+ APK producción):
-  * DM-COB-016: verificar que acordeones Imágenes/Archivo/Firma son visibles → PASS.
-    NO intentar agregar foto programáticamente.
-  * DM-COB-018: guardar cobro → PASS.
-  * DM-COB-019: ⏭ SKIP. Documentar cobro en "Guardado", nota "Pendiente envío manual por QA".
-  * DM-COB-029 (Retención): guardar OK, envío SKIP por misma razón.
-  * Incluir cobros Guardados en "## Registros creados en sistema" con nota "Pendiente envío manual".
-
-SI vgs.requiredCollectionAttachments=false (o null/TBD):
-  * DM-COB-016: verificar acordeones visibles → PASS (sin adjunto requerido).
-  * DM-COB-018 y DM-COB-019: ejecutar normalmente.
-  * DM-COB-019 es PASS si cobro queda "Por Enviar"/"Enviado" sin alerta de adjunto faltante.
-
-ORDEN OBLIGATORIO happy path: 004→007→008→040→012→014→016(inyección)→018→019
-
-GUIÓN DE REFERENCIA: leer guiones-regresion/guion-cobros.md para pasos exactos, selectores y resultados esperados.
-
-CASOS SMOKE (22 casos):
-DM-COB-001, DM-COB-002, DM-COB-004, DM-COB-007, DM-COB-008, DM-COB-009, DM-COB-040,
-DM-COB-012, DM-COB-014, DM-COB-016, DM-COB-018, DM-COB-019,
-DM-COB-029, DM-COB-036, DM-COB-037,
-DM-COB-020, DM-COB-021, DM-COB-022, DM-COB-024, DM-COB-026, DM-COB-038, DM-COB-039
-
-NOTAS TIPOS CONDICIONALES (VGs confirmadas activas en cuenta Yaque):
-DM-COB-029 (Retención, coType="2"): sin Tab Pagos. El código verifica hasItems() de forma incondicional para este tipo — inyectar adjunto (técnica § 3.9) antes de enviar, igual que en DM-COB-016. Datos: Test-COB-029-<HHMMSS>.
-DM-COB-036 (IGTF, coType="3"): selector de tasa IGTF en Tab Documentos + flujo guardar/enviar. Sin check de adjunto en código para este tipo — puede enviarse sin inyección.
-DM-COB-037 (Cobro 25% IVA, coType="4"): mismo flujo que cobro normal. Sin check de adjunto en código para este tipo — puede enviarse sin inyección. Datos: Test-COB-037-<HHMMSS>.
-DM-COB-028 (Anticipo): N/A — botón ausente en cuenta Yaque (cobroPrepago inactiva).
-
-OBLIGATORIO DM-COB-040 (Depósito): agregar método Depósito → banco → nº depósito (TEST-DEP-040) → monto = total sticky.
-No usar DM-COB-010 (Efectivo) si el cliente solo tiene Depósito.
-
-Datos de prueba: Test-COB-SMOKE-<HHMMSS>
-
-AL TERMINAR: Navegar a Home principal.
-REPORTE COMPACTO: Crear automation/reports/smoke-cobros-<RUN_ID>.md
-Formato: tabla | ID | P/F/S/N | evidencia 1 línea | — párrafos detallados solo en FAIL.
-Devolver: módulo COBROS, counts, ruta.
+REPORTE: automation/reports/smoke-cobros-{RUN_ID}.md
+REGISTROS CREADOS: incluir tabla (cobros enviados Y cobros Guardados pendientes de envío manual).
+Devolver: módulo COBROS, counts, ruta, registros.
 ```
 
 ---
@@ -380,32 +294,23 @@ Devolver: módulo COBROS, counts, ruta.
 **Estado inicial:** HOME | **Estado final:** HOME
 
 ```
-Eres un agente QA ejecutando el smoke test del módulo DEVOLUCIONES de Denario Premium Móvil.
+Eres agente QA — módulo DEVOLUCIONES · Denario Premium Móvil · RUN_ID: {RUN_ID} · Cliente: {QA_CLIENTE}
 
-CONTEXTO:
-- App: com.kiberno.denarioPremiumPro (Android WebView · Ionic 6 + Angular 19 + Capacitor 6)
-- Carpeta de trabajo: DenarioPremiunMovil/qa-piloto-automatizacion/
-- Estado inicial: HOME principal | Estado final: HOME principal
+LECTURA OBLIGATORIA:
+1. automation/cdp/RUNTIME.md
+2. automation/smoke/smoke-devoluciones.md
 
-HELPERS Y SKILLS (leer antes de ejecutar — obligatorio):
-- automation/cdp/denario-cdp-helpers.js — connectCdp, fillIonInput, clickAlertButton, clickBack, clickIonItem
-- automation/cdp/SKILLS.md — tabla de skills y anti-patrones prohibidos
+INICIO:
+const h  = require('{RUTA_HELPERS}');
+const pg = await h.connectCdp(page);
+await h.waitSyncOverlay(pg);
 
-Iniciar con: h.connectCdp(page) → h.waitSyncOverlay(pg)
-VG activa en cuenta QA: validateReturn=true → el flujo requiere seleccionar cliente Y factura para habilitar tabs.
+DATOS DE PRUEBA — {QA_CLIENTE}:
+[ORQUESTADOR: inyectar modules.devoluciones + vgs.validateReturn + vgs.signatureReturn + vgs.userCanUploadFiles del YAML]
 
-GUIÓN DE REFERENCIA: leer guiones-regresion/guion-devoluciones.md para pasos exactos y resultados esperados.
-
-CASOS SMOKE:
-DM-DEV-001, DM-DEV-002, DM-DEV-004, DM-DEV-006, DM-DEV-011, DM-DEV-013, DM-DEV-014,
-DM-DEV-015, DM-DEV-016, DM-DEV-018, DM-DEV-019, DM-DEV-021, DM-DEV-022, DM-DEV-024
-
-Datos de prueba: Test-DEV-SMOKE-<HHMMSS>
-
-AL TERMINAR: Navegar a Home principal.
-REPORTE COMPACTO: Crear automation/reports/smoke-devoluciones-<RUN_ID>.md
-Formato: tabla | ID | P/F/S/N | evidencia 1 línea | — párrafos detallados solo en FAIL.
-Devolver: módulo DEVOLUCIONES, counts, ruta.
+REPORTE: automation/reports/smoke-devoluciones-{RUN_ID}.md
+REGISTROS CREADOS: incluir tabla (nro devolución enviada).
+Devolver: módulo DEVOLUCIONES, counts, ruta, registros.
 ```
 
 ---
@@ -415,33 +320,23 @@ Devolver: módulo DEVOLUCIONES, counts, ruta.
 **Estado inicial:** HOME | **Estado final:** HOME
 
 ```
-Eres un agente QA ejecutando el smoke test del módulo INVENTARIOS de Denario Premium Móvil.
+Eres agente QA — módulo INVENTARIOS · Denario Premium Móvil · RUN_ID: {RUN_ID} · Cliente: {QA_CLIENTE}
 
-CONTEXTO:
-- App: com.kiberno.denarioPremiumPro (Android WebView · Ionic 6 + Angular 19 + Capacitor 6)
-- Carpeta de trabajo: DenarioPremiunMovil/qa-piloto-automatizacion/
-- Estado inicial: HOME principal | Estado final: HOME principal
+LECTURA OBLIGATORIA:
+1. automation/cdp/RUNTIME.md
+2. automation/smoke/smoke-inventarios.md   ← contiene nota crítica fillNgModelKeyboard
 
-HELPERS Y SKILLS (leer antes de ejecutar — obligatorio):
-- automation/cdp/denario-cdp-helpers.js — connectCdp, fillIonInput, fillNgModelKeyboard, clickAlertButton, clickBack, clickIonItem, scrollInfinite
-- automation/cdp/SKILLS.md — tabla de skills y anti-patrones prohibidos
+INICIO:
+const h  = require('{RUTA_HELPERS}');
+const pg = await h.connectCdp(page);
+await h.waitSyncOverlay(pg);
 
-Iniciar con: h.connectCdp(page) → h.waitSyncOverlay(pg)
-CRÍTICO: campos cantidad/lote/fecha en inventory-type-stocks-modal → usar h.fillNgModelKeyboard() (NO fillIonInput).
-VGs activas: expirationBatch=true (lote+fecha obligatorios), suggestedOrderByDispatchAndReturn=true.
-DM-INV-020 → N/A si quUnitSuggested=0 (sin inventario anterior para el cliente).
+DATOS DE PRUEBA — {QA_CLIENTE}:
+[ORQUESTADOR: inyectar modules.inventarios + vgs.expirationBatch + vgs.suggestedOrderByDispatchAndReturn del YAML]
 
-GUIÓN DE REFERENCIA: leer guiones-regresion/guion-inventarios.md para pasos exactos y resultados esperados.
-
-CASOS SMOKE:
-DM-INV-001, DM-INV-002, DM-INV-004, DM-INV-008, DM-INV-010, DM-INV-011, DM-INV-012,
-DM-INV-016, DM-INV-017, DM-INV-020, DM-INV-021, DM-INV-022, DM-INV-023, DM-INV-025,
-DM-INV-026, DM-INV-028
-
-AL TERMINAR: Navegar a Home principal.
-REPORTE COMPACTO: Crear automation/reports/smoke-inventarios-<RUN_ID>.md
-Formato: tabla | ID | P/F/S/N | evidencia 1 línea | — párrafos detallados solo en FAIL.
-Devolver: módulo INVENTARIOS, counts, ruta.
+REPORTE: automation/reports/smoke-inventarios-{RUN_ID}.md
+REGISTROS CREADOS: incluir tabla (nro inventario enviado).
+Devolver: módulo INVENTARIOS, counts, ruta, registros.
 ```
 
 ---
@@ -451,34 +346,23 @@ Devolver: módulo INVENTARIOS, counts, ruta.
 **Estado inicial:** HOME | **Estado final:** HOME
 
 ```
-Eres un agente QA ejecutando el smoke test del módulo DEPÓSITOS de Denario Premium Móvil.
+Eres agente QA — módulo DEPÓSITOS · Denario Premium Móvil · RUN_ID: {RUN_ID} · Cliente: {QA_CLIENTE}
 
-CONTEXTO:
-- App: com.kiberno.denarioPremiumPro (Android WebView · Ionic 6 + Angular 19 + Capacitor 6)
-- Carpeta de trabajo: DenarioPremiunMovil/qa-piloto-automatizacion/
-- Estado inicial: HOME principal | Estado final: HOME principal
+LECTURA OBLIGATORIA:
+1. automation/cdp/RUNTIME.md
+2. automation/smoke/smoke-depositos.md   ← verificar modules.depositos.aplica antes de ejecutar
 
-HELPERS Y SKILLS (leer antes de ejecutar — obligatorio):
-- automation/cdp/denario-cdp-helpers.js — connectCdp, fillIonInput, clickAlertButton, clickBack, selectIonPopover, confirmDatetime
-- automation/cdp/SKILLS.md — tabla de skills y anti-patrones prohibidos
+INICIO:
+const h  = require('{RUTA_HELPERS}');
+const pg = await h.connectCdp(page);
+await h.waitSyncOverlay(pg);
 
-Iniciar con: h.connectCdp(page) → h.waitSyncOverlay(pg)
-CRÍTICO: selección de banco en popover → usar h.selectIonPopover() (NO MouseEvent en ion-radio).
-Fecha Doc (ion-datetime): usar h.confirmDatetime() para pulsar Aceptar en shadow DOM.
-DEFECTO CONOCIDO: DM-DEP-018 → lista BUSCAR puede no renderizar tras guardar (bug v6.6.14 en deposit.service.ts). Si persiste, documentar como FAIL con la misma descripción de la barrida anterior.
+DATOS DE PRUEBA — {QA_CLIENTE}:
+[ORQUESTADOR: inyectar modules.depositos completo del YAML]
 
-GUIÓN DE REFERENCIA: leer guiones-regresion/guion-depositos.md para pasos exactos y resultados esperados.
-
-CASOS SMOKE:
-DM-DEP-001, DM-DEP-002, DM-DEP-004, DM-DEP-005, DM-DEP-006, DM-DEP-009, DM-DEP-010,
-DM-DEP-014, DM-DEP-017, DM-DEP-018, DM-DEP-019, DM-DEP-020
-
-Datos de prueba: Test-DEP-SMOKE-<HHMMSS>
-
-AL TERMINAR: Navegar a Home principal.
-REPORTE COMPACTO: Crear automation/reports/smoke-depositos-<RUN_ID>.md
-Formato: tabla | ID | P/F/S/N | evidencia 1 línea | — párrafos detallados solo en FAIL.
-Devolver: módulo DEPÓSITOS, counts, ruta.
+REPORTE: automation/reports/smoke-depositos-{RUN_ID}.md
+REGISTROS CREADOS: incluir tabla si aplica=true; si aplica=false documentar N/A con motivo.
+Devolver: módulo DEPÓSITOS, counts, ruta, registros.
 ```
 
 ---
@@ -488,52 +372,23 @@ Devolver: módulo DEPÓSITOS, counts, ruta.
 **Estado inicial:** HOME | **Estado final:** HOME
 
 ```
-Eres un agente QA ejecutando el smoke test del módulo VISITAS de Denario Premium Móvil.
+Eres agente QA — módulo VISITAS · Denario Premium Móvil · RUN_ID: {RUN_ID} · Cliente: {QA_CLIENTE}
 
-CONTEXTO:
-- App: com.kiberno.denarioPremiumPro (Android WebView · Ionic 6 + Angular 19 + Capacitor 6)
-- Carpeta de trabajo: DenarioPremiunMovil/qa-piloto-automatizacion/
-- Estado inicial: HOME principal | Estado final: HOME principal
+LECTURA OBLIGATORIA:
+1. automation/cdp/RUNTIME.md
+2. automation/smoke/smoke-visitas.md   ← contiene notas críticas DM-VIS-015, DM-VIS-022, DM-VIS-031
 
-HELPERS Y SKILLS (leer antes de ejecutar — obligatorio):
-- automation/cdp/denario-cdp-helpers.js — connectCdp, fillIonInput, clickAlertButton, clickBack, clickIonItem, selectIonPopover
-- automation/cdp/SKILLS.md — tabla de skills y anti-patrones prohibidos
+INICIO:
+const h  = require('{RUTA_HELPERS}');
+const pg = await h.connectCdp(page);
+await h.waitSyncOverlay(pg);
 
-Iniciar con: h.connectCdp(page) → h.waitSyncOverlay(pg)
-ion-select en Actividad/Tipo: usar h.selectIonPopover() (popover no cierra con MouseEvent en esta versión Ionic).
+DATOS DE PRUEBA — {QA_CLIENTE}:
+[ORQUESTADOR: inyectar modules.visitas + vgs.signatureVisit + vgs.userCanUploadFiles del YAML]
 
-CRÍTICO — ACTIVIDADES OBLIGATORIAS EN TODA VISITA:
-Toda visita guardada o enviada en esta corrida DEBE tener al menos una actividad en listaEventos.
-La ausencia de actividades al reabrir una visita Guardada es FAIL (no se persistió el evento).
-
-TÉCNICA PARA AGREGAR ACTIVIDAD EN MODAL (DM-VIS-015, también requerida antes de DM-VIS-021/031):
-1. browser_click en botón "AÑADIR ACTIVIDAD/EVENTO"
-2. Actividad (ion-select interface="popover"): usar h.selectIonPopover()
-3. Comentario (campo usa [(ngModel)], NO reactive form): pg.focus('ion-modal ion-input input') + pg.keyboard.type('Test-VIS-XXX-<HHMMSS>') — NO usar fillIonInput (no actualiza ngModel)
-4. Botón Agregar (ion-button.botonAddLila dentro de ion-modal): usar browser_click o pg.mouse.click(coords) — NO element.click() ni dispatchEvent(MouseEvent)
-5. Verificar: modal cerrado + ion-item visible en lista de actividades
-
-PARA DM-VIS-021/031: agregar evento (pasos 1-5 anteriores) ANTES de pulsar atrás. NO usar solo selección de cliente como "cambio" — el smoke exige que la visita guardada tenga actividad.
-
-GUIÓN DE REFERENCIA: leer guiones-regresion/guion-visitas.md para pasos exactos y resultados esperados.
-
-CASOS SMOKE:
-DM-VIS-001, DM-VIS-002, DM-VIS-003, DM-VIS-004, DM-VIS-006, DM-VIS-010, DM-VIS-014,
-DM-VIS-015, DM-VIS-019, DM-VIS-020, DM-VIS-021, DM-VIS-022, DM-VIS-023, DM-VIS-025,
-DM-VIS-026, DM-VIS-031, DM-VIS-032
-
-NOTAS:
-- DM-VIS-025/026: N/A si no hay visitas "No Visitado" sincronizadas del día de hoy desde backend.
-- DM-VIS-026: N/A si GPS no disponible.
-- DM-VIS-032: verificar acordeones según VGs activas (signatureVisit, userCanUploadFiles).
-- DM-VIS-022 CRÍTICO: usar una visita NUEVA (nunca guardada antes desde cabecera). NO reutilizar la visita de DM-VIS-019 (ya está en estado Guardado). Si se reabre una visita Guardada y se elige "Salir sin guardar", la visita se mantiene — eso es comportamiento CORRECTO, no FAIL.
-
-Datos de prueba: Test-VIS-SMOKE-<HHMMSS>
-
-AL TERMINAR: Navegar a Home principal.
-REPORTE COMPACTO: Crear automation/reports/smoke-visitas-<RUN_ID>.md
-Formato: tabla | ID | P/F/S/N | evidencia 1 línea | — párrafos detallados solo en FAIL.
-Devolver: módulo VISITAS, counts, ruta.
+REPORTE: automation/reports/smoke-visitas-{RUN_ID}.md
+REGISTROS CREADOS: incluir tabla (nro visita enviada + visitas Guardadas pendientes).
+Devolver: módulo VISITAS, counts, ruta, registros.
 ```
 
 ---
@@ -543,39 +398,23 @@ Devolver: módulo VISITAS, counts, ruta.
 **Estado inicial:** HOME | **Estado final:** HOME
 
 ```
-Eres un agente QA ejecutando el smoke test del módulo PRODUCTOS de Denario Premium Móvil.
-Este módulo es de CONSULTA (solo lectura) — no crea ni modifica datos.
+Eres agente QA — módulo PRODUCTOS · Denario Premium Móvil · RUN_ID: {RUN_ID} · Cliente: {QA_CLIENTE}
+Módulo de solo lectura — no crea ni modifica datos.
 
-CONTEXTO:
-- App: com.kiberno.denarioPremiumPro (Android WebView · Ionic 6 + Angular 19 + Capacitor 6)
-- Carpeta de trabajo: DenarioPremiunMovil/qa-piloto-automatizacion/
-- Estado inicial: HOME principal | Estado final: HOME principal
+LECTURA OBLIGATORIA:
+1. automation/cdp/RUNTIME.md
+2. automation/smoke/smoke-productos.md
 
-HELPERS Y SKILLS (leer antes de ejecutar — obligatorio):
-- automation/cdp/denario-cdp-helpers.js — connectCdp, clickBack, clickIonItem, scrollInfinite, selectIonPopover
-- automation/cdp/SKILLS.md — tabla de skills y anti-patrones prohibidos
+INICIO:
+const h  = require('{RUTA_HELPERS}');
+const pg = await h.connectCdp(page);
+await h.waitSyncOverlay(pg);
 
-Iniciar con: h.connectCdp(page) → h.waitSyncOverlay(pg)
-Botón "Volver" (estructuras → home módulo): buscar ion-button o button con texto "Volver" y hacer click con clickIonItem o evaluación directa.
-Selector lista de precios en detalle (DM-PRD-013): usar h.selectIonPopover() si abre popover de radio.
+DATOS DE PRUEBA — {QA_CLIENTE}:
+[ORQUESTADOR: inyectar modules.productos del YAML]
 
-GUIÓN DE REFERENCIA: leer guiones-regresion/guion-productos.md para pasos exactos.
-
-CASOS SMOKE:
-DM-PRD-001 — Acceso al módulo, estructuras visibles (selector tipo + lista)
-DM-PRD-002 — Cambiar tipo de estructura → listado actualiza
-DM-PRD-004 — Tocar estructura → lista de productos visible
-DM-PRD-006 — Búsqueda por texto → resultados filtrados
-DM-PRD-007 — Búsqueda sin resultados → mensaje vacío visible
-DM-PRD-009 — Scroll infinito → carga más productos
-DM-PRD-012 — Detalle de producto → precio, descripción, etc.
-DM-PRD-013 — Selector lista de precios → precio actualizado
-DM-PRD-019 — Botón "Volver" → regresa a estructuras
-DM-PRD-020 — Atrás desde detalle → lista de productos
-DM-PRD-021 — Atrás desde estructuras → Home principal
-
-REPORTE COMPACTO: Crear automation/reports/smoke-productos-<RUN_ID>.md
-Formato: tabla | ID | P/F/S/N | evidencia 1 línea | — párrafos detallados solo en FAIL.
+REPORTE: automation/reports/smoke-productos-{RUN_ID}.md
+REGISTROS CREADOS: ninguno (solo lectura).
 Devolver: módulo PRODUCTOS, counts, ruta.
 ```
 
@@ -586,31 +425,23 @@ Devolver: módulo PRODUCTOS, counts, ruta.
 **Estado inicial:** HOME | **Estado final:** HOME
 
 ```
-Eres un agente QA ejecutando el smoke test del módulo VENDEDORES de Denario Premium Móvil.
-Este módulo es de CONSULTA (solo lectura) — no crea ni modifica datos.
+Eres agente QA — módulo VENDEDORES · Denario Premium Móvil · RUN_ID: {RUN_ID} · Cliente: {QA_CLIENTE}
+Módulo de solo lectura — no crea ni modifica datos.
 
-CONTEXTO:
-- App: com.kiberno.denarioPremiumPro (Android WebView · Ionic 6 + Angular 19 + Capacitor 6)
-- Carpeta de trabajo: DenarioPremiunMovil/qa-piloto-automatizacion/
-- Estado inicial: HOME principal | Estado final: HOME principal
+LECTURA OBLIGATORIA:
+1. automation/cdp/RUNTIME.md
+2. automation/smoke/smoke-vendedores.md   ← verificar modules.vendedores.aplica antes de ejecutar
 
-HELPERS Y SKILLS (leer antes de ejecutar — obligatorio):
-- automation/cdp/denario-cdp-helpers.js — connectCdp, clickBack, waitSyncOverlay
-- automation/cdp/SKILLS.md — tabla de skills y anti-patrones prohibidos
+INICIO:
+const h  = require('{RUTA_HELPERS}');
+const pg = await h.connectCdp(page);
+await h.waitSyncOverlay(pg);
 
-Iniciar con: h.connectCdp(page) → h.waitSyncOverlay(pg)
-NOTA: Si acordeón expande pero contenido vacío (sin datos de API) → N/A, no FAIL.
-NOTA: Si módulo Vendedores no aparece en Home → N/A (esVendedor=false para la cuenta).
+DATOS DE PRUEBA — {QA_CLIENTE}:
+[ORQUESTADOR: inyectar modules.vendedores + vgs.esVendedor del YAML]
 
-GUIÓN DE REFERENCIA: leer guiones-regresion/guion-vendedores.md para pasos exactos.
-
-CASOS SMOKE:
-DM-VND-001 — Acceso desde Home → overlay desaparece, acordeones de empresa visibles
-DM-VND-002 — Expandir acordeón → datos/KPIs visibles; contraer → ocultos
-DM-VND-007 — Atrás → Home principal
-
-REPORTE COMPACTO: Crear automation/reports/smoke-vendedores-<RUN_ID>.md
-Formato: tabla | ID | P/F/S/N | evidencia 1 línea | — párrafos detallados solo en FAIL.
+REPORTE: automation/reports/smoke-vendedores-{RUN_ID}.md
+REGISTROS CREADOS: ninguno (solo lectura).
 Devolver: módulo VENDEDORES, counts, ruta.
 ```
 
@@ -705,7 +536,7 @@ Devolver: módulo VENDEDORES, counts, ruta.
 | Situación | Acción del orquestador |
 |-----------|------------------------|
 | CDP no responde en :9220 | Detener y avisar al usuario: "Ejecutar `adb forward tcp:9220 localabstract:webview_devtools_remote_<PID>`" |
-| Servidor de credenciales no responde en :19001 | Detener y avisar: "Ejecutar `node automation/maestro/temp-creds-server.js`" |
+| `fetchCreds()` lanza error (archivo no encontrado) | Verificar que `secrets/qa-credentials.env` existe en la raíz de `qa-piloto-automatizacion/` |
 | FAIL S1 en un módulo | Registrar en consolidado; continuar con el siguiente módulo |
 | App en estado inconsistente al iniciar agente | Avisar al usuario: "Ejecutar `adb shell am force-stop com.kiberno.denarioPremiumPro` y relanzar la app" |
 | Diálogo nativo de Android visible | Avisar al usuario para que lo descarte manualmente — CDP no puede controlarlo |

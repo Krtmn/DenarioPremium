@@ -29,6 +29,7 @@ const h  = require('C:/Users/Personal/OneDrive/Documentos/kiberno/DenarioPremium
 const pg = await h.connectCdp(page);
 await h.waitSyncOverlay(pg);
 // Credenciales cuando se necesiten: const creds = await h.fetchCreds();
+// fetchCreds() lee secrets/qa-credentials.env directamente — no requiere servidor externo
 ```
 
 Si `require()` no está disponible: leer el archivo y copiar las funciones verbatim.
@@ -132,5 +133,15 @@ Si `require()` no está disponible: leer el archivo y copiar las funciones verba
 
 ---
 
-*Versión: Fase 1 · 2026-06-02 · post-RUN_ID 20260529_145657*
+## 8. Lecciones DELTA
+
+Si existe `automation/reports/lecciones-DELTA.md` con contenido, el orquestador lo lee en Paso 0 y lo incluye como contexto adicional en los prompts de agentes afectados.
+
+Los agentes individuales **no** leen este archivo por defecto — el orquestador inyecta solo lo relevante al módulo.
+
+Cuando un patrón del DELTA se confirma en 2+ corridas → mover a RUNTIME.md o helpers.js y registrar en la tabla de graduaciones del DELTA.
+
+---
+
+*Versión: Fase 4 · 2026-06-02 · post-RUN_ID 20260529_145657*
 *Actualizar tras cada corrida que descubra patrones nuevos graduados desde lecciones-DELTA.md*

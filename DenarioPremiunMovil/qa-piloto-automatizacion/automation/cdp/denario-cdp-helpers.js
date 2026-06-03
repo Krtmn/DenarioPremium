@@ -12,8 +12,7 @@
  *   qa-piloto-automatizacion/automation/cdp/denario-cdp-helpers.js
  */
 
-const CDP_URL   = 'http://127.0.0.1:9220';
-const CREDS_URL = 'http://127.0.0.1:19001';
+const CDP_URL = 'http://127.0.0.1:9220';
 
 // ---------------------------------------------------------------------------
 // CONEXIÓN
@@ -36,26 +35,36 @@ async function connectCdp(page) {
 // ---------------------------------------------------------------------------
 
 /**
- * Obtener credenciales QA del servidor local (:19001).
- * Devuelve { user, pass }.
- * Llama una sola vez al inicio del agente y guarda en variable local.
- * NO cachear entre llamadas MCP — cada browser_run_code_unsafe es un contexto nuevo.
+ * Obtener credenciales QA leyendo secrets/qa-credentials.env directamente.
+ * Devuelve { user, pass, badPass }.
+ * @param {string} [clienteId] - slug del cliente (ej. 'insumar', 'hidroponias').
+ *   Si se omite, usa el primer bloque del archivo.
+ *   El archivo usa secciones "# Cliente: <slug>" como marcadores.
  */
-async function fetchCreds() {
-  const text = await new Promise((resolve, reject) => {
-    require('http').get(CREDS_URL, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => resolve(data));
-    }).on('error', reject);
-  });
-  const lines = text.split('\n');
-  const get = (key) => {
+async function fetchCreds(clienteId) {
+  const path = require('path');
+  const fs   = require('fs');
+  const credsPath = path.join(__dirname, '..', '..', 'secrets', 'qa-credentials.env');
+  const text  = fs.readFileSync(credsPath, 'utf8');
+
+  let searchText = text;
+  if (clienteId) {
+    const marker   = `# Cliente: ${clienteId}`;
+    const idx      = text.toLowerCase().indexOf(marker.toLowerCase());
+    if (idx !== -1) {
+      searchText = text.slice(idx);
+      const nextSection = searchText.indexOf('\n# Cliente:', 1);
+      if (nextSection !== -1) searchText = searchText.slice(0, nextSection);
+    }
+  }
+
+  const lines = searchText.split('\n');
+  const get   = (key) => {
     const line = lines.find(l => l.trim().startsWith(key + '='));
     if (!line) return '';
     return line.split('=').slice(1).join('=').trim().replace(/^"|"$/g, '');
   };
-  return { user: get('QA_USER'), pass: get('QA_PASSWORD') };
+  return { user: get('QA_USER'), pass: get('QA_PASSWORD'), badPass: get('QA_BAD_PASSWORD') };
 }
 
 // ---------------------------------------------------------------------------
@@ -386,7 +395,6 @@ async function mockCameraAdjunto(pg) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     CDP_URL,
-    CREDS_URL,
     BASE64_1PX_JPEG,
     connectCdp,
     fetchCreds,
