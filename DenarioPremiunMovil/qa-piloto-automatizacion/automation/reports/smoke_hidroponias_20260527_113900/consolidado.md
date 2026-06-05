@@ -87,16 +87,16 @@
 
 | Módulo | Archivo | Resultado |
 |--------|---------|-----------|
-| [Login](smoke-login-20260527_113900_smoke-completo.md) | `smoke-login-20260527_113900_smoke-completo.md` | 6P · 0F · 0S · 3N/A |
-| [Clientes](smoke-clientes-20260527_113900_smoke-completo.md) | `smoke-clientes-20260527_113900_smoke-completo.md` | 9P · 0F · 1S · 0N/A |
-| [Pedidos](smoke-pedidos-20260527_113900_smoke-completo.md) | `smoke-pedidos-20260527_113900_smoke-completo.md` | 13P · 0F · 0S · 0N/A |
-| [Cobros](smoke-cobros-20260527_113900_smoke-completo.md) | `smoke-cobros-20260527_113900_smoke-completo.md` | 19P · 0F · 0S · 0N/A |
-| [Devoluciones](smoke-devoluciones-20260527_113900_smoke-completo.md) | `smoke-devoluciones-20260527_113900_smoke-completo.md` | 14P · 0F · 0S · 0N/A |
-| [Inventarios](smoke-inventarios-20260527_113900_smoke-completo.md) | `smoke-inventarios-20260527_113900_smoke-completo.md` | 15P · 0F · 0S · 1N/A |
-| [Depósitos](smoke-depositos-20260527_113900_smoke-completo.md) | `smoke-depositos-20260527_113900_smoke-completo.md` | 6P · **3F** · 0S · 2N/A |
-| [Visitas](smoke-visitas-20260527_113900_smoke-completo.md) | `smoke-visitas-20260527_113900_smoke-completo.md` | 15P · 0F · 0S · 2N/A |
-| [Productos](smoke-productos-20260527_113900_smoke-completo.md) | `smoke-productos-20260527_113900_smoke-completo.md` | 11P · 0F · 0S · 0N/A |
-| [Vendedores](smoke-vendedores-20260527_113900_smoke-completo.md) | `smoke-vendedores-20260527_113900_smoke-completo.md` | 2P · 0F · 0S · 1N/A |
+| [Login](login.md) | `login.md` | 6P · 0F · 0S · 3N/A |
+| [Clientes](clientes.md) | `clientes.md` | 9P · 0F · 1S · 0N/A |
+| [Pedidos](pedidos.md) | `pedidos.md` | 13P · 0F · 0S · 0N/A |
+| [Cobros](cobros.md) | `cobros.md` | 19P · 0F · 0S · 0N/A |
+| [Devoluciones](devoluciones.md) | `devoluciones.md` | 14P · 0F · 0S · 0N/A |
+| [Inventarios](inventarios.md) | `inventarios.md` | 15P · 0F · 0S · 1N/A |
+| [Depósitos](depositos.md) | `depositos.md` | 6P · **3F** · 0S · 2N/A |
+| [Visitas](visitas.md) | `visitas.md` | 15P · 0F · 0S · 2N/A |
+| [Productos](productos.md) | `productos.md` | 11P · 0F · 0S · 0N/A |
+| [Vendedores](vendedores.md) | `vendedores.md` | 2P · 0F · 0S · 1N/A |
 
 ---
 

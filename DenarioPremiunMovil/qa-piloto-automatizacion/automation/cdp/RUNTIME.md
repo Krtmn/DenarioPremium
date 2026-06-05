@@ -125,9 +125,13 @@ Si `require()` no está disponible: leer el archivo y copiar las funciones verba
 
 ## 7. Convención RUN_ID y rutas
 
-- **Formato:** `YYYYMMDD_HHMMSS_smoke-completo`
-- **Reportes:** `automation/reports/smoke-{modulo}-{RUN_ID}.md`
-- **Consolidado:** `automation/reports/smoke-consolidado-{RUN_ID}.md`
+- **Formato RUN_ID:** `YYYYMMDD_HHMMSS_smoke-completo`
+- **Carpeta de corrida:** `automation/reports/{tipo}_{cliente}_{YYYYMMDD}_{HHMMSS}/`
+  - Ejemplo: `automation/reports/smoke_insumar_20260603_093706/`
+  - El orquestador crea esta carpeta en Paso 0 (`RUN_DIR`).
+- **Reporte de módulo:** `{RUN_DIR}{modulo}.md` → ej. `smoke_insumar_20260603_093706/cobros.md`
+- **Consolidado:** `{RUN_DIR}consolidado.md`
+- **Archivos globales (raíz `reports/`):** `lecciones-DELTA.md`, `lecciones-aprendidas-cdp.md`
 - **Credenciales:** `secrets/qa-credentials.env` (playa activa) o `secrets/playas/{playa_id}.env` (multi-playa)
 - **Cliente activo:** leer de `automation/clientes/{QA_CLIENTE}.yaml` donde `QA_CLIENTE` viene en el prompt del orquestador
 

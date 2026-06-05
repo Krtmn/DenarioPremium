@@ -3,78 +3,116 @@
 # VGs parcialmente confirmadas — completar en primera corrida formal.
 
 cliente_id: insumar
-cliente_nombre: INSUMAR                   # TBD: confirmar nombre exacto en la app
+cliente_nombre: "INSUMAR DISTRIBUIDOR"    # Confirmado 20260603: nombre en app
 ws_url: "http://denarioislacoche.ddns.net:8081/PremiumWS/services/"
 apk_package: com.kiberno.denarioPremiumPro
 
 vgs:
-  multiCurrency: null                     # TBD
-  expirationBatch: null                   # TBD
-  suggestedOrderByDispatchAndReturn: null # TBD
+  multiCurrency: true                     # Confirmado 20260603: lista muestra Saldo BS y Saldo US$
+  expirationBatch: true                   # Confirmado 20260603: Lote + Fecha de vencimiento en modal inventario
+  suggestedOrderByDispatchAndReturn: true # Confirmado 20260603: botón "Pedido Sugerido" visible en tab Resumen
   requiredCollectionAttachments: false    # Confirmado: Insumar no requiere adjunto para cobros
   requiredComment: null                   # TBD
-  validateReturn: null                    # TBD
-  signatureReturn: null                   # TBD
+  validateReturn: false                   # Confirmado 20260603: tabs habilitadas sin seleccionar factura
+  signatureReturn: true                   # Confirmado 20260603: acordeón Firma visible en tab Adjuntos
   signatureCollection: null               # TBD
-  signatureVisit: null                    # TBD
-  userCanUploadFiles: null                # TBD
-  esVendedor: null                        # TBD
-  enterpriseEnabled: null                 # TBD
-  enabledManualRate: null                 # TBD
-  cobroPrepago: null                      # TBD
-  cobroRetencion: null                    # TBD
-  userCanSelectIGTF: null                 # TBD
-  userCanCollectIva: null                 # TBD
+  signatureVisit: true                    # Confirmado 20260603: acordeón Firma visible en tab Adjuntos visitas
+  userCanUploadFiles: true                # Confirmado 20260603: acordeón "Archivo — Subir Archivo" visible en tab Adjuntos devoluciones
+  esVendedor: true                        # Confirmado 20260603: encabezado "Vendedor" (singular) + acordeón empresa propia visible
+  enterpriseEnabled: true                 # Confirmado 20260603: acordeón "INSUMAR DISTRIBUIDOR" visible en módulo Vendedores
+  enabledManualRate: false                 # Confirmado 20260603: #manualRateInput no existe
+  cobroPrepago: true                       # Confirmado 20260603: botón ANTICIPO/PREPAGO visible (sin clientes elegibles actualmente)
+  cobroRetencion: true                    # Confirmado 20260603: botón RETENCIÓN visible y funcional; retención requiere adjunto propio
+  userCanSelectIGTF: true                 # Confirmado 20260603: botón IGTF visible; 3 selects en General (empresa/moneda/tasa)
+  userCanCollectIva: true                 # Confirmado 20260603: botón COBRO 25% IVA visible (sin clientes elegibles actualmente)
   transportRole: null                     # TBD
   userMustActivateGPS: null               # TBD
 
 modules:
   login:
     bad_password: Test-LOG-003
-    has_second_user: null                 # TBD
+    has_second_user: false                # Confirmado 20260603: no hay selector/toggle de segundo usuario en pantalla login
 
   clientes:
-    cliente_busqueda: null                # TBD
-    cliente_detalle: null                 # TBD
+    cliente_busqueda: "ABASTOS"           # Confirmado 20260603: buscar con click en botón search
+    cliente_detalle: "ADRIAN ARLET BASTARDO ALONZO"  # Cód 2738, Saldo BS 54.126,82 / US$ 104,50 — tiene documentos
 
   pedidos:
-    cliente_test: null                    # TBD
-    estructura_producto: null             # TBD
-    alerta_deuda_vencida: null            # TBD
+    cliente_test: "ADRIAN ARLET BASTARDO ALONZO"  # Cód 2738, Saldo US$ 104,50 — confirmado 20260603
+    estructura_producto: "familias → acordeón → productos (UND/BTO + Inventario)"  # ALIMENTOS/BEBIDAS/etc → click expande items
+    alerta_deuda_vencida: true            # Confirmado 20260603: "Este cliente tiene deuda vencida, ¿Desea continuar?"
 
   cobros:
-    cliente_test: null                    # TBD
-    cliente_code: null                    # TBD
-    metodo_pago: null                     # TBD
-    banco_deposito: null                  # TBD
-    smoke_na_estructural: []              # TBD según VGs activas
+    cliente_test: "ADRIAN ARLET BASTARDO ALONZO"   # Confirmado 20260603
+    cliente_code: "2738"                            # Confirmado 20260603
+    metodo_pago: "Deposito"                         # Confirmado 20260603; también Efectivo/Transferencia/Pago Móvil
+    banco_deposito: "BANESCO RAEL"                  # Confirmado 20260603 (también BANCRECER/BANCO CARIBE/BANCO MERCANTIL/BDV ADRIANA)
+    smoke_na_estructural:
+      - "DM-COB-007: documentos regulares vacios para cliente test (sin facturas pendientes en cobros)"
+      - "DM-COB-008: sin documentos para checkbox en cobro regular"
+      - "DM-COB-028: ANTICIPO/PREPAGO sin clientes elegibles actualmente"
+      - "DM-COB-037: COBRO 25% IVA sin clientes elegibles actualmente"
+      - "DM-COB-039: enabledManualRate=false"
 
   devoluciones:
-    cliente_test: null                    # TBD
-    factura_test: null                    # TBD
-    producto_test: null                   # TBD
+    cliente_test: "ADRIAN ARLET BASTARDO ALONZO"  # Cód 2738 — confirmado 20260603
+    factura_test: null                    # N/A — validateReturn=false, no requiere factura
+    producto_test: "TOMATES PELADOS MARY 24X400G"  # Cód 11293, familia ALIMENTOS — confirmado 20260603
 
   inventarios:
-    cliente_test: null                    # TBD
-    cliente_code: null                    # TBD
+    cliente_test: "ADRIAN ARLET BASTARDO ALONZO"  # Confirmado 20260603
+    cliente_code: "2738"                           # Confirmado 20260603
+    expirationBatch: true                          # Confirmado 20260603: Lote + Fecha de vencimiento presentes
+    suggestedOrderByDispatchAndReturn: true        # Confirmado 20260603: botón "Pedido Sugerido" en tab Resumen
+    nro_ref_enviado: 9                             # Inventario enviado en esta corrida
 
   depositos:
-    aplica: null                          # TBD
+    aplica: true                          # Confirmado 20260603: módulo visible en HOME y accesible
     motivo_na: null
 
   visitas:
-    cliente_test: null                    # TBD
-    smoke_na_estructural: []              # TBD
+    cliente_test: "ADRIAN ARLET BASTARDO ALONZO"  # Confirmado 20260603: Cód 2738
+    smoke_na_estructural:
+      - "DM-VIS-025: sin visitas sincronizadas desde backend hoy — lista RUTA DE HOY vacía al inicio de corrida"
+      - "DM-VIS-026: depende de DM-VIS-025 → N/A"
 
   productos:
-    tipo_estructura_default: null         # TBD
-    texto_busqueda: null                  # TBD
+    tipo_estructura_default: "Linea"      # Confirmado 20260603: catálogo organizado por Líneas
+    texto_busqueda: "TOMATES"             # Confirmado 20260603: devuelve resultados con productos reales
 
   vendedores:
-    aplica: null                          # TBD
+    aplica: true                          # Confirmado 20260603: módulo visible en HOME y accesible; esVendedor=true confirmado
 
 ultima_corrida:
-  run_id: null
-  fecha: null
-  nuevos_patrones: []
-  defectos_abiertos: []
+  run_id: "20260603_093706_smoke-completo"
+  fecha: "2026-06-03"
+  nuevos_patrones:
+    - "busqueda_clientes_requiere_click_boton: true  # filtro no reactivo — necesita click en .clear-search"
+    - "selector_activo: app-clientes  # no app-client-home/list/detail — usa sub-vistas internas"
+    - "cliente_potencial_campos_obligatorios: [naClient, nuRif, txAddress, txAddressDispatch, txClient, naResponsible, emClient, nuPhone]"
+    - "delete_sin_confirmacion: true  # borrado inmediato al click trash, sin paso previo (CLIENTES)"
+    - "pedidos_modal_cliente_usa_show-modal: true  # detectar apertura con classList.contains('show-modal')"
+    - "pedidos_ion-input-cantidad_offsetParent_null: true  # usar getBoundingClientRect para detectar visibilidad en acordeón"
+    - "pedidos_envio_dos_alertas: true  # flujo envío genera (1) 'Su Pedido será enviado' y (2) 'Pedido nro. X enviado exitosamente'"
+    - "pedidos_lista_delete_con_confirmacion: true  # a diferencia del tab Total, basura en lista requiere alert '¿Seguro que quieres eliminar?'"
+    - "pedidos_buscar_filtra_realtime: true  # searchbar en pedidosLista filtra con ionInput (distinto a módulo Clientes)"
+    - "pedidos_nro_ref_0_en_guardado_local: true  # pedidos sin sincronizar tienen Nro. Ref.: 0"
+    - "cdp_port_forward_cae_en_navegacion: true  # adb forward tcp:9220 puede caerse; re-establecer con localabstract:webview_devtools_remote_1"
+    - "devoluciones_guardar_enviar_son_icon_only: true  # clases imagenGuardar/imagenEnviar sin texto; buscar por clase no por texto"
+    - "devoluciones_ion_input_sin_id_dom: true  # ion-input devoluciones no tienen id como atributo; seleccionar por clase inp-write o por posición"
+    - "devoluciones_accordion_campos: [Lote, NroFactura, FechaVenc, CantidadDevuelta_inp-write, Unidad_select, Motivo_select]"
+    - "devoluciones_delete_con_confirmacion: true  # basura en lista requiere alert '¿Desea eliminar la devolución?' CANCELAR/ELIMINAR"
+    - "devoluciones_tipo_opciones: [Calidad, PostVenta, Servicio]  # popover con 3 opciones"
+    - "inventarios_modal_class_en_ion_modal: inventory-type-stocks-modal  # clase en ion-modal, no custom element"
+    - "inventarios_fecha_via_datetime_button: true  # ion-datetime-button → modal overlay → Aceptar en shadowRoot"
+    - "inventarios_delete_directo_sin_confirmacion: true  # basura → alert éxito directo, sin confirm previo"
+    - "inventarios_guardado_nro_ref_0: true  # mismo patrón que pedidos"
+    - "inventarios_enviado_tabs_3: true  # formulario enviado muestra General/Resumen/Adjuntos (sin tab Inventario)"
+    - "visitas_back_requiere_mouse_click_coords: true  # dispatchEvent en fechaAtras no dispara Angular router; usar getBoundingClientRect + pg.mouse.click"
+    - "visitas_ion_select_actividad_es_objeto: true  # valor es {idType, naType, requiredEvent, requiredSignature}; asignar via popover click, no .value=string"
+    - "visitas_motivo_condicional_requiredEvent: true  # select Motivo aparece solo cuando actividad.requiredEvent=true"
+    - "visitas_delete_con_confirmacion: true  # basura en lista visita Guardada → alert '¿Desea borrar la visita?' CANCELAR/ACEPTAR"
+    - "visitas_agregar_btn_coords_cambian_segun_selects_visibles: true  # obtener getBoundingClientRect frescos antes de click en AGREGAR del modal"
+    - "visitas_signatureVisit_true_confirmado: true  # acordeón Firma visible en tab Adjuntos"
+  defectos_abiertos:
+    - "DM-DEP-010/018: lista BUSCAR no renderiza tras guardar (bug v6.6.14 deposit.service.ts) — confirmado también en insumar"

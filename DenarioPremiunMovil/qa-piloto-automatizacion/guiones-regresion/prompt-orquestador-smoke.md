@@ -100,7 +100,7 @@ Eres **Claude Code actuando como Orquestador QA** para Denario Premium Móvil. T
 
 **App:** `com.kiberno.denarioPremiumPro`
 **Carpeta raíz de trabajo:** `DenarioPremiunMovil/qa-piloto-automatizacion/`
-**Reportes:** guardar en `automation/reports/`
+**Reportes:** guardar en `automation/reports/smoke_{QA_CLIENTE}_{YYYYMMDD}_{HHMMSS}/` (una carpeta por corrida — ver Paso 0)
 **QA_CLIENTE:** (especificar al lanzar, ej. `QA_CLIENTE=hidroponias`)
 
 ---
@@ -143,6 +143,8 @@ Si CDP no responde: detente y avisa — no intentes reparar infra.
 
 **RUN_ID:** Generar con formato `YYYYMMDD_HHMMSS_smoke-completo`. Usar este mismo ID en todos los reportes.
 
+**RUN_DIR:** Construir como `automation/reports/smoke_{QA_CLIENTE}_{YYYYMMDD}_{HHMMSS}/` (extraer fecha y hora del RUN_ID). Crear esta carpeta antes de lanzar el primer agente. Ejemplo: RUN_ID `20260603_093706_smoke-completo` + cliente `insumar` → `automation/reports/smoke_insumar_20260603_093706/`.
+
 ---
 
 ## ORDEN DE EJECUCIÓN
@@ -170,7 +172,7 @@ Para cada módulo en el orden anterior:
 2. Lanza con la herramienta `Agent` (`subagent_type: "claude"`). Espera resultado completo.
 3. Verifica que el agente terminó en Home.
 4. FAIL en caso S1: registra en consolidado y continúa con el siguiente módulo.
-5. Al terminar los 10: genera el Reporte Consolidado Final en `automation/reports/smoke-consolidado-<RUN_ID>.md`.
+5. Al terminar los 10: genera el Reporte Consolidado Final en `{RUN_DIR}consolidado.md`.
 
 ---
 
@@ -204,7 +206,7 @@ Si la app está en HOME al iniciar → click en "Salir" primero.
 DATOS DE PRUEBA — {QA_CLIENTE}:
 [ORQUESTADOR: inyectar modules.login del YAML]
 
-REPORTE: automation/reports/smoke-login-{RUN_ID}.md
+REPORTE: {RUN_DIR}login.md
 REGISTROS CREADOS: ninguno (módulo sin transacciones).
 Devolver: módulo LOGIN, counts PASS/FAIL/SKIP/N/A, ruta.
 ```
@@ -230,7 +232,7 @@ await h.waitSyncOverlay(pg);
 DATOS DE PRUEBA — {QA_CLIENTE}:
 [ORQUESTADOR: inyectar modules.clientes del YAML]
 
-REPORTE: automation/reports/smoke-clientes-{RUN_ID}.md
+REPORTE: {RUN_DIR}clientes.md
 REGISTROS CREADOS: incluir tabla (cliente potencial creado/enviado).
 Devolver: módulo CLIENTES, counts, ruta, registros.
 ```
@@ -256,7 +258,7 @@ await h.waitSyncOverlay(pg);
 DATOS DE PRUEBA — {QA_CLIENTE}:
 [ORQUESTADOR: inyectar modules.pedidos del YAML]
 
-REPORTE: automation/reports/smoke-pedidos-{RUN_ID}.md
+REPORTE: {RUN_DIR}pedidos.md
 REGISTROS CREADOS: incluir tabla (nro pedido enviado).
 Devolver: módulo PEDIDOS, counts, ruta, registros.
 ```
@@ -282,7 +284,7 @@ await h.waitSyncOverlay(pg);
 DATOS DE PRUEBA — {QA_CLIENTE}:
 [ORQUESTADOR: inyectar modules.cobros + vgs.requiredCollectionAttachments + vgs.cobroRetencion + vgs.userCanSelectIGTF + vgs.userCanCollectIva del YAML]
 
-REPORTE: automation/reports/smoke-cobros-{RUN_ID}.md
+REPORTE: {RUN_DIR}cobros.md
 REGISTROS CREADOS: incluir tabla (cobros enviados Y cobros Guardados pendientes de envío manual).
 Devolver: módulo COBROS, counts, ruta, registros.
 ```
@@ -308,7 +310,7 @@ await h.waitSyncOverlay(pg);
 DATOS DE PRUEBA — {QA_CLIENTE}:
 [ORQUESTADOR: inyectar modules.devoluciones + vgs.validateReturn + vgs.signatureReturn + vgs.userCanUploadFiles del YAML]
 
-REPORTE: automation/reports/smoke-devoluciones-{RUN_ID}.md
+REPORTE: {RUN_DIR}devoluciones.md
 REGISTROS CREADOS: incluir tabla (nro devolución enviada).
 Devolver: módulo DEVOLUCIONES, counts, ruta, registros.
 ```
@@ -334,7 +336,7 @@ await h.waitSyncOverlay(pg);
 DATOS DE PRUEBA — {QA_CLIENTE}:
 [ORQUESTADOR: inyectar modules.inventarios + vgs.expirationBatch + vgs.suggestedOrderByDispatchAndReturn del YAML]
 
-REPORTE: automation/reports/smoke-inventarios-{RUN_ID}.md
+REPORTE: {RUN_DIR}inventarios.md
 REGISTROS CREADOS: incluir tabla (nro inventario enviado).
 Devolver: módulo INVENTARIOS, counts, ruta, registros.
 ```
@@ -360,7 +362,7 @@ await h.waitSyncOverlay(pg);
 DATOS DE PRUEBA — {QA_CLIENTE}:
 [ORQUESTADOR: inyectar modules.depositos completo del YAML]
 
-REPORTE: automation/reports/smoke-depositos-{RUN_ID}.md
+REPORTE: {RUN_DIR}depositos.md
 REGISTROS CREADOS: incluir tabla si aplica=true; si aplica=false documentar N/A con motivo.
 Devolver: módulo DEPÓSITOS, counts, ruta, registros.
 ```
@@ -386,7 +388,7 @@ await h.waitSyncOverlay(pg);
 DATOS DE PRUEBA — {QA_CLIENTE}:
 [ORQUESTADOR: inyectar modules.visitas + vgs.signatureVisit + vgs.userCanUploadFiles del YAML]
 
-REPORTE: automation/reports/smoke-visitas-{RUN_ID}.md
+REPORTE: {RUN_DIR}visitas.md
 REGISTROS CREADOS: incluir tabla (nro visita enviada + visitas Guardadas pendientes).
 Devolver: módulo VISITAS, counts, ruta, registros.
 ```
@@ -413,7 +415,7 @@ await h.waitSyncOverlay(pg);
 DATOS DE PRUEBA — {QA_CLIENTE}:
 [ORQUESTADOR: inyectar modules.productos del YAML]
 
-REPORTE: automation/reports/smoke-productos-{RUN_ID}.md
+REPORTE: {RUN_DIR}productos.md
 REGISTROS CREADOS: ninguno (solo lectura).
 Devolver: módulo PRODUCTOS, counts, ruta.
 ```
@@ -440,7 +442,7 @@ await h.waitSyncOverlay(pg);
 DATOS DE PRUEBA — {QA_CLIENTE}:
 [ORQUESTADOR: inyectar modules.vendedores + vgs.esVendedor del YAML]
 
-REPORTE: automation/reports/smoke-vendedores-{RUN_ID}.md
+REPORTE: {RUN_DIR}vendedores.md
 REGISTROS CREADOS: ninguno (solo lectura).
 Devolver: módulo VENDEDORES, counts, ruta.
 ```
