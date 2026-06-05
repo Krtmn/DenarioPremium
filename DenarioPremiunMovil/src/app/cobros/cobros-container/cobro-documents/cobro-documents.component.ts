@@ -198,13 +198,30 @@ export class CobrosDocumentComponent implements OnInit {
   }
 
   getDaDueDate(daDueDate: string) {
-    let dateDoc = new Date(daDueDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$2/$1/$3")).getTime();
-    //minutes = 1000*60
-    //hours = minutes * 60
-    //days = hours * 24
-    //var days = 86400000; /* 1000 * 60 * 60 * 24; */
+    if (!daDueDate) return 0;
 
-    return Math.abs(Math.round(((new Date()).getTime() - dateDoc) / 86400000));
+    const rawDate = String(daDueDate).split(' ')[0].trim();
+    let dueDate: Date | null = null;
+
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(rawDate)) {
+      const [day, month, year] = rawDate.split('/').map(Number);
+      dueDate = new Date(year, month - 1, day);
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+      const [year, month, day] = rawDate.split('-').map(Number);
+      dueDate = new Date(year, month - 1, day);
+    } else {
+      const parsed = new Date(rawDate);
+      dueDate = Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    if (!dueDate) return 0;
+
+    const today = new Date();
+    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+
+    const diffDays = Math.floor((todayOnly.getTime() - dueDateOnly.getTime()) / 86400000);
+    return Math.abs(diffDays);
   }
 
   getIgtfList() {
@@ -605,15 +622,24 @@ export class CobrosDocumentComponent implements OnInit {
           this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber((this.collectService.documentSaleOpen.nuAmountRetention + this.collectService.documentSaleOpen.nuAmountRetention2)));
 
       // <-- ADD: inicializar displayAmountPaid para que el input muestre el valor al abrir
+
+      const sumRetentions = this.collectService.documentSaleOpen.nuAmountRetention +
+        this.collectService.documentSaleOpen.nuAmountRetention2;
+
       if (this.collectService.isPaymentPartial) {
         this.centsAmountPaid = Math.round((this.collectService.amountPaid ?? 0) * factor);
         this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
       } else {
+        let nuAmountPaidNet;
+        if (this.collectService.collection.stDelivery == 3)
+          nuAmountPaidNet = (this.collectService.documentSaleOpen.nuAmountPaid ?? 0);
+        else
+          nuAmountPaidNet = (this.collectService.documentSaleOpen.nuAmountPaid ?? 0) - sumRetentions;
         try {
-          this.centsAmountPaid = Math.round((this.collectService.documentSaleOpen.nuAmountPaid ?? 0) * factor);
+          this.centsAmountPaid = Math.round(nuAmountPaidNet * factor);
           this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
         } catch {
-          this.centsAmountPaid = Math.round((this.collectService.documentSaleOpen.nuAmountPaid ?? 0) * factor);
+          this.centsAmountPaid = Math.round(nuAmountPaidNet * factor);
           this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
         }
       }
@@ -1151,11 +1177,12 @@ export class CobrosDocumentComponent implements OnInit {
 
   partialPay(event: any) {
     this.collectService.isChangePaymentPartial = true;
+    this.collectService.isChangePaymentPartialPersistence = true;
     this.collectService.isPaymentPartial = event.target.checked;
     const factor = this.centsFactor();
     if (event.target.checked) {
-      if (!this.collectService.documentSaleOpen.isSave)
-        this.collectService.amountPaid = 0;
+      //if (!this.collectService.documentSaleOpen.isSave)
+      this.collectService.amountPaid = 0;
 
       this.centsAmountPaid = Math.round((this.collectService.amountPaid ?? 0) * factor);
       this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
@@ -1193,6 +1220,8 @@ export class CobrosDocumentComponent implements OnInit {
       this.collectService.documentSaleOpen.daVoucher = this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].daVoucher!;
 
       if (this.collectService.isPaymentPartial) {
+        const sumRetentions = this.collectService.documentSaleOpen.nuAmountRetention +
+          this.collectService.documentSaleOpen.nuAmountRetention2;
         this.collectService.amountPaid = this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].nuAmountPaid;
         this.centsAmountPaid = Math.round((this.collectService.amountPaid ?? 0) * factor);
         this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);

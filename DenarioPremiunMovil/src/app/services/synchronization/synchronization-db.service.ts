@@ -114,7 +114,7 @@ export class SynchronizationDBService {
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
-  private CURRENT_DB_VERSION: number = 9;
+  private CURRENT_DB_VERSION: number = 10;
 
   constructor(
     private navController: NavController,
@@ -878,12 +878,29 @@ export class SynchronizationDBService {
   insertVisitsBatch(arr: Visit[]) {
 
     var statements = [];
-    let insertStatement = "INSERT OR REPLACE INTO visits(" +
+    let insertStatement = "INSERT INTO visits(" +
+  'id_visit, co_visit, st_visit, da_visit, coordenada, id_client, co_client,' +
+  'na_client, nu_sequence, id_user, co_user, co_enterprise, id_enterprise, da_real,' +
+  'da_initial, id_address_client, co_address_client, nu_attachments, has_attachments,' +
+  'is_reassigned, tx_reassigned_motive, da_reassign) ' +
+  'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ' +
+  'ON CONFLICT(id_visit) DO UPDATE SET ' + 
+  'co_visit=excluded.co_visit, st_visit=excluded.st_visit, da_visit=excluded.da_visit, ' +
+  'coordenada=excluded.coordenada, id_client=excluded.id_client, co_client=excluded.co_client, ' +
+  'na_client=excluded.na_client, nu_sequence=excluded.nu_sequence, id_user=excluded.id_user, ' +
+  'co_user=excluded.co_user, co_enterprise=excluded.co_enterprise, id_enterprise=excluded.id_enterprise, ' +
+  'da_real=excluded.da_real, da_initial=excluded.da_initial, id_address_client=excluded.id_address_client, ' +
+  'co_address_client=excluded.co_address_client, nu_attachments=excluded.nu_attachments, ' +
+  'has_attachments=excluded.has_attachments, is_reassigned=excluded.is_reassigned, ' +
+  'tx_reassigned_motive=excluded.tx_reassigned_motive, da_reassign=excluded.da_reassign ' +
+  'WHERE visits.st_visit != 0'; // <-- Checks the ALREADY SAVED value
+    
+    /*"INSERT OR REPLACE INTO visits(" +
       'id_visit, co_visit, st_visit, da_visit, coordenada, id_client, co_client,' +
       'na_client, nu_sequence, id_user, co_user, co_enterprise, id_enterprise, da_real,' +
       'da_initial, id_address_client, co_address_client, nu_attachments, has_attachments,' +
       'is_reassigned, tx_reassigned_motive, da_reassign) ' +
-      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'*/
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
@@ -1179,19 +1196,21 @@ export class SynchronizationDBService {
 
   insertOrderTypeBatch(arr: OrderType[]) {
     let insertStatement = "INSERT OR REPLACE INTO order_types(" +
-      'id_order_type,co_order_type,na_order_type,default_value,co_enterprise,items_limit,qu_items' +
+      'id_order_type,co_order_type,na_order_type,default_value,co_enterprise,items_limit,qu_items,id_iva_list' +
       ') ' +
-      'VALUES(?,?,?,?,?,?,?)'
+      'VALUES(?,?,?,?,?,?,?,?)'
 
     var statements = [];
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
+      const row = obj as OrderType & { id_iva_list?: number | null };
+      const idIvaListResolved = row.idIvaList ?? row.id_iva_list ?? null;
       const itemsLimitRaw = obj.itemsLimit as boolean | number | string | undefined;
       const itemsLimitFlag = itemsLimitRaw === true || itemsLimitRaw === 1 || itemsLimitRaw === '1';
       const defaultValRaw = obj.defaultValue as boolean | number | string | undefined;
       const defaultFlag = defaultValRaw === true || defaultValRaw === 1 || defaultValRaw === '1';
       statements.push([insertStatement, [obj.idOrderType, obj.coOrderType, obj.naOrderType,
-      defaultFlag ? 1 : 0, obj.coEnterprise, itemsLimitFlag ? 1 : 0, obj.quItems ?? 0]]);
+      defaultFlag ? 1 : 0, obj.coEnterprise, itemsLimitFlag ? 1 : 0, obj.quItems ?? 0, idIvaListResolved]]);
     }
 
     return this.database.sqlBatch(statements).then(res => {

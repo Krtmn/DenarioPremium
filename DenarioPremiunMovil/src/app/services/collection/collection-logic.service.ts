@@ -147,6 +147,7 @@ export class CollectionService {
   public isOpen: boolean = false;
   public isPaymentPartial: boolean = false;
   public isChangePaymentPartial: boolean = false;
+  public isChangePaymentPartialPersistence: boolean = false;
   public igtfDefault: boolean = false;
   public separateIgtf: boolean = false;
   public userMustActivateGPS: boolean = true; //si la pongo en false puedes entrar al clickear rapido
@@ -859,6 +860,15 @@ export class CollectionService {
     this.montoTotalPagar = 0;
     this.montoTotalDiscounts = 0;
 
+    /* if (this.collection.stDelivery == this.COLLECT_STATUS_SENT) {
+      this.montoTotalPagar = Number(this.collection.nuAmountFinal ?? 0) - Number(this.collection.nuAmountDiscount ?? 0);
+      this.montoTotalPagarConversion = Number(this.collection.nuAmountFinalConversion ?? 0) - Number(this.collection.nuAmountDiscountConversion ?? 0);
+      this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.collection.nuAmountPaid ?? 0))
+        - this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagar));
+      this.collection.nuDifferenceConversion = this.convertirMonto(this.collection.nuDifference, 0, this.collection.coCurrency);
+      return;
+    } */
+
     if (this.collection.collectionDetails.length == 0) {
       this.montoTotalPagado = 0;
       this.montoTotalPagadoConversion = 0;
@@ -868,10 +878,12 @@ export class CollectionService {
     }
 
 
-    const preserveAmountsWithoutRecalc = this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND
+    const preserveAmountsWithoutRecalc = !this.isChangePaymentPartialPersistence && (
+      this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND
       || this.collection.stDelivery == this.COLLECT_STATUS_SENT
       || this.collection.stDelivery == null
-      || (this.collection.stDelivery == this.COLLECT_STATUS_SAVED && !this.isRateChangeInProgress);
+      || (this.collection.stDelivery == this.COLLECT_STATUS_SAVED && !this.isRateChangeInProgress)
+    );
 
     if (preserveAmountsWithoutRecalc && this.collection.nuAmountPaid > 0) {
       const hasAmountPaid = this.collection.nuAmountPaid !== null
@@ -892,40 +904,43 @@ export class CollectionService {
       this.collection.nuDifferenceConversion = this.convertirMonto(this.collection.nuDifference, 0, this.collection.coCurrency);
       return;
     } else {
-      for (var j = 0; j < this.collection.collectionDetails.length; j++) {
-        for (var i = 0; i < this.documentSales.length; i++) {
-          //for (var j = 0; j < this.collection.collectionDetails.length; j++) {
-          if (this.documentSales[i].isSave) {
-            let pos = this.documentSales[i].positionCollecDetails;
-            if (this.collection.collectionDetails[j].inPaymentPartial === true) {
-              monto += this.documentSalesBackup[i].nuAmountPaid;
-              montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuAmountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
-              montoTotalDiscounts += this.collection.collectionDetails[pos].nuAmountDiscount +
-                this.collection.collectionDetails[pos].nuAmountCollectDiscount +
-                this.documentSalesBackup[i].nuAmountRetention +
-                this.documentSalesBackup[i].nuAmountRetention2;
+      if (this.collection.stDelivery == this.COLLECT_STATUS_SENT || this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND) {
+        monto = Number(this.collection.nuAmountTotal ?? 0);
+        montoConversion = Number(this.collection.nuAmountTotalConversion ?? 0);
+      } else
+        for (var j = 0; j < this.collection.collectionDetails.length; j++) {
+          for (var i = 0; i < this.documentSales.length; i++) {
+            //for (var j = 0; j < this.collection.collectionDetails.length; j++) {
+            if (this.documentSales[i].isSave) {
+              let pos = this.documentSales[i].positionCollecDetails;
+              if (this.collection.collectionDetails[j].inPaymentPartial === true) {
+                monto += this.collection.collectionDetails[pos].nuAmountPaid;
+                montoConversion += this.convertirMonto(this.collection.collectionDetails[pos].nuAmountPaid, this.collection.nuValueLocal, this.collection.coCurrency);
+                montoTotalDiscounts += this.collection.collectionDetails[pos].nuAmountDiscount +
+                  this.collection.collectionDetails[pos].nuAmountCollectDiscount +
+                  this.collection.collectionDetails[pos].nuAmountRetention +
+                  this.collection.collectionDetails[pos].nuAmountRetention2;
+              } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
+                monto += this.documentSalesBackup[i].nuBalance;
+                montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
+                montoTotalDiscounts += this.collection.collectionDetails[pos].nuAmountDiscount +
+                  this.collection.collectionDetails[pos].nuAmountCollectDiscount +
+                  this.collection.collectionDetails[pos].nuAmountRetention +
+                  this.collection.collectionDetails[pos].nuAmountRetention2;
+              }
             } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
               monto += this.documentSalesBackup[i].nuBalance;
+              let pos = this.documentSales[i].positionCollecDetails;
               montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
               montoTotalDiscounts += this.collection.collectionDetails[pos].nuAmountDiscount +
                 this.collection.collectionDetails[pos].nuAmountCollectDiscount +
                 this.documentSalesBackup[i].nuAmountRetention +
                 this.documentSalesBackup[i].nuAmountRetention2;
             }
-          } else if (this.collection.collectionDetails[j].idDocument == this.documentSales[i].idDocument) {
-            monto += this.documentSalesBackup[i].nuBalance;
-            let pos = this.documentSales[i].positionCollecDetails;
-            montoConversion += this.convertirMonto(this.documentSalesBackup[i].nuBalance, this.collection.nuValueLocal, this.collection.coCurrency);
-            montoTotalDiscounts += this.collection.collectionDetails[pos].nuAmountDiscount +
-              this.collection.collectionDetails[pos].nuAmountCollectDiscount +
-              this.documentSalesBackup[i].nuAmountRetention +
-              this.documentSalesBackup[i].nuAmountRetention2;
           }
+          // No mutar nuAmountPaid por detalle durante recálculos de tasa.
+          // El IGTF se calcula y presenta a nivel de totales para evitar acumulaciones.
         }
-
-        // No mutar nuAmountPaid por detalle durante recálculos de tasa.
-        // El IGTF se calcula y presenta a nivel de totales para evitar acumulaciones.
-      }
     }
 
     if (this.userCanSelectIGTF

@@ -130,6 +130,8 @@ export class PedidoComponent implements OnInit {
   public modalInfoClienteOpen: boolean = false;
   saveOrExitOpen = false;
   parteDecimal = 2;
+  public DELIVERY_STATUS_NEW = DELIVERY_STATUS_NEW;
+  public DELIVERY_STATUS_SAVED = DELIVERY_STATUS_SAVED;
   public DELIVERY_STATUS_SENT = DELIVERY_STATUS_SENT;
 
   nuValueLocal = 0;
@@ -991,6 +993,7 @@ export class PedidoComponent implements OnInit {
             this.setClientfromSelector(cliente);
             this.tipoOrden = this.orderServ.tipoOrden;
             this.tipoOrdenAnterior = this.tipoOrden;
+            this.orderServ.syncOrderTypeIvaOnProducts();
           }
         }
       ]
@@ -1031,6 +1034,7 @@ export class PedidoComponent implements OnInit {
               this.setClientfromSelector(cliente);
               this.tipoOrden = this.orderServ.tipoOrden;
               this.tipoOrdenAnterior = this.tipoOrden;
+              this.orderServ.syncOrderTypeIvaOnProducts();
             },
           },
         ];
@@ -1046,6 +1050,7 @@ export class PedidoComponent implements OnInit {
         this.orderServ.tipoOrden = this.tipoOrden;
         this.tipoOrdenAnterior = this.tipoOrden;
         this.tipoOrden = this.orderServ.tipoOrden;
+        this.orderServ.syncOrderTypeIvaOnProducts();
       }
     }
     this.onChange();
@@ -1174,6 +1179,7 @@ export class PedidoComponent implements OnInit {
 
     this.tipoOrdenAnterior = this.tipoOrden;
     this.orderServ.tipoOrden = this.tipoOrden;
+    this.orderServ.syncOrderTypeIvaOnProducts();
 
   }
 
@@ -1252,6 +1258,7 @@ export class PedidoComponent implements OnInit {
             }
             this.tipoOrdenAnterior = this.tipoOrden;
             this.orderServ.tipoOrden = this.tipoOrden;
+            this.orderServ.syncOrderTypeIvaOnProducts();
           }
 
         })
@@ -1267,6 +1274,7 @@ export class PedidoComponent implements OnInit {
           }
           this.tipoOrdenAnterior = this.tipoOrden;
           this.orderServ.tipoOrden = this.tipoOrden; //para filtrar structures luego
+          this.orderServ.syncOrderTypeIvaOnProducts();
         }
       }
 
@@ -1440,7 +1448,9 @@ export class PedidoComponent implements OnInit {
 
   canExportOrderSummaryPdf(): boolean {
     const stDelivery = this.orderServ.order?.stDelivery;
-    return stDelivery == 1 || stDelivery === null;
+    return stDelivery === DELIVERY_STATUS_NEW
+      || stDelivery === DELIVERY_STATUS_SAVED
+      || stDelivery === null;
   }
 
   async createOrderSummaryPdf() {
