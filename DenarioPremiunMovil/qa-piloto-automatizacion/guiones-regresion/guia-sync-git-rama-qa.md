@@ -3,7 +3,7 @@
 **Proyecto:** Denario Premium Móvil — piloto `qa-piloto-automatizacion`  
 **Rama de trabajo:** `feature/qa-guiones-regresion` (local; experimental)  
 **Rama del equipo:** `main` en `origin` (GitHub: `Krtmn/DenarioPremium`)  
-**Fecha de referencia:** Junio 2026  
+**Fecha de referencia:** Junio 2026 (última sync: 5-jun-2026)  
 
 ---
 
@@ -12,7 +12,7 @@
 Traer a tu máquina **el código más reciente** que el equipo subió a `main` (por ejemplo cambios en `DenarioPremiunMovil/src/app/...`), **sin**:
 
 - Modificar `main` en GitHub ni el trabajo del equipo.
-- Perder el piloto de automatización (guiones, Maestro, CDP, reportes, perfiles playa/cliente).
+- Perder el piloto de automatización (guiones, smoke CDP, reportes, perfiles playa/cliente).
 
 ---
 
@@ -44,6 +44,9 @@ Traer a tu máquina **el código más reciente** que el equipo subió a `main` (
 
 ## Flujo recomendado (repetir en el futuro)
 
+> **Orden fijo:** commit QA → `fetch` → `merge origin/main` → verificar.  
+> Nunca al revés. Nunca en `main`.
+
 ### Paso 0 — Comprobar dónde estás
 
 ```powershell
@@ -71,11 +74,13 @@ Tienes cambios sin commitear en `qa-piloto-automatizacion/`, guiones, reportes, 
 
 ```powershell
 git add DenarioPremiunMovil/qa-piloto-automatizacion/
-# Añadir solo lo que quieras versionar; revisar con:
-git status
+git status -sb
+# Confirmar que NO entran: secrets/, claves.env, .playwright-mcp/
 
 git commit -m "qa: descripcion breve del avance (ej. reportes smoke, guiones, perfiles playa)"
 ```
+
+Solo versionar la carpeta del piloto. **No** incluir `Config/` ni `DenarioPremiunMovil/src/` salvo acuerdo explícito con el equipo.
 
 **Opción B — Stash temporal** (si aún no quieres commit)
 
@@ -97,10 +102,11 @@ git fetch origin
 Comprueba si hay commits nuevos en `main`:
 
 ```powershell
+git rev-list --count HEAD..origin/main
 git log --oneline HEAD..origin/main
 ```
 
-Si no sale nada, ya estás al día con el equipo.
+Si el contador es **0**, ya estás al día con el equipo.
 
 ---
 
@@ -206,7 +212,7 @@ Esto **tampoco** cambia el `main` del equipo en GitHub de forma distinta a un `p
 
 | Ruta / tema | En commits QA | Notas |
 |-------------|---------------|--------|
-| `qa-piloto-automatizacion/` | Sí | Guiones, Maestro, CDP, reportes, perfiles. |
+| `qa-piloto-automatizacion/` | Sí | Guiones, smoke CDP, reportes, perfiles cliente. |
 | `secrets/qa-credentials.env` | **No** (gitignore) | Solo `qa-credentials.env.example`. |
 | `../../claves.env` (raíz repo) | **No** (gitignore) | WsUrl y claves servidor. |
 | `DenarioPremiunMovil/.playwright-mcp/` | No | Temporal MCP. |
@@ -218,12 +224,17 @@ Esto **tampoco** cambia el `main` del equipo en GitHub de forma distinta a un `p
 ## Resumen visual del historial
 
 ```text
-origin/main (GitHub)     ... ──► 9d877e7e  (equipo sigue aquí; vosotros no pusháis)
+origin/main (GitHub)     ... ──► f3c51eb4  (equipo; NO hacemos push aquí)
 
-tu feature (local)       ... ──► 23c914c8  (commit QA piloto)
-                              └─► 708324d7  (merge origin/main)
-                                   = equipo + piloto QA
+feature/qa-guiones-regresion (local):
+  ... ──► 23c914c8   commit QA inicial
+  ... ──► 708324d7   merge origin/main (1ª sync)
+  ... ──► 61986088   commit QA (reportes, perfiles, notas smoke)
+  ... ──► 0effe59e   merge origin/main (2ª sync, sin conflictos)
+        = código del equipo + piloto QA
 ```
+
+Tu rama local `main` puede quedar **desactualizada** (`behind origin/main`). Eso es normal si solo trabajas en la feature.
 
 ---
 
@@ -241,13 +252,26 @@ tu feature (local)       ... ──► 23c914c8  (commit QA piloto)
 
 ---
 
-## Qué hicimos en la sesión de referencia (Jun 2026)
+## Sesiones de referencia (replicar igual)
 
-1. Confirmamos rama `feature/qa-guiones-regresion` y remoto `origin` → `github.com/Krtmn/DenarioPremium`.
-2. Commit del piloto QA: `23c914c8` — `qa-piloto-automatizacion/`, reportes smoke, guiones, CDP, etc.
-3. `git fetch origin` + `git merge origin/main` → merge `708324d7` sin conflictos.
-4. Verificación: `origin/main` ancestro de `HEAD` en la feature; equipo ~62 commits por delante del punto base anterior.
-5. **No** se hizo `push` a `main` ni a la feature (rama feature solo local).
+### Sync 1 — Abr/May 2026
+
+1. Rama `feature/qa-guiones-regresion` · remoto `github.com/Krtmn/DenarioPremium`.
+2. Commit QA `23c914c8` — piloto inicial.
+3. `git fetch` + `git merge origin/main` → `708324d7` sin conflictos.
+4. Sin `push` a `main`.
+
+### Sync 2 — 5-jun-2026 (proceso estándar)
+
+1. **Commit QA** `61986088` — reportes por carpeta `smoke_{cliente}_{fecha}/`, perfiles `insumar.yaml` / `romher.yaml`, `notas-ajuste-casos-smoke.md`, lecciones CDP.
+   ```powershell
+   git add DenarioPremiunMovil/qa-piloto-automatizacion/
+   git commit -m "qa: reportes por corrida, perfiles insumar/romher y notas smoke"
+   ```
+2. **`git fetch origin`** — `origin/main` en `f3c51eb4` (~29 commits nuevos).
+3. **`git merge origin/main`** → merge `0effe59e` **sin conflictos** (cobros, collection, visitas, productos, clientes, migración DB v10).
+4. **Verificación:** `git status -sb` limpio; `origin/main` incluido en el historial de la feature.
+5. **No** `push` a `main`. Rama feature sigue solo local (hasta que decidan subirla).
 
 ---
 
@@ -256,8 +280,8 @@ tu feature (local)       ... ──► 23c914c8  (commit QA piloto)
 | Área | Acción sugerida |
 |------|-----------------|
 | Guiones / smoke | Revisar si cambios en cobros, pedidos, depósitos exigen actualizar casos o selectores. |
-| APK de prueba | Recompilar o pedir APK alineado al `main` mergeado si probáis binario nuevo. |
-| Corridas CDP | Misma infra (`adb forward`, creds :19001); validar que la app arranca tras cambios en `src/`. |
+| APK debug | Tras merge, recompilar con `Config/createAPK_DEBUG.bat` (rutas locales + `WsUrl` en `claves.env`). Ver `guia-qa-chrome-inspect-builds.md`. |
+| Corridas CDP | Misma infra (`adb forward`, creds); validar que la app arranca tras cambios en `src/`. |
 | `denario-movil-para-claude.xml` | Regenerar o actualizar si el equipo cambió mucho `src/` (no automático con el merge). |
 
 ---
@@ -294,4 +318,4 @@ git merge-base --is-ancestor origin/main HEAD; echo $LASTEXITCODE
 
 ---
 
-*Guía para el equipo QA Denario Premium Móvil — sincronizar con `main` sin perder el piloto de automatización.*
+*Guía para el equipo QA Denario Premium Móvil — sincronizar con `main` sin perder el piloto de automatización. Última actualización: sync 5-jun-2026.*
