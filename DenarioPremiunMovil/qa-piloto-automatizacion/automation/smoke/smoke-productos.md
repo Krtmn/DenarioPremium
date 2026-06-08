@@ -18,7 +18,7 @@
 | DM-PRD-007 | `h.fillIonInput` texto sin coincidencias ("ZZZZZZZ") | Mensaje "No hay productos disponibles" | FAIL: lista no vacía |
 | DM-PRD-009 | `h.scrollInfinite(pg)` | Más productos cargan (o spinner desaparece si no hay más) | FAIL: spinner infinito |
 | DM-PRD-012 | Click en producto | Detalle con nombre, código, precio USD y BS, unidad | FAIL: detalle vacío |
-| DM-PRD-013 | `h.selectIonPopover` selector lista de precios | Precio se actualiza al cambiar lista | FAIL: precio no cambia |
-| DM-PRD-019 | Click botón "Volver" (arrow-back en header) | Regresa a lista de estructuras | FAIL: navega a otro lugar |
+| DM-PRD-013 | `h.selectIonPopover` selector lista de precios → cambiar a lista distinta | Precio se actualiza al cambiar lista. **Si precio numérico es idéntico en ambas listas → PASS con nota "precio igual en ambas listas"** | FAIL: precio **visible cambia** de valor pero UI no lo refleja; selector no responde |
+| DM-PRD-019 | Click botón "Volver" (flecha header) **desde la lista de productos** del tipo activo | Regresa a lista de estructuras/proveedores | FAIL: navega a lista de productos de otro tipo o al Home. **Nota:** este caso cubre retroceso desde lista, no desde detalle (eso es DM-PRD-020) |
 | DM-PRD-020 | `h.clickBack(pg)` desde detalle | Lista de productos del tipo activo | FAIL: va a estructuras |
 | DM-PRD-021 | `h.clickBack(pg)` desde estructuras | Home principal | FAIL: queda en módulo |

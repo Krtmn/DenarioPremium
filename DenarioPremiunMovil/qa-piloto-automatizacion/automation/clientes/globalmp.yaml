@@ -1,0 +1,125 @@
+# globalmp/perfil.yaml
+# Primera corrida formal — completar VGs y datos en corrida exploratoria.
+
+cliente_id: globalmp
+cliente_nombre: null                      # TBD: confirmar nombre exacto en la app
+ws_url: null                              # TBD: verificar servidor activo
+apk_package: com.kiberno.denarioPremiumPro
+
+vgs:
+  multiCurrency: false                    # Tab Total solo muestra USD (sin Bs.) — confirmado corrida pedidos
+  expirationBatch: true                   # Campos Lote y Fecha de vencimiento presentes en modal inventory-type-stocks-modal — confirmado 2026-06-06
+  suggestedOrderByDispatchAndReturn: true # Botón "Pedido Sugerido" visible en Tab Resumen — confirmado 2026-06-06
+  requiredCollectionAttachments: false    # false para cobros normales; true para Retención (dual-mode confirmado 2026-06-06)
+  requiredComment: true                   # Comentario obligatorio en cobros y retención — confirmado 2026-06-06
+  validateReturn: false                   # false — sin invoice-selector en form; tabs habilitan directamente tras cliente — confirmado 2026-06-06
+  signatureReturn: true                   # Acordeón "Firma" visible en Tab ADJUNTOS — confirmado 2026-06-06
+  signatureCollection: null               # TBD
+  signatureVisit: true                    # Acordeón "Firma" visible en Tab ADJUNTOS de Visitas — confirmado 2026-06-08
+  userCanUploadFiles: true                # Acordeón "Archivo" visible en Tab ADJUNTOS — confirmado 2026-06-06
+  esVendedor: true                        # Encabezado "Vendedor" visible en app-vendedores — confirmado 2026-06-08
+  enterpriseEnabled: true                 # ion-select Empresa obligatorio (idEnterprise:2) — confirmado
+  enabledManualRate: false                # Tasa BS es display read-only; #manualRateInput ausente — confirmado 2026-06-06
+  cobroPrepago: false                     # Botón ANTICIPO/PREPAGO ausente en home cobros — confirmado 2026-06-06
+  cobroRetencion: true                    # Botón RETENCIÓN visible; formulario sin tab Pagos — confirmado 2026-06-06
+  retencion: true                         # Columnas Retención IVA/ISLR en Tab Total — confirmado 2026-06-06
+  sizeRetention: null                     # TBD — sin docs vencidos en sesión 2026-06-06
+  formatRetention: null                   # TBD
+  userCanSelectIGTF: false                # Botón IGTF ausente en home cobros — confirmado 2026-06-06
+  userCanCollectIva: false                # Botón 25%IVA ausente en home cobros — confirmado 2026-06-06
+  transportRole: null                     # TBD
+  userMustActivateGPS: null              # TBD
+
+modules:
+  login:
+    bad_password: Test-LOG-003
+
+  clientes:
+    cliente_busqueda: "BIG"               # Confirmado 2026-06-05 — devuelve BIG MARKET y otros
+    cliente_detalle: "BIG MARKET 22, C.A" # Código BM17, Saldo BS 1.694.224,12 / USD 3.083,94
+
+  pedidos:
+    cliente_test: "BIG MARKET 22, C.A"   # Código BM17; Saldo USD 3.083,94
+    estructura_producto: "categorias_marca"  # Categorías por marca (CAPRI, COLGATE, HEINZ, NESTLE, etc.)
+    alerta_deuda_vencida: true            # Confirmado: "Este cliente tiene deuda vencida..."
+
+  cobros:
+    cliente_test: "BIG MARKET 22, C.A"   # Confirmado 2026-06-06
+    cliente_code: "BM17"                  # Confirmado 2026-06-06
+    metodo_pago: "Deposito"               # Disponibles: Depósito, Transferencia (sin Efectivo)
+    banco_deposito: "MERCANTIL - 01050030351030355770"  # Confirmado 2026-06-06
+    documento_retencion: null             # TBD — sin docs vencidos en sesión 2026-06-06
+    monto_retencion_iva: null             # TBD
+    monto_retencion_islr: null            # TBD
+    moneda_cobro: "USD"                   # Confirmado 2026-06-06 (multiCurrency=false, solo USD)
+    cobro_enviado_ref: 5438               # Cobro enviado en corrida 2026-06-06
+    tasa_usd_bs: "549,37"                 # Tasa vigente al 29/5/2026
+    nota_monto_input: "campo centavos acumulativo — tipear '79787203' para BS 797.872,03"
+    smoke_na_estructural: [DM-COB-033, DM-COB-034, DM-COB-028, DM-COB-036, DM-COB-037, DM-COB-039, DM-COB-041, DM-COB-042]
+
+  devoluciones:
+    cliente_test: "BIG MARKET 22, C.A"   # Código BM17 — confirmado 2026-06-06
+    factura_test: null                    # N/A — validateReturn=false; Nro Factura se ingresa libre por producto (requeridedNroFactura=true)
+    producto_test: "PASTA ESP. TALLARIN CORTO 12x500gr"  # Código PCE03, categoría CAPRI — confirmado 2026-06-06
+    requeridedNroFactura: true            # Campo Nro Factura en acordeón producto (inp-write, ng-invalid si vacío) — inferido 2026-06-06
+    devolucion_ref_smoke: 166             # Devolucion enviada en corrida 2026-06-06
+
+  inventarios:
+    cliente_test: "BIG MARKET 22, C.A"   # Confirmado 2026-06-06
+    cliente_code: "BM17"                  # Confirmado 2026-06-06
+
+  depositos:
+    aplica: true                          # Módulo visible y accesible en HOME — confirmado 2026-06-06
+    motivo_na: null
+    sin_cobros_disponibles: true          # Tab Cobros vacío — cobro 5438 (enviado) no aparece como disponible para depósito — 2026-06-06
+    campo_nro: "Nro. Plantilla"           # Campo se llama "Nro. Plantilla" (no "Nro. Depósito") — confirmado 2026-06-06
+    banco_disponible: "MERCANTIL - *** 0355770"  # Confirmado en ion-select.selectbanco 2026-06-06
+    alerta_salida: "GUARDAR Y SALIR / SALIR SIN GUARDAR / CANCELAR"  # alert-button-role-save/exit/cancel — confirmado 2026-06-06
+
+  visitas:
+    cliente_test: "BIG MARKET 22, C.A"   # Código BM17 — confirmado 2026-06-08
+    smoke_na_estructural: [DM-VIS-025, DM-VIS-026]  # Sin visitas No Visitado en backend el día de corrida — confirmado 2026-06-08
+
+  productos:
+    tipo_estructura_default: "LINEA"      # idTypeProductStructure=2, P1 — único tipo disponible — confirmado 2026-06-08
+    texto_busqueda: "CAPRI"               # 27 resultados en estructura CAPRI 60 — confirmado 2026-06-08
+    estructura_test: "CAPRI 60"           # Primera estructura CAPRI de la lista — confirmado 2026-06-08
+    producto_test: "PCE07"                # PASTA CAPRI 3 VEGETALES RUEDA 12x500gr — confirmado 2026-06-08
+    tipo_unico: true                      # Solo 1 tipo de estructura (LINEA) — DM-PRD-002 N/A estructural
+
+  vendedores:
+    aplica: true                          # Módulo visible en HOME — confirmado 2026-06-08
+    empresas: ["COMERCIALIZADORA DE", "HC TRADING MARKET 20"]  # Acordeones en app-vendedores — confirmado 2026-06-08
+    kpis_disponibles: false               # API no devuelve KPIs en esta sesión; contenido vacío — confirmado 2026-06-08
+
+ultima_corrida:
+  run_id: "20260605_162806_smoke-completo"
+  fecha: "2026-06-05"
+  nuevos_patrones:
+    - "pedidosLista: ion-item.click() no navega — usar pg.mouse.click(coords getBoundingClientRect)"
+    - "Envío pedido: alerta dice 'Su Pedido será enviado' (no 'Pedido nro. X enviado exitosamente')"
+    - "Eliminar en Total Tab: directo sin confirmación; eliminar en lista: con alerta Cancelar/Aceptar"
+    - "devolucion_btn_DEVOLUCIÓN: requiere secuencia acumulada (pg.mouse + keyboard.Enter + CDP Input + shadowBtn.click) para activar zone listener Angular; CDP solo no basta"
+    - "devolucion_btn_BUSCAR: CDP Input.dispatchMouseEvent solo es suficiente"
+    - "devolucion_nroFactura_por_producto: campo Nro Factura está en acordeón de cada producto (inp-write, ng-invalid), no en cabecera del formulario; requeridedNroFactura=true inferido"
+    - "devolucion_guardar_enviar: imagenGuardar (x≈267,y≈32) e imagenEnviar (x≈326,y≈32) en header fijo; pg.mouse.click funciona directamente sobre estas coords"
+    - "devolucion_enviar_alerta: texto '¿Desea enviar la devolución?' CANCELAR/ACEPTAR; éxito '¡Su Devolución será enviada!'"
+    - "devolucion_eliminar_alerta: texto '¿Desea eliminar la devolución?' CANCELAR/ELIMINAR"
+    - "inventarios_guardar_btn: header fijo x≈267,y=32 (imagen, mismo patrón devoluciones)"
+    - "inventarios_enviar_btn: header fijo x≈326,y=32"
+    - "inventarios_categoria_click: Tab Inventario muestra grupos → click en categoría → productos con campos"
+    - "inventarios_modal_checkmark: Aceptar es checkmark-outline ion-icon en (x≈321,y≈86) dentro de inventory-type-stocks-modal"
+    - "inventarios_datetime_coords: ion-datetime-button en modal en x≈273,y≈414; confirmDatetime via shadowRoot OK"
+    - "inventarios_delete_directo: trash en BUSCAR lista → alert éxito directo sin confirm; texto '¡EL Inventario se borro con exito!'"
+    - "inventarios_guardar_confirm: Alert '¿Desea guardar el Inventario?' CANCELAR/ACEPTAR antes de guardar"
+    - "inventarios_enviar_confirm: Alert '¿Desea enviar el Inventario?' CANCELAR/ACEPTAR antes de enviar"
+    - "inventarios_guardado_click: pg.mouse.click sobre coords de ion-item en lista BUSCAR navega al formulario"
+    - "depositos_tab_cobros_vacio: Tab Cobros en formulario depósito solo muestra cobros en estado 'pendiente depósito'; cobros enviados (5438) no aparecen"
+    - "depositos_campo_nro_plantilla: campo se llama 'Nro. Plantilla' (no 'Nro. Depósito') confirmado globalmp"
+    - "depositos_alerta_salida: back en formulario → alert GUARDAR Y SALIR/SALIR SIN GUARDAR/CANCELAR; roles save/exit/cancel; coordenadas Salir sin guardar: center 176,401.5"
+    - "depositos_guardar_requiere_cobros: sin cobros seleccionados en Tab Cobros → Guardar no habilita; intento de guardar → alerta 'Seleccione los Cobros a depositar'"
+    - "depositos_btn_DEPOSITO_navega_con_delay: click en DEPÓSITO requiere 2s wait antes de confirmar navegación a app-deposito"
+    - "depositos_fecha_doc_modal: click en ion-button Fecha Doc → modal 'fechasModal'; confirmDatetime via shadowRoot 'Aceptar' funciona correctamente"
+    - "depositos_banco_ion_select: clase 'selectbanco'; options incluyen cuentas BS (MERCANTIL,BANESCO,V3000,PROVINCIAL,VENEZUELA); selectIonPopover pattern funciona"
+  defectos_abiertos:
+    - "DM-PRD-019: back desde lista de productos navega directo a HOME en lugar de volver a lista de estructuras — handler de retroceso no diferencia niveles de profundidad"

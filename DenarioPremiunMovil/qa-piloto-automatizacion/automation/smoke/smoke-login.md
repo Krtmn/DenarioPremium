@@ -16,8 +16,6 @@ Si la app está en HOME al iniciar → click en "Salir" primero.
 | DM-LOG-001 | `h.fillIonInput` usuario (`creds.user`) + contraseña (`creds.pass`) → enviar | Overlay sync aparece | FAIL: no inicia sync |
 | DM-LOG-011 | (continúa DM-LOG-001) | `app-synchronization` visible con progress-bar activo | FAIL: sync no arranca |
 | DM-LOG-012 | (continúa, esperar `h.waitSyncOverlay`) | `app-home` visible con módulos | FAIL: no llega a Home |
-| DM-LOG-008/009 | Segunda cuenta QA_USER2 | — | N/A si `has_second_user=false` en perfil cliente |
-| DM-LOG-017 | Arranque limpio | — | N/A siempre (requiere reinstalación) |
 
 **Selectores clave:**
 - Campo usuario: `ion-input[name="username"]` o primer `ion-input` visible

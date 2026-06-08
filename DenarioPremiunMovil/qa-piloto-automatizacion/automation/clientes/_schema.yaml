@@ -28,7 +28,10 @@ vgs:
   enterpriseEnabled: bool
   enabledManualRate: bool
   cobroPrepago: bool
-  cobroRetencion: bool
+  cobroRetencion: bool               # muestra botón RETENCIÓN en home cobros (tipo retención)
+  retencion: bool                    # habilita retención en detalle de documento dentro de cobro normal → DM-COB-041/042
+  sizeRetention: int                 # longitud requerida del nro. comprobante (8, 14 o 16 — leer de UI)
+  formatRetention: string            # tipo/formato de comprobante (alfanumérico, solo dígitos, etc.)
   userCanSelectIGTF: bool
   userCanCollectIva: bool
   transportRole: bool
@@ -38,7 +41,6 @@ vgs:
 modules:
   login:
     bad_password: string
-    has_second_user: bool
 
   clientes:
     cliente_busqueda: string
@@ -54,6 +56,10 @@ modules:
     cliente_code: string
     metodo_pago: string           # deposito | efectivo | transferencia
     banco_deposito: string        # si metodo_pago=deposito
+    documento_retencion: string   # nro de factura en rojo para DM-COB-041/042 (si vgs.retencion=true)
+    monto_retencion_iva: number   # monto IVA a retener en DM-COB-041 (ej. 10)
+    monto_retencion_islr: number  # monto ISLR a retener en DM-COB-041 (ej. 1)
+    moneda_cobro: string          # moneda para DM-COB-041/042 (USD | VED | BS)
     smoke_na_estructural: []      # IDs siempre N/A por VGs de este cliente
 
   devoluciones:

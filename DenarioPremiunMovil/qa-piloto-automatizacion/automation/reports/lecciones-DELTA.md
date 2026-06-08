@@ -38,6 +38,11 @@
 | # | Patrón | Descripción |
 |---|--------|-------------|
 | 10 | `cobros_clienteSelectModal_requiere_present()` | Para abrir el modal de selección de cliente en cobros: `document.querySelector('#clienteSelectModal').present()`. Click en ion-input NO lo abre. |
+| GMP1 | `cobros_home_botones_requieren_pointer+mouse` (globalmp) | Botones COBRO/RETENCIÓN/BUSCAR en home globalmp requieren `PointerEvent(pointerdown/up) + MouseEvent(click)` combinados. `TouchEvent` solo funciona consistentemente en primer clic post-carga. Usar patrón PointerEvent para robustez. |
+| GMP2 | `cobros_monto_campo_centavos_acumulativo` (globalmp) | Campo Monto (depósito/transferencia) en globalmp usa formato centavos acumulativo. Para BS 797.872,03 → Backspace×20 limpiar + `pg.keyboard.type('79787203')` + Tab. Native value setter formatea incorrectamente. |
+| GMP3 | `cobros_back_CDP_no_activa_dirty_guard` (globalmp) | `img.fechaAtras` click via CDP NO activa el guard de cambios sin guardar (Angular). Hardware back button / swipe requerido. DM-COB-020/038 SKIP estructural. Confirmado en globalmp y romher. → Mover a RUNTIME.md si se confirma en 2+ clientes |
+| GMP4 | `retencion_requiere_adjunto_independientemente` (globalmp + insumar) | Cobros de Retención siempre requieren adjunto para enviar ("debe agregar al menos un adjunto"), independientemente de `requiredCollectionAttachments`. VG dual-mode: cobros normales pueden tener `false`, Retención siempre `true`. |
+| GMP5 | `cobros_imagenEnviar_requiere_pointer+mouse` (globalmp) | `imagenEnviar` en globalmp: solo `pg.mouse.click()` a veces no activa el handler Angular. Usar `PointerEvent(pointerdown/up) + MouseEvent(click)` via evaluate para consistencia. |
 | 11 | `cobros_bankPickerModal_es_modal_separado` | El selector de banco para Depósito NO es ion-select/popover. Es `.bank-picker-trigger` que abre `#bankPickerModal`. Usar click en coords del trigger. |
 | 12 | `cobros_checkbox_metodo_pago_requiere_coords_exactas` | Los checkboxes en `#eventModal` requieren `mouse.click` en coords exactas del checkbox (no del ion-item padre). |
 | 13 | `cobros_botones_guardar_enviar_son_icon_buttons` | Guardar/Enviar son `ion-button.imagenGuardar` / `ion-button.imagenEnviar` sin textContent. Localizar por clase CSS. |
@@ -84,6 +89,13 @@
 | 30 | `visitas_motivo_condicional_requiredEvent` | Select Motivo aparece solo cuando `actividad.requiredEvent = "true"` (ej. COBRANZA, MERCHANDISING). |
 | 31 | `visitas_delete_con_confirmacion` | Borrar visita Guardada: alert "¿Desea borrar la visita?" CANCELAR/ACEPTAR. |
 | 32 | `visitas_agregar_btn_coords_cambian_segun_selects` | El botón AGREGAR en el modal de actividad cambia de posición según cuántos selects están visibles. Obtener coords frescos con `getBoundingClientRect` antes de cada click. |
+| GMP-VIS-1 | `visitas_nueva_visita_requiere_shadowBtn` (globalmp) | `pg.mouse.click` en NUEVA VISITA ejecuta la acción pero URL queda en `/visitas`. Usar `ionBtn.shadowRoot.querySelector('button').click()` para navegar a `/visita`. |
+| GMP-VIS-2 | `visitas_nueva_visita_loading_overlay` (globalmp) | Múltiples clicks en NUEVA VISITA pueden dejar `ion-loading` con `backdrop-no-tappable` bloqueando UI. Llamar `loading.dismiss()` y esperar antes de reintentar. |
+| GMP-VIS-3 | `visitas_cliente_modal_search_click_boton` (globalmp) | Modal cliente en Visitas: input `.search-input` (placeholder "Clientes...") y botón `.clear-search` (x≈325,y≈96). Requiere click en botón search después de escribir. |
+| GMP-VIS-4 | `visitas_sucursal_sin_coordenadas_alert` (globalmp) | Al seleccionar BIG MARKET 22 como cliente, aparece alert "Esta sucursal no tiene coordenadas asignadas". Dismiss con primer botón del alert (Cancel). |
+| GMP-VIS-5 | `visitas_todas_actividades_requiredEvent_true` (globalmp) | Todas las actividades de globalmp tienen `requiredEvent:"true"` → Motivo siempre requerido. |
+| GMP-VIS-6 | `visitas_agregar_btn_text_title_case` (globalmp) | Botón AGREGAR en modal de actividades es "Agregar" (título), no "AGREGAR". Buscar con `.toLowerCase() === 'agregar'`. |
+| GMP-VIS-7 | `visitas_envio_estado_por_enviar_pre_sync` (globalmp) | Post-envío la visita queda como "Por Enviar" (no "Visitado") hasta que el servidor confirma. Comportamiento offline-first normal. |
 
 ### PRODUCTOS
 | # | Patrón | Descripción |

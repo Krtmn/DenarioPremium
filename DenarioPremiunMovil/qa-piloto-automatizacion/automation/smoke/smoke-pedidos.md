@@ -20,7 +20,7 @@
 | DM-PED-029 | Sin ítem en pedido | Botones guardar/enviar deshabilitados | FAIL: se puede guardar sin datos |
 | DM-PED-030 | Agregar ítem → Click guardar | Alert "Pedido Guardado" + pedido en lista Estatus: Guardado; comentario: `Test-PED-SMOKE-<HHMMSS>` | FAIL: sin alert |
 | DM-PED-031 | Click enviar → ACEPTAR | "Pedido nro. X enviado exitosamente"; navega a home pedidos | FAIL: sigue en Guardado |
-| DM-PED-032 | Click atrás con ítems cargados | Modal 3 opciones: Guardar y salir / Salir sin guardar / Cancelar | FAIL: sale sin modal |
+| DM-PED-032 | Click atrás con **formulario dirty** (ítems agregados o editados en esta sesión, antes de guardar desde cabecera) | Modal 3 opciones: Guardar y salir / Salir sin guardar / Cancelar | FAIL: sale sin modal con cambios pendientes. **Nota:** reabrir pedido Guardado sin editar y pulsar atrás → salida directa sin modal → **no es FAIL** |
 | DM-PED-034 | BUSCAR → escribir texto en searchbar | Lista filtra en tiempo real | FAIL: no filtra |
 | DM-PED-035 | Click en pedido Guardado | Formulario editable con 4 tabs | FAIL: solo lectura |
 | DM-PED-037 | Botón basura en pedido Guardado → confirmar | Pedido desaparece de lista | FAIL: persiste |

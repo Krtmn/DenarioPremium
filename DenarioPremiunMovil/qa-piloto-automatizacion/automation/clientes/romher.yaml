@@ -23,6 +23,9 @@ vgs:
   enabledManualRate: false                # confirmado 20260604 — #manualRateInput no existe
   cobroPrepago: true                      # confirmado 20260604 — botón ANTICIPO/PREPAGO visible
   cobroRetencion: true                    # confirmado 20260604 — botón RETENCIÓN visible y funcional
+  retencion: null                         # TBD — confirmar si detalle de documento tiene campos retención en cobro normal
+  sizeRetention: null                     # TBD — leer de UI «Debe tener N caracteres»
+  formatRetention: null                   # TBD
   userCanSelectIGTF: false                # confirmado 20260604 — botón IGTF ausente
   userCanCollectIva: false                # confirmado 20260604 — botón COBRO 25% IVA ausente
   transportRole: null                     # TBD
@@ -31,7 +34,6 @@ vgs:
 modules:
   login:
     bad_password: Test-LOG-003
-    has_second_user: false                # confirmado 20260604 — sin opción de segundo usuario en pantalla login
 
   clientes:
     cliente_busqueda: SIDON               # SUPERMERCADO SIDON, C.A. — confirmado 20260604
@@ -47,7 +49,16 @@ modules:
     cliente_code: "0001000111"            # confirmado 20260604
     metodo_pago: "Depósito"               # confirmado 20260604 — también disponibles: Transferencia, Otros
     banco_deposito: "Banco Provincial - 0948780100071619"  # confirmado 20260604 — también: BANCA ELECTRONICA, BANCA EFECTIVO, BANCAMIGA, Banplus, Bancaribe
-    smoke_na_estructural: [DM-COB-036, DM-COB-037, DM-COB-039]  # userCanSelectIGTF=false, userCanCollectIva=false, enabledManualRate=false
+    documento_retencion: null             # TBD — factura en rojo para DM-COB-041/042
+    monto_retencion_iva: null             # TBD
+    monto_retencion_islr: null            # TBD
+    moneda_cobro: null                    # TBD
+    smoke_na_estructural:
+      - DM-COB-036                        # userCanSelectIGTF=false
+      - DM-COB-037                        # userCanCollectIva=false
+      - DM-COB-039                        # enabledManualRate=false
+      - DM-COB-041                        # retencion=TBD — añadir a na si retencion=false
+      - DM-COB-042                        # depende de 041
 
   devoluciones:
     cliente_test: "SUPERMERCADO SIDON, C.A."  # Código: 0001000111 — confirmado 20260604

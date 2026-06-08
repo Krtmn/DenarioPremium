@@ -23,6 +23,9 @@ vgs:
   enabledManualRate: false                 # Confirmado 20260603: #manualRateInput no existe
   cobroPrepago: true                       # Confirmado 20260603: botón ANTICIPO/PREPAGO visible (sin clientes elegibles actualmente)
   cobroRetencion: true                    # Confirmado 20260603: botón RETENCIÓN visible y funcional; retención requiere adjunto propio
+  retencion: null                         # TBD — confirmar si detalle de documento tiene campos retención en cobro normal
+  sizeRetention: null                     # TBD — leer de UI «Debe tener N caracteres»
+  formatRetention: null                   # TBD
   userCanSelectIGTF: true                 # Confirmado 20260603: botón IGTF visible; 3 selects en General (empresa/moneda/tasa)
   userCanCollectIva: true                 # Confirmado 20260603: botón COBRO 25% IVA visible (sin clientes elegibles actualmente)
   transportRole: null                     # TBD
@@ -31,7 +34,6 @@ vgs:
 modules:
   login:
     bad_password: Test-LOG-003
-    has_second_user: false                # Confirmado 20260603: no hay selector/toggle de segundo usuario en pantalla login
 
   clientes:
     cliente_busqueda: "ABASTOS"           # Confirmado 20260603: buscar con click en botón search
@@ -47,12 +49,18 @@ modules:
     cliente_code: "2738"                            # Confirmado 20260603
     metodo_pago: "Deposito"                         # Confirmado 20260603; también Efectivo/Transferencia/Pago Móvil
     banco_deposito: "BANESCO RAEL"                  # Confirmado 20260603 (también BANCRECER/BANCO CARIBE/BANCO MERCANTIL/BDV ADRIANA)
+    documento_retencion: null                       # TBD — factura en rojo para DM-COB-041/042
+    monto_retencion_iva: null                       # TBD
+    monto_retencion_islr: null                      # TBD
+    moneda_cobro: null                              # TBD
     smoke_na_estructural:
       - "DM-COB-007: documentos regulares vacios para cliente test (sin facturas pendientes en cobros)"
       - "DM-COB-008: sin documentos para checkbox en cobro regular"
       - "DM-COB-028: ANTICIPO/PREPAGO sin clientes elegibles actualmente"
       - "DM-COB-037: COBRO 25% IVA sin clientes elegibles actualmente"
       - "DM-COB-039: enabledManualRate=false"
+      - "DM-COB-041: retencion=TBD — añadir a na si retencion=false"
+      - "DM-COB-042: depende de 041"
 
   devoluciones:
     cliente_test: "ADRIAN ARLET BASTARDO ALONZO"  # Cód 2738 — confirmado 20260603

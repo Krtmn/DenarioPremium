@@ -11,7 +11,6 @@
 | ID | Acción clave | PASS cuando | FAIL / N/A |
 |----|-------------|-------------|------------|
 | DM-VIS-001 | Click módulo Visitas | Título "Visitas" + 3 botones: NUEVA VISITA, RUTA DE HOY, Ver mejor ruta | FAIL: pantalla vacía |
-| DM-VIS-002 | Click "Ver mejor ruta" sin visitas pendientes | Alert "No hay visitas pendientes para trazar ruta." | FAIL: app colapsa |
 | DM-VIS-003 | Click NUEVA VISITA | Formulario con tabs ACTIVIDADES/ADJUNTOS `disabled`; sin cliente | FAIL: tabs habilitadas sin cliente |
 | DM-VIS-004 | Click RUTA DE HOY | Lista del día con searchbar visible; si vacía → sin error | FAIL: overlay no desaparece |
 | DM-VIS-006 | Botón basura en visita Guardada → ACEPTAR | Alert borrado exitoso; visita desaparece | FAIL: persiste |

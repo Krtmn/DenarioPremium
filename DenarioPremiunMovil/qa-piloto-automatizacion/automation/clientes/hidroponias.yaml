@@ -23,6 +23,9 @@ vgs:
   enabledManualRate: true
   cobroPrepago: false                     # → DM-COB-028 siempre N/A
   cobroRetencion: true
+  retencion: null                         # TBD — confirmar si detalle de documento tiene campos retención
+  sizeRetention: null                     # TBD — leer de UI «Debe tener N caracteres»
+  formatRetention: null                   # TBD
   userCanSelectIGTF: true
   userCanCollectIva: true
   transportRole: false
@@ -31,7 +34,6 @@ vgs:
 modules:
   login:
     bad_password: Test-LOG-003
-    has_second_user: false                # → DM-LOG-008/009 N/A
 
   clientes:
     cliente_busqueda: MACO
@@ -47,8 +49,14 @@ modules:
     cliente_code: "100146"
     metodo_pago: deposito
     banco_deposito: BANCO DE VENEZUELA S.A.C.A.
+    documento_retencion: null             # TBD — factura en rojo para DM-COB-041/042
+    monto_retencion_iva: null             # TBD
+    monto_retencion_islr: null            # TBD
+    moneda_cobro: null                    # TBD
     smoke_na_estructural:
       - DM-COB-028                        # cobroPrepago: false
+      - DM-COB-041                        # retencion: TBD — añadir a na si retencion=false
+      - DM-COB-042                        # depende de 041
 
   devoluciones:
     cliente_test: ALIMENTOS GOURMET CCC, C.A.

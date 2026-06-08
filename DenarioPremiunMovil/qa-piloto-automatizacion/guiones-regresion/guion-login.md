@@ -45,16 +45,15 @@ Este guion cubre el módulo de **login** en **Android** con casos **reproducible
 | DM-LOG-005 | Desmarcar "Recordar usuario" — no persistir al reabrir | Tras DM-LOG-004 (campos precargados, checkbox marcado). **Aplicación: Siempre** | 1. Desmarcar "Recordar usuario". 2. Pulsar "Aceptar" y completar login. 3. Cerrar y reabrir la app. | Credenciales QA válidas | Campos vacíos y checkbox desmarcado al reabrir. | FAIL: Siguen precargados los datos. | S3 | `login.component.ts:354-366` |
 | DM-LOG-006 | Pantalla inicial con "Recordar usuario" ya activo | Tras DM-LOG-004, app cerrada y por reabrir (sin login aún). **Aplicación: Siempre** | 1. Reabrir la app. 2. Observar login sin tocar campos. | — | Usuario y contraseña precargados; checkbox marcado; "Aceptar" usable. | FAIL: Campos vacíos o checkbox desmarcado. | S3 | `login.component.ts:120-126` |
 | DM-LOG-007 | Toggle visibilidad de contraseña | Pantalla de login. **Aplicación: Siempre** | 1. Escribir en "Contraseña". 2. Tocar ícono de ojo. 3. Tocar de nuevo. | `Test-LOG-007` | Oculto → visible en claro → oculto; ícono cambia entre `eye-outline` y `eye-off-outline`. | FAIL: No cambia visibilidad ni ícono. | S3 | `login.component.html:17-24` |
-| DM-LOG-008 | Cambio de usuario — modal de advertencia | Sesión previa con **usuario A** (login completado al menos una vez). Internet activo. **Aplicación: Siempre** | 1. En login, ingresar **usuario B** (distinto de A) y su contraseña. 2. Pulsar "Aceptar". | Usuario A y B: credenciales QA válidas distintas | Modal de advertencia sobre borrado de datos previos, con opciones confirmar y cancelar. | FAIL: Sin modal; borra datos sin preguntar. | S2 | `login.component.ts:231-239` |
-| DM-LOG-009 | Cambio de usuario — confirmar | Continuación de DM-LOG-008 (modal visible). **Aplicación: Siempre** | 1. Pulsar confirmar/aceptar en el modal. 2. Esperar sync y llegada a Home. | Usuario B válido | Sync completa; Home operativo para B. | FAIL: Error en pantalla; no llega a Home; datos mezclados de A. | S1 | `login.component.ts:134-163`; `login-logic.service.ts` |
-| DM-LOG-010 | Cambio de usuario — cancelar | Continuación de DM-LOG-008 (modal visible). **Aplicación: Siempre** | 1. Pulsar cancelar/cerrar en el modal. 2. Observar pantalla. | — | Permanece en login con campos de B; no navega; no borra datos de A. | FAIL: Borra datos o navega a Home igualmente. | S2 | `login.component.ts:134`; `message.service.ts:116-119` |
+| DM-LOG-008 | Cambio de usuario — modal de advertencia | Sesión previa con **usuario A** (login completado al menos una vez). Internet activo. **Aplicación: Siempre** — **Smoke:** no incluido — sin segunda cuenta QA en corridas smoke | 1. En login, ingresar **usuario B** (distinto de A) y su contraseña. 2. Pulsar "Aceptar". | Usuario A y B: credenciales QA válidas distintas | Modal de advertencia sobre borrado de datos previos, con opciones confirmar y cancelar. | FAIL: Sin modal; borra datos sin preguntar. | S2 | `login.component.ts:231-239` |
+| DM-LOG-009 | Cambio de usuario — confirmar | Continuación de DM-LOG-008 (modal visible). **Aplicación: Siempre** — **Smoke:** no incluido — depende de DM-LOG-008 | 1. Pulsar confirmar/aceptar en el modal. 2. Esperar sync y llegada a Home. | Usuario B válido | Sync completa; Home operativo para B. | FAIL: Error en pantalla; no llega a Home; datos mezclados de A. | S1 | `login.component.ts:134-163`; `login-logic.service.ts` |
+| DM-LOG-010 | Cambio de usuario — cancelar | Continuación de DM-LOG-008 (modal visible). **Aplicación: Siempre** — **Smoke:** no incluido — sin segunda cuenta QA en corridas smoke | 1. Pulsar cancelar/cerrar en el modal. 2. Observar pantalla. | — | Permanece en login con campos de B; no navega; no borra datos de A. | FAIL: Borra datos o navega a Home igualmente. | S2 | `login.component.ts:134`; `message.service.ts:116-119` |
 | DM-LOG-011 | Sincronización — feedback visual | Tras DM-LOG-001 en pantalla de sincronización. **Aplicación: Siempre** | 1. Durante la sync, observar la pantalla. | — | Título con tabla actual, barra que avanza, "Por favor espere...", spinner. | FAIL: Sin feedback; barra congelada >15 s sin avance visible. | S2 | `synchronization.component.html` |
 | DM-LOG-012 | Sincronización completada → Home | Sync en curso tras login exitoso. **Aplicación: Siempre** | 1. Esperar fin de la barra de progreso. | — | Navegación automática a Home; módulos usables. | FAIL: Queda en sync; vuelve a login con error. | S1 | `synchronization.component.ts:744-752` |
 | DM-LOG-013 | Footer copyright y versión | Login visible; teclado cerrado. **Aplicación: Siempre** | 1. Observar parte inferior de la pantalla. | — | Copyright Kiberno y número de versión del build (ej. Versión 6.6.14). | FAIL: Footer ausente; versión vacía o "undefined". | S4 | `login.component.html:50-58` |
 | DM-LOG-014 | Footer con teclado | Login visible. **Aplicación: Siempre** | 1. Ver footer. 2. Tocar "Usuario" (abrir teclado). 3. Cerrar teclado. | — | Footer se oculta con teclado y reaparece al cerrarlo. | FAIL: Superposición o footer no vuelve. | S4 | `login.component.ts:171-176` |
 | DM-LOG-015 | Botón "Salir" (Android) | Dispositivo Android. **Aplicación: Siempre** | 1. Ver botón "Salir". 2. Pulsarlo. | — | App se cierra y vuelve al launcher. | FAIL: Botón ausente o no cierra la app. | S3 | `login.component.html:38-41`; `App.exitApp()` |
 | DM-LOG-016 | Orientación portrait bloqueada | Login visible; auto-rotación del SO activada. **Aplicación: Siempre** | 1. Rotar dispositivo a horizontal. | — | Pantalla sigue en portrait. | FAIL: Pasa a landscape. | S4 | `login.component.ts:131` |
-| DM-LOG-017 | Primera instalación o datos de app borrados | App nueva o datos borrados en Ajustes → Aplicaciones. **Aplicación: Siempre** | 1. Abrir la app tras instalación limpia o borrado de datos. 2. Observar login. | — | Formulario visible; campos vacíos; checkbox desmarcado; sin alertas raras; footer con versión. | FAIL: Crash; datos de otra sesión; alertas inesperadas. | S1 | `login.component.ts:82-116` |
 
 ---
 
@@ -90,13 +89,14 @@ Entonces aparece el modal de advertencia de borrado de datos
 
 ### Regresión mínima (smoke rápido)
 
-1. **DM-LOG-001** — Happy path login → Home  
-2. **DM-LOG-002** — Campos vacíos  
-3. **DM-LOG-003** — Contraseña incorrecta  
-4. **DM-LOG-004** — Recordar usuario  
-5. **DM-LOG-008** / **DM-LOG-009** — Cambio de usuario (modal + confirmar)  
-6. **DM-LOG-011** / **DM-LOG-012** — Sync visible y llegada a Home  
-7. **DM-LOG-017** — Arranque limpio (si aplica en la release)
+1. **DM-LOG-002** — Campos vacíos
+2. **DM-LOG-003** — Contraseña incorrecta
+3. **DM-LOG-004** — Recordar usuario
+4. **DM-LOG-001** — Happy path login → Home
+5. **DM-LOG-011** / **DM-LOG-012** — Sync visible y llegada a Home
+
+*DM-LOG-008/009/010 (cambio de usuario) — solo en corrida manual completa; requiere segunda cuenta QA — **no incluidos en smoke**.*
+*DM-LOG-017 (arranque limpio) — eliminado del guion; requiere reinstalación de APK.*
 
 ---
 

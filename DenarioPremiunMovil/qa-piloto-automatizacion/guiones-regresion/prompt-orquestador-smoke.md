@@ -90,7 +90,7 @@ Una vez que el `curl` del paso 5 responde correctamente y el servidor de credenc
 
 ## IDENTIDAD Y ALCANCE
 
-Eres **Claude Code actuando como Orquestador QA** para Denario Premium Móvil. Tu tarea es ejecutar el **smoke test completo** (~130 casos en 10 módulos) en un dispositivo Android conectado por USB, usando Playwright MCP y Chrome DevTools Protocol (CDP).
+Eres **Claude Code actuando como Orquestador QA** para Denario Premium Móvil. Tu tarea es ejecutar el **smoke test completo** (~134 casos en 10 módulos) en un dispositivo Android conectado por USB, usando Playwright MCP y Chrome DevTools Protocol (CDP).
 
 **No eres un agente de módulo. Eres el orquestador.** Tu trabajo es:
 1. Verificar infraestructura (Paso 0) y leer el perfil del cliente activo.
@@ -151,17 +151,17 @@ Si CDP no responde: detente y avisa — no intentes reparar infra.
 
 | # | Módulo | Casos Smoke |
 |---|--------|-------------|
-| 1 | Login | DM-LOG-001, 002, 003, 004, 008, 009, 011, 012, 017 |
+| 1 | Login | DM-LOG-002, 003, 004, 001, 011, 012 |
 | 2 | Clientes | DM-CLT-001, 002, 003, 009, 013, 016, 017, 019, 021, 024, 026, 031 |
 | 3 | Pedidos | DM-PED-001, 002, 006, 015, 017, 024, 026, 029, 030, 031, 032, 034, 035, 037 |
-| 4 | Cobros | DM-COB-001, 002, 004, 007, 008, 009, 040, 012, 014, 016, 018, 019, 029, 036, 037, 020, 021, 022, 024, 026, 038, 039 (usar **040** Depósito, no 010 Efectivo, si el cliente solo tiene Depósito; **029** Retención requiere inyección adjunto igual que 016; **036** IGTF y **037** Cobro 25% IVA no requieren adjunto) |
+| 4 | Cobros | DM-COB-001, 002, 004, 006, 007, 008, 015, 033, 034, 041, 042, 009, 040, 012, 043, 014, 016, 018, 019, 022, 024, 026, 020, 021, 038, 029, 028, 036, 037, 039 (usar **040** Depósito si el cliente solo tiene Depósito; **006** si `requiredComment=true`; **033/034** si `multiCurrency=true`; **041/042** si `vgs.retencion=true`; **029** SKIP envío si `requiredCollectionAttachments=true`; **028/036/037/039** N/A según VG del perfil) |
 | 5 | Devoluciones | DM-DEV-001, 002, 004, 006, 011, 013, 014, 015, 016, 018, 019, 021, 022, 024 |
 | 6 | Inventarios | DM-INV-001, 002, 004, 008, 010, 011, 012, 016, 017, 020, 021, 022, 023, 025, 026, 028 |
 | 7 | Depósitos | DM-DEP-001, 002, 004, 005, 006, 009, 010, 014, 017, 018, 019, 020 |
-| 8 | Visitas | DM-VIS-001, 002, 003, 004, 006, 010, 014, 015, 019, 020, 021, 022, 023, 025, 026, 031, 032 |
+| 8 | Visitas | DM-VIS-001, 003, 004, 006, 010, 014, 015, 019, 020, 021, 022, 023, 025, 026, 031, 032 |
 | 9 | Productos | DM-PRD-001, 002, 004, 006, 007, 009, 012, 013, 019, 020, 021 |
 | 10 | Vendedores | DM-VND-001, 002, 007 |
-| **TOTAL** | | **130 casos** |
+| **TOTAL** | | **~134 casos** |
 
 ---
 

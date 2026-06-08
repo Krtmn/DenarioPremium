@@ -45,6 +45,7 @@ reports/
 | [smoke_insumar_20260602_180248](smoke_insumar_20260602_180248/) | insumar | 2026-06-02 | 1/10 (solo login) | parcial |
 | [smoke_insumar_20260603_093706](smoke_insumar_20260603_093706/consolidado.md) | insumar | 2026-06-03 | 10/10 | 93P · 2F · 4S · 14N/A |
 | [smoke_romher_20260604_122859](smoke_romher_20260604_122859/consolidado.md) | romher | 2026-06-04 | 10/10 | 93P · 4F · 1S · 8N/A |
+| [smoke_globalmp_20260605_162806](smoke_globalmp_20260605_162806/consolidado.md) | globalmp | 2026-06-05/08 | 10/10 | 96P · 1F · 3S · 21N/A |
 
 ## Rezagados — revisar manualmente
 

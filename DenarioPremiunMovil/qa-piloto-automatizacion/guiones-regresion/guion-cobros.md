@@ -162,6 +162,9 @@ Cada fila es ejecutable en Android sin ADB ni inspección de red. Textos esperad
 | DM-COB-036 | Cobro tipo IGTF → selector en Documentos + guardar flujo mínimo [VG userCanSelectIGTF] | VG `userCanSelectIGTF = true`. Cliente con documentos IGTF. **Aplicación: Condicional (VG: `globalConfig.get("userCanSelectIGTF") = true`)** | 1. Pulsar "IGTF". 2. Seleccionar cliente. 3. En Tab Documentos elegir tasa IGTF y al menos un documento (si hay). 4. Completar pago en Tab Pagos si aplica. 5. Guardar con comentario `Test-COB-036`. | Comentario: `Test-COB-036` | Título IGTF. Selector de tasa visible en Documentos. Cobro guardable y visible en lista como Guardado. Casos **007–008** aplican con documentos IGTF. | FAIL: No abre flujo IGTF; selector ausente; no guarda con datos mínimos; app colapsa. | S2 | `cobros-container.component.ts:165-178`, `cobro-documents.component.html:26-52` |
 | DM-COB-037 | Cobro tipo "COBRO 25% IVA" → formulario estándar con docs y pagos [VG userCanCollectIva] | VG `userCanCollectIva = true`. Cliente con documentos y pagos habilitados. **Aplicación: Condicional (VG: `globalConfig.get("userCanCollectIva") = true`)** | 1. Pulsar "COBRO 25% IVA". 2. Seleccionar cliente. 3. Confirmar tabs General, Documentos, Pagos, Total, Adjuntos visibles. 4. Seleccionar documento(s), agregar Efectivo con monto, guardar. | Comentario: `Test-COB-037` | Formulario con título Cobro 25% IVA. Misma estructura que cobro normal (`cobro25=true` en servicio). Guardar exitoso; en lista el tipo refleja cobro 25%. | FAIL: Botón ausente con VG; tabs incorrectas; no guarda; app colapsa. | S2 | `cobros-container.component.ts:180-191` (`coTypeModule = "4"`, `cobro25=true`) |
 | DM-COB-038 | «Guardar y salir» desde modal de salida → cobro Guardado en lista | Continuación de **DM-COB-020** (modal visible). Cobro **nuevo** con datos mínimos (cliente + documentos + pago, o anticipo/retención según tipo); **no** guardado antes desde cabecera. **Aplicación: Siempre** | 1. Pulsar atrás (**DM-COB-020**). 2. Elegir **`DENARIO_BOTON_SALIR_GUARDAR`** (no «Salir sin guardar»). 3. Observar mensaje y navegación. 4. BUSCAR → localizar cobro. 5. Abrir y confirmar cliente, documentos/pagos y comentario. | Comentario: `Test-COB-038` | Mensaje de guardado; app en **home cobros**. Lista: **Guardado** con datos capturados. Distinto de **021** (descartar) y **018** (guardar sin salir). | FAIL: No en lista; datos incompletos; no guarda; app colapsa. | S1 | XML: `DENARIO_BOTON_SALIR_GUARDAR` · `cobros-header.component.ts:78-104` (`saveCollection`) |
+| DM-COB-041 | Retención en detalle de documento de cobro normal → comprobante válido + fecha + IVA + ISLR → monto neto en Pagos [VG retencion] | Cobro normal. VG `retencion = true`. Cliente con factura en rojo (`modules.cobros.documento_retencion`) y saldo conocido (ej. 51 $). **Aplicación: Condicional (VG: `vgs.retencion = true`)** | 1. Cobro nuevo → seleccionar cliente. 2. Llenar Comentario (`Test-COB-041`) si `requiredComment=true`. 3. Tab Documentos → seleccionar **1 factura en rojo**. 4. Abrir detalle del documento (ícono o tap). 5. En el detalle, leer el mensaje «Debe tener N caracteres» (N = `vgs.sizeRetention`). 6. Ingresar número de comprobante con exactamente N caracteres. 7. Al aceptar comprobante válido, se habilita el selector de fecha de retención → seleccionar fecha. 8. Ingresar monto IVA retención (ej. `monto_retencion_iva`) + monto ISLR retención (ej. `monto_retencion_islr`). 9. Guardar detalle. 10. Ir al Tab Pagos y observar el «Monto total a pagar». | Comprobante: N caracteres según `vgs.sizeRetention`; IVA: `modules.cobros.monto_retencion_iva`; ISLR: `modules.cobros.monto_retencion_islr`; moneda: `modules.cobros.moneda_cobro` | Al guardar el detalle, Tab Pagos muestra monto **neto** = saldo del documento − (IVA retención + ISLR) (ej. 51 − 10 − 1 = 40 $). La diferencia refleja el neto. | FAIL: Tab Pagos muestra el monto bruto (51 $) sin descontar retenciones; el campo de comprobante no valida longitud; la fecha no se habilita al ingresar comprobante válido; app colapsa. | S1 | `src/app/cobros/cobros-container/cobro-documents/cobro-documents.component` (`detalle documento`, `retencion`); `collection-logic.service.ts` (`sizeRetention`, `formatRetention`, `retencion`) |
+| DM-COB-042 | Persistencia de retención en cobro Guardado → al reabrir, monto neto y detalle se conservan (bug activo) | Continuación de **DM-COB-041** completado (monto neto visible en Tab Pagos). **Aplicación: Condicional (VG: `vgs.retencion = true`, encadena DM-COB-041)** | 1. En Tab Pagos, completar el método de pago con monto = monto neto (ej. 40 $). 2. Guardar cobro desde cabecera (**DM-COB-018**). 3. Salir del formulario. 4. En BUSCAR, localizar el cobro Guardado. 5. Reabrir el cobro Guardado. 6. Ir al Tab Pagos y observar «Monto total a pagar». 7. Ir al Tab Documentos → abrir detalle → observar IVA + ISLR. | — | **Esperado PASS:** Tab Pagos sigue mostrando el monto **neto** (ej. 40 $); detalle del documento muestra los montos de retención guardados (IVA = `monto_retencion_iva`, ISLR = `monto_retencion_islr`). **FAIL conocido:** el «Monto total a pagar» al reabrir vuelve al bruto (ej. 51 $) aunque el detalle tenga retenciones; esto indica que la lógica de reinicio no aplica las retenciones al recargar. Documentar resultado real y continuar corrida. | FAIL conocido (bug activo): monto en Pagos vuelve al bruto al reabrir (reportar como FAIL hasta fix confirmado). PASS si el neto persiste (indica fix aplicado). | S1 | `src/app/services/collection/collection-logic.service.ts` (reinicio estado retención al abrir cobro guardado) |
+| DM-COB-043 | Pago parcial vs pago completo: indicador Diferencia cambia de rojo a azul en flujo real con documentos | Tab Pagos con documento(s) seleccionado(s) y método de pago activo. **Extiende DM-COB-012.** **Aplicación: Siempre** | 1. En Tab Pagos (con documentos cargados), ingresar un **monto menor** al total a pagar. 2. Observar el indicador «Diferencia» y su color. 3. Ingresar el **monto exacto** igual al total a pagar. 4. Observar el cambio de color. | Monto menor al total; monto igual al total | Paso 2: «Diferencia» en **rojo** (pago parcial). Paso 4: «Diferencia» en **azul** (pago completo). El comportamiento aplica con documentos reales en el flujo completo del cobro. | FAIL: El color no cambia; la diferencia no se recalcula al escribir el monto; rojo/azul invertido. | S2 | `src/app/cobros/cobros-container/cobro-pagos/cobro-pagos.component.html:12-16` (ngStyle color diferencia) |
 | DM-COB-039 | Abrir cobro **Guardado** y cambiar tasa → recálculo visible; guardar y persistir nueva tasa | Cobro **Guardado** (`stDelivery=3`) con `multiCurrency` + `showConversion`, documentos y pago registrados. **Aplicación: Condicional** — **(A)** VG `enabledManualRate = true`: input `COB_TASA` editable; **(B)** `historicoTasa = true`, `enabledManualRate = false` y `canChangeRate = true`: `COB_FECHA_TASA` / selector `COB_TASA`. Si ninguna rama aplica → **N/A**. | 1. BUSCAR → abrir Guardado (**DM-COB-024**). 2. Tab General: anotar tasa y monto en Pagos (sticky) o Total. 3. **(A)** Cambiar valor en `COB_TASA` y salir del campo (blur). **(B)** Cambiar fecha de tasa o opción del selector; si alerta `COB_COB_CHANGE_DATERATE` → confirmar. 4. Pagos/Total: verificar montos distintos al paso 2. 5. Guardar (**DM-COB-018**) con `Test-COB-039`. 6. Reabrir y confirmar tasa guardada. | Comentario: `Test-COB-039`; tasa distinta a la original (respetar mínimo en tasa manual) | Montos se actualizan tras cambiar tasa. Guardado OK. Reapertura muestra la nueva tasa. *`COB_RAZON_CAMBIO_TASA` solo si el build expone `changeRate` — observación opcional.* | FAIL: Con VG de la rama la tasa no cambia o no recalcula; guardar no persiste tasa; app colapsa. | S1 | XML: `COB_TASA`, `COB_FECHA_TASA`, `COB_COB_CHANGE_DATERATE` · `cobro-general.component.html` (63–141), `.ts` (`onManualRateBlur`, `onChangeDateRate`) · VG `enabledManualRate`, `historicoTasa`, `canChangeRate` |
 
 ---
@@ -229,6 +232,26 @@ Entonces la tasa mostrada coincide con la editada
 ```
 
 ```gherkin
+# DM-COB-041 / DM-COB-042 — Retención en detalle de documento (VG retencion=true)
+Dado que tengo un cobro normal con cliente seleccionado
+  Y en Tab Documentos hay una factura en rojo con saldo conocido (ej. 51 $)
+  Y la VG retencion está activa para este cliente
+Cuando abro el detalle de esa factura
+  Y ingreso el número de comprobante con la longitud indicada por UI (N caracteres según vgs.sizeRetention)
+Entonces la fecha de retención se habilita
+Cuando selecciono fecha y completo montos IVA + ISLR (ej. 10 + 1)
+  Y guardo el detalle
+Entonces Tab Pagos muestra el monto neto = saldo − (IVA + ISLR) (ej. 40 $)
+# DM-COB-042 — Persistencia al reabrir
+Cuando completo el pago con el monto neto y guardo el cobro
+  Y salgo y busco el cobro Guardado en BUSCAR
+  Y lo reabro
+Entonces Tab Pagos sigue mostrando el monto neto (PASS si fix aplicado)
+  Y el detalle del documento conserva los montos de retención
+# FAIL conocido: al reabrir el total puede volver al bruto — documentar y continuar corrida
+```
+
+```gherkin
 # DM-COB-016 — Adjuntos en cobro (inyección CDP)
 Dado que tengo un cobro editable con cliente, documentos y pago configurados
   Y la VG requiredCollectionAttachments está activa (default true)
@@ -243,32 +266,49 @@ Entonces fotos.length > 0 en el servicio al reabrir
 
 ---
 
-### Regresión mínima (smoke rápido)
+### Regresión mínima (smoke rápido — ~30 casos)
 
 Lista de IDs imprescindibles para validar el módulo cobros antes de cerrar un release (**no sustituye la ejecución de la tabla completa**; para una corrida general se recomienda ejecutar todos los casos que no sean N/A por VG):
 
+**Bloque base (happy path + validaciones):**
 1. **DM-COB-001** — Home cobros, botones visibles
 2. **DM-COB-002** — Nuevo cobro, formulario con tabs bloqueadas
 3. **DM-COB-004** — Seleccionar cliente, tabs habilitadas
-4. **DM-COB-007** — Tab Documentos cargada con lista e indicadores
-5. **DM-COB-008** — Seleccionar documentos, monto actualizado en Pagos
-6. **DM-COB-009** — Modal de métodos de pago (solo los habilitados por cliente)
-7. **DM-COB-040** — Método **Depósito**: seleccionar banco, nº depósito, monto = total a pagar (**obligatorio en smoke** si el cliente QA solo tiene Depósito; sustituye **010** en esa corrida)
-8. **DM-COB-012** — Indicador diferencia (azul/rojo) tras monto = total en Depósito
-9. **DM-COB-014** — Tab Total con tabla y acordeones
-10. **DM-COB-016** — **Adjuntos: inyección CDP** (`adjuntoService.fotos.length > 0`) — **OBLIGATORIO antes de DM-COB-018/019** cuando VG `requiredCollectionAttachments=true` (default activo). Sin este paso, DM-COB-019 siempre falla con alerta de adjunto faltante.
-11. **DM-COB-018** — Guardar cobro (con adjunto ya inyectado en paso 10)
-12. **DM-COB-019** — Enviar cobro (**válido solo si DM-COB-016 completó con `hasItems()==true`**)
-13. **DM-COB-029** — Cobro tipo **Retención** (VG `cobroRetencion` activa, botón visible en cuenta Yaque) — sin Tab Pagos; documentos + Total + guardar + **enviar**. ⚠ El código verifica `hasItems()` para Retención de forma **incondicional** (independiente de `requiredCollectionAttachments`) — inyectar adjunto antes de enviar igual que en DM-COB-016.
-14. **DM-COB-036** — Cobro tipo **IGTF** (VG `userCanSelectIGTF` activa, botón visible en cuenta Yaque) — selector de tasa IGTF en Tab Documentos + flujo guardar/enviar. El código **no** tiene check de adjunto para `coType="3"` — puede enviarse sin inyección de foto.
-15. **DM-COB-037** — Cobro tipo **25% IVA** (VG `userCanCollectIva` activa, botón visible en cuenta Yaque) — estructura idéntica a cobro normal; documentos + pago + guardar/enviar. El código **no** tiene check de adjunto para `coType="4"` — puede enviarse sin inyección de foto.
-16. **DM-COB-020** — Salir con cambios → modal (incluye "Guardar y salir")
-17. **DM-COB-021** — Salir sin guardar (cobro nuevo)
-18. **DM-COB-038** — Guardar y salir → Guardado en lista
-19. **DM-COB-022** — Buscar cobro → lista visible
-20. **DM-COB-024** — Abrir cobro Guardado → editable
-21. **DM-COB-039** — Cambiar tasa en cobro Guardado (si VG tasa manual o histórica)
+4. **DM-COB-006** — Comentario obligatorio (si `requiredComment=true`)
+5. **DM-COB-007** — Tab Documentos cargada con lista e indicadores
+6. **DM-COB-008** — Seleccionar documentos, monto actualizado en Pagos
+7. **DM-COB-015** — Total General visible al final del Tab Total
+8. **DM-COB-033** — Selector moneda cobro (si `multiCurrency=true`)
+9. **DM-COB-034** — Selector moneda documentos (si `multiCurrency=true`)
+
+**Bloque profundo (retenciones en documento):**
+10. **DM-COB-041** — Retención en detalle de documento: comprobante + fecha + IVA/ISLR → monto neto en Pagos (si `vgs.retencion=true`)
+11. **DM-COB-042** — Persistencia retención al reabrir cobro Guardado (encadena 041)
+
+**Bloque pago:**
+12. **DM-COB-009** — Modal de métodos de pago (solo los habilitados por cliente)
+13. **DM-COB-040** — Método **Depósito**: seleccionar banco, nº depósito, monto = total a pagar (**obligatorio en smoke** si el cliente QA solo tiene Depósito; sustituye **010** en esa corrida)
+14. **DM-COB-012** — Indicador diferencia (azul/rojo)
+15. **DM-COB-043** — Pago parcial vs completo: diferencia roja → azul en flujo real con documentos
+16. **DM-COB-014** — Tab Total con tabla y acordeones
+17. **DM-COB-016** — **Adjuntos: inyección CDP** (`adjuntoService.fotos.length > 0`) — **OBLIGATORIO antes de DM-COB-018/019** cuando VG `requiredCollectionAttachments=true` (default activo).
+18. **DM-COB-018** — Guardar cobro
+19. **DM-COB-019** — Enviar cobro (⏭ SKIP si `requiredCollectionAttachments=true` sin adjunto CDP)
+
+**Bloque lista y navegación:**
+20. **DM-COB-022** — Buscar cobro → lista visible
+21. **DM-COB-024** — Abrir cobro Guardado → editable; verificar montos y retenciones
 22. **DM-COB-026** — Eliminar cobro Guardado
+23. **DM-COB-020** — Salir con cambios → modal 3 opciones
+24. **DM-COB-021** — Salir sin guardar (cobro nuevo)
+25. **DM-COB-038** — Guardar y salir → Guardado en lista
+
+**Bloque tipos VG:**
+26. **DM-COB-029** — Cobro tipo **Retención** (VG `cobroRetencion`) — sin Tab Pagos; documentos + Total + guardar. SKIP envío si `requiredCollectionAttachments=true`.
+27. **DM-COB-028** — Anticipo/Prepago (N/A si `cobroPrepago=false`)
+28. **DM-COB-036** — IGTF (N/A si `userCanSelectIGTF=false`)
+29. **DM-COB-037** — Cobro 25% IVA (N/A si `userCanCollectIva=false`)
+30. **DM-COB-039** — Cambiar tasa en cobro Guardado (N/A si `enabledManualRate=false`)
 
 **Nota smoke — método de pago:** en cuentas QA donde el cliente solo admite **Depósito** (ej. Yaque), ejecutar **040** y **no** marcar FAIL por ausencia de Efectivo. **DM-COB-010** (Efectivo) permanece en el catálogo completo para clientes con ese método habilitado.
 
