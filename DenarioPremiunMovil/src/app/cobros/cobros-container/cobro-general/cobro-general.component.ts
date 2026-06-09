@@ -196,6 +196,8 @@ export class CobrosGeneralComponent implements OnInit {
   private handleOpenCollect() {
     this.collectService.isOpenCollect = false;
     this.collectService.recentOpenCollect = true;
+    this.collectService.createAutomatedPrepaid = false;
+    this.collectService.anticipoAutomatico = [];
     //this.collectService.disabledCurrency = true;
     this.collectService.cobroValid = true;
 
@@ -292,13 +294,6 @@ export class CobrosGeneralComponent implements OnInit {
     const moneda = this.collectService.currencyList.find(c => c.idCurrency === idCurrency);
     if (moneda) {
       this.collectService.currencySelected = moneda;
-    }
-  }
-
-  private updateSelectedIgtf(price: number) {
-    const igtf = this.collectService.igtfList.find(i => i.price == price);
-    if (igtf) {
-      this.collectService.igtfSelected = igtf;
     }
   }
 
@@ -411,13 +406,9 @@ export class CobrosGeneralComponent implements OnInit {
 
         });
         this.updateSelectedCurrency(this.collectService.collection.idCurrency);
-        //this.collectService.disabledCurrency = true;
         this.collectService.getIgtfList(this.synchronizationServices.getDatabase()).then(() => {
-          this.updateSelectedIgtf(this.collectService.collection.nuIgtf);
+          this.loadData();
         });
-
-
-        this.loadData();
       });
     });
   }
@@ -595,6 +586,7 @@ export class CobrosGeneralComponent implements OnInit {
         }
       }
     }
+    this.collectService.restoreCollectionIgtfFields();
     this.collectService.calcularMontos("", 0);
     this.collectService.checkTiposPago();
     this.collectService.validateToSend();

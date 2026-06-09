@@ -150,7 +150,15 @@ export class ProductosTabSearchComponent implements OnInit, OnDestroy {
           return;
         }
         this.productService.onProductTabSearchClicked();
-      } else if (this.devolucion && this.returnLogic.requeridedNroFactura) {
+      } else if (this.devolucion) {
+        await this.productService.getProductsSearchedByCoProductAndNaProduct(
+          this.db.getDatabase(), this.searchText, this.empresaSeleccionada.idEnterprise,
+          this.empresaSeleccionada.coCurrencyDefault, 0);
+        if (requestId !== this.searchRequestId) {
+          return;
+        }
+        this.productService.onProductTabSearchClicked();
+      } else if (this.devolucion && this.returnLogic.validateReturn) {
         await this.productService.searchProductsByIdInvoiceAndSearchText(
           this.db.getDatabase(), this.returnLogic.newReturn.idInvoice, this.searchText);
         if (requestId !== this.searchRequestId) {
