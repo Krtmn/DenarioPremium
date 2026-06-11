@@ -104,8 +104,7 @@ automation/
     smoke-productos.md
     smoke-vendedores.md
   reports/
-    lecciones-aprendidas-cdp.md  ← ARCHIVO HISTÓRICO (no leer en corridas)
-    lecciones-DELTA.md           ← novedades última corrida (resetear cada run)
+    README.md                    ← índice de corridas + convención de carpetas
     smoke-*.md                   ← reportes de corridas anteriores
 ```
 
@@ -114,9 +113,9 @@ automation/
 1. Especificar `QA_CLIENTE` (ej. `hidroponias`)
 2. Verificar CDP activo en `:9220` y `secrets/qa-credentials.env` existe
 3. Pegar prompt del orquestador en sesión nueva de Claude Code
-4. El orquestador lee `RUNTIME.md` + `clientes/{QA_CLIENTE}.yaml` + `lecciones-DELTA.md`
-5. Lanza 10 agentes secuenciales — cada uno lee `RUNTIME.md` + `smoke-{modulo}.md`
-6. Al finalizar: reporte consolidado + actualizar `lecciones-DELTA.md` con novedades
+4. El orquestador lee `RUNTIME.md` + `clientes/{QA_CLIENTE}.yaml`
+5. Lanza 10 agentes secuenciales — cada uno lee `RUNTIME.md` + `smoke-{modulo}.md` + su sección de `module-selectors.md`; cada reporte incluye sección "Patrones / selectores nuevos"
+6. Al finalizar: reporte consolidado + el orquestador lanza el **Agente 11 (consolidación automática)** que promueve los patrones nuevos de los reportes a `module-selectors.md` / YAML del cliente — sin pasos manuales
 
 ---
 

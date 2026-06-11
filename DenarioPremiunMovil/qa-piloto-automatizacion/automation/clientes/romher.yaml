@@ -90,54 +90,8 @@ modules:
 ultima_corrida:
   run_id: 20260604_122859_smoke-completo
   fecha: 2026-06-04
-  nuevos_patrones:
-    - P-ROM-CLT-001: Búsqueda no filtra on-keyup — requiere click en button.clear-search
-    - P-ROM-CLT-002: Componente root es app-clientes (no app-client-home)
-    - P-ROM-CLT-003: Enviar cliente potencial requiere confirmar 2 alertas
-    - P-ROM-CLT-004: Botón eliminar solo disponible para clientes en Estatus Guardado
-    - P-ROM-PED-001: pedidos_tab_total_trash_dentro_acordeon — expandir acordeón en Tab Total primero
-    - P-ROM-PED-002: pedidos_envio_tres_interacciones — confirm + "será enviado" + éxito con nro.
-    - P-ROM-PED-003: pedidos_modal_cliente_seleccion_mouse_click — requires mouse.click real (no dispatchEvent)
-    - P-ROM-PED-004: pedidos_romher_4_tabs_formulario — General / Pedido / Total / Adjunto
-    - P-ROM-PED-005: pedidos_back_guardado_sin_cambios_directo — no modal 3 opciones si form pristine
-    - P-ROM-COB-001: cobros_clienteSelect_click_en_nombre_p_no_masInfo — click en <p> del nombre (top del item) para seleccionar; click en centro activa masInfo→BUSCAR
-    - P-ROM-COB-002: cobros_buscar_usa_app_cobros_list — BUSCAR abre modal→client→app-cobros-list con todos los cobros
-    - P-ROM-COB-003: cobros_back_requiere_mouse_click_coords — igual que pedidos/visitas
-    - P-ROM-COB-004: cobros_requiredComment_true_bloquea_tabs — sin Comentario tabs disabled
-    - P-ROM-COB-005: cobros_retencion_enviar_disabled_sin_adjunto — imagenEnviar=disabled hasta adjunto
-    - P-ROM-COB-006: cobros_monto_deposito_requiere_ionBlur_manual — fillIonInput + FocusEvent blur + ionBlur
-    - P-ROM-COB-007: cobros_deposito_acordeon_expandido_automaticamente — no requiere click en header
-    - P-ROM-COB-008: cobros_envio_tres_alertas_confirmado_romher — mismo patrón que insumar
-    - P-ROM-COB-009: cobros_delete_con_confirmacion_romher — alert "¿Desea eliminar el Cobro?" Cancelar/Eliminar
-    - P-ROM-DEV-001: devoluciones_nro_factura_por_producto_requerido — campo "Nro Factura" en acordeón de producto es required (ng-invalid vacío); sin él Enviar disabled
-    - P-ROM-DEV-002: devoluciones_envio_tres_alertas — confirm + "será enviada" + "nro. X enviada exitosamente" (mismo patrón cobros/pedidos)
-    - P-ROM-DEV-003: devoluciones_tipo_popover_real_click — ion-select Tipo abre popover; requiere mouse.click real; opciones: Calidad/PostVenta/Servicio
-    - P-ROM-DEV-004: devoluciones_cliente_modal_busqueda_igual_clientes — input search-input + button clear-search + click p del nombre
-    - P-ROM-DEV-005: devoluciones_delete_confirmacion — alert "¿Desea eliminar la devolución?" Cancelar/Eliminar
-    - P-ROM-INV-001: inventarios_cliente_modal_mismo_patron_pedidos — click <p> nombre cliente; mismo comportamiento pedidos/cobros
-    - P-ROM-INV-002: inventarios_proveedor_lista_click_expande_productos — click ion-item proveedor navega a lista de productos
-    - P-ROM-INV-003: inventarios_envio_tres_alertas — "¿Desea enviar?" → "será enviado" → "nro. X enviado exitosamente"
-    - P-ROM-INV-004: inventarios_guardar_con_confirmacion — Guardar abre alert "¿Desea guardar el Inventario?" Cancelar/Aceptar
-    - P-ROM-INV-005: inventarios_delete_directo_exito_sin_confirmacion — trash en Guardado → éxito directo sin confirm intermedio
-    - P-ROM-INV-006: inventarios_modal_save_btn_requiere_mouse_move_previo — save-btn responde solo si mouse.move() antes tras modal.dismiss()
-    - P-ROM-INV-007: inventarios_modal_dismiss_via_ion_modal_method — modal.dismiss(null,'cancel') funciona cuando clicks físicos no responden
-    - P-ROM-INV-008: inventarios_buscar_nro_ref_cero_para_guardado — inventario guardado sin enviar muestra "Nro. Ref.: 0"
-    - P-ROM-DEP-001: depositos_checkbox_cobro_requiere_mouse_click — ion-checkbox en tab Cobros requiere getBoundingClientRect + pg.mouse.click() real
-    - P-ROM-DEP-002: depositos_monto_via_seleccion_cobros — no hay campo Monto libre; monto = cobros seleccionados en tab Cobros; sin cobro Guardar disabled
-    - P-ROM-DEP-003: depositos_formulario_4_tabs — General / Cobros / Total / Adjuntos
-    - P-ROM-DEP-004: depositos_banco_selectbanco_class — selector Banco usa clase CSS "selectbanco"; sin formControlName ni id explícito
-    - P-ROM-DEP-005: depositos_fecha_doc_ion_button_no_button — Fecha Doc es ion-button.letrasFechasButton; querySelector('button.letrasFechasButton') falla; usar ion-button selector
-    - P-ROM-DEP-006: depositos_guardar_alert_text — alert guardado: título "Denario Depósito" · mensaje "El Depósito se ha guardado" · botón "Aceptar"
-    - P-ROM-DEP-007: depositos_buscar_lista_no_renderiza — defecto DM-DEP-010/018 confirmado en romher; lista vacía también en sesión fresca y re-entrada desde HOME
-    - P-ROM-VIS-001: visitas_cdp_stale_connections_block — múltiples corridas acumulan TCP ESTABLISHED en :9220; solución: adb forward --remove + re-forward al PID activo
-    - P-ROM-VIS-002: visitas_ver_mejor_ruta_loading_sin_gps — VER MEJOR RUTA queda en ion-loading indefinido si GPS no resuelve; llamar ion-loading.dismiss() para liberar UI
-    - P-ROM-VIS-003: visitas_actividad_objeto_set_directo — asignar objeto directamente a ion-select.value + dispatch ionChange (click en popover-item fuera de viewport falla)
-    - P-ROM-VIS-004: visitas_motivo_requerido_siempre — todas las actividades tienen requiredEvent=true en romher; Motivo siempre requerido
-    - P-ROM-VIS-005: visitas_alert_borrar_con_confirmacion — trash en Guardado muestra alert CANCELAR/ACEPTAR; éxito con "Se eliminó la visita de manera exitosa"
-    - P-ROM-VIS-006: visitas_cliente_modal_click_input_id_clienteSelect — click en ion-input#clienteSelect abre modal búsqueda clientes
-    - P-ROM-VIS-007: visitas_envio_dos_alertas — envío requiere 2 alerts: (1) "¿Desea enviar?" ACEPTAR → (2) "Su Visita será enviada" OK
+  # Patrones DOM de esta corrida ya en module-selectors.md (tag [rom-2606]); INV-006/007 graduados a anti-patrones de INVENTARIOS.
   defectos_abiertos:
     - DM-PED-032: Modal "salir con ítems" no aparece cuando formulario está pristine (sin cambios); navega directo
     - DM-VIS-002: VER MEJOR RUTA deja loading indefinido sin GPS disponible; alert esperado nunca aparece
     - DM-PRD-013: Selector "Lista de precio" cambia valor interno pero precio en pantalla no se actualiza; reproducible en todos los productos
-    - DM-PRD-019: Back desde detalle de producto navega a lista de productos (no a lista de estructuras/proveedores); pila de navegación no mantiene estado

@@ -68,7 +68,7 @@ Una vez que el `curl` del paso 5 responde correctamente y el servidor de credenc
 - Claude Code confirmará el setup del Paso 0 y generará un `RUN_ID`.
 - Luego lanzará 10 agentes en secuencia. Cada agente puede tardar entre 10 y 30 minutos según el módulo.
 - Al terminar cada agente, verás en el chat un resumen del módulo (PASS/FAIL/SKIP/N/A).
-- Al terminar el módulo 10 (Vendedores), se generará el reporte consolidado.
+- Al terminar el módulo 10 (Vendedores), se generará el reporte consolidado y, automáticamente, se consolidará la memoria (Agente 11) — la corrida cierra con `module-selectors.md`/YAML ya actualizados, sin pasos manuales.
 - **No es necesario que estés frente a la pantalla** entre módulos; Claude Code gestiona toda la secuencia.
 
 ### Intervención manual que puede ser necesaria
@@ -90,13 +90,14 @@ Una vez que el `curl` del paso 5 responde correctamente y el servidor de credenc
 
 ## IDENTIDAD Y ALCANCE
 
-Eres **Claude Code actuando como Orquestador QA** para Denario Premium Móvil. Tu tarea es ejecutar el **smoke test completo** (~134 casos en 10 módulos) en un dispositivo Android conectado por USB, usando Playwright MCP y Chrome DevTools Protocol (CDP).
+Eres **Claude Code actuando como Orquestador QA** para Denario Premium Móvil. Tu tarea es ejecutar el **smoke test completo** (~137 casos en 10 módulos) en un dispositivo Android conectado por USB, usando Playwright MCP y Chrome DevTools Protocol (CDP).
 
 **No eres un agente de módulo. Eres el orquestador.** Tu trabajo es:
 1. Verificar infraestructura (Paso 0) y leer el perfil del cliente activo.
 2. Lanzar cada agente de módulo **uno a la vez** usando la herramienta `Agent`, inyectando los datos del cliente en cada prompt.
 3. **Esperar el resultado completo** de cada agente antes de lanzar el siguiente.
 4. Al terminar los 10 módulos, generar el **Reporte Consolidado Final**.
+5. **Cierre de memoria automático:** lanzar un agente final de consolidación (Agente 11) que promueve los patrones nuevos de los reportes a `module-selectors.md` / YAML del cliente. La corrida termina con la memoria ya actualizada — **sin pasos manuales**.
 
 **App:** `com.kiberno.denarioPremiumPro`
 **Carpeta raíz de trabajo:** `DenarioPremiunMovil/qa-piloto-automatizacion/`
@@ -114,7 +115,7 @@ automation/cdp/RUNTIME.md                         ← reglas operativas, skills,
 automation/clientes/{QA_CLIENTE}.yaml             ← VGs y datos de prueba del cliente activo
 ```
 
-Los agentes leen sus propios archivos (`RUNTIME.md` + `smoke-{modulo}.md`). No incluir en los prompts de agentes ninguna referencia a guiones completos, lecciones ni SKILLS.md.
+Los agentes leen sus propios archivos (`RUNTIME.md` + `smoke-{modulo}.md` + su sección de `module-selectors.md`). No incluir en los prompts de agentes ninguna referencia a guiones completos, lecciones ni SKILLS.md.
 
 ---
 
@@ -137,7 +138,6 @@ Verifica:
 
 Lee y guarda en memoria:
 - `automation/clientes/{QA_CLIENTE}.yaml` → leer completo; usarás `vgs` y `modules.*` en cada prompt de agente
-- `automation/reports/lecciones-DELTA.md` → si tiene contenido, incorporar novedades relevantes al módulo correspondiente en su prompt
 
 Si CDP no responde: detente y avisa — no intentes reparar infra.
 
@@ -154,14 +154,14 @@ Si CDP no responde: detente y avisa — no intentes reparar infra.
 | 1 | Login | DM-LOG-002, 003, 004, 001, 011, 012 |
 | 2 | Clientes | DM-CLT-001, 002, 003, 009, 013, 016, 017, 019, 021, 024, 026, 031 |
 | 3 | Pedidos | DM-PED-001, 002, 006, 015, 017, 024, 026, 029, 030, 031, 032, 034, 035, 037 |
-| 4 | Cobros | DM-COB-001, 002, 004, 006, 007, 008, 015, 033, 034, 041, 042, 009, 040, 012, 043, 014, 016, 018, 019, 022, 024, 026, 020, 021, 038, 029, 028, 036, 037, 039 (usar **040** Depósito si el cliente solo tiene Depósito; **006** si `requiredComment=true`; **033/034** si `multiCurrency=true`; **041/042** si `vgs.retencion=true`; **029** SKIP envío si `requiredCollectionAttachments=true`; **028/036/037/039** N/A según VG del perfil) |
+| 4 | Cobros | DM-COB-001, 002, 004, 006, 007, 008, 015, 033, 034, 041, 042, 009, 040, 012, 043, 014, 016, 018, 019, 022, 024, 026, 020, 021, 038, 029, 028, 036, 044, 045, 046, 047, 037, 039 (**seleccionar un cliente CON documentos pendientes** — ver `modules.cobros.clientes_con_documentos`; si ninguno hoy, recorrer la lista hasta hallar uno; usar **040** Depósito si el cliente solo tiene Depósito; **006** si `requiredComment=true`; **033/034** si `multiCurrency=true`; **041/042** retención por detalle de documento si `vgs.retencion=true` (insumar N/A → va por **029** +RETENCIÓN); **029** SKIP envío si `requiredCollectionAttachments=true`; **044/045** persistencia tasa IGTF round-trip si `userCanSelectIGTF=true` (045 N/A si 1 sola tasa); **046** persistencia pago parcial; **047** recálculo y persistencia por **Fecha tasa** si `fecha_tasa_editable`; **037** usa `modules.cobros.cliente_25iva` (único habilitado; N/A solo si vacío); **028/036/039** N/A según VG del perfil) |
 | 5 | Devoluciones | DM-DEV-001, 002, 004, 006, 011, 013, 014, 015, 016, 018, 019, 021, 022, 024 |
 | 6 | Inventarios | DM-INV-001, 002, 004, 008, 010, 011, 012, 016, 017, 020, 021, 022, 023, 025, 026, 028 |
 | 7 | Depósitos | DM-DEP-001, 002, 004, 005, 006, 009, 010, 014, 017, 018, 019, 020 |
 | 8 | Visitas | DM-VIS-001, 003, 004, 006, 010, 014, 015, 019, 020, 021, 022, 023, 025, 026, 031, 032 |
-| 9 | Productos | DM-PRD-001, 002, 004, 006, 007, 009, 012, 013, 019, 020, 021 |
+| 9 | Productos | DM-PRD-001, 002, 004, 006, 007, 009, 012, 013, 020, 021 |
 | 10 | Vendedores | DM-VND-001, 002, 007 |
-| **TOTAL** | | **~134 casos** |
+| **TOTAL** | | **~137 casos** |
 
 ---
 
@@ -173,6 +173,10 @@ Para cada módulo en el orden anterior:
 3. Verifica que el agente terminó en Home.
 4. FAIL en caso S1: registra en consolidado y continúa con el siguiente módulo.
 5. Al terminar los 10: genera el Reporte Consolidado Final en `{RUN_DIR}consolidado.md`.
+6. **Consolidación de memoria (automática — Paso 7):** **solo si los 10 módulos completaron** (no corrida parcial), lanza el **Agente 11 — Consolidación** con la herramienta `Agent` (ver plantilla abajo). No es un paso manual: lo dispara el orquestador como su último agente.
+7. Cuando el Agente 11 termine, **añade al `consolidado.md` la sección "Memoria: patrones promovidos"** con el resumen que devolvió. La corrida queda cerrada con la memoria al día; el control de calidad es revisar el `git diff` antes de commitear.
+
+> **Guarda de completitud:** si la corrida fue parcial o se abortó a mitad, **no** lances el Agente 11 — los "Patrones nuevos" quedan en los reportes y se consolidan en la próxima corrida completa (o manualmente con `prompt-consolidar-hallazgos.md`).
 
 ---
 
@@ -180,8 +184,8 @@ Para cada módulo en el orden anterior:
 
 Plantilla común — el orquestador inyecta RUN_ID, QA_CLIENTE y la sección `modules.{modulo}` del perfil cliente en cada prompt antes de lanzar el agente.
 
-Ruta helpers (constante en todos los prompts):
-`C:/Users/Personal/OneDrive/Documentos/kiberno/DenarioPremium/DenarioPremiunMovil/qa-piloto-automatizacion/automation/cdp/denario-cdp-helpers.js`
+Ruta helpers (constante en todos los prompts) — **relativa a la raíz `qa-piloto-automatizacion/`** (portable, funciona en cualquier máquina):
+`automation/cdp/denario-cdp-helpers.js`
 
 ---
 
@@ -192,9 +196,10 @@ Ruta helpers (constante en todos los prompts):
 ```
 Eres agente QA — módulo LOGIN · Denario Premium Móvil · RUN_ID: {RUN_ID} · Cliente: {QA_CLIENTE}
 
-LECTURA OBLIGATORIA (solo estos 2 archivos):
+LECTURA OBLIGATORIA (solo estos 3 archivos):
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-login.md
+3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo LOGIN" (no el archivo completo)
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
@@ -223,6 +228,7 @@ Eres agente QA — módulo CLIENTES · Denario Premium Móvil · RUN_ID: {RUN_ID
 LECTURA OBLIGATORIA:
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-clientes.md
+3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo CLIENTES" (no el archivo completo)
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
@@ -249,6 +255,7 @@ Eres agente QA — módulo PEDIDOS · Denario Premium Móvil · RUN_ID: {RUN_ID}
 LECTURA OBLIGATORIA:
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-pedidos.md
+3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo PEDIDOS" (no el archivo completo)
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
@@ -275,6 +282,7 @@ Eres agente QA — módulo COBROS · Denario Premium Móvil · RUN_ID: {RUN_ID} 
 LECTURA OBLIGATORIA:
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-cobros.md   ← contiene lógica adjunto y N/As por VG
+3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo COBROS" (no el archivo completo)
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
@@ -282,7 +290,8 @@ const pg = await h.connectCdp(page);
 await h.waitSyncOverlay(pg);
 
 DATOS DE PRUEBA — {QA_CLIENTE}:
-[ORQUESTADOR: inyectar modules.cobros + vgs.requiredCollectionAttachments + vgs.cobroRetencion + vgs.userCanSelectIGTF + vgs.userCanCollectIva del YAML]
+[ORQUESTADOR: inyectar modules.cobros (incluye `clientes_con_documentos`) + vgs.requiredCollectionAttachments + vgs.cobroRetencion + vgs.userCanSelectIGTF + vgs.userCanCollectIva del YAML.
+RECORDAR AL AGENTE: para los casos que requieren factura (007/008/012/040/041/042/043/044/046) seleccionar un cliente CON documentos pendientes (probar `clientes_con_documentos` en orden; si ninguno tiene hoy, recorrer la lista del modal hasta hallar uno con documentos). `cliente_test` solo para casos sin documentos.]
 
 REPORTE: {RUN_DIR}cobros.md
 REGISTROS CREADOS: incluir tabla (cobros enviados Y cobros Guardados pendientes de envío manual).
@@ -301,6 +310,7 @@ Eres agente QA — módulo DEVOLUCIONES · Denario Premium Móvil · RUN_ID: {RU
 LECTURA OBLIGATORIA:
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-devoluciones.md
+3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo DEVOLUCIONES" (no el archivo completo)
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
@@ -327,6 +337,7 @@ Eres agente QA — módulo INVENTARIOS · Denario Premium Móvil · RUN_ID: {RUN
 LECTURA OBLIGATORIA:
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-inventarios.md   ← contiene nota crítica fillNgModelKeyboard
+3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo INVENTARIOS" (no el archivo completo)
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
@@ -353,6 +364,7 @@ Eres agente QA — módulo DEPÓSITOS · Denario Premium Móvil · RUN_ID: {RUN_
 LECTURA OBLIGATORIA:
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-depositos.md   ← verificar modules.depositos.aplica antes de ejecutar
+3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo DEPÓSITOS" (no el archivo completo)
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
@@ -379,6 +391,7 @@ Eres agente QA — módulo VISITAS · Denario Premium Móvil · RUN_ID: {RUN_ID}
 LECTURA OBLIGATORIA:
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-visitas.md   ← contiene notas críticas DM-VIS-015, DM-VIS-022, DM-VIS-031
+3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo VISITAS" (no el archivo completo)
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
@@ -406,6 +419,7 @@ Módulo de solo lectura — no crea ni modifica datos.
 LECTURA OBLIGATORIA:
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-productos.md
+3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo PRODUCTOS" (no el archivo completo)
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
@@ -433,6 +447,7 @@ Módulo de solo lectura — no crea ni modifica datos.
 LECTURA OBLIGATORIA:
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-vendedores.md   ← verificar modules.vendedores.aplica antes de ejecutar
+3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo VENDEDORES" (no el archivo completo)
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
@@ -445,6 +460,30 @@ DATOS DE PRUEBA — {QA_CLIENTE}:
 REPORTE: {RUN_DIR}vendedores.md
 REGISTROS CREADOS: ninguno (solo lectura).
 Devolver: módulo VENDEDORES, counts, ruta.
+```
+
+---
+
+### AGENTE 11 — CONSOLIDACIÓN DE MEMORIA (automático · solo si 10/10 completaron)
+
+**Estado inicial:** 10 reportes + `consolidado.md` escritos | **No interactúa con la app** (solo edición de archivos · NO Playwright, NO adb)
+
+```
+Eres agente de consolidación de memoria QA — Denario Premium Móvil · RUN_ID: {RUN_ID} · Cliente: {QA_CLIENTE}
+Trabajo de SOLO edición de archivos: NO Playwright, NO adb, NO tocar la app.
+
+Sigue al pie de la letra: guiones-regresion/prompt-consolidar-hallazgos.md
+- QA_CLIENTE: {QA_CLIENTE}
+- RUN_DIR: {RUN_DIR}
+
+Lee la sección "## Patrones / selectores nuevos" de cada reporte en {RUN_DIR} y promuévelos:
+- DOM estándar / anti-patrón → automation/cdp/module-selectors.md (con tag [{QA_CLIENTE}-{fecha}])
+- Atado a VG o dato de cliente → inline en automation/clientes/{QA_CLIENTE}.yaml
+- Confirmado en 2+ corridas → RUNTIME.md / denario-cdp-helpers.js
+Marca cada sección procesada con "> ✅ consolidado {fecha}". NO toques defectos_abiertos. NO git commit/push.
+Actualiza ultima_corrida.run_id y .fecha del YAML al de esta corrida.
+
+Devuelve: tabla resumen (Patrón | Módulo | Decisión | Acción) + conteos + lista de archivos modificados.
 ```
 
 ---
@@ -471,6 +510,14 @@ Devolver: módulo VENDEDORES, counts, ruta.
 |----|-------------------|-----------|------------------------------|
 | DM-XXX-NNN | ... | ✅ PASS / ❌ FAIL / ⏭ SKIP / 🚫 N/A | ... |
 
+## Patrones / selectores nuevos (insumo de consolidación)
+
+| Patrón / selector | Universal o cliente | Detalle |
+|-------------------|---------------------|---------|
+| ... | universal / cliente | ... |
+
+*(si no hubo ninguno, escribir "ninguno". Lo lee `prompt-consolidar-hallazgos.md` al cierre de la corrida.)*
+
 ## Hallazgos (solo si hay FAIL u observaciones)
 
 ...
@@ -493,32 +540,58 @@ Devolver: módulo VENDEDORES, counts, ruta.
 | **RUN_ID** | `<RUN_ID>` |
 | **Dispositivo** | <ADB_SERIAL> |
 | **App** | `com.kiberno.denarioPremiumPro` — Versión <VERSION> |
-| **Resultado global** | <N> PASS · <N> FAIL · <N> SKIP · <N> N/A de 127 casos |
+| **Resultado global** | <N> PASS · <N> FAIL · <N> SKIP · <N> N/A de 137 casos |
 
 ## Resumen por módulo
 
 | Módulo | Casos | PASS | FAIL | SKIP | N/A | Estado |
 |--------|-------|------|------|------|-----|--------|
-| Login | 9 | | | | | ✅/❌ |
+| Login | 6 | | | | | ✅/❌ |
 | Clientes | 12 | | | | | ✅/❌ |
 | Pedidos | 14 | | | | | ✅/❌ |
-| Cobros | 22 | | | | | ✅/❌ |
+| Cobros | 34 | | | | | ✅/❌ |
 | Devoluciones | 14 | | | | | ✅/❌ |
 | Inventarios | 16 | | | | | ✅/❌ |
 | Depósitos | 12 | | | | | ✅/❌ |
-| Visitas | 17 | | | | | ✅/❌ |
-| Productos | 11 | | | | | ✅/❌ |
+| Visitas | 16 | | | | | ✅/❌ |
+| Productos | 10 | | | | | ✅/❌ |
 | Vendedores | 3 | | | | | ✅/❌ |
-| **TOTAL** | **130** | | | | | |
+| **TOTAL** | **137** | | | | | |
 
 ## FAIL críticos (S1/S2)
 
 | ID | Módulo | Descripción | Severidad |
 |----|--------|-------------|-----------|
 
+## Registros enviados al sistema (persisten)
+
+Agregar aquí los registros **enviados / persistentes** que reportó cada agente en su tabla "Registros creados". NO listar los temporales (Ref 0 creados y eliminados dentro de su propio caso).
+
+| Módulo | Ref / Nro | Detalle | Estado |
+|--------|-----------|---------|--------|
+| Clientes | | | Enviado |
+| Pedidos | | | Enviado |
+| Cobros | | | Enviado |
+| Devoluciones | | | Enviada |
+| Inventarios | | | Enviado |
+| Depósitos | | | Enviado |
+| Visitas | | | Enviada |
+
+*(Omitir las filas de módulos que no crean registros: Login, Productos, Vendedores. Quitar filas sin registro real en esta corrida.)*
+
+**Pendientes de envío manual:** listar cobros/visitas en estado Guardado que requieren adjunto o acción manual (con su motivo), o "ninguno".
+
 ## Observaciones generales
 
 ...
+
+## Memoria: patrones promovidos (Agente 11 — consolidación)
+
+| Patrón | Módulo | Destino |
+|--------|--------|---------|
+| ... | ... | module-selectors.md / YAML cliente / RUNTIME |
+
+*(Resumen que devolvió el Agente 11. Revisar el `git diff` de `module-selectors.md` y del YAML antes de commitear.)*
 
 ## Reportes individuales
 

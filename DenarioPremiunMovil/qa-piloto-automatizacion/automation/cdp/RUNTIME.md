@@ -14,10 +14,9 @@ No leer los siguientes archivos durante una corrida smoke (gastan tokens sin apo
 |----------------|---------|
 | `denario-movil-para-claude.xml` | ~800k tokens — solo para análisis de código |
 | `guiones-regresion/guion-*.md` completos | Los smoke extracts (`automation/smoke/`) son suficientes |
-| `automation/reports/lecciones-aprendidas-cdp.md` completo | Los patrones ya están en este archivo y en helpers.js |
 | `../src/` | Solo si hay FAIL S1 que requiera confirmar bug en código |
 
-**Sí leer:** `automation/cdp/RUNTIME.md` + `automation/smoke/smoke-{modulo}.md` + `automation/clientes/{QA_CLIENTE}.yaml`.
+**Sí leer:** `automation/cdp/RUNTIME.md` + `automation/smoke/smoke-{modulo}.md` + `automation/clientes/{QA_CLIENTE}.yaml` + sección del módulo en `automation/cdp/module-selectors.md` (selectores ya probados — evita exploración DOM a ciegas).
 
 ---
 
@@ -25,14 +24,14 @@ No leer los siguientes archivos durante una corrida smoke (gastan tokens sin apo
 
 ```javascript
 // Primeras 3 líneas de cada browser_run_code_unsafe — sin excepciones
-const h  = require('C:/Users/Personal/OneDrive/Documentos/kiberno/DenarioPremium/DenarioPremiunMovil/qa-piloto-automatizacion/automation/cdp/denario-cdp-helpers.js');
-const pg = await h.connectCdp(page);
+const pg = await h.connectCdp(page);   // 'h' = funciones inlineadas (ver abajo)
 await h.waitSyncOverlay(pg);
-// Credenciales cuando se necesiten: const creds = await h.fetchCreds();
-// fetchCreds() lee secrets/qa-credentials.env directamente — no requiere servidor externo
+// Credenciales: leer secrets/qa-credentials.env con Read y parsear el bloque "# Cliente: {QA_CLIENTE}" inline.
 ```
 
-Si `require()` no está disponible: leer el archivo y copiar las funciones verbatim.
+**Importante — en `browser_run_code_unsafe` NO existen `require` ni `fs`.** Por eso el arranque real es:
+1. **Helper:** leer `automation/cdp/denario-cdp-helpers.js` con la herramienta **Read** (ruta **relativa** a la carpeta de trabajo — misma convención que RUNTIME.md y los smoke; **portable**, sin rutas absolutas) e **inlinear** verbatim las funciones que necesites (`connectCdp`, `fillIonInput`, `clickAlertButton`, `waitSyncOverlay`, …).
+2. **Credenciales:** leer `secrets/qa-credentials.env` con **Read** y parsear el bloque `# Cliente: {QA_CLIENTE}` en línea. **No** llamar `fetchCreds()` directo: usa `fs`/`require` y revienta en este contexto.
 
 ---
 
@@ -117,6 +116,13 @@ Si `require()` no está disponible: leer el archivo y copiar las funciones verba
 | Ref | Detalle | Estado |
 |-----|---------|--------|
 
+## Patrones / selectores nuevos (insumo de consolidación)
+| Patrón / selector | Universal o cliente | Detalle |
+|-------------------|---------------------|---------|
+| ... | universal / cliente | ... |
+
+*(si no hubo ninguno, escribir "ninguno". Lo lee `prompt-consolidar-hallazgos.md` al cierre.)*
+
 ## Hallazgos (solo si hay FAIL)
 ...
 ```
@@ -131,21 +137,45 @@ Si `require()` no está disponible: leer el archivo y copiar las funciones verba
   - El orquestador crea esta carpeta en Paso 0 (`RUN_DIR`).
 - **Reporte de módulo:** `{RUN_DIR}{modulo}.md` → ej. `smoke_insumar_20260603_093706/cobros.md`
 - **Consolidado:** `{RUN_DIR}consolidado.md`
-- **Archivos globales (raíz `reports/`):** `lecciones-DELTA.md`, `lecciones-aprendidas-cdp.md`
+- **Reportes:** cada corrida en su carpeta `{RUN_DIR}`; índice en `automation/reports/README.md`
 - **Credenciales:** `secrets/qa-credentials.env` (playa activa) o `secrets/playas/{playa_id}.env` (multi-playa)
 - **Cliente activo:** leer de `automation/clientes/{QA_CLIENTE}.yaml` donde `QA_CLIENTE` viene en el prompt del orquestador
 
 ---
 
-## 8. Lecciones DELTA
+## 8. Consolidación de memoria post-corrida
 
-Si existe `automation/reports/lecciones-DELTA.md` con contenido, el orquestador lo lee en Paso 0 y lo incluye como contexto adicional en los prompts de agentes afectados.
+Los patrones nuevos de cada corrida se capturan en la sección `## Patrones / selectores nuevos` del reporte de cada módulo (`{RUN_DIR}{modulo}.md`). **No hay archivo DELTA intermedio.**
 
-Los agentes individuales **no** leen este archivo por defecto — el orquestador inyecta solo lo relevante al módulo.
+Al cierre de la corrida se ejecuta `guiones-regresion/prompt-consolidar-hallazgos.md`, que lee esos reportes y promueve cada patrón a su hogar definitivo:
+- **DOM estándar / anti-patrón** → `module-selectors.md` (basta 1 corrida confirmada, con tag).
+- **Atado a VG o dato de cliente** → inline en el YAML del cliente.
+- **Confirmado en 2+ corridas distintas** → graduar a `RUNTIME.md` o `denario-cdp-helpers.js`.
 
-Cuando un patrón del DELTA se confirma en 2+ corridas → mover a RUNTIME.md o helpers.js y registrar en la tabla de graduaciones del DELTA.
+Los agentes de módulo leen `module-selectors.md` (su sección) en cada corrida — mantenerlo afilado y bajo ~800 líneas es lo que abarata las corridas (evita re-explorar el DOM a ciegas).
 
 ---
 
-*Versión: Fase 4 · 2026-06-02 · post-RUN_ID 20260529_145657*
-*Actualizar tras cada corrida que descubra patrones nuevos graduados desde lecciones-DELTA.md*
+## 9. Oráculo de persistencia (round-trip Guardar → reabrir)
+
+Muchos bugs no se ven al **crear** un registro, sino al **reabrirlo**: un valor se guarda mal, o no se relee, y la UI muestra algo distinto a lo guardado. El smoke debe cazar estas regresiones **por sí solo**, no solo donde un caso lo pida explícitamente.
+
+**Regla general (aplica a TODO campo editable con valor por defecto):**
+Tras Guardar un registro (cobro, pedido, inventario, visita…), **reabrirlo desde BUSCAR y comparar cada valor relevante contra lo que se guardó**. Cualquier divergencia silenciosa —el valor cambió solo, o revirtió al default ignorando el cambio del usuario— es **FAIL**, no "comportamiento esperado".
+
+**Cómo aplicarlo:**
+1. **Antes de guardar**, anotar los valores clave del formulario (tasa, IGTF, moneda, método de pago, montos, retenciones, lote/fecha…).
+2. Guardar → salir → BUSCAR → reabrir el registro Guardado.
+3. Releer los mismos valores y **comparar 1:1**.
+4. Si un valor se muestra en 2 lugares (ej. selector IGTF **y** línea IGTF en Tab Total), **verificar ambos** — el bug puede dejar uno correcto y el otro no.
+
+**Dos sabores del bug — probar ambos cuando hay un default:**
+- **Default conservado:** dejar el valor por defecto → guardar → reabrir debe mostrar **ese mismo default** (FAIL si muta solo).
+- **Cambio conservado:** cambiar el default a otro valor → guardar → reabrir debe mostrar **el valor elegido** (FAIL si revierte al default).
+
+Casos que ya aplican este oráculo: DM-COB-042 (retención), DM-COB-039 (tasa), **DM-COB-044/045 (IGTF)**, DM-COB-016 (adjunto), DM-COB-024 (montos). Extender el patrón a cualquier campo nuevo con default.
+
+---
+
+*Versión: Fase 4 · 2026-06-09 · memoria sin DELTA (captura en reportes → consolidación directa)*
+*Actualizar tras cada corrida que gradúe patrones a `module-selectors.md` / `denario-cdp-helpers.js`*

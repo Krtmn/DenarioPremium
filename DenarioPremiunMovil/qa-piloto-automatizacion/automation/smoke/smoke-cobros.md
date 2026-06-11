@@ -9,10 +9,26 @@
 - `vgs.cobroRetencion` → DM-COB-029 (botón RETENCIÓN home)
 - `vgs.multiCurrency` → DM-COB-033/034
 - `vgs.requiredComment` → DM-COB-006
+- `vgs.userCanSelectIGTF` → DM-COB-036/044/045 (044/045 = persistencia tasa IGTF al reabrir)
 
 ---
 
-## Casos (~30, orden de ejecución)
+## Selección de cliente con documentos pendientes (obligatorio)
+
+Muchos casos requieren un cliente con **factura pendiente** (007, 008, 012, 040, 041/042, 043, 044, 046). Un cliente sin documentos los vuelve N/A artificialmente — eso **no es cobertura real**. Regla de selección del cliente para el cobro:
+
+1. **Atajo:** si el perfil trae `modules.cobros.clientes_con_documentos`, probar esos códigos en orden (cobro normal → seleccionar cliente → Tab Documentos → ¿hay documentos?).
+2. **Si no hay lista, o ninguno tiene documentos hoy:** recorrer la lista del modal de clientes **uno a uno** y elegir el **primero que muestre documentos** en Tab Documentos.
+3. Registrar en el reporte **qué cliente se usó** (código + saldo/documento).
+4. Marcar N/A por "sin documentos" **solo** si, tras recorrer la lista, ningún cliente tiene documentos pendientes (caso extremo).
+
+`modules.cobros.cliente_test` se reserva para los casos que **no** requieren documentos (001, 002, 004, 006, 020/021/038).
+
+**Casos de tipo de cobro (028 Anticipo, 036 IGTF, 037 25% IVA, 029 Retención): completar el flujo, no solo abrir el form.** Validar que el formulario abre con sus tabs es PASS parcial — el caso exige **crear y Guardar** el cobro de ese tipo y **reportarlo en "Registros creados"**. Si al abrir el tipo de cobro el selector de cliente sale vacío ("No hay clientes disponibles"), entonces sí → **N/A con ese motivo** (no hay cliente elegible para ese tipo).
+
+---
+
+## Casos (~34, orden de ejecución)
 
 | ID | Acción clave | PASS cuando | FAIL / N/A |
 |----|-------------|-------------|------------|
@@ -42,10 +58,14 @@
 | DM-COB-021 | Elegir "Salir sin guardar" (cobro **nuevo**, nunca guardado) | Cobro no aparece en BUSCAR | FAIL: aparece Guardado |
 | DM-COB-038 | Pulsar atrás → "Guardar y salir" | Cobro aparece en BUSCAR Estatus: Guardado | FAIL: no en lista |
 | DM-COB-029 | Click RETENCIÓN → cliente → documentos → Tab Total → Guardar | Guardado OK (sin Tab Pagos); Envío según nota adjunto abajo | N/A si `vgs.cobroRetencion=false`; SKIP envío si `requiredCollectionAttachments=true` |
-| DM-COB-028 | Click ANTICIPO/PREPAGO → cliente → Tab Pagos (sin Documentos) → monto → Guardar | Guardado OK; sin tab Documentos | N/A si `vgs.cobroPrepago=false` (leer `smoke_na_estructural` del perfil) |
+| DM-COB-028 | Click ANTICIPO/PREPAGO → seleccionar cliente elegible → confirmar 4 tabs (sin Documentos) → Tab Pagos: agregar método + **monto > 0** → **Guardar** → BUSCAR: confirmar que aparece como **Guardado tipo Anticipo** y **reportarlo en "Registros creados"** | Anticipo **creado y Guardado** (visible en BUSCAR), no basta con el form abierto | N/A si `vgs.cobroPrepago=false` o el selector de cliente del Anticipo está vacío |
 | DM-COB-036 | Click IGTF → cliente → selector tasa IGTF → documento → Guardar/Enviar | Guardado y Enviado OK | N/A si `vgs.userCanSelectIGTF=false` |
-| DM-COB-037 | Click COBRO 25% IVA → flujo igual que cobro normal | Guardado y Enviado OK | N/A si `vgs.userCanCollectIva=false` |
-| DM-COB-039 | Abrir Guardado → cambiar tasa (`h.fillIonInput` `#manualRateInput`) → blur → Guardar | Montos recalculados; al reabrir tasa nueva persiste | N/A si `vgs.enabledManualRate=false` |
+| DM-COB-044 | (encadena 036) Cobro **$** tipo IGTF. **Descubrir el default** leyendo el selector IGTF (lo configura cada cliente en web → varía). **NO** tocarlo → anotar tasa + línea IGTF del Tab Total → Guardar → BUSCAR → reabrir → releer ambos | Al reabrir, selector IGTF **y** línea IGTF del Total = **el mismo default que se guardó** (sea cual sea su %) | N/A si `userCanSelectIGTF=false`; **FAIL:** al reabrir la tasa cambió sola o selector ≠ Total |
+| DM-COB-045 | (encadena 036) Cobro **$** IGTF. Leer el default y **cambiarlo a cualquier otra opción** del selector → anotar la elegida → Guardar → BUSCAR → reabrir → releer selector + Total | Al reabrir, IGTF = **la tasa elegida** (no el default), Total coherente | N/A si `userCanSelectIGTF=false` o el selector tiene 1 sola opción; **FAIL conocido (sin fix):** al reabrir revierte al default ignorando el cambio |
+| DM-COB-046 | (req. cliente CON documentos) Cobro NORMAL → seleccionar 1 factura → Tab Pagos: anotar "Monto total a pagar" (= total factura) → volver a Documentos → **detalle** de la factura → activar el **toggle "Pago parcial"** (`ion-toggle` del detalle, ver module-selectors COBROS — NO la columna de la tabla) → escribir el monto parcial en el `ion-input` que queda editable → Aceptar → Tab Pagos muestra el **parcial** → Guardar → BUSCAR → reabrir → Pagos sigue mostrando el parcial | "Monto total a pagar" = parcial, idéntico antes y después de reabrir (round-trip §9) | N/A si no se halla cliente con documentos; **FAIL:** al reabrir vuelve al total completo de la factura |
+| DM-COB-047 | (req. cliente CON documentos; multiCurrency) Cobro NORMAL → seleccionar factura → Tab Pagos: anotar "Monto total a pagar" → Tab General: cambiar **Fecha tasa** a una fecha **anterior** → confirmar aviso de recálculo → Tab Pagos: el monto **cambió** (recalculado con la tasa de esa fecha) → Guardar → BUSCAR → reabrir → Pagos mantiene el monto recalculado | El monto se recalcula al cambiar Fecha tasa y **persiste** al reabrir | N/A si el cobro no permite cambiar Fecha tasa (sin `canChangeRate`/`historicoTasa`) o sin documentos |
+| DM-COB-037 | Click COBRO 25% IVA → seleccionar `modules.cobros.cliente_25iva` (único habilitado; si el perfil no lo trae, el que aparezca en el selector) → flujo igual que cobro normal (documentos + pago) → Guardar/Enviar → **reportar registro** | Cobro 25% IVA Guardado/Enviado y reportado | N/A si `vgs.userCanCollectIva=false` **o el selector del 25% IVA está vacío** ("No hay clientes disponibles") |
+| DM-COB-039 | Abrir Guardado → cambiar tasa: **(A)** `#manualRateInput` si `enabledManualRate=true`; **(B)** **Fecha tasa** (General) si `canChangeRate`/`historicoTasa` → recálculo → Guardar; al reabrir la tasa/monto nuevo persiste | Montos recalculados; al reabrir persiste | N/A **solo** si NINGUNA rama aplica (sin manualRate y sin cambio de fecha tasa) |
 
 ---
 
@@ -64,9 +84,37 @@
 
 ## ⚠ Nota — Retención en documento (DM-COB-041 / DM-COB-042)
 
+**Retención tiene DOS puntos de entrada — distintos casos, distintas VG:**
+- (a) **Desde el detalle del documento** en un cobro normal → `vgs.retencion` → **DM-COB-041/042** (el monto neto baja en Tab Pagos y debe **persistir** al reabrir).
+- (b) **Desde la opción +RETENCIÓN** del menú de cobros (tipo de cobro Retención) → `vgs.cobroRetencion` → **DM-COB-029** (sin Tab Pagos; montos IVA/ISLR en Tab Total; verificar que **persisten** al reabrir).
+
+En **insumar** la retención es la **(b)**: `cobroRetencion=true`, `retencion=false` → 029 aplica; 041/042 N/A.
+
 `vgs.retencion` controla si los campos de retención aparecen en el **detalle de un documento** dentro de un cobro normal (distinto de `cobroRetencion` que controla el botón RETENCIÓN home).
 
 - Leer `vgs.sizeRetention` para saber la longitud exacta del número de comprobante (8, 14 o 16 caracteres según UI).
 - Leer `modules.cobros.documento_retencion` para el documento de prueba (factura en rojo con saldo conocido).
 - Leer `modules.cobros.monto_retencion_iva` y `monto_retencion_islr` para los montos de retención.
 - DM-COB-042: FAIL conocido si al reabrir el cobro el monto en Pagos vuelve al bruto — documentar como FAIL (bug activo) pero continuar corrida.
+
+## ⚠ Nota — Persistencia tasa IGTF (DM-COB-044 / DM-COB-045) · round-trip
+
+Aplican el **oráculo de persistencia (RUNTIME §9)** a la tasa IGTF: verifican que sobrevive el ciclo Guardar → reabrir. Requieren `vgs.userCanSelectIGTF=true` y cobro en **moneda dura ($)**.
+
+- **Las tasas IGTF y cuál es el default los configura cada cliente desde la web → varían por cuenta.** No asumir valores fijos: el agente **descubre el default** leyendo el selector en un cobro $ nuevo y toma como **alterna** cualquier otra opción. `modules.cobros.igtf_tasa_default/alterna` solo registran lo observado — no son precondición.
+- **Oráculo por invariante:** el caso NO compara contra un % esperado, sino que **lo guardado = lo reabierto**. Vale para cualquier tasa que tenga configurada el cliente.
+- **Oráculo doble:** comparar **el valor del selector IGTF** Y **la línea IGTF en Tab Total** contra lo guardado — el bug puede dejar uno correcto y el otro no.
+- **DM-COB-044** (dejar default): FAIL si al reabrir la tasa cambia sola (ej. 3%→0%). En insumar el fix de este sabor está aplicado → **PASS esperado**.
+- **DM-COB-045** (cambiar a alterna): FAIL si al reabrir revierte al default ignorando el cambio. `igtf_persistencia_bug2_fixed=false` → **FAIL esperado** mientras no se confirme el fix; al observarse, documentar y continuar (no detiene la corrida).
+- Si solo hay 1 tasa IGTF disponible para el cliente → DM-COB-045 = **N/A** (no hay alterna que elegir).
+
+## ⚠ Oráculo — Persistencia del "Monto total a pagar" (Pagos) · los 3 disparadores
+
+El "Monto total a pagar" del Tab Pagos **no debe desactualizarse** tras Guardar → reabrir, **venga el ajuste de donde venga**. Anotar el monto antes de guardar y compararlo tras reabrir (RUNTIME §9). FAIL si vuelve al bruto/total. Casos que lo cubren:
+
+| Disparador del ajuste | Caso(s) |
+|-----------------------|---------|
+| IGTF | DM-COB-044 / 045 |
+| Retención (comp. + fecha + IVA + ISLR) | DM-COB-041 (calcula neto) + **DM-COB-042** (persiste al reabrir) |
+| Pago parcial por documento | **DM-COB-046** |
+| Tasa por fecha (recálculo del total) | **DM-COB-047** (cobro nuevo) + DM-COB-039 rama B (cobro Guardado) |

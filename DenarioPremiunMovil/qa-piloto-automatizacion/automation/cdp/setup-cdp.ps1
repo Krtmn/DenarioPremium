@@ -9,7 +9,6 @@ $ErrorActionPreference = 'Stop'
 $APK_PATH = "android\app\build\outputs\apk\debug\app-debug.apk"
 $PACKAGE   = "com.kiberno.denarioPremiumPro"
 $PORT      = 9220
-$CREDS_URL = "http://127.0.0.1:19001"
 
 Write-Host ""
 Write-Host "===  Pre-flight CDP Denario Premium Movil  ===" -ForegroundColor Cyan
@@ -82,29 +81,15 @@ try {
     Write-Error "CDP no responde en :$PORT. Revisa el port forward (paso 5)."
 }
 
-# 7. Permisos de ubicacion + servidor de credenciales
+# 7. Permisos de ubicacion
 Write-Host "[7/7] Permisos ubicacion..." -NoNewline
 adb shell pm grant $PACKAGE android.permission.ACCESS_FINE_LOCATION   2>$null | Out-Null
 adb shell pm grant $PACKAGE android.permission.ACCESS_COARSE_LOCATION 2>$null | Out-Null
 Write-Host " OK" -ForegroundColor Green
 
 Write-Host ""
-Write-Host "--- Servidor de credenciales ---" -ForegroundColor Cyan
-try {
-    $credsResponse = Invoke-WebRequest -Uri $CREDS_URL -UseBasicParsing -TimeoutSec 3
-    if ($credsResponse.Content -match "QA_USER") {
-        Write-Host "Servidor credenciales: OK  (:19001 activo)" -ForegroundColor Green
-    } else {
-        Write-Host "Servidor credenciales responde pero sin QA_USER. Revisar temp-creds-server.js" -ForegroundColor Yellow
-    }
-} catch {
-    Write-Host "Servidor credenciales: NO activo" -ForegroundColor Yellow
-    Write-Host ""
-    Write-Host "  Iniciar en terminal separada:" -ForegroundColor Yellow
-    Write-Host "  node DenarioPremiunMovil\qa-piloto-automatizacion\automation\maestro\temp-creds-server.js" -ForegroundColor White
-    Write-Host ""
-    Write-Host "  (Dejar esa terminal abierta durante toda la corrida)" -ForegroundColor Yellow
-}
+Write-Host "--- Credenciales ---" -ForegroundColor Cyan
+Write-Host "Login QA se lee directo de secrets\qa-credentials.env (fetchCreds). No requiere servidor." -ForegroundColor Green
 
 Write-Host ""
 Write-Host "===============================================" -ForegroundColor Cyan

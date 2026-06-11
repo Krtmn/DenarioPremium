@@ -23,9 +23,9 @@ vgs:
   enabledManualRate: false                 # Confirmado 20260603: #manualRateInput no existe
   cobroPrepago: true                       # Confirmado 20260603: botón ANTICIPO/PREPAGO visible (sin clientes elegibles actualmente)
   cobroRetencion: true                    # Confirmado 20260603: botón RETENCIÓN visible y funcional; retención requiere adjunto propio
-  retencion: null                         # TBD — confirmar si detalle de documento tiene campos retención en cobro normal
-  sizeRetention: null                     # TBD — leer de UI «Debe tener N caracteres»
-  formatRetention: null                   # TBD
+  retencion: false                        # Confirmado 20260610 [ins-2610]: detalle de documento SIN campos Retención IVA/ISLR/Comprobante en cobro normal
+  sizeRetention: null                     # N/A — retencion=false [ins-2610]
+  formatRetention: null                   # N/A — retencion=false [ins-2610]
   userCanSelectIGTF: true                 # Confirmado 20260603: botón IGTF visible; 3 selects en General (empresa/moneda/tasa)
   userCanCollectIva: true                 # Confirmado 20260603: botón COBRO 25% IVA visible (sin clientes elegibles actualmente)
   transportRole: null                     # TBD
@@ -45,22 +45,33 @@ modules:
     alerta_deuda_vencida: true            # Confirmado 20260603: "Este cliente tiene deuda vencida, ¿Desea continuar?"
 
   cobros:
-    cliente_test: "ADRIAN ARLET BASTARDO ALONZO"   # Confirmado 20260603
-    cliente_code: "2738"                            # Confirmado 20260603
+    cliente_test: "ADRIAN ARLET BASTARDO ALONZO"   # Confirmado 20260603 — usar para casos que NO requieren documentos (001,002,004,006,020/021/038)
+    cliente_code: "2738"                            # Confirmado 20260603 — OJO: 2738 NO tiene facturas pendientes en cobro NORMAL (007/008 N/A)
+    clientes_con_documentos: ["2385", "3039", "3281", "3502"]  # Confirmado 20260611 [ins-2611]: tienen documentos pendientes en cobro NORMAL — usar para casos que requieren factura (007/008/012/040/041/042/043/044/046). Si ninguno hoy → recorrer lista hasta hallar uno con documentos
+    cliente_25iva: "3277"  # [ins-2611] ÚNICO cliente habilitado (config web Denario) para COBRO 25% IVA → DM-COB-037. Reservado para esa prueba; funciona como cobro normal (tiene documentos)
     metodo_pago: "Deposito"                         # Confirmado 20260603; también Efectivo/Transferencia/Pago Móvil
     banco_deposito: "BANESCO RAEL"                  # Confirmado 20260603 (también BANCRECER/BANCO CARIBE/BANCO MERCANTIL/BDV ADRIANA)
     documento_retencion: null                       # TBD — factura en rojo para DM-COB-041/042
     monto_retencion_iva: null                       # TBD
     monto_retencion_islr: null                      # TBD
-    moneda_cobro: null                              # TBD
+    moneda_cobro: "US$"                             # Confirmado 20260610 [ins-2610]: documentos del cliente 2738 solo aparecen con Moneda Documento=US$ (lista BS vacía)
+    # Las tasas IGTF y cuál es el default los configura cada cliente desde la web → varían por cuenta. NO hardcodear: el agente las descubre en la UI.
+    # [ins-2610] insumar NO expone selector de tasa IGTF — la fija por documento. IGTF US$ 0,09 / BS 46,62 (~3%) auto. DM-COB-045 = N/A (sin alterna). DM-COB-044 PASS (persiste round-trip).
+    igtf_tasa_default: "~3% (auto por documento)"   # Confirmado 20260610 [ins-2610]: IGTF US$ 0,09 / BS 46,62; el selector de tasa NO existe en la UI
+    igtf_tasa_alterna: null                          # N/A [ins-2610]: insumar no expone selector de tasa (la fija por documento)
+    igtf_persistencia_bug2_fixed: true              # QA confirma fix 20260610: el cambio de tasa ahora persiste al reabrir → DM-COB-044 PASS confirmado en corrida
+    fecha_tasa_editable: true                       # [ins-2611] la Fecha tasa (Tab General) es editable (canChangeRate/historicoTasa) → recálculo del Monto total a pagar; DM-COB-047 (cobro nuevo) y DM-COB-039 rama B aplican PESE a enabledManualRate=false
+    retencion_via_menu: true                        # [ins-2611] retención por la opción +RETENCIÓN del menú (DM-COB-029, cobroRetencion=true), NO desde el detalle del documento (retencion=false → 041/042 N/A)
+    pago_parcial_toggle: true                       # [ins-2611 CORREGIDO 20260611] SÍ existe toggle "Pago parcial" en el detalle del documento: ion-toggle en el mismo ion-row que el ion-label "Pago parcial:" (al final del detalle). Activar (false→true) → el ion-input inmediatamente debajo (muestra el saldo, ej "1,50") pasa a editable → escribir el monto parcial → Aceptar. NO es la columna "Pago Parcial" de la tabla (íconos search-sharp/receipt-outline = historial solo lectura). DM-COB-046 debe usar ESTE toggle.
+    reapertura_ref0_cdp_inestable: true             # [ins-2611] limitación de AUTOMATIZACIÓN (no defecto de app): el primer ítem Guardado sin correlativo (Ref 0, pendiente sync) a veces no abre su detalle vía CDP (click/Pointer/shadowRoot). Ítems con Ref real sí navegan. Round-trip de reapertura ya confirmado PASS en [ins-2610]
     smoke_na_estructural:
-      - "DM-COB-007: documentos regulares vacios para cliente test (sin facturas pendientes en cobros)"
-      - "DM-COB-008: sin documentos para checkbox en cobro regular"
-      - "DM-COB-028: ANTICIPO/PREPAGO sin clientes elegibles actualmente"
-      - "DM-COB-037: COBRO 25% IVA sin clientes elegibles actualmente"
-      - "DM-COB-039: enabledManualRate=false"
-      - "DM-COB-041: retencion=TBD — añadir a na si retencion=false"
-      - "DM-COB-042: depende de 041"
+      # DM-COB-007/008: ya NO son N/A — el agente debe usar un cliente de clientes_con_documentos (2385/3039/3277/3281/3502); 2738 no tiene docs en cobro normal, elegir uno que sí
+      # DM-COB-028 (ANTICIPO/PREPAGO): con cliente 2738 SÍ elegible [ins-2610] — removido de na_estructural
+      # DM-COB-039: NO es N/A — aplica la rama B (Fecha tasa); ver fecha_tasa_editable [ins-2611]
+      # DM-COB-037: ya NO es N/A [ins-2611] — config web aplicada; usar cliente_25iva=3277 (único habilitado para cobro 25% IVA)
+      - "DM-COB-041: retencion=false [ins-2610] — retención va por +RETENCIÓN del menú (DM-COB-029), no por detalle de documento → N/A"
+      - "DM-COB-042: depende de 041 → N/A (retencion=false)"
+      - "DM-COB-045: insumar no expone selector de tasa IGTF — la fija por documento → N/A (sin alterna) [ins-2610]"
 
   devoluciones:
     cliente_test: "ADRIAN ARLET BASTARDO ALONZO"  # Cód 2738 — confirmado 20260603
@@ -77,6 +88,8 @@ modules:
   depositos:
     aplica: true                          # Confirmado 20260603: módulo visible en HOME y accesible
     motivo_na: null
+    # [ins-2610] DM-DEP-010/018 NO reprodujo en 0609 ni 0610 (2 corridas) — candidato a cerrar defecto.
+    # Flujo Guardar→Enviar con cobro vinculado ejecutado end-to-end (Ref 0 → Ref real Enviado); cierra gap G3. El bug de render no bloqueó.
 
   visitas:
     cliente_test: "ADRIAN ARLET BASTARDO ALONZO"  # Confirmado 20260603: Cód 2738
@@ -87,40 +100,15 @@ modules:
   productos:
     tipo_estructura_default: "Linea"      # Confirmado 20260603: catálogo organizado por Líneas
     texto_busqueda: "TOMATES"             # Confirmado 20260603: devuelve resultados con productos reales
+    tipos_estructura: ["Linea", "Sub-Linea"]  # [ins-2610]: insumar expone 2 tipos → DM-PRD-002 ejecutable y PASS (≠ globalmp/romher con 1 solo tipo)
+    # [ins-2610] DM-PRD-013 N/A en insumar: detalle tiene único ion-select "ALMACEN 01" (sin Lista de Precios); precio USD+BS como texto fijo no recalculable
 
   vendedores:
     aplica: true                          # Confirmado 20260603: módulo visible en HOME y accesible; esVendedor=true confirmado
 
 ultima_corrida:
-  run_id: "20260603_093706_smoke-completo"
-  fecha: "2026-06-03"
-  nuevos_patrones:
-    - "busqueda_clientes_requiere_click_boton: true  # filtro no reactivo — necesita click en .clear-search"
-    - "selector_activo: app-clientes  # no app-client-home/list/detail — usa sub-vistas internas"
-    - "cliente_potencial_campos_obligatorios: [naClient, nuRif, txAddress, txAddressDispatch, txClient, naResponsible, emClient, nuPhone]"
-    - "delete_sin_confirmacion: true  # borrado inmediato al click trash, sin paso previo (CLIENTES)"
-    - "pedidos_modal_cliente_usa_show-modal: true  # detectar apertura con classList.contains('show-modal')"
-    - "pedidos_ion-input-cantidad_offsetParent_null: true  # usar getBoundingClientRect para detectar visibilidad en acordeón"
-    - "pedidos_envio_dos_alertas: true  # flujo envío genera (1) 'Su Pedido será enviado' y (2) 'Pedido nro. X enviado exitosamente'"
-    - "pedidos_lista_delete_con_confirmacion: true  # a diferencia del tab Total, basura en lista requiere alert '¿Seguro que quieres eliminar?'"
-    - "pedidos_buscar_filtra_realtime: true  # searchbar en pedidosLista filtra con ionInput (distinto a módulo Clientes)"
-    - "pedidos_nro_ref_0_en_guardado_local: true  # pedidos sin sincronizar tienen Nro. Ref.: 0"
-    - "cdp_port_forward_cae_en_navegacion: true  # adb forward tcp:9220 puede caerse; re-establecer con localabstract:webview_devtools_remote_1"
-    - "devoluciones_guardar_enviar_son_icon_only: true  # clases imagenGuardar/imagenEnviar sin texto; buscar por clase no por texto"
-    - "devoluciones_ion_input_sin_id_dom: true  # ion-input devoluciones no tienen id como atributo; seleccionar por clase inp-write o por posición"
-    - "devoluciones_accordion_campos: [Lote, NroFactura, FechaVenc, CantidadDevuelta_inp-write, Unidad_select, Motivo_select]"
-    - "devoluciones_delete_con_confirmacion: true  # basura en lista requiere alert '¿Desea eliminar la devolución?' CANCELAR/ELIMINAR"
-    - "devoluciones_tipo_opciones: [Calidad, PostVenta, Servicio]  # popover con 3 opciones"
-    - "inventarios_modal_class_en_ion_modal: inventory-type-stocks-modal  # clase en ion-modal, no custom element"
-    - "inventarios_fecha_via_datetime_button: true  # ion-datetime-button → modal overlay → Aceptar en shadowRoot"
-    - "inventarios_delete_directo_sin_confirmacion: true  # basura → alert éxito directo, sin confirm previo"
-    - "inventarios_guardado_nro_ref_0: true  # mismo patrón que pedidos"
-    - "inventarios_enviado_tabs_3: true  # formulario enviado muestra General/Resumen/Adjuntos (sin tab Inventario)"
-    - "visitas_back_requiere_mouse_click_coords: true  # dispatchEvent en fechaAtras no dispara Angular router; usar getBoundingClientRect + pg.mouse.click"
-    - "visitas_ion_select_actividad_es_objeto: true  # valor es {idType, naType, requiredEvent, requiredSignature}; asignar via popover click, no .value=string"
-    - "visitas_motivo_condicional_requiredEvent: true  # select Motivo aparece solo cuando actividad.requiredEvent=true"
-    - "visitas_delete_con_confirmacion: true  # basura en lista visita Guardada → alert '¿Desea borrar la visita?' CANCELAR/ACEPTAR"
-    - "visitas_agregar_btn_coords_cambian_segun_selects_visibles: true  # obtener getBoundingClientRect frescos antes de click en AGREGAR del modal"
-    - "visitas_signatureVisit_true_confirmado: true  # acordeón Firma visible en tab Adjuntos"
+  run_id: "20260610_180320_smoke-completo"
+  fecha: "2026-06-10"
+  # Corrida 20260610 [ins-2610]: sin FAIL en los 10 módulos. Patrones DOM consolidados en module-selectors.md (tag [ins-2610]).
   defectos_abiertos:
     - "DM-DEP-010/018: lista BUSCAR no renderiza tras guardar (bug v6.6.14 deposit.service.ts) — confirmado también en insumar"

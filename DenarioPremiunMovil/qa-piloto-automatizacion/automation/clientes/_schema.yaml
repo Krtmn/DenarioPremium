@@ -52,8 +52,10 @@ modules:
     alerta_deuda_vencida: bool
 
   cobros:
-    cliente_test: string
+    cliente_test: string          # cliente para casos SIN documentos (001,002,004,006,020/021/038)
     cliente_code: string
+    clientes_con_documentos: []   # códigos con factura pendiente en cobro normal — casos que requieren factura (007/008/012/040/041/042/043/044/046). Si vacío o ninguno hoy → el agente recorre la lista del modal hasta hallar uno
+    cliente_25iva: string         # código habilitado para cobro 25% IVA (config web por cliente) → DM-COB-037; vacío/ausente si ninguno habilitado
     metodo_pago: string           # deposito | efectivo | transferencia
     banco_deposito: string        # si metodo_pago=deposito
     documento_retencion: string   # nro de factura en rojo para DM-COB-041/042 (si vgs.retencion=true)
@@ -90,5 +92,4 @@ modules:
 ultima_corrida:
   run_id: string
   fecha: string
-  nuevos_patrones: []
   defectos_abiertos: []

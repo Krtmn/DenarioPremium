@@ -11,7 +11,7 @@ vgs:
   multiCurrency: true
   expirationBatch: true                   # lote+fecha obligatorios en inventarios
   suggestedOrderByDispatchAndReturn: true
-  requiredCollectionAttachments: true     # adjunto obligatorio → DM-COB-019 SKIP en APK prod
+  requiredCollectionAttachments: true     # adjunto obligatorio → DM-COB-019 SKIP en APK prod; cobro queda Guardado (envío manual)
   requiredComment: true                   # comentario obligatorio en cobros
   validateReturn: true                    # requiere factura para habilitar tabs en devoluciones
   signatureReturn: true
@@ -87,8 +87,5 @@ modules:
 ultima_corrida:
   run_id: 20260529_145657_smoke-completo
   fecha: "2026-05-29"
-  nuevos_patrones:
-    - "requiredCollectionAttachments=true + APK prod → DM-COB-019 SKIP, cobro queda Guardado para envío manual"
-    - "DM-VIS-022: visita ya Guardada se mantiene al salir sin guardar — correcto, no FAIL"
   defectos_abiertos:
     - "DM-DEP-018/019/020: lista BUSCAR no renderiza tras guardar (bug v6.6.14 deposit.service.ts)"

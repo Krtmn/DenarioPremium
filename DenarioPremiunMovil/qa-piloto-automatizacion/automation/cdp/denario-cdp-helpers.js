@@ -3,13 +3,13 @@
  * Helpers CDP reutilizables — Denario Premium Móvil QA
  *
  * USO en browser_run_code_unsafe:
- *   Opción A (require): const h = require('/ruta/absoluta/a/denario-cdp-helpers.js');
- *   Opción B (eval):    eval(require('fs').readFileSync('/ruta/absoluta/a/denario-cdp-helpers.js','utf8'));
- *   Opción C (manual):  leer el archivo y copiar las funciones que necesites verbatim.
+ *   ⚠ En ese contexto NO existen `require` ni `fs`. La única vía es:
+ *   leer este archivo con la herramienta Read (ruta relativa) y copiar las funciones
+ *   que necesites VERBATIM. Para credenciales: leer secrets/qa-credentials.env con Read y
+ *   parsear el bloque "# Cliente: <slug>" inline — fetchCreds() usa fs y NO corre aquí.
  *
- * Ruta absoluta (Windows):
- *   C:/Users/Personal/OneDrive/Documentos/kiberno/DenarioPremium/DenarioPremiunMovil/
- *   qa-piloto-automatizacion/automation/cdp/denario-cdp-helpers.js
+ * Ruta (relativa a la raíz qa-piloto-automatizacion/, portable):
+ *   automation/cdp/denario-cdp-helpers.js
  */
 
 const CDP_URL = 'http://127.0.0.1:9220';
