@@ -47,11 +47,11 @@ Este paso los lee, los clasifica y los escribe **directo en su hogar definitivo*
 {RUN_DIR}*.md                          ← los reportes de módulo de la corrida; extraer su sección "## Patrones / selectores nuevos"
 automation/cdp/module-selectors.md     ← memoria universal actual (NO duplicar; si un patrón ya existe, solo añadir el tag de corrida)
 automation/cdp/RUNTIME.md              ← reglas globales (para no duplicar)
-automation/clientes/{QA_CLIENTE}.yaml  ← destino de lo cliente-específico
+automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml  ← destino de lo cliente-específico
 ```
 
 Para verificar si un patrón ya se vio en otro cliente (**solo si hay duda**), leer los otros YAML:
-`globalmp.yaml`, `romher.yaml`, `insumar.yaml`, `hidroponias.yaml` (omitir el del cliente actual, ya leído).
+`clientes/{otro}/{otro}.yaml` de cada cliente (insumar, globalmp, romher, hidroponias, central_foods — omitir el del cliente actual, ya leído).
 
 ---
 
@@ -92,7 +92,7 @@ Si un patrón universal ya está confirmado en 2+ clientes/corridas y es una reg
 - **Diferencia entre clientes:** fila en `### Notas por cliente`.
 - **Tamaño:** mantener el doc bajo ~800 líneas; consolidar filas redundantes antes de crecer.
 
-### 2. `automation/clientes/{QA_CLIENTE}.yaml`
+### 2. `automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml`
 - Lo **cliente-específico** va **inline** en la sección que corresponda (`modules.{x}` como dato/nota, o comentario en la VG). NO crear listas-buffer.
 - Actualizar `ultima_corrida.run_id` y `ultima_corrida.fecha` al de esta corrida.
 - **NO tocar** `defectos_abiertos` (lo gestiona el orquestador).

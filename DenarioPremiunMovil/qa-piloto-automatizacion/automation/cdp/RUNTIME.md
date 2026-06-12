@@ -16,7 +16,7 @@ No leer los siguientes archivos durante una corrida smoke (gastan tokens sin apo
 | `guiones-regresion/guion-*.md` completos | Los smoke extracts (`automation/smoke/`) son suficientes |
 | `../src/` | Solo si hay FAIL S1 que requiera confirmar bug en código |
 
-**Sí leer:** `automation/cdp/RUNTIME.md` + `automation/smoke/smoke-{modulo}.md` + `automation/clientes/{QA_CLIENTE}.yaml` + sección del módulo en `automation/cdp/module-selectors.md` (selectores ya probados — evita exploración DOM a ciegas).
+**Sí leer:** `automation/cdp/RUNTIME.md` + `automation/smoke/smoke-{modulo}.md` + `automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml` + sección del módulo en `automation/cdp/module-selectors.md` (selectores ya probados — evita exploración DOM a ciegas).
 
 ---
 
@@ -139,7 +139,7 @@ await h.waitSyncOverlay(pg);
 - **Consolidado:** `{RUN_DIR}consolidado.md`
 - **Reportes:** cada corrida en su carpeta `{RUN_DIR}`; índice en `automation/reports/README.md`
 - **Credenciales:** `secrets/qa-credentials.env` (playa activa) o `secrets/playas/{playa_id}.env` (multi-playa)
-- **Cliente activo:** leer de `automation/clientes/{QA_CLIENTE}.yaml` donde `QA_CLIENTE` viene en el prompt del orquestador
+- **Cliente activo:** leer de `automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml` donde `QA_CLIENTE` viene en el prompt del orquestador
 
 ---
 

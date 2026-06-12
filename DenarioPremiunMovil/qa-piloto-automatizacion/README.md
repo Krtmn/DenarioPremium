@@ -22,7 +22,7 @@ Automatización UI por **Playwright MCP + Chrome DevTools Protocol (CDP)** sobre
 ```
 Pre-vuelo:  automation/cdp/setup-cdp.ps1            → app + CDP en :9220
 Orquestar:  pegar guiones-regresion/prompt-orquestador-smoke.md   (QA_CLIENTE=<slug>)
-            lee RUNTIME.md + clientes/<cliente>.yaml
+            lee RUNTIME.md + clientes/<cliente>/<cliente>.yaml
 Ejecutar:   10 agentes; cada uno lee RUNTIME.md + smoke/smoke-<modulo>.md + module-selectors.md
             usa denario-cdp-helpers.js + secrets/qa-credentials.env
 Salida:     automation/reports/smoke_<cliente>_<fecha>/   (+ consolidado.md)
@@ -42,7 +42,7 @@ Cierre:     Agente 11 automático (prompt-consolidar-hallazgos)  → promueve pa
 | `automation/cdp/module-selectors.md` | Selectores probados por módulo |
 | `automation/cdp/setup-cdp.ps1` | Preflight ADB/CDP |
 | `automation/smoke/smoke-*.md` | Subset smoke que ejecuta cada agente |
-| `automation/clientes/*.yaml` | VGs y datos por cliente (`_schema.yaml` = esquema) |
+| `automation/clientes/*/*.yaml` | VGs y datos por cliente (`_schema.yaml` = esquema) |
 | `automation/reports/` | Evidencia por corrida (índice y convención en `reports/README.md`) |
 | `secrets/qa-credentials.env` | Login QA (gitignored) |
 | `denario-movil-para-claude.xml` | Dump Repomix del código (referencia, ~800k tokens — no leer completo) |

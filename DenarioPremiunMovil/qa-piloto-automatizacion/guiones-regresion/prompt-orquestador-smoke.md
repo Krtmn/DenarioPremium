@@ -112,7 +112,7 @@ Lee **solo estos dos archivos** antes del Paso 0:
 
 ```
 automation/cdp/RUNTIME.md                         ← reglas operativas, skills, anti-patrones, N/A vs FAIL
-automation/clientes/{QA_CLIENTE}.yaml             ← VGs y datos de prueba del cliente activo
+automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml             ← VGs y datos de prueba del cliente activo
 ```
 
 Los agentes leen sus propios archivos (`RUNTIME.md` + `smoke-{modulo}.md` + su sección de `module-selectors.md`). No incluir en los prompts de agentes ninguna referencia a guiones completos, lecciones ni SKILLS.md.
@@ -137,7 +137,7 @@ Verifica:
 - `secrets/qa-credentials.env` existe y tiene `QA_USER=`
 
 Lee y guarda en memoria:
-- `automation/clientes/{QA_CLIENTE}.yaml` → leer completo; usarás `vgs` y `modules.*` en cada prompt de agente
+- `automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml` → leer completo; usarás `vgs` y `modules.*` en cada prompt de agente
 
 Si CDP no responde: detente y avisa — no intentes reparar infra.
 
@@ -478,7 +478,7 @@ Sigue al pie de la letra: guiones-regresion/prompt-consolidar-hallazgos.md
 
 Lee la sección "## Patrones / selectores nuevos" de cada reporte en {RUN_DIR} y promuévelos:
 - DOM estándar / anti-patrón → automation/cdp/module-selectors.md (con tag [{QA_CLIENTE}-{fecha}])
-- Atado a VG o dato de cliente → inline en automation/clientes/{QA_CLIENTE}.yaml
+- Atado a VG o dato de cliente → inline en automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml
 - Confirmado en 2+ corridas → RUNTIME.md / denario-cdp-helpers.js
 Marca cada sección procesada con "> ✅ consolidado {fecha}". NO toques defectos_abiertos. NO git commit/push.
 Actualiza ultima_corrida.run_id y .fecha del YAML al de esta corrida.

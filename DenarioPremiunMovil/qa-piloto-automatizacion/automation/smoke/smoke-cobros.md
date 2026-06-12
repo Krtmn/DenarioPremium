@@ -2,7 +2,7 @@
 ## Estado inicial: HOME | Estado final: HOME
 
 **Inicio:** `h.connectCdp(page)` → `h.waitSyncOverlay(pg)`
-**Datos de prueba:** leer `automation/clientes/{QA_CLIENTE}.yaml` → `modules.cobros`
+**Datos de prueba:** leer `automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml` → `modules.cobros`
 **VGs clave:** leer antes de ejecutar:
 - `vgs.requiredCollectionAttachments` → DM-COB-016/018/019
 - `vgs.retencion` + `vgs.sizeRetention` → DM-COB-041/042 (retención en detalle de documento)

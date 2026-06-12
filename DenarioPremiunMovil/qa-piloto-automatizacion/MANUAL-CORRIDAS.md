@@ -113,7 +113,7 @@ PRE-VUELO (manual)    setup-cdp.ps1  →  app + CDP en :9220
         │  pegar prompt-orquestador-smoke.md (QA_CLIENTE=<slug>)
         ▼
 ORQUESTADOR (Claude Code, 1 sesión, Opus)
-  Paso 0   verifica CDP + credenciales · lee RUNTIME.md + clientes/<cliente>.yaml
+  Paso 0   verifica CDP + credenciales · lee RUNTIME.md + clientes/<cliente>/<cliente>.yaml
   Paso 1-5 lanza 10 agentes de módulo, uno a uno:
              ┌─────────────────────────────────────────────┐
              │ Agente de módulo                            │
@@ -129,7 +129,7 @@ ORQUESTADOR (Claude Code, 1 sesión, Opus)
   Paso 7   si 10/10 completaron → Agente 11 (consolidación automática):
              lee los "Patrones nuevos" de los reportes y los promueve:
                · DOM/anti-patrón  → module-selectors.md (con tag de corrida)
-               · VG/dato cliente   → inline en clientes/<cliente>.yaml
+               · VG/dato cliente   → inline en clientes/<cliente>/<cliente>.yaml
                · 2+ corridas       → RUNTIME.md / helpers.js
         ▼
 CIERRE (manual)   git diff → revisar lo promovido → commit coordinado
@@ -142,7 +142,7 @@ CIERRE (manual)   git diff → revisar lo promovido → commit coordinado
 | Reglas operativas | `automation/cdp/RUNTIME.md` · `denario-cdp-helpers.js` · `module-selectors.md` | Reglas CDP, helpers, selectores probados |
 | Definición de pruebas | `automation/smoke/smoke-*.md` | Lo que ejecuta el agente |
 | ↳ fuente | `guiones-regresion/guion-*.md` | Catálogo manual completo por módulo |
-| Datos por cliente | `automation/clientes/*.yaml` (+ `_schema.yaml`) | VGs y datos de prueba |
+| Datos por cliente | `automation/clientes/*/*.yaml` (+ `_schema.yaml`) | VGs y datos de prueba |
 | Memoria/mantenimiento | `guiones-regresion/prompt-consolidar-hallazgos.md` | Promueve patrones (lo corre el Agente 11) |
 | Salida | `automation/reports/smoke_<cliente>_<fecha>/` | Evidencia por corrida |
 | Credenciales | `secrets/qa-credentials.env` | Login QA (gitignored) |
@@ -152,7 +152,7 @@ CIERRE (manual)   git diff → revisar lo promovido → commit coordinado
 Captura  →  reporte de cada módulo ("## Patrones nuevos")   [evidencia]
 Promoción → Agente 11 clasifica y escribe directo:
               module-selectors.md   ← DOM universal (1 confirmación + tag)
-              clientes/<x>.yaml      ← VG/dato de cliente
+              clientes/<x>/<x>.yaml      ← VG/dato de cliente
               RUNTIME.md / helpers.js ← regla profunda (2+ corridas)
 ```
 Que `module-selectors.md` se mantenga afilado es lo que abarata las corridas: el agente lee selectores probados y **no re-explora el DOM a ciegas**.
@@ -187,7 +187,7 @@ El sistema lo mantienen **dos personas en máquinas distintas**. Para que no div
 | Categoría | Archivos | Regla |
 |-----------|----------|-------|
 | **Salida (libre)** | `automation/reports/smoke_*/` | Carpetas únicas por corrida → no chocan. Commitea/comparte libremente. |
-| **Memoria (revisar antes de pushear)** | `module-selectors.md`, `clientes/*.yaml` | El Agente 11 las edita automáticamente. Revisar el `git diff` y **coordinar el push** (no pushear sin avisar). |
+| **Memoria (revisar antes de pushear)** | `module-selectors.md`, `clientes/*/*.yaml` | El Agente 11 las edita automáticamente. Revisar el `git diff` y **coordinar el push** (no pushear sin avisar). |
 | **Estructura (proponer primero)** | `RUNTIME.md`, `helpers.js`, `smoke/*`, `guiones/*`, prompts, `_schema.yaml`, `CLAUDE.md` | **No editar a mano sin proponer.** |
 
 ### Flujo de cambios (durante el onboarding)

@@ -2,7 +2,7 @@
 ## Estado inicial: HOME | Estado final: HOME
 
 **Inicio:** `h.connectCdp(page)` → `h.waitSyncOverlay(pg)`
-**Datos de prueba:** leer `automation/clientes/{QA_CLIENTE}.yaml` → `modules.inventarios`
+**Datos de prueba:** leer `automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml` → `modules.inventarios`
 **VGs clave:** `expirationBatch` (lote+fecha obligatorios), `suggestedOrderByDispatchAndReturn`.
 
 ---
