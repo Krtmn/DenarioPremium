@@ -342,7 +342,9 @@ export class PedidosService {
       this.getWarehouses(idEnterprise).then(data => { this.listaWarehouse = data; });
     }
     if (this.userCanSelectGlobalDiscount) {
-      this.getGlobalDiscounts().then(data => { this.listaGlobalDiscount = data; });
+      catalogCritical.push(
+        this.getGlobalDiscounts().then(data => { this.listaGlobalDiscount = data; }),
+      );
     }
     if (this.userCanSelectChannel) {
       this.getOrderTypeProductStructure(idEnterprise).then(data => { this.orderTypeProductStructure = data; });
@@ -984,8 +986,9 @@ export class PedidosService {
           "subtotalConv": 0,
           "totalEnUnidades": 0,
           "nuTax": item.nuTax,
+          "nuAmountTax": 0,
           "listaModalList": listaModalList,
-          "nuPriceList": nuPriceList
+          "nuPriceList": nuPriceList,
 
         }
         orderUtils.push(ou);
@@ -1536,6 +1539,14 @@ export class PedidosService {
 
   getGlobalDiscounts() {
     return this.db.getGlobalDiscounts(this.database, this.getTag('PED_NO_DC'));
+  }
+
+  resolveSavedGlobalDiscount(nuDiscount: number | null | undefined): number {
+    const saved = Number(nuDiscount ?? 0);
+    const match = this.listaGlobalDiscount.find(
+      (g) => Number(g.globalDiscount) === saved,
+    );
+    return match ? Number(match.globalDiscount) : saved;
   }
 
   getPaymentConditions(idEnterprise: number) {
