@@ -1,7 +1,6 @@
 import { Component, OnInit, Input, inject } from '@angular/core';
 
 import { Retention } from 'src/app/modelos/retention';
-import { CollectionDetail } from 'src/app/modelos/tables/collection';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { DateServiceService } from 'src/app/services/dates/date-service.service';
@@ -178,10 +177,6 @@ export class CobroTotalComponent implements OnInit {
       this.collectService.difDocsNegativosByOriginalRate = 0;
       this.collectService.calculateDifference = false;
     }
-  }
-
-  getDetailRetentionTotal(detail: CollectionDetail): number {
-    return this.collectService.getDetailRetentionTotal(detail);
   }
 
 }

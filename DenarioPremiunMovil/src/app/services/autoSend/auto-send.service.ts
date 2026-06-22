@@ -229,330 +229,6 @@ export class AutoSendService implements OnInit {
     }
   }
 
-  setTransaction(type: string, coTransaction: string) {
-    switch (type) {
-      case 'collect': {
-
-        let request: Request = {
-          collection: {} as Collection,
-          document: {} as DocumentSale,
-        };
-
-        this.collectionService.getCollection(this.dbService.getDatabase(), coTransaction).then((collect) => {
-
-          request.collection = collect!;
-          request.collection.idUser = Number(localStorage.getItem("idUser"));
-          request.collection.coUser = localStorage.getItem("coUser")!;
-          /* request.collection.idCollection = null; */
-          if ((collect.hasIGTF != null ? collect.hasIGTF.toString() : "false") == "true") {
-            request.document = request.collection.document!;
-            if (Object.keys(request.document).length <= 0)
-              delete request.document;
-          }
-          else
-            delete request.document;
-
-          const coType = Number(request.collection.coType);
-          const promesa = new Promise<string>(async (resolve, reject) => {
-            if (coType === 1) {
-              this.collectionService.getCollectionPayments(this.dbService.getDatabase(), coTransaction).then((collectionPayments) => {
-                request.collection!.collectionPayments = collectionPayments;
-                request.collection!.collectionDetails = [];
-                resolve("ok");
-              })
-
-            } else if (coType === 2) {
-              this.collectionService.prepareCollectionDetailsForSend(
-                this.dbService.getDatabase(),
-                coTransaction
-              ).then((collectionDetails) => {
-                request.collection!.collectionDetails = collectionDetails;
-                request.collection!.collectionPayments = [];
-                resolve("ok");
-              });
-            } else {
-              this.collectionService.prepareCollectionDetailsForSend(
-                this.dbService.getDatabase(),
-                coTransaction,
-                { includeDiscounts: true }
-              ).then((collectionDetails) => {
-                request.collection!.collectionDetails = collectionDetails;
-                this.collectionService.getCollectionPayments(this.dbService.getDatabase(), coTransaction).then((collectionPayments) => {
-                  request.collection!.collectionPayments = collectionPayments;
-                  resolve("ok");
-                });
-              });
-            }
-
-          })
-          promesa.then((res) => {
-            // --- Recomendado: normalizar coType como number ---
-            const coType = Number(request.collection?.coType);
-
-            // Asegurar arrays no nulos
-            const payments = request.collection?.collectionPayments ?? [];
-            const details = request.collection?.collectionDetails ?? [];
-
-            // Por defecto permitimos enviar, salvo que una de las reglas impida el envío
-            let send = true;
-
-            switch (coType) {
-              // coType 0, 3, 4 => ambos arrays NO deben estar vacíos
-              case 0:
-              // coType 1 => collectionPayments NO debe estar vacío
-              case 1:
-                if (payments.length === 0) {
-                  send = false;
-                }
-                break;
-              // coType 2 => collectionDetails NO debe estar vacío
-              case 2:
-                if (details.length === 0) {
-                  send = false;
-                }
-                break;
-              case 3:
-              case 4:
-                if (payments.length === 0 || details.length === 0) {
-                  send = false;
-                }
-                break;
-
-              default:
-                // Si aparece un coType desconocido, prevenir el envío por seguridad
-                send = false;
-                console.warn(`AutoSendService: coType desconocido (${coType}). Se cancela el envío por seguridad.`);
-                break;
-            }
-
-            if (send) {
-              const retentionLines = this.collectionService.countCollectionDetailRetentionsForSend(
-                request.collection?.collectionDetails
-              );
-              console.log('[AutoSendService] collection_detail_retentions en payload', {
-                coCollection: coTransaction,
-                coType,
-                retentionLines,
-              });
-              this.sendTransaction(request, type, coTransaction);
-            }
-          });
-        })
-        break;
-      }
-      case 'potentialClient': {
-        let request: Request = {
-          potentialClient: {}
-        }
-        this.potentialClientServices.getPotentialClientById(coTransaction).then((pc) => {
-          request.potentialClient = {
-            "coClient": pc[0].coClient,
-            "naClient": pc[0].naClient,
-            "nuRif": pc[0].nuRif,
-            "naResponsible": pc[0].naResponsible,
-            "emClient": pc[0].emClient,
-            "nuPhone": pc[0].nuPhone,
-            "coUser": pc[0].coUser,
-            "idUser": pc[0].idUser,
-            "txAddress": pc[0].txAddress,
-            "txAddressDispatch": pc[0].txAddressDispatch,
-            "txClient": pc[0].txClient,
-            "naWebSite": pc[0].naWebSite,
-            "daClient": pc[0].daPotentialClient,
-            "coEnterprise": pc[0].coEnterprise,
-            "idEnterprise": pc[0].idEnterprise,
-            "coordenada": pc[0].coordenada,
-            "coordenadaClient": pc[0].coordenadaClient,
-            "nuAttachments": pc[0].nuAttachments,
-            "hasAttachments": (String)(pc[0].hasAttachments).toLowerCase() === 'true' ? true : false,
-          };
-          this.sendTransaction(request, type, pc[0].coClient);
-        })
-        break;
-      }
-      case 'visit': {
-        let request: Request = {
-          visit: {} as Visit,
-        }
-        this.visitService.getVisit(coTransaction).then(v => {
-
-          request.visit = v;
-
-          if (this.rolTransportista) {
-            if (v.visitDetails && Array.isArray(v.visitDetails)) {
-              for (let i = 0; i < v.visitDetails.length; i++) {
-                if (request.visit.visitDetails[i].coCause === 0) {
-                  request.visit.visitDetails[i].coCause = null;
-                }
-              }
-            }
-          }
-          request.visit.coordenadaSaved = false; //esto siempre es falso
-          if (v.stVisit == VISIT_STATUS_TO_SEND) {
-            //si es la primera vez que se manda,
-            //poner id en null para que se le asigne el id correcto en backend
-            request.visit.idVisit = null;
-          }
-
-          this.sendTransaction(request, type, v.coVisit);
-        })
-        break;
-      }
-      case 'order': {
-        let request: Request = {
-          order: {} as Orders,
-          //orderDetails: [] as OrderDetail[],
-          //orderDetailUnits: [] as OrderDetailUnit[],
-          //orderDetailDiscounts: [] as OrderDetailDiscount[],
-        }
-        this.orderService.getPedido(coTransaction).then(o => {
-          if (o != null) {
-            request = {
-              order: o
-            };
-          }
-          //request = o;
-          if (request.order!.stOrder == DELIVERY_STATUS_TO_SEND) {
-
-            request.order!.idOrder = null;
-            for (var i = 0; i < request.order!.orderDetails.length; i++) {
-              request.order!.orderDetails[i].idOrderDetail = null;
-              for (var j = 0; j < request.order!.orderDetails[i].orderDetailUnit.length; j++) {
-                request.order!.orderDetails[i].orderDetailUnit[j].idOrderDetailUnit = null;
-              }
-              if (request.order!.orderDetails[i].orderDetailDiscount != null) {
-                for (var k = 0; k < request.order!.orderDetails[i].orderDetailDiscount.length; k++) {
-                  request.order!.orderDetails[i].orderDetailDiscount[k].idOrderDetailDiscount = null;
-                  request.order!.orderDetails[i].orderDetailDiscount[k].idOrderDetail = null;
-                }
-              }
-            }
-          }
-          this.sendTransaction(request, type, coTransaction);
-        });
-
-
-        break;
-      }
-
-      case 'deposit': {
-        let request: Request = {
-          deposit: {} as Deposit,
-          collectionIds: {}
-        }
-        this.depositService.getDeposit(this.dbService.getDatabase(), coTransaction).then((deposit) => {
-          request.deposit = deposit!;
-          request.deposit.idUser = Number(localStorage.getItem("idUser"));
-          request.deposit.coUser = localStorage.getItem("coUser")!;
-          request.deposit.idDeposit = null;
-          /*
-          request.deposit.daDeposit =
-            request.deposit.daDeposit.split("/")[2] + "-" +
-            request.deposit.daDeposit.split("/")[1] + "-" +
-            request.deposit.daDeposit.split("/")[0];
-          */
-
-          this.depositService.getDepositCollect(this.dbService.getDatabase(), coTransaction).then((collects) => {
-            //request.deposit?.depositCollect = collects || [];
-            this.depositService.getIdsDepositCollect(this.dbService.getDatabase(), coTransaction).then(collectionIds => {
-              request.collectionIds = collectionIds;
-              this.sendTransaction(request, type, coTransaction);
-            })
-          })
-        })
-        break;
-      }
-
-      case 'updateaddress': {
-        let request: Request = {
-          userAddressClient: {} as UserAddresClients,
-        }
-
-        this.locationServices.getUserAddresLocation(this.dbService.getDatabase(), coTransaction).then(result => {
-          request.userAddressClient = result;
-          request.userAddressClient.idUserAddressClient = null;
-          this.sendTransaction(request, type, result.coUserAddressClient);
-        })
-        break;
-      }
-      case 'return': {
-        let request: Request = {
-          returns: {} as Return,
-        }
-        this.returnDatabaseService.getReturn(this.dbService.getDatabase(), coTransaction).then(ret => {
-          request.returns = ret;
-          if (ret.stDelivery == DELIVERY_STATUS_TO_SEND) {
-            //si es la primera vez que se manda,
-            //poner id en null para que se le asigne el id correcto en backend
-            request.returns.idReturn = null;
-            request.returns.daReturn = request.returns.daReturn.replace('T', ' ');
-            for (var i = 0; i < request.returns.details.length; i++) {
-              request.returns.details[i].idReturn = null;
-            }
-          }
-          this.sendTransaction(request, type, ret.coReturn);
-        }).catch(e => {
-          console.log("[ReturnDatabaseService] Error al ejecutar getReturn.");
-          console.log(e);
-          return null;
-        });
-        break;
-      }
-      case 'clientStock': {
-        let request: Request = {
-          clientStock: {} as ClientStocks,
-        }
-        const promesa = new Promise<ClientStocks>((resolve, reject) => {
-          this.inventariosLogicService.getClientStock(this.dbService.getDatabase(), coTransaction).then(clientStock => {
-            console.log(clientStock);
-            /* ya se buscan los details en el getClientStock. no es necesario hacer otras consultas.
-            for (var i = 0; i < clientStock.clientStockDetails.length; i++) {
-              this.inventariosLogicService.getClientStockDetailsUnits(this.dbService.getDatabase(), clientStock.clientStockDetails[i].coClientStockDetail, i).then(data => {
-                console.log(data);
-                let [index, object] = data
-
-                for (var j = 0; j < object.length; j++) {
-                  let arr = {} as ClientStocksDetailUnits;
-                  arr = object[j]
-                  clientStock.clientStockDetails[index].clientStockDetailUnits.push(arr);
-                }
-                console.log(clientStock.clientStockDetails[index]);
-                if (index == clientStock.clientStockDetails.length - 1)
-
-                  resolve(clientStock)
-              })
-
-            }*/
-            resolve(clientStock);
-          }).catch(e => {
-            console.log("Error al ejecutar getClientStock.");
-            console.log(e);
-            return null;
-          });
-        })
-
-        promesa.then((clientStock) => {
-          console.log("terime!", clientStock)
-          request.clientStock = clientStock;
-          request.clientStock.daClientStock = request.clientStock.daClientStock.replace('T', ' ');
-          if (clientStock.stDelivery == DELIVERY_STATUS_TO_SEND) {
-            //si es la primera vez que se manda,
-            //poner id en null para que se le asigne el id correcto en backend
-            request.clientStock.idClientStock = null;
-            request.clientStock.daClientStock = request.clientStock.daClientStock.replace('T', ' ');
-            for (var i = 0; i < request.clientStock.clientStockDetails.length; i++) {
-              request.clientStock.clientStockDetails[i].idClientStockDetail = null;
-            }
-          }
-          this.sendTransaction(request, type, clientStock.coClientStock);
-
-        })
-
-      }
-
-    }
-  }
-
   private async settlePendingTransaction(pt: PendingTransaction): Promise<boolean> {
     switch (pt.type) {
       case "collect":
@@ -607,17 +283,30 @@ export class AutoSendService implements OnInit {
       request.collection.collectionPayments = await this.collectionService.getCollectionPayments(db, coTransaction);
       request.collection.collectionDetails = [];
     } else if (coType === 2) {
-      request.collection.collectionDetails = await this.collectionService.prepareCollectionDetailsForSend(
-        db,
-        coTransaction
-      );
+      const collectionDetails = await this.collectionService.getCollectionDetails(db, coTransaction);
+      request.collection.collectionDetails = collectionDetails.map(detail => ({
+        ...detail,
+        nuBalanceDoc: detail.nuBalanceDocOriginal,
+        nuBalanceDocConversion: detail.nuBalanceDocOriginalConversion,
+      }));
       request.collection.collectionPayments = [];
     } else {
-      request.collection.collectionDetails = await this.collectionService.prepareCollectionDetailsForSend(
-        db,
-        coTransaction,
-        { includeDiscounts: true }
-      );
+      const collectionDetails = await this.collectionService.getCollectionDetails(db, coTransaction);
+      request.collection.collectionDetails = collectionDetails.map(detail => ({
+        ...detail,
+        nuBalanceDoc: detail.nuBalanceDocOriginal,
+        nuBalanceDocConversion: detail.nuBalanceDocOriginalConversion,
+      }));
+      const collectionDetailsDiscounts = await this.collectionService.getCollectionDetailsDiscounts(db, coTransaction);
+      const all = (collectionDetailsDiscounts || []) as any[];
+      const isDiscount = (x: any): boolean =>
+        Boolean(x && (x.idCollectDiscount !== undefined || x.nuCollectDiscount !== undefined));
+      const discounts = all.filter(isDiscount);
+      for (let i = 0; i < request.collection.collectionDetails.length; i++) {
+        const detail = request.collection.collectionDetails[i] as any;
+        detail.collectionDetailDiscounts =
+          discounts.filter((d: any) => d.coDocument === detail.coDocument) ?? [];
+      }
       request.collection.collectionPayments = await this.collectionService.getCollectionPayments(db, coTransaction);
     }
 
@@ -647,8 +336,8 @@ export class AutoSendService implements OnInit {
         send = false;
         console.warn(
           "AutoSendService: coType desconocido (" +
-          coType +
-          "). Se cancela el envío por seguridad.",
+            coType +
+            "). Se cancela el envío por seguridad.",
         );
         break;
     }
@@ -656,16 +345,6 @@ export class AutoSendService implements OnInit {
     if (!send) {
       return true;
     }
-
-    const retentionLines = this.collectionService.countCollectionDetailRetentionsForSend(
-      request.collection?.collectionDetails
-    );
-    console.log('[AutoSendService] collection_detail_retentions en payload', {
-      coCollection: coTransaction,
-      coType,
-      retentionLines,
-    });
-
     return await this.sendTransaction(request, "collect", coTransaction);
   }
 
@@ -1069,10 +748,10 @@ export class AutoSendService implements OnInit {
     );
     const errorMessage = String(
       error?.message ??
-      nested?.message ??
-      nested?.errorMessage ??
-      nested?.error ??
-      'Error de servidor al enviar la transacción.'
+        nested?.message ??
+        nested?.errorMessage ??
+        nested?.error ??
+        'Error de servidor al enviar la transacción.'
     );
     return { errorCode, errorMessage };
   }
