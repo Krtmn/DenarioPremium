@@ -1628,7 +1628,8 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
 
 
-    this.displayAmountPaid = cs.amountPaid.toString();
+    this.centsAmountPaid = Math.round((cs.amountPaid ?? 0) * this.centsFactor());
+    this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
 
     let amountPaidAux = cs.amountPaid;
     let nuAmountRetentionAux = nuAmountRetention;
