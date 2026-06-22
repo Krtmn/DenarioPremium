@@ -839,12 +839,18 @@ export class CobrosGeneralComponent implements OnInit {
 
             this.collectService.getDocumentsSales(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient,
               this.getAllDocumentsCurrency(), this.collectService.collection.coCollection, this.collectService.collection.idEnterprise,
-              this.getDocumentSalesFirstPageOptions()).then(() => {
+              this.getDocumentSalesFirstPageOptions()).then(async () => {
                 if (this.collectService.historicPartialPayment) {
                   this.collectService.findIsPaymentPartial(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
                 }
                 if (this.collectService.userCanSelectCollectDiscount) {
                   this.collectService.getCollectDiscounts(
+                    this.synchronizationServices.getDatabase(),
+                    this.collectService.collection.idEnterprise
+                  );
+                }
+                if (this.collectService.retencion) {
+                  await this.collectService.getCollectRetentions(
                     this.synchronizationServices.getDatabase(),
                     this.collectService.collection.idEnterprise
                   );

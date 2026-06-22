@@ -6,5 +6,9 @@
     {
         "sql": "ALTER TABLE orders ADD COLUMN nu_amount_tax_conversion NUMERIC(29,4);",
         "description": "Se agrega la columna 'nu_amount_tax_conversion' a 'orders' para almacenar el monto de impuesto convertido del pedido."
+    },
+    {
+        "sql": "CREATE TABLE IF NOT EXISTS collect_retentions (id_collect_retention INTEGER PRIMARY KEY, co_collect_retention VARCHAR(80), na_collect_retention VARCHAR(200), id_enterprise INTEGER);",
+        "description": "Se agrega la tabla 'collect_retentions' para almacenar las retenciones de cobranza."
     }
 ]
