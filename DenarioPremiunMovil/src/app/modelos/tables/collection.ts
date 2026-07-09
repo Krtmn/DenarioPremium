@@ -149,6 +149,7 @@ export class CollectionDetail {
       obj['missingRetention'],
       obj['nuAmountCollectDiscountConversion'],
       obj['collectionDetailDiscounts'],
+      obj['collectionDetailRetentions'],
     );
   }
 
@@ -191,6 +192,7 @@ export class CollectionDetail {
     public missingRetention: boolean = false,
     public nuAmountCollectDiscountConversion: number = 0,
     public collectionDetailDiscounts?: CollectionDetailDiscounts[],
+    public collectionDetailRetentions?: CollectionDetailRetentions[],
   ) { }
 }
 
@@ -287,6 +289,39 @@ export class CollectionDetailDiscounts {
     public nuAmountCollectDiscountOther: number = 0,
     public nuAmountCollectDiscountOtherConversion: number = 0,
     public posicion: number = 0,
+
+  ) { }
+}
+
+export class CollectionDetailRetentions {
+  static CollectionDetailRetentionsJson(obj: CollectionDetailRetentions) {
+    return new CollectionDetailRetentions(
+      obj['idCollectionDetailRetention'],
+      obj['idCollectionDetail'],
+      obj['coCollection'],
+      obj['coDocument'],
+      obj['idCollectRetention'],
+      obj['coCollectRetention'],
+      obj['nuAmountRetention'],
+      obj['nuAmountRetentionConversion'],
+      obj['posicion'],
+      obj['nuVoucherRetention'],
+      obj['daVoucherRetention'],
+    );
+  }
+
+  constructor(
+    public idCollectionDetailRetention?: number | null,
+    public idCollectionDetail: number = 0,
+    public coCollection: string = "",
+    public coDocument?: string | null,
+    public idCollectRetention: number = 0,
+    public coCollectRetention: string = "",
+    public nuAmountRetention: number = 0,
+    public nuAmountRetentionConversion: number = 0,
+    public posicion: number = 0,
+    public nuVoucherRetention: string = "",
+    public daVoucherRetention: string = "",
 
   ) { }
 }
