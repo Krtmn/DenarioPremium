@@ -83,6 +83,7 @@ import { ReturnCategory } from 'src/app/modelos/tables/returnCategory';
 import { CodePhoneNumber } from 'src/app/modelos/tables/codePhoneNumber';
 import { UnitPriceList } from 'src/app/modelos/tables/unitPriceList';
 import { TypeDocument } from 'src/app/modelos/tables/typeDocument';
+import { CollectRetentions } from 'src/app/modelos/tables/collectRetentions';
 
 
 /** Mock SQLiteObject para navegador: retorna resultados vacíos y permite probar la app con TestSprite */
@@ -114,7 +115,8 @@ export class SynchronizationDBService {
   private tables: any[] = [];
   public tablaSincronizando: string = "";
   public inHome: Boolean = true;
-  private CURRENT_DB_VERSION: number = 12;
+  private CURRENT_DB_VERSION: number = 16;
+  private readonly DEFAULT_TABLE_LAST_UPDATE = '1970-01-01 00:00:00.000';
 
   constructor(
     private navController: NavController,
@@ -193,7 +195,8 @@ export class SynchronizationDBService {
       { "id": 78, "nameTable": "returnCategory"},
       { "id": 79, "nameTable": "typeDocument" },
       { "id": 80, "nameTable": "codePhoneNumber" },
-      { "id": 81, "nameTable": "unitPriceListTable" }
+      { "id": 81, "nameTable": "unitPriceListTable" },
+      { "id": 83, "nameTable": "collectRetention" }
     ]
   }
 
@@ -348,10 +351,10 @@ export class SynchronizationDBService {
       if (!migrations || migrations.length === 0) return;
       for (const m of migrations) {
         if (typeof m === 'string') {
-          await this.database.executeSql(m, []);
+          await this.executeMigrationSql(m, []);
         } else if (m && m.sql) {
           const params = m.params || [];
-          await this.database.executeSql(m.sql, params);
+          await this.executeMigrationSql(m.sql, params);
         }
       }
     } catch (e) {
@@ -371,18 +374,95 @@ export class SynchronizationDBService {
     }
   }
 
+  private async executeMigrationSql(sql: string, params: any[] = []): Promise<void> {
+    const alterTableAddColumn = this.getAlterTableAddColumnTarget(sql);
+    if (alterTableAddColumn) {
+      const { tableName, columnName } = alterTableAddColumn;
+      const columnExists = await this.checkIfColumnExists(tableName, columnName);
+      if (columnExists) {
+        return;
+      }
+    }
+
+    await this.database.executeSql(sql, params);
+  }
+
+  private getAlterTableAddColumnTarget(sql: string): { tableName: string; columnName: string } | null {
+    const match = /^\s*alter\s+table\s+([^\s]+)\s+add\s+column(?:\s+if\s+not\s+exists)?\s+([^\s]+)/i.exec(sql);
+    if (!match) {
+      return null;
+    }
+
+    const tableName = this.normalizeSqlIdentifier(match[1]);
+    const columnName = this.normalizeSqlIdentifier(match[2]);
+    if (!tableName || !columnName) {
+      return null;
+    }
+
+    return { tableName, columnName };
+  }
+
+  private normalizeSqlIdentifier(identifier: string): string {
+    const trimmed = String(identifier || '').trim().replace(/[;,]+$/, '');
+    const bracketMatch = /^\[(.*)\]$/.exec(trimmed);
+    if (bracketMatch) {
+      return bracketMatch[1];
+    }
+    const quoteMatch = /^"(.*)"$|^'(.*)'$|^`(.*)`$/.exec(trimmed);
+    if (quoteMatch) {
+      return quoteMatch[1] || quoteMatch[2] || quoteMatch[3] || '';
+    }
+    return trimmed;
+  }
+
+  private async checkIfColumnExists(tableName: string, columnName: string): Promise<boolean> {
+    const table = String(tableName).replace(/'/g, "''");
+    const pragmaQuery = `PRAGMA table_info('${table}')`;
+    const result = await this.database.executeSql(pragmaQuery, []);
+
+    for (let i = 0; i < result.rows.length; i++) {
+      const column = result.rows.item(i);
+      if (column?.name === columnName) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   getDataBaseState() {
     return this.databaseReady.asObservable();
   }
 
+  ensureTableVersionEntries(): Promise<void> {
+    const insertStatement =
+      'INSERT OR IGNORE INTO versionsTables (id_table, name_table, last_update, numreg) VALUES (?,?,?,0)';
+    const statements = this.tables
+      .filter(table => table.id < 99996)
+      .map(table => [
+        insertStatement,
+        [table.id, table.nameTable, this.DEFAULT_TABLE_LAST_UPDATE],
+      ]);
+
+    if (statements.length === 0) {
+      return Promise.resolve();
+    }
+
+    return this.database.sqlBatch(statements).then(() => undefined).catch(error => {
+      console.log('ensureTableVersionEntries error', error);
+    });
+  }
+
   getTablesVersion() {
-    return this.database.executeSql("SELECT * FROM versionsTables", []).then(data => {
-      let lists = [];
-      for (let i = 0; i < data.rows.length; i++) {
-        lists.push(data.rows.item(i));
-      }
-      return lists;
-    })
+    return this.ensureTableVersionEntries().then(() =>
+      this.database.executeSql('SELECT * FROM versionsTables', []).then(data => {
+        const lists = [];
+        for (let i = 0; i < data.rows.length; i++) {
+          lists.push(data.rows.item(i));
+        }
+        return lists;
+      }),
+    );
   }
 
   async getCreateTables(): Promise<Observable<any[]>> {
@@ -405,13 +485,18 @@ export class SynchronizationDBService {
   }
 
   updateVersionsTables(lastUpdate: string, idTable: number) {
-    let updateStatement = "UPDATE versionsTables SET last_update = ? WHERE id_table = ?;"
+    const tableMeta = this.tables.find(table => table.id === idTable);
+    const nameTable = tableMeta?.nameTable ?? '';
+    const upsertStatement =
+      'INSERT OR REPLACE INTO versionsTables (id_table, name_table, last_update, numreg) ' +
+      'VALUES (?, ?, ?, COALESCE((SELECT numreg FROM versionsTables WHERE id_table = ?), 0))';
+
     return this.database.executeSql(
-      updateStatement, [lastUpdate, idTable]).then(res => {
-        return true;
-      }).catch(e => {
-        console.log(e);
-      })
+      upsertStatement,
+      [idTable, nameTable, lastUpdate, idTable],
+    ).then(() => true).catch(error => {
+      console.log('updateVersionsTables error', error);
+    });
   }
 
   async insertGlobalConfiguration(obj: GlobalConfiguration[]) {
@@ -1885,6 +1970,31 @@ export class SynchronizationDBService {
     }
     return this.database.sqlBatch(statements).then(res => {
       console.log("insert unit_pricelist ready")
+      return res;
+    }).catch(e => {
+      console.log(e);
+    })
+  }
+
+  insertCollectRetentionsBatch(arr: CollectRetentions[]) {
+    var statements = [];
+    let insertStatement = "INSERT OR REPLACE INTO collect_retentions(" +
+      "id_collect_retention, co_collect_retention, na_collect_retention, require_input, nu_voucher_length, id_enterprise" +
+      ") " +
+      "VALUES(?,?,?,?,?,?)"
+
+    for (var i = 0; i < arr.length; i++) {
+      const row = arr[i] as CollectRetentions & { id_enterprise?: number };
+      const idEnterpriseResolved =
+        row.idEnterprise ?? row.id_enterprise ?? null;
+      statements.push([insertStatement, [row.idCollectRetention,
+      row.coCollectRetention, row.naCollectRetention, row.requireInput,
+      row.nuVoucherLength ?? 0,
+      idEnterpriseResolved]
+      ])
+    }
+    return this.database.sqlBatch(statements).then(res => {
+      console.log("insert collect_retentions ready")
       return res;
     }).catch(e => {
       console.log(e);

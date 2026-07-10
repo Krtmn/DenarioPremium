@@ -36,6 +36,7 @@ export class SynchronizationComponent implements OnInit {
 
   public messageAlert!: MessageAlert;
   private sqlTableMap: Record<string, { table: string, id: string, idName: string }> = {};
+  private sqlTableMapById: Record<number, { table: string, id: string, idName: string }> = {};
   private tableKeyOrder: number[] = []; // Orden de sincronización de tablas
   private selectedTableIds: number[] | null = null;
 
@@ -359,11 +360,29 @@ export class SynchronizationComponent implements OnInit {
  */
   private generateSqlTableMap() {
     for (const table of createTables) {
-      this.sqlTableMap[String(table.name)] = {
+      const sqlInfo = {
         table: table.name,
         id: String(table.id),
         idName: table.idName
       };
+      this.sqlTableMap[String(table.name)] = sqlInfo;
+      if (table.id != null) {
+        this.sqlTableMapById[Number(table.id)] = sqlInfo;
+      }
+    }
+  }
+
+  private resolveTableLastUpdate(tableKey: keyof TablesLastUpdate): string {
+    const stored = this.tables[tableKey];
+    if (typeof stored === 'string' && stored.trim() !== '') {
+      return stored;
+    }
+    return '1970-01-01 00:00:00.000';
+  }
+
+  private persistTableLastUpdate(tableKey: keyof TablesLastUpdate, updateTime: string): void {
+    if (typeof updateTime === 'string' && updateTime.trim() !== '') {
+      (this.tables as Record<string, string>)[tableKey as string] = updateTime;
     }
   }
 
@@ -812,7 +831,7 @@ export class SynchronizationComponent implements OnInit {
           const tableLastUpdateKey = this.insertConfig[key].tableKey;
 
           let tabla = {
-            [tableLastUpdateKey]: (this.tables as any)[tableLastUpdateKey],
+            [tableLastUpdateKey]: this.resolveTableLastUpdate(tableLastUpdateKey as keyof TablesLastUpdate),
             page: table.page
           };
 
@@ -822,7 +841,7 @@ export class SynchronizationComponent implements OnInit {
           from(this.services.getSync(JSON.stringify(tabla))).subscribe({
             next: (result) => {
               const resTable = (result.data as any)[rowKey];
-              const sqlInfo = this.sqlTableMap[key];
+              const sqlInfo = this.sqlTableMapById[tableId];
 
               if (!resTable) {
                 console.error(`[sync] No se recibió data para la tabla con key=${key} (tableId=${tableId})`);
@@ -836,6 +855,7 @@ export class SynchronizationComponent implements OnInit {
               // 2. Si no hay páginas, solo actualiza versión y avanza
               if (resTable.numberOfPages == 0) {
                 this.synchronizationServices.updateVersionsTables(resTable.updateTime, Number(resTable.id)).then(() => {
+                  this.persistTableLastUpdate(tableLastUpdateKey as keyof TablesLastUpdate, resTable.updateTime);
                   this.initProgress(this.PROGRESS, this.BUFF);
                   this.notifyProductMinMulSynced(key);
 
@@ -849,6 +869,7 @@ export class SynchronizationComponent implements OnInit {
                     this.syncNextTable(response);
                   } else if (resTable.numberOfPages == resTable.page) {
                     this.synchronizationServices.updateVersionsTables(resTable.updateTime, Number(resTable.id)).then(() => {
+                      this.persistTableLastUpdate(tableLastUpdateKey as keyof TablesLastUpdate, resTable.updateTime);
                       this.notifyProductMinMulSynced(key);
                       table.page = 0;
                       resolve(rowKey);
@@ -942,6 +963,10 @@ export class SynchronizationComponent implements OnInit {
       return cfgTrue('userCanSelectCollectDiscount');
     }
 
+    if ([83].includes(tableId)) {
+      return cfgTrue('retencion');
+    }
+
     if ([77, 78].includes(tableId)) {
       return cfgTrue('suggestedOrderByDispatchAndReturn');
     }
@@ -967,7 +992,7 @@ export class SynchronizationComponent implements OnInit {
   ): Promise<TablesLastUpdate | false> {
     return batchFn(rows).then(() => {
       const tableLastUpdate: Record<string, any> = {};
-      tableLastUpdate[tableKey as string] = this.tables[tableKey];
+      tableLastUpdate[tableKey as string] = this.resolveTableLastUpdate(tableKey);
       tableLastUpdate['page'] = resTable[pageKey] + 1;
       this.initProgress(this.PROGRESS / resTable[numberOfPagesKey], this.BUFF / resTable[numberOfPagesKey]);
       resTable[pageKey]++;

@@ -98,20 +98,13 @@ export class ClienteSelectorComponent implements OnInit {
     if (this.service.currencyModule) {
       this.loadCurrencyModule();
     }
+    this.checkUserStatus();
     this.noClientsAlertShown = false;
   }
 
   checkUserStatus(){
-        const userStr = localStorage.getItem("user");
-    if (userStr) {
-      try {
-        let user = JSON.parse(userStr);
-        this.transportista = user.transportista;
-        //se pueden agregar los otros roles luego, de ser necesario.
-      } catch (e) {
-        this.transportista = false;
-      }
-    }
+    this.clientLogic.checkUserStatus()
+    this.transportista = this.clientLogic.esTransportista;
   }
 
   getTag(tagName: string) {
