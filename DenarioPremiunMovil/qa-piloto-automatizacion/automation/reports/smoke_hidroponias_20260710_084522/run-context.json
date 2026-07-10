@@ -1,0 +1,22 @@
+{
+  "_generated_for": "hidroponias",
+  "_run_dir": "automation/reports/smoke_hidroponias_20260710_084522/",
+  "modules": {
+    "cobros": {
+      "cliente_normal": {
+        "na_client": "EXCELSIOR GAMA SUPERMERCADOS, C.A.",
+        "co_client": "206",
+        "docs": "102",
+        "saldo": "48085.11"
+      },
+      "cliente_igtf": null,
+      "_nota": "Descubierto en pre-vuelo BD. Para el documento exacto en UI, confirmar con local-query sobre document_sales + co_currency."
+    },
+    "pedidos": null,
+    "devoluciones": null,
+    "inventarios": null,
+    "visitas": null,
+    "depositos": null,
+    "clientes": null
+  }
+}

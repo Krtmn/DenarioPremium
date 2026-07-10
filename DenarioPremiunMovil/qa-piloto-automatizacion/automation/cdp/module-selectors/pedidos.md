@@ -1,0 +1,67 @@
+> Parte de `module-selectors/` — leer junto con `_comunes.md` (convención global).
+
+## Módulo PEDIDOS
+
+### Identidad
+- Ruta: `/pedidos` (home) → `/pedido` (form) · `/pedidosLista` (lista BUSCAR)
+- Componente home: `app-pedidos` (PEDIDO/BUSCAR/COPIAR) · Form: **`app-pedido`** (singular) · Lista: **`app-pedidos-lista`**
+- Leer totales/tabs/comentario desde `app-pedido`, NO `app-pedidos` (evita "innerText vacío"). `[ins-2610]`
+- Tabs formulario: General / Pedido / Total / Adjunto
+
+### Selectores probados
+| Elemento | Selector CSS / técnica | Corrida | Notas |
+|----------|------------------------|---------|-------|
+| Modal cliente | detectar con `classList.contains('show-modal')` | `[ins-2606]` | NO usar ausencia de overlay-hidden |
+| Empresa | `ion-select` idEnterprise preseleccionado | `[gmp-2606]` | |
+| Categorías producto | lista de grupos por marca/familia → click expande acordeón | `[gmp-2606][ins-2606]` | |
+| Producto = sub-acordeón anidado | Tab Pedido: cada categoría (ej. CAPRI 60) es `ion-list > div.product-structure-title.listaProductos > ion-item.listaItems` (texto "NN-NOMBRE ⟨conteo⟩"); click en la cabecera `ion-item.listaItems` inyecta los productos en el mismo `div.listaProductos`. **Cada producto es a su vez un sub-acordeón colapsado** → click en el `ion-item` lo expande y revela su input cantidad. **Dos niveles:** categoría → producto | `[gmp-2611][dth-2612][hidroponias-20260710]` | ⚠ **NO** es `ion-accordion`. el `ion-input[type="number"]` tiene height 0 mientras el producto está colapsado |
+| Producto = `ion-accordion` (build refactorizado El Yaque) | En ferrenuestro (Isla Coche, `window.ng=false`) los productos **SÍ** son `ion-accordion.product-structure-title.accordionPedidos` dentro de `ion-accordion-group`; header = `ion-item` (Nombre+Código+Precio+Inventario), contenido = `ion-grid.contenidoProductos` con `ion-input[type=number]` (height 0 colapsado). Click en el header (`y=top+30`) expande y revela el input | `[ferrenuestro-2026-07-07][hidroponias-20260710]` | ⚠ **CONTRADICE** la nota `[gmp-2611]` "NO es ion-accordion" — la estructura del Tab Pedido **difiere por build**: builds viejos = `div.listaProductos` anidado; build refactorizado El Yaque = `ion-accordion` real. Detectar por presencia de `ion-accordion-group` |
+| Alert "sin inventario" | `ion-alert#alertNB` "Denario / Este producto no tiene inventario. Verifique antes de enviar pedido." (botón OK) tras cargar cantidad a un producto sin stock | `[dth-2612]` | su `ion-backdrop` a pantalla completa **intercepta TODOS los clicks** posteriores (no se puede expandir otra categoría). Cerrar con `h.clickAlertButton(pg,'OK')` ANTES de continuar |
+| Cantidad producto | `ion-input[type="number"]` en acordeón; visibilidad por `getBoundingClientRect().height>0` (tras expandir el producto); `fillIonInput` + blur | `[ins-2606][gmp-2611]` | NO `offsetParent`; localizar por `type="number"` + height/width>0 |
+| Badge contador ítems | `app-pedido .contadorProductos` (conteo) + indicador `[color="success"]` (verde) en el ítem | `[gmp-2611]` | aparece tras cargar la cantidad |
+| Comentario (Tab General) | `ion-input#txComment` | `[ins-2610][dth-2612][jerez-2026-07-06]` | orden inputs General: `#clienteSelect`(0), Nº Orden(1), Responsable(2), `#txComment`(3); bajo el fold (scroll). `fillIonInput` (reactive form, NO ngModel). Round-trip §9: sobrevive Guardar→reabrir `[jerez-2026-07-06]` |
+| Match "Ref 0" en texto de lista | tras `replace(/\s+/g,' ')` el texto queda `Ref.: 0Cliente:` (el 0 pegado a "C") → `\b` NO funciona; usar `/Ref\.: 0[^0-9]/` | `[jerez-2026-07-06]` | localizar el ítem Guardado (Ref 0) en `app-pedidos-lista` sin confundir con Ref 10/20… |
+| Trash ítem (Tab Total) | dentro del acordeón del ítem (`ion-item` "Código: NNN", colapsado) → `ion-button[color="danger"]` + `ion-icon[name="trash"]` | `[ins-2610][hidroponias-20260710]` | expandir acordeón primero; borrado directo sin confirmación. ⚠ **build refactorizado El Yaque (ferrenuestro):** el trash dentro del `ion-accordion` del ítem NO recalcula con `mouse.click` ni Pointer down/up (DM-PED-026 BLOCKED) — difiere de insumar donde funcionó. ⚠ **ACTUALIZACIÓN:** hidroponias La Tortuga v6.6.18 SÍ recalcula con `mouse.click` (DM-PED-026 PASS), **contradice ferrenuestro** del mismo build — investigar divergencia. `[ferrenuestro-2026-07-07][hidroponias-20260710]` |
+| Searchbar lista | `ion-searchbar` "Pedidos..." | `[gmp-2606][ins-2606]` | filtra realtime (ionInput) |
+| Trash en lista (`app-pedidos-lista`) | `ion-button[color="danger"]` **estrecho (w≈29)** en el lado derecho del `ion-item` | `[gmp-2611][ins-2622]` | usar coords frescas exactas del botón danger; click en zona baja del item cae fuera del botón y navega al form. Borrado pide confirmación "¿Seguro que quieres eliminar este pedido?" |
+| Reabrir pedido Guardado Ref 0 vía CDP | a diferencia de COBROS (Ref 0 inestable), el pedido Guardado Ref 0 reabre su detalle con `pg.mouse.click(x, y*0.4 del item)` **sin** Pointer combinado | `[ins-2622]` | click en zona izquierda-centro del item evita el botón danger estrecho de la derecha |
+| Back de `app-pedidos-lista` | `img.fechaAtras` → `closest('a')` con **`pg.mouse.click` real** (coords ≈35,54), NO `dispatchEvent` | `[gmp-2611]` | `h.clickBack` (dispatchEvent) NO navega en pedidosLista |
+| Guardar / Enviar | `.imagenGuardar` / `.imagenEnviar` | `[gmp-2606]` | disabled sin ítems |
+| Selector Sucursal (Tab General) | `div#inputAddress > div.listado-tps-selector.inp-write2` — custom (NO ion-select estándar); disabled (`ng-reflect-is-disabled=true`) si `listaDirecciones=[]`; se auto-selecciona con 1 opción | `[prc-2606]` | # candidato — confirmar en otras playas. Tabs Pedido/Total/Adjunto permanecen disabled hasta que cliente tiene sucursal válida |
+| Espera tabs post-cliente (pedidos) | tras seleccionar cliente con sucursales, esperar ≈2s antes de verificar estado de tabs | `[prc-2606][jerez-2026-07-06]` | Angular carga `listaDirecciones` asíncronamente; no marcar FAIL en snapshot inmediato. También al **reabrir** un Guardado Ref 0: tabs Pedido/Total/Adjunto salen `disabled` en el snapshot inmediato y se habilitan ~2s después `[jerez-2026-07-06]` |
+
+### Flujo mínimo probado
+```
+1. Click PEDIDO → tabs disabled salvo General
+2. Seleccionar cliente (mouse.click real, no dispatchEvent) → alerta deuda vencida (si aplica) → ACEPTAR
+3. Tab Pedido → click categoría → click producto → fillIonInput cantidad → badge contadorProductos
+4. Tab Total: totales; trash dentro de acordeón = borrado directo
+5. Guardar (Nro.Ref:0) → reabrir desde lista → Enviar
+```
+
+### VG → DOM effects
+| VG | true | false |
+|----|------|-------|
+| `multiCurrency` | Tab Total muestra Bs. + USD | Tab Total solo USD `[gmp-2606]` |
+| `enterpriseEnabled` | ion-select Empresa obligatorio | sin selector |
+
+### Anti-patrones confirmados
+- `ion-item.click()` / dispatchEvent NO navega en `pedidosLista` — usar `pg.mouse.click(coords)`. `[gmp-2606]`
+
+### Notas por cliente
+- Texto envío: globalmp dice "Su Pedido será enviado"; insumar/romher confirman secuencia de 2-3 alertas hasta "Pedido nro. X enviado exitosamente". `[gmp-2606][ins-2606][rom-2606][ins-2610]`
+- **st_order piercar usa código 1 para Enviado** (en vez de 4); pedidos anteriores muestran `st_order=6`. Tabla de estados de piercar difiere — confirmar en próxima corrida. Reconfirmado en ferrenuestro (Isla Coche): pedido enviado `id_order=28458` con `st_order=1`=Enviado. `[prc-2606][ferrenuestro-2026-07-07]`
+- **ferrenuestro (Isla Coche): botón "Pedido Sugerido" NO aparece en Tab Pedido** pese a `suggestedOrder=true` — misma divergencia UI-vs-config que jerez. Posiblemente depende de `suggestedOrderByDispatchAndReturn` (=false en ferrenuestro). ⚠ VERIFICAR con desarrollo antes de tocar la VG. `[jerez-2026-07-06][ferrenuestro-2026-07-07]`
+- **Cliente sin sucursales (`listaDirecciones=[]`) deja tabs bloqueadas** en piercar: ej. "7 CARS". La sucursal se auto-selecciona si hay exactamente 1 entrada. Patrón consistente con INVENTARIOS y VISITAS (piercar). `[prc-2606]`
+- Borrado: en **Tab Total** directo sin confirmación; desde **lista** con alert "Pedidos / ¿Seguro que quieres eliminar este pedido?" Cancelar/Aceptar. `[gmp-2606][ins-2606][ins-2610]`
+- Dirty-guard atrás SÍ funciona vía CDP en insumar Y globalmp: form sucio + `img.fechaAtras`+`mouse.click` real (≈35,54) dispara modal "¡Alerta!" (Guardar y salir / Salir sin guardar / Cancelar). ⚠ Contradice la nota `[gmp-2606]` de COBROS (que requería hardware back en globalmp): **el dirty-guard vía CDP es por MÓDULO, no por cliente global** — en globalmp dispara en PEDIDOS/DEVOLUCIONES/DEPÓSITOS/VISITAS; solo COBROS quedó intermitente. En insumar dispara al **primer intento** sin Pointer combinado. `[ins-2610][gmp-2611][ins-2622]`
+- ⚠ **Guardar con `.imagenGuardar` (alert "Pedido Guardado") deja el form *pristine* → atrás sale directo SIN modal dirty-guard.** El dirty-guard solo dispara cuando el form tiene ítems agregados/editados **sin** guardar (DM-PED-032). Matiza la nota de reapertura "reabrir con ítems marca dirty": eso aplica al **reabrir** un Guardado (la rehidratación ensucia), no al recién Guardar. `[gmp-2611][ins-2622][jerez-2026-07-06]` (jerez: modal "¡Alerta!" 3 opciones al 1er intento con `img.fechaAtras`+`mouse.click` real; Guardar deja pristine → atrás directo)
+- **Reabrir un pedido Guardado con ítems marca el form dirty:** pulsar atrás **sin editar** SÍ dispara el modal "¡Alerta!" (la rehidratación de ítems ensucia el form). No es FAIL — comportamiento defensivo. Matiza DM-PED-032 ("reabrir sin editar → salida directa"). Confirmado también en don-theo (el back requirió `PointerEvent(pointerdown/up)+MouseEvent(click)` combinado sobre el `<a>` para disparar el dirty-guard tras reabrir). `[gmp-2611][dth-2612]`
+- "Guardar y salir" (opción del dirty-guard) guarda **silenciosamente**: navega directo a `/pedidos` sin alert "Pedido Guardado"; el pedido queda Guardado (Ref 0) verificable en BUSCAR. Confirma don-theo e insumar. `[gmp-2611][dth-2612][ins-2622]`
+- **Toggle de categoría se colapsa al cambiar de tab:** al volver a Tab Pedido desde otra tab, la categoría expandida se colapsa; re-expandir requiere click limpio (clicks consecutivos alternan abrir/cerrar — evitar doble click). `[dth-2612][ferrenuestro-2026-07-07]`
+- Tab Total insumar muestra **solo US$ pese a `multiCurrency=true`** (sin Bs.) — comportamiento del módulo, no FAIL. `[ins-2610]`
+- Defecto abierto DM-PED-032 (romher): modal "salir con ítems" no aparece si form pristine. `[rom-2606]`
+- **jerez: botón "Pedido Sugerido" NO aparece en Tab Pedido** pese a `suggestedOrder=true` (la divergencia UI-vs-config `suggestedOrderByDispatchAndReturn` se manifiesta en INVENTARIOS, no aquí). Tab Total solo USD (`multiCurrencyOrder=false`). Tras Enviar, el pedido quedó **"Por Enviar"** (H1 no-persistencia El Yaque), sin transitar a "Enviado"/Ref real en ~10s — sin cotejo BD no se afirma persistencia. `[jerez-2026-07-06]`
+- ✅ **[CONTRADICE jerez-2026-07-06] hidroponias Isla La Tortuga v6.6.18:** pedido Nro. 50 Enviado **SÍ persistió a nube íntegro** (id_order=50, BD-OK). **Resuelve H1 de jerez:** la no-persistencia era específica de El Yaque jerez (posible estado de BD pre-corrida), no del build v6.6.18 global. La Tortuga la v6.6.18 envíos funcionan OK. `[hidroponias-20260710]`
+
+---
