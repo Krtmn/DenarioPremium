@@ -1,0 +1,22 @@
+{
+  "_generated_for": "jerez",
+  "_run_dir": "automation/reports/smoke_jerez_20260630_181903/",
+  "modules": {
+    "cobros": {
+      "cliente_normal": null,
+      "cliente_igtf": {
+        "na_client": "INVERSIONES MOTO REPUESTOS EL PODER DEL MONO 2016 CUDEMUS",
+        "co_client": "089129288",
+        "docs": "2",
+        "saldo": "28.78"
+      },
+      "_nota": "Descubierto en pre-vuelo BD. Para el documento exacto en UI, confirmar con local-query sobre document_sales + co_currency."
+    },
+    "pedidos": null,
+    "devoluciones": null,
+    "inventarios": null,
+    "visitas": null,
+    "depositos": null,
+    "clientes": null
+  }
+}

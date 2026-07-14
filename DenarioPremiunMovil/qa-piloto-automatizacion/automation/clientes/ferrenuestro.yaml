@@ -1,0 +1,327 @@
+# ferrenuestro/ferrenuestro.yaml
+# Cliente NUEVO: FERRENUESTRO — 1ª corrida (sin datos de prueba confirmados todavía).
+#
+# VGs pobladas desde el dump autoritativo de configuración (misma carpeta clientes/):
+#   global_configuration_202607071252_FERRENUESTRO.md  (tabla global_configuration, snapshot 2026-07-07; G/P/C, ~172 filas)
+# Las llaves coinciden 1:1 con globalConfig.get("<clave>") del código.
+# Decisión QA (2026-07-07): la fuente efectiva de VGs es el archivo global_configuration_2026...FERRENUESTRO.md.
+#   El segundo archivo global_configuration_client_...FERRENUESTRO.md (da_update 2023-02-01) NO se usa: es el seed base antiguo
+#   (misma lógica que jerez, que descartó su global_configuration_client 2022).
+#
+# ⚠ 1ª corrida: los datos de prueba (cliente/factura/estructura/producto) están en TBD.
+#   El agente debe DESCUBRIRLOS navegando las listas durante la corrida y reportarlos
+#   para consolidarlos en este YAML al cierre.
+# ⚠ El agente debe VERIFICAR las VGs contra la UI y MARCAR DISCREPANCIAS (dump dev vs app = posible bug de config).
+
+cliente_id: ferrenuestro
+cliente_nombre: "FERRENUESTRO MAYOR,"    # CONFIRMADO 2026-07-07: empresa única mostrada en detalle/selector (idEnterprise 1, coEnterprise "00001"). ⚠ el rótulo llega con COMA FINAL en el textContent del ion-select-option. enterpriseEnabled=true pero 1 sola empresa (sin gateway multi-empresa).
+ws_url: "http://denarioislacoche.ddns.net:8081/PremiumWS/services/"   # CONFIRMADO QA 2026-07-07: playa Isla Coche. Bloque activo en ../../claves.env "Isla Coche / FERRENUESTRO (main)". APK ya apunta aquí.
+apk_package: com.kiberno.denarioPremiumPro
+db_name: ferrenuestro                    # CONFIRMADO QA 2026-07-07. Conexión read-only en el bloque "# Cliente: ferrenuestro" de secrets/qa-db.env (RDS savia, user_read, base ferrenuestro). Verificación BD OPERATIVA (probada con node automation/db/query.js ferrenuestro "...").
+                                         # VGs VALIDADAS 1:1 contra BD viva 2026-07-07 (22 claves críticas, 0 discrepancias — global_configuration=170 VGs).
+                                         # Baseline pre-corrida 2026-07-07: order=5005, collection=347, return=18, client_stock=0, deposit=0, visit=4, potential_client=87 (clients=3384, product=4965).
+                                         # ⚠ Nombres de tabla: client (NO clients), order (reservada → usar "order"), collection, return (reservada → usar "return"), client_stock, deposit, visit, potential_client.
+
+# ── VGs (fuente: dump dev global_configuration 2026-07-07; VERIFICAR vs UI en corrida) ──
+# ⚠ DIFERENCIAS CLAVE que afectan cobertura del smoke:
+#   - requiredCollectionAttachments=TRUE  → cobro REQUIERE adjunto → DM-COB-019/029 SKIP envío (quedan Guardados; adjunto manual QA)
+#   - validateReturn=FALSE                → devoluciones NO valida que el producto exista en factura (requeridedNroFactura=true igual pide nro factura)
+#   - clientStock=FALSE + requireClientStock=FALSE → módulo TOMA DE INVENTARIO EN CLIENTE NO habilitado → smoke Inventarios N/A ESTRUCTURAL (confirmar en UI)
+#   - cobroRetencion=TRUE + retencion=TRUE→ AMBAS retenciones aplican: DM-COB-029 (botón +RETENCIÓN) Y DM-COB-041/042 (detalle documento)
+#   - userCanSelectIGTF=FALSE             → DM-COB-036/044/045 N/A ESTRUCTURAL (sin selector IGTF)
+#   - userCanCollectIva=FALSE             → DM-COB-037 (cobro 25% IVA) N/A ESTRUCTURAL
+#   - enabledManualRate=TRUE / canChangeRate=FALSE → DM-COB-039 rama A (tasa manual) APLICA; DM-COB-047 (cambiar fecha tasa) N/A
+#   - enterpriseEnabled=TRUE / userMustActivateGPS=FALSE / transportRole=FALSE
+vgs:
+  # Globales
+  multiCurrency: true                    # [dump] id10
+  userMustActivateGPS: false             # [dump] id7 → GPS NO obligatorio para transacciones
+  userCanSaveGPS: true                   # [dump] id8
+  enterpriseEnabled: true                # [dump] id9 → campo empresa habilitado en módulos
+  showCamera: true                       # [dump]
+  userCanUploadFiles: true               # [dump] → acordeón Archivo/Adjuntos
+  emailWithAttach: true                  # [dump]
+  quAttach: 25                           # [dump]
+  quFileAttach: 1                        # [dump]
+  cloudAttachments: false                # [dump] → adjuntos en servidor local
+  imageWeightLimit: 30                   # [dump] MB
+  longitudComentario: 200                # [dump]
+  parteDecimal: 2                        # [dump]
+  parteElntera: 15                       # [dump]
+  tagRif: "RIF"                          # [dump]
+  tagIVA: "IVA"                          # [dump]
+  checkAddressClient: true               # [dump] → confirma cambio de sucursal en transacciones
+  addressByUser: false                   # [dump]
+  logoClient: false                      # [dump]
+  visitRout: true                        # [dump]
+  transportRole: false                   # [dump] → rol transportista NO
+  promoterRole: false                    # [dump]
+  rolPlanta: false                       # [dump]
+  transactionHistory: true               # [dump]
+  historyMonths: 1                       # [dump]
+  transactionCoordinateRadius: 50        # [dump]
+  currencyModule: true                   # [dump]
+  conversionCalculator: false            # [dump]
+
+  # Pedidos
+  multiCurrencyOrder: false              # [dump] Tab Total solo moneda por defecto
+  userCanChangePriceList: true           # [dump] → puede cambiar lista de precio (DM-PRD-013 aplica)
+  userCanChangePriceListProduct: true    # [dump] → cambiar lista de precio por producto
+  unitByPriceList: false                 # [dump]
+  pricelistByOrderType: false            # [dump]
+  conversionByPriceList: false           # [dump]
+  showStock: true                        # [dump]
+  stock0: false                          # [dump] → NO permite pedir productos con stock 0
+  hideStock0: true                       # [dump] (depende de stock0)
+  productStock0: false                   # [dump]
+  validStock: true                       # [dump]
+  validateWarehouses: true               # [dump] → muestra almacenes/inventario en toma de pedido
+  userCanChangeWarehouse: false          # [dump]
+  showWarehouseDetails: true             # [dump]
+  hideProductWarehouse: false            # [dump]
+  userCanSelectGlobalDiscount: false     # [dump] → sin descuento global en pedido
+  userCanSelectProductDiscount: false    # [dump] → sin descuento por producto (setProductDiscount=false)
+  setProductDiscount: false              # [dump]
+  setMaxProductDiscount: 0               # [dump]
+  userCanSelectIVA: false                # [dump]
+  showCreditLimit: true                  # [dump] → Tab Total muestra límite de crédito
+  userCanChangePaymentConditions: true   # [dump] → puede cambiar condición de pago
+  selectOrderType: true                  # [dump] → campo "tipo de pedido" habilitado
+  orderTypeByEnterprise: false           # [dump]
+  validateNuOrder: false                 # [dump] → nro orden de compra NO obligatorio
+  orderPedidoSeleccion: true             # [dump]
+  groupByTotalByLines: false             # [dump]
+  productMinMul: true                    # [dump] → limita productos por múltiplo (PRODUCT_MIN_MUL_FAV)
+  featuredProducts: true                 # [dump] línea destacada
+  nameProductLine: "DESTACADOS"          # [dump]
+  suggestedOrder: true                   # [dump] → botón "Pedido Sugerido"
+  suggestedOrderByDispatchAndReturn: false  # [dump]
+  disableDaDispatch: true                # [dump] fecha despacho opcional/deshabilitada
+  hideProdWithoutPrice: false            # [dump]
+  quUnitDecimals: false                  # [dump]
+  totalUnit: true                        # [dump]
+  showTotalProductUnit: true             # [dump]
+  showTotalization: true                 # [dump]
+  displayProductPoints: false            # [dump]
+  quPageProduct: 50                      # [dump]
+  userCanSelectChannel: false            # [dump]
+
+  # Productos
+  showProductImages: true                # [dump]
+  productsOrderBy: "co_product"          # [dump]
+  clientsOrderBy: "co_client"            # [dump]
+  vatExemptProducts: false               # [dump]
+  priceListInfoModal: false              # [dump]
+  priceListByZone: false                 # [dump]
+  allowProductReports: false             # [dump]
+  productValor: false                    # [dump]
+
+  # Devoluciones — validateReturn=FALSE (NO valida producto en factura)
+  validateReturn: false                  # [dump] id24 → NO valida que el producto exista en factura enviada
+  requeridedNroFactura: true             # [dump] → nro factura igual REQUERIDO en devoluciones
+  multiInvoices: false                   # [dump] → NO se permiten productos de varias facturas en una devolución
+  mesesFacturas: 3                       # [dump]
+  signatureReturn: true                  # [dump]
+
+  # Inventarios (toma de inventario en cliente)
+  clientStock: false                     # [dump] id26 → ⚠ módulo toma de inventario en cliente NO habilitado → smoke Inventarios N/A ESTRUCTURAL (confirmar en UI)
+  requireClientStock: false              # [dump]
+  expirationBatch: true                  # [dump] → Lote+Fecha en modal (solo relevante SI clientStock se habilitara)
+  signatureStock: true                   # [dump]
+
+  # Visitas
+  signatureVisit: false                  # [dump] id29 → SIN acordeón firma en visitas (≠ mayoría de clientes)
+
+  # Cobros
+  requiredCollectionAttachments: true    # [dump] → cobro REQUIERE adjunto → DM-COB-019/029 SKIP envío (quedan Guardados, adjunto manual QA)
+  requiredComment: false                 # [dump] → DM-COB-006 N/A
+  cobroPrepago: true                     # [dump] → DM-COB-028 (Anticipo) aplica
+  requiredAnticipoAttachments: false     # [dump]
+  automatedPrepaid: true                 # [dump] → abono automático por diferencia positiva
+  prepaidPaymentMethod: "pa"             # [dump]
+  prepaidRangeAmount: 1                  # [dump]
+  prepaidRangeCurrency: "$"              # [dump]
+  cobroRetencion: true                   # [dump] → botón +RETENCIÓN del menú → DM-COB-029 aplica
+  retencion: true                        # [dump] → campos retención en detalle de documento → DM-COB-041/042 aplican
+  retentionDocTypeCR: true               # [dump] → maneja documentos de retención
+  userCanAddRetention: true              # [dump] → retención libre sin factura → DM-COB-032 aplica
+  requiredRetentionAttachments: false    # [dump]
+  sizeRetention: 14                      # [dump] → nro comprobante retención = 14 dígitos
+  formatRetention: "0"                   # [dump] valor 0 = Numeros (solo dígitos)
+  alwaysRetention: false                 # [dump]
+  missingRetention: false                # [dump]
+  userCanSelectIGTF: false               # [dump] → ⚠ SIN selector IGTF → DM-COB-036/044/045 N/A ESTRUCTURAL
+  igtfDefault: false                     # [dump]
+  disableCheckIGTF: false                # [dump]
+  userCanCollectIva: false               # [dump] → DM-COB-037 (cobro 25% IVA) N/A ESTRUCTURAL
+  enablePartialPayment: true             # [dump] → DM-COB-046 (pago parcial) aplica round-trip
+  alwaysPartialPayment: false            # [dump]
+  historicPartialPayment: true           # [dump]
+  historicoTasa: true                    # [dump] → selector de tasas anteriores (mesesTasa=3)
+  mesesTasa: 3                           # [dump]
+  enabledManualRate: true                # [dump] → DM-COB-039 rama A (tasa manual) APLICA
+  canChangeRate: false                   # [dump] → ⚠ DM-COB-047 (cambiar fecha tasa) N/A
+  validateCollectionDate: false          # [dump]
+  multiCurrencyCollection: true          # [dump] → DM-COB-033/034 aplican
+  multiCurrencyDeposit: true             # [dump]
+  currencyBank: false                    # [dump] → solo bancos de la moneda seleccionada en el cobro
+  clientBankAccount: false               # [dump]
+  tolerancia0: true                      # [dump] → permite cobros con diferencia (tolerancia)
+  TipoTolerancia: "0"                    # [dump] 0 = Importe
+  MonedaTolerancia: "$"                  # [dump]
+  RangoToleranciaPositiva: 100000        # [dump]
+  RangoToleranciaNegativa: 100000        # [dump]
+  userCanSelectCollectDiscount: true     # [dump] → descuentos en cobros habilitados → DM-COB-031 aplica
+  enableDifferenceCodes: false           # [dump] → sin selector de origen de diferencia
+  showTransactionCurrency: true          # [dump]
+  showExchangeRateSelector: false        # [dump]
+  reconciliation: false                  # [dump]
+  streetDay: false                       # [dump]
+  # colletionPayment (id78) = true-false-true-true-true-true → Efectivo, Transferencia, Deposito, Otros, Pago Movil (Cheque OFF)
+  #   → Efectivo HABILITADO ⇒ módulo Depósitos APLICA (requiere cobro con Efectivo). multiCurrencyDeposit=true.
+
+  # Vendedores
+  infoVendedores: false                  # [dump] id38 → módulo vendedores autogenerado en la app (no admin)
+  commisionReport: false                 # [dump]
+  esVendedor: true                       # CONFIRMADO QA 2026-07-07: el usuario de secrets/qa-credentials.env es vendedor → módulo Vendedores APLICA.
+
+  # Notificaciones (todas OFF en el dump; no observables en smoke)
+  notificationsOrder: false              # [dump]
+  notificationsCollection: false         # [dump]
+  notificationsDeposit: false            # [dump]
+  notificationsReturn: false             # [dump]
+  notificationsPotentialClient: false    # [dump]
+  notificationsClientStock: false        # [dump]
+  notificationsVisit: false              # [dump]
+
+# ── Datos de prueba (1ª corrida: TBD — el agente los descubre y se consolidan al cierre) ──
+modules:
+  login:
+    bad_password: Test-LOG-003
+
+  clientes:
+    cliente_busqueda: "INSTRUELECT IMPORT"   # CONFIRMADO 2026-07-07: primer cliente por co_client (código 1001785618). Buscar filtró 41→1.
+    cliente_detalle: "INSTRUELECT IMPORT,C.A · código 1001785618 · RIF J-412635530 · Saldo Bs. 165,54 · Crédito $ 2.000,00 · Cond. Pago 002-CREDITO · 1 doc. de venta (Nº 00034302, venc 23/07/2026)"
+    empresa_idEnterprise: 1             # value NUMÉRICO (no string) — con 1 sola opción NO se auto-selecciona; asignar sel.value=1 (number)+ionChange. coEnterprise "00001", rótulo "FERRENUESTRO MAYOR," (coma final).
+    signatureClient_no_bloquea: true    # CONFIRMADO 2026-07-07: pese a signatureClient=true en config, Guardar/Enviar del potencial habilitan con solo los 9 controles (8 inputs + idEnterprise); la firma NO es requisito para persistir/enviar.
+    # BD: cliente potencial enviado → id_client 94 (Ref UI 94 = id_client, correlación reconfirmada); st_potential_client=1 (Enviado); BD-FIELD-OK 17/17. Guardado→borrado NO llega a nube (correcto).
+
+  pedidos:
+    cliente_test: "TORNICAGUA, C.A."   # CONFIRMADO 2026-07-07: código 121793873, id_client 504, CON sucursal (auto-selecciona "CTRA NACIONAL CAGUA LA VILLA EDIF SAN ANTONIO…") → habilita tabs.
+    estructura_producto: "17 categorías por familia (LINEA): AGRICOLA(319), AUTOMOTRIZ(336), BOMBILLOS(64), CERRAJERIA(161), CONSTRUCCION(543), DESCUENTOS VARIOS(1), ELECTRICIDAD(555), GALVANIZADO(184), GRIFERIA(199), HERRAMIENTAS ELECTRICAS(18), HERRAMIENTAS MANUALES(191), MISCELANEOS(347), PEGAMENTOS(110), PINTURA(183), PLOMERIA(191), PROMOCION(0), PVC(241)"
+    alerta_deuda_vencida: true         # CONFIRMADO 2026-07-07: al seleccionar TORNICAGUA → "Pedidos / Este cliente tiene deuda vencida, ¿Desea continuar…" (Cancelar/Aceptar).
+    multiCurrencyOrder: false          # Tab Total solo US$ (sin Bs.) — verificado.
+    showCreditLimit: true              # "Límite de Crédito: 2.000,00" en Tab Total — verificado.
+    producto_test: "TALADRO INALAMBRICO 20V-2.0 Ah 10mm METCO"  # código 080178, idProduct 196, BULTO-1, Precio 86,40 $ / +IVA 100,22 $, estructura HERRAMIENTAS ELECTRICAS. Alt: ESMERIL ANGULAR 4 1/2 750W METCO (080401).
+    suggestedOrder_divergencia: true   # ⚠ DIVERGENCIA: suggestedOrder=true pero botón "Pedido Sugerido" NO aparece en Tab Pedido (igual que jerez; posible que dependa de suggestedOrderByDispatchAndReturn=false). VERIFICAR con desarrollo.
+    build_ion_accordion: true          # productos en Tab Pedido = ion-accordion.accordionPedidos (build El Yaque), CONTRADICE gmp "NO es ion-accordion". DM-PED-026 (trash Tab Total) BLOCKED por CDP en este build.
+    # BD: pedido enviado → id_order 28458 (Ref UI = id_order), st_order=1=Enviado, BD-FIELD-OK 35/35 + 2 líneas. Payload orderservice/order SÍ capturado. Guardado→borrado NO llega a nube (correcto).
+
+  cobros:
+    cliente_test: "TORNICAGUA, C.A."   # CONFIRMADO 2026-07-07: usado para cobro normal/retención/anticipo. 14 documentos tipo 11 en $ (Moneda Documento=$; en Bs. la lista sale vacía).
+    cliente_code: "121793873"          # id_client 504
+    tasa_dia: "652,97 BS/USD"          # tasa del día; #manualRateInput editable (enabledManualRate=true) — cambiado a 700 y persistió (round-trip §9).
+    # ⚠ NO usar lista fija: qué cliente tiene documentos VARÍA (las facturas se cobran/drenan).
+    #   DESCUBRIR EN RUNTIME navegando el modal de clientes con documentos (o query BD local cuando db_name esté configurado).
+    clientes_con_documentos:           # BD 2026-07-07 (nu_balance>0, ordenado por nº docs; todos USD "$"). La UI filtra más que la BD → probar en orden.
+      - "GRUPO GRAVEN, C.A"                        # id_client 1676 — 238 docs USD, saldo 28.655,38
+      - "OSWALDO CASTILLO GOYO"                    # id_client 2654 — 215 docs USD, saldo 30.943,12
+      - "INVERSIONES NUEVO HORIZONTE 2020, C.A."   # id_client 2386 — 143 docs USD, saldo 11.351,87
+      - "FERREMATERIALES LASH ,C.A"                # id_client 521 — 141 docs USD, saldo 22.957,42
+      - "TORNICAGUA, C.A."                         # id_client 504 — 125 docs USD, saldo 39.343,28
+      - "FERRE.RAPIDO"                             # id_client 2203 — 118 docs USD, saldo 19.177,88
+    cliente_25iva: null                # N/A ESTRUCTURAL — userCanCollectIva=false (DM-COB-037 N/A)
+    metodo_pago: "Efectivo"            # colletionPayment: Efectivo/Transferencia/Deposito/Otros/Pago Movil (sin Cheque)
+    banco_deposito: "N/A"              # metodo_pago=Efectivo (no Depósito); bancos ver modules.depositos.banco
+    documento_retencion: "00037108"    # CONFIRMADO 2026-07-07: usar 00037108 (saldo Bs 43.200,50 sano) para retención/pago parcial. ⚠ NO usar 00037106 (base Bs anómala 0,03 para 16,68 $ → la retención excede el documento y bloquea Guardar del detalle → DM-COB-042 BLOCKED). Mecanismo de retención validado en DM-COB-041.
+    monto_retencion_iva: "5,00"        # ejemplo usado (teclear dígitos "500")
+    monto_retencion_islr: "3,00"       # ejemplo usado (teclear dígitos "300"); "Monto total retenido" computa 8
+    moneda_cobro: "BS/USD"             # multiCurrencyCollection=true → ambas disponibles (ion-select value=objeto {coCurrency,localCurrency,hardCurrency})
+    fecha_tasa_editable: false         # canChangeRate=false → DM-COB-047 N/A. enabledManualRate=true → DM-COB-039 rama A (tasa manual 700 aceptada) aplica
+    pago_parcial_toggle: true          # enablePartialPayment=true → DM-COB-046 PASS (parcial 0,50 persiste round-trip)
+    retencion_via_detalle: true        # retencion=true → DM-COB-041/042 (detalle: Nro Comp Ret 14 díg habilita IVA/ISLR/Fecha; modal cierra en silencio, sin alert); cobroRetencion=true → DM-COB-029 (+RETENCIÓN menú)
+    adjunto_obligatorio: true          # requiredCollectionAttachments=true → DM-COB-019/029 SKIP envío; cobros quedan Guardados pendientes de adjunto manual. Nube collection permaneció en 347 (nada salió sin adjunto — correcto).
+    mock_camara_funciona: false        # CONFIRMADO 2026-07-07: build PROD (window.ng=false); TOMAR FOTO no conducible por CDP y la foto no entra al carrusel (igual romher/piercar/El Yaque). NO llamar ensureAdjunto; ir directo a Guardar + BD-SAVED.
+    metodo_pago_disponibles: "Efectivo, Depósito, Transferencia, Otros, Pago Móvil"  # SIN Cheque (coherente colletionPayment)
+    automatedPrepaid_operativo: true   # sobrepago (diferencia positiva) → "Anticipo automático creado con X" y guarda el anticipo junto al cobro
+    sizeRetention: 14                  # confirmado en UI ("Debe tener 14 caracteres")
+    smoke_na_estructural:
+      - "DM-COB-006: requiredComment=false → comentario no obligatorio → N/A"
+      - "DM-COB-036/044/045: userCanSelectIGTF=false → sin selector IGTF → N/A ESTRUCTURAL"
+      - "DM-COB-037: userCanCollectIva=false → sin cobro 25% IVA → N/A ESTRUCTURAL"
+      - "DM-COB-047: canChangeRate=false → no se cambia fecha de la tasa → N/A"
+      - "DM-COB-019/029 (envío): requiredCollectionAttachments=true → SKIP envío (queda Guardado), reportar pendiente de adjunto manual"
+
+  devoluciones:
+    # validateReturn=false → NO valida que el producto exista en factura; requeridedNroFactura=true → nro factura igual requerido.
+    # multiInvoices=false → una devolución = una sola factura.
+    cliente_test: "TORNICAGUA, C.A."   # CONFIRMADO 2026-07-07: id_client 504, código 121793873. Cartera activa, tabs habilitan OK.
+    factura_test: "N/A por VG"        # validateReturn=false → NO hay selector/modal de factura en cabecera (#InvoiceeSelectModal NO se alcanza → DM-DEV-011 N/A). El Nro Factura es campo LIBRE dentro del acordeón del producto (se usó "000123").
+    producto_test: "ALDABA PORTACANDADO 2 LAT CAL.18 C/TOR"  # coProduct 0019, idProduct 2, familia CERRAJERIA, unidad UND.
+    tipos_devolucion: "Calidad(60,default) / Cambio X Cambio(63) / Servicio(59)"  # como globalmp/don-theo; SIN PostVenta(52).
+    # BD: devolución enviada → return id=191 (co_return 1783476275479.0). ⚠ Durante la corrida se marcó "Por Enviar"/BD-SAVED porque no apareció en nube tras poll ~3min; el diff final confirmó que SÍ persistió (sync DIFERIDA, ver nota_sync_diferida). Payload returnservice/return SÍ capturado.
+
+  inventarios:
+    aplica: true                       # ⚠ CORREGIDO 2026-07-07: pese a clientStock=false, el módulo SÍ aparece en HOME y es 100% operable end-to-end (divergencia config↔UI, igual a piercar). El inventario PERSISTIÓ en nube (client_stock id=101).
+    motivo_na: null
+    divergencia_clientStock: "clientStock=false pero módulo operable en UI. VERIFICAR con desarrollo si debe ocultarse el módulo o si el valor efectivo difiere. NO es gate de servidor: el registro persistió (sync diferida ~3min)."
+    cliente_test: "TORNICAGUA, C.A."   # id_client 504, código 121793873.
+    expirationBatch: true              # confirmado en UI: modal inventory-type-stocks-modal con Cantidad+Lote+Fecha (expDate0 default HOY), tipo fijo "Exhibición - 1" SIN segmento.
+    tab_inventario: "sub-segmentos UBICACIÓN (EXHIBICIÓN/DEPÓSITO) + FILTRO (TODOS/INVENTARIADOS) + input 'Búsqueda de productos'; familias con conteo; familia sin stock de la ubicación → 'No hay productos disponibles'"
+    suggestedOrder_divergencia: true   # ⚠ botón "PEDIDO SUGERIDO" (botonAddAmarillo) activo pese a suggestedOrderByDispatchAndReturn=false (misma divergencia que jerez/piercar). Modal inventario-sugerido-modal funcional. VERIFICAR con desarrollo.
+    # BD: inventario enviado → client_stock id=101 (TORNICAGUA). "Por enviar"/Ref 0 durante la corrida; el diff final confirmó persistencia (sync DIFERIDA, ver nota_sync_diferida). Defecto conocido DM-INV-026 (reapertura abre en tab General) confirmado, no FAIL.
+
+  depositos:
+    aplica: true                       # CONFIRMADO 2026-07-07 con dato vivo: selector Banco con 7 opciones + 13 cobros Efectivo depositables (Bs., cobros ENVIADOS históricos de la nube). Flujo end-to-end ejecutado.
+    motivo_na: null
+    banco: "BANESCO BS JU (idBankAccount 409, coBank 009, cuenta 01340135721351027429)"  # banco usado. 7 bancos disponibles (ion-select.selectbanco, value=objeto):
+    bancos:                            # idBankAccount / nombre / coBank / cuenta
+      - "403 EFECTIVO BS (coBank 010)"
+      - "404 BANESCO ROGER (012)"
+      - "405 BNC JOSE (013)"
+      - "406 MERCANTIL JU (014, cta 8029810)"
+      - "407 BNC BS JU (007, 2008265)"
+      - "408 VENEZUELA BS JU (008, 0115144)"
+      - "409 BANESCO BS JU (009, cta 01340135721351027429)"
+    moneda: "BS/USD"                   # multiCurrencyDeposit=true (Bs. idCurrency 2 default / $ idCurrency 1)
+    envio_alerts: 2                    # 2 alerts (≠ jerez 3; coincide insumar): "Denario Depósito — El Depósito será enviado" Cancelar/Aceptar → "Denario Premium — El Depósito será enviado" OK.
+    # BD: depósito enviado → deposit id=1 (Banco 009, cobro STUDIO KYNWOD 541,17 Bs). "Por Enviar"/Ref 0 durante la corrida; el diff final confirmó persistencia (sync DIFERIDA, ver nota_sync_diferida). Defecto render deposit.service.ts reprodujo intermitente y recuperable con back (no bloqueó).
+
+  visitas:
+    cliente_test: "TORNICAGUA, C.A."  # CONFIRMADO 2026-07-07: id_client 504, co_client 121793873, CON sucursal (idAddressClient 67213, coAddressClient 4890, sin coordenadas → alert dismissible al SELECCIONAR, no bloquea).
+    signatureVisit: false             # CONFIRMADO en UI: Tab Adjuntos sin acordeón Firma. userCanUploadFiles=true (acordeón Archivo presente).
+    actividades: "12, TODAS requiredEvent=true / requiredSignature=false: NO VISITO(2), MERCHANDISING(47), NO COMPRO(71), VISITA FUERA DE RUTA(75), COBRANZA(82), INFO DE CLIENTES(83), COBRANZA NO EFECTIVA(84), VENTA EN RUTA(85), EVENTOS(86), REUNION CON CLIENTE(87), Cuestonario(90), Cambio X Cambio(92)"
+    motivos_merchandising: "ENTREGA DE MUESTRAS(153), LEVANTAMIENTO DATA ISSY(183), VISIBILIDAD PDV(184), PLAN SLIP(191), MUESTRA NUEVO CATALOGO(192)"
+    # BD: visita enviada → id_visit 5 (Ref UI 5 = id_visit), st_visit=2=Enviado, is_visited=true, inc=1, BD-FIELD-OK 21/21 + incidence. ⚠ VISITAS SÍ persiste de inmediato (~8s), a diferencia de dev/inv/dep (sync diferida ~3min).
+    smoke_na_estructural:
+      - "DM-VIS-025/026: dependen de RUTA DE HOY con visitas 'No Visitado' sincronizadas (variable por día; esta corrida sin ellas)"
+
+  productos:
+    tipo_estructura_default: "LINEA"  # CONFIRMADO 2026-07-07: idTypeProductStructure 1, coTypeProductStructure "01", nuLevel 1. ÚNICO tipo → DM-PRD-002 N/A estructural (selector con 1 opción).
+    texto_busqueda: "TALADRO"         # 8 resultados en HERRAMIENTAS ELECTRICAS.
+    estructuras: 17                   # LINEA: AGRICOLA(319), AUTOMOTRIZ(336), BOMBILLOS(64), CERRAJERIA(161), CONSTRUCCION(543), DESCUENTOS VARIOS(1), ELECTRICIDAD(555), GALVANIZADO(184), GRIFERIA(199), HERRAMIENTAS ELECTRICAS(18), HERRAMIENTAS MANUALES(191), MISCELANEOS(347), PEGAMENTOS(110), PINTURA(183), PLOMERIA(191), PROMOCION(0), PVC(241)
+    listas_precio: "PRECIO 1 (idList 1, coList P0001) / PRECIO 2 (idList 2, coList P0002)"  # userCanChangePriceList=true → DM-PRD-013 PASS: 86,40 $ → 63,94 $ recalcula.
+    solo_precio_usd: true             # ⚠ detalle Y product-list muestran solo precio USD ($), SIN Bs (a diferencia de gmp/don-theo/jerez).
+    producto_ejemplo: "TALADRO INALAMBRICO 20V-2.0 Ah 10mm METCO · cód 080178 · PRECIO 1 = 86,40 $ / PRECIO 2 = 63,94 $ · Almacén ALMACEN (idWarehouse 1)"
+    # quPageProduct=50 confirmado (paginación 50→100→150). hideProductWarehouse=false muestra almacén/stock.
+
+  vendedores:
+    aplica: true                     # CONFIRMADO QA 2026-07-07: usuario QA es vendedor → módulo aplica. infoVendedores=false → autogenerado por Denario.
+    kpis_poblados: true              # CONFIRMADO 2026-07-07: DM-VND-002 PASS pleno (no N/A). 1 empresa "FERRENUESTRO MAYOR,". Cartera Clientes 178 · Activados 13 · Nuevos 1 · Nuevos Activados 1 · Días Hábiles 23/Transcurridos 6/Restantes 17 · Venta Real Mes 7.610,09 $. Alinea con insumar/piercar (contrasta con gmp/don-theo/jerez vacíos).
+
+# ── Nota transversal de cliente: sync a nube DIFERIDA (Isla Coche) ────────────────
+# ⚠ nota_sync_diferida (descubierto 2026-07-07, corrida 20260707_175334):
+#   En Isla Coche/ferrenuestro la sincronización a la nube es DIFERIDA, NO no-persistencia tipo jerez.
+#   Devoluciones/inventarios/depósitos se marcaron "Por Enviar"/BD-SAVED durante la corrida porque tras la
+#   ventana de poll de los agentes (~10s–3min) la fila aún no aparecía en la nube — PERO el diff final de
+#   baseline al cierre confirmó que los TRES persistieron: return id=191, client_stock id=101, deposit id=1
+#   (todos verificados como nuestros por id_client=504 TORNICAGUA + co_* coincidente con el payload).
+#   La cola de salida (AutoSendService) reintenta y confirma más tarde. Visitas/pedidos/clientes SÍ persisten
+#   de inmediato (~8s). ⚠ Acción futura: ampliar el poll de la verificación BD inline o hacer un 2º pase de
+#   baseline-diff al cierre para no reportar falsos BD-SAVED. NO promover a memoria global (nota de cliente).
+
+# ── Última corrida ──────────────────────────────────────────────────────────────
+ultima_corrida:
+  run_id: "20260707_175334_smoke-completo"   # 1ª corrida COMPLETA 10/10: 123 PASS · 0 FAIL · 1 SKIP · 11 N/A · 2 BLOCKED (137 casos)
+  fecha: "2026-07-07"
+  defectos_abiertos: []

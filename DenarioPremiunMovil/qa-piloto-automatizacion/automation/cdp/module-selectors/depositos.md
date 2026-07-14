@@ -1,0 +1,65 @@
+> Parte de `module-selectors/` — leer junto con `_comunes.md` (convención global).
+
+## Módulo DEPÓSITOS
+
+### Identidad
+- Ruta: `/depositos` · Componente raíz: `app-depositos` · form: `app-deposito` + `app-deposito-general` · lista: `app-deposito-list`
+- Botones home: DEPÓSITO, BUSCAR · Tabs: General / Cobros / Total / Adjuntos
+- **Verificar `modules.depositos.aplica` antes de ejecutar** — si false → todo N/A.
+
+### Selectores probados
+| Elemento | Selector CSS / técnica | Corrida | Notas |
+|----------|------------------------|---------|-------|
+| Botón DEPÓSITO | `pg.mouse.click` + 2s wait antes de confirmar navegación | `[gmp-2606]` | dispatchEvent no navega |
+| Banco | `ion-select.selectbanco` + `h.selectIonPopover` (o asignar `option.value` objeto idBankAccount/coBank) | `[gmp-2606][rom-2606][ins-2610][ferrenuestro-2026-07-07]` | sin formControlName/id explícito. En DEPÓSITOS insumar/ferrenuestro SÍ usan `ion-select.selectbanco` con `ion-select-option` reales (≠ COBROS insumar que usa `#bankPickerModal`). ferrenuestro: asignar `sel.value=<option.value>` (objeto) + `ionChange` funciona sin popover; 7 bancos (idBankAccount 403-409, ver YAML), cuenta autollenada |
+| Cuenta banco | ion-input read-only (se llena al elegir banco) | `[gmp-2606]` | |
+| Nro documento | ion-input label **"Nro. Plantilla:"** (NO "Nro. Depósito") | `[gmp-2606][rom-2606][ins-2606]` | editable |
+| Fecha Doc | `ion-button` (`.letrasFechasButton`, **idx 1**; idx 0 = Fecha Depósito disabled/calculada) → modal `fechasModal` → asignar `dt.value` ISO + `ionChange` **ANTES** de `h.confirmDatetime` | `[gmp-2606][rom-2606][ins-2610][gmp-2611]` | `querySelector('button.letrasFechasButton')` falla; usar ion-button. ⚠ El valor inicial **varía por build**: en insumar abre vacío (mes "mayo de 2021") y solo Aceptar deja Fecha Doc vacía; en globalmp 0611 abrió ya con la fecha de hoy. En ambos casos asignar `dt.value` ISO + `ionChange` antes de Aceptar es seguro. `[ins-2610][gmp-2611]` |
+| Fecha Depósito | `ion-button` disabled (calculada, no editable) | `[gmp-2606]` | |
+| Checkbox cobro (Tab Cobros) | `getBoundingClientRect` + `pg.mouse.click()` real. ⚠ los `app-deposito-cobros ion-checkbox` **NO** tienen la fila como ancestro con texto aislado (el ancestro abarca toda la tabla) → mapear por **orden vertical** (`getBoundingClientRect().y` ascendente = orden de filas de datos) y clicar el checkbox por su `y` | `[rom-2606][latino_cosmetica-20260714]` | |
+| Lista `app-deposito-list` | calcular coords sobre el **`ion-item`** individual, NO el `ion-row` padre | `[ins-2610]` | el `ion-row` contenedor abarca toda la lista (top..bottom); su centro cae fuera de viewport y selecciona el item equivocado |
+| Alerta salida | "Denario Depósito": GUARDAR Y SALIR / SALIR SIN GUARDAR / CANCELAR (roles save/exit/cancel) | `[gmp-2606]` | |
+
+### Flujo mínimo probado
+```
+1. Verificar aplica=true → Click DEPÓSITO (mouse.click + 2s)
+2. Tab General: selectIonPopover banco + Fecha Doc (fechasModal) + Nro. Plantilla
+3. Tab Cobros: marcar cobros (mouse.click) — monto = suma de cobros (no campo libre)
+4. Guardar → alert "El Depósito se ha guardado"
+```
+
+### VG → DOM effects
+| Condición | Efecto |
+|-----------|--------|
+| Sin cobros seleccionados | Guardar no habilita; intento → "Seleccione los Cobros a depositar" `[gmp-2606][rom-2606]` |
+| Tab Cobros vacío | solo muestra cobros en estado "pendiente depósito"; cobros ya enviados no aparecen `[gmp-2606]` |
+
+### Anti-patrones confirmados
+- No hay campo Monto libre: el monto se deriva de los cobros seleccionados en Tab Cobros. `[rom-2606][gmp-2606]`
+- **Oráculo fiable de `aplica`:** si `ion-select.selectbanco` abre popover con 0 `ion-select-option` (tras espera), no hay cobros pendientes de depositar → `depositos.aplica=false`. Más fiable que inspeccionar la tab Cobros (que queda disabled sin Banco). `[dth-2612]`
+- **Vínculo cobro→depósito viaja por `collectionIds:[idCollection]`** en el payload `depositservice/deposit`; `depositCollect:[]` viaja vacío. La tabla nube N:M `deposit_collection_payment` NO se puebla (`pagos=0` en todo el histórico insumar) → **cotejar el vínculo por el payload, no por esa tabla** (BD-INFO, no MISMATCH). `[ins-2622]`
+
+### Notas por cliente
+- **hidroponias: `aplica=false`** — módulo requiere cobro con Efectivo; solo Depósito bancario habilitado → todos los casos N/A. `[hid-2605]`
+- **piercar: `aplica=false`** — Sin cobros depositables: cobros de la corrida quedaron en estado Guardado-local por `requiredCollectionAttachments=true`; popover banco vacío (0 opciones) confirmado. Defecto DM-DEP-010/018 (`deposit.service.ts`) reproduce en piercar: "Por favor espere..." persistente en `app-deposito-list`. `[prc-2606]`
+- **Fecha Depósito idx 0 muestra hora local completa:** `ion-button.letrasFechasButton` idx 0 muestra "DD/M/YYYY, H:MM a.m./p.m." (timestamp completo, distinto a Fecha Doc idx 1 que muestra solo fecha). `[prc-2606]`
+- **Dirty-guard back SÍ activa vía CDP en globalmp DEPÓSITOS:** `img.fechaAtras` + `getBoundingClientRect()` + `pg.mouse.click()` (≈35,34) con form sucio dispara alert "Denario Depósito" (Guardar y salir / Salir sin guardar / Cancelar). Contrasta con la vieja nota de COBROS globalmp (hardware back) — el dirty-guard via CDP es por módulo. `[gmp-2611]`
+- **Tabs se habilitan tras Banco + Fecha Doc:** Cobros/Total/Adjuntos pasan de `disabled` a habilitadas una vez seleccionados Banco y Fecha Doc en Tab General. Fecha Depósito (idx 0) disabled/calculada, Fecha Doc (idx 1) editable e inicializa en hoy. Confirma don-theo. `[gmp-2611][dth-2612]`
+- **Lista `app-deposito-list` con loader "Por favor espere..." persistente** cuando no hay datos: la vista y el `ion-searchbar` renderizan con 0 ítems pero el loader no se resuelve. Compatible con el defecto conocido de `deposit.service.ts`; no distinguible de "vacío legítimo" sin un registro guardado previo. `[gmp-2611]`
+- Borrado de depósito Guardado: **CON confirmación** (alert Cancelar/Aceptar) — distinto a Inventarios (directo). Trash `ion-button[color="danger"]` dentro del `ion-item`, solo en ítem Guardado (ausente en "Por Enviar"/Enviado). `[ins-2610][ferrenuestro-2026-07-07]`
+- **ferrenuestro: `ion-input` Nro. Plantilla/Comentario por propiedad JS `label`** — `i.label.startsWith('Nro. Plantilla')` / `'Comentario'` / `'Banco'` (cuenta autollenada). Confirma jerez `[jerez-2026-07-06]` en el build El Yaque ferrenuestro. `[jerez-2026-07-06][ferrenuestro-2026-07-07]`
+- **ferrenuestro: cobros depositables SÍ existen aunque los cobros de la corrida no se enviaron** — confirma el mecanismo `[jerez-2026-07-06]`: los depositables provienen de cobros Efectivo ENVIADOS históricos de la nube, no de los cobros Guardados de la corrida. 13 depositables Bs. disponibles → `aplica=true` con dato vivo (7 bancos). `[jerez-2026-07-06][ferrenuestro-2026-07-07]`
+- **ferrenuestro: envío = 2 alerts (≠ jerez 3)** — (1) "Denario Depósito — El Depósito será enviado" Cancelar/Aceptar → (2) "Denario Premium — El Depósito será enviado" OK. NO hubo 3er alert "Depósito nro. N enviado". Coincide con insumar (2 alerts). El depósito persistió (`deposit` id=1) por sync diferida (~3min); durante la corrida se marcó BD-SAVED. `[ferrenuestro-2026-07-07]`
+- **ferrenuestro: defecto render `deposit.service.ts` reprodujo intermitente y recuperable** — tras guardar el 2º depósito quedó `app-depositos`+`app-deposito` ambos montados con 0 botones (transición congelada); `clickBack` (`img.fechaAtras`) recupera y el siguiente BUSCAR renderizó la lista completa. Confirma la naturaleza de race del bug (no cerrado, no bloqueante). `[jerez-2026-07-06][ferrenuestro-2026-07-07]`
+- Flujo envío = 2 alertas (confirmación Cancelar/Aceptar → resultado OK); servidor asigna Nro.Ref real al enviar (Ref 0 → Ref real). `[ins-2610]`
+- **jerez: envío = 3 alertas** (1) "El Depósito será enviado" Cancelar/Aceptar → (2) "Denario Premium — El Depósito será enviado" OK → (3) "Depósito nro. N enviado exitosamente" OK. Difiere de insumar (2 alertas). Ref 0 → Ref real (7). `[jerez-2026-07-06]`
+- **jerez: multi-empresa (3) en `app-deposito-general`** — 3 empresas (idEnterprise 1/2/3). El select empresa NO tiene clase específica; localizar por option con `.value.idEnterprise`. Los cobros del Tab Cobros se filtran por empresa. Banco único: `idBankAccount:419` BANESCO "Banesco Jerez Motors", cuenta 0134....2087. `[jerez-2026-07-06]`
+- ⚠ **jerez: picker Empresa REVIERTE a "INVERSIONES JEREZ 1" (default) al reabrir un Guardado** aunque se guardó con empresa 2 — el select Empresa se comporta como filtro de creación, no como atributo de cabecera relegido. Los datos sustantivos (banco, cuenta, fechas, Nro.Plantilla y el cobro vinculado emp2) SÍ persisten. Observación, NO defecto confirmado (corrida sin cotejo BD) → nota en YAML; confirmar con BD en próxima corrida (campo empresa del deposit vs empresa del cobro vinculado). `[jerez-2026-07-06]`
+- Defecto conocido DM-DEP-010/018/019/020 (v6.6.14 `deposit.service.ts`): lista BUSCAR no renderiza tras guardar. ⚠ **INTERMITENTE confirmado:** NO reprodujo en insumar (0609/0610/0622), don-theo (0612) ni en la corrida jerez matutina (`20260706_100801`, lista renderizó limpia); **SÍ REPRODUJO en jerez `20260706_175921`** — loader "Por favor espere…" colgado en `app-deposito-list`, `ion-spinner` activo, 0 ítems tras 8s (2 intentos, ambos colgados) → DM-DEP-010/014/018/019/020 quedaron SKIP (no re-marcar FAIL, RUNTIME §5). El mismo build/cliente cuelga o no según el intento → **el bug NO está cerrado**; es una race de `deposit.service.ts`. `[rom-2606][ins-2606][ins-2610][dth-2612][ins-2622][jerez-2026-07-06]`
+- **Cobro no-enviado NO es depositable (mecanismo universal):** un cobro Efectivo en estado "Por Enviar" (sin `idCollection` de servidor) NO aparece en el Tab Cobros (`app-deposito-cobros`) del depósito; solo cobros ENVIADOS (con id de servidor) son depositables (`collectionIds:[idCollection]`). Tab Cobros vacío legítimo = 0 checkboxes SIN loader colgado + pie "Monto total depositado 0 BS". ⚠ Consecuencia aguas-arriba: si los cobros de la corrida quedaron "Por Enviar" (H1 no-persistencia El Yaque), el flujo end-to-end depósito-con-cobro NO es ejecutable — es condición de dato, NO defecto del módulo Depósitos (la exclusión de cobros no-enviados es correcta). `[jerez-2026-07-06]`
+- **Nro. Plantilla / Comentario inputs (localizar por propiedad JS `label`):** el `ion-input` Nro. Plantilla tiene propiedad JS `label`="Nro. Plantilla:" (NO atributo `label`/`placeholder`; su atributo `value` muestra el binding literal sin interpolar) → localizar por `i.label.startsWith('Nro. Plantilla')`. El `ion-input` Comentario tiene `label`="Comentario:". `[jerez-2026-07-06]`
+- **jerez: dirty-guard back NO dispara** — con form sucio (banco+Fecha Doc+Nro. Plantilla, sin cobro) el back (`img.fechaAtras`) NO disparó la alerta "Denario Depósito"; navegó directo a depositos home. Contrasta con globalmp `[gmp-2611]` (sí dispara). Observación, no defecto. Reconfirmado dm-electronica: `clickBack` con Fecha Doc re-fijada al mismo valor (hoy) NO marcó dirty → navegó directo sin alerta. `[jerez-2026-07-06][dm-electronica-20260713]`
+- **latino_cosmetica (La Tortuga v6.6.18): `depositos.aplica=true` CON dato vivo — el cobro de la MISMA corrida propagó de vuelta** — el cobro Efectivo Ref 24 (CABELLO, BSD 1.034.714,62) enviado en COBROS de este RUN **SÍ apareció** como depositable en el Tab Cobros del mismo run (+ COSMETICOS BELLA Ref 25, DISTRIBUIDORA ULTIMATE Ref 12). ⚠ **CONTRASTA dm-electronica** (El Yaque) donde el cobro recién enviado NO propagó dentro de la ventana → en La Tortuga la re-sync nube→device de depositables es lo bastante rápida para el flujo end-to-end en una sola corrida. Depósito Ref 3 Enviado BD-OK (`st_deposit=1`; vínculo cobro viaja por `collectionIds:[24]`, `deposit_collection_payment` NO se puebla — cotejar por payload). **Envío = 3 alertas** (como jerez, difiere de insumar/ferrenuestro 2). 8 cuentas bancarias reales (idBankAccount 89-97, BSD/emp 00001). `[latino_cosmetica-20260714]`
+- **dm-electronica: `depositos.aplica=true` estructural pero SIN dato depositable en la corrida** — el `ion-select.selectbanco` abre popover con `ng-for-of` VACÍO (0 opciones) + Tab Cobros vacío (0 checkboxes) porque el cobro Efectivo enviado (id_collection=5) **no propagó de vuelta al device** como depositable dentro de la ventana de la corrida. Confirma el mecanismo `[jerez/ferrenuestro]`: los depositables = cobros Efectivo ENVIADOS ya re-sincronizados de nube→device, NO los recién enviados. El formulario opera OK (Empresa BOTZ, Moneda BS/US$, Fecha Doc datetime, Nro. Plantilla, Comentario, Guardar/Enviar disabled sin datos). El defecto conocido `deposit.service.ts` NO reprodujo (lista limpia, 0 ítems, sin loader colgado). → correr depósitos tras un ciclo de sync completo, o confirmar propagación del cobro depositable antes. `[dm-electronica-20260713]`
+
+---

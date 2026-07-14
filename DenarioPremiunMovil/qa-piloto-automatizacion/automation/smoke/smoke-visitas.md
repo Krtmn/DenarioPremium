@@ -2,7 +2,7 @@
 ## Estado inicial: HOME | Estado final: HOME
 
 **Inicio:** `h.connectCdp(page)` → `h.waitSyncOverlay(pg)`
-**Datos de prueba:** leer `automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml` → `modules.visitas`
+**Datos de prueba:** leer `automation/clientes/{QA_CLIENTE}.yaml` → `modules.visitas`
 
 ---
 
@@ -48,3 +48,26 @@ Usar una visita **recién creada, nunca guardada desde cabecera**.
 Antes de pulsar atrás (DM-VIS-021), agregar **al menos un evento** usando la técnica de DM-VIS-015.
 Si se guarda sin evento → FAIL (visita sin actividades en sistema).
 Verificar Tab Actividades al reabrir desde RUTA DE HOY.
+
+---
+
+## Verificación BD (round-trip al servidor · ver RUNTIME §10)
+
+Tras DM-VIS-020 (Enviar) y DM-VIS-019 (Guardar), confirmar la visita en BD. Mecánica, vocabulario y blindaje (BD caída ⇒ `BD-N/A`, **nunca** tumba el smoke): **RUNTIME §10**.
+
+```bash
+node automation/db/query.js {QA_CLIENTE} "SELECT v.id_visit, v.co_visit, v.st_visit, v.is_visited, v.is_dispatched, (SELECT count(*) FROM incidence i WHERE i.id_visit=v.id_visit) inc FROM visit v ORDER BY v.da_created DESC LIMIT 5"
+```
+
+**Qué confirmar** en la fila recién creada:
+- `visit` existe; `inc` (nº `incidence`) = nº de actividades/eventos agregados por UI (≥1, ver DM-VIS-031).
+- `st_visit` = Enviado/Guardado; `is_visited=true` tras Enviar (DM-VIS-020).
+- ⚠ PK de incidencia no estándar (`incidence.co_incid`); FK `incidence.id_visit→visit`.
+
+**2) Local — cotejo guardado→enviado (⚠ tabla local PLURAL `visits`; visitas usa `st_visit`, no `st_delivery`):**
+```bash
+node automation/db/local-query.js "SELECT co_visit, id_visit, st_visit, is_visited FROM visits ORDER BY rowid DESC LIMIT 5"
+node automation/db/local-query.js "SELECT count(*) en_cola FROM pending_transactions WHERE type='visit'"
+```
+- `id_visit>0` → **BD-OK** (enviado) · `id_visit=0` → **BD-SAVED** (guardado, sin enviar) · en cola → **BD-QUEUED** · en `failed_transactions` (type='visit') → **BD-MISMATCH**.
+- **Correlación: Nro.Ref UI = `id_visit`** → `BD-INFO` hasta graduar a FAIL.

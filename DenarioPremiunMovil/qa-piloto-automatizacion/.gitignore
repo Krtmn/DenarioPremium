@@ -1,5 +1,14 @@
-secrets/qa-credentials.env
+# Secretos — NUNCA commitear (credenciales de login y DSN de BD por cliente)
+secrets/*.env
+secrets/playas/
+# (secrets/qa-credentials.env.example SÍ se trackea — es plantilla sin secretos)
+
+# Salida temporal / logs de runtime
 automation/reports/*.json
 automation/reports/*.log
+automation/db/_tmp_*.json
+.playwright-mcp/
+
 .env
 *.local
+.claude/settings.local.json

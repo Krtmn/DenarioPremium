@@ -2,7 +2,7 @@
 ## Estado inicial: HOME | Estado final: HOME
 
 **Inicio:** `h.connectCdp(page)` → `h.waitSyncOverlay(pg)`
-**Datos de prueba:** leer `automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml` → `modules.cobros`
+**Datos de prueba:** leer `automation/clientes/{QA_CLIENTE}.yaml` → `modules.cobros`
 **VGs clave:** leer antes de ejecutar:
 - `vgs.requiredCollectionAttachments` → DM-COB-016/018/019
 - `vgs.retencion` + `vgs.sizeRetention` → DM-COB-041/042 (retención en detalle de documento)
@@ -13,14 +13,63 @@
 
 ---
 
+## ⚠ Apertura del formulario de cobro (técnica CDP — OBLIGATORIO)
+
+Abrir SIEMPRE con **`await h.openNuevoCobro(pg, tipo)`** (tipo: 0=cobro · 1=anticipo · 2=retención). Este helper dispara el handler **real** `nuevoCobro(N)` y **espera a que `paymentMethodList` se pueble** (carga async).
+
+**NO usar `goToNuevoCobro(N)` directo** — salta el `showLoading()` y deja `paymentMethodList` vacía (los acordeones de método de pago no renderizan). Era la causa del módulo lento (atajos programáticos en cascada). Confirmado en `cobros-container.component.ts`.
+
+- Retorno `OK:` → seguir.
+- Retorno `OK-WARN:` (lista no pobló en 8s) → el cliente puede no tener métodos; revisar antes de tocar Pagos.
+- Llamar solo el `tipo` cuya VG está activa (anticipo si `cobroPrepago`, retención si `cobroRetencion`).
+
+Tabs y back: usar clicks reales (`ion-segment-button`, back que dispara el dirty-guard). Lo programático (`onChangeTab`, `exitCollectionWithoutSave`) solo como **fallback** si el click no responde.
+
+---
+
 ## Selección de cliente con documentos pendientes (obligatorio)
 
-Muchos casos requieren un cliente con **factura pendiente** (007, 008, 012, 040, 041/042, 043, 044, 046). Un cliente sin documentos los vuelve N/A artificialmente — eso **no es cobertura real**. Regla de selección del cliente para el cobro:
+Muchos casos requieren un cliente con **factura pendiente** (007, 008, 012, 040, 041/042, 043, 044, 046). Un cliente sin documentos los vuelve N/A artificialmente — eso **no es cobertura real**.
 
-1. **Atajo:** si el perfil trae `modules.cobros.clientes_con_documentos`, probar esos códigos en orden (cobro normal → seleccionar cliente → Tab Documentos → ¿hay documentos?).
-2. **Si no hay lista, o ninguno tiene documentos hoy:** recorrer la lista del modal de clientes **uno a uno** y elegir el **primero que muestre documentos** en Tab Documentos.
-3. Registrar en el reporte **qué cliente se usó** (código + saldo/documento).
-4. Marcar N/A por "sin documentos" **solo** si, tras recorrer la lista, ningún cliente tiene documentos pendientes (caso extremo).
+> ⚠ **Qué cliente tiene documentos VARÍA con el tiempo** (las facturas se cobran y se drenan). NO confiar en una lista fija del YAML — **descubrir el cliente en runtime**.
+
+**Regla de selección del cliente (orden):**
+
+1. **Descubrimiento dinámico (PRIMARIO — al inicio del módulo):** consultar la **BD local del dispositivo** (lo que la app realmente muestra) para traer candidatos frescos ordenados por cantidad de documentos pendientes:
+   ```bash
+   node automation/db/local-query.js "SELECT d.id_client, c.na_client, c.co_client, d.co_currency, count(*) docs, round(sum(d.nu_balance),2) saldo FROM document_sales d JOIN clients c ON c.id_client=d.id_client WHERE d.nu_balance > 0 GROUP BY d.id_client, c.na_client, c.co_client, d.co_currency ORDER BY docs DESC, saldo DESC LIMIT 5"
+   ```
+   Elegir el de **más documentos** (maximiza que aparezcan en UI; la app filtra más que la BD — un cliente con pocos docs en BD puede mostrar 0). Anotar `na_client` + `co_currency` para seleccionarlo y para fijar la Moneda Documento.
+   - Si la BD local no responde (`ERR:`) → pasar al paso 2.
+2. **Fallback (sin BD):** si el perfil trae `modules.cobros.clientes_con_documentos`, probarlos en orden; si ninguno tiene documentos hoy, recorrer la lista del modal de clientes **uno a uno** y elegir el **primero que muestre documentos** en Tab Documentos.
+3. Registrar en el reporte **qué cliente se usó** (nombre + saldo/documento) y que fue descubierto en runtime.
+4. Marcar N/A por "sin documentos" **solo** si, tras descubrimiento + recorrido, ningún cliente tiene documentos pendientes (caso extremo).
+
+> **Tip UI (confirmado [prc-2617]):** en Tab Documentos los documentos **no cargan hasta elegir Moneda Documento** (= la `co_currency` del candidato, normalmente USD). Y al seleccionar el cliente en el modal, hacer **`scrollIntoView` del `<p>` del nombre antes de clickear** (sin eso las coordenadas caen fuera del viewport). Para abrir el detalle: `h.openDocumentDetail(pg, {match:'<nroFactura>'})`.
+
+---
+
+## ⚡ Pre-vuelo de datos por TIPO de cobro (OBLIGATORIO antes de correr — dinámico)
+
+> ⚠ **NO hardcodear clientes** (los datos se mueven constantemente). **Descubrir en runtime** qué cliente usar por cada tipo de cobro, ANTES de lanzar el agente. Así el agente va directo, sin explorar ni caer en callejones (ej. abrir IGTF con un cliente que no tiene documento IGTF → 0 docs).
+
+Correr esta consulta y resolver los objetivos por tipo:
+```bash
+node automation/db/query.js {QA_CLIENTE} "SELECT * FROM (SELECT d.co_document_sale_type tipo, c.na_client, c.co_client, count(*) docs, round(sum(d.nu_balance),2) saldo, row_number() OVER (PARTITION BY d.co_document_sale_type ORDER BY count(*) DESC) rn FROM document_sale d JOIN client c ON c.id_client=d.id_client WHERE d.nu_balance>0 GROUP BY d.co_document_sale_type, c.na_client, c.co_client) t WHERE rn<=2 ORDER BY tipo, docs DESC"
+```
+
+Interpretación → objetivo por tipo de cobro:
+| Tipo de cobro | Documento que necesita | Cómo resolver del pre-vuelo |
+|---|---|---|
+| **Normal** (008/040/043) y **Retención por documento** (041/042) | `FACT` (factura con saldo) | cliente top del tipo `FACT` |
+| **Retención botón** (029) | `FACT` | cliente top del tipo `FACT` |
+| **IGTF** (036/044/045) | `IGTF` (documento IGTF dedicado) | cliente del tipo `IGTF`. **Si NO aparece `IGTF` en el pre-vuelo → IGTF = N/A** (no hay documento elegible; no forzar) |
+| **Anticipo** (028) | ninguno (no usa documentos) | cualquier cliente (`cliente_test`) |
+| **25% IVA** (037) | — | N/A si `userCanCollectIva=false` |
+
+- Para **seleccionar el documento en la UI**, confirmar también en la BD LOCAL del dispositivo (lo que la app muestra): `local-query` sobre `document_sales` por ese cliente + `co_currency`.
+- **Registrar en el reporte** qué cliente se usó por tipo (descubierto en runtime, no fijo).
+- El pre-vuelo evita que el agente "piense": llega sabiendo a qué cliente ir por cada tipo.
 
 `modules.cobros.cliente_test` se reserva para los casos que **no** requieren documentos (001, 002, 004, 006, 020/021/038).
 
@@ -71,16 +120,26 @@ Muchos casos requieren un cliente con **factura pendiente** (007, 008, 012, 040,
 
 ## ⚠ Nota — Adjunto obligatorio (DM-COB-016 / DM-COB-019 / DM-COB-029)
 
-**Si `vgs.requiredCollectionAttachments=true` (leer perfil cliente):**
-- DM-COB-016: verificar acordeones visibles → **PASS**. NO intentar agregar foto.
+**⚡ Atajo cuando el mock no sirve (evita reintentos inútiles):** si el perfil trae
+`modules.cobros.mock_camara_funciona: false` (build PROD donde `ensureAdjunto` SIEMPRE da false,
+ej. piercar/romher), **NO llamar `ensureAdjunto`**. Ir directo a Guardar → ⏭ SKIP del envío →
+documentar "Guardado, pendiente adjunto manual" → verificar BD LOCAL (queda SAVED). El envío real
+con adjunto lo cierra la QA a mano post-corrida. Así no se gasta tiempo en reintentos que ya sabemos
+que fallan. (DM-COB-016 igual se verifica: acordeones visibles → PASS.)
+
+**Si `vgs.requiredCollectionAttachments=true` (o RETENCIÓN, que SIEMPRE exige adjunto) Y `mock_camara_funciona` NO es false:**
+- DM-COB-016: verificar acordeones visibles → **PASS**.
 - DM-COB-018: guardar → **PASS**.
-- DM-COB-019: marcar **⏭ SKIP**. Documentar cobro como "Guardado, pendiente envío manual por QA".
-- DM-COB-029 envío: igual → **⏭ SKIP**.
-- Incluir cobros Guardados en tabla "Registros creados en sistema" con nota "Pendiente envío manual".
+- DM-COB-019 / DM-COB-029 (envío): **intentar ENVIAR de verdad.** Antes de Enviar:
+  `const ok = await h.ensureAdjunto(pg);` — inyecta la foto mock (1px) con reintento acotado + **fail-fast**.
+  - `ok === true` → Enviar normalmente → **PASS** (el cobro llega a la nube; corroborar en BD §10).
+  - `ok === false` (la foto no entró tras los reintentos) → **⏭ SKIP** del envío, documentar "Guardado, pendiente envío manual", y **verificar el cobro en BD LOCAL** (queda SAVED) — así el movimiento **se contempla igual**.
+- **NO pelear con el adjunto:** `ensureAdjunto` ya hace fail-fast; si devuelve false, SKIP y seguir (no gastar tiempo).
+- Incluir cobros Guardados (no enviados) en "Registros creados" con nota "Pendiente envío manual".
 
 **Si `vgs.requiredCollectionAttachments=false`:**
 - DM-COB-016, DM-COB-018, DM-COB-019: ejecutar normalmente.
-- DM-COB-019 PASS si cobro queda "Por Enviar"/"Enviado" sin segunda alerta de adjunto.
+- DM-COB-019 PASS si el cobro queda "Por Enviar"/"Enviado" sin segunda alerta de adjunto.
 
 ## ⚠ Nota — Retención en documento (DM-COB-041 / DM-COB-042)
 
@@ -118,3 +177,36 @@ El "Monto total a pagar" del Tab Pagos **no debe desactualizarse** tras Guardar 
 | Retención (comp. + fecha + IVA + ISLR) | DM-COB-041 (calcula neto) + **DM-COB-042** (persiste al reabrir) |
 | Pago parcial por documento | **DM-COB-046** |
 | Tasa por fecha (recálculo del total) | **DM-COB-047** (cobro nuevo) + DM-COB-039 rama B (cobro Guardado) |
+
+---
+
+## Verificación BD v2 — cotejo "lo guardado se envía" (ver RUNTIME §10)
+
+Cobros crea varios registros y de distintos `co_type` → **verificar cada uno**. Mecánica, 5 estados, vocabulario y blindaje (BD caída ⇒ `BD-N/A`, **nunca** tumba el smoke): **RUNTIME §10**.
+
+**1) Nube** (lo que llegó al servidor):
+```bash
+node automation/db/query.js {QA_CLIENTE} "SELECT c.id_collection, c.co_collection, c.co_type, c.st_collection, c.nu_amount_total, c.nu_amount_final, c.nu_amount_igtf, (SELECT count(*) FROM collection_detail d WHERE d.id_collection=c.id_collection) docs, (SELECT count(*) FROM collection_payment p WHERE p.id_collection=c.id_collection) pagos, (SELECT coalesce(sum(p.nu_amount_partial),0) FROM collection_payment p WHERE p.id_collection=c.id_collection) suma FROM collection c ORDER BY c.da_created DESC LIMIT 8"
+```
+**Por items, ramificado por `co_type`:**
+- `0` cobro normal → `docs`≥1 + `pagos`≥1 + `suma`≈total; `nu_amount_final`=total+IGTF.
+- `1` anticipo → `pagos`≥1, `docs`=0.
+- `2` retención → `docs`≥1, `pagos`=0, montos de retención presentes.
+- IGTF (cualquier tipo) → `nu_amount_igtf` coherente con la línea IGTF del Tab Total (refuerza §9 044/045).
+- **Correlación: Nro.Ref UI = `id_collection`** (no el epoch).
+
+**2) Local** (estado guardado→enviado · ⚠ tablas locales en PLURAL):
+```bash
+node automation/db/local-query.js "SELECT co_collection, id_collection, st_delivery, co_type FROM collections ORDER BY rowid DESC LIMIT 8"
+node automation/db/local-query.js "SELECT count(*) en_cola FROM pending_transactions WHERE type='collect'"
+node automation/db/local-query.js "SELECT count(*) rechazados FROM failed_transactions WHERE type='collect'"
+node automation/db/local-query.js "SELECT count(*) total, count(DISTINCT co_collection) distintos FROM collections"
+```
+**Veredicto por cobro:**
+- `id_collection>0` & `st_delivery=1` & no en cola → **BD-OK** (guardado **y** enviado).
+- `id_collection=0` & `st_delivery=3` → **BD-SAVED** (sin enviar; esperado si no hubo adjunto — **FAIL si se envió CON adjunto y aun así quedó así**).
+- en `pending_transactions` tras la ventana de sync → **BD-QUEUED** (si persiste → flag: no sincronizó).
+- en `failed_transactions` → **BD-MISMATCH** (rechazado por el server).
+- `total > distintos` → **BD-MISMATCH** (duplicado — no debe guardarse 2 veces).
+
+**Descubrimiento:** `BD-INFO` hasta graduar la regla Ref↔fila a FAIL.

@@ -1,0 +1,22 @@
+{
+  "_generated_for": "latino_cosmetica",
+  "_run_dir": "automation/reports/smoke_latino_cosmetica_20260714_130727/",
+  "modules": {
+    "cobros": {
+      "cliente_normal": null,
+      "cliente_igtf": {
+        "na_client": "FARMA COSMETICOS DULCINEA 2019 CA",
+        "co_client": "197",
+        "docs": "1",
+        "saldo": "2.77"
+      },
+      "_nota": "Descubierto en pre-vuelo BD. Para el documento exacto en UI, confirmar con local-query sobre document_sales + co_currency."
+    },
+    "pedidos": null,
+    "devoluciones": null,
+    "inventarios": null,
+    "visitas": null,
+    "depositos": null,
+    "clientes": null
+  }
+}

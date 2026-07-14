@@ -1,0 +1,70 @@
+> Parte de `module-selectors/` — leer junto con `_comunes.md` (convención global).
+
+## Módulo DEVOLUCIONES
+
+### Identidad
+- Ruta: `/devoluciones` · Componente raíz: `app-devoluciones` · contenedor: `devoluciones-container`
+- Botones home: DEVOLUCIÓN, BUSCAR · Tabs: PRODUCTOS / ADJUNTOS
+
+### Selectores probados
+| Elemento | Selector CSS / técnica | Corrida | Notas |
+|----------|------------------------|---------|-------|
+| Botón DEVOLUCIÓN | secuencia acumulada: `mouse.click` → `keyboard.Enter` → CDP `Input.dispatchMouseEvent` → `shadowBtn.click()` | `[gmp-2606]` | activa zone listener; CDP solo no navega |
+| Botón BUSCAR | CDP `Input.dispatchMouseEvent` solo basta | `[gmp-2606]` | |
+| Cliente | `ion-input#clienteSelect` → modal con searchbar (click real) | `[ins-2610][ins-2622]` | mismo patrón Pedidos/Inventarios. ⚠ esperar `#clienteSelectModal.show-modal` con `ion-item.length>0` (waitForFunction) ANTES de clickear el ítem; sin la espera el modal se cierra sin selección (`clienteVal` vacío) `[ins-2622]` |
+| Campos cabecera | `ion-input#responsable`, `#precinto`, `#comentario` (CON `id` explícito) | `[ins-2610]` | corrige nota previa "sin id"; `fillIonInput` por id funciona |
+| Nro Factura | campo `inp-write` (ng-invalid vacío) **dentro del acordeón de cada producto** | `[gmp-2606][rom-2606]` | no en cabecera; `requeridedNroFactura=true` |
+| Campos acordeón producto | Lote, NroFactura, FechaVenc, CantidadDevuelta (inp-write), Unidad (select), Motivo (select) | `[ins-2606]` | acordeón viene **colapsado** al agregar producto → click header (`ion-accordion ion-item`) para expandir `[ins-2610]` |
+| ⚠ `.inp-write` cambia de clase tras edición | al escribir cantidad, el ion-input pierde `.inp-write` (queda `sc-ion-...`) | `[ins-2610]` | para releer el valor usar `ion-accordion ion-input` genérico, no `.inp-write` |
+| Selector empresa (form) | **1º `ion-select`** visible de `app-devoluciones` (y≈147), opciones `idEnterprise` 1/2/3: `empSel.value = option.value` + `dispatchEvent(ionChange)` **recarga la cartera de clientes** del `#clienteSelectModal` a la de esa empresa | `[jerez-2026-07-06]` | *(candidato universal)* permite alcanzar clientes emp2/3 **sin** limpiar caché ni gateway externo. Distinguir del **2º** `ion-select` visible (= Tipo). Mismo mecanismo que el gateway de COBROS |
+| Tipo devolución | 2º `ion-select` visible del form (y≈551); popover sin botones (`popover.dismiss()`) | `[ins-2606][rom-2606][ins-2610][gmp-2611][dth-2612][ins-2622][ferrenuestro-2026-07-07][dm-electronica-20260713]` | opciones value numérico (varían por cliente): Calidad=60 (default), PostVenta=52, Servicio=59; **globalmp/don-theo/ferrenuestro añaden Cambio X Cambio=63** (ferrenuestro: Calidad(60)/CambioXCambio(63)/Servicio(59), sin PostVenta). dm-electronica = Calidad(60,default)/PostVenta(52)/Servicio(59) sin CxC (igual piercar/jerez) `[gmp-2611][dth-2612][ferrenuestro-2026-07-07][dm-electronica-20260713]` |
+| Familia/producto | lista **inline** dentro de `app-devoluciones` (NO modal): AGREGAR PRODUCTO → familias ("ALIMENTOS 158"…) → click familia → productos inline | `[ins-2610]` | |
+| Guardar / Enviar | `.imagenGuardar` / `.imagenEnviar` (icon-only, header fijo) | `[gmp-2606]` | |
+| Modal selección factura | `#InvoiceeSelectModal` (⚠ doble 'e' — typo en código fuente); abrir con click en `ion-input#invoiceSelect` directo | `[prc-2606]` | Universal — el id incorrecto es parte del DOM estándar de Denario. Modal lista facturas disponibles |
+| Acordeón Firma (Tab ADJUNTOS) | `ion-accordion[value="sign"]` — canvas real con coords disponibles para mousedown/move/up (w=334, h=252 en emulator-5554) | `[prc-2606][dm-electronica-20260713]` | Universal confirmado en piercar. Canvas para dibujar la firma; acordeón abre/cierra con `accordion-group.value`. ⚠ **la firma dibujada NO se cuenta como adjunto**: el payload lleva `nuAttachments=0`/`hasAttachments=false` y el envío procede igual con `signatureReturn=true` (dm-electronica) |
+| AGREGAR PRODUCTO con `validateReturn=true` | lista **directamente los productos de la factura seleccionada** (NO familias/categorías) | `[dm-electronica-20260713][latino_cosmetica-20260714]` | los productos varían por factura (50003306→CONGELADOR VIVAMAX; 50003307→LAVADORA BOTZ; latino: 1820→PT004 TRATAMIENTO CENIZO); el acordeón de cada producto expande con Cantidad/Lote/NroFactura(precargado)/Fecha Venc/Unidad/Motivo. # candidato universal — 2ª confirmación (dm-electronica + latino_cosmetica) |
+| **Selección de cliente vía Angular (modales no-clicables)** | cuando los `ion-item` del `#clienteSelectModal` NO responden a click sintético NI real (`pg.mouse.click`) y el modal cierra sin fijar `general.cliente`: `general = ng.getComponent('devolucion-general')` → `general.selectorCliente.selectClient(clientObj)` (obj de `general.selectorCliente.clientes`) | `[latino_cosmetica-20260714]` | *(candidato universal — builds `window.ng=true`)* si YA había cliente → alert "¡Alerta! Se ha detectado cambio del cliente" (Cancelar/Aceptar) → click real Aceptar; en form fresco NO hay alert. El searchbar del modal filtra a 0 al teclear el nombre completo → usar la vía Angular, NO el searchbar. Limpiar `ion-backdrop` huérfanos antes de reabrir el modal |
+| **Selección de factura vía Angular** | `general.selectorInvoice.selectInvoice(invObj)` con obj de `general.returnLogic.invoices` (keys coInvoice/idInvoice/daInvoice); abrir el modal `#InvoiceeSelectModal` primero **carga** `returnLogic.invoices` | `[latino_cosmetica-20260714]` | *(candidato universal)* habilita las tabs Productos/Adjuntos; sin alert si no había factura previa. Componente dueño = `devolucion-general` (métodos útiles: `setClientfromSelector`, `setInvoicefromSelector`, `onEnterpriseSelect`, `reset`); `app-devoluciones.showNewReturn` es solo flag del wrapper |
+
+### Flujo mínimo probado
+```
+1. Botón DEVOLUCIÓN (secuencia acumulada) → form, tabs disabled
+2. Seleccionar cliente → tabs habilitan (sin invoice-selector si validateReturn=false)
+3. Tab PRODUCTOS → AGREGAR PRODUCTO → categoría → producto → acordeón
+4. fillIonInput CantidadDevuelta + NroFactura → Guardar/Enviar habilitan
+5. Guardar ("¡Su Devolución se ha guardado!") → Enviar → "¡Su Devolución será enviada!"
+```
+
+### VG → DOM effects
+| VG | true | false |
+|----|------|-------|
+| `validateReturn` | requiere seleccionar factura para habilitar tabs | tabs habilitan directo; Nro Factura libre por producto `[gmp-2606][ins-2606][rom-2606]` |
+| `signatureReturn` | acordeón Firma en Tab ADJUNTOS | ausente |
+| `userCanUploadFiles` | acordeón Archivo en ADJUNTOS | ausente |
+
+### Anti-patrones confirmados
+- Botones Guardar/Enviar sin texto — buscar por clase, no por textContent. `[ins-2606]`
+- Devolución Enviada: imagenGuardar/imagenEnviar ocultos (correcto). `[gmp-2606]`
+- ⚠ **Back del FORM DEVOLUCIONES NO navega vía CDP en don-theo v6.6.14** — `img.fechaAtras`→`closest('a')` (sin href/routerlink) NO responde a `dispatchEvent`, `mouse.click` real (coords 35,54), Pointer+Mouse+Touch, ni `pg.click` trusted con force; el `<a>` usa listener `(click)` Angular AOT que no engancha con clicks sintéticos. **Solución que SÍ funciona:** `document.dispatchEvent(new CustomEvent('ionBackButton',{detail:{register:(p,h)=>h()}}))` (hardware back de Capacitor) → vuelve al home del módulo. ⚠ Contrasta con la nota `[gmp-2611]` (dirty-guard back SÍ disparaba vía `img.fechaAtras`+MouseEvent en globalmp DEVOLUCIONES) — en don-theo NO reproduce; usar `ionBackButton` como respaldo. `[dth-2612]` *(candidato — confirmar técnica `ionBackButton` en próxima corrida como fallback universal)*
+- ⚠ **Alerts residuales acumulan `ion-backdrop` interceptor:** tras varios Guardar/Enviar quedan hasta ~11 `ion-alert` ocultos cuyo `ion-backdrop` persiste en el DOM e intercepta clicks del header (`document.elementFromPoint` devuelve ION-BACKDROP sobre el botón back). Limpiar con `document.querySelectorAll('ion-alert').forEach(a=>a.dismiss())` + remover `ion-backdrop` huérfanos antes de interactuar con el header. `[dth-2612][jerez-2026-07-06]` (jerez: al abrir `#InvoiceeSelectModal` sin facturas, el `ion-content` del modal muestra el texto del alert "cambio de la factura" y los botones viven en ion-alerts portaled fuera del modal; ~26 ion-alert ocultos acumulados)
+
+### Notas por cliente
+- Borrado desde lista: alert "¿Desea eliminar la devolución?" CANCELAR/ELIMINAR (con confirmación). `[gmp-2606][ins-2606][rom-2606]`
+- **Eliminar Guardado NO muestra alert de éxito post-borrado** — la confirmación previa "¿Desea eliminar la devolución?" (Cancelar/Eliminar) SÍ aparece, pero tras Eliminar el ítem simplemente desaparece sin alert de éxito. Confirmado insumar + globalmp. `[ins-2610][gmp-2611]`
+- Envío: 3 alertas (confirm "¿Desea enviar?" + "¡será enviada!" + "Devolución nro. X enviada exitosamente"). Confirmado romher + insumar. `[rom-2606][ins-2610]`
+- **Dirty-guard back SÍ funciona vía CDP en globalmp DEVOLUCIONES:** `img.fechaAtras` + MouseEvent dispara modal "Guardar y salir / Salir sin guardar / Cancelar" con form sucio — alinea con PEDIDOS/VISITAS; contrasta con la vieja nota de COBROS globalmp (hardware back). `[gmp-2611]`
+- Nro.Ref:0 = Guardado local sin sincronizar; al enviar recibe el correlativo real. `[ins-2610]`
+- **piercar: tipos de devolución = Calidad(60) / PostVenta(52) / Servicio(59)** — sin "Cambio X Cambio"(63). Confirma que CxC es exclusivo de globalmp/don-theo. `[prc-2606][jerez-2026-07-06]` (jerez confirma Calidad(60,default)/PostVenta/Servicio sin CxC, igual a piercar)
+- **piercar: `nu_amount=null` en `return`** — las devoluciones enviadas no registran monto; no juzgar como BD-MISMATCH. `[prc-2606]`
+- **piercar: dirty-guard DEVOLUCIONES fiable vía CDP** — `img.fechaAtras` + MouseEvent dispara modal "Guardar y salir / Salir sin guardar / Cancelar"; consistente con PEDIDOS/VISITAS. `[prc-2606]`
+- **Lista BUSCAR devoluciones — botones DEVOLUCIÓN/BUSCAR no visibles desde la vista lista:** navegar back al home del módulo antes de buscar el botón DEVOLUCIÓN. `[prc-2606]`
+- **piercar: `st_return=1` = Enviado** — consistente con patrón `st=1` de otros módulos piercar (order, client_stock). `[prc-2606]`
+- **jerez: etiquetas de empresa (form) = "INV JEREZ MOTORS VALERA/CARACAS/TURMEREMO"** (idEnterprise 1/2/3, coEnterprise 00001/00002/00003, coCurrencyDefault USD). Difiere del YAML previo que las nombraba "INVERSIONES JEREZ 1/2/3". `[jerez-2026-07-06]`
+- **jerez/ferrenuestro: `#clienteSelectModal` sin searchbar propio que filtre** — tiene un `input` de búsqueda pero teclear en él NO reduce la lista (jerez 8 ítems / ferrenuestro 41 ítems siguen); para alcanzar clientes bajo el fold, hacer `it.scrollIntoView({block:'center'})` del ítem y clicar por coords cuando `top` esté en viewport. `[jerez-2026-07-06][ferrenuestro-2026-07-07]`
+- **ferrenuestro: trash de borrado SOLO en Estatus "Guardado", NO en "Por Enviar" ni Enviado** — `ion-button[color="danger"]` + `ion-icon[name="trash"]` aparece únicamente en ítems "Guardado" (nunca despachado); un ítem "Por Enviar" (envío intentado, en cola) tampoco expone trash, ni en lista ni en detalle. Refina la regla "solo Guardado, nunca Enviado" añadiendo el estado intermedio "Por Enviar". `[ferrenuestro-2026-07-07]`
+- **ferrenuestro: payload capture SÍ engancha `returnservice/return`** — contrario al gap conocido de order/collection, el POST de devoluciones SÍ se captura vía `nativePromise` (co_return + details completos, 4 reintentos idénticos). Útil para cotejo cuando `sqlite3` local no está disponible. `[ferrenuestro-2026-07-07]`
+- **ferrenuestro (Isla Coche): sync a nube DIFERIDA, NO no-persistencia** — la devolución enviada quedó "Por Enviar"/Ref 0 y **no apareció** en la nube tras poll ~10s/25s/50s/3min (parecía patrón jerez `project_jerez_no_persistencia_endpoints`), PERO el diff final de baseline al cierre confirmó que **SÍ llegó** (`return` id=191, id_client 504 TORNICAGUA, co_* coincidente). La cola `AutoSendService` reintenta y confirma tarde; el poll de los agentes fue más corto que la latencia. ⚠ **No marcar BD-SAVED como no-persistencia en Isla Coche** — ampliar el poll o hacer un 2º pase de baseline-diff al cierre. `[ferrenuestro-2026-07-07]`
+- **dm-electronica (El Yaque DM ELECTRONIC): sync devoluciones INMEDIATA** — CONTRASTA con ferrenuestro Isla Coche (diferida ~3min) pese a compartir dominio El Yaque: la devolución Ref 3 apareció en nube en <10s con `st_return=1`=Enviado (BD-FIELD-OK 14/14 + return_detail; `nu_amount=null`/`co_type=null` como piercar, no mismatch). Empresa default = BOTZ/BARAK_A (idEnterprise 1, coCurrencyDefault US$). La lista BUSCAR **conserva** los botones DEVOLUCIÓN/BUSCAR visibles (contrasta piercar, donde no se veían desde la lista). `[dm-electronica-20260713]`
+- **latino_cosmetica (La Tortuga v6.6.18, `window.ng=TRUE`): sync INMEDIATA** — devolución Ref 7 (CABELLO COSMETICOS CA 37, factura 1820, PT004) apareció en nube con `st_return=1`=Enviado (BD-FIELD-OK 11 + return_detail; `nu_amount=null` como piercar/dm-electronica). Tipos = Calidad(60,default)/PostVenta(52)/Servicio(59) sin CxC. Empresa default LATINOCOSMETICA C.A. (idEnterprise 1, USD). **`clickBack` (`img.fechaAtras`, dispatch MouseEvent en `closest('a')`) SÍ funciona** en este build (contrasta don-theo v6.6.14 donde fallaba). Guardar/Enviar SIN firma pese a `signatureReturn=true`. ⚠ Fue **necesaria** la vía Angular para cliente/factura (modales no aceptan clicks). `[latino_cosmetica-20260714]`
+
+---

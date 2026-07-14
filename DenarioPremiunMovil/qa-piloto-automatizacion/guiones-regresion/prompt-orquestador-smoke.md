@@ -23,43 +23,23 @@ No lo cortes ni lo envíes por partes. El orquestador necesita leer la totalidad
 
 ### Pasos antes de pegar el prompt
 
-Antes de abrir la sesión de Claude Code, completa estas acciones **manualmente** en tu terminal:
+Antes de abrir la sesión de Claude Code, conecta el dispositivo por USB y ejecuta **un solo comando** de pre-vuelo desde tu terminal:
 
-**1. Conectar el dispositivo y verificar:**
 ```powershell
-adb devices
-```
-Debe aparecer el serial del dispositivo (ej. `14678405BR003855   device`).
-
-**2. Lanzar la app:**
-```powershell
-adb shell am start -n com.kiberno.denarioPremiumPro/.MainActivity
+.\automation\cdp\setup-cdp.ps1
 ```
 
-**3. Espera ~3 segundos y encuentra el socket WebView:**
-```powershell
-adb shell cat /proc/net/unix | Select-String "webview_devtools"
-```
-Anota el número que aparece después de `webview_devtools_remote_` (es el PID del proceso).
+El script hace todo el Paso 0 solo y de forma idempotente: verifica el dispositivo ADB, instala/lanza la app si hace falta, **detecta automáticamente el PID vivo del WebView**, configura el `adb forward tcp:9220`, verifica que CDP responde (con reintento) y concede permisos de ubicación. Termina con `CDP listo en http://127.0.0.1:9220` (exit 0) o con un mensaje claro de qué falló (exit 1).
 
-**4. Configura el port forward con ese PID:**
-```powershell
-adb forward tcp:9220 localabstract:webview_devtools_remote_<PID>
-```
+Cuando veas ese mensaje de "CDP listo", ya puedes abrir Claude Code y pegar el prompt.
 
-**5. Verifica que CDP responde:**
-```powershell
-curl http://127.0.0.1:9220/json/version
-```
-Debe devolver un JSON con `browserVersion`. Si no responde, repite el paso 3-4.
+> **Si CDP se cae a mitad de corrida** (la app se reinició o cambió de PID y `curl :9220/json/version` sale vacío), NO reapuntes el forward a mano — corre la **auto-reparación en 1 comando**:
+> ```powershell
+> .\automation\cdp\setup-cdp.ps1 -Reforward
+> ```
+> Re-detecta el PID vivo y re-apunta el forward **sin relanzar la app** (no pierde estado). Se puede correr las veces que haga falta.
 
-**6. Concede permisos de ubicación** (solo necesario una vez por sesión de dispositivo):
-```powershell
-adb shell pm grant com.kiberno.denarioPremiumPro android.permission.ACCESS_FINE_LOCATION
-adb shell pm grant com.kiberno.denarioPremiumPro android.permission.ACCESS_COARSE_LOCATION
-```
-
-Una vez que el `curl` del paso 5 responde correctamente y el servidor de credenciales está corriendo, ya puedes abrir Claude Code y pegar el prompt.
+*(Fallback manual, solo si el script no está disponible: `adb devices` → `adb shell am start -n com.kiberno.denarioPremiumPro/.MainActivity` → `adb shell cat /proc/net/unix | Select-String webview_devtools` para el PID → `adb forward tcp:9220 localabstract:webview_devtools_remote_<PID>` → `curl http://127.0.0.1:9220/json/version`.)*
 
 ---
 
@@ -68,7 +48,7 @@ Una vez que el `curl` del paso 5 responde correctamente y el servidor de credenc
 - Claude Code confirmará el setup del Paso 0 y generará un `RUN_ID`.
 - Luego lanzará 10 agentes en secuencia. Cada agente puede tardar entre 10 y 30 minutos según el módulo.
 - Al terminar cada agente, verás en el chat un resumen del módulo (PASS/FAIL/SKIP/N/A).
-- Al terminar el módulo 10 (Vendedores), se generará el reporte consolidado y, automáticamente, se consolidará la memoria (Agente 11) — la corrida cierra con `module-selectors.md`/YAML ya actualizados, sin pasos manuales.
+- Al terminar el módulo 10 (Vendedores), se generará el reporte consolidado y, automáticamente, se consolidará la memoria (Agente 11) — la corrida cierra con `module-selectors/`/YAML ya actualizados, sin pasos manuales.
 - **No es necesario que estés frente a la pantalla** entre módulos; Claude Code gestiona toda la secuencia.
 
 ### Intervención manual que puede ser necesaria
@@ -76,8 +56,8 @@ Una vez que el `curl` del paso 5 responde correctamente y el servidor de credenc
 | Situación | Qué hacer |
 |-----------|-----------|
 | Diálogo nativo de Android aparece en pantalla | Acéptalo o descártalo manualmente en el dispositivo |
-| El `adb forward` se cae a mitad de la corrida | Ejecutar `adb forward tcp:9220 localabstract:webview_devtools_remote_<PID>` de nuevo |
-| La app se cierra sola | Relanzarla con `adb shell am start -n com.kiberno.denarioPremiumPro/.MainActivity` |
+| El `adb forward` se cae a mitad de la corrida (CDP responde vacío) | Ejecutar `.\automation\cdp\setup-cdp.ps1 -Reforward` (re-detecta el PID vivo y re-apunta el forward, sin relanzar la app) |
+| La app se cierra sola | Ejecutar `.\automation\cdp\setup-cdp.ps1` (relanza la app y reconfigura CDP) |
 
 ---
 
@@ -97,7 +77,7 @@ Eres **Claude Code actuando como Orquestador QA** para Denario Premium Móvil. T
 2. Lanzar cada agente de módulo **uno a la vez** usando la herramienta `Agent`, inyectando los datos del cliente en cada prompt.
 3. **Esperar el resultado completo** de cada agente antes de lanzar el siguiente.
 4. Al terminar los 10 módulos, generar el **Reporte Consolidado Final**.
-5. **Cierre de memoria automático:** lanzar un agente final de consolidación (Agente 11) que promueve los patrones nuevos de los reportes a `module-selectors.md` / YAML del cliente. La corrida termina con la memoria ya actualizada — **sin pasos manuales**.
+5. **Cierre de memoria automático:** lanzar un agente final de consolidación (Agente 11) que promueve los patrones nuevos de los reportes a `module-selectors/` / YAML del cliente. La corrida termina con la memoria ya actualizada — **sin pasos manuales**.
 
 **App:** `com.kiberno.denarioPremiumPro`
 **Carpeta raíz de trabajo:** `DenarioPremiunMovil/qa-piloto-automatizacion/`
@@ -112,10 +92,10 @@ Lee **solo estos dos archivos** antes del Paso 0:
 
 ```
 automation/cdp/RUNTIME.md                         ← reglas operativas, skills, anti-patrones, N/A vs FAIL
-automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml             ← VGs y datos de prueba del cliente activo
+automation/clientes/{QA_CLIENTE}.yaml             ← VGs y datos de prueba del cliente activo
 ```
 
-Los agentes leen sus propios archivos (`RUNTIME.md` + `smoke-{modulo}.md` + su sección de `module-selectors.md`). No incluir en los prompts de agentes ninguna referencia a guiones completos, lecciones ni SKILLS.md.
+Los agentes leen sus propios archivos (`RUNTIME.md` + `smoke-{modulo}.md` + su sección de `module-selectors/`). No incluir en los prompts de agentes ninguna referencia a guiones completos, lecciones ni SKILLS.md.
 
 ---
 
@@ -137,13 +117,27 @@ Verifica:
 - `secrets/qa-credentials.env` existe y tiene `QA_USER=`
 
 Lee y guarda en memoria:
-- `automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml` → leer completo; usarás `vgs` y `modules.*` en cada prompt de agente
+- `automation/clientes/{QA_CLIENTE}.yaml` → leer completo; usarás `vgs` y `modules.*` en cada prompt de agente
 
 Si CDP no responde: detente y avisa — no intentes reparar infra.
+
+**Pre-vuelo BD (Oráculo §10 — NO bloqueante):** probar conectividad a la BD del cliente:
+```bash
+node automation/db/query.js {QA_CLIENTE} "SELECT 1 AS ok"
+```
+- Si devuelve `[{ "ok": 1 }]` → la verificación BD inline está disponible para los 7 agentes transaccionales.
+- Si devuelve `ERR:` (sin bloque del cliente en `secrets/qa-db.env`, BD inaccesible, o playa distinta) → **la corrida sigue igual**; informar al usuario "BD no disponible → módulos transaccionales reportarán `BD-N/A`". **NUNCA** detener la corrida por la BD (la verificación BD es aditiva, no infra crítica).
+- La **playa/servidor activa la confirma la QA antes de la corrida**; su DSN va en el bloque `# Cliente: {QA_CLIENTE}` de `qa-db.env`.
 
 **RUN_ID:** Generar con formato `YYYYMMDD_HHMMSS_smoke-completo`. Usar este mismo ID en todos los reportes.
 
 **RUN_DIR:** Construir como `automation/reports/smoke_{QA_CLIENTE}_{YYYYMMDD}_{HHMMSS}/` (extraer fecha y hora del RUN_ID). Crear esta carpeta antes de lanzar el primer agente. Ejemplo: RUN_ID `20260603_093706_smoke-completo` + cliente `insumar` → `automation/reports/smoke_insumar_20260603_093706/`.
+
+**Pre-vuelo de DATOS (NO bloqueante) — tras crear RUN_DIR, si la BD respondió:**
+```bash
+node automation/db/resolve-run-context.js {QA_CLIENTE} {RUN_DIR}
+```
+Genera `{RUN_DIR}run-context.json` con el cliente/documento ya resuelto por módulo (hoy: cobros completo; otros módulos → `null` hasta validar su query → el agente usa su discovery actual). En cada prompt de agente, **inyectar la sección `modules.{modulo}` de ese JSON** (si no es `null`) como "DATOS RESUELTOS" para que el agente vaya directo sin explorar. Si el script da `ERR:` o el módulo viene `null` → el agente cae a su discovery habitual (igual que hoy). **Nunca** detener la corrida por esto.
 
 ---
 
@@ -169,12 +163,21 @@ Si CDP no responde: detente y avisa — no intentes reparar infra.
 
 Para cada módulo en el orden anterior:
 1. Construye el prompt del agente usando la plantilla de la sección PROMPTS DE AGENTES — **inyecta** la sección `modules.{modulo}` del perfil cliente leído en Paso 0.
-2. Lanza con la herramienta `Agent` (`subagent_type: "claude"`). Espera resultado completo.
+2. Lanza con la herramienta `Agent` (`subagent_type: "claude"`). Espera resultado completo del **agente UI**.
 3. Verifica que el agente terminó en Home.
+3b. **Si el módulo es transaccional:** lanzá su **Agente BD en BACKGROUND** (`Agent` con `run_in_background: true`) — coteja los payloads de ese módulo (`cotejo-payload.js`) mientras vos seguís con el agente UI del módulo siguiente. Cuando notifique, **anexá vos (orquestador, foreground) el markdown que devolvió** a `{RUN_DIR}{modulo}.md` y borrá su temporal — el agente BD NO escribe (en background se auto-deniega). Ver nota "Cotejo BD en paralelo" abajo.
 4. FAIL en caso S1: registra en consolidado y continúa con el siguiente módulo.
 5. Al terminar los 10: genera el Reporte Consolidado Final en `{RUN_DIR}consolidado.md`.
 6. **Consolidación de memoria (automática — Paso 7):** **solo si los 10 módulos completaron** (no corrida parcial), lanza el **Agente 11 — Consolidación** con la herramienta `Agent` (ver plantilla abajo). No es un paso manual: lo dispara el orquestador como su último agente.
 7. Cuando el Agente 11 termine, **añade al `consolidado.md` la sección "Memoria: patrones promovidos"** con el resumen que devolvió. La corrida queda cerrada con la memoria al día; el control de calidad es revisar el `git diff` antes de commitear.
+
+> **Cotejo BD campo-a-campo, en PARALELO (modelo de 2 agentes):** para cada **módulo transaccional**, el flujo es:
+> 1. Lanzá el **agente UI** (instala `installPayloadCapture` y vuelca los payloads a `{RUN_DIR}_payloads.jsonl`). **Esperá que termine** (usa el dispositivo).
+> 2. Lanzá el **Agente BD** de ESE módulo **en background** → en la herramienta `Agent` pasá **`run_in_background: true`**. Corre **solo Bash** (`cotejo-payload.js`), no toca el dispositivo.
+> 3. **Sin esperarlo, seguí inmediatamente con el agente UI del módulo siguiente.** Así el **Agente BD del módulo N corre EN PARALELO con el agente UI del módulo N+1** (recursos distintos: BD/Bash vs dispositivo/CDP → no chocan).
+> 4. Cuando el Agente BD termina (la herramienta te **notifica**), **devuelve** el bloque markdown de su cotejo. El orquestador (foreground) lo **anexa** a `{RUN_DIR}{modulo}.md` (sección "## Verificación BD (payload ↔ nube)") y **borra** el/los temporal/es `automation/db/_tmp_{modulo}*.json`. El agente BD NO escribe el reporte porque en background la escritura se auto-deniega (sin prompt). Recogé la notificación, anexá y seguí.
+>
+> ⚠ El solape es **offset** (BD de N ‖ UI de N+1) — **nunca** UI+BD del mismo módulo a la vez (el BD necesita el payload ya enviado + la ventana de sync ~10s). Aplica a los **7 transaccionales**; login/productos/vendedores no llevan cotejo BD. En **1 emulador** los UI siguen siendo secuenciales entre sí (un solo dispositivo); lo que se paraleliza es **el BD contra el UI siguiente**.
 
 > **Guarda de completitud:** si la corrida fue parcial o se abortó a mitad, **no** lances el Agente 11 — los "Patrones nuevos" quedan en los reportes y se consolidan en la próxima corrida completa (o manualmente con `prompt-consolidar-hallazgos.md`).
 
@@ -186,6 +189,8 @@ Plantilla común — el orquestador inyecta RUN_ID, QA_CLIENTE y la sección `mo
 
 Ruta helpers (constante en todos los prompts) — **relativa a la raíz `qa-piloto-automatizacion/`** (portable, funciona en cualquier máquina):
 `automation/cdp/denario-cdp-helpers.js`
+
+**Verificación BD inline (los 7 agentes transaccionales — clientes, pedidos, cobros, devoluciones, inventarios, depósitos, visitas):** tras cada Enviar/Guardar que persiste, el agente ejecuta la "Verificación BD" de su `smoke-{modulo}.md` (consulta read-only vía Bash: `node automation/db/query.js {QA_CLIENTE} "SELECT ..."`) y agrega la sub-sección `## Verificación BD` a su reporte con la marca `BD-OK/MISMATCH/N-A/INFO`. Mecánica y blindaje: **RUNTIME §10**. El `{QA_CLIENTE}` ya se inyecta en cada prompt. **Si la BD no responde (`ERR:`) → `BD-N/A`, el caso UI corre y se reporta igual** — la BD nunca tumba el smoke. Login/Productos/Vendedores (solo-lectura) **no** llevan Verificación BD.
 
 ---
 
@@ -199,12 +204,13 @@ Eres agente QA — módulo LOGIN · Denario Premium Móvil · RUN_ID: {RUN_ID} �
 LECTURA OBLIGATORIA (solo estos 3 archivos):
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-login.md
-3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo LOGIN" (no el archivo completo)
+3. automation/cdp/module-selectors/_comunes.md + automation/cdp/module-selectors/login.md  ← solo estos dos
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
 const pg = await h.connectCdp(page);
-const creds = await h.fetchCreds('{QA_CLIENTE}');
+// Credenciales: leer secrets/qa-credentials.env con Read y parsear el bloque "# Cliente: {QA_CLIENTE}" inline.
+// NO usar h.fetchCreds() en browser_run_code_unsafe — usa fs/require y revienta (ver RUNTIME §1).
 await h.waitSyncOverlay(pg);
 Si la app está en HOME al iniciar → click en "Salir" primero.
 
@@ -228,7 +234,7 @@ Eres agente QA — módulo CLIENTES · Denario Premium Móvil · RUN_ID: {RUN_ID
 LECTURA OBLIGATORIA:
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-clientes.md
-3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo CLIENTES" (no el archivo completo)
+3. automation/cdp/module-selectors/_comunes.md + automation/cdp/module-selectors/clientes.md  ← solo estos dos
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
@@ -255,7 +261,7 @@ Eres agente QA — módulo PEDIDOS · Denario Premium Móvil · RUN_ID: {RUN_ID}
 LECTURA OBLIGATORIA:
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-pedidos.md
-3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo PEDIDOS" (no el archivo completo)
+3. automation/cdp/module-selectors/_comunes.md + automation/cdp/module-selectors/pedidos.md  ← solo estos dos
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
@@ -282,7 +288,7 @@ Eres agente QA — módulo COBROS · Denario Premium Móvil · RUN_ID: {RUN_ID} 
 LECTURA OBLIGATORIA:
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-cobros.md   ← contiene lógica adjunto y N/As por VG
-3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo COBROS" (no el archivo completo)
+3. automation/cdp/module-selectors/_comunes.md + automation/cdp/module-selectors/cobros.md  ← solo estos dos
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
@@ -310,7 +316,7 @@ Eres agente QA — módulo DEVOLUCIONES · Denario Premium Móvil · RUN_ID: {RU
 LECTURA OBLIGATORIA:
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-devoluciones.md
-3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo DEVOLUCIONES" (no el archivo completo)
+3. automation/cdp/module-selectors/_comunes.md + automation/cdp/module-selectors/devoluciones.md  ← solo estos dos
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
@@ -322,8 +328,54 @@ DATOS DE PRUEBA — {QA_CLIENTE}:
 
 REPORTE: {RUN_DIR}devoluciones.md
 REGISTROS CREADOS: incluir tabla (nro devolución enviada).
+CAPTURA DE PAYLOAD (cotejo BD): al inicio, reset+`await h.installPayloadCapture(pg)`. Tras los Enviar, `await h.getCapturedPayloads(pg)` y volcar cada payload de servicio a `{RUN_DIR}_payloads.jsonl` (1 línea JSON `{url,data}` por envío). Lo consume el Agente BD.
 Devolver: módulo DEVOLUCIONES, counts, ruta, registros.
 ```
+
+> **Captura de payload (TODOS los 7 agentes UI transaccionales — clientes, pedidos, cobros, devoluciones, inventarios, depósitos, visitas):** al inicio del agente UI, `await pg.evaluate(()=>{window.__qaCaptureInstalled=false;})` + `await h.installPayloadCapture(pg)`; tras los Enviar, volcar `getCapturedPayloads` a `{RUN_DIR}_payloads.jsonl`. Es **universal** (un solo hook en `nativePromise` cubre los 7 tipos). El **Agente BD** (lanzado en background, ver su plantilla) consume ese archivo. Login/Productos/Vendedores NO capturan (solo lectura).
+
+---
+
+### AGENTE BD — COTEJO CAMPO-A-CAMPO POR PAYLOAD (sin Playwright · se lanza en BACKGROUND)
+
+**Estado inicial:** el agente UI del módulo ya envió y volcó los payloads a `{RUN_DIR}_payloads.jsonl` | **No interactúa con la app** (solo Bash: BD read-only · NO Playwright, NO adb tap)
+
+**Cómo lanzarlo:** con la herramienta `Agent` y **`run_in_background: true`**, justo después del agente UI de su módulo. Corre **en paralelo** con el agente UI del módulo siguiente (usa otro recurso: BD/Bash, no el dispositivo).
+
+> ⚠ **PERMISOS (crítico para que el background NO se auto-deniegue):** los jobs en background **no pueden responder prompts de permiso**, así que cualquier comando no allowlisteado se auto-deniega y el agente muere. Por eso `.claude/settings.json` ya allowlistea `node automation/db/query.js`, `node automation/db/cotejo-payload.js`, lectura de `automation/**` y escritura de temporales `automation/db/_tmp_*.json`. **El agente BD NO escribe el reporte** (esa escritura sí se auto-deniega en background): produce la sección y la **DEVUELVE** como texto; el **orquestador la anexa** al recoger la notificación (foreground, 1 paso). NO uses Write/Edit sobre el reporte ni `rm` desde el agente BD.
+
+```
+Eres agente BD — cotejo campo-a-campo por PAYLOAD · Denario Premium Móvil · RUN_ID: {RUN_ID} · Cliente: {QA_CLIENTE} · Módulo: {MODULO}
+Trabajo de SOLO Bash (BD read-only): NO Playwright, NO adb tap, NO tocar la app.
+PERMISOS: comandos allowlisteados disponibles (query.js, cotejo-payload.js, lectura automation/**, temporal automation/db/_tmp_*.json). NO escribas el reporte del módulo ni borres archivos — DEVOLVÉ el markdown y el orquestador lo anexa.
+
+OBJETIVO: confirmar que **lo que se envió (payload) == lo que se guardó (nube)**, campo por campo,
+registro completo (cabecera + líneas), para cada payload que el agente UI capturó.
+
+LECTURA OBLIGATORIA: automation/cdp/RUNTIME.md §10 + automation/db/COTEJO-BD.md (regla payload-driven + marcas BD-FIELD-*).
+
+PASOS:
+1. Leer {RUN_DIR}_payloads.jsonl y filtrar los payloads de ESTE módulo por el endpoint en `url`
+   ({MODULO}: returnservice/return, orderservice/order, collectionservice/collection, depositservice/deposit,
+    visitservice/visit, clientstockservice/clientstock, potentialclientservice/potentialclient).
+   Si no hay → reportar "sin payloads a cotejar" y terminar (no es error).
+2. Por cada payload, escribirlo a un archivo temporal `automation/db/_tmp_{MODULO}_{i}.json` (ruta allowlisteada) y correr:
+     node automation/db/cotejo-payload.js {QA_CLIENTE} automation/db/_tmp_{MODULO}_{i}.json
+   Esperar/reintentar ~10s si la nube aún no tiene la fila (sync asíncrono) → reintentar 1 vez.
+   Si el payload viene en formato resumen (no la estructura anidada que espera el motor) o cotejo-payload.js no aplica → caer a verificación equivalente con `node automation/db/query.js {QA_CLIENTE} "SELECT ..."` (cabecera + hijas) y reportarlo como nota.
+3. Interpretar la salida JSON (marca + header + children + resumen.mismatches + resumen.notas).
+
+SALIDA (DEVOLVER como texto — NO escribir el reporte; el orquestador anexa): bloque markdown con la sección "## Verificación BD (payload ↔ nube)":
+| co_x | Marca | Campos cabecera | Hijas (payload/nube) | Mismatches | Notas |
+y, para los MISMATCH, el detalle campo a campo (campo · payload · nube).
+Marcas: BD-FIELD-OK · BD-FIELD-MISMATCH (≥1 campo lleno difiere) · BD-SAVED (no llegó a la nube) · BD-N/A (BD inaccesible — la corrida sigue igual).
+CALIBRACIÓN: si hay notas "campo del payload sin columna en nube (posible rename)" o campos extra → incluirlas en la salida para que el orquestador las sume al fieldMap/ignore de cotejo-payload.js (no son mismatch).
+
+BLINDAJE: si cotejo-payload.js devuelve BD-N/A → reportarlo y seguir; la BD NUNCA tumba el smoke.
+DEVOLVER: módulo {MODULO}, conteo por marca (OK/MISMATCH/SAVED/N-A), mismatches reales, notas de calibración, y el **bloque markdown completo listo para pegar** (el orquestador lo anexa a {RUN_DIR}{MODULO}.md y borra el/los temporal/es).
+```
+
+> **Estado:** config de `cotejo-payload.js` calibrada para clientes/pedidos/inventarios/visitas/devoluciones/cobros-normal. Pendiente calibrar: cobros anticipo/retención/IGTF + depósitos (1 ejemplo de cada → las notas indican qué agregar al config). Ver `automation/db/COTEJO-BD.md`.
 
 ---
 
@@ -337,7 +389,7 @@ Eres agente QA — módulo INVENTARIOS · Denario Premium Móvil · RUN_ID: {RUN
 LECTURA OBLIGATORIA:
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-inventarios.md   ← contiene nota crítica fillNgModelKeyboard
-3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo INVENTARIOS" (no el archivo completo)
+3. automation/cdp/module-selectors/_comunes.md + automation/cdp/module-selectors/inventarios.md  ← solo estos dos
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
@@ -364,7 +416,7 @@ Eres agente QA — módulo DEPÓSITOS · Denario Premium Móvil · RUN_ID: {RUN_
 LECTURA OBLIGATORIA:
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-depositos.md   ← verificar modules.depositos.aplica antes de ejecutar
-3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo DEPÓSITOS" (no el archivo completo)
+3. automation/cdp/module-selectors/_comunes.md + automation/cdp/module-selectors/depositos.md  ← solo estos dos
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
@@ -391,7 +443,7 @@ Eres agente QA — módulo VISITAS · Denario Premium Móvil · RUN_ID: {RUN_ID}
 LECTURA OBLIGATORIA:
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-visitas.md   ← contiene notas críticas DM-VIS-015, DM-VIS-022, DM-VIS-031
-3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo VISITAS" (no el archivo completo)
+3. automation/cdp/module-selectors/_comunes.md + automation/cdp/module-selectors/visitas.md  ← solo estos dos
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
@@ -419,7 +471,7 @@ Módulo de solo lectura — no crea ni modifica datos.
 LECTURA OBLIGATORIA:
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-productos.md
-3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo PRODUCTOS" (no el archivo completo)
+3. automation/cdp/module-selectors/_comunes.md + automation/cdp/module-selectors/productos.md  ← solo estos dos
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
@@ -447,7 +499,7 @@ Módulo de solo lectura — no crea ni modifica datos.
 LECTURA OBLIGATORIA:
 1. automation/cdp/RUNTIME.md
 2. automation/smoke/smoke-vendedores.md   ← verificar modules.vendedores.aplica antes de ejecutar
-3. automation/cdp/module-selectors.md  ← leer SOLO la sección "## Módulo VENDEDORES" (no el archivo completo)
+3. automation/cdp/module-selectors/_comunes.md + automation/cdp/module-selectors/vendedores.md  ← solo estos dos
 
 INICIO:
 const h  = require('{RUTA_HELPERS}');
@@ -477,8 +529,8 @@ Sigue al pie de la letra: guiones-regresion/prompt-consolidar-hallazgos.md
 - RUN_DIR: {RUN_DIR}
 
 Lee la sección "## Patrones / selectores nuevos" de cada reporte en {RUN_DIR} y promuévelos:
-- DOM estándar / anti-patrón → automation/cdp/module-selectors.md (con tag [{QA_CLIENTE}-{fecha}])
-- Atado a VG o dato de cliente → inline en automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml
+- DOM estándar / anti-patrón → automation/cdp/module-selectors/{modulo}.md (transversal CDP → _comunes.md) con tag [{QA_CLIENTE}-{fecha}]
+- Atado a VG o dato de cliente → inline en automation/clientes/{QA_CLIENTE}.yaml
 - Confirmado en 2+ corridas → RUNTIME.md / denario-cdp-helpers.js
 Marca cada sección procesada con "> ✅ consolidado {fecha}". NO toques defectos_abiertos. NO git commit/push.
 Actualiza ultima_corrida.run_id y .fecha del YAML al de esta corrida.
@@ -502,13 +554,25 @@ Devuelve: tabla resumen (Patrón | Módulo | Decisión | Acción) + conteos + li
 | **Dispositivo** | <ADB_SERIAL> |
 | **App** | `com.kiberno.denarioPremiumPro` — Versión <VERSION> |
 | **Credenciales** | `***`/`***` |
-| **Resultado global** | <N> PASS · <N> FAIL · <N> SKIP · <N> N/A |
+| **Resultado global** | <N> PASS · <N> FAIL · <N> SKIP · <N> N/A · <N> BLOCKED |
 
 ## Casos ejecutados
 
 | ID | Descripción breve | Resultado | Evidencia / Señal detectada |
 |----|-------------------|-----------|------------------------------|
-| DM-XXX-NNN | ... | ✅ PASS / ❌ FAIL / ⏭ SKIP / 🚫 N/A | ... |
+| DM-XXX-NNN | ... | ✅ PASS / ❌ FAIL / ⏭ SKIP / 🚫 N/A / ⛔ BLOCKED | ... |
+
+> **Ledger:** además de este `.md`, anexar a `{RUN_DIR}_results.jsonl` una línea JSON por caso — `{"run_id","modulo","caso","resultado","ms","intentos","bd"}` (ver RUNTIME §6).
+
+## Verificación BD (solo agentes transaccionales · ver RUNTIME §10)
+
+*(Omitir esta sección en Login/Productos/Vendedores — solo-lectura.)*
+
+| Registro (Nro.Ref UI) | Marca BD | Fila observada (id / co / st) | Cuadra (cabecera/detalle/montos) | Correlación Ref↔fila |
+|-----------------------|----------|-------------------------------|----------------------------------|----------------------|
+| ... | BD-OK / BD-MISMATCH / BD-N/A / BD-INFO | id_x=.. · co_x=.. · st_x=.. | sí / detalle≠UI / monto≠UI | Ref==co_x? / pendiente |
+
+*(Si la BD no respondió: una fila `BD-N/A` con el motivo. En corridas de descubrimiento todo va `BD-INFO`.)*
 
 ## Patrones / selectores nuevos (insumo de consolidación)
 
@@ -540,23 +604,23 @@ Devuelve: tabla resumen (Patrón | Módulo | Decisión | Acción) + conteos + li
 | **RUN_ID** | `<RUN_ID>` |
 | **Dispositivo** | <ADB_SERIAL> |
 | **App** | `com.kiberno.denarioPremiumPro` — Versión <VERSION> |
-| **Resultado global** | <N> PASS · <N> FAIL · <N> SKIP · <N> N/A de 137 casos |
+| **Resultado global** | <N> PASS · <N> FAIL · <N> SKIP · <N> N/A · <N> BLOCKED de 137 casos |
 
 ## Resumen por módulo
 
-| Módulo | Casos | PASS | FAIL | SKIP | N/A | Estado |
-|--------|-------|------|------|------|-----|--------|
-| Login | 6 | | | | | ✅/❌ |
-| Clientes | 12 | | | | | ✅/❌ |
-| Pedidos | 14 | | | | | ✅/❌ |
-| Cobros | 34 | | | | | ✅/❌ |
-| Devoluciones | 14 | | | | | ✅/❌ |
-| Inventarios | 16 | | | | | ✅/❌ |
-| Depósitos | 12 | | | | | ✅/❌ |
-| Visitas | 16 | | | | | ✅/❌ |
-| Productos | 10 | | | | | ✅/❌ |
-| Vendedores | 3 | | | | | ✅/❌ |
-| **TOTAL** | **137** | | | | | |
+| Módulo | Casos | PASS | FAIL | SKIP | N/A | BLK | Estado |
+|--------|-------|------|------|------|-----|-----|--------|
+| Login | 6 | | | | | | ✅/❌ |
+| Clientes | 12 | | | | | | ✅/❌ |
+| Pedidos | 14 | | | | | | ✅/❌ |
+| Cobros | 34 | | | | | | ✅/❌ |
+| Devoluciones | 14 | | | | | | ✅/❌ |
+| Inventarios | 16 | | | | | | ✅/❌ |
+| Depósitos | 12 | | | | | | ✅/❌ |
+| Visitas | 16 | | | | | | ✅/❌ |
+| Productos | 10 | | | | | | ✅/❌ |
+| Vendedores | 3 | | | | | | ✅/❌ |
+| **TOTAL** | **137** | | | | | | |
 
 ## FAIL críticos (S1/S2)
 
@@ -589,9 +653,9 @@ Agregar aquí los registros **enviados / persistentes** que reportó cada agente
 
 | Patrón | Módulo | Destino |
 |--------|--------|---------|
-| ... | ... | module-selectors.md / YAML cliente / RUNTIME |
+| ... | ... | module-selectors/ / YAML cliente / RUNTIME |
 
-*(Resumen que devolvió el Agente 11. Revisar el `git diff` de `module-selectors.md` y del YAML antes de commitear.)*
+*(Resumen que devolvió el Agente 11. Revisar el `git diff` de `module-selectors/` y del YAML antes de commitear.)*
 
 ## Reportes individuales
 
@@ -610,7 +674,7 @@ Agregar aquí los registros **enviados / persistentes** que reportó cada agente
 
 | Situación | Acción del orquestador |
 |-----------|------------------------|
-| CDP no responde en :9220 | Detener y avisar al usuario: "Ejecutar `adb forward tcp:9220 localabstract:webview_devtools_remote_<PID>`" |
+| CDP no responde en :9220 | Detener y avisar al usuario: "Ejecutar `.\automation\cdp\setup-cdp.ps1 -Reforward` (auto-repara el forward al PID vivo)". Si tampoco así, `.\automation\cdp\setup-cdp.ps1` (pre-vuelo completo). |
 | `fetchCreds()` lanza error (archivo no encontrado) | Verificar que `secrets/qa-credentials.env` existe en la raíz de `qa-piloto-automatizacion/` |
 | FAIL S1 en un módulo | Registrar en consolidado; continuar con el siguiente módulo |
 | App en estado inconsistente al iniciar agente | Avisar al usuario: "Ejecutar `adb shell am force-stop com.kiberno.denarioPremiumPro` y relanzar la app" |

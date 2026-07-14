@@ -26,7 +26,7 @@ Nunca dejar archivos stub de solo redirección — si no tiene contenido útil, 
 | --- | --- |
 | **RUNTIME (reglas operativas CDP)** | `automation/cdp/RUNTIME.md` |
 | **Helpers CDP** | `automation/cdp/denario-cdp-helpers.js` |
-| **Perfiles de cliente** | `automation/clientes/{cliente}/{cliente}.yaml` (hidroponias, insumar, romher) |
+| **Perfiles de cliente** | `automation/clientes/{cliente}.yaml` (hidroponias, insumar, romher) |
 | **Smoke extracts** | `automation/smoke/` (Fase 2 — en construcción) |
 | **Orquestador smoke** | `guiones-regresion/prompt-orquestador-smoke.md` |
 | Guiones de regresión (completos) | `guiones-regresion/guion-*.md` |
@@ -88,9 +88,10 @@ automation/
     RUNTIME.md              ← reglas operativas (SIEMPRE leer — reemplaza todo lo anterior)
     denario-cdp-helpers.js  ← helpers canónicos + mockCameraAdjunto + fetchCreds desde archivo
   clientes/
-    _schema.yaml                          ← esquema de perfil
-    {cliente}/{cliente}.yaml              ← perfil por cliente (insumar, globalmp, romher, hidroponias, central_foods)
-    {cliente}/global_configuration_*.csv  ← (opcional) CSV de VGs del equipo dev, misma carpeta — NO se lee en corrida
+    _schema.yaml            ← esquema de perfil
+    hidroponias.yaml        ← VGs y datos reales (corridas 20260527/20260529)
+    insumar.yaml            ← requiredCollectionAttachments=false confirmado
+    romher.yaml             ← template TBD (activo en El Yaque)
   smoke/
     smoke-login.md          ← extract smoke por módulo (10 archivos)
     smoke-clientes.md
@@ -112,9 +113,9 @@ automation/
 1. Especificar `QA_CLIENTE` (ej. `hidroponias`)
 2. Verificar CDP activo en `:9220` y `secrets/qa-credentials.env` existe
 3. Pegar prompt del orquestador en sesión nueva de Claude Code
-4. El orquestador lee `RUNTIME.md` + `clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml`
-5. Lanza 10 agentes secuenciales — cada uno lee `RUNTIME.md` + `smoke-{modulo}.md` + su sección de `module-selectors.md`; cada reporte incluye sección "Patrones / selectores nuevos"
-6. Al finalizar: reporte consolidado + el orquestador lanza el **Agente 11 (consolidación automática)** que promueve los patrones nuevos de los reportes a `module-selectors.md` / YAML del cliente — sin pasos manuales
+4. El orquestador lee `RUNTIME.md` + `clientes/{QA_CLIENTE}.yaml`
+5. Lanza 10 agentes secuenciales — cada uno lee `RUNTIME.md` + `smoke-{modulo}.md` + su sección de `module-selectors/`; cada reporte incluye sección "Patrones / selectores nuevos"
+6. Al finalizar: reporte consolidado + el orquestador lanza el **Agente 11 (consolidación automática)** que promueve los patrones nuevos de los reportes a `module-selectors/` / YAML del cliente — sin pasos manuales
 
 ---
 

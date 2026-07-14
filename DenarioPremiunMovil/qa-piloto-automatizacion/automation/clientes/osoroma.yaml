@@ -1,0 +1,235 @@
+# osoroma/perfil.yaml
+# Cliente NUEVO — VGs derivadas del dump global_configuration_202607081702_OSOROMA.md (2026-07-08).
+# Datos de prueba por módulo (modules.*) pre-poblados desde BD read-only (osoroma) 2026-07-08; se CONFIRMAN en la 1ª corrida.
+# Rubro: CALZADOS (productos = tallas 34-52). Tenant multi-empresa (3 empresas).
+# Usuario QA: 001 (VENDEDOR de osoroma). ⚠ El bloque "# Cliente: osoroma" de secrets/qa-credentials.env está en QA_USER=leidy
+#   (usuario de FERRENUESTRO, NO aplica a osoroma) → CORREGIR a 001 antes de correr. Ver pregunta abierta al final.
+#
+# ⚠ DECISIÓN DE MERGE DE CONFIG (global vs client-override):
+#   Se entregaron DOS dumps: global_configuration_...OSOROMA (tabla global) y global_configuration_client_...OSOROMA (override).
+#   El override está congelado en 2022-10-17 con esquema legacy (contiene vars que ya NO existen en el global:
+#   orderWeb, collectionWeb, depositWeb, conversionDocument, hideColletionPayment, listProductsBy, showProductByGrid...).
+#   La tabla global_configuration de la BD de OSOROMA está mantenida hasta 2026-07-08 → es la AUTORITATIVA.
+#   → VGs tomadas del global_configuration. El client-override 2022 se considera semilla legacy superada. NO se aplica.
+#   Las 3 VGs donde el override contradecía al global (multiCurrency, retencion, userCanSelectIGTF) están marcadas
+#   "⚠ confirmar en UI" abajo — la corrida caza cualquier divergencia real.
+
+cliente_id: osoroma
+cliente_nombre: "DISTRIBUIDORA OSOROMA C.A."   # empresa 00003 (por defecto para cobros, ver abajo). Tenant multi-empresa: 00001 CALZADOS SICURA C.A., 00002 CALZADOS AYALA C.A., 00003 DISTRIBUIDORA OSOROMA C.A.
+ws_url: "http://denarioelyaque.ddns.net:8081/PremiumWS/services/"  # El Yaque — CONFIRMADO por QA 2026-07-08 (osoroma está en El Yaque). Mismo servidor que romher/hidroponias.
+# ⚠ BUILD EL YAQUE (ver jerez [jerez-2026-07-06]): window.ng=false (sin debug Angular) → helpers CDP con fallback window.ng son inoperantes; CONDUCIR CON CLICKS REALES. Aplicar a esta corrida.
+apk_package: com.kiberno.denarioPremiumPro
+db_name: osoroma                            # CONFIRMADO 2026-07-08 (current_database()=osoroma). Conexión read-only en bloque "# Cliente: osoroma" de secrets/qa-db.env (host savia.cxxaa8dakzbw.us-east-1.rds.amazonaws.com, user_read). GRANT read-only verificado (query.js corre). Baseline nube pre-corrida: clientes=4073, productos=10416, invoices=0.
+
+# ── VGs — desde global_configuration OSOROMA 2026-07-08 (salvo esVendedor, ver nota) ──────────
+# ⚠ DIFERENCIAS CLAVE que afectan cobertura del smoke:
+#   - requiredCollectionAttachments=FALSE  → cobro NO requiere adjunto → DM-COB-019 ENVIABLE (≠ piercar/romher que quedan Guardados)
+#   - cobroRetencion=TRUE + retencion=TRUE → AMBAS retenciones aplican: DM-COB-029 (botón) Y DM-COB-041/042 (detalle) — PERO 0 facturas → N/A-DATA
+#   - userCanSelectIGTF=TRUE + igtfDefault=TRUE → DM-COB-044/045 aplican; IGTF doc separado ACTIVADO por defecto
+#   - clientStock=FALSE  → ⚠ módulo "toma de inventario en el cliente" DESHABILITADO → INVENTARIOS probablemente N/A completo (confirmar botón en corrida)
+#   - validateReturn=FALSE + requeridedNroFactura=FALSE + 0 facturas sincronizadas → DEVOLUCIONES libre/limitado, casos con factura N/A-DATA
+#   - enterpriseEnabled=TRUE con 3 empresas → campo Empresa en todos los módulos; asignar idEnterprise explícito aunque sea única visible
+#   - multiCurrencyOrder=FALSE (pese a multiCurrency=TRUE) → Pedidos solo moneda por defecto
+vgs:
+  multiCurrency: true                       # global multiCurrency=true. ⚠ confirmar en UI (client-override legacy decía false)
+  expirationBatch: false                    # global expirationBatch=false → sin lote+fecha (además clientStock=false hace N/A la toma en cliente)
+  suggestedOrder: true                      # global suggestedOrder=true (P,22) → "Pedido Sugerido"
+  suggestedOrderByDispatchAndReturn: false  # global=false (VG distinta; no contradice suggestedOrder) → DM-INV-017 N/A
+  requiredCollectionAttachments: false      # global=false → cobro NO requiere adjunto → DM-COB-019 ENVIABLE
+  requiredComment: false                    # global requiredComment=false → DM-COB-006 N/A
+  validateReturn: false                     # global=false → devoluciones NO valida producto contra factura enviada
+  requeridedNroFactura: false               # global=false → nro factura NO obligatorio en devoluciones
+  multiInvoices: false                      # global=false → no se devuelven productos de varias facturas
+  signatureReturn: true                     # global signatureReturn=true
+  signatureCollection: true                 # global signatureCollection=true
+  signatureVisit: true                      # global signatureVisit=true
+  signatureOrder: true                      # global signatureOrder=true
+  signatureDeposit: true                    # global signatureDeposit=true
+  signatureStock: true                      # global signatureStock=true
+  signatureClient: true                     # global signatureClient=true
+  userCanUploadFiles: true                  # global userCanUploadFiles=true
+  showCamera: true                          # global showCamera=true
+  quAttach: 25                              # global quAttach=25
+  quFileAttach: 1                           # global quFileAttach=1
+  emailWithAttach: true                     # global emailWithAttach=true
+  cloudAttachments: false                   # global cloudAttachments=false → adjuntos en servidor local
+  imageWeightLimit: 30                       # global imageWeightLimit=30 MB
+  esVendedor: true                          # CONFIRMADO QA 2026-07-08: usuario 001 es VENDEDOR → módulo Vendedores aplica.
+  infoVendedores: true                      # global infoVendedores=true (id38, 2026-02-12) → módulo vendedores GESTIONADO desde admin (archivo USER_INFORMATION), NO autogenerado (≠ piercar false)
+  enterpriseEnabled: true                   # global=true → campo Empresa en todos los módulos (3 empresas: SICURA/AYALA/OSOROMA)
+  enabledManualRate: false                  # global enabledManualRate=false
+  canChangeRate: false                      # global canChangeRate=false (306, 2026-06-28) → NO permite cambiar fecha de la tasa → DM-COB-047 N/A
+  historicoTasa: true                       # global historicoTasa=true → selector de tasas anteriores (mesesTasa=3)
+  mesesTasa: 3                               # global mesesTasa=3
+  cobroPrepago: true                        # global cobroPrepago=true → DM-COB-028 (anticipo) aplica
+  automatedPrepaid: true                    # global automatedPrepaid=true → abono automático por diferencia positiva (tolerancia0)
+  cobroRetencion: true                      # global cobroRetencion=true → botón +RETENCIÓN → DM-COB-029 aplica (requiere factura → N/A-DATA hoy)
+  retencion: true                           # global retencion=true → campos retención en detalle → DM-COB-041/042 aplican. ⚠ confirmar en UI (override legacy decía false)
+  sizeRetention: 14                         # global sizeRetention=14 → nro comprobante retención = 14 dígitos
+  formatRetention: "0"                       # global formatRetention="0" (Numeros)
+  retentionDocTypeCR: true                  # global retentionDocTypeCR=true → maneja documentos de retención
+  userCanAddRetention: true                 # global userCanAddRetention=true → retenciones libres sin factura
+  userCanSelectIGTF: true                   # global userCanSelectIGTF=true → selector IGTF → DM-COB-044/045 aplican. ⚠ confirmar en UI (override legacy decía false)
+  igtfDefault: true                         # global igtfDefault=true → IGTF en documento separado ACTIVADO por defecto
+  disableCheckIGTF: false                   # global disableCheckIGTF=false → usuario puede cambiar el check de IGTF separado
+  userCanCollectIva: false                  # global=false → DM-COB-037 (cobro 25% IVA) N/A
+  enablePartialPayment: true                # global enablePartialPayment=true → DM-COB-046 (pago parcial) aplica
+  alwaysPartialPayment: false               # global alwaysPartialPayment=false
+  historicPartialPayment: true              # global historicPartialPayment=true
+  tolerancia0: true                         # global tolerancia0=true → se permiten cobros con diferencia (tolerancia)
+  enableDifferenceCodes: true               # global enableDifferenceCodes=true → selector de origen de diferencia en cobros
+  userCanSelectCollectDiscount: false       # global=false → sin descuentos en cobros
+  reconciliation: false                     # global reconciliation=false
+  multiCurrencyCollection: true             # global=true → cobros ambas monedas
+  multiCurrencyDeposit: true                # global=true → depósitos ambas monedas
+  multiCurrencyOrder: false                 # global=false → Pedidos SOLO moneda por defecto (pese a multiCurrency=true)
+  currencyModule: true                      # global currencyModule=true
+  currencyBank: true                        # global currencyBank=true → ver todos los bancos sin importar moneda del cobro
+  validateCollectionDate: true              # global validateCollectionDate=true → fecha de tasa = fecha del depósito/transferencia
+  clientStock: false                        # ⚠ global clientStock=false → módulo TOMA DE INVENTARIO EN CLIENTE DESHABILITADO → INVENTARIOS probablemente N/A (confirmar botón en corrida)
+  requireClientStock: false                 # global requireClientStock=false → no exige toma inventario antes de pedido
+  selectOrderType: true                     # global selectOrderType=true (P,26) → campo "tipo de pedidos" habilitado
+  userCanChangePriceList: true              # global userCanChangePriceList=true → puede cambiar lista de precio
+  userCanChangeWarehouse: false             # global userCanChangeWarehouse=false
+  showStock: true                           # global showStock=true → muestra inventario en pedido
+  validStock: false                         # global validStock=false → sin alerta al cargar producto sin inventario
+  stock0: true                              # global stock0=true → permite pedidos a productos con stock 0
+  validateWarehouses: true                  # global validateWarehouses=true (2026-06-15) → muestra almacenes e inventario en toma de pedido
+  showCreditLimit: false                    # global showCreditLimit=false → oculta límite de crédito
+  userCanSelectIVA: true                    # global userCanSelectIVA=true (P,13) → muestra IVA en pedido
+  disableDaDispatch: true                   # global disableDaDispatch=true → fecha de despacho opcional y deshabilitada por defecto
+  checkAddressClient: true                  # global checkAddressClient=true → ventana de confirmación al cambiar de sucursal
+  addressByUser: true                       # global addressByUser=true → sucursales asignadas a vendedores (CLIENT_TEMPLATE_USER) → el usuario 001 solo ve SUS clientes/sucursales
+  visitRout: true                           # global visitRout=true → rutas planificadas visibles en visitas
+  userMustActivateGPS: true                 # global userMustActivateGPS=true → obligar GPS activo para transacciones
+  userCanSaveGPS: true                      # global userCanSaveGPS=true → capturar coordenadas de sucursales en visitas
+  transportRole: true                       # global transportRole=true → rol Transportista habilitado
+  rolPlanta: true                           # global rolPlanta=true → rol Planta habilitado
+  promoterRole: false                       # global promoterRole=false
+  transactionHistory: true                  # global transactionHistory=true (historyMonths=3)
+  historyMonths: 3                           # global historyMonths=3
+  mesesFacturas: 3                           # global mesesFacturas=3
+  longitudComentario: 200                    # global longitudComentario=200
+  tagRif: "RIF"                              # global tagRif=RIF
+  tagIVA: "IVA"                              # global tagIVA=IVA
+  clientsOrderBy: "na_client"               # global clientsOrderBy=na_client → clientes ordenados por nombre
+  productsOrderBy: "co_product"             # global productsOrderBy=co_product → productos ordenados por código
+  vatExemptProducts: true                   # global vatExemptProducts=true → IVA por producto (archivo product)
+  colletionPayment:                         # global=true-false-true-true-false-true → Efectivo,Cheque,Transferencia,Deposito,Otros,PagoMovil
+    - "Efectivo"                            # ON
+    - "Transferencia"                       # ON
+    - "Deposito"                            # ON
+    - "Pago Movil"                          # ON
+    # OFF: Cheque, Otros
+
+# ── Datos de prueba por módulo — pre-poblados de BD 2026-07-08; CONFIRMAR en 1ª corrida ────────
+modules:
+  login:
+    bad_password: Test-LOG-003
+
+  clientes:
+    cliente_busqueda: "TBD"                 # addressByUser=true → el usuario 001 solo ve SUS clientes asignados; NO usar la lista global de BD (4073). Descubrir en corrida el 1º cliente visible. Ordenados por na_client.
+    cliente_detalle: "TBD"                  # confirmar en corrida (multi-empresa: verificar empresa en detalle)
+    empresas: ["CALZADOS SICURA C.A.", "CALZADOS AYALA C.A.", "DISTRIBUIDORA OSOROMA C.A."]  # 3 empresas (co 00001/00002/00003). enterpriseEnabled=true → asignar idEnterprise explícito. Confirmar cuáles ve el usuario 001.
+
+  pedidos:
+    cliente_test: "TBD"                     # cliente asignado a el usuario 001 CON sucursal (addressByUser=true). Descubrir en corrida.
+    estructura_producto: "TBD"              # catálogo CALZADOS (10416 productos, tallas 34-52). Confirmar estructura (Linea/categorías) en corrida.
+    alerta_deuda_vencida: false             # 0 facturas sincronizadas → sin deuda vencida esperada; confirmar en corrida
+    multiCurrencyOrder: false               # global=false → Tab Total solo moneda por defecto
+    showCreditLimit: false                  # global=false → sin "Límite de Crédito" en Tab Total
+    selectOrderType: true                   # global=true → confirmar selector "tipo de pedido" en corrida
+    stock0: true                            # permite productos con stock 0
+    producto_test: "TBD"                    # ej. "7101-357TAA (34)" cod 7101-357TAA-34 (de BD); confirmar disponible para usuario 001 en corrida
+
+  cobros:
+    empresa: "DISTRIBUIDORA OSOROMA"        # ⚠ CONFIRMADO QA 2026-07-08: usar la 3ª empresa (co_enterprise 00003) para cobros. enterpriseEnabled=true → seleccionar empresa explícitamente en el flujo.
+    cliente_test: "TBD"                     # cliente SIN documentos para DM-COB-001/002/004/020/021/038 + anticipo (028). Descubrir en corrida (dentro de empresa DISTRIBUIDORA OSOROMA).
+    cliente_code: "TBD"
+    clientes_con_documentos:                # ⚠ CONFIRMADO QA 2026-07-08: pocos clientes con documentos pendientes. Usar CHEVRON (empresa 3) para casos con factura (007/008/012/040/041/042/043/044/046).
+      - "CHEVRON GLOBAL TECHNOLOGY SERV"    # co_client 10770, co_enterprise 00003. Indicado por QA como cliente con documentos pendientes. (invoice=0 en tabla nube 'invoice' 2026-07-08 → confirmar tab Documentos en UI en corrida antes de marcar N/A-DATA.)
+    cliente_25iva: null                     # N/A — userCanCollectIva=false (DM-COB-037 N/A)
+    metodo_pago: "Efectivo"                 # colletionPayment: Efectivo/Transferencia/Deposito/PagoMovil (Cheque/Otros OFF)
+    banco_deposito: "TBD"                   # bancos disponibles (BD): Caja Chica/Principal Caracas, Ciudad Ojeda, Puerto La Cruz, Caja Provisional... confirmar los visibles en corrida
+    documento_retencion: null               # N/A-DATA — retencion=true pero 0 facturas (DM-COB-041/042 sin documento contra el cual retener)
+    monto_retencion_iva: null               # N/A-DATA — sin factura
+    monto_retencion_islr: null              # N/A-DATA — sin factura
+    moneda_cobro: "BS o USD"                # multiCurrencyCollection=true → ambas; confirmar tasa vigente en corrida
+    fecha_tasa_editable: false              # canChangeRate=false → DM-COB-047 N/A. historicoTasa=true → DM-COB-039 rama B posible si rateList.length>1 (confirmar)
+    pago_parcial_toggle: true               # enablePartialPayment=true → DM-COB-046 aplica (requiere factura → N/A-DATA hoy)
+    igtf_default_activado: true             # igtfDefault=true → IGTF documento separado ON por defecto; disableCheckIGTF=false → editable
+    adjunto_obligatorio: false              # requiredCollectionAttachments=false → DM-COB-019 ENVIABLE (≠ piercar/romher)
+    smoke_na_estructural:
+      - "DM-COB-006: requiredComment=false → comentario no obligatorio → N/A"
+      - "DM-COB-037: userCanCollectIva=false → sin cobro 25% IVA → N/A"
+      - "DM-COB-047: canChangeRate=false → no se puede cambiar fecha de la tasa → N/A"
+      - "DM-COB-007/008/012/040/041/042/043/044/046 (casos con factura): usar CHEVRON GLOBAL TECHNOLOGY SERV (empresa 3). Confirmar en tab Documentos que tenga saldo pendiente; si no aparece → N/A-DATA."
+
+  devoluciones:
+    cliente_test: "TBD"                     # descubrir en corrida
+    factura_test: null                      # ⚠ N/A-DATA — 0 facturas sincronizadas en nube osoroma
+    producto_test: "TBD"                    # ej. de catálogo calzados; confirmar en corrida
+    smoke_na_estructural:
+      - "validateReturn=false + requeridedNroFactura=false → devolución NO valida factura (campo factura no obligatorio)"
+      - "invoice=0 en nube → casos de devolución sobre factura sincronizada = N/A-DATA (similar a Jerez). Confirmar si el módulo permite devolución libre en corrida."
+
+  inventarios:
+    aplica: false                           # ⚠ clientStock=false → módulo TOMA DE INVENTARIO EN CLIENTE deshabilitado. CONFIRMAR en corrida si el botón/módulo Inventarios aparece; si no → N/A estructural completo.
+    motivo_na: "clientStock=false en global_configuration → toma de inventario en el cliente deshabilitada. requireClientStock=false, expirationBatch=false. Verificar en corrida si el módulo es visible."
+    cliente_test: "TBD"                     # solo si el módulo resulta visible en corrida
+    # expirationBatch=false → si el modal apareciera, solo Cantidad (sin Lote/Fecha). Usar fillNgModelKeyboard (ver smoke-inventarios §crítico).
+
+  depositos:
+    aplica: TBD                             # colletionPayment incluye Deposito+Transferencia y requiredCollectionAttachments=false → cobros ENVIABLES → depósitos POSIBLES (≠ piercar). Confirmar en corrida que haya cobros depositables (selector de banco con opciones).
+    motivo_na: "Confirmar en corrida: depósitos requieren cobros con método Depósito/Transferencia enviados y pendientes de depositar. multiCurrencyDeposit=true; signatureDeposit=true."
+    banco_test: "TBD"                       # de la lista de bancos (Cajas Caracas/Ciudad Ojeda/Puerto La Cruz)
+
+  visitas:
+    cliente_test: "TBD"                     # cliente asignado a el usuario 001 con sucursal; descubrir en corrida
+    smoke_na_estructural: []                # confirmar si hay visitas "No Visitado" sincronizadas (DM-VIS-025/026); si no → N/A-DATA
+    # signatureVisit=true, visitRout=true (rutas en mapa), userMustActivateGPS=true (obligar GPS), userCanSaveGPS=true (capturar coordenadas sucursal).
+    # ⚠ incidence_type de la BD tiene datos de prueba ("prueba", "nueva actividad", "PRUEBA1400") junto a reales (Reventa, Cheque Devuelto, Precio) → tenant de staging; confirmar actividades reales en corrida.
+
+  productos:
+    texto_busqueda: "TBD"                   # catálogo calzados (10416 productos); ej. buscar "7101" o por talla. Confirmar en corrida.
+    tipo_estructura_default: "TBD"          # confirmar estructura (Linea/categorías) en corrida
+    productsOrderBy: "co_product"           # global=co_product → ordenados por código
+    userCanChangePriceList: true            # global=true → confirmar recálculo por lista de precio en detalle (DM-PRD-013)
+    hideProductWarehouse: false             # global=false → muestra almacenes y stock en módulo productos
+
+  vendedores:
+    aplica: true                            # esVendedor=true (usuario 001 es vendedor) → módulo aplica.
+    infoVendedores: true                    # global=true → módulo gestionado desde admin (USER_INFORMATION), NO autogenerado. KPIs dependen del archivo cargado.
+    transportRole: true                     # rol Transportista habilitado
+    rolPlanta: true                         # rol Planta habilitado
+
+# ── Reparto de modelos por módulo (optimización de tiempo/costo — QA 2026-07-08) ──
+# Objetivo: bajar las ~3h de corrida. Módulos NO transaccionales (no cotejan BD) → Haiku (rápido/barato).
+# Módulos transaccionales (crean documento + cotejo BD round-trip, oráculo v2) → Opus.
+# Clasificación por presencia de sección "Verificación BD" en automation/smoke/*.md (verificado 2026-07-08).
+model_by_module:
+  haiku:                                    # NO transaccionales — sin cotejo BD
+    - login                                 # solo autenticación/validaciones UI
+    - productos                             # solo navegación/búsqueda de catálogo (no crea documento)
+    - vendedores                            # solo visualización de KPIs (infoVendedores=true, no crea documento)
+  opus:                                     # transaccionales — con cotejo BD (crean/sincronizan documento)
+    - clientes                              # crea cliente potencial (potentialclient) → cotejo BD
+    - pedidos                               # crea pedido (order) → cotejo BD
+    - cobros                                # crea cobro/anticipo/retención → cotejo BD (co_type-aware)
+    - inventarios                           # toma de inventario en cliente (clientStock) → cotejo BD  ⚠ clientStock=false → probable N/A; si N/A no consume tiempo
+    - devoluciones                          # crea devolución (return) → cotejo BD
+    - depositos                             # crea depósito (deposit) → cotejo BD
+    - visitas                               # crea visita (visit) → cotejo BD
+
+# ── Estados de sincronización (nube osoroma, tabla statuses) ──────────────────────
+# Referencia para el oráculo BD (Agente 12): "Enviado" por tipo de transacción.
+sync_status:
+  cob_enviado: [8, 14, 31]                  # co_status='env' (Enviado) para co_transaction_type='cob'
+  dep_enviado: [10, 12]                     # co_status='env' (Enviado) para co_transaction_type='dep'
+  # Resto de estados (pedido/visita/devolución/inventario): confirmar en corrida con query.js/local-query.js
+
+# ── Última corrida ────────────────────────────────────────────────────────────
+ultima_corrida:
+  run_id: null
+  fecha: null
+  defectos_abiertos: []

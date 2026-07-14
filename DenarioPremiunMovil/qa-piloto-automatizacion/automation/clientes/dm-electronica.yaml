@@ -1,0 +1,127 @@
+# dm-electronica/perfil.yaml
+# Cliente NUEVO — también conocido como BOTZ / "DM ELECTRONIC".
+# VGs derivadas del dump global_configuration_202607131130_DM_ELECTRONIC.md (tabla reciente, act. 2025-2026).
+# Datos de prueba por módulo (modules.*) aún SIN confirmar: pre-poblar desde BD o descubrir en la 1ª corrida.
+# Servidor: El Yaque (claves.env ya apunta aquí, etiqueta "El Yaque DM ELECTRONIC v6.6.18").
+
+cliente_id: dm-electronica
+cliente_nombre: "DM ELECTRONICA"            # alias BOTZ — confirmar nombre EXACTO en la app durante la 1ª corrida
+ws_url: "http://denarioelyaque.ddns.net:8081/PremiumWS/services/"  # El Yaque (mismo host que romher). claves.env ya en este WsUrl.
+apk_package: com.kiberno.denarioPremiumPro
+db_name: dm_electronica                     # base de este cliente para el Agente 12 / oráculo BD. DSN read-only en el bloque "# Cliente: dm-electronica" de secrets/qa-db.env. Read-only CONFIRMADO 2026-07-13 (SELECT 1 OK). GRANT en Postgres es POR-BASE.
+
+# ── VGs — desde global_configuration (2026-07-13). Divergencias vs override 2022 marcadas ⚠️VERIFICAR ──
+vgs:
+  multiCurrency: true                       # global=true (override 2022 decía false) ⚠️VERIFICAR en corrida
+  expirationBatch: false                    # global=false → inventarios SIN lote/fecha de expiración
+  suggestedOrder: true                      # global suggestedOrder(P,22)=true → "Pedido Sugerido" activo en Inventarios (tab Resumen), como don-theo
+  suggestedOrderByDispatchAndReturn: false  # global=false. VG distinta a suggestedOrder — dejar false
+  requiredCollectionAttachments: true       # global=true → COBRO REQUIERE ADJUNTO (mockCameraAdjunto obligatorio); DM-COB-019 NO se salta
+  requiredComment: true                     # global=true → comentario obligatorio en cobro → DM-COB-006 APLICA
+  validateReturn: true                      # global=true → devoluciones validan producto contra factura enviada. requeridedNroFactura=true (nro factura obligatorio), multiInvoices=false (una factura por devolución)
+  signatureReturn: true                     # global signatureReturn=true
+  signatureCollection: true                 # global signatureCollection=true
+  signatureVisit: true                      # global signatureVisit=true
+  userCanUploadFiles: true                  # global userCanUploadFiles=true
+  esVendedor: true                          # CONFIRMADO QA 2026-07-13: usuario QA 002 es vendedor → módulo Vendedores aplica. (No viene en el dump)
+  enterpriseEnabled: true                   # ✅ CONFIRMADO EN CORRIDA 2026-07-13 (clientes): UI expone "Empresa: BOTZ" (selector requerido en cliente potencial, fila en detalle, payload idEnterprise:1/coEnterprise:"BARAK_A"). El global=false del dump estaba obsoleto; manda la UI.
+  enabledManualRate: true                   # global=true → tasa manual permitida en cobros. canChangeRate=false, historicoTasa=true
+  cobroPrepago: true                        # global=true → anticipo/prepago aplica (DM-COB-028). OJO requiredAnticipoAttachments=true → el anticipo también EXIGE adjunto
+  cobroRetencion: false                     # global=false → botón +RETENCIÓN del menú NO disponible → DM-COB-029 N/A
+  retencion: false                          # global=false → detalle de documento SIN campos retención → DM-COB-041/042 N/A
+  sizeRetention: 14                          # global=14 (N/A operativamente: retencion=false)
+  formatRetention: "0"                       # global="0" = Números (N/A operativamente: retencion=false)
+  userCanSelectIGTF: false                  # global=false → sin selector IGTF → DM-COB-044/045 N/A
+  userCanCollectIva: false                  # global=false → sin cobro 25% IVA → DM-COB-037 N/A
+  transportRole: false                      # global transportRole=false
+  userMustActivateGPS: true                 # global=true → obligar GPS activo para transacciones. userCanSaveGPS=true, visitRout=true
+
+# ── Métodos de pago de Cobros (colletionPayment = true-false-true-true-true-true) ─────────────────
+# Efectivo=SÍ · Cheque=NO · Transferencia=SÍ · Depósito=SÍ · Otros=SÍ · Pago Móvil=SÍ
+# → EFECTIVO presente ⇒ módulo Depósitos APLICA (regla: depósitos requiere Efectivo en métodos de cobro).
+# Otras VGs de cobro relevantes: tolerancia0=true (⚠️override 2022=false), enablePartialPayment=true (→ DM-COB-046),
+#   automatedPrepaid=true, multiCurrencyCollection=true, currencyBank=true (⚠️override 2022=false), historicoTasa=true.
+
+# ── Datos de prueba por módulo — PRE-POBLADO desde BD read-only 2026-07-13 (query.js). Confirmar en 1ª corrida ──
+modules:
+  login:
+    bad_password: Test-LOG-003
+
+  clientes:
+    cliente_busqueda: "MUEBLES"             # ⚠️ CORRIDA 2026-07-13: MAR-CHAZ (00091) NO sincronizado en device para usuario 002. Cliente real en device: "+ QUE MUEBLES UN SUENO, C.A" (co 00001). El buscador filtra SOLO por nombre.
+    cliente_detalle: "+ QUE MUEBLES UN SUENO, C.A"  # co_client 00001, sincronizado en device
+    # ⚠️ SYNC PARCIAL POR USUARIO 002: la BD tiene todos los clientes pero el device solo sincroniza el subconjunto asignado al vendedor 002. Los agentes deben DESCUBRIR en UI, no fiarse de códigos BD.
+
+  pedidos:
+    cliente_test: "+ QUE MUEBLES UN SUENO, C.A"  # ✅ CORRIDA 2026-07-13: co 00001, sincronizado en device para vendedor 002 (MAR-CHAZ 00091 NO sincroniza). Catálogo LINEA BLANCA (363 prod.) cargado. Pedido Nro. 4 enviado BD-OK.
+    estructura_producto: "ion-accordion.accordionPedidos (LINEA BLANCA 363 prod.)"  # ✅ build refactorizado El Yaque: productos = ion-accordion.product-structure-title.accordionPedidos dentro de ion-item.listaItems (NO div.listaProductos). Trash Tab Total recalcula con mouse.click.
+    alerta_deuda_vencida: true              # ✅ CORRIDA 2026-07-13: "+ QUE MUEBLES UN SUENO" dispara modal "Pedidos / Este cliente tiene deuda vencida, ¿Desea continuar con el pedido?" (Cancelar/Aceptar). No bloquea.
+    # Tab Total solo US$ (multiCurrencyOrder=false pese a multiCurrency=true). "Pedido Sugerido" NO aparece en Tab Pedido pese a suggestedOrder=true (divergencia UI-vs-config, como jerez/ferrenuestro).
+
+  cobros:
+    cliente_test: TBD                       # cliente SIN documentos (001,002,004,020/021/038 + anticipo) → elegir en UI uno sin saldo
+    cliente_code: TBD
+    cliente_con_documentos_preferido: "000234 · TIENDAS RORIX C.A"  # ★ QA 2026-07-13: saldo pendiente CONFIRMADO — usar ESTE para los casos de cobro que requieren factura (007/008/012/040/043/044/046) y evitar falsos N/A
+    clientes_con_documentos:                # BD: clientes con más facturas. TIENDAS RORIX de primero por saldo pendiente confirmado por QA. Resto son respaldo (saldo se confirma en UI Tab Documentos)
+      - "000234 · TIENDAS RORIX C.A (bastantes facturas pendientes — confirmado QA)"
+      - "00091 · IMPORTADORA MAR-CHAZ C.A (8 fac)"
+      - "00167 · MEGA IMPORT, C.A. (8 fac)"
+      - "000181 · GRUPO KR 24 C.A (7 fac)"
+      - "00032 · LOCURAS, C.A (6 fac)"
+      # Nota: 00014 DM ELECTRONICS C.A. (95 fac) = probable cuenta propia de la empresa, no cliente típico
+    cliente_25iva: null                     # N/A — userCanCollectIva=false (DM-COB-037 N/A)
+    metodo_pago: "Efectivo"                 # default seguro (Efectivo=true). Otras opciones: Transferencia / Depósito / Otros / Pago Móvil (NO Cheque)
+    banco_deposito: TBD                     # si metodo_pago=Depósito/Transferencia. BD bancos: BANESCO NACIONAL, BANCO NACIONAL DE CREDITO, BANESCO PANAMA, BINANCE, USDT, ZELLE (varias variantes)
+    documento_retencion: null               # N/A — retencion=false
+    monto_retencion_iva: null               # N/A — retencion=false
+    monto_retencion_islr: null              # N/A — retencion=false
+    moneda_cobro: "BS/US$"                   # ✅ CORRIDA 2026-07-13: 2º ion-select de app-cobro-general = Moneda cobro (BS id1 / US$ id2); default BS. Selector Moneda documento (Tab Documentos) filtra docs por moneda (BS→0, US$→5). ⚠ cambiar moneda encola alert "El cobro será reiniciado!" → Cancelar para no perder el cobro.
+    pago_parcial_toggle: true               # ✅ enablePartialPayment=true → DM-COB-046 PASS (toggle "Pago parcial" en detalle doc → "Monto a pagar BS" editable, persiste §9)
+    adjunto_obligatorio: true               # requiredCollectionAttachments=true → cobro EXIGE adjunto (mockCameraAdjunto). requiredAnticipoAttachments=true → anticipo también
+    mock_camara_funciona: true              # ✅ CORRIDA 2026-07-13: Camera.getPhoto mock + TOMAR FOTO (expandir acordeón "Imágenes": grp.value=['images','file','sign']) → foto entra al carrusel → DM-COB-019 ENVIABLE de verdad (cobro id_collection=5 llegó a nube). Contradice romher/ferrenuestro (mock_camara_funciona=false).
+    window_ng: true                         # ✅ CORRIDA 2026-07-13: window.ng=TRUE en este build El Yaque v6.6.18 (CONTRASTA jerez/ferrenuestro El Yaque window.ng=false). Helpers con fallback window.ng (openNuevoCobro/openDocumentDetail) SÍ operan; comp.nuevoCobro(0) abre el form.
+    # ⚠ CORRIDA 2026-07-13: la app CRASHEA durante el POST de envío del cobro (proceso muerto tras "El Cobro será enviado"), DESPUÉS de que el POST llegó a nube (id_collection=5 persistió). Requiere relanzar app + re-map adb forward al nuevo webview PID. Payload collectservice se pierde → cotejar por columnas clave en nube. Riesgo de estabilidad.
+    # Buscador de cliente (#clienteSelectModal) filtra SOLO con Enter (inp.focus()+keyboard.type+Enter; NO click en input).
+    smoke_na_estructural:
+      - "DM-COB-029: cobroRetencion=false → sin opción +RETENCIÓN en el menú → N/A"
+      - "DM-COB-037: userCanCollectIva=false → sin cobro 25% IVA → N/A"
+      - "DM-COB-041: retencion=false → sin campos retención en detalle de documento → N/A"
+      - "DM-COB-042: depende de 041 → N/A"
+      - "DM-COB-044: userCanSelectIGTF=false → sin selector de tasa IGTF → N/A"
+      - "DM-COB-045: userCanSelectIGTF=false → sin tasa alterna → N/A"
+
+  devoluciones:
+    cliente_test: "TIENDAS RORIX C.A"       # ✅ CORRIDA 2026-07-13: co 000234 (id 119), sincronizado en device con facturas devolvibles (MAR-CHAZ 00091 NO sincroniza). Empresa default BOTZ/BARAK_A.
+    factura_test: "50003306"                # ✅ nro factura REQUERIDO y VALIDADO (validateReturn=true, requeridedNroFactura=true). Devolución Ref 3 enviada BD-OK. (respaldo Guardado: 50003307 → LAVADORA D/TINA BOTZ 8KG BLANCA)
+    producto_test: "CONGELADOR VIVAMAX 100LT SILVER"  # ✅ co 0001110, presente en factura 50003306. Con validateReturn=true, AGREGAR PRODUCTO lista directamente los productos de la factura.
+    tipos_devolucion: "Calidad(60,default) / PostVenta(52) / Servicio(59)"  # ✅ CORRIDA 2026-07-13: UI muestra estos (sin Cambio X Cambio); el dump BD PostVenta52/Despacho53 NO refleja lo sincronizado. Sync a nube INMEDIATA (<10s), NO diferida como ferrenuestro. Firma dibujada NO cuenta como adjunto (nuAttachments=0).
+
+  inventarios:
+    cliente_test: "TIENDAS RORIX C.A"       # ✅ CORRIDA 2026-07-13: co 000234, sincronizado en device (MAR-CHAZ 00091 NO sincroniza). Inventario Nro. 1 enviado BD-OK.
+    cliente_code: "000234"
+    producto_test: "CAFETERA MILEXUS NEGRA 12 TAZAS ML-CT-8021"  # ✅ co 0001001, familia LINEA BLANCA (catálogo real = línea blanca/electrodomésticos, NO aires como preveía el YAML)
+    # clientStock=true → módulo aplica. requireClientStock=false.
+    # ⚠ CORRIDA 2026-07-13: expirationBatch=false NO oculta los campos Lote + Fecha de vencimiento del inventory-type-stocks-modal — se RENDERIZAN pero NO son obligatorios (Aceptar OK con vacíos, payload nuBatch="" + daExpiration default hoy). Divergencia UI-vs-config → VERIFICAR con desarrollo. Tipo fijo "Exhibición" sin segmento.
+
+  depositos:
+    aplica: true                            # Efectivo=true en métodos de cobro → módulo aplica. signatureDeposit=true, multiCurrencyDeposit=true. Confirmar en corrida que haya cobros depositables.
+    motivo_na: null
+
+  visitas:
+    cliente_test: "+ QUE MUEBLES UN SUENO, C.A"  # ✅ CORRIDA 2026-07-13: co 00001, sincronizado en device. ⚠ sin coordenadas → alert "Esta sucursal no tiene coordenadas asignadas. ¿Desea agregarlas?" al SELECCIONAR y antes del dirty-guard en Back (no bloquea). Visita Nro. 1 enviada BD-OK.
+    smoke_na_estructural: []                # signatureVisit=true, visitRout=true.
+    # ✅ CORRIDA 2026-07-13: 11 actividades TODAS requiredEvent="true"/requiredSignature="false" (idTypes 2,47,71,75,82,83,84,85,86,87,88 — mismo set jerez/ferrenuestro; el dump BD Reventa/Cheque Devuelto/Precio NO refleja lo sincronizado). MERCHANDISING(47)→5 motivos (ENTREGA DE MUESTRAS 153, LEVANTAMIENTO DATA ISSY 183, VISIBILIDAD PDV 184, PLAN SLIP 191, MUESTRA NUEVO CATALOGO 192); COBRANZA(82)→4 motivos. Envío SÍ procede sin firma pese a signatureVisit=true (defecto conocido, igual piercar).
+
+  productos:
+    tipo_estructura_default: "Linea (id 1)"  # ✅ CORRIDA 2026-07-13: 2 tipos de estructura — Linea (id 1) / Sub-Línea (id 2). Linea→1 estructura "LINEA BLANCA 363"; Sub-Línea→3: MAYOR/MENOR/UNICO. DM-PRD-002 ejecutable y PASS (como insumar). sel[0]=empresa BOTZ.
+    texto_busqueda: "A/A"                   # ✅ CORRIDA 2026-07-13: "A/A" → 28 productos (aires acondicionados MILEXUS/GPLUS). Alternativa "VENTANA".
+    lista_precio_unica: true                # ⚠ CORRIDA 2026-07-13: 1 sola lista "PRECIO LISTA 1" (idList 1) → DM-PRD-013 N/A estructural. Detalle muestra solo US$; product-list muestra US$+BS.
+
+  vendedores:
+    aplica: true                            # esVendedor=true → módulo aplica
+
+# ── Última corrida ────────────────────────────────────────────────────────────
+ultima_corrida:
+  run_id: "20260713_115814_smoke-completo"  # 1ª corrida COMPLETA 10/10 — 0 FAIL. window.ng=TRUE en este build El Yaque v6.6.18. Sync a nube INMEDIATA. ⚠ app crasheó durante POST cobro (id_collection=5 persistió).
+  fecha: "2026-07-13"
+  defectos_abiertos: []

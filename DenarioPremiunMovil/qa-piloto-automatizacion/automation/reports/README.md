@@ -47,6 +47,7 @@ reports/
 | [smoke_romher_20260604_122859](smoke_romher_20260604_122859/consolidado.md) | romher | 2026-06-04 | 10/10 | 93P · 4F · 1S · 8N/A |
 | [smoke_globalmp_20260605_162806](smoke_globalmp_20260605_162806/consolidado.md) | globalmp | 2026-06-05/08 | 10/10 | 96P · 1F · 3S · 21N/A |
 | [smoke_insumar_20260609_132051](smoke_insumar_20260609_132051/consolidado.md) | insumar | 2026-06-09 | 10/10 | 115P · 1F · 3S · 15N/A |
+| [smoke_dm-electronica_20260713_115814](smoke_dm-electronica_20260713_115814/consolidado.md) | dm-electronica (BOTZ) | 2026-07-13 | 10/10 | 117P · 0F · 0S · 20N/A |
 
 ## Rezagados — revisar manualmente
 

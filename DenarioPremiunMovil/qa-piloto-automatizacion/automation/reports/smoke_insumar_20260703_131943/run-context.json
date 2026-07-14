@@ -1,0 +1,27 @@
+{
+  "_generated_for": "insumar",
+  "_run_dir": "automation/reports/smoke_insumar_20260703_131943/",
+  "modules": {
+    "cobros": {
+      "cliente_normal": {
+        "na_client": "SUPERMERCADO EL CHAVAL 168, C.A.",
+        "co_client": "2018",
+        "docs": "10",
+        "saldo": "6332.91"
+      },
+      "cliente_igtf": {
+        "na_client": "BODEGON MAS KE PAN 1976, CA",
+        "co_client": "1996",
+        "docs": "2",
+        "saldo": "3.15"
+      },
+      "_nota": "Descubierto en pre-vuelo BD. Para el documento exacto en UI, confirmar con local-query sobre document_sales + co_currency."
+    },
+    "pedidos": null,
+    "devoluciones": null,
+    "inventarios": null,
+    "visitas": null,
+    "depositos": null,
+    "clientes": null
+  }
+}

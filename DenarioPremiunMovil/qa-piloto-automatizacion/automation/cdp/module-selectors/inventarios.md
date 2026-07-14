@@ -1,0 +1,74 @@
+> Parte de `module-selectors/` — leer junto con `_comunes.md` (convención global).
+
+## Módulo INVENTARIOS
+
+### Identidad
+- Ruta: `/inventarios` · Componente raíz: `app-inventarios`
+- Botones home: INVENTARIO, BUSCAR
+- Tabs nuevo: General / Inventario / Resumen / Adjuntos (4) · Enviado: General / Resumen / Adjuntos (3, sin Inventario)
+
+### Selectores probados
+| Elemento | Selector CSS / técnica | Corrida | Notas |
+|----------|------------------------|---------|-------|
+| Cliente | `ion-input#clienteSelect` → modal (click real); buscar `input[placeholder="Clientes..."]` + type + click `.clear-search` + click `<p>` del nombre | `[ins-2606][ins-2610]` | mismo patrón Pedidos; selección por `<p>` del nombre (no centro del item) habilita las 4 tabs |
+| Familias/categorías | Tab Inventario muestra grupos → click expande productos | `[gmp-2606][ins-2606]` | |
+| Click producto (abre modal captura) | requiere **Pointer+Mouse combinado**: `pointerdown/pointerup`(PointerEvent) + `click`(MouseEvent) sobre el `ion-item` + `mouse.click` en coords reales | `[gmp-2611]` | `mouse.click` simple NO abre el `inventory-type-stocks-modal`; el `ion-item` es `button=""` (chevron-forward) pero el zone listener AOT no engancha con click simple |
+| Modal captura | clase `inventory-type-stocks-modal` en `ion-modal` | `[ins-2606][gmp-2606]` | `querySelector('inventory-type-stocks-modal')` = null (es clase, no custom element) |
+| Inputs modal captura | Cantidad `placeholder="Ingrese cantidad"` (type=number) + Lote `placeholder="Ingrese lote"` (type=text); ids `ion-input-NNN` **dinámicos** | `[ins-2610][jerez-2026-07-06][ferrenuestro-2026-07-07]` | localizar por placeholder, NO por id fijo. jerez/ferrenuestro igual a insumar (con placeholders); ferrenuestro: tipo fijo "Exhibición - 1" SIN segmento; `ion-datetime id=expDate0` default HOY; header icons close/checkmark/trash/add. `expirationBatch=TRUE` confirmado en UI |
+| Cantidad/Lote/Fecha | **`h.fillNgModelKeyboard`** (`pg.click(sel,{clickCount:3})` + `keyboard.type`) | `[ins-2606][gmp-2606][ins-2610]` | usan `[(ngModel)]`, NO reactive forms |
+| Fecha vencimiento | `ion-datetime-button` → overlay → `h.confirmDatetime` (Aceptar en shadowRoot) | `[ins-2606][gmp-2606]` | |
+| Aceptar modal | `ion-icon[name="checkmark-outline"]` en header del modal | `[gmp-2606]` | |
+| Pedido Sugerido | `ion-button.botonAddAmarillo` en Tab Resumen | `[ins-2606][ins-2622]` | si `suggestedOrderByDispatchAndReturn=true`. El modal `inventario-sugerido-modal` muestra "Sugerido UNIDADES: N,NN" + "Días desde último Inventario" / "Días para siguiente Inventario" (`quUnitSuggested` vive aquí, NO en Tab General). Cerrar con `modal.dismiss(null,'cancel')` evita crear el pedido `[ins-2622]` |
+| Guardar / Enviar | `.imagenGuardar` / `.imagenEnviar` (header fijo) | `[gmp-2606][ins-2606][ins-2610]` | Guardar: confirm (Cancelar/Aceptar) → éxito "Inventario guardado con éxito". Enviar: "¿Desea enviar el Inventario?" → "El Inventario será enviado" (2 alertas) `[ins-2610]` |
+| Item lista BUSCAR | `pg.mouse.click` sobre coords (dispatchEvent no navega) | `[gmp-2606][ins-2610]` | ítems `ion-item` "Nro. Ref.: N Cliente: COD - NOMBRE Estatus: X Fecha:"; searchbar `ion-searchbar` "Inventarios..." filtra realtime. Botón BUSCAR del home = coords del `ion-button` (no del `ion-col`); navega in-place (URL sigue `/inventarios`) |
+| `input[type="text"]` nativo para Lote en modal inventario | `ion-input[type="text"]` falla como selector CSS en este build (tipo = propiedad Angular, no atributo DOM); usar `input[type="text"]` nativo hijo dentro del modal o coords del rect | `[prc-2606]` | Universal confirmado |
+| Modal cliente sin `show-modal` en algunas condiciones | Usar `ion-modal p` (no `ion-modal.show-modal p`) para buscar nombres de cliente; la clase `show-modal` puede no estar presente dependiendo del estado del modal | `[prc-2606]` | # candidato — confirmar en otras playas |
+| Alerta "cambio de cliente" al re-seleccionar en form ya iniciado | `ion-alert` con texto: "Se ha detectado cambio del cliente por lo que deberá iniciar nuevamente la transacción." CANCELAR/ACEPTAR | `[prc-2606]` | Universal — confirmar en otras playas |
+| Picker de cliente — validar visibilidad real antes de clicar | al reabrir el picker una 2ª vez, filtrar los `<p>` de nombre por `getBoundingClientRect().width>0` **antes** del click (los ítems ocultos dan rect 0 → click al vacío) | `[latino_cosmetica-20260714]` | # candidato universal — evita clics en items rect=0 al recuperar el estado del picker en un 2º inventario |
+
+### Flujo mínimo probado
+```
+1. Click INVENTARIO → seleccionar cliente → tabs habilitan
+2. Tab Inventario → click familia → click producto → modal inventory-type-stocks-modal
+3. fillNgModelKeyboard Cantidad (+ Lote/Fecha si expirationBatch) → checkmark-outline
+4. Tab Resumen verifica captura → Guardar (alert confirm) → Enviar (alert confirm)
+```
+
+### VG → DOM effects
+| VG | true | false |
+|----|------|-------|
+| `expirationBatch` | campos Lote + Fecha venc en modal | solo Cantidad |
+| `suggestedOrderByDispatchAndReturn` | botón Pedido Sugerido en Resumen | DM-INV-017 N/A |
+
+### Anti-patrones confirmados
+- ⚠ **Popover residual `ion-popover.select-popover`** (tipo de stock "Exhibición") queda abierto al abrir `inventory-type-stocks-modal` e **intercepta los clicks** de Cantidad/Lote ("ion-popover intercepts pointer events"). Hacer `dismiss()` de todos los `ion-popover` visibles **ANTES** de `fillNgModelKeyboard`. `[gmp-2611]`
+- `h.fillIonInput` en campos del modal inventario → ngModel no se actualiza, guarda vacío. Usar `fillNgModelKeyboard`. `[ins-2606]`
+- Borrado Guardado: trash `ion-button[color="danger"]` dentro del item → **directo sin confirmación previa** ("¡EL Inventario se borro con exito!") — distinto a Devoluciones/Pedidos. Back desde Guardado SIN cambios sale directo (no dispara dirty-guard). Reconfirmado dm-electronica. `[ins-2606][gmp-2606][ins-2610][gmp-2611][dm-electronica-20260713]`
+- Tras `modal.dismiss()`, el `save-btn` del formulario responde solo si se hace `pg.mouse.move()` antes del click (el listener no re-engancha sin movimiento de puntero previo). `[rom-2606]`
+- Si los clicks físicos no responden en el modal de captura, cerrar con el método del componente: `ionModal.dismiss(null,'cancel')`. `[rom-2606]`
+- ⚠ **Alert residual de envío/guardado intercepta el botón BUSCAR del home:** tras cerrar el OK de Guardar/Enviar puede quedar un `ion-alert` (texto vacío) overlay que desplaza/bloquea BUSCAR (clicks no navegan). `dismiss()` de todos los `ion-alert` visibles ANTES de clickear BUSCAR. `[dth-2612]`
+- **Guardar NO navega fuera del formulario:** tras "Inventario guardado con éxito" + OK la app permanece en el formulario (tab Inventario sigue editable); para ir a BUSCAR hacer Back al home de inventarios primero. `[dth-2612]`
+
+### Notas por cliente
+- Defecto conocido DM-INV-026 (v6.6.14): formulario Guardado abre en tab General en vez de Inventario — no re-marcar FAIL. Reapertura Ref 0 vía CDP: el 1er click Pointer+Mouse SÍ abrió el form en insumar (round-trip Guardar→reabrir confirmado, cantidad conservada). `[gmp-2606][ins-2606][ins-2622]`
+- Inventario guardado local sin sincronizar: Nro.Ref:0. `[ins-2606]`
+- insumar: el modal de captura tiene segmento interno **Exhibición / Depósito / Todos** (tipo de stock); el producto capturado queda etiquetado "Inventariado: Exhibición". `[ins-2610]`
+- ⚠ **don-theo: el `inventory-type-stocks-modal` NO tiene segmento** Exhibición/Depósito/Todos (a diferencia de insumar) — el tipo aparece como label fijo "Exhibición - 1". Header icons: close/checkmark/trash/add. Inputs Cantidad (`input type=number`) y Lote (`input type=text`) **sin placeholder ni id** → localizar por `type` dentro del modal; Fecha venc = `ion-datetime-button` label "Fecha de vencimiento". `[dth-2612]`
+- ⚠ insumar (VG `suggestedOrderByDispatchAndReturn`): el botón "Pedido Sugerido" abre `inventario-sugerido-modal` cuyo **Aceptar genera un PEDIDO** y navega a `/pedido` (no solo cierra). Para inspeccionar sin crear pedido, evitar Aceptar o salir con clickBack sin guardar. `[ins-2610]`
+- **piercar: `expirationBatch=TRUE` en campo real** — pese a CSV con `false`, la UI muestra Cantidad + Lote + Fecha vencimiento en `inventory-type-stocks-modal`. ⚠ Divergencia UI vs config — anotar y confirmar con desarrollo. La VG en YAML debe actualizarse a `true` tras verificación. `[prc-2606]`
+- **piercar: `inventory-type-stocks-modal` tiene tipo fijo "Exhibición - 1"** sin segmento seleccionable (igual a don-theo, distinto a insumar que tiene segmento). Header icons: close/checkmark/trash/add. `[prc-2606]`
+- **piercar: `st_client_stock=1` = Enviado** — otras playas usan st=2; tabla de estados difiere en piercar. Confirmar en próxima corrida. `[prc-2606]`
+- piercar: cliente "7 CARS" no tiene sucursal → alerta bloqueante para inventario (igual que PEDIDOS/VISITAS). Usar "ANA MANZANARES" (MANZANARES) como cliente_test. `[prc-2606]`
+- **jerez: `suggestedOrderByDispatchAndReturn` ACTIVA en UI pese a CSV `false`** — botón "Pedido Sugerido" (`ion-button.botonAddAmarillo`) aparece y funciona; modal `inventario-sugerido-modal` con "Sugerido PIEZA: N / Despacho / Días para siguiente Inventario". Misma divergencia UI-vs-config que piercar `expirationBatch` — ⚠ anotada como discrepancia en el YAML jerez, **VERIFICAR con desarrollo antes de cambiar la VG** (no a ciegas). `[jerez-2026-07-06]`
+- **jerez: reapertura de Guardado carga datos ASYNC (~3s)** — al reabrir un inventario Guardado, cliente/capturas salen vacíos si se lee <2s; a ~3s cargan completos (cliente + Resumen "N PIEZA" + producto "Inventariado"). Esperar antes de juzgar round-trip. Consistente con la latencia de reapertura de VISITAS. `[jerez-2026-07-06]`
+- **jerez: `inventory-type-stocks-modal` tipo fijo "Exhibición" SIN segmento** Exhibición/Depósito/Todos (como piercar/don-theo, distinto a insumar) PERO **con** inputs por placeholder "Ingrese cantidad"(number)/"Ingrese lote"(text) (como insumar). Header icons close/checkmark/trash/add; Fecha venc `ion-datetime` id=`expDate0` default HOY. `[jerez-2026-07-06]`
+- **jerez: searchbar lista BUSCAR filtra por cliente/código/ref, NO por estatus** — "DANIELA"→2, "Enviado"→0 (pese a existir un Enviado), "ZZZZ"→0, vacío→2. `[jerez-2026-07-06]`
+- **ferrenuestro: modal de cliente requiere click en `ion-icon[name="search-circle-sharp"]` para filtrar** — el `input[placeholder="Clientes..."]` NO filtra on-keyup; escribir texto y luego clicar el ícono lupa dispara la búsqueda. Selección por `<p>` del nombre habilita las 4 tabs. Reconfirmado dm-electronica (input NO filtra on-keyup; texto + click lupa filtra). `[ferrenuestro-2026-07-07][dm-electronica-20260713]`
+- ⚠ **dm-electronica: `expirationBatch=false` NO oculta los campos Lote + Fecha de vencimiento del `inventory-type-stocks-modal`** — el modal muestra input "Ingrese lote" (text) + "Fecha de vencimiento" (`ion-datetime-button`) además de Cantidad, PERO **NO son obligatorios**: Aceptar (`checkmark-outline`) tuvo éxito con lote/fecha vacíos y el payload envió `nuBatch=""` + `daExpiration` en default de hoy. Es decir `expirationBatch=false` funciona a nivel de **validación** (opcional) pero los CAMPOS igual se renderizan. Divergencia UI-vs-config del mismo tipo que piercar `expirationBatch=TRUE` — ⚠ **VERIFICAR con desarrollo**. Tipo fijo "Exhibición" sin segmento; Tab Inventario con sub-segmentos UBICACIÓN (Exhibición/Depósito/Todos) + FILTRO (Inventariados) + input "Búsqueda de productos" (estructura idéntica a ferrenuestro). `[dm-electronica-20260713]`
+- **dm-electronica: `st_client_stock=1` = Enviado** (servidor El Yaque, igual piercar; otras playas usan st=2). Nro.Ref UI = `id_client_stock` (nube) = 1 confirmado. `[dm-electronica-20260713]`
+- **latino_cosmetica (La Tortuga v6.6.18): `st_client_stock=1` = Enviado** — inventario Ref 7 (ANNELI CA 13, 3058 BELOTTI ×5) persistió con `id_client_stock=7`, `st=1` (⚠ el payload trae `stClientStock=0`/`stDelivery=2`; corroborar por `id`+presencia en nube, NO por st global). Extiende el patrón `st=1` de El Yaque a La Tortuga. ⚠ `clientStock=true` REAL (módulo operable end-to-end, override 2022=false descartado). `expirationBatch=false` renderiza Lote+Fecha pero opcionales (Aceptar OK con vacíos, `nuBatch=""`) — reconfirma dm-electronica. Payload camelCase plano (cotejo espera clave anidada 'clientStock' → ajustar config de cotejo). `[latino_cosmetica-20260714]`
+- **ferrenuestro: Tab Inventario con sub-segmentos UBICACIÓN (EXHIBICIÓN/DEPÓSITO) + FILTRO (TODOS/INVENTARIADOS)** + input `placeholder="Búsqueda de productos"`; familias con conteo (AGRICOLA 319…); click en familia navega a su lista filtrada por ubicación; familia sin stock de esa ubicación muestra "No hay productos disponibles" (ej. DESCUENTOS VARIOS). `[ferrenuestro-2026-07-07]`
+- **ferrenuestro: `clientStock=false` NO oculta el módulo** — el módulo Inventarios aparece en HOME y es 100% operable end-to-end en UI (divergencia config↔UI, igual a piercar `expirationBatch` / jerez `suggestedOrderByDispatchAndReturn`). ⚠ El registro **SÍ persistió** en la nube (`client_stock` id=101) — durante la corrida se marcó BD-SAVED/"Por enviar" porque la **sync es diferida** (~3min, apareció tras la ventana de poll), NO porque `clientStock=false` sea gate de servidor. VERIFICAR con desarrollo si el módulo debe ocultarse cuando `clientStock=false`. `[ferrenuestro-2026-07-07]`
+- **ferrenuestro: botón "PEDIDO SUGERIDO" (`botonAddAmarillo`) presente pese a `suggestedOrderByDispatchAndReturn=false`** — misma divergencia UI-vs-config que jerez/piercar; modal `inventario-sugerido-modal` funcional ("Días desde último Inventario / Días para siguiente Inventario"). Cerrar con `dismiss('cancel')` para no crear pedido. VERIFICAR VG con desarrollo antes de cambiarla. `[jerez-2026-07-06][ferrenuestro-2026-07-07]`
+
+---

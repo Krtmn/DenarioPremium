@@ -37,6 +37,9 @@ async function connectCdp(page) {
 /**
  * Obtener credenciales QA leyendo secrets/qa-credentials.env directamente.
  * Devuelve { user, pass, badPass }.
+ * @deprecated NO usar en browser_run_code_unsafe — usa fs/require y revienta en ese contexto.
+ *   Allí: leer el archivo con la herramienta Read y parsear el bloque "# Cliente:" inline (RUNTIME §1).
+ *   Esta función solo es válida en contexto Node (scripts de automation/db/).
  * @param {string} [clienteId] - slug del cliente (ej. 'insumar', 'hidroponias').
  *   Si se omite, usa el primer bloque del archivo.
  *   El archivo usa secciones "# Cliente: <slug>" como marcadores.
@@ -119,6 +122,54 @@ async function fillIonInput(pg, selector, value) {
 async function fillNgModelKeyboard(pg, selector, value) {
   await pg.click(selector, { clickCount: 3 });
   await pg.keyboard.type(String(value));
+}
+
+/**
+ * Llenar un input ngModel "resistente" en modales reactivos donde `fillIonInput`
+ * NO actualiza el FormControl y `pg.click(selector)` NO fija el foco (el selector
+ * apunta al wrapper `ion-input`, o el modal intercepta el click).
+ * Estrategia: foco por CLICK REAL en las coordenadas del `<input>` interno →
+ * Ctrl+A + Delete + teclear → emitir input/change/ionInput/ionChange + blur para
+ * que ngModel/(ionChange) reciban el valor.
+ *
+ * Generaliza `fillNgModelKeyboard` (que solo sirve en inventory-type-stocks-modal)
+ * a cualquier modal reactivo. Caso probado objetivo: detalle de retención jerez
+ * (Monto retenido IVA / ISLR) — DM-COB-041/042. `[jerez-2026-07-06]`
+ */
+async function fillNgModelField(pg, selector, value) {
+  const coords = await pg.evaluate((sel) => {
+    const host = document.querySelector(sel);
+    if (!host) return null;
+    const inp = host.matches('input,textarea') ? host : host.querySelector('input,textarea');
+    if (!inp) return null;
+    inp.scrollIntoView({ block: 'center' });
+    const r = inp.getBoundingClientRect();
+    if (!r || r.width === 0) return null;
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }, selector);
+  if (!coords) throw new Error(`fillNgModelField: input no encontrado o no visible → ${selector}`);
+
+  await pg.mouse.click(coords.x, coords.y);                 // foco real (no pg.click al wrapper)
+  await pg.keyboard.down('Control');
+  await pg.keyboard.press('KeyA');
+  await pg.keyboard.up('Control');
+  await pg.keyboard.press('Delete');
+  await pg.keyboard.type(String(value));
+
+  await pg.evaluate((sel) => {
+    const host = document.querySelector(sel);
+    const inp  = host && (host.matches('input,textarea') ? host : host.querySelector('input,textarea'));
+    if (!inp) return;
+    inp.dispatchEvent(new Event('input',  { bubbles: true }));
+    inp.dispatchEvent(new Event('change', { bubbles: true }));
+    const ion = inp.closest('ion-input') || host;
+    if (ion && ion.dispatchEvent) {
+      ion.dispatchEvent(new CustomEvent('ionInput',  { bubbles: true, detail: { value: inp.value } }));
+      ion.dispatchEvent(new CustomEvent('ionChange', { bubbles: true, detail: { value: inp.value } }));
+    }
+    inp.dispatchEvent(new FocusEvent('blur', { bubbles: true }));
+  }, selector);
+  await pg.waitForTimeout(200);
 }
 
 // ---------------------------------------------------------------------------
@@ -281,6 +332,62 @@ async function confirmDatetime(pg, datetimeSelector = 'ion-datetime') {
   await pg.waitForTimeout(300);
 }
 
+/**
+ * Fijar la fecha de un `ion-datetime` y CONFIRMARLA de forma robusta.
+ * Supera el caso jerez Fecha Tasa (`.letrasFechasButton`) donde `confirmDatetime`
+ * fallaba: (a) el botón Aceptar NO estaba en el shadowRoot; (b) fijar `dt.value`
+ * por DOM no disparaba el recálculo (el (ionChange) de Angular no se emitía).
+ *
+ * Estrategia en 2 fases:
+ *  1) Fija `value` en el ion-datetime VISIBLE, emite `ionChange`/`ionValueChange`
+ *     (para que el binding (ionChange) de Angular dispare el recálculo/alert) e
+ *     invoca `dt.confirm()` (API pública Ionic — emite el ionChange confirmado).
+ *  2) Si aún hay un botón Aceptar/OK/Listo visible (shadowRoot, slot="buttons",
+ *     o en el ion-modal/ion-popover contenedor), hace CLICK REAL por coordenadas.
+ *
+ * @param valueISO 'YYYY-MM-DD' o ISO completo (ej. '2026-06-01').
+ * @param opts.datetimeSelector  selector del ion-datetime (default 'ion-datetime').
+ * Devuelve { confirmed: bool, clicked: bool }. Caso objetivo: DM-COB-047/039(B). `[jerez-2026-07-06]`
+ */
+async function setIonDatetime(pg, valueISO, opts = {}) {
+  const sel = opts.datetimeSelector || 'ion-datetime';
+
+  const confirmed = await pg.evaluate(([sel, val]) => {
+    const dts = Array.from(document.querySelectorAll(sel)).filter(d => d.offsetParent !== null);
+    const dt  = dts[dts.length - 1] || document.querySelector(sel);
+    if (!dt) throw new Error('setIonDatetime: ion-datetime no encontrado');
+    dt.value = val;
+    dt.dispatchEvent(new CustomEvent('ionChange',      { bubbles: true, detail: { value: val } }));
+    dt.dispatchEvent(new CustomEvent('ionValueChange', { bubbles: true, detail: { value: val } }));
+    if (typeof dt.confirm === 'function') { try { dt.confirm(val); return true; } catch (e) { return false; } }
+    return false;
+  }, [sel, valueISO]);
+  await pg.waitForTimeout(300);
+
+  const coords = await pg.evaluate((sel) => {
+    const dts = Array.from(document.querySelectorAll(sel)).filter(d => d.offsetParent !== null);
+    const dt  = dts[dts.length - 1];
+    if (!dt) return null;
+    const cands = [];
+    if (dt.shadowRoot) cands.push(...dt.shadowRoot.querySelectorAll('ion-button, button'));
+    cands.push(...dt.querySelectorAll('[slot="buttons"] ion-button, ion-button'));
+    const ov = dt.closest('ion-modal, ion-popover');
+    if (ov) cands.push(...ov.querySelectorAll('ion-button, button'));
+    const btn = cands.find(b => {
+      const t = (b.textContent || '').trim().toLowerCase();
+      return b.offsetParent !== null && /aceptar|ok|confirm|listo|done/.test(t);
+    });
+    if (!btn) return null;
+    const r = btn.getBoundingClientRect();
+    if (!r || r.width === 0) return null;
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }, sel);
+
+  let clicked = false;
+  if (coords) { await pg.mouse.click(coords.x, coords.y); await pg.waitForTimeout(300); clicked = true; }
+  return { confirmed, clicked };
+}
+
 // ---------------------------------------------------------------------------
 // ADJUNTOS — Mock de Capacitor Camera (§3.9)
 // Funciona en builds de PRODUCCIÓN y desarrollo (window.Capacitor siempre disponible).
@@ -388,6 +495,277 @@ async function mockCameraAdjunto(pg) {
   return 'OK: adjunto inyectado via galeria (fallback)';
 }
 
+/**
+ * Garantiza un adjunto con reintento acotado + fail-fast (política §10 cobros).
+ * Envuelve mockCameraAdjunto: intenta inyectar la foto mock para poder ENVIAR el
+ * cobro (en vez de SKIP). Verifica el carrusel como fuente de verdad.
+ *
+ * Si tras `maxIntentos` la foto NO entra al carrusel → devuelve false (fail-fast):
+ * el agente marca SKIP del envío y verifica el registro en BD LOCAL (queda SAVED).
+ * NUNCA lanza ni cuelga — la idea es no gastar tiempo peleando con el adjunto.
+ *
+ * @returns {Promise<boolean>} true si hay foto en el carrusel (se puede Enviar), false si no.
+ */
+async function ensureAdjunto(pg, maxIntentos = 2) {
+  const carruselTieneFoto = () => pg.evaluate(() =>
+    document.querySelectorAll('swiper-slide ion-img, swiper-container ion-img').length > 0
+  );
+  if (await carruselTieneFoto()) return true; // ya hay foto
+  for (let i = 0; i < maxIntentos; i++) {
+    try {
+      await mockCameraAdjunto(pg);
+    } catch (e) {
+      // botón de foto no visible / otro problema → no insistir a ciegas
+    }
+    await pg.waitForTimeout(500);
+    if (await carruselTieneFoto()) return true;
+  }
+  return false; // sin foto → el envío queda bloqueado → SKIP + verificar BD local
+}
+
+// ---------------------------------------------------------------------------
+// COBROS — Abrir nuevo cobro por el flujo REAL (fix init paymentMethodList, §10)
+// ---------------------------------------------------------------------------
+
+/**
+ * Abre un nuevo cobro disparando el handler REAL `nuevoCobro(tipo)` — el mismo que
+ * invoca el botón `(click)="nuevoCobro(N)"`. NO usar `goToNuevoCobro()`: ese salta el
+ * `showLoading()` y la vista inspecciona `paymentMethodList` ANTES de que termine el
+ * `await loadPaymentMethods()` async del hijo `cobro-general` → lista vacía
+ * (bug confirmado en `cobros-container.component.ts`).
+ *
+ * tipo: 0=cobro · 1=anticipo · 2=retención. (Llamar solo el tipo cuya VG está activa.)
+ * Espera a que `paymentMethodList` se pueble (poll 8s), EXCEPTO retención
+ * (hidePayments=true → no tiene tab Pagos).
+ *
+ * @returns {Promise<string>} 'OK: ...' | 'OK-WARN: ...' | 'ERROR: ...' (no lanza).
+ */
+async function openNuevoCobro(pg, tipo) {
+  const fired = await pg.evaluate((t) => {
+    const el = document.querySelector('app-cobros-container');
+    if (!el || !window.ng) return 'ERROR: app-cobros-container / window.ng no disponible';
+    const comp = window.ng.getComponent(el);
+    if (!comp || typeof comp.nuevoCobro !== 'function') return 'ERROR: comp.nuevoCobro no disponible';
+    comp.nuevoCobro(t); // flujo real: showLoading() → goToNuevoCobro() → render cobro-general → async loadPaymentMethods()
+    return 'OK';
+  }, tipo);
+  if (!fired.startsWith('OK')) return fired;
+
+  if (tipo === 2) { // retención: sin tab Pagos → no esperar paymentMethodList
+    await pg.waitForTimeout(800);
+    return 'OK: retención abierta (sin esperar paymentMethodList)';
+  }
+
+  try {
+    await pg.waitForFunction(() => {
+      const find = (sel) => { const e = document.querySelector(sel); return e && window.ng ? window.ng.getComponent(e) : null; };
+      const c = find('app-cobro-general') || find('app-cobros-container');
+      const list = c && c.collectService ? c.collectService.paymentMethodList : null;
+      return Array.isArray(list) && list.length > 0;
+    }, { timeout: 8000 });
+    return 'OK: paymentMethodList poblada';
+  } catch (e) {
+    return 'OK-WARN: paymentMethodList no se pobló en 8s (cliente sin métodos, o revisar init)';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// COBROS — Abrir el modal "Detalle Del Documento" (fix DM-COB-041/042/046)
+// ---------------------------------------------------------------------------
+
+/**
+ * Espera a que el modal de detalle de documento esté abierto.
+ * Detecta por (a) `collectService.isOpen=true` vía window.ng, o (b) un ion-modal
+ * visible cuyo contenido menciona "Detalle".
+ * @returns {Promise<boolean>}
+ */
+async function waitDocDetailOpen(pg, timeout = 3000) {
+  try {
+    await pg.waitForFunction(() => {
+      let flag = false;
+      if (window.ng) {
+        const el = document.querySelector('app-cobro-documents');
+        const comp = el ? window.ng.getComponent(el) : null;
+        flag = !!(comp && comp.collectService && comp.collectService.isOpen);
+      }
+      const modals = Array.from(document.querySelectorAll('ion-modal.show-modal, #eventModal'));
+      const domOpen = modals.some(md => md.offsetParent !== null && /Detalle/i.test(md.textContent || ''));
+      return flag || domOpen;
+    }, { timeout });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Abre el modal "Detalle Del Documento" de una factura en el Tab Documentos de un cobro.
+ *
+ * ⚠ El botón de la lupa (`ion-icon[name="search-sharp"]`) está DESHABILITADO hasta que el
+ * documento esté seleccionado: la plantilla usa `disabled="{{!documentSale.isSelected}}"`
+ * y el handler `openDocumentSale()` hace `if (isSelected) { ...abre... }`. Por eso hay que
+ * marcar PRIMERO el checkbox de la fila y recién entonces clickear la lupa.
+ * (Causa del SKIP de DM-COB-041/042/046 en piercar [prc-2617]: se clickeaba la lupa sin
+ * seleccionar el documento → botón disabled → no abría. Confirmado en
+ * `cobro-documents.component.html` + `.ts`.)
+ *
+ * Flujo: (1) localizar fila → asegurar checkbox seleccionado (click real + espera) →
+ *        (2) click real en el `ion-button` de la lupa (scrollIntoView + coords frescas) →
+ *        (3) esperar modal; fallback: disparar `openDocumentSale(idx)` vía window.ng.
+ *
+ * @param {object} opts  { match?: string } texto a buscar en la fila (ej. nro de factura).
+ *                        Si se omite, usa la primera fila de documentos.
+ * @returns {Promise<string>} 'OK: ...' | 'OK-WARN: ...' | 'ERROR: ...' (no lanza).
+ */
+async function openDocumentDetail(pg, opts = {}) {
+  const match = opts.match || null;
+
+  // helper de localización de fila (reusado en cada paso con coords frescas)
+  const findRow = (m) => {
+    const rows = Array.from(document.querySelectorAll('ion-row.tabladocumentSalesVenta'));
+    const visible = rows.filter(r => r.offsetParent !== null);
+    return m ? visible.find(r => (r.textContent || '').includes(m)) : visible[0];
+  };
+
+  // 1) Asegurar checkbox seleccionado
+  const rowInfo = await pg.evaluate(({ m, findRowSrc }) => {
+    const findRow = eval('(' + findRowSrc + ')');
+    const row = findRow(m);
+    if (!row) return { ok: false, msg: 'fila de documento no encontrada' + (m ? ' (match=' + m + ')' : '') };
+    const cb = row.querySelector('ion-checkbox');
+    if (!cb) return { ok: false, msg: 'checkbox de la fila no encontrado' };
+    const r = cb.getBoundingClientRect();
+    return { ok: true, selected: !!cb.checked, x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }, { m: match, findRowSrc: findRow.toString() });
+  if (!rowInfo.ok) return 'ERROR: ' + rowInfo.msg;
+
+  if (!rowInfo.selected) {
+    await pg.mouse.click(rowInfo.x, rowInfo.y);
+    try {
+      await pg.waitForFunction(({ m, findRowSrc }) => {
+        const findRow = eval('(' + findRowSrc + ')');
+        const row = findRow(m);
+        const cb = row && row.querySelector('ion-checkbox');
+        return !!(cb && cb.checked);
+      }, { m: match, findRowSrc: findRow.toString() }, { timeout: 4000 });
+    } catch (e) {
+      return 'ERROR: el documento no quedó seleccionado tras click en checkbox';
+    }
+    await pg.waitForTimeout(300); // selectDocumentSale puebla collectionDetails
+  }
+
+  // 2) Click real en la lupa (ion-button, no el ion-icon)
+  const prep = await pg.evaluate(({ m, findRowSrc }) => {
+    const findRow = eval('(' + findRowSrc + ')');
+    const row = findRow(m);
+    if (!row) return { ok: false, msg: 'fila no encontrada (paso 2)' };
+    const icon = row.querySelector('ion-icon[name="search-sharp"]');
+    const btn = icon ? icon.closest('ion-button') : null;
+    if (!btn) return { ok: false, msg: 'botón lupa no encontrado en la fila' };
+    if (btn.disabled) return { ok: false, msg: 'botón lupa sigue disabled (documento no seleccionado)' };
+    btn.scrollIntoView({ block: 'center' });
+    return { ok: true };
+  }, { m: match, findRowSrc: findRow.toString() });
+  if (!prep.ok) return 'ERROR: ' + prep.msg;
+
+  await pg.waitForTimeout(150); // dejar asentar el scroll antes de leer coords
+  const coords = await pg.evaluate(({ m, findRowSrc }) => {
+    const findRow = eval('(' + findRowSrc + ')');
+    const row = findRow(m);
+    const icon = row && row.querySelector('ion-icon[name="search-sharp"]');
+    const btn = icon ? icon.closest('ion-button') : null;
+    if (!btn) return null;
+    const r = btn.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }, { m: match, findRowSrc: findRow.toString() });
+  if (coords) await pg.mouse.click(coords.x, coords.y);
+
+  if (await waitDocDetailOpen(pg, 3000)) return 'OK: detalle de documento abierto (click real en lupa)';
+
+  // 3) Fallback: disparar el handler real vía window.ng
+  const viaHandler = await pg.evaluate((m) => {
+    if (!window.ng) return 'ERROR: window.ng no disponible para fallback';
+    const el = document.querySelector('app-cobro-documents');
+    if (!el) return 'ERROR: app-cobro-documents no encontrado';
+    const comp = window.ng.getComponent(el);
+    if (!comp || typeof comp.openDocumentSale !== 'function') return 'ERROR: openDocumentSale no disponible';
+    const list = (comp.collectService && comp.collectService.documentSales) || [];
+    let idx = -1;
+    if (m) idx = list.findIndex(d => d && d.isSelected && JSON.stringify(d).includes(m));
+    if (idx < 0) idx = list.findIndex(d => d && d.isSelected);
+    if (idx < 0) return 'ERROR: no hay documento seleccionado para abrir detalle';
+    comp.openDocumentSale(idx, new Event('click'));
+    return 'OK';
+  }, match);
+  if (!viaHandler.startsWith('OK')) return viaHandler;
+
+  return (await waitDocDetailOpen(pg, 3000))
+    ? 'OK: detalle de documento abierto (handler real fallback)'
+    : 'OK-WARN: openDocumentSale disparado pero el modal no se detectó visible';
+}
+
+// ---------------------------------------------------------------------------
+// CAPTURA DE PAYLOAD (cotejo "lo enviado == lo guardado" · §10.c)
+// ---------------------------------------------------------------------------
+
+/**
+ * Envuelve `CapacitorHttp.post` para CAPTURAR el payload que `auto-send.service`
+ * postea al servidor (= "lo que se mandó", ya estructurado/anidado, en nombres del modelo).
+ * Captura solo las URLs de servicios transaccionales (`.../<x>service/<x>`).
+ * Idempotente: si ya está instalado, no re-envuelve.
+ *
+ * Llamar UNA vez al inicio de la sesión, ANTES de Enviar cualquier transacción.
+ * Luego leer con `getCapturedPayloads(pg)`.
+ *
+ * ⚠ `CapacitorHttp` usa red nativa (no la del WebView) → NO se ve por interceptación CDP;
+ * por eso se envuelve la función JS antes de que llame a nativo.
+ *
+ * @returns {Promise<string>} 'OK: ...' | 'ERROR: ...'
+ */
+async function installPayloadCapture(pg) {
+  return await pg.evaluate(() => {
+    try {
+      const Cap = window.Capacitor;
+      if (!Cap) return 'ERROR: window.Capacitor no disponible';
+      if (window.__qaCaptureInstalled) return 'OK: ya instalado (' + (window.__qaPayloads || []).length + ' capturados)';
+      window.__qaPayloads = [];
+      // ⚠ Plugins.CapacitorHttp.post es un proxy de solo-lectura (no se puede sobre-escribir).
+      // El punto correcto es el bridge `nativePromise(plugin, method, options)`: ahí pasan los
+      // métodos async como CapacitorHttp.post antes de ir a nativo.
+      const record = (plugin, method, options) => {
+        try {
+          if (plugin === 'CapacitorHttp' && /post/i.test(String(method)) &&
+              options && /service\//i.test(String(options.url || ''))) {
+            window.__qaPayloads.push({ url: options.url, data: options.data });
+          }
+        } catch (e) { /* nunca romper el envío real */ }
+      };
+      const hooked = [];
+      if (typeof Cap.nativePromise === 'function') {
+        const orig = Cap.nativePromise.bind(Cap);
+        Cap.nativePromise = function (plugin, method, options) { record(plugin, method, options); return orig(plugin, method, options); };
+        hooked.push('nativePromise');
+      }
+      if (!hooked.length && typeof Cap.toNative === 'function') {
+        const orig = Cap.toNative.bind(Cap);
+        Cap.toNative = function (a, b, c) {
+          try { if (typeof a === 'string') record(a, b, c); else if (a && a.pluginId) record(a.pluginId, a.methodName, a.options); } catch (e) {}
+          return orig.apply(this, arguments);
+        };
+        hooked.push('toNative');
+      }
+      if (!hooked.length) return 'ERROR: ni nativePromise ni toNative disponibles para enganchar';
+      window.__qaCaptureInstalled = true;
+      return 'OK: captura instalada (' + hooked.join('+') + ')';
+    } catch (e) { return 'ERROR: ' + e.message; }
+  });
+}
+
+/** Devuelve los payloads capturados hasta el momento (array de {url, data}). */
+async function getCapturedPayloads(pg) {
+  return await pg.evaluate(() => (window.__qaPayloads || []));
+}
+
 // ---------------------------------------------------------------------------
 // EXPORTAR (CommonJS — funciona si require() está disponible)
 // ---------------------------------------------------------------------------
@@ -401,6 +779,7 @@ if (typeof module !== 'undefined' && module.exports) {
     getActiveView,
     fillIonInput,
     fillNgModelKeyboard,
+    fillNgModelField,
     selectIonPopover,
     clickAlertButton,
     clickBack,
@@ -410,6 +789,13 @@ if (typeof module !== 'undefined' && module.exports) {
     isVisible,
     getActiveAlert,
     confirmDatetime,
+    setIonDatetime,
     mockCameraAdjunto,
+    ensureAdjunto,
+    openNuevoCobro,
+    waitDocDetailOpen,
+    openDocumentDetail,
+    installPayloadCapture,
+    getCapturedPayloads,
   };
 }

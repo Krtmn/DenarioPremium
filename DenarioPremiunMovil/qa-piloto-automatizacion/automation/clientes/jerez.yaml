@@ -1,0 +1,236 @@
+# jerez/jerez.yaml
+# Cliente NUEVO: JEREZ — 1ª corrida (sin datos de prueba confirmados todavía).
+#
+# VGs pobladas desde el CSV de configuración del equipo de DESARROLLO (misma carpeta):
+#   automation/clientes/jerez/global_configuration_jerez.csv  (snapshot 2026; G/P/C, ~165 filas)
+# Las llaves coinciden 1:1 con globalConfig.get("<clave>") del código.
+# Decisión QA (2026-06-17): la fuente efectiva de VGs es global_configuration_jerez.csv (2026).
+#   El segundo archivo global_configuration_client_jerez.csv (2022, parcial) NO se usa: es un seed antiguo.
+#
+# ⚠ 1ª corrida: los datos de prueba (cliente/factura/estructura/producto) están en TBD.
+#   El agente debe DESCUBRIRLOS navegando las listas durante la corrida y reportarlos
+#   para consolidarlos en este YAML al cierre.
+# ⚠ El agente debe VERIFICAR las VGs contra la UI y MARCAR DISCREPANCIAS (CSV dev vs app = posible bug de config).
+
+cliente_id: jerez
+# [jerez-2026-06-22] HOME no muestra rótulo de empresa/cliente ni selector de empresa post-login (igual gmp/cf).
+# [jerez-2026-07-06] NOMBRES REALES de empresa (nuevo set de datos, verificados en Clientes/Devoluciones/Productos/Vendedores/Depósitos):
+#   idEnterprise 1 = "INV JEREZ MOTORS VALERA"  (coEnterprise 00001, coCurrencyDefault USD, enterpriseDefault:true)
+#   idEnterprise 2 = "INV JEREZ MOTORS CARACAS" (coEnterprise 00002)
+#   idEnterprise 3 = "INV JEREZ MOTORS TURMEREMO" (coEnterprise 00003)
+#   Reemplazan los rótulos genéricos previos "INVERSIONES JEREZ MO..." [jerez-2026-06-22] y "INVERSIONES JEREZ 1/2/3" [jerez-2026-07-01].
+cliente_nombre: "INV JEREZ MOTORS VALERA"   # [jerez-2026-07-06] empresa default idEnterprise:1 (USD). 3 empresas multi-empresa VALERA/CARACAS/TURMEREMO.
+ws_url: "TBD"                            # TBD — confirmar playa/servidor de Jerez. Conexión real en ../../claves.env
+apk_package: com.kiberno.denarioPremiumPro
+
+# ── VGs (fuente: CSV dev global_configuration_jerez.csv 2026; VERIFICAR vs UI en corrida) ──
+vgs:
+  # Globales
+  multiCurrency: true                    # [csv] id10
+  userMustActivateGPS: true              # [csv] id7 — conceder permisos ubicación antes de la corrida
+  userCanSaveGPS: true                   # [csv] id8
+  enterpriseEnabled: true                # [csv] id9
+  showCamera: true                       # [csv]
+  userCanUploadFiles: true               # [csv] id18 — acordeón Archivo/Adjuntos
+  longitudComentario: 200                # [csv]
+  tagRif: "RIF"                          # [csv]
+  tagIVA: "IVA"                          # [csv]
+  parteDecimal: 2                        # [csv]
+  transportRole: true                    # [csv] no observable en módulos del smoke
+  promoterRole: false                    # [csv]
+  rolPlanta: true                        # [csv] no observable
+  esVendedor: true                       # [jerez-2026-06-22] CONFIRMADO en UI: heading "<h1>Vendedor</h1>" presente; jerez multi-empresa 3 acordeones
+  visitRout: true                        # [csv]
+  transactionHistory: true               # [csv]
+
+  # Pedidos
+  multiCurrencyOrder: false              # [csv] Tab Total solo moneda por defecto
+  userCanChangePriceList: true           # [csv] id41 → DM-PRD-013 APLICA (puede cambiar lista de precio)
+  userCanChangePriceListProduct: false   # [csv]
+  unitByPriceList: false                 # [csv]
+  showStock: true                        # [csv]
+  stock0: true                           # [csv] permite pedir productos con stock 0
+  validStock: true                       # [csv]
+  validateWarehouses: true               # [csv] muestra almacenes/inventario en toma de pedido
+  userCanChangeWarehouse: true           # [csv]
+  userCanSelectGlobalDiscount: true      # [csv]
+  userCanSelectProductDiscount: false    # [csv]
+  userCanSelectIVA: false                # [csv]
+  showCreditLimit: false                 # [csv]
+  userCanChangePaymentConditions: true   # [csv]
+  selectOrderType: false                 # [csv]
+  productMinMul: false                   # [csv]
+  featuredProducts: true                 # [csv]
+  suggestedOrder: true                   # [csv] botón "Pedido Sugerido"
+  suggestedOrderByDispatchAndReturn: false  # [csv]
+  # ⚠ [jerez-2026-07-06] DISCREPANCIA UI-vs-config: CSV dice false, pero en Inventarios el botón "Pedido Sugerido"
+  #   (ion-button.botonAddAmarillo) aparece y FUNCIONA → modal inventario-sugerido-modal "Sugerido PIEZA: 5, Despacho 50".
+  #   Misma divergencia que piercar/expirationBatch. VERIFICAR valor efectivo con DESARROLLO antes de cambiar la VG (NO a ciegas).
+  disableDaDispatch: true                # [csv] fecha despacho opcional/deshabilitada
+
+  # Productos
+  showProductImages: true                # [csv]
+  productsOrderBy: "co_product"          # [csv]
+  hideProductWarehouse: false            # [csv]
+  vatExemptProducts: false               # [csv]
+
+  # Devoluciones — validateReturn=TRUE (requiere factura)
+  validateReturn: true                   # [csv] id24 → requiere seleccionar factura; DM-DEV-011 aplica
+  requeridedNroFactura: true             # [csv] NroFactura requerido
+  multiInvoices: true                    # [csv] permite productos de varias facturas en una devolución
+  mesesFacturas: 3                       # [csv]
+  signatureReturn: true                  # [csv]
+
+  # Inventarios
+  clientStock: true                      # [csv] id26 → módulo toma de inventario habilitado
+  requireClientStock: false              # [csv]
+  expirationBatch: true                  # [csv] id28 → Lote + Fecha venc en modal
+  signatureStock: true                   # [csv] verificar Tab Adjuntos/Firma
+
+  # Visitas
+  signatureVisit: true                   # [csv] id29 → acordeón Firma
+
+  # Cobros
+  requiredCollectionAttachments: false   # [csv] id261 → adjunto OPCIONAL: cobros se ENVÍAN (no quedan Guardado). DM-COB-019 aplica
+  requiredComment: false                 # [csv] id100 → DM-COB-006 N/A
+  cobroPrepago: true                     # [csv] id76 → DM-COB-028 (Anticipo) aplica
+  cobroRetencion: true                   # [csv] id77 → DM-COB-029 (+RETENCIÓN menú) aplica
+  retencion: true                        # [csv] id236 → DM-COB-041/042 (retención por detalle de documento) aplican
+  retentionDocTypeCR: true               # [csv] id88
+  sizeRetention: 14                      # [csv] id89 → "Debe tener 14 caracteres"
+  formatRetention: "Numeros"             # [csv] id90 valor 0 = Numeros (solo dígitos)
+  userCanAddRetention: false             # [csv] id134 → DM-COB-032 N/A (no retención libre sin factura)
+  userCanSelectIGTF: true                # [jerez-2026-07-06] EFECTIVO=true CONFIRMADO en UI (re-run): selector IGTF operable → opciones "IGTF - 0%" e "IGTF 3%" (defaultIgtf=true). El CSV id97=false está DESACTUALIZADO.
+  # ✅ [jerez-2026-07-06] H4 RESUELTO: userCanSelectIGTF efectivo=true. DM-COB-036/044/045 NO son N/A estructural.
+  #   Quedaron N/A por DATO (sin documento tipo IGTF elegible hoy: BRISAS DEL CAMPO KM 30 emp3 y EL PODER DEL MONO emp2 → 0 docs IGTF pese a saldo>0, ya drenados). Re-correr cuando exista un doc tipo IGTF vigente.
+  userCanCollectIva: true                # [csv] id102 → DM-COB-037 APLICA (necesita cliente habilitado 25% IVA — descubrir)
+  enablePartialPayment: true             # [csv] id232 → DM-COB-046 (pago parcial) aplica round-trip
+  alwaysPartialPayment: false            # [csv]
+  historicPartialPayment: true           # [csv]
+  historicoTasa: true                    # [csv] id95 → habilita elegir fecha/tasa anterior
+  canChangeRate: true                    # [csv] id231 → DM-COB-047 y 039(B) aplican (recálculo por fecha tasa)
+  enabledManualRate: false               # [csv] id264 → DM-COB-039 rama A N/A (usar rama B fecha tasa)
+  multiCurrencyCollection: true          # [csv] id91 → DM-COB-033/034 aplican
+  multiCurrencyDeposit: true             # [csv] id92
+  currencyBank: true                     # [csv] id94
+  clientBankAccount: false               # [csv] id93 (bancos propios del receptor)
+  tolerancia0: true                      # [csv] id79 permite cobros con diferencia
+  userCanSelectCollectDiscount: false    # [csv] → DM-COB-031 N/A
+  reconciliation: false                  # [csv]
+  # colletionPayment (id78) = Efectivo, Transferencia, Deposito, Otros (Cheque y Pago Móvil OFF)
+  #   → Efectivo HABILITADO ⇒ módulo Depósitos APLICA (requiere cobro con Efectivo)
+
+  # Vendedores
+  infoVendedores: false                  # [csv] id38 → módulo vendedores autogenerado en la app (no admin)
+
+# ── Datos de prueba (1ª corrida: TBD — el agente los descubre y se consolidan al cierre) ──
+modules:
+  login:
+    bad_password: Test-LOG-003
+
+  clientes:
+    cliente_busqueda: "JL Motors"        # [jerez-2026-06-22] buscable por nombre (filtra 3→1)
+    cliente_detalle: "JL Motors SE,C.A"  # [jerez-2026-06-22] Código J-506554950; Saldo 0,00, sin Doc. de Venta. [jerez-2026-07-06] Detalle rotula Empresa "INV JEREZ MOTORS VALERA" (antes "INVERSIONES JEREZ MOTORS"); Lista "Precio 1".
+    # [jerez-2026-06-22][jerez-2026-07-06 sin cambios bajo nuevo set] Cartera pequeña: solo 3 clientes reales (emp 1, todos Saldo BS/USD 0,00):
+    #   DANIELA HERNANDEZ F.P. (V161051485), Inversiones J.L Moto Piezas C.A (J-50163353-3), JL Motors SE,C.A (J-506554950)
+    # [jerez-2026-06-22] Ningún cliente con documentos de venta → DM-CLT-013 N/A para esta cuenta en su estado actual (la lista del módulo CLIENTES NO expone emp 2/3, donde viven los clientes con docs).
+    # [jerez-2026-06-22] ion-select idEnterprise (form potencial): 3 opciones (val 1/2/3); form vacío sin preselección → Guardar exige seleccionar.
+    # [jerez-2026-07-06] Los rótulos de las 3 opciones idEnterprise ahora son "INV JEREZ MOTORS VALERA / CARACAS / TURMEREMO" (antes "INVERSIONES JEREZ 1/2/3" [jerez-2026-07-01], antes idéntico "INVERSIONES JEREZ MO" [jerez-2026-06-22]).
+    # [jerez-2026-07-01] ⚠ El cliente potencial enviado quedó "Por Enviar" y NO persistió en nube (BD-SAVED) — ver ultima_corrida.pendientes (H1).
+
+  pedidos:
+    cliente_test: "JL Motors SE,C.A"     # [jerez-2026-06-22] J-506554950, saldo 0,00
+    estructura_producto: "Plasticos"     # [jerez-2026-06-22] build productos-tab; familia Plasticos (1 prod) — producto PLAN-001 "Agro silotubo flex-silon extra PB 8P*50C", 234,00 USD, PIEZA. [jerez-2026-07-06] inventario ~398 (antes ~450) bajo nuevo set.
+    alerta_deuda_vencida: false          # [jerez-2026-06-22] no aparece (los 3 clientes de cartera tienen saldo 0,00)
+    # [jerez-2026-06-22] Categorías del catálogo (conteos suben con el set): Accesorios MJ (179), Carbones (136), HJ-Forza (75), Otras marcas (131), Plasticos (1), Repuestos Jerez (221), Repuestos de Motos (4055), XCORT (31)  # [jerez-2026-07-06] conteos actualizados; Plasticos sigue 1 prod
+    # [jerez-2026-07-06] H1: tras Enviar, el pedido quedó "Por Enviar" (cola de salida), no transitó a "Enviado" ni asignó Ref real en ~10s. Sin cotejo BD no se afirma/descarta persistencia. Ver ultima_corrida.pendientes.
+
+  cobros:
+    # ⚠ [jerez-2026-07-06] BUILD REFACTORIZADO El Yaque: window.ng=false (sin debug Angular) → helpers con fallback window.ng inoperantes; conducir con clicks reales.
+    # ✅ [jerez-2026-07-06] H3 RESUELTO: era ESTADO LOCAL stale, NO defecto de app ni límite permanente del harness. Tras LIMPIAR almacenamiento+caché de la app, cambiar de empresa (asignar value + ionChange → Aceptar alert) SÍ recarga los clientes del modal (emp2: ISOLINA/EL PODER DEL MONO/FERRETERIA; emp3: BRISAS DEL CAMPO). Clientes emp2/3 con documentos alcanzables.
+    # ✅ [jerez-2026-07-06 175921] PATRÓN CONSOLIDADO gateway empresa: con ESTADO FRESCO, cambiar de empresa (asignar value {coEnterprise:'00002'} al 1º ion-select de app-cobro-general + ionChange → Aceptar alert "Se ha detectado cambio del empresa...") recarga el #clienteSelectModal con clientes emp2 de forma DETERMINISTA, SIN necesidad de limpiar caché. 0 BLOCKED en la corrida completa (29 PASS/5 N/A). Cliente CON docs usado: MULTIREPUESTOS DRG (074820707, emp2, docs USD tipo A).
+    # ✅ [jerez-2026-07-06 175921] Retención por detalle de documento (041/042): habilitar Monto retenido IVA/ISLR requiere, ADEMÁS del teclado en Nro Comp Ret, FIJAR la propiedad `.value` del ion-input (ionInput.value=inp.value + emitir input/keyup/ionInput/ionChange/blur/ionBlur). Solo con teclado (fillNgModelField) los campos IVA/ISLR quedan disabled.
+    #   Re-run 2026-07-06 de los 9 casos: 2 PASS (029 retención "La Retención se ha guardado"; 046 pago parcial round-trip §9 BS 400,00 persiste), 3 N/A por dato (036/044/045 sin doc IGTF hoy), 4 BLOCKED por límite CDP MÁS ACOTADO (041/042 modal detalle: Monto retenido IVA/ISLR resisten foco + Fecha Comp Ret sin calendario; 047/039 Fecha Tasa ion-datetime sin Aceptar accesible). Mejorar helpers: ngModel modal detalle + confirmación ion-datetime.
+    #   1ª pasada: cobro real Ref 81 (MULTIREPUESTOS DRG emp2, Efectivo BS 29.360,41) ENVIADO.
+    # [jerez-2026-06-22] Empresa 1 (00001) = AZUL, clientes saldo 0 SIN documentos. Empresas 2/3 (00002/00003) = ROJO, clientes con documentos.
+    cliente_test: "JL Motors SE,C.A"     # [jerez-2026-06-22] emp 1 (azul, J-506554950), saldo 0 → casos SIN documentos
+    cliente_code: "J-506554950"          # [jerez-2026-06-22]
+    clientes_con_documentos:             # [jerez-2026-06-22] empresa 2/3 (ROJO, saldo>0 con docs)
+      # [jerez-2026-07-01] BD: emp 2 = 4 clientes/16 docs; emp 3 = 141 clientes/395 docs. Conteos de docs (emp 2) al lado de cada uno.
+      - "MULTIREPUESTOS DRG, DE RAFAEL MOLINA, F.P (074820707)"   # emp 2 — 6 docs USD, saldo 1083,89 (el de más docs)
+      - "INVERSIONES MOTO REPUESTOS EL PODER DEL MONO 2016 CUDEMUS (089129288)"  # emp 2 — 5 docs, saldo 1346,40 (tiene docs IGTF)
+      - "ISOLINA DEL CARMEN (10283986)"              # emp 2 — 4 docs, saldo 95,19
+      - "FERRETERIA MUNDIAL, C.A. (065027207)"       # emp 2 — 1 doc (*026088); su cobro id_collection 58 se depositó (Ref 6) el 2026-07-01
+    cliente_25iva: null                  # [jerez-2026-06-22][jerez-2026-07-06 reconfirmado] NO existe: COBRO 25%IVA → selector cliente "No hay clientes disponibles" (cliente_25iva=null bajo nuevo set) → DM-COB-037 N/A POR DATO (no estructural: userCanCollectIva=true)
+    metodo_pago: "Efectivo"              # Disponibles: Efectivo/Transferencia/Deposito/Otros (sin Cheque ni Pago Móvil) — confirmado
+    banco_deposito: "Banesco Jerez Motors"   # [jerez-2026-06-22] cuenta receptora del depósito (ver modules.depositos.banco)
+    documento_retencion: "doc tipo A *026088 (FERRETERIA MUNDIAL)"   # [jerez-2026-06-22] USD 140,70 / BS 79.872,58, venc 09/05/2026
+    monto_retencion_iva: null            # TBD
+    monto_retencion_islr: null           # TBD
+    moneda_cobro: "BS/USD"               # [jerez-2026-06-22] multiCurrencyCollection confirmado; monto a pagar en BS, documentos del cliente en USD
+    fecha_tasa_editable: true            # historicoTasa+canChangeRate → DM-COB-047 y 039(B) aplican
+    pago_parcial_toggle: true            # enablePartialPayment=true → toggle "Pago parcial" en detalle. DM-COB-046 round-trip
+    retencion_via_detalle: true          # retencion=true → DM-COB-041/042 (detalle) aplican; cobroRetencion=true → DM-COB-029 (+RETENCIÓN menú)
+    smoke_na_estructural:
+      - "DM-COB-006: requiredComment=false → N/A"
+      - "DM-COB-032: userCanAddRetention=false → retención libre sin factura N/A"
+      # [jerez-2026-07-06] YA NO estructural: userCanSelectIGTF efectivo=true. 036/044/045 = N/A por DATO (sin doc tipo IGTF elegible hoy), re-correr cuando exista.
+      - "DM-COB-039(A): enabledManualRate=false → usar rama B (fecha tasa)"
+      - "DM-COB-031: userCanSelectCollectDiscount=false → descuento en cobro N/A"
+
+  devoluciones:
+    # [jerez-2026-06-22][jerez-2026-07-06 re-run] SIGUE sin facturas sincronizadas devolvibles (dentro de mesesFacturas=3) bajo el nuevo set.
+    #   Verificado activamente en las 3 empresas (emp1 JL Motors, emp2 MULTIREPUESTOS DRG + EL PODER DEL MONO, emp3 DANIELA HERNANDEZ): #InvoiceeSelectModal abre con 0 ítems y muestra el texto de estado-vacío "cambio de la factura".
+    #   → validateReturn=true exige factura → 10 casos N/A POR DATO (no defecto). Los docs de esos clientes son cuentas por cobrar (Cobros), NO facturas de venta devolvibles. Reintentar cuando exista emisión real de facturas sincronizadas.
+    # [jerez-2026-07-06] El form Devoluciones tiene un selector de empresa alcanzable (1º ion-select visible de app-devoluciones, y≈147): value+ionChange recarga la cartera del #clienteSelectModal (2º ion-select = Tipo). Etiquetas empresa = "INV JEREZ MOTORS VALERA/CARACAS/TURMEREMO".
+    cliente_test: null                   # TBD — sigue TBD hasta que existan facturas devolvibles
+    factura_test: null                   # TBD — nro factura enviada (validateReturn=true)
+    producto_test: null                  # TBD — producto presente en esa factura
+
+  inventarios:
+    cliente_test: "DANIELA HERNANDEZ F.P."   # [jerez-2026-06-22] V161051485 (emp 1) — flujo completo PASS
+    cliente_code: "V161051485"           # [jerez-2026-06-22]
+    expirationBatch: true                # Lote + Fecha venc obligatorios en modal
+    suggestedOrderByDispatchAndReturn: false  # ⚠ [jerez-2026-07-06] DISCREPANCIA: UI muestra "Pedido Sugerido" ACTIVO (ver vgs). VERIFICAR con desarrollo.
+    # [jerez-2026-06-22] Producto con Lote/Fecha venc = PLAN-001 "Agro Silotubo Flex-Silon Extra PB 8P*50C" (familia Plasticos, 1 prod, el más simple). Modal pide Cantidad+Lote+Fecha venc (default HOY). [jerez-2026-07-06] inventario PLAN-001 ~398 (antes ~450) bajo nuevo set.
+    # [jerez-2026-07-06] Reapertura de Guardado carga datos ASYNC (~3s): cliente/capturas vacíos si se lee <2s. Inventarios SÍ sincroniza (corridas previas: Guardado Ref 0 → Enviado). ⚠ En esta corrida (sin BD) el Ref 0 enviado quedó "Por enviar" en la ventana de poll ~13s; confirmar flip a Enviado con cotejo BD.
+    # [jerez-2026-07-06] Modal inventory-type-stocks-modal: tipo fijo "Exhibición" (label), SIN segmento Exhibición/Depósito/Todos (como piercar/don-theo), pero con inputs por placeholder "Ingrese cantidad"/"Ingrese lote" (como insumar).
+
+  depositos:
+    aplica: true                         # [jerez-2026-06-22] CONFIRMADO — colletionPayment incluye Efectivo → Depósitos aplica (multiCurrencyDeposit=true)
+    motivo_na: null                      # [jerez-2026-06-22] aplica=true confirmado, sin motivo N/A
+    banco: "Banesco Jerez Motors"        # [jerez-2026-06-22] idBankAccount:419, coBank:BANESCO, idBank:1, coAccount:CBA-BANESCO, nuAccount 0134....2087, coType Cuenta. Única cuenta receptora.
+    moneda: "BS"                         # [jerez-2026-06-22] default (localCurrency=true); select ofrece BS / USD (multiCurrencyDeposit confirmado en DOM)
+    # [jerez-2026-07-06] End-to-end CONFIRMADO: Guardar→Enviar Ref 7 con cobro Efectivo Ref 81 vinculado (MULTIREPUESTOS DRG, emp 2). Envío = 3 alertas (insumar=2). Defecto lista BUSCAR DM-DEP-010/018 NO reprodujo.
+    # ⚠ [jerez-2026-07-06] OBSERVACIÓN (no defecto, sin cotejo BD): al reabrir un depósito Guardado el picker Empresa REVIERTE a "INVERSIONES JEREZ 1"
+    #   aunque se guardó con JEREZ 2. Datos sustantivos (banco, cuenta, fechas, Nro.Plantilla y el cobro emp2 vinculado) SÍ persisten.
+    #   El select Empresa se comporta como filtro de creación, no como cabecera relegida. CONFIRMAR con BD en próxima corrida (empresa del deposit vs empresa del cobro vinculado).
+
+  visitas:
+    cliente_test: "DANIELA HERNANDEZ F.P."   # [jerez-2026-06-22] V161051485 (emp 1)
+    smoke_na_estructural:
+      - "DM-VIS-025/026: dependen de RUTA DE HOY con visitas sincronizadas (variable por día)"
+    # [jerez-2026-06-22] 11 actividades, TODAS requiredEvent=true (idTypes 2,47,71,75,82-88). EVENTOS (86) → Motivo único SUPERVISION DE EVENTOS (idMotive 213).
+    # [jerez-2026-06-22] Seleccionar DANIELA dispara alert "sucursal sin coordenadas" (igual gmp); dismiss con 1er botón no bloquea.
+
+  productos:
+    tipo_estructura_default: "LINEA"     # [jerez-2026-06-22] idTypeProductStructure=1, ÚNICO tipo → DM-PRD-002 N/A estructural (igual gmp/romher)
+    texto_busqueda: "esmeril"            # [jerez-2026-06-22] filtra dentro de estructura "Carbones" (50→8)
+    # [jerez-2026-07-06] listas de precio (detalle): "Precio 1" (idList 1, coList "01") y "Precio 3" (idList 2, coList "02") → DM-PRD-013 ejecutable y PASS. Almacén (detalle) = "Ferreteria UNIFICADO VALERA 2 Valera" (antes "Ferreteria VALERA 2 Valera" bajo nuevo set).
+    # [jerez-2026-07-06] Selector empresa (product-structures-list, 1er ion-select, 3 opciones) rotula "INV JEREZ MOTORS VALERA/CARACAS/TURMEREMO"; detalle muestra solo precio USD (lista muestra USD+BS, igual gmp/don-theo/piercar).
+
+  vendedores:
+    aplica: true                         # [jerez-2026-06-22] CONFIRMADO en UI (heading "Vendedor"); jerez multi-empresa = 3 acordeones
+
+# ── Última corrida ──────────────────────────────────────────────────────────────
+ultima_corrida:
+  run_id: 20260706_175921_smoke-completo  # corrida COMPLETA 10/10 bajo NUEVO SET DE DATOS, SIN cotejo BD (solo UI + round-trip §9). Totales: 109 PASS / 0 FAIL / 5 SKIP / 23 N/A / 0 BLOCKED.
+  fecha: 2026-07-06
+  fecha_corrida_completa_previa: 2026-06-22  # 20260622_112934 (1ª corrida completa). La corrida matutina 20260706_100801 fue PARCIAL 8/10.
+  defectos_abiertos: []
+  pendientes:
+    - "H1 no-persistencia (RE-CORRER CON COTEJO BD): 4/5 transacciones enviadas quedaron 'Por Enviar' en UI (cola de salida El Yaque), sin confirmar nube — cliente potencial (potentialclient), pedido (order), inventario y visita. En corridas previas inv/vis/dep SÍ sincronizaban; esta corrida (175921) también los dejó 'Por Enviar' dentro de la ventana de poll. ⚠ Sin cotejo BD NO se afirma/descarta persistencia; consecuencia aguas-abajo: Depósitos quedó sin cobro depositable (cobro emp2 'Por Enviar' = sin idCollection de servidor). Re-correr con lectura de BD para distinguir intermitencia (conectividad/cola) de defecto de endpoint."
+    - "H3 cobros: ✅ RESUELTO COMPLETO [2026-07-06]. (1) Gateway empresa→clientes era estado local stale: tras limpiar almacenamiento+caché el cambio de empresa recarga los clientes. (2) Los 4 BLOCKED remanentes (041/042 modal detalle retención; 047/039 Fecha Tasa) se cerraron parchando 2 helpers en denario-cdp-helpers.js: h.setIonDatetime (dt.confirm()+ionChange+click real Aceptar) y h.fillNgModelField (foco por click real en coords). VALIDADOS end-to-end (047 recalcula BS 13.368,86→13.196,71 y persiste §9; 041/042 retención guarda y persiste). Cobros jerez queda 0 BLOCKED. Ver module-selectors/cobros.md [jerez-2026-07-06]."
+    - "H4 IGTF: ✅ RESUELTO [2026-07-06]. userCanSelectIGTF EFECTIVO=true (selector operable IGTF 0%/3%, defaultIgtf=true) — CSV id97=false desactualizado (VG actualizada en el perfil). DM-COB-036/044/045 dejan de ser N/A estructural; quedaron N/A por DATO (sin doc tipo IGTF elegible hoy). Re-correr cuando exista un documento tipo IGTF vigente."
+    - "[2026-07-06] Depósitos: picker Empresa revierte a 'JEREZ 1' al reabrir Guardado (observación, no defecto) — confirmar campo empresa del deposit vs cobro vinculado CON cotejo BD."
+    - "[2026-07-06] DISCREPANCIA Inventarios/Pedidos: suggestedOrderByDispatchAndReturn CSV=false pero UI muestra 'Pedido Sugerido' activo. VERIFICAR con desarrollo (NO cambiar VG a ciegas)."

@@ -1,0 +1,118 @@
+# insumar/perfil.yaml
+# Cliente actualmente en Isla Coche.
+# VGs parcialmente confirmadas — completar en primera corrida formal.
+
+cliente_id: insumar
+cliente_nombre: "INSUMAR DISTRIBUIDOR"    # Confirmado 20260603: nombre en app
+ws_url: "http://denarioislacoche.ddns.net:8081/PremiumWS/services/"
+apk_package: com.kiberno.denarioPremiumPro
+
+vgs:
+  multiCurrency: true                     # Confirmado 20260603: lista muestra Saldo BS y Saldo US$
+  expirationBatch: true                   # Confirmado 20260603: Lote + Fecha de vencimiento en modal inventario
+  suggestedOrderByDispatchAndReturn: true # Confirmado 20260603: botón "Pedido Sugerido" visible en tab Resumen
+  requiredCollectionAttachments: false    # Confirmado: Insumar no requiere adjunto para cobros
+  requiredComment: null                   # TBD
+  validateReturn: false                   # Confirmado 20260603: tabs habilitadas sin seleccionar factura
+  signatureReturn: true                   # Confirmado 20260603: acordeón Firma visible en tab Adjuntos
+  signatureCollection: null               # TBD
+  signatureVisit: true                    # Confirmado 20260603: acordeón Firma visible en tab Adjuntos visitas
+  userCanUploadFiles: true                # Confirmado 20260603: acordeón "Archivo — Subir Archivo" visible en tab Adjuntos devoluciones
+  esVendedor: true                        # Confirmado 20260603: encabezado "Vendedor" (singular) + acordeón empresa propia visible
+  enterpriseEnabled: true                 # Confirmado 20260603: acordeón "INSUMAR DISTRIBUIDOR" visible en módulo Vendedores
+  enabledManualRate: false                 # Confirmado 20260603: #manualRateInput no existe
+  cobroPrepago: true                       # Confirmado 20260603: botón ANTICIPO/PREPAGO visible (sin clientes elegibles actualmente)
+  cobroRetencion: true                    # Confirmado 20260603: botón RETENCIÓN visible y funcional; retención requiere adjunto propio
+  retencion: false                        # Confirmado 20260610 [ins-2610]: detalle de documento SIN campos Retención IVA/ISLR/Comprobante en cobro normal
+  sizeRetention: null                     # N/A — retencion=false [ins-2610]
+  formatRetention: null                   # N/A — retencion=false [ins-2610]
+  userCanSelectIGTF: true                 # Confirmado 20260603: botón IGTF visible; 3 selects en General (empresa/moneda/tasa). ⚠ [ins-2622] revisar config web — el tile IGTF NO aparece en el menú de Cobros 20260622 (sí estaba en 20260603); DM-COB-036/044 quedaron N/A por ausencia de botón. Valor previo conservado hasta confirmar con desarrollo.
+  userCanCollectIva: true                 # Confirmado 20260603: botón COBRO 25% IVA visible (sin clientes elegibles actualmente). ⚠ [ins-2622] revisar config web — el tile COBRO 25% IVA NO aparece en el menú de Cobros 20260622; DM-COB-037 quedó N/A. Valor previo conservado hasta confirmar con desarrollo.
+  transportRole: null                     # TBD
+  userMustActivateGPS: null               # TBD
+
+modules:
+  login:
+    bad_password: Test-LOG-003
+
+  clientes:
+    cliente_busqueda: "ABASTOS"           # Confirmado 20260603: buscar con click en botón search
+    cliente_detalle: "ADRIAN ARLET BASTARDO ALONZO"  # Cód 2738, Saldo BS 54.126,82 / US$ 104,50 — tiene documentos
+
+  pedidos:
+    cliente_test: "ADRIAN ARLET BASTARDO ALONZO"  # Cód 2738, Saldo US$ 104,50 — confirmado 20260603
+    estructura_producto: "familias → acordeón → productos (UND/BTO + Inventario)"  # ALIMENTOS/BEBIDAS/etc → click expande items
+    alerta_deuda_vencida: true            # Confirmado 20260603: "Este cliente tiene deuda vencida, ¿Desea continuar?"
+
+  cobros:
+    cliente_test: "ADRIAN ARLET BASTARDO ALONZO"   # Confirmado 20260603 — usar para casos que NO requieren documentos (001,002,004,006,020/021/038)
+    cliente_code: "2738"                            # Confirmado 20260603 — OJO: 2738 NO tiene facturas pendientes en cobro NORMAL (007/008 N/A)
+    clientes_con_documentos: ["2385", "3039", "3281", "3502"]  # Confirmado 20260611 [ins-2611]: tienen documentos pendientes en cobro NORMAL — usar para casos que requieren factura (007/008/012/040/041/042/043/044/046). Si ninguno hoy → recorrer lista hasta hallar uno con documentos
+    cliente_25iva: "3277"  # [ins-2611] ÚNICO cliente habilitado (config web Denario) para COBRO 25% IVA → DM-COB-037. Reservado para esa prueba; funciona como cobro normal (tiene documentos)
+    metodo_pago: "Deposito"                         # Confirmado 20260603; también Efectivo/Transferencia/Pago Móvil
+    banco_deposito: "BANESCO RAEL"                  # Confirmado 20260603 (también BANCRECER/BANCO CARIBE/BANCO MERCANTIL/BDV ADRIANA)
+    documento_retencion: null                       # TBD — factura en rojo para DM-COB-041/042
+    monto_retencion_iva: null                       # TBD
+    monto_retencion_islr: null                      # TBD
+    moneda_cobro: "US$"                             # Confirmado 20260610 [ins-2610]: documentos del cliente 2738 solo aparecen con Moneda Documento=US$ (lista BS vacía)
+    # Las tasas IGTF y cuál es el default los configura cada cliente desde la web → varían por cuenta. NO hardcodear: el agente las descubre en la UI.
+    # [ins-2610] insumar NO expone selector de tasa IGTF — la fija por documento. IGTF US$ 0,09 / BS 46,62 (~3%) auto. DM-COB-045 = N/A (sin alterna). DM-COB-044 PASS (persiste round-trip).
+    igtf_tasa_default: "~3% (auto por documento)"   # Confirmado 20260610 [ins-2610]: IGTF US$ 0,09 / BS 46,62; el selector de tasa NO existe en la UI
+    igtf_tasa_alterna: null                          # N/A [ins-2610]: insumar no expone selector de tasa (la fija por documento)
+    igtf_persistencia_bug2_fixed: true              # QA confirma fix 20260610: el cambio de tasa ahora persiste al reabrir → DM-COB-044 PASS confirmado en corrida
+    fecha_tasa_editable: true                       # [ins-2611] la Fecha tasa (Tab General) es editable (canChangeRate/historicoTasa) → recálculo del Monto total a pagar; DM-COB-047 (cobro nuevo) y DM-COB-039 rama B aplican PESE a enabledManualRate=false
+    retencion_via_menu: true                        # [ins-2611] retención por la opción +RETENCIÓN del menú (DM-COB-029, cobroRetencion=true), NO desde el detalle del documento (retencion=false → 041/042 N/A)
+    pago_parcial_toggle: true                       # [ins-2611 CORREGIDO 20260611] SÍ existe toggle "Pago parcial" en el detalle del documento: ion-toggle en el mismo ion-row que el ion-label "Pago parcial:" (al final del detalle). Activar (false→true) → el ion-input inmediatamente debajo (muestra el saldo, ej "1,50") pasa a editable → escribir el monto parcial → Aceptar. NO es la columna "Pago Parcial" de la tabla (íconos search-sharp/receipt-outline = historial solo lectura). DM-COB-046 debe usar ESTE toggle.
+    # [ins-2622] BD-INFO a vigilar: el Anticipo Guardado (DM-COB-028) generó 2 filas locales co_collection idénticas (id=0, st_delivery=3, ambas sin enviar — no afecta nube). Probable doble disparo del Guardar (PointerEvent+shadowRoot+mouse.click combinados). Revisar en próxima corrida si persiste el doble guardado.
+    reapertura_ref0_cdp_inestable: true             # [ins-2611] limitación de AUTOMATIZACIÓN (no defecto de app): el primer ítem Guardado sin correlativo (Ref 0, pendiente sync) a veces no abre su detalle vía CDP (click/Pointer/shadowRoot). Ítems con Ref real sí navegan. Round-trip de reapertura ya confirmado PASS en [ins-2610]
+    smoke_na_estructural:
+      # DM-COB-007/008: ya NO son N/A — el agente debe usar un cliente de clientes_con_documentos (2385/3039/3277/3281/3502); 2738 no tiene docs en cobro normal, elegir uno que sí
+      # DM-COB-028 (ANTICIPO/PREPAGO): con cliente 2738 SÍ elegible [ins-2610] — removido de na_estructural
+      # DM-COB-039: NO es N/A — aplica la rama B (Fecha tasa); ver fecha_tasa_editable [ins-2611]
+      # DM-COB-037: ya NO es N/A [ins-2611] — config web aplicada; usar cliente_25iva=3277 (único habilitado para cobro 25% IVA)
+      - "DM-COB-041: retencion=false [ins-2610] — retención va por +RETENCIÓN del menú (DM-COB-029), no por detalle de documento → N/A"
+      - "DM-COB-042: depende de 041 → N/A (retencion=false)"
+      - "DM-COB-045: insumar no expone selector de tasa IGTF — la fija por documento → N/A (sin alterna) [ins-2610]"
+
+  devoluciones:
+    cliente_test: "ADRIAN ARLET BASTARDO ALONZO"  # Cód 2738 — confirmado 20260603
+    factura_test: null                    # N/A — validateReturn=false, no requiere factura
+    producto_test: "TOMATES PELADOS MARY 24X400G"  # Cód 11293, familia ALIMENTOS — confirmado 20260603
+
+  inventarios:
+    cliente_test: "ADRIAN ARLET BASTARDO ALONZO"  # Confirmado 20260603
+    cliente_code: "2738"                           # Confirmado 20260603
+    expirationBatch: true                          # Confirmado 20260603: Lote + Fecha de vencimiento presentes
+    suggestedOrderByDispatchAndReturn: true        # Confirmado 20260603: botón "Pedido Sugerido" en tab Resumen
+    nro_ref_enviado: 9                             # Inventario enviado en esta corrida
+
+  depositos:
+    aplica: true                          # Confirmado 20260603: módulo visible en HOME y accesible
+    motivo_na: null
+    # [ins-2610] DM-DEP-010/018 NO reprodujo en 0609 ni 0610 (2 corridas) — candidato a cerrar defecto.
+    # [ins-2622] 4ª corrida insumar limpia (0609, 0610, 0622): DM-DEP-010/018 NO reproduce tras Guardar NI tras Enviar — lista renderiza searchbar + ítems sin loader colgado → CANDIDATO FIRME A CIERRE del defecto v6.6.14 deposit.service.ts.
+    # Flujo Guardar→Enviar con cobro vinculado ejecutado end-to-end (Ref 0 → Ref real Enviado); cierra gap G3. El bug de render no bloqueó.
+
+  visitas:
+    cliente_test: "ADRIAN ARLET BASTARDO ALONZO"  # Confirmado 20260603: Cód 2738
+    smoke_na_estructural:
+      - "DM-VIS-025: sin visitas sincronizadas desde backend hoy — lista RUTA DE HOY vacía al inicio de corrida"
+      - "DM-VIS-026: depende de DM-VIS-025 → N/A"
+
+  productos:
+    tipo_estructura_default: "Linea"      # Confirmado 20260603: catálogo organizado por Líneas
+    texto_busqueda: "TOMATES"             # Confirmado 20260603: devuelve resultados con productos reales
+    tipos_estructura: ["Linea", "Sub-Linea"]  # [ins-2610]: insumar expone 2 tipos → DM-PRD-002 ejecutable y PASS (≠ globalmp/romher con 1 solo tipo)
+    # [ins-2610] DM-PRD-013 N/A en insumar: detalle tiene único ion-select "ALMACEN 01" (sin Lista de Precios); precio USD+BS como texto fijo no recalculable
+
+  vendedores:
+    aplica: true                          # Confirmado 20260603: módulo visible en HOME y accesible; esVendedor=true confirmado
+
+ultima_corrida:
+  run_id: "20260622_115712_smoke-completo"
+  fecha: "2026-06-22"
+  # Corrida 20260610 [ins-2610]: sin FAIL en los 10 módulos. Patrones DOM consolidados en module-selectors.md (tag [ins-2610]).
+  # Corrida 20260622 [ins-2622]: 124 PASS / 0 FAIL / 11 N/A / 2 BLOCKED de 137 casos. Patrones DOM consolidados en module-selectors/* (tag [ins-2622]).
+  # Oráculo BD operativo por 1ª vez en insumar: GRANT read-only aplicado esta corrida (0/182 → 182/182 tablas legibles); cotejo campo-a-campo payload↔nube confirmado en clientes/pedidos/cobros/devoluciones, inline BD-OK en inventarios/depósitos/visitas.
+  defectos_abiertos:
+    - "DM-DEP-010/018: lista BUSCAR no renderiza tras guardar (bug v6.6.14 deposit.service.ts) — confirmado también en insumar"

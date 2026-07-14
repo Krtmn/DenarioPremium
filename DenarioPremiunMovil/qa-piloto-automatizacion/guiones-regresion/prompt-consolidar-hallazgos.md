@@ -1,4 +1,4 @@
-# Prompt: Consolidar hallazgos post-corrida → `module-selectors.md` + YAML cliente
+# Prompt: Consolidar hallazgos post-corrida → `module-selectors/{modulo}.md` + YAML cliente
 ## Ejecutar con modelo **Opus** · Solo edición de archivos · NO corridas, NO Playwright, NO adb
 
 ---
@@ -35,7 +35,7 @@ Este paso los lee, los clasifica y los escribe **directo en su hogar definitivo*
 
 | Destino | Criterio |
 |---------|----------|
-| `automation/cdp/module-selectors.md` | Selector, técnica o anti-patrón del **DOM estándar** de Denario, independiente de la config del cliente |
+| `automation/cdp/module-selectors/{modulo}.md` | Selector, técnica o anti-patrón del **DOM estándar** de Denario, independiente de la config del cliente |
 | YAML del cliente (**inline** en `modules.{x}` o como comentario en `vgs`) | Comportamiento atado a una **VG** o **dato específico** del cliente |
 | `RUNTIME.md` / `denario-cdp-helpers.js` | **Solo** patrones confirmados en **2+ corridas** distintas (graduación profunda — decisión manual, rara) |
 
@@ -45,13 +45,13 @@ Este paso los lee, los clasifica y los escribe **directo en su hogar definitivo*
 
 ```
 {RUN_DIR}*.md                          ← los reportes de módulo de la corrida; extraer su sección "## Patrones / selectores nuevos"
-automation/cdp/module-selectors.md     ← memoria universal actual (NO duplicar; si un patrón ya existe, solo añadir el tag de corrida)
+automation/cdp/module-selectors/{modulo}.md     ← memoria universal actual (NO duplicar; si un patrón ya existe, solo añadir el tag de corrida)
 automation/cdp/RUNTIME.md              ← reglas globales (para no duplicar)
-automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml  ← destino de lo cliente-específico
+automation/clientes/{QA_CLIENTE}.yaml  ← destino de lo cliente-específico
 ```
 
 Para verificar si un patrón ya se vio en otro cliente (**solo si hay duda**), leer los otros YAML:
-`clientes/{otro}/{otro}.yaml` de cada cliente (insumar, globalmp, romher, hidroponias, central_foods — omitir el del cliente actual, ya leído).
+`globalmp.yaml`, `romher.yaml`, `insumar.yaml`, `hidroponias.yaml` (omitir el del cliente actual, ya leído).
 
 ---
 
@@ -70,29 +70,30 @@ Patrones con coordenadas device-specific (`x≈267,y=32`): extraer la **técnica
 Si solo aplica con una VG activa o depende de un valor configurable (banco, empresa, monto, nombre): escribirlo **inline** en la sección `modules.{x}` correspondiente o como comentario en la VG. No promover a universal.
 
 **REGLA C — Anti-patrón confirmado → siempre universal.**
-Si documenta algo que NO funciona + la alternativa correcta: promover a `module-selectors.md` sin importar cuántos clientes lo confirmaron.
+Si documenta algo que NO funciona + la alternativa correcta: promover a `module-selectors/{modulo}.md` sin importar cuántos clientes lo confirmaron.
 
 **REGLA D — Selector/técnica DOM estándar → universal con 1 confirmación.**
-Selector CSS, clase, componente Angular o técnica de interacción del DOM de Denario: promover con tag `[{QA_CLIENTE}-{fecha}]`. Si ya existe en `module-selectors.md`, solo añadir el cliente en "Corrida confirmada".
+Selector CSS, clase, componente Angular o técnica de interacción del DOM de Denario: promover con tag `[{QA_CLIENTE}-{fecha}]`. Si ya existe en `module-selectors/{modulo}.md`, solo añadir el cliente en "Corrida confirmada".
 
 **REGLA E — DOM dudoso de 1 cliente → universal candidato.**
 Si hay duda de si aplica universalmente: promover con nota `# candidato — confirmar en próxima corrida`.
 
 **REGLA F — Confirmado en 2+ corridas distintas → graduar a la capa profunda.**
-Si un patrón universal ya está confirmado en 2+ clientes/corridas y es una regla operativa o helper reutilizable: graduarlo a `RUNTIME.md` o `denario-cdp-helpers.js` (decisión manual) y dejar en `module-selectors.md` una nota de que graduó.
+Si un patrón universal ya está confirmado en 2+ clientes/corridas y es una regla operativa o helper reutilizable: graduarlo a `RUNTIME.md` o `denario-cdp-helpers.js` (decisión manual) y dejar en `module-selectors/{modulo}.md` una nota de que graduó.
 
 ---
 
 ## EDICIONES A REALIZAR
 
-### 1. `automation/cdp/module-selectors.md`
+### 1. `automation/cdp/module-selectors/{modulo}.md`
 - **Selector nuevo:** fila en `### Selectores probados` del módulo (`Elemento | Selector CSS / técnica | Corrida confirmada | Notas`).
 - **Anti-patrón nuevo:** fila en `### Anti-patrones confirmados` del módulo.
 - **Ya existente:** añadir `[{QA_CLIENTE}-{fecha}]` en "Corrida confirmada".
 - **Diferencia entre clientes:** fila en `### Notas por cliente`.
-- **Tamaño:** mantener el doc bajo ~800 líneas; consolidar filas redundantes antes de crecer.
+- **Destino por módulo:** escribir en `automation/cdp/module-selectors/{modulo}.md` (el archivo del módulo del patrón). Patrones **transversales** (no atados a un módulo: CDP, socket, firma de `browser_run_code_unsafe`) → `automation/cdp/module-selectors/_comunes.md`.
+- **Tamaño:** mantener cada archivo de módulo bajo ~120 líneas; consolidar filas redundantes antes de crecer.
 
-### 2. `automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml`
+### 2. `automation/clientes/{QA_CLIENTE}.yaml`
 - Lo **cliente-específico** va **inline** en la sección que corresponda (`modules.{x}` como dato/nota, o comentario en la VG). NO crear listas-buffer.
 - Actualizar `ultima_corrida.run_id` y `ultima_corrida.fecha` al de esta corrida.
 - **NO tocar** `defectos_abiertos` (lo gestiona el orquestador).
@@ -108,8 +109,8 @@ Si un patrón universal ya está confirmado en 2+ clientes/corridas y es una reg
 
 1. **No duplicar RUNTIME.md.** Solo lo específico por módulo.
 2. **No inventar.** Clasificar únicamente lo que aparece en los reportes de la corrida.
-3. **Trazar origen.** Todo patrón en `module-selectors.md` lleva al menos un tag de corrida.
-4. **Conservar formato** de `module-selectors.md` — no reestructurar secciones existentes.
+3. **Trazar origen.** Todo patrón en `module-selectors/{modulo}.md` lleva al menos un tag de corrida.
+4. **Conservar formato** de `module-selectors/{modulo}.md` — no reestructurar secciones existentes.
 5. **En duda sobre el nivel → preferir el menos profundo** (YAML/cliente antes que universal; universal antes que RUNTIME). Es más fácil promover después que retractarse.
 6. **No tocar** `defectos_abiertos`. **No** `git commit`/`push`.
 
@@ -121,13 +122,13 @@ Tabla resumen de cada patrón procesado:
 
 | # | Patrón (resumido) | Módulo | Decisión | Acción tomada |
 |---|-------------------|--------|----------|---------------|
-| 1 | `ion-item.click() no navega` | PEDIDOS | Universal — anti-patrón | Agregado a module-selectors.md |
+| 1 | `ion-item.click() no navega` | PEDIDOS | Universal — anti-patrón | Agregado a module-selectors/pedidos.md |
 | 2 | banco "BANESCO RAEL" para depósito | COBROS | Cliente — dato | Inline en `modules.cobros` del YAML |
 | ... | ... | ... | ... | ... |
 
 Luego confirmar:
-- Promovidos a `module-selectors.md`: **N**
+- Promovidos a `module-selectors/{modulo}.md`: **N**
 - Escritos inline en el YAML del cliente: **N**
 - Graduados a `RUNTIME.md`/`helpers.js` (2+ corridas): **N**
-- Nuevo tamaño de `module-selectors.md`: **N líneas**
+- Nuevo tamaño de `module-selectors/{modulo}.md`: **N líneas**
 - Archivos modificados: (lista de rutas)

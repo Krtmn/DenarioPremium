@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node automation/db/query.js:*)",
+      "Bash(node automation/db/cotejo-payload.js:*)",
+      "Bash(node automation/db/resolve-run-context.js:*)",
+      "Bash(node automation/db/local-query.js:*)",
+      "Bash(node automation/reports/aggregate.js:*)",
+      "Read(automation/**)",
+      "Write(automation/db/_tmp_*.json)"
+    ]
+  }
+}

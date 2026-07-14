@@ -16,7 +16,7 @@ No leer los siguientes archivos durante una corrida smoke (gastan tokens sin apo
 | `guiones-regresion/guion-*.md` completos | Los smoke extracts (`automation/smoke/`) son suficientes |
 | `../src/` | Solo si hay FAIL S1 que requiera confirmar bug en código |
 
-**Sí leer:** `automation/cdp/RUNTIME.md` + `automation/smoke/smoke-{modulo}.md` + `automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml` + sección del módulo en `automation/cdp/module-selectors.md` (selectores ya probados — evita exploración DOM a ciegas).
+**Sí leer:** `automation/cdp/RUNTIME.md` + `automation/smoke/smoke-{modulo}.md` + `automation/clientes/{QA_CLIENTE}.yaml` + `automation/cdp/module-selectors/_comunes.md` + `automation/cdp/module-selectors/{modulo}.md` (selectores ya probados — evita exploración DOM a ciegas). **NO** leer el resto de archivos de `module-selectors/` (solo el común + tu módulo).
 
 ---
 
@@ -30,7 +30,10 @@ await h.waitSyncOverlay(pg);
 ```
 
 **Importante — en `browser_run_code_unsafe` NO existen `require` ni `fs`.** Por eso el arranque real es:
-1. **Helper:** leer `automation/cdp/denario-cdp-helpers.js` con la herramienta **Read** (ruta **relativa** a la carpeta de trabajo — misma convención que RUNTIME.md y los smoke; **portable**, sin rutas absolutas) e **inlinear** verbatim las funciones que necesites (`connectCdp`, `fillIonInput`, `clickAlertButton`, `waitSyncOverlay`, …).
+1. **Helper:** dos vías —
+   - **(preferente · menos tokens) bundle auto-instalable:** leer `automation/cdp/helpers-inline.js` con **Read** y pasarlo **una sola vez** a `pg.evaluate(<contenido>)` tras `connectCdp`. Registra `window.__qaH` con las skills **puras-DOM** (`fillIonInput`, `getActiveView`, `clickIonItem`, `clickBack`, `coordsOf`, `alertButtonCoords`, `installPayloadCapture`, …). Luego usar `await pg.evaluate(() => window.__qaH.fillIonInput(...))` — **sin reinlinar** el cuerpo por uso. `window` persiste entre `evaluate` en la misma página.
+   - **acciones que mezclan Playwright** (`mockCameraAdjunto`, `ensureAdjunto`, `openNuevoCobro`, `openDocumentDetail`, `fillNgModelKeyboard`, `waitSyncOverlay`): NO viven en el bundle (necesitan `pg.mouse`/`keyboard`/`waitForFunction`). Inlinarlas verbatim desde `denario-cdp-helpers.js` como hasta ahora. Para clicks de botón/alert: pedir coords a `window.__qaH.coordsOf(sel)` / `alertButtonCoords(txt)` y hacer `await pg.mouse.click(x, y)`.
+   - **(fallback)** si el bundle no instala, inlinar todo desde `denario-cdp-helpers.js` como antes — sigue siendo válido.
 2. **Credenciales:** leer `secrets/qa-credentials.env` con **Read** y parsear el bloque `# Cliente: {QA_CLIENTE}` en línea. **No** llamar `fetchCreds()` directo: usa `fs`/`require` y revienta en este contexto.
 
 ---
@@ -44,7 +47,7 @@ await h.waitSyncOverlay(pg);
 | S2x | Llenar ngModel en modal inventario | `h.fillNgModelKeyboard(pg, selector, value)` — **solo** en `inventory-type-stocks-modal` | `fillIonInput` en campos cantidad/lote/fecha de inventario |
 | S2v | Llenar ngModel en modal visitas (comentario) | `pg.focus(sel)` + `pg.keyboard.type(val)` — en `ion-modal ion-input` con `[(ngModel)]` | `fillIonInput` para campo comentario dentro de ion-modal |
 | S3 | Click en botón ion-alert | `h.clickAlertButton(pg, 'Aceptar')` | `element.click()`, `dispatchEvent`, coords JSON fijas |
-| S4 | Credenciales | `h.fetchCreds()` una vez al inicio | Hardcodear usuario/contraseña |
+| S4 | Credenciales | Read de `secrets/qa-credentials.env` + parseo inline del bloque `# Cliente: {QA_CLIENTE}` (ver §1) | `h.fetchCreds()`/`require`/`fs` en contexto unsafe; hardcodear usuario/contraseña |
 | S5 | Alert activo (sin residuos) | `h.getActiveAlert(pg)` o `:not(.overlay-hidden)` | `querySelector('ion-alert')` sin filtrar overlay-hidden |
 | — | Botón atrás | `h.clickBack(pg)` | `window.history.back()`, `pg.goBack()`, click directo en img sin `closest('a')` |
 | — | ion-select + popover | `h.selectIonPopover(pg, selector, value)` | MouseEvent sobre ion-item/ion-radio dentro del popover |
@@ -66,7 +69,10 @@ await h.waitSyncOverlay(pg);
 ✗  connectOverCDP inline en cada agente      → usar h.connectCdp(page)
 ✗  page.screenshot() / pg.screenshot()      → timeout de fuentes; usar browser_snapshot o DOM eval
 ✗  pg.goto() en WebApp Capacitor            → reinicia estado Angular; navegar siempre con clicks DOM
+✗  Insistir >2 intentos con un selector/flujo que no responde → marcar el caso ⛔ BLOCKED y SEGUIR (no explorar a ciegas)
 ```
+
+**Techo de intentos (universal):** ningún caso debe consumir más de **2 intentos acotados** peleando con un selector/flujo que no responde por CDP. Tras el 2º intento fallido → `⛔ BLOCKED` con el motivo (no es FAIL ni N/A), registrar y continuar con el siguiente caso. El fail-fast ya implementado en `h.ensureAdjunto` es el patrón a generalizar. Esto evita el atascamiento histórico (cobros llegó a 277 tool-uses por insistir en atajos).
 
 ---
 
@@ -81,6 +87,7 @@ await h.waitSyncOverlay(pg);
 | Adjunto obligatorio bloquea envío → alerta `COB_RET_MSJ_COLLECTION_NO_ATTACHMENTS` | FAIL — no "VG esperada" |
 | "Salir sin guardar" mantiene visita ya Guardada | NO es FAIL — comportamiento correcto |
 | "Salir sin guardar" en visita nueva que nunca fue guardada → visita persiste | FAIL |
+| Selector/flujo no responde por CDP tras 2 intentos acotados | ⛔ BLOCKED (limitación de automatización, NO defecto de app — no contamina FAIL ni N/A) |
 
 ---
 
@@ -110,7 +117,7 @@ await h.waitSyncOverlay(pg);
 ## Casos ejecutados
 | ID | Resultado | Evidencia / Señal |
 |----|-----------|-------------------|
-| DM-XXX-NNN | ✅ PASS / ❌ FAIL / ⏭ SKIP / 🚫 N/A | evidencia 1 línea |
+| DM-XXX-NNN | ✅ PASS / ❌ FAIL / ⏭ SKIP / 🚫 N/A / ⛔ BLOCKED | evidencia 1 línea |
 
 ## Registros creados en sistema
 | Ref | Detalle | Estado |
@@ -127,6 +134,16 @@ await h.waitSyncOverlay(pg);
 ...
 ```
 
+### Ledger machine-readable (además del `.md`)
+
+Cada agente, **además** de su reporte `.md`, anexa al ledger de la corrida `{RUN_DIR}_results.jsonl` **una línea JSON por caso ejecutado** (formato append, una transacción por línea):
+
+```json
+{"run_id":"<RUN_ID>","modulo":"cobros","caso":"DM-COB-019","resultado":"PASS","ms":4200,"intentos":1,"bd":"BD-OK"}
+```
+
+Campos: `run_id` · `modulo` · `caso` · `resultado` (PASS/FAIL/SKIP/N-A/BLOCKED) · `ms` (duración aprox. del caso) · `intentos` (1-2, ver techo §3) · `bd` (marca BD si aplica, o `null`). Lo agrega `automation/reports/aggregate.js` para medir tendencia (flakiness por caso, ms/módulo) entre corridas — es el instrumento de mejora progresiva. El `.md` sigue siendo la evidencia humana; el `.jsonl` es la fuente agregable.
+
 ---
 
 ## 7. Convención RUN_ID y rutas
@@ -139,7 +156,7 @@ await h.waitSyncOverlay(pg);
 - **Consolidado:** `{RUN_DIR}consolidado.md`
 - **Reportes:** cada corrida en su carpeta `{RUN_DIR}`; índice en `automation/reports/README.md`
 - **Credenciales:** `secrets/qa-credentials.env` (playa activa) o `secrets/playas/{playa_id}.env` (multi-playa)
-- **Cliente activo:** leer de `automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml` donde `QA_CLIENTE` viene en el prompt del orquestador
+- **Cliente activo:** leer de `automation/clientes/{QA_CLIENTE}.yaml` donde `QA_CLIENTE` viene en el prompt del orquestador
 
 ---
 
@@ -148,11 +165,11 @@ await h.waitSyncOverlay(pg);
 Los patrones nuevos de cada corrida se capturan en la sección `## Patrones / selectores nuevos` del reporte de cada módulo (`{RUN_DIR}{modulo}.md`). **No hay archivo DELTA intermedio.**
 
 Al cierre de la corrida se ejecuta `guiones-regresion/prompt-consolidar-hallazgos.md`, que lee esos reportes y promueve cada patrón a su hogar definitivo:
-- **DOM estándar / anti-patrón** → `module-selectors.md` (basta 1 corrida confirmada, con tag).
+- **DOM estándar / anti-patrón** → `module-selectors/{modulo}.md` (transversal CDP → `_comunes.md`); basta 1 corrida confirmada, con tag.
 - **Atado a VG o dato de cliente** → inline en el YAML del cliente.
 - **Confirmado en 2+ corridas distintas** → graduar a `RUNTIME.md` o `denario-cdp-helpers.js`.
 
-Los agentes de módulo leen `module-selectors.md` (su sección) en cada corrida — mantenerlo afilado y bajo ~800 líneas es lo que abarata las corridas (evita re-explorar el DOM a ciegas).
+Los agentes de módulo leen `module-selectors/_comunes.md` + `module-selectors/{modulo}.md` (solo su archivo, no el monolito) en cada corrida — mantener cada archivo afilado y bajo ~120 líneas es lo que abarata las corridas (evita re-explorar el DOM a ciegas).
 
 ---
 
@@ -177,5 +194,71 @@ Casos que ya aplican este oráculo: DM-COB-042 (retención), DM-COB-039 (tasa), 
 
 ---
 
+## 10. Oráculo BD v2 — cotejo "lo guardado se envía" (extiende §9)
+
+El §9 verifica round-trip **UI→UI** (Guardar→reabrir). El §10 verifica **UI→servidor**: que **todo movimiento que se guarda efectivamente se envía** a la nube, y caza lo que queda atascado. Aplica a los 7 transaccionales; login/productos/vendedores → `BD-N/A`.
+
+**Cómo viaja una transacción (confirmado en `auto-send.service.ts` + por desarrollo):**
+- **Guardar** → escribe la **BD LOCAL** del dispositivo (`st_delivery=3`, `id=0`). No sale del teléfono.
+- **Enviar** → `INSERT INTO pending_transactions` (cola de salida) → `AutoSendService` hace POST a la nube **si hay conexión**; sin señal queda en la cola y **reintenta** en la próxima sync.
+- **Server OK** → borra el pendiente, marca local `st_delivery=1` + `id_<x>` del servidor, sube fotos.
+- El envío a la nube es **asíncrono/eventual** (no instantáneo) → por eso el cotejo de nube **espera/reintenta**.
+
+**Dos lectores read-only (vía Bash, no CDP):**
+| Lector | Lee | Para qué |
+|---|---|---|
+| `node automation/db/query.js {QA_CLIENTE} "SELECT…"` | **nube** (Postgres servidor; DSN del bloque `# Cliente:` de `qa-db.env`) | lo que llegó (durable) |
+| `node automation/db/local-query.js "SELECT…"` | **SQLite local** del dispositivo (`adb run-as`, base `databases/denarioPremium`) | en-vuelo / atascado / rechazado / duplicado |
+
+**Los 5 estados de un movimiento (mapa de cotejo):**
+| Estado | Dónde se ve | Marca |
+|---|---|---|
+| **Enviado** | nube: existe + items + montos · local: `id>0`, `st_delivery=1`, fuera de `pending_transactions` | `BD-OK` |
+| **Guardado sin enviar** | local: `st_delivery=3`/`id=0`, NO en cola | `BD-SAVED` — esperado si no se intentó enviar (ej. sin adjunto); **FAIL si se envió con adjunto y quedó así** |
+| **En cola** | local: en `pending_transactions` tras la ventana de sync | `BD-QUEUED` — si persiste → flag (no sincronizó) |
+| **Rechazado** | local: en `failed_transactions` (error 400) | `BD-MISMATCH` |
+| **Duplicado** | `count(*) > count(DISTINCT co_*)` | `BD-MISMATCH` (no debe guardarse 2 veces) |
+
+**Procedimiento por registro creado:**
+1. **Baseline** al inicio del módulo: `count`/`max(id)` de la(s) tabla(s) (nube) → para el diff.
+2. Tras Enviar, **esperar/reintentar** la nube (sync asíncrono): poll ~10s antes de concluir (no una sola consulta inmediata — así no se pierde un envío tardío como el id=14).
+3. **Diff de baseline:** traer **toda** fila nueva (`id>baseline`), no solo la esperada → cero misses.
+4. **Por items (co_type-aware en cobros):** verificar cada línea contra lo cargado por UI; totales como cruce. Cobros ramifica por `co_type`: `0`=docs+pagos · `1`=anticipo (solo pagos) · `2`=retención (solo docs + montos retención) · IGTF=`nu_amount_igtf` sobre el cobro.
+5. **Reconciliar nube ↔ local:** dar la marca según el estado. La pregunta clave: **¿lo que se guardó, se envió?**
+
+**Correlación Ref↔fila (CONFIRMADO piercar 2026-06-16, 5 módulos):** el **Nro.Ref de la UI = `id_<x>` (PK del servidor)**, NO el epoch `co_<x>`. Match directo `WHERE id_<x>=<Ref>`. Falta **1 corrida limpia** para graduar `BD-MISMATCH`→FAIL; hasta entonces va `BD-INFO`.
+
+**Estados `st_*`:** localmente `st_delivery=1`=enviado / `=3`=guardado es el discriminador **fiable**. El `st_collection`/`st_order` del servidor varía por tipo y playa (caveat §5/§9) — corroborar por `id` + `st_delivery`, no por `st_*` global.
+
+**Vocabulario:** `BD-OK` · `BD-SAVED` · `BD-QUEUED` · `BD-MISMATCH` · `BD-N/A` (solo-lectura / BD inaccesible) · `BD-INFO` (descubrimiento, no juzga).
+
+**Blindaje (no negociable):** la BD **nunca** tumba el smoke. Si un lector da `ERR:` (red, grant, run-as) → `BD-N/A` con motivo y la parte UI corre y se reporta igual. Aditivo, no bloqueante.
+
+**Reporte:** sub-sección `## Verificación BD` por agente transaccional: registro (Nro.Ref), marca, fila nube (id/estado/items), estado local (`st_delivery`/cola/rechazo), y la conclusión **guardado→enviado**.
+
+### §10.b — Cotejo campo-a-campo (Nivel 2 · 2 agentes · piloto devoluciones)
+
+El §10 base verifica campos clave (totales, conteos, estado). El **Nivel 2** verifica **TODO dato que se llenó**, registro completo (cabecera + líneas), con **dos agentes**:
+
+- **Agente UI** (Playwright): ejecuta los casos y **emite un manifiesto** `{RUN_DIR}_bd-manifest.jsonl` con los `co_x` que crea (1 línea JSON por registro). No hace el cotejo.
+- **Agente BD** (solo Bash, sin Playwright): lee el manifiesto y por cada `co_x` corre `node automation/db/cotejo-bd.js {cliente} {modulo} <co_x>`. Como usa otro recurso (BD, no el dispositivo), corre **en paralelo** con el agente UI del módulo siguiente.
+
+**Motor `cotejo-bd.js`** — trae el registro completo de **local** (lo enviado) y **nube** (lo guardado) y compara campo por campo. **Regla local-driven (validada con QA):**
+- campo **lleno en local** + llega igual → OK · lleno + falta/difiere en nube → **MISMATCH (se reporta)** · **vacío en local** (no se llenó) → se saltea.
+- Campos del **servidor** (PK `id_*`, timestamps, flags de sync, montos recalculados) → excluidos siempre (lista `ignore` por módulo).
+- Columnas con **nombre distinto** local↔nube → `fieldMap` (ej. `tx_comment`→`tx_description`).
+- **Fechas:** veredicto por día; si la **hora** difiere (zona horaria local UTC-4 vs nube UTC) → se reporta como **nota**, no como mismatch.
+
+**Esquema = universal · config = por cliente.** El mapeo (tablas/columnas/fieldMap/ignore) es del **modelo de datos del producto** → uno por módulo, igual para todos los clientes. Lo que cambia por cliente: la **conexión** (`qa-db.env`) y las **VGs/datos** (`{cliente}.yaml`). El arg `{cliente}` del motor solo elige la conexión.
+
+**Marcas Nivel 2:** `BD-FIELD-OK` (todo lo lleno cuadra) · `BD-FIELD-MISMATCH` (≥1 campo lleno difiere) · `BD-SAVED` (registro en local, no llegó a la nube) · `BD-N/A` (BD inaccesible → la corrida sigue). Mismo blindaje: la BD nunca tumba el smoke.
+
+> Estado: **piloto activado solo en devoluciones**. Extender a los otros 6 = agregar su config de módulo en `cotejo-bd.js` (cabecera/hijas/clave/fieldMap/ignore).
+
+> Modelo de datos: `automation/db/modelo-datos-denario.md` (§8 mapa por módulo). Helpers de cobros: `denario-cdp-helpers.js` (`openNuevoCobro`, `ensureAdjunto`).
+
+---
+
 *Versión: Fase 4 · 2026-06-09 · memoria sin DELTA (captura en reportes → consolidación directa)*
-*Actualizar tras cada corrida que gradúe patrones a `module-selectors.md` / `denario-cdp-helpers.js`*
+*§10 Oráculo BD v2 2026-06-17 (cotejo "lo guardado se envía": nube + local, 5 estados, baseline-diff, por items co_type-aware)*
+*Actualizar tras cada corrida que gradúe patrones a `module-selectors/` / `denario-cdp-helpers.js`*

@@ -2,7 +2,7 @@
 ## Estado inicial: HOME | Estado final: HOME
 
 **Inicio:** `h.connectCdp(page)` → `h.waitSyncOverlay(pg)`
-**Datos de prueba:** leer `automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml` → `modules.clientes`
+**Datos de prueba:** leer `automation/clientes/{QA_CLIENTE}.yaml` → `modules.clientes`
 
 ---
 
@@ -26,3 +26,26 @@
 **Notas:**
 - Alert de guardado: usar `h.clickAlertButton(pg, 'OK')` o `'Aceptar'`
 - Botón atrás: siempre `h.clickBack(pg)` — no `window.history.back()`
+
+---
+
+## Verificación BD (round-trip al servidor · ver RUNTIME §10)
+
+Tras DM-CLT-026 (Enviar) y DM-CLT-024 (Guardar), confirmar el cliente potencial en BD. Mecánica, vocabulario y blindaje (BD caída ⇒ `BD-N/A`, **nunca** tumba el smoke): **RUNTIME §10**.
+
+```bash
+node automation/db/query.js {QA_CLIENTE} "SELECT id_client, co_client, na_client, nu_rif, st_potential_client, da_created FROM potential_client ORDER BY da_created DESC LIMIT 5"
+```
+
+**Qué confirmar** en la fila recién creada:
+- `potential_client` existe; `na_client` = el nombre `Test-CLT-SMOKE-<HHMMSS>` que se tipeó (match directo por marcador).
+- `st_potential_client` cambia de Guardado a Enviado tras DM-CLT-026.
+- ⚠ PK es `id_client` (secuencia propia de potenciales, NO es el maestro `client`).
+
+**2) Local — cotejo guardado→enviado (⚠ tabla local PLURAL `potential_clients`):**
+```bash
+node automation/db/local-query.js "SELECT co_client, id_client, st_potential_client FROM potential_clients ORDER BY rowid DESC LIMIT 5"
+node automation/db/local-query.js "SELECT count(*) en_cola FROM pending_transactions WHERE type='potentialClient'"
+```
+- `id_client>0` → **BD-OK** (enviado) · `id_client=0` → **BD-SAVED** (guardado, sin enviar) · en cola → **BD-QUEUED** · en `failed_transactions` (type='potentialClient') → **BD-MISMATCH**.
+- **Correlación: Nro.Ref UI = `id_client`** → `BD-INFO` hasta graduar a FAIL.

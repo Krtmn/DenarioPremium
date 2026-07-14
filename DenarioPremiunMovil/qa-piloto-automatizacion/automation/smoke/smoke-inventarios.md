@@ -2,7 +2,7 @@
 ## Estado inicial: HOME | Estado final: HOME
 
 **Inicio:** `h.connectCdp(page)` → `h.waitSyncOverlay(pg)`
-**Datos de prueba:** leer `automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml` → `modules.inventarios`
+**Datos de prueba:** leer `automation/clientes/{QA_CLIENTE}.yaml` → `modules.inventarios`
 **VGs clave:** `expirationBatch` (lote+fecha obligatorios), `suggestedOrderByDispatchAndReturn`.
 
 ---
@@ -34,3 +34,26 @@
 
 Los campos cantidad, lote y fecha usan `[(ngModel)]`, NO reactive forms.
 Usar **`h.fillNgModelKeyboard(pg, selector, value)`** — si se usa `h.fillIonInput`, el ngModel no se actualiza y el modal guarda valores vacíos.
+
+---
+
+## Verificación BD (round-trip al servidor · ver RUNTIME §10)
+
+Tras DM-INV-022 (Enviar) y DM-INV-021 (Guardar), confirmar el inventario en BD (3 niveles cabecera→detalle→unidad). Mecánica, vocabulario y blindaje (BD caída ⇒ `BD-N/A`, **nunca** tumba el smoke): **RUNTIME §10**.
+
+```bash
+node automation/db/query.js {QA_CLIENTE} "SELECT s.id_client_stock, s.co_client_stock, s.st_client_stock, (SELECT count(*) FROM client_stock_detail d WHERE d.id_client_stock=s.id_client_stock) det, (SELECT count(*) FROM client_stock_detail_unit u JOIN client_stock_detail d ON d.id_client_stock_detail=u.id_client_stock_detail WHERE d.id_client_stock=s.id_client_stock) units FROM client_stock s ORDER BY s.da_created DESC LIMIT 5"
+```
+
+**Qué confirmar** en la fila recién creada:
+- `client_stock` existe; `det` = nº de productos inventariados; `units` = nº de capturas cantidad/lote.
+- Si `expirationBatch=true`: lote/vencimiento viven en `client_stock_detail_unit` (`nu_batch`, `da_expiration`).
+- `st_client_stock` = Enviado (2) / Por aprobar (6).
+
+**2) Local — cotejo guardado→enviado (⚠ tabla local PLURAL `client_stocks`):**
+```bash
+node automation/db/local-query.js "SELECT co_client_stock, id_client_stock, st_delivery FROM client_stocks ORDER BY rowid DESC LIMIT 5"
+node automation/db/local-query.js "SELECT count(*) en_cola FROM pending_transactions WHERE type='clientStock'"
+```
+- `id_client_stock>0` & `st_delivery=1` → **BD-OK** (enviado) · `id_client_stock=0` → **BD-SAVED** (guardado, sin enviar) · en cola → **BD-QUEUED** · en `failed_transactions` (type='clientStock') → **BD-MISMATCH**.
+- **Correlación: Nro.Ref UI = `id_client_stock`** → `BD-INFO` hasta graduar a FAIL.

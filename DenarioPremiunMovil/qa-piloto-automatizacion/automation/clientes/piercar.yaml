@@ -1,0 +1,189 @@
+# piercar/perfil.yaml
+# Cliente NUEVO — VGs derivadas del dump global_configuration_piercar.csv (2026-06-16).
+# Datos de prueba por módulo (modules.*) CONFIRMADOS en 1ª corrida 20260616_131624.
+# Servidor/playa: PENDIENTE confirmar con QA (el host autoritativo es el del bloque "# Cliente: piercar" de secrets/qa-db.env).
+
+cliente_id: piercar
+cliente_nombre: "PIERCAR REPUESTOS C."          # Confirmado en UI: empresa = "PIERCAR REPUESTOS C." (DM-CLT-021 + DM-VND-001)
+ws_url: "TBD"                               # TBD — confirmar endpoint del web service del dispositivo. DEBE ser el mismo tenant que la BD piercar (si no, la verificación BD compara contra datos de otro servidor)
+apk_package: com.kiberno.denarioPremiumPro
+db_name: piercar                            # CONFIRMADO 2026-06-16 (current_database()=piercar). Conexión read-only en el bloque "# Cliente: piercar" de secrets/qa-db.env. GRANT read-only APLICADO y verificado 2026-06-16: user_read lee las 180 tablas (global_configuration=165 VGs), escritura rechazada. Verificación BD OPERATIVA. Baseline pre-corrida: order=25, collection=13, return=2, client_stock=0, deposit=1, visit=59, potential_client=3.
+
+# ── VGs — confirmadas desde CSV 2026-06-16 ───────────────────────────────────────
+# ⚠ DIFERENCIAS CLAVE vs don-theo (afectan cobertura del smoke):
+#   - requiredCollectionAttachments=TRUE  → cobro REQUIERE adjunto → DM-COB-019/029 SKIP envío (quedan Guardados)
+#   - validateReturn=TRUE                 → devoluciones VALIDA factura → campo Factura habilita tabs (DM-DEV-004/011)
+#   - cobroRetencion=TRUE + retencion=TRUE→ AMBAS retenciones aplican: DM-COB-029 (botón) Y DM-COB-041/042 (detalle)
+#   - userCanSelectIGTF=TRUE              → DM-COB-036/044/045 aplican (persistencia tasa IGTF)
+#   - expirationBatch=FALSE (CSV) pero UI muestra Lote+Fecha → ⚠ divergencia; confirmado en corrida [prc-2606]
+#   - userMustActivateGPS=FALSE / enterpriseEnabled=FALSE
+vgs:
+  multiCurrency: true                       # CSV multiCurrency=true
+  multiCurrencyCollection: true             # CSV=true
+  multiCurrencyDeposit: true                # CSV=true
+  currencyModule: true                      # CSV currencyModule=true
+  currencyBank: true                        # CSV currencyBank=true → ver todos los bancos sin importar moneda
+  expirationBatch: false                    # CSV=false PERO UI muestra Lote+Fecha en inventory-type-stocks-modal [prc-2606]: ⚠ divergencia UI vs config — modal mostró Cantidad+Lote+Fecha pese a config=false; confirmar con desarrollo si es bug de sincronización de config o VG alternativa activa
+  clientStock: true                         # CSV clientStock=true → módulo inventario en cliente habilitado
+  suggestedOrder: true                      # CSV suggestedOrder=true (P,32) → "Pedido Sugerido" en Inventarios
+  suggestedOrderByDispatchAndReturn: false  # CSV=false (VG distinta; no contradice suggestedOrder)
+  requiredCollectionAttachments: true       # CSV=true → cobro REQUIERE adjunto → DM-COB-019/029 SKIP envío; cobros quedan Guardados pendientes de adjunto manual
+  requiredComment: false                    # CSV requiredComment=false → DM-COB-006 N/A
+  validateReturn: true                      # CSV=true → devoluciones valida que el producto exista en factura enviada → campo Factura habilita tabs (DM-DEV-004/011 ejecutables)
+  requeridedNroFactura: true                # CSV=true (nro factura obligatorio en devoluciones)
+  multiInvoices: true                       # CSV=true → se pueden devolver productos de varias facturas en una devolución
+  signatureReturn: true                     # CSV=true
+  signatureCollection: true                 # CSV=true
+  signatureVisit: true                      # CSV=true
+  signatureOrder: true                      # CSV=true
+  signatureDeposit: true                    # CSV=true
+  signatureStock: true                      # CSV=true
+  signatureClient: true                     # CSV=true
+  userCanUploadFiles: true                  # CSV userCanUploadFiles=true
+  showCamera: true                          # CSV showCamera=true
+  quAttach: 25                              # CSV quAttach=25
+  quFileAttach: 1                           # CSV quFileAttach=1
+  emailWithAttach: true                     # CSV emailWithAttach=true
+  cloudAttachments: false                   # CSV cloudAttachments=false → adjuntos en servidor local
+  imageWeightLimit: 30                       # CSV imageWeightLimit=30 MB
+  esVendedor: true                          # Confirmado por QA 2026-06-16: usuario QA 001 es vendedor → módulo Vendedores aplica
+  infoVendedores: false                     # CSV infoVendedores=false → módulo vendedores autogenerado por Denario; KPIs sí poblan [prc-2606]
+  enterpriseEnabled: false                  # CSV=false (≠ don-theo) → sin campo empresa en módulos
+  enabledManualRate: false                  # CSV enabledManualRate=false
+  canChangeRate: true                       # CSV canChangeRate=true → permite cambiar fecha de la tasa
+  historicoTasa: true                       # CSV historicoTasa=true → selector de tasas anteriores (mesesTasa=6)
+  cobroPrepago: true                        # CSV cobroPrepago=true → DM-COB-028 (anticipo) aplica
+  cobroRetencion: true                      # CSV=true (≠ don-theo) → botón +RETENCIÓN del menú disponible → DM-COB-029 aplica
+  retencion: true                           # CSV=true (≠ don-theo) → campos retención en detalle de documento → DM-COB-041/042 aplican
+  sizeRetention: 14                         # CSV sizeRetention=14 → nro comprobante de retención = 14 dígitos exactos
+  formatRetention: "0"                       # CSV formatRetention="0" (Numeros)
+  retentionDocTypeCR: true                  # CSV=true → maneja documentos de retención
+  userCanAddRetention: true                 # CSV=true → retenciones libres sin factura
+  userCanSelectIGTF: true                   # CSV=true (≠ don-theo) → selector IGTF → DM-COB-036/044/045 aplican (persistencia tasa)
+  igtfDefault: false                        # CSV igtfDefault=false
+  disableCheckIGTF: false                   # CSV disableCheckIGTF=false → usuario puede cambiar check IGTF separado
+  userCanCollectIva: false                  # CSV=false → DM-COB-037 (cobro 25% IVA) N/A
+  enablePartialPayment: true                # CSV=true → DM-COB-046 (pago parcial) aplica
+  alwaysPartialPayment: false               # CSV=false
+  historicPartialPayment: true              # CSV=true
+  tolerancia0: true                         # CSV=true → se permiten cobros con diferencia (tolerancia)
+  enableDifferenceCodes: true               # CSV=true → selector de origen de diferencia en cobros
+  userCanSelectCollectDiscount: true        # CSV=true → descuentos en cobros habilitados
+  checkAddressClient: false                 # CSV checkAddressClient=false
+  addressByUser: false                      # CSV addressByUser=false
+  userMustActivateGPS: false                # CSV=false (≠ don-theo) → GPS NO obligatorio para transacciones
+  userCanSaveGPS: true                      # CSV userCanSaveGPS=true
+  transportRole: true                       # CSV transportRole=true
+  longitudComentario: 200                    # CSV longitudComentario=200
+  historyMonths: 3                           # CSV historyMonths=3
+  mesesFacturas: 3                           # CSV mesesFacturas=3
+  tagRif: "RIF"                              # CSV tagRif=RIF
+  tagIVA: "IVA"                              # CSV tagIVA=IVA
+
+# ── Datos de prueba por módulo — CONFIRMADOS en 1ª corrida 20260616_131624 ────────
+modules:
+  login:
+    bad_password: Test-LOG-003
+
+  clientes:
+    cliente_busqueda: "7 CARS"              # Código: 7CARS — primer cliente en lista (clientsOrderBy=na_client); confirmado DM-CLT-002/003 [prc-2606]
+    cliente_detalle: "7 CARS"              # Detalle carga OK (multiCurrency: saldo BS+USD). Empresa: PIERCAR REPUESTOS C. [prc-2606]
+    empresa_unica: "PIERCAR REPUESTOS C."  # val=1; idEnterprise debe asignarse explícitamente aunque sea la única opción (anti-patrón [dth-2612] confirmado en piercar [prc-2606])
+    potencial_ref_ui_es_id_pk: true        # Correlación: Ref UI "nro. X" = id_client (PK secuencial), no el epoch co_client [prc-2606]
+
+  pedidos:
+    cliente_test: "AUTO PARTES EL PENON C.A."  # Código: ESPENON, id_client=24 — tiene sucursal asignada (tabs habilitan) [prc-2606]
+    estructura_producto: "Categorías repuestos automotrices"  # AMORTIGUADORES, BOBINAS, BOMBAS DE ACEITE, etc. (48 categorías en Tab Pedido) [prc-2606]
+    alerta_deuda_vencida: false            # No apareció alerta al seleccionar ESPENON [prc-2606]
+    multiCurrencyOrder: false              # Tab Total solo muestra USD (sin Bs.) — VG multiCurrencyOrder=false [prc-2606]
+    showCreditLimit: true                  # Tab Total muestra "Límite de Crédito: 0,00" [prc-2606]
+    cliente_sin_sucursal: "7 CARS"         # NO usar: listaDirecciones=[] → tabs bloqueadas. Tabs requieren cliente con ≥1 sucursal [prc-2606]
+    st_order_enviado: 1                    # piercar usa st_order=1 para Enviado (≠ 4 que se esperaría); previos tienen st_order=6. Confirmar en próxima corrida [prc-2606]
+    producto_test: "Amortiguador DELANTERO DERECHO-IZQUIERDO Baby Camry"  # cód 333114-333115, 169,00 USD [prc-2606]
+
+  cobros:
+    cliente_test: "7 CARS"                # cliente para anticipo y cobros sin documentos (DM-COB-001/002/004/020/021) [prc-2606]
+    # ⚠ NO usar lista fija: qué cliente tiene documentos VARÍA (las facturas se cobran/drenan).
+    # DESCUBRIR EN RUNTIME con la query de BD local (ver smoke-cobros.md §"Selección de cliente"):
+    #   node automation/db/local-query.js "SELECT d.id_client,c.na_client,d.co_currency,count(*) docs,round(sum(d.nu_balance),2) saldo FROM document_sales d JOIN clients c ON c.id_client=d.id_client WHERE d.nu_balance>0 GROUP BY 1,2,3 ORDER BY docs DESC LIMIT 5"
+    # Elegir el de MÁS documentos (la UI filtra más que la BD).
+    clientes_con_documentos:              # ⚠ solo REFERENCIA observada [prc-2617], NO autoritativo — confirmar SIEMPRE con la query de runtime
+      - "RAFAEL PIT STOP"                 # id 380 — 20 docs USD (observado 2026-06-17) [prc-2617]
+      - "CAHERSI MOTORS"                  # id 261 — 10 docs USD; openDocumentDetail VALIDADO en vivo con FACT0000009479 [prc-2617]
+      - "VENE CARS 66 C.A."              # id 146 — 9 docs USD [prc-2617]
+      # drenados 2026-06-17 (ya sin documentos): ANA MANZANARES (369), ANTHONY GREGORIO — cobrados por uso manual
+    cliente_25iva: null                   # N/A — userCanCollectIva=false (DM-COB-037 N/A)
+    metodo_pago: "Efectivo"               # colletionPayment confirmado: Efectivo disponible (accordion abre con monto en 2do ion-input) [prc-2606]
+    banco_deposito: "TBD"                 # requiredCollectionAttachments=true → cobros quedan Guardados; banco no evaluado en esta corrida [prc-2606]
+    documento_retencion: "FACT0000010128" # factura de ANTHONY GREGORIO para retención DM-COB-041/042 [prc-2606]
+    monto_retencion_iva: "TBD"            # nuAmountRetention disponible en collectionDetails; monto a confirmar en próxima corrida con envío
+    monto_retencion_islr: "TBD"           # campo disponible; monto a confirmar
+    moneda_cobro: "BS o USD"              # multiCurrencyCollection=true → ambas disponibles; tasa 572.68 BS/USD al 2026-06-16 [prc-2606]
+    fecha_tasa_editable: true             # canChangeRate=true + historicoTasa=true → DM-COB-047 y DM-COB-039 rama B; rateList.length=1 → N/A-DATA en esta corrida [prc-2606]
+    pago_parcial_toggle: true             # enablePartialPayment=true → DM-COB-046 aplica; confirmado ANA MANZANARES FACT0000009915 [prc-2606]
+    igtf_tasa_default: "3%"              # igtfList=[{idIgtf:1, naIgtf:"IGTF", price:3, defaultIgtf:"true"}] — 1 sola tasa [prc-2606]
+    igtf_tasa_alterna: null              # Solo 1 entrada en igtfList → DM-COB-045 N/A [prc-2606]
+    adjunto_obligatorio: true             # requiredCollectionAttachments=true → DM-COB-019/029 SKIP envío; cobros Guardados pendientes de adjunto manual
+    mock_camara_funciona: false           # build PROD: mockCameraAdjunto/ensureAdjunto NUNCA inyectan la foto (confirmado [prc-2606][prc-2617], igual que romher). → NO llamar ensureAdjunto (evita reintentos inútiles): ir directo a Guardar, marcar "pendiente adjunto manual", verificar BD local SAVED. El envío real con adjunto lo hace la QA a mano post-corrida.
+    tasa_bs_usd: 572.68                   # Tasa BS/USD vigente al 2026-06-16 [prc-2606]
+    smoke_na_estructural:
+      - "DM-COB-006: requiredComment=false → comentario no obligatorio → N/A"
+      - "DM-COB-037: userCanCollectIva=false → sin cobro 25% IVA → N/A"
+      - "DM-COB-019/029 (envío): requiredCollectionAttachments=true → SKIP envío (queda Guardado), reportar pendiente de adjunto manual"
+      - "DM-COB-039/047: rateList.length=1 → N/A-DATA (sin segunda tasa histórica para probar cambio)"
+      - "DM-COB-045: igtfList.length=1 → N/A (sin tasa IGTF alternativa)"
+
+  devoluciones:
+    cliente_test: "ANA MANZANARES"        # Código: MANZANARES — tiene facturas con productos válidos [prc-2606]
+    factura_test: "9683"                  # Fecha: 19/04/2026; id_invoice=9683 — disponible en InvoiceeSelectModal (doble 'e') [prc-2606]
+    producto_test: "Sensor Map Silverado 1500/2500/3500"  # código 1624993 — existe en factura 9683 [prc-2606]
+    tipos_devolucion: [60, 52, 59]        # Calidad(60) / PostVenta(52) / Servicio(59) — sin Cambio X Cambio(63) [prc-2606]
+    facturas_disponibles:
+      - "9683"                            # 19/04/2026
+      - "9915"                            # 14/05/2026
+    nu_amount_null: true                  # Las devoluciones en piercar no registran nu_amount en BD → no juzgar como BD-MISMATCH [prc-2606]
+    st_return_enviado: 1                  # st_return=1 = Enviado en piercar (consistente con otros módulos) [prc-2606]
+
+  inventarios:
+    cliente_test: "ANA MANZANARES"        # Código: MANZANARES — tiene sucursal asignada; tabs habilitan [prc-2606]
+    expirationBatch_real: true            # ⚠ CSV=false PERO UI muestra Cantidad+Lote+Fecha en modal → usar fillNgModelKeyboard para los tres campos; confirmar con desarrollo [prc-2606]
+    # expirationBatch=FALSE (CSV) pero modal mostró Lote+Fecha pese a config=false → divergencia anotada arriba en vgs.expirationBatch
+    cliente_sin_sucursal: "7 CARS"        # NO usar: no tiene sucursal → alerta bloqueante [prc-2606]
+    producto_test: "Bujia Hyundai PUNTA DE COBRE"  # código 18814-11051; familia BUJIAS [prc-2606]
+    familia_test: "BUJIAS"
+    st_client_stock_enviado: 1            # st=1 = Enviado en piercar (otras playas usan st=2); confirmar próxima corrida [prc-2606]
+
+  depositos:
+    aplica: false                         # CONFIRMADO en corrida [prc-2606]: selector banco vacío (0 opciones)
+    motivo_na: "sin cobros depositables — cobros quedaron Guardado-local por requiredCollectionAttachments=true; popover selectbanco abre con 0 ion-select-option"
+
+  visitas:
+    cliente_test: "G8"                    # Código: G8, sucursal "LA TRINIDAD" — único cliente confirmado con sucursal asignada que habilita tabs [prc-2606]
+    sucursal_test: "LA TRINIDAD"
+    actividades: 11                       # todas con requiredEvent:"true" [prc-2606]
+    actividad_test: "COBRANZA"            # idType 82; motivos: COBRANZA EFECTIVA(182), PARCIAL(188), RETENCION(189), COBRANZA+RETENCION(190) [prc-2606]
+    motivo_test: "COBRANZA EFECTIVA"      # idMotive 182 [prc-2606]
+    alert_coordenadas: true               # Sucursal LA TRINIDAD sin coordenadas → alert "¿Desea agregarlas?" aparece en Guardar y primer Back; dismiss con botón vacío (idx 0) [prc-2606]
+    smoke_na_estructural:
+      - "DM-VIS-025/026: RUTA DE HOY sin visitas 'No Visitado' sincronizadas desde backend en 1ª corrida → N/A"
+    st_visit_enviado: 2                   # st_visit=2 = Enviado en piercar (distinto a otros módulos piercar que usan st=1) [prc-2606]
+
+  productos:
+    texto_busqueda: "amortiguador"        # confirmado [prc-2606]; catálogo de repuestos automotrices
+    tipo_estructura_default: "Linea"      # idTypeProductStructure único [prc-2606]
+    tipos_estructura: ["Linea"]           # Solo 1 tipo → DM-PRD-002 N/A estructural [prc-2606]
+    total_estructuras: 24                 # AMORTIGUADORES, BOBINAS, BOMBAS DE ACEITE/AGUA/BOMBINES, BUJIAS, CABLES, CONJUNTOS Y PILAS DE GASOLINA, CORREAS, CUERPO ACELERACIÓN, DELIVERY, ENFRIADOR DE ACEITE, FILTROS, KIT DE CROCHE/TIEMPO/EMPACADURA, MICROFILTROS, POR DEFINIR, RODAMIENTO, SENSORES, TAPAS, TENSORES, TREN DELANTERO, VÁLVULAS y más [prc-2606]
+    listas_precio: ["GRAN MAYOR", "MAYOR"]  # 2 listas (P1 y P2); userCanChangePriceList=true [prc-2606]
+    detalle_precio_solo_usd: true         # producto-detail muestra solo precio USD; product-list muestra USD+BS [prc-2606]
+
+  vendedores:
+    aplica: true                          # esVendedor=true (usuario 001 vendedor) → módulo aplica
+    empresa_nombre: "PIERCAR REPUESTOS C."  # 1 sola empresa en acordeón [prc-2606]
+    kpis_poblan: true                     # infoVendedores=false autogenerado; KPIs: Cartera Clientes 81, Activados 2, Nuevos 0, Días Hábiles 22 [prc-2606]
+    accordion_value: "ion-accordion-106"  # valor Ionic asignado en corrida; puede cambiar entre sesiones → leer acc.value en runtime [prc-2606]
+
+# ── Última corrida ────────────────────────────────────────────────────────────
+ultima_corrida:
+  run_id: "20260616_131624_smoke-completo"
+  fecha: "2026-06-16"
+  defectos_abiertos: []

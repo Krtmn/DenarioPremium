@@ -1,0 +1,9 @@
+{
+  "name": "qa-db-tool",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Helper de consulta read-only a la BD QA de Denario (por cliente). Ver query.js.",
+  "dependencies": {
+    "pg": "^8.13.0"
+  }
+}

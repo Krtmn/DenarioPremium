@@ -1,0 +1,111 @@
+# don-theo/perfil.yaml
+# Cliente NUEVO — VGs derivadas del dump global_configuration_don_theo_062026.csv (2026-06-12).
+# Datos de prueba por módulo (modules.*) aún SIN confirmar: se descubren en la 1ª corrida y se consolidan al cierre.
+# Servidor: Isla Coche (mismo host que insumar). Panel admin web: http://denarioislacoche.ddns.net:8080/DenarioPremium/
+
+cliente_id: don-theo
+cliente_nombre: "COMERCIALIZADORA HNOS TORRES 2017, C.A."   # Confirmado por QA 2026-06-12
+ws_url: "http://denarioislacoche.ddns.net:8081/PremiumWS/services/"  # endpoint del web service (app); derivado del host Isla Coche; verificar si responde
+apk_package: com.kiberno.denarioPremiumPro
+db_name: don_theo                          # base de este cliente para el Agente 12 / oráculo BD. La conexión completa (host+user+clave read-only) vive en el bloque "# Cliente: don-theo" de secrets/qa-db.env. OJO: los servidores/playas VARÍAN (dev los remonta) — el host autoritativo es el del secret, NO se asume fijo. Read-only confirmado en don_theo 2026-06-15. GRANT en Postgres es POR-BASE: cada cliente nuevo requiere su propio GRANT.
+
+# ── VGs — confirmadas desde CSV 2026-06-12 (salvo esVendedor, ver nota) ──────────
+vgs:
+  multiCurrency: true                       # CSV multiCurrency=true
+  expirationBatch: true                     # CSV expirationBatch=true → lote+fecha en inventarios
+  suggestedOrder: true                      # CONFIRMADO QA 2026-06-12: ESTA es la VG que gobierna el "Pedido Sugerido" visible en Inventarios (tab Resumen). CSV suggestedOrder=true (P,23).
+  suggestedOrderByDispatchAndReturn: false  # CSV=false. RESUELTO 2026-06-12: don-theo usa suggestedOrder (arriba), NO esta VG. El "Pedido Sugerido" activo NO contradice este false — son VGs distintas. Dejar en false.
+  requiredCollectionAttachments: false      # CSV requiredCollectionAttachments=false → cobro NO requiere adjunto; DM-COB-019 no se salta
+  requiredComment: false                    # CSV requiredComment=false → DM-COB-006 N/A
+  validateReturn: false                     # CSV validateReturn=false → tabs devoluciones sin validar factura. OJO: requeridedNroFactura=true (nro factura es campo obligatorio, pero NO se valida contra factura enviada); multiInvoices=false
+  signatureReturn: true                     # CSV signatureReturn=true
+  signatureCollection: true                 # CSV signatureCollection=true
+  signatureVisit: true                      # CSV signatureVisit=true
+  userCanUploadFiles: true                  # CSV userCanUploadFiles=true
+  esVendedor: true                          # Confirmado por QA 2026-06-12: usuario QA (003) es vendedor → módulo Vendedores aplica. (No viene en el dump global)
+  enterpriseEnabled: true                   # CSV enterpriseEnabled=true
+  enabledManualRate: false                  # CSV enabledManualRate=false. OJO: canChangeRate=true + historicoTasa=true → Fecha tasa editable (ver cobros.fecha_tasa_editable)
+  cobroPrepago: true                        # CSV cobroPrepago=true → DM-COB-028 aplica (requiere cliente elegible; descubrir en corrida)
+  cobroRetencion: false                     # CSV cobroRetencion=false → botón +RETENCIÓN del menú NO disponible → DM-COB-029 N/A
+  retencion: false                          # CSV retencion=false → detalle de documento SIN campos retención → DM-COB-041/042 N/A
+  sizeRetention: 16                          # CSV sizeRetention=16 (N/A operativamente: retencion=false)
+  formatRetention: "0"                       # CSV formatRetention="0" (N/A operativamente: retencion=false)
+  userCanSelectIGTF: false                  # CSV userCanSelectIGTF=false → sin selector IGTF → DM-COB-044/045 N/A
+  userCanCollectIva: false                  # CSV userCanCollectIva=false → DM-COB-037 (cobro 25% IVA) N/A
+  transportRole: false                      # CSV transportRole=false
+  userMustActivateGPS: true                 # CSV userMustActivateGPS=true → obligar GPS activo para transacciones
+
+# ── Datos de prueba por módulo — TBD: descubrir en la 1ª corrida ──────────────────
+modules:
+  login:
+    bad_password: Test-LOG-003
+
+  clientes:
+    cliente_busqueda: "JESUS"               # descubierto 20260612
+    cliente_detalle: "BOD- BUENA VISTA 2015 - JESUS ALBERTO SILVA YEPEZ"  # RIF V-18465577-9; descubierto 20260612
+    # Nota: el detalle muestra el código del cliente como "RIF:V-..." (entre paréntesis del nombre), NO con etiqueta "Código:". PASS igual — dato presente. [dth-2612]
+
+  pedidos:
+    cliente_test: "BOD- BUENA VISTA 2015 - JESUS ALBERTO SILVA YEPEZ"  # RIF V-18465577-9; búsqueda "JESUS"; tiene catálogo + deuda vencida. descubierto 20260612
+    estructura_producto: "categorias DON THEO"  # catálogo por categorías/familias (descripción): 01-EMBUTIDOS, 06-LACTEOS Y DERIVADOS, 07-PRODUCTOS VARIOS, 08-VIVERES, 13-CONGELADOS/HUEVOS, 14.LACTEOS TIO POLLO, 15.VIVERES TIO POLLO, 99-DESTO Y DEV. El nº final = conteo de productos. Dos niveles: Categoría → Producto (sub-acordeón con input cantidad). descubierto 20260612
+    alerta_deuda_vencida: true              # JESUS SILVA dispara "Pedidos / Este cliente tiene deuda vencida, ¿Desea continuar con el pedido?" (Cancelar/Aceptar) al seleccionarlo. descubierto 20260612
+
+  cobros:
+    cliente_test: "ALFREDO MANUEL LOPEZ SIERRA (EL CABO CARN)"  # RIF V-22364212-4, SIN documentos → casos 001,002,004,020/021/038 + anticipo. descubierto 20260612
+    cliente_code: "V-22364212-4"            # descubierto 20260612 (cliente_test SIN docs)
+    clientes_con_documentos: ["V-18465577-9"]  # JESUS SILVA, FAC 00005776. Otros con saldo: CENTRO DISTRIBUCION KV, COM-ABASTOS PAPA FACHO. descubierto 20260612
+    cliente_25iva: null                     # N/A — userCanCollectIva=false (DM-COB-037 N/A)
+    metodo_pago: "Deposito"                 # descubierto 20260612. Métodos disponibles: Efectivo / Depósito / Transferencia
+    banco_deposito: "VENEZUELA HT"          # descubierto 20260612. Bancos en #bankPickerModal: TESORO HT, BANCOS SB, PUNTO DE VENTA, SOFITASA HT, DEVOLUCIONES, VENEZUELA HT, ACTIVO KL, PROVINCIAL KL, BANCAMIGA KL, SOBRANTES, NOMINA, EFECTIVO BS, CRUCES
+    documento_retencion: null               # N/A — retencion=false
+    monto_retencion_iva: null               # N/A — retencion=false
+    monto_retencion_islr: null              # N/A — retencion=false
+    moneda_cobro: "Bs."                     # default; descubierto 20260612
+    fecha_tasa_editable: true               # canChangeRate=true + historicoTasa=true (CSV) → DM-COB-047 y DM-COB-039 rama B aplican PESE a enabledManualRate=false
+    pago_parcial_toggle: true               # enablePartialPayment=true (CSV) → DM-COB-046 aplica
+    smoke_na_estructural:
+      - "DM-COB-006: requiredComment=false → comentario no obligatorio → N/A"
+      - "DM-COB-029: cobroRetencion=false → sin opción +RETENCIÓN en el menú → N/A"
+      - "DM-COB-037: userCanCollectIva=false → sin cobro 25% IVA → N/A"
+      - "DM-COB-041: retencion=false → sin campos retención en detalle de documento → N/A"
+      - "DM-COB-042: depende de 041 → N/A"
+      - "DM-COB-044: userCanSelectIGTF=false → sin selector de tasa IGTF → N/A"
+      - "DM-COB-045: userCanSelectIGTF=false → sin tasa alterna → N/A"
+
+  devoluciones:
+    cliente_test: "BOD- BUENA VISTA 2015 - JESUS ALBERTO SILVA YEPEZ"  # RIF V-18465577-9; descubierto 20260612
+    factura_test: "00005776"                # nro factura REQUERIDO (requeridedNroFactura=true) pero NO validado (validateReturn=false). descubierto 20260612
+    producto_test: "DELI PIMENTON Y ACEITUNA 400GR UNIDAD"  # cod BOL400GR; descubierto 20260612
+    # Tipo devolución don-theo: Calidad (60, default) / Cambio X Cambio (63) / PostVenta (52) / Servicio (59). [dth-2612]
+
+  inventarios:
+    cliente_test: "BOD- BUENA VISTA 2015 - JESUS ALBERTO SILVA YEPEZ"  # búsqueda "JESUS"; descubierto 20260612
+    cliente_code: "V-18465577-9"            # descubierto 20260612
+    # Modal captura don-theo: SIN segmento Exhibición/Depósito/Todos (a diferencia de insumar) — tipo fijo "Exhibición - 1". Cantidad/Lote sin id ni placeholder (localizar por type). expirationBatch=true confirmado (Lote + Fecha venc obligatorios). [dth-2612]
+    # VG RESUELTA (QA 2026-06-12): el "Pedido Sugerido" ACTIVO en tab Resumen lo gobierna vgs.suggestedOrder=true. vgs.suggestedOrderByDispatchAndReturn queda en false (VG distinta). DM-INV-017/020 ejecutables PASS.
+
+  depositos:
+    aplica: false                           # descubierto 20260612 — módulo visible y shell funcional, pero sin cobros depositables al momento de la corrida
+    motivo_na: "Selector de banco vacío — sin cobros pendientes de depositar para la cuenta QA al momento de la corrida (módulo visible y shell funcional)"
+    # Defecto DM-DEP-010/018 NO reprodujo: lista BUSCAR (app-deposito-list) renderizó searchbar + 0 ítems sin loader colgado. Suma a insumar 0609/0610 → 3 corridas sin reproducir, refuerza cierre. [dth-2612]
+
+  visitas:
+    cliente_test: "BOD- BUENA VISTA 2015 - JESUS ALBERTO SILVA YEPEZ"  # búsqueda "JESUS"; RIF V-18465577-9. Funcional para selección/actividades/guardar/enviar/borrar. descubierto 20260612
+    smoke_na_estructural: []                # vacío — ningún caso N/A; había 2 visitas sincronizadas → DM-VIS-025/026 ejecutables. descubierto 20260612
+    # 12 actividades, TODAS requiredEvent=true → Motivo siempre requerido (idTypes 2,47,71,75,82-88,90,92). MERCHANDISING (47): ENTREGA DE MUESTRAS, LEVANTAMIENTO DATA ISSY, VISIBILIDAD PDV, PLAN SLIP, MUESTRA NUEVO CATALOGO. [dth-2612]
+
+  productos:
+    tipo_estructura_default: "Linea"        # idTypeProductStructure 1, único tipo; descubierto 20260612
+    tipos_estructura: ["Linea"]             # solo 1 → DM-PRD-002 N/A estructural (estructura única). descubierto 20260612
+    texto_busqueda: "DELI"                  # 21 resultados reales; alternativa "PIMENTON". descubierto 20260612
+    # Detalle con Lista de precio recalculable (CONTADO P0002 / CREDITO P0001 / FABRICA) → DM-PRD-013 ejecutable y PASS (defecto romher no reproduce). Detalle muestra solo precio Bs (sin USD); product-list sí Bs+USD. [dth-2612]
+
+  vendedores:
+    aplica: true                            # esVendedor=true → módulo aplica
+
+# ── Última corrida ────────────────────────────────────────────────────────────
+ultima_corrida:
+  run_id: "20260612_103038_smoke-completo"
+  fecha: "2026-06-12"
+  # Nota (no es defecto abierto): DM-DEP-010/018 NO reprodujo en esta corrida (lista BUSCAR renderizó sin loader colgado) → refuerza candidato a cierre del defecto v6.6.14.
+  defectos_abiertos: []

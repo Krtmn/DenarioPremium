@@ -3,7 +3,7 @@
 ## Estado inicial: HOME | Estado final: HOME
 
 **Inicio:** `h.connectCdp(page)` → `h.waitSyncOverlay(pg)`
-**Datos de prueba:** leer `automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml` → `modules.vendedores`
+**Datos de prueba:** leer `automation/clientes/{QA_CLIENTE}.yaml` → `modules.vendedores`
 
 ---
 

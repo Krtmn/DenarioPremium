@@ -2,7 +2,7 @@
 ## Estado inicial: HOME | Estado final: HOME
 
 **Inicio:** `h.connectCdp(page)` → `h.waitSyncOverlay(pg)`
-**Datos de prueba:** leer `automation/clientes/{QA_CLIENTE}/{QA_CLIENTE}.yaml` → `modules.pedidos`
+**Datos de prueba:** leer `automation/clientes/{QA_CLIENTE}.yaml` → `modules.pedidos`
 
 ---
 
@@ -24,3 +24,26 @@
 | DM-PED-034 | BUSCAR → escribir texto en searchbar | Lista filtra en tiempo real | FAIL: no filtra |
 | DM-PED-035 | Click en pedido Guardado | Formulario editable con 4 tabs | FAIL: solo lectura |
 | DM-PED-037 | Botón basura en pedido Guardado → confirmar | Pedido desaparece de lista | FAIL: persiste |
+
+---
+
+## Verificación BD (round-trip al servidor · ver RUNTIME §10)
+
+Tras DM-PED-031 (Enviar) y DM-PED-030 (Guardar), confirmar el pedido en BD (3 niveles cabecera→detalle→unidad). Mecánica, vocabulario y blindaje (BD caída ⇒ `BD-N/A`, **nunca** tumba el smoke): **RUNTIME §10**.
+
+```bash
+node automation/db/query.js {QA_CLIENTE} "SELECT o.id_order, o.co_order, o.st_order, o.nu_amount_total, o.nu_amount_final, o.nu_details, (SELECT count(*) FROM order_detail d WHERE d.id_order=o.id_order) det, (SELECT count(*) FROM order_detail_unit u JOIN order_detail d ON d.id_order_detail=u.id_order_detail WHERE d.id_order=o.id_order) units FROM \"order\" o ORDER BY o.da_created DESC LIMIT 5"
+```
+
+**Qué confirmar** en la fila recién creada:
+- `order` existe; `nu_details` = `det` = nº de líneas agregadas por UI; `units` ≥ `det`.
+- `nu_amount_total`/`nu_amount_final` cuadran con el Tab Total de la UI.
+- `st_order` = Enviado (4) tras DM-PED-031 / Guardado (10) tras DM-PED-030.
+
+**2) Local — cotejo guardado→enviado (⚠ tabla local PLURAL `orders`):**
+```bash
+node automation/db/local-query.js "SELECT co_order, id_order, st_delivery FROM orders ORDER BY rowid DESC LIMIT 5"
+node automation/db/local-query.js "SELECT count(*) en_cola FROM pending_transactions WHERE type='order'"
+```
+- `id_order>0` & `st_delivery=1` → **BD-OK** (enviado) · `id_order=0` → **BD-SAVED** (guardado, sin enviar) · en cola → **BD-QUEUED** · en `failed_transactions` (type='order') → **BD-MISMATCH**.
+- **Correlación: Nro.Ref UI = `id_order`** → `BD-INFO` hasta graduar a FAIL.

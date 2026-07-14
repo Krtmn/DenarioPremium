@@ -1,0 +1,132 @@
+# latino_cosmetica/perfil.yaml
+# Cliente LATINO COSMETICA — servidor La Tortuga. 1ª corrida automatizada COMPLETA 10/10 (RUN 20260714_130727).
+# VGs construidas de los 2 dumps en clientes/ + CONFIRMADAS en corrida (se retiraron los ⚠️VERIFICAR resueltos):
+#   - global_configuration_202607141224_LATINO COSMET.md      (principal, filas 2025-2026 → AUTORITATIVO)
+#   - global_configuration_client_202607141225_LATINO COSMET.md (por-cliente, muchas filas 2022-10-17 → OVERRIDE STALE)
+# ⚠ REGLA DE RESOLUCIÓN: cuando ambos difieren, gana el `da_update` más reciente (el global principal).
+#   Conflictos 2022(client)=X vs global-reciente=Y quedaron RESUELTOS en la 1ª corrida (ver comentarios inline).
+
+cliente_id: latino_cosmetica
+cliente_nombre: "LATINOCOSMETICA C.A."       # ✅ confirmado en UI (app-client-detail Empresa + form potencial idEnterprise=1)
+ws_url: "http://denariolatortuga.ddns.net:8081/PremiumWS/services/"  # ✅ servidor La Tortuga confirmado (mismo host que hidroponias)
+apk_package: com.kiberno.denarioPremiumPro
+db_name: latino_cosmetica                   # DSN read-only en bloque "# Cliente: latino_cosmetica" de secrets/qa-db.env
+
+# ── VGs — CONFIRMADAS en corrida 20260714 (conflictos 2022 vs global RESUELTOS por observación en UI) ──
+vgs:
+  multiCurrency: true                        # ✅ REAL true (BS+USD): lista y detalle de clientes muestran "Saldo BSD" Y "Saldo $"; selector Moneda cobro con 2 opciones. El override 2022=false NO aplica
+  expirationBatch: false                     # → inventarios: Lote+Fecha SÍ se renderizan pero NO son obligatorios (Aceptar OK con vacíos, payload nuBatch=""). Divergencia UI-vs-config, VERIFICAR con desarrollo
+  suggestedOrder: false
+  suggestedOrderByDispatchAndReturn: false   # → PEDIDOS: botón "Pedido Sugerido" NO aparece (coherente). INVENTARIOS: botón PEDIDO SUGERIDO SÍ aparece (divergencia UI-vs-config, 4ª playa; VERIFICAR con desarrollo)
+  clientStock: true                          # ✅ REAL true: módulo Inventarios operable end-to-end y persiste en nube (id_client_stock=7). Override 2022=false descartado. requireClientStock=false
+  requiredCollectionAttachments: true        # 2026-07-03 → COBRO EXIGE ADJUNTO (DM-COB-019 no se salta). requiredAnticipoAttachments=true, requiredRetentionAttachments=true. ⚠ mock cámara NO funciona (ver modules.cobros)
+  requiredComment: true                      # ✅ 2026-03-24 → comentario obligatorio en cobro; comentario vacío → ion-invalid + "¡Campo Obligatorio!" + tabs disabled. DM-COB-006 APLICA
+  validateReturn: true                       # ✅ devoluciones validan producto vs factura → AGREGAR PRODUCTO lista los productos de la factura. requeridedNroFactura=true, multiInvoices=false (una factura por devolución)
+  signatureReturn: true                      # ✅ acordeón Firma en Tab Adjuntos, PERO Guardar/Enviar proceden SIN firma (payload nuAttachments=0)
+  signatureCollection: true
+  signatureVisit: true                       # ✅ acordeón Firma presente PERO envío procede SIN firma (defecto conocido DM-VIS-020)
+  signatureDeposit: true
+  signatureStock: true                       # ✅ NO bloquea Enviar (sin pad de firma interactivo)
+  signatureOrder: true
+  signatureClient: true                      # ✅ RESUELTO: NO se materializa firma en cliente potencial — Guardar y Enviar proceden directo sin pedir firma
+  userCanUploadFiles: true                   # ✅ acordeón Archivo en Adjuntos (devoluciones/visitas)
+  esVendedor: true                           # ✅ confirmado (usuario 001): módulo Vendedores presente, heading <h1>Vendedor</h1>. infoVendedores global=true
+  enterpriseEnabled: true                    # ✅ aplica en TODOS los módulos MENOS PEDIDOS (orderEnterpriseEnabled=false). Empresa ÚNICA "LATINOCOSMETICA C.A." idEnterprise=1 (no auto-selecciona, exige value numérico + ionChange)
+  enabledManualRate: false                   # → DM-COB-039 rama A (tasa manual) N/A. Tasa read-only (667,05 BSD)
+  cobroPrepago: true                         # ✅ ANTICIPO/PREPAGO aplica (DM-COB-028 co_type 1). requiredAnticipoAttachments=true
+  cobroRetencion: true                       # ✅ botón +RETENCIÓN aplica (DM-COB-029 co_type 2 Guardado). requiredRetentionAttachments=true
+  retencion: true                            # ✅ REAL true, VARIANTE dynamicRetentions (ver modules.cobros). Override 2022=false descartado. retentionDocTypeCR=true
+  sizeRetention: 14                          # nro comprobante = 14 dígitos
+  formatRetention: "0"                        # "0" = Números
+  userCanSelectIGTF: true                    # ✅ REAL true (botón IGTF presente) PERO sin documento IGTF sincronizado hoy → DM-COB-036/044/045 N/A por DATO (no estructural). igtfDefault=false, disableCheckIGTF=false
+  userCanCollectIva: false                   # ✅ confirmado: sin botón 25% IVA → DM-COB-037 N/A estructural
+  transportRole: true
+  userMustActivateGPS: true                  # ✅ presente PERO NO bloqueó ninguna transacción; coordenada real capturada (visitRout=true, userCanSaveGPS=true)
+
+# ── Métodos de pago Cobros: colletionPayment = true-false-true-true-true-true (global reciente) ──────
+# ✅ CONFIRMADO en modal métodos: Efectivo=SÍ · Cheque=NO · Transferencia=SÍ · Depósito=SÍ · Otros=SÍ · Pago Móvil=SÍ
+# → EFECTIVO presente ⇒ módulo DEPÓSITOS APLICA (confirmado con dato vivo).
+# Otras VGs de cobro relevantes (global reciente): tolerancia0=true, enablePartialPayment=true (→DM-COB-046 PASS),
+#   canChangeRate=true (→DM-COB-047 PASS: 667,05→500,00), historicoTasa=true, currencyBank=true, automatedPrepaid=true,
+#   multiCurrencyCollection=true, multiCurrencyDeposit=true, multiCurrencyOrder=false (Tab Total pedidos solo US$),
+#   dynamicRetentions=true, userCanAddRetention=true (retención libre sin factura), userCanSelectCollectDiscount=true.
+# ⚠ tagRif: global="RIF" vs client-2022="RIC" → la app mostró "RIF" (form potencial nu_rif).
+
+# ── SYNC PARCIAL POR VENDEDOR (usuario 001): la BD nube tiene TODOS los clientes, pero el device solo
+#    sincroniza el subconjunto asignado a 001. Confirmado: LOOKS 4 (149) y MUNDO MAYOR DOS (398) NO
+#    sincronizan pese a tener docs en nube. Los clientes de prueba abajo son los REALMENTE sincronizados.
+modules:
+  login:
+    bad_password: "usar QA_BAD_PASSWORD del bloque # Cliente: latino_cosmetica"  # marcador; contraseña mala real en qa-credentials.env
+
+  clientes:
+    cliente_busqueda: "ANNELI"               # ✅ "ANNELI"→1 resultado (ANNELI CA, co 13). Buscador filtra por NOMBRE (clientsOrderBy=na_client), NO por código
+    cliente_detalle: "ANNELI CA"             # ✅ co 13, idClient 34 — SINCRONIZADO. Saldo BSD 248.983,08 / $373,26; 1 doc tipo 03 Nº 1757 en Doc. de Venta. (LOOKS 4 co 149 NO sincroniza para usuario 001)
+    empresa_potencial: "LATINOCOSMETICA C.A."  # ✅ idEnterprise=1, ÚNICA. NO auto-selecciona: exige value=1 numérico + ionChange en el ion-select
+    # DM-CLT-024/026: cliente potencial creado (Ref 9 Enviado, BD-OK); Guardar y Enviar SIN firma pese a signatureClient=true
+
+  pedidos:
+    cliente_test: "ANNELI CA"                 # ✅ co 13, id_client 34 — SINCRONIZADO, con deuda vencida → modal "Este cliente tiene deuda vencida" (Aceptar continúa, no bloquea)
+    estructura_producto: "BELOTTI"            # ✅ catálogo cosmética: categorías BELOTTI(74)/PROKPIL(70)/ROIAL(8). Producto usado: 3058 BELOTTI ACOND CEBOLLA X 300 ML. orderEnterpriseEnabled=false → SIN Empresa; multiCurrencyOrder=false → Total solo US$
+    alerta_deuda_vencida: true                # ✅ ANNELI CA dispara modal deuda vencida al seleccionar
+
+  cobros:
+    cliente_test: "CABELLO COSMETICOS CA"     # ✅ co 37, idClient 300 — SINCRONIZADO. 2 facturas USD: 1820 ($1.551,18) y 1716 ($1.160,09), saldo $2.711,27
+    cliente_code: "37"
+    clientes_con_documentos:                   # ✅ SINCRONIZADOS confirmados en modal/nube (NO usar LOOKS/MUNDO MAYOR: no sincronizan para 001)
+      - "37 · CABELLO COSMETICOS CA (facturas 1820 $1.551,18 / 1716 $1.160,09 USD)"
+      - "13 · ANNELI CA (1 factura USD $373,26) — backup"
+    cliente_igtf: null                         # ⚠ userCanSelectIGTF=true PERO doc IGTF de FARMA (co 197) NO está sincronizado en device → DM-COB-036/044/045 N/A por DATO
+    cliente_25iva: null                        # userCanCollectIva=false → DM-COB-037 N/A estructural
+    metodo_pago: "Efectivo"                    # ✅ Efectivo=true (default seguro). Otras: Transferencia/Depósito/Otros/Pago Móvil (NO Cheque)
+    banco_deposito: TBD                        # si metodo_pago=Depósito/Transferencia → descubrir bancos en UI (no ejercido en cobros esta corrida)
+    documento_retencion: "1820"                # ✅ factura CABELLO usada para retención dynamicRetentions (DM-COB-029/041)
+    moneda_cobro: "BS/US$"                      # ✅ multiCurrency REAL true; selector Moneda cobro 2 opciones ($/BSD); Moneda documento filtra docs por moneda
+    pago_parcial_toggle: true                  # ✅ enablePartialPayment=true → DM-COB-046 PASS (parcial 500.000 persiste round-trip)
+    adjunto_obligatorio: true                  # requiredCollectionAttachments=true → cobro EXIGE adjunto
+    mock_camara_funciona: false                # ⚠ NO funciona: tomarImg() usa el módulo webpack @capacitor/camera (Camera.getPhoto), NO window.Capacitor.Plugins.Camera → mockCameraAdjunto/ensureAdjunto inservibles.
+                                               #   WORKAROUND validado: empujar Foto a adjuntoService.fotos + comp.checkCarousel() + comp.onAttachmentChanged() → foto entra al carrusel → DM-COB-019 enviado de verdad (BD-OK id 24)
+    retencion_variante: "dynamicRetentions"    # ⚠ NO usa los campos fijos Nro.Comp Ret+IVA+ISLR de jerez/ferrenuestro. Detalle de doc usa selector "Seleccione Retención" (IMPM/ISLR/IVA) → al elegir aparecen Nro.Comp Ret + Fecha Comp Ret + montos.
+                                               #   DM-COB-041/042 BLOCKED esta corrida (layout dinámico no mapeado) → REQUIERE HELPER NUEVO (dynamicRetentions). userCanAddRetention=true
+    selectores_tab_general: "1º ion-select=Empresa LATINOCOSMETICA C.A. (00001, 1 opción); 2º=Moneda cobro ($/BSD); 3º=Tasa read-only (667,05 BSD). Fecha Tasa=ion-button, datetime min 2026-04-22→hoy"
+    smoke_na_estructural:
+      - "DM-COB-037: userCanCollectIva=false → N/A estructural"
+      - "DM-COB-036: IGTF sin documento sincronizado en device (FARMA co 197 no sincroniza) → N/A por dato"
+      - "DM-COB-044: IGTF sin documento sincronizado → N/A por dato"
+      - "DM-COB-045: IGTF sin documento sincronizado → N/A por dato"
+
+  devoluciones:
+    cliente_test: "CABELLO COSMETICOS CA"      # ✅ co 37, idClient 300 — SINCRONIZADO con facturas devolvibles USD. validateReturn=true → AGREGAR PRODUCTO lista productos de la factura
+    factura_test: "1820"                        # ✅ idInvoice 2557 (backup 1716). Nro factura OBLIGATORIO (requeridedNroFactura=true), precargado en el acordeón del producto. multiInvoices=false
+    producto_test: "PT004"                      # ✅ TRATAMIENTO 300ml CENIZO — devolución Ref 7 Enviada (BD-OK)
+    tipos: "Calidad(60,default)/PostVenta(52)/Servicio(59) — sin Cambio X Cambio"
+
+  inventarios:
+    cliente_test: "ANNELI CA"                  # ✅ co 13, idClient 34 — SINCRONIZADO. clientStock REAL true (módulo operable, persiste nube). requireClientStock=false
+    cliente_code: "13"
+    producto_test: "3058"                       # BELOTTI ACOND CEBOLLA X 300 ML. Inventario Ref 7 Enviado (BD-OK). st_client_stock=1=Enviado en La Tortuga (no st=2)
+
+  depositos:
+    aplica: true                               # ✅ CONFIRMADO con dato vivo: Tab Cobros mostró 3 cobros Efectivo depositables (incl. el cobro Ref 24 de ESTA corrida, propagado nube→device). Depósito Ref 3 Enviado (BD-OK)
+    motivo_na: null
+    banco_test: "BANCO MERCANTIL (id 96, cuenta 01050035481035466120)"  # 8 cuentas reales idBankAccount 89-97, todas BSD/emp 00001. Envío = 3 alertas. st_deposit=1=Enviado en La Tortuga
+
+  visitas:
+    cliente_test: "ANNELI CA"                  # ✅ co 13, idClient 34, idAddressClient 6631 — SINCRONIZADO, CON coordenadas (no dispara alert de coordenadas). signatureVisit=true, visitRout=true, userMustActivateGPS=true (no bloqueó)
+    smoke_na_estructural:
+      - "DM-VIS-025/026: sin visitas 'No Visitado' sincronizadas hoy (ruta del día vacía) → N/A por dato"
+    # 11 actividades TODAS requiredEvent=true/requiredSignature=false (set El Yaque). MERCHANDISING(47)→VISIBILIDAD PDV(184)/PLAN SLIP/etc. Visita Ref 100 Enviada (BD-OK)
+
+  productos:
+    tipo_estructura_default: "Marca"           # ✅ REAL: 2º ion-select ofrece Marca (default, idTypeProductStructure=1) y Categoria (id=2). NO es "Linea". DM-PRD-002 ejecutable (Marca 3 estructuras ↔ Categoria 13)
+    texto_busqueda: "BELOTTI"                   # ✅ 47 resultados (marca con muchos SKU). "ZZZZZZZ"→0 con <p class="search-empty-state"> (no ion-item placeholder)
+    lista_precio_unica: true                    # ✅ única lista "DETAL" (userCanChangePriceList=false) → DM-PRD-013 N/A estructural. Detalle y lista muestran solo precio USD (sin Bs)
+
+  vendedores:
+    aplica: true                               # ✅ esVendedor=true (usuario 001): tile presente, app-vendedores con heading "Vendedor". 1 empresa "LATINOCOSMETICA C.A.", KPIs VACÍOS esta sesión (API sin métricas) → DM-VND-002 N/A estructural
+
+# ── Última corrida ────────────────────────────────────────────────────────────
+ultima_corrida:
+  run_id: "20260714_130727_smoke-completo"   # 1ª corrida COMPLETA 10/10 — servidor La Tortuga, window.ng=TRUE, sync inmediata/persistente
+  fecha: "2026-07-14"
+  defectos_abiertos: []                       # 0 FAIL. Notas: DM-COB-041/042 BLOCKED (dynamicRetentions, requiere helper); IGTF N/A por dato; crash de app en POST de cobro (recuperable, a vigilar)
