@@ -25,6 +25,7 @@ export interface TablesLastUpdate {
   globalDiscountTableLastUpdate: string,
   clientBankAccountTableLastUpdate: string,
   productMinMulFavTableLastUpdate: string,
+  bonusTableLastUpdate: string,
   userInformationTableLastUpdate: string,
   currencyEnterpriseTableLastUpdate: string,
   currencyRelationTableLastUpdate: string,
@@ -63,6 +64,7 @@ export interface TablesLastUpdate {
   typeDocumentTableLastUpdate: string,
   codePhoneNumberTableLastUpdate: string,
   unitPriceListTableLastUpdate: string,
+  collectRetentionTableLastUpdate: string,
   page: number
 
 }

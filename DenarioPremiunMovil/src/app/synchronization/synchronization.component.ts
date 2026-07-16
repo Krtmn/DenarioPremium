@@ -16,7 +16,7 @@ import { StraightSwap } from '../modelos/tables/straightSwap';
 import { PedidosService } from '../pedidos/pedidos.service';
 import { AutoSendService } from '../services/autoSend/auto-send.service';
 
-const TABLAS_CATALOGO = [8, 13, 15, 23, 25, 29, 32, 34, 35, 37, 39, 42, 43, 44, 46, 48, 50, 51, 53, 54, 59, 60, 72, 74, 81];
+const TABLAS_CATALOGO = [8, 13, 15, 23, 25, 29, 32, 34, 35, 37, 39, 42, 43, 44, 46, 48, 50, 51, 53, 54, 59, 60, 72, 74, 81, 84];
 
 @Component({
   selector: 'app-synchronization',
@@ -147,6 +147,8 @@ export class SynchronizationComponent implements OnInit {
     79: 'typeDocument',
     80: 'codePhoneNumber',
     81: 'unit_pricelist',
+    83: 'collectRetention',
+    84: 'product_bonus_fav',
   };
 
   /**
@@ -216,6 +218,8 @@ export class SynchronizationComponent implements OnInit {
     typeDocument: 'Tipo de Documento',
     codePhoneNumber: 'Código de Número Telefónico',
     unit_pricelist: 'Lista de Precio por Unidad',
+    collectRetention: 'Tipos de Retención',
+    product_bonus_fav: 'Bonificaciones de Producto',
   };
 
   constructor(
@@ -739,6 +743,16 @@ export class SynchronizationComponent implements OnInit {
             this.tables.page = 0;
             break;
           }
+          case 83: {
+            this.tables.collectRetentionTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
+          case 84: {
+            this.tables.bonusTableLastUpdate = result[i].last_update;
+            this.tables.page = 0;
+            break;
+          }
 
           default: {
             //statements;
@@ -1198,6 +1212,13 @@ export class SynchronizationComponent implements OnInit {
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
     },
+    product_bonus_fav: {
+      batchFn: this.synchronizationServices.processProductBonusFavDelta.bind(this.synchronizationServices),
+      rowKey: 'productBonusFavTable',
+      tableKey: 'bonusTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
     user_informations: {
       batchFn: this.synchronizationServices.insertUserInformationBatch.bind(this.synchronizationServices),
       rowKey: 'userInformationTable',
@@ -1457,6 +1478,13 @@ export class SynchronizationComponent implements OnInit {
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
     },
+    collectRetention: {
+      batchFn: this.synchronizationServices.insertCollectRetentionsBatch.bind(this.synchronizationServices),
+      rowKey: 'collectRetentionTable',
+      tableKey: 'collectRetentionTableLastUpdate',
+      pageKey: 'page',
+      numberOfPagesKey: 'numberOfPages'
+    },
   };
 
   /**
@@ -1477,11 +1505,15 @@ export class SynchronizationComponent implements OnInit {
   }
 
   private notifyProductMinMulSynced(tableName: string): void {
-    if (tableName !== 'product_min_muls') {
+    if (tableName === 'product_min_muls') {
+      this.pedidosService.invalidateCatalogCache();
+      void this.pedidosService.refreshProductMinMulData();
       return;
     }
-    this.pedidosService.invalidateCatalogCache();
-    void this.pedidosService.refreshProductMinMulData();
+    if (tableName === 'product_bonus_fav') {
+      this.pedidosService.invalidateCatalogCache();
+      void this.pedidosService.refreshProductBonusFavData();
+    }
   }
 
   /**
