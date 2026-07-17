@@ -590,7 +590,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           }
           this.message.alertModal(this.messageAlert);
           this.services.insertPendingTransactionBatch(this.dbServ.getDatabase(), transactions).then(() => {
-            this.autoSend.ngOnInit();
+            void this.autoSend.runPendingQueue();
           });
           this.orderServ.disableSendButton = false;
           this.message.hideLoading();
@@ -1654,7 +1654,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
             `Subtotal bruto: ${fmtMoney(this.orderServ.totalBase + bonusDiscountTotal)} ${currency}`
           );
           summaryTotalsDetailLines.push(
-            `Descuento bonif.: -${fmtMoney(bonusDiscountTotal)} ${currency}`
+            `Descuento bonif.: ${fmtMoney(bonusDiscountTotal)} ${currency}`
           );
         }
         summaryTotalsDetailLines.push(
