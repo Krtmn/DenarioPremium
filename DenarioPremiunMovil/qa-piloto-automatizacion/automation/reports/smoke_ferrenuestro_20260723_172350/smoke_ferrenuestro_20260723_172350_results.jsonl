@@ -1,0 +1,16 @@
+{"run_id":"20260723_172350_smoke-completo","modulo":"inventarios","caso":"DM-INV-001","resultado":"PASS","ms":2500,"intentos":1,"bd":null}
+{"run_id":"20260723_172350_smoke-completo","modulo":"inventarios","caso":"DM-INV-002","resultado":"PASS","ms":2000,"intentos":1,"bd":null}
+{"run_id":"20260723_172350_smoke-completo","modulo":"inventarios","caso":"DM-INV-004","resultado":"PASS","ms":9000,"intentos":1,"bd":null}
+{"run_id":"20260723_172350_smoke-completo","modulo":"inventarios","caso":"DM-INV-008","resultado":"PASS","ms":4000,"intentos":1,"bd":null}
+{"run_id":"20260723_172350_smoke-completo","modulo":"inventarios","caso":"DM-INV-010","resultado":"PASS","ms":5000,"intentos":1,"bd":null}
+{"run_id":"20260723_172350_smoke-completo","modulo":"inventarios","caso":"DM-INV-011","resultado":"PASS","ms":3000,"intentos":1,"bd":null}
+{"run_id":"20260723_172350_smoke-completo","modulo":"inventarios","caso":"DM-INV-012","resultado":"PASS","ms":2500,"intentos":1,"bd":null}
+{"run_id":"20260723_172350_smoke-completo","modulo":"inventarios","caso":"DM-INV-016","resultado":"PASS","ms":2000,"intentos":1,"bd":null}
+{"run_id":"20260723_172350_smoke-completo","modulo":"inventarios","caso":"DM-INV-017","resultado":"PASS","ms":3500,"intentos":1,"bd":null}
+{"run_id":"20260723_172350_smoke-completo","modulo":"inventarios","caso":"DM-INV-020","resultado":"PASS","ms":1000,"intentos":1,"bd":null}
+{"run_id":"20260723_172350_smoke-completo","modulo":"inventarios","caso":"DM-INV-021","resultado":"PASS","ms":4000,"intentos":1,"bd":null}
+{"run_id":"20260723_172350_smoke-completo","modulo":"inventarios","caso":"DM-INV-022","resultado":"PASS","ms":9000,"intentos":1,"bd":"BD-N/A"}
+{"run_id":"20260723_172350_smoke-completo","modulo":"inventarios","caso":"DM-INV-023","resultado":"PASS","ms":2500,"intentos":1,"bd":"BD-INFO"}
+{"run_id":"20260723_172350_smoke-completo","modulo":"inventarios","caso":"DM-INV-025","resultado":"PASS","ms":3000,"intentos":1,"bd":null}
+{"run_id":"20260723_172350_smoke-completo","modulo":"inventarios","caso":"DM-INV-026","resultado":"PASS","ms":8000,"intentos":1,"bd":null}
+{"run_id":"20260723_172350_smoke-completo","modulo":"inventarios","caso":"DM-INV-028","resultado":"PASS","ms":2500,"intentos":1,"bd":null}

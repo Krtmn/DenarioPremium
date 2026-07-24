@@ -1,14 +1,25 @@
 # _schema.yaml — Esquema de perfil de cliente QA
-# Cada cliente tiene su propia carpeta: automation/clientes/{cliente_id}/perfil.yaml
-# La playa (servidor) es solo un ws_url dentro del perfil — cuando el cliente cambia
-# de servidor, se actualiza ese campo. El expediente del cliente no cambia de lugar.
+# Cada cliente tiene su perfil: automation/clientes/{cliente_id}.yaml
+#
+# ⚠ DESACOPLE SERVIDOR↔CLIENTE (2026-07): el SERVIDOR (playa/ws_url) NO se guarda en el perfil.
+#   Los clientes NO están fijos a un servidor — migran según disponibilidad. El servidor efectivo
+#   es el que tenga configurado el APK en el momento de la corrida y se DESCUBRE EN RUNTIME
+#   (host observado en los payloads / la config de la app), no se hardcodea aquí. Guardar el ws_url
+#   en el perfil solo genera valores stale (causó el cotejo BD caído en ferrenuestro 20260723).
+#
+# ⚠ BD: es un ÚNICO RDS central 'savia' + usuario 'user_read' COMPARTIDOS por todos los clientes
+#   (ver automation/db/query.js). Lo único por-cliente es el NOMBRE DE LA BASE (db_name) — que SÍ es
+#   propiedad del cliente. Las bases son transitorias (el equipo las cicla) → si la base no existe o
+#   falta el grant, el cotejo es BD-N/A (acción DBA), no un problema del perfil.
 
 # ── Identificación ────────────────────────────────────────────────────────────
 cliente_id: string        # [REQUERIDO] slug único, ej: hidroponias, romher, insumar
-cliente_nombre: string    # [REQUERIDO] nombre completo de la empresa en la app
-ws_url: string            # [REQUERIDO] servidor donde está corriendo este cliente HOY
-                          # Actualizar cuando el cliente cambie de playa
+cliente_nombre: string    # [REQUERIDO] nombre de la empresa en la app (⚠ confirmar en corrida)
 apk_package: string       # [REQUERIDO] com.kiberno.denarioPremiumPro
+db_name: string           # [REQUERIDO] nombre de la BASE del cliente en savia (ej. insumar, dm_electronica,
+                          #   latino [≠slug latino_cosmetica], RUN_P1). Es propiedad del cliente, NO del servidor.
+# ws_url: <ELIMINADO>     # ⚠ NO guardar el servidor en el perfil — se descubre en runtime (ver banner arriba).
+#                         #   Si se quiere registrar la playa observada, va en el REPORTE de la corrida, no aquí.
 
 # ── Variables Globales activas para este cliente ──────────────────────────────
 # Verificar con el equipo de desarrollo si hay dudas sobre un valor.

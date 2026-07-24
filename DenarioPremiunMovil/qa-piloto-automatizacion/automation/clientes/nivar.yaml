@@ -1,0 +1,73 @@
+# nivar/perfil.yaml
+# Cliente NIVAR — servidor EL YAQUE. Perfil construido de los 2 dumps 20260723; SIN corrida aún.
+#   - global_configuration_202607231143_NIVAR.md        (principal, filas 2025-2026 → AUTORITATIVO)
+#   - global_configuration_client_202607231143_NIVAR.md (por-cliente, filas 2023-02-01 → OVERRIDE STALE)
+# ⚠ REGLA: cuando difieren, gana el da_update más reciente (el global principal). Conflictos marcados ⚠️VERIFICAR.
+# ⚠ EL YAQUE: window.ng VARÍA por build (jerez/ferrenuestro=false, dm-electronica=true) → el agente prueba !!window.ng al inicio.
+# ⚠ BD de NIVAR NO disponible aún (falta bloque en secrets/qa-db.env) → modules.* por DISCOVERY en UI, sin pre-población BD.
+
+cliente_id: nivar
+cliente_nombre: "NIVAR"                       # ⚠ confirmar nombre EXACTO en la app (app-client-detail Empresa)
+ws_url: TBD                                   # El Yaque — confirmar host exacto (denario<...>.ddns.net:8081). El APK ya apunta ahí.
+apk_package: com.kiberno.denarioPremiumPro
+db_name: nivar                                # ⚠ FALTA bloque "# Cliente: nivar" en secrets/qa-db.env → cotejo BD = BD-N/A hasta agregarlo
+
+# ── VGs — del global_configuration reciente 20260723. Conflictos vs client-config 2023 marcados ⚠️VERIFICAR ──
+vgs:
+  multiCurrency: true                         # lista/detalle con Saldo BS + US$; selector Moneda cobro activo
+  expirationBatch: false                      # inventarios: lote/fecha pueden renderizar pero NO obligatorios
+  suggestedOrder: true                        # botón "Pedido Sugerido" (puede aparecer en Inventarios/Pedido)
+  suggestedOrderByDispatchAndReturn: false
+  clientStock: true                           # módulo Inventarios aplica. requireClientStock=false (global 2025; ⚠ client-2023=true)
+  requiredCollectionAttachments: false        # ✅ cobro NO exige adjunto → DM-COB-019 se envía sin adjunto. requiredAnticipoAttachments=false, requiredRetentionAttachments=false
+  requiredComment: false                      # ✅ comentario NO obligatorio en cobro → DM-COB-006 N/A
+  validateReturn: false                       # devoluciones: tabs habilitan SIN seleccionar factura. ⚠ requeridedNroFactura=true (nro factura sí requerido como campo). multiInvoices=false
+  signatureReturn: true
+  signatureCollection: true
+  signatureVisit: true
+  signatureDeposit: true
+  signatureStock: true
+  signatureOrder: true
+  signatureClient: true                       # firma habilitada en cliente potencial (verificar si Guardar/Enviar procede sin firma)
+  userCanUploadFiles: true
+  esVendedor: TBD                             # ⚠ infoVendedores global=true vs client-2023=false → CONFIRMAR en corrida (usuario QA)
+  enterpriseEnabled: true                     # empresa en TODOS los módulos MENOS Pedidos (orderEnterpriseEnabled=false). ⚠ NOMBRE de empresa a DESCUBRIR en UI (no viene en dumps)
+  enabledManualRate: false                    # → DM-COB-039 rama A (tasa manual) N/A
+  cobroPrepago: true                          # ANTICIPO/PREPAGO aplica (DM-COB-028). requiredAnticipoAttachments=false
+  cobroRetencion: true                        # botón +RETENCIÓN del menú aplica → DM-COB-029
+  retencion: false                            # ⚠ global 2026-03-12=false (client-2023=true) → retención NO por detalle de documento → DM-COB-041/042 N/A. Va por menú (029). retentionDocTypeCR=false
+  dynamicRetentions: false                    # retención ESTÁNDAR (IVA/ISLR fijos), NO la variante dinámica de latino_cosmetica
+  sizeRetention: 14
+  formatRetention: "2"                         # ⚠ global 2026-02-27=2 (Alfanumerico) vs client-2023=0 (Numeros) → Alfanumerico
+  userCanSelectIGTF: true                     # botón IGTF; igtfDefault=true, disableCheckIGTF=false → DM-COB-036/044/045 (si hay doc IGTF sincronizado)
+  userCanCollectIva: false                    # sin cobro 25% IVA → DM-COB-037 N/A
+  transportRole: true
+  userMustActivateGPS: true                   # GPS obligatorio para transacciones
+
+# ── Métodos de pago Cobros: colletionPayment = true-false-true-true-false ──────────────────────────
+# Efectivo=SÍ · Cheque=NO · Transferencia=SÍ · Depósito=SÍ · Otros=NO
+# → EFECTIVO presente ⇒ módulo DEPÓSITOS APLICA.
+# Otras VGs de cobro (global reciente): tolerancia0=true (⚠ client-2023=false), enablePartialPayment=true (→DM-COB-046),
+#   canChangeRate=false (→DM-COB-047 y 039-B N/A), historicoTasa=true, currencyBank=false, clientBankAccount=true,
+#   automatedPrepaid=true, multiCurrencyCollection=true, multiCurrencyDeposit=true, multiCurrencyOrder=true,
+#   validateCollectionDate=true, userCanSelectCollectDiscount=false, enableDifferenceCodes=false, streetDay=false.
+# ⚠ clientsOrderBy=due_date (global 2026-05; client-2023=co_client) → lista de clientes ordenada por deuda vencida.
+# ⚠ tagRif=RIF, tagIVA=IVA. listProductsBy=lineas.
+
+# ── Datos de prueba por módulo — TBD (BD de nivar no disponible aún → DISCOVERY en UI en la 1ª corrida) ──
+modules:
+  login:      { bad_password: "usar QA_BAD_PASSWORD del bloque # Cliente: nivar" }  # ⚠ bloque de credenciales nivar FALTA en secrets/qa-credentials.env
+  clientes:   { cliente_busqueda: TBD, cliente_detalle: TBD, empresa_potencial: TBD }  # enterpriseEnabled=true → selector Empresa; descubrir nombre en UI. clientsOrderBy=due_date
+  pedidos:    { cliente_test: TBD }            # orderEnterpriseEnabled=false → SIN empresa en pedidos. multiCurrencyOrder=true → Total puede ofrecer moneda
+  cobros:     { cliente_test: TBD, clientes_con_documentos: [] }  # requiredComment=false, retencion=false (029 por menú), IGTF si hay doc, adjunto NO obligatorio
+  devoluciones: { cliente_test: TBD, factura_test: TBD, producto_test: TBD }  # validateReturn=false → tabs sin factura; requeridedNroFactura=true (nro requerido)
+  inventarios: { cliente_test: TBD }           # clientStock=true. expirationBatch=false
+  depositos:  { aplica: true, motivo_na: null }  # Efectivo en métodos → aplica
+  visitas:    { cliente_test: TBD, smoke_na_estructural: [] }  # signatureVisit=true, userMustActivateGPS=true
+  productos:  { tipo_estructura_default: "Linea", texto_busqueda: TBD }  # listProductsBy=lineas
+  vendedores: { aplica: TBD }                  # esVendedor TBD (infoVendedores global=true)
+
+ultima_corrida:
+  run_id: null
+  fecha: null
+  defectos_abiertos: []

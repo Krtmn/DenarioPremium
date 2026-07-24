@@ -6,7 +6,10 @@ secrets/playas/
 # Salida temporal / logs de runtime
 automation/reports/*.json
 automation/reports/*.log
+automation/reports/*.db
 automation/db/_tmp_*.json
+automation/db/_tmp_server_cache.json
+automation/db/tmp_*
 .playwright-mcp/
 
 .env

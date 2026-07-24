@@ -13,13 +13,33 @@
 #   para consolidarlos en este YAML al cierre.
 # ⚠ El agente debe VERIFICAR las VGs contra la UI y MARCAR DISCREPANCIAS (dump dev vs app = posible bug de config).
 
+# ══════════════════════════════════════════════════════════════════════════════
+# ⚠ MIGRACIÓN DE SERVIDOR (2026-07-23) — [ferrenuestro-20260723]
+#   El device de ferrenuestro fue RE-APUNTADO de playa Isla Coche → La Tortuga v6.6.18.
+#   ⚠ VERIFICAR si es permanente (device re-apuntado 2026-07-23). Confirmado en corrida por el
+#   host de TODOS los payloads (getsync/order/return/potentialclient/visit/clientstock/deposit) =
+#   denariolatortuga.ddns.net:8081, con datos SÍ de ferrenuestro (TORNICAGUA cód 121793873).
+#   Consecuencias CONFIRMADAS del cambio de build/servidor (el par servidor↔window.ng↔sync sigue al
+#   BUILD cargado, NO al slug de cliente — ver _comunes.md):
+#     - window.ng: FALSE (Isla Coche 2026-07-07) → **TRUE** (La Tortuga). Probar !!window.ng al inicio.
+#     - sync a nube: DIFERIDA ~3min → **INMEDIATA** (correlativos del server llegan en segundos).
+#     - botón de alertas informativas: "Aceptar" → **"OK"** (los confirm de flujo aún usan Aceptar/Cancelar).
+#     - envío de depósito: 2 alertas → **3 alertas**.
+#   ⚠ COTEJO BD CAÍDO esta corrida: el DSN de qa-db.env (bloque "# Cliente: ferrenuestro") sigue
+#   apuntando a la BD VIEJA de Isla Coche → permission-denied en TODAS las tablas → cotejo BD N/A
+#   (verificación por captura de payload nativePromise + UI). NOTA EQUIPO: actualizar el DSN a la BD de
+#   La Tortuga. (QA no toca secrets.)
+# ══════════════════════════════════════════════════════════════════════════════
+
 cliente_id: ferrenuestro
 cliente_nombre: "FERRENUESTRO MAYOR,"    # CONFIRMADO 2026-07-07: empresa única mostrada en detalle/selector (idEnterprise 1, coEnterprise "00001"). ⚠ el rótulo llega con COMA FINAL en el textContent del ion-select-option. enterpriseEnabled=true pero 1 sola empresa (sin gateway multi-empresa).
-ws_url: "http://denarioislacoche.ddns.net:8081/PremiumWS/services/"   # CONFIRMADO QA 2026-07-07: playa Isla Coche. Bloque activo en ../../claves.env "Isla Coche / FERRENUESTRO (main)". APK ya apunta aquí.
+# ws_url: <ELIMINADO — desacople servidor↔cliente 2026-07-24>. El servidor NO se guarda en el perfil:
+#   los clientes migran de playa según disponibilidad. Se DESCUBRE EN RUNTIME (host de los payloads/app).
+#   Playa observada 2026-07-23: La Tortuga (denariolatortuga v6.6.18, window.ng=TRUE); antes Isla Coche.
 apk_package: com.kiberno.denarioPremiumPro
-db_name: ferrenuestro                    # CONFIRMADO QA 2026-07-07. Conexión read-only en el bloque "# Cliente: ferrenuestro" de secrets/qa-db.env (RDS savia, user_read, base ferrenuestro). Verificación BD OPERATIVA (probada con node automation/db/query.js ferrenuestro "...").
-                                         # VGs VALIDADAS 1:1 contra BD viva 2026-07-07 (22 claves críticas, 0 discrepancias — global_configuration=170 VGs).
-                                         # Baseline pre-corrida 2026-07-07: order=5005, collection=347, return=18, client_stock=0, deposit=0, visit=4, potential_client=87 (clients=3384, product=4965).
+db_name: ferrenuestro                    # base del cliente en el RDS CENTRAL 'savia' (user_read compartido; NO es por-servidor). ⚠ 2026-07-24: la base EXISTE en savia pero le FALTA el GRANT read-only (permission-denied en tablas) → cotejo BD-N/A. ACCIÓN DBA: aplicar GRANT read-only a user_read sobre la base 'ferrenuestro'. (Ver automation/db/query.js — savia es central, no cambia por migración de playa.)
+                                         # HISTÓRICO Isla Coche (2026-07-07): conexión read-only OPERATIVA; VGs VALIDADAS 1:1 contra BD viva (22 claves críticas, 0 discrepancias — global_configuration=170 VGs).
+                                         # Baseline pre-corrida 2026-07-07 (BD Isla Coche): order=5005, collection=347, return=18, client_stock=0, deposit=0, visit=4, potential_client=87 (clients=3384, product=4965).
                                          # ⚠ Nombres de tabla: client (NO clients), order (reservada → usar "order"), collection, return (reservada → usar "return"), client_stock, deposit, visit, potential_client.
 
 # ── VGs (fuente: dump dev global_configuration 2026-07-07; VERIFICAR vs UI en corrida) ──
@@ -204,7 +224,9 @@ modules:
     cliente_detalle: "INSTRUELECT IMPORT,C.A · código 1001785618 · RIF J-412635530 · Saldo Bs. 165,54 · Crédito $ 2.000,00 · Cond. Pago 002-CREDITO · 1 doc. de venta (Nº 00034302, venc 23/07/2026)"
     empresa_idEnterprise: 1             # value NUMÉRICO (no string) — con 1 sola opción NO se auto-selecciona; asignar sel.value=1 (number)+ionChange. coEnterprise "00001", rótulo "FERRENUESTRO MAYOR," (coma final).
     signatureClient_no_bloquea: true    # CONFIRMADO 2026-07-07: pese a signatureClient=true en config, Guardar/Enviar del potencial habilitan con solo los 9 controles (8 inputs + idEnterprise); la firma NO es requisito para persistir/enviar.
-    # BD: cliente potencial enviado → id_client 94 (Ref UI 94 = id_client, correlación reconfirmada); st_potential_client=1 (Enviado); BD-FIELD-OK 17/17. Guardado→borrado NO llega a nube (correcto).
+    lista_solo_saldo_usd: true          # ⚠ [ferrenuestro-20260723] la LISTA de clientes muestra solo "Saldo $"; el saldo en Bs aparece únicamente en el DETALLE (multiCurrency: detalle con Saldo Bs. + Crédito $). No es FAIL.
+    # BD 2026-07-07 (Isla Coche): cliente potencial enviado → id_client 94 (Ref UI = id_client); st_potential_client=1; BD-FIELD-OK 17/17. Guardado→borrado NO llega a nube (correcto).
+    # ⚠ 2026-07-23 [ferrenuestro-20260723] (La Tortuga): potencial enviado → Ref 93 (correlación Ref UI = id_client reconfirmada), POST potentialclientservice/potentialclient capturado (naClient=Test-CLT-SMOKE, idEnterprise=1, coEnterprise 00001). Cotejo BD N/A (DSN Isla Coche viejo) → PAYLOAD-OK como evidencia de envío. Cliente detalle evoluciona (INSTRUELECT IMPORT: Saldo Bs. 136,57, docs 00034989/00035009).
 
   pedidos:
     cliente_test: "TORNICAGUA, C.A."   # CONFIRMADO 2026-07-07: código 121793873, id_client 504, CON sucursal (auto-selecciona "CTRA NACIONAL CAGUA LA VILLA EDIF SAN ANTONIO…") → habilita tabs.
@@ -214,7 +236,8 @@ modules:
     showCreditLimit: true              # "Límite de Crédito: 2.000,00" en Tab Total — verificado.
     producto_test: "TALADRO INALAMBRICO 20V-2.0 Ah 10mm METCO"  # código 080178, idProduct 196, BULTO-1, Precio 86,40 $ / +IVA 100,22 $, estructura HERRAMIENTAS ELECTRICAS. Alt: ESMERIL ANGULAR 4 1/2 750W METCO (080401).
     suggestedOrder_divergencia: true   # ⚠ DIVERGENCIA: suggestedOrder=true pero botón "Pedido Sugerido" NO aparece en Tab Pedido (igual que jerez; posible que dependa de suggestedOrderByDispatchAndReturn=false). VERIFICAR con desarrollo.
-    build_ion_accordion: true          # productos en Tab Pedido = ion-accordion.accordionPedidos (build El Yaque), CONTRADICE gmp "NO es ion-accordion". DM-PED-026 (trash Tab Total) BLOCKED por CDP en este build.
+    build_ion_accordion: true          # productos en Tab Pedido = ion-accordion.accordionPedidos (build El Yaque), CONTRADICE gmp "NO es ion-accordion". ⚠ ACTUALIZADO 2026-07-23 [ferrenuestro-20260723]: con window.ng=TRUE, DM-PED-026 (trash Tab Total) ahora **PASS** ($200,45→$0,00 con pg.mouse.click) — RESUELVE el BLOCKED de julio (era específico del estado window.ng=false de ese device, NO del build).
+    producto_desaparece_stock0: true   # ⚠ [ferrenuestro-20260723] tras enviar 2 uds del TALADRO 080178, la categoría HERRAMIENTAS ELECTRICAS pasó de 17→16 y 080178 dejó de renderizarse (posible filtro por inventario=0, coherente con stock0=false/hideStock0=true). Para 2º pedido usar otro producto de la misma categoría. ⚠ VERIFICAR con desarrollo si el filtro por stock es esperado.
     # BD: pedido enviado → id_order 28458 (Ref UI = id_order), st_order=1=Enviado, BD-FIELD-OK 35/35 + 2 líneas. Payload orderservice/order SÍ capturado. Guardado→borrado NO llega a nube (correcto).
 
   cobros:
@@ -233,7 +256,8 @@ modules:
     cliente_25iva: null                # N/A ESTRUCTURAL — userCanCollectIva=false (DM-COB-037 N/A)
     metodo_pago: "Efectivo"            # colletionPayment: Efectivo/Transferencia/Deposito/Otros/Pago Movil (sin Cheque)
     banco_deposito: "N/A"              # metodo_pago=Efectivo (no Depósito); bancos ver modules.depositos.banco
-    documento_retencion: "00037108"    # CONFIRMADO 2026-07-07: usar 00037108 (saldo Bs 43.200,50 sano) para retención/pago parcial. ⚠ NO usar 00037106 (base Bs anómala 0,03 para 16,68 $ → la retención excede el documento y bloquea Guardar del detalle → DM-COB-042 BLOCKED). Mecanismo de retención validado en DM-COB-041.
+    documento_retencion: "00037192"    # ⚠ ACTUALIZADO 2026-07-23 [ferrenuestro-20260723]: 00037108 quedó DRENADO (ya no en cartera TORNICAGUA) → usar 00037192 ($208,11 sano). Docs $ actuales: 00033891, 00037192, 00037221, 00037225, 00037241, 00037252 (16-17 filas). Alt: descubrir cualquier factura $ con saldo sano. Con window.ng=TRUE, DM-COB-041/042 PASS: retención IVA 5,00 + ISLR 3,00 → neto Bs 145.666,41 PERSISTE al reabrir (§9, sin el revert-a-bruto conocido). Histórico Isla Coche: se usaba 00037108 (NO usar 00037106, base Bs anómala).
+    openNuevoCobro_programatico: false # ⚠ [ferrenuestro-20260723] en este build (La Tortuga, window.ng=TRUE) comp.nuevoCobro(N)/h.openNuevoCobro dispara pero NO renderiza el form (app-cobros-container queda solo con el menú ion-grid). El form SÍ abre con CLICK REAL Pointer down/up en el tile COBRO/ANTICIPO/RETENCIÓN. openDocumentDetail SÍ funciona. CONTRASTA dm-electronica (window.ng=true, nuevoCobro programático SÍ operaba).
     monto_retencion_iva: "5,00"        # ejemplo usado (teclear dígitos "500")
     monto_retencion_islr: "3,00"       # ejemplo usado (teclear dígitos "300"); "Monto total retenido" computa 8
     moneda_cobro: "BS/USD"             # multiCurrencyCollection=true → ambas disponibles (ion-select value=objeto {coCurrency,localCurrency,hardCurrency})
@@ -241,7 +265,7 @@ modules:
     pago_parcial_toggle: true          # enablePartialPayment=true → DM-COB-046 PASS (parcial 0,50 persiste round-trip)
     retencion_via_detalle: true        # retencion=true → DM-COB-041/042 (detalle: Nro Comp Ret 14 díg habilita IVA/ISLR/Fecha; modal cierra en silencio, sin alert); cobroRetencion=true → DM-COB-029 (+RETENCIÓN menú)
     adjunto_obligatorio: true          # requiredCollectionAttachments=true → DM-COB-019/029 SKIP envío; cobros quedan Guardados pendientes de adjunto manual. Nube collection permaneció en 347 (nada salió sin adjunto — correcto).
-    mock_camara_funciona: false        # CONFIRMADO 2026-07-07: build PROD (window.ng=false); TOMAR FOTO no conducible por CDP y la foto no entra al carrusel (igual romher/piercar/El Yaque). NO llamar ensureAdjunto; ir directo a Guardar + BD-SAVED.
+    mock_camara_funciona: false        # RECONFIRMADO 2026-07-23 [ferrenuestro-20260723]: pese a window.ng=TRUE (La Tortuga v6.6.18), TOMAR FOTO sigue no conducible por CDP → requiredCollectionAttachments=true + mock cámara no conducible ⇒ cobros quedan GUARDADO (adjunto manual QA), DM-COB-019/029 SKIP envío. Original 2026-07-07: build PROD window.ng=false, foto no entra al carrusel (igual romher/piercar/El Yaque).
     metodo_pago_disponibles: "Efectivo, Depósito, Transferencia, Otros, Pago Móvil"  # SIN Cheque (coherente colletionPayment)
     automatedPrepaid_operativo: true   # sobrepago (diferencia positiva) → "Anticipo automático creado con X" y guarda el anticipo junto al cobro
     sizeRetention: 14                  # confirmado en UI ("Debe tener 14 caracteres")
@@ -259,7 +283,8 @@ modules:
     factura_test: "N/A por VG"        # validateReturn=false → NO hay selector/modal de factura en cabecera (#InvoiceeSelectModal NO se alcanza → DM-DEV-011 N/A). El Nro Factura es campo LIBRE dentro del acordeón del producto (se usó "000123").
     producto_test: "ALDABA PORTACANDADO 2 LAT CAL.18 C/TOR"  # coProduct 0019, idProduct 2, familia CERRAJERIA, unidad UND.
     tipos_devolucion: "Calidad(60,default) / Cambio X Cambio(63) / Servicio(59)"  # como globalmp/don-theo; SIN PostVenta(52).
-    # BD: devolución enviada → return id=191 (co_return 1783476275479.0). ⚠ Durante la corrida se marcó "Por Enviar"/BD-SAVED porque no apareció en nube tras poll ~3min; el diff final confirmó que SÍ persistió (sync DIFERIDA, ver nota_sync_diferida). Payload returnservice/return SÍ capturado.
+    # BD 2026-07-07 (Isla Coche): devolución enviada → return id=191 (co_return 1783476275479.0). Durante la corrida se marcó "Por Enviar"/BD-SAVED (sync DIFERIDA ~3min), el diff final confirmó persistencia.
+    # ⚠ 2026-07-23 [ferrenuestro-20260723] (La Tortuga): sync INMEDIATA — devolución Ref 215 (ALDABA PORTACANDADO 0019 qty 2, coReturn 1784855960494.0) recibió correlativo del server en el 3.er alert y apareció "Enviado" al instante. Firma NO requerida pese a signatureReturn=true (payload nuAttachments=0). Cotejo BD N/A (DSN Isla Coche viejo) → POST returnservice/return capturado por payload.
 
   inventarios:
     aplica: true                       # ⚠ CORREGIDO 2026-07-07: pese a clientStock=false, el módulo SÍ aparece en HOME y es 100% operable end-to-end (divergencia config↔UI, igual a piercar). El inventario PERSISTIÓ en nube (client_stock id=101).
@@ -269,12 +294,13 @@ modules:
     expirationBatch: true              # confirmado en UI: modal inventory-type-stocks-modal con Cantidad+Lote+Fecha (expDate0 default HOY), tipo fijo "Exhibición - 1" SIN segmento.
     tab_inventario: "sub-segmentos UBICACIÓN (EXHIBICIÓN/DEPÓSITO) + FILTRO (TODOS/INVENTARIADOS) + input 'Búsqueda de productos'; familias con conteo; familia sin stock de la ubicación → 'No hay productos disponibles'"
     suggestedOrder_divergencia: true   # ⚠ botón "PEDIDO SUGERIDO" (botonAddAmarillo) activo pese a suggestedOrderByDispatchAndReturn=false (misma divergencia que jerez/piercar). Modal inventario-sugerido-modal funcional. VERIFICAR con desarrollo.
-    # BD: inventario enviado → client_stock id=101 (TORNICAGUA). "Por enviar"/Ref 0 durante la corrida; el diff final confirmó persistencia (sync DIFERIDA, ver nota_sync_diferida). Defecto conocido DM-INV-026 (reapertura abre en tab General) confirmado, no FAIL.
+    # BD 2026-07-07 (Isla Coche): inventario enviado → client_stock id=101 (TORNICAGUA), sync DIFERIDA.
+    # ⚠ 2026-07-23 [ferrenuestro-20260723] (La Tortuga): sync INMEDIATA — POST clientstockservice/clientstock capturado, Nro.Ref servidor 101 = Enviado en la misma corrida (TALADRO 080178 ×5 UND, lote QA0723, ubicación Exhibición). Cotejo BD N/A (DSN Isla Coche viejo) → cotejo por payload + UI. Defecto conocido DM-INV-026 (reapertura abre en tab General) reconfirmado, no FAIL.
 
   depositos:
-    aplica: true                       # CONFIRMADO 2026-07-07 con dato vivo: selector Banco con 7 opciones + 13 cobros Efectivo depositables (Bs., cobros ENVIADOS históricos de la nube). Flujo end-to-end ejecutado.
+    aplica: true                       # CONFIRMADO. 2026-07-07 (Isla Coche): 13 cobros Efectivo depositables. ⚠ 2026-07-23 [ferrenuestro-20260723] (La Tortuga): 7 cobros Efectivo depositables (7 checkboxes Tab Cobros, cobros ENVIADOS históricos de nube); tras enviar el depósito que consume collectionIds:[707] la lista bajó a 6 (exclusión del cobro depositado confirmada). Flujo end-to-end ejecutado, depósito Ref 1 Enviado (POST depositservice/deposit capturado).
     motivo_na: null
-    banco: "BANESCO BS JU (idBankAccount 409, coBank 009, cuenta 01340135721351027429)"  # banco usado. 7 bancos disponibles (ion-select.selectbanco, value=objeto):
+    banco: "MERCANTIL JU (idBankAccount 406, coBank 014, cuenta 0105...8029810)"  # banco usado 2026-07-23. 7 bancos disponibles (ion-select.selectbanco, value=objeto):
     bancos:                            # idBankAccount / nombre / coBank / cuenta
       - "403 EFECTIVO BS (coBank 010)"
       - "404 BANESCO ROGER (012)"
@@ -284,15 +310,17 @@ modules:
       - "408 VENEZUELA BS JU (008, 0115144)"
       - "409 BANESCO BS JU (009, cta 01340135721351027429)"
     moneda: "BS/USD"                   # multiCurrencyDeposit=true (Bs. idCurrency 2 default / $ idCurrency 1)
-    envio_alerts: 2                    # 2 alerts (≠ jerez 3; coincide insumar): "Denario Depósito — El Depósito será enviado" Cancelar/Aceptar → "Denario Premium — El Depósito será enviado" OK.
-    # BD: depósito enviado → deposit id=1 (Banco 009, cobro STUDIO KYNWOD 541,17 Bs). "Por Enviar"/Ref 0 durante la corrida; el diff final confirmó persistencia (sync DIFERIDA, ver nota_sync_diferida). Defecto render deposit.service.ts reprodujo intermitente y recuperable con back (no bloqueó).
+    envio_alerts: 3                    # ⚠ ACTUALIZADO 2026-07-23 [ferrenuestro-20260723] (La Tortuga): 3 alerts (como jerez/latino_cosmetica La Tortuga) — (1) "El Depósito será enviado" Cancelar/Aceptar → (2) "Denario Premium — El Depósito será enviado" OK → (3) "Depósito nro. N enviado exitosamente" OK. Histórico Isla Coche 2026-07-07 = 2 alerts (sin el 3.er). El nº de alertas sigue al SERVIDOR, no al cliente.
+    # BD 2026-07-07 (Isla Coche): deposit id=1, sync DIFERIDA, 2 alerts.
+    # ⚠ 2026-07-23 [ferrenuestro-20260723] (La Tortuga): depósito Ref 1 Enviado, Banco MERCANTIL JU (coBank 014), Nro. Plantilla DEP-QA-0723, Bs. 61166, cobro vinculado collectionIds:[707] (CORPORACION TRADE DOER); sync INMEDIATA, POST depositservice/deposit capturado. Cotejo BD N/A (DSN Isla Coche viejo). Defecto render deposit.service.ts reprodujo intermitente y recuperable con back (no bloqueó).
 
   visitas:
     cliente_test: "TORNICAGUA, C.A."  # CONFIRMADO 2026-07-07: id_client 504, co_client 121793873, CON sucursal (idAddressClient 67213, coAddressClient 4890, sin coordenadas → alert dismissible al SELECCIONAR, no bloquea).
     signatureVisit: false             # CONFIRMADO en UI: Tab Adjuntos sin acordeón Firma. userCanUploadFiles=true (acordeón Archivo presente).
     actividades: "12, TODAS requiredEvent=true / requiredSignature=false: NO VISITO(2), MERCHANDISING(47), NO COMPRO(71), VISITA FUERA DE RUTA(75), COBRANZA(82), INFO DE CLIENTES(83), COBRANZA NO EFECTIVA(84), VENTA EN RUTA(85), EVENTOS(86), REUNION CON CLIENTE(87), Cuestonario(90), Cambio X Cambio(92)"
     motivos_merchandising: "ENTREGA DE MUESTRAS(153), LEVANTAMIENTO DATA ISSY(183), VISIBILIDAD PDV(184), PLAN SLIP(191), MUESTRA NUEVO CATALOGO(192)"
-    # BD: visita enviada → id_visit 5 (Ref UI 5 = id_visit), st_visit=2=Enviado, is_visited=true, inc=1, BD-FIELD-OK 21/21 + incidence. ⚠ VISITAS SÍ persiste de inmediato (~8s), a diferencia de dev/inv/dep (sync diferida ~3min).
+    # BD 2026-07-07 (Isla Coche): visita enviada → id_visit 5 (Ref UI = id_visit), st_visit=2=Enviado, is_visited=true, BD-FIELD-OK 21/21 + incidence. VISITAS SÍ persistía de inmediato (~8s) aun en Isla Coche, a diferencia de dev/inv/dep (sync diferida ~3min).
+    # ⚠ 2026-07-23 [ferrenuestro-20260723] (La Tortuga): visita enviada → Ref 2 Visitado, evento MERCHANDISING(47)/ENTREGA DE MUESTRAS(153), POST visitservice/visit capturado (coType=47, coCause=153, isVisited=true, coordenada 11.0490851,-63.8649822). Cotejo BD N/A (DSN Isla Coche viejo). Alert coordenadas TORNICAGUA dismissible (idx0=Cancelar).
     smoke_na_estructural:
       - "DM-VIS-025/026: dependen de RUTA DE HOY con visitas 'No Visitado' sincronizadas (variable por día; esta corrida sin ellas)"
 
@@ -300,17 +328,22 @@ modules:
     tipo_estructura_default: "LINEA"  # CONFIRMADO 2026-07-07: idTypeProductStructure 1, coTypeProductStructure "01", nuLevel 1. ÚNICO tipo → DM-PRD-002 N/A estructural (selector con 1 opción).
     texto_busqueda: "TALADRO"         # 8 resultados en HERRAMIENTAS ELECTRICAS.
     estructuras: 17                   # LINEA: AGRICOLA(319), AUTOMOTRIZ(336), BOMBILLOS(64), CERRAJERIA(161), CONSTRUCCION(543), DESCUENTOS VARIOS(1), ELECTRICIDAD(555), GALVANIZADO(184), GRIFERIA(199), HERRAMIENTAS ELECTRICAS(18), HERRAMIENTAS MANUALES(191), MISCELANEOS(347), PEGAMENTOS(110), PINTURA(183), PLOMERIA(191), PROMOCION(0), PVC(241)
-    listas_precio: "PRECIO 1 (idList 1, coList P0001) / PRECIO 2 (idList 2, coList P0002)"  # userCanChangePriceList=true → DM-PRD-013 PASS: 86,40 $ → 63,94 $ recalcula.
+    listas_precio: "PRECIO 1 (idList 1, coList P0001) / PRECIO 2 (idList 2, coList P0002)"  # userCanChangePriceList=true → DM-PRD-013 PASS 2026-07-07: 86,40 $ → 63,94 $ recalcula.
+    dm_prd_013_regresion_dato: true    # ⚠ A VERIFICAR (config) 2026-07-23 [ferrenuestro-20260723]: esta sesión priceListService.productlists trajo **1 SOLA lista** (PRECIO 1, idList 1) en 3 productos de HERRAMIENTAS ELECTRICAS → el ion-select "Lista de precio" queda disabled=true (comportamiento correcto de la UI, NO bug de render) → DM-PRD-013 N/A estructural esta corrida. Diverge de 2026-07-07 (2 listas, PASS). Causa raíz = datos/config del servidor (PRECIO 2 ya no asociado o cuenta leidy perdió acceso). Si se repite en la próxima corrida, cambiar la nota a "N/A estructural (1 lista)".
     solo_precio_usd: true             # ⚠ detalle Y product-list muestran solo precio USD ($), SIN Bs (a diferencia de gmp/don-theo/jerez).
     producto_ejemplo: "TALADRO INALAMBRICO 20V-2.0 Ah 10mm METCO · cód 080178 · PRECIO 1 = 86,40 $ / PRECIO 2 = 63,94 $ · Almacén ALMACEN (idWarehouse 1)"
     # quPageProduct=50 confirmado (paginación 50→100→150). hideProductWarehouse=false muestra almacén/stock.
 
   vendedores:
     aplica: true                     # CONFIRMADO QA 2026-07-07: usuario QA es vendedor → módulo aplica. infoVendedores=false → autogenerado por Denario.
-    kpis_poblados: true              # CONFIRMADO 2026-07-07: DM-VND-002 PASS pleno (no N/A). 1 empresa "FERRENUESTRO MAYOR,". Cartera Clientes 178 · Activados 13 · Nuevos 1 · Nuevos Activados 1 · Días Hábiles 23/Transcurridos 6/Restantes 17 · Venta Real Mes 7.610,09 $. Alinea con insumar/piercar (contrasta con gmp/don-theo/jerez vacíos).
+    kpis_poblados: true              # CONFIRMADO: DM-VND-002 PASS pleno (no N/A). 1 empresa "FERRENUESTRO MAYOR,". Alinea con insumar/piercar (contrasta gmp/don-theo/jerez vacíos). Los KPIs EVOLUCIONAN entre corridas (dato, no bug), lo estable es que poblan: 2026-07-07 Cartera 178/Activados 13/Nuevos 1/Venta Real Mes 7.610,09 $/Transcurridos 6-Restantes 17; ⚠ 2026-07-23 [ferrenuestro-20260723] Cartera 186/Activados 50/Nuevos 4/Nuevos Activados 2/Venta Real Mes 35.253,86 $/Transcurridos 18-Restantes 5 (Cuota Mes 0 $).
 
 # ── Nota transversal de cliente: sync a nube DIFERIDA (Isla Coche) ────────────────
-# ⚠ nota_sync_diferida (descubierto 2026-07-07, corrida 20260707_175334):
+# ⚠ OVERRIDE 2026-07-23 [ferrenuestro-20260723]: esta nota_sync_diferida aplica al build de ISLA COCHE.
+#   Tras la MIGRACIÓN a La Tortuga v6.6.18 la sync es INMEDIATA en TODOS los módulos (dev/inv/dep
+#   recibieron correlativo del server en segundos, ya no diferida). La inmediatez sigue al SERVIDOR/BUILD,
+#   no al slug de cliente. Si el device se re-apunta de vuelta a Isla Coche, vuelve a aplicar lo de abajo.
+# ⚠ nota_sync_diferida (descubierto 2026-07-07, corrida 20260707_175334 — build Isla Coche):
 #   En Isla Coche/ferrenuestro la sincronización a la nube es DIFERIDA, NO no-persistencia tipo jerez.
 #   Devoluciones/inventarios/depósitos se marcaron "Por Enviar"/BD-SAVED durante la corrida porque tras la
 #   ventana de poll de los agentes (~10s–3min) la fila aún no aparecía en la nube — PERO el diff final de
@@ -322,6 +355,8 @@ modules:
 
 # ── Última corrida ──────────────────────────────────────────────────────────────
 ultima_corrida:
-  run_id: "20260707_175334_smoke-completo"   # 1ª corrida COMPLETA 10/10: 123 PASS · 0 FAIL · 1 SKIP · 11 N/A · 2 BLOCKED (137 casos)
-  fecha: "2026-07-07"
+  run_id: "20260723_172350_smoke-completo"   # 2ª corrida COMPLETA 10/10 — ⚠ MIGRÓ a La Tortuga v6.6.18 (window.ng=TRUE)
+  fecha: "2026-07-23"
+  resumen: "125 PASS / 0 FAIL / 1 SKIP / 11 N/A; migró a La Tortuga window.ng=TRUE; retención (DM-COB-041/042/029) y DM-PED-026 resueltos; cotejo BD caído (DSN Isla Coche viejo → permission-denied → BD-N/A payload)"
   defectos_abiertos: []
+  # Histórico: run_id 20260707_175334_smoke-completo (1ª corrida COMPLETA, Isla Coche): 123 PASS · 0 FAIL · 1 SKIP · 11 N/A · 2 BLOCKED (137 casos)

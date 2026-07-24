@@ -1,0 +1,14 @@
+{
+  "_generated_for": "ferrenuestro",
+  "_run_dir": "automation/reports/smoke_ferrenuestro_20260723_172350/",
+  "modules": {
+    "cobros": null,
+    "_err_cobros": "ERR: permission denied for table document_sale",
+    "pedidos": null,
+    "devoluciones": null,
+    "inventarios": null,
+    "visitas": null,
+    "depositos": null,
+    "clientes": null
+  }
+}
