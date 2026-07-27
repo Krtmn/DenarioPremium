@@ -144,6 +144,32 @@ export class ProductService {
     return this.catalogProductMinMul && this.catalogProdMinMulMap.has(idProduct);
   }
 
+  getCatalogUnitsForProduct(idProduct: number): UnitInfo[] {
+    return this.catalogListaUnitInfo.filter(u => u.idProduct === idProduct);
+  }
+
+  resolveDisplayPriceForUnit(basePrice: number, unit: UnitInfo | undefined): number {
+    return basePrice * (unit?.quUnit ?? 1);
+  }
+
+  mapUnitToUnitInfo(unit: Unit, idProduct: number, coProduct: string): UnitInfo {
+    return new UnitInfo(
+      unit.idProductUnit,
+      unit.coProductUnit,
+      coProduct,
+      idProduct,
+      unit.coUnit,
+      unit.idUnit,
+      unit.quUnit,
+      unit.coEnterprise,
+      unit.idEnterprise,
+      unit.naUnit,
+      0,
+      '',
+      0,
+    );
+  }
+
   formatStock(stock: number | null, quUnitDecimals: boolean): string {
     if (quUnitDecimals) {
       //mostrar decimales
