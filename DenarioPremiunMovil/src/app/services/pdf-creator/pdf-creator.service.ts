@@ -386,6 +386,8 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
 
   async generateSummaryPdfDoc(data: {
     title: string;
+    /** Alineación del título en la barra verde. Default: left */
+    titleAlign?: 'left' | 'center';
     meta?: Array<{ label: string; value: string }>;
     columns: Array<{ label: string; align?: 'left' | 'center' | 'right'; width?: string; noWrap?: boolean; maxLines?: number }>;
     rows: Array<Array<string>>;
@@ -532,7 +534,11 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(continued ? 20 : 22);
       const titleY = cursorY + (continued ? 20 : 22);
-      doc.text(this.escapePdfText(data.title), marginX + 16, titleY);
+      const titleAlign = data.titleAlign === 'center' ? 'center' : 'left';
+      const titleX = titleAlign === 'center'
+        ? marginX + usableWidth / 2
+        : marginX + 16;
+      doc.text(this.escapePdfText(data.title), titleX, titleY, { align: titleAlign });
       cursorY += headerHeight + 18;
     };
 
@@ -843,12 +849,14 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
 
   private buildSummaryHtml(data: {
     title: string;
+    titleAlign?: 'left' | 'center';
     meta?: Array<{ label: string; value: string }>;
     columns: Array<{ label: string; align?: 'left' | 'center' | 'right'; width?: string; noWrap?: boolean; maxLines?: number }>;
     rows: Array<Array<string>>;
     total?: { label: string; value: string };
   }): string {
     const headerColor = '#59b02d';
+    const titleAlign = data.titleAlign === 'center' ? 'center' : 'left';
     const metaRows = (data.meta ?? [])
       .map(m => `
         <div style="display:table-row;">
@@ -899,7 +907,7 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
     return `
       <div style="font-family: Arial, sans-serif; color:#222; width:100%; box-sizing:border-box; padding:18px 22px 22px; background:#ffffff;">
         <div style="width:100%; box-sizing:border-box; padding:16px 18px; margin-bottom:18px; background:${headerColor}; color:#ffffff; border-radius:8px;">
-          <div style="font-size:24px; font-weight:700; line-height:1.2; margin:0;">${this.escapeHtml(data.title)}</div>
+          <div style="font-size:24px; font-weight:700; line-height:1.2; margin:0; text-align:${titleAlign};">${this.escapeHtml(data.title)}</div>
 
         </div>
         ${metaRows ? `

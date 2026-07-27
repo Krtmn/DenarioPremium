@@ -385,6 +385,7 @@ export class ProductReportsService {
 
     const doc = await this.pdfCreator.generateSummaryPdfDoc({
       title: 'Lista de precios',
+      titleAlign: 'center',
       enterpriseHeader,
       meta: [
         { label: 'Productos', value: String(rows.length) },
@@ -411,6 +412,7 @@ export class ProductReportsService {
 
     const doc = await this.pdfCreator.generateSummaryPdfDoc({
       title: 'Catalogo de productos',
+      titleAlign: 'center',
       enterpriseHeader,
       meta: [
         { label: 'Productos', value: String(rows.length) },
