@@ -131,6 +131,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
   nuOrderRedLabel = false;
   clientRedLabel = false;
   addressRedLabel = false;
+  commentRedLabel = false;
   public modalInfoClienteOpen: boolean = false;
   saveOrExitOpen = false;
   parteDecimal = 2;
@@ -499,6 +500,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
       } else {
         this.clientRedLabel = false;
         this.checkNuOrder();
+        this.checkComment();
       }
       if (this.direccionCliente) {
         this.addressRedLabel = false;
@@ -527,7 +529,10 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
       needsNuOrder = false;
     }
 
-    this.lockSegments = needsNuOrder || needsClient || needsAddress;
+    const needsComment = this.isCommentRequiredMissing();
+    this.commentRedLabel = needsComment;
+
+    this.lockSegments = needsNuOrder || needsClient || needsAddress || needsComment;
   }
 
   goBack() {
@@ -1202,6 +1207,29 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
         this.txCommentInput.value = clean;
       }
     }
+    this.checkComment();
+    this.segmentLock();
+  }
+
+  onTxCommentChange() {
+    this.checkComment();
+    this.segmentLock();
+    this.onChange();
+  }
+
+  private isCommentRequiredMissing(): boolean {
+    if (!this.orderServ.requiredCommentOrder) {
+      return false;
+    }
+    return !String(this.txComment ?? '').trim();
+  }
+
+  checkComment() {
+    if (!this.orderServ.requiredCommentOrder) {
+      this.commentRedLabel = false;
+      return;
+    }
+    this.commentRedLabel = this.isCommentRequiredMissing();
   }
 
   checkNuOrder() {
