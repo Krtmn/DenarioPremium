@@ -225,6 +225,7 @@ export class PedidosService {
   public userCanSelectProductDiscount!: boolean;
   public showTransactionCurrency!: boolean;
   public validateNuOrder!: boolean;
+  public requiredCommentOrder!: boolean;
   public userCanSelectIVA!: boolean;
   public selectOrderType!: boolean;
   public userCanSelectChannel!: boolean;
@@ -758,6 +759,7 @@ export class PedidosService {
     this.userCanSelectProductDiscount = this.config.get("userCanSelectProductDiscount").toLowerCase() === 'true';
     this.showTransactionCurrency = this.config.get("showTransactionCurrency").toLowerCase() === 'true'; //eliminada, se usa currencyModule
     this.validateNuOrder = this.config.get("validateNuOrder").toLowerCase() === 'true';
+    this.requiredCommentOrder = this.config.get("requiredCommentOrder").toLowerCase() === 'true';
     this.userCanSelectGlobalDiscount = this.config.get("userCanSelectGlobalDiscount").toLowerCase() === 'true';
     this.selectOrderType = this.config.get("selectOrderType").toLowerCase() === 'true';
     this.userCanSelectChannel = this.config.get("userCanSelectChannel").toLowerCase() === 'true';

@@ -299,9 +299,19 @@
                 <ion-col size="12" size-sm="12" size-xs="12">
                   <div id="inputTxComment">
                     <ion-input [label]="orderServ.getTag('PED_COMENTARIO')+':'" label-placement="floating"
-                      fill="outline" [(ngModel)]="txComment" #txCommentInput id="txComment" (ionChange)="onChange()"
-                      color="primary" (ionInput)="onTxCommentInput()"
+                      fill="outline" [(ngModel)]="txComment" #txCommentInput id="txComment"
+                      (ionChange)="onTxCommentChange()" color="primary" (ionInput)="onTxCommentInput()"
+                      [ngClass]="{
+                        'inp-write': orderServ.requiredCommentOrder && commentRedLabel,
+                        'good': orderServ.requiredCommentOrder && !commentRedLabel && !!txComment?.trim()
+                      }"
+                      [required]="orderServ.requiredCommentOrder"
                       [disabled]="!orderServ.pedidoModificable"></ion-input>
+                    @if(orderServ.requiredCommentOrder && commentRedLabel){
+                    <ion-label color="danger" class="campoObligatorio">
+                      {{ orderServ.getTag('DENARIO_CAMPO_OBLIGATORIO') }}
+                    </ion-label>
+                    }
                   </div>
                 </ion-col>
 
