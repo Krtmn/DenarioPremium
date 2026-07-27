@@ -386,8 +386,6 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
 
   async generateSummaryPdfDoc(data: {
     title: string;
-    /** Alineación del título en la barra verde. Default: left */
-    titleAlign?: 'left' | 'center';
     meta?: Array<{ label: string; value: string }>;
     columns: Array<{ label: string; align?: 'left' | 'center' | 'right'; width?: string; noWrap?: boolean; maxLines?: number }>;
     rows: Array<Array<string>>;
@@ -532,13 +530,11 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
 
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(continued ? 20 : 22);
-      const titleY = cursorY + (continued ? 20 : 22);
-      const titleAlign = data.titleAlign === 'center' ? 'center' : 'left';
-      const titleX = titleAlign === 'center'
-        ? marginX + usableWidth / 2
-        : marginX + 16;
-      doc.text(this.escapePdfText(data.title), titleX, titleY, { align: titleAlign });
+      const titleFontPt = continued ? 20 : 22;
+      doc.setFontSize(titleFontPt);
+      // Baseline Y: centro vertical de la franja (mismo patrón que headers de tabla)
+      const titleY = cursorY + headerHeight / 2 + titleFontPt * 0.35;
+      doc.text(this.escapePdfText(data.title), marginX + 16, titleY, { align: 'left' });
       cursorY += headerHeight + 18;
     };
 
@@ -849,14 +845,12 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
 
   private buildSummaryHtml(data: {
     title: string;
-    titleAlign?: 'left' | 'center';
     meta?: Array<{ label: string; value: string }>;
     columns: Array<{ label: string; align?: 'left' | 'center' | 'right'; width?: string; noWrap?: boolean; maxLines?: number }>;
     rows: Array<Array<string>>;
     total?: { label: string; value: string };
   }): string {
     const headerColor = '#59b02d';
-    const titleAlign = data.titleAlign === 'center' ? 'center' : 'left';
     const metaRows = (data.meta ?? [])
       .map(m => `
         <div style="display:table-row;">
@@ -906,9 +900,8 @@ private inlineAllComputedStyles(original: HTMLElement, clone: HTMLElement) {
 
     return `
       <div style="font-family: Arial, sans-serif; color:#222; width:100%; box-sizing:border-box; padding:18px 22px 22px; background:#ffffff;">
-        <div style="width:100%; box-sizing:border-box; padding:16px 18px; margin-bottom:18px; background:${headerColor}; color:#ffffff; border-radius:8px;">
-          <div style="font-size:24px; font-weight:700; line-height:1.2; margin:0; text-align:${titleAlign};">${this.escapeHtml(data.title)}</div>
-
+        <div style="width:100%; box-sizing:border-box; display:flex; align-items:center; min-height:48px; padding:0 18px; margin-bottom:18px; background:${headerColor}; color:#ffffff; border-radius:8px;">
+          <div style="font-size:24px; font-weight:700; line-height:1.2; margin:0; text-align:left;">${this.escapeHtml(data.title)}</div>
         </div>
         ${metaRows ? `
           <div style="display:table; width:100%; table-layout:fixed; margin-bottom:18px; font-size:13px; border:1px solid #dfe7da; border-radius:8px; overflow:hidden; background:#fbfdf9;">
