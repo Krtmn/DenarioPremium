@@ -31,10 +31,22 @@ Ejemplos vivos: `don-theo.yaml`, `piercar.yaml`. Esquema del YAML: `_schema.yaml
 **Requisitos:** bloque `# Cliente: <slug>` en `secrets/qa-db.env` + GRANT read-only en esa base (es POR-BASE; ver memoria `qa-db-oracle`). Verificar con `node automation/db/query.js <slug> "SELECT 1"`.
 
 ### Cliente CON documentos (cobros / devoluciones)
+
+> ⚠ **Corregido 2026-07-28 (el_valle).** La consulta anterior usaba `invoice`, que en el esquema real está
+> **vacía**. Los documentos de venta viven en **`document_sale`** y el saldo pendiente es **`nu_balance`**.
+> Y sobre todo: **hay que filtrar por el vendedor QA** (`client_template_user`) — un cliente con documentos
+> que no esté asignado al vendedor **no aparece en la app** y no sirve para el smoke.
+
 ```bash
-node automation/db/query.js <slug> "SELECT i.co_client, max(c.na_client) na_client, count(*) facturas FROM invoice i JOIN client c ON c.co_client=i.co_client WHERE i.co_operation<>'D' GROUP BY i.co_client ORDER BY facturas DESC LIMIT 5"
+# $U = QA_USER del bloque "# Cliente: <slug>" (leerlo del archivo, NO escribirlo en el guión)
+node automation/db/query.js <slug> "SELECT d.co_client, max(c.na_client) na_client, count(*) docs, count(*) FILTER (WHERE d.da_duedate < CURRENT_DATE) vencidos, round(sum(d.nu_balance),2) saldo, max(d.co_currency) mon FROM document_sale d JOIN client c ON c.co_client=d.co_client JOIN client_template_user ctu ON ctu.co_client=d.co_client AND lower(ctu.co_user)=lower('$U') AND ctu.co_operation<>'D' WHERE d.co_operation<>'D' AND d.nu_balance>0 GROUP BY d.co_client ORDER BY docs DESC LIMIT 5"
 ```
-(proxy de "tiene documentos"; el **saldo pendiente** se confirma en la UI Tab Documentos)
+
+**Gate del GRANT antes de nada** (`SELECT 1` pasa aunque no haya permisos sobre las tablas):
+```bash
+node automation/db/query.js <slug> "SELECT count(*) FILTER (WHERE has_table_privilege('user_read', schemaname||'.'||tablename,'SELECT')) legibles, count(*) total FROM pg_tables WHERE schemaname='public'"
+```
+Si `legibles < total` → falta el GRANT; el cotejo BD será `BD-N/A` y `modules.*` no se puede pre-poblar.
 
 ### Productos del catálogo (pedidos / devoluciones / inventarios)
 ```bash

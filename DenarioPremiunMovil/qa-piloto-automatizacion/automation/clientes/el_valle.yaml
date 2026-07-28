@@ -21,11 +21,8 @@ cliente_id: el_valle
 cliente_nombre: "EL VALLE (COVADONGA)"        # ⚠ confirmar nombre EXACTO en la app (selector Empresa)
 apk_package: com.kiberno.denarioPremiumPro
 db_name: el_valle                             # base en el RDS CENTRAL 'savia'
-# ⚠ BD: conecta, pero **0 de 185 tablas legibles** para user_read (verificado 2026-07-28)
-#   → FALTA EL GRANT read-only. ACCIÓN DBA: aplicar GRANT sobre la base 'el_valle'.
-#   Consecuencia: cotejo BD = BD-N/A en toda la corrida; el oráculo va por PAYLOAD + UI + WEB.
-#   La capa web SÍ puede evaluar igual: el gate acepta BD-N/A cuando la app obtuvo Nro.Ref del servidor
-#   (ver gatePorBD en automation/web/web-helpers.js).
+# ✅ BD LEGIBLE: **185/185 tablas** para user_read (GRANT aplicado por QA y verificado 2026-07-28).
+#   ⇒ cotejo BD v2 ACTIVO en los 7 transaccionales, y modules.* quedó PRE-POBLADO desde BD (abajo).
 
 # ── VGs — del global_configuration reciente 20260728. Conflictos vs client-config 2023 marcados ⚠️VERIFICAR ──
 vgs:
@@ -125,20 +122,63 @@ vgs:
 # validateNuOrder=false · groupByTotalByLines=true · totalUnit=true · codeTotalProductUnit=CJA ·
 # featuredProducts=true (nameProductLine=DESTACADOS) · productMinMul=false ⚠️client-2023=true · quPageProduct=50
 
-# ── Datos de prueba por módulo — TBD: la BD no es legible (falta GRANT) → DISCOVERY en UI en la 1ª corrida ──
+# ── Datos de prueba por módulo — PRE-POBLADOS desde BD read-only 2026-07-28 (GRANT aplicado: 185/185) ──
+# ⚠ Los clientes listados están FILTRADOS POR EL VENDEDOR QA vía client_template_user: son los que la app
+#   realmente le muestra. Un cliente con documentos que no esté asignado al vendedor NO sirve para el smoke.
+# ⚠ CORRECCIÓN AL PROCESO (alta-cliente.md Paso 2): la guía consulta la tabla `invoice`, que en este esquema
+#   está VACÍA (0 filas). Los documentos de venta viven en **`document_sale`** (2.783 filas) y el saldo
+#   pendiente es **`nu_balance`** (no `nu_amount_pending`). Corregir la guía.
 modules:
   login:      { bad_password: "usar QA_BAD_PASSWORD del bloque # Cliente: el_valle" }
-  clientes:   { cliente_busqueda: TBD, cliente_detalle: TBD, empresa_potencial: TBD }   # clientsOrderBy=na_client; firma habilitada
-  pedidos:    { cliente_test: TBD }        # SIN empresa (orderEnterpriseEnabled=false ⚠️VERIFICAR); sin multimoneda; comentario no obligatorio
-  cobros:     { cliente_test: TBD, clientes_con_documentos: [] }
+
+  clientes:   { cliente_busqueda: "ABASTOS Y CARNICERIA HERMANOS FLORES CA",   # co_client J309901710
+                cliente_detalle: "ADC FOODS, C.A",                              # co_client J505381237
+                empresa_potencial: TBD }                                        # ⚠ nombre exacto a descubrir en UI
+              # clientsOrderBy=na_client → la lista sale ordenada por NOMBRE · firma habilitada
+
+  pedidos:    { cliente_test: "ABASTOS Y CARNICERIA HERMANOS FLORES CA",
+                producto_test: "ALAS DE POLLO",          # co_product C0051
+                producto_alt:  "COSTILLA CHINA DE CERDO" }  # co_product C0003
+              # SIN empresa (orderEnterpriseEnabled=false ⚠️VERIFICAR) · sin multimoneda · comentario NO obligatorio
+              # stock0=true (se pueden pedir productos sin inventario) · 80 productos en catálogo
+
+  cobros:     { cliente_test: "ARMAS DEL ROSARIO, C.A",   # co_client J404786856 · 3 docs, 3 vencidos, 1.002,50 USD
+                clientes_con_documentos:
+                  - "ARMAS DEL ROSARIO, C.A"                       # J404786856 · 3 docs · 1.002,50 USD
+                  - "PROTECCION ELECTRODIGITAL, C.A"               # J401330134 · 3 docs ·    49,61 USD
+                  - "COMERCIALIZADORA J.R MALAVE ANUEL, C.A"       # J408621282 · 2 docs · 1.898,95 USD
+                  - "MERCADOS DE ALIMENTOS, C.A"                   # G200035919 · 2 docs ·   628,56 USD
+                  - "ALFREDO A HERNANDEZ S (INV LA ROCA HERNANDEZ FP)"  # V146335175 · 1 doc · 132,89 USD
+                banco_test: "BANCO MERCANTIL COVADONGA**9555 NUEVO",   # co_bank 1101003 (13 bancos activos)
+                cliente_25iva: null }                    # userCanCollectIva=false → DM-COB-037 N/A
               # 🔴 adjunto OBLIGATORIO + comentario OBLIGATORIO · IGTF N/A · multimoneda N/A ·
               # retención por detalle (041/042) y por menú (029) · pago parcial (046) · anticipo (028)
-  devoluciones: { cliente_test: TBD, factura_test: TBD, producto_test: TBD }  # tabs sin factura; Nro. factura requerido; 1 sola factura
-  inventarios: { cliente_test: TBD }       # clientStock=true · expirationBatch=true ⇒ lote + fecha de expiración
-  depositos:  { aplica: true, motivo_na: null }   # Efectivo en métodos de pago ⇒ aplica
-  visitas:    { cliente_test: TBD, smoke_na_estructural: [] }  # signatureVisit=true · GPS obligatorio · visitRout=true
-  productos:  { tipo_estructura_default: "Linea", texto_busqueda: TBD }  # listProductsBy=lineas · showProductImages=true
-  vendedores: { aplica: TBD }              # esVendedor TBD; infoVendedores=false (módulo autogenerado)
+              # ⚠ TODOS los documentos del vendedor están VENCIDOS y en USD → clientes en ROJO en la lista
+
+  devoluciones: { cliente_test: "ARMAS DEL ROSARIO, C.A",
+                  producto_test: "ALAS DE POLLO",
+                  tipo_devolucion: "Calidad",            # id_type 60 (otros: PostVenta 52, Servicio 59, Cambio X Cambio 63)
+                  motivo_devolucion: "Empaque Sucio (Inocuidad)",   # id_motive 36
+                  factura_test: TBD }                    # ⚠ el Nro. de factura se TIPEA (requeridedNroFactura=true)
+              # validateReturn=false → las tabs habilitan SIN seleccionar factura · multiInvoices=false
+
+  inventarios: { cliente_test: "ABASTOS Y CARNICERIA HERMANOS FLORES CA",
+                 producto_test: "ALAS DE POLLO" }
+              # clientStock=true · expirationBatch=true ⇒ lote + fecha de expiración habilitados
+
+  depositos:  { aplica: true, motivo_na: null,
+                banco_test: "BANCO MERCANTIL COVADONGA**9555 NUEVO" }
+              # Efectivo en métodos de pago ⇒ aplica · multiCurrencyDeposit=false
+
+  visitas:    { cliente_test: "ABASTOS Y CARNICERIA HERMANOS FLORES CA",
+                actividad_test: "COBRANZA",              # id_type 82 (otras: MERCHANDISING 47, NO COMPRO 71, VENTA EN RUTA 85)
+                smoke_na_estructural: [] }
+              # signatureVisit=true · GPS obligatorio · visitRout=true · radio 50 m
+
+  productos:  { tipo_estructura_default: "Linea", texto_busqueda: "COSTILLA" }
+              # listProductsBy=lineas · showProductImages=true · productsOrderBy=co_product · 80 productos
+
+  vendedores: { aplica: TBD }              # esVendedor TBD; infoVendedores=false (módulo autogenerado) · 18 usuarios
 
 ultima_corrida:
   run_id: null
