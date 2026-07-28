@@ -123,7 +123,13 @@ eq('cotejo: campo lleno que falta en la web → mismatch', r3.diffs[0].motivo, '
 t('BD-OK habilita la evaluación web', H.gatePorBD('BD-OK').evaluar === true);
 eq('BD-SAVED → WEB-N/A, nunca FAIL', H.gatePorBD('BD-SAVED').marca, 'WEB-N/A');
 eq('BD-QUEUED → WEB-N/A', H.gatePorBD('BD-QUEUED').marca, 'WEB-N/A');
-eq('sin marca BD → WEB-N/A', H.gatePorBD(null).marca, 'WEB-N/A');
+eq('sin marca BD ni Ref → WEB-N/A', H.gatePorBD(null).marca, 'WEB-N/A');
+// "no llegó" ≠ "no sabemos": con BD-N/A (sin GRANT, caso el_valle 0/185 tablas) el respaldo
+// es el Nro.Ref que asignó el servidor — si no, un cliente sin GRANT dejaría TODA la capa web muerta.
+t('BD-N/A + Ref del servidor → SÍ se evalúa', H.gatePorBD('BD-N/A', { refServidor: 526 }).evaluar === true);
+eq('…y deja constancia de por qué vía', H.gatePorBD('BD-N/A', { refServidor: 526 }).via, 'ref-servidor');
+eq('BD-N/A SIN Ref → WEB-N/A', H.gatePorBD('BD-N/A', {}).marca, 'WEB-N/A');
+t('BD-SAVED con Ref igual NO se evalúa (sabemos que no llegó)', H.gatePorBD('BD-SAVED', { refServidor: 9 }).evaluar === false);
 
 // ── El bundle DOM es sintácticamente válido ─────────────────────────────────
 t('BUNDLE_DOM parsea como función', typeof eval('(' + H.BUNDLE_DOM + ')') === 'function');

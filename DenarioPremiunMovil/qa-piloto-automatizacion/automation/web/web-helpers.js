@@ -251,12 +251,31 @@ const MARCAS = ['WEB-OK', 'WEB-MISSING', 'WEB-FIELD-MISMATCH', 'WEB-CALC-MISMATC
 
 /**
  * Gate de precondición: solo se juzga en la web lo que el móvil logró mandar a la nube.
- * Si el registro quedó BD-SAVED/BD-QUEUED (nunca llegó) → WEB-N/A, **jamás FAIL**.
+ *
+ * Hay que distinguir **dos cosas muy distintas**:
+ *   - `BD-SAVED` / `BD-QUEUED` → **sabemos** que NO llegó ⇒ `WEB-N/A`, jamás FAIL.
+ *   - `BD-N/A`                 → **no sabemos** (BD inaccesible / sin GRANT). No es lo mismo.
+ *
+ * ⚠ Si `BD-N/A` bloqueara la evaluación, un cliente sin GRANT dejaría **toda** la capa web en
+ * `WEB-N/A` y el trabajo no serviría de nada (caso real: `el_valle`, 0/185 tablas legibles).
+ * Por eso, con `BD-N/A` se acepta el **respaldo del propio móvil**: si la app obtuvo un
+ * **Nro.Ref asignado por el servidor**, el registro llegó a la nube — y eso alcanza para exigirle
+ * a la web que lo muestre.
+ *
+ * @param {string} marcaBD  marca del cotejo BD (RUNTIME §10)
+ * @param {{refServidor?: string|number}} [evidenciaMovil] Ref que devolvió el servidor al enviar
  */
-function gatePorBD(marcaBD) {
+function gatePorBD(marcaBD, evidenciaMovil) {
   const m = String(marcaBD || '').toUpperCase();
-  if (m === 'BD-OK' || m === 'BD-FIELD-OK') return { evaluar: true };
-  return { evaluar: false, marca: 'WEB-N/A', motivo: `el móvil no lo envió a la nube (${marcaBD || 'sin marca'})` };
+  if (m === 'BD-OK' || m === 'BD-FIELD-OK') return { evaluar: true, via: 'cotejo-bd' };
+  if (m === 'BD-SAVED' || m === 'BD-QUEUED' || m === 'BD-MISMATCH') {
+    return { evaluar: false, marca: 'WEB-N/A', motivo: `el móvil no lo envió a la nube (${marcaBD})` };
+  }
+  const ref = evidenciaMovil && evidenciaMovil.refServidor;
+  if (ref != null && String(ref).trim() !== '') {
+    return { evaluar: true, via: 'ref-servidor', nota: `sin cotejo BD (${marcaBD || 'sin marca'}); se evalúa por Nro.Ref ${ref} del servidor` };
+  }
+  return { evaluar: false, marca: 'WEB-N/A', motivo: `sin evidencia de envío (${marcaBD || 'sin marca'}) y sin Nro.Ref del servidor` };
 }
 
 // ═════════════════════════════════════════════════════════════════════════════

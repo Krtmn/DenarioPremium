@@ -1,0 +1,147 @@
+# el_valle/perfil.yaml
+# Cliente EL VALLE (COVADONGA). Perfil construido de los 2 dumps 20260728; SIN corrida aún.
+#   - global_configuration_202607281234_EL VALLE.md         (principal, filas 2025-2026 → AUTORITATIVO)
+#   - global_configuration_client_202607281234EL VALLE .md  (por-cliente, casi todo 2023-02-01 → OVERRIDE STALE)
+# ⚠ REGLA: cuando difieren, gana el da_update más reciente. Conflictos marcados ⚠️VERIFICAR.
+#   Excepción detectada: userCanSelectProductDiscount y validateWarehouses tienen filas 2026 en AMBOS dumps
+#   → ahí se comparó fecha contra fecha, no dump contra dump.
+#
+# ⚠ SERVIDOR: **NO se fija en el perfil.** EL VALLE está HOY en La Tortuga, pero los clientes se montan
+#   en cualquiera de las 3 playas según disponibilidad (El Yaque / Isla Coche / La Tortuga).
+#   El servidor efectivo se DESCUBRE EN RUNTIME (host de los payloads / config de la app) y se registra
+#   en el REPORTE de la corrida, nunca aquí. Ver banner de desacople en _schema.yaml.
+#
+# ⚠ NOMBRE DE BLOQUE EN SECRETOS: los bloques existentes dicen "# Cliente: el valle" (CON ESPACIO) tanto en
+#   secrets/qa-credentials.env como en secrets/qa-db.env, pero la base y este perfil son "el_valle".
+#   → ANTES DE CORRER: renombrar ambos encabezados a "# Cliente: el_valle" para que QA_CLIENTE=el_valle
+#     resuelva perfil + credenciales + DSN con la misma clave. (fetchCreds ahora LANZA si no encuentra
+#     el bloque exacto, así que la incoherencia se detecta al instante en vez de usar credenciales ajenas.)
+
+cliente_id: el_valle
+cliente_nombre: "EL VALLE (COVADONGA)"        # ⚠ confirmar nombre EXACTO en la app (selector Empresa)
+apk_package: com.kiberno.denarioPremiumPro
+db_name: el_valle                             # base en el RDS CENTRAL 'savia'
+# ⚠ BD: conecta, pero **0 de 185 tablas legibles** para user_read (verificado 2026-07-28)
+#   → FALTA EL GRANT read-only. ACCIÓN DBA: aplicar GRANT sobre la base 'el_valle'.
+#   Consecuencia: cotejo BD = BD-N/A en toda la corrida; el oráculo va por PAYLOAD + UI + WEB.
+#   La capa web SÍ puede evaluar igual: el gate acepta BD-N/A cuando la app obtuvo Nro.Ref del servidor
+#   (ver gatePorBD en automation/web/web-helpers.js).
+
+# ── VGs — del global_configuration reciente 20260728. Conflictos vs client-config 2023 marcados ⚠️VERIFICAR ──
+vgs:
+  multiCurrency: true                         # ambos dumps coinciden
+  expirationBatch: true                       # ⚠️VERIFICAR global 2025-04-14=true vs client-2023=false → GANA true
+                                              #   ⇒ inventarios CON lote + fecha de expiración (campos habilitados)
+  clientStock: true                           # (global 2026-05-18) módulo Inventarios APLICA
+  requireClientStock: false                   # ⚠️VERIFICAR global=false vs client-2023=true → no exige inventario previo al pedido
+  suggestedOrder: true                        # botón "Pedido Sugerido"
+  suggestedOrderByDispatchAndReturn: false
+  validateReturn: false                       # devoluciones: tabs habilitan SIN seleccionar factura
+  requeridedNroFactura: true                  # …pero el Nro. de factura SÍ es campo obligatorio
+  multiInvoices: false                        # una sola factura por devolución
+  requiredCollectionAttachments: true         # 🔴 (2026-06-23) EL COBRO **EXIGE ADJUNTO** → usar mockCameraAdjunto/ensureAdjunto
+  requiredAnticipoAttachments: false          # (2026-07-23) anticipo NO exige adjunto
+  requiredRetentionAttachments: false         # (2026-07-23) retención NO exige adjunto
+  requiredComment: true                       # 🔴 (2026-03-03) comentario OBLIGATORIO en cobro → DM-COB-006 APLICA
+  requiredCommentOrder: false                 # (2026-07-27, la fila más reciente del dump) pedido NO exige comentario
+  signatureOrder: true
+  signatureReturn: true
+  signatureCollection: true
+  signatureDeposit: true
+  signatureStock: true
+  signatureVisit: true                        # (2026-04-20)
+  signatureClient: true
+  userCanUploadFiles: true
+  showCamera: true
+  cloudAttachments: false                     # adjuntos en servidor local, no en nube
+  esVendedor: TBD                             # ⚠ NO viene en los dumps → CONFIRMAR con QA (infoVendedores=false en ambos)
+  infoVendedores: false                       # módulo Vendedores se genera automáticamente en la app
+  enterpriseEnabled: true                     # empresa habilitada… ⚠️VERIFICAR alcance (ver orderEnterpriseEnabled)
+  orderEnterpriseEnabled: false               # ⚠️VERIFICAR solo en client-2023 → PEDIDOS sin campo empresa. Confirmar en UI
+  enabledManualRate: false                    # → DM-COB-039 rama A (tasa manual) N/A
+  canChangeRate: false                        # (2026-07-23) → DM-COB-047 (fecha tasa editable) N/A
+  historicoTasa: true                         # mesesTasa=3 (global) ⚠️ client-2023=6
+  cobroPrepago: true                          # ANTICIPO/PREPAGO aplica → DM-COB-028
+  cobroRetencion: true                        # (2026-03-10) botón +RETENCIÓN del menú → DM-COB-029
+  retencion: true                             # (2026-03-09) retenciones de impuesto activas
+  retentionDocTypeCR: true                    # ⚠️VERIFICAR global 2025-11-03=true vs client-2023=false → GANA true
+                                              #   ⇒ retención POR DETALLE de documento → DM-COB-041/042 APLICAN
+  userCanAddRetention: true                   # (2026-01-16) retenciones libres SIN factura asociada
+  dynamicRetentions: false                    # retención ESTÁNDAR (IVA/ISLR fijos)
+  missingRetention: false
+  alwaysRetention: false
+  sizeRetention: 14
+  formatRetention: "0"                        # 0 = Numeros (ambos dumps coinciden)
+  userCanSelectIGTF: false                    # 🔴⚠️VERIFICAR global 2025-09-17=false vs client-2023=true → GANA false
+                                              #   ⇒ DM-COB-036 / 044 / 045 (IGTF) = **N/A**
+  igtfDefault: false
+  userCanCollectIva: false                    # → DM-COB-037 (cobro 25% IVA) N/A
+  tolerancia0: true                           # ⚠️VERIFICAR global 2025-04-15=true vs client-2023=false → se permiten cobros con diferencia
+  TipoTolerancia: "0"                         # Importe · MonedaTolerancia=USD · rangos ±100000
+  automatedPrepaid: true                      # abono automático por diferencia positiva (prepaidPaymentMethod="pa")
+  enablePartialPayment: true                  # → DM-COB-046 (pago parcial) APLICA
+  alwaysPartialPayment: false
+  historicPartialPayment: true
+  multiCurrencyCollection: false              # ⚠️VERIFICAR global 2026-06-23=false vs client-2023=true → GANA false
+                                              #   ⇒ DM-COB-033/034 (multimoneda en cobro) **N/A**
+  multiCurrencyDeposit: false                 # (2026-06-23)
+  multiCurrencyOrder: false                   # ⚠️VERIFICAR global 2025-09-17=false vs client-2023=true → GANA false
+  currencyBank: false                         # solo bancos de la moneda del cobro
+  clientBankAccount: false
+  validateCollectionDate: false
+  userCanSelectCollectDiscount: false
+  enableDifferenceCodes: false
+  streetDay: false
+  reconciliation: false
+  userMustActivateGPS: true                   # GPS obligatorio para transacciones
+  userCanSaveGPS: true
+  transactionCoordinateRadius: 50             # metros: fuera de rango se marca en reportes
+  visitRout: true                             # rutas planificadas visibles en Visitas
+  checkAddressClient: true                    # confirma cambio de sucursal
+  transportRole: false
+  promoterRole: false
+  rolPlanta: false
+  transactionHistory: true                    # historyMonths=1
+  clientsOrderBy: na_client                   # ⚠️VERIFICAR global 2026-05-08=na_client vs client-2023=co_client
+  productsOrderBy: co_product
+  listProductsBy: lineas                      # solo en client-2023 (no hay valor en el global)
+  tagRif: RIF
+  tagIVA: IVA
+  longitudComentario: 200                     # ⚠️VERIFICAR global 2026-05-15=200 vs client-2023=185
+  parteDecimal: 4                             # ⚠️VERIFICAR global 2025-09-17=4 vs client-2023=2
+
+# ── Métodos de pago Cobros: colletionPayment = true-false-true-true-false-true (global 2026-06-23, 6 valores) ──
+# Efectivo=SÍ · Cheque=NO · Transferencia=SÍ · Depósito=SÍ · Otros=NO · **Pago Móvil=SÍ** ← 6º método nuevo
+#   ⚠️VERIFICAR client-2023 traía solo 5 valores (sin Pago Móvil). hideColletionPayment=true ⇒ manda colletionPayment.
+# → EFECTIVO presente ⇒ módulo **DEPÓSITOS APLICA**.
+#
+# ── VGs de Pedidos (global reciente) ──
+# stock0=true (se pueden pedir productos sin inventario) ⚠️client-2023=false · showStock=false (2026-04-28) ·
+# validateWarehouses=true (2026-05-08 gana sobre client 2026-03-09=false) · userCanChangeWarehouse=false ·
+# userCanChangePriceList=true (2026-03-10) ⚠️client-2023=false · userCanChangePriceListProduct=true ·
+# userCanSelectProductDiscount=**false** (client 2026-03-09 es MÁS RECIENTE que global 2026-03-03) ⚠️VERIFICAR ·
+# userCanSelectGlobalDiscount=false · userCanSelectIVA=false · userCanChangePaymentConditions=true (2026-03-03) ·
+# selectOrderType=true ⚠️client-2023=false · showCreditLimit=true · disableDaDispatch=true (fecha despacho opcional) ·
+# validateNuOrder=false · groupByTotalByLines=true · totalUnit=true · codeTotalProductUnit=CJA ·
+# featuredProducts=true (nameProductLine=DESTACADOS) · productMinMul=false ⚠️client-2023=true · quPageProduct=50
+
+# ── Datos de prueba por módulo — TBD: la BD no es legible (falta GRANT) → DISCOVERY en UI en la 1ª corrida ──
+modules:
+  login:      { bad_password: "usar QA_BAD_PASSWORD del bloque # Cliente: el_valle" }
+  clientes:   { cliente_busqueda: TBD, cliente_detalle: TBD, empresa_potencial: TBD }   # clientsOrderBy=na_client; firma habilitada
+  pedidos:    { cliente_test: TBD }        # SIN empresa (orderEnterpriseEnabled=false ⚠️VERIFICAR); sin multimoneda; comentario no obligatorio
+  cobros:     { cliente_test: TBD, clientes_con_documentos: [] }
+              # 🔴 adjunto OBLIGATORIO + comentario OBLIGATORIO · IGTF N/A · multimoneda N/A ·
+              # retención por detalle (041/042) y por menú (029) · pago parcial (046) · anticipo (028)
+  devoluciones: { cliente_test: TBD, factura_test: TBD, producto_test: TBD }  # tabs sin factura; Nro. factura requerido; 1 sola factura
+  inventarios: { cliente_test: TBD }       # clientStock=true · expirationBatch=true ⇒ lote + fecha de expiración
+  depositos:  { aplica: true, motivo_na: null }   # Efectivo en métodos de pago ⇒ aplica
+  visitas:    { cliente_test: TBD, smoke_na_estructural: [] }  # signatureVisit=true · GPS obligatorio · visitRout=true
+  productos:  { tipo_estructura_default: "Linea", texto_busqueda: TBD }  # listProductsBy=lineas · showProductImages=true
+  vendedores: { aplica: TBD }              # esVendedor TBD; infoVendedores=false (módulo autogenerado)
+
+ultima_corrida:
+  run_id: null
+  fecha: null
+  servidor_observado: null                  # ← se llena en la corrida (hoy La Tortuga, puede cambiar)
+  defectos_abiertos: []
