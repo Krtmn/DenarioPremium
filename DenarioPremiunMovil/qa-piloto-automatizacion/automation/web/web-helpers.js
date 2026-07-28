@@ -42,13 +42,51 @@ function moduloDe(pathname) {
   return null;
 }
 
-/** Guarda obligatoria: ¿estoy donde creo que estoy? (ver WEB-RUNTIME §3) */
-function verificarContexto(pathname, moduloEsperado, esDetalle) {
+/** Host de cada playa (la parte que identifica el SERVIDOR). Ver `playas.yaml`. */
+const PLAYAS = {
+  el_yaque:   'denarioelyaque.ddns.net:8080',
+  isla_coche: 'denarioislacoche.ddns.net:8080',
+  la_tortuga: 'denariolatortuga.ddns.net:8080',
+};
+function playaDe(host) {
+  const h = String(host || '').toLowerCase();
+  for (const [k, v] of Object.entries(PLAYAS)) if (h === v || h.startsWith(v.split(':')[0])) return k;
+  return null;
+}
+
+/**
+ * Guarda obligatoria: ¿estoy donde creo que estoy? (ver WEB-RUNTIME §3)
+ *
+ * 🔴 **Verifica HOST *y* pathname.** Las 3 playas exponen **exactamente las mismas rutas**
+ * (`/pages/cobros` existe en las tres), así que mirar solo el pathname deja al agente ciego
+ * al servidor: leería los datos de otra playa creyendo que son los suyos. Pasó de verdad
+ * (2026-07-28: se leyó Isla Coche creyendo que era La Tortuga porque la comprobación
+ * devolvía solo `location.pathname`).
+ *
+ * @param {{host?:string, pathname?:string}|string} ctx  `__qaW.contexto()` (o un pathname suelto — modo legado)
+ * @param {string} moduloEsperado
+ * @param {boolean} [esDetalle]
+ * @param {string} [playaEsperada]  slug de playa; si se omite, NO se valida el servidor (inseguro)
+ */
+function verificarContexto(ctx, moduloEsperado, esDetalle, playaEsperada) {
+  const pathname = typeof ctx === 'string' ? ctx : (ctx && ctx.pathname);
+  const host     = typeof ctx === 'string' ? null : (ctx && ctx.host);
   const m = MODULOS[moduloEsperado];
   if (!m) return { ok: false, motivo: `módulo desconocido: ${moduloEsperado}` };
+
+  if (playaEsperada) {
+    if (!host) return { ok: false, motivo: 'no se puede validar la playa: pasá __qaW.contexto() (con host), no un pathname suelto' };
+    const actual = playaDe(host);
+    if (actual !== playaEsperada) {
+      return { ok: false, motivo: `PLAYA EQUIVOCADA: esperaba ${playaEsperada}, estoy en ${actual || host}`, playaActual: actual };
+    }
+  }
+
   const esperado = esDetalle ? m.detalle : m.ruta;
-  const ok = String(pathname || '').endsWith(esperado);
-  return ok ? { ok: true } : { ok: false, motivo: `contexto equivocado: esperaba ${esperado}, estoy en ${pathname}` };
+  if (!String(pathname || '').endsWith(esperado)) {
+    return { ok: false, motivo: `contexto equivocado: esperaba ${esperado}, estoy en ${pathname}` };
+  }
+  return { ok: true, playa: host ? playaDe(host) : null };
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -285,7 +323,8 @@ function gatePorBD(marcaBD, evidenciaMovil) {
 const BUNDLE_DOM = `() => {
   const txt = (el) => (el && el.textContent || '').replace(/\\s+/g, ' ').trim();
   window.__qaW = {
-    contexto: () => ({ pathname: location.pathname, titulo: document.title }),
+    // ⚠ Devuelve HOST además de pathname: las 3 playas comparten las mismas rutas (ver verificarContexto)
+    contexto: () => ({ host: location.host, pathname: location.pathname, url: location.href, titulo: document.title }),
     /** Textos de nodos hoja visibles, en orden — insumo de emparejarCabecera(). */
     leerHojas: (max) => {
       const out = [];
@@ -336,8 +375,8 @@ const BUNDLE_DOM = `() => {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    MODULOS, MARCAS, TOL, BUNDLE_DOM,
-    moduloDe, verificarContexto,
+    MODULOS, MARCAS, TOL, BUNDLE_DOM, PLAYAS,
+    moduloDe, playaDe, verificarContexto,
     esRuido, emparejarCabecera, limpiarCelda, valorDeSelect,
     parseNumeroVE, parseNumeroFlexible, parseMoneda, parseTasa, parseFechaVE, parseEpoch,
     igual, mismoDia, verificarConversion, verificarSuma, cotejarCampos, gatePorBD,

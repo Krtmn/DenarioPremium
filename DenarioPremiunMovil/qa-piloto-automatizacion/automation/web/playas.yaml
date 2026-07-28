@@ -4,8 +4,16 @@
 #   (ver el banner de desacople en automation/clientes/_schema.yaml). La playa efectiva de una corrida
 #   se DESCUBRE EN RUNTIME (host de los payloads capturados por el móvil) y se resuelve contra esta tabla.
 #
-# Credenciales: bloque "# USUARIO WEB" de secrets/qa-credentials.env (usuario admin, uno solo para
-#   todos los clientes; la clave puede cambiar). NUNCA escribirlas aquí.
+# Credenciales: bloque "# USUARIO WEB" de secrets/qa-credentials.env. NUNCA escribirlas aquí.
+#
+# 🔴 CONFIRMADO 2026-07-28: **la clave del usuario web es DISTINTA POR PLAYA.**
+#   El mismo usuario `admin` que entra en Isla Coche devuelve "USUARIO INVALIDO" en La Tortuga.
+#   ⇒ un solo bloque "# USUARIO WEB" NO alcanza. El archivo necesita un bloque POR PLAYA:
+#       # USUARIO WEB: el_yaque
+#       # USUARIO WEB: isla_coche
+#       # USUARIO WEB: la_tortuga
+#   y el agente web debe anclar al bloque de la playa que descubrió en runtime.
+#   Mientras falte la clave de una playa → WEB-N/A para los clientes montados ahí (nunca FAIL).
 #
 # Verificado 2026-07-28: las 3 responden HTTP 200 desde la laptop QA, sin VPN.
 

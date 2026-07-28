@@ -19,6 +19,22 @@ eq('moduloDe reconoce el detalle legacy de visitas', H.moduloDe('/DenarioPremium
 t('verificarContexto acepta el pathname correcto', H.verificarContexto('/DenarioPremium/pages/depositos', 'depositos', false).ok);
 t('verificarContexto RECHAZA otro módulo con la misma tabla (form:pedidosDT)', !H.verificarContexto('/DenarioPremium/pages/depositos', 'pedidos', false).ok);
 t('verificarContexto distingue lista de detalle', !H.verificarContexto('/DenarioPremium/pages/cobros', 'cobros', true).ok);
+
+// ── GUARDA DE PLAYA — regresión real 2026-07-28 ──────────────────────────────
+// Las 3 playas exponen las MISMAS rutas: mirar solo el pathname deja al agente ciego al
+// servidor. Paso de verdad: se leyo Isla Coche creyendo que era La Tortuga.
+eq('playaDe reconoce La Tortuga', H.playaDe('denariolatortuga.ddns.net:8080'), 'la_tortuga');
+eq('playaDe reconoce Isla Coche', H.playaDe('denarioislacoche.ddns.net:8080'), 'isla_coche');
+eq('playaDe reconoce El Yaque', H.playaDe('denarioelyaque.ddns.net:8080'), 'el_yaque');
+const ctxCoche   = { host: 'denarioislacoche.ddns.net:8080', pathname: '/DenarioPremium/pages/cobros' };
+const ctxTortuga = { host: 'denariolatortuga.ddns.net:8080', pathname: '/DenarioPremium/pages/cobros' };
+t('MISMA ruta en playa equivocada → RECHAZA', !H.verificarContexto(ctxCoche, 'cobros', false, 'la_tortuga').ok);
+eq('…y dice exactamente cuál es el problema',
+  H.verificarContexto(ctxCoche, 'cobros', false, 'la_tortuga').playaActual, 'isla_coche');
+t('playa correcta + ruta correcta → acepta', H.verificarContexto(ctxTortuga, 'cobros', false, 'la_tortuga').ok);
+t('pathname suelto NO permite validar la playa (obliga a pasar el contexto completo)',
+  !H.verificarContexto('/DenarioPremium/pages/cobros', 'cobros', false, 'la_tortuga').ok);
+t('el bundle DOM expone el host en contexto()', /host:\s*location\.host/.test(H.BUNDLE_DOM));
 eq('clientes potenciales y visitas no tienen filtro # Ref',
   [H.MODULOS.clientes_potenciales.filtroRef, H.MODULOS.visitas.filtroRef, H.MODULOS.cobros.filtroRef], [false, false, true]);
 

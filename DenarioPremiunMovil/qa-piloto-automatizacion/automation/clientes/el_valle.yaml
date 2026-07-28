@@ -18,7 +18,9 @@
 #     el bloque exacto, así que la incoherencia se detecta al instante en vez de usar credenciales ajenas.)
 
 cliente_id: el_valle
-cliente_nombre: "EL VALLE (COVADONGA)"        # ⚠ confirmar nombre EXACTO en la app (selector Empresa)
+cliente_nombre: "EL VALLE (COVADONGA)"
+# ✅ Nombre EXACTO de la empresa (leído de la web de La Tortuga 2026-07-28):
+#    "PROCESADORA DE ALIMENTOS COVADONGA,C.A"   ← usar este literal en el selector Empresa
 apk_package: com.kiberno.denarioPremiumPro
 db_name: el_valle                             # base en el RDS CENTRAL 'savia'
 # ✅ BD LEGIBLE: **185/185 tablas** para user_read (GRANT aplicado por QA y verificado 2026-07-28).

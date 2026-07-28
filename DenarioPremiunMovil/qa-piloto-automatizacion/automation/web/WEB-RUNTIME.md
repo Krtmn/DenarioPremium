@@ -34,7 +34,10 @@ Nunca improvisar una escritura en producción.
 ```javascript
 // 1. Resolver la playa (viene del host de los payloads de la corrida móvil) → URL base
 //    automation/web/playas.yaml
-// 2. Credenciales: leer secrets/qa-credentials.env con Read y tomar el bloque "# USUARIO WEB"
+// 2. Credenciales: leer secrets/qa-credentials.env con Read y tomar el bloque de LA PLAYA:
+//    "# USUARIO WEB LA TORTUGA"  /  "# USUARIO WEB ISLA COCHE"  /  "# USUARIO WEB EL YAQUE"
+//    🔴 La clave es DISTINTA POR PLAYA (confirmado 2026-07-28: la de Isla Coche da
+//       "USUARIO INVALIDO" en La Tortuga). Si falta la de tu playa → WEB-N/A, nunca FAIL.
 //    ⚠ NO un bloque "# Cliente:" — ese es el usuario de la APP, no de la web.
 browser_navigate  → {base}/pages/login.xhtml
 browser_type      → textbox "Usuario" / textbox "Clave"     (el árbol a11y resuelve limpio)
@@ -67,6 +70,26 @@ browser_evaluate("() => window.__qaW.leerHojas(120)")     // cabecera del detall
 ---
 
 ## 3. Guarda de contexto — el error más fácil de cometer
+
+### 3.a 🔴 PRIMERO la PLAYA, después el módulo
+
+**Las 3 playas exponen exactamente las mismas rutas.** `/pages/cobros` existe en El Yaque, en Isla Coche
+y en La Tortuga. Comprobar solo `location.pathname` **no distingue el servidor** → el agente puede leer
+los datos de otra playa creyendo que son los suyos y cantar `WEB-OK` sobre registros ajenos.
+
+> **Pasó de verdad (2026-07-28):** se estuvo operando sobre Isla Coche creyendo que era La Tortuga,
+> porque la comprobación devolvía únicamente el pathname. Lo detectó la QA, no la herramienta.
+
+```javascript
+const ctx = await __qaW.contexto();            // { host, pathname, url, titulo }
+verificarContexto(ctx, 'cobros', false, 'la_tortuga').ok    // ⚠ 4º arg = playa OBLIGATORIO
+```
+
+- La playa **se descubre en runtime** (host de los payloads del móvil) y se resuelve contra `playas.yaml`.
+- Si `verificarContexto` devuelve `PLAYA EQUIVOCADA` → **detener el módulo**, no "corregir y seguir".
+- Pasar un pathname suelto **impide** validar la playa: el helper lo rechaza a propósito.
+
+### 3.b Después, el módulo
 
 **`form:pedidosDT` lo comparten 5 módulos** (pedidos, devoluciones, depósitos, clientes potenciales,
 inventarios) y aparece también en algunos **detalles**. Un helper que asuma "estoy en pedidos porque
