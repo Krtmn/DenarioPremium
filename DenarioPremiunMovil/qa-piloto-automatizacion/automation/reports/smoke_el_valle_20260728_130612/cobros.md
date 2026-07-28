@@ -12,7 +12,34 @@
 
 ---
 
-## Veredicto
+## ⚠️ CORRECCIÓN DEL VEREDICTO (verificada más tarde en la misma corrida)
+
+> **Los cobros SÍ llegaron — con retraso.** Lo que sigue en "Veredicto" era correcto **en el momento de
+> medirlo**, pero quedó desmentido después. Corrección obligatoria del reporte y del bug abierto con desarrollo.
+
+**Evidencia (BD + web, confirmadas por separado):**
+
+| # Ref | Tipo | Monto | Creado en el device | `da_update` servidor | Retraso | Estatus en la web |
+|---|---|---|---|---|---|---|
+| **119** | Anticipo/Prepago (`co_type=1`) | 20,0000 USD | 28/07 19:53:48 Z | 28/07 **21:08:07** Z | **~75 min** | **Por aprobar** |
+| **120** | Cobros (`co_type=0`) | 472,9000 USD | 28/07 20:11:25 Z | 28/07 **20:39:35** Z | **~28 min** | **Por aprobar** |
+
+**El defecto NO es "los cobros no se envían" sino "el envío de cobros tiene un retraso enorme"** (~28–75 min).
+Los registros existen, están completos y su estatus es **"Por aprobar"** — el estado normal de un cobro recién
+sincronizado, **no** un rechazo.
+
+⚠ **Trampa evitada:** `st_collection=3` parece mapear a `statuses.id_status=3 = "Rechazado"` para
+`co_transaction_type='cob'`. **Es falso**: la web muestra esos mismos cobros como **"Por aprobar"**.
+Confirma el caveat de `RUNTIME §10` — *el `st_*` del servidor varía por tipo y playa; corroborar por `id` y por
+la UI, nunca por el catálogo `statuses` global*. Reportar "cobros rechazados" habría mandado a desarrollo
+por el camino equivocado.
+
+**Contraste que acota el defecto:** en la **misma sesión y el mismo servidor**, pedidos, devoluciones,
+inventarios y depósitos sincronizaron **de inmediato**. El retraso es **específico del endpoint de cobros**.
+
+---
+
+## Veredicto (al momento de medirlo — superado por la corrección de arriba)
 
 **Ningún cobro se envía.** Tras ~40 min de intentos, **cero** cobros llegaron a la nube.
 
