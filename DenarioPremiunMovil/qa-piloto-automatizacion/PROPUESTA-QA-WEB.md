@@ -62,10 +62,11 @@
 **en background y en paralelo** con el agente UI móvil del módulo siguiente — exactamente el patrón que ya usa
 el Agente BD hoy (`prompt-orquestador-smoke.md`, instrucción 3b). Por eso el costo en wall-clock tiende a cero.
 
-> ⚠ **Un cuidado operativo:** el mismo servidor MCP maneja los dos contextos de navegador. Hay que aislarlos
-> (pestaña/contexto propio para la web vía `browser_tabs`, y **nunca** cerrar el navegador que sostiene el CDP).
-> Es la primera cosa a validar en Fase 0; si diera problemas, el plan B es correr los agentes web **al cierre**
-> de la corrida móvil (cuesta wall-clock, pero elimina el acoplamiento).
+> ✅ **PROBADO (2026-07-28) — el riesgo quedó cerrado.** Con el CDP `:9220` y la pestaña web vivos a la vez:
+> `connectOverCDP` deja la web **intacta** (incluido su estado JS, `window.__qaW`), y **3 idas y vueltas**
+> dispositivo↔web tardaron **499 ms**. ⇒ **el paralelismo web ‖ móvil funciona y el plan B (correr la web al
+> cierre, +30–45 min) queda descartado.** Reglas de convivencia en `automation/web/WEB-RUNTIME.md §9`;
+> la principal: los agentes web **no se paralelizan entre sí** (comparten un solo navegador), uno en vuelo.
 
 **URL por playa — dónde vive.** El `_schema.yaml` decidió (desacople 2026-07-24) que **el servidor NO se guarda
 en el perfil del cliente**, porque los clientes migran de playa. La URL web es **propiedad del servidor**, no del

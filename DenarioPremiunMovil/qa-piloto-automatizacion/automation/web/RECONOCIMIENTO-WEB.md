@@ -212,6 +212,10 @@ un solo bloque no alcanza y habrá que partirlo por playa. Hoy es una sola → s
 
 - [x] ~~Recorrer los otros 6 módulos~~ — **hecho** (§3.b): los 7 tienen ruta, ID de tabla, filtros y columnas mapeados.
 - [x] ~~Abrir el detalle de los 6 módulos restantes~~ — **hecho** (§3.c): los 7 detalles mapeados.
+- [x] ~~Probar el aislamiento de contextos del MCP~~ — ✅ **PROBADO 2026-07-28** con CDP `:9220` y la web
+      vivos a la vez: `connectOverCDP` deja la web intacta (incluido `window.__qaW`), y 3 idas y vueltas
+      dispositivo↔web tardaron **499 ms**. ⇒ **la corrida web es gratis en wall-clock** (background,
+      patrón *offset*). Reglas de convivencia en `WEB-RUNTIME.md §9`.
 - [ ] Confirmar el comportamiento en una playa con **más de una empresa** (¿selector de empresa? ¿filtro?).
 - [ ] Probar el **aislamiento de contextos del MCP**: navegador web + CDP del dispositivo a la vez.
       **De esto depende** que la corrida web sea gratis en wall-clock (en paralelo) o cueste 30–45 min (al cierre).

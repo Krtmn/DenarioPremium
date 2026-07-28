@@ -161,7 +161,36 @@ fecha de vencimiento y motivo. No inventar un oráculo de importes ahí.
 
 ---
 
-## 9. Reporte
+## 9. Convivencia con la corrida móvil — ✅ PROBADO (2026-07-28)
+
+**El navegador web y el CDP del dispositivo conviven sin pisarse.** Verificado con las dos cosas vivas:
+
+| Prueba | Resultado |
+|---|---|
+| `connectOverCDP(:9220)` con la pestaña web abierta | ✅ la web queda **intacta** (misma URL, mismo DOM) |
+| Estado JS de la web tras el CDP | ✅ `window.__qaW` **sigue vivo** — no se pierde el bundle |
+| 3 idas y vueltas dispositivo→web→dispositivo | ✅ estables, **499 ms** las tres |
+
+⇒ **El agente web puede correr en background, en paralelo con el agente UI móvil del módulo siguiente**
+(patrón *offset*, igual que el Agente BD). Costo en wall-clock ≈ 0.
+
+### Reglas de convivencia (para que siga siendo cierto)
+
+1. **Los agentes web NO se paralelizan entre sí.** Comparten un único navegador. El paralelismo es
+   **web ‖ móvil**, nunca web ‖ web. Un agente web en vuelo a la vez.
+2. **El agente web trabaja en su pestaña y NUNCA cierra la pestaña 0** — el `page` que reciben los
+   agentes móviles cuelga de ella; cerrarla les rompe el handle.
+3. **El agente móvil nunca navega el navegador local.** Solo usa `page` para obtener el `browserType`
+   y de ahí en más trabaja contra `pg` (el WebView del dispositivo).
+4. **El agente web puede darse el lujo de esperar.** Al estar fuera del camino crítico, ante un
+   registro que no aparece debe **reintentar** (el sync a la nube puede ser diferido — hubo casos de
+   ~3 min) antes de concluir `WEB-MISSING`. Esperar ahí no le cuesta wall-clock a nadie.
+5. **Barrido de rezagados al cierre:** al terminar la corrida, repasar **solo** lo que quedó
+   `WEB-MISSING`. Así los rezagados por sync diferido se resuelven sin que el resto pague la espera.
+
+---
+
+## 10. Reporte
 
 Un `.md` por módulo web en `{RUN_DIR}web-{modulo}.md` + línea por caso en `{RUN_DIR}_web-results.jsonl`:
 
