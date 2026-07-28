@@ -25,12 +25,23 @@ const CDP_URL = 'http://127.0.0.1:9220';
  * @param {number} ms
  * @param {string} [label]
  */
-function withTimeout(promise, ms, label) {
-  let t;
-  const guard = new Promise((_, rej) => {
-    t = setTimeout(() => rej(new Error('TIMEOUT:' + (label || 'op') + ' tras ' + ms + 'ms')), ms);
+/**
+ * ⚠ En `browser_run_code_unsafe` **NO existe `setTimeout`** (confirmado en la corrida
+ * el_valle-20260728: inlinar esto sin `timer` lanzaba `ReferenceError: setTimeout is not defined`).
+ * Por eso se acepta un `timer` = objeto Playwright con `waitForTimeout` (`page` o `pg`).
+ * En contexto Node (self-tests, scripts) `timer` se omite y usa `setTimeout`.
+ */
+function _espera(ms, timer) {
+  if (timer && typeof timer.waitForTimeout === 'function') return timer.waitForTimeout(ms);
+  if (typeof setTimeout === 'function') return new Promise((r) => setTimeout(r, ms));
+  throw new Error('sin temporizador: pasá `page`/`pg` como `timer` — setTimeout no existe en browser_run_code_unsafe');
+}
+
+function withTimeout(promise, ms, label, timer) {
+  const guard = _espera(ms, timer).then(() => {
+    throw new Error('TIMEOUT:' + (label || 'op') + ' tras ' + ms + 'ms');
   });
-  return Promise.race([promise, guard]).finally(() => clearTimeout(t));
+  return Promise.race([promise, guard]);
 }
 
 /**
@@ -49,15 +60,15 @@ async function connectCdp(page, opts) {
   for (let i = 0; i <= retries; i++) {
     try {
       const cdp = await withTimeout(
-        page.context().browser()._browserType.connectOverCDP(CDP_URL), timeoutMs, 'connectOverCDP');
+        page.context().browser()._browserType.connectOverCDP(CDP_URL), timeoutMs, 'connectOverCDP', page);
       const ctx = cdp.contexts()[0];
       const pg  = ctx && ctx.pages()[0];
       if (!pg) throw new Error('CDP conectó pero no hay páginas');
-      await withTimeout(pg.bringToFront(), 5000, 'bringToFront');
+      await withTimeout(pg.bringToFront(), 5000, 'bringToFront', page);
       return pg;
     } catch (e) {
       last = e;
-      if (i < retries) await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
+      if (i < retries) await _espera(1500 * (i + 1), page);
     }
   }
   throw new Error('CDP-DOWN: ' + (last && last.message));
@@ -65,7 +76,7 @@ async function connectCdp(page, opts) {
 
 /** Ping barato al WebView: ¿el CDP sigue vivo? No lanza — devuelve boolean. */
 async function cdpAlive(pg, ms) {
-  try { await withTimeout(pg.evaluate(() => 1), ms || 5000, 'ping'); return true; }
+  try { await withTimeout(pg.evaluate(() => 1), ms || 5000, 'ping', pg); return true; }
   catch (e) { return false; }
 }
 
@@ -73,8 +84,11 @@ async function cdpAlive(pg, ms) {
  * Watchdog de módulo (RUNTIME §11). Envuelve cada operación con techo de tiempo,
  * cuenta cuelgues y aborta el módulo antes de que un hang de CDP se coma horas de wall-clock.
  *
- *   const wd = h.makeWatchdog({ moduleMs: 45*60*1000 });
- *   await wd.run('openNuevoCobro', () => h.openNuevoCobro(pg, 0));
+ *   const wd = h.makeWatchdog({ moduleMs: 45*60*1000, page });   // ⚠ `page` OBLIGATORIO en
+ *   await wd.run('openNuevoCobro', () => h.openNuevoCobro(pg, 0));  //   browser_run_code_unsafe
+ *
+ * ⚠ Sin `page`, en `browser_run_code_unsafe` revienta con `ReferenceError: setTimeout is not defined`
+ *   (no existe en ese sandbox). En Node (self-tests) `page` se omite.
  *
  * - `TIMEOUT:` → cuenta un cuelgue. Al llegar a `maxHangs` lanza 'ABORT-MODULE:...'.
  * - Superado `moduleMs` → lanza 'ABORT-MODULE:techo-wall-clock' antes de arrancar la op.
@@ -87,6 +101,7 @@ function makeWatchdog(opts) {
   const opMs     = o.opMs     || 90000;              // techo por operación
   const maxHangs = o.maxHangs || 2;                  // cuelgues tolerados por módulo
   const moduleMs = o.moduleMs || 45 * 60 * 1000;     // techo de wall-clock del módulo
+  const timer    = o.page || o.timer || null;        // ⚠ OBLIGATORIO en browser_run_code_unsafe
   const t0 = Date.now();
   let hangs = 0;
   return {
@@ -98,7 +113,7 @@ function makeWatchdog(opts) {
         throw new Error('ABORT-MODULE:techo-wall-clock (' + Math.round((Date.now() - t0) / 60000) + ' min)');
       }
       try {
-        return await withTimeout(Promise.resolve().then(fn), ms || opMs, label);
+        return await withTimeout(Promise.resolve().then(fn), ms || opMs, label, timer);
       } catch (e) {
         if (String(e && e.message).indexOf('TIMEOUT:') === 0) {
           hangs++;

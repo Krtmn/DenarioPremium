@@ -64,6 +64,32 @@ const grab = async (p) => { try { await p; return null; } catch (e) { return e.m
   const pg = await connectCdp(pageFlaky, { timeoutMs: 200, retries: 2 });
   t('connectCdp reintenta y devuelve la página cuando el CDP revive', pg && pg._id === 'pg' && intentos === 2);
 
+  // ── EL SANDBOX DE browser_run_code_unsafe NO TIENE setTimeout ──────────────────
+  // Regresión real de la corrida el_valle-20260728: el watchdog reventaba con
+  // "ReferenceError: setTimeout is not defined" al inlinarse. El self-test no lo cazaba
+  // porque en Node setTimeout SÍ existe. Acá se simula el sandbox de verdad.
+  const realSetTimeout = global.setTimeout;
+  const pageFake = { waitForTimeout: (ms) => new Promise((r) => realSetTimeout(r, ms)) };
+  global.setTimeout = undefined;                       // ← sandbox sin temporizador global
+  try {
+    t('withTimeout con `timer` funciona SIN setTimeout global',
+      /^TIMEOUT:x/.test(await grab(withTimeout(nunca(), 30, 'x', pageFake))));
+    t('withTimeout SIN timer y sin setTimeout falla con mensaje accionable',
+      /sin temporizador/.test(await grab(Promise.resolve().then(() => withTimeout(nunca(), 30, 'x')))));
+
+    const wdSandbox = makeWatchdog({ opMs: 30, maxHangs: 2, moduleMs: 60000, page: pageFake });
+    t('wd.run pasa una op sana en el sandbox', (await wdSandbox.run('ok', async () => 7)) === 7);
+    const e = await grab(wdSandbox.run('colgada', nunca));
+    t('wd.run detecta el cuelgue en el sandbox', e.indexOf('TIMEOUT:colgada') === 0 && wdSandbox.hangs() === 1);
+
+    const pageColgada2 = { waitForTimeout: pageFake.waitForTimeout,
+      context: () => ({ browser: () => ({ _browserType: { connectOverCDP: nunca } }) }) };
+    t('connectCdp funciona sin setTimeout global (usa page.waitForTimeout)',
+      (await grab(connectCdp(pageColgada2, { timeoutMs: 30, retries: 1 }))).indexOf('CDP-DOWN:') === 0);
+  } finally {
+    global.setTimeout = realSetTimeout;
+  }
+
   console.log('\n=== watchdog self-test: ' + ok + ' OK, ' + fail + ' FAIL ===');
   process.exit(fail ? 1 : 0);
 })();

@@ -275,10 +275,14 @@ El §10 base verifica campos clave (totales, conteos, estado). El **Nivel 2** ve
 
 ```javascript
 const pg = await h.connectCdp(page);                      // ya trae techo 20s + 2 reintentos
-const wd = h.makeWatchdog({ moduleMs: {TECHO_MODULO_MS} });  // el orquestador inyecta el techo
+const wd = h.makeWatchdog({ moduleMs: {TECHO_MODULO_MS}, page });  // ⚠ `page` OBLIGATORIO
 await wd.run('waitSyncOverlay', () => h.waitSyncOverlay(pg));
 await wd.run('openNuevoCobro',  () => h.openNuevoCobro(pg, 0));
 ```
+
+> 🔴 **`setTimeout` NO existe en `browser_run_code_unsafe`.** Sin pasar `page`, el watchdog revienta con
+> `ReferenceError: setTimeout is not defined` (regresión real, corrida el_valle-20260728). Con `page`,
+> los helpers usan `page.waitForTimeout`. En contexto Node (scripts/self-tests) `page` se omite.
 
 | Señal | Qué significa | Qué hace el agente |
 |---|---|---|
