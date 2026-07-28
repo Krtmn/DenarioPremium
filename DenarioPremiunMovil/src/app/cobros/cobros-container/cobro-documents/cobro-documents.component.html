@@ -697,8 +697,11 @@
                 <ion-col size="12" size-xs="12" size-sm="12">
                   <ion-input label="{{this.collectService.collectionTags.get('COB_COMENTARIO')}}"
                     label-placement="floating" fill="outline" color="primary" type="text" [(ngModel)]="discountComment"
+                    [maxlength]="textCommentMaxLength" (ionInput)="onDiscountCommentInput()"
                     (ngModelChange)="setDiscountComment()">
                   </ion-input>
+                  <app-text-comment-counter [value]="discountComment" [minLength]="textCommentMinLength"
+                    [maxLength]="textCommentMaxLength"></app-text-comment-counter>
                 </ion-col>
                 }
                 <!-- COMENTARIO DESCUENTOS -->

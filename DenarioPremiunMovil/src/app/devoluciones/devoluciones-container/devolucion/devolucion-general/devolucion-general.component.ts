@@ -13,6 +13,11 @@ import { COLOR_AMARILLO, DELIVERY_STATUS_NEW } from 'src/app/utils/appConstants'
 import { InvoiceSelectorComponent } from './invoice-selector/invoice-selector.component';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { formatClientForTab } from 'src/app/utils/client-display.util';
+import {
+  TEXT_COMMENT_MAX_LENGTH,
+  TEXT_COMMENT_MIN_LENGTH,
+} from 'src/app/utils/text-comment-field.constants';
+import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util';
 
 @Component({
   selector: 'devolucion-general',
@@ -22,6 +27,8 @@ import { formatClientForTab } from 'src/app/utils/client-display.util';
 })
 export class DevolucionGeneralComponent implements OnInit, OnDestroy {
 
+  readonly textCommentMaxLength = TEXT_COMMENT_MAX_LENGTH;
+  readonly textCommentMinLength = TEXT_COMMENT_MIN_LENGTH;
 
   enterpriseServ = inject(EnterpriseService);
   returnLogic = inject(ReturnLogicService);
@@ -262,7 +269,10 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
   }
 
   onTxCommentChange() {
-    const clean = this.cleanString(this.returnLogic.newReturn.txComment);
+    const clean = applyTextCommentMaxLength(
+      this.cleanString(this.returnLogic.newReturn.txComment),
+      this.textCommentMaxLength,
+    );
     if (this.returnLogic.newReturn.txComment !== clean) {
       this.returnLogic.newReturn.txComment = clean;
       if (this.txCommentInput && this.txCommentInput.value !== clean) {

@@ -30,6 +30,11 @@ import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 import { BancoReceptor } from 'src/app/modelos/bancoReceptor';
 import { formatClientForTab } from 'src/app/utils/client-display.util';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
+import {
+  TEXT_COMMENT_MAX_LENGTH,
+  TEXT_COMMENT_MIN_LENGTH,
+} from 'src/app/utils/text-comment-field.constants';
+import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util';
 
 
 @Component({
@@ -39,6 +44,9 @@ import { SynchronizationDBService } from 'src/app/services/synchronization/synch
   standalone: false
 })
 export class CobrosGeneralComponent implements OnInit {
+
+  readonly textCommentMaxLength = TEXT_COMMENT_MAX_LENGTH;
+  readonly textCommentMinLength = TEXT_COMMENT_MIN_LENGTH;
 
   @ViewChild('input') input!: IonInput;
   @ViewChild(ClienteSelectorComponent) selectorCliente!: ClienteSelectorComponent;
@@ -1197,11 +1205,27 @@ export class CobrosGeneralComponent implements OnInit {
     } else
       this.collectService.validComment = true;
 
-    this.collectService.collection.txComment = this.collectService.cleanString(this.collectService.collection.txComment.trim());
+    this.collectService.collection.txComment = applyTextCommentMaxLength(
+      this.collectService.cleanString(this.collectService.collection.txComment.trim()),
+      this.textCommentMaxLength,
+    );
 
     this.collectService.unlockTabs().then((resp) => {
       this.collectService.onCollectionValid(resp);
     })
+  }
+
+  onTxCommentInput() {
+    const clean = applyTextCommentMaxLength(
+      this.collectService.cleanString(this.collectService.collection.txComment),
+      this.textCommentMaxLength,
+    );
+    if (this.collectService.collection.txComment !== clean) {
+      this.collectService.collection.txComment = clean;
+      if (this.input && this.input.value !== clean) {
+        this.input.value = clean;
+      }
+    }
   }
 
   setResult(ev: any) {

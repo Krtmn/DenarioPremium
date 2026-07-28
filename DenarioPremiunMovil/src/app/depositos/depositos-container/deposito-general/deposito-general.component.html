@@ -98,8 +98,11 @@
       <ion-input label="{{this.depositService.depositTags.get('DEP_COMENTARIO')}}:" #inputTxComment
         [(ngModel)]="this.depositService.txComment" label-placement="floating" fill="outline"
         value="this.depositService.txComment" (ionInput)="onTxCommentInput()"
+        [maxlength]="textCommentMaxLength"
         [disabled]="this.depositService.hideDeposit">
       </ion-input>
+      <app-text-comment-counter [value]="this.depositService.txComment" [minLength]="textCommentMinLength"
+        [maxLength]="textCommentMaxLength"></app-text-comment-counter>
     </ion-col>
 
     <!-- <ion-col size="12" size-sm="12" size-xs="12"><ion-button (click)="print()"></ion-button></ion-col> -->

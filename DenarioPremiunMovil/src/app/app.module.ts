@@ -105,6 +105,7 @@ import { ConversionService } from './services/conversion/conversion.service';
 import { installGlobalClipboardEnablers } from 'src/app/utils/clipboard-enablers';
 import { CalculatorComponent } from './calculator/calculator.component';
 import { InventarioSugeridoPreviewComponent } from './inventarios/inventario-container/inventario-sugerido-preview/inventario-sugerido-preview.component';
+import { TextCommentCounterComponent } from './components/text-comment-counter/text-comment-counter.component';
 //import { HomeSidebarComponent } from './home-sidebar/home-sidebar.component';
 
 
@@ -205,7 +206,8 @@ import { InventarioSugeridoPreviewComponent } from './inventarios/inventario-con
     SignaturePadModule,
     HammerModule,
     GoogleMapsModule,
-    CalculatorComponent],
+    CalculatorComponent,
+    TextCommentCounterComponent],
   providers: [{ provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     SQLite,
     ServicesService,

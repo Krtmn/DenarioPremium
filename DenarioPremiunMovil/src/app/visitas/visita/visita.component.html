@@ -225,7 +225,9 @@
 
                 <ion-input label='{{ getTag("VIS_COMENTARIO") }}' #comentarioInput [(ngModel)]="comentario"
                   (ionInput)="onCommentInput()" labelPlacement="floating" fill="outline"
-                  placeholder='{{ getTag("VIS_COMENTARIO") }}' maxlength="120"></ion-input>
+                  placeholder='{{ getTag("VIS_COMENTARIO") }}' [maxlength]="textCommentMaxLength"></ion-input>
+                <app-text-comment-counter [value]="comentario" [minLength]="textCommentMinLength"
+                  [maxLength]="textCommentMaxLength"></app-text-comment-counter>
 
               </ion-col>
               <!-- <ion-col class="" size="12" size-sm="12" size-xs="12"> -->
@@ -357,8 +359,11 @@
           <ion-item>
             <ion-input label="Motivo" [(ngModel)]="motivoReagendo" placeholder="Ingrese el motivo"
               [ngClass]="{'input-rojo': !motivoReagendo, 'input-verde': motivoReagendo}" class="customInput"
-              label-placement="floating" fill="outline" color="primary" required>
+              label-placement="floating" fill="outline" color="primary" required
+              [maxlength]="textCommentMaxLength" (ionInput)="onMotivoReagendoInput()">
             </ion-input>
+            <app-text-comment-counter [value]="motivoReagendo" [minLength]="textCommentMinLength"
+              [maxLength]="textCommentMaxLength"></app-text-comment-counter>
           </ion-item>
         </ion-list>
         <ion-footer class="footer-separado">

@@ -8,6 +8,11 @@ import { GeolocationService } from 'src/app/services/geolocation/geolocation.ser
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { COLOR_LILA, COLOR_VERDE } from 'src/app/utils/appConstants';
+import {
+  TEXT_COMMENT_MAX_LENGTH,
+  TEXT_COMMENT_MIN_LENGTH,
+} from 'src/app/utils/text-comment-field.constants';
+import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util';
 
 @Component({
   selector: 'app-deposito-general',
@@ -16,6 +21,9 @@ import { COLOR_LILA, COLOR_VERDE } from 'src/app/utils/appConstants';
   standalone: false
 })
 export class DepositoGeneralComponent implements OnInit {
+
+  readonly textCommentMaxLength = TEXT_COMMENT_MAX_LENGTH;
+  readonly textCommentMinLength = TEXT_COMMENT_MIN_LENGTH;
 
   public depositService = inject(DepositService);
   public dateServ = inject(DateServiceService);
@@ -110,7 +118,10 @@ export class DepositoGeneralComponent implements OnInit {
   }
 
   onTxCommentInput() {
-    const clean = this.cleanString(this.depositService.txComment);
+    const clean = applyTextCommentMaxLength(
+      this.cleanString(this.depositService.txComment),
+      this.textCommentMaxLength,
+    );
     if (this.depositService.txComment !== clean) {
       this.depositService.txComment = clean;
       if (this.inputTxComment && this.inputTxComment.value !== clean) {
