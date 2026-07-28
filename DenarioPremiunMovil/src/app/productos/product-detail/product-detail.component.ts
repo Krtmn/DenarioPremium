@@ -13,6 +13,8 @@ import { ProductService } from 'src/app/services/products/product.service';
 import { PedidosService } from 'src/app/pedidos/pedidos.service';
 import { CurrencyModules } from 'src/app/modelos/tables/currencyModules';
 import { TextService } from 'src/app/services/text/text.service';
+import { UnitInfo } from 'src/app/modelos/unitInfo';
+import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
 @Component({
     selector: 'product-detail',
@@ -30,6 +32,7 @@ export class ProductDetailComponent implements OnInit, OnChanges {
   globalConfig = inject(GlobalConfigService);
   currencyService = inject(CurrencyService);
   textService = inject(TextService);
+  db = inject(SynchronizationDBService);
 
   @Input()
   productDetailTags = new Map<string, string>([]);
@@ -51,6 +54,10 @@ export class ProductDetailComponent implements OnInit, OnChanges {
   listPhotos: string[] = [];
   productImages: string[] = [];
   listPrices?: {idList: number, naList: string, nuPrice: number, coUnit: string, naUnit: string, coCurrency: string}[] = [];
+  unitList: UnitInfo[] = [];
+  selectedIdUnit = 0;
+  basePriceLocal = 0;
+  basePriceHard: number | null = null;
 
   public swiper!: Swiper;
 
@@ -79,8 +86,12 @@ export class ProductDetailComponent implements OnInit, OnChanges {
     }
 
     this.loadProductImages();
+    this.syncBasePricesFromDetail();
 
-    this.checkReorderPrices();
+    if (this.productService.catalogUnitByPriceList) {
+      return;
+    }
+    await this.loadUnitsForProduct();
     console.log('pSeleccionado: ' + JSON.stringify(this.pSeleccionado));
   }
 
@@ -89,8 +100,86 @@ export class ProductDetailComponent implements OnInit, OnChanges {
       this.loadProductImages();
       if (!changes['pSeleccionado'].firstChange) {
         void this.loadWarehousesAndStockForSelectedProduct();
+        void this.reloadDetailForProduct();
       }
     }
+  }
+
+  private async reloadDetailForProduct(): Promise<void> {
+    if (this.productService.catalogUnitByPriceList) {
+      this.listPrices = this.productService.listPrices;
+      return;
+    }
+
+    await this.priceListService.getListByIdProduct(this.pSeleccionado.idProduct);
+    this.lists = this.priceListService.productlists;
+    this.listSeleccionada = this.lists[0];
+    this.syncBasePricesFromDetail();
+    await this.loadUnitsForProduct();
+  }
+
+  private async loadUnitsForProduct(): Promise<void> {
+    if (this.productService.catalogUnitByPriceList || !this.pSeleccionado?.idProduct) {
+      return;
+    }
+
+    this.unitList = this.productService.getCatalogUnitsForProduct(this.pSeleccionado.idProduct);
+    if (this.unitList.length === 0) {
+      await this.productService.getUnitsByIdProductOrderByCoPrimaryUnit(
+        this.db.getDatabase(),
+        this.pSeleccionado.idProduct,
+      );
+      this.unitList = this.productService.unitsByProduct.map(unit =>
+        this.productService.mapUnitToUnitInfo(unit, this.pSeleccionado.idProduct, this.pSeleccionado.coProduct),
+      );
+    }
+
+    this.selectedIdUnit = this.resolveDefaultUnitId();
+    this.applySelectedUnitToProduct();
+  }
+
+  private resolveDefaultUnitId(): number {
+    const fromDetail = this.unitList.find(u => u.idUnit === this.pSeleccionado.idUnit);
+    if (fromDetail) {
+      return fromDetail.idUnit;
+    }
+    return this.unitList[0]?.idUnit ?? this.pSeleccionado.idUnit;
+  }
+
+  onUnitChanged(idUnit: number): void {
+    this.selectedIdUnit = idUnit;
+    this.applySelectedUnitToProduct();
+  }
+
+  private applySelectedUnitToProduct(): void {
+    const unit = this.getSelectedUnit();
+    if (!unit) {
+      return;
+    }
+    this.pSeleccionado.idUnit = unit.idUnit;
+    this.pSeleccionado.coUnit = unit.coUnit;
+    this.pSeleccionado.naUnit = unit.naUnit;
+  }
+
+  getSelectedUnit(): UnitInfo | undefined {
+    return this.unitList.find(u => u.idUnit === this.selectedIdUnit);
+  }
+
+  getDisplayPriceLocal(): number {
+    return this.productService.resolveDisplayPriceForUnit(this.basePriceLocal, this.getSelectedUnit());
+  }
+
+  getDisplayPriceHard(): number {
+    if (this.basePriceHard == null) {
+      return 0;
+    }
+    return this.productService.resolveDisplayPriceForUnit(this.basePriceHard, this.getSelectedUnit());
+  }
+
+  private syncBasePricesFromDetail(): void {
+    this.checkReorderPrices();
+    this.basePriceLocal = this.pSeleccionado.priceLocal;
+    this.basePriceHard = this.pSeleccionado.priceHard;
   }
 
   private async loadProductImages(): Promise<void> {
@@ -149,8 +238,7 @@ export class ProductDetailComponent implements OnInit, OnChanges {
       this.pSeleccionado.coCurrencyLocal = this.priceListService.productPrice.coCurrencyDefault;
       this.pSeleccionado.priceHard = this.priceListService.productPrice.priceOpposite;
       this.pSeleccionado.coCurrencyHard = this.priceListService.productPrice.coCurrencyOpposite;
-      console.log('pSeleccionado.priceLocal: ' + this.pSeleccionado.priceLocal);
-      this.checkReorderPrices();
+      this.syncBasePricesFromDetail();
     });
   }
 
