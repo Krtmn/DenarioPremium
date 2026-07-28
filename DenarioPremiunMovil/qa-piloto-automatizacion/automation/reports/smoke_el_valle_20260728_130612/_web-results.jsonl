@@ -1,0 +1,9 @@
+{"run_id":"20260728_130612_smoke-completo","capa":"web","modulo":"clientes_potenciales","caso":"DW-CLT-001","ref":"2","marca":"WEB-OK","ms":0}
+{"run_id":"20260728_130612_smoke-completo","capa":"web","modulo":"pedidos","caso":"DW-PED-001","ref":"437","marca":"WEB-OK","ms":0}
+{"run_id":"20260728_130612_smoke-completo","capa":"web","modulo":"devoluciones","caso":"DW-DEV-001","ref":"177","marca":"WEB-OK","ms":0}
+{"run_id":"20260728_130612_smoke-completo","capa":"web","modulo":"inventarios","caso":"DW-INV-001","ref":"2","marca":"WEB-OK","ms":0}
+{"run_id":"20260728_130612_smoke-completo","capa":"web","modulo":"depositos","caso":"DW-DEP-001","ref":"1","marca":"WEB-OK","ms":0}
+{"run_id":"20260728_130612_smoke-completo","capa":"web","modulo":"cobros","caso":"DW-COB-001","ref":"119","marca":"WEB-OK","ms":0}
+{"run_id":"20260728_130612_smoke-completo","capa":"web","modulo":"cobros","caso":"DW-COB-002","ref":"120","marca":"WEB-OK","ms":0}
+{"run_id":"20260728_130612_smoke-completo","capa":"web","modulo":"cobros","caso":"DW-COB-003","ref":"121","marca":"WEB-OK","ms":0}
+{"run_id":"20260728_130612_smoke-completo","capa":"web","modulo":"cobros","caso":"DW-COB-004","ref":"122","marca":"WEB-CALC-MISMATCH","ms":0}

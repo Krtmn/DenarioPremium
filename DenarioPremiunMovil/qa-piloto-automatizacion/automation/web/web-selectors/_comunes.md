@@ -43,7 +43,26 @@ sin darse cuenta. `[f0-2807]`
 | Módulo | Cómo se localiza el registro |
 |---|---|
 | cobros · pedidos · devoluciones · depósitos · inventarios | **filtro `# Ref`** + `Buscar` (directo, barato) |
-| **clientes potenciales** · **visitas** | ❌ sin filtro de Ref → filtrar por **vendedor + rango de fechas** y **barrer filas** buscando la columna `# Ref` / `Ref` |
+| **clientes potenciales** · **visitas** | ❌ **sin FILTRO** de Ref → filtrar por **vendedor + rango de fechas** y **barrer filas**. ✅ Pero la **LISTA sí trae columna `# Ref`** (confirmado en clientes potenciales), así que el barrido es exacto, no aproximado |
+
+### 🔴 La conversión de moneda NO siempre divide — depende de la moneda de la transacción
+
+| Playa observada | Monto | Conv. | Operación |
+|---|---|---|---|
+| capitalina / Isla Coche | **BS** | US$ | `50.687,24 / 724 = 70,01` → **dividir** |
+| el_valle / La Tortuga | **US$** | BS | `30,00 × 725,75 = 21.772,50` → **multiplicar** |
+
+Asumir siempre división produce **falsos `WEB-CALC-MISMATCH`** en las playas que operan en US$.
+`verificarConversion()` deduce la dirección de las monedas y, si no puede, **no juzga** en vez de adivinar
+(`opts.direccion` la fuerza). `[el_valle-20260728]`
+
+### Totales de cabecera: etiqueta y valor comparten padre
+
+En **todos** los detalles (no solo pedidos) el bloque de totales no lo levanta la regla "hoja etiqueta → hoja
+siguiente": el valor es un *textNode* del mismo padre. Leer con
+`el.parentElement.textContent.slice(etiqueta.length)` **y poner tope de longitud**, o `Ubicación:` absorbe los
+controles del mapa. Casos sueltos: **`Observaciones` no lleva `:`** y se pierde con la regla estándar; en
+`detalleInventario` la **coordenada no es texto visible** (vive en el HTML del mapa). `[el_valle-20260728]`
 
 `[f0-2807]`
 

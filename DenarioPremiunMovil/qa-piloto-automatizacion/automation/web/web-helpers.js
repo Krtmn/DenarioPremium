@@ -229,12 +229,34 @@ function mismoDia(a, b) {
   return !!(fa && fb && fa.dia === fb.dia);
 }
 
-/** Oráculo de conversión: monto / tasa == monto convertido. */
-function verificarConversion(montoBs, tasa, montoConv, tol) {
-  const m = parseNumeroVE(montoBs), t = parseTasa(tasa), c = parseNumeroVE(montoConv);
+/**
+ * Oráculo de conversión — **la dirección depende de la moneda de la transacción**.
+ *
+ * 🔴 No siempre se divide. Confirmado con datos reales:
+ *   · capitalina / Isla Coche: monto en **BS**, conv. en **US$** → `50.687,24 / 724 = 70,01`   → **DIVIDIR**
+ *   · el_valle / La Tortuga:   monto en **US$**, conv. en **BS**  → `30,00 × 725,75 = 21.772,50` → **MULTIPLICAR**
+ * Asumir siempre división produce **falsos WEB-CALC-MISMATCH** en las playas que operan en US$.
+ *
+ * Por defecto deduce la dirección de las monedas (`parseMoneda`). Si no puede deducirla, no juzga
+ * (`ok: null`) en vez de adivinar. `opts.direccion` fuerza `'dividir'` | `'multiplicar'`.
+ */
+function verificarConversion(monto, tasa, montoConv, opts) {
+  const o = (typeof opts === 'number') ? { tol: opts } : (opts || {});   // compat: 4º arg numérico = tol
+  const tol = o.tol == null ? TOL : o.tol;
+  const pm = parseMoneda(monto), pc = parseMoneda(montoConv);
+  const m = pm.valor, c = pc.valor, t = parseTasa(tasa);
   if (m == null || t == null || c == null || t === 0) return { ok: null, motivo: 'datos incompletos' };
-  const esperado = m / t;
-  return { ok: igual(esperado, c, tol == null ? TOL : tol), esperado, obtenido: c };
+
+  let dir = o.direccion;
+  if (!dir) {
+    if (pm.moneda === 'BS' && pc.moneda === 'US$') dir = 'dividir';
+    else if (pm.moneda === 'US$' && pc.moneda === 'BS') dir = 'multiplicar';
+  }
+  if (!dir) {
+    return { ok: null, motivo: `no se pudo deducir la dirección (monto=${pm.moneda || '?'}, conv=${pc.moneda || '?'}): pasá opts.direccion` };
+  }
+  const esperado = dir === 'dividir' ? m / t : m * t;
+  return { ok: igual(esperado, c, tol), esperado, obtenido: c, direccion: dir };
 }
 
 /** Oráculo de depósito: Σ(cobros hijos) == monto depositado (F0: el detalle lista sus cobros). */

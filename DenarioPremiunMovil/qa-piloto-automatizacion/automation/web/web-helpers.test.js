@@ -105,10 +105,22 @@ const casos = [
   ['519', '47.950,52 BS', '724,00 BS = 1 US$', '66,23 US$'],
 ];
 for (const [ref, monto, tasa, conv] of casos) {
-  t(`conversión OK en el cobro real #${ref}`, H.verificarConversion(monto, tasa, conv).ok === true);
+  t(`conversión OK en el cobro real #${ref} (BS→US$, divide)`, H.verificarConversion(monto, tasa, conv).ok === true);
 }
 t('conversión detecta un valor mal calculado', H.verificarConversion('50.687,24 BS', '724,00 BS = 1 US$', '99,99 US$').ok === false);
 eq('conversión con datos incompletos no juzga', H.verificarConversion('50,00', null, '1,00').ok, null);
+
+// ── DIRECCIÓN DE LA CONVERSIÓN — regresión real el_valle-20260728 ──────────────
+// No siempre se divide: en La Tortuga la transacción es en US$ y la conversión va a BS.
+// Asumir división daba un falso WEB-CALC-MISMATCH.
+eq('deduce DIVIDIR cuando BS→US$', H.verificarConversion('50.687,24 BS', '724,00 BS = 1 US$', '70,01 US$').direccion, 'dividir');
+eq('deduce MULTIPLICAR cuando US$→BS', H.verificarConversion('30,00 US$', '725,75 BS = 1 US$', '21.772,50 BS').direccion, 'multiplicar');
+t('caso real el_valle: 30,00 US$ × 725,75 = 21.772,50 BS', H.verificarConversion('30,00 US$', '725,75 BS = 1 US$', '21.772,50 BS').ok === true);
+t('caso real el_valle línea 1: 9,60 × 725,75 = 6.967,20', H.verificarConversion('9,60 US$', '725,75 BS = 1 US$', '6.967,20 BS').ok === true);
+t('US$→BS con valor mal calculado se detecta', H.verificarConversion('30,00 US$', '725,75 BS = 1 US$', '9.999,00 BS').ok === false);
+eq('sin monedas legibles NO adivina: no juzga', H.verificarConversion('30,00', '725,75', '21.772,50').ok, null);
+t('opts.direccion fuerza el sentido', H.verificarConversion('30,00', '725,75', '21.772,50', { direccion: 'multiplicar' }).ok === true);
+t('compat: 4º arg numérico se sigue tomando como tolerancia', H.verificarConversion('50.687,24 BS', '724,00 BS = 1 US$', '70,02 US$', 0.05).ok === true);
 
 // ── Oráculo de depósito: Σ(cobros hijos) == monto depositado ────────────────
 t('suma de cobros cuadra con el depósito', H.verificarSuma(['10,00 US$', '6,85 US$'], '16,85 US$').ok === true);
