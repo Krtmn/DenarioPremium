@@ -1,0 +1,17 @@
+{
+  "_generated_for": "el_valle",
+  "_run_dir": "automation/reports/smoke_el_valle_20260728_130612/",
+  "modules": {
+    "cobros": {
+      "cliente_normal": null,
+      "cliente_igtf": null,
+      "_nota": "Descubierto en pre-vuelo BD. Para el documento exacto en UI, confirmar con local-query sobre document_sales + co_currency."
+    },
+    "pedidos": null,
+    "devoluciones": null,
+    "inventarios": null,
+    "visitas": null,
+    "depositos": null,
+    "clientes": null
+  }
+}

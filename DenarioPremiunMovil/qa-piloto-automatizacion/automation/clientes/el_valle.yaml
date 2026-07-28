@@ -29,8 +29,12 @@ db_name: el_valle                             # base en el RDS CENTRAL 'savia'
 # ── VGs — del global_configuration reciente 20260728. Conflictos vs client-config 2023 marcados ⚠️VERIFICAR ──
 vgs:
   multiCurrency: true                         # ambos dumps coinciden
-  expirationBatch: true                       # ⚠️VERIFICAR global 2025-04-14=true vs client-2023=false → GANA true
-                                              #   ⇒ inventarios CON lote + fecha de expiración (campos habilitados)
+  expirationBatch: true                       # ✅ CONFIRMADO EN CORRIDA [el_valle-20260728] — el dump client-2023=false
+                                              #   queda DESCARTADO. Lote y Fecha de vencimiento son **OBLIGATORIOS**:
+                                              #   con solo cantidad la app rechaza con "Complete cantidad, unidad,
+                                              #   fecha y lote para continuar." y el producto NO queda inventariado.
+                                              #   ⚠ La VG gobierna la VALIDACIÓN, no la visibilidad (los campos se
+                                              #   renderizan igual con false) — ver _comunes.md.
   clientStock: true                           # (global 2026-05-18) módulo Inventarios APLICA
   requireClientStock: false                   # ⚠️VERIFICAR global=false vs client-2023=true → no exige inventario previo al pedido
   suggestedOrder: true                        # botón "Pedido Sugerido"
@@ -56,7 +60,10 @@ vgs:
   esVendedor: TBD                             # ⚠ NO viene en los dumps → CONFIRMAR con QA (infoVendedores=false en ambos)
   infoVendedores: false                       # módulo Vendedores se genera automáticamente en la app
   enterpriseEnabled: true                     # empresa habilitada… ⚠️VERIFICAR alcance (ver orderEnterpriseEnabled)
-  orderEnterpriseEnabled: false               # ⚠️VERIFICAR solo en client-2023 → PEDIDOS sin campo empresa. Confirmar en UI
+  orderEnterpriseEnabled: false               # ✅ CONFIRMADO-CON-MATIZ [el_valle-20260728] el campo Empresa **SÍ se
+                                              #   renderiza** en Pedidos, pero como ion-select DESHABILITADO con
+                                              #   "PROCESADORA DE ALIMENTOS COVADONGA" preseleccionada. No es ausencia
+                                              #   del campo → no esperar que falte, esperar que esté bloqueado.
   enabledManualRate: false                    # → DM-COB-039 rama A (tasa manual) N/A
   canChangeRate: false                        # (2026-07-23) → DM-COB-047 (fecha tasa editable) N/A
   historicoTasa: true                         # mesesTasa=3 (global) ⚠️ client-2023=6
@@ -116,7 +123,10 @@ vgs:
 #
 # ── VGs de Pedidos (global reciente) ──
 # stock0=true (se pueden pedir productos sin inventario) ⚠️client-2023=false · showStock=false (2026-04-28) ·
-# validateWarehouses=true (2026-05-08 gana sobre client 2026-03-09=false) · userCanChangeWarehouse=false ·
+# validateWarehouses=true ✅CONFIRMADO en UI+BD [el_valle-20260728]: el ítem muestra "Almacén: 1 - PRODUCTO
+#   TERMINADO (EMBUTIDOS)" y la BD lleva co_warehouse=010 → el `false` del client-config era dump stale ·
+# userCanSelectProductDiscount=false ✅CONFIRMADO (ningún control de descuento por producto en la UI) ·
+# userCanChangeWarehouse=false ·
 # userCanChangePriceList=true (2026-03-10) ⚠️client-2023=false · userCanChangePriceListProduct=true ·
 # userCanSelectProductDiscount=**false** (client 2026-03-09 es MÁS RECIENTE que global 2026-03-03) ⚠️VERIFICAR ·
 # userCanSelectGlobalDiscount=false · userCanSelectIVA=false · userCanChangePaymentConditions=true (2026-03-03) ·
@@ -139,8 +149,15 @@ modules:
               # clientsOrderBy=na_client → la lista sale ordenada por NOMBRE · firma habilitada
 
   pedidos:    { cliente_test: "ABASTOS Y CARNICERIA HERMANOS FLORES CA",
-                producto_test: "ALAS DE POLLO",          # co_product C0051
-                producto_alt:  "COSTILLA CHINA DE CERDO" }  # co_product C0003
+                producto_test: "ALAS DE POLLO",          # co_product C0051 · precio 4,80
+                producto_alt:  "COSTILLA CHINA DE CERDO" }  # co_product C0003 · precio 6,80
+              # ✅ [el_valle-20260728] 14/14 PASS · pedido Ref 437 (=id_order) BD-OK campo-a-campo
+              # ⚠ CORRECCIONES del perfil halladas en corrida:
+              #   · codeTotalProductUnit decía "CJA" pero UI y BD usan **PIEZA / PZA-** → no esperar CJA
+              #   · el Tab Pedido NO tiene searchbar → `texto_busqueda` no aplica acá (sí en Productos)
+              #   · línea "DESTACADOS" (featuredProducts) está VACÍA en esta playa
+              # Estructura del Tab Pedido: HÍBRIDA — `ion-item.listaItems` (categoría) que al expandir
+              #   INYECTA un `ion-accordion-group` de productos. Son dos niveles, no dos builds distintos.
               # SIN empresa (orderEnterpriseEnabled=false ⚠️VERIFICAR) · sin multimoneda · comentario NO obligatorio
               # stock0=true (se pueden pedir productos sin inventario) · 80 productos en catálogo
 

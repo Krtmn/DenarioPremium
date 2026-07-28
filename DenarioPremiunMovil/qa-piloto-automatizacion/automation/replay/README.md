@@ -80,6 +80,23 @@ reproducir con los datos de la nueva corrida (ver `substitute()` en `replay-engi
   corre `runReplay`, y solo lanza un agente-modelo para los pasos que divergen. **Aún no cableado** —
   no tiene sentido hasta tener la 1ª traza real.
 
+## 🔴 Limitación conocida — la traza se PARTE en el paso que persiste
+
+Detectado en la 1ª corrida de grabación real (`el_valle-20260728`, módulo clientes):
+
+> Los clicks de **Guardar / Enviar / botón de alert** se hacen con `pg.mouse.click(x, y)` sobre
+> **coordenadas frescas** (`coordsOf`/`alertButtonCoords`), no con un helper con nombre. Como el grabador
+> solo captura `eng.W(helper)` / `recEval` / `recAssert`, **esas acciones no quedan en la traza**.
+
+**Consecuencia:** ningún módulo transaccional puede reproducir su **envío** por replay — la traza cubre
+el llenado del formulario pero se corta justo antes de persistir. El replay serviría para navegar y
+llenar, no para completar el caso.
+
+**Arreglo pendiente (antes de que REPLAY sirva de verdad):** promover esos clicks a **helpers canónicos
+envolvibles** (ej. `clickHeaderButton(pg, 'Guardar')`, `clickAlertButton` ya existe) y grabarlos con
+`eng.W(...)`. Mientras tanto, las trazas se graban igual y son útiles como documentación del flujo, pero
+**no son reproducibles end-to-end**. Los agentes lo declaran en `nota_cobertura` dentro de la traza.
+
 ## Estado
 
 - ✅ Motor + self-test de lógica pura — validado sin dispositivo (`node automation/replay/replay-engine.test.js` → 13/13).
