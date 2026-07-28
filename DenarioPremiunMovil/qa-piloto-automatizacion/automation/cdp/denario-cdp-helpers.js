@@ -19,15 +19,97 @@ const CDP_URL = 'http://127.0.0.1:9220';
 // ---------------------------------------------------------------------------
 
 /**
+ * Corta cualquier promesa que se cuelgue. Base del watchdog (RUNTIME §11).
+ * Lanza Error('TIMEOUT:<label> tras <ms>ms') — el prefijo TIMEOUT: es lo que cuenta makeWatchdog.
+ * @param {Promise} promise
+ * @param {number} ms
+ * @param {string} [label]
+ */
+function withTimeout(promise, ms, label) {
+  let t;
+  const guard = new Promise((_, rej) => {
+    t = setTimeout(() => rej(new Error('TIMEOUT:' + (label || 'op') + ' tras ' + ms + 'ms')), ms);
+  });
+  return Promise.race([promise, guard]).finally(() => clearTimeout(t));
+}
+
+/**
  * Conectar al WebView de la app vía CDP y devolver la página activa.
  * Siempre usar este helper en vez de escribir connectOverCDP inline.
+ * Con techo de tiempo + reintento acotado: un `connectOverCDP` que no responde
+ * ya no cuelga el módulo — falla con 'CDP-DOWN:' y el agente marca ⛔ BLOCKED (RUNTIME §11).
+ * @param {object} page - la `page` que expone browser_run_code_unsafe
+ * @param {{timeoutMs?:number, retries?:number}} [opts]
  */
-async function connectCdp(page) {
-  const cdp = await page.context().browser()._browserType.connectOverCDP(CDP_URL);
-  const ctx  = cdp.contexts()[0];
-  const pg   = ctx.pages()[0];
-  await pg.bringToFront();
-  return pg;
+async function connectCdp(page, opts) {
+  const o = opts || {};
+  const timeoutMs = o.timeoutMs || 20000;
+  const retries   = o.retries == null ? 2 : o.retries;
+  let last;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const cdp = await withTimeout(
+        page.context().browser()._browserType.connectOverCDP(CDP_URL), timeoutMs, 'connectOverCDP');
+      const ctx = cdp.contexts()[0];
+      const pg  = ctx && ctx.pages()[0];
+      if (!pg) throw new Error('CDP conectó pero no hay páginas');
+      await withTimeout(pg.bringToFront(), 5000, 'bringToFront');
+      return pg;
+    } catch (e) {
+      last = e;
+      if (i < retries) await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
+    }
+  }
+  throw new Error('CDP-DOWN: ' + (last && last.message));
+}
+
+/** Ping barato al WebView: ¿el CDP sigue vivo? No lanza — devuelve boolean. */
+async function cdpAlive(pg, ms) {
+  try { await withTimeout(pg.evaluate(() => 1), ms || 5000, 'ping'); return true; }
+  catch (e) { return false; }
+}
+
+/**
+ * Watchdog de módulo (RUNTIME §11). Envuelve cada operación con techo de tiempo,
+ * cuenta cuelgues y aborta el módulo antes de que un hang de CDP se coma horas de wall-clock.
+ *
+ *   const wd = h.makeWatchdog({ moduleMs: 45*60*1000 });
+ *   await wd.run('openNuevoCobro', () => h.openNuevoCobro(pg, 0));
+ *
+ * - `TIMEOUT:` → cuenta un cuelgue. Al llegar a `maxHangs` lanza 'ABORT-MODULE:...'.
+ * - Superado `moduleMs` → lanza 'ABORT-MODULE:techo-wall-clock' antes de arrancar la op.
+ * - Cualquier otro error se propaga tal cual (es un FAIL/BLOCKED normal, no un cuelgue).
+ *
+ * @param {{opMs?:number, maxHangs?:number, moduleMs?:number}} [opts]
+ */
+function makeWatchdog(opts) {
+  const o = opts || {};
+  const opMs     = o.opMs     || 90000;              // techo por operación
+  const maxHangs = o.maxHangs || 2;                  // cuelgues tolerados por módulo
+  const moduleMs = o.moduleMs || 45 * 60 * 1000;     // techo de wall-clock del módulo
+  const t0 = Date.now();
+  let hangs = 0;
+  return {
+    hangs: () => hangs,
+    elapsedMs: () => Date.now() - t0,
+    budgetLeftMs: () => moduleMs - (Date.now() - t0),
+    run: async (label, fn, ms) => {
+      if (Date.now() - t0 > moduleMs) {
+        throw new Error('ABORT-MODULE:techo-wall-clock (' + Math.round((Date.now() - t0) / 60000) + ' min)');
+      }
+      try {
+        return await withTimeout(Promise.resolve().then(fn), ms || opMs, label);
+      } catch (e) {
+        if (String(e && e.message).indexOf('TIMEOUT:') === 0) {
+          hangs++;
+          if (hangs >= maxHangs) {
+            throw new Error('ABORT-MODULE:' + hangs + ' cuelgues de CDP (último: ' + label + ')');
+          }
+        }
+        throw e;
+      }
+    },
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -775,6 +857,9 @@ if (typeof module !== 'undefined' && module.exports) {
     CDP_URL,
     BASE64_1PX_JPEG,
     connectCdp,
+    withTimeout,
+    cdpAlive,
+    makeWatchdog,
     fetchCreds,
     getActiveView,
     fillIonInput,

@@ -12,6 +12,10 @@ automation/db/_tmp_server_cache.json
 automation/db/tmp_*
 .playwright-mcp/
 
+# Trazas record→replay (RUNTIME §12) — no commitear hasta validarlas con validateTrace
+automation/reports/*/_trace/
+automation/replay/traces/
+
 .env
 *.local
 .claude/settings.local.json

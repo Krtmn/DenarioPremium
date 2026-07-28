@@ -68,13 +68,27 @@ reproducir con los datos de la nueva corrida (ver `substitute()` en `replay-engi
 
 ## Integración con el orquestador (2 modos)
 
-- **RECORD** (flag `QA_MODE=record`): cada agente de módulo instala el grabador (`installRecorder`),
-  envuelve sus ops con el vocabulario, y al cierre vuelca `dumpTrace` a `{RUN_DIR}/_trace/{modulo}.trace.json`.
+- **RECORD** (flag `QA_MODE=record`) — **cableado** (2026-07-28):
+  - `prompt-orquestador-smoke.md` → **Paso 0** crea `{RUN_DIR}_trace/` e inyecta el **BLOQUE RECORD**
+    en cada prompt de agente; sin el flag, nadie graba y la corrida es idéntica a hoy.
+  - `RUNTIME.md §12` → procedimiento del agente: instalar el grabador, envolver las ops con el
+    vocabulario, y al cierre volcar a `{RUN_DIR}_trace/{modulo}.trace.json` con el sobre completo.
+  - Los agentes **inlinan `installRecorder`/`dumpTrace` desde este archivo** (en
+    `browser_run_code_unsafe` no hay `require`) — este archivo es la **única fuente** de esas funciones;
+    no reescribirlas en el prompt ni duplicarlas en `denario-cdp-helpers.js`.
 - **REPLAY** (flag `QA_MODE=replay`): un runner liviano por módulo lee su traza + los datos del YAML,
-  corre `runReplay`, y solo lanza un agente-modelo para los pasos que divergen.
+  corre `runReplay`, y solo lanza un agente-modelo para los pasos que divergen. **Aún no cableado** —
+  no tiene sentido hasta tener la 1ª traza real.
 
 ## Estado
 
-- ✅ Motor + self-test de lógica pura (este commit) — validado sin dispositivo.
+- ✅ Motor + self-test de lógica pura — validado sin dispositivo (`node automation/replay/replay-engine.test.js` → 13/13).
+- ✅ **Modo RECORD cableado** al orquestador y a `RUNTIME.md §12` (2026-07-28). La próxima corrida
+  lanzada con `QA_MODE=record` graba; sin el flag no cambia nada.
 - ⏳ Pendiente de una **corrida de grabación** (device + cliente) para producir la 1ª traza real y
   validar el loop end-to-end + medir el ahorro vs baseline (ferrenuestro cobros: 87 tool-uses / módulo pesado).
+- ⏳ Pendiente el **runner de REPLAY** (bloqueado por lo anterior).
+
+> **Compañero necesario:** el watchdog de CDP (`RUNTIME §11`, `denario-cdp-helpers.js`
+> `makeWatchdog`/`withTimeout`, self-test `automation/cdp/watchdog.test.js`). Sin él, un solo cuelgue
+> de CDP (ferrenuestro-20260723: ~15.7 h por 2 hangs) se come todo el ahorro que produzca el replay.

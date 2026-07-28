@@ -83,6 +83,7 @@ Eres **Claude Code actuando como Orquestador QA** para Denario Premium Móvil. T
 **Carpeta raíz de trabajo:** `DenarioPremiunMovil/qa-piloto-automatizacion/`
 **Reportes:** guardar en `automation/reports/smoke_{QA_CLIENTE}_{YYYYMMDD}_{HHMMSS}/` (una carpeta por corrida — ver Paso 0)
 **QA_CLIENTE:** (especificar al lanzar, ej. `QA_CLIENTE=hidroponias`)
+**QA_MODE:** opcional — `QA_MODE=record` para que los agentes **graben la traza** de replay determinista (RUNTIME §12). Si no se especifica, la corrida es la normal de hoy y **nadie graba**.
 
 ---
 
@@ -139,6 +140,17 @@ node automation/db/resolve-run-context.js {QA_CLIENTE} {RUN_DIR}
 ```
 Genera `{RUN_DIR}run-context.json` con el cliente/documento ya resuelto por módulo (hoy: cobros completo; otros módulos → `null` hasta validar su query → el agente usa su discovery actual). En cada prompt de agente, **inyectar la sección `modules.{modulo}` de ese JSON** (si no es `null`) como "DATOS RESUELTOS" para que el agente vaya directo sin explorar. Si el script da `ERR:` o el módulo viene `null` → el agente cae a su discovery habitual (igual que hoy). **Nunca** detener la corrida por esto.
 
+**Techo de wall-clock por módulo (watchdog — RUNTIME §11):** fijar `TECHO_MODULO_MS` por módulo e inyectarlo en cada prompt de agente. Defaults:
+
+| Módulo | Techo |
+|---|---|
+| Cobros · Pedidos | **60 min** (`3600000`) |
+| Los otros 8 | **45 min** (`2700000`) |
+
+Existe porque en `ferrenuestro-20260723` dos cuelgues de CDP (cobros ~2.7 h, productos ~9.9 h) llevaron la corrida a ~15.7 h. Con techo, un módulo colgado se corta y la corrida sigue.
+
+**Si `QA_MODE=record` (RUNTIME §12):** crear también `{RUN_DIR}_trace/` e inyectar el **BLOQUE RECORD** en cada prompt de agente (ver PROMPTS DE AGENTES). Sin el flag, no crear la carpeta ni inyectar el bloque.
+
 ---
 
 ## ORDEN DE EJECUCIÓN
@@ -167,6 +179,7 @@ Para cada módulo en el orden anterior:
 3. Verifica que el agente terminó en Home.
 3b. **Si el módulo es transaccional:** lanzá su **Agente BD en BACKGROUND** (`Agent` con `run_in_background: true`) — coteja los payloads de ese módulo (`cotejo-payload.js`) mientras vos seguís con el agente UI del módulo siguiente. Cuando notifique, **anexá vos (orquestador, foreground) el markdown que devolvió** a `{RUN_DIR}{modulo}.md` y borrá su temporal — el agente BD NO escribe (en background se auto-deniega). Ver nota "Cotejo BD en paralelo" abajo.
 4. FAIL en caso S1: registra en consolidado y continúa con el siguiente módulo.
+4b. **Si el agente devuelve `MODULO ABORTADO: …`** (watchdog — RUNTIME §11): **no relanzarlo**. Anotar en el consolidado (módulo · motivo · casos ejecutados · BLOCKED) y **seguir con el módulo siguiente**. Antes de lanzarlo, verificar que el CDP revivió: `curl http://127.0.0.1:9220/json/version`. Si el CDP está caído → detener la corrida y avisar (contingencia de infra), **no** encadenar módulos contra un CDP muerto. Una corrida con ≥1 módulo abortado es **parcial** → aplica la guarda de completitud (sin Agente 11).
 5. Al terminar los 10: genera el Reporte Consolidado Final en `{RUN_DIR}consolidado.md`.
 6. **Consolidación de memoria (automática — Paso 7):** **solo si los 10 módulos completaron** (no corrida parcial), lanza el **Agente 11 — Consolidación** con la herramienta `Agent` (ver plantilla abajo). No es un paso manual: lo dispara el orquestador como su último agente.
 7. Cuando el Agente 11 termine, **añade al `consolidado.md` la sección "Memoria: patrones promovidos"** con el resumen que devolvió. La corrida queda cerrada con la memoria al día; el control de calidad es revisar el `git diff` antes de commitear.
@@ -185,10 +198,46 @@ Para cada módulo en el orden anterior:
 
 ## PROMPTS DE AGENTES
 
-Plantilla común — el orquestador inyecta RUN_ID, QA_CLIENTE y la sección `modules.{modulo}` del perfil cliente en cada prompt antes de lanzar el agente.
+Plantilla común — el orquestador inyecta RUN_ID, QA_CLIENTE y la sección `modules.{modulo}` del perfil cliente en cada prompt antes de lanzar el agente. Además inyecta el **BLOQUE WATCHDOG** (siempre, con el techo del módulo) y el **BLOQUE RECORD** (solo si `QA_MODE=record`) — ambos definidos justo abajo.
 
 Ruta helpers (constante en todos los prompts) — **relativa a la raíz `qa-piloto-automatizacion/`** (portable, funciona en cualquier máquina):
 `automation/cdp/denario-cdp-helpers.js`
+
+### BLOQUE WATCHDOG (obligatorio · inyectar en los 10 prompts, justo después del INICIO)
+
+```
+WATCHDOG (RUNTIME §11 — obligatorio):
+const wd = h.makeWatchdog({ moduleMs: {TECHO_MODULO_MS} });
+Envolvé toda operación de CDP: await wd.run('<label>', () => <op>);
+- TIMEOUT:<label>  → ese caso ⛔ BLOCKED "cuelgue CDP" y SEGUÍ con el siguiente.
+- CDP-DOWN:        → ⛔ BLOCKED; reconectá UNA vez con h.connectCdp(page); si vuelve a fallar, abortá.
+- ABORT-MODULE:*   → CORTÁ el módulo YA. Casos restantes ⛔ BLOCKED "techo de módulo".
+Al abortar: escribí igual el reporte .md + el ledger de lo ejecutado, volvé a HOME si podés, y
+devolvé al orquestador: "MODULO ABORTADO: <motivo> · <n> ejecutados · <n> BLOCKED".
+Nunca reintentes un módulo abortado por tu cuenta.
+```
+
+> El orquestador sustituye `{TECHO_MODULO_MS}` por el techo del módulo (Paso 0: cobros/pedidos `3600000`, resto `2700000`).
+
+### BLOQUE RECORD (condicional · **solo** si `QA_MODE=record` — RUNTIME §12)
+
+```
+QA_MODE=record — GRABÁ LA TRAZA (aditivo: si falla, seguí la corrida normal):
+1. Leé automation/replay/replay-engine.js con Read e inliná SOLO installRecorder y dumpTrace
+   (no hay require en browser_run_code_unsafe; no las reescribas de memoria).
+2. Tras connectCdp:  const eng = await installRecorder(pg);
+3. Envolvé las ops deterministas:
+     await eng.recCase('DM-XXX-NNN');
+     await eng.W('<helper>', h.<helper>, pg, ...args);      // ejecuta Y graba
+     await eng.recEval("() => { ... }", '<tag>');           // acción DOM a medida
+     await eng.recAssert('<desc>', "() => <booleano>");     // oráculo del caso
+4. Al cierre, escribí {RUN_DIR}_trace/{modulo}.trace.json con el sobre de RUNTIME §12:
+   { run_id, modulo, cliente, servidor, build:{app_version, window_ng}, data:{...}, ops:[dumpTrace] }
+   - data DEBE listar TODO valor run-específico usado (cliente, documento, montos, refs).
+   - Descartá los bloques de ops de casos que NO terminaron PASS.
+   - NUNCA grabes credenciales ni nada de secrets/.
+5. En el reporte .md: "TRAZA: {n} ops · {n} casos grabados" (o el motivo si no se grabó).
+```
 
 **Verificación BD inline (los 7 agentes transaccionales — clientes, pedidos, cobros, devoluciones, inventarios, depósitos, visitas):** tras cada Enviar/Guardar que persiste, el agente ejecuta la "Verificación BD" de su `smoke-{modulo}.md` (consulta read-only vía Bash: `node automation/db/query.js {QA_CLIENTE} "SELECT ..."`) y agrega la sub-sección `## Verificación BD` a su reporte con la marca `BD-OK/MISMATCH/N-A/INFO`. Mecánica y blindaje: **RUNTIME §10**. El `{QA_CLIENTE}` ya se inyecta en cada prompt. **Si la BD no responde (`ERR:`) → `BD-N/A`, el caso UI corre y se reporta igual** — la BD nunca tumba el smoke. Login/Productos/Vendedores (solo-lectura) **no** llevan Verificación BD.
 
@@ -679,6 +728,9 @@ Agregar aquí los registros **enviados / persistentes** que reportó cada agente
 | FAIL S1 en un módulo | Registrar en consolidado; continuar con el siguiente módulo |
 | App en estado inconsistente al iniciar agente | Avisar al usuario: "Ejecutar `adb shell am force-stop com.kiberno.denarioPremiumPro` y relanzar la app" |
 | Diálogo nativo de Android visible | Avisar al usuario para que lo descarte manualmente — CDP no puede controlarlo |
+| Agente devuelve `MODULO ABORTADO:` (cuelgue CDP o techo de wall-clock) | No relanzarlo. Anotar en el consolidado, verificar CDP con `curl :9220/json/version` y seguir con el módulo siguiente. Corrida queda **parcial** → sin Agente 11 |
+| CDP caído tras un `MODULO ABORTADO` | Detener la corrida y avisar (`setup-cdp.ps1 -Reforward`) — no encadenar módulos contra un CDP muerto |
+| `QA_MODE=record` y la grabación falla | **No** detener nada: anotar el motivo en el reporte del módulo y seguir la corrida normal (la traza es subproducto, RUNTIME §12) |
 
 ═══════════════════════════════════════════════════════════
 ─── FIN DEL PROMPT ───

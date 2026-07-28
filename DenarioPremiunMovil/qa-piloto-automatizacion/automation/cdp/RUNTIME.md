@@ -25,7 +25,8 @@ No leer los siguientes archivos durante una corrida smoke (gastan tokens sin apo
 ```javascript
 // Primeras 3 líneas de cada browser_run_code_unsafe — sin excepciones
 const pg = await h.connectCdp(page);   // 'h' = funciones inlineadas (ver abajo)
-await h.waitSyncOverlay(pg);
+const wd = h.makeWatchdog({ moduleMs: {TECHO_MODULO_MS} });   // techo del módulo — §11
+await wd.run('waitSyncOverlay', () => h.waitSyncOverlay(pg));
 // Credenciales: leer secrets/qa-credentials.env con Read y parsear el bloque "# Cliente: {QA_CLIENTE}" inline.
 ```
 
@@ -55,6 +56,8 @@ await h.waitSyncOverlay(pg);
 | — | Scroll infinito | `h.scrollInfinite(pg)` | Scroll nativo de página |
 | — | Click ion-item | `h.clickIonItem(pg, selector)` | `pg.click()` directo en ion-item |
 | — | Adjunto obligatorio (cobros/retención) | `h.mockCameraAdjunto(pg)` | `window.ng.getComponent` (solo dev build); ignorar el bloqueo como "VG esperada" |
+| S6 | Techo de tiempo por operación | `h.withTimeout(promesa, ms, 'label')` | Esperar indefinidamente a un `pg.*` que no responde |
+| S7 | Watchdog del módulo (cuelgues + wall-clock) | `h.makeWatchdog({moduleMs})` + `wd.run('label', () => …)` | Correr un módulo sin techo de wall-clock (ver §11) |
 
 ---
 
@@ -88,6 +91,8 @@ await h.waitSyncOverlay(pg);
 | "Salir sin guardar" mantiene visita ya Guardada | NO es FAIL — comportamiento correcto |
 | "Salir sin guardar" en visita nueva que nunca fue guardada → visita persiste | FAIL |
 | Selector/flujo no responde por CDP tras 2 intentos acotados | ⛔ BLOCKED (limitación de automatización, NO defecto de app — no contamina FAIL ni N/A) |
+| CDP cuelga (`TIMEOUT:`) o se corta la conexión (`CDP-DOWN:`) | ⛔ BLOCKED con motivo `cuelgue CDP` — infra, NO defecto de app (ver §11) |
+| Módulo abortado por watchdog (`ABORT-MODULE:`) | Casos restantes ⛔ BLOCKED `techo de módulo`; devolver al orquestador y seguir con el módulo siguiente |
 
 ---
 
@@ -259,6 +264,80 @@ El §10 base verifica campos clave (totales, conteos, estado). El **Nivel 2** ve
 
 ---
 
+## 11. Watchdog de CDP — ningún módulo se cuelga en silencio
+
+**Por qué existe:** en la corrida `ferrenuestro-20260723` el wall-clock fue **~15.7 h**, y no por volumen de casos: **2 cuelgues de CDP** (cobros ~2.7 h, productos ~9.9 h). Un `browser_run_code_unsafe` que no responde **no se detecta ni se corta solo** — el módulo queda colgado hasta el techo de sesión. Un solo hang puede multiplicar ×30 la duración de un módulo.
+
+**Regla (obligatoria en todo agente de módulo):**
+
+```javascript
+const pg = await h.connectCdp(page);                      // ya trae techo 20s + 2 reintentos
+const wd = h.makeWatchdog({ moduleMs: {TECHO_MODULO_MS} });  // el orquestador inyecta el techo
+await wd.run('waitSyncOverlay', () => h.waitSyncOverlay(pg));
+await wd.run('openNuevoCobro',  () => h.openNuevoCobro(pg, 0));
+```
+
+| Señal | Qué significa | Qué hace el agente |
+|---|---|---|
+| `TIMEOUT:<label>` | esa operación superó el techo (default **90 s**) | cuenta 1 cuelgue · marca el caso ⛔ BLOCKED `cuelgue CDP` · **sigue** con el caso siguiente |
+| `CDP-DOWN: …` | `connectCdp` agotó sus reintentos | ⛔ BLOCKED e **intentar reconectar una vez** al inicio del caso siguiente; si vuelve a fallar → abortar módulo |
+| `ABORT-MODULE:<n> cuelgues` | 2º cuelgue del módulo (default `maxHangs=2`) | **cortar el módulo ya**; casos restantes ⛔ BLOCKED |
+| `ABORT-MODULE:techo-wall-clock` | el módulo superó su `moduleMs` | **cortar el módulo ya**; casos restantes ⛔ BLOCKED |
+
+**Al abortar:** escribir igual el reporte `.md` + las líneas del ledger de lo ya ejecutado, **volver a HOME si se puede**, y devolver al orquestador `MODULO ABORTADO: <motivo> · <n> casos ejecutados · <n> BLOCKED`. El orquestador **continúa con el módulo siguiente** — un módulo abortado no tumba la corrida.
+
+**Techos por defecto** (el orquestador puede ajustarlos por módulo): operación **90 s** · cuelgues tolerados **2** · wall-clock de módulo **45 min** (cobros y pedidos: **60 min**).
+
+> `ABORT-MODULE` y `BLOCKED` por cuelgue son **infra**, no defectos de la app: no cuentan como FAIL ni como N/A (§4). `aggregate.js` los ve como salud de automatización.
+
+---
+
+## 12. Modo RECORD — grabar la traza para replay determinista (Ola 2)
+
+**Para qué:** el costo real de una corrida no es la app, es **el modelo razonando entre cada acción** (~550 tool-uses/corrida). El modo RECORD graba, durante una corrida agéntica normal, la secuencia de operaciones deterministas que **de verdad funcionaron en ESE build**. Las corridas siguientes del mismo build/cliente la **reproducen** (REPLAY) en pocas `browser_run_code_unsafe`, y el modelo solo entra **ante divergencia**. Diseño completo: `automation/replay/README.md`.
+
+**Cuándo aplica:** solo si el orquestador inyecta `QA_MODE=record` en el prompt del agente. **Sin ese flag el agente NO graba nada** y la corrida es idéntica a hoy.
+
+**Cómo (grabar es aditivo — nunca puede tumbar la corrida):**
+
+1. Leer `automation/replay/replay-engine.js` con **Read** e inlinar **solo** `installRecorder` y `dumpTrace` (≈12 líneas) — en `browser_run_code_unsafe` no hay `require` (§1). Es la **única** fuente de esas funciones: no reescribirlas de memoria.
+2. Tras `connectCdp`: `const eng = await installRecorder(pg);`
+3. Envolver cada operación determinista con el vocabulario de la traza:
+   - `await eng.recCase('DM-COB-002')` → marca el inicio de un caso
+   - `await eng.W('openNuevoCobro', h.openNuevoCobro, pg, 0)` → **ejecuta Y graba** el helper con sus args
+   - `await eng.recEval("() => { … }", 'select-client')` → acción DOM a medida
+   - `await eng.recAssert('5 tabs', "() => …")` → oráculo booleano del caso
+4. **Al cierre del módulo**, volcar a `{RUN_DIR}_trace/{modulo}.trace.json` con este sobre:
+
+```jsonc
+{
+  "run_id": "<RUN_ID>", "modulo": "cobros", "cliente": "<QA_CLIENTE>", "servidor": "<playa>",
+  "build": { "app_version": "6.6.18", "window_ng": true },
+  "data": { "cliente_test": "TORNICAGUA, C.A.", "documento": "00037192" },  // valores run-específicos usados
+  "ops": [ /* lo que devolvió dumpTrace(pg) */ ]
+}
+```
+
+**Reglas de higiene de la traza (si no se cumplen, la traza no sirve para replay):**
+
+- **`data` es obligatorio** y debe listar **todo** valor run-específico que aparezca en args o en código (cliente, documento, montos, refs). Es lo que `substitute()` reemplaza al reproducir con otros datos. Si un valor no está en `data`, el replay lo repetirá literal y fallará.
+- **Solo casos PASS.** Al volcar, **descartar los bloques de ops de casos que terminaron FAIL / BLOCKED / N/A** — reproducir un camino roto no aporta.
+- **Nunca** grabar credenciales ni valores de `secrets/` en `data` ni en `code`.
+- **Grabar no bloquea:** si `installRecorder` o el volcado fallan, registrar la nota en el reporte y **continuar la corrida normal**. La traza es un subproducto, no un entregable de la corrida.
+- Reportar en el `.md` del módulo: `TRAZA: {n} ops · {n} casos grabados` (o el motivo si no se grabó).
+
+**Validar la traza antes de confiar en ella** (fuera de la corrida, sin dispositivo):
+
+```bash
+node -e "const{validateTrace}=require('./automation/replay/replay-engine.js');const t=require('./<ruta>.trace.json');console.log(validateTrace(t))"
+```
+`[]` = estructuralmente válida.
+
+> Modo REPLAY: aún **no** cableado — requiere primero una traza real grabada con este modo. Ver "Estado" en `automation/replay/README.md`.
+
+---
+
 *Versión: Fase 4 · 2026-06-09 · memoria sin DELTA (captura en reportes → consolidación directa)*
 *§10 Oráculo BD v2 2026-06-17 (cotejo "lo guardado se envía": nube + local, 5 estados, baseline-diff, por items co_type-aware)*
+*§11 Watchdog CDP + §12 modo RECORD 2026-07-28 (techo por operación/módulo tras el hang de 15.7h en ferrenuestro-20260723; grabación de traza para replay determinista — Ola 2)*
 *Actualizar tras cada corrida que gradúe patrones a `module-selectors/` / `denario-cdp-helpers.js`*

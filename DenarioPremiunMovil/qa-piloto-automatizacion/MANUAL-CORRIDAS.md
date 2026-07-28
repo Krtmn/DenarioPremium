@@ -100,6 +100,15 @@ Esto verifica dispositivo, instala/lanza la app, encuentra el socket WebView, co
 
 Claude hará el resto: 10 módulos en secuencia + consolidado + consolidación de memoria. No necesitas estar frente a la pantalla entre módulos.
 
+**Corrida de GRABACIÓN (opcional — para acelerar las corridas futuras del mismo cliente/build):** añade una segunda línea al lanzar:
+```
+QA_CLIENTE=insumar
+QA_MODE=record
+```
+La corrida es **igual de larga que siempre**, pero además **graba** en `{RUN_DIR}_trace/` la secuencia de operaciones que funcionaron en ese build. Esa traza es la que después permitirá re-correr al mismo cliente en minutos en vez de horas (modo replay). Grabar es aditivo: **si la grabación falla, la corrida sigue normal**. Sin la línea `QA_MODE`, nadie graba y todo funciona como hoy. Detalle: `automation/replay/README.md`.
+
+**Si un módulo se cuelga:** ya no se come la corrida. Desde 2026-07-28 cada módulo tiene un **techo de tiempo** (60 min cobros/pedidos, 45 min el resto) y corta a los 2 cuelgues de CDP. Verás en el consolidado `MODULO ABORTADO: <motivo>` y la corrida **sigue con el módulo siguiente**. Una corrida con módulos abortados es **parcial** → no corre el Agente 11 (la memoria se consolida en la próxima corrida completa).
+
 ### Paso C — Cierre (único checkpoint manual)
 Al terminar, **revisa el `git diff`** de `automation/cdp/module-selectors/` y del YAML del cliente — ahí está lo que el Agente 11 escribió en la memoria. Si todo se ve bien, coordina el commit con el equipo (ver §6). **No hagas push de cambios de memoria/estructura sin avisar.**
 
