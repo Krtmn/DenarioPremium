@@ -58,7 +58,7 @@ await wd.run('waitSyncOverlay', () => h.waitSyncOverlay(pg));
 | — | ion-datetime | `h.confirmDatetime(pg, selector)` | `querySelector('ion-button')` sin shadowRoot |
 | — | Scroll infinito | `h.scrollInfinite(pg)` | Scroll nativo de página |
 | — | Click ion-item | `h.clickIonItem(pg, selector)` | `pg.click()` directo en ion-item |
-| — | Adjunto obligatorio (cobros/retención) | `h.mockCameraAdjunto(pg)` | `window.ng.getComponent` (solo dev build); ignorar el bloqueo como "VG esperada" |
+| — | Adjunto obligatorio (cobros/retención) | `h.installCameraMock(pg)` **primero**, luego `h.mockCameraAdjunto(pg)` | 🔴 **Clickear "TOMAR FOTO" sin el mock del bridge** (abre la cámara NATIVA y cuelga la app, sin salida automática); parchear `Capacitor.Plugins.Camera.getPhoto` (es un **Proxy**: la asignación no se pega y da un **falso OK**); ignorar el bloqueo como "VG esperada" |
 | S6 | Techo de tiempo por operación | `h.withTimeout(promesa, ms, 'label')` | Esperar indefinidamente a un `pg.*` que no responde |
 | S7 | Watchdog del módulo (cuelgues + wall-clock) | `h.makeWatchdog({moduleMs})` + `wd.run('label', () => …)` | Correr un módulo sin techo de wall-clock (ver §11) |
 

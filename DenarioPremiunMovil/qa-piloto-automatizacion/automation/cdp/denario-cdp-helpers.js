@@ -508,29 +508,75 @@ const BASE64_1PX_JPEG =
  * Usar antes de DM-COB-019 (enviar cobro) y DM-COB-029 (Retención) para satisfacer
  * la VG requiredCollectionAttachments. Retorna string 'OK: ...' o lanza Error.
  */
-async function mockCameraAdjunto(pg) {
-  // Instalar mock de Camera.getPhoto capturando Zone.current en el momento de la llamada.
-  // tomarImg() llama Camera.getPhoto() desde dentro de Angular's zone — al capturar
-  // Zone.current allí y resolver dentro de esa zona, el .then() también corre en la zona
-  // de Angular y la vista se actualiza aunque sea un build de producción (AOT + Ivy).
-  const mockInstalled = await pg.evaluate((b64) => {
-    if (!window.Capacitor?.Plugins?.Camera) return 'ERROR: window.Capacitor.Plugins.Camera no disponible';
-    window.Capacitor.Plugins.Camera.getPhoto = function(options) {
-      // Capturamos Zone.current en el momento en que Angular llama al mock
-      const callerZone = (typeof Zone !== 'undefined') ? Zone.current : null;
-      return new Promise((resolve) => {
-        const doResolve = () => resolve({ base64String: b64, format: 'jpeg', saved: false });
-        if (callerZone) {
-          callerZone.run(doResolve);
-        } else {
-          doResolve();
+/**
+ * 🔴 GUARDA DE CÁMARA — instalar SIEMPRE antes de tocar cualquier botón de foto.
+ *
+ * La cámara nativa es una **actividad de Android fuera del WebView**: CDP no la alcanza, la promesa de
+ * `Camera.getPhoto()` NUNCA resuelve y la app queda esperando para siempre. Y no hay salida automática:
+ * `adb shell input keyevent` está PROHIBIDO por las reglas de la corrida ⇒ **solo se sale a mano**.
+ * Incidente real: corrida el_valle-20260728, cobros — se clickeó "TOMAR FOTO" sin mock, la app quedó en
+ * la cámara, hubo que reiniciarla (PID 20475→28660) y **el cobro se perdió**.
+ *
+ * Devuelve 'OK: ...' o lanza. Marca `window.__qaCameraMock = true` para poder verificarlo después.
+ */
+async function installCameraMock(pg) {
+  const r = await pg.evaluate((b64) => {
+    const C = window.Capacitor;
+    if (!C || typeof C.nativePromise !== 'function') return 'ERROR: Capacitor.nativePromise no disponible';
+    if (!C.__qaNativeOrig) {
+      C.__qaNativeOrig = C.nativePromise;
+      // Firma confirmada en device: nativePromise(pluginName, methodName, options)
+      C.nativePromise = function (plugin, metodo, opciones) {
+        if (plugin === 'Camera') {
+          // FALLA CERRADO: NINGÚN método de Camera llega al nativo. Abrir la cámara real
+          // cuelga la app sin salida automática (adb input está prohibido).
+          if (metodo === 'getPhoto' || metodo === 'pickImages') {
+            const z = (typeof Zone !== 'undefined') ? Zone.current : null;   // resolver DENTRO de la zona de Angular
+            return new Promise((resolve) => {
+              const d = () => resolve({ base64String: b64, format: 'jpeg', saved: false });
+              if (z) z.run(d); else d();
+            });
+          }
+          if (metodo === 'checkPermissions' || metodo === 'requestPermissions') {
+            return Promise.resolve({ camera: 'granted', photos: 'granted' });
+          }
+          return Promise.resolve({});
         }
-      });
-    };
-    return 'OK: mock-zone instalado';
+        return C.__qaNativeOrig.call(this, plugin, metodo, opciones);
+      };
+    }
+    window.__qaCameraMock = true;
+    return 'OK: mock de cámara instalado en el bridge (Capacitor.nativePromise)';
   }, BASE64_1PX_JPEG);
+  if (!String(r).startsWith('OK')) throw new Error('installCameraMock: ' + r);
+  return r;
+}
 
-  if (!mockInstalled.startsWith('OK')) throw new Error('mockCameraAdjunto: ' + mockInstalled);
+/** ¿El mock sigue vivo? El contexto JS se pierde al recargar/reiniciar la app → hay que reinstalarlo. */
+async function cameraMockActivo(pg) {
+  try { return await pg.evaluate(() => window.__qaCameraMock === true); } catch (e) { return false; }
+}
+
+/**
+ * Click seguro sobre un botón de foto: **se niega a clickear si el mock no está instalado.**
+ * Usar esto en vez de `pg.mouse.click` sobre el botón de cámara, siempre.
+ */
+async function clickCamaraSeguro(pg, coords) {
+  if (!(await cameraMockActivo(pg))) {
+    throw new Error('CAMARA-SIN-MOCK: clickear la cámara sin mock abre la cámara NATIVA y cuelga la app ' +
+                    'sin salida automática. Llamá installCameraMock(pg) primero (ver RUNTIME §2).');
+  }
+  await pg.mouse.click(coords.x, coords.y);
+}
+
+async function mockCameraAdjunto(pg) {
+  // 🔴 CORREGIDO 2026-07-28 (incidente el_valle): antes parcheaba
+  //    `window.Capacitor.Plugins.Camera.getPhoto`, pero **`Plugins.Camera` es un Proxy** y la asignación
+  //    NO se pega (verificado en device: tras asignar, sigue leyendo `getPhoto() { [capacitor code] }`).
+  //    Resultado: devolvía "OK: mock-zone instalado" siendo un **falso OK**, el click abría la cámara
+  //    NATIVA y la app quedaba colgada sin salida (se perdió un cobro y hubo que reiniciar la app).
+  //    Ahora delega en installCameraMock(), que intercepta el BRIDGE (`Capacitor.nativePromise`).
+  const mockInstalled = await installCameraMock(pg);
 
   // Buscar botón ADJ_TOMAR_FOTO (visible solo si service.showCamera=true)
   const coordsCamara = await pg.evaluate(() => {
@@ -893,6 +939,9 @@ if (typeof module !== 'undefined' && module.exports) {
     getActiveAlert,
     confirmDatetime,
     setIonDatetime,
+    installCameraMock,
+    cameraMockActivo,
+    clickCamaraSeguro,
     mockCameraAdjunto,
     ensureAdjunto,
     openNuevoCobro,
