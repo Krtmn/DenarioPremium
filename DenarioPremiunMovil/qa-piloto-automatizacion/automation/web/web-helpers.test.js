@@ -1,0 +1,133 @@
+/**
+ * web-helpers.test.js — Self-test de la lógica pura de los helpers web.
+ * Corre SIN navegador:  node automation/web/web-helpers.test.js
+ *
+ * Los casos usan DATOS REALES capturados en el reconocimiento F0
+ * (Isla Coche · CAPITALINA DE ALIMENTOS 212, C.A. · 2026-07-28).
+ */
+
+const H = require('./web-helpers.js');
+
+let ok = 0, fail = 0;
+const t = (desc, cond) => { if (cond) ok++; else { fail++; console.error('  FAIL: ' + desc); } };
+const eq = (desc, a, b) => t(`${desc} (esperaba ${JSON.stringify(b)}, dio ${JSON.stringify(a)})`, JSON.stringify(a) === JSON.stringify(b));
+
+// ── Mapa de módulos y guarda de contexto ────────────────────────────────────
+eq('7 módulos mapeados', Object.keys(H.MODULOS).length, 7);
+eq('moduloDe reconoce la lista de cobros', H.moduloDe('/DenarioPremium/pages/cobros'), 'cobros');
+eq('moduloDe reconoce el detalle legacy de visitas', H.moduloDe('/DenarioPremium/pages/protected/visitas/detalleVisita.xhtml'), 'visitas');
+t('verificarContexto acepta el pathname correcto', H.verificarContexto('/DenarioPremium/pages/depositos', 'depositos', false).ok);
+t('verificarContexto RECHAZA otro módulo con la misma tabla (form:pedidosDT)', !H.verificarContexto('/DenarioPremium/pages/depositos', 'pedidos', false).ok);
+t('verificarContexto distingue lista de detalle', !H.verificarContexto('/DenarioPremium/pages/cobros', 'cobros', true).ok);
+eq('clientes potenciales y visitas no tienen filtro # Ref',
+  [H.MODULOS.clientes_potenciales.filtroRef, H.MODULOS.visitas.filtroRef, H.MODULOS.cobros.filtroRef], [false, false, true]);
+
+// ── Ruido de plantilla ──────────────────────────────────────────────────────
+t('descarta el dashboard demo', H.esRuido('Rain Clothing') && H.esRuido('12K') && H.esRuido('Tamas Bunce'));
+t('descarta el menú', H.esRuido('Transacciones') && H.esRuido('Indicadores'));
+t('descarta "N mins ago"', H.esRuido('23 mins ago'));
+t('NO descarta un dato real', !H.esRuido('No. de Ref.:') && !H.esRuido('1801'));
+
+// ── Cabecera del detalle (hojas reales de /pages/detallePedido) ──────────────
+const hojasPedido = ['Transacciones', 'Detalle Pedido', 'Rain Clothing', '12K', '3 mins ago',
+  'No. de Ref.:', '1801', 'Código pedido:', '1785243271076.0', 'Fecha del pedido:', '28/07/2026 09:06:36',
+  'Vendedor:', '01 01', 'Empresa:', 'CAPITALINA DE ALIMENTOS 212, C.A.',
+  'No. Orden de compra:', 'Plataforma:', '¿Por Aprobar?:', 'NO'];
+const cab = H.emparejarCabecera(hojasPedido);
+eq('cabecera: No. de Ref.', cab['No. de Ref.'], '1801');
+eq('cabecera: fecha', cab['Fecha del pedido'], '28/07/2026 09:06:36');
+eq('cabecera: empresa', cab['Empresa'], 'CAPITALINA DE ALIMENTOS 212, C.A.');
+eq('cabecera: campo VACÍO en la web queda vacío, no toma la etiqueta siguiente', cab['No. Orden de compra'], '');
+eq('cabecera: campo tras uno vacío se lee bien', cab['¿Por Aprobar?'], 'NO');
+t('cabecera: el ruido no entra', !('Rain Clothing' in cab) && !('12K' in cab));
+eq('cabecera: normaliza "Cédula::"', H.emparejarCabecera(['Cédula::', '12920139'])['Cédula'], '12920139');
+
+// ── Celdas con el encabezado pegado ─────────────────────────────────────────
+eq('limpiarCelda # Ref', H.limpiarCelda('# Ref', '# Ref526'), '526');
+eq('limpiarCelda monto', H.limpiarCelda('Monto cobrado', 'Monto cobrado 50.687,24 BS'), '50.687,24 BS');
+eq('limpiarCelda tasa', H.limpiarCelda('Tasa conv.', 'Tasa conv.724,00 BS = 1 US$'), '724,00 BS = 1 US$');
+eq('limpiarCelda con celda vacía', H.limpiarCelda('Nro Retención', 'Nro Retención'), '');
+eq('limpiarCelda no rompe si no hay prefijo', H.limpiarCelda('# Ref', '526'), '526');
+
+// ── Celdas <select> (respaldo textual) ──────────────────────────────────────
+eq('valorDeSelect: estatus real de cobros',
+  H.valorDeSelect(H.limpiarCelda('Estatus del Cobro', 'Estatus del CobroAprobadoPendientePor aprobarRechazadoPor aprobar')),
+  'Por aprobar');
+eq('valorDeSelect: otra opción seleccionada',
+  H.valorDeSelect('AprobadoPendientePor aprobarRechazadoAprobado'), 'Aprobado');
+
+// ── Parseo es-VE ────────────────────────────────────────────────────────────
+eq('parseNumeroVE millones', H.parseNumeroVE('2.000.000,00'), 2000000);
+eq('parseNumeroVE con moneda', H.parseNumeroVE('50.687,24 BS'), 50687.24);
+eq('parseNumeroVE sin decimales', H.parseNumeroVE('16,85 US$'), 16.85);
+eq('parseNumeroVE vacío → null', H.parseNumeroVE(''), null);
+eq('parseMoneda BS', H.parseMoneda('50.687,24 BS'), { valor: 50687.24, moneda: 'BS' });
+eq('parseMoneda US$', H.parseMoneda('70,01 US$'), { valor: 70.01, moneda: 'US$' });
+eq('parseTasa', H.parseTasa('724,00 BS = 1 US$'), 724);
+eq('parseFechaVE', H.parseFechaVE('28/07/2026 09:06:36'), { dia: '2026-07-28', hora: '09:06:36' });
+eq('parseFechaVE sin hora', H.parseFechaVE('27/07/2026'), { dia: '2026-07-27', hora: null });
+eq('parseFechaVE inválida', H.parseFechaVE('no es fecha'), null);
+eq('parseEpoch (co_x del móvil)', H.parseEpoch('Código pedido: 1785243271076.0'), 1785243271076);
+eq('parseEpoch en clientes potenciales', H.parseEpoch('1785244841833.0'), 1785244841833);
+
+// ── parseNumeroFlexible: móvil (crudo) vs web (es-VE) — el falso mismatch que cazó el self-test ──
+eq('flexible: payload del móvil (punto decimal)', H.parseNumeroFlexible('2000000.00'), 2000000);
+eq('flexible: número JSON tal cual', H.parseNumeroFlexible(2000000), 2000000);
+eq('flexible: web es-VE con moneda', H.parseNumeroFlexible('2.000.000,00 BS'), 2000000);
+eq('flexible: es-VE de miles SIN decimales', H.parseNumeroFlexible('2.000.000'), 2000000);
+eq('flexible: decimal es-VE', H.parseNumeroFlexible('16,85 US$'), 16.85);
+eq('flexible: entero simple', H.parseNumeroFlexible('526'), 526);
+t('⚠ el parser es-VE solo NO sirve para el payload del móvil (por eso existe el flexible)',
+  H.parseNumeroVE('2000000.00') !== 2000000);
+t('móvil crudo y web es-VE se comparan iguales',
+  H.igual(H.parseNumeroFlexible('2000000.00'), H.parseNumeroFlexible('2.000.000,00 BS')));
+
+// ── Oráculo de conversión — los 3 cobros REALES de capitalina ───────────────
+const casos = [
+  ['526', '50.687,24 BS', '724,00 BS = 1 US$', '70,01 US$'],
+  ['525', '2.000.000,00 BS', '724,00 BS = 1 US$', '2.762,43 US$'],
+  ['519', '47.950,52 BS', '724,00 BS = 1 US$', '66,23 US$'],
+];
+for (const [ref, monto, tasa, conv] of casos) {
+  t(`conversión OK en el cobro real #${ref}`, H.verificarConversion(monto, tasa, conv).ok === true);
+}
+t('conversión detecta un valor mal calculado', H.verificarConversion('50.687,24 BS', '724,00 BS = 1 US$', '99,99 US$').ok === false);
+eq('conversión con datos incompletos no juzga', H.verificarConversion('50,00', null, '1,00').ok, null);
+
+// ── Oráculo de depósito: Σ(cobros hijos) == monto depositado ────────────────
+t('suma de cobros cuadra con el depósito', H.verificarSuma(['10,00 US$', '6,85 US$'], '16,85 US$').ok === true);
+t('suma detecta faltante', H.verificarSuma(['10,00 US$'], '16,85 US$').ok === false);
+t('tolerancia de redondeo (< 0,01) no es mismatch', H.igual(2762.4309, 2762.43));
+t('diferencia real sí es mismatch', !H.igual(2762.43, 2763.00));
+
+// ── Fechas: veredicto por día ───────────────────────────────────────────────
+t('misma fecha distinta hora = mismo día (UTC-4 vs UTC)', H.mismoDia('28/07/2026 09:06:36', '28/07/2026 13:06:36'));
+t('días distintos NO son el mismo día', !H.mismoDia('28/07/2026 09:06', '27/07/2026 09:06'));
+
+// ── Cotejo campo-a-campo (regla local-driven) ───────────────────────────────
+const r1 = H.cotejarCampos(
+  { cliente: 'CHOCOLATES KRON C.A', monto: '2000000.00', fecha: '27/07/2026 10:44:05', obs: '' },
+  { cliente: 'CHOCOLATES KRON C.A', monto: '2.000.000,00 BS', fecha: '27/07/2026 14:44:05', obs: 'algo que la web agregó' },
+  { fechas: ['fecha'], numeros: ['monto'] });
+eq('cotejo: todo lo lleno cuadra → WEB-OK', r1.marca, 'WEB-OK');
+eq('cotejo: campo vacío en el móvil se saltea (no se juzga)', r1.comparados, 3);
+eq('cotejo: hora distinta genera NOTA, no mismatch', r1.notas.length, 1);
+
+const r2 = H.cotejarCampos({ monto: '100.00' }, { monto: '105,00 BS' }, { numeros: ['monto'] });
+eq('cotejo: monto distinto → WEB-FIELD-MISMATCH', r2.marca, 'WEB-FIELD-MISMATCH');
+
+const r3 = H.cotejarCampos({ cliente: 'ACME' }, {});
+eq('cotejo: campo lleno que falta en la web → mismatch', r3.diffs[0].motivo, 'falta en web');
+
+// ── Gate de precondición (no juzgar lo que nunca llegó a la nube) ───────────
+t('BD-OK habilita la evaluación web', H.gatePorBD('BD-OK').evaluar === true);
+eq('BD-SAVED → WEB-N/A, nunca FAIL', H.gatePorBD('BD-SAVED').marca, 'WEB-N/A');
+eq('BD-QUEUED → WEB-N/A', H.gatePorBD('BD-QUEUED').marca, 'WEB-N/A');
+eq('sin marca BD → WEB-N/A', H.gatePorBD(null).marca, 'WEB-N/A');
+
+// ── El bundle DOM es sintácticamente válido ─────────────────────────────────
+t('BUNDLE_DOM parsea como función', typeof eval('(' + H.BUNDLE_DOM + ')') === 'function');
+t('BUNDLE_DOM no contiene acciones de escritura', !/\.click\(|\.value\s*=|submit\(|removeChild|\.remove\(/.test(H.BUNDLE_DOM));
+
+console.log(`\n=== web-helpers self-test: ${ok} OK, ${fail} FAIL ===`);
+process.exit(fail ? 1 : 0);

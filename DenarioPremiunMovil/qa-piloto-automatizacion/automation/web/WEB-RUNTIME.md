@@ -1,0 +1,177 @@
+# WEB-RUNTIME — Denario Premium **web**
+## Referencia operativa del agente web · todas las playas
+
+Leer una sola vez al inicio de cada sesión de agente web.
+Helpers: `automation/web/web-helpers.js` · Selectores: `web-selectors/_comunes.md` + `{modulo}.md`
+Hechos medidos: `RECONOCIMIENTO-WEB.md` · Diseño y alcance: `../../PROPUESTA-QA-WEB.md`
+
+> **Esto NO es la corrida móvil.** Acá no hay CDP, ni dispositivo, ni `browser_run_code_unsafe`.
+> Se conduce un navegador normal con las herramientas **estándar** del MCP de Playwright.
+
+---
+
+## 0. La regla que manda sobre todas: **READ-ONLY**
+
+El agente web **no crea, no edita, no borra, no aprueba nada**. Busca registros que la corrida móvil
+ya creó y los **lee**. La web es **producción**.
+
+**El único control que se toca en una fila es `Consultar`.** Prohibido explícito:
+
+| Módulo | Controles que NO se tocan |
+|---|---|
+| **Visitas** | `Editar` · `Eliminar` por fila |
+| **Pedidos** | `Nuevo Pedido` · `Copiar` |
+| **Cobros** | el `<select>` **"Estatus del Cobro"**, editable en la propia fila |
+| Todos | `Guardar`, `Aprobar`, `Procesar`, `Cambiar Clave`, cualquier `submit` |
+
+Si un caso pareciera necesitar una acción de escritura para verse completo → **`⛔ BLOCKED` y preguntar**.
+Nunca improvisar una escritura en producción.
+
+---
+
+## 1. Inicio de sesión de agente
+
+```javascript
+// 1. Resolver la playa (viene del host de los payloads de la corrida móvil) → URL base
+//    automation/web/playas.yaml
+// 2. Credenciales: leer secrets/qa-credentials.env con Read y tomar el bloque "# USUARIO WEB"
+//    ⚠ NO un bloque "# Cliente:" — ese es el usuario de la APP, no de la web.
+browser_navigate  → {base}/pages/login.xhtml
+browser_type      → textbox "Usuario" / textbox "Clave"     (el árbol a11y resuelve limpio)
+browser_click     → button "Ingresar"
+// 3. Verificar que llegó: pathname termina en /pages/main
+// 4. Instalar el bundle DOM una vez:  browser_evaluate(BUNDLE_DOM de web-helpers.js)
+```
+
+Login fallido devuelve el alert **"USUARIO INVALIDO"** → `WEB-N/A` para toda la corrida web
+(la clave puede haber cambiado; la web **nunca** tumba la corrida móvil).
+
+---
+
+## 2. Observación mínima — obligatoria, no opcional
+
+```
+✗  browser_snapshot como observación por defecto
+```
+
+El snapshot de `/pages/cobros` devolvió **76.000 caracteres** y reventó el límite de tokens (F0).
+**Regla:** toda lectura va por `browser_evaluate` devolviendo **solo el JSON que el oráculo necesita**:
+
+```javascript
+browser_evaluate("() => window.__qaW.leerTabla('form:cobrosDT', 5)")
+browser_evaluate("() => window.__qaW.leerHojas(120)")     // cabecera del detalle
+```
+
+`browser_snapshot` queda reservado para **diagnosticar una divergencia**, nunca para operar.
+
+---
+
+## 3. Guarda de contexto — el error más fácil de cometer
+
+**`form:pedidosDT` lo comparten 5 módulos** (pedidos, devoluciones, depósitos, clientes potenciales,
+inventarios) y aparece también en algunos **detalles**. Un helper que asuma "estoy en pedidos porque
+existe `form:pedidosDT`" leerá depósitos sin enterarse.
+
+**Antes de leer cualquier tabla:**
+
+```javascript
+const { pathname } = await __qaW.contexto();
+verificarContexto(pathname, 'depositos', /*esDetalle*/ false).ok   // si no → ⛔ BLOCKED
+```
+
+Cuando el ID es auto-generado (`form:j_idt177`, `j_idt163`, `j_idt169`), **anclar por estructura**:
+`__qaW.tablaPorColumnas(['Forma de pago','Monto cobrado'])` → devuelve el ID vigente.
+**Nunca** escribir un `j_idt*` en un guión.
+
+---
+
+## 4. Localizar el registro creado por el móvil
+
+La llave viene del manifiesto de la corrida móvil. **Hay dos, y conviene usar ambas:**
+
+| Llave | Dónde aparece en la web |
+|---|---|
+| **Nro.Ref** (= `id_<x>`, PK del servidor) | columna `# Ref` de la lista · `No. de Ref.:` en el detalle |
+| **Epoch `co_<x>`** | `Código {módulo}:` en el detalle (ej. `1785243271076.0`) |
+
+| Módulo | Cómo se busca |
+|---|---|
+| cobros · pedidos · devoluciones · depósitos · inventarios | **filtro `# Ref`** + `Buscar` (directo) |
+| **clientes potenciales** · **visitas** | ❌ sin filtro de Ref → filtrar por **vendedor + rango de fechas** y **barrer filas** |
+
+⚠ En **clientes potenciales** el detalle **no muestra `No. de Ref.`**: la única llave es el **epoch**.
+
+---
+
+## 5. Veredictos
+
+| Marca | Cuándo |
+|---|---|
+| `WEB-OK` | aparece y **todo campo lleno en el móvil** coincide, y los cálculos cuadran |
+| `WEB-MISSING` | el cotejo BD dio `BD-OK` pero la web **no lo muestra** → defecto de la web |
+| `WEB-FIELD-MISMATCH` | ≥1 campo lleno difiere |
+| `WEB-CALC-MISMATCH` | los campos base cuadran pero un **derivado** no (total, IGTF, retención, conversión, suma) |
+| `WEB-N/A` | no evaluable: el móvil no lo envió · la playa/login no responde · el módulo no aplica |
+
+**Gate de precondición (no negociable):** solo se juzga lo que el cotejo BD marcó **`BD-OK`**.
+Si el registro quedó `BD-SAVED`/`BD-QUEUED` (nunca llegó a la nube) → **`WEB-N/A`, jamás FAIL**:
+la web no puede mostrar lo que no recibió. `gatePorBD()` lo aplica.
+
+**Blindaje:** la web **nunca** tumba el smoke. Cualquier fallo de infra web → `WEB-N/A` con motivo,
+y la parte móvil se reporta igual. Es aditivo.
+
+---
+
+## 6. Reglas de comparación
+
+- **Números:** cada lado con su convención — el móvil manda **crudo** (`2000000.00`), la web muestra
+  **es-VE** (`2.000.000,00`). Usar `parseNumeroFlexible()`; un solo parser da **falsos mismatch**.
+- **Tolerancia:** `|a−b| < 0.01` (la misma de `cotejo-payload.js`) — el redondeo no es defecto.
+- **Fechas:** veredicto **por día**. Hora distinta (móvil UTC-4 vs servidor UTC) → **nota**, no mismatch.
+- **Local-driven:** campo **lleno en el móvil** → se compara · **vacío en el móvil** → **se saltea**.
+  Lo que la web agregue por su cuenta no se juzga.
+- **Texto:** comparar normalizado (espacios colapsados, mayúsculas).
+
+---
+
+## 7. Oráculos de cálculo confirmados en F0
+
+| Oráculo | Regla |
+|---|---|
+| **Conversión de moneda** | `Monto / Tasa conv. == Monto conv.` — verificado en 3 cobros reales |
+| **Depósito ↔ cobros** | el detalle del depósito lista sus cobros ⇒ `Σ(Monto cobrado hijos) == Monto depositado` |
+| **Cobro** | `Monto cobrado == Σ pagos` · `Diferencia cobro == Total por cobrar − Monto cobrado` |
+| **Retención** | `Retención IVA` / `Retención ISLR` del detalle contra lo que envió el móvil |
+| **Inventario → pedido** | la cabecera trae `Ver Pedido Relacionado` (enlace cruzado) |
+
+⚠ **Devoluciones NO tiene montos** (ni lista ni detalle): se verifica cantidad, lote, N° factura,
+fecha de vencimiento y motivo. No inventar un oráculo de importes ahí.
+
+---
+
+## 8. Esperas y estabilidad
+
+- **PrimeFaces es ajax:** esperar por **señal** (`browser_wait_for` sobre un texto/dato propio de la página),
+  nunca `waitForTimeout` fijo.
+- **Navegación directa por URL FUNCIONA** con sesión activa (no hay `ViewExpired`) → ir directo a
+  `{base}{ruta}` sin recorrer el menú. El **detalle** sí se abre con el botón `Consultar` de la fila.
+- **Mapas de Google embebidos** (clientes potenciales, visitas, inventarios, devoluciones): carga externa
+  → **nunca** esperar por el mapa ni bloquear un caso porque no cargó.
+- **Techo de 2 intentos** por caso y **watchdog de módulo**, igual que en móvil (`cdp/RUNTIME.md §3` y `§11`).
+
+---
+
+## 9. Reporte
+
+Un `.md` por módulo web en `{RUN_DIR}web-{modulo}.md` + línea por caso en `{RUN_DIR}_web-results.jsonl`:
+
+```json
+{"run_id":"<RUN_ID>","capa":"web","modulo":"cobros","caso":"DW-COB-001","ref":"526","marca":"WEB-OK","ms":1200}
+```
+
+Los casos web se numeran **`DW-<ABREV>-NNN`** (DW = Denario **W**eb) y **referencian** el caso móvil
+que creó el registro.
+
+---
+
+*F1 · 2026-07-28 · basado en el reconocimiento F0 (Isla Coche / CAPITALINA), read-only*
