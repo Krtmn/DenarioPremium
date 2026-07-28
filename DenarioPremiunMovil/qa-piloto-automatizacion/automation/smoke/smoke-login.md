@@ -1,7 +1,12 @@
 # Smoke — LOGIN
 ## Estado inicial: pantalla LOGIN | Estado final: HOME principal
 
-**Inicio:** `h.connectCdp(page)` → `creds = await h.fetchCreds()` → `h.waitSyncOverlay(pg)`
+**Inicio:** `h.connectCdp(page)` → credenciales (ver abajo) → `h.waitSyncOverlay(pg)`
+
+> **Credenciales (RUNTIME §1/S4):** leer `secrets/qa-credentials.env` con **Read** y parsear **el bloque
+> `# Cliente: {QA_CLIENTE}`** en línea. **NO** `h.fetchCreds()` (usa `fs`/`require` → revienta en contexto unsafe).
+> ⚠ **NO tomar el primer `QA_USER=` del archivo:** el primer bloque es `# USUARIO WEB` (credenciales de la web,
+> no de la app). Si el login usa ese usuario, falla en todos los clientes.
 Si la app está en HOME al iniciar → click en "Salir" primero.
 
 ---

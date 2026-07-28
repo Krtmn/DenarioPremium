@@ -36,6 +36,9 @@ await wd.run('waitSyncOverlay', () => h.waitSyncOverlay(pg));
    - **acciones que mezclan Playwright** (`mockCameraAdjunto`, `ensureAdjunto`, `openNuevoCobro`, `openDocumentDetail`, `fillNgModelKeyboard`, `waitSyncOverlay`): NO viven en el bundle (necesitan `pg.mouse`/`keyboard`/`waitForFunction`). Inlinarlas verbatim desde `denario-cdp-helpers.js` como hasta ahora. Para clicks de botón/alert: pedir coords a `window.__qaH.coordsOf(sel)` / `alertButtonCoords(txt)` y hacer `await pg.mouse.click(x, y)`.
    - **(fallback)** si el bundle no instala, inlinar todo desde `denario-cdp-helpers.js` como antes — sigue siendo válido.
 2. **Credenciales:** leer `secrets/qa-credentials.env` con **Read** y parsear el bloque `# Cliente: {QA_CLIENTE}` en línea. **No** llamar `fetchCreds()` directo: usa `fs`/`require` y revienta en este contexto.
+   > ⚠ **El archivo abre con un bloque `# USUARIO WEB`** (credenciales de la web de Denario, no de la app).
+   > **Nunca** tomar "el primer `QA_USER=` del archivo": hay que anclar al marcador `# Cliente: {QA_CLIENTE}`
+   > exacto. Si se usa el usuario web, el login falla en **todos** los clientes.
 
 ---
 
@@ -48,7 +51,7 @@ await wd.run('waitSyncOverlay', () => h.waitSyncOverlay(pg));
 | S2x | Llenar ngModel en modal inventario | `h.fillNgModelKeyboard(pg, selector, value)` — **solo** en `inventory-type-stocks-modal` | `fillIonInput` en campos cantidad/lote/fecha de inventario |
 | S2v | Llenar ngModel en modal visitas (comentario) | `pg.focus(sel)` + `pg.keyboard.type(val)` — en `ion-modal ion-input` con `[(ngModel)]` | `fillIonInput` para campo comentario dentro de ion-modal |
 | S3 | Click en botón ion-alert | `h.clickAlertButton(pg, 'Aceptar')` | `element.click()`, `dispatchEvent`, coords JSON fijas |
-| S4 | Credenciales | Read de `secrets/qa-credentials.env` + parseo inline del bloque `# Cliente: {QA_CLIENTE}` (ver §1) | `h.fetchCreds()`/`require`/`fs` en contexto unsafe; hardcodear usuario/contraseña |
+| S4 | Credenciales | Read de `secrets/qa-credentials.env` + parseo inline del bloque `# Cliente: {QA_CLIENTE}` (ver §1) | `h.fetchCreds()`/`require`/`fs` en contexto unsafe; hardcodear usuario/contraseña; **tomar el primer `QA_USER=` del archivo** (es el bloque `# USUARIO WEB`) |
 | S5 | Alert activo (sin residuos) | `h.getActiveAlert(pg)` o `:not(.overlay-hidden)` | `querySelector('ion-alert')` sin filtrar overlay-hidden |
 | — | Botón atrás | `h.clickBack(pg)` | `window.history.back()`, `pg.goBack()`, click directo en img sin `closest('a')` |
 | — | ion-select + popover | `h.selectIonPopover(pg, selector, value)` | MouseEvent sobre ion-item/ion-radio dentro del popover |

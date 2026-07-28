@@ -1,0 +1,40 @@
+# playas.yaml — URL de la web de Denario Premium por PLAYA (servidor).
+#
+# ⚠ Es propiedad del SERVIDOR, no del cliente. Los clientes migran de playa según disponibilidad
+#   (ver el banner de desacople en automation/clientes/_schema.yaml). La playa efectiva de una corrida
+#   se DESCUBRE EN RUNTIME (host de los payloads capturados por el móvil) y se resuelve contra esta tabla.
+#
+# Credenciales: bloque "# USUARIO WEB" de secrets/qa-credentials.env (usuario admin, uno solo para
+#   todos los clientes; la clave puede cambiar). NUNCA escribirlas aquí.
+#
+# Verificado 2026-07-28: las 3 responden HTTP 200 desde la laptop QA, sin VPN.
+
+playas:
+  el_yaque:
+    nombre: "El Yaque"
+    base:   "http://denarioelyaque.ddns.net:8080/DenarioPremium"
+  isla_coche:
+    nombre: "Isla Coche"
+    base:   "http://denarioislacoche.ddns.net:8080/DenarioPremium"
+    # Empresa observada 2026-07-28: CAPITALINA DE ALIMENTOS 212, C.A.
+  la_tortuga:
+    nombre: "La Tortuga"
+    base:   "http://denariolatortuga.ddns.net:8080/DenarioPremium"
+
+# Rutas — IGUALES en las 3 playas (se concatenan a `base`).
+# ✅ Verificado: la navegación DIRECTA por URL funciona con sesión activa (no hay ViewExpired).
+rutas:
+  login:                "/pages/login.xhtml"
+  home:                 "/pages/main"
+  # Los 7 transaccionales del alcance (menú "Transacciones", salvo visitas)
+  pedidos:              "/pages/pedidos"
+  cobros:               "/pages/cobros"
+  devoluciones:         "/pages/devoluciones"
+  depositos:            "/pages/depositos"
+  clientes_potenciales: "/pages/clientesPotenciales"
+  inventarios:          "/pages/inventarios"
+  visitas:              "/pages/visitas"          # menú "Visitas" → "Reporte de Visitas"
+  # Detalle (se llega por el botón Consultar de la fila, NO por URL directa sin contexto)
+  detalle_cobro:        "/pages/detalleCobro"
+  # Fuera de alcance por ahora (existen, no se validan): facturaciones, productos, clientes,
+  # documentos, reportes/*, indicadores/*, empresa/*, estructura*/*

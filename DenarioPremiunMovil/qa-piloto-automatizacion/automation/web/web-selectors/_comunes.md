@@ -1,0 +1,106 @@
+# Selectores web — comunes a todos los módulos
+
+> Memoria viva de la web (JSF/PrimeFaces). Espejo de `automation/cdp/module-selectors/_comunes.md`.
+> Origen: reconocimiento F0 2026-07-28, Isla Coche · empresa CAPITALINA DE ALIMENTOS 212, C.A.
+> Mantener bajo ~120 líneas. Todo patrón nuevo confirmado en 1 corrida entra acá con su tag.
+
+## Regla de oro de selectores — los IDs son MIXTOS
+
+La web mezcla dos tipos de ID. **La diferencia importa y hay que verificarla siempre:**
+
+| Tipo | Ejemplo | ¿Usar? |
+|---|---|---|
+| **Semántico** (form nombrado) | `form:cobrosDT` · `form:documentosPagadosDT` · `form:cobrosDT:0:consultar` | ✅ **Sí** — estable entre despliegues |
+| **Auto-generado** (JSF posicional) | `j_idt12` · `j_idt177` · `j_id1:javax.faces.ViewState:0` | ❌ **NUNCA** — se corren al tocar el `.xhtml` |
+
+**Cuando el ID es `j_idt*`, anclar por estructura, no por ID.** Ej. la tabla de pagos del detalle de cobro
+es `form:j_idt177` → localizarla como *"el `.ui-datatable` cuyos `thead th` incluyen 'Forma de pago'"*.
+
+En el **login** todos los IDs son `j_idt*`, pero el árbol de accesibilidad resuelve limpio:
+`getByRole('textbox', {name:'Usuario'})` · `{name:'Clave'}` · `getByRole('button', {name:'Ingresar'})`. `[f0-2807]`
+
+## Patrón de IDs de fila (confirmado en 7/7 módulos)
+
+```
+{idTabla}:{índiceFila}:{acción}      →  form:cobrosDT:0:consultar
+```
+Predecible: para actuar sobre la fila N, `#form\:cobrosDT\:N\:consultar` (escapar los `:` en CSS). `[f0-2807]`
+
+## ⚠ `form:pedidosDT` NO es único — lo comparten 5 módulos
+
+| ID de tabla | Módulos que lo usan |
+|---|---|
+| `form:pedidosDT` | **pedidos · devoluciones · depósitos · clientes potenciales · inventarios** |
+| `form:cobrosDT` | cobros (único) |
+| `form:tablaVisit` | visitas (único) |
+
+⇒ **Nunca identificar el módulo por el ID de la tabla.** Verificar primero `location.pathname` (o `document.title`)
+y recién entonces leer. Un helper que asuma "estoy en pedidos porque existe `form:pedidosDT`" leerá depósitos
+sin darse cuenta. `[f0-2807]`
+
+## Búsqueda del registro por Nro.Ref — no está en todos
+
+| Módulo | Cómo se localiza el registro |
+|---|---|
+| cobros · pedidos · devoluciones · depósitos · inventarios | **filtro `# Ref`** + `Buscar` (directo, barato) |
+| **clientes potenciales** · **visitas** | ❌ sin filtro de Ref → filtrar por **vendedor + rango de fechas** y **barrer filas** buscando la columna `# Ref` / `Ref` |
+
+`[f0-2807]`
+
+## Navegación
+
+- ✅ **La navegación directa por URL FUNCIONA** con sesión activa — `/pages/cobros` carga sin `ViewExpired`.
+  No hace falta recorrer el menú por módulo. Rutas en `automation/web/playas.yaml`. `[f0-2807]`
+- El **detalle** sí se abre por el botón `Consultar` de la fila (necesita el contexto de la fila), no por URL suelta.
+- Login: `POST` a `/pages/login.xhtml` → redirige a `/pages/main` (título "Inicio"). Cookie `JSESSIONID`, `Path=/DenarioPremium`.
+- Credenciales: bloque `# USUARIO WEB` de `secrets/qa-credentials.env` (**no** un bloque `# Cliente:`).
+
+## Anti-patrones (prohibidos)
+
+```
+✗  browser_snapshot como observación por defecto  → el de /pages/cobros dio 76k caracteres y reventó el
+                                                     límite de tokens. Usar browser_evaluate devolviendo
+                                                     SOLO el JSON que el oráculo necesita.  [f0-2807]
+✗  Anclar a #j_idt*                               → ver regla de oro
+✗  waitForTimeout fijo tras acción ajax           → esperar por señal/texto (browser_wait_for)
+✗  Identificar el módulo por el ID de la tabla    → ver la sección de form:pedidosDT
+```
+
+### ⛔ Superficie de ESCRITURA — el agente web es READ-ONLY
+
+**El único control que se toca en una fila es `Consultar`.** Todo lo demás está prohibido:
+
+| Módulo | Controles que NO se tocan |
+|---|---|
+| **Visitas** | **`Editar` · `Eliminar` por fila** — la superficie más peligrosa del sitio |
+| **Pedidos** | `Nuevo Pedido` · `Copiar` (por fila) |
+| **Cobros** | `<select>` **"Estatus del Cobro", editable en la propia fila** — cambiarlo altera el documento en producción |
+
+`[f0-2807]`
+
+## Lectura de celdas — ⚠ el texto trae el encabezado pegado
+
+PrimeFaces (modo responsive) **duplica el `th` dentro del `td`**. El `textContent` crudo sale así:
+
+```
+"# Ref526"                 → encabezado "# Ref"  + valor "526"
+"Monto cobrado 50.687,24 BS"
+"Tasa conv.724,00 BS = 1 US$"
+```
+
+⇒ El lector debe **quitar el prefijo del encabezado** antes de comparar. Caso especial: las celdas con
+`<select>` traen **todas las opciones concatenadas y el valor actual al final**:
+`"Estatus del CobroAprobadoPendientePor aprobarRechazadoPor aprobar"` → valor real = `"Por aprobar"`. `[f0-2807]`
+
+## Formato de datos (es-VE)
+
+- **Números:** `.` = miles · `,` = decimales → `2.000.000,00`. Parsear con `s.replace(/\./g,'').replace(',','.')`.
+- **Moneda:** sufijo ` BS` / ` US$`.
+- **Fechas:** `DD/MM/YYYY HH:mm:ss`. Veredicto **por día** (móvil UTC-4 vs servidor UTC) — igual que `RUNTIME §10.b`.
+- **Tasa:** `"724,00 BS = 1 US$"` → extraer el número antes de ` BS`.
+
+## Filtros de lista (patrón común)
+
+Botones `Buscar` · `Limpiar` · `Columnas`. El filtro **`# Ref`** es la llave de cotejo con el móvil
+(Nro.Ref UI = `id_<x>` = PK del servidor, ver `RUNTIME §10`) — es como el agente web encuentra
+el registro que creó la corrida móvil, sin discovery.

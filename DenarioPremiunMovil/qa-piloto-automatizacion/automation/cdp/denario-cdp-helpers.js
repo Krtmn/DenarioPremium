@@ -122,9 +122,12 @@ function makeWatchdog(opts) {
  * @deprecated NO usar en browser_run_code_unsafe — usa fs/require y revienta en ese contexto.
  *   Allí: leer el archivo con la herramienta Read y parsear el bloque "# Cliente:" inline (RUNTIME §1).
  *   Esta función solo es válida en contexto Node (scripts de automation/db/).
- * @param {string} [clienteId] - slug del cliente (ej. 'insumar', 'hidroponias').
- *   Si se omite, usa el primer bloque del archivo.
- *   El archivo usa secciones "# Cliente: <slug>" como marcadores.
+ * @param {string} clienteId - slug del cliente (ej. 'insumar', 'hidroponias'). **OBLIGATORIO.**
+ *   El archivo usa secciones "# Cliente: <slug>" como marcadores, y **abre con un bloque
+ *   `# USUARIO WEB`** (credenciales de la web, no de la app). Por eso ya NO hay fallback al
+ *   primer bloque: sin clienteId, o con uno inexistente, lanza en vez de devolver el usuario
+ *   equivocado (2026-07-28).
+ * @throws si falta clienteId o el bloque no existe.
  */
 async function fetchCreds(clienteId) {
   const path = require('path');
@@ -132,16 +135,16 @@ async function fetchCreds(clienteId) {
   const credsPath = path.join(__dirname, '..', '..', 'secrets', 'qa-credentials.env');
   const text  = fs.readFileSync(credsPath, 'utf8');
 
-  let searchText = text;
-  if (clienteId) {
-    const marker   = `# Cliente: ${clienteId}`;
-    const idx      = text.toLowerCase().indexOf(marker.toLowerCase());
-    if (idx !== -1) {
-      searchText = text.slice(idx);
-      const nextSection = searchText.indexOf('\n# Cliente:', 1);
-      if (nextSection !== -1) searchText = searchText.slice(0, nextSection);
-    }
-  }
+  // ⚠ El archivo abre con un bloque `# USUARIO WEB` (credenciales de la WEB, no de la app).
+  //   Por eso NO se puede caer al texto completo: el primer QA_USER= del archivo es el de la web.
+  //   Sin clienteId, o con un clienteId inexistente, se falla explícito en vez de devolver el usuario equivocado.
+  if (!clienteId) throw new Error('fetchCreds: falta el clienteId (el 1.er bloque del archivo es # USUARIO WEB, no un cliente)');
+  const marker = `# Cliente: ${clienteId}`;
+  const idx    = text.toLowerCase().indexOf(marker.toLowerCase());
+  if (idx === -1) throw new Error(`fetchCreds: no existe el bloque "${marker}" en qa-credentials.env`);
+  let searchText = text.slice(idx);
+  const nextSection = searchText.indexOf('\n# Cliente:', 1);
+  if (nextSection !== -1) searchText = searchText.slice(0, nextSection);
 
   const lines = searchText.split('\n');
   const get   = (key) => {

@@ -23,7 +23,7 @@
 > ⚠ `h.waitSyncOverlay` NO basta como única señal de HOME: el overlay `app-synchronization` muestra `offsetParent === null` momentáneamente **entre fases de sync** (Etiquetas → Clientes → …), por lo que `waitSyncOverlay` puede retornar con la URL aún en `/synchronization`. Confirmar HOME con `waitForFunction`: `location.href.includes('/home') && app-home.offsetParent !== null`. `[gmp-2611]`
 
 ```
-1. fillIonInput Usuario + Contraseña (creds via h.fetchCreds)
+1. fillIonInput Usuario + Contraseña (creds: Read de qa-credentials.env → bloque "# Cliente: {QA_CLIENTE}", NO el bloque "# USUARIO WEB" ni el primer QA_USER del archivo)
 2. Click ion-button[type=submit] "Aceptar"
 3. Esperar app-synchronization ("Sincronizando - Clientes...") → h.waitSyncOverlay
 4. Verificar app-home con módulos visibles; app-login no visible
