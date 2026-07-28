@@ -565,6 +565,13 @@
 <!-- RETENCION -->
 @if (this.collectService.coTypeModule == '2') {
 <div>
+  @if (this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_NEW ||
+  this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SAVED) {
+  <ion-button (click)="addRetencion()" size="small" fill="outline" expand="block">
+    {{this.collectService.collectionTags.get('COB_ADD_RETENTION')}}
+  </ion-button>
+  }
+
   <ion-accordion-group>
     <!-- DETAILS -->
     @for (retentionDetails of this.collectService.collection.collectionDetails; track $index; let ret = $index) {
@@ -618,6 +625,15 @@
             {{this.collectService.collection.coCurrency}}:
             {{this.currencyService.formatNumber(retentionDetails.nuAmountRetention +
             retentionDetails.nuAmountRetention2)}}
+          </ion-item>
+          }
+
+          @if (this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_NEW ||
+          this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SAVED) {
+          <ion-item>
+            <ion-button fill="clear" color="danger" (click)="deleteRetention(ret)">
+              <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+            </ion-button>
           </ion-item>
           }
 
