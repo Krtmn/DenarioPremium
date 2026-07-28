@@ -153,9 +153,9 @@ agente UI móvil ──► crea registro
 |---|---|---|---|
 | 1 | **Cobros** | documento por Nro.Ref · docs aplicados · métodos de pago | **el más rico:** total vs suma de pagos · **IGTF** · **retención** (IVA/ISLR) · **anticipo** · **conversión por tasa** y **fecha de tasa** · **saldo del cliente después de aplicar** |
 | 2 | **Pedidos** | pedido por Nro.Ref · líneas | precio × cantidad · **descuentos** · **impuestos por línea** · total del pedido |
-| 3 | **Devoluciones** | devolución por Nro.Ref · líneas · motivo | montos por línea · total · afectación de inventario |
+| 3 | **Devoluciones** | devolución por Nro.Ref · líneas · motivo | ⚠ **corregido en F0: no hay montos** (ni lista ni detalle). Se verifica **Cantidad · Lote · N° Factura · Fecha vencimiento · Motivo · Devolución en** + precinto/observaciones de cabecera |
 | 4 | **Inventarios** (clientstock) | existencia registrada por cliente | cantidad · **lote** · fecha de vencimiento · ubicación |
-| 5 | **Depósitos** | depósito por Nro.Ref | monto · banco · referencia · fecha · **conciliación con los cobros en efectivo** que lo originan |
+| 5 | **Depósitos** | depósito por Nro.Ref | banco · N° cuenta · N° planilla · fecha · ✅ **conciliación confirmada en F0**: el detalle lista los cobros que lo componen con `N° Ref cobro` ⇒ **Σ(cobros hijos) == Monto depositado** |
 | 6 | **Visitas** | visita del día por vendedor/cliente | fecha/hora (**⚠ zona horaria**) · actividades marcadas · comentario · geolocalización |
 | 7 | **Clientes potenciales** | cliente creado | datos fiscales (RIF/CI) · razón social · dirección · contacto · **estatus de aprobación** |
 

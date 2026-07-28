@@ -92,6 +92,52 @@ PrimeFaces (modo responsive) **duplica el `th` dentro del `td`**. El `textConten
 `<select>` traen **todas las opciones concatenadas y el valor actual al final**:
 `"Estatus del CobroAprobadoPendientePor aprobarRechazadoPor aprobar"` → valor real = `"Por aprobar"`. `[f0-2807]`
 
+## Lectura de la CABECERA del detalle (vale para los 7)
+
+Secuencia de **nodos hoja**: la **etiqueta termina en `:`**, el **valor es el nodo siguiente**.
+
+```js
+// "No. de Ref.:" → "1801"   ·   "Fecha del pedido:" → "28/07/2026 09:06:36"
+const hojas = [...document.querySelectorAll('body *')]
+  .filter(el => !el.children.length && el.offsetParent !== null)
+  .map(el => (el.textContent||'').replace(/\s+/g,' ').trim()).filter(Boolean);
+// emparejar: si hojas[i] termina en ':' → campo hojas[i] = hojas[i+1]
+```
+
+⚠ **Filtrar el ruido de plantilla que aparece en TODAS las páginas:** el menú completo (`Transacciones`,
+`Cobros`, `Reportes`…) más un dashboard demo — `Rain Clothing` · `Products` `12K` · `Orders` `26K` ·
+`Sales` `$200K` · `Tamas Bunce` · `Olivia Arribas` · `N mins ago` · `Denario Premium Configuración`. `[f0-2807]`
+
+## 🔑 Dos llaves de correlación con el móvil
+
+| Llave | Dónde | Nota |
+|---|---|---|
+| `No. de Ref.` | cabecera del detalle + columna `# Ref` de la lista | = `id_<x>`, PK del servidor (`RUNTIME §10`) |
+| `Código {módulo}` | cabecera del detalle | = **epoch `co_<x>`** (ej. `1785243271076.0`) — el mismo que manda el móvil |
+
+Confirmado en pedidos e inventarios. **En clientes potenciales NO hay `No. de Ref.` en el detalle: el epoch
+`Código:` es la única llave.** Devoluciones/depósitos/visitas: solo `No. de Ref.` observado. `[f0-2807]`
+
+## URLs de detalle (se llega por `Consultar`, no por URL suelta)
+
+```
+/pages/detalleCobro   /pages/detallePedido   /pages/detalleDevolucion   /pages/detalleDeposito
+/pages/detalleClientePotencial              /pages/detalleInventario
+/pages/protected/visitas/detalleVisita.xhtml     ← ⚠ visitas usa la forma legacy con /protected/ y .xhtml
+```
+
+## Enlaces cruzados entre módulos (oráculos gratis)
+
+- **Depósito → cobros:** la tabla hija del detalle de depósito lista los cobros con `N° Ref cobro` y
+  `Monto cobrado` ⇒ **Σ(hijos) == `Monto depositado`** de la cabecera, y salto directo al módulo de cobros.
+- **Inventario → pedido:** la cabecera trae `Ver Pedido Relacionado`.
+
+## Mapas de Google embebidos
+
+Presentes en clientes potenciales, visitas, inventarios y devoluciones. **Carga externa** → nunca esperar por el
+mapa ni bloquear un caso si no carga; esperar por un dato propio de la página. La `Coordenada de transacción`
+(`lat,lng`) sí es dato verificable. `[f0-2807]`
+
 ## Formato de datos (es-VE)
 
 - **Números:** `.` = miles · `,` = decimales → `2.000.000,00`. Parsear con `s.replace(/\./g,'').replace(',','.')`.

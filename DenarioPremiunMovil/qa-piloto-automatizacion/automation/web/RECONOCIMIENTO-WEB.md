@@ -121,6 +121,70 @@ los demás derivados (IGTF, retención, descuentos, saldos).
 
 ---
 
+## 3.c Los 7 DETALLES — mapa medido
+
+| Módulo | URL del detalle | Tabla hija | ID de la hija |
+|---|---|---|---|
+| Cobros | `/pages/detalleCobro` | pagos **+** documentos pagados | `form:j_idt177` ⚠ · `form:documentosPagadosDT` ✅ |
+| Pedidos | `/pages/detallePedido` | líneas de producto | `form:pedidosDT` |
+| Devoluciones | `/pages/detalleDevolucion` | líneas devueltas | `form:j_idt169` ⚠ |
+| Depósitos | `/pages/detalleDeposito` | **cobros que componen el depósito** | `form:j_idt163` ⚠ |
+| Clientes Potenciales | `/pages/detalleClientePotencial` | *(ninguna)* | — |
+| Inventarios | `/pages/detalleInventario` | líneas de existencia | `form:pedidosDT` |
+| Visitas | `/pages/protected/visitas/detalleVisita.xhtml` ⚠ **otra forma de URL** | actividades | `form:visitasDT` ✅ |
+
+### La regla de lectura de cabecera (vale para los 7)
+
+La cabecera es una secuencia de **nodos hoja** donde **la etiqueta termina en `:`** y el **valor es el nodo
+siguiente**. Generalizable y barata:
+
+```
+"No. de Ref.:" → "1801"      "Fecha del pedido:" → "28/07/2026 09:06:36"      "Vendedor:" → "01 01"
+```
+
+⚠ Hay que **filtrar el ruido de plantilla** que aparece en TODAS las páginas: el menú completo más un
+dashboard demo (`Rain Clothing`, `Products 12K`, `Orders 26K`, `Sales $200K`, `Tamas Bunce`, `3 mins ago`…).
+
+### 🔑 Hay DOS llaves de correlación, no una
+
+El detalle expone, además del Nro.Ref, el **epoch `co_<x>`** que el móvil también manda:
+
+| Módulo | `No. de Ref.` (PK servidor) | `Código …` (epoch `co_<x>`) |
+|---|:---:|---|
+| Pedidos | ✅ `1801` | ✅ `Código pedido: 1785243271076.0` |
+| Inventarios | ✅ `2` | ✅ `Código inventario: 1785172223237.0` |
+| **Clientes Potenciales** | ❌ **no aparece** | ✅ `Código: 1785244841833.0` — **única llave** |
+| Devoluciones · Depósitos · Visitas | ✅ | no observado |
+
+⇒ **Doble anclaje** para el cotejo (más robusto que uno solo), y en **clientes potenciales el epoch es la
+única forma de identificar el registro** en el detalle.
+
+### Qué verifica cada detalle
+
+- **Pedidos:** líneas con Cod. producto · Lista de precio · Unidades pedidas · **Monto Total** · **Monto conv.**
+- **Devoluciones:** ⚠ **NO hay montos** — ni en lista ni en detalle. Solo Cod. producto · **Lote** · N° Factura ·
+  Fecha vencimiento · Devolución en · Motivo · **Cantidad**. *(Corrige el supuesto de `PROPUESTA-QA-WEB.md §5`,
+  que preveía "montos por línea · total".)* Cabecera: tipo de devolución · **precinto** · observaciones · firma.
+- **Depósitos:** 💡 la hija lista **los cobros que lo componen** con `N° Ref cobro` + `Monto cobrado`.
+  ⇒ oráculo directo **Σ(cobros hijos) == `Monto depositado`** de la cabecera, y **enlace cruzado al módulo de
+  cobros por Ref**. Cabecera: Banco (`0173`) · N° cuenta · N° Planilla · Fecha de planilla · Monto depositado.
+- **Inventarios:** líneas con Estructura · **Depósito** · **Exhibición** (la cantidad va separada por ubicación) ·
+  **Lote** · **Fecha expiración**. Cabecera trae además **`Ver Pedido Relacionado`** (enlace cruzado a pedidos).
+- **Clientes Potenciales:** secciones *Datos Básicos · Contacto · Dirección* → Nombre · Cédula/RIF · Comentario ·
+  Web · Responsable · Correo · Teléfono · Dirección · Dirección Entrega · **Coordenada de transacción** (`lat,lng`).
+- **Visitas:** Orden de visita · Fecha planeada · Título · cliente · hija con **Actividad · Motivo · Descripción**.
+
+### Otros hallazgos del barrido de detalles
+
+1. **`form:pedidosDT` aparece también en los DETALLES** de pedidos e inventarios → refuerza la regla: **jamás
+   identificar el contexto por el ID de la tabla**, siempre por `location.pathname`.
+2. **Mapa de Google embebido** en clientes potenciales, visitas, inventarios y devoluciones → carga **externa**;
+   hay que esperar por dato propio, no por el mapa, y nunca bloquear el caso si el mapa no carga.
+3. **Firma y adjuntos** (`Descargar/Ver adjuntos`) presentes en casi todos → material para cotejar el adjunto
+   obligatorio que el móvil ya prueba.
+
+---
+
 ## 4. Hallazgos que cambian el diseño de los helpers
 
 1. **`browser_snapshot` no sirve como observación por defecto.** El de `/pages/cobros` devolvió
@@ -147,8 +211,7 @@ un solo bloque no alcanza y habrá que partirlo por playa. Hoy es una sola → s
 ## 6. Qué falta para cerrar F0
 
 - [x] ~~Recorrer los otros 6 módulos~~ — **hecho** (§3.b): los 7 tienen ruta, ID de tabla, filtros y columnas mapeados.
-- [ ] Abrir el **detalle** de los 6 módulos restantes (solo cobros está abierto). Es donde viven los montos de
-      devoluciones e inventarios, que no aparecen en la lista.
+- [x] ~~Abrir el detalle de los 6 módulos restantes~~ — **hecho** (§3.c): los 7 detalles mapeados.
 - [ ] Confirmar el comportamiento en una playa con **más de una empresa** (¿selector de empresa? ¿filtro?).
 - [ ] Probar el **aislamiento de contextos del MCP**: navegador web + CDP del dispositivo a la vez.
       **De esto depende** que la corrida web sea gratis en wall-clock (en paralelo) o cueste 30–45 min (al cierre).
