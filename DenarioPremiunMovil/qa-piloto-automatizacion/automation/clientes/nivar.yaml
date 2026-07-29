@@ -2,6 +2,8 @@
 # Cliente NIVAR — servidor EL YAQUE. Perfil construido de los 2 dumps 20260723; SIN corrida aún.
 #   - global_configuration_202607231143_NIVAR.md        (principal, filas 2025-2026 → AUTORITATIVO)
 #   - global_configuration_client_202607231143_NIVAR.md (por-cliente, filas 2023-02-01 → OVERRIDE STALE)
+# ℹ Esos 2 dumps se ELIMINARON el 2026-07-28 una vez construido este perfil (política de
+#   `alta-cliente.md`: el dump es insumo, el YAML es el producto). Recuperables desde git si hicieran falta.
 # ⚠ REGLA: cuando difieren, gana el da_update más reciente (el global principal). Conflictos marcados ⚠️VERIFICAR.
 # ⚠ EL YAQUE: window.ng VARÍA por build (jerez/ferrenuestro=false, dm-electronica=true) → el agente prueba !!window.ng al inicio.
 # ⚠ BD de NIVAR NO disponible aún (falta bloque en secrets/qa-db.env) → modules.* por DISCOVERY en UI, sin pre-población BD.

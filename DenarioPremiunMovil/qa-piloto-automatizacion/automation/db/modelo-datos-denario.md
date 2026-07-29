@@ -403,3 +403,83 @@ SELECT (SELECT count(*) FROM collection_detail WHERE id_collection=<ID>) docs,
 - VGs viven en **`global_configuration`** (clave/valor), con override por cliente en `global_configuration_client`. El campo `tipo_variable` (G/C/P) define alcance.
 - `invoice`/`invoice_detail` (2874/6555 filas) son las **facturas del ERP** que alimentan los documentos cobrables (`collection_detail.co_document`).
 - Tablas `*_saved` = **borradores locales** no enviados (pedido borrador en `order_saved`).
+
+---
+
+## 10. Queries útiles QA
+
+> Rescatadas de `bdd-schema.md` (archivado 2026-07-28) al depurar el proyecto. Ese archivo no lo
+> referenciaba nadie y estas plantillas se estaban perdiendo. Sustituir `:id_enterprise` según la playa.
+
+### 🔴 Estatus REAL de una transacción — `st_*` NO indexa contra `statuses.id_status`
+
+**Este es el query que evita el error más caro de interpretación de BD.** Leer `st_collection` y buscarlo
+en el catálogo `statuses` **da un resultado falso**: en `el_valle-20260728`, los 4 cobros tenían
+`st_collection=3`, y `statuses.id_status=3` para `co_transaction_type='cob'` es **"Rechazado"** — pero la
+web mostraba **"Por aprobar"**. Reportar "cobros rechazados" habría mandado a desarrollo por el camino
+equivocado. El estatus real vive en **`transaction_statuses`** (el último por fecha):
+
+```sql
+SELECT c.id_collection, c.co_type, c.nu_amount_total,
+       c.st_collection,              -- ⚠ NO interpretar con el catálogo statuses
+       s.na_status AS estatus_real   -- ✅ éste es el que muestra la web
+FROM collection c
+LEFT JOIN LATERAL (
+    SELECT ts.* FROM transaction_statuses ts
+    WHERE ts.co_transaction = c.co_collection
+    ORDER BY ts.da_transaction_statuses DESC LIMIT 1
+) ts ON true
+LEFT JOIN statuses s ON s.id_status = ts.id_status
+ORDER BY c.da_collection DESC;
+```
+✅ **Verificado 2026-07-28** contra la web de La Tortuga: devuelve `Por aprobar` para los 4 cobros, coincidiendo
+1:1 con la UI. El mismo patrón aplica a las demás cabeceras (`co_order`, `co_return`, `co_deposit`, `co_visit`).
+
+### Cobros con su tipo legible (`co_type`)
+
+```sql
+SELECT c.id_collection, c.co_collection, c.da_collection, c.co_client, c.na_client,
+       CASE c.co_type WHEN 0 THEN 'Cobro normal'
+                      WHEN 1 THEN 'Anticipo/Prepago'
+                      WHEN 2 THEN 'Retención'
+                      ELSE c.co_type::text END AS tipo_cobro,
+       c.co_currency, c.nu_amount_final, c.st_collection, c.id_enterprise
+FROM collection c
+-- WHERE c.id_enterprise = :id_enterprise      -- descomentar si la playa es multi-empresa
+ORDER BY c.da_collection DESC, c.id_collection DESC;
+```
+
+### Documentos aplicados en un cobro (retenciones y pago parcial)
+
+```sql
+SELECT c.id_collection, c.na_client, cd.co_document,
+       cd.nu_amount_doc, cd.nu_balance_doc, cd.nu_amount_paid,
+       cd.nu_amount_retention, cd.nu_amount_retention2, cd.in_payment_partial
+FROM collection c
+JOIN collection_detail cd ON cd.co_collection = c.co_collection
+ORDER BY c.id_collection DESC;
+```
+
+### Empresas de la playa
+
+```sql
+SELECT id_enterprise, co_enterprise, lb_enterprise, enterprise_default FROM enterprise ORDER BY id_enterprise;
+```
+
+### Descubrir las columnas de una tabla (meta-query)
+
+```sql
+SELECT column_name, data_type, is_nullable FROM information_schema.columns
+WHERE table_schema='public' AND table_name='collection' ORDER BY ordinal_position;
+```
+> Útil cuando una consulta falla por nombre de columna. Así se descubrió que el saldo pendiente de
+> `document_sale` es **`nu_balance`** y no `nu_amount_pending`.
+
+### Gate del GRANT read-only (correr ANTES de dar la BD por disponible)
+
+```sql
+SELECT count(*) FILTER (WHERE has_table_privilege('user_read', schemaname||'.'||tablename,'SELECT')) AS legibles,
+       count(*) AS total
+FROM pg_tables WHERE schemaname='public';
+```
+> `SELECT 1` pasa aunque no haya permisos sobre las tablas. Si `legibles < total`, falta el GRANT.

@@ -17,6 +17,25 @@ Ejemplos vivos: `don-theo.yaml`, `piercar.yaml`. Esquema del YAML: `_schema.yaml
 
 ---
 
+## 🧹 Ciclo de vida de los dumps de configuración
+
+Los archivos `global_configuration_*_<CLIENTE>.md` y `global_configuration_client_*_<CLIENTE>.md`
+son **insumo, no entregable**: sirven **mientras no existe el YAML del cliente**.
+
+| Momento | Qué hacer con los dumps |
+|---|---|
+| Antes de tener el perfil | **Conservarlos** — son la fuente de las VGs |
+| **Una vez creado `<cliente>.yaml`** | **BORRARLOS.** El YAML ya es el producto: tiene las VGs resueltas, los conflictos dirimidos por `da_update` y las marcas `⚠️VERIFICAR` |
+
+**Por qué:** dejar los dos duplica la fuente de verdad. Si alguien consulta el dump en vez del YAML se
+lleva los valores **sin resolver** — incluidos los del override viejo de 2023, que en varios clientes
+contradice al global reciente. El YAML es el único que documenta **qué versión ganó y por qué**.
+
+⚠ **Cuidado al borrarlos:** son varios archivos con el nombre del cliente y es fácil llevarse por delante
+el `<cliente>.yaml`, que es justo lo que hay que conservar. Verificá que el perfil siga ahí después de limpiar.
+
+---
+
 ## Paso 1 — VGs desde el CSV (`global_configuration_<cliente>.csv`)
 
 1. Mapear cada `clave`/`valor` del CSV a la sección `vgs:` del YAML.

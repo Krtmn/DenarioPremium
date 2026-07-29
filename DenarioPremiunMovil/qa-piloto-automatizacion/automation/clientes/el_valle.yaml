@@ -1,7 +1,9 @@
 # el_valle/perfil.yaml
-# Cliente EL VALLE (COVADONGA). Perfil construido de los 2 dumps 20260728; SIN corrida aún.
+# Cliente EL VALLE (COVADONGA). Perfil construido de los 2 dumps 20260728.
 #   - global_configuration_202607281234_EL VALLE.md         (principal, filas 2025-2026 → AUTORITATIVO)
 #   - global_configuration_client_202607281234EL VALLE .md  (por-cliente, casi todo 2023-02-01 → OVERRIDE STALE)
+# ℹ Esos 2 dumps se ELIMINARON el 2026-07-28 una vez construido este perfil y CORRIDO el smoke
+#   (política de `alta-cliente.md`: el dump es insumo, el YAML es el producto). Recuperables desde git.
 # ⚠ REGLA: cuando difieren, gana el da_update más reciente. Conflictos marcados ⚠️VERIFICAR.
 #   Excepción detectada: userCanSelectProductDiscount y validateWarehouses tienen filas 2026 en AMBOS dumps
 #   → ahí se comparó fecha contra fecha, no dump contra dump.
