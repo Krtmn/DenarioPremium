@@ -2,122 +2,160 @@
 #
 # Para qué sirve: que el lector de corridas (`automation/reports/leer-corrida.js`) separe
 #   "esto ya se sabe" de "🔎 esto es nuevo, míralo".
-# Sin este registro, cada corrida vuelve a levantar los mismos defectos y la QA pierde tiempo
-#   revisando cosas ya reportadas o ya resueltas.
+# Los DESCARTADOS se conservan a propósito: evitan que una corrida futura vuelva a levantarlos
+#   como hallazgo y que alguien repita el análisis que ya se hizo.
 #
-# ⚠ AL AGREGAR UNO: poné un `patron` (regex, sin distinguir mayúsculas) que matchee cómo lo
-#   describen los agentes en sus reportes. Es lo que permite el cruce automático.
+# La versión es DOCUMENTACIÓN, no un gate: el lector nunca decide nada por ella.
+# **Quién decide qué se reporta es la QA.**
 
 meta:
-  # La versión es DOCUMENTACIÓN, no un gate: el lector nunca decide nada por ella.
-  # Sirve para ubicar cuándo se vio un defecto; **quién decide qué se reporta es la QA**.
-  # (Los identificadores no están unificados: la corrida expone `app_version: "1.0"` y
-  #  `db_version: 19`, y `RUNTIME §5` habla de `v6.6.14`. No hace falta resolverlo.)
   tag_en_prueba: "20"
   actualizado: "2026-07-28"
+  triaje: "2026-07-28 con la responsable QA — de 8 quedaron 2 a confirmar, 1 en monitoreo, 1 cerrado y 4 descartados"
 
 defectos:
 
+  # ───────────────────── EN MONITOREO ─────────────────────
   - id: COB-RET-TOTAL-CERO
     titulo: 'Cobro por RETENCIÓN muestra "Total Monto a pagar" en 0,00 en el detalle web'
     capa: web
     modulo: cobros
-    detectado_en: "v20"
-    resuelto_en: "v21"
-    estado: resuelto-sin-liberar        # la v21 aún no salió
-    severidad: presentación
+    detectado_en: "tag 20"
+    resuelto_en: "tag 21"
+    estado: monitoreo          # ya reportado; la 21 no ha salido
     patron: 'total monto a pagar|ret[eé]n[a-z]*.*0,00|COB-RET-TOTAL-CERO'
     detalle: >-
       La lista, la línea del documento y la BD (`nu_amount_final`) traen el valor correcto; solo el campo de
       cabecera del detalle sale en 0. La cabecera parece calcular Σ(pagos), y un cobro por retención no tiene
-      filas de pago. Confirmado por QA como conocido de la v20.
-    accion: "No reportar. Verificar que quede resuelto cuando se libere la v21."
+      filas de pago.
+    accion: "No reportar. Caso de regresión DW-COB-C09: confirmar que quede resuelto al liberarse el tag 21."
 
+  # ───────────────────── A CONFIRMAR MANUALMENTE ─────────────────────
+  - id: VIS-GUARDAR-NO-IDEMPOTENTE
+    titulo: "Dos eventos de Guardar seguidos crean DOS visitas"
+    capa: movil
+    modulo: visitas
+    detectado_en: "tag 20"
+    estado: a-confirmar-manual
+    patron: 'idempotente|dos visitas|doble.*guardar|guard de reentrada'
+    detalle: >-
+      El helper de automatización entregó click sintético + click real sobre `.imagenGuardar` y de un solo
+      "Guardar" salieron DOS visitas Guardadas idénticas (mismo cliente, misma fecha, ambas Ref 0). Las dos
+      quedaron LOCALES: la nube quedó limpia con una sola fila (id 51). ⚠ Los dos clicks fueron casi
+      simultáneos — más rápido que un doble toque humano —, así que puede no reproducirse a mano.
+    reproduccion: "Ver `## Pasos de reproducción` al final de este archivo."
+    accion: "QA lo reproduce a mano. Si se confirma → reportar (sugerencia: guard de reentrada / deshabilitar Guardar mientras el guardado está en vuelo)."
+
+  - id: PRD-BUSCADOR-NO-REPUEBLA
+    titulo: "Vaciar el buscador de productos NO repuebla la lista"
+    capa: movil
+    modulo: productos
+    detectado_en: "tag 20"
+    estado: a-confirmar-manual
+    patron: 'no repuebla|No hay productos disponibles|buscador.*vaci'
+    detalle: >-
+      Tras una búsqueda, al borrar TODO el texto la lista queda en 0 ítems con "No hay productos disponibles"
+      + "Por favor espere…" y NO se recupera (se sondeó 8 s). Workaround: buscar otro término, o salir a
+      estructuras y reentrar.
+      🔑 MATIZ IMPORTANTE: las 2 reproducciones partieron de una búsqueda que YA daba 0 resultados
+      ("ZZZZZZZ" y "ALAS" dentro de EMBUTIDOS, que no contiene ese producto). NO se probó vaciar tras una
+      búsqueda CON resultados. La condición real del defecto podría ser más estrecha.
+    reproduccion: "Ver `## Pasos de reproducción` al final de este archivo."
+    accion: "QA reproduce los dos escenarios (con y sin resultados previos). Eso acota el defecto antes de reportarlo."
+
+  # ───────────────────── CERRADO ─────────────────────
+  - id: COB-SYNC-DIFERIDA
+    titulo: "El envío de cobros tardaba ~28-75 min en llegar a la nube"
+    capa: movil
+    modulo: cobros
+    detectado_en: "tag 20"
+    estado: corregido
+    patron: 'sync diferida|collectionservice|latencia.*cobro'
+    detalle: "Era específico del endpoint de cobros; los demás módulos sincronizaban de inmediato."
+    accion: "Cerrado. Pendiente único: re-medir la latencia en la próxima corrida para confirmarlo con datos."
+
+  # ───────────────────── DESCARTADOS (no volver a levantarlos) ─────────────────────
   - id: DEP-LISTA-NO-RENDERIZA
     titulo: "Lista BUSCAR de depósitos no renderiza tras guardar"
     capa: movil
     modulo: depositos
     casos: [DM-DEP-018, DM-DEP-019, DM-DEP-020]
-    detectado_en: "v6.6.14"
-    estado: abierto
-    severidad: funcional
+    estado: descartado
     patron: 'DM-DEP-(018|019|020)|lista BUSCAR no renderiza|deposit\.service'
-    detalle: "Bug en `deposit.service.ts`. Es intermitente (race): en el_valle-20260728 NO reprodujo."
-    accion: "No re-marcar FAIL. Si reaparece, anotar en qué condiciones."
+    accion: "DESCARTADO por QA (2026-07-28): no reprodujo — la lista renderizó limpia en los 3 accesos."
 
-  - id: VIS-MODAL-ANTES-VALIDAR
-    titulo: "Modal de confirmación de envío aparece antes de validar actividades"
+  - id: VIS-FIRMA-NO-OBLIGATORIA
+    titulo: "Permite Enviar una visita sin firma con signatureVisit=true"
     capa: movil
     modulo: visitas
     casos: [DM-VIS-020]
-    detectado_en: "v6.6.14"
-    estado: abierto
-    severidad: UX
-    patron: 'DM-VIS-020|modal.*antes de validar|enviar sin firma'
+    estado: no-es-defecto
+    patron: 'enviar sin firma|signatureVisit|modal.*antes de validar'
     detalle: >-
-      UX, no bloquea. ⚠ En 4 playas se observó además que permite Enviar SIN FIRMA pese a
-      `signatureVisit=true` — eso es más grave que el modal y conviene tratarlo aparte.
-    accion: "No re-marcar FAIL por el modal. El 'enviar sin firma' SÍ merece reporte propio."
+      ⚠ LECTURA CORREGIDA POR QA: la VG dice "¿Desea HABILITAR la firma en el módulo de visitas? SI: se PODRÁ
+      firmar". Habilita la función, NO la vuelve obligatoria ⇒ enviar sin firma es comportamiento correcto.
+    accion: "NO es defecto. No volver a levantarlo en ninguna playa."
 
   - id: INV-REABRE-TAB-GENERAL
-    titulo: "Formulario Guardado de inventario reabre en tab General en vez de Inventario"
+    titulo: "Formulario Guardado de inventario reabre en tab General"
     capa: movil
     modulo: inventarios
     casos: [DM-INV-026]
-    detectado_en: "v6.6.14"
-    estado: abierto
-    severidad: UX
+    estado: descartado
     patron: 'DM-INV-026|tab General en lugar de|reabre en tab'
-    accion: "No re-marcar FAIL."
+    accion: "DESCARTADO por QA (2026-07-28): cosmético, sin quejas de usuarios."
 
   - id: PED-SUGERIDO-VG-FALSE
-    titulo: 'Botón "Pedido Sugerido" aparece pese a la VG en false'
+    titulo: 'Botón "Pedido Sugerido" aparece pese a suggestedOrderByDispatchAndReturn=false'
     capa: movil
     modulo: pedidos
-    detectado_en: "recurrente"
-    estado: en-observacion
-    severidad: por-determinar
+    estado: no-es-defecto
     patron: 'pedido sugerido|suggestedOrder'
-    detalle: >-
-      Observado en 5 playas. Hipótesis del agente: la VG que gobierna el botón sería `suggestedOrder`
-      (=true) y no `suggestedOrderByDispatchAndReturn` (=false). ⚠ NO confirmado con desarrollo.
-    accion: "Confirmar con desarrollo qué VG lo gobierna, y recién ahí corregir los YAML o abrir defecto."
+    detalle: "Observado en 5 playas. Lo gobierna otra VG (`suggestedOrder`=true), no la que se estaba mirando."
+    accion: "NO es defecto. Si se quiere, corregir la expectativa en los YAML."
 
-  - id: VIS-GUARDAR-NO-IDEMPOTENTE
-    titulo: "guardar() de visitas no es idempotente: doble evento crea DOS visitas"
-    capa: movil
-    modulo: visitas
-    detectado_en: "v20"
-    estado: reportado
-    severidad: funcional
-    patron: 'idempotente|dos visitas|doble.*guardar|guard de reentrada'
-    detalle: >-
-      Detectado en el_valle-20260728. Se disparó por un artefacto de automatización (click sintético + real),
-      pero el comportamiento de fondo es real: un doble-tap en campo duplicaría la visita.
-    accion: "Sugerido a desarrollo: guard de reentrada mientras el guardado está en vuelo."
-
-  - id: PRD-BUSCADOR-NO-REPUEBLA
-    titulo: "El buscador de productos no repuebla la lista al vaciarse"
-    capa: movil
-    modulo: productos
-    detectado_en: "v20"
-    estado: reportado
-    severidad: funcional
-    patron: 'no repuebla|No hay productos disponibles|buscador.*vaci'
-    detalle: >-
-      Queda en 0 con "No hay productos disponibles" y sigue en 0 tras 8 s. Reproducido 2 veces en
-      el_valle-20260728. Contradice la nota de insumar de que el 0 es transitorio.
-    accion: "Reportar si se reproduce en otra playa."
-
-  - id: COB-SYNC-DIFERIDA
-    titulo: "El envío de cobros tardaba ~28-75 min en llegar a la nube"
-    capa: movil
-    modulo: cobros
-    detectado_en: "v20"
-    estado: corregido
-    severidad: funcional
-    patron: 'sync diferida|collectionservice|cobros no.*(llegan|env[ií]an)|latencia.*cobro'
-    detalle: >-
-      Pedidos, devoluciones, inventarios y depósitos sincronizaban de inmediato en la misma sesión ⇒ era
-      específico del endpoint de cobros. Desarrollo aplicó un arreglo el 2026-07-28.
-    accion: "⚠ FALTA re-medir la latencia para confirmar el arreglo con datos."
+---
+# ═══════════════════════════════════════════════════════════════════════════
+# Pasos de reproducción manual — para los dos que quedaron a confirmar
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# ── VIS-GUARDAR-NO-IDEMPOTENTE ────────────────────────────────────────────
+# 1. App → módulo VISITAS → "NUEVA VISITA" (o el tile equivalente).
+# 2. Seleccionar el cliente (ej. ABASTOS Y CARNICERIA HERMANOS FLORES CA).
+# 3. Tab Actividades → elegir una actividad (ej. COBRANZA) y esperar ~2 s a que
+#    carguen los motivos → elegir un motivo (ej. COBRANZA EFECTIVA).
+# 4. Escribir una descripción cualquiera.
+# 5. 🎯 EL PASO CLAVE: dar **DOS TOQUES LO MÁS RÁPIDO POSIBLE** sobre el ícono
+#    de GUARDAR (el disquete de la barra superior, `.imagenGuardar`).
+# 6. Volver a la lista de visitas y buscar en GUARDADAS.
+#    · CORRECTO  → 1 sola visita.
+#    · DEFECTO   → 2 visitas idénticas (mismo cliente, misma fecha, ambas sin Nro.Ref).
+#
+# ⚠ Puede costar reproducirlo: los dos clicks de la automatización fueron casi
+#   simultáneos, más rápido que un doble toque humano. Si no sale al primer intento,
+#   probar con el teléfono cargado de apps (más lento) o repetir varias veces.
+# ℹ Las duplicadas quedan SOLO EN EL DISPOSITIVO (nunca se envían), así que la prueba
+#   no ensucia la nube. Borrar la sobrante con el ícono de papelera.
+#
+# ── PRD-BUSCADOR-NO-REPUEBLA ──────────────────────────────────────────────
+# Hay que probar DOS escenarios, porque solo uno está confirmado:
+#
+# ESCENARIO A — el que falló (búsqueda previa SIN resultados):
+# 1. App → módulo PRODUCTOS → entrar a una estructura (ej. EMBUTIDOS).
+#    Debe listar productos (unos 50).
+# 2. En el buscador escribir algo que NO exista: `ZZZZZZZ` + Enter.
+#    → muestra "No hay productos disponibles". Correcto hasta acá.
+# 3. 🎯 BORRAR TODO el texto del buscador (backspace hasta vaciarlo) + Enter.
+#    · CORRECTO → vuelven a listarse los ~50 productos.
+#    · DEFECTO  → sigue en "No hay productos disponibles" / "Por favor espere…"
+#                 y NO se recupera (se esperó 8 s).
+#
+# ESCENARIO B — NO probado, es el que falta (búsqueda previa CON resultados):
+# 1. Misma estructura EMBUTIDOS.
+# 2. Buscar `COSTILLA` + Enter → debe traer resultados.
+# 3. 🎯 Borrar todo el texto + Enter. ¿Vuelve la lista completa?
+#
+# 🔑 Si falla A pero B funciona, el defecto es más estrecho de lo que parece:
+#    "no se recupera solo cuando la búsqueda previa dio 0". Ese dato le ahorra
+#    tiempo a desarrollo.
+# ℹ Workaround conocido: buscar otro término, o salir a estructuras y volver a entrar.
