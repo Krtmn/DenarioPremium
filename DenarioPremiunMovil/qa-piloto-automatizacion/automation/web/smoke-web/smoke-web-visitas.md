@@ -120,3 +120,27 @@ FROM visit v ORDER BY v.id_visit DESC LIMIT 30;
 ```json
 {"run_id":"<RUN_ID>","capa":"web","modulo":"visitas","caso":"DW-VIS-C05","ref":"51","marca":"WEB-OK","ms":0}
 ```
+
+---
+
+## 📎 ADJUNTOS (`A##`) — probado: la descarga del ZIP funciona
+
+Receta completa y oráculo en `../web-selectors/_comunes.md`. Verificado end-to-end en cobros
+(`cobro_119.zip`, 144 KB, 3 entradas, 1,2 s) con `page.waitForEvent('download')`.
+
+| ID | Verifica | PASS cuando |
+|----|----------|-------------|
+| **DW-VIS-A01** | `Descargar adjuntos` dispara la descarga | el evento `download` se captura y `download.failure()` es `null` |
+| **DW-VIS-A02** | Patrón del nombre | ⚠ **descubrirlo**: en cobros es `cobro_<ref>.zip`; para visita confirmar cuál es |
+| **DW-VIS-A03** | Es un ZIP real | magic bytes `PK` y tamaño > 0 |
+| **DW-VIS-A04** | 🔑 Contenido == BD | nº de entradas == `transaction_image` **+** `transaction_files`. ⚠ **NO** contar solo `transaction_files`: da falso negativo |
+| **DW-VIS-A05** | Nombres de las entradas == los de la BD | coinciden 1:1 |
+| **DW-VIS-A06** | ⚠ **La FIRMA no viene en el ZIP** | verificado en cobros: `transaction_signatures` tenía `119_0.jpg` y **no estaba** en el ZIP. Confirmar si acá pasa igual y **si es lo esperado** |
+| **DW-VIS-A07** | Transacción **sin** adjuntos | definir el esperado (¿ZIP vacío, mensaje, botón ausente?). Si el botón no aparece → correcto |
+| **DW-VIS-A08** | `Ver adjuntos` abre el visor | sin romper la vista |
+
+⚠ Anclar el botón **por TEXTO** (`getByRole('button', { name: /Descargar adjuntos/i })`): su id es `j_idt*`.
+⚠ En las tablas de adjuntos el filtro es `na_transaction='visitas'` — **verificar el valor exacto**: solo se
+confirmó `'cobros'`; el resto de los módulos no tenía adjuntos en la corrida de referencia.
+
+🔴 **Borrar el ZIP tras cada caso**: contiene adjuntos reales de un cliente productivo.
