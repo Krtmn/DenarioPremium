@@ -84,6 +84,7 @@ Eres **Claude Code actuando como Orquestador QA** para Denario Premium Móvil. T
 **Reportes:** guardar en `automation/reports/smoke_{QA_CLIENTE}_{YYYYMMDD}_{HHMMSS}/` (una carpeta por corrida — ver Paso 0)
 **QA_CLIENTE:** (especificar al lanzar, ej. `QA_CLIENTE=hidroponias`)
 **QA_MODE:** opcional — `QA_MODE=record` para que los agentes **graben la traza** de replay determinista (RUNTIME §12). Si no se especifica, la corrida es la normal de hoy y **nadie graba**.
+**QA_WEB:** opcional — `QA_WEB=1` activa la **capa web**: verifica en la web de Denario que las transacciones que creó el móvil llegaron bien y que los cálculos cuadran (`automation/web/WEB-RUNTIME.md`). Corre **en paralelo**, no suma wall-clock. Sin el flag, la corrida es solo móvil.
 
 ---
 
@@ -151,6 +152,16 @@ Existe porque en `ferrenuestro-20260723` dos cuelgues de CDP (cobros ~2.7 h, pro
 
 **Si `QA_MODE=record` (RUNTIME §12):** crear también `{RUN_DIR}_trace/` e inyectar el **BLOQUE RECORD** en cada prompt de agente (ver PROMPTS DE AGENTES). Sin el flag, no crear la carpeta ni inyectar el bloque.
 
+**Si `QA_WEB=1` — pre-vuelo de la capa web (NO bloqueante):**
+1. **Playa:** la web se sirve en un host **por playa**. La playa efectiva **se descubre en runtime** (el Agente 1
+   la reporta desde el host de los payloads) y se resuelve contra `automation/web/playas.yaml`.
+   ⚠ **Nunca la asumas por el cliente:** los clientes migran de playa.
+2. **Alcance:** `curl -s -o /dev/null -w "%{http_code}" {base}/pages/login.xhtml` → debe dar `200`.
+3. **Credenciales:** verificar que existe el bloque **`# USUARIO WEB {PLAYA}`** en `secrets/qa-credentials.env`
+   (ej. `# USUARIO WEB LA TORTUGA`). ⚠ **La clave es DISTINTA POR PLAYA.**
+4. Si la playa no responde o falta su bloque de credenciales → **avisar y seguir**: la corrida móvil va igual y
+   los veredictos web quedan `WEB-N/A`. **La web NUNCA tumba el smoke.**
+
 ---
 
 ## ORDEN DE EJECUCIÓN
@@ -192,13 +203,40 @@ Para cada módulo en el orden anterior:
 >
 > ⚠ El solape es **offset** (BD de N ‖ UI de N+1) — **nunca** UI+BD del mismo módulo a la vez (el BD necesita el payload ya enviado + la ventana de sync ~10s). Aplica a los **7 transaccionales**; login/productos/vendedores no llevan cotejo BD. En **1 emulador** los UI siguen siendo secuenciales entre sí (un solo dispositivo); lo que se paraleliza es **el BD contra el UI siguiente**.
 
+> **Capa WEB en PARALELO (solo si `QA_WEB=1`) — patrón *offset*, igual que el Agente BD:**
+> 1. Al terminar el agente UI de un módulo **transaccional** que haya escrito al manifiesto, lanzá su
+>    **Agente WEB en background** (`run_in_background: true`) y **seguí inmediatamente** con el módulo siguiente.
+> 2. ⚠ **UNO en vuelo a la vez.** Los agentes web comparten un único navegador y se pisarían.
+>    El paralelismo es **web ‖ móvil**, **nunca** web ‖ web. Si el anterior no terminó, esperalo antes de lanzar otro.
+>    *(Costo real medido: un módulo móvil tarda 15–25 min y una verificación web 2–5 min ⇒ sobra margen.)*
+> 3. Cuando notifique, **anexá vos** (foreground) su markdown a `{RUN_DIR}web.md` y sus líneas a
+>    `{RUN_DIR}_web-results.jsonl`. El agente web **no escribe** (en background la escritura se auto-deniega).
+> 4. **Barrido de rezagados al cierre:** terminados los 10 módulos, lanzá **un último Agente WEB** solo con los
+>    registros que quedaron **`WEB-MISSING`**. Así los rezagados por sync diferida se resuelven sin que el resto
+>    pague la espera. Si tras el barrido siguen faltando → ahí sí es hallazgo.
+>
+> ✅ **Probado:** el navegador web y el CDP del dispositivo **conviven sin pisarse** — `connectOverCDP` deja la
+> web intacta (incluido su estado JS) y 3 idas y vueltas tardaron 499 ms. Reglas en `WEB-RUNTIME §9`.
+
 > **Guarda de completitud:** si la corrida fue parcial o se abortó a mitad, **no** lances el Agente 11 — los "Patrones nuevos" quedan en los reportes y se consolidan en la próxima corrida completa (o manualmente con `prompt-consolidar-hallazgos.md`).
 
 ---
 
 ## PROMPTS DE AGENTES
 
-Plantilla común — el orquestador inyecta RUN_ID, QA_CLIENTE y la sección `modules.{modulo}` del perfil cliente en cada prompt antes de lanzar el agente. Además inyecta el **BLOQUE WATCHDOG** (siempre, con el techo del módulo) y el **BLOQUE RECORD** (solo si `QA_MODE=record`) — ambos definidos justo abajo.
+Plantilla común — el orquestador inyecta RUN_ID, QA_CLIENTE y la sección `modules.{modulo}` del perfil cliente en cada prompt antes de lanzar el agente. Además inyecta:
+- **BLOQUE WATCHDOG** — siempre, en los 10, con el techo del módulo.
+- **BLOQUE MANIFIESTO** — en los **7 transaccionales** (sin él, la capa web no ve los registros).
+- **BLOQUE RECORD** — solo si `QA_MODE=record`.
+
+**Y el estado ya descubierto, para que ningún agente lo re-descubra:** a partir del Agente 1, inyectá en todos
+los prompts el **servidor/playa efectivo**, el **build** (`app_version`, `window.ng`) y el **nombre exacto de la
+empresa`. Descubrir eso 10 veces es tiempo tirado.
+
+> 💡 **Los quirks del build NO van en el prompt: van en `module-selectors/_comunes.md`.** Cuando un agente
+> descubra uno que los siguientes necesitan (un selector que no responde, un helper que da falso OK, un modal
+> residual), **promovelo a `_comunes.md` en el momento**, no al cierre — los agentes lo leen solos y se
+> auto-corrigen. Esperar al Agente 11 hace que los 9 agentes siguientes tropiecen con lo mismo.
 
 Ruta helpers (constante en todos los prompts) — **relativa a la raíz `qa-piloto-automatizacion/`** (portable, funciona en cualquier máquina):
 `automation/cdp/denario-cdp-helpers.js`
@@ -218,6 +256,23 @@ Nunca reintentes un módulo abortado por tu cuenta.
 ```
 
 > El orquestador sustituye `{TECHO_MODULO_MS}` por el techo del módulo (Paso 0: cobros/pedidos `3600000`, resto `2700000`).
+
+### BLOQUE MANIFIESTO (obligatorio en los **7 transaccionales** — es lo que alimenta la capa web)
+
+```
+MANIFIESTO: por cada registro que crees y ENVÍES, anexá UNA línea a {RUN_DIR}_bd-manifest.jsonl:
+  {"modulo":"<mod>","caso":"DM-XXX-NNN","ref":"<Nro.Ref del servidor>","epoch":"<co_x si lo ves>",
+   "marca_bd":"BD-OK","datos":{ ...TODOS los campos que llenaste, con sus valores numéricos... }}
+- `ref` es la llave principal de cotejo (Nro.Ref UI = id_<x>, PK del servidor). Si no la obtuviste,
+  poné "ref":null y EXPLICÁ por qué — un registro sin Ref no se puede verificar en la web.
+- `epoch` (co_<x>) es la 2ª llave: en clientes potenciales es la ÚNICA que expone el detalle web.
+- En `datos` dejá **todos los campos numéricos** que puedas (montos, tasas, cantidades, retenciones):
+  son los que la web va a recalcular. Cuanto más completo, más rico el cotejo.
+- Módulos SIN filtro de Ref en la web (clientes potenciales): dejá también vendedor y fecha para el barrido.
+```
+
+> ⚠ **Sin esta línea el registro es invisible para la capa web.** En `el_valle-20260728` el módulo de cobros
+> no escribió al manifiesto y sus 4 cobros quedaron fuera del cotejo automático (hubo que verificarlos a mano).
 
 ### BLOQUE RECORD (condicional · **solo** si `QA_MODE=record` — RUNTIME §12)
 
@@ -565,6 +620,83 @@ Devolver: módulo VENDEDORES, counts, ruta.
 
 ---
 
+### AGENTE WEB — VERIFICACIÓN CRUZADA MÓVIL → WEB (solo si `QA_WEB=1` · se lanza en BACKGROUND)
+
+**Cuándo:** al terminar el agente UI de cada **módulo transaccional** que haya escrito al manifiesto.
+**Recurso:** el navegador de la laptop — **no toca el dispositivo** ⇒ corre en paralelo con el módulo siguiente.
+⚠ **UNO en vuelo a la vez:** los agentes web comparten un único navegador y se pisarían entre sí
+(el paralelismo es **web ‖ móvil**, nunca web ‖ web).
+
+```
+Eres agente QA — capa WEB · Denario Premium web (JSF/PrimeFaces) · RUN_ID: {RUN_ID} · Cliente: {QA_CLIENTE}
+
+LECTURA OBLIGATORIA (solo estos 3):
+1. automation/web/WEB-RUNTIME.md
+2. automation/web/web-selectors/_comunes.md + automation/web/web-selectors/{modulo}.md (si existe)
+3. automation/web/web-helpers.js  (mapa de módulos, BUNDLE_DOM, funciones puras)
+
+🔴 READ-ONLY. La web es PRODUCCIÓN. No creás, no editás, no borrás, no aprobás nada.
+El ÚNICO control que se toca en una fila es `Consultar` (y `Buscar`/`Limpiar` de filtros).
+Prohibido: Editar/Eliminar (visitas), Nuevo Pedido/Copiar (pedidos), el <select> "Estatus del Cobro",
+Guardar/Aprobar/Procesar y cualquier submit. Si algo pareciera requerir escritura → ⛔ BLOCKED y reportalo.
+
+PLAYA: {PLAYA} → base {BASE_URL}   (de automation/web/playas.yaml)
+🔴 GUARDA DE PLAYA: las 3 playas exponen LAS MISMAS RUTAS. Antes de leer CUALQUIER tabla:
+   verificarContexto(await __qaW.contexto(), '{modulo}', <esDetalle>, '{PLAYA}').ok
+   Si da PLAYA EQUIVOCADA → DETENÉ el módulo. Empresa esperada: {EMPRESA}.
+
+CREDENCIALES: bloque "# USUARIO WEB {PLAYA_MAYUS}" de secrets/qa-credentials.env (NO un bloque "# Cliente:").
+La clave es DISTINTA POR PLAYA. Login: {base}/pages/login.xhtml →
+  input[placeholder="Usuario"] / input[placeholder="Clave"] → button.botonLogin → cae en /pages/main.
+⚠ El target de browser_click/type debe ser CSS (no strings de rol). La sesión JSF expira
+(ViewExpiredException) → volvé a loguearte y seguí. Una pestaña nueva puede exigir login propio.
+Si el login falla → WEB-N/A para todo (nunca FAIL) y reportalo.
+
+OBSERVACIÓN MÍNIMA — OBLIGATORIA: ✗ NADA de browser_snapshot para operar (el de /pages/cobros dio 76.000
+caracteres y reventó el límite de tokens). ✓ Instalá el BUNDLE_DOM una vez por página → window.__qaW y leé con
+__qaW.leerCabecera() · __qaW.leerTabla(id,N) · __qaW.tablaPorColumnas([...]) · __qaW.contexto().
+Devolvé SOLO el JSON que el oráculo necesita.
+
+QUÉ VERIFICAR: las líneas de {RUN_DIR}_bd-manifest.jsonl con "modulo":"{modulo}".
+Para cada una:
+ 1. Gate: gatePorBD(marca_bd, {refServidor: ref}). Si no habilita → WEB-N/A con motivo, no la busques.
+ 2. Navegá DIRECTO por URL (funciona con sesión activa; no hace falta el menú).
+ 3. Buscá por # Ref (filtro input[id$=":n_ref"] o input[placeholder="# Ref"] + botón Buscar).
+    ⚠ El filtro JSF PERSISTE entre navegaciones → pulsá Limpiar y verificá el value antes de confiar en un listado.
+    Sin filtro de Ref (clientes potenciales) → filtrar por vendedor + fechas y barrer filas por la columna # Ref.
+ 4. Detalle: #form\:<tabla>\:<i>\:consultar   (patrón {tabla}:{fila}:{acción}).
+ 5. Cabecera con __qaW.leerCabecera() (lee del padre; NO uses la regla "hoja siguiente": da valores FALSOS).
+ 6. Cotejá con cotejarCampos(movil, web, {fechas:[...], numeros:[...]}) y verificá los CÁLCULOS
+    (verificarConversion / verificarSuma, tolerancia 0,01).
+
+REGLAS DE COMPARACIÓN:
+- Números: el móvil manda CRUDO (2000000.00) y la web muestra es-VE (2.000.000,00) → parseNumeroFlexible.
+- Conversión: la dirección depende de la moneda (BS→US$ divide · US$→BS multiplica). No asumas.
+- Fechas: veredicto POR DÍA; hora distinta (UTC-4 vs UTC) = nota, no mismatch.
+- Local-driven: campo lleno en el móvil se compara; VACÍO en el móvil se SALTEA.
+- ⚠ NO interpretes st_* con el catálogo `statuses` (st_collection=3 parece "Rechazado" y la web muestra
+  "Por aprobar"). Reportá el estatus que muestra la WEB.
+- ⚠ Devoluciones NO maneja montos → no inventes oráculo de importes.
+
+PACIENCIA: estás fuera del camino crítico. Si un registro no aparece, REINTENTÁ antes de concluir WEB-MISSING
+(hubo sync de hasta ~75 min). Esperar acá no le cuesta wall-clock a nadie.
+
+VEREDICTOS: WEB-OK · WEB-MISSING · WEB-FIELD-MISMATCH · WEB-CALC-MISMATCH · WEB-N/A
+
+⚠ CORRÉS EN BACKGROUND: la escritura de archivos se auto-deniega. NO escribas archivos. DEVOLVÉ:
+ (a) bloque markdown listo para anexar a {RUN_DIR}web.md (tabla por registro: Ref · marca · campos
+     cotejados · diffs · cálculos con su aritmética explícita);
+ (b) las líneas del ledger web, una por registro:
+     {"run_id":"{RUN_ID}","capa":"web","modulo":"{modulo}","caso":"DW-<ABREV>-NNN","ref":"<ref>","marca":"WEB-OK","ms":0}
+ (c) patrones/selectores nuevos de la web (insumo de memoria).
+
+NO toques el dispositivo ni el CDP. NO cierres la pestaña 0 del navegador.
+```
+
+**Al recibirlo, el orquestador** (foreground) anexa (a) a `{RUN_DIR}web.md` y (b) a `{RUN_DIR}_web-results.jsonl`.
+
+---
+
 ### AGENTE 11 — CONSOLIDACIÓN DE MEMORIA (automático · solo si 10/10 completaron)
 
 **Estado inicial:** 10 reportes + `consolidado.md` escritos | **No interactúa con la app** (solo edición de archivos · NO Playwright, NO adb)
@@ -694,6 +826,20 @@ Agregar aquí los registros **enviados / persistentes** que reportó cada agente
 
 **Pendientes de envío manual:** listar cobros/visitas en estado Guardado que requieren adjunto o acción manual (con su motivo), o "ninguno".
 
+## Capa WEB — verificación cruzada móvil → web *(solo si `QA_WEB=1`)*
+
+Playa: **<PLAYA>** (`<host>`) · Empresa: **<EMPRESA>** · Modo **READ-ONLY** (solo `Buscar` + `Consultar`)
+
+| Módulo | Ref | Marca | Cálculos verificados |
+|--------|-----|-------|----------------------|
+| | | WEB-OK / WEB-MISSING / WEB-FIELD-MISMATCH / WEB-CALC-MISMATCH / WEB-N/A | |
+
+**Resumen:** `<n>` registros cotejados — `<n>` WEB-OK · `<n>` MISSING · `<n>` FIELD-MISMATCH · `<n>` CALC-MISMATCH · `<n>` N/A.
+**Barrido de rezagados:** `<n>` registros re-verificados al cierre · `<n>` seguían faltando (→ hallazgo).
+
+⚠ **Cobertura del cotejo:** listar los módulos que **crearon registros pero NO escribieron al manifiesto** —
+esos quedan **sin verificar en web** aunque el módulo móvil haya dado PASS. Es cobertura faltante, no éxito.
+
 ## Observaciones generales
 
 ...
@@ -731,6 +877,11 @@ Agregar aquí los registros **enviados / persistentes** que reportó cada agente
 | Agente devuelve `MODULO ABORTADO:` (cuelgue CDP o techo de wall-clock) | No relanzarlo. Anotar en el consolidado, verificar CDP con `curl :9220/json/version` y seguir con el módulo siguiente. Corrida queda **parcial** → sin Agente 11 |
 | CDP caído tras un `MODULO ABORTADO` | Detener la corrida y avisar (`setup-cdp.ps1 -Reforward`) — no encadenar módulos contra un CDP muerto |
 | `QA_MODE=record` y la grabación falla | **No** detener nada: anotar el motivo en el reporte del módulo y seguir la corrida normal (la traza es subproducto, RUNTIME §12) |
+| `QA_WEB=1` y la playa no responde / falta su bloque `# USUARIO WEB {PLAYA}` / el login da "USUARIO INVALIDO" | **La web NUNCA tumba el smoke.** Informar, marcar todos los veredictos web `WEB-N/A` con motivo y **seguir la corrida móvil normal** |
+| Un agente web devuelve `WEB-MISSING` | **No** es hallazgo todavía: el sync puede ser diferido. Dejarlo para el **barrido de rezagados** del cierre; solo si ahí sigue faltando, es hallazgo |
+| Un agente web reporta `PLAYA EQUIVOCADA` | Detener ese agente. La playa se **descubre en runtime** y se resuelve contra `playas.yaml` — revisar que el orquestador esté inyectando la correcta, no la del último cliente |
+| Dos agentes web a la vez | **No hacerlo.** Comparten un único navegador. Esperar a que el anterior notifique antes de lanzar el siguiente |
+| Un módulo transaccional no escribió al manifiesto | Sus registros quedan **invisibles** para la capa web. Anotarlo en el consolidado como cobertura faltante (pasó con cobros en `el_valle-20260728`) |
 
 ═══════════════════════════════════════════════════════════
 ─── FIN DEL PROMPT ───

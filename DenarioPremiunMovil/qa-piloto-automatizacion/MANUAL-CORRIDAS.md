@@ -100,6 +100,28 @@ Esto verifica dispositivo, instala/lanza la app, encuentra el socket WebView, co
 
 Claude hará el resto: 10 módulos en secuencia + consolidado + consolidación de memoria. No necesitas estar frente a la pantalla entre módulos.
 
+**Corrida CON VERIFICACIÓN WEB (recomendado):** añade una línea al lanzar:
+```
+QA_CLIENTE=insumar
+QA_WEB=1
+```
+Con eso, además del smoke móvil, un agente verifica **en la web de Denario** que cada transacción que creó el
+móvil llegó bien: busca el registro por su Nro.Ref, abre el detalle, coteja campo a campo contra lo que se envió
+y **recalcula los importes** (conversión de moneda, retenciones, suma de líneas, Σ cobros = monto depositado).
+
+Tres cosas que conviene que sepas:
+- **Es de solo lectura.** El agente no crea, edita ni borra nada en la web. Solo usa `Buscar` y `Consultar`.
+- **No alarga la corrida.** Corre en paralelo con el módulo móvil siguiente, en el navegador de la laptop
+  (recurso distinto al dispositivo). Medido: ~0–10 min extra.
+- **Nunca tumba el smoke.** Si la playa no responde o falta la clave web de esa playa, los veredictos quedan
+  `WEB-N/A` y la corrida móvil sigue igual.
+
+⚠ **La clave del usuario web es distinta por playa.** El archivo `secrets/qa-credentials.env` necesita el bloque
+de la playa donde esté montado el cliente: `# USUARIO WEB LA TORTUGA`, `# USUARIO WEB ISLA COCHE` o
+`# USUARIO WEB EL YAQUE`. La playa la descubre la corrida sola; vos solo tenés que tener su clave cargada.
+
+Al terminar, el resultado queda en `{RUN_DIR}web.md` y en la sección "Capa WEB" del consolidado.
+
 **Corrida de GRABACIÓN (opcional — para acelerar las corridas futuras del mismo cliente/build):** añade una segunda línea al lanzar:
 ```
 QA_CLIENTE=insumar
