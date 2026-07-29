@@ -130,6 +130,107 @@ function compararCorridas(actual, anterior) {
   return { peor, mejor, nuevos, desaparecidos };
 }
 
+// ── ANOMALÍAS: "cosas raras" que merecen ojo humano ─────────────────────────
+
+/** Señales de DIVERGENCIA: una línea marcada que además dice que algo no cuadra. */
+const SENIALES = [
+  'pero', 'sin embargo', 'no aparece', 'no coincide', 'no cuadra', 'no reprodujo', 'no repuebla',
+  'en vez de', 'en lugar de', 'diverge', 'divergencia', 'anómal', 'anomal', 'inesperad',
+  'contradice', 'contradicci', 'discrepan', 'difiere', 'falso', 'deberia', 'debería',
+  'llamativ', 'sospech', 'raro', 'extraño', 'no deberia', 'no debería', 'sigue en 0',
+  'duplicad', 'se pierde', 'se perdio', 'se perdió', 'no persiste', 'no fiable', 'poco fiable',
+  // valores que no cuadran (el patrón "muestra X cuando el valor real es Y")
+  'valor real', 'cuando el valor', 'en 0,00', 'en cero', 'incorrect', 'mal calculad', 'no suma',
+];
+// ⚠ Esta lista es una HEURÍSTICA tunable, no una verdad: si una corrida deja pasar una anomalía
+//    real, agregar acá la expresión que la describía. Prefiere falsos positivos (ruido revisable)
+//    antes que falsos negativos (una rareza que nadie mira).
+/** Ruido: encabezados de tabla, reglas e instrucciones — no son hallazgos. */
+const RUIDO_ANOM = [
+  'no re-marcar', 'no reportar', 'prohibid', 'usar h.', 'anti-patrón:', 'anti-patron:',
+  '| patrón', '| universal', 'obligatori', 'recordá', 'recorda ',
+];
+
+const MARCADOR = /[⚠🐞🔴🔎]/u;
+
+/** Extrae de un .md las líneas que parecen un hallazgo (no una regla). */
+function extraerAnomaliasDeMd(texto, archivo) {
+  const out = [];
+  let seccion = '';
+  for (const cruda of String(texto || '').split(/\r?\n/)) {
+    const l = cruda.trim();
+    if (/^#{1,4}\s/.test(l)) { seccion = l.replace(/^#+\s*/, '').replace(/[*_`]/g, '').trim(); continue; }
+    if (!l || l.length < 25) continue;
+    const bajo = l.toLowerCase();
+    if (RUIDO_ANOM.some((r) => bajo.includes(r))) continue;
+    if (/^\|\s*-+/.test(l)) continue;                                  // separador de tabla
+
+    const enSeccionHallazgos = /hallazgo|observaci|divergenc|defect/i.test(seccion);
+    const tieneMarcador = MARCADOR.test(l);
+    const tieneSenial = SENIALES.some((s) => bajo.includes(s));
+
+    // Un hallazgo es: (marcador Y señal de divergencia) o (está en una sección de hallazgos Y tiene señal)
+    if (!((tieneMarcador && tieneSenial) || (enSeccionHallazgos && tieneSenial))) continue;
+
+    out.push({
+      archivo,
+      seccion: seccion || '(sin sección)',
+      texto: l.replace(/\s+/g, ' ').replace(/^[|>\-*\s]+/, '').slice(0, 300),
+    });
+  }
+  return out;
+}
+
+/** Cruza cada anomalía contra el registro de defectos conocidos. */
+function clasificarAnomalias(anomalias, defectos) {
+  const conocidas = [], nuevas = [];
+  for (const a of anomalias) {
+    const hit = (defectos || []).find((d) => {
+      if (!d.patron) return false;
+      try { return new RegExp(d.patron, 'i').test(a.texto); } catch (e) { return false; }
+    });
+    if (hit) conocidas.push({ ...a, defecto: hit });
+    else nuevas.push(a);
+  }
+  return { conocidas, nuevas };
+}
+
+/** Anomalías que salen del propio ledger, sin leer prosa. */
+function anomaliasDelLedger(filas, manifiesto, web) {
+  const out = [];
+  // reintentos
+  const reintentos = filas.filter((f) => Number(f.intentos) >= 2);
+  if (reintentos.length) out.push({ tipo: 'reintentos', detalle: `${reintentos.length} caso(s) necesitaron 2 intentos (flakiness): ` + reintentos.map((f) => f.caso).join(', ') });
+  // outliers de duración: > 3× la mediana global
+  const ms = filas.map((f) => Number(f.ms)).filter((n) => Number.isFinite(n) && n > 0).sort((a, b) => a - b);
+  if (ms.length > 5) {
+    const mediana = ms[Math.floor(ms.length / 2)];
+    const lentos = filas.filter((f) => Number(f.ms) > mediana * 3);
+    if (lentos.length) out.push({ tipo: 'lentitud', detalle: `${lentos.length} caso(s) tardaron >3× la mediana (${mediana} ms): ` + lentos.map((f) => `${f.caso} (${f.ms}ms)`).slice(0, 6).join(', ') });
+  }
+  // registros sin Ref del servidor
+  const sinRef = (manifiesto || []).filter((r) => r.ref == null || String(r.ref).trim() === '');
+  if (sinRef.length) out.push({ tipo: 'sin-ref', detalle: `${sinRef.length} registro(s) creados SIN Nro.Ref del servidor: ` + sinRef.map((r) => `${r.modulo}/${r.caso}`).join(', ') });
+  // marcas BD distintas de OK
+  const bdMal = (manifiesto || []).filter((r) => r.marca_bd && !/^BD-(OK|FIELD-OK)$/i.test(r.marca_bd));
+  if (bdMal.length) out.push({ tipo: 'bd', detalle: `${bdMal.length} registro(s) con marca BD distinta de OK: ` + bdMal.map((r) => `${r.modulo}/${r.ref}=${r.marca_bd}`).join(', ') });
+  // marcas web distintas de OK
+  const webMal = (web || []).filter((w) => w.marca && w.marca !== 'WEB-OK');
+  if (webMal.length) out.push({ tipo: 'web', detalle: `${webMal.length} veredicto(s) web distinto(s) de WEB-OK: ` + webMal.map((w) => `${w.modulo}/${w.ref}=${w.marca}`).join(', ') });
+  return out;
+}
+
+function cargarDefectos() {
+  const ruta = path.join(__dirname, '..', 'defectos-conocidos.yaml');
+  if (!fs.existsSync(ruta)) return { meta: {}, defectos: [] };
+  try {
+    const yaml = require('js-yaml');
+    return yaml.load(fs.readFileSync(ruta, 'utf8')) || { meta: {}, defectos: [] };
+  } catch (e) {
+    return { meta: {}, defectos: [], _error: e.message };
+  }
+}
+
 // ── recolección ─────────────────────────────────────────────────────────────
 
 function corridasDisponibles() {
@@ -172,6 +273,18 @@ function analizar(carpeta, carpetaAnterior) {
 
   const reportes = fs.readdirSync(dir).filter((f) => f.endsWith('.md'));
 
+  // anomalías: de la prosa de los reportes + del propio ledger
+  const registro = cargarDefectos();
+  let crudas = [];
+  for (const f of reportes) {
+    crudas = crudas.concat(extraerAnomaliasDeMd(fs.readFileSync(path.join(dir, f), 'utf8'), f));
+  }
+  // dedup por texto
+  const vistas = new Set();
+  crudas = crudas.filter((a) => { const k = a.texto.slice(0, 120); if (vistas.has(k)) return false; vistas.add(k); return true; });
+  const { conocidas, nuevas } = clasificarAnomalias(crudas, registro.defectos);
+  const delLedger = anomaliasDelLedger(ledger.filas, manif.filas, web.filas);
+
   let diff = null;
   if (carpetaAnterior) {
     const l2 = leerJsonl(path.join(REPORTS_DIR, carpetaAnterior, '_results.jsonl'));
@@ -187,6 +300,7 @@ function analizar(carpeta, carpetaAnterior) {
     web: { lineas: web.filas.length, marcas: marcasWeb, existe: web.existe },
     sinCotejoWeb: sinWeb,
     trazas, reportes, diff,
+    anomalias: { nuevas, conocidas, delLedger, versionEnPrueba: (registro.meta || {}).version_en_prueba || null },
   };
 }
 
@@ -270,6 +384,37 @@ function imprimir(a) {
       a.diff.desaparecidos.slice(0, 8).map((d) => d.caso).join(', ')));
   }
 
+  // ── COSAS RARAS — lo que hay que mirar con ojo humano ──
+  const A = a.anomalias || { nuevas: [], conocidas: [], delLedger: [] };
+  L.push('', b('── 🔎 COSAS RARAS — para revisar a ojo ──'));
+  if (A.versionEnPrueba) L.push(`(cruzado contra defectos conocidos de ${A.versionEnPrueba})`);
+
+  if (A.delLedger.length) {
+    L.push('', amar('  Señales del ledger:'));
+    for (const x of A.delLedger) L.push(`   · [${x.tipo}] ${x.detalle}`);
+  }
+
+  if (A.nuevas.length) {
+    L.push('', rojo(`  🔎 ${A.nuevas.length} observación(es) SIN clasificar — revisá si hay que reportarlas:`));
+    for (const x of A.nuevas) L.push(`   · (${x.archivo} › ${x.seccion})\n     ${x.texto}`);
+  } else {
+    L.push('', verde('  Ninguna observación nueva sin clasificar.'));
+  }
+
+  if (A.conocidas.length) {
+    const porId = {};
+    for (const x of A.conocidas) (porId[x.defecto.id] = porId[x.defecto.id] || []).push(x);
+    L.push('', `  ✔ ${A.conocidas.length} coincidencia(s) con DEFECTOS YA CONOCIDOS (no requieren acción nueva):`);
+    for (const [id, xs] of Object.entries(porId)) {
+      const d = xs[0].defecto;
+      const est = d.estado === 'resuelto-sin-liberar' ? `resuelto en ${d.resuelto_en} (sin liberar)`
+        : d.estado === 'corregido' ? 'corregido' : d.estado;
+      L.push(`   · ${id} — ${d.titulo}`);
+      L.push(`     estado: ${est}${d.detectado_en ? ` · detectado en ${d.detectado_en}` : ''} · ${xs.length} mención(es)`);
+      if (d.accion) L.push(`     acción: ${d.accion}`);
+    }
+  }
+
   // material
   L.push('', b('── Material de la corrida ──'));
   L.push(`Reportes .md: ${a.reportes.length} (${a.reportes.join(', ')})`);
@@ -343,6 +488,37 @@ function selfTest() {
   eq('detecta el caso que DESAPARECIÓ del alcance', d.desaparecidos.map((x) => x.caso), ['cobros|D']);
 
   eq('jsonl inexistente no revienta', leerJsonl('/no/existe.jsonl').existe, false);
+
+  // ── anomalías ──
+  const mdAnom = [
+    '## Hallazgos',
+    '⚠ El botón "Pedido Sugerido" aparece PERO la VG está en false, cuarta corrida consecutiva.',
+    '## Casos ejecutados',
+    '⚠ Recordá usar h.clickAlertButton para los alerts — es obligatorio en todos los módulos.',
+    'DM-PED-001 PASS sin novedad y con evidencia suficiente para el reporte.',
+    '⚠ El detalle muestra Total Monto a pagar en 0,00 cuando el valor real es 12,00 en la retención.',
+  ].join('\n');
+  const an = extraerAnomaliasDeMd(mdAnom, 'x.md');
+  t('detecta el hallazgo con marcador + señal de divergencia', an.some((x) => /Pedido Sugerido/.test(x.texto)));
+  t('detecta el del Total en 0,00', an.some((x) => /Total Monto a pagar/.test(x.texto)));
+  t('IGNORA la línea de regla/instrucción (⚠ pero es "obligatorio")', !an.some((x) => /clickAlertButton/.test(x.texto)));
+  t('IGNORA la línea sin marcador ni señal', !an.some((x) => /sin novedad/.test(x.texto)));
+
+  const defs = [{ id: 'COB-RET-TOTAL-CERO', titulo: 'Total en 0', patron: 'total monto a pagar', estado: 'resuelto-sin-liberar', resuelto_en: 'v21' }];
+  const cl = clasificarAnomalias(an, defs);
+  t('clasifica como CONOCIDO lo que matchea el registro', cl.conocidas.some((x) => x.defecto.id === 'COB-RET-TOTAL-CERO'));
+  t('deja como NUEVO lo que no matchea', cl.nuevas.some((x) => /Pedido Sugerido/.test(x.texto)));
+  t('un patrón inválido no rompe la clasificación', clasificarAnomalias(an, [{ id: 'X', patron: '([' }]).nuevas.length === an.length);
+
+  const led = anomaliasDelLedger(
+    [{ caso: 'A', intentos: 2, ms: 100 }, { caso: 'B', intentos: 1, ms: 100 }],
+    [{ modulo: 'cobros', ref: null, caso: 'C1' }, { modulo: 'pedidos', ref: '9', marca_bd: 'BD-SAVED' }],
+    [{ modulo: 'cobros', ref: '122', marca: 'WEB-CALC-MISMATCH' }]
+  );
+  t('ledger: detecta reintentos', led.some((x) => x.tipo === 'reintentos'));
+  t('ledger: detecta registro sin Ref del servidor', led.some((x) => x.tipo === 'sin-ref'));
+  t('ledger: detecta marca BD distinta de OK', led.some((x) => x.tipo === 'bd'));
+  t('ledger: detecta veredicto web distinto de WEB-OK', led.some((x) => x.tipo === 'web'));
 
   console.log(`\n=== leer-corrida self-test: ${ok} OK, ${fail} FAIL ===`);
   process.exit(fail ? 1 : 0);
