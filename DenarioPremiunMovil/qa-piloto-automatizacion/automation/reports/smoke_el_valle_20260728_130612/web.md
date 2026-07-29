@@ -501,3 +501,44 @@ fila del 437), ni `Editar`/`Eliminar`, ni ningún `Guardar`/`Aprobar`/`Procesar`
 ---
 
 *Agente QA capa WEB · F1 · 2026-07-28 · playa la_tortuga · empresa PROCESADORA DE ALIMENTOS COVADONGA,C.A*
+
+## Visitas — DW-VIS-001 (Ref 51)
+
+**Veredicto: `WEB-OK`** · Playa `la_tortuga` (empresa **PROCESADORA DE ALIMENTOS COVADONGA,C.A**) ·
+Gate BD: `BD-OK` · Caso móvil de origen: `DM-VIS-020`
+Guardas de contexto `ok:true` en lista (`/pages/visitas`) y detalle (`/pages/protected/visitas/detalleVisita.xhtml`).
+
+### Campos cotejados — 12 comparados · **0 diffs**
+
+| Campo | Móvil | Web | ✔ |
+|---|---|---|---|
+| Nro.Ref | 51 | 51 | ✅ |
+| Cliente / Cód. | ABASTOS Y CARNICERIA HERMANOS FLORES CA / J309901710 | ídem | ✅ |
+| Actividad / Motivo | COBRANZA / COBRANZA EFECTIVA | ídem | ✅ |
+| Descripción | Test-VIS-015-QA-smoke-el-valle | ídem | ✅ |
+| Fecha programada / iniciada / enviada | 18:21:04 / 18:21:05 / 18:25:11 | ídem | ✅ **al segundo** |
+| Status | Visitado (`st_visit=2`) | visitado | ✅ |
+| Coordenada | 11.0490583,-63.8649814 | ídem (en el HTML del mapa) | ✅ |
+| Orden de visita | 1 | 1 | ✅ |
+
+**Sin oráculo de cálculo:** visitas no maneja montos.
+
+### Notas (no son diffs)
+
+1. **`titulo` — la web es fiel, no hay defecto.** El manifiesto traía `"Visita COBRANZA"`; la web muestra
+   `2026-07-28-ABASTOS Y CARNICERIA HERMANOS FLORES CA`. Se dirimió muestreando **45 visitas**: las refs 39–48
+   tienen títulos libres reales ⇒ la columna **no** la deriva la web; y las 3 de origen móvil (49, 50, 51) traen
+   el patrón `{fecha}-{cliente}`. ⇒ **el título lo genera el móvil**; el del manifiesto era una anotación
+   descriptiva del agente, no el valor persistido.
+2. **Fechas sin desfase horario**: las tres coinciden **hasta el segundo**.
+3. **`Geo` = `Fuera de Rango`** es una *clasificación de la web* (radio 50 m), no la coordenada. No se juzga.
+4. Campos que la web enriquece: vendedor `001`→`001 001`, empresa `00001`→razón social.
+
+### Patrones nuevos descubiertos
+
+- 🔴 **Visitas SÍ tiene filtro `# Ref`** (`input[placeholder="# Ref"]`) — corrige la doc previa.
+- ⚠ **El filtro JSF PERSISTE entre navegaciones por URL** → pulsar `Limpiar` y verificar el `value` del input.
+- 🐛 La regla de cabecera "etiqueta `:` → hoja siguiente" da **valores FALSOS**: `Titulo:` tomaba el encabezado
+  `N°` de la tabla hija. ⇒ corregido con `__qaW.leerCabecera()` (padre-primero).
+- La **coordenada no es texto visible**: vive en el HTML del mapa, en dos variantes → quedarse con la de más decimales.
+- El detalle **no** trae `Observaciones`, `Estatus` ni fechas de inicio/envío: hay que leer **lista y detalle**.

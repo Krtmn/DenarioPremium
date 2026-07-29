@@ -7,3 +7,4 @@
 {"run_id":"20260728_130612_smoke-completo","capa":"web","modulo":"cobros","caso":"DW-COB-002","ref":"120","marca":"WEB-OK","ms":0}
 {"run_id":"20260728_130612_smoke-completo","capa":"web","modulo":"cobros","caso":"DW-COB-003","ref":"121","marca":"WEB-OK","ms":0}
 {"run_id":"20260728_130612_smoke-completo","capa":"web","modulo":"cobros","caso":"DW-COB-004","ref":"122","marca":"WEB-CALC-MISMATCH","ms":0}
+{"run_id":"20260728_130612_smoke-completo","capa":"web","modulo":"visitas","caso":"DW-VIS-001","ref":"51","marca":"WEB-OK","ms":0}
