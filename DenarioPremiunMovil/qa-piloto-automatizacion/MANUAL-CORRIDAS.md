@@ -122,6 +122,25 @@ de la playa donde esté montado el cliente: `# USUARIO WEB LA TORTUGA`, `# USUAR
 
 Al terminar, el resultado queda en `{RUN_DIR}web.md` y en la sección "Capa WEB" del consolidado.
 
+### Corrida WEB EXTENDIDA (aparte — solo cuando vos la pidas)
+
+Valida **todo lo que la corrida normal NO cubre** de la web: reportes, indicadores, facturaciones, datos
+maestros, estructura comercial y las pantallas de configuración. **No necesita dispositivo ni corrida móvil.**
+
+Sesión nueva, pegar `guiones-regresion/prompt-web-extendido.md` indicando cliente y playa:
+```
+QA_CLIENTE=el_valle
+QA_PLAYA=la_tortuga
+```
+Dura ~1 h 20 – 1 h 40 de máquina; se lanza y se lee el reporte al final.
+
+⚠ Este guión **sí entra a pantallas de configuración** (Variables Globales, Usuarios, Licencias). Ahí el agente
+tiene prohibido interactuar: solo verifica que carguen. Cambiar una VG desde la web **altera lo que hace la app
+móvil para un cliente real**.
+
+💎 Incluye revisar **Errores de aplicación** de la web: es el log real de errores de usuarios reales, así que
+puede sacar a la luz defectos que ninguna prueba provocó.
+
 **Corrida de GRABACIÓN (opcional — para acelerar las corridas futuras del mismo cliente/build):** añade una segunda línea al lanzar:
 ```
 QA_CLIENTE=insumar
