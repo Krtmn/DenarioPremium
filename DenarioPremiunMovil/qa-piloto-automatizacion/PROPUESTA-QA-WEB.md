@@ -225,6 +225,72 @@ real — es la lección literal del piloto de replay que salió frágil por auto
 
 ---
 
+## 7.b Alcance AMPLIADO — presupuesto de ~2 h de web bajo las 3 h del móvil (decisión QA 2026-07-28)
+
+**Contexto:** la web viene acumulando reportes de errores. QA quiere **validar los transaccionales lo más
+posible**, sin alargar la corrida. Presupuesto acordado: **~2 h de trabajo web**, en paralelo con las ~3 h del móvil.
+
+### La restricción que ordena todo
+
+El límite **no es el tiempo, es la serialización**: los agentes web **no se paralelizan entre sí** (comparten
+un único navegador). Con 2 h de presupuesto y un agente en vuelo a la vez, la pregunta pasa a ser **cómo se
+reparte esa cola** dentro de la ventana de 3 h.
+
+Y ahí aparece la clave: **solo el cotejo depende del móvil.** Todo lo demás —filtros, paginación,
+consistencia lista↔detalle— es independiente y puede **arrancar en el minuto 0** y llenar los huecos.
+
+### La palanca de mayor rendimiento: **muestreo BD ↔ web**
+
+> El defecto `COB-RET-TOTAL-CERO` apareció al comparar **un** cobro de retención contra la BD.
+> Con **20–30 registros por módulo** en vez de 1, la misma técnica cubre muchísimo más — y es **barata**,
+> porque es lectura masiva sin crear nada.
+
+La BD es la verdad; la web debe reflejarla. Para cada módulo se toma una **muestra de registros históricos**
+(no solo los de la corrida), se traen sus valores con `query.js` y se contrastan contra lista y detalle.
+Esto encuentra defectos de **presentación** —el tipo que más se le escapa al móvil y al cotejo BD— a escala.
+
+### Los 5 bloques de trabajo web
+
+| Bloque | Qué valida | ¿Depende del móvil? | Estimado |
+|---|---|---|---|
+| **A · Filtros** | los ~55 filtros de los 7 módulos, en 3 niveles. Oráculo = conteo en BD | ❌ no | 35–40 min |
+| **B · Muestreo BD ↔ web** | 20–30 registros por módulo: lista y detalle contra BD | ❌ no | 40–50 min |
+| **C · Cotejo de la corrida** | los registros del manifiesto, campo a campo + cálculos | ✅ **sí** | 15–20 min |
+| **D · Comportamiento de la web** | paginación, orden por columna, selector de Columnas, enlaces cruzados (depósito↔cobros, inventario↔pedido), consistencia lista↔detalle | ❌ no | 15–20 min |
+| **E · Barrido de rezagados** | solo lo que quedó `WEB-MISSING` | ✅ sí | ~5 min |
+| | | **Total** | **≈ 1 h 50 – 2 h 15** |
+
+### Cómo se agenda (cola con prioridad)
+
+El agente web trabaja una **cola priorizada**, no un módulo suelto:
+
+1. **Prioridad alta — cotejo (C):** cuando el orquestador avisa que cerró un módulo transaccional, el cotejo
+   de **ese** módulo entra primero.
+2. **Relleno — funcional (A, B, D):** mientras no haya cotejo pendiente, el agente consume la cola funcional.
+   Como no depende del móvil, **arranca en el minuto 0**, junto con login/clientes.
+3. **Cierre — E:** el barrido de rezagados al final.
+
+⇒ En la práctica el orquestador lanza, tras cada módulo, **un agente web con: el cotejo de ese módulo + tantos
+casos funcionales de la cola como entren en su ventana** (~15–25 min, la duración del módulo móvil siguiente).
+
+### Lo que esto cuesta de verdad
+
+- **Wall-clock:** ~0. Todo cae dentro de la ventana del móvil, salvo la cola del último módulo y el barrido:
+  **+5–15 min reales**.
+- **Tokens:** ⚠ **esto sí sube y conviene decirlo.** Los agentes web de la corrida `el_valle-20260728`
+  consumieron 80–160 k tokens cada uno. Un programa de ~2 h son del orden de **400–700 k tokens por corrida**,
+  además de los del móvil. Es el costo real de la ampliación; el wall-clock es gratis, los tokens no.
+- **Riesgo operativo:** más tiempo de sesión web ⇒ más probabilidad de `ViewExpiredException`. Ya está
+  mitigado (el agente re-loguea y sigue), pero hay que mantenerlo en los guiones.
+
+### Lo que NO entra (el límite se mantiene)
+
+Sigue **fuera de alcance** la web como aplicación completa: facturaciones, datos maestros, reportes,
+indicadores, empresa, estructura comercial, usuarios/licencias. El alcance son **los 7 transaccionales** —
+lo que se amplía es la **profundidad** sobre ellos, no la superficie.
+
+---
+
 ## 8. Riesgos y mitigaciones
 
 | Riesgo | Mitigación |
