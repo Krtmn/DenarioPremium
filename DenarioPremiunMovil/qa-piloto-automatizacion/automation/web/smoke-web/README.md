@@ -46,6 +46,19 @@ todos los `C##` darían `WEB-MISSING` falso.
 —`COB-RET-TOTAL-CERO`— apareció comparando **un** registro contra la BD. Con 20-30 por módulo, la misma
 técnica cubre muchísimo más, y es barata: lectura masiva, sin crear nada.
 
+## 📎 Adjuntos — familia `A##`
+
+**Probado y funciona** (2026-07-28): el botón `Descargar adjuntos` genera un **ZIP real** que Playwright
+captura con `page.waitForEvent('download')`. Verificado end-to-end: `cobro_119.zip`, 144 KB, 3 entradas, 1,2 s.
+
+Aplica a los módulos con adjuntos: **cobros · devoluciones · depósitos · inventarios · clientes potenciales ·
+visitas**. Receta y oráculo en `../web-selectors/_comunes.md`; casos de referencia en `smoke-web-cobros.md`.
+
+🔑 **El oráculo son DOS tablas:** `transaction_image` (fotos) **+** `transaction_files` (documentos).
+Contar solo una da falso negativo — para el cobro 119, `transaction_files` dice 1 y el ZIP trae 3.
+
+🔴 **Borrar el ZIP tras cada caso**: son adjuntos reales de un cliente productivo.
+
 ## Niveles de los filtros
 
 🔴 **crítico** (siempre — de ellos depende el cotejo) · 🟡 **módulo** (si hay presupuesto) ·

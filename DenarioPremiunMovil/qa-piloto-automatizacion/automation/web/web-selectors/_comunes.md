@@ -157,6 +157,53 @@ Presentes en clientes potenciales, visitas, inventarios y devoluciones. **Carga 
 mapa ni bloquear un caso si no carga; esperar por un dato propio de la página. La `Coordenada de transacción`
 (`lat,lng`) sí es dato verificable. `[f0-2807]`
 
+## 📎 Descarga de adjuntos — SÍ es testeable (probado 2026-07-28)
+
+El botón **`Descargar adjuntos`** del detalle genera un **ZIP real** y Playwright puede capturarlo.
+Verificado end-to-end en La Tortuga: `cobro_119.zip`, **144 KB, 3 entradas, en 1,2 s**.
+
+```js
+// en browser_run_code_unsafe (acá `page` ES la página web, no el WebView)
+const boton = page.getByRole('button', { name: /Descargar adjuntos/i }).first();  // ⚠ por TEXTO: el id es j_idt*
+const [download] = await Promise.all([
+  page.waitForEvent('download', { timeout: 30000 }),
+  boton.click(),
+]);
+const nombre = download.suggestedFilename();   // → "cobro_119.zip"
+const ruta   = await download.path();          // espera a que termine
+const falla  = await download.failure();       // null si salió bien
+```
+Verificar afuera (Bash/PowerShell): **magic bytes `PK\x03\x04`**, tamaño > 0 y **listar entradas** con
+`[System.IO.Compression.ZipFile]::OpenRead(...)`. ⚠ `tar -tf` **no** pudo listar estos ZIP.
+
+🔴 **BORRAR EL ZIP DESPUÉS.** Contiene **adjuntos reales de un cliente productivo** (fotos, documentos).
+No dejarlo en disco ni commitearlo.
+
+### 🔑 El oráculo son DOS tablas, no una
+
+El ZIP trae **imágenes + documentos**, y se registran por separado:
+
+| Tabla | Qué guarda | Ejemplo |
+|---|---|---|
+| `transaction_image` | **fotos** (las del adjunto de cámara) | `119_0.jpeg`, `119_1.jpeg` |
+| `transaction_files` | **documentos** | `119_0.pdf` |
+
+⚠ **Contar solo `transaction_files` da un falso negativo:** para el cobro 119 esa tabla dice **1 archivo**
+pero el ZIP trae **3**. Verificado: la unión de ambas da exactamente las entradas del ZIP.
+
+```sql
+SELECT id_transaction ref,
+       count(*) FILTER (WHERE origen='imagen')  imagenes,
+       count(*) FILTER (WHERE origen='archivo') archivos,
+       count(*) total_esperado_en_zip
+FROM (SELECT id_transaction,'imagen'  origen FROM transaction_image WHERE na_transaction='cobros'
+      UNION ALL
+      SELECT id_transaction,'archivo'        FROM transaction_files WHERE na_transaction='cobros') x
+GROUP BY id_transaction ORDER BY id_transaction;
+```
+Cambiar `'cobros'` por el módulo. *(Hay además `transaction_signatures` para las firmas; en el ZIP del 119
+no venían — verificar por módulo antes de incluirlas en la cuenta.)*
+
 ## Formato de datos (es-VE)
 
 - **Números:** `.` = miles · `,` = decimales → `2.000.000,00`. Parsear con `s.replace(/\./g,'').replace(',','.')`.

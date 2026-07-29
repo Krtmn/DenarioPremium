@@ -135,6 +135,27 @@ ORDER BY c.id_collection DESC LIMIT 30;
 | **DW-COB-D05** | Lista **vacía** | mensaje de vacío, sin error |
 | **DW-COB-D06** | 🔴 **El `<select>` "Estatus del Cobro" de la fila NO se toca** | documentar como decisión: es control de **escritura** en producción |
 
+### 📎 Descarga de adjuntos (`DW-COB-A##`) — probado, funciona
+
+Aplica a **todo módulo con adjuntos** (cobros, devoluciones, depósitos, inventarios, clientes potenciales,
+visitas). Receta completa y oráculo en `../web-selectors/_comunes.md`.
+
+| ID | Verifica | PASS cuando |
+|----|----------|-------------|
+| **DW-COB-A01** | `Descargar adjuntos` **dispara una descarga** | el evento `download` se captura (medido: **1,2 s**) y `download.failure()` es `null` |
+| **DW-COB-A02** | El nombre del archivo sigue el patrón | `cobro_<ref>.zip` |
+| **DW-COB-A03** | **Es un ZIP real**, no una página de error | magic bytes `PK\x03\x04` y tamaño > 0 |
+| **DW-COB-A04** | 🔑 **El contenido cuadra con la BD** | nº de entradas == `transaction_image` **+** `transaction_files` de esa transacción. ⚠ **Contar solo `transaction_files` da falso negativo** (para el cobro 119: 1 en la tabla, **3 en el ZIP**) |
+| **DW-COB-A05** | Los **nombres** de las entradas == los de la BD | `119_0.jpeg`, `119_1.jpeg`, `119_0.pdf` |
+| **DW-COB-A06** | Transacción **sin adjuntos** | ⚠ definir el esperado: ¿ZIP vacío, mensaje, o botón deshabilitado? Si el botón ni aparece → correcto, no defecto |
+| **DW-COB-A07** | `Ver adjuntos` abre el visor | sin romper la vista (no descargar masivamente) |
+
+🔴 **Borrar el ZIP al terminar cada caso**: contiene **adjuntos reales de un cliente productivo**.
+Nunca dejarlo en disco ni commitearlo.
+
+> ℹ En `el_valle` `cloudAttachments=false` (adjuntos en el servidor local, no en nube) y aun así la descarga
+> funciona. En un cliente con `cloudAttachments=true` conviene re-verificar: la ruta de origen cambia.
+
 ---
 
 ## Veredictos
