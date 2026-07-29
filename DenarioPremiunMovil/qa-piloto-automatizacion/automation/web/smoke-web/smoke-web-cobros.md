@@ -91,6 +91,52 @@ navegaciones por URL**. Volver a `/pages/cobros` conserva el filtro anterior y d
 
 ---
 
+---
+
+## MUESTREO BD ↔ WEB (`M##`) — el bloque que más defectos encuentra
+
+Tomar **20–30 cobros históricos**, no solo los de la corrida, **cubriendo los 3 `co_type`**:
+
+```sql
+SELECT c.id_collection, c.co_collection, c.co_type, c.co_client, c.co_currency,
+       c.nu_amount_total, c.nu_amount_final, c.nu_amount_igtf, c.id_deposit, c.da_collection,
+       s.na_status AS estatus_real
+FROM collection c
+LEFT JOIN LATERAL (SELECT ts.* FROM transaction_statuses ts
+                   WHERE ts.co_transaction = c.co_collection
+                   ORDER BY ts.da_transaction_statuses DESC LIMIT 1) ts ON true
+LEFT JOIN statuses s ON s.id_status = ts.id_status
+ORDER BY c.id_collection DESC LIMIT 30;
+```
+
+| ID | Verifica |
+|----|----------|
+| **DW-COB-M01** | Los 30 aparecen en la lista (rango de fechas que los abarque) |
+| **DW-COB-M02** | `Monto cobrado` de la lista == `nu_amount_total` de BD, en los 30 |
+| **DW-COB-M03** | **Estatus** de la web == `estatus_real` del query (⚠ **no** `st_collection` contra el catálogo) |
+| **DW-COB-M04** | 🧮 En **5 detalles por cada `co_type`**: los cálculos del bloque `C##` a escala |
+| **DW-COB-M05** | 💎 **Consistencia lista ↔ detalle** en TODOS los muestreados: `Total por cobrar` de la fila == `Total Monto a pagar` de la cabecera del detalle |
+| **DW-COB-M06** | Todo cobro con `id_deposit` no nulo ofrece `Consultar Depósito`, y el depósito lo incluye |
+
+> 💎 **`M05` es el caso estrella.** Así se encontró `COB-RET-TOTAL-CERO`: la lista decía 12,00 y el detalle
+> 0,00. Aplicado a 30 registros —y sobre todo a **todos los de `co_type=2`**— destapa cualquier otra
+> divergencia de presentación del mismo tipo.
+
+---
+
+## COMPORTAMIENTO (`D##`)
+
+| ID | Verifica | PASS cuando |
+|----|----------|-------------|
+| **DW-COB-D01** | **Paginación** (la lista trae 50 por página) | pág. 2 trae filas distintas, sin repetir ni saltar |
+| **DW-COB-D02** | **Orden por `# Ref`** | ordena como **número**, no como texto |
+| **DW-COB-D03** | **Orden** por `Monto cobrado` y por `Fecha Cobro` | numérico y cronológico correctos |
+| **DW-COB-D04** | Selector **`Columnas`** (la lista tiene 18 únicas) | ocultar/mostrar no descoloca los datos |
+| **DW-COB-D05** | Lista **vacía** | mensaje de vacío, sin error |
+| **DW-COB-D06** | 🔴 **El `<select>` "Estatus del Cobro" de la fila NO se toca** | documentar como decisión: es control de **escritura** en producción |
+
+---
+
 ## Veredictos
 
 `WEB-OK` · `WEB-MISSING` · `WEB-FIELD-MISMATCH` · `WEB-CALC-MISMATCH` · `WEB-N/A`
