@@ -99,13 +99,22 @@ await wd.run('waitSyncOverlay', () => h.waitSyncOverlay(pg));
 
 ---
 
-## 5. Defectos conocidos (v6.6.14 — no re-marcar FAIL sin cambio de código)
+## 5. Defectos conocidos — no re-marcar FAIL sin cambio de código
+
+> 📍 **Esta tabla es solo para los AGENTES durante la corrida**: qué casos **no** marcar FAIL.
+> El **registro completo con su triaje** (confirmado / descartado / no-es-defecto / corregido, con pasos de
+> reproducción) vive en **`automation/defectos-conocidos.yaml`**, y es el que consulta el lector de corridas.
+> Si hay que agregar o cerrar un defecto, se hace **allí**; acá solo lo que cambia el veredicto de un caso.
 
 | Módulo | Caso | Comportamiento |
 |--------|------|----------------|
-| Depósitos | DM-DEP-018/019/020 | Lista BUSCAR no renderiza tras guardar — bug en `deposit.service.ts` |
-| Visitas | DM-VIS-020 | Modal confirmación envío aparece antes de validar actividades — UX, no bloquea |
-| Inventarios | DM-INV-026 | Formulario Guardado abre en tab General en lugar de Inventario |
+| Depósitos | DM-DEP-018/019/020 | Lista BUSCAR no renderiza tras guardar — bug en `deposit.service.ts`. ⚠ **Intermitente**: en `el_valle-20260728` NO reprodujo |
+| Visitas | DM-VIS-020 | Modal de confirmación de envío aparece antes de validar actividades — UX, no bloquea |
+| Inventarios | DM-INV-026 | Formulario Guardado abre en tab General en lugar de Inventario — cosmético |
+
+⚠ **NO es defecto** (aclarado por QA 2026-07-29): que una visita se pueda **Enviar sin firma** con
+`signatureVisit=true`. Esa VG dice *"¿Desea **habilitar** la firma? SI: se **podrá** firmar"* — **habilita la
+función, no la vuelve obligatoria**. No levantarlo como hallazgo en ninguna playa.
 
 ---
 

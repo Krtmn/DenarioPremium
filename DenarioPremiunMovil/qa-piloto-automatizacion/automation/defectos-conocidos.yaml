@@ -30,38 +30,48 @@ defectos:
       filas de pago.
     accion: "No reportar. Caso de regresión DW-COB-C09: confirmar que quede resuelto al liberarse el tag 21."
 
-  # ───────────────────── A CONFIRMAR MANUALMENTE ─────────────────────
+  # ───────────────────── CONFIRMADOS A MANO POR QA ─────────────────────
   - id: VIS-GUARDAR-NO-IDEMPOTENTE
     titulo: "Dos eventos de Guardar seguidos crean DOS visitas"
     capa: movil
     modulo: visitas
     detectado_en: "tag 20"
-    estado: a-confirmar-manual
+    estado: confirmado
+    confirmado_por: "QA, manualmente, 2026-07-29"
+    severidad: funcional
+    probabilidad_en_uso_real: baja      # valoración de QA: "rebuscado" para que un cliente lo replique
     patron: 'idempotente|dos visitas|doble.*guardar|guard de reentrada'
     detalle: >-
-      El helper de automatización entregó click sintético + click real sobre `.imagenGuardar` y de un solo
-      "Guardar" salieron DOS visitas Guardadas idénticas (mismo cliente, misma fecha, ambas Ref 0). Las dos
-      quedaron LOCALES: la nube quedó limpia con una sola fila (id 51). ⚠ Los dos clicks fueron casi
-      simultáneos — más rápido que un doble toque humano —, así que puede no reproducirse a mano.
+      Dos toques rápidos sobre Guardar en una visita aún no persistida crean DOS visitas Guardadas idénticas
+      (mismo cliente, misma fecha, ambas Ref 0). **Confirmado a mano por QA.** Las duplicadas quedan LOCALES:
+      la nube no se ensucia. ⚠ Requiere un doble toque muy rápido — QA lo considera poco probable en uso real,
+      pero es real.
     reproduccion: "Ver `## Pasos de reproducción` al final de este archivo."
-    accion: "QA lo reproduce a mano. Si se confirma → reportar (sugerencia: guard de reentrada / deshabilitar Guardar mientras el guardado está en vuelo)."
+    accion: >-
+      Reportar a desarrollo con la valoración de probabilidad baja, para que priorice en consecuencia.
+      Arreglo sugerido: guard de reentrada / deshabilitar Guardar mientras el guardado está en vuelo.
 
   - id: PRD-BUSCADOR-NO-REPUEBLA
     titulo: "Vaciar el buscador de productos NO repuebla la lista"
     capa: movil
     modulo: productos
     detectado_en: "tag 20"
-    estado: a-confirmar-manual
+    estado: confirmado
+    confirmado_por: "QA, manualmente, 2026-07-29"
+    severidad: funcional
+    probabilidad_en_uso_real: alta      # vaciar el buscador es un gesto cotidiano
     patron: 'no repuebla|No hay productos disponibles|buscador.*vaci'
     detalle: >-
-      Tras una búsqueda, al borrar TODO el texto la lista queda en 0 ítems con "No hay productos disponibles"
-      + "Por favor espere…" y NO se recupera (se sondeó 8 s). Workaround: buscar otro término, o salir a
-      estructuras y reentrar.
-      🔑 MATIZ IMPORTANTE: las 2 reproducciones partieron de una búsqueda que YA daba 0 resultados
-      ("ZZZZZZZ" y "ALAS" dentro de EMBUTIDOS, que no contiene ese producto). NO se probó vaciar tras una
-      búsqueda CON resultados. La condición real del defecto podría ser más estrecha.
+      Tras CUALQUIER búsqueda, al borrar todo el texto la lista queda en 0 ítems con "No hay productos
+      disponibles" + "Por favor espere…" y NO se recupera.
+      🔑 **Hipótesis DESCARTADA:** se sospechaba que solo fallaba cuando la búsqueda previa daba 0 resultados.
+      QA lo probó y **falla en AMBOS escenarios** (con y sin resultados previos) ⇒ el defecto es más simple y
+      más amplio: **vaciar el buscador nunca repuebla la lista**.
+      Workaround: buscar otro término, o salir a estructuras y reentrar.
     reproduccion: "Ver `## Pasos de reproducción` al final de este archivo."
-    accion: "QA reproduce los dos escenarios (con y sin resultados previos). Eso acota el defecto antes de reportarlo."
+    accion: >-
+      Reportar. A diferencia del de visitas, este SÍ es de alta probabilidad: vaciar el buscador para volver
+      al catálogo completo es un gesto cotidiano de un vendedor.
 
   # ───────────────────── CERRADO ─────────────────────
   - id: COB-SYNC-DIFERIDA
@@ -138,24 +148,17 @@ defectos:
 #   no ensucia la nube. Borrar la sobrante con el ícono de papelera.
 #
 # ── PRD-BUSCADOR-NO-REPUEBLA ──────────────────────────────────────────────
-# Hay que probar DOS escenarios, porque solo uno está confirmado:
+# ✅ CONFIRMADO por QA (2026-07-29) en LOS DOS escenarios.
 #
-# ESCENARIO A — el que falló (búsqueda previa SIN resultados):
 # 1. App → módulo PRODUCTOS → entrar a una estructura (ej. EMBUTIDOS).
 #    Debe listar productos (unos 50).
-# 2. En el buscador escribir algo que NO exista: `ZZZZZZZ` + Enter.
-#    → muestra "No hay productos disponibles". Correcto hasta acá.
+# 2. Buscar CUALQUIER término + Enter. Da igual que traiga resultados
+#    (`COSTILLA`) o que no traiga ninguno (`ZZZZZZZ`).
 # 3. 🎯 BORRAR TODO el texto del buscador (backspace hasta vaciarlo) + Enter.
-#    · CORRECTO → vuelven a listarse los ~50 productos.
-#    · DEFECTO  → sigue en "No hay productos disponibles" / "Por favor espere…"
-#                 y NO se recupera (se esperó 8 s).
+#    · ESPERADO → vuelven a listarse los ~50 productos.
+#    · REAL     → queda en "No hay productos disponibles" / "Por favor espere…"
+#                 y NO se recupera.
 #
-# ESCENARIO B — NO probado, es el que falta (búsqueda previa CON resultados):
-# 1. Misma estructura EMBUTIDOS.
-# 2. Buscar `COSTILLA` + Enter → debe traer resultados.
-# 3. 🎯 Borrar todo el texto + Enter. ¿Vuelve la lista completa?
-#
-# 🔑 Si falla A pero B funciona, el defecto es más estrecho de lo que parece:
-#    "no se recupera solo cuando la búsqueda previa dio 0". Ese dato le ahorra
-#    tiempo a desarrollo.
-# ℹ Workaround conocido: buscar otro término, o salir a estructuras y volver a entrar.
+# 🔑 La hipótesis de que solo fallaba tras una búsqueda vacía quedó DESCARTADA:
+#    falla siempre. El defecto es simple — vaciar el buscador nunca repuebla.
+# ℹ Workaround: buscar otro término, o salir a estructuras y volver a entrar.
