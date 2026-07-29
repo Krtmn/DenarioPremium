@@ -209,6 +209,114 @@ datos debería decirlo, no quedarse en blanco.
 
 ---
 
+# Errores de SISTEMA (no de cálculo)
+
+Los D-01 a D-08 son mayormente de datos mal mostrados. Estos son fallos **técnicos**: excepciones del
+servidor, JavaScript roto, filtros que no consultan.
+
+---
+
+## 🔴 S-01 · El servidor lanza `NullPointerException` al procesar un cobro sin IGTF
+
+**Dónde:** backend, módulo Cobros (`CollectionBO`) · visible en `failed_transactions`
+**Severidad:** alta — es una excepción no controlada en producción
+
+**El error, literal:**
+```
+Error inesperado Cannot invoke "java.lang.Double.doubleValue()"
+because the return value of "...CollectionBO.getNuAmountIgtf()" is null
+```
+
+**Qué significa:** un cobro que llega **sin monto de IGTF** hace que el servidor reviente con
+`NullPointerException` en vez de validar el dato y responder un error de negocio. **Falta el guard de nulo.**
+
+**Por qué importa más de lo que parece:** corrobora el síntoma que ya teníamos documentado como *"la app
+crashea al hacer POST de cobro"*. Puede ser la causa raíz de ese comportamiento.
+
+⚠ **Honestidad sobre el origen:** las 2 filas son del 28/07, de la ventana de la corrida QA, y la
+transacción se llama `TEST-ANT-001`. **Lo disparó una sonda nuestra, no un usuario real.** Pero el fallo es
+del servidor: un dato faltante no debería producir una excepción no controlada.
+
+---
+
+## 🔴 S-02 · Reintento sin backoff ni tope: 26 intentos en 3 minutos
+
+**Dónde:** cola de reenvío (`failed_transactions`)
+**Severidad:** alta — carga innecesaria sobre producción
+
+**Evidencia:** 9 transacciones distintas generaron **79 fallos**.
+
+| Transacción | Intentos | Ventana |
+|---|---:|---|
+| `1785269490696.0` | **26** | 20:12:11 → 20:15:12 (**3 minutos**) |
+| `1785266556477.0` | 15 | 19:33 → 19:47 |
+
+**Mensaje dominante** (77 de 79 filas):
+`Error inesperado Transaction silently rolled back because it has been marked as rollback-only`
+
+**Qué significa:** una transacción irrecuperable **se reintenta indefinidamente contra producción**, sin
+espera creciente ni límite. Con un dispositivo se notó; con cien vendedores en la calle, multiplica.
+
+---
+
+## 🔴 S-03 · El plugin de gráficos revienta — y es SISTÉMICO
+
+**Dónde:** toda la web · **Severidad:** alta
+
+**El error, capturado en consola:**
+```
+Uncaught TypeError: Cannot read properties of undefined (reading 'helpers')
+  at cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0:6:294
+```
+
+**Qué pasa:** `chartjs-plugin-datalabels` **se inicializa antes que Chart.js** y falla. Es un problema de
+**orden de carga**, no de datos.
+
+**No es de una pantalla — se registró en cinco:**
+`pedidosProductosVentas` · `reportePlanCuota` · `reporteActivacionClientes` · `reporteRotacionInventario` ·
+`variablesConfiguracion`.
+
+**Agravante:** el plugin se sirve desde **`cdn.jsdelivr.net`**, un CDN público externo. Si la red del
+cliente lo bloquea —habitual en intranets corporativas— **la web se queda sin gráficos por completo**.
+
+🔗 **Esto probablemente EXPLICA D-08** (Ventas Diarias en blanco) y quizá parte de **D-07**. Conviene
+arreglar S-03 primero y volver a evaluarlos: puede que no sean defectos independientes sino síntomas de éste.
+
+---
+
+## 🔴 S-04 · Segundo filtro roto: `Código documento` en Documentos
+
+**Dónde:** Datos Maestros → Documentos de Venta · `/pages/documentos`
+**Severidad:** media
+
+**Observado:** el filtro `Código documento` devuelve **0 resultados para códigos que esa misma pantalla
+está mostrando**.
+
+| Filtro | Web | BD |
+|---|---:|---:|
+| `Código documento = 00026237` (vigente, existe) | **0** | 1 |
+| `Código documento = 00026235` (listado en pantalla) | **0** | 1 |
+
+**Y el contraste que aísla el problema:** en la **misma pantalla**, el **filtro de rango de fechas funciona
+perfecto** — 3 de 3 rangos cuadran exactos con el SQL (233, 124 y 2.783 filas).
+
+🔗 **Mismo cuadro de fallo que D-06** (filtros de Productos). Dos pantallas distintas, filtros de
+texto/código que no consultan, mientras los filtros de fecha sí funcionan. **Sugiere un componente o patrón
+compartido**, no dos bugs sueltos. Vale revisarlos juntos.
+
+---
+
+## 🟡 S-05 · Dos pantallas distintas con el mismo `<title>`
+
+`/pages/mapaRutas` y `/pages/protected/visitas/rutero.xhtml` **ambas** tienen `document.title = "Rutero"`.
+Además varios títulos no coinciden con el nombre del menú (`/pages/estructuraEmpresa` → "Zonas de venta",
+`/pages/segmentacion` → "Canales de Distribucion").
+
+Menor para el usuario, pero **relevante para automatización y soporte**: el título no sirve para identificar
+en qué pantalla está alguien.
+
+---
+
 # Anexo — hallazgos de DATOS, no de la aplicación
 
 No son defectos de software, pero afectan lo que el cliente ve y conviene que alguien los mire.
@@ -246,20 +354,38 @@ se queda sin gráficos**. Vale revisarlo para instalaciones en redes restringida
 
 # Resumen para priorizar
 
-| # | Defecto | Severidad | Verificado |
-|---|---|---|---|
-| **D-03** | Facturaciones muestra 0 de 735 documentos | 🔴 alta | ✅ dato + hipótesis de causa |
-| **D-01** | Morosidad en cero | 🔴 alta | ✅ |
-| **D-02** | Documentos lista los borrados | 🔴 alta | ✅ |
-| **D-05** | "Límite crédito" muestra el saldo | 🟠 media | ✅ |
-| **D-04** | Canales se contradice a sí mismo | 🟠 media | agente |
-| **D-06** | Filtros de Productos vacíos | 🟠 media | agente (aislado con control) |
-| **D-07** | Gráfico de Cobranzas en cero | 🟡 media | agente |
-| **D-08** | Ventas Diarias en blanco | 🟡 media | agente |
+| # | Hallazgo | Tipo | Severidad | Verificado |
+|---|---|---|---|---|
+| **D-03** | Facturaciones muestra 0 de 735 documentos | datos | 🔴 alta | ✅ dato + hipótesis de causa |
+| **D-01** | Morosidad en cero | datos | 🔴 alta | ✅ |
+| **D-02** | Documentos lista los borrados | datos | 🔴 alta | ✅ |
+| **S-01** | `NullPointerException` del servidor en cobros sin IGTF | **sistema** | 🔴 alta | agente (log del servidor) |
+| **S-03** | Plugin de gráficos roto en **5 pantallas** + CDN externo | **sistema** | 🔴 alta | agente (consola) |
+| **S-02** | Reintento sin backoff: 26 intentos en 3 min | **sistema** | 🔴 alta | agente (log) |
+| **D-05** | "Límite crédito" muestra el saldo | datos | 🟠 media | ✅ |
+| **D-06** | Filtros de Productos no consultan | **sistema** | 🟠 media | agente (aislado con control) |
+| **S-04** | Filtro `Código documento` no consulta | **sistema** | 🟠 media | agente (aislado con control) |
+| **D-04** | Canales se contradice a sí mismo | datos | 🟠 media | agente |
+| **D-07** | Gráfico de Cobranzas en cero | datos | 🟡 media | agente — *ver S-03* |
+| **D-08** | Ventas Diarias en blanco | datos | 🟡 media | agente — *probablemente causado por S-03* |
+| **S-05** | Dos pantallas con el mismo `<title>` | sistema | 🟡 baja | agente |
 
-**Por dónde empezaría:** **D-03, D-01 y D-02** son los tres que le mienten al usuario sobre dinero — cero
-cartera por cobrar, cero morosidad y medio millón de deuda que no existe. Los tres viven en el mismo
-territorio (`document_sale`) y podrían compartir causa: vale revisarlos juntos.
+## Tres grupos que conviene atacar juntos
+
+**Grupo 1 — el dinero (`document_sale`):** **D-03 · D-01 · D-02**. Los tres le mienten al usuario sobre
+plata —cero cartera por cobrar, cero morosidad, medio millón de deuda inexistente— y los tres viven sobre
+la misma tabla. Podrían compartir causa.
+
+**Grupo 2 — los filtros que no consultan:** **D-06 · S-04**. Dos pantallas distintas donde el filtro de
+texto/código devuelve 0 sobre datos que la propia pantalla muestra, **mientras el filtro de fechas de esa
+misma pantalla funciona perfecto**. El patrón repetido sugiere un componente compartido, no dos bugs sueltos.
+
+**Grupo 3 — los gráficos:** **S-03** primero, y **después** volver a evaluar **D-07 y D-08**. Un error de
+orden de carga de JavaScript rompe los gráficos en 5 pantallas; es probable que D-08 (pantalla en blanco)
+sea un síntoma de eso y no un defecto propio. Arreglar S-03 puede cerrar tres entradas de esta lista.
+
+**Aparte, por riesgo de producción:** **S-01** (excepción no controlada) y **S-02** (reintento sin tope).
+Ninguno lo provocó un usuario real, pero ambos son fallos del servidor que un usuario real puede disparar.
 
 *Corrida de solo lectura · el detalle completo con la aritmética está en `extendido-parte1.md`,
 `extendido-parte2a.md` y `extendido-parte2b.md` de esta misma carpeta.*
