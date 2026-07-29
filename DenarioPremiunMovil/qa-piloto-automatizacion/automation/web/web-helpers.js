@@ -31,7 +31,8 @@ const MODULOS = {
   depositos:            { ruta: '/pages/depositos',           tabla: 'form:pedidosDT', detalle: '/pages/detalleDeposito',           filtroRef: true  },
   clientes_potenciales: { ruta: '/pages/clientesPotenciales', tabla: 'form:pedidosDT', detalle: '/pages/detalleClientePotencial',   filtroRef: false },
   inventarios:          { ruta: '/pages/inventarios',         tabla: 'form:pedidosDT', detalle: '/pages/detalleInventario',         filtroRef: true  },
-  visitas:              { ruta: '/pages/visitas',             tabla: 'form:tablaVisit', detalle: '/pages/protected/visitas/detalleVisita.xhtml', filtroRef: false },
+  // ✅ visitas SÍ tiene filtro # Ref (`input[placeholder="# Ref"]`) — corregido 2026-07-28 contra la doc previa
+  visitas:              { ruta: '/pages/visitas',             tabla: 'form:tablaVisit', detalle: '/pages/protected/visitas/detalleVisita.xhtml', filtroRef: true },
 };
 
 /** ⚠ `form:pedidosDT` lo comparten 5 módulos → el ID NUNCA identifica el contexto. */
@@ -347,7 +348,30 @@ const BUNDLE_DOM = `() => {
   window.__qaW = {
     // ⚠ Devuelve HOST además de pathname: las 3 playas comparten las mismas rutas (ver verificarContexto)
     contexto: () => ({ host: location.host, pathname: location.pathname, url: location.href, titulo: document.title }),
-    /** Textos de nodos hoja visibles, en orden — insumo de emparejarCabecera(). */
+    /**
+     * Cabecera de un detalle → { campo: valor }. **Preferir SIEMPRE ésta sobre leerHojas+emparejarCabecera.**
+     * Lee el valor del MISMO PADRE (el valor es un textNode hermano de la etiqueta), que es el patrón real
+     * en todos los detalles. Así no puede tomar como valor la etiqueta/encabezado siguiente.
+     * Tope de longitud para que 'Ubicación:' no absorba los controles del mapa.
+     */
+    leerCabecera: (topeValor) => {
+      const tope = topeValor || 120;
+      const out = {};
+      document.querySelectorAll('body *').forEach((el) => {
+        if (el.children.length || el.offsetParent === null) return;
+        const t = txt(el);
+        if (!t.endsWith(':')) return;
+        const clave = t.replace(/:+$/, '').trim();
+        if (!clave) return;
+        let v = '';
+        const padre = el.parentElement;
+        if (padre) { const pt = txt(padre); if (pt.startsWith(t)) v = pt.slice(t.length).trim(); }
+        if (v.length > tope) v = '';
+        out[clave] = v;
+      });
+      return out;
+    },
+    /** Textos de nodos hoja visibles, en orden — insumo de emparejarCabecera() (modo legado/respaldo). */
     leerHojas: (max) => {
       const out = [];
       document.querySelectorAll('body *').forEach((el) => {

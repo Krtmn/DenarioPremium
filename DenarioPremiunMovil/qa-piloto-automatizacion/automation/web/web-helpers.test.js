@@ -35,8 +35,15 @@ t('playa correcta + ruta correcta → acepta', H.verificarContexto(ctxTortuga, '
 t('pathname suelto NO permite validar la playa (obliga a pasar el contexto completo)',
   !H.verificarContexto('/DenarioPremium/pages/cobros', 'cobros', false, 'la_tortuga').ok);
 t('el bundle DOM expone el host en contexto()', /host:\s*location\.host/.test(H.BUNDLE_DOM));
-eq('clientes potenciales y visitas no tienen filtro # Ref',
-  [H.MODULOS.clientes_potenciales.filtroRef, H.MODULOS.visitas.filtroRef, H.MODULOS.cobros.filtroRef], [false, false, true]);
+// ✅ corregido 2026-07-28: visitas SÍ tiene filtro # Ref (input[placeholder="# Ref"]); el único sin filtro
+// es clientes potenciales (aunque su LISTA sí trae la columna # Ref).
+eq('solo clientes potenciales carece de filtro # Ref',
+  [H.MODULOS.clientes_potenciales.filtroRef, H.MODULOS.visitas.filtroRef, H.MODULOS.cobros.filtroRef], [false, true, true]);
+// El lector de cabecera DOM-aware evita el bug de "la hoja siguiente": en detalleVisita, `Titulo:` es el
+// último campo antes de la tabla hija y la regla vieja lo llenaba con el encabezado "N°" (valor FALSO).
+t('BUNDLE_DOM expone leerCabecera (lector padre-primero)', /leerCabecera:/.test(H.BUNDLE_DOM));
+t('leerCabecera lee del PADRE, no de la hoja siguiente', /pt\.startsWith\(t\)/.test(H.BUNDLE_DOM));
+t('leerCabecera acota el valor (evita que "Ubicación:" absorba el mapa)', /v\.length > tope/.test(H.BUNDLE_DOM));
 
 // ── Ruido de plantilla ──────────────────────────────────────────────────────
 t('descarta el dashboard demo', H.esRuido('Rain Clothing') && H.esRuido('12K') && H.esRuido('Tamas Bunce'));
