@@ -16,3 +16,6 @@
 {"run_id":"20260729_085323_web-extendido","capa":"web-extendido","modulo":"configuracion","caso":"DWX-CFG-003","marca":"WEB-OK","ms":0}
 {"run_id":"20260729_085323_web-extendido","capa":"web-extendido","modulo":"configuracion","caso":"DWX-CFG-004","marca":"WEB-OK","ms":0}
 {"run_id":"20260729_085323_web-extendido","capa":"web-extendido","modulo":"configuracion","caso":"DWX-CFG-005","marca":"WEB-OK","ms":0}
+{"run_id":"20260729_085323_web-extendido","capa":"web-extendido","modulo":"productos","caso":"DWX-MAE-001","marca":"WEB-FIELD-MISMATCH","ms":0}
+{"run_id":"20260729_085323_web-extendido","capa":"web-extendido","modulo":"clientes","caso":"DWX-MAE-002","marca":"WEB-OK","ms":0}
+{"run_id":"20260729_085323_web-extendido","capa":"web-extendido","modulo":"documentos","caso":"DWX-MAE-003","marca":"WEB-FIELD-MISMATCH","ms":0}
