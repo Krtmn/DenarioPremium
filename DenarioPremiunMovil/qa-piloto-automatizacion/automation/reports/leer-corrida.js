@@ -300,7 +300,7 @@ function analizar(carpeta, carpetaAnterior) {
     web: { lineas: web.filas.length, marcas: marcasWeb, existe: web.existe },
     sinCotejoWeb: sinWeb,
     trazas, reportes, diff,
-    anomalias: { nuevas, conocidas, delLedger, versionEnPrueba: (registro.meta || {}).version_en_prueba || null },
+    anomalias: { nuevas, conocidas, delLedger, versionEnPrueba: (registro.meta || {}).tag_en_prueba || null },
   };
 }
 
@@ -387,7 +387,7 @@ function imprimir(a) {
   // ── COSAS RARAS — lo que hay que mirar con ojo humano ──
   const A = a.anomalias || { nuevas: [], conocidas: [], delLedger: [] };
   L.push('', b('── 🔎 COSAS RARAS — para revisar a ojo ──'));
-  if (A.versionEnPrueba) L.push(`(cruzado contra defectos conocidos de ${A.versionEnPrueba})`);
+  if (A.versionEnPrueba) L.push(`(cruzado contra defectos conocidos del tag ${A.versionEnPrueba})`);
 
   if (A.delLedger.length) {
     L.push('', amar('  Señales del ledger:'));

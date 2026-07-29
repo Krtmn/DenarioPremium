@@ -9,10 +9,11 @@
 #   describen los agentes en sus reportes. Es lo que permite el cruce automático.
 
 meta:
-  # ⚠ VERSIONADO A CONFIRMAR CON QA: hoy conviven tres identificadores distintos —
-  #   la corrida reporta `app_version: "1.0"` y `db_version: 19`, `RUNTIME §5` dice `v6.6.14`,
-  #   y QA se refiere a la versión en prueba como **v20**. Hasta unificar, se usa la de QA.
-  version_en_prueba: "v20"
+  # La versión es DOCUMENTACIÓN, no un gate: el lector nunca decide nada por ella.
+  # Sirve para ubicar cuándo se vio un defecto; **quién decide qué se reporta es la QA**.
+  # (Los identificadores no están unificados: la corrida expone `app_version: "1.0"` y
+  #  `db_version: 19`, y `RUNTIME §5` habla de `v6.6.14`. No hace falta resolverlo.)
+  tag_en_prueba: "20"
   actualizado: "2026-07-28"
 
 defectos:
