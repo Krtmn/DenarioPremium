@@ -91,3 +91,8 @@ build
 
 # Local private tooling (Bruno collections, scratch files) — never commit
 .local/
+
+# Artefactos temporales del MCP de Playwright — snapshots (page-*.yml), logs de consola
+# (console-*.log) y scripts de un solo uso que generan los agentes durante una corrida.
+# Se regeneran solos y NUNCA se commitean (ver qa-piloto-automatizacion/MANUAL-CORRIDAS.md).
+.playwright-mcp/
