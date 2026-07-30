@@ -311,17 +311,89 @@ export class ClientLogicService {
     });
   }
 
-  fixClientListSaldos(clients: Client[]): Client[] {
-    const toFiniteNumber = (value: unknown): number => {
-      const n = Number(value);
-      return Number.isFinite(n) ? n : 0;
+  private toFiniteSaldo(value: unknown): number {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  /**
+   * Combina saldo1/saldo2 con semántica moneda-cliente / opuesta
+   * (misma regla que usa la lista cuando conversionDocument != true).
+   */
+  resolveClientCurrencyPairBalances(
+    saldo1Raw: unknown,
+    saldo2Raw: unknown,
+    coCurrency: string,
+  ): { saldoCliente: number; saldoOpuesto: number } {
+    const saldo1 = this.toFiniteSaldo(saldo1Raw);
+    const saldo2 = this.toFiniteSaldo(saldo2Raw);
+    const hasRate = this.currencyService.hasValidExchangeRate();
+
+    if (!hasRate) {
+      return { saldoCliente: saldo1, saldoOpuesto: 0 };
+    }
+
+    if (coCurrency === this.localCurrency.coCurrency) {
+      const saldoCliente = saldo1 + this.currencyService.toLocalCurrency(saldo2);
+      return {
+        saldoCliente: this.toFiniteSaldo(saldoCliente),
+        saldoOpuesto: this.toFiniteSaldo(this.currencyService.toHardCurrency(saldoCliente)),
+      };
+    }
+
+    const saldoCliente = saldo1 + this.currencyService.toHardCurrency(saldo2);
+    return {
+      saldoCliente: this.toFiniteSaldo(saldoCliente),
+      saldoOpuesto: this.toFiniteSaldo(this.currencyService.toLocalCurrency(saldoCliente)),
     };
+  }
+
+  /**
+   * Totales listos para etiquetas fijas Saldo local / Saldo fuerte del detalle.
+   * - conversionDocument=true: saldo1=local, saldo2=hard.
+   * - conversionDocument!=true: saldo1=moneda cliente, saldo2=opuesta (como la lista).
+   */
+  resolveClientBalanceTotals(
+    saldo1Raw: unknown,
+    saldo2Raw: unknown,
+    coCurrency: string,
+    conversionDocument: boolean = false,
+  ): { saldoLocal: number; saldoFuerte: number } {
+    const saldo1 = this.toFiniteSaldo(saldo1Raw);
+    const saldo2 = this.toFiniteSaldo(saldo2Raw);
+    const hasRate = this.currencyService.hasValidExchangeRate();
+
+    if (conversionDocument) {
+      if (!hasRate) {
+        return { saldoLocal: saldo1, saldoFuerte: saldo2 };
+      }
+      const saldoLocal = saldo1 + this.currencyService.toLocalCurrency(saldo2);
+      return {
+        saldoLocal: this.toFiniteSaldo(saldoLocal),
+        saldoFuerte: this.toFiniteSaldo(this.currencyService.toHardCurrency(saldoLocal)),
+      };
+    }
+
+    const { saldoCliente, saldoOpuesto } = this.resolveClientCurrencyPairBalances(
+      saldo1,
+      saldo2,
+      coCurrency,
+    );
+
+    if (coCurrency === this.localCurrency.coCurrency) {
+      return { saldoLocal: saldoCliente, saldoFuerte: saldoOpuesto };
+    }
+
+    return { saldoLocal: saldoOpuesto, saldoFuerte: saldoCliente };
+  }
+
+  fixClientListSaldos(clients: Client[]): Client[] {
     const hasRate = this.currencyService.hasValidExchangeRate();
 
     if (hasRate && this.localCurrencyDefault) {
       for (const c of clients) {
         if (c.coCurrency !== this.localCurrency.coCurrency) {
-          c.saldo1 = this.currencyService.toOppositeCurrency(c.coCurrency, toFiniteNumber(c.saldo1));
+          c.saldo1 = this.currencyService.toOppositeCurrency(c.coCurrency, this.toFiniteSaldo(c.saldo1));
           c.coCurrency = this.localCurrency.coCurrency;
         }
       }
@@ -331,31 +403,20 @@ export class ClientLogicService {
           c.coCurrency = this.hardCurrency.coCurrency;
           c.saldo1 = this.currencyService.toOppositeCurrency(
             this.hardCurrency.coCurrency,
-            toFiniteNumber(c.saldo1),
+            this.toFiniteSaldo(c.saldo1),
           );
         }
       }
     }
     if (this.currencyService.multimoneda) {
       for (let c = 0; c < clients.length; c++) {
-        const saldo1 = toFiniteNumber(clients[c].saldo1);
-        const saldo2 = toFiniteNumber(clients[c].saldo2);
-        let saldoCliente = 0;
-        let saldoOpuesto = 0;
-
-        if (!hasRate) {
-          saldoCliente = saldo1;
-          saldoOpuesto = 0;
-        } else if (clients[c].coCurrency == this.localCurrency.coCurrency) {
-          saldoCliente = saldo1 + this.currencyService.toLocalCurrency(saldo2);
-          saldoOpuesto = this.currencyService.toHardCurrency(saldoCliente);
-        } else {
-          saldoCliente = saldo1 + this.currencyService.toHardCurrency(saldo2);
-          saldoOpuesto = this.currencyService.toLocalCurrency(saldoCliente);
-        }
-
-        clients[c].saldo1 = toFiniteNumber(saldoCliente);
-        clients[c].saldo2 = toFiniteNumber(saldoOpuesto);
+        const { saldoCliente, saldoOpuesto } = this.resolveClientCurrencyPairBalances(
+          clients[c].saldo1,
+          clients[c].saldo2,
+          clients[c].coCurrency,
+        );
+        clients[c].saldo1 = saldoCliente;
+        clients[c].saldo2 = saldoOpuesto;
       }
     }
     return clients;

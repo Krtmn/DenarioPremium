@@ -6,7 +6,8 @@ alwaysApply: true
 # Estandares Globales de Programacion + Contexto del Proyecto
 
 Guia operativa del agente (flujos, offline/sync, git, que evitar): ver `AGENTS.md` en la raiz del repo.
-No duplicar aqui reglas de proceso; este archivo fija estandares de codigo.
+Bugs mapeados: `BUGS.md`. Checklist corta: `.cursor/rules/bug-prevention.mdc`.
+No duplicar aqui reglas de proceso ni post-mortems; este archivo fija estandares de codigo.
 
 ## Stack
 Angular 19.2 | Ionic 8.6 | Capacitor 6.2 | TypeScript 5.8 | RxJS 7.8 | SCSS

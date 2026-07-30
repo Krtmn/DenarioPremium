@@ -1,0 +1,75 @@
+# BUGS.md — Incidencias mapeadas (Denario Premium Mobile)
+
+Fuente de verdad de bugs ya diagnosticados/resueltos.  
+Reglas cortas de prevención: `.cursor/rules/bug-prevention.mdc`.  
+Contexto operativo de dominio: `AGENTS.md`.
+
+Formato por entrada: síntoma → causa → fix → cómo evitar → archivos → estado.
+
+---
+
+## [COB-TR-001] Transferencia: Enviar OFF con monto exacto (`clientBankAccount`)
+
+- **Síntoma:** Con Transferencia y monto exacto, Enviar no se habilitaba; con exceso sí (anticipo automático).
+- **Causa:** `isTransferenciaPaymentComplete` exigía siempre `nuevaCuenta` cuando `clientBankAccount=true`, aunque el usuario hubiera elegido cuenta existente (`numeroCuentaCliente`).
+- **Fix:** Exigir `nuevaCuenta` solo si `showNuevaCuenta`; si no, exigir `numeroCuentaCliente`. Con `clientBankAccount=false` no pedir emisor.
+- **Evitar:** No acoplar completitud TR a “Nueva Cuenta” salvo ese modo UI. Probar monto exacto y exceso por separado.
+- **Archivos:** `collection-logic.service.ts` (`isTransferenciaPaymentComplete`, `hasIncompletePaymentMethods`).
+- **Estado:** fixed (`86d9de56` y cherry-picks relacionados).
+
+---
+
+## [COB-TR-002] Bajar monto dejaba Enviar ON
+
+- **Síntoma:** Tras habilitar Enviar, al bajar el monto el botón seguía ON sin revalidar.
+- **Causa:** `setMonto` / flujo de UI reactivaba o no forzaba revalidación completa de tolerancia/completitud.
+- **Fix:** Al cambiar monto, no forzar ON; revalidar vía `validateToSend` / tolerancia.
+- **Evitar:** Cualquier path que haga `onCollectionValidToSend(true)` al editar monto sin pasar por validación completa.
+- **Archivos:** `cobro-pagos.component.ts`, `collection-logic.service.ts`.
+- **Estado:** fixed (`d6653e86`).
+
+---
+
+## [COB-TR-003] Guardar → reabrir Transferencia: Enviar OFF
+
+- **Síntoma:** Cobro TR válido, tras guardar y reabrir, Enviar en OFF.
+- **Causa:** En `loadPayments` case `'tr'`, mapeo invertido emisor/receptor (`numeroCuenta` ← `nuClientBankAccount`, etc.) y pickers sin restaurar.
+- **Fix:** `buildHydratedTransferenciaPayment`: receptor ← `nuBankAccount`, emisor ← `nuClientBankAccount`; restaurar `bankAccountSelected` / `clientBankAccountSelected`.
+- **Evitar:** Al hidratar TR, respetar contrato SQLite↔UI (ver `AGENTS.md` sección Cobros). No invertir campos “por simetría” con Depósito/PM.
+- **Archivos:** `cobro-general.component.ts`.
+- **Estado:** fixed (`714cd04d`). Fase 2 pendiente: Nueva Cuenta + carreras al reabrir.
+
+---
+
+## [COB-TR-004] Enviar ON con monto muy bajo (ej. 0.1) — no es bug de TR
+
+- **Síntoma:** Con 0.1 ya se habilita Enviar.
+- **Causa:** `tolerancia0=true`, `TipoTolerancia=0`, `RangoToleranciaNegativa` grande (ej. 100000): `checkTolerancia` habilita si el faltante ≤ rango; solo bloquea `montoTotalPagado <= 0`.
+- **Fix:** Ninguno de código si el negocio acepta esa config. Ajustar rangos de tolerancia en config empresa.
+- **Evitar:** No diagnosticar como bug de Transferencia/completitud sin revisar `tolerancia0` y rangos. Recordar bypass de `createAutomatedPrepaid` en exceso.
+- **Archivos:** `collection-logic.service.ts` (`checkTolerancia`, `validateToSend`, `onCollectionValidToSend`).
+- **Estado:** documented (comportamiento por config).
+
+---
+
+## [CLI-SALDOS-001] Lista vs detalle: Saldo USD/BS cruzados
+
+- **Síntoma:** Lista (ej. AS04): USD 2,84 / BS 2.096,23 (alineado a web). Detalle: BS ~1.546.766 / USD 2.096,23.
+- **Causa:** Con `conversionDocument != true`, SQL usa `saldo1`=moneda cliente y `saldo2`=opuesta. El detalle (`initializeClientBalances`) asumía siempre `saldo1`=local y `saldo2`=hard, y convertía BS como USD.
+- **Fix:** `resolveClientBalanceTotals` / `resolveClientCurrencyPairBalances` en `ClientLogicService`; detalle usa esa lógica sin mutar `client.saldo1/saldo2`. Rama `conversionDocument=true` conserva semántica local/hard.
+- **Evitar:**
+  - No asumir `saldo1`/`saldo2` = local/hard sin mirar `conversionDocument`.
+  - No “arreglar” solo con swap de labels en HTML.
+  - No mutar saldos del cliente del detalle con `fixClientListSaldos` (rompe crédito disponible y otros usos).
+  - No cambiar SQL de saldos sin alinear lista + detalle + post-proceso.
+- **Archivos:** `client-detail.component.ts`, `client-logic.service.ts`; SQL referencia en `clientes-database-services.service.ts`.
+- **Estado:** fixed (pendiente confirmación QA en dispositivo). Landmine aparte: `getClientById` usa truthy en `conversionDocument` vs lista `== 'true'`.
+
+---
+
+## Cómo añadir una entrada nueva
+
+1. ID estable: `[MODULO-TEMA-NNN]`.
+2. Completar las 6 viñetas del formato.
+3. Si aplica a un módulo concreto, una línea en `.cursor/rules/bug-prevention.mdc` (checklist), no pegar el post-mortem entero ahí.
+4. Si es contrato de dominio reutilizable, resumen corto en `AGENTS.md` y detalle aquí.

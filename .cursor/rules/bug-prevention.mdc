@@ -1,0 +1,32 @@
+---
+description: Checklist corta para no repetir bugs ya mapeados; detalle en BUGS.md
+alwaysApply: true
+---
+
+# Prevencion de bugs conocidos
+
+Historial completo (sintoma, causa, fix, evitar): ver `BUGS.md` en la raiz del repo.
+Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
+
+## Antes de cambiar codigo
+
+1. Si el sintoma ya suena a una entrada de `BUGS.md`, leerla antes de proponer otro fix.
+2. Cambios pequenos y localizados; no “arreglar de pasada” SQL/sync/listados.
+3. No mutar estado compartido solo para cuadrar una vista (ej. no reescribir `saldo1/saldo2` del cliente en detalle).
+
+## Cobros / Transferencia / Enviar
+
+- Completitud TR != tolerancia. Revisar `clientBankAccount`, `nuevaCuenta` vs cuenta existente.
+- Al hidratar TR: receptor=`nuBankAccount`, emisor=`nuClientBankAccount` (no invertir).
+- Enviar con monto bajo puede ser `tolerancia0` + `RangoToleranciaNegativa`, no bug de UI.
+- `createAutomatedPrepaid` puede forzar Enviar ON en exceso; no ignorarlo al diagnosticar.
+
+## Clientes / saldos
+
+- Con `conversionDocument != true`, `saldo1`/`saldo2` = moneda cliente / opuesta (no local/hard fijos).
+- Lista y detalle deben usar la misma regla de combinacion (`resolveClientBalanceTotals`).
+- No asumir swap de labels; validar con conversionDocument y moneda del cliente.
+
+## Al cerrar un bug
+
+Agregar entrada en `BUGS.md` y, si cabe, una linea en esta checklist (maximo ~50 lineas totales en este archivo).

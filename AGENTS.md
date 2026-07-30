@@ -141,4 +141,6 @@ Notas:
 ## Referencias
 
 - Estándares siempre aplicados: `.cursor/rules/programming-standards.mdc`
+- Prevención bugs (checklist): `.cursor/rules/bug-prevention.mdc`
+- Historial de bugs mapeados: [`BUGS.md`](BUGS.md)
 - Funcional / flujos: `DenarioPremiunMovil/DOCUMENTACION_APP.md`
