@@ -30,6 +30,199 @@ defectos:
       filas de pago.
     accion: "No reportar. Caso de regresión DW-COB-C09: confirmar que quede resuelto al liberarse el tag 21."
 
+  - id: PED-IVA-CONV-DIV-CANTIDAD
+    titulo: "En el detalle web de PEDIDOS, el IVA convertido de cada línea viene dividido entre la cantidad"
+    capa: web
+    modulo: pedidos
+    detectado_en: "tag 20"
+    estado: conocido           # ⚠ DEFECTO CONOCIDO DE LA VERSIÓN 20 — confirmado por QA el 2026-07-29
+    patron: 'iva.*conv|conv.*iva|dividido entre la cantidad|÷ ?cantidad|PED-IVA-CONV-DIV-CANTIDAD'
+    detalle: >-
+      La columna `Monto conv.` de la grilla de líneas divide el IVA entre la cantidad pedida, y el
+      `Importe + IVA` convertido arrastra el error. Fórmula observada:
+      `IVA_conv_mostrado = (IVA_unitario_US$ × tasa) / cantidad`.
+      ⚠ Para leerlo bien: en esa pantalla la columna en US$ es **unitaria** (Precio base, IVA, Importe+IVA son
+      por unidad) y sólo `Subtotal` es de línea.
+      Alcance acotado: el `Precio base` convertido, el `Subtotal` convertido y el **IVA de cabecera** convertido
+      están CORRECTOS ⇒ el bug vive sólo en dos celdas de la grilla de líneas.
+      Corroboración de formato: los valores afectados se imprimen con 1 decimal en vez de 2.
+      Prueba autocontenida (no necesita BD ni tasa): en US$ `Importe+IVA × cantidad = Subtotal`, pero en
+      conversión no (ej. pedido 124: 3.595,7 × 4 = 14.382,8 ≠ 16.042,32 que muestra la misma fila).
+    evidencia: >-
+      8 de 8 líneas verificadas en 4 pedidos distintos (121, 122, 123, 124) de latino_cosmetica / Isla Coche,
+      con divisores ÷2, ÷4, ÷5, ÷6, ÷7, ÷10 y ÷12 — siempre igual a la cantidad. Determinista.
+    accion: "No reportar: ya es conocido de la 20. Re-verificar cuando salga el tag 21."
+
+  # ───────────────────── MAPEADOS, SIN REPORTAR (falta repro) ─────────────────────
+  - id: PED-IVA-LINEA-NULL
+    titulo: "La app guarda el pedido con `iva = NULL` y `nu_amount_tax = 0` en algunas líneas gravadas"
+    capa: movil
+    modulo: pedidos
+    detectado_en: "tag 20"
+    estado: mapeado_sin_reportar   # decisión de QA 2026-07-29: no se reporta hasta lograr reproducirlo
+    severidad: alta                # toca facturación: el documento cobra IVA de menos
+    patron: 'iva.*null|nu_amount_tax.*0|iva que no cobra|sub-?facturad|PED-IVA-LINEA-NULL'
+    detalle: >-
+      El pedido 121 (latino_cosmetica, 29/07/2026) se guardó con `iva = NULL` y `nu_amount_tax = 0` en 2 de sus
+      3 líneas, pese a que los 3 productos tienen `products.nu_tax = 16`.
+      Cabecera: base 219,7592 · IVA guardado **18,40** · IVA correcto **35,1615** ⇒ faltan **16,76 $** (~12.354 BSD).
+      El dato malo se sincronizó a la nube tal cual (la web muestra 18,40 porque es fiel a lo guardado).
+      ⚠ NO es exención: los 152 productos del catálogo son 16 % (`iva_lists` sólo define 0 y 16; ninguno usa 0).
+      ⚠ NO es un fallo general de multi-línea: los pedidos 71 (5 líneas) y 56 (12 líneas) guardan el IVA en
+      todas y cuadran exacto.
+      El defecto web PED-IVA-CONV-DIV-CANTIDAD lo **enmascara**: el detalle imprime un «IVA 16.0%» calculado
+      desde la tasa del producto, no desde el valor guardado, así que en pantalla el pedido parece normal.
+    no_reproducible: >-
+      Intento de control fallido: el pedido **124** (mismas 3 líneas, mismo `id_order_type=2`, mismo usuario,
+      mismo flujo manual) salió **correcto** — IVA en las 3 líneas, exacto en línea, cabecera y conversión.
+      1 de 6 pedidos afectado ⇒ intermitente.
+    pista_sin_confirmar: >-
+      Los epoch de `co_order_detail` se agrupan distinto: en el 121 (roto) las 3 líneas comparten un único
+      epoch (`…943.{0,1,2}`); en el 124 y el 71 (correctos) la línea 0 tiene epoch propio y el resto comparte
+      otro. Sugiere que el IVA se asigna en un paso POSTERIOR al alta de la línea y que se pierde para las
+      que ya estaban cuando todo ocurre en el mismo instante. Muestra de 3 — hipótesis, no conclusión.
+    accion: >-
+      Mantener mapeado y buscar reproducción en OTROS clientes. No reportar todavía (decisión de QA).
+      Experimento sugerido: armar pedidos agregando los productos muy seguidos sin salir del selector
+      (mismo epoch) vs. con pausa entre uno y otro.
+
+  # ═══════════ TRIAJE 2026-07-29 con QA — corrida latino_cosmetica / Isla Coche ═══════════
+
+  - id: VIS-WEB-LISTA-DUPLICA
+    titulo: "La lista de visitas muestra la misma visita dos veces"
+    capa: web
+    modulo: visitas
+    detectado_en: "tag 20"
+    estado: descartado         # ⛔ NO ES DEFECTO — explicado por QA el 2026-07-29
+    patron: 'duplica|dos veces|misma visita|VIS-WEB-LISTA-DUPLICA'
+    detalle: >-
+      La visita Ref 207 aparece 2 veces en el listado con distinta Actividad/Motivo; ambas filas abren el
+      mismo detalle.
+    por_que_no_es_defecto: >-
+      **Es el comportamiento esperado**: la lista muestra UNA FILA POR ACTIVIDAD, y esa visita tenía 2
+      actividades. No son visitas duplicadas. (QA, 2026-07-29.)
+    accion: "No reportar. Al contar visitas, agrupar por # Ref — no contar filas."
+
+  - id: WEB-LIMPIAR-NO-RESTABLECE
+    titulo: "El botón Limpiar no restablece los filtros de estado (Tiene Adjunto / Status / Moneda)"
+    capa: web
+    modulo: transversal        # depósitos, cobros, inventarios, pedidos, clientes potenciales
+    detectado_en: "tag 20"
+    estado: en_conversacion    # QA lo conversa con el equipo (2026-07-29)
+    severidad: funcional
+    patron: 'limpiar|no restablece|filtro.*pegado|WEB-LIMPIAR-NO-RESTABLECE'
+    detalle: >-
+      Tras pulsar `Limpiar`, los `p:selectOneMenu` de estado conservan su valor y el listado sigue filtrado
+      **sin ninguna señal visual**. Los inputs de texto y las fechas sí se restablecen.
+      Impacto medido por módulo — Depósitos: Moneda queda en BSD y **oculta el depósito real** (la pantalla
+      dice "No se encontraron registros" con el Ref 1 ahí; probado A/B). Cobros: deja 0 de 50 filas.
+      Inventarios: deja 2 de 18 (y tampoco restablece `Status`). Pedidos y clientes potenciales: también
+      quedan pegados, sin ocultar datos ese día.
+    contraejemplo_util: >-
+      🔑 **En VISITAS el mismo `Limpiar` funciona bien** — restablece el filtro y vacía ambas fechas. Usa
+      `selectAttach` en vez de `attachStatus`. La implementación correcta YA EXISTE dentro del producto:
+      el arreglo de los otros 5 módulos es copiarla, no diseñarla.
+    accion: "QA lo conversa con el equipo. Re-verificar en la próxima corrida."
+
+  - id: WEB-ORDENAMIENTO-INCONSISTENTE
+    titulo: "El ordenamiento de las listas se comporta de tres formas distintas según el módulo"
+    capa: web
+    modulo: transversal
+    detectado_en: "tag 20"
+    estado: en_conversacion    # QA lo conversa con el equipo (2026-07-29)
+    patron: 'ordenamiento|aria-sort|no reordena|WEB-ORDENAMIENTO'
+    detalle: >-
+      (a) **Clientes potenciales: NO reordena** — el `aria-sort` cambia y el POST responde 200, pero las filas
+      quedan igual (muestreado 3 s / 12 lecturas: no es una carrera del ajax).
+      (b) **Inventarios: reordena por el campo equivocado** — `# Ref` está atado al id del *pedido relacionado*:
+      la única fila que lo tiene (Ref 15 → pedido 121) es la única que se mueve; las otras 17 comparan iguales
+      (patrón NULLS-LAST/FIRST de PostgreSQL).
+      (c) **Cobros: el orden por importe ignora la moneda** — `10,00 $` (~7.372 BSD) queda debajo de
+      `61,74 BSD`. Debería ordenar por el importe convertido.
+      Pedidos, en cambio, ordena bien (numérico, no lexicográfico).
+    accion: "QA lo conversa con el equipo."
+
+  - id: VIS-WEB-DETALLE-INCOMPLETO
+    titulo: "El detalle de visita omite Status, Fecha Iniciada, Fecha Enviada y Geo, y tiene un typo CSS"
+    capa: web
+    modulo: visitas
+    detectado_en: "tag 20"
+    estado: mapeado_sin_reportar   # decisión de QA 2026-07-29
+    patron: 'detalle.*visita|font\.-bold|fecha iniciada|VIS-WEB-DETALLE-INCOMPLETO'
+    detalle: >-
+      El detalle no muestra **Status**, **Fecha Iniciada**, **Fecha Enviada**, **Geo** ni la coordenada
+      numérica (sólo el mapa) — todos ellos SÍ están en la lista. Además rotula `Fecha planeada de visita`
+      un valor con hora que coincide con el inicio real (Ref 209: 18:27:06 vs 18:27:07).
+      **Typo CSS en el mismo archivo** (`detalleVisita.xhtml`): las etiquetas usan `class="font.-bold"`
+      (con punto) en vez de `font-bold` ⇒ clase inexistente, las etiquetas no se renderizan en negrita.
+      Sólo `Titulo:` usa la clase correcta. En pedidos/inventarios/depósitos está bien escrita.
+      Fue lo que rompió los dos lectores de cabecera estándar del framework de QA.
+    accion: "Mapeado. Reportar junto con otros hallazgos de visitas cuando haya más evidencia."
+
+  - id: INV-WEB-SIN-LOTE-VENCIMIENTO
+    titulo: "El detalle web de inventarios no muestra Lote ni Fecha de vencimiento"
+    capa: web
+    modulo: inventarios
+    detectado_en: "tag 20"
+    estado: mapeado_sin_reportar   # decisión de QA 2026-07-29
+    patron: 'lote|vencim|expira|batch|INV-WEB-SIN-LOTE'
+    detalle: >-
+      El móvil envía lote (`QA0729`) y fecha de vencimiento (`29-07-2026`) y la web no los publica en ningún
+      lado: columnas del detalle = `N° · Cod. producto · Producto · Estructura · Depósito · Exhibición`, sin
+      toggler. Búsqueda en todo el HTML por `lote|vencim|expira|batch|QA0729` → 0 coincidencias.
+      Contraste: **Devoluciones sí expone lote y fecha de vencimiento** ⇒ no es una convención del producto.
+      Quien audita una toma de inventario no puede verificar el lote.
+    accion: "Mapeado. Confirmar en otro cliente antes de reportar."
+
+  - id: CLT-FILTRO-ADJUNTO-FALSOS-POSITIVOS
+    titulo: 'El filtro "Tiene Adjunto = SI" devuelve registros que no tienen adjuntos'
+    capa: web
+    modulo: clientes_potenciales
+    detectado_en: "tag 20"
+    estado: mapeado_sin_reportar   # decisión de QA 2026-07-29
+    patron: 'tiene adjunto|falsos positivos|icono.*adjunto|CLT-FILTRO-ADJUNTO'
+    detalle: >-
+      `Tiene Adjunto = SI` devuelve las Refs 3, 2 y 1, pero sólo la Ref 3 tiene adjuntos reales (botones
+      habilitados, ZIP con 3 archivos). En las Refs 2 y 1 los botones `Descargar Adjunto` y `Ver adjuntos`
+      están `disabled` y no hay ningún archivo servido bajo `/denario/resources/images/`.
+      **2 falsos positivos de 3.** Descartada la lectura de que el filtro cuente firmas: esos registros
+      tampoco tienen firma.
+    observacion_qa: >-
+      QA (2026-07-29): esos clientes potenciales **no los envió ella**, así que no se conoce el paso a paso
+      que los originó. En la lista **sí muestran el ícono de adjunto** (por eso los devuelve el filtro), pero
+      al entrar no hay nada que descargar. ⇒ El indicador de la lista y el contenido real no coinciden.
+    accion: >-
+      Mapeado. Falta saber cómo se crearon esos registros (¿adjunto borrado del disco? ¿contador que quedó
+      en la cabecera?). Reproducir con un cliente potencial creado y controlado por QA.
+
+  - id: DEP-WEB-BANCO-SIN-NOMBRE
+    titulo: "El detalle de depósito muestra el código del banco y no expone la forma de pago"
+    capa: web
+    modulo: depositos
+    detectado_en: "tag 20"
+    estado: mapeado_sin_reportar   # decisión de QA 2026-07-29
+    patron: 'banco.*039|c[oó]digo de banco|forma de pago|zelle|DEP-WEB-BANCO'
+    detalle: >-
+      El detalle muestra `Banco: 039` (código, no nombre), `N° cuenta 9999999999` y `N° Planilla` vacío.
+      QA registró el depósito como **ZELLE** y esa palabra no aparece en ningún campo de la pantalla.
+    observacion_qa: >-
+      QA (2026-07-29): "sí creo que debería decir el nombre del banco". Se deja mapeado para ver cómo se
+      comporta en otros clientes antes de reportar.
+    accion: "Mapeado. Contrastar en el próximo cliente: ¿muestra el nombre del banco allí?"
+
+  - id: VIS-VISITADO-SIN-FECHA-INICIO
+    titulo: "Visita con Status 'visitado' y sin Fecha Iniciada"
+    capa: web
+    modulo: visitas
+    detectado_en: "tag 20"
+    estado: sin_efecto         # decisión de QA 2026-07-29
+    patron: 'sin fecha iniciada|visitado sin inicio|VIS-VISITADO-SIN-FECHA'
+    detalle: >-
+      La visita Ref 208 llegó con Status `visitado` y Fecha Enviada 18:22:07, pero sin Fecha Iniciada. Las
+      otras dos visitas del día sí la tienen. No se pudo cruzar con el lado móvil porque el módulo de visitas
+      no dejó ledger en esta corrida.
+    accion: "Sin efecto por decisión de QA. No re-levantar."
+
   # ───────────────────── CONFIRMADOS A MANO POR QA ─────────────────────
   - id: VIS-GUARDAR-NO-IDEMPOTENTE
     titulo: "Dos eventos de Guardar seguidos crean DOS visitas"

@@ -8,9 +8,14 @@
 
 cliente_id: latino_cosmetica
 cliente_nombre: "LATINOCOSMETICA C.A."       # ✅ confirmado en UI (app-client-detail Empresa + form potencial idEnterprise=1)
-ws_url: "http://denariolatortuga.ddns.net:8081/PremiumWS/services/"  # ✅ servidor La Tortuga confirmado (mismo host que hidroponias)
+ws_url: "http://denariolatortuga.ddns.net:8081/PremiumWS/services/"  # ⚠ OBSOLETO al 29/07/2026 — el cliente MIGRÓ. Descubrir el servidor en runtime (Agente 1), NO confiar en este valor.
+playa_web: isla_coche                        # ⚠ CAMBIÓ (29/07/2026, indicado por QA): la web de latino ya NO es La Tortuga. Login web = bloque "# USUARIO WEB ISLA COCHE".
 apk_package: com.kiberno.denarioPremiumPro
-db_name: latino_cosmetica                   # DSN read-only en bloque "# Cliente: latino_cosmetica" de secrets/qa-db.env
+db_name: latino                             # 🔴 LA BASE SE LLAMA `latino`, NO `latino_cosmetica` (confirmado 29/07/2026 con current_database()).
+                                            #    `latino_cosmetica` es solo el ALIAS de cliente (el nombre del bloque en secrets/qa-db.env y el arg de query.js).
+                                            #    ⇒ El GRANT read-only debe aplicarse sobre `latino`:  \c latino  → GRANT ... TO user_read;
+                                            #    Un GRANT sobre "latino_cosmetica" NO hace nada: esa base no existe en el servidor.
+                                            # DSN read-only en bloque "# Cliente: latino_cosmetica" de secrets/qa-db.env
 
 # ── VGs — CONFIRMADAS en corrida 20260714 (conflictos 2022 vs global RESUELTOS por observación en UI) ──
 vgs:
@@ -84,7 +89,8 @@ modules:
     moneda_cobro: "BS/US$"                      # ✅ multiCurrency REAL true; selector Moneda cobro 2 opciones ($/BSD); Moneda documento filtra docs por moneda
     pago_parcial_toggle: true                  # ✅ enablePartialPayment=true → DM-COB-046 PASS (parcial 500.000 persiste round-trip)
     adjunto_obligatorio: true                  # requiredCollectionAttachments=true → cobro EXIGE adjunto
-    mock_camara_funciona: false                # ⚠ NO funciona: tomarImg() usa el módulo webpack @capacitor/camera (Camera.getPhoto), NO window.Capacitor.Plugins.Camera → mockCameraAdjunto/ensureAdjunto inservibles.
+    mock_camara_funciona: true                 # ✅ ACTUALIZADO 29/07/2026 — usar h.installCameraMock(pg) + h.clickCamaraSeguro(...). Intercepta Capacitor.nativePromise('Camera','getPhoto'), que SÍ es el camino real del módulo webpack. Validado en el_valle tras el cuelgue de cámara.
+                                               # ⚠ HISTÓRICO (obsoleto, no seguir): el mock viejo asignaba sobre window.Capacitor.Plugins.Camera —es un Proxy, la asignación se ignoraba en silencio— y abría la cámara nativa, colgando la app.
                                                #   WORKAROUND validado: empujar Foto a adjuntoService.fotos + comp.checkCarousel() + comp.onAttachmentChanged() → foto entra al carrusel → DM-COB-019 enviado de verdad (BD-OK id 24)
     retencion_variante: "dynamicRetentions"    # ⚠ NO usa los campos fijos Nro.Comp Ret+IVA+ISLR de jerez/ferrenuestro. Detalle de doc usa selector "Seleccione Retención" (IMPM/ISLR/IVA) → al elegir aparecen Nro.Comp Ret + Fecha Comp Ret + montos.
                                                #   DM-COB-041/042 BLOCKED esta corrida (layout dinámico no mapeado) → REQUIERE HELPER NUEVO (dynamicRetentions). userCanAddRetention=true
@@ -96,6 +102,16 @@ modules:
       - "DM-COB-045: IGTF sin documento sincronizado → N/A por dato"
 
   devoluciones:
+    # ⛔ EXCLUIDO POR QA (29/07/2026) — NO lanzar el agente de DEVOLUCIONES en la móvil
+    #    NI revisar devoluciones en la web, hasta nuevo aviso.
+    #    Motivo (textual de QA): "no están apareciendo las facturas de los clientes y ese número de
+    #    factura se exige en sus VG para realizar una devolución. Ya esto de las facturas que no
+    #    aparecen está reportado."
+    #    Coherente con requeridedNroFactura=true + validateReturn=true (ver líneas 24 y abajo):
+    #    sin facturas sincronizadas el módulo es inconducible, no es un FAIL.
+    #    ⚠ Levantar esta exclusión SOLO cuando QA confirme el fix de las facturas.
+    excluido_por_qa: true
+    motivo_exclusion: "Facturas de clientes no aparecen; requeridedNroFactura=true las exige. Defecto ya reportado (29/07/2026)."
     cliente_test: "CABELLO COSMETICOS CA"      # ✅ co 37, idClient 300 — SINCRONIZADO con facturas devolvibles USD. validateReturn=true → AGREGAR PRODUCTO lista productos de la factura
     factura_test: "1820"                        # ✅ idInvoice 2557 (backup 1716). Nro factura OBLIGATORIO (requeridedNroFactura=true), precargado en el acordeón del producto. multiInvoices=false
     producto_test: "PT004"                      # ✅ TRATAMIENTO 300ml CENIZO — devolución Ref 7 Enviada (BD-OK)
