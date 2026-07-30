@@ -99,7 +99,11 @@
                                     placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_OBSERVACION')}}:"
                                     formControlName="txClient" [(ngModel)]="clientLogic.potentialClient.txClient"
                                     (ionInput)="onTxClientChange()" #txClientInput [readonly]="isDisabled"
+                                    [maxlength]="textCommentMaxLength"
                                     (ionChange)="checkForm()"></ion-input>
+                                <app-text-comment-counter [value]="clientLogic.potentialClient.txClient"
+                                    [minLength]="textCommentMinLength"
+                                    [maxLength]="textCommentMaxLength"></app-text-comment-counter>
                             </ion-col>
                         </ion-row>
                         <ion-row>

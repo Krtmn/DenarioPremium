@@ -301,12 +301,15 @@
                     <ion-input [label]="orderServ.getTag('PED_COMENTARIO')+':'" label-placement="floating"
                       fill="outline" [(ngModel)]="txComment" #txCommentInput id="txComment"
                       (ionChange)="onTxCommentChange()" color="primary" (ionInput)="onTxCommentInput()"
+                      [maxlength]="textCommentMaxLength"
                       [ngClass]="{
                         'inp-write': orderServ.requiredCommentOrder && commentRedLabel,
                         'good': orderServ.requiredCommentOrder && !commentRedLabel && !!txComment?.trim()
                       }"
                       [required]="orderServ.requiredCommentOrder"
                       [disabled]="!orderServ.pedidoModificable"></ion-input>
+                    <app-text-comment-counter [value]="txComment" [minLength]="textCommentMinLength"
+                      [maxLength]="textCommentMaxLength"></app-text-comment-counter>
                     @if(orderServ.requiredCommentOrder && commentRedLabel){
                     <ion-label color="danger" class="campoObligatorio">
                       {{ orderServ.getTag('DENARIO_CAMPO_OBLIGATORIO') }}

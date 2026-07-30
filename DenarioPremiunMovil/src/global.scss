@@ -551,6 +551,16 @@ ion-badge {
 
 }
 
+.text-comment-counter {
+    .text-comment-hint {
+        color: var(--ion-color-medium);
+    }
+
+    .text-comment-count {
+        color: var(--ion-color-medium-shade);
+    }
+}
+
 @media(max-width: 540px) {
     .campoObligatorio {
         float: right;

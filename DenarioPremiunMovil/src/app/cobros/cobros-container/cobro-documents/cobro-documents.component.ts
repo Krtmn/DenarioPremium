@@ -19,6 +19,11 @@ import { IgtfList } from 'src/app/modelos/tables/igtfList';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { ClienteSelectorService } from 'src/app/cliente-selector/cliente-selector.service';
 import { Subscription } from 'rxjs';
+import {
+  TEXT_COMMENT_MAX_LENGTH,
+  TEXT_COMMENT_MIN_LENGTH,
+} from 'src/app/utils/text-comment-field.constants';
+import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util';
 
 
 @Component({
@@ -28,6 +33,9 @@ import { Subscription } from 'rxjs';
   standalone: false
 })
 export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy {
+
+  readonly textCommentMaxLength = TEXT_COMMENT_MAX_LENGTH;
+  readonly textCommentMinLength = TEXT_COMMENT_MIN_LENGTH;
 
   public collectService = inject(CollectionService);
   public clientSelectorService = inject(ClienteSelectorService);
@@ -4444,6 +4452,16 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     let index = this.collectService.documentSaleOpen.positionCollecDetails;
     this.collectService.collection.collectionDetails[index].discountComment = this.discountComment;
     //this.disabledSaveButton = false;
+  }
+
+  onDiscountCommentInput() {
+    const clean = applyTextCommentMaxLength(
+      this.discountComment ?? '',
+      this.textCommentMaxLength,
+    );
+    if (this.discountComment !== clean) {
+      this.discountComment = clean;
+    }
   }
 
   public hasCollectRetentions(): boolean {

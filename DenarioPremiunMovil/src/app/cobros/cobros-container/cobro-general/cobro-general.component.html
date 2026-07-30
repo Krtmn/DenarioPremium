@@ -165,12 +165,15 @@
       <ion-col size="6" size-sm="12" size-xs="12">
         <ion-input #input label="{{this.collectService.collectionTags.get('COB_COMENTARIO')}}:"
           [(ngModel)]="this.collectService.collection.txComment" label-placement="floating" fill="outline"
-          (ionChange)="setComment()" value="this.collectService.collection.txComment" [ngClass]="{
+          (ionChange)="setComment()" (ionInput)="onTxCommentInput()"
+          value="this.collectService.collection.txComment" [maxlength]="textCommentMaxLength" [ngClass]="{
             'inp-write': !this.collectService.validComment && !isSentDelivery,
             'no-validate': isSentDelivery
           }" [required]="this.collectService.requiredComment"
           [readonly]="this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SENT || this.collectService.collection.stDelivery == 6">
         </ion-input>
+        <app-text-comment-counter [value]="this.collectService.collection.txComment"
+          [minLength]="textCommentMinLength" [maxLength]="textCommentMaxLength"></app-text-comment-counter>
         @if (this.collectService.collection.txComment.trim() == '' && this.collectService.requiredComment) {
         <ion-label color="danger" class="campoObligatorio">
           {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}

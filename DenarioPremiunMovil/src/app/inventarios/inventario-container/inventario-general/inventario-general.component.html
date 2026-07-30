@@ -104,9 +104,12 @@
           <div id="inputComentario">
             <ion-input label="{{this.inventariosLogicService.inventarioTags.get('INV_COMENTARIO')}}:" id="responsable"
               [(ngModel)]="txComment" #txCommentInput labelPlacement="floating" fill="outline"
-              placeholder="{{this.inventariosLogicService.inventarioTags.get('INV_COMENTARIO')}}:" maxlength="120"
-              (ionChange)="setTXComment()" [disabled]="this.inventariosLogicService.inventarioSent"
+              placeholder="{{this.inventariosLogicService.inventarioTags.get('INV_COMENTARIO')}}:"
+              [maxlength]="textCommentMaxLength" (ionInput)="setTXComment()" (ionChange)="setTXComment()"
+              [disabled]="this.inventariosLogicService.inventarioSent"
               [readonly]="this.inventariosLogicService.newClientStock.stDelivery == 1 || this.inventariosLogicService.newClientStock.stDelivery == 2|| this.inventariosLogicService.newClientStock.stDelivery == null "></ion-input>
+            <app-text-comment-counter [value]="txComment" [minLength]="textCommentMinLength"
+              [maxLength]="textCommentMaxLength"></app-text-comment-counter>
           </div>
         </ion-col>
       </ion-row>

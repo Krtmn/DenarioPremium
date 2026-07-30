@@ -46,6 +46,11 @@ import { PdfCreatorService } from 'src/app/services/pdf-creator/pdf-creator.serv
 import { ImageServicesService } from 'src/app/services/imageServices/image-services.service';
 import { Share } from '@capacitor/share';
 import { formatClientForTab } from 'src/app/utils/client-display.util';
+import {
+  TEXT_COMMENT_MAX_LENGTH,
+  TEXT_COMMENT_MIN_LENGTH,
+} from 'src/app/utils/text-comment-field.constants';
+import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util';
 
 @Component({
   selector: 'app-pedido',
@@ -55,7 +60,8 @@ import { formatClientForTab } from 'src/app/utils/client-display.util';
 })
 export class PedidoComponent implements OnInit, ViewWillEnter {
 
-
+  readonly textCommentMaxLength = TEXT_COMMENT_MAX_LENGTH;
+  readonly textCommentMinLength = TEXT_COMMENT_MIN_LENGTH;
   // Injects
   public enterpriseServ = inject(EnterpriseService);
   public currencyServ = inject(CurrencyService);
@@ -1237,7 +1243,10 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
   }
 
   onTxCommentInput() {
-    const clean = this.cleanString(this.txComment);
+    const clean = applyTextCommentMaxLength(
+      this.cleanString(this.txComment),
+      this.textCommentMaxLength,
+    );
     if (this.txComment !== clean) {
       this.txComment = clean;
       if (this.txCommentInput && this.txCommentInput.value !== clean) {
