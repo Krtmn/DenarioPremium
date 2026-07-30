@@ -842,9 +842,12 @@ export class PedidosService {
   setChangesMade(value: boolean) {
     this.changesMade = value;
     if (value) {
+      const hasCommentIfRequired = !this.requiredCommentOrder
+        || !!String(this.order?.txComment ?? '').trim();
       var disable = !((this.cliente.idClient != null) &&
         (this.carrito.length > 0) &&
-        (!this.adjuntoService.weightLimitExceeded));
+        (!this.adjuntoService.weightLimitExceeded) &&
+        hasCommentIfRequired);
       this.disableSaveButton = disable;
       this.disableSendButton = disable;
     } else {

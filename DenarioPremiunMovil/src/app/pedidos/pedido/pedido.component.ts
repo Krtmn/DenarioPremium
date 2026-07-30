@@ -487,6 +487,12 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           console.error("No se consiguio producto: " + detail.idProduct);
         }
       }
+      this.syncOrderCommentFromInput();
+      this.checkComment();
+      this.segmentLock();
+      if (this.orderServ.pedidoModificable) {
+        this.orderServ.setChangesMade(true);
+      }
     });
     //fin openOrder()
   }
@@ -546,15 +552,36 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
 
   saveButton() {
     if (this.orderServ.changesMade) {
+      this.syncOrderCommentFromInput();
+      if (this.isCommentRequiredMissing()) {
+        this.commentRedLabel = true;
+        this.segmentLock();
+        this.orderServ.setChangesMade(true);
+        this.message.transaccionMsjModalNB(
+          this.orderServ.getTag('DENARIO_CAMPO_OBLIGATORIO') || 'Campo obligatorio'
+        );
+        return;
+      }
       this.saveOrder(3).then(s => {
         this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_AVISO_GUARDADO")); //TAG THIS
-        this.orderServ.disableSendButton = false;
+        this.syncOrderCommentFromInput();
+        this.orderServ.setChangesMade(true);
       });
 
     }
   }
 
   confirmSend() {
+    this.syncOrderCommentFromInput();
+    if (this.isCommentRequiredMissing()) {
+      this.commentRedLabel = true;
+      this.segmentLock();
+      this.orderServ.setChangesMade(true);
+      this.message.transaccionMsjModalNB(
+        this.orderServ.getTag('DENARIO_CAMPO_OBLIGATORIO') || 'Campo obligatorio'
+      );
+      return;
+    }
     if (this.orderServ.cliente.idClient != null && this.orderServ.carrito.length > 0) {
       this.orderServ.disableSendButton = true;
       this.message.showLoading().then(() => {
@@ -638,6 +665,16 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
 
   sendButton() {
     console.log("Send Button");
+    this.syncOrderCommentFromInput();
+    if (this.isCommentRequiredMissing()) {
+      this.commentRedLabel = true;
+      this.segmentLock();
+      this.orderServ.setChangesMade(true);
+      this.message.transaccionMsjModalNB(
+        this.orderServ.getTag('DENARIO_CAMPO_OBLIGATORIO') || 'Campo obligatorio'
+      );
+      return;
+    }
     let buttonsConfirmSend = [
       {
         text: 'Cancelar',
@@ -1207,11 +1244,13 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
         this.txCommentInput.value = clean;
       }
     }
+    this.syncOrderCommentFromInput();
     this.checkComment();
     this.segmentLock();
   }
 
   onTxCommentChange() {
+    this.syncOrderCommentFromInput();
     this.checkComment();
     this.segmentLock();
     this.onChange();
@@ -1222,6 +1261,13 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
       return false;
     }
     return !String(this.txComment ?? '').trim();
+  }
+
+  private syncOrderCommentFromInput(): void {
+    if (!this.orderServ.order) {
+      return;
+    }
+    this.orderServ.order.txComment = this.cleanString(this.txComment ?? '');
   }
 
   checkComment() {
