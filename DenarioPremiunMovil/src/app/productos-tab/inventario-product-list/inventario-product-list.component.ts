@@ -286,6 +286,15 @@ export class InventarioProductListComponent implements OnInit {
     };
   }
 
+  /** Cantidad válida para inventario: número finito >= 0 (incluye cero). */
+  private isValidInventoryQuantity(value: number | string | null | undefined): boolean {
+    if (value === null || value === undefined || value === '') {
+      return false;
+    }
+    const quantity = Number(value);
+    return Number.isFinite(quantity) && quantity >= 0;
+  }
+
   addInventoryRow() {
     const defaultUnit = this.inventariosLogicService.productSelected?.productUnitList?.[0] || null;
     this.inventoryRows.push(this.createEmptyInventoryRow(defaultUnit));
@@ -318,7 +327,7 @@ export class InventarioProductListComponent implements OnInit {
     }
 
     const invalid = cleanRows.some(row => {
-      const invalidQuantity = !row.cantidad || Number(row.cantidad) <= 0;
+      const invalidQuantity = !this.isValidInventoryQuantity(row.cantidad);
       const invalidUnit = !row.unidad;
       const invalidBatch = this.expirationBatch && !row.lote.trim();
       const invalidDate = !row.fechaVencimiento;
@@ -379,7 +388,7 @@ export class InventarioProductListComponent implements OnInit {
       typeStock.tipo = location;
       typeStock.idProduct = selectedProduct.idProduct;
       typeStock.fechaVencimiento = row.fechaVencimiento;
-      typeStock.validateCantidad = Number(row.cantidad) > 0;
+      typeStock.validateCantidad = this.isValidInventoryQuantity(row.cantidad);
       typeStock.validateLote = this.expirationBatch ? row.lote.trim().length > 0 : true;
       typeStock.showDateModalDep = false;
       typeStock.showDateModalExh = false;
@@ -432,7 +441,7 @@ export class InventarioProductListComponent implements OnInit {
     details.forEach(detail => {
       if (detail?.idProduct && detail.clientStockDetailUnits?.length) {
         detail.clientStockDetailUnits.forEach(unit => {
-          if (Number(unit.quStock) <= 0) {
+          if (!this.isValidInventoryQuantity(unit.quStock)) {
             return;
           }
 
@@ -482,7 +491,9 @@ export class InventarioProductListComponent implements OnInit {
     const currentById = new Map<number, ProductUtil>(currentProductList.map(p => [p.idProduct, p]));
 
     const inventoriedProducts = details
-      .filter(detail => (detail.clientStockDetailUnits || []).some(unit => Number(unit.quStock) > 0))
+      .filter(detail => (detail.clientStockDetailUnits || []).some(unit =>
+        this.isValidInventoryQuantity(unit.quStock)
+      ))
       .map(detail => {
         const existing = currentById.get(detail.idProduct);
         if (existing) {
@@ -574,7 +585,7 @@ export class InventarioProductListComponent implements OnInit {
     }
 
     detail.clientStockDetailUnits.forEach(unit => {
-      if (Number(unit.quStock) <= 0) {
+      if (!this.isValidInventoryQuantity(unit.quStock)) {
         return;
       }
       const normalized = this.normalizeInventoryLocation(unit.ubicacion);
