@@ -168,7 +168,7 @@ export class CobrosGeneralComponent implements OnInit {
     }
     this.collectService.restoreCollectionIgtfFields();
 
-    this.loadPayments();
+    void this.loadPayments();
 
     this.clientService.getClientById(this.collectService.collection.idClient).then(client => {
       this.collectService.client = client;
@@ -434,8 +434,16 @@ export class CobrosGeneralComponent implements OnInit {
     });
   }
 
-  loadPayments() {
-    const payments = this.collectService.collection.collectionPayments;
+  async loadPayments(): Promise<void> {
+    // Idempotente: evita duplicar métodos de pago si loadData se ejecuta más de una vez.
+    this.collectService.pagoEfectivo = [] as PagoEfectivo[];
+    this.collectService.pagoCheque = [] as PagoCheque[];
+    this.collectService.pagoDeposito = [] as PagoDeposito[];
+    this.collectService.pagoTransferencia = [] as PagoTransferencia[];
+    this.collectService.pagoMovil = [] as PagoMovil[];
+    this.collectService.pagoOtros = [] as PagoOtros[];
+
+    const payments = this.collectService.collection.collectionPayments ?? [];
     const bankAccounts = this.collectService.listBankAccounts;
     for (let i = 0; i < payments.length; i++) {
       const payment = payments[i];
@@ -608,9 +616,17 @@ export class CobrosGeneralComponent implements OnInit {
       }
     }
     this.collectService.restoreCollectionIgtfFields();
-    this.collectService.calcularMontos("", 0);
+    await this.refreshSendStateAfterPaymentsHydrated();
+  }
+
+  /**
+   * Tras hidratar pagos de un cobro guardado/reabierto, recalcula totales y
+   * revalida Enviar de forma determinista (evita carrera al reabrir borrador).
+   */
+  private async refreshSendStateAfterPaymentsHydrated(): Promise<void> {
+    await this.collectService.calcularMontos('', 0);
     this.collectService.checkTiposPago();
-    this.collectService.validateToSend();
+    await this.collectService.validateToSend();
   }
 
   initCollection() {
@@ -826,7 +842,7 @@ export class CobrosGeneralComponent implements OnInit {
         this.collectService.bankAccountSelected = [] as BankAccount[];
         this.collectService.getAllBankAccountsByEnterprise(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise, this.collectService.collection.coCurrency).then(result => {
           this.collectService.listBankAccounts = result;
-          this.loadPayments();
+          void this.loadPayments();
 
           this.collectService.getAllBanks(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise);
 
@@ -1077,7 +1093,7 @@ export class CobrosGeneralComponent implements OnInit {
               this.collectService.documentsSaleComponent = false;
 
             this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
-            this.loadPayments();
+            void this.loadPayments();
           })
 
       })
@@ -1131,7 +1147,7 @@ export class CobrosGeneralComponent implements OnInit {
 
     this.collectService.getAllBankAccountsByEnterprise(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise, this.collectService.collection.coCurrency).then(result => {
       this.collectService.listBankAccounts = result;
-      this.loadPayments();
+      void this.loadPayments();
 
     })
   }

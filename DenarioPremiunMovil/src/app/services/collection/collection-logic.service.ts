@@ -1595,10 +1595,6 @@ export class CollectionService {
   }
 
   private hasValidDocumentSalesForSend(): boolean {
-    if (!Array.isArray(this.documentSales) || this.documentSales.length === 0) {
-      return false;
-    }
-
     const details = Array.isArray(this.collection?.collectionDetails)
       ? this.collection.collectionDetails
       : [];
@@ -1607,9 +1603,21 @@ export class CollectionService {
       return false;
     }
 
-    return this.documentSales.some((doc, index) =>
-      this.isDocumentSaleReadyForSend(doc, index, details)
-    );
+    if (Array.isArray(this.documentSales) && this.documentSales.length > 0) {
+      const readyFromUi = this.documentSales.some((doc, index) =>
+        this.isDocumentSaleReadyForSend(doc, index, details)
+      );
+      if (readyFromUi) {
+        return true;
+      }
+    }
+
+    // Reopen/carrera: cobro ya persistido con detalles guardados, aunque documentSales
+    // aún no haya marcado isSelected al hidratar la pantalla.
+    return this.isPersistedCollection()
+      && details.some(detail =>
+        detail?.isSave === true && (!!detail.coDocument || !!detail.idDocument)
+      );
   }
 
   private isDocumentSaleReadyForSend(
@@ -2299,7 +2307,7 @@ export class CollectionService {
     return this.cleanFormattedNumber(this.currencyService.formatNumber(monto * rateReal));
   }
 
-  calcularMontos(type: string, index: number) {
+  async calcularMontos(type: string, index: number): Promise<boolean> {
     this.syncExchangeRateToCollectionHeader();
     this.montoTotalPagado = 0;
     if (this.tipoPagoEfectivo) {
@@ -2354,7 +2362,7 @@ export class CollectionService {
       this.montoTotalPagadoConversion = this.convertirMonto(this.montoTotalPagado, 0, this.collection.coCurrency);
     }
 
-    this.calculatePayment(type, index);
+    await this.calculatePayment(type, index);
     if (this.coTypeModule == "0") {
       if (this.createAutomatedPrepaid) {
         if (!this.recentOpenCollect && !this.isRateChangeInProgress) {
@@ -2370,7 +2378,7 @@ export class CollectionService {
       this.syncAddPaymentMethodDisabledState();
     }
 
-    return Promise.resolve(true);
+    return true;
   }
 
   async validateToSend() {
@@ -2920,11 +2928,12 @@ export class CollectionService {
 
   onCollectionValidToSend(validToSend: boolean) {
     console.log('returnLogicService: onReturnValidToSend');
-    if (!validToSend) {
-      if (this.createAutomatedPrepaid)
-        this.collectValidToSend.next(this.createAutomatedPrepaid);
-    } else
-      this.collectValidToSend.next(validToSend);
+    // Anticipo automático: el cobro puede enviarse aunque la diferencia no cuadre exactamente.
+    if (!validToSend && this.createAutomatedPrepaid) {
+      this.collectValidToSend.next(true);
+      return;
+    }
+    this.collectValidToSend.next(validToSend);
   }
 
 
@@ -4394,12 +4403,9 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       this.documentSalesBackup.push(backup);
       this.mapDocumentsSales.set(row.id_document, doc);
 
-      if (!this.isOpenCollect) {
-        this.applyExistingSelection(index, doc, backup);
-      } else {
-        doc.isSelected = false;
-        backup.isSelected = false;
-      }
+      // Siempre reaplicar selección desde collectionDetails (incluye reopen de borrador).
+      // Evita dejar documentos sin isSelected y bloquear Enviar al reabrir.
+      this.applyExistingSelection(index, doc, backup);
     }
   }
 
@@ -4542,7 +4548,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
   private applyExistingSelection(index: number, doc: DocumentSale, backup: DocumentSale) {
     for (let cd = 0; cd < this.collection.collectionDetails.length; cd++) {
       const detail = this.collection.collectionDetails[cd];
-      if (doc.idDocument !== detail.idDocument) continue;
+      if (Number(doc.idDocument) !== Number(detail.idDocument)) continue;
 
       if (!this.isPersistedCollection()) {
         this.disabledSelectCollectMethodDisabled = false;
