@@ -472,30 +472,9 @@ export class CobrosGeneralComponent implements OnInit {
           break;
         }
         case 'tr': {
-          const newPagoTransferencia: PagoTransferencia = {
-            idBanco: payment.idBank,
-            nombreBanco: payment.naBank,
-            numeroTransferencia: payment.nuPaymentDoc,
-            numeroCuenta: payment.nuClientBankAccount,
-            numeroCuentaCliente: payment.newNuClientBankAccount,
-            monto: payment.nuAmountPartial,
-            montoConversion: payment.nuAmountPartialConversion,
-            fecha: payment.daValue!,
-            nuevaCuenta: payment.newNuClientBankAccount,
-            posCollectionPayment: i,
-            type: "tr",
-            anticipoPrepaid: payment.isAnticipoPrepaid,
-            disabled: false,
-            bancoReceptor: this.getBancoReceptor(payment.nuClientBankAccount),
-            showDateModal: false,
-            showNuevaCuenta: false,
-          };
-          const cuenta = bankAccounts.find(b => b.idBank == newPagoTransferencia.idBanco);
-          if (cuenta) {
-            this.collectService.bankAccountSelected[newPagoTransferencia.posCollectionPayment] = cuenta;
-            newPagoTransferencia.disabled = false;
-          }
-          this.collectService.pagoTransferencia.push(newPagoTransferencia);
+          this.collectService.pagoTransferencia.push(
+            this.buildHydratedTransferenciaPayment(payment, i, bankAccounts)
+          );
           break;
         }
         case 'pm': {
@@ -1351,8 +1330,8 @@ export class CobrosGeneralComponent implements OnInit {
     }
   }
 
-  getBancoReceptor(nuClientBankAccount: string): BancoReceptor {
-    const bancoReceptor = this.collectService.listBankAccounts.find(b => b.nuAccount == nuClientBankAccount);
+  getBancoReceptor(nuBankAccount: string): BancoReceptor {
+    const bancoReceptor = this.collectService.listBankAccounts.find(b => b.nuAccount == nuBankAccount);
     if (bancoReceptor) {
       return {
         coAccount: bancoReceptor.coAccount,
@@ -1370,6 +1349,94 @@ export class CobrosGeneralComponent implements OnInit {
     } else {
       return new BancoReceptor();
     }
+  }
+
+  /**
+   * Rehidrata Transferencia desde SQLite con el mismo contrato que guarda selectBankAccount/selectListBankAccount.
+   * Receptor: nu_bank_account / id_bank / na_bank. Emisor: nu_client_bank_account.
+   */
+  private buildHydratedTransferenciaPayment(
+    payment: CollectionPayment,
+    paymentIndex: number,
+    bankAccounts: BankAccount[] | null | undefined,
+  ): PagoTransferencia {
+    const receptorAccount = String(payment.nuBankAccount ?? '').trim();
+    const clientAccount = String(payment.nuClientBankAccount ?? '').trim();
+    const showNuevaCuenta = this.isPersistedTransferNuevaCuenta(payment);
+    const nuevaCuenta = showNuevaCuenta
+      ? String(payment.newNuClientBankAccount ?? '').trim()
+      : '';
+
+    const newPagoTransferencia: PagoTransferencia = {
+      idBanco: payment.idBank,
+      nombreBanco: payment.naBank,
+      numeroTransferencia: payment.nuPaymentDoc,
+      numeroCuenta: receptorAccount,
+      numeroCuentaCliente: showNuevaCuenta ? 'Nueva Cuenta' : clientAccount,
+      monto: payment.nuAmountPartial,
+      montoConversion: payment.nuAmountPartialConversion,
+      fecha: payment.daValue!,
+      nuevaCuenta,
+      posCollectionPayment: paymentIndex,
+      type: 'tr',
+      anticipoPrepaid: payment.isAnticipoPrepaid,
+      disabled: false,
+      bancoReceptor: this.getBancoReceptor(receptorAccount),
+      showDateModal: false,
+      showNuevaCuenta,
+    };
+
+    this.restoreTransferenciaBankPickers(newPagoTransferencia, payment, bankAccounts);
+    return newPagoTransferencia;
+  }
+
+  private isPersistedTransferNuevaCuenta(payment: CollectionPayment): boolean {
+    if (!this.collectService.clientBankAccount) {
+      return false;
+    }
+    const coClient = String(payment.coClientBankAccount ?? '').trim();
+    const nuClient = String(payment.nuClientBankAccount ?? '').trim();
+    return coClient === 'Nueva Cuenta' || nuClient === 'Nueva Cuenta';
+  }
+
+  private restoreTransferenciaBankPickers(
+    pago: PagoTransferencia,
+    payment: CollectionPayment,
+    bankAccounts: BankAccount[] | null | undefined,
+  ): void {
+    const accounts = Array.isArray(bankAccounts) ? bankAccounts : [];
+    const receptor = accounts.find(b =>
+      Number(b.idBank) === Number(payment.idBank)
+      && (!pago.numeroCuenta || b.nuAccount === pago.numeroCuenta)
+    ) ?? accounts.find(b => Number(b.idBank) === Number(payment.idBank));
+
+    if (receptor) {
+      if (!Array.isArray(this.collectService.bankAccountSelected)) {
+        this.collectService.bankAccountSelected = [] as BankAccount[];
+      }
+      this.collectService.bankAccountSelected[pago.posCollectionPayment] = receptor;
+      pago.disabled = false;
+    }
+
+    if (!this.collectService.clientBankAccount || pago.showNuevaCuenta) {
+      return;
+    }
+
+    const clientAccounts = this.collectService.clientBankAccounts ?? [];
+    const clientAccount = clientAccounts.find(account =>
+      (pago.numeroCuentaCliente && account.nuAccount === pago.numeroCuentaCliente)
+      || (payment.coClientBankAccount
+        && (account.coClientBankAccount === payment.coClientBankAccount
+          || account.coBank === payment.coClientBankAccount))
+    );
+    if (!clientAccount) {
+      return;
+    }
+
+    if (!Array.isArray(this.collectService.clientBankAccountSelected)) {
+      this.collectService.clientBankAccountSelected = [] as BankAccount[];
+    }
+    this.collectService.clientBankAccountSelected[pago.posCollectionPayment] = clientAccount as unknown as BankAccount;
   }
 
 
