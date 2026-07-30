@@ -2,8 +2,8 @@
 # Primera corrida formal — completar VGs y datos en corrida exploratoria.
 
 cliente_id: globalmp
-cliente_nombre: null                      # TBD: confirmar nombre exacto en la app
-ws_url: null                              # TBD: verificar servidor activo
+cliente_nombre: "COMERCIALIZADORA DE ALIMENTOS GLOBAL M&P, C.A."  # ✅ empresa por defecto (00002, enterprise_default=true). La 2ª es 00001 HC TRADING MARKET 2021, C.A
+ws_url: "http://denariolatortuga.ddns.net:8081/PremiumWS"  # ✅ descubierto en runtime 30/07/2026 (authservice/auth + syncservice). Playa LA TORTUGA · web en :8080/DenarioPremium
 apk_package: com.kiberno.denarioPremiumPro
 
 vgs:
@@ -35,6 +35,9 @@ modules:
     bad_password: Test-LOG-003
 
   clientes:
+    # 🔴 30/07/2026: "BIG MARKET 22, C.A" (BM17) YA NO ESTA SINCRONIZADO en el device.
+    #    Clientes vivos confirmados hoy: ABASTO EL SITIO DSG (AS04) · BIG BANG IMPORT (CB10) ·
+    #    ABASTOS Y LICORERIA RICO SABOR (AR11) · ABASTO YOSELIN (CY09) · ABASTOS SANTA MARGARITA (SM03)
     cliente_busqueda: "BIG"               # Confirmado 2026-06-05. NOTA: el 2026-06-11 el filtro "BIG" devolvió 1 sola coincidencia (BIG MARKET 22) — dataset backend cambió, sigue PASS
     cliente_detalle: "BIG MARKET 22, C.A" # Código BM17, Saldo BS 1.694.224,12 / USD 3.083,94
     form_potencial_inputs: 9              # 9 ion-inputs (incl. naWebSite opcional) + idEnterprise (ion-select); los 8 obligatorios + idEnterprise habilitan Guardar/Enviar — confirmado 2026-06-11
@@ -48,6 +51,19 @@ modules:
     pedido_enviado_ref: 10111             # Pedido enviado en corrida 2026-06-11 (PCE03 ×2, Total USD 40,40)
 
   cobros:
+    # ═══ MODO REVISIÓN (corrida 30/07/2026) — el agente NO crea cobros ═══
+    # Instrucción de QA, textual: "EN VEZ DE MONTAR LOS COBROS ÉL MISMO, solo necesito que el agente
+    # entre por la movil y a la web a ver los cobros realizados el día de hoy 30/07/2026. Que entre a
+    # los cobros y verifique los cobros enviados por mí manualmente. Repito, el agente en la movil NO
+    # hará cobros, solo debe ingresar a los cobros ya enviados hoy y revisar si los calculos están
+    # todos bien, tanto en la web como en la movil."
+    modo: revision_solo_lectura
+    fecha_objetivo: "2026-07-30"
+    # ⛔ HAY UN COBRO EN ESTATUS **GUARDADO** QUE NO SE DEBE TOCAR.
+    #    Textual de QA: "es un caso ya reportado de un cobro que no habilita el botón de enviar, por
+    #    eso sigue en guardado". Ya está reportado ⇒ no re-levantarlo como hallazgo nuevo, no intentar
+    #    enviarlo, no editarlo, no borrarlo. Solo dejar constancia de que se lo identificó y se lo omitió.
+    cobro_guardado_no_tocar: true
     cliente_test: "BIG MARKET 22, C.A"   # Confirmado 2026-06-06
     cliente_code: "BM17"                  # Confirmado 2026-06-06
     metodo_pago: "Deposito"               # Disponibles: Depósito, Transferencia (sin Efectivo)
@@ -82,7 +98,13 @@ modules:
     inventario_enviado_ref: 113           # Inventario enviado en corrida 2026-06-11 (CP09, 15 CAJA, Lote LOTEQA01)
 
   depositos:
-    aplica: true                          # Módulo visible y accesible en HOME — confirmado 2026-06-06
+    # ⛔ EXCLUIDO POR QA (30/07/2026) — NO lanzar el agente de DEPÓSITOS en la móvil.
+    #    Motivo (textual de QA): "ellos NO usan ese modulo, no perdamos tiempo ahí."
+    #    ⚠ Es una decisión de NEGOCIO del cliente, no una limitación técnica: el módulo SÍ está
+    #      visible y es accesible en HOME (ver `aplica` abajo). No re-descubrirlo cada corrida.
+    excluido_por_qa: true
+    motivo_exclusion: "El cliente no usa el módulo de Depósitos (indicado por QA, 30/07/2026)."
+    aplica: true                          # Módulo visible y accesible en HOME — confirmado 2026-06-06 (pero NO se prueba: ver excluido_por_qa)
     motivo_na: null
     sin_cobros_disponibles: true          # Tab Cobros vacío — cobro 5438 (enviado) no aparece como disponible para depósito — 2026-06-06
     campo_nro: "Nro. Plantilla"           # Campo se llama "Nro. Plantilla" (no "Nro. Depósito") — confirmado 2026-06-06
@@ -106,7 +128,11 @@ modules:
   vendedores:
     aplica: true                          # Módulo visible en HOME — confirmado 2026-06-08
     empresas: ["COMERCIALIZADORA DE", "HC TRADING MARKET 20"]  # Acordeones en app-vendedores — confirmado 2026-06-08
-    kpis_disponibles: false               # API no devuelve KPIs en esta sesión; contenido vacío — confirmado 2026-06-08
+    kpis_disponibles: true                # ✅ 30/07/2026: la API SÍ devuelve KPIs (era `false` desde 2026-06-08, cuando salían vacíos).
+    # ⚠ PERO vienen MAL SEGMENTADOS: solo `Cartera Clientes` distingue por empresa (357 vs 14);
+    #   `Activados`, `Nuevos` y `Nuevos Activados` salen IDÉNTICOS en los dos acordeones.
+    #   HC TRADING muestra "Activados 119" sobre una cartera de 14 — imposible (activados ⊆ cartera).
+    #   → defecto VND-KPIS-SIN-SEGMENTAR, mapeado por QA el 30/07/2026 para observar en próximos clientes.
 
 ultima_corrida:
   run_id: "20260611_181640_smoke-completo"

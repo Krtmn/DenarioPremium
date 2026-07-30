@@ -46,6 +46,33 @@
 | ~~`goToNuevoCobro(N)` directo~~ | ⛔ NO usar: salta `showLoading()` → la vista lee `paymentMethodList` antes del `await loadPaymentMethods()` → **lista vacía** (causa del módulo lento) | `[prc-2617]` | ANTI-PATRÓN confirmado en `cobros-container.component.ts`. Reemplazado por `h.openNuevoCobro` |
 | Cambiar tab cobro por código | `comp.onChangeTab({detail:{value:'general'}})` + `applyChanges` en `app-cobro` | `[prc-2606]` | alternativa cuando click normal no responde; values: 'general','documentos','pagos','total','adjuntos' |
 
+### Cobro YA ENVIADO — vista de solo lectura `[gmp-20260730]`
+
+Revisión de cobros enviados (no creación). Confirmado en globalmp/La Tortuga v1.0, `window.ng=true`.
+
+| Elemento | Selector CSS / técnica | Notas |
+|----------|------------------------|-------|
+| **Un cobro enviado abre con SOLO 3 tabs** | values `default` / `total` / `adjuntos` | ⚠ **NO hay tab Documentos ni tab Pagos.** Todo el detalle (documentos, descuentos, retenciones, pagos) se lee en el **Tab Total**. `openDocumentDetail` NO aplica: no hay lupa ni modal de detalle |
+| **Abrir un cobro de la lista** | **click REAL** en el `ion-item` de `app-cobros-list` | ⚠ `onCollectSelect()`/`openCollect()` vía `window.ng` **NO navegan** (aun con `window.ng=true`) — la llamada corre sin error y la vista no cambia. ⚠ **Verificar que la fila esté dentro del viewport (360×744)**: `getBoundingClientRect()` devuelve coords válidas con `y>744` pero el click no llega y falla en silencio → `scrollIntoView({block:'center'})` + re-medir + `elementFromPoint` antes de clickear |
+| **Tab Total — tabla de documentos con columnas DINÁMICAS** | `app-cobro-total ion-row > ion-col` | El nº de columnas cambia según el contenido del cobro: **5** (Tipo/Nro.Doc./Monto Doc./Desc./Monto Pago), **8** (+ Dev/Falt./Retención IVA/Retención ISLR), **4** (sin descuento). **Mapear celdas por posición contra la fila de encabezado, nunca por índice fijo.** ⚠ NO usar `innerText` del bloque: las celdas vacías colapsan y desalinean el mapeo |
+| **Columna `Dev/Falt.` ≠ columna `Desc.`** | — | Son conceptos distintos: `nu_amount_discount` (BD) se pinta en **Dev/Falt.**, y el descuento real (`nu_amount_collect_discount` / `collection_detail_discounts`) en **Desc.** Cierre esperado: `Monto Pago + Desc. + Dev/Falt. = saldo del documento` |
+| **Retención (co_type=2): detalle en acordeones del Tab Total** | un `ion-accordion` por documento (`Nro. Doc.: FFxxxxx`) | Expandir con `grp.value = [todos los values de sus ion-accordion]` + `ionChange`. Contiene Monto Doc./Monto IVA/Monto ISLR/Monto total retenido |
+| **Salida: 1 back = menú COBROS (no la lista)** | `img.fechaAtras` | Hay que volver a pulsar **BUSCAR** para reentrar a la lista. ⚠ **NO apilar** back programático (`dispatchEvent`) + `mouse.click`: **sobre-navega hasta HOME**. Un back por vez, verificando destino con `getActiveView` |
+| **Botón BUSCAR del menú COBROS** | `app-cobros ion-button` con `textContent==='BUSCAR'` | ⚠ NO es `<p>` ni `ion-label` (a diferencia de los tiles de HOME). Pointer(down/up) + `shadowRoot button.click()` |
+| **`listCollect` camelCase vs `displayedItems` snake_case** | — | `collectService.listCollect[i].idCollection`/`.coCollection` **vs** `displayedItems[i].id_collection`/`.co_collection`. Buscar por el campo equivocado devuelve `-1` en silencio |
+
+**Defectos vistos en esta vista** (globalmp 30/07/2026, revisión de 5 cobros enviados):
+- ❌ `Total Depósitos:` en Tab Total imprime el monto BS **sin formato** (`BS 1500`, `BS 175622.82`) mientras `Total Transferencias:` sí formatea. 2/2 cobros con depósito.
+- ❌ Retención: `Fecha del documento: 2026-07-20T04:00:00.000+00:00` — timestamp ISO crudo en el acordeón.
+
+**⚠ `nu_amount_paid_conversion` mal grabado (multiplicado por la tasa) — NO visible en la app.** Afecta a todo
+documento **editado** (descuento/retención/pago parcial) de cobros `co_type=0`; los documentos pagados al saldo
+completo y la retención (`co_type=2`) están bien. La app **no bindea** ese campo en ningún `.html` y recalcula
+al vuelo → inocuo en móvil. Causa: `convertirMonto(monto, rate, currency)` (`collection-logic.service.ts:2286-2299`)
+recibe la moneda **del documento** (rama multiplicar) en vez de la **del cobro** (rama dividir). Ruta latente a
+pantalla: `resolvePersistedNetAmountSumConversion` (`:1413-1418`) usa el valor almacenado si `inPaymentPartial===true`.
+Idem `nu_amount_collect_discount_other_conversion` (`cobro-documents.component.ts:4243`). **Verificar en la WEB.**
+
 ### Flujo mínimo probado
 ```
 1. Click COBRO (Pointer+Mouse) → 5 tabs, solo General activo

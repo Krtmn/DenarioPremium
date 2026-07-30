@@ -103,45 +103,6 @@ defectos:
       actividades. No son visitas duplicadas. (QA, 2026-07-29.)
     accion: "No reportar. Al contar visitas, agrupar por # Ref — no contar filas."
 
-  - id: WEB-LIMPIAR-NO-RESTABLECE
-    titulo: "El botón Limpiar no restablece los filtros de estado (Tiene Adjunto / Status / Moneda)"
-    capa: web
-    modulo: transversal        # depósitos, cobros, inventarios, pedidos, clientes potenciales
-    detectado_en: "tag 20"
-    estado: en_conversacion    # QA lo conversa con el equipo (2026-07-29)
-    severidad: funcional
-    patron: 'limpiar|no restablece|filtro.*pegado|WEB-LIMPIAR-NO-RESTABLECE'
-    detalle: >-
-      Tras pulsar `Limpiar`, los `p:selectOneMenu` de estado conservan su valor y el listado sigue filtrado
-      **sin ninguna señal visual**. Los inputs de texto y las fechas sí se restablecen.
-      Impacto medido por módulo — Depósitos: Moneda queda en BSD y **oculta el depósito real** (la pantalla
-      dice "No se encontraron registros" con el Ref 1 ahí; probado A/B). Cobros: deja 0 de 50 filas.
-      Inventarios: deja 2 de 18 (y tampoco restablece `Status`). Pedidos y clientes potenciales: también
-      quedan pegados, sin ocultar datos ese día.
-    contraejemplo_util: >-
-      🔑 **En VISITAS el mismo `Limpiar` funciona bien** — restablece el filtro y vacía ambas fechas. Usa
-      `selectAttach` en vez de `attachStatus`. La implementación correcta YA EXISTE dentro del producto:
-      el arreglo de los otros 5 módulos es copiarla, no diseñarla.
-    accion: "QA lo conversa con el equipo. Re-verificar en la próxima corrida."
-
-  - id: WEB-ORDENAMIENTO-INCONSISTENTE
-    titulo: "El ordenamiento de las listas se comporta de tres formas distintas según el módulo"
-    capa: web
-    modulo: transversal
-    detectado_en: "tag 20"
-    estado: en_conversacion    # QA lo conversa con el equipo (2026-07-29)
-    patron: 'ordenamiento|aria-sort|no reordena|WEB-ORDENAMIENTO'
-    detalle: >-
-      (a) **Clientes potenciales: NO reordena** — el `aria-sort` cambia y el POST responde 200, pero las filas
-      quedan igual (muestreado 3 s / 12 lecturas: no es una carrera del ajax).
-      (b) **Inventarios: reordena por el campo equivocado** — `# Ref` está atado al id del *pedido relacionado*:
-      la única fila que lo tiene (Ref 15 → pedido 121) es la única que se mueve; las otras 17 comparan iguales
-      (patrón NULLS-LAST/FIRST de PostgreSQL).
-      (c) **Cobros: el orden por importe ignora la moneda** — `10,00 $` (~7.372 BSD) queda debajo de
-      `61,74 BSD`. Debería ordenar por el importe convertido.
-      Pedidos, en cambio, ordena bien (numérico, no lexicográfico).
-    accion: "QA lo conversa con el equipo."
-
   - id: VIS-WEB-DETALLE-INCOMPLETO
     titulo: "El detalle de visita omite Status, Fecha Iniciada, Fecha Enviada y Geo, y tiene un typo CSS"
     capa: web
@@ -222,6 +183,326 @@ defectos:
       otras dos visitas del día sí la tienen. No se pudo cruzar con el lado móvil porque el módulo de visitas
       no dejó ledger en esta corrida.
     accion: "Sin efecto por decisión de QA. No re-levantar."
+
+  # ═══════════ TRIAJE 2026-07-30 con QA — corrida globalmp / La Tortuga ═══════════
+
+  - id: CLT-LISTA-SALDOS-CRUZADOS
+    titulo: "El listado de clientes cruza las etiquetas de saldo y divide de más (deuda ~738× más chica)"
+    capa: movil
+    modulo: clientes
+    detectado_en: "tag 20"
+    estado: reportado          # ✅ QA lo reportó a desarrollo el 2026-07-30 — esperando respuesta
+    severidad: alta            # financiero y visible: el vendedor ve la cartera subestimada
+    patron: 'saldo.*cruzad|etiqueta.*saldo|738|deuda.*subestim|CLT-LISTA-SALDOS'
+    detalle: >-
+      En el LISTADO de clientes, lo rotulado "Saldo BS" es en realidad el importe en USD, y lo rotulado
+      "Saldo USD" es ese importe dividido otra vez por la tasa ⇒ la deuda se ve ~738× más chica.
+      Cliente AS04: lista `USD 2,84 / BS 2.096,23` vs detalle `USD 2.096,23 / BS 1.546.766,19`.
+      Triangulado contra documentos: un solo documento de CB10 arrastra 22,24 USD, así que el 0,62 USD de la
+      lista es imposible. **El DETALLE está correcto; solo falla el listado.**
+      La web NO lo reproduce (muestra un único `Balance = 2.096,23`) ⇒ es de la app.
+    accion: "Reportado. Esperar respuesta de desarrollo."
+
+  - id: VIS-FECHA-MAS-4H
+    titulo: "La fecha de la visita se muestra +4 h al reabrirla en la app"
+    capa: movil
+    modulo: visitas
+    detectado_en: "tag 20"
+    estado: reportado          # ✅ QA lo reportó a desarrollo el 2026-07-30 — esperando respuesta
+    severidad: presentacion
+    patron: 'fecha.*visita.*\+?4 ?h|UTC.*local|VIS-FECHA-MAS-4H'
+    detalle: >-
+      La app pinta el reloj UTC como si fuera local: la visita 574864 se creó `11:51:05` y al reabrirla en la
+      app muestra `15:51`.
+    alcance_acotado: >-
+      🔑 **El arreglo es de una sola capa.** Verificado por la capa web: la web muestra `30/07/2026 11:51:05`
+      (único timestamp de la página; ningún `15:51`) y `Fecha Enviada` = `11:53:56` = el `da_real` del móvil.
+      ⇒ El dato está bien en origen, en el servidor y en la web. **El +4 h vive únicamente en el formateo de
+      la app.** No hay que tocar el dato ni migrar nada.
+    accion: "Reportado. Esperar respuesta de desarrollo."
+
+  - id: VND-KPIS-SIN-SEGMENTAR
+    titulo: "Los KPIs de vendedor no se segmentan por empresa (119 activados sobre una cartera de 14)"
+    capa: movil
+    modulo: vendedores
+    detectado_en: "tag 20"
+    estado: mapeado_sin_reportar   # decisión de QA 2026-07-30: mapear y observar en próximos clientes
+    severidad: media
+    patron: 'kpi|activados|cartera|segmenta|VND-KPIS'
+    detalle: >-
+      Solo `Cartera Clientes` se segmenta por empresa (357 vs 14). `Activados`, `Nuevos` y `Nuevos Activados`
+      vienen **idénticos en los dos acordeones**. En HC TRADING MARKET la app muestra **Activados 119 sobre
+      Cartera 14** — aritméticamente imposible (activados ⊆ cartera); lee como 850 % de activación.
+    contraparte: >-
+      En latino_cosmetica el mismo servicio devolvió **KPIs vacíos en 2 corridas seguidas**. En globalmp hoy
+      **sí devuelve datos** (corrige la nota histórica `kpis_disponibles:false`), pero mal segmentados.
+      Mismo servicio de métricas ⇒ conviene mirarlos juntos.
+    accion: >-
+      Mapeado. **Observar en los próximos clientes si se comporta igual** antes de reportar (decisión de QA).
+
+  # ── DESCARTADOS por QA el 2026-07-30 (se conservan para no re-levantarlos) ──
+  - id: DESCARTADOS-GLOBALMP-20260730
+    titulo: "Lote de hallazgos menores de la corrida globalmp descartados por QA"
+    capa: movil
+    modulo: varios
+    detectado_en: "tag 20"
+    estado: descartado
+    patron: 'total dep[oó]sitos|sin formato|timestamp ISO|expirationBatch|incidencia hu[eé]rfana|guardar y salir|MR04|tab adjuntos'
+    detalle: >-
+      QA los revisó el 2026-07-30 y decidió **descartarlos**. No re-levantar en corridas futuras:
+      · `Total Depósitos` imprime el BS sin formato de miles (`BS 1500`) mientras `Total Transferencias` sí
+        formatea — 2/2 cobros con depósito. La web lo muestra bien ⇒ solo móvil.
+      · La fecha del documento en la retención sale como timestamp ISO crudo
+        (`2026-07-20T04:00:00.000+00:00`). La web muestra `20/07/2026` ⇒ solo móvil.
+      · `expirationBatch=true` no valida el Lote: el modal aceptó la captura con Lote vacío (3ª playa con
+        esta divergencia UI-vs-config).
+      · Borrar una visita Guardada deja su incidencia huérfana en la tabla local `incidences`.
+      · "Guardar y salir" en clientes potenciales deja al usuario en la lista y **la lista no refresca**
+        (el registro sí persiste, aparece al reentrar).
+      · El envío del pedido dio 2 alertas en vez de 3 (faltó "Pedido nro. X enviado"); el envío fue exitoso.
+      · El producto `MR04` tiene precio de lista 0,02 USD — verificado que **no** es el defecto de conversión
+        (multiplica bien); es dato maestro mal cargado, no defecto de app.
+      · El Tab Adjuntos de cobros no expandió por CDP (único ⛔ BLOCKED) — limitación de automatización, no
+        dice nada del producto.
+    accion: "No reportar. No re-levantar."
+
+  # ═══════════ TRIAJE WEB 2026-07-30 con QA — corrida globalmp / La Tortuga ═══════════
+
+  - id: COB-WEB-DCTO-CONV-MULTIPLICA
+    titulo: "La web multiplica por la tasa la conversión del descuento en vez de dividirla"
+    capa: web
+    modulo: cobros
+    detectado_en: "tag 20"
+    estado: reportado          # ✅ QA lo reportó el 2026-07-30 — esperando fix para re-validar
+    severidad: alta            # financiero y VISIBLE
+    patron: 'descuento.*conversi|conv.*descuento|36\.?894|737\.?880|COB-WEB-DCTO'
+    detalle: >-
+      Cobros 8352 y 8353, en 7 celdas: cabecera `Monto total descuento conversión`, columna
+      `Total dcto. conversion` de `form:documentosPagadosDT` y columna `Monto conversión` de `form:discountsDT`.
+      8352 muestra **36.894,00 USD** donde va `0,07` (= 50 × 737,88); 8353 muestra **737.880,00 USD** donde va
+      `1,36` (= 1.000 × 737,88). La cabecera se autocontradice: `113,48 − 36.894,00 ≠ 113,41`.
+      **La web NO recalcula al vuelo: pinta el dato crudo del servidor.** En el móvil el mismo dato existe pero
+      es inocuo (no hay pantalla que lo muestre).
+    causa_raiz: >-
+      `convertirMonto()` (`collection-logic.service.ts:2286-2299`) recibe la moneda **del documento** (rama que
+      multiplica) en vez de la **del cobro**. Se dispara **cuando el documento fue EDITADO** (descuento,
+      retención o pago parcial) — pagar el saldo completo sin tocar nada graba bien (por eso 8356 está limpio).
+    # ═══ COMENTARIO PARA PASARLE AL EQUIPO CUANDO TOMEN EL CASO ═══
+    # (QA lo entrega aparte, no forma parte del reporte inicial del defecto)
+    comentario_para_desarrollo: |
+      Además de la celda visible del descuento, hay un SEGUNDO campo que se corrompe por la MISMA causa:
+
+        `nu_amount_paid_conversion`  — la conversión del monto pagado por documento.
+
+      Se guarda MULTIPLICADO por la tasa en vez de dividido, en los mismos cobros (los que tienen el
+      documento editado: descuento, retención o pago parcial). Ejemplo real, cobro 8352, documento 037245:
+      pagado 83.684,62 BS → el campo guarda 61.749.207,41 cuando lo correcto sería 113,41.
+
+      Hoy NO se ve en ninguna pantalla —ni en la app ni en la web— porque la tabla de documentos no tiene
+      una columna para ese dato. Pero:
+        1) el valor corrupto YA está viajando al servidor y quedando persistido, y
+        2) existe una ruta que lo leería: `resolvePersistedNetAmountSumConversion`
+           (collection-logic.service.ts:1413-1418) usa el valor almacenado cuando `inPaymentPartial === true`.
+           El cobro 8355 es exactamente ese caso; hoy no aflora sólo porque gana el cálculo de la cabecera.
+
+      Por eso conviene arreglar `convertirMonto()` DE RAÍZ (que reciba la moneda del cobro y no la del
+      documento) en vez de corregir únicamente la celda del descuento: con el arreglo de raíz los dos campos
+      quedan resueltos; si sólo se toca el descuento, éste sigue guardándose mal y la ruta latente queda viva.
+    accion: "Reportado. Re-validar cuando salga el fix. Entregar `comentario_para_desarrollo` cuando tomen el caso."
+
+  - id: WEB-LIMPIAR-CAMBIA-EMPRESA
+    titulo: "`Limpiar` cambia la empresa y muestra registros de otra compañía sin aviso"
+    capa: web
+    modulo: transversal        # visitas · clientes potenciales
+    detectado_en: "tag 20"
+    estado: reportado          # ✅ QA lo reportó el 2026-07-30
+    severidad: alta            # el usuario cree estar viendo sus datos y ve los de otra empresa
+    patron: 'limpiar.*empresa|cambia.*empresa|HC TRADING|WEB-LIMPIAR-CAMBIA-EMPRESA'
+    detalle: >-
+      Reproducido 2/2 en visitas y confirmado en clientes potenciales. Estando en **00002 GLOBAL M&P**, al
+      pulsar `Limpiar` el selector salta a **00001 HC TRADING MARKET 2021** y el listado muestra 50 filas de la
+      otra empresa (clientes ajenos); el registro buscado desaparece. **Sin ningún mensaje ni cambio visual
+      fuera del propio selector.**
+    detalle_que_delata_el_bug: >-
+      🔑 En **visitas** el `<select>` de Empresa **SÍ tiene opción neutra** (`"" = Seleccione Empresa`), a
+      diferencia de devoluciones e inventarios donde solo hay `1` y `2`. **`Limpiar` igual elige la primera
+      empresa real en vez de la neutra** ⇒ no es que falte a dónde resetear: **el reset apunta al índice
+      equivocado.**
+    accion: "Reportado. Re-validar cuando salga el fix."
+
+  - id: WEB-LIMPIAR-NO-RESETEA-SELECTS
+    titulo: "`Limpiar` no restablece los desplegables de estado (Status / Tiene Adjunto)"
+    capa: web
+    modulo: transversal        # devoluciones · inventarios · clientes potenciales
+    detectado_en: "tag 20"
+    estado: reportado          # ✅ QA lo reportó el 2026-07-30
+    patron: 'limpiar.*no restablece|filtro.*pegado|tiene adjunto|WEB-LIMPIAR-NO-RESETEA'
+    detalle: >-
+      En devoluciones, inventarios y clientes potenciales los `p:selectOneMenu` de estado quedan puestos tras
+      `Limpiar` y el listado sigue filtrado **sin señal visual**.
+    por_que_va_separado_del_anterior: >-
+      🔑 **Son dos defectos independientes.** La prueba: en **visitas** este NO ocurre (sí resetea) pero
+      WEB-LIMPIAR-CAMBIA-EMPRESA **sí**; en **devoluciones e inventarios** es exactamente al revés.
+      En **pedidos y cobros** ninguno de los dos ocurre.
+    # ── FUSIONADO 2026-07-30: absorbe la entrada WEB-LIMPIAR-NO-RESTABLECE (latino_cosmetica / Isla Coche,
+    #    29/07/2026). QA confirmó que son el MISMO defecto de versión, vivo en las dos playas. ──
+    evidencia_latino_cosmetica_isla_coche: >-
+      Confirmado en **5 módulos** el 29/07/2026, con impacto medido:
+      · **Depósitos:** `Moneda` queda en BSD y **OCULTA el depósito real** — la pantalla dice "No se encontraron
+        registros" con el Ref 1 ahí (probado A/B en los dos sentidos). Es el caso más grave visto.
+      · **Cobros:** deja la pantalla en **0 de 50** filas.
+      · **Inventarios:** deja **2 de 18** (y tampoco restablece `Status`).
+      · **Pedidos y clientes potenciales:** también quedan pegados (ese día sin ocultar datos).
+    contraejemplo_util: >-
+      🔑 **En VISITAS de Isla Coche el mismo `Limpiar` funciona bien** — restablece el filtro y vacía ambas
+      fechas. Usa el componente **`selectAttach`** en vez de `attachStatus`.
+      **La implementación correcta YA EXISTE dentro del producto: el arreglo de los demás módulos es copiarla,
+      no diseñarla.** Es el dato que vuelve barato el fix.
+    accion: "Reportado. Re-validar cuando salga el fix, en AMBAS playas."
+
+  - id: COB-WEB-DCTO-CONV-ETIQUETA
+    titulo: "La columna `Descuento conversión` muestra el Diferencia/Faltante bajo la etiqueta de descuento"
+    capa: web
+    modulo: cobros
+    detectado_en: "tag 20"
+    estado: reportado          # ✅ QA lo reportó el 2026-07-30
+    patron: 'descuento conversi|570\.?418|faltante|COB-WEB-DCTO-CONV-ETIQUETA'
+    detalle: >-
+      Cobro 8353, documento `FF081401`: la columna `Descuento conversión` muestra **570.418,13**
+      = `773,05 × 737,88`, pero **773,05 NO es el descuento** — es el `Diferencia/Faltante`. El descuento real
+      de ese documento es `1.000,00` y vive en otra columna.
+      La celda está **multiplicada Y bajo etiqueta equivocada**. Correcto: `773,05 / 737,88 = 1,05`, en una
+      columna rotulada "Dif/Faltante conversión".
+    diferencia_con_COB-WEB-DCTO-CONV-MULTIPLICA: >-
+      🔑 **No son el mismo defecto y no se arreglan juntos.** Aquél es *la operación mal hecha sobre el número
+      correcto*; éste es *además el número equivocado*. Si el fix corrige solo la dirección de la conversión,
+      esta celda pasaría a mostrar `1,05` **pero seguiría rotulada "Descuento"** cuando el descuento es 1.000,00.
+      **El error de etiqueta sobrevive al fix de la conversión.**
+    accion: "Reportado. Re-validar cuando salga el fix — verificar AMBOS aspectos, no solo el número."
+
+  - id: WEB-ORDENAMIENTO-NO-ORDENA-GLOBALMP
+    titulo: "El ordenamiento no reordena las filas, y falla POR COLUMNA (no por módulo)"
+    capa: web
+    modulo: transversal        # devoluciones · inventarios (# Ref) · clientes potenciales
+    detectado_en: "tag 20"
+    estado: reportado          # ✅ QA lo reportó el 2026-07-30
+    patron: 'ordenamiento|aria-sort|no reordena|no ordena|WEB-ORDENAMIENTO'
+    detalle: >-
+      El indicador `aria-sort` cambia y el POST responde 200, pero **las filas quedan igual**.
+      · **devoluciones:** `# Ref`, `Cliente` y `Fecha` no reordenan.
+      · **inventarios:** `Fecha creación` ✅ funciona · **`# Ref` ❌ no** (en otro cliente se determinó que esa
+        columna está atada al id del *pedido relacionado*, no al Nro.Ref).
+      · **clientes potenciales:** no reordena (3 pruebas).
+      · **pedidos y visitas:** funcionan bien (pedidos: 1,2,3…50 numérico; visitas: 390·424·481·788·1250).
+    dato_clave: >-
+      🔑 **Falla por COLUMNA, no por módulo** — probado con espera de 2,5 s en ambos sentidos. Que en pedidos y
+      visitas sí ordene descarta que sea el componente `p:dataTable` o la plantilla: es la configuración de
+      cada columna.
+    # ── FUSIONADO 2026-07-30: absorbe la entrada WEB-ORDENAMIENTO-INCONSISTENTE (latino_cosmetica / Isla Coche,
+    #    29/07/2026). QA confirmó que es el MISMO defecto de versión, vivo en las dos playas. ──
+    evidencia_latino_cosmetica_isla_coche: >-
+      Confirmado el 29/07/2026, con **tres comportamientos distintos** según el módulo:
+      · **Clientes potenciales: NO reordena** — el `aria-sort` cambia y el POST responde 200, pero las filas
+        quedan igual. Muestreado 3 s / 12 lecturas: **no es una carrera del ajax**.
+      · **Inventarios: reordena por el CAMPO EQUIVOCADO** — la columna `# Ref` está atada al **id del pedido
+        relacionado**: la única fila que lo tiene (Ref 15 → pedido 121) es la única que se mueve; las otras 17
+        comparan iguales. Reproduce el patrón NULLS-LAST/FIRST de PostgreSQL.
+      · **Cobros: el orden por importe IGNORA LA MONEDA** — `10,00 $` (≈7.372 BS) queda debajo de `61,74 BS`.
+        Debería ordenar por el importe convertido.
+      · **Pedidos:** ordena bien (numérico, no lexicográfico).
+    accion: "Reportado. Re-validar cuando salga el fix, en AMBAS playas."
+
+  # ── DESCARTADOS por QA el 2026-07-30 (capa web) ──
+
+  - id: COB-WEB-FILTRO-STATUS
+    titulo: "El filtro `Status` de cobros no filtra"
+    capa: web
+    modulo: cobros
+    detectado_en: "tag 20"
+    estado: descartado         # ⛔ FALSO POSITIVO — QA lo probó a mano el 2026-07-30 y el filtro SÍ funciona
+    patron: 'status.*no filtra|filtro status|COB-WEB-FILTRO-STATUS'
+    detalle: >-
+      El agente web reportó que con `Status = APROBADO` (24) y con `RECHAZADO` (25) el listado no cambiaba
+      (50 filas, 10 páginas, mismo mix 11/3/36), usando `Tipo Cobro` como filtro de control.
+    por_que_es_falso: >-
+      ⛔ **QA lo verificó manualmente y el filtro SÍ funciona.** El hallazgo del agente queda **descartado**.
+      🔑 **Causa probable del falso positivo, ya documentada en esta misma corrida:** no esperar tras elegir en
+      un `p:selectOneMenu`. El `li` dispara su propio ajax y, si `Buscar` sale antes, **el backend usa el valor
+      anterior**. Otro agente de esta corrida generó **4 falsos defectos de filtro** exactamente así y los
+      descartó al revalidar sobre una vista nueva.
+    leccion_para_los_guiones: >-
+      **Regla obligatoria antes de dar por roto cualquier filtro:** elegir la opción → esperar ≥2 s →
+      **verificar el `.ui-selectonemenu-label`** → recién ahí pulsar `Buscar`. Y si un módulo "tiene todos los
+      filtros rotos", sospechar primero del panel JSF desincronizado (recuperable con `page.goto()`).
+    accion: "No reportar. No re-levantar. Es un falso positivo del harness, no un defecto del producto."
+
+  - id: INV-WEB-SIN-LOTE-VENCIMIENTO-GLOBALMP
+    titulo: "El detalle web de inventarios no publica lote ni fecha de vencimiento"
+    capa: web
+    modulo: inventarios
+    detectado_en: "tag 20"
+    estado: descartado         # ⛔ QA decidió descartarlo el 2026-07-30
+    patron: 'lote|vencim|expira|batch|INV-WEB-SIN-LOTE'
+    detalle: >-
+      El móvil envía lote y vencimiento y la pantalla no los tiene. Sondeo del HTML: **0 coincidencias** de
+      `lote|vencim|expira|batch|caduc`; **falta la columna entera**, no el valor. Confirmado en 2 registros
+      (Refs 104 y 105) y en 2 clientes (también latino_cosmetica / Isla Coche) ⇒ no depende de la playa.
+      Contraste: **devoluciones, en esta misma web, sí tiene esas columnas y las llena.**
+    accion: "Descartado por QA. No re-levantar."
+
+  - id: WEB-ENCABEZADOS-ACENTO-GRAVE
+    titulo: "Encabezados con acento grave: `Fecha Devoluciòn` y `Conversiòn Monto Total`"
+    capa: web
+    modulo: transversal        # devoluciones · pedidos
+    detectado_en: "tag 20"
+    estado: descartado         # ⛔ QA decidió descartarlo POR AHORA el 2026-07-30
+    patron: 'acento grave|Devoluci[oò]n|Conversi[oò]n Monto|WEB-ENCABEZADOS-ACENTO'
+    detalle: >-
+      El encabezado de la lista de devoluciones dice `Fecha Devoluciòn` y el del detalle de pedidos
+      `Conversiòn Monto Total` — acento grave (`ò`) en vez de agudo (`ó`). Cosmético, dos caracteres.
+    accion: "Descartado por ahora (decisión de QA). Se puede sumar a un lote cosmético más adelante."
+
+  - id: VIS-WEB-CSS-TYPO-GLOBALMP
+    titulo: "Typo CSS `class=\"font.-bold\"` ×8 en detalleVisita.xhtml"
+    capa: web
+    modulo: visitas
+    detectado_en: "tag 20"
+    estado: descartado         # ⛔ QA decidió descartarlo el 2026-07-30
+    patron: 'font\.-bold|typo.*css|negrita'
+    detalle: >-
+      8 ocurrencias de `font.-bold` (con punto, clase inexistente) contra 2 de `font-bold` correcta. Las 8 mal
+      escritas son todas las etiquetas de la cabecera; solo `Titulo:` está bien ⇒ no salen en negrita.
+      Confirmado en 2 clientes y 2 playas ⇒ está en el fuente.
+      ⚠ Consecuencia para los guiones: el lector `span.font-bold` **solo levanta 1 de 9 campos** en esa
+      pantalla → usar `span[class*="bold"]` → `sp.closest('div').nextElementSibling`.
+    accion: "Descartado por QA. No re-levantar (pero la nota para los guiones sigue vigente)."
+
+  # ── EN OBSERVACIÓN (decisión de QA 2026-07-30) ──
+  - id: COB-CONTADOR-ADJUNTOS
+    titulo: "El contador de adjuntos no coincide con los archivos realmente presentes"
+    capa: ambas
+    modulo: cobros
+    detectado_en: "tag 20"
+    estado: en_observacion
+    patron: 'contador.*adjunt|nu_attachments|COB-CONTADOR-ADJUNTOS'
+    detalle: >-
+      El cobro 8352 declara `nu_attachments = 2` y se encuentra **1**; el 8355 declara 4 y el servicio ve **3**.
+      Sin GRANT en la nube no hay oráculo y la enumeración en la app quedó ⛔ BLOCKED.
+    accion: >-
+      QA lo revisará **en la regresión, cuando monten los fixes**, para ver si sigue ocurriendo. No reportar aún.
+
+  - id: VIS-SIN-FECHA-INICIADA
+    titulo: "Visita enviada con `Fecha Iniciada` vacía"
+    capa: ambas
+    modulo: visitas
+    detectado_en: "tag 20"
+    estado: en_observacion
+    patron: 'fecha iniciada|da_init|VIS-SIN-FECHA-INICIADA'
+    detalle: >-
+      La visita 574864 llegó a la web con `Fecha Iniciada` vacía, mientras otras del listado sí la traen
+      (574862 → `30/07/2026 09:33`). El manifiesto del móvil no reporta campo de inicio ⇒ sin oráculo.
+      Puede ser que el flujo automatizado no grabara `da_init`, o un defecto real.
+    accion: "QA lo deja en observación: ver si se repite en las próximas corridas. No reportar aún."
 
   # ───────────────────── CONFIRMADOS A MANO POR QA ─────────────────────
   - id: VIS-GUARDAR-NO-IDEMPOTENTE
