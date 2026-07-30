@@ -347,3 +347,32 @@ ausencia de la columna **y** la del vencimiento, que sí tenía valor).
    el pedido y la fecha al guardarlo). **No es defecto web**; observación para el lado móvil.
 5. **La sesión web expira entre corridas** — un `page.goto()` a un módulo redirigió a `login.xhtml`. Los
    guiones web deben comprobar el pathname tras navegar y re-loguear, en lugar de asumir sesión viva.
+
+---
+
+## 🔴 CORRECCIÓN POSTERIOR (30/07/2026) — el oráculo de adjuntos que usamos NO es fiable
+
+En este reporte se usó, en varios módulos, la regla:
+
+> «`Ver adjuntos` / `Descargar` con `disabled === true` ⇒ el registro no tiene adjuntos. **Señal fiable.**»
+
+**Esa regla queda INVALIDADA.** QA encontró y confirmó a mano un caso donde **es falsa**:
+
+Una visita **precargada desde la web** y enviada desde la **móvil con adjunto** llega con el archivo
+—se descarga sin problema desde el detalle— pero en el listado **no muestra el ícono de clip** y el
+**filtro `Tiene Adjunto` tampoco la toma**. Ver `VIS-WEB-SIN-ICONO-ADJUNTO` en `defectos-conocidos.yaml`.
+
+**Por qué importa para los guiones:** el ícono, el filtro y (muy probablemente) el estado `disabled` de los
+botones leen **el mismo flag/contador de adjuntos**, que puede estar desactualizado. El **detalle**, en cambio,
+lee los **archivos reales**. ⇒ Los tres primeros pueden decir "sin adjuntos" sobre un registro que sí los tiene.
+
+**Regla corregida:**
+- `disabled === true` **NO prueba** ausencia de adjuntos — solo dice qué cree el flag.
+- Para afirmar que un registro **no tiene** adjuntos hay que **abrir el detalle** y comprobarlo ahí,
+  o sondear las URLs directas de los archivos.
+- Cuando el flag y el detalle **se contradigan**, eso **es el hallazgo**, no un problema de lectura.
+
+⚠ Alcance de esta corrida: la visita 574864 se verificó con la regla vieja, pero fue **creada desde la móvil
+y sin adjuntos** (`nu_attachments = 0` en el manifiesto), y el manifiesto lo confirma de forma independiente.
+Ese veredicto **sigue siendo válido**. Lo que queda sin cubrir es el caso de QA — visita precargada **con**
+adjunto —, que esta corrida nunca llegó a ejercitar.

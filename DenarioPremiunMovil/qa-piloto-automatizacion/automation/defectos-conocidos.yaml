@@ -412,6 +412,49 @@ defectos:
       · **Pedidos:** ordena bien (numérico, no lexicográfico).
     accion: "Reportado. Re-validar cuando salga el fix, en AMBAS playas."
 
+  - id: VIS-WEB-SIN-ICONO-ADJUNTO
+    titulo: "La lista web de visitas no muestra el ícono de clip en visitas de ruta precargada que sí traen adjunto"
+    capa: web
+    modulo: visitas
+    detectado_en: "tag 20"
+    estado: reportado          # ✅ Encontrado y reportado por QA a mano el 2026-07-30
+    encontrado_por: "QA, manualmente — NO por la automatización (ver 'por_que_la_corrida_no_lo_detecto')"
+    patron: 'icono.*clip|clip.*adjunto|sin icono|VIS-WEB-SIN-ICONO-ADJUNTO'
+    detalle: >-
+      Flujo: la visita **se crea desde la WEB** (queda precargada en la ruta del vendedor) → el vendedor la
+      **envía desde la MÓVIL con un adjunto**. El adjunto **sí viaja**: aparece en el **detalle** de la visita
+      en la web. Pero en el **listado**, esa visita **no muestra el ícono de clip** que indica que tiene adjunto.
+    precondicion_para_reproducir: >-
+      🔴 **Solo se reproduce con visitas PRECARGADAS** (creadas desde la web, existentes en la ruta del día).
+      Una visita creada desde cero en la móvil no sirve para reproducirlo.
+    por_que_la_corrida_no_lo_detecto: >-
+      La visita de la corrida (Ref 574864) se creó **desde la móvil** y **sin adjuntos**, así que no cumplía
+      ninguna de las dos condiciones. El agente web verificó el indicador de adjuntos por dos vías y ambas
+      dieron coherente (botones `disabled === true` y el filtro `Tiene Adjuntos` reduciendo de 13 a 2
+      excluyéndola) — correcto para ESE registro, pero ciego a este caso.
+    severidad: funcional       # ⬆ NO es cosmético — ver confirmación de QA abajo
+    confirmado_por_qa: >-
+      🔴 **QA probó el filtro `Tiene Adjunto` el 2026-07-30 y TAMPOCO la toma como que tiene adjunto.**
+      Pero al entrar al detalle, los adjuntos **están y se pueden descargar**.
+      ⇒ **No es un ícono que no se pinta: es que el sistema cree que la visita no tiene adjunto.**
+      El ícono del listado y el filtro leen el **mismo dato** (el flag/contador de adjuntos) y ambos dicen
+      "no hay"; el detalle lee los **archivos reales**, que sí llegaron.
+      **El archivo viajó, pero el flag nunca se actualizó.**
+    impacto: >-
+      El adjunto queda **invisible para cualquier búsqueda o reporte**. Quien audite "qué visitas tienen
+      evidencia cargada" verá esas visitas como SIN evidencia, aunque la tengan. No se pierde el archivo,
+      se pierde la trazabilidad.
+    posible_familia_comun: >-
+      🔑 Vale mirarlo junto con **COB-CONTADOR-ADJUNTOS** (en observación): allí el contador de cobros dice 2
+      y hay 1, dice 4 y hay 3. Es el mismo síntoma —**el contador/flag de adjuntos no refleja la realidad**—
+      aunque en dirección opuesta (allí cuenta de más, acá de menos). Puede ser el mismo origen: el contador
+      no se recalcula al recibir el envío del móvil. Si desarrollo toma uno, conviene que mire el otro.
+    para_corridas_futuras: >-
+      Para cubrirlo hay que **partir de una visita ya precargada en la ruta** (creada desde la web) y enviarla
+      desde la móvil **con adjunto**; luego verificar en la web **el ícono del listado** Y **el filtro
+      `Tiene Adjunto = SI`**, no solo el detalle.
+    accion: "Reportado por QA. Cubrir en corridas futuras con visitas precargadas."
+
   # ── DESCARTADOS por QA el 2026-07-30 (capa web) ──
 
   - id: COB-WEB-FILTRO-STATUS
