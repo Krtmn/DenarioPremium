@@ -65,7 +65,11 @@ modules:
     bad_password: "usar QA_BAD_PASSWORD del bloque # Cliente: latino_cosmetica"  # marcador; contraseña mala real en qa-credentials.env
 
   clientes:
-    cliente_busqueda: "ANNELI"               # ✅ "ANNELI"→1 resultado (ANNELI CA, co 13). Buscador filtra por NOMBRE (clientsOrderBy=na_client), NO por código
+    # 🔴 CORRECCIÓN 31/07/2026 (web extendida, pantalla de Variables Globales): `clientsOrderBy` es **`co_client`**,
+    #    no `na_client` como decía la nota de abajo. Además la **distancia máxima de geocerca es 50 m** — es la
+    #    que genera los 28 registros "Fuera de Rango" del Plan de Visitas (no es un defecto).
+    #    ✅ El resto del perfil sigue vigente pese a la migración de playa: **23 de 23 VGs coinciden**.
+    cliente_busqueda: "ANNELI"               # ✅ "ANNELI"→1 resultado (ANNELI CA, co 13)
     cliente_detalle: "ANNELI CA"             # ✅ co 13, idClient 34 — SINCRONIZADO. Saldo BSD 248.983,08 / $373,26; 1 doc tipo 03 Nº 1757 en Doc. de Venta. (LOOKS 4 co 149 NO sincroniza para usuario 001)
     empresa_potencial: "LATINOCOSMETICA C.A."  # ✅ idEnterprise=1, ÚNICA. NO auto-selecciona: exige value=1 numérico + ionChange en el ion-select
     # DM-CLT-024/026: cliente potencial creado (Ref 9 Enviado, BD-OK); Guardar y Enviar SIN firma pese a signatureClient=true

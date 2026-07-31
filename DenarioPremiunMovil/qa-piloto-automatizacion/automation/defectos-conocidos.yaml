@@ -328,6 +328,12 @@ defectos:
       diferencia de devoluciones e inventarios donde solo hay `1` y `2`. **`Limpiar` igual elige la primera
       empresa real en vez de la neutra** ⇒ no es que falte a dónde resetear: **el reset apunta al índice
       equivocado.**
+    no_se_reproduce_en_isla_coche: >-
+      🔴 **DATO PARA CUANDO DESARROLLO INTENTE REPRODUCIRLO.** La corrida web extendida del 31/07/2026 sobre
+      **Isla Coche / LATINOCOSMETICA** buscó este defecto en **dos familias de pantallas distintas** (bloques
+      1-4 y bloques 5-7) y **NO se reproduce allí**: el control se comporta correctamente.
+      ⇒ El defecto está confirmado en **La Tortuga**. Si el equipo prueba en Isla Coche y no lo ve, **no
+      significa que esté arreglado ni que el reporte sea falso** — hay que probarlo en La Tortuga.
     accion: "Reportado. Re-validar cuando salga el fix."
 
   - id: WEB-LIMPIAR-NO-RESETEA-SELECTS
@@ -358,6 +364,12 @@ defectos:
       fechas. Usa el componente **`selectAttach`** en vez de `attachStatus`.
       **La implementación correcta YA EXISTE dentro del producto: el arreglo de los demás módulos es copiarla,
       no diseñarla.** Es el dato que vuelve barato el fix.
+    no_se_reproduce_en_isla_coche: >-
+      🔴 **DATO PARA CUANDO DESARROLLO INTENTE REPRODUCIRLO.** La corrida web extendida del 31/07/2026 sobre
+      **Isla Coche / LATINOCOSMETICA** buscó este defecto en **dos familias de pantallas distintas** (bloques
+      1-4 y bloques 5-7) y **NO se reproduce allí**: el control se comporta correctamente.
+      ⇒ El defecto está confirmado en **La Tortuga**. Si el equipo prueba en Isla Coche y no lo ve, **no
+      significa que esté arreglado ni que el reporte sea falso** — hay que probarlo en La Tortuga.
     accion: "Reportado. Re-validar cuando salga el fix, en AMBAS playas."
 
   - id: COB-WEB-DCTO-CONV-ETIQUETA
@@ -410,6 +422,12 @@ defectos:
       · **Cobros: el orden por importe IGNORA LA MONEDA** — `10,00 $` (≈7.372 BS) queda debajo de `61,74 BS`.
         Debería ordenar por el importe convertido.
       · **Pedidos:** ordena bien (numérico, no lexicográfico).
+    no_se_reproduce_en_isla_coche: >-
+      🔴 **DATO PARA CUANDO DESARROLLO INTENTE REPRODUCIRLO.** La corrida web extendida del 31/07/2026 sobre
+      **Isla Coche / LATINOCOSMETICA** buscó este defecto en **dos familias de pantallas distintas** (bloques
+      1-4 y bloques 5-7) y **NO se reproduce allí**: el control se comporta correctamente.
+      ⇒ El defecto está confirmado en **La Tortuga**. Si el equipo prueba en Isla Coche y no lo ve, **no
+      significa que esté arreglado ni que el reporte sea falso** — hay que probarlo en La Tortuga.
     accion: "Reportado. Re-validar cuando salga el fix, en AMBAS playas."
 
   - id: VIS-WEB-SIN-ICONO-ADJUNTO
@@ -492,6 +510,109 @@ defectos:
       (Refs 104 y 105) y en 2 clientes (también latino_cosmetica / Isla Coche) ⇒ no depende de la playa.
       Contraste: **devoluciones, en esta misma web, sí tiene esas columnas y las llena.**
     accion: "Descartado por QA. No re-levantar."
+
+  - id: REP-ACTIVACION-CLIENTES-CIFRAS-MALAS
+    titulo: "Activación de Clientes: no cuadran ni la cartera por vendedor ni los clientes activados"
+    capa: web
+    modulo: reportes
+    detectado_en: "tag 20"
+    estado: confirmado         # ✅ QA lo verificó A MANO el 31/07/2026 y decidió reportarlo
+    confirmado_por: "QA, manualmente, 2026-07-31"
+    severidad: alta            # afecta la evaluación del desempeño de personas
+    patron: 'activaci[oó]n|reporteActivacionClientes|719|cartera.*vendedor|REP-ACTIVACION'
+    detalle: >-
+      Pantalla `/pages/reporteActivacionClientes`. **Ninguna de las dos cifras del reporte cuadra** (verificado
+      a mano por QA):
+      · **la cartera de clientes por vendedor**, y
+      · **el número de clientes activados**.
+      Como el porcentaje de activación se calcula `activados ÷ cartera`, con ambos operandos mal el indicador
+      es inservible.
+    lo_que_detecto_la_automatizacion: >-
+      El agente observó que **7 vendedores muestran 719 clientes cada uno**, y que `719 = 722 totales − 3 nuevos`
+      = la cartera completa de la empresa. Lo verificó contra el contador de `/pages/clientes`.
+    correccion_de_alcance: >-
+      ⚠ **El agente describió el defecto MÁS CHICO de lo que es.** Solo detectó el denominador (la cartera
+      inflada); **QA encontró a mano que los ACTIVADOS tampoco cuadran.** El defecto abarca las dos columnas.
+    hipotesis_descartada: >-
+      🔑 QA planteó —con buen criterio— que esos 7 vendedores podrían **tener legítimamente toda la cartera
+      asignada** (supervisores, cuentas genéricas), en cuyo caso sería un tema de configuración y no de sistema.
+      El argumento a favor era fuerte: **otros vendedores SÍ muestran números distintos**, o sea el reporte
+      sabe diferenciar. **QA lo verificó a mano y los números no coinciden** ⇒ hipótesis descartada, es defecto.
+      ⚠ Nota para futuros agentes: la comprobación de "719 == total de la empresa" **NO alcanza** para
+      declararlo defecto — es compatible con que esos vendedores tengan todo asignado. El discriminador es
+      filtrar `/pages/clientes` por ese vendedor y contar.
+    posible_familia_comun: >-
+      🔑 Mirar junto con **VND-KPIS-SIN-SEGMENTAR** (móvil, mapeado): allí los KPIs de vendedor tampoco se
+      segmentan por empresa y muestran **119 activados sobre una cartera de 14** — aritméticamente imposible.
+      **Es el mismo servicio de métricas fallando en las dos capas.** Si desarrollo toma uno, conviene que
+      mire el otro; puede ser un solo arreglo.
+    accion: "Reportar. Verificado a mano por QA — no requiere más evidencia de nuestra parte."
+
+  - id: VIS-WEB-FILTRO-COORDENADAS
+    titulo: "El filtro `Coordenadas` de visitas se contradice con su propia tabla (0 vs 90) y no filtra en `Por Revisar`"
+    capa: web
+    modulo: visitas
+    detectado_en: "tag 20"
+    estado: confirmado         # ✅ QA lo reprodujo a mano el 31/07/2026
+    confirmado_por: "QA, manualmente, 2026-07-31"
+    patron: 'coordenadas|no realizado|por revisar|VIS-WEB-FILTRO-COORDENADAS'
+    detalle: >-
+      Pantalla `/pages/itinerario`. Prueba cerrada, sin BD:
+      · `Estatus = No visitado` → **90 filas**, y las 90 muestran `Geo = No Realizado` (90/90)
+      · `Estatus = Visitado` → 125 filas: 92 Correcto + 28 Fuera de Rango + 5 Falta Coord. = 125 ✅
+      · `Coordenadas = No Realizado` (sin filtro de estatus) → **"No existe registro", Total = 0**
+      **La misma pantalla escribe `No Realizado` en 90 filas y su propio filtro dice que no existe ninguna.**
+      Además: `Coordenadas = Por Revisar` devuelve **215** = el total sin filtrar ⇒ **no filtra nada**.
+    descartado_falso_positivo: >-
+      Revalidado sobre vista nueva (`page.goto()` + UN solo `Limpiar` + verificación de que `Estatus` estuviera
+      en neutro y de que el `.ui-selectonemenu-label` y el `<select>` marcaran ambos `No Realizado`).
+      **Se reprodujo, Total = 0.** No es el falso positivo de panel JSF desincronizado.
+    accion: "Reportar. Verificado a mano por QA."
+
+  # ── DESCARTADOS por QA el 2026-07-31 (web extendida Isla Coche) ──
+  - id: DESCARTADOS-WEBEXT-ISLACOCHE-20260731
+    titulo: "Lote de hallazgos de la web extendida de Isla Coche descartados por QA"
+    capa: web
+    modulo: varios
+    detectado_en: "tag 20"
+    estado: descartado
+    patron: 'rutero.*mapa|setCenter|NaN|ventas diarias|jsdelivr|chartjs|datalabels|l[ií]mite cr[eé]dito'
+    detalle: >-
+      QA los revisó a mano el 2026-07-31 y decidió **descartarlos**. No re-levantar:
+      · **El mapa del Rutero no se dibuja** (`rutero.xhtml`, `setCenter` con `lat: NaN`, recuadro blanco).
+        🔑 **QA lo probó con un día en el que un vendedor SÍ tenía visitas y el rutero SÍ dibuja** ⇒ el `NaN`
+        venía de que el conjunto filtrado no tenía coordenadas, no de un fallo de la pantalla.
+      · **Ventas Diarias sin gráficos** (`pedidosProductosVentas.xhtml`, `typeof Chart === "undefined"`, 0 canvas).
+      · **El plugin de gráficos se descarga de `cdn.jsdelivr.net`** (dominio externo; si la red del cliente lo
+        bloquea, la web queda sin gráficos). Confirmado en 2 playas, **descartado igual**.
+      · **`Límite crédito` muestra el saldo del documento** en `/pages/documentos` (50/50 filas), mientras en
+        `/pages/clientes` vale 0 $. **Es el mismo D-05 de el_valle/La Tortuga** ⇒ al descartarlo acá,
+        **también queda cerrado aquel**, que seguía pendiente de verificación manual.
+    accion: "No reportar. No re-levantar."
+
+  - id: EST-CANALES-CONTADOR-VS-LISTADO
+    titulo: "Canales de Distribución: el contador dice N y el botón `Consultar clientes` lista muchos menos"
+    capa: web
+    modulo: estructura_comercial
+    detectado_en: "tag 20"
+    estado: descartado         # ⛔ NO ES DEFECTO — explicado por QA, YA DOS VECES (29/07 y 31/07)
+    patron: 'canales.*distribuci|cantidad clientes|722|7\.?007|5\.?382|consultar clientes|EST-CANALES-CONTADOR'
+    detalle: >-
+      La pantalla muestra un contador `Cantidad clientes` y un botón `Consultar clientes` cuyo listado devuelve
+      un número mucho menor. Observado en 2 clientes y 2 playas:
+      · el_valle / La Tortuga (29/07/2026): contador **7.007** vs listado **5.382**
+      · latino_cosmetica / Isla Coche (31/07/2026): contador **722** vs listado **12**
+    por_que_no_es_defecto: >-
+      ⛔ **Explicado por QA las dos veces:** al entrar al detalle, **el filtro `Activo` viene puesto**. Si se le
+      quita el filtro, el listado muestra el total completo (los 7.007 / los 722) y coincide con el contador.
+      El contador cuenta todos; el listado aplica el filtro que trae por defecto. **No hay contradicción real.**
+    nota: >-
+      ⚠ La magnitud varía mucho entre clientes (23 % de diferencia en el_valle, 98 % en latino) y eso puede
+      hacerlo parecer más grave de lo que es. **No es criterio para reabrirlo:** depende de cuántos clientes
+      inactivos tenga cada cartera.
+    accion: >-
+      **No reportar. No re-levantar.** Si un agente lo detecta, debe verificar el filtro `Activo` del detalle
+      ANTES de anotarlo como hallazgo — quitándolo, los números coinciden.
 
   - id: WEB-ENCABEZADOS-ACENTO-GRAVE
     titulo: "Encabezados con acento grave: `Fecha Devoluciòn` y `Conversiòn Monto Total`"
@@ -621,7 +742,12 @@ defectos:
     detalle: >-
       ⚠ LECTURA CORREGIDA POR QA: la VG dice "¿Desea HABILITAR la firma en el módulo de visitas? SI: se PODRÁ
       firmar". Habilita la función, NO la vuelve obligatoria ⇒ enviar sin firma es comportamiento correcto.
-    accion: "NO es defecto. No volver a levantarlo en ninguna playa."
+    evidencia_definitiva: >-
+      🔑 **CERRADO CON EVIDENCIA DE CONFIGURACIÓN (31/07/2026).** La corrida web extendida de Isla Coche revisó
+      el catálogo de **Actividades** (`/pages/actividades`) y confirmó que **ninguna de las 11 actividades marca
+      la firma como requerida**. ⇒ Ya no es una interpretación de la VG: **está probado en la configuración**
+      que la firma no es obligatoria para ninguna actividad de este cliente.
+    accion: "NO es defecto — cerrado con evidencia. No volver a levantarlo en ninguna playa."
 
   - id: INV-REABRE-TAB-GENERAL
     titulo: "Formulario Guardado de inventario reabre en tab General"

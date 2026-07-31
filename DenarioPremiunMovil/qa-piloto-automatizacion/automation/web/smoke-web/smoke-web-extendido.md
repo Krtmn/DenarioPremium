@@ -135,7 +135,7 @@ Es de bajo valor de prueba y **alto riesgo de romper producción**, así que la 
 | **DWX-CFG-003** | Variables Globales — Clientes | `/pages/variablesConfiguracionClientes` |
 | **DWX-CFG-004** | Usuarios · Dispositivos · Supervisores · Licencias | `/pages/usuarios` · `/pages/dispositivos` · `/pages/supervisores` · `/pages/licencias` |
 | **DWX-CFG-005** | Catálogos: tipos/motivos de devolución, IVA, IGTF, actividades, tipos de pedido, feriados | `/pages/tiposdevol` · `/pages/motivosdevol` · `/pages/iva` · `/pages/igtf` · `/pages/actividades` · `/pages/tipoPedidos` · `/pages/feriados` |
-| **DWX-CFG-006** | **Errores de aplicación** | `/pages/protected/administracion/erroresAplicacion/error` |
+| **DWX-CFG-006** | **Errores de aplicación** | `/pages/protected/administracion/erroresAplicacion/erroresAplicacion.xhtml` |
 
 💎 **`DWX-CFG-006` merece atención especial:** es el log de errores de la aplicación. **Revisarlo puede
 descubrir defectos que ninguna prueba provocó** — errores reales de usuarios reales. Vale la pena mirar los
