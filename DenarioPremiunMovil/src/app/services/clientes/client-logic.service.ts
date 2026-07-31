@@ -20,6 +20,7 @@ import { DocumentSale } from 'src/app/modelos/tables/documentSale';
 import { AddresClient } from 'src/app/modelos/tables/addresClient';
 import { IonModal, ModalController } from '@ionic/angular';
 import { ClienteComponent } from 'src/app/clientes/client-container/client-detail/client-detail.component';
+import { filterClientsBySelectionMode } from 'src/app/utils/client-suspension.policy';
 
 
 @Injectable({
@@ -274,16 +275,18 @@ export class ClientLogicService {
   }
 
   async updateClientListAfterEdit(clients: Client[]) {
+    const pageExhausted = clients.length < this.clientesServices.MAX_ITEMS_PER_PAGE;
     if (this.clientListPage === 0) {
       this.clients = [] as Client[];
     }
     this.fixClientListSaldos(clients);
+    const visibleClients = filterClientsBySelectionMode(clients, 'default');
     if (this.clientListPage === 0) {
-      this.clients = clients;
+      this.clients = visibleClients;
     } else {
-      this.clients = this.clients.concat(clients);
+      this.clients = this.clients.concat(visibleClients);
     }
-    this.results = [...clients];
+    this.results = [...visibleClients];
 
     // Recorre todos los clientes y loggea si la moneda es distinta a la moneda local
 
@@ -291,9 +294,8 @@ export class ClientLogicService {
       await this.oderByDueDateAndSaldo(this.clients);
     }
 
-    return Promise.resolve(clients.length < this.clientesServices.MAX_ITEMS_PER_PAGE);
+    return Promise.resolve(pageExhausted);
   }
-
 
   async oderByDueDateAndSaldo(clientes: Client[]) {
     clientes.sort((a, b) => {

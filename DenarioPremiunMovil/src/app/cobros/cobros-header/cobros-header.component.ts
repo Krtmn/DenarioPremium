@@ -9,6 +9,10 @@ import { CollectionService } from 'src/app/services/collection/collection-logic.
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW } from 'src/app/utils/appConstants';
+import {
+  canCreateCollectionForClient,
+  MSG_CLIENT_SUSPENDED_COLLECTION,
+} from 'src/app/utils/client-suspension.policy';
 
 
 @Component({
@@ -294,7 +298,11 @@ export class CobrosHeaderComponent implements OnInit {
   }
 
   sendOrSave(sendOrSave: boolean) {
-   
+    if (!canCreateCollectionForClient(this.collectService.client)) {
+      this.messageService.transaccionMsjModalNB(MSG_CLIENT_SUSPENDED_COLLECTION);
+      return;
+    }
+
     if (this.collectService.collection.coType == "0" && sendOrSave) {
       //ES UN COBRO, SE DEBE BUSCAR EN TODOS LOS DETAILS SI HAY RETENCIONES, SI HAY RETENCIONES HAY QUE BUSCAR
       // SI HAY ADJUNTOS, SI NO HAY, SE DEBE ENVIAR MSJ DE ALERTA Y

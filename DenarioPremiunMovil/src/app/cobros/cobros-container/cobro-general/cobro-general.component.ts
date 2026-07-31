@@ -35,6 +35,10 @@ import {
   TEXT_COMMENT_MIN_LENGTH,
 } from 'src/app/utils/text-comment-field.constants';
 import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util';
+import {
+  canCreateCollectionForClient,
+  MSG_CLIENT_SUSPENDED_COLLECTION,
+} from 'src/app/utils/client-suspension.policy';
 
 
 @Component({
@@ -906,6 +910,11 @@ export class CobrosGeneralComponent implements OnInit {
     if (client == undefined) {
       console.log("client vacio");
       this.collectService.nameClient = "";
+      return;
+    }
+
+    if (!canCreateCollectionForClient(client)) {
+      this.messageService.transaccionMsjModalNB(MSG_CLIENT_SUSPENDED_COLLECTION);
       return;
     }
 

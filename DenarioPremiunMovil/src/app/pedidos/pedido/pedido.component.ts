@@ -47,6 +47,10 @@ import { ImageServicesService } from 'src/app/services/imageServices/image-servi
 import { Share } from '@capacitor/share';
 import { formatClientForTab } from 'src/app/utils/client-display.util';
 import {
+  canCreateOrderForClient,
+  MSG_CLIENT_SUSPENDED_ORDER,
+} from 'src/app/utils/client-suspension.policy';
+import {
   TEXT_COMMENT_MAX_LENGTH,
   TEXT_COMMENT_MIN_LENGTH,
 } from 'src/app/utils/text-comment-field.constants';
@@ -586,6 +590,10 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
       this.message.transaccionMsjModalNB(
         this.orderServ.getTag('DENARIO_CAMPO_OBLIGATORIO') || 'Campo obligatorio'
       );
+      return;
+    }
+    if (!canCreateOrderForClient(this.orderServ.cliente)) {
+      this.message.transaccionMsjModalNB(MSG_CLIENT_SUSPENDED_ORDER);
       return;
     }
     if (this.orderServ.cliente.idClient != null && this.orderServ.carrito.length > 0) {
@@ -1411,6 +1419,11 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
     preserveOrderType: boolean = false,
   ) {
     if (cliente) {
+
+      if (!canCreateOrderForClient(cliente)) {
+        this.message.transaccionMsjModalNB(MSG_CLIENT_SUSPENDED_ORDER);
+        return;
+      }
 
       if (!skipDebtValidation && !this.orderServ.openOrder
         && Number((cliente.saldo1 ?? 0) + (cliente.saldo2 ?? 0)) > 0
