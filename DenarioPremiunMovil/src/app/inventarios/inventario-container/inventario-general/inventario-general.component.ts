@@ -20,6 +20,11 @@ import { ClienteSelectorService } from 'src/app/cliente-selector/cliente-selecto
 import { ClientesDatabaseServicesService } from 'src/app/services/clientes/clientes-database-services.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { formatClientForTab } from 'src/app/utils/client-display.util';
+import {
+  TEXT_COMMENT_MAX_LENGTH,
+  TEXT_COMMENT_MIN_LENGTH,
+} from 'src/app/utils/text-comment-field.constants';
+import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util';
 
 
 
@@ -30,6 +35,9 @@ import { formatClientForTab } from 'src/app/utils/client-display.util';
   standalone: false
 })
 export class InventarioGeneralComponent implements OnInit {
+
+  readonly textCommentMaxLength = TEXT_COMMENT_MAX_LENGTH;
+  readonly textCommentMinLength = TEXT_COMMENT_MIN_LENGTH;
 
   @ViewChild(ClienteSelectorComponent)
   selectorCliente!: ClienteSelectorComponent;
@@ -418,7 +426,10 @@ export class InventarioGeneralComponent implements OnInit {
   }
 
   setTXComment() {
-    const clean = this.cleanString(this.txComment);
+    const clean = applyTextCommentMaxLength(
+      this.cleanString(this.txComment),
+      this.textCommentMaxLength,
+    );
     if (this.txComment !== clean) {
       this.txComment = clean;
       this.inventariosLogicService.newClientStock.txComment = clean;

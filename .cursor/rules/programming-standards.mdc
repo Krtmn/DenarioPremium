@@ -3,38 +3,74 @@ description: Estandares globales de programacion para trabajo asistido por IA
 alwaysApply: true
 ---
 
-# Estandares Globales de Programacion
+# Estandares Globales de Programacion + Contexto del Proyecto
 
-## Alcance
-- Aplica a todo codigo generado o editado por la IA.
-- Stack objetivo: Angular 19, Ionic 8, TypeScript 5.8.
+Guia operativa del agente (flujos, offline/sync, git, que evitar): ver `AGENTS.md` en la raiz del repo.
+Bugs mapeados: `BUGS.md`. Checklist corta: `.cursor/rules/bug-prevention.mdc`.
+No duplicar aqui reglas de proceso ni post-mortems; este archivo fija estandares de codigo.
 
-## Diseno de Funciones
-- Mantener una sola responsabilidad por funcion.
-- Usar nombres claros: `verbo + contextoDeDominio` (ejemplo: `buildCollectionPayload`).
-- Tipar siempre parametros y retorno en TypeScript.
-- Preferir funciones puras; si hay efectos secundarios, aislarlos y hacerlos explicitos.
-- Reutilizar servicios/utilidades existentes antes de crear nuevos helpers.
+## Stack
+Angular 19.2 | Ionic 8.6 | Capacitor 6.2 | TypeScript 5.8 | RxJS 7.8 | SCSS
 
-## Largo y Complejidad de Funciones
-- Largo objetivo: 20-40 lineas por funcion.
-- Maximo recomendado: 60 lineas; si se excede, extraer helpers privados.
-- Preferir una anidacion maxima de 2-3 niveles.
-- Usar guard clauses para reducir bloques `if/else` profundos.
-- Si la complejidad crece, dividir la logica en pasos pequenos y testeables.
-
-## Reglas de Compatibilidad de Sintaxis
-- Usar solo sintaxis compatible con TypeScript 5.8 y Angular 19.
-- Preferir `const` por defecto y `let` cuando haya reasignacion.
-- Usar caracteristicas modernas de TS cuando mejoren legibilidad: optional chaining, nullish coalescing, template literals, union types y `as const` cuando aplique.
-- Evitar patrones legacy o debiles: `var`, `any` sin tipado cuando sea evitable, callback pyramids y APIs deprecadas de Angular.
+## Arquitectura del Proyecto
+- **NgModule clasico** (NO standalone components) - todos con `standalone: false`
+- Servicios con `providedIn: 'root'`
+- DI: usar `inject()` function (Angular 14+ style)
+- Routing: `AppRoutingModule`, `PreloadAllModules`, lazy loading home module
+- Offline-first: SQLite local + sincronización remota
 
 ## Reglas de Ejecucion para IA
 - Proponer por defecto cambios pequenos y verificables.
 - Mantener ediciones localizadas y evitar refactors amplios salvo pedido explicito.
 - Para funciones complejas, incluir un mini plan de extraccion en la descripcion del cambio.
 - Preservar la arquitectura y convenciones de nombres del modulo editado.
+- **LEER el archivo completo antes de editarlo** (no asumir estructura).
+- **Buscar patrones existentes** en el proyecto antes de crear algo nuevo.
+- **NUNCA borrar codigo** sin entender que lo usa otra parte.
+- **NUNCA asumir standalone components** - verificar si el modulo usa NgModule.
+
+## Reglas Especificas del Proyecto
+
+### Database (SQLite)
+- BD local: `@awesome-cordova-plugins/sqlite` + `cordova-sqlite-storage`
+- Queries SQL en servicios bajo `services/synchronization/` y servicios de dominio
+- **NUNCA modificar queries SQL sin verificar modelos en `modelos/tables/`**
+- No asumir datos disponibles - verificar sincronización offline
+
+### HTTP & Config
+- **NUNCA hardcodear URLs, tokens o credenciales** - leer de `window.__env`
+- Runtime env via `claves.env` → `window.__env` (cargado en `main.ts`), NO `environment.ts`
+- HTTP hibrido: preferir `CapacitorHttp` (nativo) sobre `HttpClient` en producción
+- **NUNCA versionar `claves.env`**
+
+### TypeScript
+- `strict: true` - tipar siempre, evitar `any`
+- `const` por defecto, `let` solo con reasignacion
+- Optional chaining `?.`, nullish coalescing `??`, template literals
+- `async/await` sobre `.then()`
+- 2 espacios indentacion, single quotes
+
+### Naming
+- Componentes: `kebab-case.component.ts` → selector `app-*`
+- Servicios: `kebab-case.service.ts`
+- Modelos: `camelCase.ts`, con factory estatico `fromJson(obj)`
+- Metodos: `verbo + contextoDeDominio` (ej: `buildCollectionPayload`)
+- Texto UI en espanol
+
+### Testing
+- Jasmine + Karma (`npm test`)
+- `waitForAsync` de `@angular/core/testing`
+- 100+ spec files existentes - seguir mismo patron
+
+### Linting
+- `npm run lint` (ESLint 8 + angular-eslint 19 + typescript-eslint 8)
+
+### Formatos
+- Componentes SCSS en `src/theme/variables.scss`
+- PDF: `jspdf` + `pdfmake`
+- Excel: `xlsx`
+- Mapas: `@angular/google-maps`
 
 ## Ejemplo Rapido
-- Malo: una funcion de 120 lineas mezclando SQL, mapeo y alertas de UI.
+- Malo: funcion de 120 lineas mezclando SQL, mapeo y alertas de UI.
 - Bueno: dividir en `fetchRows`, `mapRowsToModel` y `notifyResult`.

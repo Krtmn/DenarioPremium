@@ -89,8 +89,10 @@
       <div id="inputComentario">
         <ion-input disabled="{{ this.returnLogic.returnSent }}" label="{{this.generalTags.get('DEV_COMENTARIO_DEV')}}:"
           label-placement="floating" fill="outline" [(ngModel)]="returnLogic.newReturn.txComment" value="" #txCommentInput
-          id="comentario" color="primary" maxlength="500" (ionInput)="onTxCommentChange()"
-          ></ion-input>
+          id="comentario" color="primary" [maxlength]="textCommentMaxLength" (ionInput)="onTxCommentChange()"
+          (ionChange)="onTxCommentChange()"></ion-input>
+        <app-text-comment-counter [value]="returnLogic.newReturn.txComment" [minLength]="textCommentMinLength"
+          [maxLength]="textCommentMaxLength"></app-text-comment-counter>
       </div>
     </ion-col>
     <ion-col size="12" size-xs="12" size-sm="12" size-md="12">

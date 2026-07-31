@@ -25,6 +25,9 @@ export class ClienteSelectorService {
 
   public currencyModule: CurrencyModules = {} as CurrencyModules;
 
+  /** ped → order, cob → collection, resto → default (oculta suspendido al día). */
+  public selectionCoModule: string = '';
+
   ClientChanged = new Subject<Client>;
   idEnterprise: number = 0;
 

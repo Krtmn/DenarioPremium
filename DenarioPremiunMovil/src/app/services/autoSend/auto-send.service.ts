@@ -612,6 +612,12 @@ export class AutoSendService implements OnInit {
         return false;
       }
 
+      if (result && (result.errorCode === '118' || result.errorCode === '119')) {
+        this.messageAlert = new MessageAlert('Denario Premium', result.errorMessage);
+        this.messageService.alertModal(this.messageAlert);
+        return false;
+      }
+
       if (this.isBadRequestResponse(result)) {
         await this.handleBadRequestFailedTransaction(coTransaction, type, request, result);
         return true;

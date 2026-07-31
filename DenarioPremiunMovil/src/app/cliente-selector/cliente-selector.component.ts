@@ -11,6 +11,10 @@ import { MessageService } from '../services/messageService/message.service';
 import { ClientLogicService } from '../services/clientes/client-logic.service';
 import { ModalController } from '@ionic/angular';
 import { GlobalConfigService } from '../services/globalConfig/global-config.service';
+import {
+  filterClientsBySelectionMode,
+  resolveClientSelectionMode,
+} from '../utils/client-suspension.policy';
 
 
 
@@ -125,6 +129,7 @@ export class ClienteSelectorComponent implements OnInit {
 
     this.service.checkClient = checkClient;
     this.service.clienteAnterior = cliente;
+    this.service.selectionCoModule = coModule || '';
     this.service.currencyModule = this.currencyService.getCurrencyModule(coModule);
     if (this.service.currencyModule) {
       this.loadCurrencyModule();
@@ -217,7 +222,8 @@ export class ClienteSelectorComponent implements OnInit {
       this.service.clientes = [] as Client[];
     }
 
-    const clientsToShow = result;
+    const mode = resolveClientSelectionMode(this.service.selectionCoModule);
+    const clientsToShow = filterClientsBySelectionMode(result, mode);
 
     if (this.multimoneda) {
       this.fixClientListSaldos(clientsToShow);

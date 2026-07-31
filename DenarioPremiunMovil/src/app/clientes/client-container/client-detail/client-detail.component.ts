@@ -188,8 +188,15 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    this.saldoLocal = saldo1 + this.currencyService.toLocalCurrency(saldo2);
-    this.saldoFuerte = this.currencyService.toHardCurrency(this.saldoLocal);
+    const conversionDocument = this.globalConfig.get('conversionDocument') === 'true';
+    const totals = this.clientLogic.resolveClientBalanceTotals(
+      saldo1,
+      saldo2,
+      this.client?.coCurrency ?? '',
+      conversionDocument,
+    );
+    this.saldoLocal = totals.saldoLocal;
+    this.saldoFuerte = totals.saldoFuerte;
   }
 
   private getClientSaldo1(): number {

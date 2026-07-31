@@ -34,6 +34,11 @@ import { SelectedClient } from 'src/app/modelos/selectedClient';
 import { ClientLocationService } from 'src/app/services/clientes/locationClient/client-location.service';
 import { ClientesDatabaseServicesService } from 'src/app/services/clientes/clientes-database-services.service';
 import { formatClientForTab } from 'src/app/utils/client-display.util';
+import {
+  TEXT_COMMENT_MAX_LENGTH,
+  TEXT_COMMENT_MIN_LENGTH,
+} from 'src/app/utils/text-comment-field.constants';
+import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util';
 
 
 @Component({
@@ -43,6 +48,9 @@ import { formatClientForTab } from 'src/app/utils/client-display.util';
   standalone: false
 })
 export class VisitaComponent implements OnInit {
+
+  readonly textCommentMaxLength = TEXT_COMMENT_MAX_LENGTH;
+  readonly textCommentMinLength = TEXT_COMMENT_MIN_LENGTH;
   //injects
   adjuntoService = inject(AdjuntoService);
   dateServ = inject(DateServiceService);
@@ -1060,7 +1068,10 @@ export class VisitaComponent implements OnInit {
   }
 
   onCommentInput() {
-    const cleaned = this.cleanString(this.comentario);
+    const cleaned = applyTextCommentMaxLength(
+      this.cleanString(this.comentario),
+      this.textCommentMaxLength,
+    );
     if (this.comentario !== cleaned) {
       this.comentario = cleaned;
       if (this.comentarioInput && this.comentarioInput.value !== cleaned) {
@@ -1068,6 +1079,17 @@ export class VisitaComponent implements OnInit {
       }
     }
   }
+
+  onMotivoReagendoInput() {
+    const cleaned = applyTextCommentMaxLength(
+      this.motivoReagendo ?? '',
+      this.textCommentMaxLength,
+    );
+    if (this.motivoReagendo !== cleaned) {
+      this.motivoReagendo = cleaned;
+    }
+  }
+
   cleanString(str: string): string {
     // Elimina ;
     str = str.replace(/;/g, '');

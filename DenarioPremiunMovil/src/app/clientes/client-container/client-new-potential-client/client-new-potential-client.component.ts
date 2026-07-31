@@ -20,6 +20,11 @@ import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { Subscription } from 'rxjs';
 import { GeolocationService } from 'src/app/services/geolocation/geolocation.service';
+import {
+  TEXT_COMMENT_MAX_LENGTH,
+  TEXT_COMMENT_MIN_LENGTH,
+} from 'src/app/utils/text-comment-field.constants';
+import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util';
 
 
 @Component({
@@ -30,6 +35,9 @@ import { GeolocationService } from 'src/app/services/geolocation/geolocation.ser
 })
 
 export class NewPotentialClientComponent implements OnInit {
+
+  readonly textCommentMaxLength = TEXT_COMMENT_MAX_LENGTH;
+  readonly textCommentMinLength = TEXT_COMMENT_MIN_LENGTH;
 
   public messageService = inject(MessageService);
   public synchronizationServices = inject(SynchronizationDBService);
@@ -368,7 +376,10 @@ export class NewPotentialClientComponent implements OnInit {
   }
 
   onTxClientChange() {
-    const clean = this.cleanString(this.newPotentialClient.get('txClient')?.value || '');
+    const clean = applyTextCommentMaxLength(
+      this.cleanString(this.newPotentialClient.get('txClient')?.value || ''),
+      this.textCommentMaxLength,
+    );
     if (this.clientLogic.potentialClient.txClient !== clean) {
       this.clientLogic.potentialClient.txClient = clean;
     }

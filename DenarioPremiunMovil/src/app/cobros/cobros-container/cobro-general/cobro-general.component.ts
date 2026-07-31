@@ -30,6 +30,15 @@ import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 import { BancoReceptor } from 'src/app/modelos/bancoReceptor';
 import { formatClientForTab } from 'src/app/utils/client-display.util';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
+import {
+  TEXT_COMMENT_MAX_LENGTH,
+  TEXT_COMMENT_MIN_LENGTH,
+} from 'src/app/utils/text-comment-field.constants';
+import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util';
+import {
+  canCreateCollectionForClient,
+  MSG_CLIENT_SUSPENDED_COLLECTION,
+} from 'src/app/utils/client-suspension.policy';
 
 
 @Component({
@@ -39,6 +48,9 @@ import { SynchronizationDBService } from 'src/app/services/synchronization/synch
   standalone: false
 })
 export class CobrosGeneralComponent implements OnInit {
+
+  readonly textCommentMaxLength = TEXT_COMMENT_MAX_LENGTH;
+  readonly textCommentMinLength = TEXT_COMMENT_MIN_LENGTH;
 
   @ViewChild('input') input!: IonInput;
   @ViewChild(ClienteSelectorComponent) selectorCliente!: ClienteSelectorComponent;
@@ -168,7 +180,7 @@ export class CobrosGeneralComponent implements OnInit {
     }
     this.collectService.restoreCollectionIgtfFields();
 
-    this.loadPayments();
+    void this.loadPayments();
 
     this.clientService.getClientById(this.collectService.collection.idClient).then(client => {
       this.collectService.client = client;
@@ -434,8 +446,16 @@ export class CobrosGeneralComponent implements OnInit {
     });
   }
 
-  loadPayments() {
-    const payments = this.collectService.collection.collectionPayments;
+  async loadPayments(): Promise<void> {
+    // Idempotente: evita duplicar métodos de pago si loadData se ejecuta más de una vez.
+    this.collectService.pagoEfectivo = [] as PagoEfectivo[];
+    this.collectService.pagoCheque = [] as PagoCheque[];
+    this.collectService.pagoDeposito = [] as PagoDeposito[];
+    this.collectService.pagoTransferencia = [] as PagoTransferencia[];
+    this.collectService.pagoMovil = [] as PagoMovil[];
+    this.collectService.pagoOtros = [] as PagoOtros[];
+
+    const payments = this.collectService.collection.collectionPayments ?? [];
     const bankAccounts = this.collectService.listBankAccounts;
     for (let i = 0; i < payments.length; i++) {
       const payment = payments[i];
@@ -456,30 +476,9 @@ export class CobrosGeneralComponent implements OnInit {
           break;
         }
         case 'tr': {
-          const newPagoTransferencia: PagoTransferencia = {
-            idBanco: payment.idBank,
-            nombreBanco: payment.naBank,
-            numeroTransferencia: payment.nuPaymentDoc,
-            numeroCuenta: payment.nuClientBankAccount,
-            numeroCuentaCliente: payment.newNuClientBankAccount,
-            monto: payment.nuAmountPartial,
-            montoConversion: payment.nuAmountPartialConversion,
-            fecha: payment.daValue!,
-            nuevaCuenta: payment.newNuClientBankAccount,
-            posCollectionPayment: i,
-            type: "tr",
-            anticipoPrepaid: payment.isAnticipoPrepaid,
-            disabled: false,
-            bancoReceptor: this.getBancoReceptor(payment.nuClientBankAccount),
-            showDateModal: false,
-            showNuevaCuenta: false,
-          };
-          const cuenta = bankAccounts.find(b => b.idBank == newPagoTransferencia.idBanco);
-          if (cuenta) {
-            this.collectService.bankAccountSelected[newPagoTransferencia.posCollectionPayment] = cuenta;
-            newPagoTransferencia.disabled = false;
-          }
-          this.collectService.pagoTransferencia.push(newPagoTransferencia);
+          this.collectService.pagoTransferencia.push(
+            this.buildHydratedTransferenciaPayment(payment, i, bankAccounts)
+          );
           break;
         }
         case 'pm': {
@@ -608,9 +607,17 @@ export class CobrosGeneralComponent implements OnInit {
       }
     }
     this.collectService.restoreCollectionIgtfFields();
-    this.collectService.calcularMontos("", 0);
+    await this.refreshSendStateAfterPaymentsHydrated();
+  }
+
+  /**
+   * Tras hidratar pagos de un cobro guardado/reabierto, recalcula totales y
+   * revalida Enviar de forma determinista (evita carrera al reabrir borrador).
+   */
+  private async refreshSendStateAfterPaymentsHydrated(): Promise<void> {
+    await this.collectService.calcularMontos('', 0);
     this.collectService.checkTiposPago();
-    this.collectService.validateToSend();
+    await this.collectService.validateToSend();
   }
 
   initCollection() {
@@ -826,7 +833,7 @@ export class CobrosGeneralComponent implements OnInit {
         this.collectService.bankAccountSelected = [] as BankAccount[];
         this.collectService.getAllBankAccountsByEnterprise(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise, this.collectService.collection.coCurrency).then(result => {
           this.collectService.listBankAccounts = result;
-          this.loadPayments();
+          void this.loadPayments();
 
           this.collectService.getAllBanks(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise);
 
@@ -903,6 +910,11 @@ export class CobrosGeneralComponent implements OnInit {
     if (client == undefined) {
       console.log("client vacio");
       this.collectService.nameClient = "";
+      return;
+    }
+
+    if (!canCreateCollectionForClient(client)) {
+      this.messageService.transaccionMsjModalNB(MSG_CLIENT_SUSPENDED_COLLECTION);
       return;
     }
 
@@ -1077,7 +1089,7 @@ export class CobrosGeneralComponent implements OnInit {
               this.collectService.documentsSaleComponent = false;
 
             this.collectService.findIsMissingRetention(this.synchronizationServices.getDatabase(), this.collectService.collection.idClient);
-            this.loadPayments();
+            void this.loadPayments();
           })
 
       })
@@ -1131,7 +1143,7 @@ export class CobrosGeneralComponent implements OnInit {
 
     this.collectService.getAllBankAccountsByEnterprise(this.synchronizationServices.getDatabase(), this.collectService.collection.idEnterprise, this.collectService.collection.coCurrency).then(result => {
       this.collectService.listBankAccounts = result;
-      this.loadPayments();
+      void this.loadPayments();
 
     })
   }
@@ -1197,11 +1209,27 @@ export class CobrosGeneralComponent implements OnInit {
     } else
       this.collectService.validComment = true;
 
-    this.collectService.collection.txComment = this.collectService.cleanString(this.collectService.collection.txComment.trim());
+    this.collectService.collection.txComment = applyTextCommentMaxLength(
+      this.collectService.cleanString(this.collectService.collection.txComment.trim()),
+      this.textCommentMaxLength,
+    );
 
     this.collectService.unlockTabs().then((resp) => {
       this.collectService.onCollectionValid(resp);
     })
+  }
+
+  onTxCommentInput() {
+    const clean = applyTextCommentMaxLength(
+      this.collectService.cleanString(this.collectService.collection.txComment),
+      this.textCommentMaxLength,
+    );
+    if (this.collectService.collection.txComment !== clean) {
+      this.collectService.collection.txComment = clean;
+      if (this.input && this.input.value !== clean) {
+        this.input.value = clean;
+      }
+    }
   }
 
   setResult(ev: any) {
@@ -1311,8 +1339,8 @@ export class CobrosGeneralComponent implements OnInit {
     }
   }
 
-  getBancoReceptor(nuClientBankAccount: string): BancoReceptor {
-    const bancoReceptor = this.collectService.listBankAccounts.find(b => b.nuAccount == nuClientBankAccount);
+  getBancoReceptor(nuBankAccount: string): BancoReceptor {
+    const bancoReceptor = this.collectService.listBankAccounts.find(b => b.nuAccount == nuBankAccount);
     if (bancoReceptor) {
       return {
         coAccount: bancoReceptor.coAccount,
@@ -1330,6 +1358,94 @@ export class CobrosGeneralComponent implements OnInit {
     } else {
       return new BancoReceptor();
     }
+  }
+
+  /**
+   * Rehidrata Transferencia desde SQLite con el mismo contrato que guarda selectBankAccount/selectListBankAccount.
+   * Receptor: nu_bank_account / id_bank / na_bank. Emisor: nu_client_bank_account.
+   */
+  private buildHydratedTransferenciaPayment(
+    payment: CollectionPayment,
+    paymentIndex: number,
+    bankAccounts: BankAccount[] | null | undefined,
+  ): PagoTransferencia {
+    const receptorAccount = String(payment.nuBankAccount ?? '').trim();
+    const clientAccount = String(payment.nuClientBankAccount ?? '').trim();
+    const showNuevaCuenta = this.isPersistedTransferNuevaCuenta(payment);
+    const nuevaCuenta = showNuevaCuenta
+      ? String(payment.newNuClientBankAccount ?? '').trim()
+      : '';
+
+    const newPagoTransferencia: PagoTransferencia = {
+      idBanco: payment.idBank,
+      nombreBanco: payment.naBank,
+      numeroTransferencia: payment.nuPaymentDoc,
+      numeroCuenta: receptorAccount,
+      numeroCuentaCliente: showNuevaCuenta ? 'Nueva Cuenta' : clientAccount,
+      monto: payment.nuAmountPartial,
+      montoConversion: payment.nuAmountPartialConversion,
+      fecha: payment.daValue!,
+      nuevaCuenta,
+      posCollectionPayment: paymentIndex,
+      type: 'tr',
+      anticipoPrepaid: payment.isAnticipoPrepaid,
+      disabled: false,
+      bancoReceptor: this.getBancoReceptor(receptorAccount),
+      showDateModal: false,
+      showNuevaCuenta,
+    };
+
+    this.restoreTransferenciaBankPickers(newPagoTransferencia, payment, bankAccounts);
+    return newPagoTransferencia;
+  }
+
+  private isPersistedTransferNuevaCuenta(payment: CollectionPayment): boolean {
+    if (!this.collectService.clientBankAccount) {
+      return false;
+    }
+    const coClient = String(payment.coClientBankAccount ?? '').trim();
+    const nuClient = String(payment.nuClientBankAccount ?? '').trim();
+    return coClient === 'Nueva Cuenta' || nuClient === 'Nueva Cuenta';
+  }
+
+  private restoreTransferenciaBankPickers(
+    pago: PagoTransferencia,
+    payment: CollectionPayment,
+    bankAccounts: BankAccount[] | null | undefined,
+  ): void {
+    const accounts = Array.isArray(bankAccounts) ? bankAccounts : [];
+    const receptor = accounts.find(b =>
+      Number(b.idBank) === Number(payment.idBank)
+      && (!pago.numeroCuenta || b.nuAccount === pago.numeroCuenta)
+    ) ?? accounts.find(b => Number(b.idBank) === Number(payment.idBank));
+
+    if (receptor) {
+      if (!Array.isArray(this.collectService.bankAccountSelected)) {
+        this.collectService.bankAccountSelected = [] as BankAccount[];
+      }
+      this.collectService.bankAccountSelected[pago.posCollectionPayment] = receptor;
+      pago.disabled = false;
+    }
+
+    if (!this.collectService.clientBankAccount || pago.showNuevaCuenta) {
+      return;
+    }
+
+    const clientAccounts = this.collectService.clientBankAccounts ?? [];
+    const clientAccount = clientAccounts.find(account =>
+      (pago.numeroCuentaCliente && account.nuAccount === pago.numeroCuentaCliente)
+      || (payment.coClientBankAccount
+        && (account.coClientBankAccount === payment.coClientBankAccount
+          || account.coBank === payment.coClientBankAccount))
+    );
+    if (!clientAccount) {
+      return;
+    }
+
+    if (!Array.isArray(this.collectService.clientBankAccountSelected)) {
+      this.collectService.clientBankAccountSelected = [] as BankAccount[];
+    }
+    this.collectService.clientBankAccountSelected[pago.posCollectionPayment] = clientAccount as unknown as BankAccount;
   }
 
 
