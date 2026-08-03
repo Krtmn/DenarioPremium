@@ -230,7 +230,7 @@ defectos:
     capa: movil
     modulo: visitas
     detectado_en: "tag 20"
-    estado: reportado          # ✅ QA lo reportó a desarrollo el 2026-07-30 — esperando respuesta
+    estado: arreglado_verificado          # ✅ QA lo reportó a desarrollo el 2026-07-30 — esperando respuesta
     severidad: presentacion
     patron: 'fecha.*visita.*\+?4 ?h|UTC.*local|VIS-FECHA-MAS-4H'
     detalle: >-
@@ -241,6 +241,10 @@ defectos:
       (único timestamp de la página; ningún `15:51`) y `Fecha Enviada` = `11:53:56` = el `da_real` del móvil.
       ⇒ El dato está bien en origen, en el servidor y en la web. **El +4 h vive únicamente en el formateo de
       la app.** No hay que tocar el dato ni migrar nada.
+    verificado_por_qa: >-
+      ✅ **ARREGLADO — QA lo validó a mano el 03/08/2026.** El desfase de +4 h ya no se produce.
+      Coherente con el diagnóstico: el dato estaba bien en origen, en el servidor y en la web; el arreglo era
+      de una sola capa (el formateo de la app).
     accion: "Reportado. Esperar respuesta de desarrollo."
 
   - id: VND-KPIS-SIN-SEGMENTAR
