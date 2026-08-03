@@ -201,7 +201,29 @@ defectos:
       Triangulado contra documentos: un solo documento de CB10 arrastra 22,24 USD, así que el 0,62 USD de la
       lista es imposible. **El DETALLE está correcto; solo falla el listado.**
       La web NO lo reproduce (muestra un único `Balance = 2.096,23`) ⇒ es de la app.
-    accion: "Reportado. Esperar respuesta de desarrollo."
+    verificado_20260803: >-
+      🔴 **EL FIX NO CORRIGIÓ EL DEFECTO Y EMPEORÓ LA SITUACIÓN — TARJETA DEVUELTA (03/08/2026).**
+      No corrigieron el listado: **alinearon el DETALLE al listado roto**. Hoy las dos pantallas coinciden,
+      pero **coinciden en el valor equivocado** ⇒ **ya no queda ninguna pantalla donde consultar el saldo real**
+      (antes el detalle era confiable).
+      Cliente AS04: listado idéntico al 30/07 (`USD 2,84 / BS 2.096,23`) y el detalle pasó de
+      `USD 2.096,23 / BS 1.546.766,19` (correcto) a `BS 2.096,23 / USD 2,84` (incorrecto).
+      Verificado en **4 clientes por UI** y **11/11 contra la BD local**. Tasa sin cambios (737,88) y saldos sin
+      movimientos desde el 30/07 ⇒ la comparación es limpia.
+    tres_evidencias_para_el_reporte: >-
+      QA reunió **tres fuentes independientes que dan 2.096,23** (el saldo real en USD) frente a **una sola**
+      que dice otra cosa (la línea de "Saldo"):
+      1. **Suma de los documentos** de la pestaña Documentos de Venta del propio detalle → 2.096,23
+      2. **`Crédito USD − Crédito Disponible USD`** en la misma pantalla → 2.096,23
+         ⇒ el motor de crédito SÍ usa el saldo correcto mientras la línea de "Saldo" muestra otro.
+      3. **BD nube** (`SUM(document_sale.nu_balance)` del cliente AS04, **empresa 00002**) → **2.096,23**
+         ⚠ Filtrar por empresa es imprescindible: sumando las dos empresas del grupo da 4.956,99 y no es el
+         número comparable (la pantalla verificada estaba en 00002).
+    leccion_de_criterio: >-
+      🔑 **El criterio de aceptación "listado y detalle coinciden" es INSUFICIENTE** — es exactamente lo que
+      dejó pasar este fix. Hay que anclar contra **la tasa y la BD**, nunca contra la otra pantalla.
+    accion: >-
+      **TARJETA DEVUELTA el 03/08/2026** con las 3 evidencias y capturas. Re-validar cuando vuelva.
 
   - id: VIS-FECHA-MAS-4H
     titulo: "La fecha de la visita se muestra +4 h al reabrirla en la app"
@@ -315,7 +337,7 @@ defectos:
     capa: web
     modulo: transversal        # visitas · clientes potenciales
     detectado_en: "tag 20"
-    estado: reportado          # ✅ QA lo reportó el 2026-07-30
+    estado: arreglado_verificado          # ✅ QA lo reportó el 2026-07-30
     severidad: alta            # el usuario cree estar viendo sus datos y ve los de otra empresa
     patron: 'limpiar.*empresa|cambia.*empresa|HC TRADING|WEB-LIMPIAR-CAMBIA-EMPRESA'
     detalle: >-
@@ -334,6 +356,11 @@ defectos:
       1-4 y bloques 5-7) y **NO se reproduce allí**: el control se comporta correctamente.
       ⇒ El defecto está confirmado en **La Tortuga**. Si el equipo prueba en Isla Coche y no lo ve, **no
       significa que esté arreglado ni que el reporte sea falso** — hay que probarlo en La Tortuga.
+    verificado_20260803: >-
+      ✅ **ARREGLADO — verificado el 03/08/2026** en la regresión sobre La Tortuga (globalmp).
+      El entorno pasó del **tag 20 a main**, donde el equipo tiene los fixes; por eso el comportamiento cambió
+      sin que hubiera artefactos nuevos en el despliegue (la huella de Last-Modified no detecta un repunte de rama).
+      **Sin regresiones en el grupo de control.**
     accion: "Reportado. Re-validar cuando salga el fix."
 
   - id: WEB-LIMPIAR-NO-RESETEA-SELECTS
@@ -341,7 +368,7 @@ defectos:
     capa: web
     modulo: transversal        # devoluciones · inventarios · clientes potenciales
     detectado_en: "tag 20"
-    estado: reportado          # ✅ QA lo reportó el 2026-07-30
+    estado: arreglado_verificado          # ✅ QA lo reportó el 2026-07-30
     patron: 'limpiar.*no restablece|filtro.*pegado|tiene adjunto|WEB-LIMPIAR-NO-RESETEA'
     detalle: >-
       En devoluciones, inventarios y clientes potenciales los `p:selectOneMenu` de estado quedan puestos tras
@@ -370,6 +397,11 @@ defectos:
       1-4 y bloques 5-7) y **NO se reproduce allí**: el control se comporta correctamente.
       ⇒ El defecto está confirmado en **La Tortuga**. Si el equipo prueba en Isla Coche y no lo ve, **no
       significa que esté arreglado ni que el reporte sea falso** — hay que probarlo en La Tortuga.
+    verificado_20260803: >-
+      ✅ **ARREGLADO — verificado el 03/08/2026** en la regresión sobre La Tortuga (globalmp).
+      El entorno pasó del **tag 20 a main**, donde el equipo tiene los fixes; por eso el comportamiento cambió
+      sin que hubiera artefactos nuevos en el despliegue (la huella de Last-Modified no detecta un repunte de rama).
+      **Sin regresiones en el grupo de control.**
     accion: "Reportado. Re-validar cuando salga el fix, en AMBAS playas."
 
   - id: COB-WEB-DCTO-CONV-ETIQUETA
@@ -397,7 +429,7 @@ defectos:
     capa: web
     modulo: transversal        # devoluciones · inventarios (# Ref) · clientes potenciales
     detectado_en: "tag 20"
-    estado: reportado          # ✅ QA lo reportó el 2026-07-30
+    estado: arreglado_verificado          # ✅ QA lo reportó el 2026-07-30
     patron: 'ordenamiento|aria-sort|no reordena|no ordena|WEB-ORDENAMIENTO'
     detalle: >-
       El indicador `aria-sort` cambia y el POST responde 200, pero **las filas quedan igual**.
@@ -428,6 +460,11 @@ defectos:
       1-4 y bloques 5-7) y **NO se reproduce allí**: el control se comporta correctamente.
       ⇒ El defecto está confirmado en **La Tortuga**. Si el equipo prueba en Isla Coche y no lo ve, **no
       significa que esté arreglado ni que el reporte sea falso** — hay que probarlo en La Tortuga.
+    verificado_20260803: >-
+      ✅ **ARREGLADO — verificado el 03/08/2026** en la regresión sobre La Tortuga (globalmp).
+      El entorno pasó del **tag 20 a main**, donde el equipo tiene los fixes; por eso el comportamiento cambió
+      sin que hubiera artefactos nuevos en el despliegue (la huella de Last-Modified no detecta un repunte de rama).
+      **Sin regresiones en el grupo de control.**
     accion: "Reportado. Re-validar cuando salga el fix, en AMBAS playas."
 
   - id: VIS-WEB-SIN-ICONO-ADJUNTO
@@ -589,6 +626,48 @@ defectos:
         `/pages/clientes` vale 0 $. **Es el mismo D-05 de el_valle/La Tortuga** ⇒ al descartarlo acá,
         **también queda cerrado aquel**, que seguía pendiente de verificación manual.
     accion: "No reportar. No re-levantar."
+
+  - id: VIS-WEB-LIMPIAR-COORDENADAS
+    titulo: "`Limpiar` no restablece el desplegable `Coordenadas` de visitas (ni el widget ni el bean)"
+    capa: web
+    modulo: visitas
+    detectado_en: "main (post-fix)"
+    estado: mapeado_sin_reportar   # hallado el 03/08/2026 en la regresión
+    severidad: funcional
+    patron: 'coordenadas|limpiar.*coordenadas|VIS-WEB-LIMPIAR-COORDENADAS'
+    detalle: >-
+      Pantalla `/pages/visitas`. Prueba aislada (con `Coordenadas` como ÚNICO filtro puesto), confirmada **2/2**:
+      · `Coordenadas = Fuera de Rango` (`value=4`) + `Buscar` → **50 filas**, todas con `Geo = "Fuera de Rango"`
+      · **`Limpiar`** → el control **sigue en "Fuera de Rango" / `value=4`** (ni el widget ni el bean)
+      · El listado tras `Limpiar` → **50 filas, todas "Fuera de Rango"** ⇒ **el filtro sigue aplicado en el servidor**
+      · Los **demás** controles de la misma pantalla SÍ se restablecen: `Estatus`→0, `Despachado`→0,
+        `Actividad`→"", Empresa→2, fechas→vacías.
+    no_es_regresion: >-
+      ⚠ **No es una regresión demostrable.** El reporte del 30/07 dice que en visitas «`Limpiar` SÍ resetea los
+      selects», pero solo deja constancia de haber probado `# Ref`, `Estatus`, `Actividad` y `Adjuntos`.
+      **`Coordenadas` y `Despachado` no figuran** ⇒ es un defecto **no cubierto entonces**, detectado ahora.
+    accion: >-
+      Mapeado. Sumar al lote de defectos web pendientes de reportar (el de la planificación semanal).
+
+  - id: CLT-CREDITO-MULTIPLICADO
+    titulo: "Las líneas de Crédito del detalle de cliente vienen multiplicadas por la tasa"
+    capa: movil
+    modulo: clientes
+    detectado_en: "main (post-fix)"
+    estado: sin_investigar         # hallado de paso el 03/08/2026; NO se profundizó
+    patron: 'cr[eé]dito.*multiplic|l[ií]mite.*737|2\.?951\.?520|CLT-CREDITO-MULTIPLICADO'
+    detalle: >-
+      `clients.nu_credit_limit` en la BD local trae valores **redondos** (AS04 = `4000`, CH01 = `1000`), pero la
+      UI muestra **`Crédito USD 2.951.520,00`** = `4000 × 737,88`, y el `Crédito BS` = `4000 × 737,88²`.
+      Un límite de crédito de casi 3 millones de USD para un abasto **no es plausible**.
+    relacion_posible: >-
+      Puede ser la **misma familia** que CLT-LISTA-SALDOS-CRUZADOS (etiquetas de moneda cruzadas + una
+      multiplicación/división de más). Conviene mirarlo cuando desarrollo tome esa tarjeta.
+      ⚠ **Ojo:** la resta `Crédito USD − Crédito Disponible USD` **SÍ da el saldo correcto** (2.096,23), o sea
+      que la diferencia entre las dos líneas es buena aunque los valores absolutos estén inflados.
+    accion: >-
+      **Sin investigar a fondo.** Verificar con QA si el límite real de AS04 es 4.000 (USD o BS) antes de
+      reportarlo — puede ser dato o puede ser conversión.
 
   - id: EST-CANALES-CONTADOR-VS-LISTADO
     titulo: "Canales de Distribución: el contador dice N y el botón `Consultar clientes` lista muchos menos"
