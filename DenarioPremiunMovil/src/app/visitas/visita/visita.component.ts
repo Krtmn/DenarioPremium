@@ -596,6 +596,40 @@ export class VisitaComponent implements OnInit {
     return formatClientForTab(this.nombreCliente, this.cliente?.coClient);
   }
 
+  get visitDateButtonLabel(): string {
+    const visit = this.visitServ.visit;
+
+    if (this.isVisitSent()) {
+      const daReal = (visit?.daReal ?? '').trim();
+      return this.dateServ.formatComplete(this.normalizeVisitDate(daReal));
+    }
+
+    if (this.isVisitStarted()) {
+      const daInitial = (this.fechaInitial || visit?.daInitial || '').trim();
+      return this.dateServ.formatComplete(this.normalizeVisitDate(daInitial));
+    }
+
+    const daVisit = (visit?.daVisit || this.fechaVisita || '').trim();
+    return this.dateServ.formatShort(daVisit);
+  }
+
+  private normalizeVisitDate(value: string): string {
+    return (value ?? '').replace('T', ' ');
+  }
+
+  private isVisitSent(): boolean {
+    const visit = this.visitServ.visit;
+    const daReal = (visit?.daReal ?? '').trim();
+    return daReal.length > 0
+      || visit?.stVisit === VISIT_STATUS_TO_SEND
+      || visit?.stVisit === VISIT_STATUS_VISITED;
+  }
+
+  private isVisitStarted(): boolean {
+    const daInitial = (this.fechaInitial || this.visitServ.visit?.daInitial || '').trim();
+    return daInitial.length > 0 && !(this.fromWeb && this.initialLock);
+  }
+
   resetEventSelect() {
     if (this.actividadSeleccionada) {
       if (this.rolTransportista)

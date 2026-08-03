@@ -111,7 +111,7 @@
                 {{ rolTransportista ? getTag('VIS_FECHA_VISITA_DESPACHO') : getTag('VIS_FECHA_VISITA') }}
               </b>
               <ion-button (click)="setShowDateModal(true)" color="light" disabled="true" class="letrasFechasButton">
-                {{ dateServ.formatComplete(fechaVisita) }}
+                {{ visitDateButtonLabel }}
               </ion-button>
             </ion-col>
           </ion-col>
