@@ -350,12 +350,13 @@ defectos:
       diferencia de devoluciones e inventarios donde solo hay `1` y `2`. **`Limpiar` igual elige la primera
       empresa real en vez de la neutra** ⇒ no es que falte a dónde resetear: **el reset apunta al índice
       equivocado.**
-    no_se_reproduce_en_isla_coche: >-
-      🔴 **DATO PARA CUANDO DESARROLLO INTENTE REPRODUCIRLO.** La corrida web extendida del 31/07/2026 sobre
-      **Isla Coche / LATINOCOSMETICA** buscó este defecto en **dos familias de pantallas distintas** (bloques
-      1-4 y bloques 5-7) y **NO se reproduce allí**: el control se comporta correctamente.
-      ⇒ El defecto está confirmado en **La Tortuga**. Si el equipo prueba en Isla Coche y no lo ve, **no
-      significa que esté arreglado ni que el reporte sea falso** — hay que probarlo en La Tortuga.
+    correccion_20260803: >-
+      ⚠ **SE RETIRA la conclusión anterior de que este defecto era "propio de La Tortuga".** Se basaba en que
+      la corrida del 31/07 en Isla Coche no lo reprodujo — pero ese día **solo se probaron visitas y reportes**,
+      justamente los dos módulos que ya estaban sanos. **Fue un hueco de cobertura, no un hallazgo.**
+      El **29/07**, en esa misma playa, los defectos **SÍ se reprodujeron** en 5 módulos, y hoy esos 5 están
+      arreglados ⇒ la ventana del repunte a la rama main fue **30/07–03/08**. **Eran defectos de la VERSIÓN.**
+
     verificado_20260803: >-
       ✅ **ARREGLADO — verificado el 03/08/2026** en la regresión sobre La Tortuga (globalmp).
       El entorno pasó del **tag 20 a main**, donde el equipo tiene los fixes; por eso el comportamiento cambió
@@ -391,12 +392,13 @@ defectos:
       fechas. Usa el componente **`selectAttach`** en vez de `attachStatus`.
       **La implementación correcta YA EXISTE dentro del producto: el arreglo de los demás módulos es copiarla,
       no diseñarla.** Es el dato que vuelve barato el fix.
-    no_se_reproduce_en_isla_coche: >-
-      🔴 **DATO PARA CUANDO DESARROLLO INTENTE REPRODUCIRLO.** La corrida web extendida del 31/07/2026 sobre
-      **Isla Coche / LATINOCOSMETICA** buscó este defecto en **dos familias de pantallas distintas** (bloques
-      1-4 y bloques 5-7) y **NO se reproduce allí**: el control se comporta correctamente.
-      ⇒ El defecto está confirmado en **La Tortuga**. Si el equipo prueba en Isla Coche y no lo ve, **no
-      significa que esté arreglado ni que el reporte sea falso** — hay que probarlo en La Tortuga.
+    correccion_20260803: >-
+      ⚠ **SE RETIRA la conclusión anterior de que este defecto era "propio de La Tortuga".** Se basaba en que
+      la corrida del 31/07 en Isla Coche no lo reprodujo — pero ese día **solo se probaron visitas y reportes**,
+      justamente los dos módulos que ya estaban sanos. **Fue un hueco de cobertura, no un hallazgo.**
+      El **29/07**, en esa misma playa, los defectos **SÍ se reprodujeron** en 5 módulos, y hoy esos 5 están
+      arreglados ⇒ la ventana del repunte a la rama main fue **30/07–03/08**. **Eran defectos de la VERSIÓN.**
+
     verificado_20260803: >-
       ✅ **ARREGLADO — verificado el 03/08/2026** en la regresión sobre La Tortuga (globalmp).
       El entorno pasó del **tag 20 a main**, donde el equipo tiene los fixes; por eso el comportamiento cambió
@@ -454,12 +456,13 @@ defectos:
       · **Cobros: el orden por importe IGNORA LA MONEDA** — `10,00 $` (≈7.372 BS) queda debajo de `61,74 BS`.
         Debería ordenar por el importe convertido.
       · **Pedidos:** ordena bien (numérico, no lexicográfico).
-    no_se_reproduce_en_isla_coche: >-
-      🔴 **DATO PARA CUANDO DESARROLLO INTENTE REPRODUCIRLO.** La corrida web extendida del 31/07/2026 sobre
-      **Isla Coche / LATINOCOSMETICA** buscó este defecto en **dos familias de pantallas distintas** (bloques
-      1-4 y bloques 5-7) y **NO se reproduce allí**: el control se comporta correctamente.
-      ⇒ El defecto está confirmado en **La Tortuga**. Si el equipo prueba en Isla Coche y no lo ve, **no
-      significa que esté arreglado ni que el reporte sea falso** — hay que probarlo en La Tortuga.
+    correccion_20260803: >-
+      ⚠ **SE RETIRA la conclusión anterior de que este defecto era "propio de La Tortuga".** Se basaba en que
+      la corrida del 31/07 en Isla Coche no lo reprodujo — pero ese día **solo se probaron visitas y reportes**,
+      justamente los dos módulos que ya estaban sanos. **Fue un hueco de cobertura, no un hallazgo.**
+      El **29/07**, en esa misma playa, los defectos **SÍ se reprodujeron** en 5 módulos, y hoy esos 5 están
+      arreglados ⇒ la ventana del repunte a la rama main fue **30/07–03/08**. **Eran defectos de la VERSIÓN.**
+
     verificado_20260803: >-
       ✅ **ARREGLADO — verificado el 03/08/2026** en la regresión sobre La Tortuga (globalmp).
       El entorno pasó del **tag 20 a main**, donde el equipo tiene los fixes; por eso el comportamiento cambió
@@ -604,9 +607,17 @@ defectos:
       Revalidado sobre vista nueva (`page.goto()` + UN solo `Limpiar` + verificación de que `Estatus` estuviera
       en neutro y de que el `.ui-selectonemenu-label` y el `<select>` marcaran ambos `No Realizado`).
       **Se reprodujo, Total = 0.** No es el falso positivo de panel JSF desincronizado.
-    accion: "Reportar. Verificado a mano por QA."
+    tarjeta_20260803: >-
+      🎫 **QA levanta TARJETA (03/08/2026)**, separada de la del bean de `Limpiar`. Motivo: **son defectos
+      distintos** — éste es de **mapeo de valores** y el otro de **reset de estado**. Juntarlos arriesga que se
+      arregle uno y se cierren los dos.
+      **Confirmado en LAS DOS PLAYAS** (La Tortuga e Isla Coche), con los mismos números en Isla Coche el 31/07
+      y el 03/08 ⇒ **es de la versión**. El fix del 30/07–03/08 **no lo tocó**.
+      🔑 Control que acota el defecto: `Coordenadas = Correcto` devuelve **92/92, correcto** ⇒ el filtro está
+      sano; fallan sólo dos valores, y de forma **opuesta** (uno no trae nada, el otro trae todo).
+    accion: >-
+      Tarjeta levantada por QA. Re-validar cuando salga el fix — probar los TRES valores, no solo el que falle.
 
-  # ── DESCARTADOS por QA el 2026-07-31 (web extendida Isla Coche) ──
   - id: DESCARTADOS-WEBEXT-ISLACOCHE-20260731
     titulo: "Lote de hallazgos de la web extendida de Isla Coche descartados por QA"
     capa: web
@@ -646,8 +657,28 @@ defectos:
       ⚠ **No es una regresión demostrable.** El reporte del 30/07 dice que en visitas «`Limpiar` SÍ resetea los
       selects», pero solo deja constancia de haber probado `# Ref`, `Estatus`, `Actividad` y `Adjuntos`.
       **`Coordenadas` y `Despachado` no figuran** ⇒ es un defecto **no cubierto entonces**, detectado ahora.
+    causa_raiz: >-
+      🔑 `Limpiar` **no borra el campo: vuelve a renderizar el control leyendo del bean del servidor, y ese bean
+      nunca se resetea.** Comprobado poniendo un valor en el widget **sin** buscar: tras `Limpiar` el control
+      quedó en el valor **del bean**, no en el tecleado ni en el neutro.
+      **QA confirmó el comportamiento el 03/08:** tras buscar con `Correcto` y luego con `Por Revisar`,
+      `Limpiar` deja **`Por Revisar`** ⇒ conserva **el último valor aplicado**, no el primero de la sesión.
+    sintoma_grave_asociado: >-
+      🔴 **Tras `Limpiar`, la pantalla de visitas queda INUTILIZABLE: toda búsqueda devuelve 0**, sin importar
+      filtros ni rango de fechas. Antes de `Limpiar` el rango 01/07–31/07 daba **215**; después, el mismo rango
+      con el mismo método da **0**. Reproducido **3/3** por automatización y **confirmado a mano por QA en LAS
+      DOS PLAYAS**. **No se recupera** volviendo a buscar ni recargando — **solo cerrando sesión**.
+      La corrupción es **por módulo** (con visitas roto, inventarios seguía bien).
+    disparador_a_confirmar: >-
+      ⚠ **Hipótesis abierta:** el síntoma grave apareció en las pruebas que venían de usar el filtro
+      **`Coordenadas`**. En la regresión de La Tortuga, que venía de usar solo `Estatus` y `Adjuntos`, tras
+      `Limpiar` la búsqueda **sí devolvió resultados**. Si se confirma, el paso que lo dispara es **usar
+      `Coordenadas` antes de `Limpiar`** — lo que encaja con que sea ése el campo cuyo bean no se restablece.
+      **Falta confirmarlo con las dos secuencias.**
     accion: >-
-      Mapeado. Sumar al lote de defectos web pendientes de reportar (el de la planificación semanal).
+      🎫 **QA levanta TARJETA (03/08/2026)** con este defecto + el síntoma grave, agrupados porque comparten
+      sospechoso (el bean que no se resetea). La tarjeta del mapeo de valores va aparte
+      (ver VIS-WEB-FILTRO-COORDENADAS).
 
   - id: CLT-CREDITO-MULTIPLICADO
     titulo: "Las líneas de Crédito del detalle de cliente vienen multiplicadas por la tasa"
