@@ -25,6 +25,47 @@ playas:
     nombre: "Isla Coche"
     base:   "http://denarioislacoche.ddns.net:8080/DenarioPremium"
     # Empresa observada 2026-07-28: CAPITALINA DE ALIMENTOS 212, C.A.
+  caribe:
+    nombre: "Caribe"
+    base:   "http://denariocaribe.ddns.net:8080/DenarioPremium"
+    # 🆕 Playa NUEVA — servidor QA de pruebas, informada por QA el 03/08/2026. Reconocida ese mismo día:
+    #   · Empresa ÚNICA: "PROCESADORA DE ALIMENTOS COVADONGA,C.A" — cliente NUEVO, sin perfil propio todavía.
+    #     ⚠ El código de la empresa CAMBIA según la pantalla: vale `00001` en /pages/pedidos y `1` en
+    #       /pages/cobros, /pages/clientes y /pages/visitas. Mismo nombre, distinto value.
+    #     ⚠ El placeholder "Seleccione Empresa" existe en Clientes y Visitas, pero NO en Pedidos ni Cobros.
+    #   · Credenciales: entra con el bloque "# USUARIO WEB ISLA COCHE Y LA TORTUGA" (no hace falta uno propio).
+    #   · Build: `common.css` del 31/07/2026 13:38 GMT — el MÁS NUEVO de las 3 playas
+    #     (La Tortuga 16/07 · Isla Coche 23/07). ⚠ La URL correcta de la huella es
+    #     /DenarioPremium/javax.faces.resource/common.css.xhtml?ln=css  (SIN el `css/` intermedio, que da 404).
+    #   · Datos: maestros de volumen REAL (5.384 clientes, 14 vendedores) pero transaccional MUY FLACO
+    #     (440 pedidos · 17 cobros · 35 visitas en TODO 2026; los # Ref más altos confirman que es el histórico
+    #     completo). Sirve para lectura, filtros, maestros y reportes; NO para volumen ni histórico multi-año.
+    #   · Menú: sin pantallas nuevas de valor. El delta contra smoke-web-extendido.md son 6 entradas y las 6
+    #     caen dentro de Configuración (zona que no se toca). Falta /pages/protected/indicadores/pedidosProductosVentas.xhtml,
+    #     que el guión sí lista.
+    #   🔴 Defecto conocido REPRODUCIDO acá: el filtro `Coordenadas = No Realizado` de Visitas devuelve 0
+    #      cuando la tabla muestra 29 filas con ese valor ⇒ **el build más nuevo NO tiene ese fix**.
+    #   ✅ RESUELTO 2026-08-03 — la supuesta "trampa del `Buscar` atrasado" NO EXISTE. Se creyó que el listado
+    #      iba un `Buscar` atrás del filtro; instrumentando el fin REAL del ajax (hook sobre XMLHttpRequest →
+    #      `loadend`, en vez de esperas fijas) el filtro de fechas ACIERTA AL PRIMER `Buscar`, siempre.
+    #      Lo que pasa es que /pages/pedidos tarda ~25 s en responder (4 s con 2 filas · 25,1 s con 205 ·
+    #      24,5 s con 440) y SIN spinner visible: con una espera de 4 s se lee la tabla antes de que llegue la
+    #      respuesta y se ve todavía el resultado anterior — que es real, y por eso parecía coherente.
+    #      ⇒ Regla para automatización: enganchar el fin del ajax, NUNCA dormir un tiempo fijo.
+    #      ⚠ Dos artefactos de automatización descubiertos de paso (no son defectos del producto):
+    #        1. Setear la fecha con `el.value = ...` NO funciona: el widget PrimeFaces conserva su fecha interna
+    #           y revierte el input. Hay que usar `widget.setDate()` o el calendario.
+    #        2. `jQuery(document).ajaxComplete` NO dispara en esta página; hay que enganchar XMLHttpRequest.
+    #      ⚠ Lo que SÍ queda como observación real: ~25 s por consulta con sólo 440 registros y sin indicador
+    #        de carga (CAR-PED-PERF). Facturaciones responde en ~2 s con más registros ⇒ es puntual de pedidos.
+    #   ⚠ RUTAS SIN EXTENSIÓN: `/pages/pedidos` funciona, `/pages/pedidos.xhtml` da HTTP 404. El login SÍ es
+    #      `/pages/login.xhtml`.
+    #   ⚠ BASELINE `document_sale`: los 2.783 registros incluyen **2.048 borrados lógicos** (`co_operation='D'`,
+    #      el 73,6 %). Los vigentes son **735**, que es lo que la web muestra — correctamente. Medir SIEMPRE con
+    #      `WHERE co_operation <> 'D'`. Esto explica el defecto D-02 de El Valle ("lista 2.783 vs 735"): la web
+    #      hace lo correcto.
+    #   ⚠ Zona horaria a verificar: `gmap.js` reporta 6 h exactas de diferencia contra las otras dos playas.
+    #      Importa porque los cotejos móvil↔web comparan fecha y hora.
   la_tortuga:
     nombre: "La Tortuga"
     base:   "http://denariolatortuga.ddns.net:8080/DenarioPremium"

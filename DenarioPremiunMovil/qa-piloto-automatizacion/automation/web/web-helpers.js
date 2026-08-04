@@ -45,6 +45,7 @@ function moduloDe(pathname) {
 
 /** Host de cada playa (la parte que identifica el SERVIDOR). Ver `playas.yaml`. */
 const PLAYAS = {
+  caribe:     'denariocaribe.ddns.net:8080',   // playa NUEVA (03/08/2026) — sin ella verificarContexto da "PLAYA EQUIVOCADA"
   el_yaque:   'denarioelyaque.ddns.net:8080',
   isla_coche: 'denarioislacoche.ddns.net:8080',
   la_tortuga: 'denariolatortuga.ddns.net:8080',
