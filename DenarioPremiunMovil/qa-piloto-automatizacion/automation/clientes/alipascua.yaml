@@ -1,0 +1,181 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Perfil QA — ALIPASCUA
+# Creado 2026-08-04 desde los dumps global_configuration_202608041528_ALIPASCUA
+# (global, 174 claves) + global_configuration_client_202608041528_ALIPASCUA
+# (override de cliente, 74 claves) + pre-poblado desde BD read-only.
+# Los dumps se BORRAN una vez creado este perfil (política de alta-cliente.md).
+#
+# ⚠ CONFLICTOS ENTRE DUMPS: 33 claves difieren. En 31 gana el GLOBAL (2025-10-13
+#   en adelante) sobre el override de cliente, que es de 2022-10-17 y está stale.
+#   🔴 En 2 gana el CLIENT porque su da_update es MÁS RECIENTE — van marcadas
+#      ⚠️VERIFICAR abajo. Es la trampa documentada en la memoria de config.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── Identificación ────────────────────────────────────────────────────────────
+cliente_id: alipascua
+cliente_nombre: "ALIPASCUA, C.A."      # co_enterprise = ALIP_BSD (empresa ÚNICA en BD)
+apk_package: com.kiberno.denarioPremiumPro
+db_name: alipascua                      # base en savia; GRANT read-only ✅ (185/185 tablas)
+# ws_url: NO se guarda — se descubre en runtime. Playa informada por QA: El Yaque.
+
+# ── Variables Globales ────────────────────────────────────────────────────────
+vgs:
+  multiCurrency: true
+  expirationBatch: false                # ⇒ inventarios/devoluciones SIN lote ni vencimiento
+  suggestedOrderByDispatchAndReturn: false
+  requiredCollectionAttachments: false  # ⇒ el cobro se puede ENVIAR sin adjunto
+  requiredComment: true                 # 🔴 comentario OBLIGATORIO — longitudComentario=200
+  validateReturn: false                 # ⇒ NO valida que el producto esté en una factura enviada
+  signatureReturn: true
+  signatureCollection: true
+  signatureVisit: true
+  userCanUploadFiles: true
+  esVendedor: TBD                       # 🔴 NO viene en los dumps — CONFIRMAR CON QA antes de correr
+  enterpriseEnabled: false              # global 2026-02-20 (client-2022 decía true) · 1 sola empresa en BD ⇒ coherente
+  enabledManualRate: false              # ⇒ la tasa NO se edita a mano
+  cobroPrepago: true                    # ⇒ existe botón ANTICIPO/PREPAGO
+  cobroRetencion: true                  # ⇒ existe botón RETENCIÓN (co_type=2)
+  retencion: false                      # ⇒ NO hay retención dentro del cobro normal → DM-COB-041/042 N/A
+  sizeRetention: 14
+  formatRetention: "0"
+  userCanSelectIGTF: false              # ⇒ casos de IGTF N/A
+  userCanCollectIva: true
+  transportRole: false
+  userMustActivateGPS: true             # 🔴 exige GPS activo — habilitarlo en el dispositivo antes de correr
+
+  # ── VGs extra (fuera del esquema base, útiles para el mapa de N/A) ──
+  clientStock: true                     # global 2025-10-13 (client-2022=false) ⇒ INVENTARIOS APLICA
+  requireClientStock: true
+  signatureOrder: true
+  signatureDeposit: true
+  signatureStock: true
+  multiInvoices: false                  # ⇒ una sola factura por devolución
+  requeridedNroFactura: true            # ⇒ nro de factura OBLIGATORIO en devoluciones
+  mesesFacturas: 3
+  selectOrderType: true                 # ⇒ hay selector de tipo de pedido
+  suggestedOrder: true                  # global 2026-08-04 (hoy)
+  productMinMul: true
+  hideProdWithoutPrice: true            # ⇒ productos sin precio NO se listan
+  showStock: true
+  stock0: false                         # ⇒ NO se pueden pedir productos sin inventario
+  userCanChangePriceList: true
+  userCanSelectGlobalDiscount: true
+  userCanChangePaymentConditions: true
+  userCanSelectIVA: true
+  userCanChangeWarehouse: false
+  userCanSaveGPS: true
+  historicoTasa: true
+  showCamera: true
+  quAttach: 25
+  infoVendedores: true                  # ⇒ VENDEDORES viene del administrativo
+  tagRif: RIF
+  tagIVA: IVA
+  parteDecimal: 4
+  longitudComentario: 200
+
+  # 🔴 ⚠️VERIFICAR EN CORRIDA — acá gana el dump de CLIENTE, no el global,
+  #    porque su da_update (2026-02-24) es MÁS RECIENTE que el del global.
+  #    Si la UI contradice esto, gana la UI y se corrige el perfil.
+  userCanSelectProductDiscount: false   # ⚠️VERIFICAR client 2026-02-24=false vs global 2026-02-20=true
+  validateWarehouses: false             # ⚠️VERIFICAR client 2026-02-24=false vs global 2025-10-13=true
+
+# ── Métodos de pago de Cobros ─────────────────────────────────────────────────
+# colletionPayment = true-false-true-true-true-true  (global 2026-04-17, 6 valores)
+#   Efectivo=SÍ · Cheque=NO · Transferencia=SÍ · Depósito=SÍ · Otros=SÍ · Pago Móvil=SÍ
+#   hideColletionPayment=true ⇒ manda colletionPayment.
+# → EFECTIVO presente ⇒ módulo DEPÓSITOS APLICA.
+
+# ── Datos de prueba por módulo (pre-poblado desde BD, vendedor QA 002) ────────
+# El vendedor 002 tiene 64 clientes asignados. Un cliente NO asignado no aparece
+# en la app, así que todo lo de abajo está filtrado por client_template_user.
+modules:
+  login:
+    bad_password: "(ver secrets/qa-credentials.env → QA_BAD_PASSWORD)"
+
+  clientes:
+    cliente_busqueda: "RENZO"
+    cliente_detalle: "V28556138"        # RENZO FERNANDO MARTINEZ MEJIAS
+
+  pedidos:
+    cliente_test: "V28556138"
+    estructura_producto: TBD            # confirmar en corrida
+    alerta_deuda_vencida: true          # tiene 7 documentos, los 7 VENCIDOS ⇒ debería alertar
+
+  cobros:
+    # 🔴 ESTA CORRIDA: cobros es SOLO LECTURA. No se crean cobros.
+    #    Verificar los 3 que QA envió el 2026-08-04 (uno por co_type):
+    #      · 39236 co_type=0 normal    · J296437246 · 185.000,00 BSD
+    #        ⚠ nu_amount_total 185.000,00 ≠ nu_amount_final 179.063,4753 ⇒ documento EDITADO
+    #      · 39237 co_type=1 anticipo  · J295847190 ·   3.000,00 BSD
+    #      · 39238 co_type=2 retención · J296437246 ·   1.800,00 US$
+    #    Tasa del día: 746,6297 · id_user 468
+    cliente_test: "V235072935"          # YUCHAN WU DE WU — SIN documentos pendientes
+    cliente_code: "V235072935"
+    clientes_con_documentos:
+      - "V28556138"                     # RENZO F. MARTINEZ — 7 docs, 7 vencidos, 2.596,29 US$
+      - "J403387222"                    # DISTRIBUIDORA ZORIMARTI MARTIN — 6 docs, 6 venc., 502,06 US$
+      - "V137687450"                    # YOLIMAR J. ORTEGA MALPA — 6 docs, 6 venc., 621,67 US$
+      - "J504792225"                    # IMPORTADORA DAKIM — 5 docs, 0 vencidos, 115,51 US$
+      - "J506060523"                    # VARIEDADES YASMERYS — 5 docs, 5 venc., 1.835,94 US$
+    cliente_25iva: ""                   # no hay VG de cobro 25% en los dumps ⇒ N/A
+    metodo_pago: efectivo               # Efectivo habilitado (ver colletionPayment)
+    banco_deposito: "0108"              # BANCO PROVINCIAL
+    documento_retencion: ""             # vgs.retencion=false ⇒ DM-COB-041/042 N/A
+    monto_retencion_iva: 0
+    monto_retencion_islr: 0
+    moneda_cobro: "BSD"
+    smoke_na_estructural:
+      - "retención dentro de cobro normal (retencion=false)"
+      - "IGTF (userCanSelectIGTF=false)"
+      - "adjunto obligatorio (requiredCollectionAttachments=false)"
+      - "🔴 TODOS los casos de CREACIÓN — esta corrida cobros es solo lectura"
+
+  devoluciones:
+    cliente_test: "V28556138"
+    factura_test: TBD                   # tomar una de las 7 del cliente en la corrida
+    producto_test: "7591473004525"      # ACEITE DE OLIVA EXTRA VIRGEN MARY 12X500 GRS
+    # validateReturn=false ⇒ no exige que el producto esté en la factura
+    # requeridedNroFactura=true ⇒ el nro de factura SÍ es obligatorio
+    # multiInvoices=false ⇒ una sola factura por devolución
+    # expirationBatch=false ⇒ SIN lote ni fecha de vencimiento
+
+  inventarios:
+    cliente_test: "V28556138"
+    cliente_code: "V28556138"
+    # clientStock=true ⇒ aplica · expirationBatch=false ⇒ sin lote/vencimiento
+
+  depositos:
+    aplica: true                        # EFECTIVO habilitado en colletionPayment ⇒ aplica
+    motivo_na: ""
+
+  visitas:
+    cliente_test: "V28556138"
+    smoke_na_estructural: []
+    # signatureVisit=true · userCanSaveGPS=true · userMustActivateGPS=true
+
+  productos:
+    tipo_estructura_default: TBD
+    texto_busqueda: "ACEITE"            # 468 productos activos en catálogo
+
+  vendedores:
+    aplica: true                        # infoVendedores=true
+
+# ── Estados por módulo (tabla statuses) ───────────────────────────────────────
+# cob: 3=Enviado(env) · 9=Por aprobar(pap) · 11=Aprobado(0001) · 12=Rechazado(0002)
+# dep: 1=Enviado(env) · 7=Por aprobar(pap)
+# dev: 5=Enviado(env) · 8=Por aprobar(pap)
+
+# ── Catálogos auxiliares (BD, 2026-08-04) ─────────────────────────────────────
+# Bancos: 0108 BANCO PROVINCIAL · 0191 BCO NACIONAL DE CREDITO · 0008 BCO GUAYANA ·
+#         0104 VENEZOLANO · más 0021-0024 "PROVEEDOR *" (no son bancos reales)
+# Tipos devolución: 52 PostVenta · 53 Despacho · (54 problemas, 55 prueba, 56 hola,
+#                   57 Prueba Tovar → datos de prueba, preferir 52/53)
+# Motivos devolución: 35 Vencido · 28 Tapas Rotas · 33 producto en mal estado ·
+#                     30/31 No funciona · 32 not working
+# Actividades visita: 48 Reventa · 53 Cheque Devuelto · (63-70 son de prueba)
+
+# ── Última corrida ────────────────────────────────────────────────────────────
+ultima_corrida:
+  run_id: ""                            # sin corridas aún — este perfil es previo a la 1ª
+  fecha: ""
+  defectos_abiertos: []
