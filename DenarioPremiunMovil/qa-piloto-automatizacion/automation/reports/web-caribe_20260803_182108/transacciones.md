@@ -409,3 +409,87 @@ registros**, no sólo de conteo. Excluye bien los documentos borrados.
 - **CAR-FAC-005** (`WEB-FIELD-MISMATCH`): columna y filtro `Vendedor` inutilizables por `id_user` NULL.
 - **`WEB-N/A`** para el detalle: ningún registro consultable porque `invoice` está vacía.
 
+---
+
+## 3. `/pages/cobros` — ⏸ SUSPENDIDO (04/08/2026)
+
+> **Motivo de la interrupción:** QA informó que **van a cambiar el cliente montado en la playa Caribe**.
+> Todo hallazgo de *datos* sobre los 17 cobros actuales quedaría invalidado, así que se corta acá y se
+> retoma cuando haya un cliente estable. **Ningún caso `CAR-COB-###` se da por cerrado** y no se escribió
+> ninguna línea en `_web-results.jsonl`.
+
+### 3.1 Lo que SÍ se conserva (independiente del cliente)
+
+**Contexto verificado:** host `denariocaribe.ddns.net:8080` · `/DenarioPremium/pages/cobros` ·
+tabla **`form:cobrosDT`** (única, no compartida con los otros 5 módulos).
+
+**Prefijo de los filtros: `form:j_idt116:`** — ⚠ es un `j_idt*`, cambia entre despliegues; anclar por
+sufijo (`[id$=":n_ref"]`), nunca escribir el prefijo literal en un guión.
+
+| Control | Sufijo del id | Notas |
+|---|---|---|
+| Empresa | `idEnterprise_input` | value **`1`** acá (en `/pages/pedidos` es `00001`) · sin placeholder |
+| # Ref | `n_ref` | input de texto |
+| Vendedor | `idSalesmaView_input` | 15 opciones (14 + placeholder), con `_filter` |
+| Cliente | `clientSOM_input` | con `_filter` |
+| Tipo Cobro | `idTipo_input` | `0` Cobros · `1` Anticipo/Prepago · `2` Retención · **`3` IGTF · `4` Cobro 25 %** |
+| Fecha Inicio / Final | `dateB_input` / `dateF_input` | widgets `widget_form_j_idt116_dateB` / `_dateF` |
+| Depositado | `idDep_input` | `1` SI · `2` NO |
+| Moneda | `idCurrency_input` | `1` BS · `2` USD |
+| Tiene Adjunto | `attachStatus_input` | `1` SI · `2` NO |
+| Status | `orderStatus_input` | `7` Enviado · `1` Aprobado · `2` Pendiente · `3` Rechazado · `13` Por aprobar |
+| Buscar / Limpiar | `ajax` / `botonLimpiar` | |
+
+**18 columnas** en la lista: `Detalle`, `# Ref`, `Estatus del Cobro`, `Fecha Cobro`, `Pagos`,
+`Monto cobrado`, `Vendedor`, `Cliente`, `Tipo de Cobro`, `Nro Retención`, `Banco receptor`, `Depósito`,
+`Total por cobrar`, `Diferencia cobro`, `Monto conv.`, `Por cobrar conv.`, `Diferencia cambiaria`, `Tasa conv.`
+
+🔑 **Dos tipos de cobro que el guión `smoke-web-cobros.md` no contempla:** el combo ofrece **IGTF (3)** y
+**Cobro 25 % (4)** además de las 3 ramas conocidas de `co_type`. El guión sólo documenta 0/1/2 ⇒ hay que
+ampliarlo, con cliente nuevo o con el actual.
+
+**Driver de búsqueda (reutilizable):** vale la misma regla de la playa —`widget.setDate()` para las fechas
+y enganche a `XMLHttpRequest → loadend`, nunca espera fija. Para los `p:selectOneMenu` alcanzó con setear
+el `<select>` nativo y disparar `change`: el backend toma el valor sin necesidad de abrir el panel perezoso.
+
+### 3.2 ⚠ Rendimiento — observación firme, no depende del cliente
+
+**33,5 s** tardó `Buscar` con el rango completo (2020–2027) devolviendo **sólo 17 filas**, sin spinner.
+Es **peor que pedidos** (25 s con 440 filas) y muy lejos de facturaciones (≈2 s con 735).
+
+⇒ Refuerza y **amplía** `CAR-PED-PERF`: el problema no es el volumen de datos ni el servidor, porque acá
+hay 17 registros. Son consultas puntuales mal resueltas. **Vale la pena levantarlo aunque cambie el cliente.**
+
+### 3.3 Pistas a retomar (⚠ PROVISIONALES — dependen de los datos actuales)
+
+Se anotan para no volver a descubrirlas, **no como hallazgos**:
+
+1. **Origen del estatus inconsistente.** Los refs 1 y 2 muestran **"Aprobado"** en la web, pero
+   `transaction_statuses` dice **"Enviado"** (el catálogo `st_collection` sí dice "Aprobado").
+   En los refs 119 y 133 pasa al revés: la web dice **"Por aprobar"** = `transaction_statuses`, mientras
+   `st_collection` dice "Rechazado". ⇒ La web **no sigue una sola fuente**. Es la pista más prometedora;
+   hay que rehacerla con datos estables antes de afirmar nada.
+2. **`Monto cobrado` de la lista NO es un total: es la lista de pagos.** El ref 127 muestra
+   `"200,3000 USD 200,0000 USD"` (dos pagos) y las retenciones (122, 126) lo muestran **vacío** porque
+   `co_type=2` no tiene pagos. `Total por cobrar` es el que trae `nu_amount_final`.
+   ⇒ Al leer esta tabla, **no parsear `Monto cobrado` como un número suelto.**
+3. **Sobrepagos con factor ×1000 y su anticipo espejo.** Refs 129/130 y 131/132 son pares: un cobro cuyo
+   pago (132.890,00 / 333.460,00) es exactamente **1.000×** el monto aplicado (132,89 / 333,46), y el
+   excedente aparece como un **Anticipo/Prepago** por la diferencia exacta (132.757,11 / 333.126,54).
+   La aritmética de la web **cierra**; huele a carga de datos, no a defecto de la web. El ref 128
+   (427,00 pagado contra 42,72) tiene la misma forma pero **sin** anticipo espejo — esa asimetría sí
+   habría que perseguirla.
+4. **Convención de signo de `Diferencia cobro`.** `WEB-RUNTIME §7` la define como
+   `Total por cobrar − Monto cobrado`, pero lo que se ve es `Monto cobrado − Total por cobrar`
+   (siempre positivo, incluso cuando hay sobrepago). Con estos datos no se puede distinguir "resta
+   invertida" de "valor absoluto": hace falta un cobro **parcial** (pagado < adeudado) para decidirlo.
+   Un sobrepago mostrado como saldo positivo pendiente **induce a error**; queda pendiente de confirmar.
+
+### 3.4 Qué falta cuando se retome
+
+Ningún **detalle** de cobro llegó a abrirse. Queda sin tocar el bloque que más rinde según el guión:
+`M05` (consistencia lista ↔ detalle, el que destapó `COB-RET-TOTAL-CERO`), los cálculos de retención
+IVA/ISLR de los `co_type=2`, el enlace `Consultar Depósito` (3 cobros lo ofrecen: 119, 121, 123) y toda
+la batería de filtros `F##`. También quedan pendientes Devoluciones, Depósitos, Clientes Potenciales,
+Inventarios y los 3 módulos de Datos Maestros.
+

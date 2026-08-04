@@ -23,7 +23,7 @@ Es una playa **nueva** (informada el 03/08/2026). El objetivo doble:
 |---|---|---|
 | **Transacciones · Pedidos** | ✅ cerrado (12 casos + perf) | `WEB-FIELD-MISMATCH` — 2 hallazgos de datos |
 | **Transacciones · Facturaciones** | ✅ cerrado (8 casos) | `WEB-OK` con salvedad + `WEB-N/A` en detalle |
-| Transacciones · Cobros | ⬜ pendiente | — |
+| Transacciones · Cobros | ⏸ **suspendido 04/08** | sin veredicto — ver `transacciones.md §3` |
 | Transacciones · Devoluciones | ⬜ pendiente | — |
 | Transacciones · Depósitos | ⬜ pendiente | — |
 | Transacciones · Clientes Potenciales | ⬜ pendiente | — |
@@ -34,6 +34,12 @@ Es una playa **nueva** (informada el 03/08/2026). El objetivo doble:
 
 **Continuar por Cobros** y seguir la tabla. Escribir **anexando** a `transacciones.md` y
 `_web-results.jsonl`, sin reescribir lo ya cerrado.
+
+> ⏸ **04/08/2026 — corrida EN PAUSA.** QA informó que **van a cambiar el cliente montado en Caribe**,
+> así que cualquier hallazgo de datos nacería invalidado. Cobros quedó a medias: lo reutilizable
+> (selectores, driver, rendimiento) está en `transacciones.md §3.1–3.2`; las pistas que dependen de
+> los datos, marcadas como provisionales, en `§3.3`. **Retomar cuando haya un cliente estable**, y
+> rehacer Cobros desde cero — no dar por bueno nada de `§3.3`.
 
 ### Hallazgos ya levantados (no re-levantar)
 
