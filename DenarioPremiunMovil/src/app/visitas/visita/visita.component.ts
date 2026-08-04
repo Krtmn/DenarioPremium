@@ -899,8 +899,8 @@ export class VisitaComponent implements OnInit {
       coAddressClient: this.cliente.coAddressClients,
       visitDetails: [],
       coordenadaSaved: false, //este SIEMPRE es false.
-      hasAttachments: this.adjuntoService.hasItems(),
-      nuAttachments: this.adjuntoService.getNuAttachment(),
+      hasAttachments: !!this.adjuntoService.hasItems(),
+      nuAttachments: Number(this.adjuntoService.getNuAttachment()) || 0,
       isReassigned: this.visitServ.visit.isReassigned ? this.visitServ.visit.isReassigned : false,
       txReassignedMotive: this.visitServ.visit.txReassignedMotive,
       daReassign: this.visitServ.visit.daReassign ? this.visitServ.visit.daReassign.replace("T", " ") : this.visitServ.visit.daReassign,

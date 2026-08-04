@@ -70,10 +70,7 @@ export class ClientesHeaderComponent implements OnInit {
           this.saveSendLocationFunction()
         }
         if (this.clientLogic.clientNewPotentialClientComponent) {
-          this.clientLogic.saveSendPotentialClient = false;
-          this.clientLogic.clientNewPotentialClientComponent = false;
-          this.clientLogic.clienteNuevoBlancoImg = true;
-          this.clientLogic.clientPotentialClientComponent = true;
+          this.clientLogic.exitToPotentialClientListAfterSave = true;
           this.saveSendNewPotentialCliente(true);
         }
       },
