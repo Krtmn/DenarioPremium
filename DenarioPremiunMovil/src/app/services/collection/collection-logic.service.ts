@@ -3634,6 +3634,31 @@ export class CollectionService {
     }
   }
 
+  /**
+   * Adjunta descuentos a cada detail por coDocument (no por coCollection).
+   * Evita COB-DISC-001: filtrar solo por cobro asigna el Descuento manual de un doc a todos.
+   */
+  attachCollectionDetailDiscountsToDetails(
+    details: CollectionDetail[],
+    discounts: CollectionDetailDiscounts[] | null | undefined,
+  ): void {
+    if (!Array.isArray(details)) {
+      return;
+    }
+
+    const allDiscounts = Array.isArray(discounts) ? discounts : [];
+    for (const detail of details) {
+      if (!detail) {
+        continue;
+      }
+
+      const detailCoDocument = this.normalizeCoDocument(detail.coDocument);
+      detail.collectionDetailDiscounts = allDiscounts.filter(
+        discount => this.normalizeCoDocument(discount?.coDocument) === detailCoDocument,
+      );
+    }
+  }
+
   attachCollectionDetailRetentionsToDetails(
     details: CollectionDetail[],
     retentions: CollectionDetailRetentions[],
@@ -3700,12 +3725,7 @@ export class CollectionService {
 
     if (options.includeDiscounts) {
       const collectionDetailsDiscounts = await this.getCollectionDetailsDiscounts(dbServ, coCollection);
-      const discounts: CollectionDetailDiscounts[] = collectionDetailsDiscounts ?? [];
-
-      for (let i = 0; i < details.length; i++) {
-        details[i].collectionDetailDiscounts =
-          discounts.filter(discount => discount.coDocument === details[i].coDocument);
-      }
+      this.attachCollectionDetailDiscountsToDetails(details, collectionDetailsDiscounts);
     }
 
     const retentions = await this.getCollectionDetailsRetentions(dbServ, coCollection);

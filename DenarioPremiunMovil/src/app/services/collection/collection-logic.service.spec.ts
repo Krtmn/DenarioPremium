@@ -1271,4 +1271,66 @@ describe('CollectionService', () => {
       expect(spy).toHaveBeenCalledWith(false);
     });
   });
+
+  describe('COB-DISC-001 attachCollectionDetailDiscountsToDetails', () => {
+    it('attaches manual discount only to matching coDocument', () => {
+      const details = [
+        { coDocument: 'FF081402', coCollection: 'COB-1', collectionDetailDiscounts: [] },
+        { coDocument: 'FF082165', coCollection: 'COB-1', collectionDetailDiscounts: [] },
+      ] as any[];
+      const discounts = [{
+        coCollection: 'COB-1',
+        coDocument: 'FF081402',
+        idCollectDiscount: -1,
+        naCollectDiscountOther: 'Descuento manual',
+        nuAmountCollectDiscountOther: 8,
+      }] as any[];
+
+      service.attachCollectionDetailDiscountsToDetails(details, discounts);
+
+      expect(details[0].collectionDetailDiscounts.length).toBe(1);
+      expect(details[0].collectionDetailDiscounts[0].nuAmountCollectDiscountOther).toBe(8);
+      expect(details[1].collectionDetailDiscounts).toEqual([]);
+    });
+
+    it('keeps distinct discounts per document without cross-leak', () => {
+      const details = [
+        { coDocument: 'DOC-A', collectionDetailDiscounts: [] },
+        { coDocument: 'DOC-B', collectionDetailDiscounts: [] },
+      ] as any[];
+      const discounts = [
+        {
+          coDocument: 'DOC-A',
+          idCollectDiscount: -1,
+          nuAmountCollectDiscountOther: 8,
+        },
+        {
+          coDocument: 'DOC-B',
+          idCollectDiscount: 12,
+          nuAmountCollectDiscountOther: 3,
+        },
+      ] as any[];
+
+      service.attachCollectionDetailDiscountsToDetails(details, discounts);
+
+      expect(details[0].collectionDetailDiscounts.map((d: any) => d.idCollectDiscount)).toEqual([-1]);
+      expect(details[1].collectionDetailDiscounts.map((d: any) => d.idCollectDiscount)).toEqual([12]);
+    });
+
+    it('matches coDocument after normalizeCoDocument trims spaces', () => {
+      const details = [
+        { coDocument: 'FF081402', collectionDetailDiscounts: [] },
+      ] as any[];
+      const discounts = [{
+        coDocument: '  FF081402  ',
+        idCollectDiscount: -1,
+        nuAmountCollectDiscountOther: 8,
+      }] as any[];
+
+      service.attachCollectionDetailDiscountsToDetails(details, discounts);
+
+      expect(details[0].collectionDetailDiscounts.length).toBe(1);
+      expect(details[0].collectionDetailDiscounts[0].nuAmountCollectDiscountOther).toBe(8);
+    });
+  });
 });
