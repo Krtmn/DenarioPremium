@@ -11,6 +11,7 @@
     "ios:sync": "npm run build && npx cap sync ios",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:cobros": "ng test --include=**/collection-logic.service.spec.ts --include=**/cobro-pagos.component.spec.ts --include=**/cobro-general.component.spec.ts --include=**/cobro-documents.component.spec.ts --include=**/cobro-total.component.spec.ts --include=**/cobros-list.component.spec.ts --watch=false --browsers=ChromeHeadless",
     "lint": "ng lint"
   },
   "private": true,
