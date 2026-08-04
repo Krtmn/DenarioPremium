@@ -299,7 +299,7 @@ defectos:
     capa: web
     modulo: cobros
     detectado_en: "tag 20"
-    estado: reportado          # ✅ QA lo reportó el 2026-07-30 — esperando fix para re-validar
+    estado: arreglado_parcial  # ✅ verificado 2026-08-04 — el fix sirve para registros NUEVOS; los viejos siguen mal
     severidad: alta            # financiero y VISIBLE
     patron: 'descuento.*conversi|conv.*descuento|36\.?894|737\.?880|COB-WEB-DCTO'
     detalle: >-
@@ -334,7 +334,31 @@ defectos:
       Por eso conviene arreglar `convertirMonto()` DE RAÍZ (que reciba la moneda del cobro y no la del
       documento) en vez de corregir únicamente la celda del descuento: con el arreglo de raíz los dos campos
       quedan resueltos; si sólo se toca el descuento, éste sigue guardándose mal y la ruta latente queda viva.
-    accion: "Reportado. Re-validar cuando salga el fix. Entregar `comentario_para_desarrollo` cuando tomen el caso."
+    verificado_20260804: >-
+      ✅ **ARREGLADO PARA REGISTROS NUEVOS — verificado el 2026-08-04** en La Tortuga / globalmp, sobre el
+      cobro **8363** que QA montó para esta validación. Las **4 celdas** visibles dan el valor correcto:
+      cabecera `Monto total descuento conversión` = **1,36 USD**, columna `Total dcto. conversion` = **1,36**,
+      `Dif/Faltante conversión` = **1,66**, y `Monto conversión` de `form:discountsDT` = **1,36 USD**.
+      `1.000 / 737,88 = 1,3552` ⇒ **divide**. La cabecera, que antes se autocontradecía, ahora cierra:
+      `478,67 − 1,36 − 1,66 − 1,22 − 0,11 = 474,32` contra los `474,33` que muestra (redondeo).
+    ⚠_registros_viejos_siguen_mal: >-
+      🔴 **El fix NO repara lo ya guardado, y esto no es menor.** El **cobro 8362** (creado el 03/08, un día
+      antes) sigue mostrando **737.880,00 USD** en la cabecera y en `Total dcto. conversion`, y
+      **164.613,65** en `Dif/Faltante conversión` (= `223,09 × 737,88`).
+      Es una comparación limpia: **8362 y 8363 comparten el mismo documento `036332`, el mismo descuento de
+      1.000,00 BS y la misma tasa 737,88**; lo único que cambia es la fecha de creación.
+      Coherente con la causa raíz: el valor lo calcula y **persiste la app móvil**, y la web sólo pinta el dato
+      crudo del servidor. ⇒ **Hace falta una migración de datos** para los cobros históricos con documento
+      editado; si no, el usuario les seguirá viendo `737.880,00 USD` donde van `1,36` para siempre.
+      **Preguntar a desarrollo si la contemplaron.**
+    no_verificado_falta_bd: >-
+      ⚠ **No se pudo cerrar la verificación DE RAÍZ.** El `comentario_para_desarrollo` de arriba advierte que
+      el mismo bug corrompe `nu_amount_paid_conversion`, y que si el arreglo fue de raíz ese campo también
+      quedaría sano. **No se pudo comprobar: la BD de `globalmp` no tiene el GRANT de solo lectura**
+      (`permission denied` en todas las tablas — acción DBA: aplicar grant a `user_read`).
+      ⇒ Hoy sólo se puede afirmar que **el síntoma visible desapareció**, no que el fix fue de raíz.
+      Al recuperar el acceso: comparar `nu_amount_paid_conversion` del 8363 contra el del 8362.
+    accion: "Verificado parcialmente el 2026-08-04. Falta: (1) definir migración de históricos con desarrollo, (2) GRANT en globalmp para confirmar el arreglo de raíz en `nu_amount_paid_conversion`."
 
   - id: WEB-LIMPIAR-CAMBIA-EMPRESA
     titulo: "`Limpiar` cambia la empresa y muestra registros de otra compañía sin aviso"
@@ -415,7 +439,7 @@ defectos:
     capa: web
     modulo: cobros
     detectado_en: "tag 20"
-    estado: reportado          # ✅ QA lo reportó el 2026-07-30
+    estado: arreglado_verificado   # ✅ verificado 2026-08-04 en La Tortuga / globalmp, cobro 8363
     patron: 'descuento conversi|570\.?418|faltante|COB-WEB-DCTO-CONV-ETIQUETA'
     detalle: >-
       Cobro 8353, documento `FF081401`: la columna `Descuento conversión` muestra **570.418,13**
@@ -428,7 +452,23 @@ defectos:
       correcto*; éste es *además el número equivocado*. Si el fix corrige solo la dirección de la conversión,
       esta celda pasaría a mostrar `1,05` **pero seguiría rotulada "Descuento"** cuando el descuento es 1.000,00.
       **El error de etiqueta sobrevive al fix de la conversión.**
-    accion: "Reportado. Re-validar cuando salga el fix — verificar AMBOS aspectos, no solo el número."
+    verificado_20260804: >-
+      ✅ **ARREGLADO — verificado el 2026-08-04** en La Tortuga / globalmp, cobro **8363**, documento `036332`.
+      Se verificaron **los dos aspectos**, como pedía la acción:
+      · **El número:** `Total dcto. conversion` = **1,36**, que es el descuento real (1.000,00 / 737,88).
+      · **La etiqueta:** el `Diferencia/Faltante` (1.223,09) ya **no** se cuela en esa celda — vive en su
+        propia columna **`Dif/Faltante conversión` = 1,66**, exactamente el rótulo que pedía la ficha.
+    por_que_la_prueba_discrimina: >-
+      🔑 La prueba **separa de verdad** este defecto del de la conversión: descuento y faltante dan
+      **números distintos** (1,36 vs 1,66). Si sólo se hubiera arreglado la dirección de la conversión,
+      la celda de descuento mostraría **1,66** (el faltante bien dividido, pero bajo la etiqueta equivocada).
+      Muestra **1,36** ⇒ el error de etiqueta **no sobrevivió**, se arregló también.
+    nota_sobre_el_8362: >-
+      ℹ En el cobro **8362** (anterior al fix) el error de **etiqueta tampoco aparece**: cada columna trae su
+      propio número, sólo que multiplicado (`737.880,00` el descuento y `164.613,65` el faltante).
+      ⇒ Este defecto se corrigió **en la presentación**, no depende del dato guardado — a diferencia de
+      [COB-WEB-DCTO-CONV-MULTIPLICA], que sí deja los registros viejos rotos.
+    accion: "Cerrado — verificado el 2026-08-04 en ambos aspectos (número y etiqueta)."
 
   - id: WEB-ORDENAMIENTO-NO-ORDENA-GLOBALMP
     titulo: "El ordenamiento no reordena las filas, y falla POR COLUMNA (no por módulo)"
@@ -479,7 +519,7 @@ defectos:
     capa: web
     modulo: visitas
     detectado_en: "tag 20"
-    estado: reportado          # ✅ Encontrado y reportado por QA a mano el 2026-07-30
+    estado: arreglado_sin_verificar   # ⚠ QA informó el fix el 2026-08-04; NO re-probado todavía — ver `pendiente_de_reverificar`
     encontrado_por: "QA, manualmente — NO por la automatización (ver 'por_que_la_corrida_no_lo_detecto')"
     patron: 'icono.*clip|clip.*adjunto|sin icono|VIS-WEB-SIN-ICONO-ADJUNTO'
     detalle: >-
@@ -515,7 +555,19 @@ defectos:
       Para cubrirlo hay que **partir de una visita ya precargada en la ruta** (creada desde la web) y enviarla
       desde la móvil **con adjunto**; luego verificar en la web **el ícono del listado** Y **el filtro
       `Tiene Adjunto = SI`**, no solo el detalle.
-    accion: "Reportado por QA. Cubrir en corridas futuras con visitas precargadas."
+    arreglado_segun_qa_20260804: >-
+      ✅ **QA informó el 2026-08-04 que el flag ya fue arreglado.**
+      ⚠ **Se registra tal cual: informado, NO verificado.** No se re-probó en esta sesión, así que no se marca
+      `arreglado_verificado` como sí se hizo con los dos defectos de cobros del mismo día.
+    pendiente_de_reverificar: >-
+      Para cerrarlo hace falta el escenario completo descrito en `para_corridas_futuras`: **partir de una
+      visita ya precargada en la ruta** (creada desde la web), enviarla desde la móvil **con adjunto**, y
+      verificar en la web **las dos vías que leen el flag**: el **ícono de clip del listado** Y el filtro
+      **`Tiene Adjunto = SI`**. Comprobar sólo el detalle NO alcanza — el detalle lee los archivos reales y
+      siempre dio bien; era el flag el que no se actualizaba.
+      🔑 Al re-verificarlo, mirar de paso **COB-CONTADOR-ADJUNTOS** (ver `posible_familia_comun`): si el
+      arreglo fue al recálculo del contador, puede haber resuelto los dos.
+    accion: "Arreglo informado por QA el 2026-08-04, sin verificar. Re-probar con una visita PRECARGADA + adjunto, chequeando ícono Y filtro."
 
   # ── DESCARTADOS por QA el 2026-07-30 (capa web) ──
 
