@@ -3391,7 +3391,7 @@ export class CollectionService {
     return this.convertirMonto(
       normalizedAmount,
       this.collection.nuValueLocal,
-      this.resolveDetailDocumentCurrency(detail, open),
+      this.collection.coCurrency,
     );
   }
 
@@ -5110,7 +5110,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     const nuAmountPaidConversion = this.convertirMonto(
       nuAmountPaid,
       this.collection.nuValueLocal,
-      documentCurrency,
+      this.collection.coCurrency,
     );
     const nuAmountIgtf = this.shouldCalculateEmbeddedIgtf() ? payment.igtfAmount : 0;
     const nuAmountIgtfConversion = this.convertirMonto(

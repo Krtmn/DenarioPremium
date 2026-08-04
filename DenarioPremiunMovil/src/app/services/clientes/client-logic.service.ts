@@ -82,6 +82,7 @@ export class ClientLogicService {
   public saveSendPotentialClient: Boolean = false; //BOTONES saalvar y enviar cliente potencial
   public savePotentialClient: Boolean = false; //BOTONES saalvar y enviar cliente potencial
   public saveOrExitOpen = false;
+  public exitToPotentialClientListAfterSave = false;
   public clientLocationChanged: Boolean = false;
   public cannotSendClientCoordinate: Boolean = false;
 
@@ -589,12 +590,12 @@ export class ClientLogicService {
 
   }
 
-  getPotentialClient() {
-    this.potentialClientService.getPotentialClient().then(result => {
+  getPotentialClient(): Promise<PotentialClient[]> {
+    return this.potentialClientService.getPotentialClient().then(result => {
       this.indice = 1;
       this.potentialClients = result;
-      return true;
-    })
+      return result;
+    });
   }
 
   getEnterprisePotentialClient() {

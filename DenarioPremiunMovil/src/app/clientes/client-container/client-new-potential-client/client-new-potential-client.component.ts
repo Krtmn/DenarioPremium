@@ -221,6 +221,7 @@ export class NewPotentialClientComponent implements OnInit {
               this.clientLogic.clientNewPotentialClientComponent = false;
               this.clientLogic.clientPotentialClientComponent = true;
               this.clientLogic.clienteNuevoBlancoImg = true;
+              await this.clientLogic.getPotentialClient();
               /*
               this.messageAlert = new MessageAlert(
                 "Denario Cliente",
@@ -236,7 +237,15 @@ export class NewPotentialClientComponent implements OnInit {
             );
             this.messageService.alertModal(this.messageAlert);
 
-            if (this.clientLogic.saveOrExitOpen) {
+            if (this.clientLogic.exitToPotentialClientListAfterSave) {
+              this.clientLogic.exitToPotentialClientListAfterSave = false;
+              this.clientLogic.newPotentialClientChanged = false;
+              this.clientLogic.saveSendPotentialClient = false;
+              this.clientLogic.clientNewPotentialClientComponent = false;
+              this.clientLogic.clienteNuevoBlancoImg = true;
+              this.clientLogic.clientPotentialClientComponent = true;
+              await this.clientLogic.getPotentialClient();
+            } else if (this.clientLogic.saveOrExitOpen) {
               this.clientLogic.newPotentialClientChanged = false;
               this.clientLogic.saveOrExitOpen = false;
               this.clientLogic.saveSendPotentialClient = false;

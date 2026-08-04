@@ -2015,7 +2015,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
               detail.nuAmountPaidConversion = this.collectService.convertirMonto(
                 partialAmount,
                 this.collectService.collection.nuValueLocal,
-                this.collectService.documentSaleOpen.coCurrency
+                this.collectService.collection.coCurrency
               );
             }
             validate = true;
@@ -2146,7 +2146,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
             detail.nuAmountPaidConversion = this.collectService.convertirMonto(
               partialAmount,
               this.collectService.collection.nuValueLocal,
-              this.collectService.documentSaleOpen.coCurrency
+              this.collectService.collection.coCurrency
             );
           }
           validate = true;
@@ -2234,7 +2234,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       detail.nuAmountPaidConversion = cs.convertirMonto(
         amountToSave,
         cs.collection.nuValueLocal,
-        cs.documentSaleOpen?.coCurrency ?? cs.collection.coCurrency,
+        cs.collection.coCurrency,
       );
     }
   }
@@ -4098,7 +4098,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
           nuAmountCollectDiscountConversion: this.collectService.convertirMonto(
             manualDiscountApplied,
             this.collectService.collection.nuValueLocal,
-            this.collectService.documentSaleOpen.coCurrency
+            this.collectService.collection.coCurrency
           ),
           position: 1
         } as CollectDiscounts);
@@ -4183,7 +4183,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         const updated = {
           ...detail,
           nuAmountCollectDiscount: discountTotal,
-          nuAmountCollectDiscountConversion: this.collectService.convertirMonto(discountTotal, this.collectService.collection.nuValueLocal, this.collectService.documentSaleOpen.coCurrency),
+          nuAmountCollectDiscountConversion: this.collectService.convertirMonto(discountTotal, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
           nuCollectDiscount: totalDiscounts,
           hasDiscount: discountTotal > 0,
           nuAmountPaid: amountToApply
@@ -4248,7 +4248,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
           nuCollectDiscountOther: this.getNuCollectDiscount(discount.idCollectDiscount!),
           naCollectDiscountOther: this.getNaCollectDiscount(discount.idCollectDiscount!),
           nuAmountCollectDiscountOther: this.getNuAmountCollectDiscount(discount.idCollectDiscount!),
-          nuAmountCollectDiscountOtherConversion: this.collectService.convertirMonto(this.getNuAmountCollectDiscount(discount.idCollectDiscount!), this.collectService.collection.nuValueLocal, this.collectService.documentSaleOpen.coCurrency),
+          nuAmountCollectDiscountOtherConversion: this.collectService.convertirMonto(this.getNuAmountCollectDiscount(discount.idCollectDiscount!), this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
           posicion: this.detailCollectDiscountsPos + 1,
           coDocument: coDocument
         };
@@ -4258,7 +4258,6 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     });
 
     if (this.hasManualCollectDiscount()) {
-      const currencyCode = this.collectService.documentSaleOpen?.coCurrency || this.collectService.collection.coCurrency;
       const manualAmount = Number(this.manualCollectDiscountAmount ?? 0);
       const manualDiscount: CollectionDetailDiscounts = {
         idCollectionDetailDiscount: this.MANUAL_COLLECT_DISCOUNT_ID,
@@ -4271,7 +4270,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         nuAmountCollectDiscountOtherConversion: this.collectService.convertirMonto(
           manualAmount,
           this.collectService.collection.nuValueLocal,
-          currencyCode
+          this.collectService.collection.coCurrency
         ),
         posicion: this.detailCollectDiscountsPos + 1,
         coDocument: coDocument
