@@ -30,7 +30,7 @@ vgs:
   signatureCollection: true
   signatureVisit: true
   userCanUploadFiles: true
-  esVendedor: TBD                       # 🔴 NO viene en los dumps — CONFIRMAR CON QA antes de correr
+  esVendedor: true                      # ✅ confirmado por QA 2026-08-04: el usuario 002 ES vendedor
   enterpriseEnabled: false              # global 2026-02-20 (client-2022 decía true) · 1 sola empresa en BD ⇒ coherente
   enabledManualRate: false              # ⇒ la tasa NO se edita a mano
   cobroPrepago: true                    # ⇒ existe botón ANTICIPO/PREPAGO
