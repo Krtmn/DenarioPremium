@@ -351,14 +351,34 @@ defectos:
       crudo del servidor. ⇒ **Hace falta una migración de datos** para los cobros históricos con documento
       editado; si no, el usuario les seguirá viendo `737.880,00 USD` donde van `1,36` para siempre.
       **Preguntar a desarrollo si la contemplaron.**
-    no_verificado_falta_bd: >-
-      ⚠ **No se pudo cerrar la verificación DE RAÍZ.** El `comentario_para_desarrollo` de arriba advierte que
-      el mismo bug corrompe `nu_amount_paid_conversion`, y que si el arreglo fue de raíz ese campo también
-      quedaría sano. **No se pudo comprobar: la BD de `globalmp` no tiene el GRANT de solo lectura**
-      (`permission denied` en todas las tablas — acción DBA: aplicar grant a `user_read`).
-      ⇒ Hoy sólo se puede afirmar que **el síntoma visible desapareció**, no que el fix fue de raíz.
-      Al recuperar el acceso: comparar `nu_amount_paid_conversion` del 8363 contra el del 8362.
-    accion: "Verificado parcialmente el 2026-08-04. Falta: (1) definir migración de históricos con desarrollo, (2) GRANT en globalmp para confirmar el arreglo de raíz en `nu_amount_paid_conversion`."
+    verificado_de_raiz_20260804: >-
+      ✅ **CONFIRMADO QUE EL FIX FUE DE RAÍZ**, no de fachada. Verificado en BD el 2026-08-04, una vez aplicado
+      el GRANT de solo lectura sobre `global_mp`. El campo oculto `nu_amount_paid_conversion` —el que advertía
+      el `comentario_para_desarrollo`— **ahora se guarda dividido**:
+
+      | cobro | documento | pagado | conversión guardada | correcta (÷ tasa) | |
+      |---|---|---|---|---|---|
+      | **8363** | 036332   | 330.000,00 | **447,23** | 447,2272 | ✅ divide |
+      | **8363** | FF081400 |  20.000,00 | **27,10**  | 27,1047  | ✅ divide |
+      | **8362** | 036332   | 331.000,00 | **244.238.280,00** | 448,58 | ❌ multiplica |
+      | **8362** | FF081398 |   7.000,36 | **5.165.425,64**   | 9,49   | ❌ multiplica |
+
+      ⇒ Se arregló `convertirMonto()` en el origen: quedan sanos **los dos** campos (el descuento visible y el
+      `nu_amount_paid_conversion` oculto), que era exactamente lo que pedía el comentario para desarrollo.
+      Con esto **la ruta latente `resolvePersistedNetAmountSumConversion` deja de ser un riesgo para lo nuevo.**
+    alcance_del_daño_historico: >-
+      📊 **Medido en `global_mp` el 2026-08-04** — el dato que le faltaba a la conversación de migración:
+
+      · **70 líneas corruptas** en **43 cobros**, sobre 12.167 líneas y 8.120 cobros ⇒ **0,5 % de los cobros**.
+      · Rango: **24/05/2026 → 03/08/2026**. El último afectado es del día ANTERIOR al fix; el 8363 (04/08)
+        ya sale limpio ⇒ **la ventana cierra exactamente donde tiene que cerrar.**
+      · Peor valor guardado: **244.238.280,00** donde correspondían **448,58**.
+
+      Consulta para detectarlos (sirve para cualquier cliente):
+      `WHERE abs(cd.nu_amount_paid_conversion - cd.nu_amount_paid * c.nu_value_local) < 1 AND cd.nu_amount_paid > 0`
+      ⚠ **Ojo: la misma medición hay que correrla en las otras playas/clientes.** El 0,5 % es de globalmp;
+      no se puede extrapolar sin medirlo.
+    accion: "Fix confirmado de raíz el 2026-08-04. Queda UNA cosa: definir con desarrollo la migración de los 43 cobros históricos (24/05–03/08). Medir el mismo alcance en las demás playas antes de dimensionar el trabajo."
 
   - id: WEB-LIMPIAR-CAMBIA-EMPRESA
     titulo: "`Limpiar` cambia la empresa y muestra registros de otra compañía sin aviso"
