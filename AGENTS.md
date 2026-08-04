@@ -72,7 +72,10 @@ DenarioPremiunMovil/src/app/
 | `npm start` | Dev (`ng serve`) |
 | `npm run build` | Build producción |
 | `npm test` | Unit tests |
+| `npm run test:cobros` | Unit tests del módulo Cobros (`collection-logic`) |
 | `npm run lint` | ESLint |
+
+Catálogo QA por módulo (qué prueba cada caso + backlog de blindaje): `DenarioPremiunMovil/docs/qa/`. Cobros: `docs/qa/cobros/`.
 
 ## Errores frecuentes
 
@@ -87,6 +90,9 @@ DenarioPremiunMovil/src/app/
 - En Transferencia: invertir emisor/receptor al rehidratar desde SQLite (`nuBankAccount` vs `nuClientBankAccount`).
 
 ## Cobros — Transferencia y botón Enviar (contexto operativo)
+
+Catálogo unitarios + plan de blindaje QA: `DenarioPremiunMovil/docs/qa/cobros/`.  
+Bugs: `BUGS.md` (`COB-*`). Checklist corta: `.cursor/rules/bug-prevention.mdc`.
 
 Referencia para no re-diagnosticar síntomas ya entendidos. Código clave:
 
