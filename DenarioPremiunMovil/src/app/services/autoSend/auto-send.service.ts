@@ -449,6 +449,15 @@ export class AutoSendService implements OnInit {
         request.visit.idVisit = null as any;
       }
 
+      const persistedAttachmentCount = await this.adjuntoService.getNuAttachImages(
+        this.dbService.getDatabase(),
+        coTransaction,
+        'visitas',
+      );
+      const attachmentFields = this.resolveVisitAttachmentFields(v, persistedAttachmentCount);
+      request.visit.hasAttachments = attachmentFields.hasAttachments;
+      request.visit.nuAttachments = attachmentFields.nuAttachments;
+
       return await this.sendTransaction(request, "visit", v.coVisit);
     } finally {
       this.visitsInFlight.delete(coTransaction);
@@ -1130,6 +1139,18 @@ export class AutoSendService implements OnInit {
 
     }
       */
+
+  private resolveVisitAttachmentFields(
+    visit: Visit,
+    persistedAttachmentCount: number,
+  ): { hasAttachments: boolean; nuAttachments: number } {
+    const nuAttachments = persistedAttachmentCount > 0
+      ? persistedAttachmentCount
+      : Number(visit.nuAttachments) || 0;
+    const hasAttachments = nuAttachments > 0
+      || String(visit.hasAttachments).toLowerCase() === 'true';
+    return { hasAttachments, nuAttachments };
+  }
 
   private parseIsVisitedFlag(value: unknown): boolean {
     return value === true || value === 1 || value === '1' || value === 'true';

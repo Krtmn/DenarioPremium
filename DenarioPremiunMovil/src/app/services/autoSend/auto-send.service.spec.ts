@@ -24,11 +24,13 @@ describe('AutoSendService', () => {
   let runPendingQueueSpy: jasmine.Spy;
   let alertModalSpy: jasmine.Spy;
   let getVisitSpy: jasmine.Spy;
+  let getNuAttachImagesSpy: jasmine.Spy;
 
   beforeEach(() => {
     executeSqlSpy = jasmine.createSpy('executeSql').and.resolveTo({ rows: { length: 0, item: () => null } });
     alertModalSpy = jasmine.createSpy('alertModal');
     getVisitSpy = jasmine.createSpy('getVisit');
+    getNuAttachImagesSpy = jasmine.createSpy('getNuAttachImages').and.resolveTo(0);
 
     TestBed.configureTestingModule({
       providers: [
@@ -51,6 +53,7 @@ describe('AutoSendService', () => {
           useValue: {
             sendPendingPhotos: jasmine.createSpy('sendPendingPhotos').and.resolveTo(),
             sendPhotos: jasmine.createSpy('sendPhotos').and.resolveTo(),
+            getNuAttachImages: getNuAttachImagesSpy,
           }
         },
         { provide: ReturnDatabaseService, useValue: {} },
@@ -265,6 +268,69 @@ describe('AutoSendService', () => {
     expect(executeSqlSpy).toHaveBeenCalledWith(
       'UPDATE visits SET id_visit = ?, st_visit = ? WHERE co_visit = ?',
       [202, VISIT_STATUS_VISITED, coVisit],
+    );
+  });
+
+  it('sets visit attachment fields from persisted images/files count before POST', async () => {
+    const coVisit = 'VIS-WEB-001';
+    getVisitSpy.and.resolveTo({
+      coVisit,
+      idVisit: 10,
+      stVisit: VISIT_STATUS_TO_SEND,
+      visitDetails: [],
+      coordenadaSaved: false,
+      hasAttachments: false,
+      nuAttachments: 0,
+    });
+    getNuAttachImagesSpy.and.resolveTo(2);
+
+    const sendTransactionSpy = spyOn<any>(service, 'sendTransaction').and.resolveTo(true);
+
+    await (service as any).dispatchVisitTransaction(coVisit);
+
+    expect(getNuAttachImagesSpy).toHaveBeenCalledWith(
+      jasmine.any(Object),
+      coVisit,
+      'visitas',
+    );
+    expect(sendTransactionSpy).toHaveBeenCalledWith(
+      jasmine.objectContaining({
+        visit: jasmine.objectContaining({
+          hasAttachments: true,
+          nuAttachments: 2,
+        }),
+      }),
+      'visit',
+      coVisit,
+    );
+  });
+
+  it('falls back to visit row attachment metadata when persisted count is zero', async () => {
+    const coVisit = 'VIS-WEB-002';
+    getVisitSpy.and.resolveTo({
+      coVisit,
+      idVisit: 10,
+      stVisit: VISIT_STATUS_TO_SEND,
+      visitDetails: [],
+      coordenadaSaved: false,
+      hasAttachments: 'true',
+      nuAttachments: 3,
+    });
+    getNuAttachImagesSpy.and.resolveTo(0);
+
+    const sendTransactionSpy = spyOn<any>(service, 'sendTransaction').and.resolveTo(true);
+
+    await (service as any).dispatchVisitTransaction(coVisit);
+
+    expect(sendTransactionSpy).toHaveBeenCalledWith(
+      jasmine.objectContaining({
+        visit: jasmine.objectContaining({
+          hasAttachments: true,
+          nuAttachments: 3,
+        }),
+      }),
+      'visit',
+      coVisit,
     );
   });
 });
