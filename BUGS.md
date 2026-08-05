@@ -74,6 +74,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-PREPAID-002] Anticipo automático no se envía con el cobro (queda ~5 min)
+
+- **Síntoma:** Al Enviar cobro normal con anticipo automático, el cobro sale de inmediato (o queda Por Enviar) pero el anticipo no se encola/envía hasta el siguiente BackgroundSync (~5 min). Offline: anticipo puede no aparecer como Por Enviar junto al cobro.
+- **Causa:** `saveSend` del cobro hacía `insertPending` + `runPendingQueue` primero; el anticipo se creaba después y su `runPendingQueue` se descartaba por `isProcessingPending` (sin reintento).
+- **Fix:** (B) Enviar cobro normal: persistir → `refreshAutomatedPrepaidBeforeSend` → `createAnticipo*(…, enqueuePending=false)` → `insertPendingTransactionBatch([cobro, anticipo?])` + un `runPendingQueue`. (C) AutoSend: si `runPendingQueue` llega con cola ocupada → dirty-requeue acotado al terminar el pase (mutex intacto).
+- **Evitar:** No encolar cobro y anticipo en dos `saveSend`/`runPendingQueue` separados sin dirty-requeue. No fusionar en 1 POST WS. No tocar umbral `prepaidRangeAmount` (COB-PREPAID-001).
+- **Archivos:** `cobros-header.component.ts`, `collection-logic.service.ts`, `auto-send.service.ts` (+ specs).
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [CLI-SALDOS-001] Lista vs detalle: Saldo USD/BS cruzados
 
 - **Síntoma:** Lista/selector (ej. AS04, `conversionDocument=true`): USD 2,84 / BS 2.096,23. Detalle: BS ~1.546.766 / USD 2.096,23 (correcto). Crédito/docs/web: ~2.096,23 USD.

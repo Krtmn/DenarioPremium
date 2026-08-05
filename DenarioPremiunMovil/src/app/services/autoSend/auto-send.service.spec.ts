@@ -141,6 +141,7 @@ describe('AutoSendService', () => {
       coordenadaSaved: false,
     });
 
+    let visitPendingDeleted = false;
     executeSqlSpy.and.callFake((sql: string) => {
       if (
         typeof sql === 'string' &&
@@ -150,6 +151,9 @@ describe('AutoSendService', () => {
         !sql.includes('INSERT') &&
         !sql.includes('UPDATE')
       ) {
+        if (visitPendingDeleted) {
+          return Promise.resolve({ rows: { length: 0, item: () => null } });
+        }
         return Promise.resolve({
           rows: {
             length: 1,
@@ -177,7 +181,9 @@ describe('AutoSendService', () => {
     });
 
     spyOn(service as any, 'persistServerSuccessForPending').and.resolveTo();
-    spyOn(service as any, 'deletePendingTransaction').and.resolveTo();
+    spyOn(service as any, 'deletePendingTransaction').and.callFake(async () => {
+      visitPendingDeleted = true;
+    });
 
     localStorage.setItem('connected', 'true');
 
@@ -185,6 +191,56 @@ describe('AutoSendService', () => {
 
     expect(callCount).toBe(1);
     expect(getVisitSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('COB-PREPAID-002: runPendingQueue during processing marks dirty and sends newly queued item', async () => {
+    runPendingQueueSpy.and.callThrough();
+
+    const firstCo = 'COL-A';
+    const secondCo = 'COL-B';
+    let pendingRows: Array<{ co_transaction: string; id_transaction: number; type: string }> = [
+      { co_transaction: firstCo, id_transaction: 0, type: 'collect' },
+    ];
+
+    executeSqlSpy.and.callFake((sql: string) => {
+      if (
+        typeof sql === 'string' &&
+        sql.includes('FROM pending_transactions') &&
+        !sql.includes('attachments') &&
+        !sql.includes('DELETE') &&
+        !sql.includes('INSERT') &&
+        !sql.includes('UPDATE')
+      ) {
+        return Promise.resolve({
+          rows: {
+            length: pendingRows.length,
+            item: (i: number) => pendingRows[i],
+          },
+        });
+      }
+      return Promise.resolve({ rows: { length: 0, item: () => null } });
+    });
+
+    const settled: string[] = [];
+    spyOn(service as any, 'settlePendingTransaction').and.callFake(async (pt: { coTransaction: string }) => {
+      settled.push(pt.coTransaction);
+      if (pt.coTransaction === firstCo) {
+        pendingRows = [
+          { co_transaction: secondCo, id_transaction: 0, type: 'collect' },
+        ];
+        void service.runPendingQueue();
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      } else if (pt.coTransaction === secondCo) {
+        pendingRows = [];
+      }
+      return true;
+    });
+
+    localStorage.setItem('connected', 'true');
+
+    await service.runPendingQueue();
+
+    expect(settled).toEqual([firstCo, secondCo]);
   });
 
   it('skips duplicate in-flight visit sends for the same coVisit', async () => {

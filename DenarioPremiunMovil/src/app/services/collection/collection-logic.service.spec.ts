@@ -1017,6 +1017,81 @@ describe('CollectionService', () => {
       });
     });
 
+    describe('COB-PREPAID-002 createAnticipo enqueuePending + batch', () => {
+      function buildSourceCollection(): any {
+        return {
+          nuDifference: 25,
+          collectionPayments: [{
+            idCollectionDetail: 1,
+            coPaymentMethod: 'ef',
+            idBank: 0,
+            nuPaymentDoc: '',
+            naBank: '',
+            coClientBankAccount: '',
+            nuClientBankAccount: '',
+            daValue: '2026-01-01',
+            daCollectionPayment: '2026-01-01',
+            nuCollectionPayment: 1,
+            idDifferenceCode: 0,
+            coDifferenceCode: '',
+            nuBankAccount: '',
+            idTypeDocument: 0,
+            nuDocument: '',
+            idCodePhoneNumber: 0,
+            nuPhoneNumber: '',
+          }],
+        };
+      }
+
+      it('enqueuePending=false no emite saveSend y retorna coCollection', async () => {
+        service.anticipoAutomatico = [{ type: 'ef', posCollectionPayment: 0 }];
+        const collection = buildSourceCollection();
+        const db = { executeSql: jasmine.createSpy('executeSql').and.resolveTo({}) } as any;
+        spyOn(service, 'saveSendCollection');
+
+        const result = await service.createAnticipoCollectionPayment(
+          db,
+          collection,
+          'ANT-NEW-1',
+          25,
+          25,
+          false,
+        );
+
+        expect(result).toBe('ANT-NEW-1');
+        expect(service.saveSendCollection).not.toHaveBeenCalled();
+      });
+
+      it('enqueuePending default true emite saveSend', async () => {
+        service.anticipoAutomatico = [{ type: 'ef', posCollectionPayment: 0 }];
+        const collection = buildSourceCollection();
+        const db = { executeSql: jasmine.createSpy('executeSql').and.resolveTo({}) } as any;
+        spyOn(service, 'saveSendCollection');
+
+        const result = await service.createAnticipoCollectionPayment(
+          db,
+          collection,
+          'ANT-NEW-2',
+          25,
+          25,
+        );
+
+        expect(result).toBe('ANT-NEW-2');
+        expect(service.saveSendCollection).toHaveBeenCalledWith('ANT-NEW-2');
+      });
+
+      it('buildCollectPendingBatch ordena cobro → anticipo', () => {
+        const onlyCobro = service.buildCollectPendingBatch('COB-1');
+        expect(onlyCobro.length).toBe(1);
+        expect(onlyCobro[0].coTransaction).toBe('COB-1');
+        expect(onlyCobro[0].type).toBe('collect');
+
+        const withAnticipo = service.buildCollectPendingBatch('COB-1', 'ANT-1');
+        expect(withAnticipo.map((t) => t.coTransaction)).toEqual(['COB-1', 'ANT-1']);
+        expect(withAnticipo.every((t) => t.type === 'collect')).toBeTrue();
+      });
+    });
+
     it('P1: isRetentionInvalid when sum exceeds balance or both zero', () => {
       expect(service.isRetentionInvalid(10, 1, 5)).toBeTrue();
       expect(service.isRetentionInvalid(0, 0, 100)).toBeTrue();

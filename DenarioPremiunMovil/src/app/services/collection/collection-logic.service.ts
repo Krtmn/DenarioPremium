@@ -42,6 +42,7 @@ import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
 import { TypeDocument } from 'src/app/modelos/tables/typeDocument';
 import { CodePhoneNumber } from 'src/app/modelos/tables/codePhoneNumber';
 import { CollectRetentions } from 'src/app/modelos/tables/collectRetentions';
+import { PendingTransaction } from 'src/app/modelos/tables/pendingTransactions';
 
 export interface DocumentSalesPagination {
   limit: number;
@@ -7017,8 +7018,30 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     this.saveSend.next(coCollection);
   }
 
+  /** Orden cobro → anticipo para batch de pendientes (COB-PREPAID-002). */
+  buildCollectPendingBatch(
+    coCollection: string,
+    anticipoCoCollection?: string | null,
+  ): PendingTransaction[] {
+    const batch: PendingTransaction[] = [
+      new PendingTransaction(coCollection, 0, 'collect'),
+    ];
+    if (anticipoCoCollection) {
+      batch.push(new PendingTransaction(anticipoCoCollection, 0, 'collect'));
+    }
+    return batch;
+  }
+
   //createAnticipoCollection(collection: Collection, inserStatement: string) {
-  createAnticipoCollection(dbServ: SQLiteObject, collection: Collection) {
+  /**
+   * Crea anticipo automático. Con `enqueuePending=false` no emite saveSend
+   * (el caller encola cobro+anticipo en batch). Default true conserva callers legacy.
+   */
+  createAnticipoCollection(
+    dbServ: SQLiteObject,
+    collection: Collection,
+    enqueuePending: boolean = true,
+  ): Promise<string | null> {
     this.syncExchangeRateToCollectionHeader();
     const excessAmount = this.syncPrepaidDifferenceAmounts();
     const excessConversion = Number(this.collection.nuDifferenceConversion ?? 0);
@@ -7097,8 +7120,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         collection.nuAmountDiscountTotalConversion,//collection.nuAmountDiscountTotalConversion,
         collection.nuIgtf,
         collection.hasIGTF,
-        collection.nuAttachments,
-        collection.hasAttachments
+        0,
+        false,
       ]).then(data => {
         console.log("CREE ANTICIPO AUTOMATICO, DEBO CREAR EL PAYMENT")
         return this.createAnticipoCollectionPayment(
@@ -7107,9 +7130,11 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
           newCoCollection,
           excessAmount,
           excessConversion,
+          enqueuePending,
         );
       }).catch(e => {
         console.log(e);
+        return null;
       })
   }
 
@@ -7119,7 +7144,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     newCoCollection: string,
     excessAmount: number = Number(collection.nuDifference ?? 0),
     excessConversion: number = Number(collection.nuDifferenceConversion ?? 0),
-  ) {
+    enqueuePending: boolean = true,
+  ): Promise<string | null> {
 
     let insertStatement = "INSERT OR REPLACE INTO collection_payments(" +
       "id_collection_payment," +
@@ -7148,13 +7174,13 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
     if (!Array.isArray(this.anticipoAutomatico) || this.anticipoAutomatico.length === 0) {
       console.log('ERROR: anticipoAutomatico vacio al crear payment de anticipo');
-      return Promise.resolve(false);
+      return Promise.resolve(null);
     }
 
     const sourcePayment = collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment];
     if (!sourcePayment) {
       console.log('ERROR: no se encontro payment fuente para anticipo automatico');
-      return Promise.resolve(false);
+      return Promise.resolve(null);
     }
 
     return dbServ.executeSql(insertStatement,
@@ -7183,11 +7209,13 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         sourcePayment.nuPhoneNumber,
       ]).then(data => {
         console.log("SE CREO COLLECTION PAYMENTS AUTOMATICO POR EL ANTICIPO");
-        this.saveSendCollection(newCoCollection);
-        return true;
+        if (enqueuePending) {
+          this.saveSendCollection(newCoCollection);
+        }
+        return newCoCollection;
       }).catch(e => {
         console.log(e);
-        return false;
+        return null;
       })
   }
 
