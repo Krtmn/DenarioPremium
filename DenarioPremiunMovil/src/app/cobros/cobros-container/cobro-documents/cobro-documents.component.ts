@@ -1557,6 +1557,8 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
     this.indexDocumentSaleOpen = index;
     if (this.collectService.documentSales[index].isSelected) {
+      // COB-DISC-001: limpiar buffers compartidos antes de hidratar este documento.
+      this.clearDocumentDiscountUiState();
 
       const positionCollecDetails = this.collectService.documentSales[index].positionCollecDetails ?? index;
 
@@ -1604,26 +1606,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         this.resetOpenPartialPaymentAmountState();
       }
 
-      if (this.collectService.userCanSelectCollectDiscount) {
-        if (this.collectService.collection.collectionDetails[positionCollecDetails]?.collectionDetailDiscounts &&
-          this.collectService.collection.collectionDetails[positionCollecDetails].collectionDetailDiscounts?.length > 0) {
-          const persistedDiscounts = this.collectService.collection.collectionDetails[positionCollecDetails].collectionDetailDiscounts!;
-          this.manualCollectDiscountAmount = this.getManualCollectDiscountFromDetails(persistedDiscounts);
-          this.manualCollectDiscountAmountBackup = this.manualCollectDiscountAmount;
-          this.centsManualCollectDiscount = undefined;
-          this.syncManualCollectDiscountInput();
-          const selectedIds = persistedDiscounts
-            .map(cdd => Number(cdd.idCollectDiscount))
-            .filter(id => !Number.isNaN(id) && id > 0);
-          this.collectService.selectedCollectDiscounts = selectedIds;
-          this.setCollectionDetailDiscounts(positionCollecDetails, selectedIds);
-        } else {
-          this.manualCollectDiscountAmount = 0;
-          this.manualCollectDiscountAmountBackup = 0;
-          this.centsManualCollectDiscount = 0;
-          this.displayManualCollectDiscount = '';
-        }
-      }
+      // Descuentos: solo hidratar UI via checkCollectDiscount (no mutar con setCollectionDetailDiscounts).
 
       await this.calculateSaldo(index);
       await this.calculateDocumentSaleOpen(index);
@@ -2063,6 +2046,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         if (this.collectService.dynamicRetentions) {
           this.clearDocumentRetentionState();
         }
+        this.clearDocumentDiscountUiState();
         this.cdr.detectChanges();
         console.log("GUARDAR")
         this.collectService.isOpen = false;
@@ -5076,4 +5060,17 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.detailCollectRetentionsPos = 0;
   }
 
+  /** Limpia buffers de descuento compartidos entre documentos (COB-DISC-001). */
+  private clearDocumentDiscountUiState(): void {
+    this.manualCollectDiscountAmount = 0;
+    this.manualCollectDiscountAmountBackup = 0;
+    this.centsManualCollectDiscount = undefined;
+    this.displayManualCollectDiscount = '';
+    this.assignDiscountsOpen = false;
+    this.collectService.selectedCollectDiscounts = [];
+    this.collectService.tempSelectedCollectDiscounts = [];
+    this.collectService.prevSelectedCollectDiscounts = [];
+  }
+
 }
+

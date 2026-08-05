@@ -10,21 +10,44 @@ import { GlobalConfigService } from 'src/app/services/globalConfig/global-config
 describe('CobroPagosComponent', () => {
   let component: CobroPagosComponent;
   let fixture: ComponentFixture<CobroPagosComponent>;
+  let collectionServiceMock: any;
 
   beforeEach(waitForAsync(() => {
-    const collectionServiceMock = {
+    collectionServiceMock = {
       montoTotalPagar: 0,
+      disableSendButton: false,
       pagoEfectivo: [],
+      pagoCheque: [],
+      pagoDeposito: [],
+      pagoTransferencia: [],
+      pagoMovil: [],
+      pagoOtros: [],
       collectionTagsDenario: new Map([['DENARIO_BOTON_ACEPTAR', 'Aceptar']]),
+      collection: {
+        coCurrency: 'USD',
+        collectionPayments: [],
+      },
+      syncExchangeRateToCollectionHeader: jasmine.createSpy('syncExchangeRateToCollectionHeader').and.returnValue(1),
+      convertirMonto: jasmine.createSpy('convertirMonto').and.callFake((amount: number) => amount),
+      validateToSend: jasmine.createSpy('validateToSend'),
+      cleanString: (value: string) => value,
     };
 
     TestBed.configureTestingModule({
-      declarations: [ CobroPagosComponent ],
+      declarations: [CobroPagosComponent],
       imports: [IonicModule.forRoot()],
       providers: [
         { provide: CollectionService, useValue: collectionServiceMock },
         { provide: CurrencyService, useValue: {} },
-        { provide: DateServiceService, useValue: {} },
+        {
+          provide: DateServiceService,
+          useValue: {
+            hoyISO: () => '2026-08-04',
+            hoyISOFullTime: () => '2026-08-04 12:00:00',
+            toDbDateTime: (value: string) => value,
+            normalizeDateRateToDbDateTime: (value: string) => value,
+          },
+        },
         { provide: GlobalConfigService, useValue: { get: () => undefined } },
       ],
     })
@@ -75,5 +98,29 @@ describe('CobroPagosComponent', () => {
     component.clearBankSearch(searchKey);
 
     expect(component.getFilteredBanks(banks, searchKey)).toEqual(banks);
+  });
+
+  it('COB-TR-002: setMonto forces Enviar OFF before revalidation when lowering amount', () => {
+    collectionServiceMock.disableSendButton = false;
+    collectionServiceMock.pagoEfectivo = [{
+      monto: 100,
+      posCollectionPayment: 0,
+      fecha: '',
+    }];
+    collectionServiceMock.collection.collectionPayments = [{
+      coType: 'ef',
+      coPaymentMethod: 'ef',
+      nuAmountPartial: 100,
+      daValue: '',
+      daCollectionPayment: '',
+    }];
+    spyOn(component, 'validatePayment');
+
+    component.setMonto(50, 0, 'ef');
+
+    expect(collectionServiceMock.disableSendButton).toBeTrue();
+    expect(collectionServiceMock.pagoEfectivo[0].monto).toBe(50);
+    expect(collectionServiceMock.collection.collectionPayments[0].nuAmountPartial).toBe(50);
+    expect(component.validatePayment).toHaveBeenCalledWith('ef', 0);
   });
 });

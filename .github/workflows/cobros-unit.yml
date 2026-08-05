@@ -1,0 +1,30 @@
+name: Cobros unit tests
+
+on:
+  pull_request:
+    paths:
+      - 'DenarioPremiunMovil/src/app/services/collection/**'
+      - 'DenarioPremiunMovil/src/app/cobros/**'
+      - 'DenarioPremiunMovil/package.json'
+      - 'DenarioPremiunMovil/angular.json'
+      - 'DenarioPremiunMovil/karma.conf.js'
+      - '.github/workflows/cobros-unit.yml'
+  workflow_dispatch:
+
+jobs:
+  test-cobros:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: DenarioPremiunMovil
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: DenarioPremiunMovil/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run Cobros unit tests
+        run: npm run test:cobros

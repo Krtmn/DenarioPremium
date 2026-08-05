@@ -65,7 +65,7 @@ describe('NewPotentialClientComponent', () => {
   });
 
   it('should set clientLogic.cannotSavePotentialClient to false if form is valid', async () => {
-    Object.values(component.newPotentialClient.controls).forEach(control => control.setValue('test'));
+    Object.values(component.newPotentialClient.controls).forEach(control => (control as any).setValue('test'));
     await component.checkForm();
     expect(component.clientLogic.cannotSavePotentialClient).toBeFalse();
   });

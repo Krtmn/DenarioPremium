@@ -20,12 +20,15 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Al hidratar TR: receptor=`nuBankAccount`, emisor=`nuClientBankAccount` (no invertir).
 - Enviar con monto bajo puede ser `tolerancia0` + `RangoToleranciaNegativa`, no bug de UI.
 - `createAutomatedPrepaid` puede forzar Enviar ON en exceso; no ignorarlo al diagnosticar.
+- Anticipo automático: umbral = `prepaidRangeAmount` (no anular excedente por `RangoToleranciaPositiva`); ver `COB-PREPAID-001`.
+- Documentos paginados: totales/parciales viven en `collectionDetails`, no en la página de `documentSales` (ver `COB-DOCS-001`).
+- Descuentos/retenciones al reabrir: adjuntar por `coDocument` (no solo `coCollection`); ver `COB-DISC-001`.
 
 ## Clientes / saldos
 
-- Con `conversionDocument != true`, `saldo1`/`saldo2` = moneda cliente / opuesta (no local/hard fijos).
-- Lista y detalle deben usar la misma regla de combinacion (`resolveClientBalanceTotals`).
-- No asumir swap de labels; validar con conversionDocument y moneda del cliente.
+- Con `conversionDocument=true`, SQL `saldo1`/`saldo2` = local/hard; con `!= true` = moneda cliente / opuesta.
+- Lista/selector: `mapRawSaldosToClientOppositeDisplay` (no asumir siempre cliente/opuesta). Detalle: `resolveClientBalanceTotals`.
+- No asumir swap de labels; no mutar saldos del cliente en detalle solo para display.
 
 ## Al cerrar un bug
 

@@ -1,19 +1,19 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { IonicModule } from '@ionic/angular';
 
-import { CobroComponent } from './cobros.component';
+import { CobrosComponent } from './cobros.component';
 
-describe('CobroComponent', () => {
-  let component: CobroComponent;
-  let fixture: ComponentFixture<CobroComponent>;
+describe('CobrosComponent', () => {
+  let component: CobrosComponent;
+  let fixture: ComponentFixture<CobrosComponent>;
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ CobroComponent ],
+      declarations: [CobrosComponent],
       imports: [IonicModule.forRoot()]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(CobroComponent);
+    fixture = TestBed.createComponent(CobrosComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   }));

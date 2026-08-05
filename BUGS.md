@@ -52,18 +52,51 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-PREPAID-001] Anticipo automático no dispara en USD (sí en BS)
+
+- **Síntoma:** Con `prepaidRangeAmount=1` USD, cobro USD (ej. a pagar 333.46, pagado 335 → excedente ~1.54) no crea anticipo. En BS con excedente >= mínimo sí. Montos irreales enormes sí reaccionan.
+- **Causa:** `getPrepaidExcessAmount` anulaba el excedente si `isPositiveExcessWithinTolerance` (misma regla que Enviar: `tolerancia0` + `MonedaTolerancia` + `RangoToleranciaPositiva` alto). En USD el sobrante “normal” quedaba en 0 y nunca superaba el umbral de anticipo; en BS la moneda ≠ `MonedaTolerancia` y el filtro no aplicaba.
+- **Fix:** Desacoplar: anticipo solo usa excedente > 0 vs `prepaidRangeAmount` (`>=`); tolerancia sigue solo en `checkTolerancia` (Enviar).
+- **Evitar:** No reutilizar rangos de tolerancia positiva para decidir anticipo automático.
+- **Archivos:** `collection-logic.service.ts` (`getPrepaidExcessAmount`, `resolveAutomatedPrepaid`).
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [CLI-SALDOS-001] Lista vs detalle: Saldo USD/BS cruzados
 
-- **Síntoma:** Lista (ej. AS04): USD 2,84 / BS 2.096,23 (alineado a web). Detalle: BS ~1.546.766 / USD 2.096,23.
-- **Causa:** Con `conversionDocument != true`, SQL usa `saldo1`=moneda cliente y `saldo2`=opuesta. El detalle (`initializeClientBalances`) asumía siempre `saldo1`=local y `saldo2`=hard, y convertía BS como USD.
-- **Fix:** `resolveClientBalanceTotals` / `resolveClientCurrencyPairBalances` en `ClientLogicService`; detalle usa esa lógica sin mutar `client.saldo1/saldo2`. Rama `conversionDocument=true` conserva semántica local/hard.
+- **Síntoma:** Lista/selector (ej. AS04, `conversionDocument=true`): USD 2,84 / BS 2.096,23. Detalle: BS ~1.546.766 / USD 2.096,23 (correcto). Crédito/docs/web: ~2.096,23 USD.
+- **Causa:** Con `conversionDocument=true`, SQL usa `saldo1`=local y `saldo2`=hard. La lista/selector siempre combinaban con semántica cliente/opuesta (`toHardCurrency` sobre el USD) → 2,84 bajo “Saldo USD”. El detalle ya usaba `resolveClientBalanceTotals(..., true)`.
+- **Fix:** `mapRawSaldosToClientOppositeDisplay` en `ClientLogicService` (reusa `resolveClientBalanceTotals` si `conversionDocument=true`, si no `resolveClientCurrencyPairBalances`); `fixClientListSaldos` y el cálculo del selector lo usan. No mutar saldos del cliente en detalle.
 - **Evitar:**
   - No asumir `saldo1`/`saldo2` = local/hard sin mirar `conversionDocument`.
   - No “arreglar” solo con swap de labels en HTML.
   - No mutar saldos del cliente del detalle con `fixClientListSaldos` (rompe crédito disponible y otros usos).
   - No cambiar SQL de saldos sin alinear lista + detalle + post-proceso.
-- **Archivos:** `client-detail.component.ts`, `client-logic.service.ts`; SQL referencia en `clientes-database-services.service.ts`.
-- **Estado:** fixed (pendiente confirmación QA en dispositivo). Landmine aparte: `getClientById` usa truthy en `conversionDocument` vs lista `== 'true'`.
+- **Archivos:** `client-logic.service.ts`, `cliente-selector.component.ts`; detalle ya OK en `client-detail.component.ts`; SQL en `clientes-database-services.service.ts`.
+- **Estado:** fixed en fuente; QA dispositivo requiere **rebuild + `cap copy`/`sync`** (el APK con `--no-sync` / live-reload caído seguía el `main.js` viejo → 2,84). Follow-up: `getClientById` truthy vs `== 'true'`.
+
+---
+
+## [COB-DOCS-001] Pagos parciales perdidos al paginar Documentos
+
+- **Síntoma:** En Cobros (Normal / 25%), parciales en página 1 no suman en Pago tras ir a página 2 (y viceversa).
+- **Causa:** `getDocumentsSales` hace `clearDocumentSalesState`; `addSelectedDocumentsSales` solo reinyectaba desde SQLite `collection_details` (cobro nuevo no tiene filas). `calculatePayment` iteraba solo `documentSales` de la página actual.
+- **Fix:** Sumar desde `collection.collectionDetails` (`accumulateAmountToPayFromCollectionDetails`); reinyectar seleccionados en memoria (`addSelectedDocumentsSalesFromMemory`); restaurar `inPaymentPartial`/`nuAmountPaid` en `applyExistingSelection`; alinear helpers `resolvePersisted*`.
+- **Evitar:** No acoplar totales de Pago a la página visible. No inventar un Map paralelo a `collectionDetails`. Parciales tipados sin Guardar en el modal siguen fuera de alcance.
+- **Archivos:** `collection-logic.service.ts`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [COB-DISC-001] Descuento manual de un documento aparece en otros al reabrir
+
+- **Síntoma:** Cobro guardado con Descuento manual solo en doc A; al reabrir y abrir lupa de doc B, UI muestra "Descuentos Seleccionados: Descuento manual: X" aunque Total Descuento de B sea 0.
+- **Causa:** En reopen (`cobros-list`), los descuentos se adjuntaban con `d.coCollection === detail.coCollection` (compartido por todos los details). Además `openDocumentSale` llamaba `setCollectionDetailDiscounts` y podía reescribir el manual en el doc abierto.
+- **Fix:** `attachCollectionDetailDiscountsToDetails` por `normalizeCoDocument`; usarlo en lista y `prepareCollectionDetailsForSend`; hidratar UI solo con `checkCollectDiscount`; `clearDocumentDiscountUiState` al abrir/cerrar detalle.
+- **Evitar:** No adjuntar hijos de detalle (descuentos/retenciones) solo por `coCollection`. No mutar `collectionDetailDiscounts` al abrir la lupa.
+- **Archivos:** `collection-logic.service.ts`, `cobros-list.component.ts`, `cobro-documents.component.ts`.
+- **Estado:** fixed (pendiente QA dispositivo).
 
 ---
 
