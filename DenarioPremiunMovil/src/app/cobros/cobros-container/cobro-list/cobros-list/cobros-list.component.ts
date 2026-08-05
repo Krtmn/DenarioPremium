@@ -224,12 +224,10 @@ export class CobrosListComponent implements OnInit {
             const all = collectionDetailsDiscounts || [];
             const isDiscount = (x: any): x is any => x && (x.idCollectDiscount !== undefined || x.nuCollectDiscount !== undefined);
             const discounts = (all as any[]).filter(isDiscount);
-            if (collectionDetailsDiscounts.length > 0) {
-              for (const detail of this.collectService.collection.collectionDetails) {
-                detail.collectionDetailDiscounts = discounts.filter(d => d.coCollection === detail.coCollection) ?? [];
-              }
-
-            }
+            this.collectService.attachCollectionDetailDiscountsToDetails(
+              this.collectService.collection.collectionDetails,
+              discounts,
+            );
 
             this.collectService.getCollectionDetailsRetentions(this.synchronizationServices.getDatabase(), coCollection).then(collectionDetailsRetentions => {
               this.collectService.attachCollectionDetailRetentionsToDetails(

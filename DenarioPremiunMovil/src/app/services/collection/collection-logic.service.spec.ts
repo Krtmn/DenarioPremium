@@ -952,7 +952,7 @@ describe('CollectionService', () => {
       expect(service.montoTotalPagar).toBe(103);
     });
 
-    it('P1: shouldCreateAutomatedPrepaidOnSend requires excess above prepaid range', () => {
+    it('P1: shouldCreateAutomatedPrepaidOnSend requires excess >= prepaid range', () => {
       service.automatedPrepaid = true;
       service.coTypeModule = '0';
       service.existPartialPayment = false;
@@ -963,8 +963,58 @@ describe('CollectionService', () => {
 
       expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeTrue();
 
+      (service as any).getPrepaidExcessAmount.and.returnValue(10);
+      expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeTrue();
+
       (service as any).getPrepaidExcessAmount.and.returnValue(5);
       expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeFalse();
+    });
+
+    describe('COB-PREPAID-001 automated prepaid vs tolerancia', () => {
+      function setupUsdPrepaidScenario(excess: number): void {
+        service.automatedPrepaid = true;
+        service.coTypeModule = '0';
+        service.existPartialPayment = false;
+        service.prepaidRangeAmount = 1;
+        service.prepaidRangeCurrency = 'USD';
+        service.tolerancia0 = true;
+        service.TipoTolerancia = 0;
+        service.RangoToleranciaPositiva = 100000;
+        service.MonedaTolerancia = 'USD';
+        service.collection = { coCurrency: 'USD' } as any;
+        spyOn(service as any, 'syncPrepaidDifferenceAmounts').and.returnValue(excess);
+        spyOn(service as any, 'syncExchangeRateToCollectionHeader').and.stub();
+        spyOn(service as any, 'checkTiposPago').and.stub();
+        spyOn(service as any, 'setAutomatedPrepaid').and.callFake(() => {
+          service.anticipoAutomatico = [{ type: 'ef' }];
+        });
+        spyOn(service, 'validateToSend').and.stub();
+        spyOn(service as any, 'syncAddPaymentMethodDisabledState').and.stub();
+      }
+
+      it('USD: exceso 1.54 con rango+ tolerancia alto sigue contando para anticipo', () => {
+        setupUsdPrepaidScenario(1.54);
+
+        const prepaidExcess = (service as any).getPrepaidExcessAmount();
+        expect(prepaidExcess).toBeCloseTo(1.54, 2);
+
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeTrue();
+      });
+
+      it('umbral exacto: exceso = prepaidRangeAmount crea anticipo', () => {
+        setupUsdPrepaidScenario(1);
+
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeTrue();
+      });
+
+      it('bajo umbral: exceso 0.5 con mínimo 1 no crea anticipo', () => {
+        setupUsdPrepaidScenario(0.5);
+
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeFalse();
+      });
     });
 
     it('P1: isRetentionInvalid when sum exceeds balance or both zero', () => {
@@ -1269,6 +1319,68 @@ describe('CollectionService', () => {
       await service.validateToSend();
 
       expect(spy).toHaveBeenCalledWith(false);
+    });
+  });
+
+  describe('COB-DISC-001 attachCollectionDetailDiscountsToDetails', () => {
+    it('attaches manual discount only to matching coDocument', () => {
+      const details = [
+        { coDocument: 'FF081402', coCollection: 'COB-1', collectionDetailDiscounts: [] },
+        { coDocument: 'FF082165', coCollection: 'COB-1', collectionDetailDiscounts: [] },
+      ] as any[];
+      const discounts = [{
+        coCollection: 'COB-1',
+        coDocument: 'FF081402',
+        idCollectDiscount: -1,
+        naCollectDiscountOther: 'Descuento manual',
+        nuAmountCollectDiscountOther: 8,
+      }] as any[];
+
+      service.attachCollectionDetailDiscountsToDetails(details, discounts);
+
+      expect(details[0].collectionDetailDiscounts.length).toBe(1);
+      expect(details[0].collectionDetailDiscounts[0].nuAmountCollectDiscountOther).toBe(8);
+      expect(details[1].collectionDetailDiscounts).toEqual([]);
+    });
+
+    it('keeps distinct discounts per document without cross-leak', () => {
+      const details = [
+        { coDocument: 'DOC-A', collectionDetailDiscounts: [] },
+        { coDocument: 'DOC-B', collectionDetailDiscounts: [] },
+      ] as any[];
+      const discounts = [
+        {
+          coDocument: 'DOC-A',
+          idCollectDiscount: -1,
+          nuAmountCollectDiscountOther: 8,
+        },
+        {
+          coDocument: 'DOC-B',
+          idCollectDiscount: 12,
+          nuAmountCollectDiscountOther: 3,
+        },
+      ] as any[];
+
+      service.attachCollectionDetailDiscountsToDetails(details, discounts);
+
+      expect(details[0].collectionDetailDiscounts.map((d: any) => d.idCollectDiscount)).toEqual([-1]);
+      expect(details[1].collectionDetailDiscounts.map((d: any) => d.idCollectDiscount)).toEqual([12]);
+    });
+
+    it('matches coDocument after normalizeCoDocument trims spaces', () => {
+      const details = [
+        { coDocument: 'FF081402', collectionDetailDiscounts: [] },
+      ] as any[];
+      const discounts = [{
+        coDocument: '  FF081402  ',
+        idCollectDiscount: -1,
+        nuAmountCollectDiscountOther: 8,
+      }] as any[];
+
+      service.attachCollectionDetailDiscountsToDetails(details, discounts);
+
+      expect(details[0].collectionDetailDiscounts.length).toBe(1);
+      expect(details[0].collectionDetailDiscounts[0].nuAmountCollectDiscountOther).toBe(8);
     });
   });
 });

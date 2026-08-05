@@ -6,7 +6,7 @@
 - `src/app/cobros/.../cobro-general.component.spec.ts`
 
 **Correr:** `npm run test:cobros`  
-**Estado:** **70** casos (ChromeHeadless).  
+**Estado:** ver salida de `npm run test:cobros` (incluye COB-DISC-001).  
 **CI:** `.github/workflows/cobros-unit.yml` (PR que toque cobros/collection).
 
 Los unitarios validan **lógica de negocio** y regresiones UI críticas. Smoke dispositivo: [smoke-manual.md](./smoke-manual.md).
@@ -105,6 +105,7 @@ Los unitarios validan **lógica de negocio** y regresiones UI críticas. Smoke d
 | **COB-TR-003** | cobro-general | Hidrata TR sin invertir cuentas; restaura nueva cuenta. |
 | **P2 filtro moneda** | cobro-documents | Filtra docs de la página por moneda. |
 | **P2 parcial UI** | cobro-documents | Sync flag parcial a doc/detail/open. |
+| **COB-DISC-001** | cobro-documents | `clearDocumentDiscountUiState` limpia buffers; `checkCollectDiscount` deja 0 sin líneas. |
 | **P2 totales** | cobro-total | Format montos, columnas retención, docs negativos. |
 | **P2 lista** | cobros-list | Búsqueda por nombre cliente / vacío. |
 
@@ -117,6 +118,14 @@ Los unitarios validan **lógica de negocio** y regresiones UI críticas. Smoke d
 | **P1 referencias** | TR sin ref → false; efectivo sin ref → true; monto 0 → false. |
 | **DM-COB-028** | Anticipo: pago con monto parcial → Enviar ON; sin monto → OFF. |
 
+## 12. COB-DISC-001 — descuentos por documento
+
+| ID | Qué hace |
+|----|----------|
+| **COB-DISC-001** | Manual discount solo en el `coDocument` que lo tiene; el otro queda `[]`. |
+| **COB-DISC-001** | Descuentos distintos por doc no se cruzan. |
+| **COB-DISC-001** | Match con `co_document` con espacios vía `normalizeCoDocument`. |
+
 ---
 
 ## Relación con bugs
@@ -124,6 +133,7 @@ Los unitarios validan **lógica de negocio** y regresiones UI críticas. Smoke d
 | Bug ID | Cubierto |
 |--------|----------|
 | COB-DOCS-001 | Sí (totales + applyExistingSelection + reinjection SQL) |
+| COB-DISC-001 | Sí (`attachCollectionDetailDiscountsToDetails`) |
 | COB-TR-001 | Sí (completitud TR) |
 | COB-TR-002 | Sí (setMonto) |
 | COB-TR-003 | Sí (hidratación) |

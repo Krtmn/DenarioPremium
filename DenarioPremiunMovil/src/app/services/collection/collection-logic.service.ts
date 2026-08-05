@@ -1989,22 +1989,13 @@ export class CollectionService {
     return normalizedExcess;
   }
 
-  private isPositiveExcessWithinTolerance(excess: number): boolean {
-    if (excess <= 0) {
-      return true;
-    }
-    if (!this.tolerancia0 || this.TipoTolerancia !== 0) {
-      return false;
-    }
-    if (this.collection.coCurrency !== this.MonedaTolerancia) {
-      return false;
-    }
-    return excess < this.RangoToleranciaPositiva;
-  }
-
+  /**
+   * Excedente para anticipo automático. No usa tolerancia de Enviar:
+   * tolerancia positiva habilita Enviar; prepaidRangeAmount decide el anticipo.
+   */
   private getPrepaidExcessAmount(): number {
     const excess = this.syncPrepaidDifferenceAmounts();
-    if (excess <= 0 || this.isPositiveExcessWithinTolerance(excess)) {
+    if (excess <= 0) {
       return 0;
     }
     if (this.prepaidRangeCurrency === this.collection.coCurrency) {
@@ -2026,7 +2017,7 @@ export class CollectionService {
     }
 
     const prepaidExcess = this.getPrepaidExcessAmount();
-    if (prepaidExcess <= this.prepaidRangeAmount) {
+    if (prepaidExcess < this.prepaidRangeAmount) {
       return false;
     }
 
@@ -2055,7 +2046,7 @@ export class CollectionService {
 
     if (this.automatedPrepaid && this.coTypeModule === '0' && !this.existPartialPayment) {
       const prepaidExcess = this.getPrepaidExcessAmount();
-      if (prepaidExcess > this.prepaidRangeAmount) {
+      if (prepaidExcess >= this.prepaidRangeAmount) {
         this.createAutomatedPrepaid = true;
       }
     }
@@ -2239,7 +2230,7 @@ export class CollectionService {
     this.anticipoAutomatico = [];
     this.syncExchangeRateToCollectionHeader();
     const excess = this.getPrepaidExcessAmount();
-    if (excess <= this.prepaidRangeAmount) {
+    if (excess < this.prepaidRangeAmount) {
       return;
     }
 
@@ -3634,6 +3625,31 @@ export class CollectionService {
     }
   }
 
+  /**
+   * Adjunta descuentos a cada detail por coDocument (no por coCollection).
+   * Evita COB-DISC-001: filtrar solo por cobro asigna el Descuento manual de un doc a todos.
+   */
+  attachCollectionDetailDiscountsToDetails(
+    details: CollectionDetail[],
+    discounts: CollectionDetailDiscounts[] | null | undefined,
+  ): void {
+    if (!Array.isArray(details)) {
+      return;
+    }
+
+    const allDiscounts = Array.isArray(discounts) ? discounts : [];
+    for (const detail of details) {
+      if (!detail) {
+        continue;
+      }
+
+      const detailCoDocument = this.normalizeCoDocument(detail.coDocument);
+      detail.collectionDetailDiscounts = allDiscounts.filter(
+        discount => this.normalizeCoDocument(discount?.coDocument) === detailCoDocument,
+      );
+    }
+  }
+
   attachCollectionDetailRetentionsToDetails(
     details: CollectionDetail[],
     retentions: CollectionDetailRetentions[],
@@ -3700,12 +3716,7 @@ export class CollectionService {
 
     if (options.includeDiscounts) {
       const collectionDetailsDiscounts = await this.getCollectionDetailsDiscounts(dbServ, coCollection);
-      const discounts: CollectionDetailDiscounts[] = collectionDetailsDiscounts ?? [];
-
-      for (let i = 0; i < details.length; i++) {
-        details[i].collectionDetailDiscounts =
-          discounts.filter(discount => discount.coDocument === details[i].coDocument);
-      }
+      this.attachCollectionDetailDiscountsToDetails(details, collectionDetailsDiscounts);
     }
 
     const retentions = await this.getCollectionDetailsRetentions(dbServ, coCollection);

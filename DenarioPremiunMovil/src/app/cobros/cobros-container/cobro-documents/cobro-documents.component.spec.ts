@@ -28,6 +28,9 @@ describe('CobrosDocumentComponent', () => {
       isPaymentPartial: false,
       alwaysPartialPayment: false,
       isChangePaymentPartialPersistence: false,
+      selectedCollectDiscounts: [1],
+      tempSelectedCollectDiscounts: [{ idCollectDiscount: 1 }],
+      prevSelectedCollectDiscounts: [1],
       collection: {
         collectionDetails: [],
       },
@@ -118,5 +121,41 @@ describe('CobrosDocumentComponent', () => {
     expect(collectServiceMock.documentSales[0].inPaymentPartial).toBeTrue();
     expect(collectServiceMock.collection.collectionDetails[0].inPaymentPartial).toBeTrue();
     expect(collectServiceMock.documentSaleOpen.inPaymentPartial).toBeTrue();
+  });
+
+  it('COB-DISC-001: clearDocumentDiscountUiState resets shared discount buffers', () => {
+    (component as any).manualCollectDiscountAmount = 8;
+    (component as any).manualCollectDiscountAmountBackup = 8;
+    (component as any).centsManualCollectDiscount = 800;
+    (component as any).displayManualCollectDiscount = '8,00';
+    (component as any).assignDiscountsOpen = true;
+
+    (component as any).clearDocumentDiscountUiState();
+
+    expect((component as any).manualCollectDiscountAmount).toBe(0);
+    expect((component as any).manualCollectDiscountAmountBackup).toBe(0);
+    expect((component as any).centsManualCollectDiscount).toBeUndefined();
+    expect((component as any).displayManualCollectDiscount).toBe('');
+    expect((component as any).assignDiscountsOpen).toBeFalse();
+    expect(collectServiceMock.selectedCollectDiscounts).toEqual([]);
+    expect(collectServiceMock.tempSelectedCollectDiscounts).toEqual([]);
+    expect(collectServiceMock.prevSelectedCollectDiscounts).toEqual([]);
+  });
+
+  it('COB-DISC-001: checkCollectDiscount keeps manual amount 0 when detail has no discounts', () => {
+    (component as any).manualCollectDiscountAmount = 8;
+    collectServiceMock.documentSaleOpen = {
+      coDocument: 'FF082165',
+      positionCollecDetails: 0,
+    };
+    collectServiceMock.collection.collectionDetails = [{
+      coDocument: 'FF082165',
+      collectionDetailDiscounts: [],
+    }];
+
+    component.checkCollectDiscount();
+
+    expect((component as any).manualCollectDiscountAmount).toBe(0);
+    expect(collectServiceMock.selectedCollectDiscounts).toEqual([]);
   });
 });
