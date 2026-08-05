@@ -1989,22 +1989,13 @@ export class CollectionService {
     return normalizedExcess;
   }
 
-  private isPositiveExcessWithinTolerance(excess: number): boolean {
-    if (excess <= 0) {
-      return true;
-    }
-    if (!this.tolerancia0 || this.TipoTolerancia !== 0) {
-      return false;
-    }
-    if (this.collection.coCurrency !== this.MonedaTolerancia) {
-      return false;
-    }
-    return excess < this.RangoToleranciaPositiva;
-  }
-
+  /**
+   * Excedente para anticipo automático. No usa tolerancia de Enviar:
+   * tolerancia positiva habilita Enviar; prepaidRangeAmount decide el anticipo.
+   */
   private getPrepaidExcessAmount(): number {
     const excess = this.syncPrepaidDifferenceAmounts();
-    if (excess <= 0 || this.isPositiveExcessWithinTolerance(excess)) {
+    if (excess <= 0) {
       return 0;
     }
     if (this.prepaidRangeCurrency === this.collection.coCurrency) {
@@ -2026,7 +2017,7 @@ export class CollectionService {
     }
 
     const prepaidExcess = this.getPrepaidExcessAmount();
-    if (prepaidExcess <= this.prepaidRangeAmount) {
+    if (prepaidExcess < this.prepaidRangeAmount) {
       return false;
     }
 
@@ -2055,7 +2046,7 @@ export class CollectionService {
 
     if (this.automatedPrepaid && this.coTypeModule === '0' && !this.existPartialPayment) {
       const prepaidExcess = this.getPrepaidExcessAmount();
-      if (prepaidExcess > this.prepaidRangeAmount) {
+      if (prepaidExcess >= this.prepaidRangeAmount) {
         this.createAutomatedPrepaid = true;
       }
     }
@@ -2239,7 +2230,7 @@ export class CollectionService {
     this.anticipoAutomatico = [];
     this.syncExchangeRateToCollectionHeader();
     const excess = this.getPrepaidExcessAmount();
-    if (excess <= this.prepaidRangeAmount) {
+    if (excess < this.prepaidRangeAmount) {
       return;
     }
 
