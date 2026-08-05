@@ -8,6 +8,8 @@ import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
+import { AutoSendService } from 'src/app/services/autoSend/auto-send.service';
+import { ServicesService } from 'src/app/services/services.service';
 import { COLLECT_STATUS_SAVED, COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW } from 'src/app/utils/appConstants';
 import {
   canCreateCollectionForClient,
@@ -31,6 +33,8 @@ export class CobrosHeaderComponent implements OnInit {
   public adjuntoService = inject(AdjuntoService);
   public synchronizationServices = inject(SynchronizationDBService);
   public messageService = inject(MessageService);
+  private services = inject(ServicesService);
+  private autoSend = inject(AutoSendService);
   messageAlert!: MessageAlert;
 
 
@@ -56,6 +60,9 @@ export class CobrosHeaderComponent implements OnInit {
   public COLLECT_STATUS_SENT = COLLECT_STATUS_SENT;
   public COLLECT_STATUS_TO_SEND = COLLECT_STATUS_TO_SEND;
   public COLLECT_STATUS_NEW = COLLECT_STATUS_NEW;
+
+  /** Evita doble Enviar si ion-alert didDismiss dispara dos veces. */
+  private isSendingNormalCollection = false;
 
   public alertButtons = [
     /*  {
@@ -265,36 +272,140 @@ export class CobrosHeaderComponent implements OnInit {
 
   setResultSend(ev: any) {
     console.log('Apretó:' + ev.detail.role);
-    if (ev.detail.role === 'confirm') {
-      this.alertMessageOpenSend = false;
-      this.sendOrSave(true)
-    } else {
-      this.alertMessageOpenSend = false;
+    // Cerrar primero; un segundo didDismiss (isOpen→false) no debe reenviar.
+    if (!this.alertMessageOpenSend) {
+      return;
     }
+    this.alertMessageOpenSend = false;
+    if (ev?.detail?.role === 'confirm') {
+      this.sendOrSave(true);
+    }
+  }
+
+  private isCollectSendOnline(): boolean {
+    return localStorage.getItem('connected') === 'true';
+  }
+
+  /** UX de “Por Enviar” (paths que aún encolan vía saveSend + AutoSend en paralelo). */
+  notifyCollectionQueuedForSend(): void {
+    this.collectService.sendCollection = true;
+
+    const sendMessage = this.isCollectSendOnline()
+      ? this.collectService.collectionTags.get('COB_DENARIO_TO_SEND')!
+      : this.collectService.collectionTags.get('COB_DENARIO_TO_SEND_OFFLINE')!;
+
+    if (this.collectService.lastPersistCreatedSeparateIgtfDocument) {
+      this.collectService.mensaje = `${sendMessage}\n\n${this.collectService.resolveSeparateIgtfDocumentCreatedMessage()}`;
+      this.alertMessageOpen = true;
+      return;
+    }
+
+    this.messageAlert = new MessageAlert(
+      this.collectService.collectionTags.get('COB_HEADER_MESSAGE')!,
+      sendMessage,
+    );
+    this.messageService.alertModal(this.messageAlert);
+  }
+
+  /** Solo offline: un aviso de cola (online usa loading + alertas AutoSend). */
+  private notifyOfflineCollectQueued(): void {
+    this.collectService.sendCollection = true;
+    if (this.isCollectSendOnline()) {
+      return;
+    }
+
+    const sendMessage = this.collectService.collectionTags.get('COB_DENARIO_TO_SEND_OFFLINE')!;
+    if (this.collectService.lastPersistCreatedSeparateIgtfDocument) {
+      this.collectService.mensaje = `${sendMessage}\n\n${this.collectService.resolveSeparateIgtfDocumentCreatedMessage()}`;
+      this.alertMessageOpen = true;
+      return;
+    }
+
+    this.messageAlert = new MessageAlert(
+      this.collectService.collectionTags.get('COB_HEADER_MESSAGE')!,
+      sendMessage,
+    );
+    this.messageService.alertModal(this.messageAlert);
   }
 
   saveSendNewCollection(send: Boolean, coCollection: string) {
     if (send) {
-      this.collectService.sendCollection = true;
       this.collectService.saveSendCollection(coCollection);
+      this.notifyCollectionQueuedForSend();
+    }
+  }
 
-      const sendMessage = localStorage.getItem("connected") == "true"
-        ? this.collectService.collectionTags.get('COB_DENARIO_TO_SEND')!
-        : this.collectService.collectionTags.get('COB_DENARIO_TO_SEND_OFFLINE')!;
+  private async finishAfterSendNavigation(): Promise<void> {
+    this.collectService.initCollect = true;
+    this.collectService.disableSavedButton = true;
+    this.collectService.disableSendButton = true;
+    this.collectService.showHeaderButtons = false;
+    this.collectService.cobroComponent = false;
+    this.collectService.cobrosComponent = true;
+    this.collectService.collectValid = false;
+    this.collectService.collectionIsSave = false;
+    await this.messageService.hideLoading();
+  }
 
-      if (this.collectService.lastPersistCreatedSeparateIgtfDocument) {
-        this.collectService.mensaje = `${sendMessage}\n\n${this.collectService.resolveSeparateIgtfDocumentCreatedMessage()}`;
-        this.alertMessageOpen = true;
-        return;
+  /**
+   * COB-PREPAID-002: cobro normal — batch cobro + anticipo + un runPendingQueue.
+   * Online: loading solo mientras persiste/encola; luego hide → AutoSend (alertas limpios).
+   * Sin “Su Cobro será enviado” online. Offline: sin loading + aviso de cola.
+   */
+  private async sendNormalCollectionWithOptionalPrepaid(): Promise<void> {
+    if (this.isSendingNormalCollection) {
+      return;
+    }
+    this.isSendingNormalCollection = true;
+    const online = this.isCollectSendOnline();
+
+    try {
+      if (online) {
+        await this.messageService.showLoading();
       }
 
-      this.messageAlert = new MessageAlert(
-        this.collectService.collectionTags.get('COB_HEADER_MESSAGE')!,
-        sendMessage,
-      );
-      this.messageService.alertModal(this.messageAlert);
-    }
+      const db = this.synchronizationServices.getDatabase();
+      const coCollection = this.collectService.collection.coCollection;
 
+      const response = await this.collectService.saveCollection(
+        db,
+        this.collectService.collection,
+        true,
+      );
+      await this.adjuntoService.savePhotos(db, coCollection, 'cobros');
+      console.log(response);
+      this.collectService.applyPersistSucceededBaseline();
+
+      const shouldCreatePrepaid = await this.collectService.refreshAutomatedPrepaidBeforeSend();
+      let anticipoCoCollection: string | null = null;
+      if (shouldCreatePrepaid) {
+        anticipoCoCollection = await this.collectService.createAnticipoCollection(
+          db,
+          this.collectService.collection,
+          false,
+        );
+        console.log(anticipoCoCollection, ' SE CREO ANTICIPO AUTOMATICO');
+        this.collectService.createAutomatedPrepaid = false;
+        this.collectService.anticipoAutomatico = [];
+      }
+
+      const transactions = this.collectService.buildCollectPendingBatch(
+        coCollection,
+        anticipoCoCollection,
+      );
+      await this.services.insertPendingTransactionBatch(db, transactions);
+      this.collectService.sendCollection = true;
+
+      // Esperar a que el spinner se cierre del todo antes de AutoSend (evita z-index overlap).
+      await this.finishAfterSendNavigation();
+      if (!online) {
+        this.notifyOfflineCollectQueued();
+      }
+      await this.autoSend.runPendingQueue();
+    } finally {
+      this.isSendingNormalCollection = false;
+      await this.messageService.hideLoading();
+    }
   }
 
   sendOrSave(sendOrSave: boolean) {
@@ -374,6 +485,19 @@ export class CobrosHeaderComponent implements OnInit {
     }
 
     this.collectService.collectionIsSave = true;
+
+    // Cobro normal Enviar: online=loading+AutoSend; offline=aviso cola (sin “será enviado” online).
+    if (sendOrSave && this.collectService.collection.coType === '0') {
+      this.collectService.collection.stDelivery = 2;
+      this.collectService.collection.stCollection = this.COLLECT_STATUS_TO_SEND;
+      void this.sendNormalCollectionWithOptionalPrepaid().catch(err => {
+        console.error('CobrosHeader: error enviando cobro con anticipo', err);
+        this.collectService.collectionIsSave = false;
+        void this.messageService.hideLoading();
+      });
+      return;
+    }
+
     this.messageService.showLoading().then(async () => {
       if (this.collectService.collection.coType === '1') {
         await this.collectService.calcularMontos('', 0);
@@ -381,9 +505,10 @@ export class CobrosHeaderComponent implements OnInit {
       }
 
       if (sendOrSave) {
-        //envio
         this.collectService.collection.stDelivery = 2;
         this.collectService.collection.stCollection = this.COLLECT_STATUS_TO_SEND;
+
+        // Otros tipos (anticipo manual / retención / IGTF): flujo previo
         this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(response => {
           this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros").then(() => {
             console.log(response);
@@ -391,7 +516,6 @@ export class CobrosHeaderComponent implements OnInit {
             this.saveSendNewCollection(true, this.collectService.collection.coCollection);
             this.collectService.refreshAutomatedPrepaidBeforeSend().then((shouldCreatePrepaid) => {
               if (shouldCreatePrepaid) {
-                //DEBO CREAR EL ANTICIPO AUTOMATICO
                 this.collectService.createAnticipoCollection(this.synchronizationServices.getDatabase(), this.collectService.collection).then(resp => {
                   console.log(resp, " SE CREO ANTICIPO AUTOMATICO");
                   this.collectService.createAutomatedPrepaid = false;
@@ -399,19 +523,9 @@ export class CobrosHeaderComponent implements OnInit {
                 });
               }
 
-              this.collectService.initCollect = true;
-              this.collectService.disableSavedButton = true;
-              this.collectService.disableSendButton = true;
-              this.collectService.showHeaderButtons = false;
-              this.collectService.cobroComponent = false;
-              this.collectService.cobrosComponent = true;
-              this.collectService.collectValid = false;
-              this.collectService.collectionIsSave = false;
-              this.messageService.hideLoading();
+              this.finishAfterSendNavigation();
             });
           })
-
-
         })
       } else {
         //salvo
