@@ -73,6 +73,10 @@ export class ClienteSelectorComponent implements OnInit {
   public page = 0; // para paginacion de clientes.
   public scrollDisable = false;
 
+  private shouldExcludeSuspended(): boolean {
+    return (this.service.selectionCoModule || '').toLowerCase() === 'ped';
+  }
+
 
 
   @ViewChild(IonModal) modal!: IonModal;
@@ -196,6 +200,7 @@ export class ClienteSelectorComponent implements OnInit {
       idEnterprise,
       this.page,
       this.shouldFilterCollectionIva(),
+      this.shouldExcludeSuspended(),
     ).then(result => {
       this.handleUpdateClientList(result);
     });
@@ -209,6 +214,7 @@ export class ClienteSelectorComponent implements OnInit {
         searchText,
         this.page,
         this.shouldFilterCollectionIva(),
+        this.shouldExcludeSuspended(),
       ).then(result => {
         this.handleUpdateClientList(result);
       });
@@ -223,7 +229,9 @@ export class ClienteSelectorComponent implements OnInit {
     }
 
     const mode = resolveClientSelectionMode(this.service.selectionCoModule);
-    const clientsToShow = filterClientsBySelectionMode(result, mode);
+    const clientsToShow = mode === 'order'
+      ? filterClientsBySelectionMode(result, 'order')
+      : result;
 
     if (this.multimoneda) {
       this.fixClientListSaldos(clientsToShow);
