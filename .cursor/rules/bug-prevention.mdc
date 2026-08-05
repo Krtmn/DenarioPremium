@@ -23,6 +23,7 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Anticipo automático: umbral = `prepaidRangeAmount` (no anular excedente por `RangoToleranciaPositiva`); ver `COB-PREPAID-001`.
 - Documentos paginados: totales/parciales viven en `collectionDetails`, no en la página de `documentSales` (ver `COB-DOCS-001`).
 - Descuentos/retenciones al reabrir: adjuntar por `coDocument` (no solo `coCollection`); ver `COB-DISC-001`.
+- Retención multi-doc (`coType` 2): Enviar/Guardar exige completitud por documento, no solo suma > 0 (`COB-RET-001`).
 
 ## Clientes / saldos
 

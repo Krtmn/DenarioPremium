@@ -52,6 +52,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-RET-001] Retención multi-documento permite enviar con docs en blanco
+
+- **Síntoma:** Módulo Retención (`coType`/`coTypeModule` = `2`): con 2+ facturas seleccionadas, completar retención solo en una y dejar otra en 0 permite Enviar/Guardar; el documento vacío viaja sin monto/comprobante/fecha.
+- **Causa:** `validateToSend` (rama `coType == '2'`) solo exigía suma global `getDetailRetentionTotal` > 0. El header `sendOrSave` para tipo 2 validaba adjuntos, no completitud por documento.
+- **Fix:** Helpers `isRetentionDetailComplete` / `areAllRetentionDetailsComplete` (monto > 0 + voucher/fecha legacy o líneas dinámicas con `idCollectRetention` y `validateRetentionVoucherValue`). `validateToSend` usa el helper (reemplaza criterio de suma). Header bloquea Guardar y Enviar con alerta en español si algún detalle está incompleto. Lista vacía → incompleto.
+- **Evitar:** No habilitar Enviar en retención solo por suma > 0; cada documento seleccionado debe estar completo.
+- **Archivos:** `collection-logic.service.ts`, `cobros-header.component.ts`, `collection-logic.service.spec.ts`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [COB-PREPAID-001] Anticipo automático no dispara en USD (sí en BS)
 
 - **Síntoma:** Con `prepaidRangeAmount=1` USD, cobro USD (ej. a pagar 333.46, pagado 335 → excedente ~1.54) no crea anticipo. En BS con excedente >= mínimo sí. Montos irreales enormes sí reaccionan.
