@@ -10,3 +10,4 @@ Checklist corta P3. No automatizar todavía.
 6. Adjunto + GPS (si aplica config).
 7. Lista: borrador vs enviado.
 8. `tolerancia0` OFF → no enviar con faltante; ON + rango− alto → sí (documentado, no bug TR).
+9. COB-PREPAID-002: cobro normal con excedente ≥ `prepaidRangeAmount` + `automatedPrepaid` → Enviar → online: loading solo al persistir/encolar, se cierra y luego alertas AutoSend (cobro → anticipo), sin “Su Cobro será enviado”; offline: aviso “al tener conexión” + ambos Por Enviar. Sin adjuntos en el anticipo automático.

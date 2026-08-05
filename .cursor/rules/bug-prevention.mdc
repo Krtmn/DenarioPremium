@@ -21,6 +21,7 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Enviar con monto bajo puede ser `tolerancia0` + `RangoToleranciaNegativa`, no bug de UI.
 - `createAutomatedPrepaid` puede forzar Enviar ON en exceso; no ignorarlo al diagnosticar.
 - Anticipo automático: umbral = `prepaidRangeAmount` (no anular excedente por `RangoToleranciaPositiva`); ver `COB-PREPAID-001`.
+- Anticipo automático al Enviar: batch cobro→anticipo + dirty-requeue AutoSend (no dos `runPendingQueue` sueltos); ver `COB-PREPAID-002`.
 - Documentos paginados: totales/parciales viven en `collectionDetails`, no en la página de `documentSales` (ver `COB-DOCS-001`).
 - Descuentos/retenciones al reabrir: adjuntar por `coDocument` (no solo `coCollection`); ver `COB-DISC-001`.
 - Retención multi-doc (`coType` 2): Enviar/Guardar exige completitud por documento, no solo suma > 0 (`COB-RET-001`).
