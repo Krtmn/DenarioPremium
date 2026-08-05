@@ -351,12 +351,18 @@ export class CobrosHeaderComponent implements OnInit {
       }
     }
 
-    if (this.collectService.collection.coType == "2" && sendOrSave) {
-      if (this.collectService.requiredRetentionAttachments) {
+    if (this.collectService.collection.coType == "2") {
+      if (sendOrSave && this.collectService.requiredRetentionAttachments) {
         if (!this.adjuntoService.hasItems()) {
           this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_RET_MSJ_RETENTION_NO_ATTACHMENTS')!);
           return;
         }
+      }
+      if (!this.collectService.areAllRetentionDetailsComplete(this.collectService.collection.collectionDetails)) {
+        this.messageService.transaccionMsjModalNB(
+          'Cada documento seleccionado debe tener retención completa (monto, comprobante y fecha).'
+        );
+        return;
       }
     }
 
