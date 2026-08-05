@@ -1322,6 +1322,159 @@ describe('CollectionService', () => {
     });
   });
 
+  describe('COB-RET-001 multi-document retention completeness', () => {
+    function legacyCompleteDetail(overrides: Partial<CollectionDetail> = {}): CollectionDetail {
+      return {
+        coDocument: 'FAC-A',
+        nuAmountRetention: 10,
+        nuAmountRetention2: 0,
+        nuVoucherRetention: '1234567890',
+        daVoucher: '2026-08-05',
+        ...overrides,
+      } as CollectionDetail;
+    }
+
+    beforeEach(() => {
+      service.dynamicRetentions = false;
+      service.sizeRetention = 0;
+      service.collectRetentions = [];
+    });
+
+    it('COB-RET-001: validateToSend OFF when one selected doc has zero retention', async () => {
+      const spy = spyOn(service, 'onCollectionValidToSend');
+      service.collection = {
+        coType: '2',
+        collectionDetails: [
+          legacyCompleteDetail({ coDocument: 'FAC-A' }),
+          legacyCompleteDetail({
+            coDocument: 'FAC-B',
+            nuAmountRetention: 0,
+            nuAmountRetention2: 0,
+            nuVoucherRetention: '',
+            daVoucher: '',
+          }),
+        ],
+      } as any;
+
+      await service.validateToSend();
+
+      expect(spy).toHaveBeenCalledWith(false);
+    });
+
+    it('COB-RET-002: validateToSend ON when all selected docs are complete', async () => {
+      const spy = spyOn(service, 'onCollectionValidToSend');
+      service.collection = {
+        coType: '2',
+        collectionDetails: [
+          legacyCompleteDetail({ coDocument: 'FAC-A' }),
+          legacyCompleteDetail({
+            coDocument: 'FAC-B',
+            nuAmountRetention: 5,
+            nuVoucherRetention: 'ABC',
+            daVoucher: '2026-08-04',
+          }),
+        ],
+      } as any;
+
+      await service.validateToSend();
+
+      expect(spy).toHaveBeenCalledWith(true);
+    });
+
+    it('COB-RET-003: validateToSend ON for single complete retention detail', async () => {
+      const spy = spyOn(service, 'onCollectionValidToSend');
+      service.collection = {
+        coType: '2',
+        collectionDetails: [legacyCompleteDetail()],
+      } as any;
+
+      await service.validateToSend();
+
+      expect(spy).toHaveBeenCalledWith(true);
+    });
+
+    it('COB-RET-004: validateToSend OFF when dynamic retention line is incomplete', async () => {
+      const spy = spyOn(service, 'onCollectionValidToSend');
+      service.dynamicRetentions = true;
+      service.collectRetentions = [{
+        idCollectRetention: 1,
+        requireInput: true,
+        nuVoucherLength: 10,
+      } as any];
+      service.collection = {
+        coType: '2',
+        collectionDetails: [{
+          coDocument: 'FAC-A',
+          nuAmountRetention: 0,
+          nuAmountRetention2: 0,
+          collectionDetailRetentions: [{
+            idCollectRetention: 1,
+            nuAmountRetention: 15,
+            nuVoucherRetention: '',
+            daVoucherRetention: '2026-08-05',
+          }],
+        }],
+      } as any;
+
+      await service.validateToSend();
+
+      expect(spy).toHaveBeenCalledWith(false);
+    });
+
+    it('COB-RET-005: isRetentionDetailComplete / areAllRetentionDetailsComplete unit cases', () => {
+      expect(service.areAllRetentionDetailsComplete([])).toBeFalse();
+      expect(service.areAllRetentionDetailsComplete(undefined)).toBeFalse();
+      expect(service.isRetentionDetailComplete(null)).toBeFalse();
+
+      const complete = legacyCompleteDetail();
+      expect(service.isRetentionDetailComplete(complete)).toBeTrue();
+      expect(service.areAllRetentionDetailsComplete([complete])).toBeTrue();
+
+      const zeroAmount = legacyCompleteDetail({ nuAmountRetention: 0, nuAmountRetention2: 0 });
+      expect(service.isRetentionDetailComplete(zeroAmount)).toBeFalse();
+
+      const missingVoucher = legacyCompleteDetail({ nuVoucherRetention: '   ' });
+      expect(service.isRetentionDetailComplete(missingVoucher)).toBeFalse();
+
+      const missingDate = legacyCompleteDetail({ daVoucher: '' });
+      expect(service.isRetentionDetailComplete(missingDate)).toBeFalse();
+
+      service.sizeRetention = 10;
+      expect(service.isRetentionDetailComplete(legacyCompleteDetail({ nuVoucherRetention: '123' }))).toBeFalse();
+      expect(service.isRetentionDetailComplete(legacyCompleteDetail({ nuVoucherRetention: '1234567890' }))).toBeTrue();
+
+      service.dynamicRetentions = true;
+      service.collectRetentions = [{
+        idCollectRetention: 7,
+        requireInput: true,
+        nuVoucherLength: 5,
+      } as any];
+      const dynamicOk = {
+        coDocument: 'FAC-D',
+        collectionDetailRetentions: [{
+          idCollectRetention: 7,
+          nuAmountRetention: 3,
+          nuVoucherRetention: '12345',
+          daVoucherRetention: '2026-01-01',
+        }],
+      } as CollectionDetail;
+      expect(service.isRetentionDetailComplete(dynamicOk)).toBeTrue();
+
+      const dynamicNoId = {
+        coDocument: 'FAC-D2',
+        collectionDetailRetentions: [{
+          idCollectRetention: 0,
+          nuAmountRetention: 3,
+          nuVoucherRetention: '12345',
+          daVoucherRetention: '2026-01-01',
+        }],
+      } as CollectionDetail;
+      expect(service.isRetentionDetailComplete(dynamicNoId)).toBeFalse();
+
+      expect(service.areAllRetentionDetailsComplete([complete, zeroAmount])).toBeFalse();
+    });
+  });
+
   describe('COB-DISC-001 attachCollectionDetailDiscountsToDetails', () => {
     it('attaches manual discount only to matching coDocument', () => {
       const details = [

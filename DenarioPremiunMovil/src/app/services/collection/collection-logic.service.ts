@@ -2450,20 +2450,12 @@ export class CollectionService {
       }
 
     } else if (this.collection.coType == '2') {
-      //SI ERES RETENCION Y ESTAS ACA, LA RETENCION ES VALIDA
-      if (this.collection.collectionDetails.length > 0) {
-        //DEBO VALIDAR SI LOS DETAILS TIENEN MONTO DE RETENCION O IVA
-
-        let sum = 0;
-        for (var i = 0; i < this.collection.collectionDetails.length; i++) {
-          sum += this.getDetailRetentionTotal(this.collection.collectionDetails[i]);
-        }
-        if (sum > 0) {
-          this.onCollectionValidToSend(true);
-        } else {
-          this.onCollectionValidToSend(false);
-          return;
-        }
+      // Retención: todos los documentos seleccionados deben estar completos (no basta suma global > 0).
+      if (this.areAllRetentionDetailsComplete(this.collection.collectionDetails)) {
+        this.onCollectionValidToSend(true);
+      } else {
+        this.onCollectionValidToSend(false);
+        return;
       }
     } else {
 
@@ -3276,6 +3268,53 @@ export class CollectionService {
       );
     }
     return Number(detail.nuAmountRetention ?? 0) + Number(detail.nuAmountRetention2 ?? 0);
+  }
+
+  /**
+   * Completitud de retención por documento (módulo Retención / coType 2).
+   * Monto > 0 + comprobante/fecha según modo legacy o dinámico.
+   */
+  public isRetentionDetailComplete(detail: CollectionDetail | null | undefined): boolean {
+    if (!detail) {
+      return false;
+    }
+    if (this.getDetailRetentionTotal(detail) <= 0) {
+      return false;
+    }
+
+    if (this.dynamicRetentions && detail.collectionDetailRetentions?.length) {
+      return detail.collectionDetailRetentions.every(line => {
+        const amount = Number(line?.nuAmountRetention ?? 0);
+        if (amount <= 0) {
+          return true;
+        }
+        const idCollectRetention = Number(line?.idCollectRetention ?? 0);
+        if (idCollectRetention <= 0) {
+          return false;
+        }
+        if (!this.validateRetentionVoucherValue(String(line?.nuVoucherRetention ?? ''), idCollectRetention)) {
+          return false;
+        }
+        return String(line?.daVoucherRetention ?? '').trim().length > 0;
+      });
+    }
+
+    const voucher = String(detail.nuVoucherRetention ?? '').trim();
+    if (!voucher) {
+      return false;
+    }
+    if (this.sizeRetention > 0 && voucher.length !== this.sizeRetention) {
+      return false;
+    }
+    return String(detail.daVoucher ?? '').trim().length > 0;
+  }
+
+  /** True solo si hay al menos un detalle y todos están completos. */
+  public areAllRetentionDetailsComplete(details?: CollectionDetail[] | null): boolean {
+    if (!Array.isArray(details) || details.length === 0) {
+      return false;
+    }
+    return details.every(detail => this.isRetentionDetailComplete(detail));
   }
 
   public normalizeCoDocument(value: unknown): string {
