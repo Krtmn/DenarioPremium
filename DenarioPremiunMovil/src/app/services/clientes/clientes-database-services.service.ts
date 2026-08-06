@@ -36,6 +36,14 @@ export class ClientesDatabaseServicesService {
       + " OR LOWER(TRIM(CAST(c.collection_iva AS TEXT))) = 'true')";
   }
 
+  private inSuspensionSqlFilter(excludeSuspended: boolean): string {
+    if (!excludeSuspended) {
+      return '';
+    }
+    return " AND NOT (c.in_suspension = 1 OR c.in_suspension = '1'"
+      + " OR LOWER(TRIM(CAST(c.in_suspension AS TEXT))) = 'true')";
+  }
+
   ClientBDtoClient(data: any): Client[] {
     let clients: Client[] = [];
     for (let i = 0; i < data.rows.length; i++) {
@@ -88,10 +96,17 @@ export class ClientesDatabaseServicesService {
     return clients;
   }
 
-  getClients(idEnterprise: number, page: number, onlyCollectionIva = false) {
+  getClients(
+    idEnterprise: number,
+    page: number,
+    onlyCollectionIva = false,
+    excludeSuspended = false,
+  ) {
     let selectStatement = "";
     let offset = page * this.MAX_ITEMS_PER_PAGE;
     const collectionIvaFilter = this.collectionIvaSqlFilter(onlyCollectionIva);
+    const inSuspensionFilter = this.inSuspensionSqlFilter(excludeSuspended);
+    const clientFilters = collectionIvaFilter + inSuspensionFilter;
     // CLI-SALDOS-001: Saldo display = buckets por moneda de documento (local/hard),
     // misma empresa. No particionar por c.co_currency ni pisar coCurrency del cliente.
     if (this.globalConfig.get("multiCurrency") == 'true') {
@@ -112,7 +127,7 @@ export class ClientesDatabaseServicesService {
         'FROM clients c ' +
         'LEFT JOIN lists p ON p.id_list = c.id_list ' +
         'LEFT JOIN distribution_channels dc ON dc.id_channel = c.id_channel ' +
-        'WHERE c.id_enterprise = ?' + collectionIvaFilter + ' ';
+        'WHERE c.id_enterprise = ?' + clientFilters + ' ';
     } else {
       selectStatement = 'SELECT c.*, (SELECT p.na_list FROM lists p WHERE p.id_list = c.id_list LIMIT 1 ) na_price_list, ' +
         '(SELECT na_channel FROM distribution_channels WHERE id_channel = c.id_channel LIMIT 1 ) channel, ' +
@@ -126,7 +141,7 @@ export class ClientesDatabaseServicesService {
         'FROM clients c ' +
         'LEFT JOIN lists p ON p.id_list = c.id_list ' +
         'LEFT JOIN distribution_channels dc ON dc.id_channel = c.id_channel ' +
-        'WHERE c.id_enterprise = ?' + collectionIvaFilter + ' ';
+        'WHERE c.id_enterprise = ?' + clientFilters + ' ';
     }
 
     /* selectStatement = "SELECT * FROM clients" */
@@ -154,12 +169,14 @@ export class ClientesDatabaseServicesService {
     searchText: string,
     page: number,
     onlyCollectionIva = false,
+    excludeSuspended = false,
   ) {
     let selectStatement = "";
     let offset = page * this.MAX_ITEMS_PER_PAGE;
     // Normalize and split search text into tokens
     const tokens = (searchText || '').toString().trim().toLowerCase().split(/\s+/).filter(t => t.length > 0);
     const collectionIvaFilter = this.collectionIvaSqlFilter(onlyCollectionIva);
+    const inSuspensionFilter = this.inSuspensionSqlFilter(excludeSuspended);
 
     let orderBy = ' '
     if (this.globalConfig.get("clientsOrderBy") != '') {
@@ -182,7 +199,7 @@ export class ClientesDatabaseServicesService {
     // always filter by enterprise
     const whereTokens = (tokenClauses.length
       ? tokenClauses.join(" AND ") + " AND c.id_enterprise = ?"
-      : "c.id_enterprise = ?") + collectionIvaFilter;
+      : "c.id_enterprise = ?") + collectionIvaFilter + inSuspensionFilter;
     params.push(idEnterprise);
 
     //paginacion: limit y offset

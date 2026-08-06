@@ -484,7 +484,9 @@ export class InventariosLogicService {
     }
     let dateLastInventory =  this.dateServ.pastDaysISO(daysSinceLastInventory);
     //despacho por ultima facturacion
-    let dispatchsByLastInvoice = await this.getInvoicesDetailUnitsByIdProductUnit(dbServ, idProductUnits);
+    let dispatchsByLastInvoice = await this.getInvoicesDetailUnitsByIdProductUnit(
+      dbServ, idProductUnits, idClient, idAddressClient
+    );
     
 
     //Cambio por cambio
@@ -1313,13 +1315,25 @@ export class InventariosLogicService {
   });
 }
 
-getInvoicesDetailUnitsByIdProductUnit(dbServ: SQLiteObject, idProductUnits: number[]) {
+getInvoicesDetailUnitsByIdProductUnit(
+  dbServ: SQLiteObject,
+  idProductUnits: number[],
+  idClient: number,
+  idAddressClient: number
+) {
+  if (idProductUnits.length === 0) {
+    return Promise.resolve([] as InvoiceDetailUnit[]);
+  }
+
   let select = "SELECT * FROM ("+
-      "SELECT *, ROW_NUMBER() OVER (PARTITION BY id_product_unit ORDER BY id_invoice_detail_unit DESC) as rn "+
-      "FROM invoice_detail_units "+
-      "WHERE id_product_unit IN ("+idProductUnits.join(",")+")"+
+      "SELECT idu.*, ROW_NUMBER() OVER (PARTITION BY idu.id_product_unit ORDER BY idu.id_invoice_detail_unit DESC) as rn "+
+      "FROM invoice_detail_units idu "+
+      "INNER JOIN invoice_details id ON id.id_invoice_detail = idu.id_invoice_detail "+
+      "INNER JOIN invoices inv ON inv.id_invoice = id.id_invoice "+
+      "WHERE idu.id_product_unit IN ("+idProductUnits.join(",")+") "+
+      "AND inv.id_client = ? AND inv.id_address_client = ?"+
     ") WHERE rn = 1;";
-    return dbServ.executeSql(select, []).then(data => {
+    return dbServ.executeSql(select, [idClient, idAddressClient]).then(data => {
       let invoiceDetailUnits: InvoiceDetailUnit[] = [];
       for (var i = 0; i < data.rows.length; i++) {
         let item = data.rows.item(i);
