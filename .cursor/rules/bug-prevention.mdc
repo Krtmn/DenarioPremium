@@ -21,15 +21,16 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Enviar con monto bajo puede ser `tolerancia0` + `RangoToleranciaNegativa`, no bug de UI.
 - `createAutomatedPrepaid` puede forzar Enviar ON en exceso; no ignorarlo al diagnosticar.
 - Anticipo automático: umbral = `prepaidRangeAmount` (no anular excedente por `RangoToleranciaPositiva`); ver `COB-PREPAID-001`.
+- Anticipo automático al Enviar: batch cobro→anticipo + dirty-requeue AutoSend (no dos `runPendingQueue` sueltos); ver `COB-PREPAID-002`.
 - Documentos paginados: totales/parciales viven en `collectionDetails`, no en la página de `documentSales` (ver `COB-DOCS-001`).
 - Descuentos/retenciones al reabrir: adjuntar por `coDocument` (no solo `coCollection`); ver `COB-DISC-001`.
 - Retención multi-doc (`coType` 2): Enviar/Guardar exige completitud por documento, no solo suma > 0 (`COB-RET-001`).
 
 ## Clientes / saldos
 
-- Con `conversionDocument=true`, SQL `saldo1`/`saldo2` = local/hard; con `!= true` = moneda cliente / opuesta.
-- Lista/selector: `mapRawSaldosToClientOppositeDisplay` (no asumir siempre cliente/opuesta). Detalle: `resolveClientBalanceTotals`.
-- No asumir swap de labels; no mutar saldos del cliente en detalle solo para display.
+- Saldo display (lista/detalle): buckets `document_sales` local/hard por empresa — no particionar por `c.co_currency` mentiroso (`CLI-SALDOS-001`).
+- No mutar `client.coCurrency` solo para cuadrar Saldo; crédito/cobros/pedidos usan la moneda del cliente.
+- Lista y detalle: misma regla (`resolveClientBalanceTotals` con semántica docs).
 
 ## Al cerrar un bug
 

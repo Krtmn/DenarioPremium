@@ -390,36 +390,28 @@ export class ClientLogicService {
     return { saldoLocal: saldoOpuesto, saldoFuerte: saldoCliente };
   }
 
+  /**
+   * CLI-SALDOS-001: post-proceso de Saldo display.
+   * SQL ya trae saldo1=local / saldo2=hard (docs). No muta coCurrency del cliente.
+   */
   fixClientListSaldos(clients: Client[]): Client[] {
-    const hasRate = this.currencyService.hasValidExchangeRate();
-
-    if (hasRate && this.localCurrencyDefault) {
-      for (const c of clients) {
-        if (c.coCurrency !== this.localCurrency.coCurrency) {
-          c.saldo1 = this.currencyService.toOppositeCurrency(c.coCurrency, this.toFiniteSaldo(c.saldo1));
-          c.coCurrency = this.localCurrency.coCurrency;
-        }
-      }
-    } else if (hasRate) {
-      for (const c of clients) {
-        if (c.coCurrency !== this.hardCurrency.coCurrency) {
-          c.coCurrency = this.hardCurrency.coCurrency;
-          c.saldo1 = this.currencyService.toOppositeCurrency(
-            this.hardCurrency.coCurrency,
-            this.toFiniteSaldo(c.saldo1),
-          );
-        }
-      }
+    if (!this.localCurrency?.coCurrency) {
+      this.localCurrency = this.currencyService.getLocalCurrency();
     }
+    if (!this.hardCurrency?.coCurrency) {
+      this.hardCurrency = this.currencyService.getHardCurrency();
+    }
+
     if (this.currencyService.multimoneda) {
       for (let c = 0; c < clients.length; c++) {
-        const { saldoCliente, saldoOpuesto } = this.resolveClientCurrencyPairBalances(
+        const { saldoLocal, saldoFuerte } = this.resolveClientBalanceTotals(
           clients[c].saldo1,
           clients[c].saldo2,
           clients[c].coCurrency,
+          true,
         );
-        clients[c].saldo1 = saldoCliente;
-        clients[c].saldo2 = saldoOpuesto;
+        clients[c].saldo1 = saldoLocal;
+        clients[c].saldo2 = saldoFuerte;
       }
     }
     return clients;
@@ -434,17 +426,16 @@ export class ClientLogicService {
       const clientResult = await this.clientesServices.getClientById(Number(idClient));
       this.datos = {} as SelectedClient;
 
-      // Normalizar moneda del cliente
+      // Normalizar moneda del cliente (crédito / etiqueta).
+      // CLI-SALDOS-001: no convertir saldo1 — SQL detalle ya trae buckets docs local/hard.
       if (this.localCurrencyDefault) {
         if (clientResult.idCurrency !== this.localCurrency.idCurrency) {
-          clientResult.saldo1 = this.currencyService.toOppositeCurrency(clientResult.coCurrency, clientResult.saldo1);
           clientResult.nuCreditLimit = this.currencyService.toOppositeCurrency(clientResult.coCurrency, clientResult.nuCreditLimit);
           clientResult.coCurrency = this.localCurrency.coCurrency;
         }
       } else {
         if (clientResult.idCurrency !== this.hardCurrency.idCurrency) {
           clientResult.coCurrency = this.hardCurrency.coCurrency;
-          clientResult.saldo1 = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, clientResult.saldo1);
           clientResult.nuCreditLimit = this.currencyService.toOppositeCurrency(this.hardCurrency.coCurrency, clientResult.nuCreditLimit);
         }
       }

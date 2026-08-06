@@ -22,6 +22,8 @@ import { Return } from 'src/app/modelos/tables/return';
 })
 export class DepositService {
 
+  private static readonly DEPOSIT_PAYMENT_METHODS_SQL = "('ef', 'ch')";
+
   public globalConfig = inject(GlobalConfigService);
   public services = inject(ServicesService);
   public dateServ = inject(DateServiceService);
@@ -547,15 +549,16 @@ export class DepositService {
        " AND cp.co_payment_method <> 'tr' AND cd.co_type_doc <> 'CR' and c.id_collection <> 0" +
        " AND c.co_collection NOT IN (SELECT dc.co_collection FROM deposit_collects dc) GROUP BY c.co_collection"; */
 
+    const depositPaymentMethods = DepositService.DEPOSIT_PAYMENT_METHODS_SQL;
     let selectStatement =
       "SELECT DISTINCT(c.co_collection), c.*, cd.co_document, " +
-      " (SELECT SUM(cp2.nu_amount_partial) FROM collection_payments cp2 WHERE cp2.co_collection = c.co_collection AND cp2.co_payment_method <> 'de' AND cp2.co_payment_method <> 'tr' AND cp2.co_payment_method <> 'ot') AS total_deposit, " +
-      " (SELECT SUM(cp2.nu_amount_partial_conversion) FROM collection_payments cp2 WHERE cp2.co_collection = c.co_collection AND cp2.co_payment_method <> 'de' AND cp2.co_payment_method <> 'tr' AND cp2.co_payment_method <> 'ot') AS total_deposit_conversion " +
+      " (SELECT SUM(cp2.nu_amount_partial) FROM collection_payments cp2 WHERE cp2.co_collection = c.co_collection AND cp2.co_payment_method IN " + depositPaymentMethods + ") AS total_deposit, " +
+      " (SELECT SUM(cp2.nu_amount_partial_conversion) FROM collection_payments cp2 WHERE cp2.co_collection = c.co_collection AND cp2.co_payment_method IN " + depositPaymentMethods + ") AS total_deposit_conversion " +
       " FROM collections c " +
       " JOIN collection_payments cp ON c.co_collection = cp.co_collection " +
-      " LEFT OUTER JOIN collection_details cd ON c.co_collection = cd.co_collection " + // <-- corregido aquí
+      " LEFT OUTER JOIN collection_details cd ON c.co_collection = cd.co_collection " +
       " WHERE c.co_currency = ? AND c.st_delivery <> 0 " +
-      " AND cp.co_payment_method <> 'de' AND cp.co_payment_method <> 'tr' " +
+      " AND cp.co_payment_method IN " + depositPaymentMethods + " " +
       " AND cd.co_type_doc <> 'CR' AND c.id_collection <> 0 " +
       " AND c.co_collection NOT IN (SELECT dc.co_collection FROM deposit_collects dc) " +
       " GROUP BY c.co_collection ORDER BY c.co_collection DESC";
@@ -583,21 +586,22 @@ export class DepositService {
       "AND cp.co_payment_method <> 'tr' AND c.id_collection <> 0 AND c.co_type = '1' " +
       "AND c.co_collection NOT IN (SELECT dc.co_collection FROM deposit_collects dc) GROUP BY c.co_collection"; */3
 
+    const depositPaymentMethods = DepositService.DEPOSIT_PAYMENT_METHODS_SQL;
     let selectStatement =
       "SELECT c.co_collection, c.*, " +
       "  (SELECT SUM(cp2.nu_amount_partial) " +
       "   FROM collection_payments cp2 " +
       "   WHERE cp2.co_collection = c.co_collection " +
-      "     AND cp2.co_payment_method NOT IN ('de', 'tr', 'ot')) AS total_deposit, " +
+      "     AND cp2.co_payment_method IN " + depositPaymentMethods + ") AS total_deposit, " +
       "  (SELECT SUM(cp2.nu_amount_partial_conversion) " +
       "   FROM collection_payments cp2 " +
       "   WHERE cp2.co_collection = c.co_collection " +
-      "     AND cp2.co_payment_method NOT IN ('de', 'tr', 'ot')) AS total_deposit_conversion " +
+      "     AND cp2.co_payment_method IN " + depositPaymentMethods + ") AS total_deposit_conversion " +
       "FROM collections c " +
       "INNER JOIN collection_payments cp ON c.co_collection = cp.co_collection " +
       "WHERE c.co_currency = ? " +
       "  AND c.st_collection <> 0 " +
-      "  AND cp.co_payment_method NOT IN ('de', 'tr') " +
+      "  AND cp.co_payment_method IN " + depositPaymentMethods + " " +
       "  AND c.id_collection <> 0 " +
       "  AND c.co_type = '1' " +
       "  AND c.co_collection NOT IN (SELECT dc.co_collection FROM deposit_collects dc) " +

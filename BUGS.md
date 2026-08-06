@@ -74,18 +74,30 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-PREPAID-002] Anticipo automático no se envía con el cobro (queda ~5 min)
+
+- **Síntoma:** Al Enviar cobro normal con anticipo automático, el cobro sale de inmediato (o queda Por Enviar) pero el anticipo no se encola/envía hasta el siguiente BackgroundSync (~5 min). Offline: anticipo puede no aparecer como Por Enviar junto al cobro.
+- **Causa:** `saveSend` del cobro hacía `insertPending` + `runPendingQueue` primero; el anticipo se creaba después y su `runPendingQueue` se descartaba por `isProcessingPending` (sin reintento).
+- **Fix:** (B) Enviar cobro normal: persistir → `refreshAutomatedPrepaidBeforeSend` → `createAnticipo*(…, enqueuePending=false)` → `insertPendingTransactionBatch([cobro, anticipo?])` + un `runPendingQueue`. (C) AutoSend: si `runPendingQueue` llega con cola ocupada → dirty-requeue acotado al terminar el pase (mutex intacto).
+- **Evitar:** No encolar cobro y anticipo en dos `saveSend`/`runPendingQueue` separados sin dirty-requeue. No fusionar en 1 POST WS. No tocar umbral `prepaidRangeAmount` (COB-PREPAID-001).
+- **Archivos:** `cobros-header.component.ts`, `collection-logic.service.ts`, `auto-send.service.ts` (+ specs).
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [CLI-SALDOS-001] Lista vs detalle: Saldo USD/BS cruzados
 
-- **Síntoma:** Lista/selector (ej. AS04, `conversionDocument=true`): USD 2,84 / BS 2.096,23. Detalle: BS ~1.546.766 / USD 2.096,23 (correcto). Crédito/docs/web: ~2.096,23 USD.
-- **Causa:** Con `conversionDocument=true`, SQL usa `saldo1`=local y `saldo2`=hard. La lista/selector siempre combinaban con semántica cliente/opuesta (`toHardCurrency` sobre el USD) → 2,84 bajo “Saldo USD”. El detalle ya usaba `resolveClientBalanceTotals(..., true)`.
-- **Fix:** `mapRawSaldosToClientOppositeDisplay` en `ClientLogicService` (reusa `resolveClientBalanceTotals` si `conversionDocument=true`, si no `resolveClientCurrencyPairBalances`); `fixClientListSaldos` y el cálculo del selector lo usan. No mutar saldos del cliente en detalle.
-- **Evitar:**
-  - No asumir `saldo1`/`saldo2` = local/hard sin mirar `conversionDocument`.
-  - No “arreglar” solo con swap de labels en HTML.
-  - No mutar saldos del cliente del detalle con `fixClientListSaldos` (rompe crédito disponible y otros usos).
-  - No cambiar SQL de saldos sin alinear lista + detalle + post-proceso.
-- **Archivos:** `client-logic.service.ts`, `cliente-selector.component.ts`; detalle ya OK en `client-detail.component.ts`; SQL en `clientes-database-services.service.ts`.
-- **Estado:** fixed en fuente; QA dispositivo requiere **rebuild + `cap copy`/`sync`** (el APK con `--no-sync` / live-reload caído seguía el `main.js` viejo → 2,84). Follow-up: `getClientById` truthy vs `== 'true'`.
+- **Síntoma:** GLOBAL MP / AS04: Saldo USD **2,84** (BS mal rotulado 2.096,23). Correcto: USD **2.096,23** / BS **≈1.546.766**.
+- **Causa (QA):** `clients.co_currency='BS'` pero `nu_balance`/docs en USD. La app particionaba saldos por `c.co_currency` y convertía de más (`2.096,23 / tasa ≈ 2,84`).
+- **Fix (blindaje app, display-only):**
+  - SQL lista/búsqueda/detalle: Saldo = buckets `document_sales` **local/hard** filtrados por **empresa**; no particionar por `c.co_currency`; no pisar `coCurrency` con moneda de un doc.
+  - `fixClientListSaldos` / selector: `resolveClientBalanceTotals(..., true)`; **no muta** `coCurrency`.
+  - Lista/selector etiquetan Saldo local/hard (como detalle). Detalle usa la misma semántica.
+  - `goToClient` no convierte `saldo1` (los buckets ya vienen de docs).
+  - Maestro GLOBAL MP sigue recomendado (`co_currency` alineado al saldo); crédito puede seguir con etiqueta de cliente.
+- **Evitar:** mutar `client.coCurrency` globalmente; mappers grandes; tocar Cobros/Pedidos.
+- **Archivos:** `clientes-database-services.service.ts`, `client-logic.service.ts`, `cliente-selector`, `client-list` HTML, `client-detail`.
+- **Estado:** blindaje en app; validar AS04 + un cliente con docs en moneda local.
 
 ---
 
