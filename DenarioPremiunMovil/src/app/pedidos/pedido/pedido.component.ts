@@ -1363,24 +1363,37 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
 
       //OrderType
       if (this.orderServ.orderTypeByEnterprise) {
+        this.listaOrderTypes = [];
         this.tipoOrden = {} as OrderType;
-        this.selectOrderTypebyEnterprise()
+        this.tipoOrdenAnterior = {} as OrderType;
       }
 
     }
 
   }
 
-  selectOrderTypebyEnterprise() {
+  private resolveOrderTypeFromList(preferredId?: number | null): OrderType | undefined {
+    if (this.listaOrderTypes.length === 0) {
+      return undefined;
+    }
+    if (preferredId != null) {
+      return this.listaOrderTypes.find((o) => o.idOrderType === preferredId)
+        ?? this.listaOrderTypes[0];
+    }
+    return this.listaOrderTypes[0];
+  }
 
-    if (this.tipoOrden == undefined || this.tipoOrden.idOrderType == null) {
-      this.tipoOrden = this.listaOrderTypes[0];
+  selectOrderTypebyEnterprise() {
+    const resolved = this.resolveOrderTypeFromList(this.tipoOrden?.idOrderType);
+    if (!resolved) {
+      return;
     }
 
+    this.tipoOrden = resolved;
     this.tipoOrdenAnterior = this.tipoOrden;
     this.orderServ.tipoOrden = this.tipoOrden;
     this.orderServ.syncOrderTypeIvaOnProducts();
-
+    this.changeDetector.detectChanges();
   }
 
   orderTypeCompare(a: OrderType, b: OrderType) {

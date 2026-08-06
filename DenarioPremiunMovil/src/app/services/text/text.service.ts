@@ -38,12 +38,22 @@ export class TextService {
         'c': 'cCçÇ'
     };
 
+    const accentToBase: Record<string, string> = {
+        'á': 'a', 'à': 'a', 'ä': 'a', 'â': 'a',
+        'é': 'e', 'è': 'e', 'ë': 'e', 'ê': 'e',
+        'í': 'i', 'ì': 'i', 'ï': 'i', 'î': 'i',
+        'ó': 'o', 'ò': 'o', 'ö': 'o', 'ô': 'o',
+        'ú': 'u', 'ù': 'u', 'ü': 'u', 'û': 'u',
+        'ç': 'c',
+    };
+
     const pattern = search.split('').map(char => {
         const lowerChar = char.toLowerCase();
-        
+        const lookupChar = accentToBase[lowerChar] ?? lowerChar;
+
         // Check if it exists in our map (either 'n' or 'ñ' now have their own entries)
-        if (accentMap[lowerChar]) {
-            return `[${accentMap[lowerChar]}]`;
+        if (accentMap[lookupChar]) {
+            return `[${accentMap[lookupChar]}]`;
         }
         
         // Default case-insensitivity for other letters
