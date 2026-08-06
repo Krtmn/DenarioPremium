@@ -1550,6 +1550,159 @@ describe('CollectionService', () => {
     });
   });
 
+  describe('COB-TOTAL-001 Total General nuAmountTotal on reopen/persist', () => {
+    function stubTotalSideEffects(): void {
+      const svc = service as any;
+      spyOn(service, 'convertirMonto').and.callFake((amount: number) => Number(amount) || 0);
+      spyOn(svc.currencyService, 'formatNumber').and.callFake((n: number) => String(n ?? 0));
+      spyOn(service, 'cleanFormattedNumber').and.callFake((value: string | number) => Number(value) || 0);
+      spyOn(svc, 'shouldApplyIgtfToCollection').and.returnValue(false);
+      spyOn(svc, 'shouldCalculateEmbeddedIgtf').and.returnValue(false);
+      spyOn(svc, 'isRetentionCollection').and.returnValue(false);
+      spyOn(svc, 'resolveAutomatedPrepaid').and.stub();
+      spyOn(service, 'syncAddPaymentMethodDisabledState').and.stub();
+      spyOn(svc, 'syncCollectionDetailsIgtfAmounts').and.stub();
+      spyOn(svc, 'syncCollectionIgtfFields').and.stub();
+      spyOn(svc, 'applyCollectionIgtfAmountFields').and.stub();
+      spyOn(svc, 'restoreCollectionIgtfFields').and.stub();
+      spyOn(svc, 'restorePersistedIgtfDisplayAmounts').and.stub();
+    }
+
+    function setupSavedHardCollection(): void {
+      stubTotalSideEffects();
+      service.coTypeModule = '0';
+      service.isOpen = false;
+      service.isChangePaymentPartialPersistence = false;
+      service.isRateChangeInProgress = false;
+      service.tipoPagoTransferencia = true;
+      service.tipoPagoEfectivo = false;
+      service.tipoPagoCheque = false;
+      service.tipoPagoDeposito = false;
+      service.tipoPagoPagoMovil = false;
+      service.tipoPagoOtros = false;
+      service.pagoTransferencia = [] as any[];
+      service.pagoEfectivo = [] as any[];
+      service.pagoCheque = [] as any[];
+      service.pagoDeposito = [] as any[];
+      service.pagoMovil = [] as any[];
+      service.pagoOtros = [] as any[];
+      service.montoTotalPagado = 0;
+      service.montoTotalPagar = 0;
+      service.documentSales = [] as DocumentSale[];
+      service.documentSalesBackup = [] as DocumentSale[];
+      service.collection = {
+        coCurrency: 'USD',
+        nuValueLocal: 36.5,
+        stDelivery: service.COLLECT_STATUS_SAVED,
+        stCollection: service.COLLECT_STATUS_SAVED,
+        coType: '0',
+        nuAmountFinal: 2000.94,
+        nuAmountFinalConversion: 73034.31,
+        nuAmountTotal: 2000.94,
+        nuAmountTotalConversion: 73034.31,
+        nuAmountPaid: 2000.94,
+        nuAmountPaidConversion: 73034.31,
+        nuAmountIgtf: 0,
+        collectionDetails: [{
+          idDocument: 10,
+          coDocument: 'FAC-10',
+          inPaymentPartial: false,
+          nuAmountPaid: 2000.94,
+          nuAmountPaidConversion: 2000.94,
+          nuBalanceDoc: 2000.94,
+          nuBalanceDocOriginal: 2000.94,
+          nuAmountDoc: 2000.94,
+          nuAmountDiscount: 0,
+          nuAmountCollectDiscount: 0,
+          nuAmountRetention: 0,
+          nuAmountRetention2: 0,
+          nuAmountIgtf: 0,
+          isSave: true,
+        }] as CollectionDetail[],
+        collectionPayments: [{
+          coPaymentMethod: 'tr',
+          nuAmountPartial: 2000.94,
+          nuAmountPartialConversion: 73034.31,
+        }],
+      } as any;
+    }
+
+    it('forceRecalc with empty UI arrays keeps nuAmountTotal from collectionPayments', async () => {
+      setupSavedHardCollection();
+
+      await service.calculatePayment('', 0, true, true);
+
+      expect(service.montoTotalPagado).toBe(2000.94);
+      expect(service.collection.nuAmountTotal).toBe(2000.94);
+      expect(service.collection.nuAmountTotal).not.toBe(0);
+    });
+
+    it('preserve path after UI hydrate syncs nuAmountTotal to montoTotalPagado', async () => {
+      setupSavedHardCollection();
+      service.collection.nuAmountTotal = 0;
+      service.collection.nuAmountTotalConversion = 0;
+      service.pagoTransferencia = [{
+        monto: 2000.94,
+        montoConversion: 73034.31,
+        type: 'tr',
+        posCollectionPayment: 0,
+      }] as any[];
+
+      await service.calculatePayment('', 0, false, true);
+
+      expect(service.montoTotalPagar).toBe(2000.94);
+      expect(service.montoTotalPagado).toBe(2000.94);
+      expect(service.collection.nuAmountTotal).toBe(2000.94);
+    });
+
+    it('syncNuAmountTotalFromPaidAmounts aligns header before persist (normal cobro)', () => {
+      stubTotalSideEffects();
+      service.coTypeModule = '0';
+      service.montoTotalPagado = 150.5;
+      service.collection = {
+        coCurrency: 'USD',
+        coType: '0',
+        nuAmountTotal: 0,
+        nuAmountTotalConversion: 0,
+        collectionPayments: [],
+      } as any;
+
+      (service as any).syncNuAmountTotalFromPaidAmounts();
+
+      expect(service.collection.nuAmountTotal).toBe(150.5);
+      expect(service.collection.nuAmountTotalConversion).toBe(150.5);
+    });
+
+    it('retention syncNuAmountTotalFromPaidAmounts does not overwrite retention totals', () => {
+      stubTotalSideEffects();
+      (service as any).isRetentionCollection.and.returnValue(true);
+      service.coTypeModule = '2';
+      service.montoTotalPagado = 99;
+      service.collection = {
+        coCurrency: 'USD',
+        coType: '2',
+        nuAmountTotal: 40,
+        nuAmountTotalConversion: 40,
+        collectionPayments: [],
+      } as any;
+
+      (service as any).syncNuAmountTotalFromPaidAmounts();
+
+      expect(service.collection.nuAmountTotal).toBe(40);
+    });
+
+    it('SENT forceRecalc with empty UI also restores paid from collectionPayments', async () => {
+      setupSavedHardCollection();
+      service.collection.stDelivery = service.COLLECT_STATUS_SENT;
+      service.collection.nuAmountTotal = 2000.94;
+
+      await service.calculatePayment('', 0, true, true);
+
+      expect(service.montoTotalPagado).toBe(2000.94);
+      expect(service.collection.nuAmountTotal).toBe(2000.94);
+    });
+  });
+
   describe('COB-DISC-001 attachCollectionDetailDiscountsToDetails', () => {
     it('attaches manual discount only to matching coDocument', () => {
       const details = [

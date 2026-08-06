@@ -123,6 +123,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-TOTAL-001] Total General USD = 0 al reabrir cobro Guardado (hard)
+
+- **Síntoma:** Cobro hard/USD Guardado: al reabrir, TOTAL muestra Total General = 0 aunque Monto a pagar, Pago y métodos (TR) tienen monto correcto.
+- **Causa:** Al reabrir, `loadPaymentMethods` vacía arrays UI; `getDocumentsSales(..., includeSelected)` llama `calculatePayment(..., forceRecalc=true)` y `syncMontosPagadosFromPayments` sumaba UI vacía → `nuAmountTotal = 0`. Luego `loadPayments` + preserve restauraba `montoTotalPagado` (Pago OK) pero no `collection.nuAmountTotal` (Total General). `getDocumentsSales` early-return solo para TO_SEND; SAVED y SENT sí entran al path. QA lo vio en hard/Guardado.
+- **Fix:** Fallback a suma de `collectionPayments.nuAmountPartial` si UI=0; `syncNuAmountTotalFromPaidAmounts` en preserve y full recalc; `saveCollection` (cobro normal) alinea `nuAmountTotal` al pagado antes de INSERT. Retención (`coType` 2) no se toca.
+- **Evitar:** No asumir que arrays UI de pago están hidratados cuando `getDocumentsSales` hace `forceRecalc`. Total General = `nuAmountTotal` ≠ `montoTotalPagado` runtime.
+- **Archivos:** `collection-logic.service.ts` (+ spec).
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## Cómo añadir una entrada nueva
 
 1. ID estable: `[MODULO-TEMA-NNN]`.
