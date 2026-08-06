@@ -28,9 +28,9 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 
 ## Clientes / saldos
 
-- Con `conversionDocument=true`, SQL `saldo1`/`saldo2` = local/hard; con `!= true` = moneda cliente / opuesta.
-- Lista/selector: `mapRawSaldosToClientOppositeDisplay` (no asumir siempre cliente/opuesta). Detalle: `resolveClientBalanceTotals`.
-- No asumir swap de labels; no mutar saldos del cliente en detalle solo para display.
+- Saldo display (lista/detalle): buckets `document_sales` local/hard por empresa — no particionar por `c.co_currency` mentiroso (`CLI-SALDOS-001`).
+- No mutar `client.coCurrency` solo para cuadrar Saldo; crédito/cobros/pedidos usan la moneda del cliente.
+- Lista y detalle: misma regla (`resolveClientBalanceTotals` con semántica docs).
 
 ## Al cerrar un bug
 
