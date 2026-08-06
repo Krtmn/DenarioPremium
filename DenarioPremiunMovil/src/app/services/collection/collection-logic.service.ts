@@ -1038,6 +1038,8 @@ export class CollectionService {
       this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado))
         - this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagar));
       this.collection.nuDifferenceConversion = this.convertirMonto(this.collection.nuDifference, 0, this.collection.coCurrency);
+      // COB-TOTAL-001: Total General lee nuAmountTotal; no dejarlo en 0 tras reopen.
+      this.syncNuAmountTotalFromPaidAmounts();
       this.applyCollectionIgtfAmountFields(this.normalizeIgtfPrice(this.montoIgtf));
       this.syncCollectionDetailsIgtfAmounts();
       this.syncCollectionIgtfFields();
@@ -1150,7 +1152,8 @@ export class CollectionService {
       this.collection.nuAmountPaidConversion = this.convertirMonto(this.montoTotalPagar, 0, this.collection.coCurrency);
       this.collection.nuAmountFinal = this.montoTotalPagar;
       this.collection.nuAmountFinalConversion = this.convertirMonto(this.collection.nuAmountFinal, 0, this.collection.coCurrency);
-      this.collection.nuAmountTotal = this.montoTotalPagado;
+      // COB-TOTAL-001: no pisar Total General con 0 si hay pagos persistidos y UI aún vacía.
+      this.syncNuAmountTotalFromPaidAmounts();
     }
 
     if (this.coTypeModule == "2") {
@@ -1727,6 +1730,40 @@ export class CollectionService {
     }
 
     this.montoTotalPagado = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado));
+
+    // COB-TOTAL-001: al reabrir, loadPaymentMethods vacía arrays UI antes de getDocumentsSales
+    // (forceRecalc). Si la UI aún no se hidrató, usar collectionPayments persistidos.
+    if (Number(this.montoTotalPagado ?? 0) <= 0) {
+      const paidFromPayments = this.resolvePaidSumFromCollectionPayments();
+      if (paidFromPayments > 0) {
+        this.montoTotalPagado = this.cleanFormattedNumber(
+          this.currencyService.formatNumber(paidFromPayments),
+        );
+      }
+    }
+  }
+
+  /**
+   * Total General (nuAmountTotal) = monto pagado. No aplica a retención (coType 2),
+   * donde nuAmountTotal sigue la semántica de syncRetentionTotalsBeforePersist.
+   * Si arrays UI están vacíos, syncMontosPagadosFromPayments ya pudo hidratar desde
+   * collectionPayments (COB-TOTAL-001).
+   */
+  private syncNuAmountTotalFromPaidAmounts(): void {
+    if (this.isRetentionCollection()) {
+      return;
+    }
+
+    const paid = this.cleanFormattedNumber(
+      this.currencyService.formatNumber(this.montoTotalPagado ?? 0),
+    );
+    this.collection.nuAmountTotal = paid;
+    this.collection.nuAmountTotalConversion = paid > 0
+      ? this.convertirMonto(paid, 0, this.collection.coCurrency)
+      : 0;
+    if (paid > 0) {
+      this.montoTotalPagadoConversion = this.collection.nuAmountTotalConversion;
+    }
   }
 
   private isAnticipoCollection(collection?: Collection): boolean {
@@ -1894,7 +1931,7 @@ export class CollectionService {
     this.collection.nuDifferenceConversion = 0;
   }
 
-  private resolveAnticipoPaidSumFromCollectionPayments(): number {
+  private resolvePaidSumFromCollectionPayments(): number {
     const payments = Array.isArray(this.collection?.collectionPayments)
       ? this.collection.collectionPayments
       : [];
@@ -1912,7 +1949,7 @@ export class CollectionService {
     this.syncMontosPagadosFromPayments();
 
     if (Number(this.montoTotalPagado ?? 0) <= 0) {
-      const paidFromPayments = this.resolveAnticipoPaidSumFromCollectionPayments();
+      const paidFromPayments = this.resolvePaidSumFromCollectionPayments();
       if (paidFromPayments > 0) {
         this.montoTotalPagado = this.cleanFormattedNumber(
           this.currencyService.formatNumber(paidFromPayments),
@@ -6257,6 +6294,11 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
             0,
             this.collection.coCurrency,
           );
+          // COB-TOTAL-001: alinear Total General (nuAmountTotal) al pagado antes de INSERT.
+          if (Number(this.montoTotalPagado ?? 0) <= 0) {
+            this.syncMontosPagadosFromPayments();
+          }
+          this.syncNuAmountTotalFromPaidAmounts();
         }
 
 
