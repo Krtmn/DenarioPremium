@@ -27,10 +27,10 @@ docs/qa/
 
 | Módulo | Catálogo | Backlog | Script npm |
 |--------|----------|---------|------------|
-| Cobros | [cobros/unit-tests-catalog.md](./cobros/unit-tests-catalog.md) | [cobros/hardening-backlog.md](./cobros/hardening-backlog.md) · [smoke](./cobros/smoke-manual.md) | `npm run test:cobros` (**70**) · CI `cobros-unit.yml` |
+| Cobros | [cobros/unit-tests-catalog.md](./cobros/unit-tests-catalog.md) | [cobros/hardening-backlog.md](./cobros/hardening-backlog.md) · [smoke](./cobros/smoke-manual.md) | `npm run test:cobros` · CI `cobros-unit.yml` |
 | Pedidos | _(pendiente)_ | _(pendiente)_ | — |
 | Devoluciones | _(pendiente)_ | _(pendiente)_ | — |
-| Clientes | _(pendiente)_ | _(pendiente)_ | — |
+| Clientes | [clientes/unit-tests-catalog.md](./clientes/unit-tests-catalog.md) | [clientes/hardening-backlog.md](./clientes/hardening-backlog.md) · [smoke](./clientes/smoke-manual.md) | `npm run test:clientes` · CI `clientes-unit.yml` |
 
 ## Cómo correr unitarios de un módulo
 
@@ -38,6 +38,7 @@ Desde `DenarioPremiunMovil/`:
 
 ```bash
 npm run test:cobros
+npm run test:clientes
 ```
 
 Al abrir un módulo nuevo: crear carpeta `docs/qa/<modulo>/`, script `test:<modulo>` en `package.json`, y actualizar esta tabla.

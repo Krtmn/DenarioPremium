@@ -188,12 +188,12 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    const conversionDocument = this.globalConfig.get('conversionDocument') === 'true';
+    // CLI-SALDOS-001: misma semántica que la lista (buckets docs local/hard).
     const totals = this.clientLogic.resolveClientBalanceTotals(
       saldo1,
       saldo2,
       this.client?.coCurrency ?? '',
-      conversionDocument,
+      true,
     );
     this.saldoLocal = totals.saldoLocal;
     this.saldoFuerte = totals.saldoFuerte;
