@@ -2035,5 +2035,23 @@ describe('CollectionService', () => {
       expect(service.convertirMonto).toHaveBeenCalled();
       expect(detail.nuAmountDiscountConversion).toBe(50);
     });
+
+    it('does not throw when this.collection is undefined (batch/sync path)', () => {
+      (service as any).collection = undefined;
+      spyOn(service, 'convertirMonto').and.returnValue(12);
+
+      const detail = {
+        nuAmountDiscount: 100,
+        nuAmountDiscountConversion: 5,
+        nuValueLocal: 36,
+        coOriginal: 'USD',
+      } as unknown as CollectionDetail;
+
+      expect(() =>
+        service.syncCollectionDetailDiscountConversion(detail, 36, 'USD'),
+      ).not.toThrow();
+      expect(service.convertirMonto).toHaveBeenCalledWith(100, 36, 'USD');
+      expect(detail.nuAmountDiscountConversion).toBe(12);
+    });
   });
 });
