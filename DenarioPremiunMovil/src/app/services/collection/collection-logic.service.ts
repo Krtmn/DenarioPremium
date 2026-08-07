@@ -3517,26 +3517,42 @@ export class CollectionService {
   private resolveDetailAmountConversion(
     amount: number,
     detail: CollectionDetail,
-    open?: DocumentSale
+    open?: DocumentSale,
+    rateOverride?: number,
+    currencyOverride?: string,
   ): number {
     const normalizedAmount = Number(amount ?? 0);
     if (normalizedAmount <= 0) {
       return 0;
     }
 
-    return this.convertirMonto(
-      normalizedAmount,
-      this.collection.nuValueLocal,
-      this.collection.coCurrency,
+    // saveCollectionBatch (sync) puede correr sin this.collection en memoria.
+    const rate = Number(
+      rateOverride
+      ?? this.collection?.nuValueLocal
+      ?? detail?.nuValueLocal
+      ?? open?.nuValueLocal
+      ?? 0,
     );
+    const currency =
+      currencyOverride
+      ?? this.collection?.coCurrency
+      ?? detail?.coOriginal
+      ?? open?.coCurrency
+      ?? '';
+
+    return this.convertirMonto(normalizedAmount, rate, currency);
   }
 
   /**
    * Mantiene nuAmountDiscountConversion alineado al faltante local.
    * Evita residuales en web cuando el faltante se deja en 0.
+   * rate/currency opcionales: path batch/sync sin cabecera UI cargada.
    */
   public syncCollectionDetailDiscountConversion(
     detail: CollectionDetail | null | undefined,
+    rateOverride?: number,
+    currencyOverride?: string,
   ): void {
     if (!detail) {
       return;
@@ -3544,6 +3560,9 @@ export class CollectionService {
     detail.nuAmountDiscountConversion = this.resolveDetailAmountConversion(
       Number(detail.nuAmountDiscount ?? 0),
       detail,
+      undefined,
+      rateOverride,
+      currencyOverride,
     );
   }
 
@@ -6683,7 +6702,11 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
       for (var coDetail = 0; coDetail < collect.collectionDetails.length; coDetail++) {
         const collectionDetail = collection[co].collectionDetails[coDetail];
-        this.syncCollectionDetailDiscountConversion(collectionDetail);
+        this.syncCollectionDetailDiscountConversion(
+          collectionDetail,
+          collect.nuValueLocal,
+          collect.coCurrency,
+        );
 
         if (collectionDetail.inPaymentPartial == true) {
           this.coDocumentToUpdate.push(collectionDetail.coDocument);
