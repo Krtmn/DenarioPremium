@@ -3257,9 +3257,13 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   public onDiscountBlur(): void {
     this.ensureDiscountInit();
     const parsed = (this.centsDiscount ?? 0) / this.centsFactor();
-
-    this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails!].nuAmountDiscount = parsed;
-    // this.collectService.documentSaleOpen.nuAmountDiscount = parsed;
+    const detail = this.collectService.collection.collectionDetails[
+      this.collectService.documentSaleOpen.positionCollecDetails!
+    ];
+    if (detail) {
+      detail.nuAmountDiscount = parsed;
+      this.collectService.syncCollectionDetailDiscountConversion(detail);
+    }
     try {
       this.displayDiscount = this.currencyService.formatNumber(parsed);
     } catch {
@@ -3272,9 +3276,13 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   private updateDiscountModel(): void {
     const cents = this.centsDiscount ?? 0;
     const value = cents / this.centsFactor();
-    this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails!].nuAmountDiscount = value;
-
-    //this.collectService.documentSaleOpen.nuAmountDiscount = value;
+    const detail = this.collectService.collection.collectionDetails[
+      this.collectService.documentSaleOpen.positionCollecDetails!
+    ];
+    if (detail) {
+      detail.nuAmountDiscount = value;
+      this.collectService.syncCollectionDetailDiscountConversion(detail);
+    }
     this.displayDiscount = this.formatFromCents(cents);
     if (typeof (this as any).setAmountTotal === 'function') {
       this.setAmountTotal();

@@ -3491,6 +3491,22 @@ export class CollectionService {
     );
   }
 
+  /**
+   * Mantiene nuAmountDiscountConversion alineado al faltante local.
+   * Evita residuales en web cuando el faltante se deja en 0.
+   */
+  public syncCollectionDetailDiscountConversion(
+    detail: CollectionDetail | null | undefined,
+  ): void {
+    if (!detail) {
+      return;
+    }
+    detail.nuAmountDiscountConversion = this.resolveDetailAmountConversion(
+      Number(detail.nuAmountDiscount ?? 0),
+      detail,
+    );
+  }
+
   public resolveDetailRetentionLineConversion(
     amount: number,
     detail: CollectionDetail,
@@ -6627,6 +6643,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
       for (var coDetail = 0; coDetail < collect.collectionDetails.length; coDetail++) {
         const collectionDetail = collection[co].collectionDetails[coDetail];
+        this.syncCollectionDetailDiscountConversion(collectionDetail);
 
         if (collectionDetail.inPaymentPartial == true) {
           this.coDocumentToUpdate.push(collectionDetail.coDocument);
@@ -6837,6 +6854,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     for (var i = 0; i < collectionDetail.length; i++) {
       this.ensureDetailDynamicRetentionsFromAmounts(collectionDetail[i], i);
       this.syncDetailRetentionAmountsAndConversions(collectionDetail[i], undefined, i);
+      this.syncCollectionDetailDiscountConversion(collectionDetail[i]);
       statementsCollectionDetails.push([inserStatementCollectionDetail, [
         0,
         collectionDetail[i].coCollection,

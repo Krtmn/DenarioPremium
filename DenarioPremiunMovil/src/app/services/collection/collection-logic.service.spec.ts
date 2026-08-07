@@ -1764,4 +1764,40 @@ describe('CollectionService', () => {
       expect(details[0].collectionDetailDiscounts[0].nuAmountCollectDiscountOther).toBe(8);
     });
   });
+
+  describe('syncCollectionDetailDiscountConversion', () => {
+    it('clears stale conversion when faltante local is set to 0', () => {
+      service.collection = {
+        coCurrency: 'VES',
+        nuValueLocal: 36.5,
+      } as any;
+
+      const detail = {
+        nuAmountDiscount: 0,
+        nuAmountDiscountConversion: 13.5887,
+      } as CollectionDetail;
+
+      service.syncCollectionDetailDiscountConversion(detail);
+
+      expect(detail.nuAmountDiscountConversion).toBe(0);
+    });
+
+    it('recalculates conversion when faltante local is positive', () => {
+      service.collection = {
+        coCurrency: 'VES',
+        nuValueLocal: 2,
+      } as any;
+      spyOn(service, 'convertirMonto').and.returnValue(50);
+
+      const detail = {
+        nuAmountDiscount: 100,
+        nuAmountDiscountConversion: 0,
+      } as CollectionDetail;
+
+      service.syncCollectionDetailDiscountConversion(detail);
+
+      expect(service.convertirMonto).toHaveBeenCalled();
+      expect(detail.nuAmountDiscountConversion).toBe(50);
+    });
+  });
 });
