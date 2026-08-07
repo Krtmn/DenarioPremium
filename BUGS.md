@@ -123,6 +123,18 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-FALT-001] Pagos: monto total a pagar no se actualiza al poner faltante en 0 (Guardado)
+
+- **Síntoma:** Cobro Guardado reabierto con Diferencia/Faltante > 0; al poner faltante en 0,0000, en Pagos el “monto total a pagar” sigue en el neto viejo (doc − faltante) y no refleja el saldo completo.
+- **Causa:** (1) `validate()` exigía `difFaltante > 0` para habilitar Guardar y saltaba `calculatePayment`. (2) En SAVED, `resolveDetailNetAmountToPay` + `normalizeDocumentNetAmountFromPaid` retenían `nuAmountPaid` viejo (`paid < net` → paid) y `preserveAmountsWithoutRecalc` congelaba `montoTotalPagar`. (3) Cancelar no restauraba `nuAmountDiscount` mutado en memoria.
+- **Fix:** Guardar por monto válido (no por faltante > 0); sync `detail.nuAmountPaid` al neto nuevo (`syncOpenDetailNuAmountPaidFromAmountPaid`); `forceRecalc` al validar/cambiar faltante; en docs no parciales preferir `expectedNet` si `paid < expectedNet`; snapshot/restore de faltante al abrir/cancelar (`captureOpenDetailFaltanteBackup` / `restoreDocumentSaleState`).
+- **Evitar:** No acoplar Guardar del documento a `nuAmountDiscount > 0`. Tras bajar/quitar faltante en Guardado, refrescar totales (`forceRecalc` o sync de `nuAmountPaid`) antes de confiar en `preserveAmountsWithoutRecalc`. No dejar `nuAmountPaid` stale en detail cuando el neto esperado sube.
+- **Tests:** `npm run test:cobros` — `cobro-documents.component.spec.ts` (validate con faltante 0 + sync detail); `collection-logic.service.spec.ts` describe `COB-FALT-001` (forceRecalc sube `montoTotalPagar`, preserve no congela con paid < expectedNet, restore de faltante al cancelar, parcial sigue en `nuAmountPaid`).
+- **Archivos:** `cobro-documents.component.ts`, `collection-logic.service.ts` (+ specs); checklist `.cursor/rules/bug-prevention.mdc`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [COB-TOTAL-001] Total General USD = 0 al reabrir cobro Guardado (hard)
 
 - **Síntoma:** Cobro hard/USD Guardado: al reabrir, TOTAL muestra Total General = 0 aunque Monto a pagar, Pago y métodos (TR) tienen monto correcto.
@@ -131,6 +143,8 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 - **Evitar:** No asumir que arrays UI de pago están hidratados cuando `getDocumentsSales` hace `forceRecalc`. Total General = `nuAmountTotal` ≠ `montoTotalPagado` runtime.
 - **Archivos:** `collection-logic.service.ts` (+ spec).
 - **Estado:** fixed (pendiente QA dispositivo).
+
+---
 
 ---
 
