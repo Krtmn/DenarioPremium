@@ -1,0 +1,22 @@
+{
+  "_generated_for": "alipascua",
+  "_run_dir": "automation/reports/smoke_alipascua_20260804_162329/",
+  "modules": {
+    "cobros": {
+      "cliente_normal": {
+        "na_client": "COMERCIAL EL UNICO 2019, C.A",
+        "co_client": "J412860852",
+        "docs": "55",
+        "saldo": "13000.37"
+      },
+      "cliente_igtf": null,
+      "_nota": "Descubierto en pre-vuelo BD. Para el documento exacto en UI, confirmar con local-query sobre document_sales + co_currency."
+    },
+    "pedidos": null,
+    "devoluciones": null,
+    "inventarios": null,
+    "visitas": null,
+    "depositos": null,
+    "clientes": null
+  }
+}

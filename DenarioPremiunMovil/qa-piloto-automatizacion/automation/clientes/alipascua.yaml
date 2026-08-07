@@ -76,8 +76,14 @@ vgs:
   # 🔴 ⚠️VERIFICAR EN CORRIDA — acá gana el dump de CLIENTE, no el global,
   #    porque su da_update (2026-02-24) es MÁS RECIENTE que el del global.
   #    Si la UI contradice esto, gana la UI y se corrige el perfil.
-  userCanSelectProductDiscount: false   # ⚠️VERIFICAR client 2026-02-24=false vs global 2026-02-20=true
-  validateWarehouses: false             # ⚠️VERIFICAR client 2026-02-24=false vs global 2025-10-13=true
+  # ✅ VERIFICADAS CONTRA LA UI en la corrida 20260804_162329 (módulo pedidos):
+  userCanSelectProductDiscount: true    # 🔴 CORREGIDO: el dump de CLIENTE decía false y estaba MAL.
+                                        #    La UI SÍ expone ion-select "Descuento" por producto (opciones
+                                        #    5/7/8/10/3), habilitado, impacta el total y persiste en BD
+                                        #    (order_detail.id_discount). Gana el GLOBAL 2026-02-20=true.
+  validateWarehouses: false             # ✅ CONFIRMADO false: 999 unidades sobre inventario 30 se aceptaron
+                                        #    sin alerta ni bloqueo. (userCanChangeWarehouse=false también
+                                        #    confirmado: el select "Almacén" llega disabled.)
 
 # ── Métodos de pago de Cobros ─────────────────────────────────────────────────
 # colletionPayment = true-false-true-true-true-true  (global 2026-04-17, 6 valores)

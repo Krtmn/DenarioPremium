@@ -60,6 +60,12 @@ Revisión de cobros enviados (no creación). Confirmado en globalmp/La Tortuga v
 | **Salida: 1 back = menú COBROS (no la lista)** | `img.fechaAtras` | Hay que volver a pulsar **BUSCAR** para reentrar a la lista. ⚠ **NO apilar** back programático (`dispatchEvent`) + `mouse.click`: **sobre-navega hasta HOME**. Un back por vez, verificando destino con `getActiveView` |
 | **Botón BUSCAR del menú COBROS** | `app-cobros ion-button` con `textContent==='BUSCAR'` | ⚠ NO es `<p>` ni `ion-label` (a diferencia de los tiles de HOME). Pointer(down/up) + `shadowRoot button.click()` |
 | **`listCollect` camelCase vs `displayedItems` snake_case** | — | `collectService.listCollect[i].idCollection`/`.coCollection` **vs** `displayedItems[i].id_collection`/`.co_collection`. Buscar por el campo equivocado devuelve `-1` en silencio |
+| 🔴 **Back de `app-cobros-header` = `img.fechaAtras` con `src=flecha-blanca.png`** | filtrar por **`rect.width>0 && rect.x<100`**, NUNCA por `src` | 🔴 **CORRIGE el filtro vigente:** el `/atras/i.test(src)` heredado de vendedores/pedidos **descarta este back** y se lee como "no existe botón atrás". Acá el `src` es `flecha-blanca.png` y **sí** tiene `<a>` padre; la 2.ª `img.fechaAtras` (x=302) es `cobrosNuevoBlanco.svg`, decorativa. Coords ≈(31,31). `[el_palmar-20260805]` |
+| 🔴 **Oráculo de cobertura de la lista: `pageSize` vs `filteredItems`** | `window.ng.getComponent(document.querySelector('app-cobros-list'))` | antes de concluir "la lista no muestra X": si **`filteredItems < pageSize`** y **`ion-infinite-scroll.disabled===true`**, **no hay página siguiente** ⇒ el recorte **no** es de paginación. Evita el falso "hay que hacer scroll infinito". `[el_palmar-20260805]` |
+| **Tabla local `statuses` VACÍA — el estado se rotula por CONSTANTES del componente** | `COLLECT_STATUS_NEW=0` · `SENT=1` · `TO_SEND=2` · `SAVED=3` en `app-cobros-list` | un hueco en el catálogo `statuses` del servidor **no** afecta el rotulado del móvil — **no diagnosticar por ahí**. `[el_palmar-20260805]` |
+| **Valores del Tab General viven en `.value` / shadowRoot, NO en `innerText`** | `ion-input.value` + `ion-select.shadowRoot.querySelector('.select-text').textContent` | `innerText` devuelve `"Empresa: \| Cliente: \| Cliente: \|"` con **los valores vacíos** — se lee como "el cobro no tiene datos". `[el_palmar-20260805]` |
+| **Etiqueta de fecha del Tab General VARÍA con `co_type`** | "Fecha Cobro" en `co_type=0/3` · **"Fecha Retención"** en `co_type=2` | **no usar la etiqueta como selector estable.** `[el_palmar-20260805]` |
+| ⚠ **"Monto Doc." del acordeón de retención muestra el SALDO, no el monto de la factura** | — | en el cobro 27081 la UI rotula `Monto Doc. VES: 103.006,4277` = **`nu_balance_doc`**; el `nu_amount_doc` real es **114.270,2050**. El rótulo induce a error al cotejar contra la nube ⇒ **comparar contra `nu_balance_doc`**. `[el_palmar-20260805]` |
 
 **Defectos vistos en esta vista** (globalmp 30/07/2026, revisión de 5 cobros enviados):
 - ❌ `Total Depósitos:` en Tab Total imprime el monto BS **sin formato** (`BS 1500`, `BS 175622.82`) mientras `Total Transferencias:` sí formatea. 2/2 cobros con depósito.
@@ -103,7 +109,25 @@ Idem `nu_amount_collect_discount_other_conversion` (`cobro-documents.component.t
 - ⚠ **El alert "Cobro nro. X enviado exitosamente" bloquea el siguiente `nuevoCobro`** — cerrar SIEMPRE el alert de éxito (`h.clickAlertButton 'OK'`) antes de abrir el siguiente cobro. `[ins-2622]`
 - ✅ **[SUPERADO jerez-2026-07-06] Fecha Tasa SÍ recalcula vía CDP con `h.setIonDatetime`.** La nota previa `[ins-2622]` ("Fecha Tasa vía CDP NO recalcula de forma fiable → BLOCKED") queda **obsoleta**: el problema era que `confirmDatetime` no hallaba el botón Aceptar (no estaba en el shadowRoot) y `dt.value` por DOM no emitía el (ionChange). `h.setIonDatetime` lo resuelve: llama `dt.confirm()` (API Ionic, emite el ionChange confirmado) + emite ionChange/ionValueChange + click real en Aceptar (shadow/slot/overlay). Validado en jerez: DM-COB-047 (cobro nuevo) y 039 rama B (cobro Guardado) → **PASS con recálculo y persistencia §9**. Único caveat: en Guardado el alert puede tardar → poll del `ion-alert`. `[jerez-2026-07-06]`
 
+### 🔴 Catálogo de `co_type` — son CINCO valores, no 3 `[el_palmar-20260805]`
+
+`0` = Cobros · `1` = Anticipo/Prepago · `2` = Retención · `3` = **IGTF** · `4` = **Cobro 25%**
+
+- **Cómo resolver un `co_type` desconocido gratis y sin BD:** el `<select id$=":idTipo_input">` de `/pages/cobros`
+  de la **web** expone el enum completo con sus rótulos. Es más barato y más fiable que el catálogo `statuses`.
+- ⚠ **El oráculo de la cabecera de un cobro depende del `co_type`** — usar el equivocado produce falsos positivos:
+  - `co_type 0` → `Total a pagar = Σ(Saldo doc) − Total dcto − (Ret.IVA + Ret.ISLR) − Σ(Dif/Faltante) + IGTF`
+  - `co_type 2` → `Total a pagar = Σ(Monto a pagar por doc) = Ret.IVA + Ret.ISLR` — **el saldo NO participa**
+- **`collection.co_original_collection` es la llave cobro↔anticipo** (`id_original_collection` viene **NULL**).
+  Es la **única** forma de correlacionar el par: ninguna pantalla de la web expone el vínculo.
+  La forma de pago **`Prepago Automático`** marca un anticipo **generado por el sistema** desde el vuelto de otro cobro.
+- **`collection_payment.nu_collection_payment` = NÚMERO DE CUENTA, no el importe** — el importe está en
+  **`nu_amount_partial`**. Contarlo como importe da falsos "pagos vacíos".
+- **`erp_in_collection_payment` es un espejo del ERP ⇒ EXCLUIRLA** de cualquier conteo de pagos, o se cuentan dobles.
+
 ### Notas por cliente
+- **el_palmar (Isla Coche v1.0/db19, 2 empresas) — corrida SOLO LECTURA: 25 cobros revisados (27068-27092), 0 creados.** `st_collection=1` en los 25, valor **inexistente** en el catálogo `cob` de ambas empresas ⇒ **el `st_*` NO es traducible por catálogo en esta playa**; la fuente confiable es **`transaction_statuses` con `co_status='env'`**. Comentario del cobro: hint "Mín. 0 - Máx. **255** caracteres" (≠ los 120 de inventarios en alipascua) ⇒ el tope lo fija la constante de producto **por campo**, no `longitudComentario`. Un cobro Enviado abre con **3 tabs** (`default`/`total`/`adjuntos`, sin Documentos ni Pagos — reconfirma `[gmp-20260730]`), y la retención (`co_type=2`) muestra **un `ion-accordion` por documento** en el Tab Total (expandir con `grp.value=[values]`+`ionChange`). Abrir un cobro de la lista exige **click REAL** (`scrollIntoView({block:'center'})` → esperar → **re-leer rect** → validar viewport 360×744 → `mouse.click(...,{delay:120})`); un back devuelve al **menú COBROS**, no a la lista. `[el_palmar-20260805]`
+- ⚠ **el_palmar: BUSCAR de Cobros NO consulta la nube — el historial es puramente LOCAL.** El sync **no descarga** `collection` del servidor. Consecuencia para el smoke: **nunca marcar FAIL "la lista está vacía / faltan cobros"** sin contrastar antes contra la BD local (y contra `sqlite_sequence`, ver `_comunes.md`, para distinguir borrado de nunca-llegó). `# candidato — confirmar en la próxima playa antes de graduar a universal`. `[el_palmar-20260805]`
 - **piercar: `igtfList` = 1 tasa (3% default)** — `rateList` = 1 tasa histórica (572.68 BS/USD al 16/06/2026). Solo moneda cobro BS/USD (`multiCurrencyCollection=true`). DM-COB-039 y DM-COB-047 N/A-DATA por rateList.length=1. `[prc-2606]`
 - **piercar: documentos cliente ANA MANZANARES** — FACT0000009915 (id=1350, 737.56 USD) y FACT0000009683 (id=1270, 0.49 USD saldo). `[prc-2606]`
 - **piercar: `goToNuevoCobro(0)` sin FAB deja `paymentMethodList` vacía** — Al abrir cobro via componente Angular directo (sin FAB+sync), el `paymentMethodList` queda vacío y los acordeones de métodos no renderizan. Flujo normal (FAB → sync) sí inicializa. `[prc-2606]`

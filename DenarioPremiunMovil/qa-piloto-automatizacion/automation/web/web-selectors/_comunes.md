@@ -19,12 +19,63 @@ es `form:j_idt177` → localizarla como *"el `.ui-datatable` cuyos `thead th` in
 En el **login** todos los IDs son `j_idt*`, pero el árbol de accesibilidad resuelve limpio:
 `getByRole('textbox', {name:'Usuario'})` · `{name:'Clave'}` · `getByRole('button', {name:'Ingresar'})`. `[f0-2807]`
 
+## 🔴🔴 GUARDA DE TENANT — anclar al TEXTO, no al host ni al `value` `[el_palmar-20260805]`
+
+**Es la lección que costó una corrida entera.** Antes de leer nada, verificar que se está en la playa correcta:
+
+```js
+// 1 sola llamada, sin clicks: PrimeFaces mantiene un <select> ESPEJO con todas las <option>
+const empresas  = [...document.querySelectorAll('[id$=":idEnterprise_input"] option')].map(o => o.textContent.trim());
+const vendedores = [...document.querySelectorAll('[id$=":idSalesmaView_input"] option')].map(o => o.textContent.trim());
+// guarda: empresas esperadas presentes por TEXTO  +  vendedor esperado presente
+```
+
+- 🔴 **El `value` del `<select>` de Empresa NO es uniforme entre módulos.** En `/pages/devoluciones` es **posicional**
+  (`1|CENTRAL EL PALMAR`, `2|DESTILERIA YARACUY`); en `/pages/clientesPotenciales` es el **`co_enterprise`**
+  (`1002|…`, `1003|…`). ⇒ **anclar por TEXTO de la opción, nunca por `value`**, y **no compararlo contra BD**.
+- El `<select>` de **vendedores** usa `id_user` como `value` y el **nombre** como label (`266|Dilcia Duarte`):
+  el **login** del vendedor (`1276`) **no aparece** — buscar por id o por nombre, no por login.
+- Los `li[id*="idEnterprise_"]` **solo existen tras abrir el combo**; el `<select>` espejo está siempre.
+
+### 🔴 El filtro Empresa arranca en la 2ª empresa y se RESETEA AL ENTRAR FRESCO A CADA MÓDULO
+
+Observado en 4 módulos: el filtro venía preseleccionado en la **2ª empresa** y, tras corregirlo en inventarios,
+al navegar a depósitos **volvió a estar en la 2ª**. **Sin corregirlo, los registros salen invisibles y se canta
+un `WEB-MISSING` falso.** Matiz importante: una vez fijado **sobrevive a `detalleX` → volver**, y la tabla vuelve
+poblada **sin `Buscar`**; lo que lo resetea es **entrar fresco al módulo**. ⇒ **corregir Empresa en CADA módulo,
+siempre, antes de `Buscar`.** Cambiarla **sí** obliga a `Buscar` de nuevo. `[el_palmar-20260805]`
+
+```js
+// cambiar Empresa sin browser_click, dentro de una sola evaluate:
+// label.click()  →  click sobre el <li> filtrado POR TEXTO
+```
+
+Rango de fechas por defecto = el mes en curso hasta hoy. `[el_palmar-20260805]`
+
 ## Patrón de IDs de fila (confirmado en 7/7 módulos)
 
 ```
 {idTabla}:{índiceFila}:{acción}      →  form:cobrosDT:0:consultar
 ```
 Predecible: para actuar sobre la fila N, `#form\:cobrosDT\:N\:consultar` (escapar los `:` en CSS). `[f0-2807]`
+
+🔴🔴 **PERO NUNCA anclar al ÍNDICE de fila: anclar al `# Ref`.** Los índices **se corren durante la corrida** si
+se crean registros mientras se lee — un mismo cobro pasó de `:3:` a `:4:` a `:6:` **en 4 minutos**. Anclar al
+índice **garantiza abrir el registro equivocado**. Receta: **una sola `evaluate` que construye el mapa
+`# Ref → id de botón` y clickea**; luego una 2ª que lee. Ciclo real = `navigate` → `evaluate(mapa+click)` →
+`evaluate(leer)` = **3 llamadas**. `[el_palmar-20260805]`
+
+## Prefijo del panel de filtros — cambia entre tandas, resolver por SUFIJO
+
+El prefijo `form:j_idt*` del panel **cambió de `j_idt116` a `j_idt114` entre dos tandas del mismo día** ⇒ confirma
+la regla de oro: **nunca anclar a `j_idt*`**. Los **sufijos SÍ son estables** (iguales en todos los módulos):
+
+```
+:idEnterprise_label  ·  :idSalesmaView_label  ·  :clientSOM_label  ·  :attachStatus_label
+:orderStatus_label   ·  :n_ref  ·  :dateB_input / :dateF_input  ·  :ajax (Buscar)  ·  :botonLimpiar
+```
+Anclar por sufijo funcionó al **100 %**. ⚠ En devoluciones `orderStatus` trae **dos opciones distintas con el
+mismo texto `Enviado`** (`8` y `23`) ⇒ filtrar por ese literal es ambiguo: **filtrar por `# Ref`**. `[el_palmar-20260805]`
 
 ## ⚠ `form:pedidosDT` NO es único — lo comparten 5 módulos
 
@@ -55,6 +106,16 @@ sin darse cuenta. `[f0-2807]`
 Asumir siempre división produce **falsos `WEB-CALC-MISMATCH`** en las playas que operan en US$.
 `verificarConversion()` deduce la dirección de las monedas y, si no puede, **no juzga** en vez de adivinar
 (`opts.direccion` la fuerza). `[el_valle-20260728]`
+
+✅ **RESUELTO `[el_palmar-20260805]` — la moneda puede rotularse `VES`/`USD`, no solo `BS`/`US$`.** En Isla Coche
+`parseMoneda()` no reconocía esos literales ⇒ `verificarConversion()` devolvía **`ok:null`** en toda la playa
+("no se pudo deducir la dirección"), la causa más probable de un falso *"no evaluable"*. **Ya corregido en
+`web-helpers.js`**: el regex reconoce `USD|VES` y los **normaliza** a `US$|BS`, de modo que `VES→USD` deduce
+**dividir** y `USD→VES` **multiplicar**. Cubierto por 3 aserciones del self-test (93/93 OK).
+
+🔴 **Anti-patrón nuevo — `Monto conv.` de la LISTA no es derivable de `Monto cobrado`.** Salen de fuentes
+distintas. Un oráculo que asuma `Monto conv. == Monto cobrado / Tasa` marca MISMATCH **por la razón equivocada**.
+El oráculo correcto es contra **BD**, no entre columnas de la lista. `[el_palmar-20260805]`
 
 ### Totales de cabecera: etiqueta y valor comparten padre
 
@@ -126,6 +187,32 @@ const hojas = [...document.querySelectorAll('body *')]
 ⚠ **Filtrar el ruido de plantilla que aparece en TODAS las páginas:** el menú completo (`Transacciones`,
 `Cobros`, `Reportes`…) más un dashboard demo — `Rain Clothing` · `Products` `12K` · `Orders` `26K` ·
 `Sales` `$200K` · `Tamas Bunce` · `Olivia Arribas` · `N mins ago` · `Denario Premium Configuración`. `[f0-2807]`
+Ruido **nuevo** a filtrar (widget de noticias): `Last year was the hottest on record for the Arctic…` ·
+`Minimum extent of sea ice…` · `Right… my friend…`. `[el_palmar-20260805]`
+
+### 🔴 DOS reglas OPUESTAS de lectura del detalle — hay que usar las dos, y varían por página
+
+| Qué se lee | Regla que funciona | Qué pasa con la otra |
+|---|---|---|
+| **Cabecera** (`No. de Ref.`, `Estatus`, `Fecha`, `Nombre del cliente`, `Vendedor`, `Empresa`, `Responsable`, `Comentario`, `Ubicación`) | **`leerHojas` + hoja-siguiente** | `leerCabecera` devuelve **todo vacío** salvo `Coordenada de transacción` |
+| **Pie de totales** de `detalleCobro` (`Monto total base`, `…descuento`, `Retención IVA/ISLR`, `Monto total IGTF`, `Total Monto a pagar`, `Tasa de conversión`) | **mismo padre (`leerCabecera`)** | con la regla de cabecera el pie sale **vacío** y `Tasa de conversión` se contamina con `"Documentos Pagados"` |
+| **`detalleInventario` y `detalleDeposito` (completos)** | **`leerHojas` + hoja-siguiente** (resolvió el 100 %) | `leerCabecera` devolvió **las 12 claves en `""`** |
+
+⚠ **`leerHojas` + hoja-siguiente ABSORBE los títulos de sección:** `Web:` quedó emparejado con `Contacto`, que es
+el encabezado de la sección siguiente. **Descartar como valor toda hoja que sea un título conocido**
+(`Datos Básicos`, `Dirección`, `Contacto`, `Observaciones`). ⚠ En clientes potenciales la etiqueta del RIF es
+**`Cédula::`** (doble dos-puntos) y contiene el **RIF**. `[el_palmar-20260805]`
+
+## Sesión y transporte del bundle
+
+- 🔴 **La sesión JSF CADUCA entre tandas y `navigate` NO falla: devuelve `login.xhtml`.** ⇒ **chequear
+  `document.title`/`location.pathname` tras cada `navigate`** y re-loguear. Re-login funcional por los IDs del
+  login: `#j_idt12` usuario · `#j_idt14` clave · `#j_idt16` Ingresar. `[el_palmar-20260805]`
+- 🔑 **El bundle DOM no sobrevive a `browser_navigate`, pero `sessionStorage` sí** (~40 % menos tokens): guardar
+  `install.toString()` en `sessionStorage.qa` una vez y arrancar cada página con el bootstrap de una línea
+  `()=>{eval('('+sessionStorage.qa+')()'); return Q.DET()}`. Reconfirmado en 3 tandas. `[el_palmar-20260805]`
+- 🔴 **El bundle NO sobrevive tampoco a `Consultar`** — el detalle es **navegación completa, no ajax**. Para el
+  detalle usar un **lector autocontenido**: una sola `browser_evaluate` que define sus helpers y devuelve el JSON. `[el_palmar-20260805]`
 
 ## 🔑 Dos llaves de correlación con el móvil
 
@@ -144,6 +231,15 @@ Confirmado en pedidos e inventarios. **En clientes potenciales NO hay `No. de Re
 /pages/detalleClientePotencial              /pages/detalleInventario
 /pages/protected/visitas/detalleVisita.xhtml     ← ⚠ visitas usa la forma legacy con /protected/ y .xhtml
 ```
+
+## Tablas hijas del detalle — anclar por COLUMNAS, nunca por su `j_idt*` `[el_palmar-20260805]`
+
+| Página | Tabla de líneas | Cómo anclarla | Columnas / caveat |
+|---|---|---|---|
+| `detalleDevolucion` | `form:j_idt169` | `tablaPorColumnas(['Lote','Fecha vencimiento'])` | `N° · Cod. producto · Producto · Lote · N° Factura · Fecha vencimiento · Devolución en · Motivo · Cantidad`. **Cero columnas de dinero** ⇒ no construir oráculo de importes |
+| `detalleInventario` | `form:pedidosDT` | por id (semántico) | `N° · Cod. producto · Producto · Estructura · Depósito · Exhibición · Lote · Fecha expiración`. ⚠ **La ubicación NO es una columna**: `exh` se expresa poniendo la cantidad en **Exhibición** y dejando **Depósito = `-`** |
+| `detalleDeposito` | `form:j_idt163` | `tablaPorColumnas(['N° Ref cobro','Monto cobrado'])` | lista **las formas de pago del cobro vinculado**, repitiendo el mismo `N° Ref cobro` por fila ⇒ **NO sumar sus filas contra el monto depositado** |
+| `detalleCobro` | ver `web-selectors/cobros.md` | — | — |
 
 ## Enlaces cruzados entre módulos (oráculos gratis)
 

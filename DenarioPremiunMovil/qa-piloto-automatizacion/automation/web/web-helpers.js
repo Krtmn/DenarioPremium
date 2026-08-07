@@ -171,11 +171,18 @@ function parseNumeroVE(s) {
   return Number.isFinite(n) ? n : null;
 }
 
-/** '50.687,24 BS' → {valor:50687.24, moneda:'BS'} · '70,01 US$' → {valor:70.01, moneda:'US$'} */
+/** '50.687,24 BS' → {valor:50687.24, moneda:'BS'} · '70,01 US$' → {valor:70.01, moneda:'US$'}
+ *  ⚠ Isla Coche rotula la moneda como **`VES`/`USD`**, no `BS`/`US$` — sin reconocerlos,
+ *  `verificarConversion()` devolvía `ok:null` ("no se pudo deducir la dirección") en toda esa
+ *  playa. Se reconocen y se **normalizan** a `BS`/`US$` para no tocar el resto del deductor.
+ *  `[el_palmar-20260805]` */
 function parseMoneda(s) {
   const valor = parseNumeroVE(s);
-  const m = String(s == null ? '' : s).match(/(US\$|BS|Bs\.?|\$)\s*$/i);
-  return { valor, moneda: m ? m[1].toUpperCase().replace('BS.', 'BS') : null };
+  const m = String(s == null ? '' : s).match(/(US\$|USD|VES|BS|Bs\.?|\$)\s*$/i);
+  let moneda = m ? m[1].toUpperCase().replace('BS.', 'BS') : null;
+  if (moneda === 'USD') moneda = 'US$';
+  else if (moneda === 'VES') moneda = 'BS';
+  return { valor, moneda };
 }
 
 /** '724,00 BS = 1 US$' → 724 (cuántos BS por 1 US$) */

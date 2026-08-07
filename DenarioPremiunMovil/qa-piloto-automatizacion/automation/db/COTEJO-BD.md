@@ -95,3 +95,39 @@ Cada uno: el agente UI arma+Guarda → **adjunto manual (QA)** → Enviar → co
 
 ---
 *Generado por Claude Code · sistema de cotejo BD por payload · 2026-06-17*
+
+---
+
+## 6. Centinelas — chequeos que corren en TODA corrida transaccional
+
+Consultas de vigilancia sobre defectos **en observación**: no bloquean nada, pero si aparece un caso nuevo
+hay que reportarlo con el contexto fresco (que es justo lo que le faltó al episodio original).
+
+### 6.1 · `total-cero` — cobros que perdieron `nu_amount_total` teniendo pagos reales
+
+**Estado:** 🟡 en observación · **NO reportado** (decisión QA 2026-08-06: sin pasos de reproducción,
+desarrollo no puede tomar el caso).
+
+**Cuándo correrla:** el **Agente BD del módulo COBROS**, en toda corrida — aunque cobros vaya en solo lectura.
+
+```bash
+node automation/db/query.js "<cliente>" "$(grep -v '^--' automation/db/check-total-cero.sql | tr '
+' ' ')"
+```
+
+**Qué hacer con el resultado:**
+- **0 filas** → anotar en el reporte `Centinela total-cero: sin casos` y seguir. No es hallazgo.
+- **≥1 fila** → 🔴 **reportarlo en el .md del módulo con máxima prioridad**, incluyendo: `id_collection`,
+  `co_type`, moneda, `nu_amount_final`, cantidad de pagos, comentario y hora exacta. Y **verificar en la web**
+  si ese cobro muestra `N/A` en las columnas `Monto conv.` y `Tasa conv.` **del LISTADO** de `/pages/cobros`
+  (el detalle sale bien — el defecto es exclusivo del listado).
+
+**⚠ El filtro de PAGOS de la consulta es imprescindible, no lo quites:** en `co_type=2` (retención)
+`nu_amount_total = 0` es **normal**, porque las retenciones no llevan filas de pago por diseño. Sin ese
+filtro salen **44 falsos positivos históricos** solo en el_palmar (oct-2025 → mar-2026).
+
+**Episodio original (el único hasta hoy):** el_palmar, **5 cobros del 2026-08-05** (27076, 27077, 27082,
+27085, 27086) en una ventana de 2 h 12 min (12:48 → 15:00). Sin antecedentes en 10 meses de datos y sin
+repetirse en los 17 cobros posteriores, incluidos 2 creados a propósito para reproducirlo. Se descartaron
+por evidencia: sobrepago, método de pago, moneda y tipo de cobro. **Apunta a estado transitorio de la app**,
+no a una combinación de datos.

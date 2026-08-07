@@ -84,7 +84,20 @@ Eres **Claude Code actuando como Orquestador QA** para Denario Premium Móvil. T
 **Reportes:** guardar en `automation/reports/smoke_{QA_CLIENTE}_{YYYYMMDD}_{HHMMSS}/` (una carpeta por corrida — ver Paso 0)
 **QA_CLIENTE:** (especificar al lanzar, ej. `QA_CLIENTE=hidroponias`)
 **QA_MODE:** opcional — `QA_MODE=record` para que los agentes **graben la traza** de replay determinista (RUNTIME §12). Si no se especifica, la corrida es la normal de hoy y **nadie graba**.
-**QA_WEB:** opcional — `QA_WEB=1` activa la **capa web**: verifica en la web de Denario que las transacciones que creó el móvil llegaron bien y que los cálculos cuadran (`automation/web/WEB-RUNTIME.md`). Corre **en paralelo**, no suma wall-clock. Sin el flag, la corrida es solo móvil.
+**QA_WEB:** opcional — `QA_WEB=1` activa la **capa web** (`automation/web/WEB-RUNTIME.md`). Corre **en paralelo**, no suma wall-clock. Sin el flag, la corrida es solo móvil.
+🔴 **La capa web son CUATRO familias, no solo el cotejo** (ver `automation/web/smoke-web/README.md`). Solo una depende del móvil:
+
+| Familia | Qué valida | ¿Depende del móvil? | Cuándo corre |
+|---|---|---|---|
+| **`F##`** Filtros | que la web encuentra lo que se le pide | ❌ no | 🔴 **PRIMERO DE TODO**, junto con el login |
+| **`C##`** Cotejo | que lo que el móvil envió llegó bien y los cálculos cuadran | ✅ sí (manifiesto) | en *offset*, tras cada módulo móvil |
+| **`M##`** Muestreo BD↔web | 20-30 registros **históricos** por módulo contra la BD | ❌ no | relleno |
+| **`A##`** Adjuntos | que la descarga y el visor funcionan | ❌ no | relleno |
+| **`D##`** Comportamiento | paginación, orden, columnas, lista vacía, formato de importes | ❌ no | relleno |
+
+⚠ **`F##` va primero, no es opcional:** todo el cotejo depende de que el filtro `# Ref` funcione. Si está roto, **todos los `C##` darían `WEB-MISSING` falsos** y se persiguen fantasmas. En `el_palmar-20260805` se asumió bueno sin verificarlo.
+💎 **`M##` es la familia que más defectos encuentra** — es lectura masiva y barata. En `el_palmar-20260806` halló, con 161 registros en 7 módulos, lo único que ninguna otra familia vio.
+⏱ **Costo real: cero wall-clock.** Las 4 familias sumaron ~3 h de máquina contra ~7 h de dispositivo, y entran completas en la ventana del móvil (recursos distintos: navegador de la laptop vs teléfono). La única restricción es **un agente web a la vez** (comparten navegador).
 
 ---
 
@@ -203,17 +216,31 @@ Para cada módulo en el orden anterior:
 >
 > ⚠ El solape es **offset** (BD de N ‖ UI de N+1) — **nunca** UI+BD del mismo módulo a la vez (el BD necesita el payload ya enviado + la ventana de sync ~10s). Aplica a los **7 transaccionales**; login/productos/vendedores no llevan cotejo BD. En **1 emulador** los UI siguen siendo secuenciales entre sí (un solo dispositivo); lo que se paraleliza es **el BD contra el UI siguiente**.
 
-> **Capa WEB en PARALELO (solo si `QA_WEB=1`) — patrón *offset*, igual que el Agente BD:**
-> 1. Al terminar el agente UI de un módulo **transaccional** que haya escrito al manifiesto, lanzá su
->    **Agente WEB en background** (`run_in_background: true`) y **seguí inmediatamente** con el módulo siguiente.
+> **Capa WEB en PARALELO (solo si `QA_WEB=1`) — 4 familias, patrón *offset* para el cotejo:**
+>
+> 🔴 **PASO 0 — `F##` ANTES QUE NADA.** Junto con el agente de LOGIN, lanzá el **Agente WEB de FILTROS**
+>    (`F##` de los 7 módulos). **No sigas al cotejo hasta saber que el filtro `# Ref` funciona**: si está roto,
+>    todos los `C##` dan `WEB-MISSING` falsos. Si `F##` reporta el filtro roto → avisá y marcá los `C##`
+>    como `WEB-N/A`, no como MISSING.
+> 1. **`C##` (cotejo):** al terminar el agente UI de un módulo **transaccional** que haya escrito al manifiesto,
+>    lanzá su **Agente WEB en background** (`run_in_background: true`) y **seguí inmediatamente** con el módulo
+>    siguiente.
 > 2. ⚠ **UNO en vuelo a la vez.** Los agentes web comparten un único navegador y se pisarían.
 >    El paralelismo es **web ‖ móvil**, **nunca** web ‖ web. Si el anterior no terminó, esperalo antes de lanzar otro.
 >    *(Costo real medido: un módulo móvil tarda 15–25 min y una verificación web 2–5 min ⇒ sobra margen.)*
-> 3. Cuando notifique, **anexá vos** (foreground) su markdown a `{RUN_DIR}web.md` y sus líneas a
+> 3. **`M##`, `A##` y `D##` son el RELLENO.** Cada vez que la cola web quede libre y el móvil siga ocupado,
+>    lanzá el siguiente bloque pendiente. **No esperan a nadie** — no dependen del manifiesto.
+>    Prioridad cuando el tiempo aprieta: **`M##` > `A##` > `D##`**, y dentro de `M##`, **cobros primero**
+>    (es el módulo más rico: ramifica por `co_type`).
+>    ⚠ En `A##`: los ZIP traen **adjuntos reales de un cliente productivo** ⇒ **borrarlos al terminar cada caso**,
+>    y barrer **dos** ubicaciones (el cwd y `DenarioPremiunMovil/.playwright-mcp/`, donde Playwright deja copia).
+> 4. Cuando notifique, **anexá vos** (foreground) su markdown a `{RUN_DIR}web.md` y sus líneas a
 >    `{RUN_DIR}_web-results.jsonl`. El agente web **no escribe** (en background la escritura se auto-deniega).
-> 4. **Barrido de rezagados al cierre:** terminados los 10 módulos, lanzá **un último Agente WEB** solo con los
+> 5. **Barrido de rezagados al cierre:** terminados los 10 módulos, lanzá **un último Agente WEB** solo con los
 >    registros que quedaron **`WEB-MISSING`**. Así los rezagados por sync diferida se resuelven sin que el resto
 >    pague la espera. Si tras el barrido siguen faltando → ahí sí es hallazgo.
+> 6. **Si al cierre quedaron familias sin correr, decilo en el consolidado.** Una corrida con solo `C##` tiene
+>    **cobertura web parcial**, aunque el cotejo haya dado todo OK.
 >
 > ✅ **Probado:** el navegador web y el CDP del dispositivo **conviven sin pisarse** — `connectOverCDP` deja la
 > web intacta (incluido su estado JS) y 3 idas y vueltas tardaron 499 ms. Reglas en `WEB-RUNTIME §9`.
@@ -620,20 +647,48 @@ Devolver: módulo VENDEDORES, counts, ruta.
 
 ---
 
-### AGENTE WEB — VERIFICACIÓN CRUZADA MÓVIL → WEB (solo si `QA_WEB=1` · se lanza en BACKGROUND)
+### AGENTE WEB — 4 familias (solo si `QA_WEB=1` · se lanza en BACKGROUND)
 
-**Cuándo:** al terminar el agente UI de cada **módulo transaccional** que haya escrito al manifiesto.
-**Recurso:** el navegador de la laptop — **no toca el dispositivo** ⇒ corre en paralelo con el módulo siguiente.
+**Recurso:** el navegador de la laptop — **no toca el dispositivo** ⇒ corre en paralelo con el móvil.
 ⚠ **UNO en vuelo a la vez:** los agentes web comparten un único navegador y se pisarían entre sí
 (el paralelismo es **web ‖ móvil**, nunca web ‖ web).
 
-```
-Eres agente QA — capa WEB · Denario Premium web (JSF/PrimeFaces) · RUN_ID: {RUN_ID} · Cliente: {QA_CLIENTE}
+**Cuándo lanzar cada familia** — el orquestador inyecta `{FAMILIA}` y ajusta el bloque "QUÉ VERIFICAR":
 
-LECTURA OBLIGATORIA (solo estos 3):
+| Familia | Cuándo | Alcance del agente |
+|---|---|---|
+| **`F##`** | 🔴 con el LOGIN, **antes del 1er cotejo** | filtros de los 7 módulos; **el caso crítico es que `# Ref` funcione** |
+| **`C##`** | tras cada módulo transaccional (offset) | las líneas del manifiesto de ESE módulo |
+| **`M##`** | relleno, cuando la cola web quede libre | **20-30 registros HISTÓRICOS por módulo** contra la BD |
+| **`A##`** | relleno | descarga y visor de adjuntos |
+| **`D##`** | relleno | paginación, orden, columnas, lista vacía, formato de importes |
+
+> 💎 **`M##` es la de mayor rendimiento.** Muestra variada (todos los `co_type`, ambas monedas, ambas
+> empresas, meses distintos) y **aritmética explícita** contra la BD. Reusar los oráculos ya validados:
+> `co_type 0: Total a pagar = Σ(Saldo doc) − dcto − (Ret.IVA+Ret.ISLR) − Σ(Dif/Faltante) + IGTF` ·
+> `co_type 2: Total a pagar = Σ(Monto a pagar por doc) = Ret.IVA + Ret.ISLR` (el saldo NO participa) ·
+> `Monto total base = Σ(Saldo doc)`, no Σ(Monto doc). ⚠ **Cada registro lleva su propia tasa
+> (`nu_value_local`)** — usar la del registro, no la del día.
+>
+> ⚠ **`A##` — seguridad de datos:** los ZIP traen **adjuntos reales de un cliente productivo**. **Borrarlos al
+> terminar cada caso**, y barrer **dos** ubicaciones: el cwd y `DenarioPremiunMovil/.playwright-mcp/`.
+> El oráculo del contenido es **`transaction_image` + `transaction_files`**, **NO `nu_attachments`** (ese
+> incluye la firma, que **nunca viaja en el ZIP** ⇒ da un falso −1 sistemático).
+>
+> ⚠ **Antes de marcar un `M##` como hallazgo, releé lo que ya reportaron otros agentes de la misma corrida.**
+> En `el_palmar-20260806` un agente levantó como crítico que el depósito guardaba "un solo pago", cuando otro
+> ya había establecido que el monto correcto es **el pago en EFECTIVO** del cobro vinculado (se deposita el
+> efectivo, no la transferencia). Costó una falsa alarma.
+
+```
+Eres agente QA — capa WEB · familia {FAMILIA} · Denario Premium web (JSF/PrimeFaces)
+RUN_ID: {RUN_ID} · Cliente: {QA_CLIENTE}
+
+LECTURA OBLIGATORIA (solo estos 4):
 1. automation/web/WEB-RUNTIME.md
-2. automation/web/web-selectors/_comunes.md + automation/web/web-selectors/{modulo}.md (si existe)
-3. automation/web/web-helpers.js  (mapa de módulos, BUNDLE_DOM, funciones puras)
+2. automation/web/smoke-web/smoke-web-{modulo}.md   ← el guión: los casos de tu familia y su oráculo
+3. automation/web/web-selectors/_comunes.md + automation/web/web-selectors/{modulo}.md (si existe)
+4. automation/web/web-helpers.js  (mapa de módulos, BUNDLE_DOM, funciones puras)
 
 🔴 READ-ONLY. La web es PRODUCCIÓN. No creás, no editás, no borrás, no aprobás nada.
 El ÚNICO control que se toca en una fila es `Consultar` (y `Buscar`/`Limpiar` de filtros).
