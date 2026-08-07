@@ -1764,4 +1764,276 @@ describe('CollectionService', () => {
       expect(details[0].collectionDetailDiscounts[0].nuAmountCollectDiscountOther).toBe(8);
     });
   });
+
+  describe('COB-FALT-001 faltante→0 refreshes montoTotalPagar on SAVED', () => {
+    function makeDetail(partial: Partial<CollectionDetail>): CollectionDetail {
+      return {
+        idDocument: 1,
+        coDocument: 'FAC-1',
+        inPaymentPartial: false,
+        nuAmountPaid: 0,
+        nuAmountPaidConversion: 0,
+        nuBalanceDoc: 0,
+        nuBalanceDocConversion: 0,
+        nuBalanceDocOriginal: 0,
+        nuAmountDoc: 0,
+        nuAmountDiscount: 0,
+        nuAmountDiscountConversion: 0,
+        nuAmountCollectDiscount: 0,
+        nuAmountRetention: 0,
+        nuAmountRetention2: 0,
+        nuAmountIgtf: 0,
+        isSave: true,
+        ...partial,
+      } as CollectionDetail;
+    }
+
+    function stubPaymentSideEffects(): void {
+      const svc = service as any;
+      spyOn(service, 'convertirMonto').and.callFake((amount: number) => Number(amount) || 0);
+      spyOn(svc.currencyService, 'formatNumber').and.callFake((n: number) => String(n ?? 0));
+      spyOn(service, 'cleanFormattedNumber').and.callFake((value: string | number) => Number(value) || 0);
+      spyOn(svc, 'shouldApplyIgtfToCollection').and.returnValue(false);
+      spyOn(svc, 'shouldCalculateEmbeddedIgtf').and.returnValue(false);
+      spyOn(svc, 'isRetentionCollection').and.returnValue(false);
+      spyOn(svc, 'resolveAutomatedPrepaid').and.stub();
+      spyOn(service, 'syncAddPaymentMethodDisabledState').and.stub();
+      spyOn(svc, 'syncCollectionDetailsIgtfAmounts').and.stub();
+      spyOn(svc, 'syncCollectionIgtfFields').and.stub();
+      spyOn(svc, 'applyCollectionIgtfAmountFields').and.stub();
+      spyOn(svc, 'restoreCollectionIgtfFields').and.stub();
+      spyOn(svc, 'restorePersistedIgtfDisplayAmounts').and.stub();
+    }
+
+    it('SAVED: clearing faltante + syncing nuAmountPaid lifts montoTotalPagar to full balance', async () => {
+      stubPaymentSideEffects();
+      service.coTypeModule = '0';
+      service.isOpen = false;
+      service.isChangePaymentPartialPersistence = false;
+      service.isRateChangeInProgress = false;
+      service.montoTotalPagado = 400;
+      service.documentSales = [{
+        idDocument: 10,
+        coDocument: 'FAC-10',
+        isSelected: true,
+        isSave: true,
+        inPaymentPartial: false,
+        nuAmountPaid: 400,
+        positionCollecDetails: 0,
+      } as DocumentSale];
+      service.documentSalesBackup = [{
+        idDocument: 10,
+        nuBalance: 500,
+        nuAmountPaid: 400,
+        isSave: true,
+      } as DocumentSale];
+      service.collection = {
+        coCurrency: 'USD',
+        nuValueLocal: 1,
+        stDelivery: service.COLLECT_STATUS_SAVED,
+        stCollection: service.COLLECT_STATUS_SAVED,
+        coType: '0',
+        nuAmountFinal: 400,
+        nuAmountPaid: 400,
+        nuAmountTotal: 400,
+        nuAmountIgtf: 0,
+        collectionDetails: [
+          makeDetail({
+            idDocument: 10,
+            coDocument: 'FAC-10',
+            nuBalanceDoc: 500,
+            nuBalanceDocOriginal: 500,
+            nuAmountDoc: 500,
+            nuAmountDiscount: 0,
+            nuAmountPaid: 500,
+            nuAmountPaidConversion: 500,
+            isSave: true,
+          }),
+        ],
+        collectionPayments: [{
+          coPaymentMethod: 'ef',
+          nuAmountPartial: 400,
+        }],
+      } as any;
+      service.tipoPagoEfectivo = true;
+      service.pagoEfectivo = [{ monto: 400, type: 'ef', posCollectionPayment: 0 }] as any[];
+
+      await service.calculatePayment('', 0, true, true);
+
+      expect(service.montoTotalPagar).toBe(500);
+      expect(service.montoTotalPagar).not.toBe(400);
+    });
+
+    it('SAVED preserve: stale paid < expectedNet after faltante 0 does not freeze montoTotalPagar', async () => {
+      stubPaymentSideEffects();
+      service.coTypeModule = '0';
+      service.isOpen = false;
+      service.isChangePaymentPartialPersistence = false;
+      service.isRateChangeInProgress = false;
+      service.montoTotalPagado = 400;
+      service.documentSales = [{
+        idDocument: 10,
+        coDocument: 'FAC-10',
+        isSelected: true,
+        isSave: true,
+        inPaymentPartial: false,
+        nuAmountPaid: 400,
+        positionCollecDetails: 0,
+      } as DocumentSale];
+      service.documentSalesBackup = [{
+        idDocument: 10,
+        nuBalance: 500,
+        nuAmountPaid: 400,
+        isSave: true,
+      } as DocumentSale];
+      service.collection = {
+        coCurrency: 'USD',
+        nuValueLocal: 1,
+        stDelivery: service.COLLECT_STATUS_SAVED,
+        stCollection: service.COLLECT_STATUS_SAVED,
+        coType: '0',
+        nuAmountFinal: 400,
+        nuAmountPaid: 400,
+        nuAmountTotal: 400,
+        nuAmountIgtf: 0,
+        collectionDetails: [
+          makeDetail({
+            idDocument: 10,
+            coDocument: 'FAC-10',
+            nuBalanceDoc: 500,
+            nuBalanceDocOriginal: 500,
+            nuAmountDoc: 500,
+            nuAmountDiscount: 0,
+            // Neto viejo aún en detail (antes del sync de amountPaid)
+            nuAmountPaid: 400,
+            nuAmountPaidConversion: 400,
+            isSave: true,
+          }),
+        ],
+        collectionPayments: [{
+          coPaymentMethod: 'tr',
+          nuAmountPartial: 400,
+        }],
+      } as any;
+      service.tipoPagoTransferencia = true;
+      service.pagoTransferencia = [{ monto: 400, type: 'tr', posCollectionPayment: 0 }] as any[];
+
+      await service.calculatePayment('', 0, false, true);
+
+      expect(service.montoTotalPagar).toBe(500);
+    });
+
+    it('restoreDocumentSaleState restores faltante snapshot on cancel', () => {
+      stubPaymentSideEffects();
+      service.documentSales = [{
+        idDocument: 10,
+        coDocument: 'FAC-10',
+        positionCollecDetails: 0,
+        isSave: true,
+        nuAmountPaid: 400,
+      } as DocumentSale];
+      service.documentSalesBackup = [{
+        idDocument: 10,
+        coDocument: 'FAC-10',
+        positionCollecDetails: 0,
+        isSave: true,
+        nuBalance: 500,
+        nuAmountPaid: 400,
+      } as DocumentSale];
+      service.collection = {
+        coCurrency: 'USD',
+        nuValueLocal: 1,
+        stDelivery: service.COLLECT_STATUS_SAVED,
+        collectionDetails: [
+          makeDetail({
+            idDocument: 10,
+            coDocument: 'FAC-10',
+            nuBalanceDoc: 500,
+            nuAmountDiscount: 100,
+            nuAmountDiscountConversion: 100,
+            nuAmountPaid: 400,
+            isSave: true,
+          }),
+        ],
+        collectionPayments: [],
+      } as any;
+
+      service.captureOpenDetailFaltanteBackup(0);
+      service.collection.collectionDetails[0].nuAmountDiscount = 0;
+      service.collection.collectionDetails[0].nuAmountDiscountConversion = 0;
+
+      service.restoreDocumentSaleState(0);
+
+      expect(service.collection.collectionDetails[0].nuAmountDiscount).toBe(100);
+      expect(service.collection.collectionDetails[0].nuAmountDiscountConversion).toBe(100);
+    });
+
+    it('partial payment still uses nuAmountPaid (not full balance) after faltante 0', async () => {
+      stubPaymentSideEffects();
+      service.coTypeModule = '0';
+      service.isOpen = false;
+      service.collection = {
+        coCurrency: 'USD',
+        nuValueLocal: 1,
+        stDelivery: service.COLLECT_STATUS_SAVED,
+        collectionDetails: [
+          makeDetail({
+            idDocument: 99,
+            coDocument: 'FAC-99',
+            inPaymentPartial: true,
+            nuAmountPaid: 40,
+            nuAmountPaidConversion: 40,
+            nuBalanceDoc: 100,
+            nuBalanceDocOriginal: 100,
+            nuAmountDiscount: 0,
+            isSave: true,
+          }),
+        ],
+        collectionPayments: [],
+        nuAmountIgtf: 0,
+      } as any;
+      service.documentSales = [] as DocumentSale[];
+      service.documentSalesBackup = [] as DocumentSale[];
+
+      await service.calculatePayment('', 0, true, true);
+
+      expect(service.montoTotalPagar).toBe(40);
+    });
+  });
+
+  describe('syncCollectionDetailDiscountConversion', () => {
+    it('clears stale conversion when faltante local is set to 0', () => {
+      service.collection = {
+        coCurrency: 'VES',
+        nuValueLocal: 36.5,
+      } as any;
+
+      const detail = {
+        nuAmountDiscount: 0,
+        nuAmountDiscountConversion: 13.5887,
+      } as CollectionDetail;
+
+      service.syncCollectionDetailDiscountConversion(detail);
+
+      expect(detail.nuAmountDiscountConversion).toBe(0);
+    });
+
+    it('recalculates conversion when faltante local is positive', () => {
+      service.collection = {
+        coCurrency: 'VES',
+        nuValueLocal: 2,
+      } as any;
+      spyOn(service, 'convertirMonto').and.returnValue(50);
+
+      const detail = {
+        nuAmountDiscount: 100,
+        nuAmountDiscountConversion: 0,
+      } as CollectionDetail;
+
+      service.syncCollectionDetailDiscountConversion(detail);
+
+      expect(service.convertirMonto).toHaveBeenCalled();
+      expect(detail.nuAmountDiscountConversion).toBe(50);
+    });
+  });
 });

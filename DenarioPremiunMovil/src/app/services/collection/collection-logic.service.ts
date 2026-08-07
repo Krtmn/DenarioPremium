@@ -165,6 +165,12 @@ export class CollectionService {
   public isHardCurrency: boolean = false;
   public multiCurrency!: boolean;
   public isOpen: boolean = false;
+  /** Snapshot de faltante (nuAmountDiscount) al abrir detalle; se restaura al cancelar (COB-FALT-001). */
+  private detailFaltanteOpenBackup: {
+    position: number;
+    nuAmountDiscount: number;
+    nuAmountDiscountConversion: number;
+  } | null = null;
   public isPaymentPartial: boolean = false;
   public isChangePaymentPartial: boolean = false;
   public isChangePaymentPartialPersistence: boolean = false;
@@ -1318,6 +1324,11 @@ export class CollectionService {
         return expectedNet;
       }
       if (deductions > 0 && persistedPaid <= deductions) {
+        return expectedNet;
+      }
+      // COB-FALT-001: doc no parcial — si faltante bajó/quedó 0 y nuAmountPaid quedó en neto viejo,
+      // no congelar montoTotalPagar con paid < expectedNet (path de normalizeDocumentNetAmountFromPaid).
+      if (persistedPaid < expectedNet) {
         return expectedNet;
       }
       if (persistedPaid < balance) {
@@ -3225,6 +3236,23 @@ export class CollectionService {
     return suma > nuBalance || suma < 0 || (nuAmountRetention === 0 && nuAmountRetention2 === 0);
   }
 
+  captureOpenDetailFaltanteBackup(position: number): void {
+    const detail = this.collection?.collectionDetails?.[position];
+    if (!detail || !Number.isInteger(position) || position < 0) {
+      this.detailFaltanteOpenBackup = null;
+      return;
+    }
+    this.detailFaltanteOpenBackup = {
+      position,
+      nuAmountDiscount: Number(detail.nuAmountDiscount ?? 0),
+      nuAmountDiscountConversion: Number(detail.nuAmountDiscountConversion ?? 0),
+    };
+  }
+
+  clearOpenDetailFaltanteBackup(): void {
+    this.detailFaltanteOpenBackup = null;
+  }
+
   restoreDocumentSaleState(index: number) {
     // Copia los datos de documentSales[index] a documentSaleOpen y documentSalesBackup[index]
     const original = { ...this.documentSalesBackup[index] };
@@ -3252,6 +3280,18 @@ export class CollectionService {
     }
 
     const positionCollecDetails = position;
+    // COB-FALT-001: restaurar faltante mutado en memoria al cancelar el modal.
+    const detailForFaltante = this.collection.collectionDetails?.[positionCollecDetails];
+    if (
+      detailForFaltante
+      && this.detailFaltanteOpenBackup
+      && this.detailFaltanteOpenBackup.position === positionCollecDetails
+    ) {
+      detailForFaltante.nuAmountDiscount = this.detailFaltanteOpenBackup.nuAmountDiscount;
+      detailForFaltante.nuAmountDiscountConversion = this.detailFaltanteOpenBackup.nuAmountDiscountConversion;
+    }
+    this.detailFaltanteOpenBackup = null;
+
     const nuAmountBase = this.collection.collectionDetails[positionCollecDetails].nuBalanceDoc,
       nuAmountDiscount = this.collection.collectionDetails[positionCollecDetails].nuAmountDiscount,
       nuAmountPaid = this.collection.collectionDetails[positionCollecDetails].nuAmountPaid,
@@ -3488,6 +3528,22 @@ export class CollectionService {
       normalizedAmount,
       this.collection.nuValueLocal,
       this.collection.coCurrency,
+    );
+  }
+
+  /**
+   * Mantiene nuAmountDiscountConversion alineado al faltante local.
+   * Evita residuales en web cuando el faltante se deja en 0.
+   */
+  public syncCollectionDetailDiscountConversion(
+    detail: CollectionDetail | null | undefined,
+  ): void {
+    if (!detail) {
+      return;
+    }
+    detail.nuAmountDiscountConversion = this.resolveDetailAmountConversion(
+      Number(detail.nuAmountDiscount ?? 0),
+      detail,
     );
   }
 
@@ -6627,6 +6683,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
       for (var coDetail = 0; coDetail < collect.collectionDetails.length; coDetail++) {
         const collectionDetail = collection[co].collectionDetails[coDetail];
+        this.syncCollectionDetailDiscountConversion(collectionDetail);
 
         if (collectionDetail.inPaymentPartial == true) {
           this.coDocumentToUpdate.push(collectionDetail.coDocument);
@@ -6837,6 +6894,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     for (var i = 0; i < collectionDetail.length; i++) {
       this.ensureDetailDynamicRetentionsFromAmounts(collectionDetail[i], i);
       this.syncDetailRetentionAmountsAndConversions(collectionDetail[i], undefined, i);
+      this.syncCollectionDetailDiscountConversion(collectionDetail[i]);
       statementsCollectionDetails.push([inserStatementCollectionDetail, [
         0,
         collectionDetail[i].coCollection,

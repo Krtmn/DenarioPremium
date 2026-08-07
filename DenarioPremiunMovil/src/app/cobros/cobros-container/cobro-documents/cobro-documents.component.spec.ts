@@ -158,4 +158,90 @@ describe('CobrosDocumentComponent', () => {
     expect((component as any).manualCollectDiscountAmount).toBe(0);
     expect(collectServiceMock.selectedCollectDiscounts).toEqual([]);
   });
+
+  it('COB-FALT-001: validate enables Guardar when faltante is 0 and amountPaid is valid', () => {
+    collectServiceMock.coTypeModule = '0';
+    collectServiceMock.isPaymentPartial = false;
+    collectServiceMock.alwaysPartialPayment = false;
+    collectServiceMock.enablePartialPayment = true;
+    collectServiceMock.isChangePaymentPartial = false;
+    collectServiceMock.validNuRetention = false;
+    collectServiceMock.retencion = false;
+    collectServiceMock.amountPaid = 500;
+    collectServiceMock.amountPaidDoc = 500;
+    collectServiceMock.indexDocumentSaleOpen = 0;
+    collectServiceMock.parteDecimal = 2;
+    collectServiceMock.documentSaleOpen = {
+      positionCollecDetails: 0,
+      nuAmountRetention: 0,
+      nuAmountRetention2: 0,
+      nuAmountTax: 0,
+      nuAmountBase: 500,
+      nuAmountPaid: 500,
+      nuBalance: 500,
+    };
+    collectServiceMock.documentSales = [{
+      idDocument: 1,
+      isSave: true,
+      nuAmountPaid: 500,
+      positionCollecDetails: 0,
+    }];
+    collectServiceMock.documentSalesBackup = [{
+      idDocument: 1,
+      nuBalance: 500,
+      nuAmountPaid: 500,
+      isSave: true,
+    }];
+    collectServiceMock.collection.collectionDetails = [{
+      idDocument: 1,
+      nuAmountDiscount: 0,
+      nuAmountCollectDiscount: 0,
+      nuAmountRetention: 0,
+      nuAmountRetention2: 0,
+      nuBalanceDoc: 500,
+      nuAmountPaid: 400,
+      inPaymentPartial: false,
+      isSave: true,
+    }];
+    collectServiceMock.collectionTags = new Map();
+    collectServiceMock.ensureNumber = jasmine.createSpy('ensureNumber');
+    collectServiceMock.convertirMonto = jasmine.createSpy('convertirMonto').and.callFake((n: number) => n);
+    collectServiceMock.calculatePayment = jasmine.createSpy('calculatePayment').and.resolveTo(false);
+    spyOn(component as any, 'syncOpenDocumentAmountPaidWithRetentions').and.stub();
+    spyOn(component as any, 'resolveOpenDocumentMaxAmountToPay').and.returnValue(500);
+    spyOn(component as any, 'exceedsMaxAmountToPay').and.returnValue(false);
+    spyOn(component as any, 'isEmptyOrZeroRetention').and.returnValue(false);
+    spyOn(component as any, 'getDocumentRetentionTotal').and.returnValue(0);
+    spyOn(component as any, 'isCollectRetentionEntryInProgress').and.returnValue(false);
+    spyOn(component as any, 'shouldSkipSendValidationOnPaymentRecalc').and.returnValue(false);
+    spyOn(component as any, 'validateOpenDocumentRetentionTotals').and.returnValue(true);
+    (component as any).currencyService = {
+      cleanFormattedNumber: (v: string | number) => Number(v) || 0,
+      formatNumber: (n: number) => String(n ?? 0),
+    };
+
+    (component as any).validate();
+
+    expect(component.disabledSaveButton).toBeFalse();
+    expect(collectServiceMock.calculatePayment).toHaveBeenCalledWith('', 0, true, false);
+    expect(collectServiceMock.collection.collectionDetails[0].nuAmountPaid).toBe(500);
+  });
+
+  it('COB-FALT-001: syncOpenDetailNuAmountPaidFromAmountPaid updates detail net', () => {
+    collectServiceMock.coTypeModule = '0';
+    collectServiceMock.isPaymentPartial = false;
+    collectServiceMock.amountPaid = 500;
+    collectServiceMock.collection = {
+      nuValueLocal: 1,
+      coCurrency: 'USD',
+      collectionDetails: [{ nuAmountPaid: 400, nuAmountPaidConversion: 400 }],
+    };
+    collectServiceMock.documentSaleOpen = { positionCollecDetails: 0 };
+    collectServiceMock.convertirMonto = jasmine.createSpy('convertirMonto').and.callFake((n: number) => n);
+
+    (component as any).syncOpenDetailNuAmountPaidFromAmountPaid();
+
+    expect(collectServiceMock.collection.collectionDetails[0].nuAmountPaid).toBe(500);
+    expect(collectServiceMock.collection.collectionDetails[0].nuAmountPaidConversion).toBe(500);
+  });
 });

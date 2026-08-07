@@ -1570,6 +1570,8 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
       const openDetail = this.collectService.collection.collectionDetails[positionCollecDetails];
       this.collectService.missingRetentionValue = openDetail?.missingRetention === true;
+      // COB-FALT-001: snapshot de faltante para restaurar al cancelar.
+      this.collectService.captureOpenDetailFaltanteBackup(positionCollecDetails);
 
       this.disabledSaveButton = true;
       this.collectService.documentSaleOpen = new DocumentSale;
@@ -2042,6 +2044,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
           this.setCollectionDetailRetentions(this.collectService.documentSaleOpen.positionCollecDetails!);
         }
         this.collectService.copyDocumentSaleOpenToSalesAndDetails();
+        this.collectService.clearOpenDetailFaltanteBackup();
         this.collectService.calculatePayment("", 0, true);
         if (this.collectService.dynamicRetentions) {
           this.clearDocumentRetentionState();
@@ -2324,11 +2327,35 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.collectService.documentSalesBackup[cs.indexDocumentSaleOpen].nuAmountRetention = nuAmountRetentionAux;
     this.collectService.documentSalesBackup[cs.indexDocumentSaleOpen].nuAmountRetention2 = nuAmountRetention2Aux;
 
-    let positionCollecDetails = this.collectService.documentSaleOpen.positionCollecDetails;
+    // COB-FALT-001: alinear detail.nuAmountPaid al neto nuevo tras cambiar faltante.
+    this.syncOpenDetailNuAmountPaidFromAmountPaid();
 
     this.validate();
 
     return Promise.resolve(true);
+  }
+
+  /** Sincroniza collectionDetails.nuAmountPaid con amountPaid del documento abierto (no parcial). */
+  private syncOpenDetailNuAmountPaidFromAmountPaid(): void {
+    const cs = this.collectService;
+    if (cs.coTypeModule === '2' || cs.isPaymentPartial) {
+      return;
+    }
+    const pos = cs.documentSaleOpen?.positionCollecDetails;
+    if (!Number.isInteger(pos) || (pos as number) < 0) {
+      return;
+    }
+    const detail = cs.collection.collectionDetails?.[pos as number];
+    if (!detail) {
+      return;
+    }
+    const amount = Number(cs.amountPaid ?? 0);
+    detail.nuAmountPaid = amount;
+    detail.nuAmountPaidConversion = cs.convertirMonto(
+      amount,
+      cs.collection.nuValueLocal,
+      cs.collection.coCurrency,
+    );
   }
 
   missingRetention(event: any) {
@@ -2662,26 +2689,26 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       return;
     }
 
-    let difFaltante = this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails].nuAmountDiscount
-
-    if (difFaltante > 0)
-      this.disabledSaveButton = false;
-    else
-      this.disabledSaveButton = true;
-
+    // COB-FALT-001: Guardar según monto válido (no exigir faltante > 0).
+    const amountPaidOk = Number(cs.amountPaid ?? 0) > 0
+      && (isAlwaysPartialWithFixedMode || !this.exceedsMaxAmountToPay(cs.amountPaid, maxAmountToPay));
+    this.disabledSaveButton = !amountPaidOk;
 
     cs.amountPaymentPartial = 0;
     doc.nuAmountPaid = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaid));
     cs.amountPaidDoc = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaidDoc));
+    this.syncOpenDetailNuAmountPaidFromAmountPaid();
 
     if (!this.disabledSaveButton) {
-      cs.calculatePayment("", 0, false, this.shouldSkipSendValidationOnPaymentRecalc());
+      // forceRecalc: tras cambiar faltante, no dejar montoTotalPagar en neto viejo (SAVED/preserve).
+      cs.calculatePayment("", 0, true, this.shouldSkipSendValidationOnPaymentRecalc());
       this.cdr.detectChanges();
     }
 
     if (cs.isChangePaymentPartial && !cs.isPaymentPartial) {
       this.disabledSaveButton = false;
-      cs.calculatePayment("", 0, false, this.shouldSkipSendValidationOnPaymentRecalc());
+      this.syncOpenDetailNuAmountPaidFromAmountPaid();
+      cs.calculatePayment("", 0, true, this.shouldSkipSendValidationOnPaymentRecalc());
       this.cdr.detectChanges();
     }
 
@@ -3257,9 +3284,13 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   public onDiscountBlur(): void {
     this.ensureDiscountInit();
     const parsed = (this.centsDiscount ?? 0) / this.centsFactor();
-
-    this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails!].nuAmountDiscount = parsed;
-    // this.collectService.documentSaleOpen.nuAmountDiscount = parsed;
+    const detail = this.collectService.collection.collectionDetails[
+      this.collectService.documentSaleOpen.positionCollecDetails!
+    ];
+    if (detail) {
+      detail.nuAmountDiscount = parsed;
+      this.collectService.syncCollectionDetailDiscountConversion(detail);
+    }
     try {
       this.displayDiscount = this.currencyService.formatNumber(parsed);
     } catch {
@@ -3272,9 +3303,13 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   private updateDiscountModel(): void {
     const cents = this.centsDiscount ?? 0;
     const value = cents / this.centsFactor();
-    this.collectService.collection.collectionDetails[this.collectService.documentSaleOpen.positionCollecDetails!].nuAmountDiscount = value;
-
-    //this.collectService.documentSaleOpen.nuAmountDiscount = value;
+    const detail = this.collectService.collection.collectionDetails[
+      this.collectService.documentSaleOpen.positionCollecDetails!
+    ];
+    if (detail) {
+      detail.nuAmountDiscount = value;
+      this.collectService.syncCollectionDetailDiscountConversion(detail);
+    }
     this.displayDiscount = this.formatFromCents(cents);
     if (typeof (this as any).setAmountTotal === 'function') {
       this.setAmountTotal();
