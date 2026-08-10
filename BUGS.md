@@ -135,6 +135,18 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [INV-SEARCH-001] Buscador Inventarios sensible a tildes
+
+- **Síntoma:** Buscar “Azucar” vs “Azúcar” (o “Calorias” vs “Calorías”) en Inventarios devuelve conteos distintos; a veces “No hay productos” con tilde o menos resultados sin tilde.
+- **Causa:** `getProductsSearchedByCoProductAndNaProduct` ya usa `convertToSqliteAccentGlob` (SQL OK), pero `inventario-product-list.getVisibleProducts()` refiltraba en memoria con `.toLowerCase().includes()` (sensible a tildes) y descartaba matches válidos.
+- **Fix:** Normalizar NFD + quitar diacríticos en término y en `coProduct`/`naProduct` antes del `includes` (solo listado visible de Inventarios).
+- **Evitar:** No añadir un segundo filtro en memoria accent-sensitive sobre resultados ya buscados con GLOB. No tocar Pedidos/otros módulos sin pedido explícito.
+- **Tests:** `inventario-product-list.component.spec.ts` describe `INV-SEARCH-001`.
+- **Archivos:** `inventario-product-list.component.ts` (+ spec); checklist bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [COB-INV-COMMENT-001] Comentario: Espacio del teclado ignorado (Cobros / Inventarios)
 
 - **Síntoma:** En Comentario (Cobros e Inventarios), la tecla Espacio no registra al primer toque; hay que pulsar varias veces o el teclado inserta un punto. No ocurre en Pedidos/Depósitos/Devoluciones.
