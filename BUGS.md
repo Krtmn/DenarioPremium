@@ -135,6 +135,18 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [VND-LOAD-001] Vendedor: modal "Cargando..." ~20–60s al abrir
+
+- **Síntoma:** Al entrar a Vendedor (listado distribuidoras), overlay “Cargando...” bloquea la UI hasta que responde el WS (~20s+).
+- **Causa:** `ngOnInit` hacía `showLoading()` y solo `hideLoading` en `.finally()` de `userservice/userinformation`. Las empresas ya estaban en SQLite pero el modal esperaba el HTTP pesado (`UserServiceManager` por empresa/moneda/unidad).
+- **Fix (móvil):** No usar modal global; pintar empresas al toque; métricas en background con spinner inline en el acordeón.
+- **Fix (WS):** `UserServiceManager`: paralelizar empresas; prefetch planes/monedas/unidades; solo planes reales (sin SP/sintéticos que la app no pinta); cache 2 min por `idUser`.
+- **Evitar:** No amarrar `MessageService.showLoading` a endpoints de métricas lentos si el listado maestro es local. No hacer N×`getPedidosVendedoresCurrency` ni SP descartado.
+- **Archivos:** móvil `vendedores.component.ts` / `.html`; WS `UserServiceManager.java`, `PlanCuotaEmpresaViewRepository.java`.
+- **Estado:** mitigated app + WS optimizado (pendiente redeploy WS y medir POST otra vez).
+
+---
+
 ## [INV-SEARCH-001] Buscador Inventarios sensible a tildes
 
 - **Síntoma:** Buscar “Azucar” vs “Azúcar” (o “Calorias” vs “Calorías”) en Inventarios devuelve conteos distintos; a veces “No hay productos” con tilde o menos resultados sin tilde.
