@@ -1210,7 +1210,7 @@ export class CobrosGeneralComponent implements OnInit {
       this.collectService.validComment = true;
 
     this.collectService.collection.txComment = applyTextCommentMaxLength(
-      this.collectService.cleanString(this.collectService.collection.txComment.trim()),
+      this.collectService.cleanString(this.collectService.collection.txComment),
       this.textCommentMaxLength,
     );
 
