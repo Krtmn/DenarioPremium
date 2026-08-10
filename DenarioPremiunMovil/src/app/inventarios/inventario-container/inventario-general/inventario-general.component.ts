@@ -442,15 +442,10 @@ export class InventarioGeneralComponent implements OnInit {
   }
 
   cleanString(str: string): string {
-    // Elimina espacios al principio y al final
-    str = str.trim();
-    // Elimina ;
+    // COB-INV-COMMENT-001: no trim en ionInput — mismo criterio que Pedidos/Depósitos.
     str = str.replace(/;/g, '');
-    // Elimina comillas simples
     str = str.replace(/'/g, '');
-    // Elimina comillas dobles
     str = str.replace(/"/g, '');
-
 
     return str;
   }
