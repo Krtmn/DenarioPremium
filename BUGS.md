@@ -135,6 +135,18 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-INV-COMMENT-001] Comentario: Espacio del teclado ignorado (Cobros / Inventarios)
+
+- **Síntoma:** En Comentario (Cobros e Inventarios), la tecla Espacio no registra al primer toque; hay que pulsar varias veces o el teclado inserta un punto. No ocurre en Pedidos/Depósitos/Devoluciones.
+- **Causa:** `cleanString()` hacía `trim()` en cada `ionInput` y reescribía `ngModel`/`input.value`, borrando el espacio trailing (`"hola "` → `"hola"`). `setComment()` en Cobros además aplicaba `.trim()` antes de limpiar.
+- **Fix:** Alinear con Pedidos: `cleanString` solo quita `;` `'` `"` (sin trim). Validación de vacío sigue usando `.trim() == ""`.
+- **Evitar:** No hacer `trim()` en handlers `ionInput` de comentario; trim solo en validación/persistencia si hace falta.
+- **Tests:** `collection-logic.service.spec.ts` describe `COB-INV-COMMENT-001`; `inventario-general.component.spec.ts` mismo criterio.
+- **Archivos:** `collection-logic.service.ts`, `cobro-general.component.ts`, `inventario-general.component.ts` (+ specs).
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [COB-TOTAL-001] Total General USD = 0 al reabrir cobro Guardado (hard)
 
 - **Síntoma:** Cobro hard/USD Guardado: al reabrir, TOTAL muestra Total General = 0 aunque Monto a pagar, Pago y métodos (TR) tienen monto correcto.

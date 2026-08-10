@@ -2054,4 +2054,16 @@ describe('CollectionService', () => {
       expect(detail.nuAmountDiscountConversion).toBe(12);
     });
   });
+
+  describe('COB-INV-COMMENT-001 cleanString', () => {
+    it('preserves trailing and internal spaces (no trim on ionInput path)', () => {
+      expect(service.cleanString('hola ')).toBe('hola ');
+      expect(service.cleanString('hola mundo')).toBe('hola mundo');
+      expect(service.cleanString('  hola')).toBe('  hola');
+    });
+
+    it('still strips ; \' " characters', () => {
+      expect(service.cleanString(`hola;"'mundo"`)).toBe('holamundo');
+    });
+  });
 });
