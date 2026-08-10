@@ -182,6 +182,15 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [LOGIN-CASE-001] Cambio de usuario falso por mayúsculas/minúsculas
+
+- **Síntoma:** Usuario guardado en "Recuérdame" con distinta capitalización (ej. `Vendedor01` vs `vendedor01`) dispara modal de cambio de usuario y borra BD local al aceptar.
+- **Causa:** `onLogin` comparaba `localStorage.getItem("login")` con el login ingresado de forma case-sensitive; el backend auth acepta el mismo usuario sin distinguir mayúsculas.
+- **Fix:** Comparar logins con `trim()` + `toLowerCase()` antes de mostrar el modal de cambio de usuario.
+- **Evitar:** No usar `!=` directo sobre login almacenado; alinear validación local con semántica del auth server.
+- **Archivos:** `login.component.ts` (`onLogin`).
+- **Estado:** fixed.
+
 ---
 
 ## Cómo añadir una entrada nueva
