@@ -546,6 +546,11 @@ export class InventariosLogicService {
         if(unitUtil.quUnitSuggested < 0){
           unitUtil.quUnitSuggested = 0;
         }
+        // Si Inventario actual >= sugerido, entonces sugerido = 0
+        // Es decir, ya tiene lo que va a usar hasta la siguiente visita.
+        if(unitUtil.currentStock >= unitUtil.quUnitSuggested){
+          unitUtil.quUnitSuggested = 0;
+        }
       }
     }
 
