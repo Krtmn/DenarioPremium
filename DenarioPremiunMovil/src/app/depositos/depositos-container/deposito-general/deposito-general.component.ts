@@ -2,17 +2,20 @@ import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 import { Currencies } from 'src/app/modelos/tables/currencies';
+import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { DateServiceService } from 'src/app/services/dates/date-service.service';
 import { DepositService } from 'src/app/services/deposit/deposit.service';
 import { GeolocationService } from 'src/app/services/geolocation/geolocation.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
-import { COLOR_LILA, COLOR_VERDE } from 'src/app/utils/appConstants';
+import { COLOR_LILA } from 'src/app/utils/appConstants';
 import {
   TEXT_COMMENT_MAX_LENGTH,
   TEXT_COMMENT_MIN_LENGTH,
 } from 'src/app/utils/text-comment-field.constants';
 import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util';
+
+type DepositResetKind = 'currency' | 'enterprise';
 
 @Component({
   selector: 'app-deposito-general',
@@ -44,6 +47,7 @@ export class DepositoGeneralComponent implements OnInit {
   public daDocument: string = this.dateServ.hoyISO();
   public alertMessageOpen: boolean = false;
   public showDateModal: boolean = false;
+  private pendingResetKind: DepositResetKind | null = null;
 
 
   public alertButtons = [
@@ -89,7 +93,21 @@ export class DepositoGeneralComponent implements OnInit {
 
 
   onEnterpriseSelect() {
+    const selected = this.depositService.enterpriseSelected;
+    const currentId = Number(this.depositService.deposit?.idEnterprise ?? 0);
+    if (!selected || Number(selected.idEnterprise) === currentId) {
+      return;
+    }
 
+    if ((this.depositService.deposit?.depositCollect?.length ?? 0) > 0) {
+      this.pendingResetKind = 'enterprise';
+      this.depositService.message =
+        'Al cambiar la empresa se reiniciará el Depósito, ¿Desea reiniciar el Depósito?';
+      this.alertMessageOpen = true;
+      return;
+    }
+
+    void this.changeEnterprise();
   }
 
   print() {
@@ -152,6 +170,7 @@ export class DepositoGeneralComponent implements OnInit {
   changeCurrencyMsj(event: any) {
     this.depositService.currencySelected = event.detail.value as Currencies;
     if (this.depositService.deposit.depositCollect.length > 0) {
+      this.pendingResetKind = 'currency';
       this.depositService.message = "Al cambiar la moneda se reiniciará el Depósito, ¿Desea reiniciar del Depósito?"
       this.alertMessageOpen = true;
     } else {
@@ -161,29 +180,81 @@ export class DepositoGeneralComponent implements OnInit {
 
   changeCurrency() {
     this.alertMessageOpen = false;
-    this.depositService.resetDeposit().then(r => {
-      this.depositService.deposit.idCurrency = this.depositService.currencySelected.idCurrency;
-      this.depositService.deposit.coCurrency = this.depositService.currencySelected.coCurrency;
-      /* this.depositService.initOpenDeposit(); */
+    this.pendingResetKind = null;
+    const selectedCurrency = this.depositService.currencySelected;
+    const selectedEnterprise = this.depositService.enterpriseSelected;
+    this.depositService.resetDeposit().then(() => {
+      if (selectedEnterprise) {
+        this.depositService.enterpriseSelected = selectedEnterprise;
+        this.depositService.deposit.idEnterprise = selectedEnterprise.idEnterprise;
+        this.depositService.deposit.coEnterprise = selectedEnterprise.coEnterprise;
+      }
+      this.depositService.currencySelected = selectedCurrency;
+      this.depositService.deposit.idCurrency = selectedCurrency.idCurrency;
+      this.depositService.deposit.coCurrency = selectedCurrency.coCurrency;
       this.depositService.bankList = [] as BankAccount[];
       this.depositService.bankSelected = {} as BankAccount;
-      this.depositService.getCurrencyConversion(this.depositService.currencySelected.coCurrency);
-      this.depositService.updateBankAccounts(this.db.getDatabase()).then(result => {
-        this.depositService.isSelectedBank = false;
-        this.depositService.getBankAccounts(this.db.getDatabase(), this.depositService.deposit.idEnterprise,
-          this.depositService.currencySelected.coCurrency).then(resp => {
-            //ya tengo todo para iniciar el deposito
-            this.depositService.getAllCollectsToDeposit(this.db.getDatabase(), this.depositService.deposit.coCurrency).then(resp1 => {
-              this.depositService.getAllCollectsAnticipoToDeposit(this.db.getDatabase(), this.depositService.deposit.coCurrency).then(resp2 => {
-                console.log(resp1.length);
-                console.log(resp2.length);
-              })
-            })
-          })
+      this.depositService.getCurrencyConversion(selectedCurrency.coCurrency);
+      return this.reloadBanksAndCollects();
+    });
+  }
 
-      })
-    })
+  async changeEnterprise(): Promise<void> {
+    this.alertMessageOpen = false;
+    this.pendingResetKind = null;
 
+    const selectedEnterprise = this.depositService.enterpriseSelected;
+    if (!selectedEnterprise) {
+      return;
+    }
+
+    await this.depositService.resetDeposit();
+    this.depositService.enterpriseSelected = selectedEnterprise;
+    this.depositService.deposit.idEnterprise = selectedEnterprise.idEnterprise;
+    this.depositService.deposit.coEnterprise = selectedEnterprise.coEnterprise;
+
+    const db = this.db.getDatabase();
+    await this.depositService.getCurrencies(db, selectedEnterprise.idEnterprise);
+    this.depositService.getCurrencyConversion(this.depositService.currencySelected.coCurrency);
+    await this.reloadBanksAndCollects();
+    this.adjuntoService.getSavedPhotos(
+      this.synchronizationServices.getDatabase(),
+      this.depositService.deposit.coDeposit,
+      'depositos',
+    );
+    this.depositService.markDepositDirty();
+  }
+
+  private async reloadBanksAndCollects(): Promise<void> {
+    const db = this.db.getDatabase();
+    const idEnterprise = this.depositService.deposit.idEnterprise;
+    const coCurrency = this.depositService.currencySelected?.coCurrency
+      || this.depositService.deposit.coCurrency;
+
+    this.depositService.isSelectedBank = false;
+    await this.depositService.updateBankAccounts(db);
+    await this.depositService.getBankAccounts(db, idEnterprise, coCurrency);
+    await this.depositService.getAllCollectsToDeposit(db, coCurrency, idEnterprise);
+    await this.depositService.getAllCollectsAnticipoToDeposit(db, coCurrency, idEnterprise);
+  }
+
+  private restorePreviousEnterprise(): void {
+    const previousId = Number(this.depositService.deposit?.idEnterprise ?? 0);
+    const previous = this.depositService.enterpriseList.find(
+      (emp: Enterprise) => Number(emp.idEnterprise) === previousId,
+    );
+    if (previous) {
+      this.depositService.enterpriseSelected = previous;
+    }
+  }
+
+  private restorePreviousCurrency(): void {
+    for (let i = 0; i < this.depositService.currencyList.length; i++) {
+      if (this.depositService.currencyList[i].idCurrency == this.depositService.deposit.idCurrency) {
+        this.depositService.currencySelected = this.depositService.currencyList[i];
+        break;
+      }
+    }
   }
 
   setShowDateModal(val: boolean) {
@@ -194,19 +265,20 @@ export class DepositoGeneralComponent implements OnInit {
     console.log('Apretó:' + ev.detail.role);
     if (ev.detail.role === 'confirm') {
       this.alertMessageOpen = false;
-      this.changeCurrency();
-    } else {
-      /* this.depositService.currencySelected.idCurrency = this.depositService.deposit.idCurrency;
-      this.depositService.currencySelected.coCurrency = this.depositService.deposit.coCurrency; */
-      for (var i = 0; i < this.depositService.currencyList.length; i++) {
-        if (this.depositService.currencyList[i].idCurrency == this.depositService.deposit.idCurrency) {
-          this.depositService.currencySelected = this.depositService.currencyList[i]
-          i = this.depositService.currencyList.length + 1;
-          break
-        }
+      if (this.pendingResetKind === 'enterprise') {
+        void this.changeEnterprise();
+      } else {
+        this.changeCurrency();
       }
-
-      this.alertMessageOpen = false;
+      return;
     }
+
+    if (this.pendingResetKind === 'enterprise') {
+      this.restorePreviousEnterprise();
+    } else {
+      this.restorePreviousCurrency();
+    }
+    this.pendingResetKind = null;
+    this.alertMessageOpen = false;
   }
 }
