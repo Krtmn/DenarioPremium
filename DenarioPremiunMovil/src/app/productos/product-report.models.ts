@@ -15,6 +15,7 @@ export interface ProductReportOptions {
   idEnterprise: number;
   enterpriseLabel: string;
   coEnterprise?: string;
+  tags?: Map<string, string>;
 }
 
 export interface ProductReportRow {

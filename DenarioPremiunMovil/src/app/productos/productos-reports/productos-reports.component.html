@@ -2,14 +2,14 @@
   <ion-grid>
     <ion-row>
       <ion-col size="12">
-        <div class="reports-title">Reportes de productos</div>
+        <div class="reports-title">{{ tag('PROD_REPORT_TITLE', 'Reportes de productos') }}</div>
         <div class="reports-subtitle">{{ empresaSeleccionada.lbEnterprise }}</div>
       </ion-col>
     </ion-row>
 
     <ion-row>
       <ion-col size="12">
-        <label class="reports-label">Tipo de reporte</label>
+        <label class="reports-label">{{ tag('PROD_REPORT_TYPE', 'Tipo de reporte') }}</label>
         <ion-select [(ngModel)]="reportType" interface="popover" class="reports-select">
           <ion-select-option *ngFor="let option of reportTypes" [value]="option.value">
             {{ option.label }}
@@ -20,7 +20,7 @@
 
     <ion-row>
       <ion-col size="12">
-        <label class="reports-label">Filtro</label>
+        <label class="reports-label">{{ tag('PROD_REPORT_FILTER', 'Filtro') }}</label>
         <ion-select
           [(ngModel)]="filterType"
           (ionChange)="onFilterTypeChanged()"
@@ -35,7 +35,7 @@
 
     <ion-row *ngIf="filterType !== 'all'">
       <ion-col size="12">
-        <label class="reports-label">Valor del filtro</label>
+        <label class="reports-label">{{ tag('PROD_REPORT_FILTER_VALUE', 'Valor del filtro') }}</label>
         <ion-select [(ngModel)]="structureId" interface="popover" class="reports-select">
           <ion-select-option *ngFor="let structure of filterStructures" [value]="structure.idProductStructure">
             {{ structure.naProductStructure }}
@@ -46,7 +46,7 @@
 
     <ion-row *ngIf="reportType === 'priceList'">
       <ion-col size="12">
-        <label class="reports-label">Orden</label>
+        <label class="reports-label">{{ tag('PROD_REPORT_ORDER', 'Orden') }}</label>
         <ion-select [(ngModel)]="sortField" interface="popover" class="reports-select">
           <ion-select-option *ngFor="let option of sortFields" [value]="option.value">
             {{ option.label }}
@@ -62,7 +62,7 @@
           class="reports-button"
           [disabled]="isGenerating"
           (click)="generateReport('excel')">
-          Generar Excel
+          {{ tag('PROD_REPORT_GENERATE_EXCEL', 'Generar Excel') }}
         </ion-button>
       </ion-col>
       <ion-col size="12" [sizeMd]="canGenerateExcel() ? 6 : 12">
@@ -71,7 +71,7 @@
           class="reports-button"
           [disabled]="isGenerating"
           (click)="generateReport('pdf')">
-          Generar PDF
+          {{ tag('PROD_REPORT_GENERATE_PDF', 'Generar PDF') }}
         </ion-button>
       </ion-col>
     </ion-row>
