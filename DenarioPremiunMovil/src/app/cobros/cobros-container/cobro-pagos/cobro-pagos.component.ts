@@ -71,6 +71,16 @@ export class CobroPagosComponent implements OnInit {
     return this.dateServ.toDbDateTime(value);
   }
 
+  /** Persist UI date to both fields; reopen hydrates `fecha` from `daValue`. */
+  private syncPaymentDateFields(posCollectionPayment: number, dbDate: string): void {
+    const payment = this.collectService.collection.collectionPayments?.[posCollectionPayment];
+    if (!payment) {
+      return;
+    }
+    payment.daCollectionPayment = dbDate;
+    payment.daValue = dbDate;
+  }
+
 
   public alertButtons = [
     /*  {
@@ -488,14 +498,20 @@ export class CobroPagosComponent implements OnInit {
 
       case "tr": {
         this.collectService.pagoTransferencia[index].fecha = fecha;
-        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daCollectionPayment = this.toDbDateTime(fecha);
+        this.syncPaymentDateFields(
+          this.collectService.pagoTransferencia[index].posCollectionPayment,
+          this.toDbDateTime(fecha)
+        );
         this.collectService.validateToSend();
         break;
       }
 
       case "pm": {
         this.collectService.pagoMovil[index].fecha = fecha;
-        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.daCollectionPayment = this.toDbDateTime(fecha);
+        this.syncPaymentDateFields(
+          this.collectService.pagoMovil[index].posCollectionPayment,
+          this.toDbDateTime(fecha)
+        );
         this.collectService.validateToSend();
         break;
       }
@@ -553,11 +569,12 @@ export class CobroPagosComponent implements OnInit {
           this.collectService.pagoTransferencia[index].fecha = this.normalizedCollectionDateRate();
         } else {
           this.collectService.pagoTransferencia[index].fecha = this.toDbDateTime(fecha);
-          fecha = this.toDbDateTime(fecha);
         }
 
-        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.daCollectionPayment
-          = this.toDbDateTime(this.collectService.pagoTransferencia[index].fecha);
+        this.syncPaymentDateFields(
+          this.collectService.pagoTransferencia[index].posCollectionPayment,
+          this.toDbDateTime(this.collectService.pagoTransferencia[index].fecha)
+        );
         this.collectService.validateToSend();
         break;
       }
@@ -567,11 +584,12 @@ export class CobroPagosComponent implements OnInit {
           this.collectService.pagoMovil[index].fecha = this.normalizedCollectionDateRate();
         } else {
           this.collectService.pagoMovil[index].fecha = this.toDbDateTime(fecha);
-          fecha = this.toDbDateTime(fecha);
         }
 
-        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.daCollectionPayment
-          = this.toDbDateTime(this.collectService.pagoMovil[index].fecha);
+        this.syncPaymentDateFields(
+          this.collectService.pagoMovil[index].posCollectionPayment,
+          this.toDbDateTime(this.collectService.pagoMovil[index].fecha)
+        );
         this.collectService.validateToSend();
         break;
       }
@@ -792,16 +810,20 @@ export class CobroPagosComponent implements OnInit {
 
       case "tr": {
         this.collectService.pagoTransferencia[i].fecha = this.dateServ.hoyISO();
-        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[i].posCollectionPayment]!.daCollectionPayment
-          = this.toDbDateTime(this.collectService.pagoTransferencia[i].fecha);
+        this.syncPaymentDateFields(
+          this.collectService.pagoTransferencia[i].posCollectionPayment,
+          this.toDbDateTime(this.collectService.pagoTransferencia[i].fecha)
+        );
         this.collectService.validateToSend();
         break;
       }
 
       case "pm": {
         this.collectService.pagoMovil[i].fecha = this.dateServ.hoyISO();
-        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[i].posCollectionPayment]!.daCollectionPayment
-          = this.toDbDateTime(this.collectService.pagoMovil[i].fecha);
+        this.syncPaymentDateFields(
+          this.collectService.pagoMovil[i].posCollectionPayment,
+          this.toDbDateTime(this.collectService.pagoMovil[i].fecha)
+        );
         this.collectService.validateToSend();
         break;
       }

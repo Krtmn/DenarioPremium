@@ -147,6 +147,18 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-DATE-001] Fecha TR/PM elegida se pierde al Guardar/reabrir
+
+- **Síntoma:** En Pagos, elegir fecha distinta a hoy (ej. Transferencia `01/08/2026`) se ve bien en UI; tras Guardar/Enviar y reabrir aparece hoy.
+- **Causa:** `getFechaValor` (y rutas `getFecha`/`onOpenCalendar`) de TR/PM solo actualizaban `daCollectionPayment`. La hidratación en `loadPayments` usa `fecha: payment.daValue`, que quedaba en “hoy” (set al crear/seleccionar banco). Depósito ya escribía `daValue`.
+- **Fix:** Al cambiar fecha TR/PM, sincronizar ambos campos (`daValue` + `daCollectionPayment`) vía `syncPaymentDateFields`.
+- **Evitar:** No persistir solo `daCollectionPayment` si la UI rehidrata desde `daValue`. No mezclar el modelo de fecha de Cheque (`fechaValor` → `daValue`).
+- **Tests:** `cobro-pagos.component.spec.ts` describe `COB-DATE-001` (TR y PM).
+- **Archivos:** `cobro-pagos.component.ts` (+ spec); checklist bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [INV-SEARCH-001] Buscador Inventarios sensible a tildes
 
 - **Síntoma:** Buscar “Azucar” vs “Azúcar” (o “Calorias” vs “Calorías”) en Inventarios devuelve conteos distintos; a veces “No hay productos” con tilde o menos resultados sin tilde.
