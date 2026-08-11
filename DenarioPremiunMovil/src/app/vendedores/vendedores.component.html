@@ -35,6 +35,15 @@
                   <ion-col size="12" size-sm="12" size-xs="12">
 
                     @if (!infoVendedores) {
+                      @if (loadingUserInfo && !hasMetricsForEnterprise(empresa)) {
+                        <div class="ion-text-center ion-padding">
+                          <ion-spinner name="crescent"></ion-spinner>
+                          <p>Cargando información del vendedor...</p>
+                        </div>
+                      }
+                      @if (userInfoLoadFailed && !loadingUserInfo && !hasMetricsForEnterprise(empresa)) {
+                        <p color="medium">No se pudo cargar la información del vendedor. Revise la conexión e intente de nuevo.</p>
+                      }
                       @for (info of userInfo; track info?.id ?? info) {
                         @if (showInfo(empresa, info)) {
 
