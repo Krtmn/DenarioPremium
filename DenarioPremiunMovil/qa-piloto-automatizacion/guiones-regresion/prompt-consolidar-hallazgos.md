@@ -8,7 +8,7 @@
 1. Indicar el cliente y la carpeta de la corrida que acaba de terminar:
 ```
 QA_CLIENTE=insumar
-RUN_DIR=automation/reports/smoke_insumar_20260609_132051/
+RUN_DIR=automation/reports/insumar/smoke_insumar_20260609_132051/
 ```
 
 2. Cambiar a modelo Opus:

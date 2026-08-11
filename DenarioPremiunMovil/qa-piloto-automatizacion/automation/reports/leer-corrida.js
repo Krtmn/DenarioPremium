@@ -233,10 +233,29 @@ function cargarDefectos() {
 
 // ── recolección ─────────────────────────────────────────────────────────────
 
+// Los reportes están agrupados por cliente: reports/<cliente>/<corrida>/
+// Se recorren AMBOS niveles para seguir soportando corridas sueltas en la raíz.
+// 🔴 El orden se calcula sobre el NOMBRE DE LA CORRIDA, no sobre la ruta: si se
+// ordenara por ruta, "la más reciente" sería la del último cliente alfabético.
+// Los nombres llevan YYYYMMDD, así que el orden lexicográfico es cronológico.
+// Fecha embebida en el nombre de la corrida (YYYYMMDD[_HHMMSS]).
+// Devuelve 0 si el nombre no la trae, para que esas queden al final del orden.
+function fechaDe(carpeta) {
+  const m = path.basename(carpeta).match(/_(\d{8})(?:_(\d{6}))?/);
+  return m ? Number(m[1] + (m[2] || '000000')) : 0;
+}
+
 function corridasDisponibles() {
-  return fs.readdirSync(REPORTS_DIR, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && /^smoke_/.test(d.name))
-    .map((d) => d.name).sort();
+  const esCorrida = (n) => /^smoke_/.test(n);
+  const out = [];
+  for (const d of fs.readdirSync(REPORTS_DIR, { withFileTypes: true })) {
+    if (!d.isDirectory()) continue;
+    if (esCorrida(d.name)) out.push(d.name);
+    for (const h of fs.readdirSync(path.join(REPORTS_DIR, d.name), { withFileTypes: true })) {
+      if (h.isDirectory() && esCorrida(h.name)) out.push(`${d.name}/${h.name}`);
+    }
+  }
+  return out.sort((a, b) => path.basename(a).localeCompare(path.basename(b)));
 }
 
 function analizar(carpeta, carpetaAnterior) {
@@ -534,12 +553,23 @@ const libres = args.filter((a) => !a.startsWith('--'));
 const disponibles = corridasDisponibles();
 if (!disponibles.length) { console.error('No hay corridas en automation/reports/'); process.exit(1); }
 
-const carpeta = libres[0] || disponibles[disponibles.length - 1];
-const iAnt = disponibles.indexOf(carpeta) - 1;
-const cliente = (carpeta.match(/^smoke_(.+)_\d{8}_\d{6}$/) || [])[1];
+// Sin argumento se toma la corrida MÁS RECIENTE POR FECHA.
+// 🔴 Antes se tomaba `disponibles[length-1]` tras ordenar por nombre, y como el
+// nombre empieza por el cliente (smoke_<cliente>_<fecha>) eso devolvía "el último
+// cliente alfabético", no la corrida más nueva. Se ordena por la fecha del nombre.
+const carpeta = libres[0] || [...disponibles].sort((a, b) => fechaDe(a) - fechaDe(b)).pop();
+// El cliente es la carpeta contenedora; si la corrida está suelta en la raíz
+// (estructura vieja), se cae al nombre.
+const cliente = carpeta.includes('/')
+  ? carpeta.split('/')[0]
+  : (path.basename(carpeta).match(/^smoke_(.+?)_\d{8}/) || [])[1];
 // corrida anterior DEL MISMO CLIENTE (comparar contra otro cliente no dice nada)
-const anterior = disponibles.slice(0, iAnt + 1).reverse()
-  .find((c) => cliente && c.startsWith(`smoke_${cliente}_`));
+const anterior = !cliente ? undefined : disponibles
+  .filter((c) => (c.includes('/') ? c.split('/')[0] === cliente
+                                  : path.basename(c).startsWith(`smoke_${cliente}_`))
+               && c !== carpeta && fechaDe(c) < fechaDe(carpeta))
+  .sort((a, b) => fechaDe(a) - fechaDe(b))
+  .pop();
 
 try {
   const a = analizar(carpeta, anterior);

@@ -30,7 +30,7 @@ Nunca dejar archivos stub de solo redirección — si no tiene contenido útil, 
 | **Smoke extracts** | `automation/smoke/` (Fase 2 — en construcción) |
 | **Orquestador smoke** | `guiones-regresion/prompt-orquestador-smoke.md` |
 | Guiones de regresión (completos) | `guiones-regresion/guion-*.md` |
-| Reportes de corridas | `automation/reports/smoke_{cliente}_{YYYYMMDD}_{HHMMSS}/` (una carpeta por corrida) |
+| Reportes de corridas | `automation/reports/{cliente}/{tipo}_{cliente}_{YYYYMMDD}_{HHMMSS}/` — **agrupados por cliente** (una carpeta por cliente, dentro una por corrida) |
 | Dump Repomix | `denario-movil-para-claude.xml` |
 | Código fuente (lectura) | `../src/` |
 | Config servidor (lectura) | `../../claves.env` |

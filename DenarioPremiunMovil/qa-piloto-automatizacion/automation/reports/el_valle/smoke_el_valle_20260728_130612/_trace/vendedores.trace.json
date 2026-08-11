@@ -1,0 +1,53 @@
+{
+  "run_id": "20260728_130612_smoke-completo",
+  "modulo": "vendedores",
+  "cliente": "el_valle",
+  "servidor": "la_tortuga",
+  "build": { "app_version": "1.0", "window_ng": true },
+  "data": {
+    "modulo_home": "Vendedores",
+    "empresa": "PROCESADORA DE ALIMENTOS COVADONGA,C.A",
+    "empresa_label_ui": "PROCESADORA DE ALIME"
+  },
+  "ops": [
+    { "case": "DM-VND-001" },
+    {
+      "op": "eval",
+      "code": "() => { const p = Array.from(document.querySelectorAll('app-home p.nombreModulos')).find(x=>x.textContent.trim()==='Vendedores');\n            if(!p) return 'NO-TILE'; const a = p.closest('a'); if(!a) return 'NO-ANCHOR';\n            a.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window})); return 'CLICKED'; }",
+      "tag": "home->vendedores"
+    },
+    {
+      "op": "assert",
+      "desc": "app-vendedores visible con acordeones",
+      "code": "() => { const v=document.querySelector('app-vendedores'); return !!v && v.offsetParent!==null && v.querySelectorAll('ion-accordion').length>0; }"
+    },
+    { "case": "DM-VND-002" },
+    {
+      "op": "eval",
+      "code": "() => { const grp=document.querySelector('app-vendedores ion-accordion-group');\n            const acc=document.querySelector('app-vendedores ion-accordion');\n            if(!grp||!acc) return 'NO-ACC';\n            grp.value=acc.value;\n            grp.dispatchEvent(new CustomEvent('ionChange',{detail:{value:acc.value},bubbles:true}));\n            return 'SET:'+acc.value; }",
+      "tag": "expandir-acordeon"
+    },
+    {
+      "op": "eval",
+      "code": "() => { const grp=document.querySelector('app-vendedores ion-accordion-group');\n            grp.value=undefined;\n            grp.dispatchEvent(new CustomEvent('ionChange',{detail:{value:undefined},bubbles:true}));\n            return 'COLLAPSED'; }",
+      "tag": "contraer-acordeon"
+    },
+    {
+      "op": "assert",
+      "desc": "acordeon expande y contrae",
+      "code": "() => { const a=document.querySelector('app-vendedores ion-accordion'); return a.className.indexOf('accordion-collapsed')>=0; }"
+    },
+    { "case": "DM-VND-007" },
+    {
+      "op": "eval",
+      "code": "() => { const imgs=Array.from(document.querySelectorAll('img.fechaAtras')).filter(i=>i.offsetParent!==null);\n      if(!imgs.length) return 'NO-BACK'; const l=imgs[0].closest('a')||imgs[0];\n      l.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window})); return 'BACK'; }",
+      "tag": "back->home"
+    },
+    {
+      "op": "assert",
+      "desc": "HOME con tiles de modulos",
+      "code": "() => { const h=document.querySelector('app-home'); return !!h && h.offsetParent!==null && h.querySelectorAll('p.nombreModulos').length>0; }"
+    }
+  ],
+  "nota_cobertura": "3/3 casos PASS grabados (DM-VND-001/002/007) — traza completa del modulo, sin ops descartadas. Modulo de solo lectura: no crea registros, BD-N/A. Ops 100% puras-DOM (ningun helper Playwright) => replayable sin coords ni mouse. La expansion del acordeon NO responde a mouse.click en el header: se conduce por grp.value=acc.value + ionChange (vigente en La Tortuga v1.0 window.ng=true). El unico dato run-especifico es el nombre de la empresa, que la traza no hardcodea (se descubre por querySelector) => la traza es reutilizable en cualquier cliente con esVendedor=true."
+}

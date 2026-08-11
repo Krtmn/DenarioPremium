@@ -1,0 +1,86 @@
+{
+  "run_id": "20260728_130612_smoke-completo",
+  "modulo": "inventarios",
+  "cliente": "el_valle",
+  "servidor": "la_tortuga",
+  "build": { "app_version": "1.0", "window_ng": true },
+  "data": {
+    "cliente_test": "ABASTOS Y CARNICERIA HERMANOS FLORES",
+    "linea": "PRODUCTO FRESCO EN VENTA",
+    "producto_test": "ALAS DE POLLO",
+    "cantidad": "5",
+    "lote": "LOTE-QA-INV728",
+    "fecha_venc": "2026-12-31T04:00:00",
+    "busqueda_sin_match": "ZZZZNOEXISTE",
+    "busqueda_con_match": "ABASTOS"
+  },
+  "ops": [
+    { "case": "DM-INV-001" },
+    { "op": "helper", "name": "clickModulo", "args": ["Inventarios"] },
+    { "op": "assert", "desc": "home inventarios con INVENTARIO y BUSCAR", "code": "() => Array.from(document.querySelectorAll('app-inventarios ion-button')).filter(b=>b.offsetParent!==null).length >= 2" },
+
+    { "case": "DM-INV-002" },
+    { "op": "helper", "name": "clickByText", "args": ["app-inventarios ion-button", "INVENTARIO", { "wait": 1800 }] },
+    { "op": "assert", "desc": "4 tabs y cliente vacio", "code": "() => { const t=Array.from(document.querySelectorAll('app-inventarios ion-segment-button')).filter(b=>b.offsetParent!==null); const c=document.querySelector('ion-input#clienteSelect'); const v=c&&c.querySelector('input')?c.querySelector('input').value:''; return t.length===4 && !v; }" },
+
+    { "case": "DM-INV-004" },
+    { "op": "helper", "name": "clickSel", "args": ["ion-input#clienteSelect", { "wait": 2000 }] },
+    { "op": "eval", "code": "() => window.__qaInv.setCliente('ABASTOS Y CARNICERIA HERMANOS FLORES')", "tag": "set-cliente" },
+    { "op": "assert", "desc": "4 tabs habilitadas con cliente", "code": "() => Array.from(document.querySelectorAll('app-inventarios ion-segment-button')).filter(b=>b.offsetParent!==null).every(b=>!b.disabled)" },
+
+    { "case": "DM-INV-008" },
+    { "op": "eval", "code": "() => { const sg=Array.from(document.querySelectorAll('app-inventarios ion-segment')).filter(x=>x.offsetParent!==null)[0]; const b=sg&&Array.from(sg.querySelectorAll('ion-segment-button')).find(x=>x.textContent.trim()==='Inventario'); if(!sg||!b) return 'no-seg'; sg.value=b.value; sg.dispatchEvent(new CustomEvent('ionChange',{bubbles:true,detail:{value:b.value}})); return 'OK'; }", "tag": "tab-inventario" },
+    { "op": "helper", "name": "pmClick", "args": ["app-inventarios ion-item", "PRODUCTO FRESCO EN VENTA", { "wait": 2500 }] },
+    { "op": "assert", "desc": "lista de productos con codigos", "code": "() => Array.from(document.querySelectorAll('app-inventarios ion-item')).filter(e=>e.offsetParent!==null).some(e=>/C\\u00f3digo:/.test(e.textContent))" },
+
+    { "case": "DM-INV-010" },
+    { "op": "helper", "name": "pmClick", "args": ["app-inventarios ion-item", "ALAS DE POLLO", { "wait": 1800 }] },
+    { "op": "assert", "desc": "modal de captura abierto con lote y fecha (expirationBatch=true)", "code": "() => { const md=Array.from(document.querySelectorAll('ion-modal')).find(m=>m.offsetParent!==null && (m.className||'').indexOf('inventory-type-stocks-modal')>=0); if(!md) return false; return !!md.querySelector('input[placeholder=\"Ingrese cantidad\"]') && !!md.querySelector('input[placeholder=\"Ingrese lote\"]') && !!md.querySelector('ion-datetime-button'); }" },
+
+    { "case": "DM-INV-011" },
+    { "op": "helper", "name": "fillNg", "args": ["ion-modal.inventory-type-stocks-modal input[placeholder=\"Ingrese cantidad\"]", "5"] },
+    { "op": "helper", "name": "fillNg", "args": ["ion-modal.inventory-type-stocks-modal input[placeholder=\"Ingrese lote\"]", "LOTE-QA-INV728"] },
+    { "op": "helper", "name": "clickSel", "args": ["ion-modal.inventory-type-stocks-modal ion-datetime-button", { "wait": 1200 }] },
+    { "op": "eval", "code": "() => { const ds=Array.from(document.querySelectorAll('ion-datetime')).filter(x=>x.offsetParent!==null); const d=ds.pop()||document.querySelector('#expDate0'); if(!d) return 'no-dt'; d.value='2026-12-31T04:00:00'; d.dispatchEvent(new CustomEvent('ionChange',{bubbles:true,detail:{value:'2026-12-31T04:00:00'}})); d.dispatchEvent(new CustomEvent('ionValueChange',{bubbles:true,detail:{value:'2026-12-31T04:00:00'}})); if(typeof d.confirm==='function'){try{d.confirm('2026-12-31T04:00:00');}catch(e){}} return 'OK:'+d.value; }", "tag": "set-fecha-venc" },
+    { "op": "eval", "code": "() => { Array.from(document.querySelectorAll('ion-popover')).filter(p=>p.offsetParent!==null).forEach(p=>{try{p.dismiss();}catch(e){}}); return 'OK'; }", "tag": "dismiss-popover-residual" },
+    { "op": "assert", "desc": "cantidad, lote y fecha cargados (fecha por #expDate0, el datetime-button no refleja texto)", "code": "() => { const md=document.querySelector('ion-modal.inventory-type-stocks-modal'); if(!md) return false; const c=md.querySelector('input[placeholder=\"Ingrese cantidad\"]').value; const l=md.querySelector('input[placeholder=\"Ingrese lote\"]').value; const f=(document.querySelector('#expDate0')||{}).value||''; return c==='5' && l==='LOTE-QA-INV728' && /2026-12-31/.test(f); }" },
+
+    { "case": "DM-INV-012" },
+    { "op": "helper", "name": "clickSel", "args": ["ion-modal.inventory-type-stocks-modal ion-icon[name=\"checkmark-outline\"]", { "wait": 1800 }] },
+    { "op": "assert", "desc": "modal cerrado y producto marcado Inventariado", "code": "() => { const md=document.querySelector('ion-modal.inventory-type-stocks-modal'); const cerrado=!(md&&md.offsetParent!==null); const marcado=Array.from(document.querySelectorAll('app-inventarios ion-item')).some(e=>/ALAS DE POLLO/.test(e.textContent)&&/Inventariado/.test(e.textContent)); return cerrado && marcado; }" },
+
+    { "case": "DM-INV-016" },
+    { "op": "helper", "name": "clickByText", "args": ["app-inventarios ion-segment-button", "Resumen", { "wait": 2000 }] },
+    { "op": "assert", "desc": "resumen con columnas por ubicacion y el producto capturado", "code": "() => { const t=(document.querySelector('app-inventarios')||{textContent:''}).textContent; return /ALAS DE POLLO/.test(t) && /Exhibici\\u00f3n/.test(t) && /Dep\\u00f3sito/.test(t); }" },
+
+    { "case": "DM-INV-017" },
+    { "op": "helper", "name": "clickSel", "args": ["app-inventarios ion-button.botonAddAmarillo", { "wait": 2500 }] },
+    { "op": "assert", "desc": "modal inventario-sugerido con cantidad sugerida", "code": "() => { const md=Array.from(document.querySelectorAll('ion-modal')).filter(m=>m.offsetParent!==null).pop(); return !!md && /Sugerido/i.test(md.textContent); }" },
+
+    { "case": "DM-INV-020" },
+    { "op": "assert", "desc": "dias desde ultimo / hasta siguiente inventario visibles", "code": "() => { const md=Array.from(document.querySelectorAll('ion-modal')).filter(m=>m.offsetParent!==null).pop(); return !!md && /Dias hasta siguiente inventario/i.test(md.textContent); }" },
+    { "op": "eval", "code": "() => { let n=0; Array.from(document.querySelectorAll('ion-modal')).filter(m=>m.offsetParent!==null && (m.className||'').indexOf('inventory-type-stocks')<0).forEach(m=>{try{m.dismiss(null,'cancel');n++;}catch(e){}}); return n; }", "tag": "cerrar-sugerido-sin-crear-pedido" },
+
+    { "case": "DM-INV-021" },
+    { "op": "helper", "name": "clickSel", "args": ["app-inventarios ion-button.imagenGuardar", { "wait": 1800 }] },
+
+    { "case": "DM-INV-022" },
+    { "op": "helper", "name": "clickSel", "args": ["app-inventarios ion-button.imagenEnviar", { "wait": 2000 }] },
+
+    { "case": "DM-INV-023" },
+    { "op": "helper", "name": "clickByText", "args": ["app-inventarios ion-button", "BUSCAR", { "wait": 2500 }] },
+    { "op": "assert", "desc": "lista BUSCAR con al menos un inventario Enviado", "code": "() => Array.from(document.querySelectorAll('app-inventarios ion-item')).filter(e=>e.offsetParent!==null && /Nro\\. Ref/.test(e.textContent)).length >= 1" },
+
+    { "case": "DM-INV-025" },
+    { "op": "eval", "code": "() => window.__qaH.fillIonInput('app-inventarios ion-searchbar','ZZZZNOEXISTE')", "tag": "buscar-sin-match" },
+    { "op": "assert", "desc": "filtro sin match deja 0 items", "code": "() => Array.from(document.querySelectorAll('app-inventarios ion-item')).filter(e=>e.offsetParent!==null && /Nro\\. Ref/.test(e.textContent)).length === 0" },
+    { "op": "eval", "code": "() => window.__qaH.fillIonInput('app-inventarios ion-searchbar','ABASTOS')", "tag": "buscar-con-match" },
+    { "op": "assert", "desc": "filtro con match devuelve items", "code": "() => Array.from(document.querySelectorAll('app-inventarios ion-item')).filter(e=>e.offsetParent!==null && /Nro\\. Ref/.test(e.textContent)).length >= 1" },
+    { "op": "eval", "code": "() => window.__qaH.fillIonInput('app-inventarios ion-searchbar','')", "tag": "buscar-limpiar" },
+
+    { "case": "DM-INV-028" },
+    { "op": "eval", "code": "() => { const it=Array.from(document.querySelectorAll('app-inventarios ion-item')).filter(e=>e.offsetParent!==null).find(e=>/Estatus:\\s*Guardado/i.test(e.textContent)); const b=it&&it.querySelector('ion-button[color=\"danger\"]'); if(!b) return 'sin-trash'; ['pointerdown','pointerup'].forEach(n=>b.dispatchEvent(new PointerEvent(n,{bubbles:true,cancelable:true,view:window}))); b.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window})); return 'OK'; }", "tag": "trash-guardado" },
+    { "op": "assert", "desc": "el inventario Guardado desaparece de la lista", "code": "() => !Array.from(document.querySelectorAll('app-inventarios ion-item')).filter(e=>e.offsetParent!==null).some(e=>/Estatus:\\s*Guardado/i.test(e.textContent))" }
+  ],
+  "nota_cobertura": "Traza el_valle 20260728 (La Tortuga v1.0, window.ng=true). Cubre DM-INV-001/002/004/008/010/011/012/016/017/020/021/022/023/025/028 (todos PASS). DESCARTADO el bloque de DM-INV-026 (BLOCKED: el item de la lista BUSCAR no navega al formulario por CDP, ni por coords ni por dispatch Pointer+Mouse; falla igual en Guardado y en Enviado). Requisitos del replay: (a) bundle window.__qaH instalado (automation/cdp/helpers-inline.js); (b) helper de modulo window.__qaInv (setCliente) instalado antes de reproducir, su codigo esta en el reporte inventarios.md; (c) helpers de agente clickModulo/clickByText/clickSel/pmClick/fillNg del prelude window.__qaSrc. ALERTS fuera de la traza: Guardar = 2 alerts (Aceptar -> OK); Enviar = 3 alerts (Aceptar -> OK -> OK 'Inventario nro. N enviado exitosamente'); borrado = 1 alert (OK, sin confirmacion previa). ANTIPATRON CRITICO: dejar un ion-modal.show-modal residual del selector de cliente intercepta TODOS los clicks por coordenadas (elementFromPoint cae fuera del target) - hacer dismiss(null,'cancel') de los ion-modal visibles antes de seguir. El click real sobre ion-segment-button no siempre cambia de tab: fallback fijando ion-segment.value ('default'|'inventario'|'actividades'|'adjuntos') + ionChange. El ion-datetime-button NO refleja texto aunque el valor quede fijado en #expDate0: verificar la fecha por #expDate0, no por el label del boton."
+}

@@ -1,0 +1,84 @@
+{
+  "run_id": "20260728_130612_smoke-completo",
+  "modulo": "devoluciones",
+  "cliente": "el_valle",
+  "servidor": "la_tortuga",
+  "build": { "app_version": "1.0", "window_ng": true },
+  "data": {
+    "cliente_test": "ARMAS DEL ROSARIO",
+    "responsable": "QA AUTOMATIZACION",
+    "precinto": "PRE-20260728",
+    "comentario": "Devolucion QA smoke el_valle 20260728",
+    "familia": "PRODUCTO FRESCO",
+    "producto_test": "ALAS DE POLLO",
+    "lote": "LOTE-QA-728",
+    "nro_factura": "P00004560",
+    "cantidad": "2",
+    "fecha_venc": "2026-12-31",
+    "id_tipo": 60,
+    "id_motivo": 36,
+    "busqueda_sin_match": "ZZZZNOEXISTE",
+    "busqueda_con_match": "ARMAS"
+  },
+  "ops": [
+    { "case": "DM-DEV-001" },
+    { "op": "helper", "name": "clickModuloHome", "args": ["Devoluc"] },
+    { "op": "assert", "desc": "home modulo con DEVOLUCION y BUSCAR", "code": "() => Array.from(document.querySelectorAll('app-devoluciones ion-button')).filter(b=>b.offsetParent!==null).length >= 2" },
+
+    { "case": "DM-DEV-002" },
+    { "op": "helper", "name": "clickByText", "args": ["app-devoluciones ion-button", "DEVOLUCI"] },
+    { "op": "assert", "desc": "tabs Productos/Adjuntos disabled sin cliente", "code": "() => Array.from(document.querySelectorAll('app-devoluciones ion-segment-button')).filter(b=>/Productos|Adjuntos/.test(b.textContent)).every(b=>b.disabled)" },
+
+    { "case": "DM-DEV-004" },
+    { "op": "helper", "name": "clickSel", "args": ["ion-input#clienteSelect"] },
+    { "op": "eval", "code": "() => window.__qaDev.setCliente('ARMAS DEL ROSARIO')", "tag": "set-cliente" },
+    { "op": "assert", "desc": "tabs habilitadas y sin selector de factura (validateReturn=false)", "code": "() => Array.from(document.querySelectorAll('app-devoluciones ion-segment-button')).every(b=>!b.disabled) && !document.querySelector('#invoiceSelect')" },
+
+    { "case": "DM-DEV-006" },
+    { "op": "eval", "code": "() => window.__qaH.fillIonInput('#responsable', 'QA AUTOMATIZACION')", "tag": "fill-responsable" },
+    { "op": "eval", "code": "() => window.__qaH.fillIonInput('#precinto', 'PRE-20260728')", "tag": "fill-precinto" },
+    { "op": "eval", "code": "() => window.__qaH.fillIonInput('#comentario', 'Devolucion QA smoke el_valle 20260728')", "tag": "fill-comentario" },
+    { "op": "eval", "code": "() => { const r=document.querySelector('app-devoluciones'); const s=Array.from(r.querySelectorAll('ion-select')).filter(x=>x.offsetParent!==null)[1]; if(!s) return 'no-select'; s.value=60; s.dispatchEvent(new CustomEvent('ionChange',{bubbles:true,detail:{value:60}})); return 'OK'; }", "tag": "set-tipo-60" },
+    { "op": "assert", "desc": "cabecera cargada", "code": "() => document.querySelector('#responsable').value === 'QA AUTOMATIZACION' && document.querySelector('#precinto').value === 'PRE-20260728'" },
+
+    { "case": "DM-DEV-013" },
+    { "op": "helper", "name": "clickByText", "args": ["app-devoluciones ion-segment-button", "Productos"] },
+    { "op": "helper", "name": "clickByText", "args": ["app-devoluciones ion-button", "Agregar Producto"] },
+    { "op": "helper", "name": "clickByText", "args": ["app-devoluciones ion-item", "PRODUCTO FRESCO"] },
+    { "op": "helper", "name": "clickByText", "args": ["app-devoluciones ion-item", "ALAS DE POLLO"] },
+    { "op": "helper", "name": "clickSel", "args": ["app-devoluciones ion-accordion ion-item"] },
+    { "op": "assert", "desc": "acordeon expandido con 3 ion-input", "code": "() => Array.from(document.querySelectorAll('app-devoluciones ion-accordion ion-input')).filter(i=>i.offsetParent!==null).length === 3" },
+
+    { "case": "DM-DEV-014" },
+    { "op": "eval", "code": "() => window.__qaDev.fillAcc(0, 'LOTE-QA-728')", "tag": "fill-lote" },
+    { "op": "eval", "code": "() => window.__qaDev.fillAcc(1, 'P00004560')", "tag": "fill-nrofactura" },
+    { "op": "eval", "code": "() => window.__qaDev.fillAcc(2, '2')", "tag": "fill-cantidad" },
+    { "op": "eval", "code": "() => window.__qaDev.setSelect(1, 36)", "tag": "set-motivo-36" },
+    { "op": "helper", "name": "clickByText", "args": ["app-devoluciones ion-button", "Fecha"] },
+    { "op": "eval", "code": "() => { const d=Array.from(document.querySelectorAll('ion-datetime')).filter(x=>x.offsetParent!==null).pop(); if(!d) return 'no-dt'; d.value='2026-12-31'; d.dispatchEvent(new CustomEvent('ionChange',{bubbles:true,detail:{value:'2026-12-31'}})); d.dispatchEvent(new CustomEvent('ionValueChange',{bubbles:true,detail:{value:'2026-12-31'}})); if(typeof d.confirm==='function'){try{d.confirm('2026-12-31');}catch(e){}} return 'OK'; }", "tag": "set-fecha-venc" },
+    { "op": "assert", "desc": "boton Enviar habilitado tras cantidad + nro factura", "code": "() => { const b=document.querySelector('app-devoluciones ion-button.imagenEnviar'); return !!b && !b.disabled; }" },
+
+    { "case": "DM-DEV-015" },
+    { "op": "helper", "name": "clickByText", "args": ["app-devoluciones ion-segment-button", "Adjuntos"] },
+    { "op": "assert", "desc": "acordeones images/file/sign presentes", "code": "() => ['images','file','sign'].every(v => !!document.querySelector('app-devoluciones ion-accordion[value=\"'+v+'\"]'))" },
+
+    { "case": "DM-DEV-016" },
+    { "op": "helper", "name": "clickSel", "args": ["app-devoluciones ion-button.imagenGuardar"] },
+    { "op": "assert", "desc": "alert guardado", "code": "() => { const a=Array.from(document.querySelectorAll('ion-alert')).filter(x=>!x.classList.contains('overlay-hidden')&&x.offsetParent!==null).pop(); const m=a&&a.querySelector('.alert-message'); return !!m && /se ha guardado/i.test(m.textContent); }" },
+
+    { "case": "DM-DEV-018" },
+    { "op": "helper", "name": "clickSel", "args": ["app-devoluciones ion-button.imagenEnviar"] },
+
+    { "case": "DM-DEV-019" },
+    { "op": "helper", "name": "clickByText", "args": ["app-devoluciones ion-button", "BUSCAR"] },
+    { "op": "assert", "desc": "lista con al menos una devolucion", "code": "() => Array.from(document.querySelectorAll('app-devoluciones ion-item, app-devoluciones ion-card')).filter(i=>i.offsetParent!==null && /Nro\\. Ref/.test(i.textContent)).length >= 1" },
+
+    { "case": "DM-DEV-021" },
+    { "op": "eval", "code": "() => window.__qaH.fillIonInput('app-devoluciones ion-searchbar', 'ZZZZNOEXISTE')", "tag": "buscar-sin-match" },
+    { "op": "assert", "desc": "filtro sin match deja 0 items", "code": "() => Array.from(document.querySelectorAll('app-devoluciones ion-item, app-devoluciones ion-card')).filter(i=>i.offsetParent!==null && /Nro\\. Ref/.test(i.textContent)).length === 0" },
+    { "op": "eval", "code": "() => window.__qaH.fillIonInput('app-devoluciones ion-searchbar', 'ARMAS')", "tag": "buscar-con-match" },
+    { "op": "assert", "desc": "filtro con match devuelve items", "code": "() => Array.from(document.querySelectorAll('app-devoluciones ion-item, app-devoluciones ion-card')).filter(i=>i.offsetParent!==null && /Nro\\. Ref/.test(i.textContent)).length >= 1" },
+    { "op": "eval", "code": "() => window.__qaH.fillIonInput('app-devoluciones ion-searchbar', '')", "tag": "buscar-limpiar" }
+  ],
+  "nota_cobertura": "Traza de la corrida el_valle 20260728 (La Tortuga v1.0, window.ng=true). Cubre DM-DEV-001/002/004/006/013/014/015/016/018/019/021 (todos PASS). NO incluye ops de DM-DEV-022 (reabrir Guardada) ni DM-DEV-024 (eliminar Guardada): ambos requieren una 2a devolucion en estado Guardado creada fuera de la secuencia grabada, y su interaccion es por coordenadas relativas del item de lista (no reproducible como op determinista sin el estado previo). DM-DEV-011 es N/A (validateReturn=false: no existe selector de factura). Requisitos del replay: (a) el bundle window.__qaH instalado (automation/cdp/helpers-inline.js), (b) los helpers de modulo window.__qaDev (setCliente/fillAcc/setSelect/accInputs) instalados antes de reproducir - su codigo esta en el reporte devoluciones.md, (c) helpers de agente clickModuloHome/clickByText/clickSel. Los alerts se manejan fuera de la traza: guardar='OK'; enviar=3 alerts (Aceptar -> OK -> OK)."
+}

@@ -81,7 +81,7 @@ Eres **Claude Code actuando como Orquestador QA** para Denario Premium Móvil. T
 
 **App:** `com.kiberno.denarioPremiumPro`
 **Carpeta raíz de trabajo:** `DenarioPremiunMovil/qa-piloto-automatizacion/`
-**Reportes:** guardar en `automation/reports/smoke_{QA_CLIENTE}_{YYYYMMDD}_{HHMMSS}/` (una carpeta por corrida — ver Paso 0)
+**Reportes:** guardar en `automation/reports/{QA_CLIENTE}/smoke_{QA_CLIENTE}_{YYYYMMDD}_{HHMMSS}/` — **agrupados por cliente**: una carpeta por cliente, y dentro una por corrida (ver Paso 0)
 **QA_CLIENTE:** (especificar al lanzar, ej. `QA_CLIENTE=hidroponias`)
 **QA_MODE:** opcional — `QA_MODE=record` para que los agentes **graben la traza** de replay determinista (RUNTIME §12). Si no se especifica, la corrida es la normal de hoy y **nadie graba**.
 **QA_WEB:** opcional — `QA_WEB=1` activa la **capa web** (`automation/web/WEB-RUNTIME.md`). Corre **en paralelo**, no suma wall-clock. Sin el flag, la corrida es solo móvil.
@@ -146,7 +146,14 @@ node automation/db/query.js {QA_CLIENTE} "SELECT 1 AS ok"
 
 **RUN_ID:** Generar con formato `YYYYMMDD_HHMMSS_smoke-completo`. Usar este mismo ID en todos los reportes.
 
-**RUN_DIR:** Construir como `automation/reports/smoke_{QA_CLIENTE}_{YYYYMMDD}_{HHMMSS}/` (extraer fecha y hora del RUN_ID). Crear esta carpeta antes de lanzar el primer agente. Ejemplo: RUN_ID `20260603_093706_smoke-completo` + cliente `insumar` → `automation/reports/smoke_insumar_20260603_093706/`.
+**RUN_DIR:** 🔴 **Los reportes se agrupan POR CLIENTE.** Construir como
+`automation/reports/{QA_CLIENTE}/smoke_{QA_CLIENTE}_{YYYYMMDD}_{HHMMSS}/` (extraer fecha y hora del RUN_ID).
+Crear **ambos niveles** antes de lanzar el primer agente (`mkdir -p`). La carpeta del cliente **se reutiliza**
+entre corridas: si ya existe, no crear otra ni renombrarla.
+Ejemplo: RUN_ID `20260603_093706_smoke-completo` + cliente `insumar` →
+`automation/reports/insumar/smoke_insumar_20260603_093706/`.
+⚠ El nombre de la corrida **conserva el cliente** aunque sea redundante con la carpeta: mantiene los nombres
+únicos y evita romper referencias existentes.
 
 **Pre-vuelo de DATOS (NO bloqueante) — tras crear RUN_DIR, si la BD respondió:**
 ```bash
