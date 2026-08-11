@@ -32,25 +32,35 @@ export class ProductosReportsComponent implements OnInit {
   filterStructures: ProductStructure[] = [];
   isGenerating = false;
 
-  readonly reportTypes: Array<{ value: ProductReportType; label: string }> = [
-    { value: 'priceList', label: 'Lista de precios' },
-    { value: 'catalog', label: 'Catalogo de productos' },
-  ];
-
-  readonly filterTypes: Array<{ value: ProductReportFilterType; label: string }> = [
-    { value: 'all', label: 'Todos los productos' },
-    { value: 'category', label: 'Categoria' },
-    { value: 'brand', label: 'Marca' },
-    { value: 'tag', label: 'Etiqueta' },
-  ];
-
-  readonly sortFields: Array<{ value: ProductReportSortField; label: string }> = [
-    { value: 'code', label: 'Codigo' },
-    { value: 'description', label: 'Descripcion' },
-  ];
-
   ngOnInit(): void {
     void this.reloadFilterStructures();
+  }
+
+  get reportTypes(): Array<{ value: ProductReportType; label: string }> {
+    return [
+      { value: 'priceList', label: this.tag('PROD_REPORT_TYPE_PRICE_LIST', 'Lista de precios') },
+      { value: 'catalog', label: this.tag('PROD_REPORT_TYPE_CATALOG', 'Catálogo de productos') },
+    ];
+  }
+
+  get filterTypes(): Array<{ value: ProductReportFilterType; label: string }> {
+    return [
+      { value: 'all', label: this.tag('PROD_REPORT_FILTER_ALL', 'Todos los productos') },
+      { value: 'category', label: this.tag('PROD_REPORT_FILTER_CATEGORY', 'Categoría') },
+      { value: 'brand', label: this.tag('PROD_REPORT_FILTER_BRAND', 'Marca') },
+      { value: 'tag', label: this.tag('PROD_REPORT_FILTER_TAG', 'Etiqueta') },
+    ];
+  }
+
+  get sortFields(): Array<{ value: ProductReportSortField; label: string }> {
+    return [
+      { value: 'code', label: this.tag('PROD_COD_PROD', 'Código') },
+      { value: 'description', label: this.tag('PROD_DESC_PROD', 'Descripción') },
+    ];
+  }
+
+  tag(key: string, fallback: string): string {
+    return this.productTags.get(key) ?? fallback;
   }
 
   async onFilterTypeChanged(): Promise<void> {
@@ -81,7 +91,9 @@ export class ProductosReportsComponent implements OnInit {
     }
 
     if (this.filterType !== 'all' && !this.structureId) {
-      await this.messageService.transaccionMsjModalNB('Seleccione un valor para el filtro elegido.');
+      await this.messageService.transaccionMsjModalNB(
+        this.tag('PROD_REPORT_MSG_SELECT_FILTER', 'Seleccione un valor para el filtro elegido.'),
+      );
       return;
     }
 
@@ -93,7 +105,9 @@ export class ProductosReportsComponent implements OnInit {
       await this.reportsService.generateAndShareReport(options);
     } catch (error) {
       console.error('[ProductosReportsComponent] Error generating report', error);
-      await this.messageService.transaccionMsjModalNB('No se pudo generar el reporte. Intente nuevamente.');
+      await this.messageService.transaccionMsjModalNB(
+        this.tag('PROD_REPORT_MSG_GENERATE_ERROR', 'No se pudo generar el reporte. Intente nuevamente.'),
+      );
     } finally {
       this.isGenerating = false;
       await this.messageService.hideLoading();
@@ -114,6 +128,7 @@ export class ProductosReportsComponent implements OnInit {
       idEnterprise: this.empresaSeleccionada.idEnterprise,
       enterpriseLabel: this.empresaSeleccionada.lbEnterprise,
       coEnterprise: this.empresaSeleccionada.coEnterprise,
+      tags: this.productTags,
     };
   }
 }
