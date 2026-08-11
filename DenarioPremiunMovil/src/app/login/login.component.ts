@@ -220,6 +220,11 @@ export class LoginComponent implements OnInit {
     if (f.value.login != undefined) {
       login = f.value.login.trim();
     }
+    const storedLogin = localStorage.getItem("login");
+    const isDifferentUser =
+      storedLogin != null &&
+      storedLogin.trim().toLowerCase() !== login.toLowerCase();
+
     if (login == "" || f.value.password == "" || login == undefined || f.value.password == undefined) {
       this.message.hideLoading();
       this.messageAlert = new MessageAlert(
@@ -228,7 +233,7 @@ export class LoginComponent implements OnInit {
       );
       /* this.message.hideLoading(); */
       this.message.alertModal(this.messageAlert);
-    } else if (localStorage.getItem("login") != login && localStorage.getItem("login") != null) {
+    } else if (isDifferentUser) {
       this.message.hideLoading();
       this.messageAlert = new MessageAlert(
         "Denario Premium",

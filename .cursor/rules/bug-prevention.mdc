@@ -34,6 +34,10 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 
 - Buscador productos: no refiltrar con `.includes()` crudo tras SQL GLOB accent-insensitive; normalizar tildes en memoria (`INV-SEARCH-001`).
 
+## Vendedor
+
+- No bloquear UI con `showLoading` esperando `userservice/userinformation`; empresas desde SQLite, métricas en background (`VND-LOAD-001`).
+
 ## Clientes / saldos
 
 - Saldo display (lista/detalle): buckets `document_sales` local/hard por empresa — no particionar por `c.co_currency` mentiroso (`CLI-SALDOS-001`).
