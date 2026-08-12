@@ -414,6 +414,18 @@ export class CobrosHeaderComponent implements OnInit {
       return;
     }
 
+    if (this.collectService.collection.coType !== '2'
+      && (this.collectService.hasEmptyCollectionPayments()
+        || this.collectService.hasIncompletePaymentMethods())) {
+      this.collectService.blockSaveAndSendForInvalidPayments();
+      this.messageService.transaccionMsjModalNB(
+        this.collectService.hasEmptyCollectionPayments()
+          ? 'Hay un método de pago vacío. Complételo o elimínelo antes de guardar o enviar.'
+          : 'Hay un método de pago incompleto. Complételo o elimínelo antes de guardar o enviar.'
+      );
+      return;
+    }
+
     if (this.collectService.collection.coType == "0" && sendOrSave) {
       //ES UN COBRO, SE DEBE BUSCAR EN TODOS LOS DETAILS SI HAY RETENCIONES, SI HAY RETENCIONES HAY QUE BUSCAR
       // SI HAY ADJUNTOS, SI NO HAY, SE DEBE ENVIAR MSJ DE ALERTA Y
@@ -479,7 +491,7 @@ export class CobrosHeaderComponent implements OnInit {
 
     if (sendOrSave && this.collectService.collection.coType !== '2') {
       if (this.collectService.hasIncompletePaymentMethods()) {
-        this.collectService.onCollectionValidToSend(false);
+        this.collectService.blockSaveAndSendForInvalidPayments();
         return;
       }
     }
