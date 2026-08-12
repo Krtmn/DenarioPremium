@@ -476,6 +476,34 @@ describe('CollectionService', () => {
       expect(service.hasIncompletePaymentMethods()).toBeTrue();
     });
 
+    it('blocks empty collectionPayment without payment method', () => {
+      service.collection = {
+        collectionPayments: [
+          { coPaymentMethod: 'pm', coType: 'pm', nuAmountPartial: 10, idBank: 9 } as any,
+          { coPaymentMethod: '', coType: '', nuAmountPartial: 0, idBank: 0 } as any,
+        ],
+      } as any;
+
+      expect(service.hasEmptyCollectionPayments()).toBeTrue();
+      expect(service.hasIncompletePaymentMethods()).toBeTrue();
+      expect(service.getNonEmptyCollectionPayments(service.collection.collectionPayments).length).toBe(1);
+      expect(service.blockSaveAndSendForInvalidPayments()).toBeTrue();
+      expect(service.disableSavedButton).toBeTrue();
+      expect(service.disableSendButton).toBeTrue();
+    });
+
+    it('allows save/send when all collectionPayments have method', () => {
+      service.collection = {
+        collectionPayments: [
+          { coPaymentMethod: 'pm', coType: 'pm', nuAmountPartial: 10, idBank: 9 } as any,
+        ],
+      } as any;
+      service.tipoPagoPagoMovil = false;
+
+      expect(service.hasEmptyCollectionPayments()).toBeFalse();
+      expect(service.hasIncompletePaymentMethods()).toBeFalse();
+    });
+
     it('DM-COB-040: deposito requires bank, account, number, date and amount', () => {
       service.tipoPagoDeposito = true;
       service.pagoDeposito = [{

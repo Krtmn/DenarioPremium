@@ -270,13 +270,16 @@ export class CobroPagosComponent implements OnInit {
     this.collectService.lengthMethodPaid++;
     this.collectService.collection.collectionPayments[this.collectService.collection.collectionPayments.length] = new CollectionPayment;
     this.collectService.collection.collectionPayments[this.collectService.collection.collectionPayments.length - 1].coCollection = this.collectService.collection.coCollection;
+    // Evitar slot vacío persistible: marcar método desde el alta.
+    this.collectService.collection.collectionPayments[this.collectService.collection.collectionPayments.length - 1].coPaymentMethod = type;
+    this.collectService.collection.collectionPayments[this.collectService.collection.collectionPayments.length - 1].coType = type;
     this.collectService.tiposPago.forEach(tp => tp.selected = false);
 
 
     // Normalizar dateRate del cobro a YYYY-MM-DD HH:mm:ss
     const daRate = this.normalizedCollectionDateRate();
 
-    this.collectService.onCollectionValidToSend(false)
+    this.collectService.blockSaveAndSendForInvalidPayments();
     // Nuevo: referencia al pago creado (se asigna dentro del switch)
     let newPago: any = null;
 
