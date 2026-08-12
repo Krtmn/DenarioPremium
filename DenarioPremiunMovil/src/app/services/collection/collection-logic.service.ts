@@ -2472,13 +2472,12 @@ export class CollectionService {
     this.montoTotalPagado = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado));
 
     this.alertMessageOpen = false;
+    // Cobros/anticipo/IGTF: pagos vacíos o incompletos deshabilitan Guardar y Enviar.
+    if (this.collection.coType != '2' && this.blockSaveAndSendForInvalidPayments()) {
+      return;
+    }
     if (this.collection.coType == '1') {
       //SI ERES ANTICIPO
-      if (this.hasIncompletePaymentMethods()) {
-        this.onCollectionValidToSend(false);
-        return;
-      }
-
       if (this.collection.collectionPayments.length > 0) {
         if (this.collection && Array.isArray(this.collection.collectionPayments) && this.collection.collectionPayments.length > 0) {
           const hasPartialAmount = this.collection.collectionPayments.some(p => {
@@ -2509,12 +2508,13 @@ export class CollectionService {
     } else {
 
       if (this.hasIncompletePaymentMethods()) {
-        this.onCollectionValidToSend(false);
+        this.blockSaveAndSendForInvalidPayments();
         return;
       }
 
       if (!(await this.validateReferencePayment())) {
         this.onCollectionValidToSend(false);
+        this.onCollectionValidToSave(false);
         return;
       }
 
@@ -2882,7 +2882,48 @@ export class CollectionService {
     }
   }
 
+  /** Pago sin método (slot vacío): no debe persistirse ni enviarse. */
+  public isEmptyCollectionPayment(payment: CollectionPayment | null | undefined): boolean {
+    if (!payment) {
+      return true;
+    }
+    const method = (payment.coPaymentMethod ?? payment.coType ?? '').toString().trim();
+    return method.length === 0;
+  }
+
+  public hasEmptyCollectionPayments(): boolean {
+    const payments = this.collection?.collectionPayments;
+    if (!Array.isArray(payments) || payments.length === 0) {
+      return false;
+    }
+    return payments.some(p => this.isEmptyCollectionPayment(p));
+  }
+
+  public getNonEmptyCollectionPayments(
+    payments: CollectionPayment[] | null | undefined
+  ): CollectionPayment[] {
+    if (!Array.isArray(payments) || payments.length === 0) {
+      return [];
+    }
+    return payments.filter(p => !this.isEmptyCollectionPayment(p));
+  }
+
+  /** Deshabilita Guardar y Enviar cuando hay pagos vacíos o incompletos. */
+  public blockSaveAndSendForInvalidPayments(): boolean {
+    if (!this.hasIncompletePaymentMethods()) {
+      return false;
+    }
+    this.onCollectionValidToSend(false);
+    this.onCollectionValidToSave(false);
+    this.disableSavedButton = true;
+    this.disableSendButton = true;
+    return true;
+  }
+
   public hasIncompletePaymentMethods(): boolean {
+    if (this.hasEmptyCollectionPayments()) {
+      return true;
+    }
     if (this.tipoPagoEfectivo && this.pagoEfectivo.some(p => !this.isEfectivoPaymentComplete(p))) {
       return true;
     }
@@ -2982,10 +3023,14 @@ export class CollectionService {
   onCollectionValidToSave(valid: boolean) {
     console.log('returnLogicService: onReturnValid');
     if (!valid) {
-      if (this.createAutomatedPrepaid)
-        this.collectValidToSave.next(this.createAutomatedPrepaid);
-    } else
-      this.collectValidToSave.next(valid);
+      if (this.createAutomatedPrepaid) {
+        this.collectValidToSave.next(true);
+      } else {
+        this.collectValidToSave.next(false);
+      }
+      return;
+    }
+    this.collectValidToSave.next(true);
   }
 
   onCollectionValidToSend(validToSend: boolean) {
@@ -6786,6 +6831,9 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
       for (var coDetailPayment = 0; coDetailPayment < collect.collectionPayments.length; coDetailPayment++) {
         const collectionPayment = collect.collectionPayments[coDetailPayment];
+        if (this.isEmptyCollectionPayment(collectionPayment)) {
+          continue;
+        }
         queries.push([insertCollectionPaymentSQL,
           [
             collectionPayment.idCollectionPayment,
@@ -7065,6 +7113,12 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
   saveCollectionPayment(dbServ: SQLiteObject, collectionPayment: CollectionPayment[], coCollection: string) {
 
+    // Nunca persistir slots vacíos (método en blanco / id_bank 0 sin tipo).
+    const paymentsToSave = this.getNonEmptyCollectionPayments(collectionPayment);
+    if (this.collection?.coCollection === coCollection && Array.isArray(this.collection.collectionPayments)) {
+      this.collection.collectionPayments = paymentsToSave;
+    }
+
     //if (collectionPayment.length > 0)
     dbServ.executeSql("DELETE FROM collection_payments WHERE co_collection = ?", [coCollection]).then(res => {
 
@@ -7098,31 +7152,35 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       "nu_phone_number" +
       ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
-    for (var i = 0; i < collectionPayment.length; i++) {
+    for (var i = 0; i < paymentsToSave.length; i++) {
       statementsCollectionPayment.push([insertStatement, [
         0,
-        collectionPayment[i].coCollection,
-        collectionPayment[i].idCollectionDetail,
-        collectionPayment[i].coPaymentMethod,
-        collectionPayment[i].idBank,
-        collectionPayment[i].nuPaymentDoc,
-        collectionPayment[i].naBank,
-        collectionPayment[i].coClientBankAccount,
-        collectionPayment[i].nuClientBankAccount,
-        collectionPayment[i].daValue,
-        collectionPayment[i].daCollectionPayment,
-        collectionPayment[i].nuCollectionPayment,
-        collectionPayment[i].nuAmountPartial,
-        collectionPayment[i].nuAmountPartialConversion,
-        collectionPayment[i].coType,
-        collectionPayment[i].idDifferenceCode,
-        collectionPayment[i].coDifferenceCode,
-        collectionPayment[i].nuBankAccount,
-        collectionPayment[i].idTypeDocument,
-        collectionPayment[i].nuDocument,
-        collectionPayment[i].idCodePhoneNumber,
-        collectionPayment[i].nuPhoneNumber,
+        paymentsToSave[i].coCollection,
+        paymentsToSave[i].idCollectionDetail,
+        paymentsToSave[i].coPaymentMethod,
+        paymentsToSave[i].idBank,
+        paymentsToSave[i].nuPaymentDoc,
+        paymentsToSave[i].naBank,
+        paymentsToSave[i].coClientBankAccount,
+        paymentsToSave[i].nuClientBankAccount,
+        paymentsToSave[i].daValue,
+        paymentsToSave[i].daCollectionPayment,
+        paymentsToSave[i].nuCollectionPayment,
+        paymentsToSave[i].nuAmountPartial,
+        paymentsToSave[i].nuAmountPartialConversion,
+        paymentsToSave[i].coType,
+        paymentsToSave[i].idDifferenceCode,
+        paymentsToSave[i].coDifferenceCode,
+        paymentsToSave[i].nuBankAccount,
+        paymentsToSave[i].idTypeDocument,
+        paymentsToSave[i].nuDocument,
+        paymentsToSave[i].idCodePhoneNumber,
+        paymentsToSave[i].nuPhoneNumber,
       ]]);
+    }
+
+    if (statementsCollectionPayment.length === 0) {
+      return Promise.resolve("TERMINE");
     }
 
     return dbServ.sqlBatch(statementsCollectionPayment).then(res => {
@@ -7664,7 +7722,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
         })
       }
-      return collectionPayments;
+      return collectionPayments.filter(p => !this.isEmptyCollectionPayment(p));
 
     }).catch(e => {
       let collectionPayments: CollectionPayment[] = [];
