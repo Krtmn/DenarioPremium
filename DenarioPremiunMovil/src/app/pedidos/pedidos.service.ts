@@ -1226,7 +1226,9 @@ export class PedidosService {
         //DESCUENTOS
         let discountList: Discount[] = [];
         if (priceListSeleccionado.idList != null) {
-          discountList = this.listaDiscount.filter(d => d.idProduct == item.idProduct && d.idList == priceListSeleccionado.idList);
+          discountList = this.listaDiscount
+            .filter(d => d.idProduct == item.idProduct && d.idList == priceListSeleccionado.idList)
+            .sort((a, b) => (a.nuPriority ?? 0) - (b.nuPriority ?? 0));
         }
         //descuento que representa que no hay descuento seleccionado
         discountList.unshift({
