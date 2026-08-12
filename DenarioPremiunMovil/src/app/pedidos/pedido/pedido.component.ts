@@ -1277,6 +1277,11 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
     if (!this.orderServ.requiredCommentOrder) {
       return false;
     }
+    // Pedidos no editables (enviados / por enviar): no bloquear por comentario vacío.
+    // Pudieron crearse cuando requiredCommentOrder estaba en false y el input está disabled.
+    if (!this.orderServ.pedidoModificable) {
+      return false;
+    }
     return !String(this.txComment ?? '').trim();
   }
 
