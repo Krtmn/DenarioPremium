@@ -113,12 +113,28 @@ La fila se delata sola: su código es `US$13720262626`, o sea **13/07/2026** —
 2. Compará con la tasa que muestra un pedido creado **desde el móvil** hoy.
 
 **Se reprodujo si:** el pedido web sale con **721,35** y el móvil con **752,09**.
-✅ **Este se arregla sin tocar código:** borrando las 3 filas (`id_conversion_type` **3443**, **3445**, **3447**).
-Igual conviene el arreglo de fondo: que el sistema ignore tasas con fecha futura.
+✅ **RESUELTO EN LA 21 con una guarda en código:** el sistema ignora las tasas con fecha futura.
+
+🕐 **Las 3 filas corruptas SIGUEN en la base** (`id_conversion_type` **3443**, **3445**, **3447**).
+**Decisión de QA (2026-08-11): NO se limpian desde acá — queda para que lo revise el propio cliente.**
+⚠ Para que no se vuelva a levantar: la guarda las neutraliza **en la web**, pero el dato sigue cargado, así que
+cualquier otro consumidor que lea `conversion_type` sin pasar por esa guarda (un reporte, el ERP, una
+integración) seguiría tomando **721,35**. No es un pendiente nuestro; es contexto para cuando el cliente lo mire.
 
 ---
 
 # W7 · Los pedidos de un vendedor dado de baja desaparecen del listado
+
+> ❌ **DESCARTADO — decisión de QA, 2026-08-11. No se reporta.**
+> Afecta a **una sola persona**: Dayana Acuña (`VEND714`, `id_user` 283), dada de baja el **04/08/2026**, con
+> **93 pedidos y 157 cobros** entre **ago-2024 y ene-2025**. Es la única de baja entre los 34 usuarios del
+> tenant, y sus registros tienen más de un año y medio. **Impacto práctico hoy: nulo.**
+> Los otros dos usuarios fuera de la vista son **`admin` y `superadmin`**, cuentas de sistema con **cero
+> transacciones**: que no aparezcan en un desplegable de *vendedores* es correcto.
+> ⚠ **Lo único a recordar si algún día se toca:** la vista está **tapando 13 inventarios de otros clientes**
+> (`LMP01`, `ALIP_BSD`, de usuarios que ni existen en `users`). **Si se arregla la visibilidad sin limpiar
+> antes esos datos, quedan a la vista dentro de difranca.** Primero limpiar, después arreglar.
+
 
 **Qué pasa.** El listado de pedidos se arma cruzando contra una vista que **excluye a los usuarios dados de
 baja**. Resultado: **124 pedidos de difranca no aparecen en ninguna búsqueda**, aunque existen y se abren
@@ -136,6 +152,13 @@ El combo salta del 282 al 284. Ningún filtro de la pantalla alcanza esos pedido
 
 # W9 · No hay forma de saber el estatus de una devolución
 
+> ❌ **DESCARTADO PARCIALMENTE — decisión de QA, 2026-08-11.**
+> **El detalle nunca mostró Estatus**: es cómo está hecho el producto, no un defecto. Confirmado por QA.
+> ✅ La **columna del listado** sí se arregló hacia adelante (la devolución 879, creada nueva, muestra
+> `Enviado`). El histórico anterior queda mudo salvo backfill de `transaction_statuses`, que es decisión de
+> datos, no de la versión.
+
+
 **Qué pasa.** En el listado la columna **Estatus** sale vacía en casi todas, y al abrir el detalle **no existe
 el campo Estatus en ninguna parte**. O sea que por la web nadie puede saber en qué estado está una devolución.
 **Parcialmente arreglado:** las devoluciones **creadas desde el 10/08 sí muestran estatus en la lista**; las
@@ -152,6 +175,11 @@ anteriores quedan mudas. **El detalle sigue sin el campo, incluso en las nuevas.
 ---
 
 # W10 · El visor de adjuntos nunca muestra los PDF
+
+> ❌ **DESCARTADO — decisión de QA, 2026-08-11. No se reporta.**
+> **Es una característica de Denario**: el visor nunca mostró más que imágenes. Los PDF **sí viajan en el ZIP**
+> descargable, así que el archivo no se pierde — solo no se previsualiza.
+
 
 **Qué pasa.** `Ver adjuntos` muestra **solo imágenes**. Si el registro tiene un PDF, no aparece y **nada indica
 que exista**. El archivo sí está: si descargás el ZIP, el PDF viene adentro.

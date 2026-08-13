@@ -288,10 +288,29 @@ vgs:
   # ✅ ⚠️VERIFICAR #1 — RESUELTO EN UI 2026-08-05: el dump de CLIENTE tenía razón ═══
   #   A diferencia de alipascua, acá el valor `false` del dump de cliente SÍ se
   #   corresponde con la UI. La regla del da_update acertó esta vez.
-  userCanSelectProductDiscount: false   # ✅ CONFIRMADO EN UI (⚠️VERIFICAR retirado):
-                                        #    el panel de línea del producto trae **3 selects, no 5**
-                                        #    — "% Descuento" NO aparece. La AUSENCIA del select ES
-                                        #    la señal de la VG (no hay que provocar el comportamiento).
+  userCanSelectProductDiscount: true    # 🔴 CORREGIDO 2026-08-12 — antes decía `false` y estaba MAL.
+                                        #    Evidencia: pedido **13819** (cliente MAYOR RKL 1000001162,
+                                        #    lista **Z02 id_list 2**, vendedor **2045**). El desplegable
+                                        #    ofreció **sin descuento · 7 % · 15 %** (`id_discount` 0/417/393),
+                                        #    se aplicaron dos descuentos distintos y **persistieron** en
+                                        #    `order_detail.id_discount` + `nu_discount_total`.
+                                        #
+                                        # ⚠️ POR QUÉ SE HABÍA LEÍDO MAL — vale para cualquier VG de este tipo:
+                                        #    la medición del 5-ago concluyó `false` porque el select
+                                        #    "% Descuento" NO aparecía. Pero **la ausencia del select no es
+                                        #    la señal de la VG**: significa que **ESE producto no tiene
+                                        #    descuentos en ESA lista de precio**. Se evaluó sobre un producto
+                                        #    sin descuentos y se leyó como función apagada.
+                                        # ⇒ Para evaluarla hay que usar un producto con descuentos cargados
+                                        #    en la lista activa del cliente. Ver `pedido_descuento_20260812.md`.
+                                        #
+                                        # 🔴 DATO OPERATIVO: con el vendedor **1276** (el del bloque de datos
+                                        #    de prueba) **es imposible** armar un pedido con descuento — sus
+                                        #    clientes usan listas sin descuentos. Usar el vendedor **2045**,
+                                        #    que tiene 6 clientes en Z02.
+                                        # 🔴 El baseline por `max(id_order)` NO sirve en este cliente: el
+                                        #    máximo histórico es 23147 y los pedidos nuevos entran en 13.8xx.
+                                        #    Usar `da_created` para el diff.
 
 # ── Métodos de pago de Cobros ─────────────────────────────────────────────────
 # colletionPayment = true-false-true-true-false-false  (global 2026-07-23, 6 valores)

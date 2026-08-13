@@ -1,0 +1,9 @@
+{"run_id":"hidroponias_sugerido_20260811","capa":"web","modulo":"sugerido","caso":"DW-SUG-001","ref":"-","marca":"WEB-MISSING","nota":"sin desglose Despacho/CambioxCambio/InvInicial/Venta en ninguna pantalla"}
+{"run_id":"hidroponias_sugerido_20260811","capa":"web","modulo":"sugerido","caso":"DW-SUG-002","ref":"-","marca":"WEB-MISSING","nota":"days_since_last/days_until_next no se exponen"}
+{"run_id":"hidroponias_sugerido_20260811","capa":"web","modulo":"inventarios","caso":"DW-SUG-003","ref":"34-47","marca":"WEB-OK","nota":"14 vs 14; clientes, vendedor y fechas cuadran"}
+{"run_id":"hidroponias_sugerido_20260811","capa":"web","modulo":"inventarios","caso":"DW-SUG-004","ref":"47","marca":"WEB-OK","nota":"9/9 lineas vs client_stock_detail_view"}
+{"run_id":"hidroponias_sugerido_20260811","capa":"web","modulo":"pedidos","caso":"DW-SUG-005","ref":"34","marca":"WEB-OK","nota":"12/12 lineas + Inventario relacionado Ref 35"}
+{"run_id":"hidroponias_sugerido_20260811","capa":"web","modulo":"sugerido","caso":"DW-SUG-006","ref":"-","marca":"WEB-N/A","nota":"fix facturas: sin superficie administrativa para verificarlo"}
+{"run_id":"hidroponias_sugerido_20260811","capa":"web","modulo":"reportes","caso":"DW-SUG-007","ref":"-","marca":"WEB-CALC-MISMATCH","nota":"ROT-INV-CERO: Inventario Inicial/Final=0 en 22 y 50 filas; BD 703 uds ESPINACA"}
+{"run_id":"hidroponias_sugerido_20260811","capa":"web","modulo":"sugerido","caso":"DW-SUG-008","ref":"-","marca":"WEB-MISSING","nota":"SUG-QU-CERO: qu_suggested=0 en 559/559 lineas; tabla suggested vacia"}
+{"run_id":"hidroponias_sugerido_20260811","capa":"web","modulo":"sugerido","caso":"DW-SUG-009","ref":"-","marca":"WEB-N/A","nota":"el movil no envio nada: cliente 147 sin client_stock al cierre"}
