@@ -1,13 +1,41 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
 
 import { ServicesService } from './services.service';
+
+describe('ServicesService CapacitorHttp gzip headers', () => {
+  let service: ServicesService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient()],
+    });
+    service = TestBed.inject(ServicesService);
+  });
+
+  it('getHttpOptions should not set Accept-Encoding', () => {
+    const headers = service.getHttpOptions().headers ?? {};
+    expect(headers['Accept-Encoding']).toBeUndefined();
+    expect(headers['accept-encoding']).toBeUndefined();
+  });
+
+  it('getHttpOptionsAuthorization should not set Accept-Encoding', () => {
+    const headers = service.getHttpOptionsAuthorization().headers ?? {};
+    expect(headers['Accept-Encoding']).toBeUndefined();
+    expect(headers['accept-encoding']).toBeUndefined();
+    expect(headers['Content-Type']).toBe('application/json');
+    expect(headers['Authorization']).toContain('Bearer');
+  });
+});
 
 describe('ServicesService', () => {
   let service: ServicesService;
   let fetchSpy: jasmine.Spy;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient()],
+    });
     service = TestBed.inject(ServicesService);
     fetchSpy = spyOn(window, 'fetch');
     spyOn(service, 'getHttpOptionsAuthorization').and.returnValue({
