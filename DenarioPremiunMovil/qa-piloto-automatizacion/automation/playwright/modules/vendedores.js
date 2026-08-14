@@ -77,39 +77,54 @@ async function runVendedores(pg, DATA) {
 
   // ─── DM-VND-002: Expandir acordeones y verificar KPIs ───────────────────────
   try {
-    const resultado002 = await pg.evaluate(async () => {
+    // Paso 1: expandir
+    const expandResult = await pg.evaluate(() => {
       const grp  = document.querySelector('app-vendedores ion-accordion-group');
       const accs = [...grp.querySelectorAll(':scope > ion-accordion')];
       if (!accs.length) return { ok: false, msg: 'sin acordeones' };
-
-      // Expandir todos a la vez (técnica multi: grp.multiple = true)
       grp.multiple = true;
       grp.value = accs.map(a => a.value);
       grp.dispatchEvent(new CustomEvent('ionChange', { detail: { value: grp.value }, bubbles: true }));
+      return { ok: true, count: accs.length };
+    });
 
-      // Espera mínima para que Ionic anime la expansión
-      await new Promise(r => setTimeout(r, 700));
+    if (!expandResult.ok) throw new Error(expandResult.msg);
 
-      const empresas = accs.map(acc => {
-        const slot    = acc.querySelector('[slot="content"]');
-        const rect    = slot ? slot.getBoundingClientRect() : { height: 0 };
-        const kpisHay = rect.height > 5; // >5px = hay contenido visual
-        const label   = acc.querySelector('[slot="header"]')?.textContent?.trim() || acc.value;
-        return { label, alturaContent: Math.round(rect.height), kpisHay };
+    // Esperar animación de expansión fuera del evaluate (usa Playwright, no setTimeout)
+    await pg.waitForTimeout(800);
+
+    // Paso 2: leer alturas expandidas
+    const empresas = await pg.evaluate(() => {
+      const grp  = document.querySelector('app-vendedores ion-accordion-group');
+      const accs = [...grp.querySelectorAll(':scope > ion-accordion')];
+      return accs.map(acc => {
+        const slot  = acc.querySelector('[slot="content"]');
+        const rect  = slot ? slot.getBoundingClientRect() : { height: 0 };
+        const label = acc.querySelector('[slot="header"]')?.textContent?.trim() || acc.value;
+        return { label, alturaContent: Math.round(rect.height), kpisHay: rect.height > 5 };
       });
+    });
 
-      // Colapsar
+    // Paso 3: colapsar
+    await pg.evaluate(() => {
+      const grp = document.querySelector('app-vendedores ion-accordion-group');
       grp.value = undefined;
       grp.dispatchEvent(new CustomEvent('ionChange', { detail: { value: undefined }, bubbles: true }));
-      await new Promise(r => setTimeout(r, 300));
+    });
 
-      const colapsado = accs.every(acc => {
+    await pg.waitForTimeout(600);
+
+    // Paso 4: verificar colapso
+    const colapsado = await pg.evaluate(() => {
+      const grp  = document.querySelector('app-vendedores ion-accordion-group');
+      const accs = [...grp.querySelectorAll(':scope > ion-accordion')];
+      return accs.every(acc => {
         const slot = acc.querySelector('[slot="content"]');
         return !slot || slot.getBoundingClientRect().height <= 5;
       });
-
-      return { ok: true, empresas, colapsado };
     });
+
+    const resultado002 = { ok: true, empresas, colapsado };
 
     if (!resultado002.ok) throw new Error(resultado002.msg);
 
