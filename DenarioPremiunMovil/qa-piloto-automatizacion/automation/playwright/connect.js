@@ -45,29 +45,67 @@ async function esperarHome(pg, ms = 15000) {
 }
 
 /**
- * Navega de vuelta a HOME presionando history.back() hasta que app-home sea visible.
- * Útil al iniciar una corrida cuando la app quedó dentro de un módulo, o entre módulos.
+ * Navega de vuelta a HOME haciendo click en el botón de retroceso de Denario (img.fechaAtras)
+ * o en ion-back-button hasta que app-home sea visible.
+ * Más confiable que history.back() o ADB keyevent porque Ionic lo procesa como acción real.
  * @param {import('playwright').Page} pg
  * @param {number} [ms=20000]
  */
 async function volverAHome(pg, ms = 20000) {
-  const isVisible = () => pg.evaluate(() => {
-    const el = document.querySelector('app-home');
-    if (!el) return false;
-    return !el.classList.contains('ion-page-hidden') &&
-           getComputedStyle(el).display !== 'none';
-  }).catch(() => false);
+  const getState = () => pg.evaluate(() => {
+    const homeEl  = document.querySelector('app-home');
+    const loginEl = document.querySelector('app-login');
+    return {
+      pathname: location.pathname,
+      homeHidden: homeEl ? homeEl.classList.contains('ion-page-hidden') : true,
+      // loginPresent solo si la página login está VISIBLE (no oculta por Ionic)
+      loginPresent: !!(loginEl && !loginEl.classList.contains('ion-page-hidden')),
+    };
+  }).catch(() => ({ pathname: '', homeHidden: true, loginPresent: false }));
 
-  if (await isVisible()) return;
+  const isHome = async () => !(await getState()).homeHidden;
+
+  if (await isHome()) return;
+
+  const initial = await getState();
+  if (initial.loginPresent) {
+    throw new Error('volverAHome: app en login — iniciar sesión manualmente antes de correr el test');
+  }
+
+  // Clic en el botón de retroceso visible de Denario
+  const clickBackBtn = () => pg.evaluate(() => {
+    // 1. img.fechaAtras (botón de flecha de Denario, top-left)
+    const imgs = [...document.querySelectorAll('img.fechaAtras')];
+    const back = imgs.find(img => {
+      const r = img.getBoundingClientRect();
+      return r.width > 0 && r.x < 120 && r.y < 120;
+    });
+    if (back) {
+      const target = back.closest('a') || back;
+      const r = target.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }
+    // 2. ion-back-button (estándar Ionic)
+    const ionBack = document.querySelector('ion-back-button');
+    if (ionBack && ionBack.getBoundingClientRect().width > 0) {
+      const r = ionBack.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }
+    return null;
+  }).catch(() => null);
 
   const deadline = Date.now() + ms;
   while (Date.now() < deadline) {
-    await pg.evaluate(() => history.back()).catch(() => {});
-    await pg.waitForTimeout(700);
-    if (await isVisible()) return;
+    const coords = await clickBackBtn();
+    if (coords) {
+      await pg.mouse.click(coords.x, coords.y, { delay: 60 });
+    }
+    await pg.waitForTimeout(800);
+    if (await isHome()) return;
+    const s = await getState();
+    if (s.loginPresent) throw new Error('volverAHome: llegó a login — iniciar sesión manualmente');
   }
-  // Último recurso: espera estricta
-  await pg.waitForSelector('app-home:not(.ion-page-hidden)', { timeout: 3000 });
+  throw new Error('volverAHome: no se llegó a HOME en ' + ms + 'ms — verificar estado del dispositivo');
 }
 
 module.exports = { conectar, esperarHome, volverAHome, CDP_URL };

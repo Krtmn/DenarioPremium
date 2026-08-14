@@ -227,7 +227,9 @@ async function runClientes(pg, DATA) {
     if (!tileCoords) throw new Error('Tile Clientes no encontrado en HOME');
     await pg.mouse.click(tileCoords.x, tileCoords.y, { delay: 80 });
     await pg.waitForSelector('app-clientes', { state: 'visible', timeout: 10000 });
-    await pg.waitForTimeout(1000); // dejar que la transición se asiente
+    // Esperar botones específicos visibles + dar tiempo a Angular a registrar los event handlers
+    await pg.waitForSelector('app-clientes ion-button.colorBorderBuscar', { state: 'visible', timeout: 10000 });
+    await pg.waitForTimeout(1000);
     const n3 = await check3Botones();
     if (n3 < 3) throw new Error(`Solo ${n3} botones en home clientes (esperaban 3)`);
     inHomeClts = true;
