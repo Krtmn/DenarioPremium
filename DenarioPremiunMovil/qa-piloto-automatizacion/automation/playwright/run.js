@@ -24,6 +24,7 @@ const { fetchCreds }               = require('../cdp/denario-cdp-helpers');
 const MODULOS = {
   vendedores: require('./modules/vendedores').runVendedores,
   productos:  require('./modules/productos').runProductos,
+  clientes:   require('./modules/clientes').runClientes,
 };
 
 // ─── Parsear args ─────────────────────────────────────────────────────────────
@@ -66,6 +67,12 @@ function dataParaModulo(perfil, modulo) {
         textoBusqueda:         mod.texto_busqueda || 'A',
         estructuraTest:        mod.estructura_test || '',
         userCanChangePriceList: vgs.userCanChangePriceList !== false,
+      };
+    case 'clientes':
+      return {
+        aplica:          mod.aplica !== false,
+        clienteBusqueda: mod.cliente_busqueda || 'A',
+        clienteDetalle:  mod.cliente_detalle  || '',
       };
     default:
       return { aplica: mod.aplica !== false };
