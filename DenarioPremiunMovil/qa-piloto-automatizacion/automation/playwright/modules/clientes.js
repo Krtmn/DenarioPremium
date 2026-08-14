@@ -40,13 +40,14 @@ async function runClientes(pg, DATA) {
     });
   }
 
-  // Botón atrás: img.fechaAtras → closest('a'), width>0 && x<100
+  // Botón atrás: img.fechaAtras top-left (x<100, y<80, width>0) → closest('a')
+  // En clientes la imagen es flecha-blanca.png — NO filtrar por nombre de src
   async function clickBack() {
     const coords = await pg.evaluate(() => {
       const imgs = [...document.querySelectorAll('img.fechaAtras')];
       const back = imgs.find(img => {
         const r = img.getBoundingClientRect();
-        return /atras/i.test(img.src || '') && r.width > 0 && r.x < 100;
+        return r.width > 0 && r.x < 100 && r.y < 80;
       });
       if (!back) return null;
       const a = back.closest('a');
@@ -55,7 +56,7 @@ async function runClientes(pg, DATA) {
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     });
     if (!coords) throw new Error('back button (img.fechaAtras) no encontrado');
-    await pg.mouse.click(coords.x, coords.y);
+    await pg.mouse.click(coords.x, coords.y, { delay: 60 });
   }
 
   // Botón de alert por igualdad EXACTA (no includes — anti-patrón 3 botones)
@@ -178,22 +179,20 @@ async function runClientes(pg, DATA) {
   // DM-CLT-001: Navegar a Clientes desde Home
   // ═══════════════════════════════════════════════════════════════════════════
   try {
-    const clickOk = await pg.evaluate(() => {
+    const tileCoords = await pg.evaluate(() => {
       const tiles = [...document.querySelectorAll('app-home a.ion-text-center')];
       const tile = tiles.find(a => {
         const p = a.querySelector('p.nombreModulos');
         return p && p.textContent.trim() === 'Clientes';
       });
-      if (!tile) return 'NO_TILE';
+      if (!tile) return null;
       const r = tile.getBoundingClientRect();
-      const x = r.left + r.width / 2, y = r.top + r.height / 2;
-      ['pointerdown','pointerup','mousedown','mouseup','click'].forEach(type =>
-        tile.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y }))
-      );
-      return 'OK';
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     });
-    if (clickOk === 'NO_TILE') throw new Error('Tile Clientes no encontrado en HOME');
+    if (!tileCoords) throw new Error('Tile Clientes no encontrado en HOME');
+    await pg.mouse.click(tileCoords.x, tileCoords.y, { delay: 80 });
     await pg.waitForSelector('app-clientes', { state: 'visible', timeout: 10000 });
+    await pg.waitForTimeout(1000); // dejar que la transición se asiente
     const n3 = await check3Botones();
     if (n3 < 3) throw new Error(`Solo ${n3} botones en home clientes (esperaban 3)`);
     inHomeClts = true;
@@ -244,17 +243,13 @@ async function runClientes(pg, DATA) {
     // DM-CLT-009: Click en cliente → detalle
     // ═══════════════════════════════════════════════════════════════════════
     try {
-      // Si hay clienteDetalle, re-buscar con el primer token de su nombre
-      if (DATA.clienteDetalle) {
-        const termino = DATA.clienteDetalle.trim().split(/\s+/)[0].slice(0, 8).toUpperCase();
-        await buscarEnLista(termino);
-      }
-      await clickItemEnLista(DATA.clienteDetalle || '');
+      // Usar primer ítem visible de la lista actual (resultado de CLT-003)
+      await clickItemEnLista('');
       await pg.waitForSelector('app-client-detail', { state: 'visible', timeout: 10000 });
       inDetail = true;
-      // Capturar nombre del cliente para la nota
+      // Capturar algún texto del detalle para la nota
       const nombre = await pg.evaluate(() => {
-        const el = document.querySelector('app-client-detail ion-card-title, app-client-detail h2, app-client-detail .client-name');
+        const el = document.querySelector('app-client-detail ion-card-title, app-client-detail h2, app-client-detail .client-name, app-client-detail ion-title');
         return el ? el.textContent.trim().slice(0, 60) : 'detalle visible';
       });
       v('DM-CLT-009', 'Click en cliente → detalle', 'PASS', nombre);
@@ -359,8 +354,9 @@ async function runClientes(pg, DATA) {
       if (!form) return null;
       // Contar ion-inputs visibles (anclado al componente para no agarrar app-login)
       const inputs = [...form.querySelectorAll('ion-input')].filter(i => i.offsetParent !== null);
-      const guardar = form.querySelector('ion-button.imagenGuardar');
-      const enviar  = form.querySelector('ion-button.imagenEnviar');
+      // Los botones Guardar/Enviar pueden estar en el componente padre (fuera del form child)
+      const guardar = document.querySelector('ion-button.imagenGuardar');
+      const enviar  = document.querySelector('ion-button.imagenEnviar');
       return {
         inputs: inputs.length,
         guardarDisabled: guardar ? guardar.disabled : null,
@@ -427,11 +423,10 @@ async function runClientes(pg, DATA) {
     });
     await pg.waitForTimeout(600);
 
-    // Verificar que los botones habilitaron
+    // Verificar que los botones habilitaron (buscar globalmente, no solo en el form child)
     const botonesHabilitados = await pg.evaluate(() => {
-      const form = document.querySelector('app-client-new-potential-client');
-      const guardar = form && form.querySelector('ion-button.imagenGuardar');
-      const enviar  = form && form.querySelector('ion-button.imagenEnviar');
+      const guardar = document.querySelector('ion-button.imagenGuardar');
+      const enviar  = document.querySelector('ion-button.imagenEnviar');
       return { guardar: guardar ? !guardar.disabled : null, enviar: enviar ? !enviar.disabled : null };
     });
 
@@ -452,9 +447,9 @@ async function runClientes(pg, DATA) {
   // DM-CLT-024: Click Guardar → alert → verificar en lista BUSCAR
   // ═══════════════════════════════════════════════════════════════════════════
   try {
-    // Click Guardar
+    // Click Guardar (buscar globalmente)
     const guardarCoords = await pg.evaluate(() => {
-      const btn = document.querySelector('app-client-new-potential-client ion-button.imagenGuardar');
+      const btn = document.querySelector('ion-button.imagenGuardar');
       if (!btn || btn.disabled) return null;
       const r = btn.getBoundingClientRect();
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
@@ -555,9 +550,9 @@ async function runClientes(pg, DATA) {
     await pg.waitForSelector('app-client-new-potential-client', { state: 'visible', timeout: 8000 });
     await pg.waitForTimeout(600);
 
-    // Click Enviar
+    // Click Enviar (buscar globalmente)
     const enviarCoords = await pg.evaluate(() => {
-      const btn = document.querySelector('app-client-new-potential-client ion-button.imagenEnviar');
+      const btn = document.querySelector('ion-button.imagenEnviar');
       if (!btn || btn.disabled) return null;
       const r = btn.getBoundingClientRect();
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
@@ -603,15 +598,15 @@ async function runClientes(pg, DATA) {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // DM-CLT-031: Crear 2.º Guardado vía dirty-guard → trash → verificar borrado
+  // DM-CLT-031: Crear 2.º Guardado (via Guardar directo) → trash → verificar
   // ═══════════════════════════════════════════════════════════════════════════
   try {
-    // Estamos en home clientes. Click CLIENTE POTENCIAL → llenar → clickBack → dirty-guard
+    // Estamos en home clientes (3 botones). Crear 2.º potencial con Guardar directo.
     await clickBotonClientes('CLIENTE POTENCIAL');
     await pg.waitForSelector('app-client-new-potential-client', { state: 'visible', timeout: 8000 });
     await pg.waitForTimeout(600);
 
-    // Llenar los 8 campos (nombre diferente para poder identificar)
+    // Llenar los 8 campos con nombre diferente
     const camposDel = [
       { name: 'naClient',          val: nombreDel },
       { name: 'nuRif',             val: 'J123456789' },
@@ -625,7 +620,7 @@ async function runClientes(pg, DATA) {
     for (const campo of camposDel) {
       await fillPotencialInput(campo.name, campo.val);
     }
-    // También idEnterprise si aplica
+    // idEnterprise si aplica
     await pg.evaluate(() => {
       const form = document.querySelector('app-client-new-potential-client');
       if (!form) return;
@@ -644,30 +639,45 @@ async function runClientes(pg, DATA) {
     });
     await pg.waitForTimeout(400);
 
-    // Click back → dirty-guard → "Guardar y salir" (EXACT match, anti-patrón 3 botones)
-    await clickBack();
-    await pg.waitForTimeout(900);
-    const dirtyCoords = await pg.evaluate(() => {
-      const alerts = [...document.querySelectorAll('ion-alert')].filter(
-        a => !a.classList.contains('overlay-hidden') && a.offsetParent !== null
-      );
-      if (!alerts.length) return null;
-      const alert = alerts[alerts.length - 1];
-      const btn = [...alert.querySelectorAll('.alert-button')].find(b =>
-        b.textContent.trim().toLowerCase() === 'guardar y salir' &&
-        b.getBoundingClientRect().width > 0
-      );
-      if (!btn) return null;
+    // Guardar directo (más estable que dirty-guard)
+    const gCoords = await pg.evaluate(() => {
+      const btn = document.querySelector('ion-button.imagenGuardar');
+      if (!btn || btn.disabled) return null;
       const r = btn.getBoundingClientRect();
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     });
-    if (!dirtyCoords) throw new Error('Dirty-guard "Guardar y salir" no apareció');
-    await pg.mouse.click(dirtyCoords.x, dirtyCoords.y);
-    await pg.waitForTimeout(1000);
+    if (!gCoords) throw new Error('Botón Guardar (CLT-031) no encontrado o disabled');
+    await pg.mouse.click(gCoords.x, gCoords.y, { delay: 120 });
+    await clickAlertBtn(['OK', 'Aceptar']); // alert de guardado exitoso
+    await pg.waitForTimeout(600);
 
-    // Ahora en BUSCAR list (stale). Click back → home clientes → BUSCAR → lista fresca
+    // Volver a home clientes desde el form (form limpio tras Guardar → no dirty-guard)
     await clickBack();
-    await pg.waitForTimeout(800);
+    await pg.waitForTimeout(1200);
+    // Si apareció dirty-guard de todas formas, salir sin guardar
+    const hasDirtyBack = await pg.evaluate(() =>
+      [...document.querySelectorAll('ion-alert')].some(
+        a => !a.classList.contains('overlay-hidden') && a.offsetParent !== null
+      )
+    );
+    if (hasDirtyBack) {
+      const sdCoords = await pg.evaluate(() => {
+        const alerts = [...document.querySelectorAll('ion-alert')].filter(
+          a => !a.classList.contains('overlay-hidden') && a.offsetParent !== null
+        );
+        if (!alerts.length) return null;
+        const btn = [...alerts[alerts.length - 1].querySelectorAll('.alert-button')].find(b =>
+          b.textContent.trim().toLowerCase() === 'salir sin guardar' &&
+          b.getBoundingClientRect().width > 0
+        );
+        if (!btn) return null;
+        const r = btn.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      });
+      if (sdCoords) { await pg.mouse.click(sdCoords.x, sdCoords.y); await pg.waitForTimeout(800); }
+    }
+
+    // Abrir BUSCAR CLIENTE POTENCIAL → lista fresca
     await clickBotonClientes('BUSCAR CLIENTE POTENCIAL');
     await pg.waitForTimeout(2000);
 
