@@ -57,7 +57,8 @@ export class ServicesService {
   }
 
 
-  // Http Options
+  // Http Options — CapacitorHttp only. Do not add Accept-Encoding: gzip here:
+  // Android HttpURLConnection disables transparent decompression when that header is set explicitly.
   getHttpOptions() {
     const httpOptions = {
       url: this.WsUrl || this.getWsUrl(),

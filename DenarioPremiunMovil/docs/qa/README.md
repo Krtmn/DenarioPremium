@@ -31,6 +31,7 @@ docs/qa/
 | Pedidos | _(pendiente)_ | _(pendiente)_ | — |
 | Devoluciones | _(pendiente)_ | _(pendiente)_ | — |
 | Clientes | [clientes/unit-tests-catalog.md](./clientes/unit-tests-catalog.md) | [clientes/hardening-backlog.md](./clientes/hardening-backlog.md) · [smoke](./clientes/smoke-manual.md) | `npm run test:clientes` · CI `clientes-unit.yml` |
+| Sync / HTTP gzip | — | [sync/gzip-smoke-manual.md](./sync/gzip-smoke-manual.md) | Build Android + smoke manual |
 
 ## Cómo correr unitarios de un módulo
 
