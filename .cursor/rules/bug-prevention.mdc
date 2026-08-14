@@ -20,13 +20,31 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Al hidratar TR: receptor=`nuBankAccount`, emisor=`nuClientBankAccount` (no invertir).
 - Enviar con monto bajo puede ser `tolerancia0` + `RangoToleranciaNegativa`, no bug de UI.
 - `createAutomatedPrepaid` puede forzar Enviar ON en exceso; no ignorarlo al diagnosticar.
+- Anticipo automático: umbral = `prepaidRangeAmount` (no anular excedente por `RangoToleranciaPositiva`); ver `COB-PREPAID-001`.
+- Anticipo automático al Enviar: batch cobro→anticipo + dirty-requeue AutoSend (no dos `runPendingQueue` sueltos); ver `COB-PREPAID-002`.
 - Documentos paginados: totales/parciales viven en `collectionDetails`, no en la página de `documentSales` (ver `COB-DOCS-001`).
+- Descuentos/retenciones al reabrir: adjuntar por `coDocument` (no solo `coCollection`); ver `COB-DISC-001`.
+- Retención multi-doc (`coType` 2): Enviar/Guardar exige completitud por documento, no solo suma > 0 (`COB-RET-001`).
+- Total General = `nuAmountTotal` (no `montoTotalPagado`); al reabrir no pisar con `forceRecalc` si UI de pagos aún vacía (`COB-TOTAL-001`).
+- Faltante (`nuAmountDiscount`) → 0 en Guardado: refrescar `montoTotalPagar` (no exigir faltante > 0 para Guardar; no congelar con `paid < net` / preserve) — `COB-FALT-001`.
+- `syncCollectionDetailDiscountConversion` / batch sync: no asumir `this.collection` UI; pasar tasa/moneda del cobro persistido.
+- Comentario Cobros/Inventarios: no `trim()` en `cleanString`/`ionInput` (se come el Espacio); ver `COB-INV-COMMENT-001`.
+- Fecha TR/PM al cambiar: escribir `daValue` y `daCollectionPayment` (reabrir usa `daValue`); ver `COB-DATE-001`.
+
+## Inventarios
+
+- Buscador productos: no refiltrar con `.includes()` crudo tras SQL GLOB accent-insensitive; normalizar tildes en memoria (`INV-SEARCH-001`).
+
+## Vendedor
+
+- No bloquear UI con `showLoading` esperando `userservice/userinformation`; empresas desde SQLite, métricas en background (`VND-LOAD-001`).
 
 ## Clientes / saldos
 
-- Con `conversionDocument != true`, `saldo1`/`saldo2` = moneda cliente / opuesta (no local/hard fijos).
-- Lista y detalle deben usar la misma regla de combinacion (`resolveClientBalanceTotals`).
-- No asumir swap de labels; validar con conversionDocument y moneda del cliente.
+- Saldo display (lista/detalle): buckets `document_sales` local/hard por empresa — no particionar por `c.co_currency` mentiroso (`CLI-SALDOS-001`).
+- No mutar `client.coCurrency` solo para cuadrar Saldo; crédito/cobros/pedidos usan la moneda del cliente.
+- Lista y detalle: misma regla (`resolveClientBalanceTotals` con semántica docs).
+
 
 ## Al cerrar un bug
 

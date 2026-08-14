@@ -42,6 +42,7 @@ import { CollectDiscounts } from 'src/app/modelos/tables/collectDiscounts';
 import { TypeDocument } from 'src/app/modelos/tables/typeDocument';
 import { CodePhoneNumber } from 'src/app/modelos/tables/codePhoneNumber';
 import { CollectRetentions } from 'src/app/modelos/tables/collectRetentions';
+import { PendingTransaction } from 'src/app/modelos/tables/pendingTransactions';
 
 export interface DocumentSalesPagination {
   limit: number;
@@ -164,6 +165,12 @@ export class CollectionService {
   public isHardCurrency: boolean = false;
   public multiCurrency!: boolean;
   public isOpen: boolean = false;
+  /** Snapshot de faltante (nuAmountDiscount) al abrir detalle; se restaura al cancelar (COB-FALT-001). */
+  private detailFaltanteOpenBackup: {
+    position: number;
+    nuAmountDiscount: number;
+    nuAmountDiscountConversion: number;
+  } | null = null;
   public isPaymentPartial: boolean = false;
   public isChangePaymentPartial: boolean = false;
   public isChangePaymentPartialPersistence: boolean = false;
@@ -1037,6 +1044,8 @@ export class CollectionService {
       this.collection.nuDifference = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado))
         - this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagar));
       this.collection.nuDifferenceConversion = this.convertirMonto(this.collection.nuDifference, 0, this.collection.coCurrency);
+      // COB-TOTAL-001: Total General lee nuAmountTotal; no dejarlo en 0 tras reopen.
+      this.syncNuAmountTotalFromPaidAmounts();
       this.applyCollectionIgtfAmountFields(this.normalizeIgtfPrice(this.montoIgtf));
       this.syncCollectionDetailsIgtfAmounts();
       this.syncCollectionIgtfFields();
@@ -1149,7 +1158,8 @@ export class CollectionService {
       this.collection.nuAmountPaidConversion = this.convertirMonto(this.montoTotalPagar, 0, this.collection.coCurrency);
       this.collection.nuAmountFinal = this.montoTotalPagar;
       this.collection.nuAmountFinalConversion = this.convertirMonto(this.collection.nuAmountFinal, 0, this.collection.coCurrency);
-      this.collection.nuAmountTotal = this.montoTotalPagado;
+      // COB-TOTAL-001: no pisar Total General con 0 si hay pagos persistidos y UI aún vacía.
+      this.syncNuAmountTotalFromPaidAmounts();
     }
 
     if (this.coTypeModule == "2") {
@@ -1314,6 +1324,11 @@ export class CollectionService {
         return expectedNet;
       }
       if (deductions > 0 && persistedPaid <= deductions) {
+        return expectedNet;
+      }
+      // COB-FALT-001: doc no parcial — si faltante bajó/quedó 0 y nuAmountPaid quedó en neto viejo,
+      // no congelar montoTotalPagar con paid < expectedNet (path de normalizeDocumentNetAmountFromPaid).
+      if (persistedPaid < expectedNet) {
         return expectedNet;
       }
       if (persistedPaid < balance) {
@@ -1726,6 +1741,40 @@ export class CollectionService {
     }
 
     this.montoTotalPagado = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado));
+
+    // COB-TOTAL-001: al reabrir, loadPaymentMethods vacía arrays UI antes de getDocumentsSales
+    // (forceRecalc). Si la UI aún no se hidrató, usar collectionPayments persistidos.
+    if (Number(this.montoTotalPagado ?? 0) <= 0) {
+      const paidFromPayments = this.resolvePaidSumFromCollectionPayments();
+      if (paidFromPayments > 0) {
+        this.montoTotalPagado = this.cleanFormattedNumber(
+          this.currencyService.formatNumber(paidFromPayments),
+        );
+      }
+    }
+  }
+
+  /**
+   * Total General (nuAmountTotal) = monto pagado. No aplica a retención (coType 2),
+   * donde nuAmountTotal sigue la semántica de syncRetentionTotalsBeforePersist.
+   * Si arrays UI están vacíos, syncMontosPagadosFromPayments ya pudo hidratar desde
+   * collectionPayments (COB-TOTAL-001).
+   */
+  private syncNuAmountTotalFromPaidAmounts(): void {
+    if (this.isRetentionCollection()) {
+      return;
+    }
+
+    const paid = this.cleanFormattedNumber(
+      this.currencyService.formatNumber(this.montoTotalPagado ?? 0),
+    );
+    this.collection.nuAmountTotal = paid;
+    this.collection.nuAmountTotalConversion = paid > 0
+      ? this.convertirMonto(paid, 0, this.collection.coCurrency)
+      : 0;
+    if (paid > 0) {
+      this.montoTotalPagadoConversion = this.collection.nuAmountTotalConversion;
+    }
   }
 
   private isAnticipoCollection(collection?: Collection): boolean {
@@ -1893,7 +1942,7 @@ export class CollectionService {
     this.collection.nuDifferenceConversion = 0;
   }
 
-  private resolveAnticipoPaidSumFromCollectionPayments(): number {
+  private resolvePaidSumFromCollectionPayments(): number {
     const payments = Array.isArray(this.collection?.collectionPayments)
       ? this.collection.collectionPayments
       : [];
@@ -1911,7 +1960,7 @@ export class CollectionService {
     this.syncMontosPagadosFromPayments();
 
     if (Number(this.montoTotalPagado ?? 0) <= 0) {
-      const paidFromPayments = this.resolveAnticipoPaidSumFromCollectionPayments();
+      const paidFromPayments = this.resolvePaidSumFromCollectionPayments();
       if (paidFromPayments > 0) {
         this.montoTotalPagado = this.cleanFormattedNumber(
           this.currencyService.formatNumber(paidFromPayments),
@@ -1989,22 +2038,13 @@ export class CollectionService {
     return normalizedExcess;
   }
 
-  private isPositiveExcessWithinTolerance(excess: number): boolean {
-    if (excess <= 0) {
-      return true;
-    }
-    if (!this.tolerancia0 || this.TipoTolerancia !== 0) {
-      return false;
-    }
-    if (this.collection.coCurrency !== this.MonedaTolerancia) {
-      return false;
-    }
-    return excess < this.RangoToleranciaPositiva;
-  }
-
+  /**
+   * Excedente para anticipo automático. No usa tolerancia de Enviar:
+   * tolerancia positiva habilita Enviar; prepaidRangeAmount decide el anticipo.
+   */
   private getPrepaidExcessAmount(): number {
     const excess = this.syncPrepaidDifferenceAmounts();
-    if (excess <= 0 || this.isPositiveExcessWithinTolerance(excess)) {
+    if (excess <= 0) {
       return 0;
     }
     if (this.prepaidRangeCurrency === this.collection.coCurrency) {
@@ -2026,7 +2066,7 @@ export class CollectionService {
     }
 
     const prepaidExcess = this.getPrepaidExcessAmount();
-    if (prepaidExcess <= this.prepaidRangeAmount) {
+    if (prepaidExcess < this.prepaidRangeAmount) {
       return false;
     }
 
@@ -2055,7 +2095,7 @@ export class CollectionService {
 
     if (this.automatedPrepaid && this.coTypeModule === '0' && !this.existPartialPayment) {
       const prepaidExcess = this.getPrepaidExcessAmount();
-      if (prepaidExcess > this.prepaidRangeAmount) {
+      if (prepaidExcess >= this.prepaidRangeAmount) {
         this.createAutomatedPrepaid = true;
       }
     }
@@ -2239,7 +2279,7 @@ export class CollectionService {
     this.anticipoAutomatico = [];
     this.syncExchangeRateToCollectionHeader();
     const excess = this.getPrepaidExcessAmount();
-    if (excess <= this.prepaidRangeAmount) {
+    if (excess < this.prepaidRangeAmount) {
       return;
     }
 
@@ -2432,13 +2472,12 @@ export class CollectionService {
     this.montoTotalPagado = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado));
 
     this.alertMessageOpen = false;
+    // Cobros/anticipo/IGTF: pagos vacíos o incompletos deshabilitan Guardar y Enviar.
+    if (this.collection.coType != '2' && this.blockSaveAndSendForInvalidPayments()) {
+      return;
+    }
     if (this.collection.coType == '1') {
       //SI ERES ANTICIPO
-      if (this.hasIncompletePaymentMethods()) {
-        this.onCollectionValidToSend(false);
-        return;
-      }
-
       if (this.collection.collectionPayments.length > 0) {
         if (this.collection && Array.isArray(this.collection.collectionPayments) && this.collection.collectionPayments.length > 0) {
           const hasPartialAmount = this.collection.collectionPayments.some(p => {
@@ -2459,30 +2498,23 @@ export class CollectionService {
       }
 
     } else if (this.collection.coType == '2') {
-      //SI ERES RETENCION Y ESTAS ACA, LA RETENCION ES VALIDA
-      if (this.collection.collectionDetails.length > 0) {
-        //DEBO VALIDAR SI LOS DETAILS TIENEN MONTO DE RETENCION O IVA
-
-        let sum = 0;
-        for (var i = 0; i < this.collection.collectionDetails.length; i++) {
-          sum += this.getDetailRetentionTotal(this.collection.collectionDetails[i]);
-        }
-        if (sum > 0) {
-          this.onCollectionValidToSend(true);
-        } else {
-          this.onCollectionValidToSend(false);
-          return;
-        }
+      // Retención: todos los documentos seleccionados deben estar completos (no basta suma global > 0).
+      if (this.areAllRetentionDetailsComplete(this.collection.collectionDetails)) {
+        this.onCollectionValidToSend(true);
+      } else {
+        this.onCollectionValidToSend(false);
+        return;
       }
     } else {
 
       if (this.hasIncompletePaymentMethods()) {
-        this.onCollectionValidToSend(false);
+        this.blockSaveAndSendForInvalidPayments();
         return;
       }
 
       if (!(await this.validateReferencePayment())) {
         this.onCollectionValidToSend(false);
+        this.onCollectionValidToSave(false);
         return;
       }
 
@@ -2850,7 +2882,48 @@ export class CollectionService {
     }
   }
 
+  /** Pago sin método (slot vacío): no debe persistirse ni enviarse. */
+  public isEmptyCollectionPayment(payment: CollectionPayment | null | undefined): boolean {
+    if (!payment) {
+      return true;
+    }
+    const method = (payment.coPaymentMethod ?? payment.coType ?? '').toString().trim();
+    return method.length === 0;
+  }
+
+  public hasEmptyCollectionPayments(): boolean {
+    const payments = this.collection?.collectionPayments;
+    if (!Array.isArray(payments) || payments.length === 0) {
+      return false;
+    }
+    return payments.some(p => this.isEmptyCollectionPayment(p));
+  }
+
+  public getNonEmptyCollectionPayments(
+    payments: CollectionPayment[] | null | undefined
+  ): CollectionPayment[] {
+    if (!Array.isArray(payments) || payments.length === 0) {
+      return [];
+    }
+    return payments.filter(p => !this.isEmptyCollectionPayment(p));
+  }
+
+  /** Deshabilita Guardar y Enviar cuando hay pagos vacíos o incompletos. */
+  public blockSaveAndSendForInvalidPayments(): boolean {
+    if (!this.hasIncompletePaymentMethods()) {
+      return false;
+    }
+    this.onCollectionValidToSend(false);
+    this.onCollectionValidToSave(false);
+    this.disableSavedButton = true;
+    this.disableSendButton = true;
+    return true;
+  }
+
   public hasIncompletePaymentMethods(): boolean {
+    if (this.hasEmptyCollectionPayments()) {
+      return true;
+    }
     if (this.tipoPagoEfectivo && this.pagoEfectivo.some(p => !this.isEfectivoPaymentComplete(p))) {
       return true;
     }
@@ -2923,15 +2996,11 @@ export class CollectionService {
   }
 
   cleanString(str: string): string {
-    // Elimina espacios al principio y al final
-    str = str.trim();
-    // Elimina ;
+    // COB-INV-COMMENT-001: no trim aquí — ionInput reescribe el valor y el Espacio
+    // del teclado se pierde (Pedidos/Depósitos/Devoluciones tampoco trimean en vivo).
     str = str.replace(/;/g, '');
-    // Elimina comillas simples
     str = str.replace(/'/g, '');
-    // Elimina comillas dobles
     str = str.replace(/"/g, '');
-
 
     return str;
   }
@@ -2954,10 +3023,14 @@ export class CollectionService {
   onCollectionValidToSave(valid: boolean) {
     console.log('returnLogicService: onReturnValid');
     if (!valid) {
-      if (this.createAutomatedPrepaid)
-        this.collectValidToSave.next(this.createAutomatedPrepaid);
-    } else
-      this.collectValidToSave.next(valid);
+      if (this.createAutomatedPrepaid) {
+        this.collectValidToSave.next(true);
+      } else {
+        this.collectValidToSave.next(false);
+      }
+      return;
+    }
+    this.collectValidToSave.next(true);
   }
 
   onCollectionValidToSend(validToSend: boolean) {
@@ -3204,6 +3277,23 @@ export class CollectionService {
     return suma > nuBalance || suma < 0 || (nuAmountRetention === 0 && nuAmountRetention2 === 0);
   }
 
+  captureOpenDetailFaltanteBackup(position: number): void {
+    const detail = this.collection?.collectionDetails?.[position];
+    if (!detail || !Number.isInteger(position) || position < 0) {
+      this.detailFaltanteOpenBackup = null;
+      return;
+    }
+    this.detailFaltanteOpenBackup = {
+      position,
+      nuAmountDiscount: Number(detail.nuAmountDiscount ?? 0),
+      nuAmountDiscountConversion: Number(detail.nuAmountDiscountConversion ?? 0),
+    };
+  }
+
+  clearOpenDetailFaltanteBackup(): void {
+    this.detailFaltanteOpenBackup = null;
+  }
+
   restoreDocumentSaleState(index: number) {
     // Copia los datos de documentSales[index] a documentSaleOpen y documentSalesBackup[index]
     const original = { ...this.documentSalesBackup[index] };
@@ -3231,6 +3321,18 @@ export class CollectionService {
     }
 
     const positionCollecDetails = position;
+    // COB-FALT-001: restaurar faltante mutado en memoria al cancelar el modal.
+    const detailForFaltante = this.collection.collectionDetails?.[positionCollecDetails];
+    if (
+      detailForFaltante
+      && this.detailFaltanteOpenBackup
+      && this.detailFaltanteOpenBackup.position === positionCollecDetails
+    ) {
+      detailForFaltante.nuAmountDiscount = this.detailFaltanteOpenBackup.nuAmountDiscount;
+      detailForFaltante.nuAmountDiscountConversion = this.detailFaltanteOpenBackup.nuAmountDiscountConversion;
+    }
+    this.detailFaltanteOpenBackup = null;
+
     const nuAmountBase = this.collection.collectionDetails[positionCollecDetails].nuBalanceDoc,
       nuAmountDiscount = this.collection.collectionDetails[positionCollecDetails].nuAmountDiscount,
       nuAmountPaid = this.collection.collectionDetails[positionCollecDetails].nuAmountPaid,
@@ -3285,6 +3387,53 @@ export class CollectionService {
       );
     }
     return Number(detail.nuAmountRetention ?? 0) + Number(detail.nuAmountRetention2 ?? 0);
+  }
+
+  /**
+   * Completitud de retención por documento (módulo Retención / coType 2).
+   * Monto > 0 + comprobante/fecha según modo legacy o dinámico.
+   */
+  public isRetentionDetailComplete(detail: CollectionDetail | null | undefined): boolean {
+    if (!detail) {
+      return false;
+    }
+    if (this.getDetailRetentionTotal(detail) <= 0) {
+      return false;
+    }
+
+    if (this.dynamicRetentions && detail.collectionDetailRetentions?.length) {
+      return detail.collectionDetailRetentions.every(line => {
+        const amount = Number(line?.nuAmountRetention ?? 0);
+        if (amount <= 0) {
+          return true;
+        }
+        const idCollectRetention = Number(line?.idCollectRetention ?? 0);
+        if (idCollectRetention <= 0) {
+          return false;
+        }
+        if (!this.validateRetentionVoucherValue(String(line?.nuVoucherRetention ?? ''), idCollectRetention)) {
+          return false;
+        }
+        return String(line?.daVoucherRetention ?? '').trim().length > 0;
+      });
+    }
+
+    const voucher = String(detail.nuVoucherRetention ?? '').trim();
+    if (!voucher) {
+      return false;
+    }
+    if (this.sizeRetention > 0 && voucher.length !== this.sizeRetention) {
+      return false;
+    }
+    return String(detail.daVoucher ?? '').trim().length > 0;
+  }
+
+  /** True solo si hay al menos un detalle y todos están completos. */
+  public areAllRetentionDetailsComplete(details?: CollectionDetail[] | null): boolean {
+    if (!Array.isArray(details) || details.length === 0) {
+      return false;
+    }
+    return details.every(detail => this.isRetentionDetailComplete(detail));
   }
 
   public normalizeCoDocument(value: unknown): string {
@@ -3409,17 +3558,52 @@ export class CollectionService {
   private resolveDetailAmountConversion(
     amount: number,
     detail: CollectionDetail,
-    open?: DocumentSale
+    open?: DocumentSale,
+    rateOverride?: number,
+    currencyOverride?: string,
   ): number {
     const normalizedAmount = Number(amount ?? 0);
     if (normalizedAmount <= 0) {
       return 0;
     }
 
-    return this.convertirMonto(
-      normalizedAmount,
-      this.collection.nuValueLocal,
-      this.collection.coCurrency,
+    // saveCollectionBatch (sync) puede correr sin this.collection en memoria.
+    const rate = Number(
+      rateOverride
+      ?? this.collection?.nuValueLocal
+      ?? detail?.nuValueLocal
+      ?? open?.nuValueLocal
+      ?? 0,
+    );
+    const currency =
+      currencyOverride
+      ?? this.collection?.coCurrency
+      ?? detail?.coOriginal
+      ?? open?.coCurrency
+      ?? '';
+
+    return this.convertirMonto(normalizedAmount, rate, currency);
+  }
+
+  /**
+   * Mantiene nuAmountDiscountConversion alineado al faltante local.
+   * Evita residuales en web cuando el faltante se deja en 0.
+   * rate/currency opcionales: path batch/sync sin cabecera UI cargada.
+   */
+  public syncCollectionDetailDiscountConversion(
+    detail: CollectionDetail | null | undefined,
+    rateOverride?: number,
+    currencyOverride?: string,
+  ): void {
+    if (!detail) {
+      return;
+    }
+    detail.nuAmountDiscountConversion = this.resolveDetailAmountConversion(
+      Number(detail.nuAmountDiscount ?? 0),
+      detail,
+      undefined,
+      rateOverride,
+      currencyOverride,
     );
   }
 
@@ -3634,6 +3818,31 @@ export class CollectionService {
     }
   }
 
+  /**
+   * Adjunta descuentos a cada detail por coDocument (no por coCollection).
+   * Evita COB-DISC-001: filtrar solo por cobro asigna el Descuento manual de un doc a todos.
+   */
+  attachCollectionDetailDiscountsToDetails(
+    details: CollectionDetail[],
+    discounts: CollectionDetailDiscounts[] | null | undefined,
+  ): void {
+    if (!Array.isArray(details)) {
+      return;
+    }
+
+    const allDiscounts = Array.isArray(discounts) ? discounts : [];
+    for (const detail of details) {
+      if (!detail) {
+        continue;
+      }
+
+      const detailCoDocument = this.normalizeCoDocument(detail.coDocument);
+      detail.collectionDetailDiscounts = allDiscounts.filter(
+        discount => this.normalizeCoDocument(discount?.coDocument) === detailCoDocument,
+      );
+    }
+  }
+
   attachCollectionDetailRetentionsToDetails(
     details: CollectionDetail[],
     retentions: CollectionDetailRetentions[],
@@ -3700,12 +3909,7 @@ export class CollectionService {
 
     if (options.includeDiscounts) {
       const collectionDetailsDiscounts = await this.getCollectionDetailsDiscounts(dbServ, coCollection);
-      const discounts: CollectionDetailDiscounts[] = collectionDetailsDiscounts ?? [];
-
-      for (let i = 0; i < details.length; i++) {
-        details[i].collectionDetailDiscounts =
-          discounts.filter(discount => discount.coDocument === details[i].coDocument);
-      }
+      this.attachCollectionDetailDiscountsToDetails(details, collectionDetailsDiscounts);
     }
 
     const retentions = await this.getCollectionDetailsRetentions(dbServ, coCollection);
@@ -6206,6 +6410,11 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
             0,
             this.collection.coCurrency,
           );
+          // COB-TOTAL-001: alinear Total General (nuAmountTotal) al pagado antes de INSERT.
+          if (Number(this.montoTotalPagado ?? 0) <= 0) {
+            this.syncMontosPagadosFromPayments();
+          }
+          this.syncNuAmountTotalFromPaidAmounts();
         }
 
 
@@ -6534,6 +6743,11 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
       for (var coDetail = 0; coDetail < collect.collectionDetails.length; coDetail++) {
         const collectionDetail = collection[co].collectionDetails[coDetail];
+        this.syncCollectionDetailDiscountConversion(
+          collectionDetail,
+          collect.nuValueLocal,
+          collect.coCurrency,
+        );
 
         if (collectionDetail.inPaymentPartial == true) {
           this.coDocumentToUpdate.push(collectionDetail.coDocument);
@@ -6617,6 +6831,9 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
       for (var coDetailPayment = 0; coDetailPayment < collect.collectionPayments.length; coDetailPayment++) {
         const collectionPayment = collect.collectionPayments[coDetailPayment];
+        if (this.isEmptyCollectionPayment(collectionPayment)) {
+          continue;
+        }
         queries.push([insertCollectionPaymentSQL,
           [
             collectionPayment.idCollectionPayment,
@@ -6744,6 +6961,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     for (var i = 0; i < collectionDetail.length; i++) {
       this.ensureDetailDynamicRetentionsFromAmounts(collectionDetail[i], i);
       this.syncDetailRetentionAmountsAndConversions(collectionDetail[i], undefined, i);
+      this.syncCollectionDetailDiscountConversion(collectionDetail[i]);
       statementsCollectionDetails.push([inserStatementCollectionDetail, [
         0,
         collectionDetail[i].coCollection,
@@ -6895,6 +7113,12 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
   saveCollectionPayment(dbServ: SQLiteObject, collectionPayment: CollectionPayment[], coCollection: string) {
 
+    // Nunca persistir slots vacíos (método en blanco / id_bank 0 sin tipo).
+    const paymentsToSave = this.getNonEmptyCollectionPayments(collectionPayment);
+    if (this.collection?.coCollection === coCollection && Array.isArray(this.collection.collectionPayments)) {
+      this.collection.collectionPayments = paymentsToSave;
+    }
+
     //if (collectionPayment.length > 0)
     dbServ.executeSql("DELETE FROM collection_payments WHERE co_collection = ?", [coCollection]).then(res => {
 
@@ -6928,31 +7152,35 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       "nu_phone_number" +
       ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
-    for (var i = 0; i < collectionPayment.length; i++) {
+    for (var i = 0; i < paymentsToSave.length; i++) {
       statementsCollectionPayment.push([insertStatement, [
         0,
-        collectionPayment[i].coCollection,
-        collectionPayment[i].idCollectionDetail,
-        collectionPayment[i].coPaymentMethod,
-        collectionPayment[i].idBank,
-        collectionPayment[i].nuPaymentDoc,
-        collectionPayment[i].naBank,
-        collectionPayment[i].coClientBankAccount,
-        collectionPayment[i].nuClientBankAccount,
-        collectionPayment[i].daValue,
-        collectionPayment[i].daCollectionPayment,
-        collectionPayment[i].nuCollectionPayment,
-        collectionPayment[i].nuAmountPartial,
-        collectionPayment[i].nuAmountPartialConversion,
-        collectionPayment[i].coType,
-        collectionPayment[i].idDifferenceCode,
-        collectionPayment[i].coDifferenceCode,
-        collectionPayment[i].nuBankAccount,
-        collectionPayment[i].idTypeDocument,
-        collectionPayment[i].nuDocument,
-        collectionPayment[i].idCodePhoneNumber,
-        collectionPayment[i].nuPhoneNumber,
+        paymentsToSave[i].coCollection,
+        paymentsToSave[i].idCollectionDetail,
+        paymentsToSave[i].coPaymentMethod,
+        paymentsToSave[i].idBank,
+        paymentsToSave[i].nuPaymentDoc,
+        paymentsToSave[i].naBank,
+        paymentsToSave[i].coClientBankAccount,
+        paymentsToSave[i].nuClientBankAccount,
+        paymentsToSave[i].daValue,
+        paymentsToSave[i].daCollectionPayment,
+        paymentsToSave[i].nuCollectionPayment,
+        paymentsToSave[i].nuAmountPartial,
+        paymentsToSave[i].nuAmountPartialConversion,
+        paymentsToSave[i].coType,
+        paymentsToSave[i].idDifferenceCode,
+        paymentsToSave[i].coDifferenceCode,
+        paymentsToSave[i].nuBankAccount,
+        paymentsToSave[i].idTypeDocument,
+        paymentsToSave[i].nuDocument,
+        paymentsToSave[i].idCodePhoneNumber,
+        paymentsToSave[i].nuPhoneNumber,
       ]]);
+    }
+
+    if (statementsCollectionPayment.length === 0) {
+      return Promise.resolve("TERMINE");
     }
 
     return dbServ.sqlBatch(statementsCollectionPayment).then(res => {
@@ -6967,8 +7195,30 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     this.saveSend.next(coCollection);
   }
 
+  /** Orden cobro → anticipo para batch de pendientes (COB-PREPAID-002). */
+  buildCollectPendingBatch(
+    coCollection: string,
+    anticipoCoCollection?: string | null,
+  ): PendingTransaction[] {
+    const batch: PendingTransaction[] = [
+      new PendingTransaction(coCollection, 0, 'collect'),
+    ];
+    if (anticipoCoCollection) {
+      batch.push(new PendingTransaction(anticipoCoCollection, 0, 'collect'));
+    }
+    return batch;
+  }
+
   //createAnticipoCollection(collection: Collection, inserStatement: string) {
-  createAnticipoCollection(dbServ: SQLiteObject, collection: Collection) {
+  /**
+   * Crea anticipo automático. Con `enqueuePending=false` no emite saveSend
+   * (el caller encola cobro+anticipo en batch). Default true conserva callers legacy.
+   */
+  createAnticipoCollection(
+    dbServ: SQLiteObject,
+    collection: Collection,
+    enqueuePending: boolean = true,
+  ): Promise<string | null> {
     this.syncExchangeRateToCollectionHeader();
     const excessAmount = this.syncPrepaidDifferenceAmounts();
     const excessConversion = Number(this.collection.nuDifferenceConversion ?? 0);
@@ -7047,8 +7297,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         collection.nuAmountDiscountTotalConversion,//collection.nuAmountDiscountTotalConversion,
         collection.nuIgtf,
         collection.hasIGTF,
-        collection.nuAttachments,
-        collection.hasAttachments
+        0,
+        false,
       ]).then(data => {
         console.log("CREE ANTICIPO AUTOMATICO, DEBO CREAR EL PAYMENT")
         return this.createAnticipoCollectionPayment(
@@ -7057,9 +7307,11 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
           newCoCollection,
           excessAmount,
           excessConversion,
+          enqueuePending,
         );
       }).catch(e => {
         console.log(e);
+        return null;
       })
   }
 
@@ -7069,7 +7321,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     newCoCollection: string,
     excessAmount: number = Number(collection.nuDifference ?? 0),
     excessConversion: number = Number(collection.nuDifferenceConversion ?? 0),
-  ) {
+    enqueuePending: boolean = true,
+  ): Promise<string | null> {
 
     let insertStatement = "INSERT OR REPLACE INTO collection_payments(" +
       "id_collection_payment," +
@@ -7098,13 +7351,13 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
     if (!Array.isArray(this.anticipoAutomatico) || this.anticipoAutomatico.length === 0) {
       console.log('ERROR: anticipoAutomatico vacio al crear payment de anticipo');
-      return Promise.resolve(false);
+      return Promise.resolve(null);
     }
 
     const sourcePayment = collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment];
     if (!sourcePayment) {
       console.log('ERROR: no se encontro payment fuente para anticipo automatico');
-      return Promise.resolve(false);
+      return Promise.resolve(null);
     }
 
     return dbServ.executeSql(insertStatement,
@@ -7133,11 +7386,13 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         sourcePayment.nuPhoneNumber,
       ]).then(data => {
         console.log("SE CREO COLLECTION PAYMENTS AUTOMATICO POR EL ANTICIPO");
-        this.saveSendCollection(newCoCollection);
-        return true;
+        if (enqueuePending) {
+          this.saveSendCollection(newCoCollection);
+        }
+        return newCoCollection;
       }).catch(e => {
         console.log(e);
-        return false;
+        return null;
       })
   }
 
@@ -7467,7 +7722,7 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
 
         })
       }
-      return collectionPayments;
+      return collectionPayments.filter(p => !this.isEmptyCollectionPayment(p));
 
     }).catch(e => {
       let collectionPayments: CollectionPayment[] = [];

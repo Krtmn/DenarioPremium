@@ -649,14 +649,26 @@ export class InventarioProductListComponent implements OnInit {
     });
   }
 
+  /**
+   * INV-SEARCH-001: el listado SQL ya usa GLOB accent-insensitive, pero este filtro
+   * en memoria no puede usar .includes() crudo o se pierden matches (Azúcar vs Azucar).
+   */
+  private normalizeInventorySearchTerm(value: unknown): string {
+    return String(value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  }
+
   getVisibleProducts(): ProductUtil[] {
     const productList = this.inventariosLogicService.newClientStock.productList || [];
-    const search = (this.searchText || '').trim().toLowerCase();
+    const search = this.normalizeInventorySearchTerm(this.searchText);
 
     return productList.filter(product => {
       const matchSearch = !search
-        || product.coProduct.toLowerCase().includes(search)
-        || product.naProduct.toLowerCase().includes(search);
+        || this.normalizeInventorySearchTerm(product.coProduct).includes(search)
+        || this.normalizeInventorySearchTerm(product.naProduct).includes(search);
 
       if (!matchSearch) {
         return false;

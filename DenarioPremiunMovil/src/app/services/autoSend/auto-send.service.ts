@@ -59,6 +59,9 @@ export class AutoSendService implements OnInit {
 
   public rolTransportista = false;
   private isProcessingPending = false;
+  /** Si llega otro runPendingQueue mientras hay un pase activo, re-ejecutar al terminar. */
+  private pendingQueueDirty = false;
+  private static readonly MAX_PENDING_QUEUE_PASSES = 5;
   /** Evita POST duplicado de la misma visita mientras un envÃ­o sigue en curso. */
   private visitsInFlight = new Set<string>();
 
@@ -91,33 +94,51 @@ export class AutoSendService implements OnInit {
 
   async runPendingQueue(): Promise<void> {
     if (this.isProcessingPending) {
+      this.pendingQueueDirty = true;
       return;
     }
 
     this.isProcessingPending = true;
     try {
-      const pending = await this.getPendingTransaction();
-      this.pendingTransaction = pending;
-      if (pending.length > 0) {
-        this.funcObsQueueCount = pending.length;
-        await this.initTransaction(pending);
-      }
-
-      const pendingAttachments = await this.getPendingTransactionsAttachments();
-      this.pendingTransactionsAttachments = pendingAttachments;
-      if (pendingAttachments.length > 0) {
-        const counts = new Map<string, number>();
-        pendingAttachments.forEach(att => {
-          counts.set(att.coTransaction, (counts.get(att.coTransaction) ?? 0) + 1);
-        });
-        pendingAttachments.forEach(att => {
-          att.cantidad = counts.get(att.coTransaction) ?? 0;
-        });
-
-        await this.adjuntoService.sendPendingPhotos(this.dbService.getDatabase(), pendingAttachments);
-      }
+      let passes = 0;
+      do {
+        this.pendingQueueDirty = false;
+        passes++;
+        await this.executePendingQueuePass();
+      } while (
+        this.pendingQueueDirty
+        && passes < AutoSendService.MAX_PENDING_QUEUE_PASSES
+      );
     } finally {
       this.isProcessingPending = false;
+    }
+
+    // Carrera: dirty entre el último check del loop y liberar el mutex.
+    if (this.pendingQueueDirty) {
+      await this.runPendingQueue();
+    }
+  }
+
+  private async executePendingQueuePass(): Promise<void> {
+    const pending = await this.getPendingTransaction();
+    this.pendingTransaction = pending;
+    if (pending.length > 0) {
+      this.funcObsQueueCount = pending.length;
+      await this.initTransaction(pending);
+    }
+
+    const pendingAttachments = await this.getPendingTransactionsAttachments();
+    this.pendingTransactionsAttachments = pendingAttachments;
+    if (pendingAttachments.length > 0) {
+      const counts = new Map<string, number>();
+      pendingAttachments.forEach(att => {
+        counts.set(att.coTransaction, (counts.get(att.coTransaction) ?? 0) + 1);
+      });
+      pendingAttachments.forEach(att => {
+        att.cantidad = counts.get(att.coTransaction) ?? 0;
+      });
+
+      await this.adjuntoService.sendPendingPhotos(this.dbService.getDatabase(), pendingAttachments);
     }
   }
 

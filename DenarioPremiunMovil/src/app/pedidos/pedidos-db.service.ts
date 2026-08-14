@@ -308,7 +308,8 @@ export class PedidosDbService {
       "co_list as coList, id_list as idList, co_product as coProduct, id_product as idProduct, " +
       "co_unit as coUnit, id_unit as idUnit, qu_vol_ini as quVolIni, qu_vol_fin as quVolFin, " +
       "nu_priority as nuPriority, co_enterprise as coEnterprise, id_enterprise as idEnterprise " +
-      "FROM discounts where id_enterprise = ? "
+      "FROM discounts where id_enterprise = ? " +
+      "ORDER BY nu_priority ASC"
 
     return db.executeSql(query, [idEnterprise]).then(data => {
       let list: Discount[] = [];

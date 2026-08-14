@@ -48,8 +48,8 @@ export class ClienteSelectorComponent implements OnInit {
 
   public isModalOpen: boolean = false;
   public precision = this.currencyService.precision;
-  private localCurrency!: CurrencyEnterprise;
-  private hardCurrency!: CurrencyEnterprise;
+  public localCurrency!: CurrencyEnterprise;
+  public hardCurrency!: CurrencyEnterprise;
 
   public transportista = false;
   public showConversion = false;
@@ -72,6 +72,10 @@ export class ClienteSelectorComponent implements OnInit {
 
   public page = 0; // para paginacion de clientes.
   public scrollDisable = false;
+
+  private shouldExcludeSuspended(): boolean {
+    return (this.service.selectionCoModule || '').toLowerCase() === 'ped';
+  }
 
 
 
@@ -196,6 +200,7 @@ export class ClienteSelectorComponent implements OnInit {
       idEnterprise,
       this.page,
       this.shouldFilterCollectionIva(),
+      this.shouldExcludeSuspended(),
     ).then(result => {
       this.handleUpdateClientList(result);
     });
@@ -209,6 +214,7 @@ export class ClienteSelectorComponent implements OnInit {
         searchText,
         this.page,
         this.shouldFilterCollectionIva(),
+        this.shouldExcludeSuspended(),
       ).then(result => {
         this.handleUpdateClientList(result);
       });
@@ -223,7 +229,9 @@ export class ClienteSelectorComponent implements OnInit {
     }
 
     const mode = resolveClientSelectionMode(this.service.selectionCoModule);
-    const clientsToShow = filterClientsBySelectionMode(result, mode);
+    const clientsToShow = mode === 'order'
+      ? filterClientsBySelectionMode(result, 'order')
+      : result;
 
     if (this.multimoneda) {
       this.fixClientListSaldos(clientsToShow);
@@ -264,53 +272,10 @@ export class ClienteSelectorComponent implements OnInit {
   }
 
   fixClientListSaldos(result: any) {
-    const toFiniteNumber = (value: unknown): number => {
-      const n = Number(value);
-      return Number.isFinite(n) ? n : 0;
-    };
-    const hasRate = this.currencyService.hasValidExchangeRate();
-
-    for (let c = 0; c < result.length; c++) {
-      const saldo1 = toFiniteNumber(result[c].saldo1);
-      const saldo2 = toFiniteNumber(result[c].saldo2);
-      let saldoCliente = 0;
-      let saldoOpuesto = 0;
-
-      if (!hasRate) {
-        // Sin tasa: no convertir; el saldo opuesto queda en 0.
-        saldoCliente = saldo1;
-        saldoOpuesto = 0;
-      } else if (result[c].coCurrency == this.localCurrency.coCurrency) {
-        saldoCliente = saldo1 + this.currencyService.toLocalCurrency(saldo2);
-        saldoOpuesto = this.currencyService.toHardCurrency(saldoCliente);
-      } else {
-        saldoCliente = saldo1 + this.currencyService.toHardCurrency(saldo2);
-        saldoOpuesto = this.currencyService.toLocalCurrency(saldoCliente);
-      }
-
-      result[c].saldo1 = toFiniteNumber(saldoCliente);
-      result[c].saldo2 = toFiniteNumber(saldoOpuesto);
-
-      // Sin tasa no se intercambian monedas: el swap dejaría saldo1 en 0.
-      if (!hasRate) {
-        continue;
-      }
-
-      if (this.currencySwitchEnabled && this.localCurrencyDefault) {
-        if (result[c].coCurrency != this.localCurrency.coCurrency) {
-          result[c].coCurrency = this.oppositeCoCurrency(result[c].coCurrency);
-          const tempSaldo = result[c].saldo1;
-          result[c].saldo1 = result[c].saldo2;
-          result[c].saldo2 = tempSaldo;
-        }
-      } else if (result[c].coCurrency != this.hardCurrency.coCurrency) {
-        result[c].coCurrency = this.oppositeCoCurrency(result[c].coCurrency);
-        const tempSaldo = result[c].saldo1;
-        result[c].saldo1 = result[c].saldo2;
-        result[c].saldo2 = tempSaldo;
-      }
-    }
-    return result;
+    // CLI-SALDOS-001: misma regla que lista (docs local/hard); no mutar coCurrency.
+    this.clientLogic.localCurrency = this.localCurrency;
+    this.clientLogic.hardCurrency = this.hardCurrency;
+    return this.clientLogic.fixClientListSaldos(result);
   }
 
   @Output() clienteSeleccionado: EventEmitter<Client> = new EventEmitter<Client>();

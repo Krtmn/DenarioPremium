@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ChangeDetectorRef, inject } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject, OnDestroy } from '@angular/core';
 import { ServicesService } from '../services/services.service';
 import { UserInfoView } from '../modelos/tables/userInfoView';
 import { MessageService } from 'src/app/services/messageService/message.service';
@@ -8,7 +8,7 @@ import { UserInformation } from '../modelos/tables/userInformation';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite/ngx';
 import { Enterprise } from '../modelos/tables/enterprise';
 import { EnterpriseService } from '../services/enterprise/enterprise.service';
-import { IonAccordionGroup, Platform } from '@ionic/angular';
+import { Platform } from '@ionic/angular';
 import { Observable, Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 
@@ -19,17 +19,17 @@ import { Router } from '@angular/router';
   styleUrls: ['./vendedores.component.scss'],
   standalone: false
 })
-export class VendedoresComponent implements OnInit {
+export class VendedoresComponent implements OnInit, OnDestroy {
   router = inject(Router);
   observador!: any;
-  userInfo!: UserInfoView[];
+  userInfo: UserInfoView[] = [];
   infoVendedores: boolean = false;
   bdUserInfo?: UserInformation;
+  /** VND-LOAD-001: métricas remotas en background; no bloquear listado de empresas. */
+  loadingUserInfo = false;
+  userInfoLoadFailed = false;
 
-  //multiempresa = false;
   empresas: Enterprise[] = [];
-  //empresaSeleccionada!: Enterprise;
-
 
   public tags = new Map<string, string>([]);
   constructor(
@@ -44,74 +44,71 @@ export class VendedoresComponent implements OnInit {
   }
 
   backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
-    //console.log('backButton was called!');
     this.router.navigate(['home']);
   });
 
   ngOnInit() {
-    this.message.showLoading().then(() => {
-      this.getTags();  //buscamos los tags
-      this.infoVendedores = this.globalConfig.get("infoVendedores") === "true"; //chequeamos variable global infoVendedores
-      this.getEnterpriseInfo(); //buscamos info de empresas / multiempresas
-
+    this.infoVendedores = this.globalConfig.get('infoVendedores') === 'true';
+    this.getTags();
+    // Empresas desde SQLite: pintar YA, sin modal global (VND-LOAD-001).
+    void this.getEnterpriseInfo().then(() => {
       if (this.infoVendedores) {
-        // metodo por defecto
         this.getUserInfoBD();
-        this.message.hideLoading();
-
       } else {
-        this.getUserInfo();
+        this.loadUserInfoInBackground();
       }
-
     });
-
-
-
-
   }
 
   getTags() {
-    this.services.getTags(this.db.getDatabase(), "VND", "ESP").then(result => {
-      for (var i = 0; i < result.length; i++) {
+    this.services.getTags(this.db.getDatabase(), 'VND', 'ESP').then(result => {
+      for (let i = 0; i < result.length; i++) {
         this.tags.set(
           result[i].coApplicationTag, result[i].tag
-        )
+        );
       }
-      if (this.tags) {
-        console.log(this.tags);
-      }
-
-    })
+      this.cdr.detectChanges();
+    });
   }
 
-  getUserInfo() {
-    //obtiene la info del vendedor por el servicio
-    this.services.getUserInformation().then(obs => {
+  /**
+   * HTTP userservice/userinformation puede tardar 20s+.
+   * No usa MessageService.showLoading para no bloquear el acordeón de distribuidoras.
+   */
+  loadUserInfoInBackground(): Promise<void> {
+    this.loadingUserInfo = true;
+    this.userInfoLoadFailed = false;
+    this.cdr.detectChanges();
+
+    return this.services.getUserInformation().then(obs => {
       if (obs instanceof Observable) {
-        console.error("Error al obtener la info del vendedor: el servicio devolvio un Observable en vez de los datos esperados.");
-        this.message.hideLoading();
+        console.error('Error al obtener la info del vendedor: el servicio devolvio un Observable.');
+        this.userInfoLoadFailed = true;
         return;
       }
 
       this.observador = obs.data;
-      this.userInfo = this.observador.userInfo;
-      //console.log("!!! USER INFO: ");
-      console.log(this.userInfo);
+      this.userInfo = Array.isArray(this.observador?.userInfo)
+        ? this.observador.userInfo
+        : [];
     }).catch(e => {
-      console.error("Error al obtener la info del vendedor: ");
-      console.error(e);
+      console.error('Error al obtener la info del vendedor: ', e);
+      this.userInfoLoadFailed = true;
     }).finally(() => {
+      this.loadingUserInfo = false;
       this.cdr.detectChanges();
-      this.message.hideLoading();
     });
+  }
 
+  /** @deprecated usar loadUserInfoInBackground — se mantiene por compatibilidad de llamadas. */
+  getUserInfo() {
+    this.loadUserInfoInBackground();
   }
 
   async getEnterpriseInfo() {
-    this.enterpriseServ.setup(this.db.getDatabase()).then(() => {
-      this.empresas = this.enterpriseServ.empresas;
-
-    });
+    await this.enterpriseServ.setup(this.db.getDatabase());
+    this.empresas = this.enterpriseServ.empresas;
+    this.cdr.detectChanges();
   }
 
   onEnterpriseSelect() {
@@ -119,8 +116,7 @@ export class VendedoresComponent implements OnInit {
   }
 
   async userInformationQuery(database: SQLiteObject) {
-    var selectStatement = "SELECT * FROM user_informations";
-    console.log(selectStatement);
+    const selectStatement = 'SELECT * FROM user_informations';
     return database.executeSql(selectStatement, [])
       .catch(
         err => console.log(err)
@@ -128,13 +124,10 @@ export class VendedoresComponent implements OnInit {
   }
 
   getUserInfoBD() {
-    //obtiene la info del vendedor por la BD de la app.
-    console.log("en userInfoBD");
     this.userInformationQuery(this.db.getDatabase()).then(
       (result) => {
-        console.log("bdUserInfo: ");
-        if (result.rows.length > 0) {
-          var ui = result.rows.item(0);
+        if (result?.rows?.length > 0) {
+          const ui = result.rows.item(0);
           this.bdUserInfo = new UserInformation(
             ui.id_user_information,
             ui.co_user,
@@ -144,10 +137,8 @@ export class VendedoresComponent implements OnInit {
             ui.co_enterprise,
             ui.id_enterprise
           );
-          console.log(this.bdUserInfo);
           this.cdr.detectChanges();
         }
-
       }
     );
   }
@@ -156,8 +147,14 @@ export class VendedoresComponent implements OnInit {
     return info.coEnterprise === empresa.coEnterprise;
   }
 
+  hasMetricsForEnterprise(empresa: Enterprise): boolean {
+    return (this.userInfo || []).some(info => this.showInfo(empresa, info));
+  }
+
   ngOnDestroy() {
     this.backButtonSubscription.unsubscribe();
+    // Por si quedó un loading global de una versión anterior / carrera.
+    void this.message.hideLoading();
   }
 
 }

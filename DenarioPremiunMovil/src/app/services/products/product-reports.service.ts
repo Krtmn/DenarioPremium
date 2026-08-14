@@ -297,8 +297,12 @@ export class ProductReportsService {
     return text;
   }
 
-  private displayOrNa(value: string): string {
-    return value.trim() ? value : 'N/A';
+  private tag(tags: Map<string, string> | undefined, key: string, fallback: string): string {
+    return tags?.get(key) ?? fallback;
+  }
+
+  private displayOrNa(value: string, tags?: Map<string, string>): string {
+    return value.trim() ? value : this.tag(tags, 'PROD_REPORT_NA', 'N/A');
   }
 
   private mapReportRow(row: Record<string, unknown>): ProductReportRow {
@@ -327,48 +331,63 @@ export class ProductReportsService {
     };
   }
 
-  private formatPrice(value: number | null, currency: string): string {
+  private formatPrice(value: number | null, currency: string, tags?: Map<string, string>): string {
     if (value == null || Number.isNaN(value)) {
-      return 'N/A';
+      return this.tag(tags, 'PROD_REPORT_NA', 'N/A');
     }
 
     return `${this.currencyService.formatNumber(value)} ${currency}`.trim();
   }
 
-  private buildPriceListColumns(): Array<{ label: string; align?: 'left' | 'center' | 'right'; width?: string }> {
+  private buildPriceListColumns(
+    tags?: Map<string, string>,
+  ): Array<{ label: string; align?: 'left' | 'center' | 'right'; width?: string }> {
     return [
-      { label: 'Codigo', width: '12%' },
-      { label: 'Nombre', width: '30%' },
-      { label: 'Precio', align: 'right', width: '14%' },
-      { label: 'Moneda', width: '10%' },
-      { label: 'Unidad', width: '12%' },
-      { label: 'Estructura', width: '22%' },
+      { label: this.tag(tags, 'PROD_COD_PROD', 'Código'), width: '12%' },
+      { label: this.tag(tags, 'PROD_NAME_PROD', 'Nombre'), width: '30%' },
+      { label: this.tag(tags, 'PROD_PRICE_PROD', 'Precio'), align: 'right', width: '14%' },
+      { label: this.tag(tags, 'PROD_REPORT_COL_CURRENCY', 'Moneda'), width: '10%' },
+      { label: this.tag(tags, 'PROD_REPORT_COL_UNIT', 'Unidad'), width: '12%' },
+      { label: this.tag(tags, 'PROD_REPORT_COL_STRUCTURE', 'Estructura'), width: '22%' },
     ];
   }
 
-  private mapPriceListPdfRows(rows: ProductReportRow[]): string[][] {
+  private mapPriceListPdfRows(rows: ProductReportRow[], tags?: Map<string, string>): string[][] {
+    const na = this.tag(tags, 'PROD_REPORT_NA', 'N/A');
     return rows.map((row) => [
       row.coProduct,
       row.naProduct,
-      row.nuPrice == null ? 'N/A' : this.currencyService.formatNumber(row.nuPrice),
-      this.displayOrNa(row.coCurrency),
-      this.displayOrNa(row.naUnit || row.coUnit),
-      this.displayOrNa(row.naProductStructure),
+      row.nuPrice == null ? na : this.currencyService.formatNumber(row.nuPrice),
+      this.displayOrNa(row.coCurrency, tags),
+      this.displayOrNa(row.naUnit || row.coUnit, tags),
+      this.displayOrNa(row.naProductStructure, tags),
     ]);
   }
 
   private async sharePriceListExcel(rows: ProductReportRow[], options: ProductReportOptions): Promise<void> {
+    const tags = options.tags;
+    const colCodigo = this.tag(tags, 'PROD_COD_PROD', 'Código');
+    const colNombre = this.tag(tags, 'PROD_NAME_PROD', 'Nombre');
+    const colPrecio = this.tag(tags, 'PROD_PRICE_PROD', 'Precio');
+    const colMoneda = this.tag(tags, 'PROD_REPORT_COL_CURRENCY', 'Moneda');
+    const colUnidad = this.tag(tags, 'PROD_REPORT_COL_UNIT', 'Unidad');
+    const colEstructura = this.tag(tags, 'PROD_REPORT_COL_STRUCTURE', 'Estructura');
+    const colEmbalaje = this.tag(tags, 'PROD_REPORT_COL_PACKING', 'Embalaje');
+    const colVentaMinima = this.tag(tags, 'PROD_REPORT_COL_MIN_SALE', 'Venta mínima');
+    const colMultiplo = this.tag(tags, 'PROD_REPORT_COL_MULTIPLE', 'Múltiplo');
+    const colNotas = this.tag(tags, 'PROD_REPORT_COL_NOTES', 'Notas');
+
     const sheetRows = rows.map((row) => ({
-      Codigo: row.coProduct,
-      Nombre: row.naProduct,
-      Precio: row.nuPrice ?? '',
-      Moneda: row.coCurrency,
-      Unidad: row.naUnit || row.coUnit,
-      Estructura: row.naProductStructure,
-      Embalaje: row.txPacking || row.bulkUnits,
-      VentaMinima: row.quMinimum > 1 ? row.quMinimum : '',
-      Multiplo: row.quMultiple > 1 ? row.quMultiple : '',
-      Notas: row.txDescription,
+      [colCodigo]: row.coProduct,
+      [colNombre]: row.naProduct,
+      [colPrecio]: row.nuPrice ?? '',
+      [colMoneda]: row.coCurrency,
+      [colUnidad]: row.naUnit || row.coUnit,
+      [colEstructura]: row.naProductStructure,
+      [colEmbalaje]: row.txPacking || row.bulkUnits,
+      [colVentaMinima]: row.quMinimum > 1 ? row.quMinimum : '',
+      [colMultiplo]: row.quMultiple > 1 ? row.quMultiple : '',
+      [colNotas]: row.txDescription,
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(sheetRows);
@@ -381,17 +400,21 @@ export class ProductReportsService {
   }
 
   private async sharePriceListPdf(rows: ProductReportRow[], options: ProductReportOptions): Promise<void> {
+    const tags = options.tags;
     const enterpriseHeader = await this.buildEnterprisePdfHeader(options);
+    const sortLabel = options.sortField === 'code'
+      ? this.tag(tags, 'PROD_COD_PROD', 'Código')
+      : this.tag(tags, 'PROD_DESC_PROD', 'Descripción');
 
     const doc = await this.pdfCreator.generateSummaryPdfDoc({
-      title: 'Lista de precios',
+      title: this.tag(tags, 'PROD_REPORT_TYPE_PRICE_LIST', 'Lista de precios'),
       enterpriseHeader,
       meta: [
-        { label: 'Productos', value: String(rows.length) },
-        { label: 'Orden', value: options.sortField === 'code' ? 'Codigo' : 'Descripcion' },
+        { label: this.tag(tags, 'PROD_REPORT_META_PRODUCTS', 'Productos'), value: String(rows.length) },
+        { label: this.tag(tags, 'PROD_REPORT_ORDER', 'Orden'), value: sortLabel },
       ],
-      columns: this.buildPriceListColumns(),
-      rows: this.mapPriceListPdfRows(rows),
+      columns: this.buildPriceListColumns(tags),
+      rows: this.mapPriceListPdfRows(rows, tags),
       fileName: this.buildFileName('lista_precios', 'pdf', options),
     }, { orientation: 'landscape', format: 'letter' });
 
@@ -407,17 +430,21 @@ export class ProductReportsService {
   }
 
   private async shareCatalogPdf(rows: ProductReportRow[], options: ProductReportOptions): Promise<void> {
+    const tags = options.tags;
     const enterpriseHeader = await this.buildEnterprisePdfHeader(options);
 
     const doc = await this.pdfCreator.generateSummaryPdfDoc({
-      title: 'Catalogo de productos',
+      title: this.tag(tags, 'PROD_REPORT_TYPE_CATALOG', 'Catálogo de productos'),
       enterpriseHeader,
       meta: [
-        { label: 'Productos', value: String(rows.length) },
-        { label: 'Empresa', value: options.enterpriseLabel || enterpriseHeader.name || '' },
+        { label: this.tag(tags, 'PROD_REPORT_META_PRODUCTS', 'Productos'), value: String(rows.length) },
+        {
+          label: this.tag(tags, 'PROD_REPORT_META_ENTERPRISE', 'Empresa'),
+          value: options.enterpriseLabel || enterpriseHeader.name || '',
+        },
       ],
-      columns: this.buildCatalogColumns(),
-      rows: this.mapCatalogPdfRows(rows),
+      columns: this.buildCatalogColumns(tags),
+      rows: this.mapCatalogPdfRows(rows, tags),
       fileName: this.buildFileName('catalogo_productos', 'pdf', options),
     }, { orientation: 'landscape', format: 'letter' });
 
@@ -483,27 +510,30 @@ export class ProductReportsService {
     return enterprises[0];
   }
 
-  private buildCatalogColumns(): Array<{ label: string; align?: 'left' | 'center' | 'right'; width?: string }> {
+  private buildCatalogColumns(
+    tags?: Map<string, string>,
+  ): Array<{ label: string; align?: 'left' | 'center' | 'right'; width?: string }> {
     return [
-      { label: 'Codigo', width: '12%' },
-      { label: 'Nombre', width: '28%' },
-      { label: 'Precio', align: 'right', width: '12%' },
-      { label: 'Unidad', width: '10%' },
-      { label: 'Bulto', width: '12%' },
-      { label: 'Min.', align: 'right', width: '8%' },
-      { label: 'Notas', width: '18%' },
+      { label: this.tag(tags, 'PROD_COD_PROD', 'Código'), width: '12%' },
+      { label: this.tag(tags, 'PROD_NAME_PROD', 'Nombre'), width: '28%' },
+      { label: this.tag(tags, 'PROD_PRICE_PROD', 'Precio'), align: 'right', width: '12%' },
+      { label: this.tag(tags, 'PROD_REPORT_COL_UNIT', 'Unidad'), width: '10%' },
+      { label: this.tag(tags, 'PROD_REPORT_COL_BULK', 'Bulto'), width: '12%' },
+      { label: this.tag(tags, 'PROD_REPORT_COL_MIN', 'Mín.'), align: 'right', width: '8%' },
+      { label: this.tag(tags, 'PROD_REPORT_COL_NOTES', 'Notas'), width: '18%' },
     ];
   }
 
-  private mapCatalogPdfRows(rows: ProductReportRow[]): string[][] {
+  private mapCatalogPdfRows(rows: ProductReportRow[], tags?: Map<string, string>): string[][] {
+    const na = this.tag(tags, 'PROD_REPORT_NA', 'N/A');
     return rows.map((row) => [
       row.coProduct,
       row.naProduct,
-      this.formatPrice(row.nuPrice, row.coCurrency),
-      this.displayOrNa(row.naUnit || row.coUnit),
-      this.displayOrNa(row.bulkUnits || row.txPacking),
-      row.quMinimum > 1 ? String(row.quMinimum) : 'N/A',
-      this.displayOrNa(row.txDescription),
+      this.formatPrice(row.nuPrice, row.coCurrency, tags),
+      this.displayOrNa(row.naUnit || row.coUnit, tags),
+      this.displayOrNa(row.bulkUnits || row.txPacking, tags),
+      row.quMinimum > 1 ? String(row.quMinimum) : na,
+      this.displayOrNa(row.txDescription, tags),
     ]);
   }
 

@@ -123,4 +123,46 @@ describe('CobroPagosComponent', () => {
     expect(collectionServiceMock.collection.collectionPayments[0].nuAmountPartial).toBe(50);
     expect(component.validatePayment).toHaveBeenCalledWith('ef', 0);
   });
+
+  it('COB-DATE-001: getFechaValor TR writes daValue and daCollectionPayment', () => {
+    collectionServiceMock.validateCollectionDate = false;
+    collectionServiceMock.pagoTransferencia = [{
+      fecha: '2026-08-11',
+      posCollectionPayment: 0,
+    }];
+    collectionServiceMock.collection.collectionPayments = [{
+      coType: 'tr',
+      coPaymentMethod: 'tr',
+      daValue: '2026-08-11 00:00:00',
+      daCollectionPayment: '2026-08-11 00:00:00',
+    }];
+
+    component.getFechaValor('2026-08-01', 0, 'tr');
+
+    const payment = collectionServiceMock.collection.collectionPayments[0];
+    expect(collectionServiceMock.pagoTransferencia[0].fecha).toBe('2026-08-01');
+    expect(payment.daValue).toBe('2026-08-01');
+    expect(payment.daCollectionPayment).toBe('2026-08-01');
+  });
+
+  it('COB-DATE-001: getFechaValor PM writes daValue and daCollectionPayment', () => {
+    collectionServiceMock.validateCollectionDate = false;
+    collectionServiceMock.pagoMovil = [{
+      fecha: '2026-08-11',
+      posCollectionPayment: 0,
+    }];
+    collectionServiceMock.collection.collectionPayments = [{
+      coType: 'pm',
+      coPaymentMethod: 'pm',
+      daValue: '2026-08-11 00:00:00',
+      daCollectionPayment: '2026-08-11 00:00:00',
+    }];
+
+    component.getFechaValor('2026-08-01', 0, 'pm');
+
+    const payment = collectionServiceMock.collection.collectionPayments[0];
+    expect(collectionServiceMock.pagoMovil[0].fecha).toBe('2026-08-01');
+    expect(payment.daValue).toBe('2026-08-01');
+    expect(payment.daCollectionPayment).toBe('2026-08-01');
+  });
 });
