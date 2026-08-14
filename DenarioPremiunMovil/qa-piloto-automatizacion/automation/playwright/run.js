@@ -23,6 +23,7 @@ const { fetchCreds }               = require('../cdp/denario-cdp-helpers');
 // Módulos disponibles (añadir aquí al ir implementando los demás)
 const MODULOS = {
   vendedores: require('./modules/vendedores').runVendedores,
+  productos:  require('./modules/productos').runProductos,
 };
 
 // ─── Parsear args ─────────────────────────────────────────────────────────────
@@ -56,8 +57,15 @@ function dataParaModulo(perfil, modulo) {
   switch (modulo) {
     case 'vendedores':
       return {
-        aplica:     mod.aplica     !== false && vgs.esVendedor !== false,
+        aplica:     mod.aplica !== false && vgs.esVendedor !== false,
         esVendedor: vgs.esVendedor !== false,
+      };
+    case 'productos':
+      return {
+        tipoUnico:             mod.tipo_unico === true,
+        textoBusqueda:         mod.texto_busqueda || 'A',
+        estructuraTest:        mod.estructura_test || '',
+        userCanChangePriceList: vgs.userCanChangePriceList !== false,
       };
     default:
       return { aplica: mod.aplica !== false };
