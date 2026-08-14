@@ -16,7 +16,7 @@ const path  = require('path');
 const yaml  = require('js-yaml');
 const fs    = require('fs');
 
-const { conectar, esperarHome }    = require('./connect');
+const { conectar, esperarHome, volverAHome } = require('./connect');
 const { crearCarpetaRun, escribirReporte } = require('./report');
 const { fetchCreds }               = require('../cdp/denario-cdp-helpers');
 
@@ -128,7 +128,7 @@ async function main() {
     console.log('\n🔌  Conectando CDP (:9220)...');
     pg = await conectar();
     console.log('✔   CDP conectado');
-    await esperarHome(pg);
+    await volverAHome(pg);
     console.log('✔   App en HOME\n');
   } catch (e) {
     console.error('❌  ' + e.message);
@@ -139,8 +139,11 @@ async function main() {
   const resumenGlobal = [];
 
   for (const modulo of modulosFiltro) {
+    // Asegurar HOME antes de cada módulo (el módulo anterior puede haber terminado dentro de su vista)
+    try { await volverAHome(pg); } catch (_) {}
     console.log(`▶   [${modulo.toUpperCase()}] iniciando...`);
     const data = dataParaModulo(perfil, modulo);
+    data.clienteSlug = clienteSlug;
     const t0   = Date.now();
 
     let verdicts, msTotal;

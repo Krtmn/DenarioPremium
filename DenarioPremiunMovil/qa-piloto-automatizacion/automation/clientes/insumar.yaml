@@ -4,8 +4,8 @@
 
 cliente_id: insumar
 cliente_nombre: "INSUMAR DISTRIBUIDOR"    # Confirmado 20260603: nombre en app
-ws_url: "http://denarioislacoche.ddns.net:8081/PremiumWS/services/"
 apk_package: com.kiberno.denarioPremiumPro
+db_name: insumar_P1                       # Base en savia — distinto del slug
 
 vgs:
   multiCurrency: true                     # Confirmado 20260603: lista muestra Saldo BS y Saldo US$

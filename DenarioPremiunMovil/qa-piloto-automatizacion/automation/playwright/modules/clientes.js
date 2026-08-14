@@ -1,3 +1,35 @@
+const { execFileSync } = require('child_process');
+const fs   = require('fs');
+const os   = require('os');
+const path = require('path');
+const { installPayloadCapture, getCapturedPayloads } = require('../../cdp/denario-cdp-helpers');
+
+const LOCAL_QUERY_PATH    = path.resolve(__dirname, '../../db/local-query.js');
+const COTEJO_PAYLOAD_PATH = path.resolve(__dirname, '../../db/cotejo-payload.js');
+
+/** Consulta local SQLite del teléfono. Devuelve array de filas o [] en error. */
+function localQuery(sql) {
+  try {
+    return JSON.parse(
+      execFileSync('node', [LOCAL_QUERY_PATH, sql], { encoding: 'utf8', timeout: 15000 })
+    );
+  } catch (_) { return []; }
+}
+
+/** Corre cotejo-payload.js con un objeto payload. Devuelve marca o 'BD-N/A'. */
+function cotejoPayload(slug, payload) {
+  const tmp = path.join(os.tmpdir(), `qa_clt_payload_${Date.now()}.json`);
+  try {
+    fs.writeFileSync(tmp, JSON.stringify(payload));
+    const r = JSON.parse(
+      execFileSync('node', [COTEJO_PAYLOAD_PATH, slug, tmp], { encoding: 'utf8', timeout: 30000 })
+    );
+    const mismatches = ((r.resumen || {}).mismatches || []).slice(0, 2).join('; ');
+    return r.marca + (mismatches ? ` (${mismatches})` : '');
+  } catch (_) { return 'BD-N/A'; }
+  finally { try { fs.unlinkSync(tmp); } catch (_) {} }
+}
+
 /**
  * modules/clientes.js
  * Casos determinísticos — Módulo CLIENTES (12 casos)
@@ -5,7 +37,7 @@
  * Selectores documentados en module-selectors/clientes.md
  *
  * @param {import('playwright').Page} pg
- * @param {{ aplica:boolean, clienteBusqueda:string, clienteDetalle:string }} DATA
+ * @param {{ aplica:boolean, clienteBusqueda:string, clienteDetalle:string, clienteSlug:string }} DATA
  * @returns {Promise<{ verdicts: Array, msTotal: number }>}
  */
 async function runClientes(pg, DATA) {
@@ -24,6 +56,9 @@ async function runClientes(pg, DATA) {
     );
     return { verdicts, msTotal: Date.now() - t0 };
   }
+
+  // Instalar captura de payloads — idempotente, nunca tumba el smoke
+  try { await installPayloadCapture(pg); } catch (_) {}
 
   // Nombres únicos para registros de prueba
   const ts = String(Date.now()).slice(-6);
@@ -504,9 +539,25 @@ async function runClientes(pg, DATA) {
     }, nombreTest);
 
     guardadoOk = itemEncontrado;
+
+    // BD local: verificar que quedó como Guardado (id_client=0)
+    let bdNota024 = 'BD-N/A';
+    try {
+      const rows = localQuery(
+        `SELECT id_client, st_potential_client FROM potential_clients WHERE na_client='${nombreTest.replace(/'/g, "''")}' ORDER BY rowid DESC LIMIT 1`
+      );
+      if (!rows.length) {
+        bdNota024 = 'BD-LOCAL-NOT-FOUND';
+      } else {
+        const id = parseInt(rows[0].id_client, 10);
+        const st = String(rows[0].st_potential_client);
+        bdNota024 = id === 0 ? `BD-SAVED(st=${st})` : `BD-UNEXPECTED(id=${id},st=${st})`;
+      }
+    } catch (_) {}
+
     v('DM-CLT-024', 'Click Guardar → cliente potencial guardado',
       itemEncontrado ? 'PASS' : 'FAIL',
-      `alert btn: "${alertLabel}"; ${itemEncontrado ? `"${nombreTest}" visible en BUSCAR` : `"${nombreTest}" NO encontrado en BUSCAR`}`
+      `alert btn: "${alertLabel}"; ${itemEncontrado ? `"${nombreTest}" visible en BUSCAR` : `"${nombreTest}" NO encontrado en BUSCAR`} · ${bdNota024}`
     );
   } catch (e) {
     v('DM-CLT-024', 'Click Guardar → cliente potencial guardado', 'FAIL', e.message);
@@ -587,9 +638,33 @@ async function runClientes(pg, DATA) {
     const enviado = n3 >= 3;
     inHomeClts = enviado;
 
+    // ── Verificación BD: local + payload↔nube ───────────────────────────────
+    let bdNota026 = 'BD-N/A';
+    try {
+      // 1) Local SQLite
+      const rows026 = localQuery(
+        `SELECT id_client, st_potential_client FROM potential_clients WHERE na_client='${nombreTest.replace(/'/g, "''")}' ORDER BY rowid DESC LIMIT 1`
+      );
+      const localId = rows026.length ? parseInt(rows026[0].id_client, 10) : -1;
+      const localSt = rows026.length ? String(rows026[0].st_potential_client) : '?';
+      // st=2 local=Enviado; id>0 = ref del servidor recibida
+      const localMarca = localId > 0 ? `BD-LOCAL-OK(id=${localId},st=${localSt})` : `BD-LOCAL-PENDING(id=${localId},st=${localSt})`;
+
+      // 2) Payload capturado → cotejo contra nube
+      const payloads = await getCapturedPayloads(pg);
+      const pClt = payloads.filter(p => /potentialclient/i.test(String(p.url)));
+      let cotejo = 'BD-N/A(sin-payload)';
+      if (pClt.length && DATA.clienteSlug) {
+        cotejo = cotejoPayload(DATA.clienteSlug, pClt[pClt.length - 1]);
+      }
+
+      bdNota026 = `${localMarca} · ${cotejo}`;
+    } catch (_) {}
+    // ────────────────────────────────────────────────────────────────────────
+
     v('DM-CLT-026', 'Re-abrir Guardado → Enviar → 3 alertas → Enviado',
       enviado ? 'PASS' : 'FAIL',
-      `ref potencial: ${refPotencial || 'N/A'}; en home clientes: ${n3} botones`
+      `ref potencial: ${refPotencial || 'N/A'}; en home clientes: ${n3} botones · ${bdNota026}`
     );
   } catch (e) {
     v('DM-CLT-026', 'Re-abrir Guardado → Enviar', 'FAIL', e.message);

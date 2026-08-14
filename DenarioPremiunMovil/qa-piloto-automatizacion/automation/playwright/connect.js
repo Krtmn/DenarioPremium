@@ -44,4 +44,30 @@ async function esperarHome(pg, ms = 15000) {
   await pg.waitForSelector('app-home', { state: 'visible', timeout: ms });
 }
 
-module.exports = { conectar, esperarHome, CDP_URL };
+/**
+ * Navega de vuelta a HOME presionando history.back() hasta que app-home sea visible.
+ * Útil al iniciar una corrida cuando la app quedó dentro de un módulo, o entre módulos.
+ * @param {import('playwright').Page} pg
+ * @param {number} [ms=20000]
+ */
+async function volverAHome(pg, ms = 20000) {
+  const isVisible = () => pg.evaluate(() => {
+    const el = document.querySelector('app-home');
+    if (!el) return false;
+    return !el.classList.contains('ion-page-hidden') &&
+           getComputedStyle(el).display !== 'none';
+  }).catch(() => false);
+
+  if (await isVisible()) return;
+
+  const deadline = Date.now() + ms;
+  while (Date.now() < deadline) {
+    await pg.evaluate(() => history.back()).catch(() => {});
+    await pg.waitForTimeout(700);
+    if (await isVisible()) return;
+  }
+  // Último recurso: espera estricta
+  await pg.waitForSelector('app-home:not(.ion-page-hidden)', { timeout: 3000 });
+}
+
+module.exports = { conectar, esperarHome, volverAHome, CDP_URL };
