@@ -435,19 +435,45 @@ ORDER BY c.da_collection DESC;
 ✅ **Verificado 2026-07-28** contra la web de La Tortuga: devuelve `Por aprobar` para los 4 cobros, coincidiendo
 1:1 con la UI. El mismo patrón aplica a las demás cabeceras (`co_order`, `co_return`, `co_deposit`, `co_visit`).
 
-### Cobros con su tipo legible (`co_type`)
+### Cobros con su tipo legible (`co_type`) — 🔴 son CINCO valores, no 3 `[el_palmar-20260805]`
+
+| `co_type` | Significado |
+|---|---|
+| `0` | Cobro normal |
+| `1` | Anticipo / Prepago |
+| `2` | Retención |
+| `3` | **IGTF** |
+| `4` | **Cobro 25%** |
+
+Los tipos **3 y 4 son recientes** (en el_palmar aparecen recién a partir del `id_collection` ~26.838) y faltaban
+en este modelo. **Forma barata de resolver un `co_type` desconocido sin BD:** el `<select id$=":idTipo_input">`
+de `/pages/cobros` de la web expone el enum completo con sus rótulos (ver `web/web-selectors/cobros.md`).
+
+⚠ **El oráculo de la cabecera del cobro depende del `co_type`** — ver la fórmula por tipo en
+`web/web-selectors/cobros.md`; aplicar la de `co_type 0` a una retención produce un mismatch inexistente.
 
 ```sql
 SELECT c.id_collection, c.co_collection, c.da_collection, c.co_client, c.na_client,
        CASE c.co_type WHEN 0 THEN 'Cobro normal'
                       WHEN 1 THEN 'Anticipo/Prepago'
                       WHEN 2 THEN 'Retención'
+                      WHEN 3 THEN 'IGTF'
+                      WHEN 4 THEN 'Cobro 25%'
                       ELSE c.co_type::text END AS tipo_cobro,
        c.co_currency, c.nu_amount_final, c.st_collection, c.id_enterprise
 FROM collection c
 -- WHERE c.id_enterprise = :id_enterprise      -- descomentar si la playa es multi-empresa
 ORDER BY c.da_collection DESC, c.id_collection DESC;
 ```
+
+### 🔴 Trampas de `collection_payment` `[el_palmar-20260805]`
+
+- **`nu_collection_payment` = NÚMERO DE CUENTA, no el importe.** El importe está en **`nu_amount_partial`**.
+  Contarlo como importe da falsos *"pagos vacíos"*.
+- **`erp_in_collection_payment` es un ESPEJO del ERP ⇒ EXCLUIRLA** de cualquier conteo de pagos, o se cuentan dobles.
+- **`collection.co_original_collection` es la llave cobro↔anticipo** — `id_original_collection` viene **NULL**, y
+  **ninguna pantalla de la web expone el vínculo**: es la única forma de correlacionar el par.
+  La forma de pago **`Prepago Automático`** marca un anticipo **generado por el sistema** desde el vuelto de otro cobro.
 
 ### Documentos aplicados en un cobro (retenciones y pago parcial)
 

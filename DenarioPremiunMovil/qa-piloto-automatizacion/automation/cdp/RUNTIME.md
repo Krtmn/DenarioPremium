@@ -76,7 +76,15 @@ await wd.run('waitSyncOverlay', () => h.waitSyncOverlay(pg));
 ✗  page.screenshot() / pg.screenshot()      → timeout de fuentes; usar browser_snapshot o DOM eval
 ✗  pg.goto() en WebApp Capacitor            → reinicia estado Angular; navegar siempre con clicks DOM
 ✗  Insistir >2 intentos con un selector/flujo que no responde → marcar el caso ⛔ BLOCKED y SEGUIR (no explorar a ciegas)
+✗  Credenciales embebidas en el código de browser_run_code_unsafe (ni vía `filename`) → el MCP DEVUELVE el código en su respuesta; tipearlas con browser_type / pg.keyboard.type
+✗  Paginar un modal por código (onIonInfinite…) sin ng.applyChanges(comp) → el modelo crece y el DOM NO; se lee como "el registro no existe"
+✗  Botón dentro de un ion-modal que no responde a mouse.click → b.shadowRoot.querySelector('button').click() (el punto puede no ser tuyo: verificar con elementFromPoint)
 ```
+
+**Graduados en esta versión** (confirmados en ≥2 corridas y ≥2 servidores — detalle y evidencia en `module-selectors/`):
+- **Botón de `ion-modal` que "no responde": usar el shadowRoot.** `document.elementFromPoint()` sobre su rect puede devolver **otro** elemento (en VISITAS, el `Agregar` del `ion-modal#eventModal` devuelve el `ion-button.botonAddLila` del form de fondo ⇒ el click re-dispara el form subyacente). **Fix: `b.shadowRoot.querySelector('button').click()`** — 1.er intento en las dos corridas. **Rect válido ≠ punto clickeable ≠ punto tuyo.** `[el_palmar-20260805][difranca-20260807]`
+- **Tras paginar programáticamente, `window.ng.applyChanges(comp)` + ~1,2 s.** `pg.evaluate` corre fuera de NgZone. Cortar el bucle por `sc.scrollDisable===true` (no por "el `length` dejó de crecer") y dar ~800-900 ms por vuelta. `[alipascua-20260804][difranca-20260807]`
+- **`PRD-BUSCADOR-NO-REPUEBLA` es universal (3 playas, 3 builds):** vaciar el buscador + `Enter` deja la lista en 0 con empty-state. **Nunca usar "campo vacío" como estado sin-filtro**; re-entrar a la estructura para recuperar el baseline. `[latino_cosmetica-20260729][el_palmar-20260805][difranca-20260807]`
 
 **Techo de intentos (universal):** ningún caso debe consumir más de **2 intentos acotados** peleando con un selector/flujo que no responde por CDP. Tras el 2º intento fallido → `⛔ BLOCKED` con el motivo (no es FAIL ni N/A), registrar y continuar con el siguiente caso. El fail-fast ya implementado en `h.ensureAdjunto` es el patrón a generalizar. Esto evita el atascamiento histórico (cobros llegó a 277 tool-uses por insistir en atajos).
 
@@ -166,10 +174,14 @@ Campos: `run_id` · `modulo` · `caso` · `resultado` (PASS/FAIL/SKIP/N-A/BLOCKE
 ## 7. Convención RUN_ID y rutas
 
 - **Formato RUN_ID:** `YYYYMMDD_HHMMSS_smoke-completo`
-- **Carpeta de corrida:** `automation/reports/{tipo}_{cliente}_{YYYYMMDD}_{HHMMSS}/`
-  - Ejemplo: `automation/reports/smoke_insumar_20260603_093706/`
-  - El orquestador crea esta carpeta en Paso 0 (`RUN_DIR`).
-- **Reporte de módulo:** `{RUN_DIR}{modulo}.md` → ej. `smoke_insumar_20260603_093706/cobros.md`
+- 🔴 **Carpeta de corrida — AGRUPADA POR CLIENTE** (desde 2026-08-11):
+  `automation/reports/{cliente}/{tipo}_{cliente}_{YYYYMMDD}_{HHMMSS}/`
+  - Ejemplo: `automation/reports/insumar/smoke_insumar_20260603_093706/`
+  - El orquestador crea **ambos niveles** en Paso 0 (`RUN_DIR`). La carpeta del cliente se reutiliza entre
+    corridas; **nunca** se crea una nueva por corrida.
+  - El nombre de la corrida **conserva el cliente** aunque sea redundante con la carpeta: así sigue siendo
+    único y no se rompe nada que lo referencie.
+- **Reporte de módulo:** `{RUN_DIR}{modulo}.md` → ej. `insumar/smoke_insumar_20260603_093706/cobros.md`
 - **Consolidado:** `{RUN_DIR}consolidado.md`
 - **Reportes:** cada corrida en su carpeta `{RUN_DIR}`; índice en `automation/reports/README.md`
 - **Credenciales:** `secrets/qa-credentials.env` (playa activa) o `secrets/playas/{playa_id}.env` (multi-playa)

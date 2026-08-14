@@ -1,0 +1,700 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Perfil QA — EL PALMAR (CENTRAL EL PALMAR, S.A.)   ·   ALTA PRIORIDAD
+#
+# ⚠ REVISIÓN 2 (2026-08-05): la 1ª versión de `modules.*` se pre-pobló con el
+#   VENDEDOR EQUIVOCADO (login 2045 / id_user 244, que tiene solo 6 clientes).
+#   El vendedor QA real es **login 1276 / id_user 266 (Dilcia Duarte)**, con
+#   144 clientes asignados por empresa. TODO `modules.*` fue rehecho con él.
+#   Si ves datos de prueba con 6 clientes o códigos 10000016xx/10000024xx
+#   sueltos, es material viejo.
+#
+# Creado 2026-08-05 desde los dumps global_configuration_202608051152_EL PALMAR
+# (global, 180 claves) + global_configuration_client_202608051152 EL PALMAR
+# (override de cliente, 76 claves) + pre-poblado desde BD read-only.
+# Los dumps se BORRARON una vez creado este perfil (política de alta-cliente.md).
+#
+# ⚠ CONFLICTOS ENTRE DUMPS: de 67 claves presentes en AMBOS, 17 tienen valor distinto.
+#     · en 14 gana el GLOBAL (da_update 2024-05 → 2026-07)
+#     · 🔴 en 3 gana el CLIENT porque su da_update (2026-02-17) es MÁS RECIENTE
+#       que el del global — van marcadas ⚠️VERIFICAR abajo.
+#   Además hay 9 claves que SOLO existen en el override de cliente (todas de
+#   2023-02-01, sin contraparte global ⇒ potencialmente stale) y 113 que solo
+#   existen en el global.
+#
+# 🔴 LECCIÓN DE ALIPASCUA (2026-08-04) APLICADA AQUÍ:
+#   allí `userCanSelectProductDiscount` se fijó en false siguiendo el dump de
+#   CLIENTE más reciente… y la UI demostró que era true. En ESTE cliente se
+#   repite EXACTAMENTE el mismo patrón (client 2026-02-17=false vs global
+#   2024-05-22=true). Se deja false por la regla del da_update, pero es el
+#   ⚠️VERIFICAR #1 de la corrida.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── Identificación ────────────────────────────────────────────────────────────
+cliente_id: el_palmar
+cliente_nombre: "CENTRAL EL PALMAR, S.A."
+apk_package: com.kiberno.denarioPremiumPro
+db_name: el_palmar                      # base en savia; GRANT read-only ✅ 184/184 tablas
+# ws_url: NO se guarda — se descubre en runtime.
+#   Playa informada por QA: ISLA COCHE.
+#     Web  : http://denarioislacoche.ddns.net:8080/DenarioPremium
+#     API  : mismo host, puerto :8081/PremiumWS/services/
+#
+# 🔴🔴 DISCREPANCIA DE SLUG — LEER ANTES DE CORRER 🔴🔴
+#   Este archivo y `cliente_id` usan GUION BAJO: `el_palmar`.
+#   PERO los bloques de credenciales se llaman literalmente con ESPACIO:
+#       secrets/qa-credentials.env  →  "# Cliente: el palmar"
+#       secrets/qa-db.env           →  "# Cliente: el palmar"
+#   Los agentes de la corrida parsean ese bloque por NOMBRE EXACTO: si buscan
+#   "el_palmar" en los .env NO lo encuentran y el login falla.
+#   ⇒ Para leer credenciales usar la cadena  "el palmar"  (con espacio).
+#   ⇒ Para consultas de BD ambas formas funcionan (verificado 2026-08-05):
+#         node automation/db/query.js el_palmar "SELECT ..."      ← USAR ESTA
+#         node automation/db/query.js "el palmar" "SELECT ..."    ← también OK
+#      Se recomienda `el_palmar` (sin comillas, coincide con db_name).
+#   NO editar los .env para "arreglar" el nombre: quedan como están.
+
+# ── 🔴 DOS EMPRESAS — cambia el smoke ─────────────────────────────────────────
+# En BD hay 2 empresas activas:
+#     id_enterprise 1 · co_enterprise "1002" · CENTRAL EL PALMAR, S.A.   ← USAR ESTA
+#     id_enterprise 2 · co_enterprise "1003" · C.A. DESTILERIA YARACUY
+# enterpriseEnabled=true Y orderEnterpriseEnabled=true en AMBOS dumps ⇒ coherente
+# con las 2 empresas: DEBE haber selector de empresa en todos los módulos
+# (incluido PEDIDOS, que normalmente se excluye). Confirmar en corrida.
+#
+# ⚠ Casi TODO es por empresa en esta BD: productos, bancos, documentos y hasta
+#   el catálogo `statuses`. Elegir la empresa equivocada deja el smoke sin datos.
+#
+# RECOMENDACIÓN: empresa **1002 — CENTRAL EL PALMAR, S.A.**
+#   Números REALES del vendedor QA 1276 / id_user 266 (BD, 2026-08-05):
+#     clientes asignados : 1002 = 144 | 1003 = 144   (los MISMOS 144 en ambas)
+#     clientes CON docs  : 1002 = 48  | 1003 = 32
+#     docs pendientes    : 1002 = 451 | 1003 = 296   (100% VENCIDOS en ambas)
+#     · por moneda       : 1002 → 427 USD (6.335.703,06) + 24 VES (11.348.133,39)
+#                          1003 → 276 USD (6.557.129,85) + 20 VES (285.641,97)
+#     productos activos  : 1002 = 39  | 1003 = 18
+#     bancos             : 1002 = 33 ("Cepsa") | 1003 = 24 ("Cady")
+#   ⇒ 1002 gana en clientes con documentos (48 vs 32), volumen de documentos
+#     (451 vs 296), catálogo de productos (39 vs 18) y bancos (33 vs 24).
+#   Todo el bloque `modules.*` de abajo está poblado con datos de la empresa 1002.
+#
+# ⚠ PERO la empresa 1003 NO es descartable: QA la está usando hoy.
+#   3 de los 18 cobros de hoy son de empresa 1003 (cliente CAYETANO FARIAS
+#   1000002025, que tiene 156 docs en 1003 y solo 2 en 1002). Si el smoke tiene
+#   que cubrir el SELECTOR DE EMPRESA, el par natural es:
+#       1002 → RON SANTA TERESA (1000000803)   ·   1003 → CAYETANO FARIAS (1000002025)
+
+# ── Variables Globales ────────────────────────────────────────────────────────
+vgs:
+  multiCurrency: true                   # AMBOS · monedas en BD: USD, VES, EUR
+  expirationBatch: true                 # ✅ CONFIRMADO true 2026-08-05, pero 🔴 **CON ALCANCE
+                                        #   POR MÓDULO** (⚠️VERIFICAR retirado):
+                                        #     · INVENTARIOS → el **LOTE es OBLIGATORIO**. Alerta:
+                                        #       "Complete cantidad, unidad, fecha y lote para
+                                        #       continuar." [OK]. (La fecha nunca bloquea: trae default.)
+                                        #     · DEVOLUCIONES → **NO es obligatorio**: aceptó y envió
+                                        #       con lote vacío.
+                                        #   Misma VG, misma corrida, mismo build ⇒ NO extrapolar el
+                                        #   comportamiento de un módulo al otro.
+  suggestedOrderByDispatchAndReturn: false   # solo-global 2026-07-08
+  requiredCollectionAttachments: false  # solo-global 2026-07-08 ⇒ el cobro se ENVÍA sin adjunto
+  requiredComment: true                 # ✅ CONFIRMADO 2026-08-05 con ALCANCE = COBROS (tipo=C).
+                                        # 🔴 COMPROBADO EN LOS 4 MÓDULOS: NO aplica a clientes,
+                                        #   inventarios, depósitos ni visitas. En CLIENTES el form
+                                        #   ni siquiera tiene campo comentario; en los otros 3
+                                        #   Guardar/Enviar habilitan con el comentario vacío.
+                                        #   Para PEDIDOS manda requiredCommentOrder=false.
+                                        # 🔴 EL TOPE REAL DEL COMENTARIO ES **255**, NO 185:
+                                        #   lo fija la constante de producto TEXT_COMMENT_MAX_LENGTH
+                                        #   (por CAMPO), no la VG longitudComentario. Medido en
+                                        #   cobros (hint "Mín. 0 - Máx. 255"), inventarios (255),
+                                        #   depósitos (255) y visitas (comp.textCommentMaxLength=255;
+                                        #   300 tecleados → 255 aceptados). Ver longitudComentario.
+  validateReturn: false                 # solo-global 2023-06-30 ⇒ NO valida que el producto
+                                        #   esté en una factura enviada
+  signatureReturn: true                 # solo-global 2025-10-06
+  signatureCollection: true             # solo-global 2025-10-06
+  signatureVisit: false                 # ✅ CONFIRMADO en UI 2026-08-05 ⇒ visitas SIN firma
+                                        #   (Tab Adjuntos sin acordeón Firma; el envío procedió)
+  userCanUploadFiles: false             # 🔴 CORREGIDO 2026-08-05 (el perfil decía true, siguiendo
+                                        #   el dump de CLIENTE 2026-02-17). LA UI MANDA: en el form
+                                        #   de cliente potencial hay **0 botones/iconos de cámara o
+                                        #   adjunto** y el payload viaja con nuAttachments:0 /
+                                        #   hasAttachments:false ⇒ nada puede bloquear el Enviar.
+                                        #   3ª vez que el dump de CLIENTE resulta stale (ver
+                                        #   ⚠️VERIFICAR #1 y la lección de alipascua).
+  esVendedor: true                      # ✅ CONFIRMADO 2026-08-05 (no viene en los dumps).
+                                        #   Usuario QA: login 1276 / id_user 266 (Dilcia Duarte).
+                                        #   EVIDENCIA: (1) tiene 144 clientes asignados por empresa
+                                        #   vía client_template_user; (2) creó los 18 cobros de hoy
+                                        #   desde el móvil (collection.id_user=266).
+  enterpriseEnabled: true               # AMBOS · 2 empresas en BD ⇒ coherente, DEBE haber selector
+  enabledManualRate: false              # ✅ RESUELTO EN UI 2026-08-05 — **la tasa NO es editable**.
+                                        # 🔴 GANA enabledManualRate=false SOBRE canChangeRate=true.
+                                        #   EVIDENCIA: `ion-input#tasa` del Tab General de PEDIDOS
+                                        #   llega `disabled=false` pero **`readonly=true`**.
+                                        #   ⚠ LECCIÓN: en ion-input, disabled=false NO implica
+                                        #     editable — hay que leer `readonly` aparte. Mirar solo
+                                        #     `disabled` daba el veredicto de VG al revés.
+  cobroPrepago: true                    # solo-global 2025-10-06 ⇒ existe botón ANTICIPO/PREPAGO
+  cobroRetencion: true                  # solo-global 2025-10-06 ⇒ existe botón RETENCIÓN (co_type=2)
+  retencion: true                       # AMBOS ⇒ 🟢 retención DENTRO del cobro normal SÍ aplica
+                                        #   → DM-COB-041/042 APLICAN (a diferencia de alipascua)
+  sizeRetention: 0                      # ⚠️VERIFICAR — global 2025-11-11=0 GANA sobre client=14.
+                                        #   "0 dígitos" es sospechoso para un nro. de comprobante;
+                                        #   leer la longitud REAL exigida por la UI y corregir aquí.
+  formatRetention: "0"                  # AMBOS · items = Numeros,Letras,Alfanumerico ⇒ 0 = Números
+  userCanSelectIGTF: true               # AMBOS ⇒ 🟢 IGTF APLICA (≠ alipascua)
+                                        #   Recordatorio: la base del IGTF es el TOTAL A PAGAR,
+                                        #   no solo el efectivo. disableCheckIGTF=false.
+  userCanCollectIva: true               # solo-global 2025-10-08
+  transportRole: true                   # solo-global 2025-11-12 ⚠️VERIFICAR alcance
+  userMustActivateGPS: false            # solo-global 2025-10-06 ⇒ NO exige GPS activo
+                                        #   (userCanSaveGPS=false también)
+
+  # ── VGs extra (fuera del esquema base, útiles para el mapa de N/A) ──
+  orderEnterpriseEnabled: true          # ⚠️VERIFICAR — global 2024-05-17=true sobre client=false.
+                                        #   ⇒ selector de empresa TAMBIÉN en PEDIDOS
+  orderTypeByEnterprise: true           # solo-global 2025-02-10
+  clientStock: true                     # AMBOS ⇒ 🟢 INVENTARIOS APLICA
+  requireClientStock: false             # ⚠️VERIFICAR — global 2024-05-22=false sobre client=true
+                                        #   ⇒ NO obliga toma de inventario antes del pedido
+  signatureOrder: true
+  signatureClient: true
+  signatureDeposit: false               # ⇒ depósitos SIN firma
+  signatureStock: false                 # ⇒ inventarios SIN firma
+  multiInvoices: false                  # ⇒ una sola factura por devolución
+  requeridedNroFactura: true            # AMBOS ⇒ nro de factura OBLIGATORIO en devoluciones
+  mesesFacturas: 3
+  selectOrderType: true                 # ⚠️VERIFICAR — global 2024-05-20=true sobre client=false
+  suggestedOrder: true                  # AMBOS
+  productMinMul: false                  # ⚠️VERIFICAR — global 2026-07-08=false sobre client=true
+                                        #   ⇒ NO limita por múltiplo de venta
+  featuredProducts: true
+  nameProductLine: "DESTACADOS"
+  hideProdWithoutPrice: false           # AMBOS ⇒ los productos SIN precio SÍ se listan
+  showStock: true
+  stock0: true                          # ⚠️VERIFICAR — global 2024-05-22=true sobre client=false
+                                        #   ⇒ SÍ se pueden pedir productos con inventario 0
+  hideStock0: false
+  productStock0: false
+  validStock: false                     # ⇒ NO alerta al cargar producto sin inventario
+  quUnitDecimals: true                  # ⚠️VERIFICAR — global 2024-05-22=true sobre client=false
+                                        #   ⇒ cantidades CON decimales en pedidos
+  userCanChangePriceList: false         # AMBOS ⇒ no cambia lista de precios…
+  userCanChangePriceListProduct: true   # …pero SÍ por producto (solo-global 2025-11-07) ⚠️VERIFICAR
+  userCanSelectGlobalDiscount: false    # AMBOS ⇒ descuento global N/A
+  userCanChangePaymentConditions: true  # ⚠️VERIFICAR — global 2024-05-22=true sobre client=false
+  userCanSelectIVA: true                # ⚠️VERIFICAR — global 2024-05-22=true sobre client=false
+  userCanSelectChannel: true
+  userCanChangeWarehouse: false         # AMBOS ⇒ el select "Almacén" debería llegar disabled
+  userCanSaveGPS: false
+  historicoTasa: true                   # AMBOS · mesesTasa=6
+  showExchangeRateSelector: false       # ⚠️VERIFICAR — parece contradecir historicoTasa=true
+  canChangeRate: true                   # solo-global 2026-07-23 ⚠️VERIFICAR vs enabledManualRate=false
+  showCamera: true
+  quAttach: 25
+  quFileAttach: 1
+  cloudAttachments: false
+  infoVendedores: false                 # AMBOS ⇒ el módulo VENDEDORES NO viene del administrativo:
+                                        #   se genera automáticamente en la app con datos de Denario.
+                                        #   ⚠️VERIFICAR que el módulo igualmente aparezca y liste.
+  tagRif: "RIF"
+  tagIVA: "IVA"
+  parteDecimal: 4                       # global 2024-11-05=4 gana sobre client 2023=2
+  parteEntera: 16                       # ⚠ ojo: el override de cliente trae la clave con TYPO
+                                        #   `parteElntera`=15 (con L). Son DOS claves distintas;
+                                        #   la buena es `parteEntera`=16 del global.
+  longitudComentario: 185               # ⚠ VALOR DE CONFIG, **NO es el tope real**: la UI acepta 255
+                                        #   en cobros/inventarios/depósitos/visitas. El tope lo fija
+                                        #   TEXT_COMMENT_MAX_LENGTH (constante de producto, por campo).
+                                        #   No reportar la diferencia como incumplimiento de VG.
+  requiredCommentOrder: false           # ⇒ comentario NO obligatorio en PEDIDOS
+  validateNuOrder: true                 # 🔴 CORREGIDO 2026-08-05 (el perfil decía false, siguiendo el
+                                        #   dump de CLIENTE 2026-02-17). LA UI MANDA: `ion-input#nuPurchase`
+                                        #   del Tab General de PEDIDOS llega **required=true** y mantiene
+                                        #   `comp.lockSegments=true` ⇒ las tabs Pedido/Total/Adjunto
+                                        #   siguen disabled AUNQUE el cliente ya esté seleccionado;
+                                        #   al llenarlo, las 3 habilitan en el mismo tick.
+                                        #   ⇒ el Nro. de orden de compra **SÍ es obligatorio**.
+                                        #   ⚠ Se leía como "DM-PED-006 FALLÓ: las tabs no habilitan".
+  # ── Cobros: tolerancias, parciales, retenciones, anticipos ──
+  tolerancia0: true                     # ⚠️VERIFICAR — global 2025-10-06=true sobre client=false
+                                        #   ⇒ SÍ se pueden enviar cobros que no cierran en 0
+  TipoTolerancia: 0
+  RangoToleranciaNegativa: 10
+  RangoToleranciaPositiva: 100000
+  MonedaTolerancia: "USD"
+  positiveDifference: false             # ⚠️VERIFICAR — solo-client 2023-02-01, SIN contraparte
+                                        #   global ⇒ valor potencialmente stale
+  enablePartialPayment: true            # ⇒ pagos parciales habilitados
+  alwaysPartialPayment: false
+  historicPartialPayment: true
+  retentionDocTypeCR: true              # ⚠️VERIFICAR — global 2025-10-21=true sobre client=false
+  userCanAddRetention: true
+  dynamicRetentions: false
+  alwaysRetention: false
+  missingRetention: false
+  requiredRetentionAttachments: false
+  requiredAnticipoAttachments: false
+  automatedPrepaid: true
+  prepaidPaymentMethod: "pa"
+  prepaidRangeAmount: 10
+  prepaidRangeCurrency: "USD"
+  clientBankAccount: false              # AMBOS ⇒ no se asocia cuenta bancaria del cliente
+  currencyBank: false                   # ⇒ solo se ven los bancos de la MONEDA del cobro
+  conversionDocument: false             # ⚠️VERIFICAR — solo-client 2023-02-01, sin contraparte global
+  validateCollectionDate: true
+  userCanSelectCollectDiscount: false
+  multiCurrencyCollection: true
+  multiCurrencyOrder: true
+  multiCurrencyDeposit: true
+  # ── Almacenes / warehouse ──
+  validateWarehouses: false             # ✅ CONFIRMADO EN UI 2026-08-05 (⚠️VERIFICAR retirado):
+                                        #   el panel de línea del producto trae **3 selects, no 5**
+                                        #   — la AUSENCIA de "Almacén" ES la señal de la VG.
+  showWarehouseDetails: true            # AMBOS ⇒ pero SÍ columna de almacén en el detalle
+  hideProductWarehouse: false
+  # ── Otros ──
+  visitRout: true                       # ⇒ ruta de visitas activa
+  promoterRole: true
+  rolPlanta: false
+  transactionCoordinateRadius: 50
+  transactionHistory: false
+  historyMonths: 1
+  activateSavia: false
+  currencyModule: true
+  vatExemptProducts: false              # AMBOS ⇒ IVA NO por producto, se usa la config web
+  setProductDiscount: false
+  setMaxProductDiscount: 0
+  clientsOrderBy: "co_client"
+  productsOrderBy: "co_product"
+  listProductsBy: "lineas"              # solo-client 2023 (sin contraparte global) ⚠️VERIFICAR
+  quPageProduct: 100
+  showProductImages: true
+  showProductByGrid: false
+  showCreditLimit: true
+  totalUnit: true
+  showTotalization: true
+  showTransactionCurrency: true
+  groupByTotalByLines: false
+  hideColletionPayment: true            # solo-client 2023 (sin contraparte global) ⚠️VERIFICAR
+                                        #   ⇒ manda lo configurado en colletionPayment
+  orderWeb: true                        # solo-client 2023
+  collectionWeb: false
+  depositWeb: false
+  returnWeb: false                      # solo-client 2023
+  # notifications* : TODAS en false (correo de notificación desactivado en todos los módulos)
+
+  # ✅ ⚠️VERIFICAR #1 — RESUELTO EN UI 2026-08-05: el dump de CLIENTE tenía razón ═══
+  #   A diferencia de alipascua, acá el valor `false` del dump de cliente SÍ se
+  #   corresponde con la UI. La regla del da_update acertó esta vez.
+  userCanSelectProductDiscount: true    # 🔴 CORREGIDO 2026-08-12 — antes decía `false` y estaba MAL.
+                                        #    Evidencia: pedido **13819** (cliente MAYOR RKL 1000001162,
+                                        #    lista **Z02 id_list 2**, vendedor **2045**). El desplegable
+                                        #    ofreció **sin descuento · 7 % · 15 %** (`id_discount` 0/417/393),
+                                        #    se aplicaron dos descuentos distintos y **persistieron** en
+                                        #    `order_detail.id_discount` + `nu_discount_total`.
+                                        #
+                                        # ⚠️ POR QUÉ SE HABÍA LEÍDO MAL — vale para cualquier VG de este tipo:
+                                        #    la medición del 5-ago concluyó `false` porque el select
+                                        #    "% Descuento" NO aparecía. Pero **la ausencia del select no es
+                                        #    la señal de la VG**: significa que **ESE producto no tiene
+                                        #    descuentos en ESA lista de precio**. Se evaluó sobre un producto
+                                        #    sin descuentos y se leyó como función apagada.
+                                        # ⇒ Para evaluarla hay que usar un producto con descuentos cargados
+                                        #    en la lista activa del cliente. Ver `pedido_descuento_20260812.md`.
+                                        #
+                                        # 🔴 DATO OPERATIVO: con el vendedor **1276** (el del bloque de datos
+                                        #    de prueba) **es imposible** armar un pedido con descuento — sus
+                                        #    clientes usan listas sin descuentos. Usar el vendedor **2045**,
+                                        #    que tiene 6 clientes en Z02.
+                                        # 🔴 El baseline por `max(id_order)` NO sirve en este cliente: el
+                                        #    máximo histórico es 23147 y los pedidos nuevos entran en 13.8xx.
+                                        #    Usar `da_created` para el diff.
+
+# ── Métodos de pago de Cobros ─────────────────────────────────────────────────
+# colletionPayment = true-false-true-true-false-false  (global 2026-07-23, 6 valores)
+#   Efectivo=SÍ · Cheque=NO · Transferencia=SÍ · Depósito=SÍ · Otros=NO · Pago Móvil=NO
+#   hideColletionPayment=true ⇒ manda colletionPayment.
+#   ⚠ El override de cliente traía solo 5 valores ("true-false-true-true-false",
+#     2023-02-01); el global de 2026-07-23 agrega el 6º (Pago Móvil) y GANA.
+# → EFECTIVO presente ⇒ módulo DEPÓSITOS APLICA.
+
+# ── Datos de prueba por módulo ────────────────────────────────────────────────
+# Pre-poblado desde BD read-only el 2026-08-05, EMPRESA 1002, vendedor QA
+# **login 1276 / id_user 266 (Dilcia Duarte)** — 144 clientes asignados por empresa.
+# ⚠ La tabla `users` se busca por `login_user`, NO por `co_user` (esa columna no
+#   existe); tampoco existe `na_user` (son name_user + lastname_user).
+# ⚠ En `client_template_user` el vendedor sí es la columna `co_user` = '1276'.
+# Un cliente NO asignado no aparece en la app: todo lo de abajo está filtrado por
+# client_template_user Y por co_enterprise='1002'.
+#
+# 🟢 CRITERIO: se priorizaron los clientes que la QA YA ESTÁ USANDO HOY (los de
+#    los 18 cobros del 2026-08-05), para que el smoke pise terreno conocido.
+modules:
+  login:
+    bad_password: "(ver secrets/qa-credentials.env → bloque '# Cliente: el palmar' → QA_BAD_PASSWORD)"
+    # usuario QA: (ver secrets/qa-credentials.env → bloque '# Cliente: el palmar' → QA_USER)
+
+  clientes:
+    cliente_busqueda: "RON SANTA"       # C.A. RON SANTA TERESA, S.A.C.A
+    cliente_detalle: "1000000803"       # cliente usado por QA hoy (9 cobros)
+
+  pedidos:
+    cliente_test: "1000000803"          # C.A. RON SANTA TERESA, S.A.C.A (empresa 1002)
+    estructura_producto: "Sector"       # ✅ RESUELTO en UI 2026-08-05 (era TBD). El selector de
+                                        #   agrupación ofrece **Sector (P01, default) / Grupo de
+                                        #   artículos (P02)**; su `value` es el objeto
+                                        #   `type_product_structure` completo (coTypeProductStructure,
+                                        #   nuLevel 1/2). ⚠ El par de opciones CAMBIA POR CLIENTE
+                                        #   (en alipascua era Proveedor/Línea): leerlo, no asumirlo.
+    moneda_pedido: "USD"                # 🔴🔴 OBLIGATORIO ELEGIR USD ANTES DE ABRIR EL TAB PEDIDO.
+                                        #   El Tab Pedido filtra por el par (LISTA DE PRECIOS ACTIVA
+                                        #   × MONEDA DEL PEDIDO). La lista activa de este cliente es
+                                        #   **Z12** (id_list 11, "Med.Ind.Ctro-Cap CIF") y tiene
+                                        #   **13 filas / 7 productos en USD y 0 en VES**… pero el
+                                        #   selector de moneda **llega por defecto en VES** ⇒ con el
+                                        #   default se ven **0 productos en todo el árbol** y se lee
+                                        #   como "no hay catálogo". Con USD, `Azucar` lista 6.
+                                        #   ⚠ El agregado por empresa ENGAÑA: 1002 "tenía 1 producto
+                                        #     en VES", pero en la lista Z12 tenía 0.
+                                        #   ⚠ `PVA` sigue vacía incluso con USD: sus 30 productos no
+                                        #     tienen precio en Z12 en NINGUNA moneda. Para el smoke,
+                                        #     usar productos de `Azucar` (p.ej. 160000010).
+                                        #   ⚠ Predicción no verificada en UI: la empresa 1003 tiene
+                                        #     0 filas en VES en TODAS sus listas ⇒ mismo síntoma.
+    alerta_deuda_vencida: true          # 26 documentos pendientes, los 26 VENCIDOS,
+                                        #   51.600,26 USD ⇒ debería alertar
+    # ── Medido en la corrida 20260805_133539 ──
+    # · Empresa: el select llega **preseleccionado en 1002 y HABILITADO** (a diferencia
+    #   de CLIENTES, donde llega vacío y obligatorio) y NO toma la `enterprise_default`.
+    # · `#nuPurchase` es OBLIGATORIO (ver validateNuOrder, corregido a true): mientras
+    #   esté vacío, `comp.lockSegments=true` y las tabs Pedido/Total/Adjunto NO habilitan
+    #   aunque el cliente ya esté elegido. NO es un FAIL de la app.
+    # · `#tasa` llega readonly ⇒ la tasa NO se edita (ver enabledManualRate).
+    # · El modal de cliente ordena por deuda vencida (`oderByDueDateAndSaldo`), no
+    #   alfabético: 1000000803 cayó en el índice 3 de 50 ⇒ 0 rondas de paginación.
+    # · El árbol de productos es **drill-down**: click en la categoría NAVEGA dentro
+    #   (no expande); volver con `ion-icon[name="arrow-back-outline"]`.
+    # · El badge de la categoría NO refleja el filtro de precio/moneda (`Azucar 8` lista 6).
+    # stock0=true ⇒ se puede pedir producto sin inventario
+    # validateWarehouses=false ⇒ CONFIRMADO: el panel de línea trae 3 selects, no 5
+    # requiredCommentOrder=false ⇒ comentario NO obligatorio
+
+  cobros:
+    # 🔴🔴🔴 ESTA CORRIDA: COBROS ES **SOLO LECTURA** (decisión de QA 2026-08-05).
+    #   NO se crean cobros: ni normales, ni anticipos, ni retenciones.
+    #   Los datos de abajo quedan cargados para FUTURAS corridas y para poder
+    #   navegar/leer el módulo, pero TODOS los casos de creación son N/A.
+    #   Contexto BD: 26.263 cobros históricos y solo 2 depósitos.
+    #
+    #   📋 LOS 18 COBROS DE HOY (id_user=266, 2026-08-05) — para verificar por lectura:
+    #      ids 27068..27085 · TODOS con st_collection=1
+    #      por co_type: 0 → 27070,27071,27072,27076,27077,27078,27082,27084,27085 (9)
+    #                   1 → 27073 (1)   · 2 → 27069,27074,27079,27080,27081 (5)
+    #                   3 → 27083 (1)   · 4 → 27068,27075 (2)
+    #      por empresa: 1002 → 15 cobros · 1003 → 3 cobros (27068,27071,27072)
+    #      ⚠ 5 de ellos tienen nu_amount_total = 0,00 USD (27076,27077,27082,27085
+    #        y otro): revisar si es esperado o defecto.
+    cliente_test: "1000000747"          # INDUSTRIA MANICERA ARAIRA INDUMAC — SIN documentos
+                                        #   pendientes (0 docs en AMBAS empresas) Y usado por
+                                        #   QA hoy ⇒ ideal para los casos "cliente sin documentos"
+    cliente_code: "1000000747"
+    clientes_con_documentos:            # empresa 1002 · 100% vencidos
+      # ── prioritarios: la QA los usó HOY ──
+      - "1000000803"                    # C.A. RON SANTA TERESA — 26 docs, 26 venc., 51.600,26 USD
+      - "1000000804"                    # CORPORACION ALCOHOLES DEL CARIBE — 52 docs, 98.064,12 USD
+      - "1000001971"                    # COCA-COLA FEMSA DE VENEZUELA — 46 docs, 171.111,06 USD
+      # ── volumen alto (si hace falta más carga) ──
+      - "1000001977"                    # PEPSI-COLA VENEZUELA — 584 docs, 43.929.565,88 VES
+      - "1000001897"                    # NESTLE VENEZUELA — 376 docs
+      - "1000001943"                    # C.A. SUCESORA DE JOSE PUIG & CIA — 84 docs
+      - "1000001925"                    # ALIMENTOS POLAR COMERCIAL — 72 docs
+      - "1000002001"                    # INDUSTRIAS AMAPOLA — 56 docs
+    # ── empresa 1003 (para el caso del SELECTOR DE EMPRESA) ──
+    clientes_con_documentos_emp1003:
+      - "1000002025"                    # CAYETANO FARIAS E HIJOS — 156 docs, 6.084.391,98 VES
+                                        #   ⚠ usado por QA hoy (3 cobros, empresa 1003)
+      - "1000001977"                    # PEPSI-COLA VENEZUELA — 138 docs, 2.182.702,38 VES
+      - "1000001735"                    # ALCOHOLES Y AÑEJOS MONAGAS — 130 docs, 3.074.228,92 USD
+      - "1000000804"                    # CORPORACION ALCOHOLES DEL CARIBE — 30 docs, 763.776,04 USD
+    cliente_25iva: ""                   # no hay VG de cobro 25% IVA en los dumps ⇒ N/A
+    metodo_pago: efectivo               # Efectivo habilitado (ver colletionPayment)
+    banco_deposito: "BP342"             # Provincial Cepsa BP342 (empresa 1002)
+                                        #   ⚠ los bancos son POR EMPRESA: 33 en 1002 (sufijo
+                                        #     "Cepsa"), 24 en 1003 (sufijo "Cady"). Todos son
+                                        #     bancos REALES — ningún "PROVEEDOR *" como en alipascua.
+                                        #   ⚠ currencyBank=false ⇒ solo se listan los bancos de
+                                        #     la moneda del cobro.
+    documento_retencion: "0092002924"   # cliente 1000000803 RON SANTA TERESA · empresa 1002
+                                        #   2.784,00 USD, saldo 2.496,00, vencido 2025-07-26
+                                        #   vgs.retencion=true ⇒ DM-COB-041/042 APLICAN
+                                        #   (pero esta corrida es solo lectura)
+    monto_retencion_iva: 10
+    monto_retencion_islr: 1
+    # ── Medido en la corrida 20260805_133539 (SOLO LECTURA, 25 cobros) ──
+    # · 🔴 BUSCAR de Cobros **NO consulta la nube**: el historial es puramente LOCAL
+    #   (el sync no descarga `collection`) ⇒ NUNCA marcar FAIL "la lista está vacía /
+    #   faltan cobros" sin contrastar contra la BD local primero.
+    # · La tabla local `statuses` está VACÍA; el estado se rotula por constantes del
+    #   componente (COLLECT_STATUS_NEW=0/SENT=1/TO_SEND=2/SAVED=3). No diagnosticar por ahí.
+    # · Un cobro Enviado abre con **3 tabs** (General/Total/Adjuntos): sin Documentos ni Pagos.
+    # · La etiqueta de fecha del Tab General varía con co_type ("Fecha Cobro" en 0/3,
+    #   "Fecha Retención" en 2) ⇒ no usarla como selector estable.
+    # · Los valores del Tab General viven en `.value`/shadowRoot, NO en `innerText`
+    #   (innerText devuelve las etiquetas con los valores vacíos).
+    # · ⚠ "Monto Doc." del acordeón de retención muestra el **SALDO** (`nu_balance_doc`),
+    #   no el `nu_amount_doc`: cotejar contra nu_balance_doc o sale un mismatch falso.
+    # · Comentario: tope real **255** (hint "Mín. 0 - Máx. 255"), no longitudComentario=185.
+    moneda_cobro: "USD"                 # 427 de los 451 docs de la empresa 1002 están en USD
+                                        #   ⚠ pero los cobros que QA hizo HOY son mayormente VES
+                                        #     (16 de 18) ⇒ si se replica el flujo real, usar VES
+    smoke_na_estructural:
+      - "🔴 TODOS los casos de CREACIÓN de cobro — esta corrida cobros es SOLO LECTURA"
+      - "Cheque como método de pago (colletionPayment posición 2 = false)"
+      - "Otros como método de pago (posición 5 = false)"
+      - "Pago Móvil como método de pago (posición 6 = false)"
+      - "adjunto obligatorio (requiredCollectionAttachments=false)"
+      - "adjunto obligatorio en anticipo (requiredAnticipoAttachments=false)"
+      - "adjunto obligatorio en retención (requiredRetentionAttachments=false)"
+      - "tasa manual editable (enabledManualRate=false) — ⚠️VERIFICAR vs canChangeRate=true"
+      - "cuenta bancaria del cliente (clientBankAccount=false)"
+      - "descuento en cobro (userCanSelectCollectDiscount=false)"
+
+  devoluciones:
+    cliente_test: "1000000803"          # C.A. RON SANTA TERESA, S.A.C.A (empresa 1002)
+    factura_test: "0092002924"          # 2.784,00 USD · o cualquiera de las 26 del cliente
+                                        #   (0092002923/26/27/28, 0092002888/89, 0092002910/11…)
+    producto_test: "160000019"          # AZÚCAR MONTALBAN REFINO PAPEL 20X1KG
+                                        #   ✅ re-verificado: activo (co_operation<>'D') y
+                                        #      perteneciente a la EMPRESA 1002
+    # validateReturn=false ⇒ NO exige que el producto esté en la factura
+    # requeridedNroFactura=true ⇒ el nro de factura SÍ es obligatorio
+    # multiInvoices=false ⇒ una sola factura por devolución
+    # expirationBatch=true ⇒ 🔴 SÍ pide LOTE y FECHA DE VENCIMIENTO (⚠️VERIFICAR)
+    # signatureReturn=true ⇒ pide firma
+
+  inventarios:
+    cliente_test: "1000000803"          # C.A. RON SANTA TERESA, S.A.C.A
+    cliente_code: "1000000803"
+    # clientStock=true ⇒ aplica · requireClientStock=false ⇒ no bloquea el pedido
+    # expirationBatch=true ⇒ ✅ CONFIRMADO: el **LOTE es OBLIGATORIO acá** (y NO en
+    #   devoluciones). Alerta: "Complete cantidad, unidad, fecha y lote para continuar."
+    # signatureStock=false ⇒ SIN firma
+    # ✅ El comentario NO es obligatorio acá (comprobado): requiredComment es de alcance
+    #   COBROS (tipo_variable=C). Tope real medido = **255** (constante de producto).
+    # ── Medido en la corrida 20260805_133539: Inventario Ref 17 Enviado ──
+    # · Envío = 3 alertas y la 3ª da la Ref ("Inventario nro. 17 enviado exitosamente").
+    # · Títulos de alert inconsistentes dentro del módulo: "Denario Inventario" /
+    #   "Denario Inventarios" (borrado, en plural) / "Denario Premium" (la de la Ref).
+    # · NO apareció alerta de geolocalización (depende del permiso del DEVICE).
+    # ⚠ BD: `transaction_statuses` de esta playa NO tiene columna `tx_status` — descubrir
+    #   el esquema antes de traducir estados. Y en la NUBE `client_stock_detail_unit`
+    #   NO tiene `co_unit`: la unidad viaja en **`co_product_unit`** (ej. 160000019-FAR).
+
+  depositos:
+    aplica: true                        # EVIDENCIA: colletionPayment = true-false-true-true-false-false
+                                        #   → posición 1 (Efectivo) = true ⇒ hay efectivo que depositar
+                                        #   → posición 4 (Depósito)  = true
+                                        #   ⇒ el módulo DEPÓSITOS APLICA.
+    motivo_na: ""
+    banco_test: "BP342"                 # ✅ 11 cuentas ofrecidas con VES/empresa 1002 (de 57
+                                        #   `bank_accounts` locales): las cuentas se filtran por
+                                        #   **MONEDA *Y* POR EMPRESA**, no solo por moneda.
+    # ── Medido en la corrida 20260805_133539: Depósito Ref 3 Enviado ──
+    # · Monto depositable = **solo la porción EFECTIVO del cobro** (cobro 27083:
+    #   total 16.820,4436 = 10.000 `de` + 6.820,4436 `ef` → "Monto Depósito 6820.4436").
+    #   Correcto; buen oráculo de que el filtro co_payment_method='ef' opera bien.
+    # · Al elegir el banco el layout se recompone: **Fecha Doc baja de y=477 a y=348**
+    #   ⇒ releer el rect o el click cae al vacío sin error.
+    # · El ion-item de la lista **solo responde en su tercio superior** (sobre "Nro Ref:").
+    # · Envío = 3 alertas, mezclando Aceptar/OK dentro del mismo flujo; la 3ª da la Ref.
+    # · Inconsistencia COSMÉTICA (no defecto): la tab Cobros muestra `id_collection`
+    #   ("Referencia 27083") y la tab Total `co_collection` ("1785950387050.0"); el
+    #   payload viaja correcto (`collectionIds:[27083]`).
+    # signatureDeposit=false ⇒ SIN firma · multiCurrencyDeposit=true
+    # ⚠ `deposits` LOCAL arranca VACÍA aunque la nube tenga histórico (2 depósitos de
+    #   oct-2025): los depósitos históricos NO se sincronizan al device. NO confundir
+    #   "lista vacía" con defecto de render ni con el bug de `deposit.service.ts`.
+
+  visitas:
+    cliente_test: "1000000803"          # C.A. RON SANTA TERESA, S.A.C.A
+    smoke_na_estructural:
+      - "firma de visita (signatureVisit=false)"
+      - "guardar GPS (userCanSaveGPS=false)"
+      - "exigir GPS activo (userMustActivateGPS=false)"
+    # visitRout=true ⇒ ruta de visitas activa
+    # 🔴 CORREGIDO 2026-08-05: el catálogo de actividades que ofrece la app es de **11**,
+    #   no 8 (el conteo previo se hizo con un filtro incompleto). Verificado en UI.
+    # ✅ Y **la app SÍ filtra `co_operation='D'`** — comprobado acá y en devoluciones:
+    #   ninguna de las actividades borradas ("prueba", "ffrfff", "Prueba Kiberno"…)
+    #   apareció en el selector. NO es defecto; se retira la sospecha.
+    # Base ACTIVA conocida (incidence_type con co_operation<>'D'):
+    #   2 NO VISITO · 47 MERCHANDISING · 71 NO COMPRO · 75 VISITA FUERA DE RUTA ·
+    #   82 COBRANZA · 83 INFO DE CLIENTES · 84 COBRANZA NO EFECTIVA · 85 VENTA EN RUTA
+    # ── Medido en la corrida 20260805_133539 ──
+    # · Empresa: `ion-select` PRESELECCIONADO, sin `formcontrolname`, objeto empresa
+    #   completo como value; NO entra en la validación (Guardar/Enviar dependen solo
+    #   de cliente + ≥1 evento).
+    # · Alert "sucursal sin coordenadas": dispara al SELECCIONAR el cliente y al
+    #   REABRIR la visita, NO antes del dirty-guard. No bloquea Guardar/Enviar.
+    #   (cliente 1000000803, sucursal DESPACHO 51123 sin coords)
+    # · Borrado usa **[CANCELAR, Aceptar]**, NO "Eliminar" (al revés que devoluciones
+    #   del mismo cliente) ⇒ la etiqueta se LEE, no se predice.
+    # · RUTA DE HOY sin datos = N/A estructural PROBADO con 3 señales coincidentes
+    #   (comp.listaVisitas.length + tabla local `visits` + texto "No hay resultados").
+    # ⚠ `transaction_statuses` NO cubre visitas (solo ped/cob/dev/inv/dep) ⇒ el estado
+    #   fiable es `visit.st_visit=2`=Enviado + `is_visited=true`. Local: 0=Guardado, 2=Enviado.
+
+  productos:
+    tipo_estructura_default: "Sector"   # ✅ RESUELTO en UI 2026-08-05 (era TBD): Sector (P01) /
+                                        #   Grupo de artículos (P02). El `value` del ion-select es
+                                        #   el OBJETO completo, no un id.
+    texto_busqueda: "AZUCAR"            # 🔴 SIN TILDE — la búsqueda **no normaliza diacríticos**:
+                                        #   con "AZÚCAR" el caso se lee como "no filtra" (falso FAIL).
+                                        #   Alternativa segura: "MONTALBAN".
+                                        # 39 productos activos en la empresa 1002
+                                        #   ⚠ el catálogo es POR EMPRESA: 39 en 1002
+                                        #     (azúcar/papelón/gelatinas MONTALBAN),
+                                        #     18 en 1003 (alcoholes + azúcares).
+                                        #   Alternativa sin acento: "MONTALBAN"
+
+  vendedores:
+    aplica: true                        # el módulo existe, pero infoVendedores=false ⇒ NO viene
+                                        # del sistema administrativo: se autogenera en la app con
+                                        # datos de Denario. ⚠️VERIFICAR que liste algo.
+
+# ── Estados por módulo ────────────────────────────────────────────────────────
+# 🔴🔴 ADVERTENCIA CRÍTICA PARA EL COTEJO BD: en esta playa el `st_*` de la
+#     transacción **NO es traducible por el catálogo `statuses`**.
+#     ✅ RECONFIRMADO 2026-08-05 sobre los **25 cobros verificados** (27068-27092):
+#        los 25 tienen `st_collection = 1`, valor inexistente en el catálogo `cob`
+#        de AMBAS empresas. La fuente confiable es `transaction_statuses` con
+#        **co_status='env'** (ver abajo). Vale para todos los módulos de esta playa.
+#     Los cobros que QA envió hoy tienen `collection.st_collection = 1`,
+#     y el valor 1 **NO EXISTE** en el catálogo `cob` de NINGUNA de las dos
+#     empresas (1002 tiene 2 y 12; 1003 tiene 7, 22 y 17).
+#     Distribución real de la tabla `collection`: st=1 → 22 filas · st=6 → 26.241.
+#     Ninguno de los dos coincide con el catálogo `cob`.
+#     ⇒ NO derivar "Enviado" haciendo JOIN de st_collection contra statuses.
+#
+# ✅ LA FUENTE CONFIABLE ES `transaction_statuses` (log de estado por transacción),
+#    donde lo que importa es **co_status**, no id_status:
+#      cob: co_status='env' (id_status 1 → 2.468 · 2 → 194 · 7 → 50)
+#      ped: co_status='env' (id_status 1 → 2.447)
+#      dev: co_status='env' (id_status 3 → 3)
+#      inv: co_status='env' (id_status 4 → 2 · 9 → 1)
+#      dep: co_status='env' (id_status 5 → 2)
+#    Nótese que id_status=1 aparece tanto en 'cob' como en 'ped' ⇒ el id NO es
+#    discriminante; usar co_status.
+#
+# ✅ 'Por aprobar' (pap) NUNCA se usa en la práctica: `transaction_types` tiene
+#    require_approval=false para los 6 tipos (ped, cob, dev, inv, dep, vis).
+#
+# Catálogo `statuses` (POR EMPRESA — se deja como referencia, NO para traducir):
+#   EMPRESA 1002: ped 1=env/11=pap · cob 2=env/12=pap · dev 3=env/13=pap ·
+#                 inv 4=env/14=pap · dep 5=env/15=pap      (status_action=3)
+#   EMPRESA 1003: ped 6=env/16=pap/21=env · cob 7=env/17=pap/22=env ·
+#                 dev 8/18/23 · inv 9/19/24 · dep 10/20/25 (el 3º con action=1)
+#   required_comment=false en TODOS. ⚠ No hay filas para 'vis' (visitas).
+
+# ── 🔴 co_type de COBROS: 5 valores en esta BD, no 3 ──────────────────────────
+# El modelo compartido (automation/db/modelo-datos-denario.md) solo documenta
+# 0/1/2. En EL PALMAR hay CINCO:
+#   co_type=0 → 15.032 cobros (ids 1..27085)      — cobro normal
+#   co_type=1 →  5.097 cobros (ids 4..27073)      — anticipo/prepago
+#   co_type=2 →  6.088 cobros (ids 21..27081)     — retención
+#   co_type=3 →      9 cobros (ids 26838..27083)  — ✅ **IGTF**
+#   co_type=4 →     37 cobros (ids 26846..27075)  — ✅ **Cobro 25%**
+#
+# ✅ RESUELTO 2026-08-05 (capa web). Los rótulos salieron GRATIS del propio filtro:
+#    el `<select id$=":idTipo_input">` de /pages/cobros expone el enum completo.
+#    Es más barato y más fiable que el catálogo `statuses`.
+#    ⚠ La hipótesis previa ("se relacionan con devolución / faltante") queda DESCARTADA.
+#    ⚠ "Cobro 25%" es solo el ROTULO del tipo: en la verificación de los 25 cobros
+#      **no apareció ningún 25 % real** en montos (ver web.md §F4).
+#    Ya volcado a automation/db/modelo-datos-denario.md y a web-selectors/cobros.md.
+#
+# 🔴 EL ORÁCULO DE LA CABECERA ES POR co_type — usar el equivocado da falsos positivos:
+#    co_type 0: Total a pagar = Σ(Saldo doc) − Total dcto − (Ret.IVA+Ret.ISLR) − Σ(Dif/Faltante) + IGTF
+#    co_type 2: Total a pagar = Σ(Monto a pagar por doc) = Ret.IVA + Ret.ISLR   ← el saldo NO participa
+
+# ── Catálogos auxiliares (BD read-only, 2026-08-05) ───────────────────────────
+# TIPOS DE DEVOLUCIÓN (return_type) — solo 3 ACTIVOS, el resto está borrado:
+#   52 PostVenta · 59 Servicio · 60 Calidad
+#   ⚠ Los datos basura de alipascua ("prueba", "hola", "Prueba Tovar", "problemas",
+#     "Despacho") existen en la tabla pero con co_operation='D' ⇒ NO deberían
+#     aparecer en la app. Si aparecen ⇒ defecto. Preferir 52 / 59 / 60.
+#
+# MOTIVOS DE DEVOLUCIÓN (return_motive) — 🔴 **24 ACTIVOS** (corregido en UI 2026-08-05;
+#   el conteo previo decía 21). Catálogo LIMPIO y legítimo,
+#   etiquetados por categoría (Calidad / Inocuidad / Servicio). Ejemplos usables:
+#     34 Empaque Roto/Mal Sellado (Calidad)
+#     36 Empaque Sucio (Inocuidad)
+#     37 Empaque Mojado (Inocuidad)
+#     40 Producto con Falla de Peso (Calidad)
+#     41 Producto sin Nro. de Lote (Calidad)
+#     48 Tiempos de Despacho (Servicio)
+#     57 Mala Atención del vendedor (Servicio)
+#   ✅ Los motivos genéricos viejos ("Vencido", "Tapas Rotas", "No funciona",
+#     "not working", "producto en mal estado", "Producto Vencido") están BORRADOS
+#     (co_operation='D') y **la app NO los ofrece**: comprobado en UI 2026-08-05.
+#     🔴 **La app SÍ filtra `co_operation='D'`** ⇒ se retira la sospecha de defecto,
+#     tanto acá como en los tipos de devolución y en las actividades de visita.
+#   ⚠ co_motive es NULL en todos: identificarlos por id_motive.
+#
+# BANCOS — 57 activos, TODOS reales (33 empresa 1002 "Cepsa", 24 empresa 1003 "Cady").
+#   Empresa 1002, ejemplos: BP342 Provincial Cepsa · BM052 Mercantil Cepsa ·
+#   BB406 Banesco Cepsa · BC102 Bancaribe Cepsa · BN592 BNC Cepsa ·
+#   BV069 Venezuela Cepsa · BF821 BFC CEPSA USD · BA906 Amerant Bank Cepsa
+#   ⚠ currencyBank=false ⇒ la app filtra por la moneda del cobro.
+#
+# MONEDAS (currency): USD (Dólar estadoun.) · VES (Bolivar Sober.) · EUR (Euro)
+#
+# ALMACENES: existen por empresa (1002: 1004, 1312, 1314, 1401, 1501-1504…),
+#   pero userCanChangeWarehouse=false y validateWarehouses=false ⇒ no se eligen
+#   en la toma de pedido.
+
+# ── Mapa de N/A estructural implicado por las VGs ─────────────────────────────
+# NO APLICAN en este cliente:
+#   · Cheque / Otros / Pago Móvil como método de pago (colletionPayment)
+#   · Adjunto OBLIGATORIO en cobro, anticipo y retención (los 3 required*=false)
+#   · Firma en VISITAS, DEPÓSITOS e INVENTARIOS (signatureVisit/Deposit/Stock=false)
+#   · GPS obligatorio y guardado de GPS (userMustActivateGPS=false, userCanSaveGPS=false)
+#   · Tasa manual editable (enabledManualRate=false) ⚠️VERIFICAR vs canChangeRate=true
+#   · Descuento GLOBAL en pedido (userCanSelectGlobalDiscount=false)
+#   · Cambio de lista de precios a nivel pedido (userCanChangePriceList=false)
+#   · Cambio de almacén / inventario por almacén en pedido (userCanChangeWarehouse=false,
+#     validateWarehouses=false)
+#   · Alerta por producto sin inventario (validStock=false)
+#   · Múltiples facturas por devolución (multiInvoices=false)
+#   · Validación de producto contra factura enviada en devolución (validateReturn=false)
+#   · Cuenta bancaria del cliente en cobro (clientBankAccount=false)
+#   · Descuento en cobro (userCanSelectCollectDiscount=false)
+#   · IVA por producto (vatExemptProducts=false)
+#   · Notificaciones por correo (TODAS las notifications*=false)
+#   · Toma de inventario obligatoria antes del pedido (requireClientStock=false)
+#   · Comentario obligatorio en PEDIDOS (requiredCommentOrder=false)
+#   · Nro. de orden de compra obligatorio (validateNuOrder=false)
+#   · 🔴 TODA la creación en COBROS — decisión de QA para esta corrida
+#
+# SÍ APLICAN (y son lo diferencial de este cliente frente a alipascua):
+#   · 🟢 IGTF (userCanSelectIGTF=true)
+#   · 🟢 Retención dentro del cobro normal → DM-COB-041/042 (retencion=true)
+#   · 🟢 Botón RETENCIÓN y botón ANTICIPO (cobroRetencion/cobroPrepago=true)
+#   · 🟢 LOTE + FECHA DE VENCIMIENTO en inventarios y devoluciones (expirationBatch=true)
+#   · 🟢 SELECTOR DE EMPRESA en todos los módulos, PEDIDOS incluido
+#        (enterpriseEnabled=true + orderEnterpriseEnabled=true, 2 empresas en BD)
+#   · 🟢 Comentario obligatorio en COBROS (requiredComment=true, máx. 185)
+#   · 🟢 Pagos parciales (enablePartialPayment=true)
+#   · 🟢 Cobros que no cierran en cero (tolerancia0=true)
+#   · 🟢 Módulo INVENTARIOS (clientStock=true) y DEPÓSITOS (efectivo habilitado)
+
+# ── Última corrida ────────────────────────────────────────────────────────────
+ultima_corrida:
+  run_id: "20260805_133539_smoke-completo"
+  fecha: "2026-08-05"
+  # 1ª corrida del cliente. Reportes: automation/reports/smoke_el_palmar_20260805_133539/
+  # COBROS fue SOLO LECTURA por decisión de QA (25 cobros verificados, 27068-27092).
+  # Patrones promovidos a module-selectors/ y web-selectors/ el 2026-08-05.
+  defectos_abiertos: []

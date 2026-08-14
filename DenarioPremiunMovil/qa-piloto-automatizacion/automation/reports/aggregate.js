@@ -19,11 +19,21 @@ const fCliente = getArg("--cliente");
 const fModulo = getArg("--modulo");
 
 // ── Recolectar todas las líneas de ledger ──
+// Los reportes están agrupados por cliente: reports/<cliente>/<corrida>/
+// Se recorren AMBOS niveles para seguir soportando corridas sueltas en la raíz.
+// El bucle de abajo descarta solo las que no tengan _results.jsonl, así que
+// devolver candidatos de más es inofensivo.
 function runDirs() {
-  return fs.readdirSync(REPORTS_DIR, { withFileTypes: true })
-    .filter((d) => d.isDirectory())
-    .map((d) => d.name)
-    .filter((n) => !fCliente || n.includes(`_${fCliente}_`));
+  const out = [];
+  for (const d of fs.readdirSync(REPORTS_DIR, { withFileTypes: true })) {
+    if (!d.isDirectory()) continue;
+    out.push(d.name);
+    for (const h of fs.readdirSync(path.join(REPORTS_DIR, d.name), { withFileTypes: true })) {
+      if (h.isDirectory()) out.push(`${d.name}/${h.name}`);
+    }
+  }
+  // --cliente matchea tanto la carpeta del cliente como el nombre viejo (smoke_<cliente>_<fecha>)
+  return out.filter((n) => !fCliente || n.includes(fCliente));
 }
 
 const rows = [];

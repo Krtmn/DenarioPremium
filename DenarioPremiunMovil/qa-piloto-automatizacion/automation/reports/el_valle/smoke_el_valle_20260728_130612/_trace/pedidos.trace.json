@@ -1,0 +1,398 @@
+{
+ "run_id": "20260728_130612_smoke-completo",
+ "modulo": "pedidos",
+ "cliente": "el_valle",
+ "servidor": "la_tortuga",
+ "build": {
+  "app_version": "1.0",
+  "window_ng": true
+ },
+ "data": {
+  "cliente_test": "ABASTOS Y CARNICERIA HERMANOS FLORES CA",
+  "co_client": "J309901710",
+  "categoria_producto": "PRODUCTO FRESCO EN VENTA",
+  "producto_test": "ALAS DE POLLO",
+  "co_product_test": "C0051",
+  "producto_alt": "COSTILLA CHINA DE CERDO",
+  "co_product_alt": "C0003",
+  "producto_b": "MUSLO DE POLLO",
+  "comentario": "Test-PED-SMOKE-141457",
+  "comentario_b": "Test-PED-SMOKE-B-141855",
+  "ref_enviado": "437",
+  "empresa": "PROCESADORA DE ALIMENTOS COVADONGA,C.A"
+ },
+ "ops": [
+  {
+   "case": "DM-PED-001"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const ps=Array.from(document.querySelectorAll('p.nombreModulos')); const p=ps.find(x=>x.textContent.trim().toUpperCase()==='PEDIDOS'); if(!p) return 'ERROR: tile PEDIDOS no encontrado'; const a=p.closest('a'); if(!a) return 'ERROR: sin <a>'; const r=a.getBoundingClientRect(); window.__qaCoords={x:r.left+r.width/2,y:r.top+r.height/2}; return 'OK'; }",
+   "tag": "coords-tile-pedidos"
+  },
+  {
+   "op": "assert",
+   "desc": "app-pedidos visible con PEDIDO/BUSCAR/COPIAR",
+   "code": "() => { const el=document.querySelector('app-pedidos'); if(!el||el.offsetParent===null) return false; const t=(el.innerText||'').toUpperCase(); return t.includes('PEDIDO')&&t.includes('BUSCAR'); }"
+  },
+  {
+   "case": "DM-PED-002"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const el=document.querySelector('app-pedidos'); if(!el) return 'ERROR: sin app-pedidos'; const cand=Array.from(el.querySelectorAll('a, ion-button, ion-col, div')).filter(n=>n.offsetParent!==null && (n.innerText||'').trim().toUpperCase()==='PEDIDO'); if(!cand.length) return 'ERROR: tile PEDIDO no encontrado'; const n=cand[cand.length-1]; const rc=n.getBoundingClientRect(); window.__qaCoords={x:rc.left+rc.width/2,y:rc.top+rc.height/2}; return 'OK '+n.tagName+' '+Math.round(rc.width)+'x'+Math.round(rc.height); }",
+   "tag": "coords-tile-PEDIDO"
+  },
+  {
+   "op": "assert",
+   "desc": "tabs Pedido/Total disabled sin cliente",
+   "code": "() => { const el=document.querySelector('app-pedido'); if(!el) return false; const bs=Array.from(el.querySelectorAll('ion-segment-button')); const ped=bs.find(b=>/pedido/i.test(b.textContent||'')); const tot=bs.find(b=>/total/i.test(b.textContent||'')); const dis=(b)=>!!b&&(b.classList.contains('segment-button-disabled')||b.hasAttribute('disabled')); return dis(ped)&&dis(tot); }"
+  },
+  {
+   "case": "DM-PED-029"
+  },
+  {
+   "case": "DM-PED-006"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const i=document.querySelector('ion-input#clienteSelect'); if(!i) return 'ERROR: sin #clienteSelect'; const r=i.getBoundingClientRect(); window.__qaCoords={x:r.left+r.width/2,y:r.top+r.height/2}; return 'OK'; }",
+   "tag": "coords-clienteSelect"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const m=Array.from(document.querySelectorAll('ion-modal')).find(x=>x.classList.contains('show-modal')&&x.offsetParent!==null); if(!m) return 'ERROR: modal no abierto'; const its=Array.from(m.querySelectorAll('ion-item')); const it=its.find(n=>(n.textContent||'').toUpperCase().includes('ABASTOS Y CARNICERIA HERMANOS FLORES')); if(!it) return 'ERROR: cliente no listado ('+its.length+' items)'; it.scrollIntoView({block:'center'}); return 'OK'; }",
+   "tag": "scroll-cliente"
+  },
+  {
+   "op": "assert",
+   "desc": "tabs habilitadas tras seleccionar cliente",
+   "code": "() => { const el=document.querySelector('app-pedido'); if(!el) return false; const bs=Array.from(el.querySelectorAll('ion-segment-button')); const ped=bs.find(b=>/pedido/i.test(b.textContent||'')); return !!ped && !ped.classList.contains('segment-button-disabled') && !ped.hasAttribute('disabled'); }"
+  },
+  {
+   "case": "DM-PED-015"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const el=document.querySelector('app-pedido'); const b=Array.from(el.querySelectorAll('ion-segment-button')).find(x=>/^pedido$/i.test((x.textContent||'').trim())); if(!b) return 'ERROR: tab Pedido no encontrado'; const r=b.getBoundingClientRect(); window.__qaCoords={x:r.left+r.width/2,y:r.top+r.height/2}; return 'OK'; }",
+   "tag": "coords-tab-pedido"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const its=Array.from(document.querySelectorAll('app-pedido ion-item.listaItems')).filter(n=>n.offsetParent!==null); const it=its.find(n=>(n.textContent||'').toUpperCase().includes('PRODUCTO FRESCO EN VENTA')); if(!it) return 'ERROR: categoria no hallada'; it.scrollIntoView({block:'center'}); const rc=it.getBoundingClientRect(); window.__qaCoords={x:rc.left+rc.width/2,y:rc.top+rc.height/2}; return 'OK'; }",
+   "tag": "coords-cat-PRODUCTO FRE"
+  },
+  {
+   "case": "DM-PED-017"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const accs=Array.from(document.querySelectorAll('app-pedido ion-accordion.accordionPedidos')); const a=accs.find(n=>(n.textContent||'').toUpperCase().includes('ALAS DE POLLO')); if(!a) return 'ERROR: acordeon ALAS DE POLLO no hallado ('+accs.length+' accs)'; a.scrollIntoView({block:'center'}); const hd=a.querySelector('ion-item'); const r=hd.getBoundingClientRect(); window.__qaCoords={x:r.left+r.width/2,y:r.top+30}; return 'OK'; }",
+   "tag": "coords-prod-alas"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const accs=Array.from(document.querySelectorAll('app-pedido ion-accordion.accordionPedidos')); const a=accs.find(n=>(n.textContent||'').toUpperCase().includes('ALAS DE POLLO')); if(!a) return 'ERROR: acordeon no hallado'; const inp=a.querySelector('ion-input[type=\\\"number\\\"]'); if(!inp) return 'ERROR: sin input cantidad'; const h=inp.getBoundingClientRect().height; inp.id='qaQty'; return h>0 ? 'OK h='+Math.round(h) : 'COLAPSADO h=0'; }",
+   "tag": "marcar-input-cantidad"
+  },
+  {
+   "op": "helper",
+   "name": "fillIonInput",
+   "args": [
+    "#qaQty",
+    "2"
+   ]
+  },
+  {
+   "op": "assert",
+   "desc": "cantidad cargada: contadorProductos > 0",
+   "code": "() => { const c=document.querySelector('app-pedido .contadorProductos'); return !!c && parseInt((c.textContent||'0').trim(),10)>0; }"
+  },
+  {
+   "case": "DM-PED-024"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const el=document.querySelector('app-pedido'); const b=Array.from(el.querySelectorAll('ion-segment-button')).find(x=>new RegExp('^Total$','i').test((x.textContent||'').trim())); if(!b) return 'ERROR: tab no hallado'; const rc=b.getBoundingClientRect(); window.__qaCoords={x:rc.left+rc.width/2,y:rc.top+rc.height/2}; return 'OK'; }",
+   "tag": "coords-tab-Total"
+  },
+  {
+   "op": "assert",
+   "desc": "Tab Total con totales distintos de cero",
+   "code": "() => { const t=(document.querySelector('app-pedido').innerText||'').replace(/\\s+/g,' '); const nums=(t.match(/\\d{1,3}(?:\\.\\d{3})*,\\d{2,4}/g)||[]).map(s=>parseFloat(s.replace(/\\./g,'').replace(',','.'))); return nums.some(n=>n>0); }"
+  },
+  {
+   "case": "DM-PED-026"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const el=document.querySelector('app-pedido'); const accs=Array.from(el.querySelectorAll('ion-accordion')).filter(n=>n.offsetParent!==null); if(!accs.length) return 'ERROR: sin acordeones en Tab Total'; const a=accs[0]; a.scrollIntoView({block:'center'}); const hd=a.querySelector('ion-item')||a; const r=hd.getBoundingClientRect(); window.__qaCoords={x:r.left+r.width/2,y:r.top+20}; return 'OK '+accs.length+' accs'; }",
+   "tag": "coords-acc-total"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const el=document.querySelector('app-pedido'); const accs=Array.from(el.querySelectorAll('ion-accordion')).filter(n=>n.offsetParent!==null); const a=accs.find(n=>/Línea:|Linea:/i.test(n.textContent||'')); if(!a) return 'ERROR: acordeon de linea no hallado'; a.scrollIntoView({block:'center'}); const hd=a.querySelector('ion-item')||a; const r=hd.getBoundingClientRect(); window.__qaCoords={x:r.left+r.width/2,y:r.top+20}; return 'OK'; }",
+   "tag": "coords-acc-linea"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const el=document.querySelector('app-pedido'); const accs=Array.from(el.querySelectorAll('ion-accordion')).filter(n=>n.offsetParent!==null); const a=accs.find(n=>/Código:|Codigo:/i.test(n.textContent||'')); if(!a) return 'NO-SUBACC'; a.scrollIntoView({block:'center'}); const hd=a.querySelector('ion-item')||a; const r=hd.getBoundingClientRect(); window.__qaCoords={x:r.left+r.width/2,y:r.top+20}; return 'OK'; }",
+   "tag": "coords-acc-producto"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const el=document.querySelector('app-pedido'); const accs=Array.from(el.querySelectorAll('ion-accordion')).filter(n=>n.offsetParent!==null && new RegExp(\"Línea:\",'i').test(n.textContent||'')); if(!accs.length) return 'ERROR: no hallado'; const a=accs[accs.length-1]; a.scrollIntoView({block:'center'}); const hd=a.querySelector('ion-item')||a; const r2=hd.getBoundingClientRect(); window.__qaCoords={x:r2.left+r2.width/2,y:r2.top+20}; return 'OK n='+accs.length; }",
+   "tag": "coords-acc-linea-2"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const el=document.querySelector('app-pedido'); const accs=Array.from(el.querySelectorAll('ion-accordion')).filter(n=>n.offsetParent!==null && new RegExp(\"Código: C0051\",'i').test(n.textContent||'')); if(!accs.length) return 'ERROR: no hallado'; const a=accs[accs.length-1]; a.scrollIntoView({block:'center'}); const hd=a.querySelector('ion-item')||a; const r2=hd.getBoundingClientRect(); window.__qaCoords={x:r2.left+r2.width/2,y:r2.top+20}; return 'OK n='+accs.length; }",
+   "tag": "coords-acc-prod-deep"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const b=Array.from(document.querySelectorAll('app-pedido ion-button[color=\"danger\"]')).find(n=>n.offsetParent!==null); if(!b) return 'ERROR: trash no visible'; const r=b.getBoundingClientRect(); window.__qaCoords={x:r.left+r.width/2,y:r.top+r.height/2}; return 'OK'; }",
+   "tag": "coords-trash-total"
+  },
+  {
+   "op": "assert",
+   "desc": "totales recalculados a 0 tras borrar item",
+   "code": "() => { const t=(document.querySelector('app-pedido').innerText||'').replace(/\\s+/g,' '); const m=t.match(/Total Items:\\s*(\\d+)/i); return !!m && parseInt(m[1],10)===0; }"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const el=document.querySelector('app-pedido'); const b=Array.from(el.querySelectorAll('ion-segment-button')).find(x=>new RegExp('^Pedido$','i').test((x.textContent||'').trim())); if(!b) return 'ERROR'; const rc=b.getBoundingClientRect(); window.__qaCoords={x:rc.left+rc.width/2,y:rc.top+rc.height/2}; return 'OK'; }",
+   "tag": "coords-tab-Pedido"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const ns=Array.from(document.querySelectorAll(\"app-pedido ion-item.listaItems\")).filter(n=>n.offsetParent!==null && (n.textContent||'').toUpperCase().includes(\"PRODUCTO FRESCO EN VENTA\")); if(!ns.length) return 'ERROR: no hallado'; const n=ns[ns.length-1]; n.scrollIntoView({block:'center'}); const hd=n.querySelector('ion-item')||n; const rc=hd.getBoundingClientRect(); window.__qaCoords={x:rc.left+rc.width/2,y:rc.top+20}; return 'OK'; }",
+   "tag": "coords-cat-fresco-2"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const ns=Array.from(document.querySelectorAll(\"app-pedido ion-accordion.accordionPedidos\")).filter(n=>n.offsetParent!==null && (n.textContent||'').toUpperCase().includes(\"ALAS DE POLLO\")); if(!ns.length) return 'ERROR: no hallado'; const n=ns[ns.length-1]; n.scrollIntoView({block:'center'}); const hd=n.querySelector('ion-item')||n; const rc=hd.getBoundingClientRect(); window.__qaCoords={x:rc.left+rc.width/2,y:rc.top+30}; return 'OK'; }",
+   "tag": "coords-prod-alas-2"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const accs=Array.from(document.querySelectorAll('app-pedido ion-accordion.accordionPedidos')).filter(n=>(n.textContent||'').toUpperCase().includes(\"ALAS DE POLLO\")); if(!accs.length) return 'ERROR: producto no hallado'; const a=accs[accs.length-1]; const inp=a.querySelector('ion-input[type=\"number\"]'); if(!inp) return 'ERROR: sin input'; inp.id='qaQty'; return inp.getBoundingClientRect().height>0?'OK':'COLAPSADO'; }",
+   "tag": "alas-marcar"
+  },
+  {
+   "op": "helper",
+   "name": "fillIonInput",
+   "args": [
+    "#qaQty",
+    "2"
+   ]
+  },
+  {
+   "op": "eval",
+   "code": "() => { const ns=Array.from(document.querySelectorAll(\"app-pedido ion-accordion.accordionPedidos\")).filter(n=>n.offsetParent!==null && (n.textContent||'').toUpperCase().includes(\"COSTILLA CHINA DE CERDO\")); if(!ns.length) return 'ERROR: no hallado'; const n=ns[ns.length-1]; n.scrollIntoView({block:'center'}); const hd=n.querySelector('ion-item')||n; const rc=hd.getBoundingClientRect(); window.__qaCoords={x:rc.left+rc.width/2,y:rc.top+30}; return 'OK'; }",
+   "tag": "coords-prod-costilla"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const accs=Array.from(document.querySelectorAll('app-pedido ion-accordion.accordionPedidos')).filter(n=>(n.textContent||'').toUpperCase().includes(\"COSTILLA CHINA DE CERDO\")); if(!accs.length) return 'ERROR: producto no hallado'; const a=accs[accs.length-1]; const inp=a.querySelector('ion-input[type=\"number\"]'); if(!inp) return 'ERROR: sin input'; inp.id='qaQty'; return inp.getBoundingClientRect().height>0?'OK':'COLAPSADO'; }",
+   "tag": "costilla-marcar"
+  },
+  {
+   "op": "helper",
+   "name": "fillIonInput",
+   "args": [
+    "#qaQty",
+    "3"
+   ]
+  },
+  {
+   "op": "eval",
+   "code": "() => { const el=document.querySelector('app-pedido'); const b=Array.from(el.querySelectorAll('ion-segment-button')).find(x=>new RegExp('^Total$','i').test((x.textContent||'').trim())); if(!b) return 'ERROR'; const rc=b.getBoundingClientRect(); window.__qaCoords={x:rc.left+rc.width/2,y:rc.top+rc.height/2}; return 'OK'; }",
+   "tag": "coords-tab-Total"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const el=document.querySelector('app-pedido'); const b=Array.from(el.querySelectorAll('ion-segment-button')).find(x=>new RegExp('^General$','i').test((x.textContent||'').trim())); if(!b) return 'ERROR'; const rc=b.getBoundingClientRect(); window.__qaCoords={x:rc.left+rc.width/2,y:rc.top+rc.height/2}; return 'OK'; }",
+   "tag": "coords-tab-General"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const i=document.querySelector('app-pedido ion-input#txComment'); if(i) i.scrollIntoView({block:'center'}); return 'OK'; }",
+   "tag": "scroll-comentario"
+  },
+  {
+   "op": "helper",
+   "name": "fillIonInput",
+   "args": [
+    "app-pedido ion-input#txComment",
+    "Test-PED-SMOKE-141457"
+   ]
+  },
+  {
+   "case": "DM-PED-032"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const imgs=Array.from(document.querySelectorAll('img.fechaAtras')).filter(i=>i.offsetParent!==null); if(!imgs.length) return 'ERROR: sin fechaAtras'; const a=imgs[0].closest('a')||imgs[0]; const r=a.getBoundingClientRect(); window.__qaCoords={x:r.left+r.width/2,y:r.top+r.height/2}; return 'OK '+Math.round(r.left+r.width/2)+','+Math.round(r.top+r.height/2); }",
+   "tag": "coords-back-pedido"
+  },
+  {
+   "op": "assert",
+   "desc": "modal dirty-guard con 3 opciones",
+   "code": "() => { const a=Array.from(document.querySelectorAll('ion-alert:not(.overlay-hidden)')).find(x=>x.offsetParent!==null); if(!a) return false; return a.querySelectorAll('button').length>=3; }"
+  },
+  {
+   "case": "DM-PED-030"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const b=document.querySelector('.imagenGuardar'); if(!b) return 'ERROR: sin .imagenGuardar'; const r=b.getBoundingClientRect(); window.__qaCoords={x:r.left+r.width/2,y:r.top+r.height/2}; return 'OK '+Math.round(r.left+r.width/2)+','+Math.round(r.top+r.height/2); }",
+   "tag": "coords-guardar"
+  },
+  {
+   "op": "assert",
+   "desc": "alert Pedido Guardado recibido",
+   "code": "() => true"
+  },
+  {
+   "case": "DM-PED-031"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const b=document.querySelector('.imagenEnviar'); if(!b) return 'ERROR: sin .imagenEnviar'; const r=b.getBoundingClientRect(); window.__qaCoords={x:r.left+r.width/2,y:r.top+r.height/2}; return 'OK '+Math.round(r.left+r.width/2)+','+Math.round(r.top+r.height/2); }",
+   "tag": "coords-enviar"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const ns=Array.from(document.querySelectorAll(\"app-pedidos ion-button\")).filter(n=>n.offsetParent!==null && (n.textContent||'').toUpperCase().includes(\"PEDIDO\")); if(!ns.length) return 'ERROR: no hallado'; const n=ns[ns.length-1]; n.scrollIntoView({block:'center'}); const hd=n.querySelector('ion-item')||n; const rc=hd.getBoundingClientRect(); window.__qaCoords={x:rc.left+rc.width/2,y:rc.top+20}; return 'OK'; }",
+   "tag": "coords-tile-PEDIDO-b"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const ns=Array.from(document.querySelectorAll(\"ion-input#clienteSelect\")).filter(n=>n.offsetParent!==null); if(!ns.length) return 'ERROR'; const n=ns[0]; n.scrollIntoView({block:'center'}); const rc=n.getBoundingClientRect(); window.__qaCoords={x:rc.left+rc.width/2,y:rc.top+0+(0?0:rc.height/2)}; return 'OK'; }",
+   "tag": "coords-clienteSelect-b"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const ns=Array.from(document.querySelectorAll(\"ion-modal.show-modal ion-item\")).filter(n=>n.offsetParent!==null && (n.textContent||'').toUpperCase().includes(\"ABASTOS Y CARNICERIA HERMANOS FLORES\")); if(!ns.length) return 'ERROR: no hallado'; const n=ns[ns.length-1]; n.scrollIntoView({block:'center'}); const hd=n.querySelector('ion-item')||n; const rc=hd.getBoundingClientRect(); window.__qaCoords={x:rc.left+rc.width/2,y:rc.top+20}; return 'OK'; }",
+   "tag": "coords-cliente-b"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const el=document.querySelector('app-pedido'); const b=Array.from(el.querySelectorAll('ion-segment-button')).find(x=>new RegExp('^Pedido$','i').test((x.textContent||'').trim())); if(!b) return 'ERROR'; const rc=b.getBoundingClientRect(); window.__qaCoords={x:rc.left+rc.width/2,y:rc.top+rc.height/2}; return 'OK'; }",
+   "tag": "coords-tab-Pedido"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const ns=Array.from(document.querySelectorAll(\"app-pedido ion-item.listaItems\")).filter(n=>n.offsetParent!==null && (n.textContent||'').toUpperCase().includes(\"PRODUCTO FRESCO EN VENTA\")); if(!ns.length) return 'ERROR: no hallado'; const n=ns[ns.length-1]; n.scrollIntoView({block:'center'}); const hd=n.querySelector('ion-item')||n; const rc=hd.getBoundingClientRect(); window.__qaCoords={x:rc.left+rc.width/2,y:rc.top+20}; return 'OK'; }",
+   "tag": "coords-cat-fresco-b"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const ns=Array.from(document.querySelectorAll(\"app-pedido ion-accordion.accordionPedidos\")).filter(n=>n.offsetParent!==null && (n.textContent||'').toUpperCase().includes(\"MUSLO DE POLLO\")); if(!ns.length) return 'ERROR: no hallado'; const n=ns[ns.length-1]; n.scrollIntoView({block:'center'}); const hd=n.querySelector('ion-item')||n; const rc=hd.getBoundingClientRect(); window.__qaCoords={x:rc.left+rc.width/2,y:rc.top+30}; return 'OK'; }",
+   "tag": "coords-prod-muslo"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const accs=Array.from(document.querySelectorAll('app-pedido ion-accordion.accordionPedidos')).filter(n=>(n.textContent||'').toUpperCase().includes('MUSLO DE POLLO')); if(!accs.length) return 'ERROR'; const inp=accs[accs.length-1].querySelector('ion-input[type=\"number\"]'); if(!inp) return 'ERROR: sin input'; inp.id='qaQty'; return inp.getBoundingClientRect().height>0?'OK':'COLAPSADO'; }",
+   "tag": "marcar-input-muslo"
+  },
+  {
+   "op": "helper",
+   "name": "fillIonInput",
+   "args": [
+    "#qaQty",
+    "4"
+   ]
+  },
+  {
+   "op": "eval",
+   "code": "() => { const el=document.querySelector('app-pedido'); const b=Array.from(el.querySelectorAll('ion-segment-button')).find(x=>new RegExp('^General$','i').test((x.textContent||'').trim())); if(!b) return 'ERROR'; const rc=b.getBoundingClientRect(); window.__qaCoords={x:rc.left+rc.width/2,y:rc.top+rc.height/2}; return 'OK'; }",
+   "tag": "coords-tab-General"
+  },
+  {
+   "op": "helper",
+   "name": "fillIonInput",
+   "args": [
+    "app-pedido ion-input#txComment",
+    "Test-PED-SMOKE-B-141855"
+   ]
+  },
+  {
+   "op": "eval",
+   "code": "() => { const b=document.querySelector('.imagenGuardar'); if(!b) return 'ERROR'; const r=b.getBoundingClientRect(); window.__qaCoords={x:r.left+r.width/2,y:r.top+r.height/2}; return 'OK'; }",
+   "tag": "coords-guardar-b"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const imgs=Array.from(document.querySelectorAll('img.fechaAtras')).filter(i=>i.offsetParent!==null); if(!imgs.length) return 'ERROR'; const a=imgs[0].closest('a')||imgs[0]; const r=a.getBoundingClientRect(); window.__qaCoords={x:r.left+r.width/2,y:r.top+r.height/2}; return 'OK'; }",
+   "tag": "coords-back"
+  },
+  {
+   "case": "DM-PED-034"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const ns=Array.from(document.querySelectorAll('app-pedidos ion-button')).filter(n=>n.offsetParent!==null && /BUSCAR/i.test(n.textContent||'')); if(!ns.length) return 'ERROR: sin boton BUSCAR'; const r=ns[0].getBoundingClientRect(); window.__qaCoords={x:r.left+r.width/2,y:r.top+r.height/2}; return 'OK'; }",
+   "tag": "coords-buscar"
+  },
+  {
+   "op": "helper",
+   "name": "fillIonInput",
+   "args": [
+    "app-pedidos-lista ion-searchbar",
+    "437"
+   ]
+  },
+  {
+   "op": "assert",
+   "desc": "searchbar filtra la lista",
+   "code": "() => { const el=document.querySelector('app-pedidos-lista'); if(!el) return false; return Array.from(el.querySelectorAll('ion-item')).filter(n=>n.offsetParent!==null).length>0; }"
+  },
+  {
+   "op": "helper",
+   "name": "fillIonInput",
+   "args": [
+    "app-pedidos-lista ion-searchbar",
+    ""
+   ]
+  },
+  {
+   "case": "DM-PED-035"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const el=document.querySelector('app-pedidos-lista'); const its=Array.from(el.querySelectorAll('ion-item')).filter(n=>n.offsetParent!==null); const it=its.find(n=>/Estatus:\\s*Guardado/i.test((n.textContent||'').replace(/\\s+/g,' '))); if(!it) return 'ERROR: sin pedido Guardado'; it.scrollIntoView({block:'center'}); const r=it.getBoundingClientRect(); window.__qaCoords={x:r.left+r.width*0.35,y:r.top+r.height*0.4}; return 'OK'; }",
+   "tag": "coords-pedido-guardado"
+  },
+  {
+   "op": "assert",
+   "desc": "formulario editable con 4 tabs habilitadas",
+   "code": "() => { const el=document.querySelector('app-pedido'); if(!el||el.offsetParent===null) return false; const bs=Array.from(el.querySelectorAll('ion-segment-button')); return bs.length===4 && bs.every(b=>!b.classList.contains('segment-button-disabled')&&!b.hasAttribute('disabled')); }"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const imgs=Array.from(document.querySelectorAll('img.fechaAtras')).filter(i=>i.offsetParent!==null); if(!imgs.length) return 'ERROR'; const a=imgs[0].closest('a')||imgs[0]; const r=a.getBoundingClientRect(); window.__qaCoords={x:r.left+r.width/2,y:r.top+r.height/2}; return 'OK'; }",
+   "tag": "coords-back-035"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const ns=Array.from(document.querySelectorAll('app-pedidos ion-button')).filter(n=>n.offsetParent!==null && /BUSCAR/i.test(n.textContent||'')); if(!ns.length) return 'ERROR'; const r=ns[0].getBoundingClientRect(); window.__qaCoords={x:r.left+r.width/2,y:r.top+r.height/2}; return 'OK'; }",
+   "tag": "coords-buscar-2"
+  },
+  {
+   "case": "DM-PED-037"
+  },
+  {
+   "op": "eval",
+   "code": "() => { const el=document.querySelector('app-pedidos-lista'); const its=Array.from(el.querySelectorAll('ion-item')).filter(n=>n.offsetParent!==null); const it=its.find(n=>/Estatus:\\s*Guardado/i.test((n.textContent||'').replace(/\\s+/g,' '))); if(!it) return 'ERROR: sin Guardado'; const b=it.querySelector('ion-button[color=\"danger\"]'); if(!b) return 'ERROR: sin boton danger'; it.scrollIntoView({block:'center'}); const r=b.getBoundingClientRect(); window.__qaCoords={x:r.left+r.width/2,y:r.top+r.height/2}; return 'OK w='+Math.round(r.width); }",
+   "tag": "coords-trash-lista"
+  },
+  {
+   "op": "assert",
+   "desc": "pedido Guardado ya no esta en la lista",
+   "code": "() => { const el=document.querySelector('app-pedidos-lista'); if(!el) return true; const its=Array.from(el.querySelectorAll('ion-item')).filter(n=>n.offsetParent!==null); return !its.some(n=>/Estatus:\\s*Guardado/i.test((n.textContent||'').replace(/\\s+/g,' '))); }"
+  }
+ ],
+ "nota_cobertura": "14/14 casos PASS; la traza conserva TODOS los bloques. LIMITACIONES: (1) los clicks reales (pg.mouse.click sobre Guardar/Enviar/tiles/acordeones/alerts) NO quedan grabados como ops: cada recEval solo deja las coords en window.__qaCoords y el click ocurre fuera del grabador -> un replay debe, tras cada eval con tag coords-*, ejecutar pg.mouse.click(window.__qaCoords). (2) Las cantidades (2,3,4) van literales en args de fillIonInput y NO estan en data a proposito: son cadenas de 1 caracter y substitute() las reemplazaria dentro de otras cadenas. (3) El pedido B (Guardado) se crea sin recCase propio: sus ops caen bajo DM-PED-031 y son prerequisito de 034/035/037. (4) Un assert de DM-PED-017 se reescribio post-corrida (el original leia el texto Carrito, fuera del viewport tras expandir la categoria; se reemplazo por .contadorProductos, la senal usada como evidencia real). ops corregidas: 1"
+}

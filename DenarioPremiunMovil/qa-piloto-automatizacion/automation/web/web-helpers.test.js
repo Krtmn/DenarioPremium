@@ -86,6 +86,10 @@ eq('parseNumeroVE sin decimales', H.parseNumeroVE('16,85 US$'), 16.85);
 eq('parseNumeroVE vacío → null', H.parseNumeroVE(''), null);
 eq('parseMoneda BS', H.parseMoneda('50.687,24 BS'), { valor: 50687.24, moneda: 'BS' });
 eq('parseMoneda US$', H.parseMoneda('70,01 US$'), { valor: 70.01, moneda: 'US$' });
+// Isla Coche rotula VES/USD — se normalizan a BS/US$ para que la deducción de dirección funcione [el_palmar-20260805]
+eq('parseMoneda VES → BS', H.parseMoneda('244.864,73 VES'), { valor: 244864.73, moneda: 'BS' });
+eq('parseMoneda USD → US$', H.parseMoneda('375,00 USD'), { valor: 375, moneda: 'US$' });
+eq('deduce DIVIDIR con VES→USD', H.verificarConversion('244.864,73 VES', '652,9726 VES = 1 USD', '375,00 USD').direccion, 'dividir');
 eq('parseTasa', H.parseTasa('724,00 BS = 1 US$'), 724);
 eq('parseFechaVE', H.parseFechaVE('28/07/2026 09:06:36'), { dia: '2026-07-28', hora: '09:06:36' });
 eq('parseFechaVE sin hora', H.parseFechaVE('27/07/2026'), { dia: '2026-07-27', hora: null });
