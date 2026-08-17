@@ -22,9 +22,13 @@ const { fetchCreds }               = require('../cdp/denario-cdp-helpers');
 
 // Módulos disponibles (añadir aquí al ir implementando los demás)
 const MODULOS = {
-  vendedores: require('./modules/vendedores').runVendedores,
-  productos:  require('./modules/productos').runProductos,
-  clientes:   require('./modules/clientes').runClientes,
+  login:       require('./modules/login').runLogin,
+  vendedores:  require('./modules/vendedores').runVendedores,
+  productos:   require('./modules/productos').runProductos,
+  clientes:    require('./modules/clientes').runClientes,
+  depositos:   require('./modules/depositos').runDepositos,
+  inventarios: require('./modules/inventarios').runInventarios,
+  visitas:     require('./modules/visitas').runVisitas,
 };
 
 // ─── Parsear args ─────────────────────────────────────────────────────────────
@@ -56,6 +60,10 @@ function dataParaModulo(perfil, modulo) {
   const mod     = modules[modulo] || {};
 
   switch (modulo) {
+    case 'login':
+      return {
+        aplica: mod.aplica !== false,
+      };
     case 'vendedores':
       return {
         aplica:     mod.aplica !== false && vgs.esVendedor !== false,
@@ -73,6 +81,25 @@ function dataParaModulo(perfil, modulo) {
         aplica:          mod.aplica !== false,
         clienteBusqueda: mod.cliente_busqueda || 'A',
         clienteDetalle:  mod.cliente_detalle  || '',
+      };
+    case 'depositos':
+      return {
+        aplica: mod.aplica !== false,
+      };
+    case 'inventarios':
+      return {
+        aplica:          mod.aplica !== false,
+        clienteTest:     mod.cliente_test || '',
+        expirationBatch: mod.expirationBatch !== undefined ? !!mod.expirationBatch : !!vgs.expirationBatch,
+        suggestedOrder:  vgs.suggestedOrderByDispatchAndReturn === true,
+      };
+    case 'visitas':
+      return {
+        aplica:              mod.aplica !== false,
+        clienteTest:         mod.cliente_test || '',
+        smokenaEstructural:  mod.smoke_na_estructural || [],
+        signatureVisit:      vgs.signatureVisit === true,
+        userCanUploadFiles:  vgs.userCanUploadFiles === true,
       };
     default:
       return { aplica: mod.aplica !== false };
@@ -128,8 +155,28 @@ async function main() {
     console.log('\n🔌  Conectando CDP (:9220)...');
     pg = await conectar();
     console.log('✔   CDP conectado');
-    await volverAHome(pg);
-    console.log('✔   App en HOME\n');
+
+    const atLogin = await pg.evaluate(() => {
+      const loginEl = document.querySelector('app-login');
+      const homeEl  = document.querySelector('app-home');
+      if (loginEl && !loginEl.classList.contains('ion-page-hidden')) return true;
+      if (homeEl  && !homeEl.classList.contains('ion-page-hidden'))  return false;
+      // Fallback: si hay 2+ ion-input visibles → pantalla de login
+      return [...document.querySelectorAll('ion-input')]
+        .filter(i => i.getBoundingClientRect().width > 0).length >= 2;
+    }).catch(() => false);
+
+    if (atLogin) {
+      // Si la app está en login y el módulo login va a correr, puede continuar
+      if (modulosFiltro[0] === 'login') {
+        console.log('✔   App en pantalla de login — módulo login lo manejará\n');
+      } else {
+        throw new Error('app en login — iniciar sesión manualmente antes de correr el test');
+      }
+    } else {
+      await volverAHome(pg);
+      console.log('✔   App en HOME\n');
+    }
   } catch (e) {
     console.error('❌  ' + e.message);
     process.exit(1);
@@ -139,8 +186,10 @@ async function main() {
   const resumenGlobal = [];
 
   for (const modulo of modulosFiltro) {
-    // Asegurar HOME antes de cada módulo (el módulo anterior puede haber terminado dentro de su vista)
-    try { await volverAHome(pg); } catch (_) {}
+    // Asegurar HOME antes de cada módulo (excepto login que maneja su propia navegación)
+    if (modulo !== 'login') {
+      try { await volverAHome(pg); } catch (_) {}
+    }
     console.log(`▶   [${modulo.toUpperCase()}] iniciando...`);
     const data = dataParaModulo(perfil, modulo);
     data.clienteSlug = clienteSlug;
@@ -148,7 +197,10 @@ async function main() {
 
     let verdicts, msTotal;
     try {
-      ({ verdicts, msTotal } = await MODULOS[modulo](pg, data));
+      const result = await MODULOS[modulo](pg, data);
+      ({ verdicts, msTotal } = result);
+      // Algunos módulos (ej. login) reconectan CDP y devuelven el nuevo pg
+      if (result.newPg) pg = result.newPg;
     } catch (e) {
       console.error(`    ⛔  Error no capturado en ${modulo}: ${e.message}`);
       verdicts = [{ id: modulo, descripcion: 'Error general', resultado: 'BLOCKED', nota: e.message, ms: Date.now() - t0 }];
