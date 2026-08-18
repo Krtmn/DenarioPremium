@@ -1,81 +1,65 @@
-#!/usr/bin/env node
-/**
- * run.js — Orquestador de scripts determinísticos Denario Premium Móvil
- *
- * Uso:
- *   node automation/playwright/run.js --cliente=hidroponias
- *   node automation/playwright/run.js --cliente=globalmp --modulo=vendedores
- *
- * Prerrequisitos:
- *   1. npm install  (dentro de automation/playwright/)
- *   2. .\automation\cdp\setup-cdp.ps1  (dispositivo conectado, CDP en :9220)
- *   3. App abierta en HOME, sincronización terminada
- */
+'use strict';
+// Orquestador Playwright Standalone — Denario Premium Móvil QA
+// Uso:
+//   node automation/playwright/run.js run-vzla
+//   node automation/playwright/run.js --cliente=run-vzla
+//   node automation/playwright/run.js --cliente=run-vzla --modulo=login
 
-const path  = require('path');
-const yaml  = require('js-yaml');
-const fs    = require('fs');
+const path = require('path');
+const fs   = require('fs');
+const yaml = require('js-yaml');
+const { chromium } = require('playwright');
+const { conectar, volverAHome } = require('./connect');
 
-const { conectar, esperarHome, volverAHome } = require('./connect');
-const { crearCarpetaRun, escribirReporte } = require('./report');
-const { fetchCreds }               = require('../cdp/denario-cdp-helpers');
+// ── Parsear args ──────────────────────────────────────────────────────────────
+const rawArgs = process.argv.slice(2);
+let QA_CLIENTE = null, QA_MODULO = null;
+for (const a of rawArgs) {
+  if (a.startsWith('--cliente=')) QA_CLIENTE = a.split('=')[1];
+  else if (a.startsWith('--modulo=')) QA_MODULO  = a.split('=')[1];
+  else if (!QA_CLIENTE && !a.startsWith('--')) QA_CLIENTE = a;
+}
+if (!QA_CLIENTE) {
+  console.error('Uso: node automation/playwright/run.js <QA_CLIENTE> [--modulo=<modulo>]');
+  process.exit(1);
+}
 
-// Módulos disponibles (añadir aquí al ir implementando los demás)
+const ROOT = path.resolve(__dirname, '..', '..');
+
+// ── Leer perfil YAML ──────────────────────────────────────────────────────────
+const yamlPath = path.join(ROOT, 'automation', 'clientes', `${QA_CLIENTE}.yaml`);
+let perfil;
+try {
+  perfil = yaml.load(fs.readFileSync(yamlPath, 'utf8'));
+} catch (e) {
+  console.error(`ERR: no se pudo leer ${yamlPath}: ${e.message}`);
+  process.exit(1);
+}
+
+// ── Módulos disponibles ───────────────────────────────────────────────────────
 const MODULOS = {
   login:       require('./modules/login').runLogin,
-  vendedores:  require('./modules/vendedores').runVendedores,
-  productos:   require('./modules/productos').runProductos,
   clientes:    require('./modules/clientes').runClientes,
-  depositos:   require('./modules/depositos').runDepositos,
+  pedidos:     null,       // pendiente
+  cobros:      null,       // pendiente
+  devoluciones:null,       // pendiente
   inventarios: require('./modules/inventarios').runInventarios,
+  depositos:   require('./modules/depositos').runDepositos,
   visitas:     require('./modules/visitas').runVisitas,
+  productos:   require('./modules/productos').runProductos,
+  vendedores:  require('./modules/vendedores').runVendedores,
 };
 
-// ─── Parsear args ─────────────────────────────────────────────────────────────
+const ORDEN_DEFAULT = ['login','clientes','inventarios','depositos','visitas','productos','vendedores'];
 
-function parseArgs() {
-  const args = {};
-  process.argv.slice(2).forEach(a => {
-    const [k, v] = a.replace(/^--/, '').split('=');
-    if (k && v !== undefined) args[k] = v;
-  });
-  return args;
-}
-
-// ─── Leer perfil cliente ──────────────────────────────────────────────────────
-
-function leerPerfil(clienteSlug) {
-  const yamlPath = path.resolve(__dirname, '../clientes', `${clienteSlug}.yaml`);
-  if (!fs.existsSync(yamlPath)) {
-    throw new Error(`Perfil no encontrado: ${yamlPath}`);
-  }
-  return yaml.load(fs.readFileSync(yamlPath, 'utf8'));
-}
-
-// ─── Extraer DATA relevante para cada módulo ──────────────────────────────────
-
-function dataParaModulo(perfil, modulo) {
+// ── Construir DATA para cada módulo desde el perfil YAML ──────────────────────
+function dataParaModulo(modulo) {
   const vgs     = perfil.vgs     || {};
   const modules = perfil.modules || {};
   const mod     = modules[modulo] || {};
-
   switch (modulo) {
     case 'login':
-      return {
-        aplica: mod.aplica !== false,
-      };
-    case 'vendedores':
-      return {
-        aplica:     mod.aplica !== false && vgs.esVendedor !== false,
-        esVendedor: vgs.esVendedor !== false,
-      };
-    case 'productos':
-      return {
-        tipoUnico:             mod.tipo_unico === true,
-        textoBusqueda:         mod.texto_busqueda || 'A',
-        estructuraTest:        mod.estructura_test || '',
-        userCanChangePriceList: vgs.userCanChangePriceList !== false,
-      };
+      return {};
     case 'clientes':
       return {
         aplica:          mod.aplica !== false,
@@ -83,147 +67,139 @@ function dataParaModulo(perfil, modulo) {
         clienteDetalle:  mod.cliente_detalle  || '',
       };
     case 'depositos':
-      return {
-        aplica: mod.aplica !== false,
-      };
+      return { aplica: mod.aplica !== false };
     case 'inventarios':
       return {
-        aplica:          mod.aplica !== false,
+        aplica:          true,
         clienteTest:     mod.cliente_test || '',
-        expirationBatch: mod.expirationBatch !== undefined ? !!mod.expirationBatch : !!vgs.expirationBatch,
+        expirationBatch: vgs.expirationBatch === true,
         suggestedOrder:  vgs.suggestedOrderByDispatchAndReturn === true,
       };
     case 'visitas':
       return {
-        aplica:              mod.aplica !== false,
-        clienteTest:         mod.cliente_test || '',
-        smokenaEstructural:  mod.smoke_na_estructural || [],
-        signatureVisit:      vgs.signatureVisit === true,
-        userCanUploadFiles:  vgs.userCanUploadFiles === true,
+        aplica:             true,
+        clienteTest:        mod.cliente_test || '',
+        signatureVisit:     vgs.signatureVisit === true,
+        userCanUploadFiles: vgs.userCanUploadFiles === true,
+        smokenaEstructural: mod.smoke_na_estructural || [],
+      };
+    case 'productos':
+      return {
+        tipoUnico:              mod.tipo_unico === true,
+        textoBusqueda:          mod.texto_busqueda || 'A',
+        estructuraTest:         mod.estructura_test || mod.tipo_estructura_default || '',
+        userCanChangePriceList: vgs.userCanChangePriceList !== false,
+      };
+    case 'vendedores':
+      return {
+        aplica:     mod.aplica !== false,
+        esVendedor: vgs.esVendedor !== false,
       };
     default:
-      return { aplica: mod.aplica !== false };
+      return {};
   }
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
+// ── Crear carpeta de reporte ──────────────────────────────────────────────────
+const now = new Date();
+const pad = (n) => String(n).padStart(2, '0');
+const fecha = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}`;
+const hora  = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+const RUN_DIR = path.join(ROOT, 'automation', 'reports', `playwright_${QA_CLIENTE}_${fecha}_${hora}`);
+fs.mkdirSync(RUN_DIR, { recursive: true });
 
-async function main() {
-  const args = parseArgs();
+const RESULTS_FILE = path.join(RUN_DIR, '_results.jsonl');
 
-  if (!args.cliente) {
-    console.error('❌  Uso: node run.js --cliente=<slug> [--modulo=<modulo>]');
-    console.error('   Módulos disponibles: ' + Object.keys(MODULOS).join(', '));
-    process.exit(1);
+function appendResult(modulo, v) {
+  fs.appendFileSync(RESULTS_FILE, JSON.stringify({ modulo, ...v, runner: 'playwright-standalone' }) + '\n');
+}
+
+function buildMd(modulo, verdicts, msTotal) {
+  const iconMap = { PASS: '✅', FAIL: '❌', SKIP: '⏭️', 'N/A': '⬜', BLOCKED: '🚫' };
+  const lines = [`# ${modulo.toUpperCase()} — ${QA_CLIENTE}`, ''];
+  for (const v of verdicts) {
+    const icon = iconMap[v.resultado] || '❓';
+    const nota = v.nota ? ` _(${v.nota})_` : '';
+    lines.push(`- ${icon} **${v.id}** ${v.descripcion || ''}${nota}`);
   }
+  const counts = verdicts.reduce((a, v) => { a[v.resultado] = (a[v.resultado]||0)+1; return a; }, {});
+  lines.push('', `**Resumen:** ${Object.entries(counts).map(([k,n])=>`${k}:${n}`).join(' · ')}`);
+  lines.push(`_Tiempo: ${(msTotal/1000).toFixed(1)}s_`);
+  return lines.join('\n');
+}
 
-  const clienteSlug  = args.cliente;
-  const modulosFiltro = args.modulo ? [args.modulo] : Object.keys(MODULOS);
+// ── Determinar módulos a correr ───────────────────────────────────────────────
+const modulosFiltro = QA_MODULO
+  ? [QA_MODULO]
+  : ORDEN_DEFAULT.filter(m => MODULOS[m] !== null);
 
-  // Validar módulos pedidos
-  const invalidos = modulosFiltro.filter(m => !MODULOS[m]);
-  if (invalidos.length) {
-    console.error(`❌  Módulo(s) no implementado(s): ${invalidos.join(', ')}`);
-    console.error('   Disponibles: ' + Object.keys(MODULOS).join(', '));
-    process.exit(1);
-  }
+const invalidos = modulosFiltro.filter(m => !MODULOS[m]);
+if (invalidos.length) {
+  console.error(`ERR: módulo(s) no implementado(s): ${invalidos.join(', ')}`);
+  console.error(`Disponibles: ${Object.keys(MODULOS).filter(m => MODULOS[m]).join(', ')}`);
+  process.exit(1);
+}
 
-  console.log(`\n🚀  QA Playwright — cliente: ${clienteSlug} | módulos: ${modulosFiltro.join(', ')}`);
+// ── Main ──────────────────────────────────────────────────────────────────────
+(async () => {
+  console.log(`\n╔══════════════════════════════════════════════╗`);
+  console.log(`║  QA Playwright Standalone · ${QA_CLIENTE.padEnd(17)}║`);
+  console.log(`║  Módulos: ${modulosFiltro.join(', ').padEnd(35)}║`);
+  console.log(`╚══════════════════════════════════════════════╝`);
+  console.log(`RUN DIR: ${RUN_DIR}\n`);
 
-  // Leer perfil y credenciales
-  let perfil, creds;
-  try {
-    perfil = leerPerfil(clienteSlug);
-    console.log(`✔   Perfil cargado: ${perfil.cliente_nombre || clienteSlug}`);
-  } catch (e) {
-    console.error('❌  ' + e.message); process.exit(1);
-  }
-  try {
-    creds = await fetchCreds(clienteSlug);
-    console.log(`✔   Credenciales OK (usuario: ${creds.user})`);
-  } catch (e) {
-    console.error('❌  ' + e.message); process.exit(1);
-  }
-
-  // Crear carpeta de reporte
-  const { dir: runDir, nombre: runNombre } = crearCarpetaRun(clienteSlug);
-  console.log(`📁  Reporte en: automation/reports/${runNombre}/`);
-
-  // Conectar CDP
   let pg;
   try {
-    console.log('\n🔌  Conectando CDP (:9220)...');
     pg = await conectar();
-    console.log('✔   CDP conectado');
-
-    const atLogin = await pg.evaluate(() => {
-      const loginEl = document.querySelector('app-login');
-      const homeEl  = document.querySelector('app-home');
-      if (loginEl && !loginEl.classList.contains('ion-page-hidden')) return true;
-      if (homeEl  && !homeEl.classList.contains('ion-page-hidden'))  return false;
-      // Fallback: si hay 2+ ion-input visibles → pantalla de login
-      return [...document.querySelectorAll('ion-input')]
-        .filter(i => i.getBoundingClientRect().width > 0).length >= 2;
-    }).catch(() => false);
-
-    if (atLogin) {
-      // Si la app está en login y el módulo login va a correr, puede continuar
-      if (modulosFiltro[0] === 'login') {
-        console.log('✔   App en pantalla de login — módulo login lo manejará\n');
-      } else {
-        throw new Error('app en login — iniciar sesión manualmente antes de correr el test');
-      }
-    } else {
-      await volverAHome(pg);
-      console.log('✔   App en HOME\n');
-    }
+    console.log('✓ CDP conectado\n');
   } catch (e) {
-    console.error('❌  ' + e.message);
+    console.error(`ERR: no se pudo conectar al CDP: ${e.message}`);
+    console.error('Verificar: adb forward tcp:9220 localabstract:webview_devtools_remote_<PID>');
     process.exit(1);
   }
 
-  // Ejecutar módulos
-  const resumenGlobal = [];
+  const totalStart = Date.now();
+  const allVerdicts = [];
 
-  for (const modulo of modulosFiltro) {
-    // Asegurar HOME antes de cada módulo (excepto login que maneja su propia navegación)
+  for (let i = 0; i < modulosFiltro.length; i++) {
+    const modulo = modulosFiltro[i];
+    console.log(`[${i+1}/${modulosFiltro.length}] ${modulo}...`);
+
+    // Asegurar HOME antes de cada módulo, excepto login (gestiona su propio estado)
     if (modulo !== 'login') {
-      try { await volverAHome(pg); } catch (_) {}
+      try { await volverAHome(pg); } catch (e) {
+        console.warn(`    WARN volverAHome: ${e.message}`);
+      }
     }
-    console.log(`▶   [${modulo.toUpperCase()}] iniciando...`);
-    const data = dataParaModulo(perfil, modulo);
-    data.clienteSlug = clienteSlug;
-    const t0   = Date.now();
 
+    const data = { ...dataParaModulo(modulo), clienteSlug: QA_CLIENTE };
+    const t0 = Date.now();
     let verdicts, msTotal;
+
     try {
       const result = await MODULOS[modulo](pg, data);
       ({ verdicts, msTotal } = result);
-      // Algunos módulos (ej. login) reconectan CDP y devuelven el nuevo pg
       if (result.newPg) pg = result.newPg;
     } catch (e) {
-      console.error(`    ⛔  Error no capturado en ${modulo}: ${e.message}`);
+      console.error(`    ERR no capturado en ${modulo}: ${e.message}`);
       verdicts = [{ id: modulo, descripcion: 'Error general', resultado: 'BLOCKED', nota: e.message, ms: Date.now() - t0 }];
       msTotal  = Date.now() - t0;
     }
 
-    const { pass, fail, na, blocked } = escribirReporte(runDir, modulo, verdicts, msTotal);
-    const linea = `    ✔  ${modulo}: ${pass}P ${fail}F ${na}NA ${blocked}BLK — ${msTotal}ms`;
-    console.log(linea);
-    resumenGlobal.push({ modulo, pass, fail, na, blocked });
+    for (const v of verdicts) appendResult(modulo, v);
+    fs.writeFileSync(path.join(RUN_DIR, `${modulo}.md`), buildMd(modulo, verdicts, msTotal));
+    allVerdicts.push(...verdicts);
+
+    const counts = verdicts.reduce((a, v) => { a[v.resultado] = (a[v.resultado]||0)+1; return a; }, {});
+    console.log(`      ${verdicts.length} casos · ${(msTotal/1000).toFixed(1)}s · ${Object.entries(counts).map(([k,n])=>`${k}:${n}`).join(' ')}\n`);
   }
 
-  // Resumen final
-  const totalFail = resumenGlobal.reduce((s, m) => s + m.fail, 0);
-  const totalPass = resumenGlobal.reduce((s, m) => s + m.pass, 0);
-  const totalNA   = resumenGlobal.reduce((s, m) => s + m.na, 0);
-
-  console.log('\n' + '─'.repeat(50));
-  console.log(`RESULTADO: ${totalPass} PASS · ${totalFail} FAIL · ${totalNA} N/A`);
-  console.log(`Reportes en: automation/reports/${runNombre}/`);
-  console.log('─'.repeat(50) + '\n');
-
-  process.exit(totalFail > 0 ? 1 : 0);
-}
-
-main().catch(e => { console.error(e); process.exit(1); });
+  // ── Resumen final ─────────────────────────────────────────────────────────
+  const totalCounts = allVerdicts.reduce((a, v) => { a[v.resultado] = (a[v.resultado]||0)+1; return a; }, {});
+  const totalMs = Date.now() - totalStart;
+  console.log('═══════════════════════════════════════════');
+  console.log(`RESUMEN · ${QA_CLIENTE} · ${(totalMs/60000).toFixed(1)} min`);
+  console.log(`  PASS:${totalCounts.PASS||0}  FAIL:${totalCounts.FAIL||0}  SKIP:${totalCounts.SKIP||0}  N/A:${totalCounts['N/A']||0}  BLOCKED:${totalCounts.BLOCKED||0}  total:${allVerdicts.length}`);
+  console.log(`  Reporte: ${RUN_DIR}`);
+  console.log('═══════════════════════════════════════════\n');
+})().catch(e => { console.error('ERR FATAL:', e.message); process.exit(1); });
