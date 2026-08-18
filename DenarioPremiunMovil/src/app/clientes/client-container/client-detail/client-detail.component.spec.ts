@@ -113,6 +113,17 @@ describe('ClienteComponent (client-detail)', () => {
     expect(component.saldoFuerte).toBeCloseTo(2096.23, 2);
   });
 
+  it('CLI-CREDIT-001: crédito display local/hard (no etiqueta coCurrency)', () => {
+    component.localCurrency = 'BS';
+    (component as any).initializeClientBalances();
+    (component as any).initializeClientCredits();
+
+    expect(component.creditoFuerte).toBe(5000);
+    expect(component.creditoLocal).toBeCloseTo(5000 * 737.88, 2);
+    expect(component.availableCreditFuerte).toBeCloseTo(5000 - 2096.23, 2);
+    expect(component.availableCreditLocal).toBeCloseTo((5000 * 737.88) - 1546766.19, 2);
+  });
+
   it('DM-CLT-010: onChangeAddress actualiza dirección y coordenada del cliente', () => {
     component.selectedAddress = clientLogicMock.listaDirecciones[1];
     component.onChangeAddress({});
