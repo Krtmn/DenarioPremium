@@ -41,6 +41,7 @@ export class ClientesHeaderComponent implements OnInit {
   public showIconsNewPotentialClient: Boolean = false;
   public saveSendLocation: Boolean = false;
   public alertMessageOpen: Boolean = false;
+  public alertMessageOpenSave: Boolean = false;
   public header: string = '';
   public mensaje: string = '';
   public texto: string = ""
@@ -70,8 +71,11 @@ export class ClientesHeaderComponent implements OnInit {
           this.saveSendLocationFunction()
         }
         if (this.clientLogic.clientNewPotentialClientComponent) {
+          if (!this.validatePotentialClientBeforeAction(false)) {
+            return;
+          }
           this.clientLogic.exitToPotentialClientListAfterSave = true;
-          this.saveSendNewPotentialCliente(true);
+          this.emitPotentialClientSave();
         }
       },
     },
@@ -134,14 +138,14 @@ export class ClientesHeaderComponent implements OnInit {
     });
 
     this.subscriberWeightLimitExceeded = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
-      this.clientLogic.cannotSavePotentialClient = true;
-      this.clientLogic.cannotSendPotentialClient = true;
+      this.clientLogic.updatePotentialClientSaveButtonAvailability();
+      this.clientLogic.updatePotentialClientSendButtonAvailability();
     });
 
     this.AttachWeightSubscription = this.adjuntoService.AttachmentChanged.subscribe(() => {
-      var valid = this.clientLogic.validPotentialClient;
-      this.clientLogic.cannotSavePotentialClient = !valid;
-      this.clientLogic.cannotSendPotentialClient = !valid;
+      if (this.clientLogic.clientNewPotentialClientComponent) {
+        this.clientLogic.notifyPotentialClientEdited();
+      }
     });
 
   }
@@ -166,17 +170,11 @@ export class ClientesHeaderComponent implements OnInit {
     if (this.clientLogic.clientNewPotentialClientComponent) {
       if (ev.detail.role === 'confirm') {
         this.alertMessageOpen = false;
-        this.potentialClientService.saveSendNewPotentialCliente(true)
-        this.messageService.alertModal(
-          {
-            header: this.clientLogic.clientTags.get('DENARIO_NOMBRE_APP')!,
-            message: this.clientLogic.clientTags.get('CLI_SEND_MSG')!,
-          }
-        );
-
+        this.emitPotentialClientSend();
       } else {
         this.alertMessageOpen = false;
       }
+      return;
     }
     if (this.clientLogic.clientLocationComponent) {
       this.alertMessageOpen = false;
@@ -257,18 +255,77 @@ export class ClientesHeaderComponent implements OnInit {
     //console.log('backButton was called!');
     this.goBack();
   });
-  saveSendNewPotentialCliente(salvarEnviar: Boolean) {
+
+  private notifyPotentialClientValidationFailure(blockSend: boolean): void {
+    if (blockSend) {
+      this.clientLogic.sendBlockedByFields = true;
+      this.clientLogic.updatePotentialClientSendButtonAvailability();
+    }
+    this.messageService.transaccionMsjModalNB(
+      this.clientLogic.getPotentialClientValidationMessage(),
+    );
+  }
+
+  private validatePotentialClientBeforeAction(blockSendOnError: boolean): boolean {
+    if (!this.clientLogic.generalTabValidForSave) {
+      return false;
+    }
+
+    this.clientLogic.sendValidationAttempted = true;
+
+    if (this.clientLogic.hasPotentialClientFieldErrors()) {
+      this.notifyPotentialClientValidationFailure(blockSendOnError);
+      this.clientLogic.potentialClientForm?.markAllAsTouched();
+      return false;
+    }
+
+    if (blockSendOnError) {
+      this.clientLogic.sendBlockedByFields = false;
+      this.clientLogic.updatePotentialClientSendButtonAvailability();
+    }
+    return true;
+  }
+
+  buttonSavePotentialClient(): void {
+    if (!this.validatePotentialClientBeforeAction(false)) {
+      return;
+    }
+    this.mensaje =
+      this.clientLogic.clientTags.get('CLI_POT_MSJ_SAVE_QUESTION')
+      ?? '¿Desea guardar el Cliente Potencial?';
+    this.alertMessageOpenSave = true;
+  }
+
+  buttonSendPotentialClient(): void {
+    if (!this.validatePotentialClientBeforeAction(true)) {
+      return;
+    }
+    this.mensaje =
+      this.clientLogic.clientTags.get('CLI_POT_MSJ_SEND_QUESTION')
+      ?? this.clientLogic.clientTags.get('CLI_DENARIO_CONFIRM_SEND_POTENTIAL_CLIENT')
+      ?? '¿Desea enviar el Cliente Potencial?';
+    this.alertMessageOpen = true;
+  }
+
+  setResultSave(ev: any): void {
+    if (ev.detail.role === 'confirm') {
+      this.alertMessageOpenSave = false;
+      this.clientLogic.saveOrExitOpen = false;
+      this.clientLogic.newPotentialClientChanged = false;
+      this.emitPotentialClientSave();
+    } else {
+      this.alertMessageOpenSave = false;
+    }
+  }
+
+  private emitPotentialClientSave(): void {
+    this.potentialClientService.saveSendNewPotentialCliente(false);
+  }
+
+  private emitPotentialClientSend(): void {
     this.clientLogic.saveOrExitOpen = false;
     this.clientLogic.newPotentialClientChanged = false;
-    if (salvarEnviar) {
-      console.log("SALVAR");
-      this.potentialClientService.saveSendNewPotentialCliente(false);
-
-    } else {
-      console.log("ENVIAR");
-      this.mensaje = this.clientLogic.clientTags.get('CLI_DENARIO_CONFIRM_SEND_POTENTIAL_CLIENT')!;
-      this.alertMessageOpen = true;
-    }
+    this.potentialClientService.saveSendNewPotentialCliente(true);
   }
 
   saveSendLocationFunction() {
