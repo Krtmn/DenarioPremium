@@ -28,7 +28,7 @@
       </thead>
       <tbody>
         @for (row of inventoryRows; track row.rowId) {
-        <tr>
+        <tr [class.stock-send-error-row]="inventariosLogicService.shouldShowProductStockSendError(row.coProduct)">
           @if(canManageRows()) {
           <td class="col-sel">
             <ion-checkbox [(ngModel)]="row.selected"></ion-checkbox>

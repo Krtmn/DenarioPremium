@@ -136,9 +136,9 @@ export class InventarioGeneralComponent implements OnInit {
   }
 
   setChangesMade(value: boolean) {
-    //ESTA FUNCION SE USARA PARA CONTROLAR SI PUEDO ENVIAR O GUARDAR, CVER QUE HAGO ACA
-    this.inventariosLogicService.onStockValidToSave(value);
-    this.inventariosLogicService.onStockValidToSend(value);
+    if (value) {
+      this.inventariosLogicService.notifyStockEdited();
+    }
   }
 
   initInventario() {
@@ -221,6 +221,8 @@ export class InventarioGeneralComponent implements OnInit {
 
                 if (clientStock.clientStockDetails.length == 0) {
                   this.inventariosLogicService.newClientStock.clientStockDetails = [] as ClientStocksDetail[];
+                  this.inventariosLogicService.markStockOpenedFromPersistedCopy();
+                  this.message.hideLoading();
                 } else {
                   const detailUnitPromises = clientStock.clientStockDetails.map((detail, detailIndex) =>
                     this.inventariosLogicService
@@ -232,10 +234,11 @@ export class InventarioGeneralComponent implements OnInit {
                   );
 
                   Promise.all(detailUnitPromises).then(() => {
+                    this.inventariosLogicService.pauseStockDirtyTracking();
                     this.inventariosLogicService.newClientStock.clientStockDetails = clientStock.clientStockDetails;
                     this.inventariosLogicService.setVariablesMap();
-                    this.inventariosLogicService.onStockValidToSave(true);
-                    this.inventariosLogicService.onStockValidToSend(true);
+                    this.inventariosLogicService.markStockOpenedFromPersistedCopy();
+                    this.inventariosLogicService.resumeStockDirtyTracking();
 
                     if (clientStock.stDelivery == 1 || clientStock.stDelivery == null) {
                       this.inventariosLogicService.getInfoUnit(this.dbServ.getDatabase(), clientStock).then(() => {
@@ -286,6 +289,7 @@ export class InventarioGeneralComponent implements OnInit {
     }else{
       this.inventariosLogicService.newClientStock.daysSinceLast = this.daysSinceLastInventory;
     }
+    this.inventariosLogicService.notifyStockEdited();
   }
 
   setDaysUntilNextInventory(){
@@ -295,6 +299,7 @@ export class InventarioGeneralComponent implements OnInit {
     }else{
       this.inventariosLogicService.newClientStock.daysUntilNext = this.daysUntilNextInventory;
     }
+    this.inventariosLogicService.notifyStockEdited();
   }
 
   onEnterpriseSelect() {
@@ -305,8 +310,6 @@ export class InventarioGeneralComponent implements OnInit {
   }
 
   private reiniciarInventarioPorEnterprise(enterprise: Enterprise) {
-    this.inventariosLogicService.onStockValidToSave(false);
-    this.inventariosLogicService.onStockValidToSend(false);
     this.inventariosLogicService.onClientStockValid(false);
     this.inventariosLogicService.initClientStockDetails();
 
@@ -367,7 +370,6 @@ export class InventarioGeneralComponent implements OnInit {
             this.clientSelectorService.checkClient = true;
           }
           this.newClient = {} as Client;
-          this.inventariosLogicService.onStockValidToSave(true);
           this.inventariosLogicService.isEdit = true;
 
           const isNewInventory = !this.inventariosLogicService.newClientStock.coClientStock;
@@ -401,11 +403,10 @@ export class InventarioGeneralComponent implements OnInit {
               this.coDireccionAnterior = this.inventariosLogicService.newClientStock.coAddressClient;
               this.inventariosLogicService.selectedClient = true;
               this.inventariosLogicService.onClientStockValid(true);
+              this.inventariosLogicService.notifyStockEdited();
             } else {
               //setTimeout(() => {
               this.inventariosLogicService.selectedClient = false;
-              this.inventariosLogicService.onStockValidToSave(false);
-              this.inventariosLogicService.onStockValidToSend(false);
               this.inventariosLogicService.onClientStockValid(false);
               this.inventariosLogicService.message = this.inventariosLogicService.inventarioTags.get('INV_ERROR_LIST_ADDRESS')!;
               this.inventariosLogicService.alertMessageOpen = true;
@@ -439,6 +440,7 @@ export class InventarioGeneralComponent implements OnInit {
     } else {
       this.inventariosLogicService.newClientStock.txComment = this.txComment;
     }
+    this.inventariosLogicService.notifyStockEdited();
   }
 
   cleanString(str: string): string {

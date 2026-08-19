@@ -84,14 +84,15 @@ export class InventarioHeaderComponent implements OnInit {
     this.AttachSubscription = this.adjuntoService.AttachmentChanged.subscribe(() => {
       this.inventariosLogicService.newClientStock.hasAttachments = this.adjuntoService.hasItems();
       this.inventariosLogicService.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
-      var valid = this.inventariosLogicService.checkValidStockToSend();
-      this.inventariosLogicService.onStockValidToSave(valid);
-      this.inventariosLogicService.onStockValidToSend(valid);
+      this.inventariosLogicService.notifyStockEdited();
+      this.inventariosLogicService.refreshSendBlockedState();
+      this.inventariosLogicService.updateSaveButtonAvailability();
+      this.inventariosLogicService.updateSendButtonAvailability();
     });
 
     this.AttachWeightSubscription = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
-      this.inventariosLogicService.onStockValidToSave(false);
-      this.inventariosLogicService.onStockValidToSend(false);
+      this.inventariosLogicService.updateSaveButtonAvailability();
+      this.inventariosLogicService.updateSendButtonAvailability();
     });
 
     this.alertButtons = [
@@ -173,6 +174,8 @@ export class InventarioHeaderComponent implements OnInit {
             await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.inventariosLogicService.newClientStock.coClientStock, "inventarios");
 
             console.log(res);
+            this.inventariosLogicService.applyPersistSucceededBaseline();
+            this.inventariosLogicService.resetSendValidationUx();
             if (send) {
               //SE ENVIARA Y GUARDARA CLIENTSTOCK
               let pendingTransaction = {} as PendingTransaction;
@@ -255,18 +258,62 @@ export class InventarioHeaderComponent implements OnInit {
     }
   }
 
-  sendOrSave(sendOrSave: Boolean) {
-    this.header = this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!;
-    /* this.mensaje = this.inventariosLogicService.inventarioTags.get('DENARIO_DEV_CONFIRM_SEND')!; */
-    if (sendOrSave) {
-      //envio
+  private notifyStockValidationFailure(blockSend: boolean): void {
+    const focusIndex = this.inventariosLogicService.findFirstIncompleteTypeStockIndex();
+    if (focusIndex >= 0) {
+      this.inventariosLogicService.stockSendFocusTypeStockIndex = focusIndex;
+    }
+    if (blockSend) {
+      this.inventariosLogicService.sendBlockedByFields = true;
+      this.inventariosLogicService.updateSendButtonAvailability();
+    }
+    this.messageService.transaccionMsjModalNB(
+      this.inventariosLogicService.getStockValidationMessage(),
+    );
+  }
 
-      this.mensaje = this.inventariosLogicService.inventarioTags.get('INV_MSJ_SEND_QUESTION_TYPESTOCK')!
-      this.alertMessageOpenSend = true;
+  private validateStockBeforeAction(blockSendOnError: boolean): boolean {
+    if (!this.inventariosLogicService.generalTabValidForSave) {
+      return false;
+    }
+
+    this.inventariosLogicService.sendValidationAttempted = true;
+
+    if (this.inventariosLogicService.hasStockFieldErrors()) {
+      this.notifyStockValidationFailure(blockSendOnError);
+      return false;
+    }
+
+    if (blockSendOnError) {
+      this.inventariosLogicService.sendBlockedByFields = false;
+      this.inventariosLogicService.updateSendButtonAvailability();
+    }
+    return true;
+  }
+
+  saveStock() {
+    if (!this.validateStockBeforeAction(false)) {
+      return;
+    }
+    this.header = this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!;
+    this.mensaje = this.inventariosLogicService.inventarioTags.get('INV_MSJ_SAVE_QUESTION_TYPESTOCK')!;
+    this.alertMessageOpenSave = true;
+  }
+
+  sendStock() {
+    if (!this.validateStockBeforeAction(true)) {
+      return;
+    }
+    this.header = this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!;
+    this.mensaje = this.inventariosLogicService.inventarioTags.get('INV_MSJ_SEND_QUESTION_TYPESTOCK')!;
+    this.alertMessageOpenSend = true;
+  }
+
+  sendOrSave(sendOrSave: Boolean) {
+    if (sendOrSave) {
+      this.sendStock();
     } else {
-      //salvo
-      this.mensaje = this.inventariosLogicService.inventarioTags.get('INV_MSJ_SAVE_QUESTION_TYPESTOCK')!
-      this.alertMessageOpenSave = true;
+      this.saveStock();
     }
   }
 
