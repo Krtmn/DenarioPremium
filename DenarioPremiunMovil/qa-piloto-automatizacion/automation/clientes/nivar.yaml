@@ -10,7 +10,7 @@
 
 cliente_id: nivar
 cliente_nombre: "NIVAR"                       # ⚠ confirmar nombre EXACTO en la app (app-client-detail Empresa)
-ws_url: TBD                                   # El Yaque — confirmar host exacto (denario<...>.ddns.net:8081). El APK ya apunta ahí.
+# ws_url: NO se guarda — la playa es del SERVIDOR y es rotativa; se descubre en runtime (ver _schema.yaml).
 apk_package: com.kiberno.denarioPremiumPro
 db_name: nivar                                # ⚠ FALTA bloque "# Cliente: nivar" en secrets/qa-db.env → cotejo BD = BD-N/A hasta agregarlo
 

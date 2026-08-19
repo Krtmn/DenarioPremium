@@ -16,7 +16,7 @@ cliente_id: alipascua
 cliente_nombre: "ALIPASCUA, C.A."      # co_enterprise = ALIP_BSD (empresa ÚNICA en BD)
 apk_package: com.kiberno.denarioPremiumPro
 db_name: alipascua                      # base en savia; GRANT read-only ✅ (185/185 tablas)
-# ws_url: NO se guarda — se descubre en runtime. Playa informada por QA: El Yaque.
+# ws_url: NO se guarda — se descubre en runtime.
 
 # ── Variables Globales ────────────────────────────────────────────────────────
 vgs:

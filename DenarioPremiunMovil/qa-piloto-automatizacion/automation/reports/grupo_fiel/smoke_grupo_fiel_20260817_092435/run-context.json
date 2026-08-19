@@ -1,0 +1,17 @@
+{
+  "_generated_for": "grupo_fiel",
+  "_run_dir": "automation/reports/grupo_fiel/smoke_grupo_fiel_20260817_092435/",
+  "modules": {
+    "cobros": {
+      "cliente_normal": null,
+      "cliente_igtf": null,
+      "_nota": "Descubierto en pre-vuelo BD. Para el documento exacto en UI, confirmar con local-query sobre document_sales + co_currency."
+    },
+    "pedidos": null,
+    "devoluciones": null,
+    "inventarios": null,
+    "visitas": null,
+    "depositos": null,
+    "clientes": null
+  }
+}

@@ -1,0 +1,441 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Perfil QA — GRUPO FIEL, S.A. (GRUFISA)
+#
+# Cliente NUEVO: nunca se ha corrido. Perfil construido ANTES de la 1ª corrida desde
+#   los dumps global_configuration_202608141613 + global_configuration_client_202608141614
+#   (2026-08-14) y pre-poblado desde BD read-only. Los dumps se BORRARON una vez creado
+#   este perfil (política de alta-cliente.md).
+#
+# ── CONFLICTOS ENTRE DUMPS (contados, no estimados) ───────────────────────────
+#   claves en el GLOBAL .............. 174
+#   claves en el OVERRIDE de cliente .. 74
+#   presentes en AMBOS ................ 64
+#   con VALOR DISTINTO ................ 32  → **gana el GLOBAL en las 32**
+#   gana el CLIENT .................... 0   ✅ sin trampa: ningún override cambia el resultado
+#   solo en el override ............... 10  (2022-10-17/25 y 2026-02-24)
+#   solo en el global ................. 110
+#
+# ⚠ El override tiene claves de 2022 (potencialmente stale) pero **ninguna gana**: el global
+#   es más reciente en todos los casos en disputa. Las 10 solo-client sí se conservan.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+cliente_id: grupo_fiel
+cliente_nombre: "GRUPO FIEL, S.A. (GRUFISA)"   # ✅ de BD (`enterprise`). ⚠ confirmar rótulo EXACTO en la app.
+# ws_url / playa: NO se registran — es propiedad del SERVIDOR, es rotativa y se descubre
+#   en runtime (ver _schema.yaml).
+apk_package: com.kiberno.denarioPremiumPro
+db_name: grupo_fiel                     # base en savia · GRANT read-only ✅ **185/185 tablas**
+
+# ── Última corrida ────────────────────────────────────────────────────────────
+ultima_corrida:
+  run_id: "20260817_092435_smoke-completo"
+  fecha: "2026-08-17"
+  # 1ª corrida COMPLETA 10/10 · servidor El Yaque `denarioelyaque.ddns.net:8081`
+  # app v1.0 / db19 · `window.ng=TRUE` · `sqlitePlugin` disponible
+  # ⚠ El HOST/playa NO está en `localStorage` en este build: solo se obtiene del hook de payload.
+
+# Modelo por módulo (feedback QA 2026-07-08): Haiku en los no-transaccionales, Opus en los 7 con cotejo BD.
+model_by_module:
+  login: haiku
+  productos: haiku
+  vendedores: haiku
+  clientes: opus
+  pedidos: opus
+  cobros: opus
+  devoluciones: opus
+  inventarios: opus
+  depositos: opus
+  visitas: opus
+
+# ── SLUG — UNIFICADO (corregido 2026-08-17, 1ª corrida) ───────────────────────
+#   perfil / base de datos ....... grupo_fiel
+#   bloque de qa-db.env .......... grupo_fiel
+#   bloque de qa-credentials.env . grupo_fiel
+#   ⇒ `node automation/db/query.js grupo_fiel "..."`  ✅ 185/185 tablas legibles.
+#   ⚠ La nota anterior ("grupo fiel" CON ESPACIO / "grupofiel" TODO JUNTO) era de la fase de alta y
+#     quedó STALE: hoy los 3 bloques usan el mismo slug. Con espacio da
+#     `database "grupo fiel" does not exist`.
+
+# ── EMPRESA — UNA SOLA ────────────────────────────────────────────────────────
+#   00001 · GRUPO FIEL, S.A. (GRUFISA) · co_operation='I'
+#   lb_enterprise = "GRUPO FIEL, S.A. (GR"  ⚠ TRUNCADO a 20 caracteres: cotejar contra
+#     `lb_enterprise`, nunca contra `na_enterprise`, o el mismatch es falso.
+#   ✅ COHERENTE con enterpriseEnabled=false ⇒ **no debería haber selector de empresa
+#     en ningún módulo**. Si aparece ⇒ divergencia a anotar.
+
+# ── 🔴 USUARIO QA — Y LA TRAMPA DEL IDENTIFICADOR ─────────────────────────────
+#   Login (qa-credentials.env, bloque "# Cliente: grupofiel") → `johana`
+#   Resolución en BD:
+#     users           → login_user='johana'  ⇒ id_user = 463  (Johana Belandria)
+#     users_data      → id_user=463          ⇒ **co_user = '003'**
+#     salesman_view   → co_user='003', co_enterprise='00001', co_role=7, st_user=1
+#     client_template_user → co_user='003'   ⇒ **61 clientes asignados**
+#
+# 🔴 `client_template_user` NO se puede unir por el login: sus `co_user` son códigos
+#   numéricos ('003','006','013'…), no nombres. Filtrar por 'johana' devuelve **0 filas**
+#   y parece que la vendedora no tiene cartera.
+#   ⇒ El puente es **`users_data`** (id_user → co_user). Ese mapeo no existe en `users`.
+#
+# ⚠ Filtrar SIEMPRE por el vendedor QA: un cliente no asignado NO aparece en la app.
+
+# ── Variables Globales ────────────────────────────────────────────────────────
+vgs:
+  multiCurrency: true
+  multiCurrencyCollection: true
+  multiCurrencyDeposit: true
+  multiCurrencyOrder: false             # ⚠ pedidos en UNA sola moneda pese a multiCurrency=true
+  expirationBatch: true                 # ✅ RESUELTO [grupo_fiel-20260817] — **APLICA SOLO A INVENTARIOS**.
+                                        #   Medido módulo por módulo: en DEVOLUCIONES y en el resto es inocua.
+                                        #   🔴 El bloqueante es el **LOTE**, no la fecha: la fecha de
+                                        #   vencimiento **nace poblada en HOY**, así que el único campo que
+                                        #   frena el guardado es el lote vacío. Confirma difranca/el_palmar.
+  clientStock: true                     # 🟢 INVENTARIOS APLICA
+                                        #   ⚠ En ferrenuestro y difranca esta VG en `false` NO ocultó el
+                                        #     módulo ⇒ la VG no gobierna la visibilidad. Acá está en true,
+                                        #     así que el módulo debe estar y ser operable.
+  requireClientStock: false             # no obliga toma de inventario antes del pedido
+  enterpriseEnabled: false              # ✅ coherente en MÓVIL: 1 sola empresa ⇒ el selector llega
+                                        #   `disabled=true` auto-asignado (NO desaparece: sigue en el DOM).
+                                        # 🔴 CORRECCIÓN [grupo_fiel-20260817]: **en la WEB `enterpriseEnabled=false`
+                                        #   NO elimina el filtro/selector de Empresa** — aparece igual, con UNA
+                                        #   sola opción ya preseleccionada. Es inocuo, pero NO usarlo como
+                                        #   oráculo de la VG: la predicción "no debería haber selector" era falsa
+                                        #   en ambas capas.
+  orderEnterpriseEnabled: false         # solo-client. ⚠️VERIFICAR: en difranca una solo-client sin
+                                        #   contraparte global resultó STALE y la UI la desmintió.
+  esVendedor: true                      # ✅ RESUELTO [grupo_fiel-20260817] — PENDIENTE CERRADO.
+                                        #   Confirmado en UI: heading "Vendedor" + KPIs reales poblados
+                                        #   (1 acordeón, altura 393,4 px). Coherente con co_role=7 en
+                                        #   `salesman_view`. DM-VND-002 = PASS pleno.
+  infoVendedores: false                 # el módulo VENDEDORES se autogenera en la app
+  # ── Cobros ──
+  colletionPayment: "true-false-true-true-true-true"
+                                        # Efectivo=SÍ · Cheque=NO · Transferencia=SÍ · Depósito=SÍ ·
+                                        #   Otros=SÍ · Pago Móvil=SÍ   (hideColletionPayment=true ⇒ manda esta)
+                                        # 🟢 **DEPÓSITOS APLICA**: hay EFECTIVO habilitado y solo se
+                                        #   deposita la porción en efectivo de un cobro.
+  tolerancia0: true                     # 🟢 SÍ se pueden enviar cobros que no cierren en cero
+  TipoTolerancia: 0                     # items = Importe,Porcentaje ⇒ 0 = Importe
+  RangoToleranciaNegativa: 1
+  RangoToleranciaPositiva: 100000       # ⚠️VERIFICAR: rango positivo enorme contra negativo de 1.
+  MonedaTolerancia: "USD"               # ⚠ los documentos del vendedor QA están en **BS** (ver modules)
+  enablePartialPayment: true            # 🟢 pagos parciales habilitados
+  cobroPrepago: true                    # botón ANTICIPO/PREPAGO
+  cobroRetencion: true                  # botón RETENCIÓN
+  retencion: true                       # 🟢 retención DENTRO del cobro normal SÍ aplica
+  sizeRetention: 14                     # nº de dígitos del comprobante
+  formatRetention: "2"                  # items = Numeros,Letras,Alfanumerico ⇒ 2 = Alfanumérico
+  userCanAddRetention: true
+  retentionDocTypeCR: false
+  userCanSelectIGTF: false              # ✅ RESUELTO [grupo_fiel-20260817] — **MANDA ESTA**. IGTF = N/A real:
+                                        #   no hay botón ni check de IGTF en la UI.
+  igtfDefault: true                     # ✅ CONTRADICCIÓN CERRADA: `igtfDefault` y `disableCheckIGTF` son
+  disableCheckIGTF: true                #   **INERTES** cuando userCanSelectIGTF=false. No re-abrir la duda.
+  userCanCollectIva: false              # 🔴 COBRO 25% IVA **NO APLICA**
+  userCanSelectCollectDiscount: false   # 🔴 descuento en cobro N/A
+  clientBankAccount: false
+  currencyBank: false                   # los bancos se filtran por la moneda del cobro
+  validateCollectionDate: true          # ⚠ valida la fecha del cobro
+  requiredCollectionAttachments: false  # el cobro se ENVÍA sin adjunto
+  requiredRetentionAttachments: false
+  conversionDocument: false             # solo-client ⚠️VERIFICAR (sin contraparte global)
+  # ── Pedidos / productos ──
+  suggestedOrder: true                  # 🟢 SÍ se ofrece pedido sugerido
+  suggestedOrderByDispatchAndReturn: false
+                                        # ⇒ corre el algoritmo VIEJO (promedio de `client_avg_products`),
+                                        #   no el de última factura. ⚠ Elegir productos con `average>0`
+                                        #   o el sugerido sale 0 y el caso no prueba nada.
+  selectOrderType: true                 # 🟢 SÍ hay "tipo de pedido"
+  orderTypeByEnterprise: false
+  pricelistByOrderType: true            # ⚠ la lista de precios depende del tipo de pedido
+  userCanSelectGlobalDiscount: true     # 🟢 descuento GLOBAL en pedido SÍ aplica
+  userCanSelectProductDiscount: false   # sin "% Descuento" por línea
+  setProductDiscount: false
+  setMaxProductDiscount: 0
+  userCanSelectIVA: false
+  vatExemptProducts: false
+  userCanChangePaymentConditions: true  # 🟢 SÍ cambia condiciones de pago
+  userCanChangePriceList: false
+  userCanChangePriceListProduct: false
+  userCanChangeWarehouse: false         # el select "Almacén" debería llegar disabled
+  validateWarehouses: true              # 🔴 SÍ valida existencia por almacén (≠ difranca)
+  showWarehouseDetails: true
+  validStock: true                      # 🔴 SÍ alerta al cargar producto sin inventario
+  stock0: false                         # 🔴 **NO** se pueden pedir productos con inventario 0
+  hideStock0: false
+  showStock: true
+  productMinMul: false
+  quUnitDecimals: false                 # cantidades ENTERAS
+  validateNuOrder: false                # #nuPurchase no debería llegar required
+  featuredProducts: true
+  nameProductLine: "DESTACADOS"
+  hideProdWithoutPrice: false           # ⚠ EL NOMBRE ENGAÑA: leer la descripción del dump, no la clave
+  showProductImages: true
+  listProductsBy: "lineas"              # solo-client ⚠️VERIFICAR
+  quPageProduct: 50
+  productsOrderBy: "co_product"
+  clientsOrderBy: "na_client"           # ⚠ ordena por NOMBRE (≠ difranca, que ordena por código)
+  showCreditLimit: true
+  totalUnit: true
+  showTotalization: true
+  showTotalProductUnit: true
+  productBonification: false
+  productValor: false
+  # ── Devoluciones ──
+  validateReturn: false                 # NO valida que el producto esté en una factura enviada
+  requeridedNroFactura: true            # 🔴 el Nro. de factura **SÍ** es obligatorio
+  multiInvoices: false                  # una sola factura por devolución
+  # ── Firmas — TODAS activas ──
+  signatureOrder: true
+  signatureCollection: true
+  signatureReturn: true
+  signatureDeposit: true
+  signatureVisit: true
+  signatureStock: true
+  signatureClient: true
+  # ── Visitas / GPS / roles ──
+  visitRout: true                       # 🟢 **SÍ hay RUTA DE VISITAS** ⇒ "Ruta de hoy" debe traer datos
+  userCanSaveGPS: true
+  userMustActivateGPS: true             # 🔴 **EXIGE GPS ACTIVO** — el device debe tener ubicación encendida
+  transactionCoordinateRadius: false    # ⚠ valor booleano en una clave que en otros clientes es un radio
+  promoterRole: true
+  rolPlanta: false
+  transportRole: false
+  # ── Tasa / conversión ──
+  historicoTasa: true
+  mesesTasa: 6
+  canChangeRate: true                   # la tasa "sería" editable…
+  enabledManualRate: false              # ✅ RESUELTO [grupo_fiel-20260817] — **MANDA ESTA**: no hay tasa manual.
+                                        # 🔴 Y NO APLICA EL PATRÓN `readonly` DE EL_PALMAR: acá el control de
+                                        #   tasa **es un `ion-select` de UNA sola opción** (rotula "771,07 BS"),
+                                        #   NO un `ion-input` — `#manualRateInput` **no existe**. Buscar el par
+                                        #   (disabled, readonly) de un ion-input no encuentra nada y lleva a
+                                        #   concluir "no hay campo de tasa". ⇒ comprobar el TIPO de control y
+                                        #   contar sus opciones: 1 opción ⇒ sin tasa alterna aunque esté habilitado.
+  showExchangeRateSelector: false       # ⚠️VERIFICAR: contradice historicoTasa=true
+  conversionByPriceList: false
+  conversionCalculator: false
+  currencyModule: true
+  paymentCurrency: false
+  paymentCurrencyDefault: "USD"
+  # ── Adjuntos ──
+  userCanUploadFiles: true
+  showCamera: true
+  quAttach: 25
+  quFileAttach: 1
+  cloudAttachments: false
+  imageWeightLimit: 30
+  # ── Formato / textos ──
+  tagRif: "RIF"
+  tagIVA: "IVA"
+  parteDecimal: 2
+  parteElntera: 15                      # ⚠ OJO: la clave viene con TYPO (con L) en AMBOS dumps
+  longitudComentario: 200               # ⚠ valor de CONFIG, no es el tope real: la UI lo fija por
+                                        #   constante de producto. **Medir el `maxlength` del input.**
+  requiredComment: true                 # ✅ RESUELTO [grupo_fiel-20260817] — **APLICA SOLO A COBROS**.
+                                        #   Medido en 6 módulos: en visitas el `Agregar` con Comentario VACÍO
+                                        #   agregó el evento (`listaEventos` 0→1, `comentario:""`) sin alert ni
+                                        #   bloqueo; ídem el resto. Confirma el alcance de difranca. No extrapolar.
+  passwordExpiresIn: 0
+  # ── Historial / reportes / web ──
+  transactionHistory: true
+  historyMonths: 1
+  commisionReport: false
+  mesesFacturas: 3
+  orderWeb: true                        # solo-client
+  collectionWeb: false                  # solo-client
+  depositWeb: false                     # solo-client
+  returnWeb: false                      # solo-client
+  reconciliation: false
+  enableDifferenceCodes: false
+  streetDay: false
+  # ── Notificaciones — TODAS EN false ──
+  # notifications{Order,Collection,Deposit,Return,PotentialClient,ClientStock,Visit} = false
+  # notificationsClient* = false
+  # 🟢 **NINGUNA transacción del smoke dispara correos.** (≠ difranca, con 6 de 7 prendidas.)
+
+# ── Datos de prueba por módulo ────────────────────────────────────────────────
+# Pre-poblado desde BD read-only el 2026-08-14 · empresa 00001 · vendedora QA co_user '003'.
+modules:
+  login:
+    # usuario QA: ver secrets/qa-credentials.env → bloque "# Cliente: grupofiel" (¡TODO JUNTO!)
+    bad_password: "(ver el mismo bloque → QA_BAD_PASSWORD)"
+
+  clientes:
+    cliente_busqueda: "MP GELATO"
+    cliente_detalle: "J-504863246"      # MP GELATO C.A. — 4 docs, 3 vencidos, 361.024,51 BS
+    # showCreditLimit=true ⇒ el detalle muestra líneas de crédito
+    # clientsOrderBy=na_client ⇒ la lista viene ordenada por NOMBRE
+
+  pedidos:
+    cliente_test: "J-504863246"         # MP GELATO C.A.
+    moneda_pedido: "BS"                 # 🔴 los documentos del vendedor QA están en **BS**
+                                        #   ⚠ pero MonedaTolerancia=USD y paymentCurrencyDefault=USD.
+                                        #   Verificar en qué moneda llega el catálogo antes de concluir
+                                        #   "no hay productos" (mismo falso-FAIL que en el_palmar).
+    producto_test: "1.5LTS"             # Caja de Agua 1.5lts 6und
+    productos_alternos: ["330ML", "5LTS", "600ML"]   # Caja de Agua 330ml/5lts/600ml
+    alerta_deuda_vencida: true          # MP GELATO tiene 3 de 4 documentos vencidos
+    # 🔴 stock0=false + validStock=true + validateWarehouses=true ⇒ las validaciones de
+    #   inventario están TODAS activas. Elegir un producto CON existencia o el pedido se bloquea.
+    # selectOrderType=true ⇒ hay que elegir tipo de pedido
+    # pricelistByOrderType=true ⇒ la lista de precios CAMBIA con el tipo elegido
+    # userCanSelectGlobalDiscount=true ⇒ probar descuento global
+    # ── RESUELTO EN BD 2026-08-17 (pre-vuelo de la 1ª corrida) ──
+    tipos_pedido:                       # `order_type` activos de la empresa 00001 (co_operation<>'D')
+      - co: "B"                         # "Pedido Nota"    · default_value=TRUE · lista de precios 02
+        nombre: "Pedido Nota"
+        lista_precio: "02"
+      - co: "A"                         # "Pedido Factura" · lista de precios 03
+        nombre: "Pedido Factura"
+        lista_precio: "03"
+                                        # ⇒ pricelistByOrderType=true es VERIFICABLE: A y B usan listas
+                                        #   distintas (03 vs 02). Cambiar el tipo DEBE cambiar el precio.
+    # ── ✅ RESUELTO EN LA 1ª CORRIDA [grupo_fiel-20260817] ──
+    #   **`pricelistByOrderType` FUNCIONA END-TO-END**: B "Pedido Nota" (default, lista 02) y
+    #   A "Pedido Factura" (lista 03); cambiar el tipo CAMBIA el precio en pantalla.
+    # 🔴 `co_order_type` es NULL en **985/985** pedidos del tenant — NO es "el tipo no viajó" de estos 2:
+    #   la app envía **`idOrderType`**, nunca `coOrderType`. La columna `co_order_type` simplemente no se
+    #   puebla desde móvil. **No levantarlo como defecto**; cotejar el tipo por `id_order_type`.
+    stock_por_almacen:                  # `stock` — almacenes 003 y 006, los 4 productos con existencia
+      "330ML": {alm_003: 1825, alm_006: 1559}
+      "1.5LTS": {alm_003: 1786, alm_006: 1468}
+      "5LTS":  {alm_003: 1507, alm_006: 1448}
+      "600ML": {alm_003: 1428, alm_006: 871}
+    # 🔴 PEDIDO SUGERIDO — `client_avg_product` tiene 102 filas, todas con average>0, pero apuntan a
+    #   **25 códigos de cliente que NO EXISTEN en `client`** (formato viejo `C000799`; los reales son RIF `J-…`).
+    #   Cruce medido: 25 co_client en avg → **0** existen en `client`. Sigue siendo observación de DATOS.
+    # ✅ CORRECCIÓN DE MI PROPIA PREDICCIÓN [grupo_fiel-20260817]: **el sugerido NO da 0.**
+    #   Con los avg huérfanos la app **cae al fallback `sugerido = currentStock`** — medido en INVENTARIOS:
+    #   dio **11 y 5**, no 0. ⇒ el caso SÍ es ejercitable; no marcarlo N/A "por datos huérfanos" sin medir.
+
+  cobros:
+    # 🔴🔴🔴 CORRIDA 2026-08-17: COBROS EN MÓVIL ES **SOLO LECTURA** (decisión de QA, confirmada).
+    #   NO se crea ningún cobro: ni normal, ni anticipo, ni retención.
+    #   SÍ se ejercen: entrar al módulo, BUSCAR, abrir el detalle de cobros existentes, leer tabs
+    #   (Documentos / Pagos / Total), montos, tasa, moneda y estado. Todo caso de CREACIÓN → 🚫 N/A
+    #   con motivo "cobros solo lectura".
+    #   Los datos de abajo quedan cargados para futuras corridas y para navegar el módulo.
+    solo_lectura: true
+    cliente_test: "J-504863246"
+    clientes_con_documentos:            # cartera de co_user '003', saldo > 0
+      - "J-504863246"                   # MP GELATO C.A. — 4 docs (3 vencidos) · 361.024,51 BS
+      - "J408595060"                    # GRUPO COMERCIALIZADORA FERCO — 3 docs (0 vencidos) · 924.549,47 BS
+      - "J505839020"                    # FARMA VID 2024 — 3 docs (3 vencidos) · 644.420,52 BS
+      - "J-501156808"                   # MAGED JERUSALEN — 2 docs · 94.235,07 BS
+      - "J-500836996"                   # INVERSIONES Y DISTRIBUIDORA L Y Y — 2 docs (1 vencido) · 1.038.180,70 BS
+    moneda_cobro: "BS"
+    metodo_pago: efectivo               # 🟢 Efectivo habilitado (posición 1 = true)
+    banco_deposito: "0666"              # BANCO VENEZUELA. Otros: BCO04 Venezolano de Crédito ·
+                                        #   7738 BANESCO · 9213-USD Venezuela USD$
+                                        #   ⚠ currencyBank=false ⇒ se filtran por la moneda del cobro
+    documento_retencion: null           # TBD — elegir una factura del listado de arriba en la 1ª corrida
+    monto_retencion_iva: null           # TBD
+    monto_retencion_islr: null          # TBD
+    smoke_na_estructural:
+      - "🔴 TODOS los casos de CREACIÓN de cobro (normal / anticipo / retención) — solo lectura 2026-08-17"
+      - "IGTF (userCanSelectIGTF=false) — ⚠️VERIFICAR: igtfDefault y disableCheckIGTF están en true"
+      - "Cobro 25% IVA (userCanCollectIva=false)"
+      - "Descuento en cobro (userCanSelectCollectDiscount=false)"
+      - "Cheque como método de pago (posición 2 = false)"
+      - "Cuenta bancaria del cliente (clientBankAccount=false)"
+
+  devoluciones:
+    cliente_test: "J-504863246"
+    producto_test: "1.5LTS"
+    factura_test: "B066127"             # ✅ RESUELTO EN BD 2026-08-17 · GRUPPO SAPORI DI CALABRIA, CA
+                                        #   (co_client J501005400) · 17.702,20 BS, saldo íntegro,
+                                        #   emitida 2026-08-13, vence 2026-08-20. Cliente de la cartera 003.
+                                        #   ⚠ La columna es `co_document_sale` (no `co_document`);
+                                        #     `nu_document` viene con el literal "NULL" en este cliente.
+    facturas_alternas:                  # todas con saldo > 0, cartera del vendedor 003
+      - {factura: "B066129", cliente: "J507952665", monto: 897126.16}   # MAYOR Y DETAL EL EXITO 2026
+      - {factura: "B066126", cliente: "J-500836996", monto: 666234.42}  # INVERSIONES Y DISTRIBUIDORA L Y Y
+      - {factura: "B065917", cliente: "J408595060", monto: 311877.16}   # GRUPO COMERCIALIZADORA FERCO
+      - {factura: "B066024", cliente: "J407277294", monto: 18260.44}    # C.A SEGURIDAD ABSOLUTA
+    # validateReturn=false ⇒ no exige que el producto esté en la factura
+    # multiInvoices=false ⇒ una sola factura por devolución
+    # ✅ RESUELTO [grupo_fiel-20260817] — LA BASURA DE PRUEBAS **NO LLEGA A LA APP**:
+    #   de las 9 filas de `return_type`, **6 tienen `co_operation='D'`** (borradas) y el filtro se aplica en la
+    #   SINCRONIZACIÓN, no en la UI ⇒ el device solo ve los 3 reales.
+    tipos_devolucion: ["Calidad", "PostVenta", "Servicio"]   # sin "Cambio X Cambio"
+    #   ⇒ NO reportar la basura ("hola", "prueba", "problemas", "PruebaTovar") como defecto de app;
+    #     es higiene de datos del tenant y es invisible desde el móvil.
+
+  inventarios:
+    aplica: true                        # clientStock=true
+    cliente_test: "J-504863246"
+    # expirationBatch=true ⇒ probablemente exija LOTE (verificar: el alcance es por módulo)
+    # signatureStock=true ⇒ pide firma
+    # suggestedOrderByDispatchAndReturn=false ⇒ algoritmo viejo: elegir producto con
+    #   `client_avg_products.average > 0` o el sugerido dará 0
+
+  depositos:
+    aplica: true                        # 🟢 Efectivo habilitado en colletionPayment ⇒ hay qué depositar
+    motivo_na: null
+    # signatureDeposit=true ⇒ pide firma · multiCurrencyDeposit=true
+    # 🔴 2026-08-17: como cobros va en SOLO LECTURA, no habrá cobro nuevo en efectivo. Decisión de QA:
+    #   **depositar contra un cobro EXISTENTE** con porción en efectivo disponible (histórico o de hoy).
+    #   Si el modal de cobros a depositar viene vacío ⇒ N/A por datos (no FAIL), y anotarlo.
+    # ── CANDIDATOS RESUELTOS EN BD 2026-08-17 (id_deposit IS NULL + pago co_payment_method='ef') ──
+    cobros_con_efectivo_sin_depositar:
+      - {ref: 32, cliente: "GRUPPO SAPORI DI CALABRIA, CA", moneda: "BS",  efectivo: 8000.00}   # + 2.000 pago móvil
+      - {ref: 31, cliente: "FARMA VID DR PORTILLO, CA",     moneda: "USD", efectivo: 100.00}
+    # ✅ ORÁCULO YA VALIDADO EN ESTE CLIENTE: el cobro Ref 27 (295.639,02 BS · ef 95.000 + tr 200.639,02)
+    #   quedó vinculado al depósito Ref 1, cuyo `nu_amount_doc` = **95.000,00** = EXACTAMENTE la porción
+    #   en EFECTIVO. ⇒ se deposita el efectivo, no el total ni la transferencia. No levantarlo como defecto
+    #   (falsa alarma cometida en el_palmar-20260806).
+    # ✅ RESUELTO [grupo_fiel-20260817] — **LA APP NO EXIGE EL Nº DE PLANILLA NI EL COMENTARIO.**
+    #   Medido el par antes/después: con Banco + Fecha Doc + cobro marcado y **ambos campos vacíos**,
+    #   `imagenGuardar`/`imagenEnviar` pasaron de disabled=true a false **en el mismo tick**.
+    #   ⇒ el `nu_document=""` del Ref 1 es coherente con la app, no un dato corrupto.
+    # 🔴🔴 LAS 4 CUENTAS BANCARIAS SON `coCurrency:"BS"` — INCLUIDA la rotulada "VENEZUELA USD$"
+    #   (`coBank 9213-USD`, `idBankAccount 388`, que aparece en la lista de BS).
+    #   ⇒ **NO SE PUEDE DEPOSITAR EN USD en este cliente**: con `currencyBank=false`, BS → 4 cuentas y
+    #     USD → **0** ⇒ un cobro en USD es estructuralmente no depositable (N/A por datos, nunca FAIL).
+    #   ⚠ **Juzgar la moneda de una cuenta por su NOMBRE lleva a un falso "el filtro de moneda está roto":
+    #     leer `coCurrency`, no el `naBank`.** Elegir moneda ANTES que banco, siempre.
+    # Códigos de pago observados: ef=efectivo · tr=transferencia · pm=pago móvil · ot=otros
+    #   ⇒ coherente con colletionPayment "true-false-true-true-true-true" (cheque en false, y no aparece).
+
+  visitas:
+    cliente_test: "J-504863246"
+    # 🟢 visitRout=true ⇒ **"Ruta de hoy" DEBE traer datos** (≠ difranca, donde estaba vacía por diseño)
+    # 🔴 userMustActivateGPS=true ⇒ **encender la ubicación del dispositivo ANTES de la corrida**
+    # signatureVisit=true ⇒ pide firma
+    # ✅ CORREGIDO [grupo_fiel-20260817]: el catálogo de actividades que llega a la app son **11**, no 5
+    #   (set El Yaque estándar, todas `requiredEvent="true"` / `requiredSignature="false"`).
+    #   La lista de 5 de abajo era un subconjunto: NO usarla como oráculo de completitud.
+    actividades_count: 11
+    actividades_muestra: ["COBRANZA", "MERCHANDISING", "VENTA EN RUTA", "NO COMPRO", "NO VISITO"]
+    # ⚠ Motivo carga DIFERIDA ~2 s tras elegir Actividad. MERCHANDISING (47) → 5 motivos.
+    # ⚠ Otro vendedor (jgomez, id_user=474) trabaja el mismo tenant: `max(id_visit)+1` NO predice la Ref.
+    #   Baseline y diff **filtrados por `id_user`**; la Ref se lee del 3.er alert de envío.
+
+  productos:
+    texto_busqueda: "Caja"              # el catálogo son cajas de agua (1.5lts, 330ml, 5lts, 600ml)
+    tipo_estructura_default: null       # TBD — listProductsBy="lineas" sugiere Línea
+
+  vendedores:
+    aplica: true                        # infoVendedores=false ⇒ se autogenera en la app
+    # ⚠ Confirmar `esVendedor` en la 1ª corrida (no viene en los dumps)
+
+# ── Pendientes de la 1ª corrida — TODOS CERRADOS 2026-08-17 ───────────────────
+# 1. ✅ esVendedor = true (heading "Vendedor" + KPIs reales; co_role=7)
+# 2. ✅ IGTF: manda userCanSelectIGTF=false ⇒ igtfDefault y disableCheckIGTF son INERTES.
+#    ✅ TASA: manda enabledManualRate=false, y el control es un `ion-select` de 1 opción (no un ion-input)
+# 3. ✅ REFUTADO: `enterpriseEnabled=false` NO elimina el selector de empresa.
+#       Móvil → llega `disabled=true` auto-asignado (sigue en el DOM). Web → aparece igual, 1 opción
+#       preseleccionada, inocuo. La predicción "no debería haber selector" era falsa en AMBAS capas.
+# 4. ✅ requiredComment = SOLO COBROS · expirationBatch = SOLO INVENTARIOS (y el bloqueante es el LOTE:
+#       la fecha de vencimiento nace poblada en HOY)
+# 5. ✅ Catálogo en BS; el detalle de Productos muestra solo USD y `product-list` muestra USD+BS
+#       (patrón backend El Yaque). `userCanChangePriceList` efectivo: 2 listas y el precio SÍ recalcula.
+#
+# ── Abiertos para la 2ª corrida ───────────────────────────────────────────────
+# a. COBROS quedó en SOLO LECTURA por decisión de QA: ningún caso de CREACIÓN se ejerció.
+#    Los TBD de retención (documento_retencion, monto_retencion_iva/islr) siguen sin resolver.
+# b. `nuAmountDiscountConversion:0` con `nuAmountDiscount:453,39` en el payload de pedidos
+#    (el par hermano sí convierte). No afecta ningún total — verificar en otra playa antes de levantarlo.
+# c. `client.coPaymentCondition='CodCredito'` pero el form arranca en CONTADO/CodContado (la app resuelve
+#    por `idPaymentCondition`). Parece dato inconsistente en `client`, no defecto de app.

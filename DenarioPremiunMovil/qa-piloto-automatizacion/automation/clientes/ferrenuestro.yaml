@@ -14,14 +14,13 @@
 # ⚠ El agente debe VERIFICAR las VGs contra la UI y MARCAR DISCREPANCIAS (dump dev vs app = posible bug de config).
 
 # ══════════════════════════════════════════════════════════════════════════════
-# ⚠ MIGRACIÓN DE SERVIDOR (2026-07-23) — [ferrenuestro-20260723]
-#   El device de ferrenuestro fue RE-APUNTADO de playa Isla Coche → La Tortuga v6.6.18.
-#   ⚠ VERIFICAR si es permanente (device re-apuntado 2026-07-23). Confirmado en corrida por el
-#   host de TODOS los payloads (getsync/order/return/potentialclient/visit/clientstock/deposit) =
-#   denariolatortuga.ddns.net:8081, con datos SÍ de ferrenuestro (TORNICAGUA cód 121793873).
-#   Consecuencias CONFIRMADAS del cambio de build/servidor (el par servidor↔window.ng↔sync sigue al
-#   BUILD cargado, NO al slug de cliente — ver _comunes.md):
-#     - window.ng: FALSE (Isla Coche 2026-07-07) → **TRUE** (La Tortuga). Probar !!window.ng al inicio.
+# ⚠ LECCIÓN: EL COMPORTAMIENTO SIGUE AL BUILD, NO AL CLIENTE — [ferrenuestro-20260723]
+#   Este cliente fue re-apuntado a otro servidor entre dos corridas y su comportamiento cambió,
+#   con los MISMOS datos de ferrenuestro (TORNICAGUA cód 121793873). Es la prueba más fuerte de que
+#   estas propiedades NO son del cliente: se MIDEN en cada corrida, no se leen del perfil.
+#   (Qué servidor era cada vez se registra en el REPORTE de la corrida, no acá.)
+#   Diferencias observadas entre un build y el otro:
+#     - window.ng: FALSE → **TRUE**. Probar !!window.ng al inicio, siempre.
 #     - sync a nube: DIFERIDA ~3min → **INMEDIATA** (correlativos del server llegan en segundos).
 #     - botón de alertas informativas: "Aceptar" → **"OK"** (los confirm de flujo aún usan Aceptar/Cancelar).
 #     - envío de depósito: 2 alertas → **3 alertas**.
@@ -35,7 +34,6 @@ cliente_id: ferrenuestro
 cliente_nombre: "FERRENUESTRO MAYOR,"    # CONFIRMADO 2026-07-07: empresa única mostrada en detalle/selector (idEnterprise 1, coEnterprise "00001"). ⚠ el rótulo llega con COMA FINAL en el textContent del ion-select-option. enterpriseEnabled=true pero 1 sola empresa (sin gateway multi-empresa).
 # ws_url: <ELIMINADO — desacople servidor↔cliente 2026-07-24>. El servidor NO se guarda en el perfil:
 #   los clientes migran de playa según disponibilidad. Se DESCUBRE EN RUNTIME (host de los payloads/app).
-#   Playa observada 2026-07-23: La Tortuga (denariolatortuga v6.6.18, window.ng=TRUE); antes Isla Coche.
 apk_package: com.kiberno.denarioPremiumPro
 db_name: ferrenuestro                    # base del cliente en el RDS CENTRAL 'savia' (user_read compartido; NO es por-servidor). ⚠ 2026-07-24: la base EXISTE en savia pero le FALTA el GRANT read-only (permission-denied en tablas) → cotejo BD-N/A. ACCIÓN DBA: aplicar GRANT read-only a user_read sobre la base 'ferrenuestro'. (Ver automation/db/query.js — savia es central, no cambia por migración de playa.)
                                          # HISTÓRICO Isla Coche (2026-07-07): conexión read-only OPERATIVA; VGs VALIDADAS 1:1 contra BD viva (22 claves críticas, 0 discrepancias — global_configuration=170 VGs).

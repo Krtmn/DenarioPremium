@@ -35,9 +35,6 @@ cliente_nombre: "CENTRAL EL PALMAR, S.A."
 apk_package: com.kiberno.denarioPremiumPro
 db_name: el_palmar                      # base en savia; GRANT read-only ✅ 184/184 tablas
 # ws_url: NO se guarda — se descubre en runtime.
-#   Playa informada por QA: ISLA COCHE.
-#     Web  : http://denarioislacoche.ddns.net:8080/DenarioPremium
-#     API  : mismo host, puerto :8081/PremiumWS/services/
 #
 # 🔴🔴 DISCREPANCIA DE SLUG — LEER ANTES DE CORRER 🔴🔴
 #   Este archivo y `cliente_id` usan GUION BAJO: `el_palmar`.

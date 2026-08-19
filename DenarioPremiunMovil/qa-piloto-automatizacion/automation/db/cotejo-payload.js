@@ -62,7 +62,9 @@ const TYPES = {
       {
         field: "orderDetails", table: "order_detail", match: ["co_product"], ignore: [...SRV, "id_order", "id_order_detail", "na_product"],
         arrays: [
-          { field: "orderDetailUnit", table: "order_detail_unit", match: ["co_product_unit"], parentLink: "co_order_detail", ignore: [...SRV, "id_order_detail", "id_order_detail_unit", "co_unit"] },
+          // [grupo_fiel-2026-08-17] match por co_order_detail_unit (PK de negocio) por el mismo motivo que en
+          //   clientStock: co_product_unit no es único si el mismo producto+unidad aparece 2 veces en el pedido.
+          { field: "orderDetailUnit", table: "order_detail_unit", match: ["co_order_detail_unit"], parentLink: "co_order_detail", ignore: [...SRV, "id_order_detail", "id_order_detail_unit", "co_unit"] },
         ],
       },
     ],
@@ -90,7 +92,11 @@ const TYPES = {
         ignore: [...SRV, "id_client_stock", "id_client_stock_detail", "na_product", "posicion", "is_save"],
         arrays: [
           // cantidad/lote/fecha viven en la unidad (qu_stock, nu_batch, da_expiration → SÍ se verifican)
-          { field: "clientStockDetailUnits", table: "client_stock_detail_unit", match: ["co_product_unit"], parentLink: "co_client_stock_detail",
+          // [grupo_fiel-2026-08-17] match por co_client_stock_detail_unit (PK de negocio), NO por co_product_unit:
+          //   el MISMO producto puede inventariarse en 2 ubicaciones (dep/exh) ⇒ co_product_unit se REPITE y el
+          //   emparejamiento cruzaba líneas, produciendo BD-FIELD-MISMATCH falsos (medido: 6 filas, 6 PK distintas,
+          //   solo 2 co_product_unit distintos). Es el escenario NORMAL del módulo, no un borde.
+          { field: "clientStockDetailUnits", table: "client_stock_detail_unit", match: ["co_client_stock_detail_unit"], parentLink: "co_client_stock_detail",
             ignore: [...SRV, "id_client_stock_detail", "id_client_stock_detail_unit", "co_unit", "na_unit", "qu_unit", "qu_suggested", "is_save", "is_edit", "posicion", "id_unit"] },
         ],
       },

@@ -3,7 +3,7 @@
 
 cliente_id: globalmp
 cliente_nombre: "COMERCIALIZADORA DE ALIMENTOS GLOBAL M&P, C.A."  # ✅ empresa por defecto (00002, enterprise_default=true). La 2ª es 00001 HC TRADING MARKET 2021, C.A
-ws_url: "http://denariolatortuga.ddns.net:8081/PremiumWS"  # ✅ descubierto en runtime 30/07/2026 (authservice/auth + syncservice). Playa LA TORTUGA · web en :8080/DenarioPremium
+# ws_url: NO se guarda — la playa es del SERVIDOR y es rotativa; se descubre en runtime (ver _schema.yaml).
 apk_package: com.kiberno.denarioPremiumPro
 
 vgs:

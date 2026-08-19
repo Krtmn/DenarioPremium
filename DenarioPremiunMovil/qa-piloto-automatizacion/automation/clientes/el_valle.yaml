@@ -213,7 +213,6 @@ modules:
 ultima_corrida:
   run_id: "20260728_130612_smoke-completo"
   fecha: "2026-07-28"
-  servidor_observado: la_tortuga            # descubierto en runtime (denariolatortuga.ddns.net:8081/PremiumWS)
   build: { app_version: "1.0", db_version: 19, window_ng: true }
   resultado: "97 PASS · 0 FAIL · 5 N/A · 1 BLOCKED (103 casos, 10/10 módulos)"
   capa_web: "9 registros cotejados en La Tortuga: 8 WEB-OK · 1 WEB-CALC-MISMATCH"

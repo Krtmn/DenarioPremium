@@ -1,0 +1,421 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Perfil QA — CHOCOLATES KRON, C.A.
+#
+# Cliente NUEVO: nunca se ha corrido. Perfil construido ANTES de la 1ª corrida desde
+#   los dumps global_configuration_202608141617 + global_configuration_client_202608141617
+#   (2026-08-14) y pre-poblado desde BD read-only. Los dumps se BORRARON una vez creado
+#   este perfil (política de alta-cliente.md).
+#
+# ── CONFLICTOS ENTRE DUMPS (contados, no estimados) ───────────────────────────
+#   claves en el GLOBAL .............. 178
+#   claves en el OVERRIDE de cliente .. 76
+#   presentes en AMBOS ................ 65
+#   con VALOR DISTINTO ................ 19  → **gana el GLOBAL en las 19**
+#   gana el CLIENT .................... 0   ✅ sin trampa
+#   solo en el override ............... 11  (2023-02-01, 2026-01-27, 2026-02-01)
+#   solo en el global ................. 113
+#
+# ⚠ Tres claves del override son MÁS RECIENTES que el global (userCanSelectProductDiscount,
+#   userCanUploadFiles, validateNuOrder) pero traen **el mismo valor** ⇒ no cambian nada.
+# ⚠ `userCanSelectProductDiscount` aparece DUPLICADA en el dump global (2025-04 y 2026-05),
+#   ambas en `false`. Sin efecto, pero anotado por si el dump se vuelve a leer.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+cliente_id: kron
+cliente_nombre: "CHOCOLATES KRON, C.A."   # ✅ de BD (`enterprise`). ⚠ confirmar rótulo EXACTO en la app.
+# ws_url / playa: NO se registran — es propiedad del SERVIDOR, es rotativa y se descubre
+#   en runtime (ver _schema.yaml).
+apk_package: com.kiberno.denarioPremiumPro
+db_name: kron                            # base en savia · GRANT read-only ✅ **184/184 tablas**
+#   ⚠ El bloque de qa-db.env se llama "# Cliente: kron" (coincide con el slug).
+#
+# ── 🔴 TRAMPAS DE BD MEDIDAS EN LA 1.ª CORRIDA [kron-20260817] ────────────────
+#   🔴 `collection_payment.co_operation` viene **NULL** en las filas nuevas ⇒ `WHERE co_operation <> 'D'`
+#      **OCULTA filas** (`NULL <> 'D'` es NULL). **Usar `IS DISTINCT FROM 'D'`.**
+#      ⚠ Es **POR TABLA**: `order_detail` y `return_detail` sí traen `'I'`. No generalizar en ninguna dirección.
+#   ⚠ Matiz al "184/184 tablas legibles": **`visit_view` NO es legible**
+#      (`permission denied for sequence visit_view_seq` — las TABLAS tienen GRANT, la SECUENCIA de la vista no).
+#      ✅ **Pero `incidence` SÍ es legible** ⇒ la actividad/motivo de la visita **sí se coteja**: no es BD-N/A.
+#      ⚠ kron **no tiene `visit_incidence`**; las tablas de visitas son `visit`, `visit_cycles`,
+#        `visit_planning`, `visit_view`. El catálogo de causa es **`incidence_motive`**, no `incidence_cause`.
+#   ⚠ `deposit` **no tiene `co_user`** (el vendedor va por `id_user`) · el monto del pago es
+#      **`nu_amount_partial`**, no `nu_amount` · `collection` no tiene `nu_rate` (la tasa es **`nu_value_local`**).
+#   ⚠ `order_type` guarda `id_enterprise = NULL` ⇒ filtrar por `id_enterprise=1` devuelve 0 filas.
+#   ⚠ `deposit_collection_payment` **VACÍA** ⇒ el vínculo es **`collection.id_deposit`** (guión ya corregido).
+#   🔴 **Medir con `count(*)`, NUNCA con `max(id)`** — pasó 2 veces acá: "177 devoluciones" eran **3** y
+#      "351 cobros" eran **72** (eran los id máximos). Contamina el alcance declarado de todo muestreo.
+
+# ── EMPRESA — UNA SOLA, pero con el selector ENCENDIDO ────────────────────────
+#   KRON_ADM · CHOCOLATES KRON, C.A. · co_operation='I'
+#   rótulo UI (`lb_enterprise`) = "CHOCOLATES KRON, C.A"  ← SIN punto final
+#   `na_enterprise`             = "CHOCOLATES KRON, C.A." ← CON punto (así sale en el DETALLE web)
+#
+# ✅ RESUELTO [kron-20260817] — **NO era una incoherencia.** `enterpriseEnabled=true` con una sola
+#   empresa se comporta **idéntico** a grupo_fiel, que la tenía en `false`: el selector aparece, viene
+#   resuelto solo y todo caso de CAMBIO de empresa es N/A. **La VG NO gobierna la variante del selector**
+#   (graduado a `cdp/RUNTIME.md §3`): el predictor es el **nº de empresas**, y la variante concreta la fija
+#   **cada FORMULARIO** — en kron se midieron 4 en el mismo día: CLIENTES `disabled=true` auto-asignado ·
+#   INVENTARIOS habilitado con objeto · DEPÓSITOS sin `formcontrolname` · VISITAS `disabled`.
+#   ⇒ **no volver a marcar ⚠️VERIFICAR por esta combinación en ningún perfil.**
+
+# ── 🔴 EL SLUG SE ESCRIBE DISTINTO SEGÚN EL ARCHIVO — LEER ANTES DE CORRER ────
+#   perfil / base de datos / bloque de qa-db.env .... `kron`
+#   bloque de qa-credentials.env ................... **`chocolates_kron`**
+#   ⇒ El login NO se resuelve con el slug del perfil. Anclar al bloque
+#     "# Cliente: chocolates_kron" o el agente no encuentra las credenciales.
+#   📋 A alinear con QA: conviene que ambos bloques usen el mismo nombre.
+
+# ── USUARIO QA ────────────────────────────────────────────────────────────────
+#   Login (qa-credentials.env, bloque "# Cliente: chocolates_kron") → `scarlet`
+#   Resolución en BD (✅ confirmada 2026-08-14):
+#     users        → login_user='scarlet' ⇒ id_user = 309  (SCARLET FLOREZ, st_user=1)
+#     users_data   → id_user=309          ⇒ **co_user = 'VE0002'**
+#     client_template_user → co_user='VE0002' ⇒ **30 clientes asignados** (21 con documentos)
+#
+# 🔴 TRAMPA DEL IDENTIFICADOR (igual que en grupo_fiel): `client_template_user.co_user` son
+#   códigos 'VE00NN', **no logins**. Filtrar por 'scarlet' devuelve 0 filas y parece que no
+#   tiene cartera. El puente login→co_user está en **`users_data`**, no en `users`.
+#
+# ⚠ `name_user` en BD trae un **espacio al final** ("SCARLET "). Cotejar con trim.
+#
+# 🔴 [kron-20260817] **`users` en kron NO tiene `co_user`** — solo `login_user`, `name_user`, `lastname_user`
+#   (⚠ `lastname_user`, **no** `last_name_user`). **El nombre completo que muestra la web es
+#   `name_user + ' ' + lastname_user`.** Cotejar solo contra `name_user` produce un
+#   **falso `WEB-FIELD-MISMATCH` en el 100 % de las filas**. El `co_user` vive en `users_data`.
+#   ⚠ En la web el label del vendedor puede venir con **DOBLE espacio** ("SCARLET  FLOREZ") y en visitas
+#     como "VE0002 - SCARLET  FLOREZ" ⇒ normalizar espacios; un `===` literal falla.
+# ⚠ `potential_client` **sí** tiene `co_user`, y su fecha es **`da_client`**.
+#
+# ⚠ Filtrar SIEMPRE por el vendedor QA: un cliente no asignado NO aparece en la app.
+
+# ── Variables Globales ────────────────────────────────────────────────────────
+vgs:
+  multiCurrency: true
+  multiCurrencyCollection: true
+  multiCurrencyDeposit: true
+  multiCurrencyOrder: false             # ⚠ pedidos en UNA sola moneda pese a multiCurrency=true
+  expirationBatch: true                 # ✅ [kron-20260817] ALCANCE MEDIDO: aplica **SOLO A INVENTARIOS**.
+                                        #   Bloqueante = **el LOTE** (la fecha nace en HOY y nunca falta).
+                                        #   En DEVOLUCIONES el `ion-input` "Lote" llega `required=false` y no
+                                        #   exige nada. 3.ª confirmación del alcance por módulo ⇒ graduado a
+                                        #   `cdp/RUNTIME.md §3`.
+  clientStock: true                     # 🟢 INVENTARIOS APLICA
+  requireClientStock: false
+  enterpriseEnabled: true               # ✅ [kron-20260817] NO gobierna la variante del selector — ver arriba.
+                                        #   Combinación true + 1 empresa = NORMAL, no incoherencia.
+  orderEnterpriseEnabled: false         # solo-client ⚠️VERIFICAR (candidata a stale)
+  esVendedor: true                      # ✅ CONFIRMADO POR UI [kron-20260817]: <h1>Vendedor</h1> +
+                                        #   acordeón funcional (0↔281 px) + KPIs reales poblados;
+                                        #   Cartera Clientes 30 == client_template_user id_user=309.
+                                        #   (no venía en ninguno de los 2 dumps)
+  infoVendedores: false                 # el módulo VENDEDORES se autogenera en la app
+  # ── Cobros ──
+  colletionPayment: "true-false-true-true-true-false"
+                                        # Efectivo=SÍ · Cheque=NO · Transferencia=SÍ · Depósito=SÍ ·
+                                        #   Otros=SÍ · Pago Móvil=NO   (hideColletionPayment=true)
+                                        # 🟢 **DEPÓSITOS APLICA**: hay EFECTIVO habilitado.
+  tolerancia0: true                     # 🟢 SÍ se pueden enviar cobros que no cierren en cero
+  TipoTolerancia: 0
+  RangoToleranciaNegativa: 100000       # ⚠ ambos rangos enormes ⇒ la tolerancia es efectivamente libre
+  RangoToleranciaPositiva: 100000
+  MonedaTolerancia: "USD"               # ✅ coherente: los documentos están en USD
+  positiveDifference: false             # solo-client ⇒ no se pagan montos mayores al documento
+  enablePartialPayment: true
+  cobroPrepago: true                    # botón ANTICIPO/PREPAGO
+  cobroRetencion: true                  # 🟢 botón RETENCIÓN (por el menú)
+  retencion: false                      # 🔴 retención DENTRO del cobro normal **NO** aplica
+                                        #   ⇒ los casos de retención van por +RETENCIÓN del menú,
+                                        #     no por el detalle del documento (patrón de insumar).
+  sizeRetention: 14
+  formatRetention: "0"                  # 0 = Números
+  userCanAddRetention: true
+  retentionDocTypeCR: true              # 🟢 SÍ maneja documentos de retención en cobros (≠ difranca)
+  userCanSelectIGTF: false              # 🔴 **IGTF N/A**
+  igtfDefault: false                    # ✅ coherente con userCanSelectIGTF=false
+  disableCheckIGTF: false
+  userCanCollectIva: false              # 🔴 COBRO 25% IVA **NO APLICA**
+  userCanSelectCollectDiscount: true    # 🟢 ✅ **CONFIRMADO OPERATIVO [kron-20260817]** — el cobro 348 se creó
+                                        #   CON descuento y la columna `Desc.` apareció en el Tab Total
+                                        #   (5 columnas vs 4 en el cobro sin descuento). (≠ difranca)
+  clientBankAccount: false
+  currencyBank: true                    # ⚠ [kron-20260817] **NO OBSERVABLE**: las 13 cuentas bancarias del
+                                        #   cliente son **todas BS** (`idBankAccount` 449,450,451,454,455,458,
+                                        #   460,461,464,467,469,473,474) ⇒ no hay con qué contrastar el filtro
+                                        #   por moneda. **No leerlo como incumplimiento.**
+  validateCollectionDate: false         # ✅ CONFIRMADO [kron-20260817]
+  requiredCollectionAttachments: false
+  requiredRetentionAttachments: false
+  conversionDocument: false             # solo-client ⚠️VERIFICAR
+  # ── Pedidos / productos ──
+  suggestedOrder: true                  # 🔴 [kron-20260817] **SIN INSUMO: `client_avg_product` VACÍA (0 filas,
+                                        #   0 clientes)** ⇒ el botón de Pedido Sugerido **no se renderiza** en
+                                        #   PEDIDOS. Es **N/A por DATOS — nunca FAIL**, y tampoco es la
+                                        #   "divergencia UI-vs-config" de jerez/piercar/ferrenuestro.
+                                        #   Consultar esa tabla ANTES de reportar nada del sugerido.
+  suggestedOrderByDispatchAndReturn: false
+                                        # ⇒ algoritmo VIEJO (promedio). Elegir producto con
+                                        #   `client_avg_products.average > 0` o el sugerido da 0.
+  selectOrderType: true                 # 🟢 SÍ hay "tipo de pedido"
+  orderTypeByEnterprise: false
+  pricelistByOrderType: false
+  userCanSelectGlobalDiscount: false    # 🔴 descuento GLOBAL en pedido N/A
+  userCanSelectProductDiscount: false   # sin "% Descuento" por línea
+  setProductDiscount: false
+  setMaxProductDiscount: 0
+  userCanSelectIVA: false
+  vatExemptProducts: false
+  userCanChangePaymentConditions: false
+  userCanChangePriceList: false
+  userCanChangePriceListProduct: false
+  userCanChangeWarehouse: false
+  validateWarehouses: false             # NO valida existencia por almacén
+  showWarehouseDetails: true
+  validStock: false                     # NO alerta al cargar producto sin inventario
+  stock0: true                          # 🟢 SÍ se pueden pedir productos con inventario 0
+  hideStock0: false
+  showStock: true
+  productMinMul: false
+  quUnitDecimals: false                 # cantidades ENTERAS
+  validateNuOrder: false
+  featuredProducts: true
+  nameProductLine: "DESTACADOS"
+  hideProdWithoutPrice: true            # ⚠ EL NOMBRE ENGAÑA: leer la descripción del dump
+  showProductImages: true
+  listProductsBy: "lineas"              # solo-client ⚠️VERIFICAR
+  quPageProduct: 50
+  productsOrderBy: "co_product"
+  clientsOrderBy: "co_client"
+  showCreditLimit: true
+  totalUnit: true
+  showTotalization: true
+  showTotalProductUnit: false
+  productBonification: false
+  productValor: false
+  # ── Devoluciones ──
+  validateReturn: false
+  requeridedNroFactura: true            # 🔴 el Nro. de factura **SÍ** es obligatorio, PERO ⚠ [kron-20260817]
+                                        #   **NO se valida contra facturas reales**: acepta TEXTO LIBRE, un valor
+                                        #   inexistente pasa, persiste y viaja como `coDocument`. Coherente con
+                                        #   `validateReturn=false`. ⇒ **no hace falta una factura sincronizada**
+                                        #   para ejercitar el módulo, y no es defecto.
+  multiInvoices: false
+  # ── Firmas — mixtas ──
+  signatureCollection: true
+  signatureReturn: true
+  signatureDeposit: true
+  signatureStock: true
+  signatureClient: true
+  signatureOrder: false                 # 🔴 pedidos **SIN** firma
+  signatureVisit: false                 # 🔴 visitas **SIN** firma
+  # ── Visitas / GPS / roles ──
+  visitRout: true                       # 🟢 **SÍ hay RUTA DE VISITAS** ⇒ "Ruta de hoy" debe traer datos
+  userCanSaveGPS: true
+  userMustActivateGPS: false            # no exige GPS activo
+                                        #   ⚠ En difranca se comprobó que `userCanSaveGPS` NO impide que
+                                        #     la coordenada VIAJE en el payload. No leer un Geo poblado
+                                        #     como incumplimiento.
+  transactionCoordinateRadius: 50
+  promoterRole: false
+  rolPlanta: false
+  transportRole: false
+  # ── Tasa / conversión ──
+  historicoTasa: true
+  mesesTasa: 3
+  canChangeRate: false                  # ✅ coherente con enabledManualRate=false
+  enabledManualRate: false
+  showExchangeRateSelector: false       # ⚠️VERIFICAR: contradice historicoTasa=true
+  conversionByPriceList: false
+  conversionCalculator: false
+  currencyModule: true
+  paymentCurrency: false
+  paymentCurrencyDefault: "USD"
+  # ── Adjuntos ──
+  userCanUploadFiles: true
+  showCamera: true
+  quAttach: 25
+  quFileAttach: 1
+  cloudAttachments: false
+  imageWeightLimit: 30
+  # ── Formato / textos ──
+  tagRif: "RIF"
+  tagIVA: "IVA"
+  parteDecimal: 2
+  parteElntera: 15                      # ⚠ clave con TYPO (con L) en AMBOS dumps
+  longitudComentario: 200               # 🔴 [kron-20260817] **EL TOPE REAL ES 255, no 200.** Medido en VISITAS:
+                                        #   `comp.textCommentMaxLength=255` Y `maxlength="255"` en el `ion-input`.
+                                        #   ⇒ el valor de CONFIG **no manda**; la constante es de producto y por
+                                        #   campo. Medirla, nunca leerla de acá.
+  requiredComment: false                # 🟢 ✅ CONFIRMADO [kron-20260817] — `Agregar` con Comentario vacío
+                                        #   agregó el evento y la visita quedó Guardable/Enviable.
+                                        #   (mapa cerrado: `requiredComment` aplica SOLO a COBROS)
+  requiredCommentOrder: false
+  passwordExpiresIn: 0
+  # ── Historial / reportes / web ──
+  transactionHistory: true
+  historyMonths: 1
+  commisionReport: false
+  mesesFacturas: 3
+  orderWeb: true                        # solo-client
+  collectionWeb: false                  # solo-client
+  depositWeb: false                     # solo-client
+  returnWeb: false                      # solo-client
+  reconciliation: false
+  enableDifferenceCodes: false
+  streetDay: false
+  activateSavia: false
+  # ── Notificaciones — TODAS EN false ──
+  # 🟢 **NINGUNA transacción del smoke dispara correos.**
+
+# ── Datos de prueba por módulo ────────────────────────────────────────────────
+# Pre-poblado desde BD read-only el 2026-08-14 · empresa KRON_ADM · vendedora QA `scarlet` (VE0002).
+modules:
+  login:
+    # usuario QA: ver secrets/qa-credentials.env → bloque "# Cliente: **chocolates_kron**"
+    bad_password: "(ver el mismo bloque → QA_BAD_PASSWORD)"
+
+  clientes:
+    cliente_busqueda: "BICENTENARIA"
+    cliente_detalle: "J504480975"       # MINIMARKET BICENTENARIA CCS, C.A. — 20 docs, 10 vencidos, 113.134,08 USD
+    # 🔴 ⚠ [kron-20260817] SON **TRES**, NO DOS, y los tres salen en la misma búsqueda:
+    #     J504480975  MINIMARKET BICENTENARIA CCS, C.A.      — 113.134,08 USD
+    #     J505383973  MINIMARKET BICENTENARIA VALENCIA        —  93.443,19 USD
+    #     J409215121  MINIMARKET BICENTENARIA, C.A.           — 165.823,96 USD  ← el mayor de los tres
+    #   ⇒ **ANCLAR POR `co_client` SIEMPRE**, nunca por nombre. En los modales de cliente,
+    #     tipear el `co_client` + lupa devuelve 1 solo ítem.
+
+  pedidos:
+    cliente_test: "J504480975"          # MINIMARKET BICENTENARIA CCS
+    moneda_pedido: "USD"                # los documentos están en USD
+    producto_test: "51104106"           # BALLS BLANCO 10X1KG
+    productos_alternos: ["51104118", "51104107", "51104119"]
+                                        # BALLS BLANCO 12X500GR · BALLS FRESA 10X1KG · BALLS FRESA 12X500GR
+    alerta_deuda_vencida: true          # BICENTENARIA CCS tiene 10 de 20 documentos vencidos
+    # stock0=true + validStock=false + validateWarehouses=false ⇒ **sin validaciones de inventario**
+    # selectOrderType=true ⇒ hay que elegir tipo de pedido
+    # signatureOrder=false ⇒ el pedido NO pide firma
+
+  cobros:
+    cliente_test: "J504480975"
+    clientes_con_documentos:            # cartera de VE0002 (scarlet), saldo > 0
+      - "J504480975"                    # MINIMARKET BICENTENARIA CCS — 20 docs (10 vencidos) · 113.134,08 USD
+      - "J407811231"                    # D AVANZADO CENTRO C.A — 19 docs (8 vencidos) · 115.699,04 USD
+      - "J401243401"                    # ALIMENTOS J.M.A., C.A. — 14 docs (5 vencidos) · 20.817,69 USD
+      - "J505383973"                    # MINIMARKET BICENTENARIA VALENCIA — 14 docs (9 vencidos) · 93.443,19 USD
+    moneda_cobro: "USD"
+    metodo_pago: efectivo               # 🟢 Efectivo habilitado
+    banco_deposito: "0108"              # BANCO PROVINCIAL. Otros: 0008 Guayana · 0104 Venezolano de
+                                        #   Crédito · 0114 Banco del Caribe · 0115 Exterior
+                                        #   ⚠ currencyBank=true ⇒ se listan TODOS, sin filtrar por moneda
+    documento_retencion: null           # TBD
+    # 🔑 [kron-20260817] **kron DESCARGA el historial de cobros del servidor** (no es 100 % local) — y lo hace
+    #    estando en **Isla Coche**, la misma playa que el_palmar, que sí es 100 % local ⇒ **el origen del
+    #    historial NO depende de la playa: es por cuenta.**
+    # ⚠ El recorte tiene **DOS filtros: vendedor Y ventana de fecha** — de 72 cobros en nube bajan **4**
+    #   (por vendedor quedan 5; el que falta es de hace 5 meses). Contrastar solo contra el conteo por
+    #   vendedor (receta de difranca) da un **falso "falta 1 cobro"**.
+    # ⚠ Los cobros del tenant rotulan **"Por aprobar"** con `statuses.editable=false` ⇒ el detalle abre en
+    #   SOLO LECTURA **por diseño**: verificar `statuses.editable` antes de marcar DM-COB-024 FAIL.
+    smoke_na_estructural:
+      - "Retención DENTRO del cobro normal (retencion=false) → va por +RETENCIÓN del menú"
+      - "IGTF (userCanSelectIGTF=false, igtfDefault=false — coherentes)"
+      - "Cobro 25% IVA (userCanCollectIva=false)"
+      - "Cheque como método de pago (posición 2 = false)"
+      - "Pago Móvil como método de pago (posición 6 = false)"
+      - "Pago mayor al documento (positiveDifference=false)"
+
+  devoluciones:
+    cliente_test: "J504480975"
+    producto_test: "51104106"
+    factura_test: "(texto libre)"       # ✅ [kron-20260817] CERRADO — NO hace falta una factura real:
+                                        #   el Nro. de factura acepta texto libre (ver `requeridedNroFactura`).
+    tipos_activos: ["PostVenta", "Servicio", "Calidad", "Cambio X Cambio"]
+                                        # ✅ [kron-20260817] `return_type` tiene **12 filas en BD pero solo 4
+                                        #   ACTIVOS** (id 52/59/60/63), y `returnLogic.returnTypes` trae
+                                        #   exactamente esos 4.
+    # ✅ La BASURA DE PRUEBAS ("hola", "prueba", "problemas", "Prueba Tovar") **NO llega a la app**
+    #   (`co_operation='D'` no baja al device) ⇒ observación de datos, NO algo visible al usuario.
+    # ⚠ Además hay 3 borrados de aspecto LEGÍTIMO — `Despacho`, `Vencidos`, `Falla` — que tampoco
+    #   aparecen. Si QA los espera en la UI, es dato, no defecto.
+
+  inventarios:
+    aplica: true                        # clientStock=true
+    cliente_test: "J504480975"
+    # ✅ [kron-20260817] expirationBatch=true **SÍ exige LOTE acá** (único módulo donde aplica).
+    #    Alerta `Inventario` / "Complete cantidad, unidad, fecha y lote para continuar." [OK]
+    #    ⚠ el título viene SIN el prefijo `Denario` en este tenant.
+    # ✅ signatureStock=true NO hizo obligatoria la firma (la VG habilita, no obliga).
+    # ⚠ `.imagenGuardar` habilita con 0 capturas; `.imagenEnviar` NO (exige ≥1).
+    # ⚠ El payload viajó con `coordenada:""` (permiso de ubicación del device) — observación, no defecto.
+
+  depositos:
+    aplica: true                        # 🟢 Efectivo habilitado ⇒ hay qué depositar
+    motivo_na: null
+    cuentas_bancarias: 13               # todas BS (ver `currencyBank`) ⇒ con la moneda en BS (default)
+                                        #   NO hace falta re-elegir el banco
+    # 🔑 [kron-20260817] SECUENCIACIÓN: para cubrir **enviar Y borrar** hacen falta **≥2 cobros con
+    #    efectivo** al llegar al módulo. Con uno solo, Enviar consume el pool ⇒ DM-DEP-020 N/A por datos.
+    # ✅ signatureDeposit=true NO hizo obligatoria la firma (habilita, no obliga) — no es defecto.
+    # ✅ La app NO exige Nro. Plantilla ni Comentario (ningún `ion-input` con `required=true`).
+    # ⛔ NO cotejar `deposit_collection_payment` (vacía siempre) — ver `smoke/smoke-depositos.md` corregido.
+
+  visitas:
+    cliente_test: "J504480975"
+    # 🟢 visitRout=true ⇒ "Ruta de hoy" DEBE traer datos
+    # signatureVisit=false ⇒ **sin firma**
+    # userMustActivateGPS=false ⇒ no exige ubicación encendida
+    actividades_n: 12                   # 🔴 [kron-20260817] SON **12**, no las 5 que listaba este perfil.
+                                        #   Leerlas del `ion-select` en runtime.
+    actividades: ["COBRANZA", "MERCHANDISING", "VENTA EN RUTA", "NO COMPRO", "NO VISITO"]  # lista PARCIAL
+    # 🔴 `comp.listaMotivos` trae el CATÁLOGO MAESTRO (94), no el filtrado por actividad. El oráculo
+    #    de los motivos válidos es el DOM (`ion-select-option`), NO el modelo — mirar el modelo hace
+    #    parecer que el filtro por actividad está roto.
+    # ⚠ La sucursal FISCAL de J504480975 NO tiene coordenadas ⇒ el payload viaja `coordenada:""` /
+    #   `coordenadaSaved:false`. Es CORRECTO, no incumple `userCanSaveGPS`.
+    # ⚠ El envío puede tardar ~90 s dejando 2 `ion-loading` y `.imagenEnviar` en `disabled`
+    #   (= estado "enviando", no botón roto). NO reintentar sin leerlo o se envía dos veces.
+
+  productos:
+    texto_busqueda: "BALLS"             # catálogo de chocolates (BALLS blanco/fresa, etc.) → 10 hits
+    tipo_estructura_default: "Modelo"   # ✅ [kron-20260817] — idTypeProductStructure 1 / co '001'.
+                                        #   🔴 NO es "Línea": `listProductsBy="lineas"` designa el MODO
+                                        #   de agrupar, NO el rótulo del tipo. 1 sola opción ⇒ DM-PRD-002 N/A.
+    tipo_estructura_opciones: 1
+    estructuras: 9                      # ARTESANAL 2 · BARQUILLAS 4 · GOLOSINAS 10 · GOTAS 44 ·
+                                        #   GRAGEADOS 32 · GRANULADOS 3 · TABLETAS 11 · TOPPING 9 · UNTABLES 32
+                                        #   (badges NO son rollup: suman 147 = catálogo exacto)
+    catalogo_total: 147                 # nube, co_enterprise='KRON_ADM'
+    catalogo_con_precio: 131            # 🔴 ⇒ **16 productos (10,9 %) son INVISIBLES en la app** por
+                                        #   `hideProdWithoutPrice=true`, **concentrados en GOLOSINAS**
+                                        #   (10 en catálogo → solo 4 listados = 60 % de la estructura oculto).
+                                        #   Brechas medidas: GOLOSINAS 10→4 · GOTAS 44→39 · GRAGEADOS 32→28 ·
+                                        #   UNTABLES 32→31; el resto sin brecha.
+                                        # ⚠ **`badge − listados = productos sin precio` — NO es lista truncada.**
+                                        #   Correr ese query ANTES de imputar `PRD-LISTA-CORTA-CATALOGO`
+                                        #   (predijo 9 de 9 estructuras). Ver `cdp/module-selectors/productos.md`.
+    listas_precio: 1                    # "PRECIO 1" (idList 1 / coList P1) ⇒ DM-PRD-013 N/A estructural
+    producto_test: "51104106"           # BALLS BLANCO 10X1KG · GRAGEADOS · BULTO · 78.186,50 BS
+    moneda_detalle: "BS"                # ⚠ detalle solo BS (defaultCurrency); product-list muestra BS+USD
+
+  vendedores:
+    aplica: true                        # infoVendedores=false ⇒ se autogenera en la app
+    kpis_disponibles: true              # ✅ [kron-20260817] POBLADOS: Cartera 30 · Activados 6 · Nuevos 0 ·
+                                        #   Nuevos Activados 0 · Días 21/11/10. Acordeón 0↔281 px.
+    empresas_acordeon: 1                # rótulo "CHOCOLATES KRON, C.A" (= lb_enterprise, SIN punto)
+
+# ── Última corrida ────────────────────────────────────────────────────────────
+ultima_corrida:
+  run_id: "20260817_145314_smoke-completo"
+  fecha: "2026-08-17"
+  # 1ª corrida del cliente · servidor Isla Coche (denarioislacoche.ddns.net:8081) · app v1.0 / db19
+  # 10/10 módulos completos + capa web. Consolidada el 2026-08-17.
+
+# ── Pendientes ────────────────────────────────────────────────────────────────
+# 1. ✅ CERRADO [kron-20260817] — esVendedor = true (confirmado por UI, ver vgs.esVendedor)
+# 2. ✅ CERRADO [kron-20260817] — enterpriseEnabled=true con 1 empresa: el selector EXISTE y llega
+#       `disabled` con la única opción ya resuelta. Y quedó probado que **la VG no gobierna la variante**
+#       (ver bloque EMPRESA arriba + `cdp/RUNTIME.md §3`) ⇒ deja de ser una pregunta abierta en TODO perfil.
+# 3. ✅ CERRADO [kron-20260817] — expirationBatch aplica **solo a INVENTARIOS**, bloqueante = **LOTE**.
+# 4. ✅ CERRADO (parcial) [kron-20260817] — `factura_test`: NO hace falta una factura real (texto libre).
+#       ⏳ Queda `documento_retencion`: elegir uno real y comprobar que habilita el flujo de +RETENCIÓN.
+# 5. ⏳ ABIERTO — 📋 Alinear el nombre del bloque de credenciales (`chocolates_kron`) con el slug del
+#       perfil y de la BD (`kron`). Sigue siendo el único punto donde el slug se escribe distinto.

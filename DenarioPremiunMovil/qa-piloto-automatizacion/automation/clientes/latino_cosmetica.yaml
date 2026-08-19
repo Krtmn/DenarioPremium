@@ -8,8 +8,8 @@
 
 cliente_id: latino_cosmetica
 cliente_nombre: "LATINOCOSMETICA C.A."       # ✅ confirmado en UI (app-client-detail Empresa + form potencial idEnterprise=1)
-ws_url: "http://denariolatortuga.ddns.net:8081/PremiumWS/services/"  # ⚠ OBSOLETO al 29/07/2026 — el cliente MIGRÓ. Descubrir el servidor en runtime (Agente 1), NO confiar en este valor.
-playa_web: isla_coche                        # ⚠ CAMBIÓ (29/07/2026, indicado por QA): la web de latino ya NO es La Tortuga. Login web = bloque "# USUARIO WEB ISLA COCHE".
+# ws_url: NO se guarda — la playa es del SERVIDOR y es rotativa; se descubre en runtime (ver _schema.yaml).
+# playa_web: NO se registra — resolver la playa en runtime y elegir ahi el bloque '# USUARIO WEB' correspondiente.
 apk_package: com.kiberno.denarioPremiumPro
 db_name: latino                             # 🔴 LA BASE SE LLAMA `latino`, NO `latino_cosmetica` (confirmado 29/07/2026 con current_database()).
                                             #    `latino_cosmetica` es solo el ALIAS de cliente (el nombre del bloque en secrets/qa-db.env y el arg de query.js).

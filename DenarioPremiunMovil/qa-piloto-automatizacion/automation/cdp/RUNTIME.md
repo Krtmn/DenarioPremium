@@ -82,9 +82,21 @@ await wd.run('waitSyncOverlay', () => h.waitSyncOverlay(pg));
 ```
 
 **Graduados en esta versión** (confirmados en ≥2 corridas y ≥2 servidores — detalle y evidencia en `module-selectors/`):
-- **Botón de `ion-modal` que "no responde": usar el shadowRoot.** `document.elementFromPoint()` sobre su rect puede devolver **otro** elemento (en VISITAS, el `Agregar` del `ion-modal#eventModal` devuelve el `ion-button.botonAddLila` del form de fondo ⇒ el click re-dispara el form subyacente). **Fix: `b.shadowRoot.querySelector('button').click()`** — 1.er intento en las dos corridas. **Rect válido ≠ punto clickeable ≠ punto tuyo.** `[el_palmar-20260805][difranca-20260807]`
+- **Botón de `ion-modal` que "no responde": usar el shadowRoot.** `document.elementFromPoint()` sobre su rect puede devolver **otro** elemento (en VISITAS, el `Agregar` del `ion-modal#eventModal` devuelve el `ion-button.botonAddLila` del form de fondo ⇒ el click re-dispara el form subyacente). **Fix: `b.shadowRoot.querySelector('button').click()`** — 1.er intento en las tres corridas. **Rect válido ≠ punto clickeable ≠ punto tuyo.** ✅ **3.ª confirmación (3 clientes, 2 servidores) ⇒ GRADUADO A HELPER: usar `h.clickModalButton(pg, sel, texto)`** de `denario-cdp-helpers.js` en vez de reescribir el snippet. `[el_palmar-20260805][difranca-20260807][grupo_fiel-20260817]`
 - **Tras paginar programáticamente, `window.ng.applyChanges(comp)` + ~1,2 s.** `pg.evaluate` corre fuera de NgZone. Cortar el bucle por `sc.scrollDisable===true` (no por "el `length` dejó de crecer") y dar ~800-900 ms por vuelta. `[alipascua-20260804][difranca-20260807]`
-- **`PRD-BUSCADOR-NO-REPUEBLA` es universal (3 playas, 3 builds):** vaciar el buscador + `Enter` deja la lista en 0 con empty-state. **Nunca usar "campo vacío" como estado sin-filtro**; re-entrar a la estructura para recuperar el baseline. `[latino_cosmetica-20260729][el_palmar-20260805][difranca-20260807]`
+- 🔴 **`PRD-BUSCADOR-NO-REPUEBLA` es universal **de PRODUCTOS**, NO de todos los módulos — ACOTADO `[grupo_fiel-20260817]`.** En `product-list` sigue reproduciendo en **5 playas / 4 servidores / 3 builds** (La Tortuga · El Yaque · **Isla Coche**): vaciar el buscador + `Enter` deja la lista en **0 con empty-state**, con `input.value===""` **y** `comp.searchText===""` (estado idéntico al baseline ⇒ no es un filtro residual). **Nunca usar "campo vacío" como estado sin-filtro en PRODUCTOS**; re-entrar a la estructura **desde HOME** para recuperar el baseline.
+  ⚠ **En este build NO aplica fuera de PRODUCTOS** — medido en 4 módulos de una sola corrida, todos repueblan solos al vaciar: `app-pedidos-lista` (3→34), COBROS (`filteredItems` 0→6), DEVOLUCIONES (2 ítems) e INVENTARIOS (`GELATO`→1, `ZZZZ`→0, vaciar→2, filtra **on-keyup** sin lupa). **Reconfirmado en una 2.ª corrida entera** (kron): PEDIDOS 8→1→**8**, COBROS 0→**4**, DEVOLUCIONES 1→**2**. ⇒ **no extrapolar el defecto a otras listas; medir por módulo antes de aplicar el workaround.** `[latino_cosmetica-20260729][el_palmar-20260805][difranca-20260807][grupo_fiel-20260817][kron-20260817]`
+- 🔴🔴 **GRADUADO — `enterpriseEnabled` NO gobierna la variante del selector de empresa. DEROGA toda nota que ate la variante a esa VG.** Dos corridas del mismo día lo prueban por contraste directo: **kron** con `enterpriseEnabled=**TRUE**` y 1 empresa entrega **exactamente el mismo** select que **grupo_fiel** con `enterpriseEnabled=**FALSE**` y 1 empresa (`disabled=true`, `value=null`, `ng-invalid=false`, shadowRoot "Seleccione…"). **Los dos predictores reales son, en este orden:**
+  1. **El nº de EMPRESAS** decide si el control entra o no en la validación — *1 empresa ⇒ resuelto solo · 2-3 ⇒ editable, vacío y obligatorio* (5 corridas coherentes: latino_cosmetica 1 · grupo_fiel 1 · kron 1 ⇒ resuelto; el_palmar 2 · difranca 3 ⇒ editable).
+  2. **El FORMULARIO** decide la variante concreta. **4 variantes medidas dentro del MISMO tenant, el mismo día y build** (kron): CLIENTES `disabled=true` auto-asignado · INVENTARIOS `disabled=false` + objeto empresa · DEPÓSITOS **sin `formcontrolname`** + objeto · VISITAS `disabled=true` + objeto. La tabla de variantes de `module-selectors/_comunes.md` sigue siendo la referencia.
+  ⇒ **Corolario operativo (sin cambios): leer `formcontrolname` + `disabled` + `value` + `ng-invalid` en CADA form, y actuar solo si `value` es `null`.** Corolario de perfil: **`enterpriseEnabled=true` con 1 sola empresa NO es una incoherencia a investigar** — no marcarlo ⚠️VERIFICAR en los YAML. `[latino_cosmetica-20260729][el_palmar-20260805][difranca-20260807][grupo_fiel-20260817][kron-20260817]`
+- 🔴 **GRADUADO — `expirationBatch` es una VG de alcance POR MÓDULO, y el campo bloqueante es el LOTE.** 3.ª confirmación en 3 clientes / 2 servidores: en los tres, con la VG en `true`, **INVENTARIOS** rechaza con `"Complete cantidad, unidad, fecha y lote para continuar."` `[OK]` teniendo el **lote vacío**, y **DEVOLUCIONES de la misma corrida no exige nada** (el `ion-input` "Lote" llega `required=false` mientras factura/cantidad llegan `true`). **La fecha nunca es el bloqueante: nace en HOY por default.**
+  **Reglas de medición:** (a) medir **por módulo**, nunca extrapolar de uno a otro; (b) medir **con el campo VACÍO**, nunca por la existencia del input (los campos se renderizan con la VG en cualquier valor — ver la nota de `[el_valle-20260728]` en `_comunes.md`); (c) el discriminador barato sin provocar el rechazo es leer `required` del `ion-input` "Lote", o el valor plano en `<modulo>LogicService`. `[el_palmar-20260805][grupo_fiel-20260817][kron-20260817]`
+- 🔴 **LA VARIANTE DE OVERLAY LA FIJA EL *CONTROL*, no el módulo ni el build — 5 evidencias en una sola corrida.** Un `ion-select` puede abrir un **`ion-popover`** (opciones como `ion-item`+`ion-radio`, se resuelve con **1 click**) o un **`ion-alert` de radios** (opciones y botones de acción **en la misma lista** de `button.alert-button`, **2 clicks**: opción → acción). **Los dos conviven en el MISMO formulario** (`app-devolucion`: Tipo → popover, Motivo → alert de 26 botones). ⚠ **Los botones de acción pueden venir en INGLÉS (`Cancel`/`OK`) mezclados con opciones en español** ⇒ recorrer `['Aceptar','OK','Eliminar']` por **igualdad exacta** case-insensitive; **jamás `includes`/regex** (`/desc/i` matchea "SIN DESCUENTO"; `/salir/i` matchea "Guardar y salir" y **dispara un guardado no deseado**). ⚠ **La asignación programática del `value` falla EN SILENCIO si el `value` es un objeto** (empresa/moneda/banco llegan como objeto de N claves): `s.value='USD'` no matchea nunca y se lee como "el filtro está roto".
+  **Receta: (a) leer el TIPO de `value` antes de asignarlo — si es objeto, la vía programática está descartada; (b) click real y probar `ion-popover` PRIMERO; si devuelve `[]`, leer el `ion-alert` activo y hacer los 2 clicks.** `[grupo_fiel-20260817]`
+- 🔴🔴 **GRADUADO — techo de espera ≥ 120 s en TODA navegación que atraviese la guarda de GPS (`userMustActivateGPS=true`).** Los handlers de entrada dejan el `router.navigate` **dentro del `.then()` de `getCurrentPosition()`**: con caché de posición fría el click parece **muerto**, a veces **sin ningún `ion-loading`**, y un techo corto produce un `⛔ BLOCKED` falso sobre una navegación que seguía en curso. Medido en **3 módulos de una misma corrida y device**: **30,3 s** pedidos · **43,1 s** devoluciones · **~87 s** inventarios (VISITAS, en cambio, máximo 6,85 s ⇒ **no escala con el acoplamiento al GPS sino con el volumen de datos que el form carga al abrir**). El indicador tiene **3 variantes**: ninguno · `ion-loading` con **mensaje vacío** · `ion-loading` con "Cargando…". **La caché de posición expira a los 60 s**, así que cada reingreso vuelve a pagarlo; la reapertura de un Guardado **no** atraviesa la guarda. **Diagnóstico barato:** envolver el handler (`comp.nuevoPedido`) y ver si loguea la llamada sin llegar a la navegación ⇒ es GPS, no el selector. `[run_vzla-20260818]`
+- 🔴 **GRADUADO — `pg.waitForFunction` IGNORA el `timeout` y corta a 30 s sobre el `pg` de CDP** (`{timeout:70000}` → `Timeout 30000ms exceeded` a los 30,2 s) ⇒ **toda espera > 30 s se sondea a mano en bucle con `page.waitForTimeout`**. Es el complemento obligado del techo de GPS de arriba: sin esto, la espera larga **siempre** se lee como "la navegación falló". Ver también `§11`. `[run_vzla-20260818]`
+- **Namespace por agente: sufijo de 2-3 letras, NUNCA una sola inicial.** El bundle es idempotente (`if (window.__qaX) return`), así que una colisión te devuelve **las skills de otro agente** y falla con `X.alertInfo is not a function`. `__qaC` ya estaba tomado en COBROS; `__qaCOB`/`__qaDEV`/`__qaINV`/`__qaVIS` instalaron limpio. Consumir el hook de payload heredado (`window.__qaPayloadsData`, guarda `__qaDataHook`) **sin reinstalarlo**. `[grupo_fiel-20260817]`
 
 **Techo de intentos (universal):** ningún caso debe consumir más de **2 intentos acotados** peleando con un selector/flujo que no responde por CDP. Tras el 2º intento fallido → `⛔ BLOCKED` con el motivo (no es FAIL ni N/A), registrar y continuar con el siguiente caso. El fail-fast ya implementado en `h.ensureAdjunto` es el patrón a generalizar. Esto evita el atascamiento histórico (cobros llegó a 277 tool-uses por insistir en atajos).
 
@@ -104,6 +116,43 @@ await wd.run('waitSyncOverlay', () => h.waitSyncOverlay(pg));
 | Selector/flujo no responde por CDP tras 2 intentos acotados | ⛔ BLOCKED (limitación de automatización, NO defecto de app — no contamina FAIL ni N/A) |
 | CDP cuelga (`TIMEOUT:`) o se corta la conexión (`CDP-DOWN:`) | ⛔ BLOCKED con motivo `cuelgue CDP` — infra, NO defecto de app (ver §11) |
 | Módulo abortado por watchdog (`ABORT-MODULE:`) | Casos restantes ⛔ BLOCKED `techo de módulo`; devolver al orquestador y seguir con el módulo siguiente |
+| **Anomalía que SOLO aparece en registros VIEJOS y no se puede reproducir creando uno nuevo** | **NO es defecto** — observación sobre datos históricos (ver §4.b) |
+
+### 4.b 🔴 La prueba de fuego de todo hallazgo: **¿reproduce en la versión que estamos probando?**
+
+> Regla dada por la responsable QA el **2026-08-17**, tras descartar 4 de 6 hallazgos web de la corrida
+> `grupo_fiel`. **Aplicarla ANTES de reportar, no después** — es tiempo perdido en cada corrida futura.
+
+**Una anomalía observada sobre registros históricos NO es un defecto de la release en prueba
+mientras no se demuestre que reproduce en un registro NUEVO.**
+
+**Procedimiento obligatorio** cuando encontrás algo raro en datos viejos (típico de la familia `M##`,
+que muestrea histórico, y de cualquier lectura de listados):
+
+1. **Identificá la condición** que dispara la anomalía (ej. `nu_amount_final = 0`).
+2. **Contá cuántos registros la cumplen y desde cuándo**, ordenados por fecha:
+   ```bash
+   node automation/db/query.js {cliente} "SELECT id_x, da_x::date, <campo> FROM <tabla> WHERE co_operation<>'D' ORDER BY da_x"
+   ```
+3. **Buscá el último afectado.** Si **nada posterior a esa fecha** la cumple —y sobre todo, si **nada de lo
+   creado por la corrida de hoy** la cumple— ⇒ **NO se reporta como defecto.** Va como *observación sobre
+   datos históricos*, con la fecha del último caso.
+4. Si la condición **sí** aparece en un registro reciente o en uno creado por la corrida ⇒ **ahí sí es defecto**,
+   y tenés el caso reproducible que lo prueba.
+
+⚠ **Precisión al redactar — no te pases de la evidencia.** Que no reproduzca prueba *"no ocurre en nada
+reciente"*, **no** prueba *qué* lo corrigió. Escribí **"no reproduce desde {fecha}"**, nunca *"se arregló en la
+versión N"* salvo que desarrollo confirme el cambio. En `grupo_fiel` el discriminador **no era puramente la
+fecha**: el 18/05 convivían registros afectados y sanos.
+
+**Ejemplo real que originó la regla** (`grupo_fiel-20260817`): dos "defectos" reportados por separado
+—el detalle de anticipos mostrando `Monto pagado 0,00` y la lista de cobros mostrando `Tasa conv. N/A`—
+resultaron ser **la misma condición de datos**, con el **último caso el 13/07/2026** y **cero reproducciones**
+en los 16 registros posteriores, incluidos los 10 creados ese mismo día. Ambos se bajaron a observación.
+
+**Severidad de los problemas de visibilidad:** medir el impacto sobre **datos ACTIVOS**. Que no se listen los
+pedidos de un vendedor **dado de baja** no es grave; lo grave sería que desaparecieran los de un vendedor
+**activo**. Verificalo con datos antes de asignar severidad, no lo asumas.
 
 ---
 
@@ -119,6 +168,32 @@ await wd.run('waitSyncOverlay', () => h.waitSyncOverlay(pg));
 | Depósitos | DM-DEP-018/019/020 | Lista BUSCAR no renderiza tras guardar — bug en `deposit.service.ts`. ⚠ **Intermitente**: en `el_valle-20260728` NO reprodujo |
 | Visitas | DM-VIS-020 | Modal de confirmación de envío aparece antes de validar actividades — UX, no bloquea |
 | Inventarios | DM-INV-026 | Formulario Guardado abre en tab General en lugar de Inventario — cosmético |
+| Cobros | Tab Documentos | 🔴 **El botón de la CALCULADORA tapa la paginación de documentos**: con `conversionCalculator=true` y un cliente con muchos documentos, **no se puede pasar a la página siguiente ni seleccionar facturas de las páginas 2+**. Detectado **a mano por la QA** (run_vzla, 19/08); **ningún agente lo vio**. Ver §5.b |
+
+### 5.b · 🔴 OCLUSIÓN: comprobar que los controles se puedan PULSAR, no solo que existan
+
+**Lección de run_vzla (2026-08-19).** Nueve agentes recorrieron cobros sin detectar que el botón flotante de
+la calculadora **tapa la paginación del Tab Documentos**. Todos verificaron que los controles *existieran* en
+el DOM; ninguno verificó que fueran **alcanzables**. La QA lo encontró a mano en cinco minutos.
+
+⇒ **En cualquier lista paginada o control cerca de un botón flotante (FAB, calculadora, barra fija), es
+OBLIGATORIO comprobar la alcanzabilidad**, no la presencia:
+
+```js
+// El elemento existe... ¿pero responde al click en su propio centro?
+const r = el.getBoundingClientRect();
+const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+const arriba = document.elementFromPoint(cx, cy);
+const ocluido = arriba !== el && !el.contains(arriba);
+// ocluido === true  ⇒  hay algo encima: reportarlo con QUÉ lo tapa (arriba.tagName/className)
+```
+
+- Hazlo **con datos reales que fuercen el caso**: un cliente con **muchos** documentos (que la paginación
+  aparezca de verdad), no con el primero de la lista.
+- Un `.click()` por JS **atraviesa la oclusión y da un falso PASS**. Usa `pg.mouse.click(x, y)` sobre
+  coordenadas reales, que es lo que hace el dedo del vendedor.
+- Aplica igual a: paginación de documentos en cobros, listas largas de productos, y cualquier pantalla con
+  `conversionCalculator=true` u otro botón flotante activo por VG.
 
 ⚠ **NO es defecto** (aclarado por QA 2026-07-29): que una visita se pueda **Enviar sin firma** con
 `signatureVisit=true`. Esa VG dice *"¿Desea **habilitar** la firma? SI: se **podrá** firmar"* — **habilita la
@@ -255,6 +330,10 @@ El §9 verifica round-trip **UI→UI** (Guardar→reabrir). El §10 verifica **U
 4. **Por items (co_type-aware en cobros):** verificar cada línea contra lo cargado por UI; totales como cruce. Cobros ramifica por `co_type`: `0`=docs+pagos · `1`=anticipo (solo pagos) · `2`=retención (solo docs + montos retención) · IGTF=`nu_amount_igtf` sobre el cobro.
 5. **Reconciliar nube ↔ local:** dar la marca según el estado. La pregunta clave: **¿lo que se guardó, se envió?**
 
+🔴🔴 **DOS MATICES GRADUADOS — sin ellos el §10 marca PASS sobre registros perdidos** `[run_vzla-20260818]`:
+- **La 3.ª alerta de envío es el ÚNICO acuse del SERVIDOR.** Las alertas 1 y 2 (`¿Desea enviar…?` → `Su <registro> será enviado`) son **locales** y salen **idénticas cuando el POST falla**; la app **navega de vuelta al listado lo mismo**. ⇒ **Antes de marcar PASS de cualquier Enviar hay que esperar la 3.ª alerta (`… nro. <Ref> enviad{o|a} exitosamente`) o comprobar `id_<x> > 0` en la BD local.** Un agente que corte tras la 2.ª da por bueno un registro que nunca llegó.
+- **`failed_transactions` NO capta los rechazos del servidor.** Con un registro atascado en bucle, `failed_transactions` estuvo en **0** todo el módulo mientras `pending_transactions` tenía la fila ⇒ **`BD-QUEUED` persistente es indistinguible de una pérdida desde el device**, y la fila `Rechazado → BD-MISMATCH` de la tabla de arriba **solo cubre el 400 explícito**. **La prueba real es `count(*)` en la NUBE por `co_<x>`.** Diagnóstico complementario sin BD: **agrupar `window.__qaPayloadsData` por `co<Entidad>` — N POST del mismo `co_x` = transacción atascada** (7 POST para 3 visitas ⇒ 5 eran la misma), lo que distingue *sync lenta* (1 POST pendiente) de *rechazo en bucle*.
+
 **Correlación Ref↔fila (CONFIRMADO piercar 2026-06-16, 5 módulos):** el **Nro.Ref de la UI = `id_<x>` (PK del servidor)**, NO el epoch `co_<x>`. Match directo `WHERE id_<x>=<Ref>`. Falta **1 corrida limpia** para graduar `BD-MISMATCH`→FAIL; hasta entonces va `BD-INFO`.
 
 **Estados `st_*`:** localmente `st_delivery=1`=enviado / `=3`=guardado es el discriminador **fiable**. El `st_collection`/`st_order` del servidor varía por tipo y playa (caveat §5/§9) — corroborar por `id` + `st_delivery`, no por `st_*` global.
@@ -304,6 +383,12 @@ await wd.run('openNuevoCobro',  () => h.openNuevoCobro(pg, 0));
 > 🔴 **`setTimeout` NO existe en `browser_run_code_unsafe`.** Sin pasar `page`, el watchdog revienta con
 > `ReferenceError: setTimeout is not defined` (regresión real, corrida el_valle-20260728). Con `page`,
 > los helpers usan `page.waitForTimeout`. En contexto Node (scripts/self-tests) `page` se omite.
+
+> 🔴 **`pg.waitForFunction` IGNORA su `timeout` y corta a 30 s sobre el `pg` de CDP** (`{timeout:70000}` devolvió
+> `page.waitForFunction: Timeout 30000ms exceeded` a los **30,2 s**). ⇒ **toda espera > 30 s se sondea a mano en bucle
+> con `page.waitForTimeout`**, nunca con el `timeout` de `waitForFunction`. Crítico para la guarda de GPS (§3, techo
+> ≥ 120 s) y para la sync: el corte a 30 s se lee como "la navegación falló" cuando seguía en curso, y produce un
+> `⛔ BLOCKED` falso. `[run_vzla-20260818]`
 
 | Señal | Qué significa | Qué hace el agente |
 |---|---|---|

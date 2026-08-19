@@ -303,6 +303,15 @@ MANIFIESTO: por cada registro que crees y ENVÍES, anexá UNA línea a {RUN_DIR}
 - En `datos` dejá **todos los campos numéricos** que puedas (montos, tasas, cantidades, retenciones):
   son los que la web va a recalcular. Cuanto más completo, más rico el cotejo.
 - Módulos SIN filtro de Ref en la web (clientes potenciales): dejá también vendedor y fecha para el barrido.
+
+🔴 **EL ESQUEMA ES LITERAL — usá EXACTAMENTE estas claves:**
+`modulo` · `caso` · `ref` · `epoch` · `marca_bd` · `datos`
+**NO** `module` / `co_x` / `action`, ni ninguna variante en inglés.
+⚠ **Pasó en DOS corridas seguidas** (`grupo_fiel-20260817` y `kron-20260817`): un agente de devoluciones
+escribió `{"module":"devoluciones","co_x":"…","action":"sent"}` como marca intermedia. El lector de corridas
+**no reconoce esas claves** y cuenta el registro como *"creado y NUNCA verificado en la web"*, ensuciando el
+informe de cobertura con un hueco que no existe.
+**Una línea por registro ENVIADO, ni una más:** no escribas marcas de "guardado"/"en progreso".
 ```
 
 > ⚠ **Sin esta línea el registro es invisible para la capa web.** En `el_valle-20260728` el módulo de cobros
@@ -681,6 +690,16 @@ Devolver: módulo VENDEDORES, counts, ruta.
 > terminar cada caso**, y barrer **dos** ubicaciones: el cwd y `DenarioPremiunMovil/.playwright-mcp/`.
 > El oráculo del contenido es **`transaction_image` + `transaction_files`**, **NO `nu_attachments`** (ese
 > incluye la firma, que **nunca viaja en el ZIP** ⇒ da un falso −1 sistemático).
+>
+> 🔴 **REGLA DE ORO DE `M##` (QA, 2026-08-17): un problema que solo aparece en registros VIEJOS y no se
+> reproduce en uno NUEVO *no es un defecto* de la versión en prueba.** Esta familia lee **histórico**, así que
+> es la más expuesta a este error: en `grupo_fiel-20260817` se descartaron **4 de 6** hallazgos web por esto.
+> Antes de escribir un hallazgo: identificá la condición que lo dispara, listá los afectados **por fecha**,
+> buscá el **último**, y si nada posterior —ni nada creado por la corrida de hoy— la cumple ⇒ va como
+> **observación sobre datos históricos**, no como hallazgo. Escribí **"no reproduce desde {fecha}"**, nunca
+> "se corrigió en la versión N". Mecánica completa: `RUNTIME.md §4.b` y `WEB-RUNTIME.md §5.a`.
+> ⚠ Y revisá `WEB-RUNTIME.md §5.b` — hay comportamientos **por diseño** que ya se reportaron por error
+> (la columna `Monto cobrado` es un **desglose**, no un total; en retenciones viene **vacía** a propósito).
 >
 > ⚠ **Antes de marcar un `M##` como hallazgo, releé lo que ya reportaron otros agentes de la misma corrida.**
 > En `el_palmar-20260806` un agente levantó como crítico que el depósito guardaba "un solo pago", cuando otro

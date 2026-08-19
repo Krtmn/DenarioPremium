@@ -5,7 +5,7 @@
 
 cliente_id: piercar
 cliente_nombre: "PIERCAR REPUESTOS C."          # Confirmado en UI: empresa = "PIERCAR REPUESTOS C." (DM-CLT-021 + DM-VND-001)
-ws_url: "TBD"                               # TBD — confirmar endpoint del web service del dispositivo. DEBE ser el mismo tenant que la BD piercar (si no, la verificación BD compara contra datos de otro servidor)
+# ws_url / playa: NO se registran — es propiedad del SERVIDOR, es rotativa y se descubre en runtime (ver _schema.yaml).
 apk_package: com.kiberno.denarioPremiumPro
 db_name: piercar                            # CONFIRMADO 2026-06-16 (current_database()=piercar). Conexión read-only en el bloque "# Cliente: piercar" de secrets/qa-db.env. GRANT read-only APLICADO y verificado 2026-06-16: user_read lee las 180 tablas (global_configuration=165 VGs), escritura rechazada. Verificación BD OPERATIVA. Baseline pre-corrida: order=25, collection=13, return=2, client_stock=0, deposit=1, visit=59, potential_client=3.
 

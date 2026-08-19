@@ -143,6 +143,40 @@ la web no puede mostrar lo que no recibió. `gatePorBD()` lo aplica.
 **Blindaje:** la web **nunca** tumba el smoke. Cualquier fallo de infra web → `WEB-N/A` con motivo,
 y la parte móvil se reporta igual. Es aditivo.
 
+### 5.a 🔴 Antes de reportar: **¿reproduce en la versión que estamos probando?**
+
+> Regla de la responsable QA, **2026-08-17**, tras descartar **4 de 6** hallazgos web de `grupo_fiel`.
+> Esta familia (`M##`) lee **histórico**, así que es la que más expuesta está a este error.
+> Mecánica completa en `automation/cdp/RUNTIME.md §4.b`.
+
+**Una anomalía que solo aparece en registros VIEJOS y no se reproduce en uno NUEVO no es un defecto de la
+release en prueba.** Antes de escribirla como hallazgo:
+
+1. Identificá la **condición** que la dispara (ej. `nu_amount_total_conversion = 0`).
+2. Listá los registros que la cumplen **ordenados por fecha** y encontrá el **último afectado**.
+3. Si **nada posterior** la cumple —y en particular **nada creado por la corrida de hoy**— ⇒ va como
+   **observación sobre datos históricos**, con la fecha del último caso. **No es hallazgo.**
+4. Si aparece en un registro reciente ⇒ **ahí sí**, y tenés el caso reproducible.
+
+⚠ Escribí **"no reproduce desde {fecha}"**, nunca *"se corrigió en la versión N"*: que no reproduzca no prueba
+qué lo corrigió.
+
+**Severidad de un problema de visibilidad:** se mide por el impacto sobre **datos ACTIVOS**. Registros que no
+se listan porque pertenecen a un usuario **dado de baja** ⇒ severidad baja. Verificá con BD si hay **usuarios
+activos** afectados antes de asignar severidad.
+
+### 5.b ❌ Comportamientos POR DISEÑO — **NO volver a reportarlos**
+
+Ya se levantaron por error más de una vez. Si los ves, **no son defecto**:
+
+| Qué se ve | Por qué NO es defecto |
+|---|---|
+| La columna **`Monto cobrado`** de `/pages/cobros` muestra **varios importes** (`"2.000,00 BS 8.000,00 BS"`) | **Es un DESGLOSE por método de pago, no un total.** En ese ejemplo: 8.000 en efectivo + 2.000 en pago móvil |
+| Esa misma columna viene **VACÍA** en un cobro de **Retención** (`co_type=2`) | En las retenciones **no se registra método de pago** ⇒ no hay nada que desglosar. Siempre fue así |
+| El **rango de fechas por defecto** (mes en curso) acota el listado | Es el filtro inicial, no una pérdida de registros. La búsqueda por `# Ref` **no** queda tapada por él |
+| La columna **Vendedor** de `clientesPotenciales` trae solo el **primer nombre** | Es así en esa pantalla; cotejar contra el nombre completo da un **falso** `WEB-FIELD-MISMATCH` |
+| **`Geo = "Falta Coordenada (Sucursal)"`** en visitas | Es una clasificación que calcula la web comparando contra la coordenada **de la sucursal del cliente**; no dice que falte la de la visita |
+
 ---
 
 ## 6. Reglas de comparación

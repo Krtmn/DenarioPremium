@@ -16,8 +16,8 @@
 
 cliente_id: osoroma
 cliente_nombre: "DISTRIBUIDORA OSOROMA C.A."   # empresa 00003 (por defecto para cobros, ver abajo). Tenant multi-empresa: 00001 CALZADOS SICURA C.A., 00002 CALZADOS AYALA C.A., 00003 DISTRIBUIDORA OSOROMA C.A.
-ws_url: "http://denarioelyaque.ddns.net:8081/PremiumWS/services/"  # El Yaque — CONFIRMADO por QA 2026-07-08 (osoroma está en El Yaque). Mismo servidor que romher/hidroponias.
-# ⚠ BUILD EL YAQUE (ver jerez [jerez-2026-07-06]): window.ng=false (sin debug Angular) → helpers CDP con fallback window.ng son inoperantes; CONDUCIR CON CLICKS REALES. Aplicar a esta corrida.
+# ws_url: NO se guarda — la playa es del SERVIDOR y es rotativa; se descubre en runtime (ver _schema.yaml).
+# ⚠ SEGUN EL BUILD que traiga el device (visto en jerez [jerez-2026-07-06]): window.ng=false (sin debug Angular) → helpers CDP con fallback window.ng son inoperantes; CONDUCIR CON CLICKS REALES. Aplicar a esta corrida.
 apk_package: com.kiberno.denarioPremiumPro
 db_name: osoroma                            # CONFIRMADO 2026-07-08 (current_database()=osoroma). Conexión read-only en bloque "# Cliente: osoroma" de secrets/qa-db.env (host savia.cxxaa8dakzbw.us-east-1.rds.amazonaws.com, user_read). GRANT read-only verificado (query.js corre). Baseline nube pre-corrida: clientes=4073, productos=10416, invoices=0.
 

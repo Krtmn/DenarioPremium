@@ -991,3 +991,27 @@ defectos:
 # 🔑 La hipótesis de que solo fallaba tras una búsqueda vacía quedó DESCARTADA:
 #    falla siempre. El defecto es simple — vaciar el buscador nunca repuebla.
 # ℹ Workaround: buscar otro término, o salir a estructuras y volver a entrar.
+
+# ── COB-CALCULADORA-TAPA-PAGINACION ───────────────────────────────────────
+# 🔴 CONFIRMADO por QA a mano (2026-08-19, run_vzla / CORPORACION FERRE 19 / La Tortuga).
+# Severidad: ALTA — impide cobrar facturas que no estén en la primera página.
+#
+# Precondición: VG `conversionCalculator = true` (en run_vzla lo está).
+#
+# 1. App → COBROS → Nuevo cobro → elegir un cliente **con muchos documentos**
+#    (que la lista de documentos pendientes muestre paginación).
+# 2. Ir al Tab DOCUMENTOS.
+# 3. 🎯 Intentar pasar a la PÁGINA SIGUIENTE de documentos pendientes.
+#    · ESPERADO → avanza y deja seleccionar facturas de la pág. 2 en adelante.
+#    · REAL     → el **botón flotante de la calculadora queda encima del control
+#                 de paginación**: no se puede pulsar, y por tanto NO se pueden
+#                 seleccionar facturas de las páginas siguientes.
+#
+# 🔑 Solo se ve con la calculadora activa Y un cliente con varias páginas de
+#    documentos. Con pocos documentos no hay paginación y el defecto no aparece.
+#
+# ⚠ NINGÚN AGENTE LO DETECTÓ en la corrida completa de 10 módulos: todos
+#   verificaron que los controles EXISTIERAN en el DOM, ninguno que fueran
+#   ALCANZABLES. Un `.click()` por JS atraviesa la oclusión y da falso PASS.
+#   ⇒ Ver `automation/cdp/RUNTIME.md §5.b` (comprobación de oclusión con
+#     `document.elementFromPoint` + `pg.mouse.click` sobre coordenadas reales).

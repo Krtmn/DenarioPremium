@@ -25,6 +25,9 @@ playas:
     nombre: "Isla Coche"
     base:   "http://denarioislacoche.ddns.net:8080/DenarioPremium"
     # Empresa observada 2026-07-28: CAPITALINA DE ALIMENTOS 212, C.A.
+  # 🔴 CARIBE FUERA DE SERVICIO (2026-08-13, indicado por QA): HTTP 404 en :8080 —
+  #   Tomcat levantado pero la app DenarioPremium NO desplegada (ni /DenarioPremium ni la raiz).
+  #   NO incluirla en barridos playa-por-playa salvo confirmacion explicita de QA.
   caribe:
     nombre: "Caribe"
     base:   "http://denariocaribe.ddns.net:8080/DenarioPremium"

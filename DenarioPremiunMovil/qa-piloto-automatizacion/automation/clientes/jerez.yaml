@@ -20,7 +20,7 @@ cliente_id: jerez
 #   idEnterprise 3 = "INV JEREZ MOTORS TURMEREMO" (coEnterprise 00003)
 #   Reemplazan los rótulos genéricos previos "INVERSIONES JEREZ MO..." [jerez-2026-06-22] y "INVERSIONES JEREZ 1/2/3" [jerez-2026-07-01].
 cliente_nombre: "INV JEREZ MOTORS VALERA"   # [jerez-2026-07-06] empresa default idEnterprise:1 (USD). 3 empresas multi-empresa VALERA/CARACAS/TURMEREMO.
-ws_url: "TBD"                            # TBD — confirmar playa/servidor de Jerez. Conexión real en ../../claves.env
+# ws_url / playa: NO se registran — es propiedad del SERVIDOR, es rotativa y se descubre en runtime (ver _schema.yaml).
 apk_package: com.kiberno.denarioPremiumPro
 
 # ── VGs (fuente: CSV dev global_configuration_jerez.csv 2026; VERIFICAR vs UI en corrida) ──

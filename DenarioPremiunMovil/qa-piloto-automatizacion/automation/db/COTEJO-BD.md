@@ -30,6 +30,18 @@ Agente BD (solo Bash):       lee los payloads → cotejo-payload.js por cada uno
 - **Fechas:** veredicto por día; diferencia de hora (zona horaria local UTC-4 vs nube UTC) → **nota**, no mismatch.
 - **Marcas:** `BD-FIELD-OK` · `BD-FIELD-MISMATCH` · `BD-SAVED` (no llegó a la nube) · `BD-N/A`.
 
+### ✅ Corrección de la CLAVE DE EMPAREJAMIENTO — ejercitada en su primer caso real `[kron-20260817]`
+
+La corrección de `cotejo-payload.js` (clave de emparejamiento de hijas) se aplicó a mano y **kron fue su primer
+caso real: funcionó.** Escenario que antes la rompía — **inventario Ref 3 con el MISMO producto en DOS
+ubicaciones** (`exh` y `dep`): las dos filas comparten `co_client_stock_detail`, así que un emparejamiento por
+producto colisionaba y marcaba mismatch. Con la clave corregida el cotejo salió **`BD-FIELD-OK`**, línea por línea.
+
+⇒ **El caso "mismo producto en 2 ubicaciones" queda como escenario de regresión del motor:** si vuelve a
+aparecer un `BD-FIELD-MISMATCH` en inventarios con detalle duplicado, sospechar primero de la clave, no del dato.
+⚠ Recordar que la app trata las ubicaciones **separadas** (2 `client_stocks_details_units` distintas) mientras el
+pedido sugerido las **consolida** (`Inv. Actual` = suma) — no son oráculos intercambiables.
+
 ### Esquema universal · config por cliente
 El mapeo (tablas/columnas/fieldMap/ignore) es del **modelo de datos del producto → igual para todos los clientes**. Por cliente solo cambia: la **conexión** (`secrets/qa-db.env`) y las **VGs/datos** (`{cliente}.yaml`). El arg `<cliente>` solo elige la conexión.
 

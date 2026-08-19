@@ -98,14 +98,52 @@ function detectarHuecos(alcance, filas) {
   return huecos.sort((a, b) => b.faltan.length - a.faltan.length);
 }
 
+/**
+ * La marca de una línea web, tolerando los dos esquemas que han convivido:
+ *   grupo_fiel/kron → `marca`      · run_vzla → `marca_web`
+ * [run_vzla-2026-08-19] antes leía solo `marca` y el resumen salía «undefined=152».
+ */
+function marcaWeb(w) {
+  return w.marca || w.marca_web || null;
+}
+
+/**
+ * Las refs que una línea web acredita como verificadas.
+ * [run_vzla-2026-08-19] El esquema viejo traía `ref` explícito; el nuevo no, y el cruce
+ * daba 21 falsos «creado SIN verificar» sobre registros que SÍ se habían cotejado.
+ * Se acepta `ref` y, si falta, se extraen las refs citadas en `evidencia`
+ * (`# Ref 2819`, `id_order 2819`, `Ref=2819`…). Es deliberadamente amplio: este cruce
+ * existe para AVISAR de huecos, y un falso «sin verificar» cuesta más que uno de menos
+ * — pero ver la nota de abajo sobre por qué eso NO lo vuelve inofensivo.
+ */
+function refsDeLineaWeb(w) {
+  const refs = new Set();
+  if (w.ref !== undefined && w.ref !== null && String(w.ref) !== '') refs.add(String(w.ref));
+  const ev = String(w.evidencia || '');
+  // números de 1-8 dígitos precedidos de un marcador de referencia
+  const re = /(?:#\s*ref|ref\s*[:=]?|id_[a-z_]+|nro\.?)\s*[:=#]?\s*(\d{1,8})/gi;
+  let m;
+  while ((m = re.exec(ev)) !== null) refs.add(m[1]);
+  return refs;
+}
+
 /** Registros creados (manifiesto) que NO tienen veredicto en la capa web. */
 function detectarSinCotejoWeb(manifiesto, web) {
-  const verificados = new Set(web.map((w) => `${normalizarModulo(w.modulo)}|${String(w.ref)}`));
+  const verificados = new Set();
+  for (const w of web) {
+    const mod = normalizarModulo(w.modulo);
+    for (const r of refsDeLineaWeb(w)) verificados.add(`${mod}|${r}`);
+  }
   const alias = { clientes: 'clientes_potenciales' };       // el móvil rotula distinto que la web
   return manifiesto.filter((r) => {
+    // Un registro con ref 0 nunca llegó a la nube (Guardado o borrado): no hay nada que cotejar.
+    if (String(r.ref) === '0' || /^BD-(SAVED|QUEUED)$/i.test(String(r.marca_bd || ''))) return false;
     const m = normalizarModulo(r.modulo);
     const claves = [`${m}|${String(r.ref)}`];
     if (alias[m]) claves.push(`${alias[m]}|${String(r.ref)}`);
+    // el cotejo puede haberse registrado bajo cualquier módulo (una visita se verifica en `visitas`,
+    // pero un cliente potencial creado desde CLIENTES se verifica en `clientesPotenciales`)
+    for (const k of verificados) if (k.endsWith(`|${String(r.ref)}`)) claves.push(k);
     return !claves.some((k) => verificados.has(k));
   });
 }
@@ -215,8 +253,8 @@ function anomaliasDelLedger(filas, manifiesto, web) {
   const bdMal = (manifiesto || []).filter((r) => r.marca_bd && !/^BD-(OK|FIELD-OK)$/i.test(r.marca_bd));
   if (bdMal.length) out.push({ tipo: 'bd', detalle: `${bdMal.length} registro(s) con marca BD distinta de OK: ` + bdMal.map((r) => `${r.modulo}/${r.ref}=${r.marca_bd}`).join(', ') });
   // marcas web distintas de OK
-  const webMal = (web || []).filter((w) => w.marca && w.marca !== 'WEB-OK');
-  if (webMal.length) out.push({ tipo: 'web', detalle: `${webMal.length} veredicto(s) web distinto(s) de WEB-OK: ` + webMal.map((w) => `${w.modulo}/${w.ref}=${w.marca}`).join(', ') });
+  const webMal = (web || []).filter((w) => marcaWeb(w) && marcaWeb(w) !== 'WEB-OK');
+  if (webMal.length) out.push({ tipo: 'web', detalle: `${webMal.length} veredicto(s) web distinto(s) de WEB-OK: ` + webMal.map((w) => `${w.modulo}/${w.ref ?? w.caso}=${marcaWeb(w)}`).join(', ') });
   return out;
 }
 
@@ -285,7 +323,7 @@ function analizar(carpeta, carpetaAnterior) {
 
   // marcas de la capa web
   const marcasWeb = {};
-  for (const w of web.filas) marcasWeb[w.marca] = (marcasWeb[w.marca] || 0) + 1;
+  for (const w of web.filas) { const k = marcaWeb(w) || '(sin marca)'; marcasWeb[k] = (marcasWeb[k] || 0) + 1; }
 
   const trazas = fs.existsSync(path.join(dir, '_trace'))
     ? fs.readdirSync(path.join(dir, '_trace')).filter((f) => f.endsWith('.trace.json')) : [];

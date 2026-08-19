@@ -4,7 +4,7 @@
 
 cliente_id: hidroponias
 cliente_nombre: HIDROPONIAS VENEZOLA
-ws_url: "http://denariolatortuga.ddns.net:8081/PremiumWS/services/"  # Isla La Tortuga (v6.6.18)
+# ws_url: NO se guarda — la playa es del SERVIDOR y es rotativa; se descubre en runtime (ver _schema.yaml).
 apk_package: com.kiberno.denarioPremiumPro
 
 vgs:

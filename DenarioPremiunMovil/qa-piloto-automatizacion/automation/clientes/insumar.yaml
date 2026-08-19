@@ -1,11 +1,23 @@
 # insumar/perfil.yaml
-# Cliente actualmente en Isla Coche.
+# ⚠ El servidor/playa NO se registra acá (ver _schema.yaml): es propiedad del SERVIDOR, es rotativo
+#   y se DESCUBRE EN RUNTIME. Este perfil llegó a tener un ws_url fijo y quedó stale — el valor viejo
+#   apuntaba a otro tenant. Si hace falta dejar constancia de la playa observada, va en el REPORTE
+#   de la corrida, nunca en el perfil.
 # VGs parcialmente confirmadas — completar en primera corrida formal.
 
 cliente_id: insumar
 cliente_nombre: "INSUMAR DISTRIBUIDOR"    # Confirmado 20260603: nombre en app
-ws_url: "http://denarioislacoche.ddns.net:8081/PremiumWS/services/"
+# ws_url: NO se guarda — la playa es del SERVIDOR y es rotativa; se descubre en runtime (ver _schema.yaml).
 apk_package: com.kiberno.denarioPremiumPro
+db_name: insumar_P1                       # ✅ CONFIRMADO 2026-08-13 (current_database()). La base es
+                                          #   `insumar_P1`, NO `insumar` — con el slug daba
+                                          #   "database does not exist" y el cotejo quedaba BD-N/A.
+                                          # ⚠ ACCIÓN EQUIPO (QA no toca secrets): el bloque
+                                          #   "# Cliente: insumar" de secrets/qa-db.env trae un
+                                          #   QA_DB_URL con la base vieja, y en query.js el DSN
+                                          #   TIENE PRECEDENCIA sobre este db_name ⇒ agregar
+                                          #   `QA_DB_NAME=insumar_P1` a ese bloque (o corregir la URL)
+                                          #   para que el cotejo funcione sin overrides.
 
 vgs:
   multiCurrency: true                     # Confirmado 20260603: lista muestra Saldo BS y Saldo US$

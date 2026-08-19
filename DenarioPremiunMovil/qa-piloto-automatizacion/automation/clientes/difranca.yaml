@@ -40,9 +40,6 @@ cliente_nombre: "DIFRANCA C.A"
 apk_package: com.kiberno.denarioPremiumPro
 db_name: difranca                       # base en savia; GRANT read-only ✅ 185/185 tablas
 # ws_url: NO se guarda — se descubre en runtime (ver _schema.yaml).
-#   Playa confirmada por el orquestador en el dispositivo: **EL YAQUE**
-#     API : denarioelyaque.ddns.net:8081
-#     Web : denarioelyaque.ddns.net:8080
 #   Dispositivo: app v1.0 · db_version 19 · coUser = 206
 #
 # Bloques de credenciales (NO copiar valores acá):
@@ -190,15 +187,22 @@ vgs:
                                         #   (userCanSaveGPS=false también ⇒ ni siquiera lo guarda)
 
   # ── VGs extra (fuera del esquema base, necesarias para el mapa de N/A) ──
-  clientStock: false                    # 🔴🔴 ⚠️VERIFICAR — **APAGA UN MÓDULO ENTERO**.
-                                        #   global 2024-07-03=false GANA sobre client 2023-02-01=true.
-                                        #   ⇒ el módulo INVENTARIOS (toma de inventario en el cliente)
-                                        #     NO debería existir.
-                                        #   EVIDENCIA DE APOYO EN DATOS: la tabla `client_stock` tiene
-                                        #   **16 filas en toda la BD** (contra 19.771 cobros y 16.558
-                                        #   pedidos) ⇒ residuales de cuando estuvo prendida.
-                                        #   🔴 ES LA VG DE MAYOR IMPACTO DEL PERFIL: si en la UI el
-                                        #     módulo SÍ aparece, todo el mapa de N/A cambia.
+  clientStock: false                    # ✅✅ **VALOR CONFIRMADO EN RUNTIME 2026-08-13** (leído del
+                                        #   globalConfig del device: `"false"`). El valor del dump era
+                                        #   correcto — lo que estaba MAL era la INFERENCIA.
+                                        # 🔴 **ESTA VG NO GOBIERNA LA VISIBILIDAD DEL MÓDULO.**
+                                        #   Con `clientStock=false` el módulo INVENTARIOS **aparece en el
+                                        #   HOME y es operable end-to-end**: se creó y ENVIÓ el inventario
+                                        #   **Ref 20** (CAR755, 3 líneas) que llegó a la nube.
+                                        #   ⇒ **2.ª confirmación** de la divergencia: ferrenuestro ya la
+                                        #     había documentado (`clientStock=false` NO oculta el módulo).
+                                        #     Ya no es rareza de un cliente: es el comportamiento del build.
+                                        #   ⚠ CONSULTAR CON EL CLIENTE / DESARROLLO si el módulo debería
+                                        #     ocultarse con la VG en false. **No es un defecto que QA pueda
+                                        #     cerrar**: es una decisión de producto (decisión QA 2026-08-13).
+                                        #   ⚠ El conteo bajo de `client_stock` (16 filas al 2026-08-07) NO
+                                        #     prueba que el módulo esté apagado: prueba que se usa poco.
+                                        #     No volver a derivar "módulo inexistente" de un conteo bajo.
   requireClientStock: false             # ⚠️VERIFICAR — global 2024-05-22=false sobre client=true
                                         #   ⇒ NO obliga toma de inventario antes del pedido
                                         #   (coherente con clientStock=false)
@@ -678,17 +682,42 @@ modules:
     # · Trash solo en "Guardado" (tampoco en "Por Enviar"), medido con ambos estados en pantalla.
 
   inventarios:
-    aplica: false                       # 🔴 N/A ESTRUCTURAL — clientStock=false (global 2024-07-03
-                                        #   gana sobre client 2023=true).
-    motivo_na: >-
-      clientStock=false ⇒ el módulo de toma de inventario en el cliente no debería existir.
-      Apoyo en datos: la tabla `client_stock` tiene 16 filas en toda la BD (contra 19.771 cobros
-      y 16.558 pedidos) ⇒ residuales de cuando la VG estuvo prendida.
-      ⚠️VERIFICAR EN UI: es la VG de mayor impacto del perfil. Si el módulo APARECE, todo el mapa
-      de N/A cambia y hay que poner clientStock=true.
-    cliente_test: "CAR755"              # solo por si el módulo aparece igual
+    aplica: true                        # ✅ **CORREGIDO 2026-08-13 — el N/A del perfil era FALSO.**
+                                        #   El módulo existe y es 100% conducible: Ref 20 creada y
+                                        #   ENVIADA (3 líneas, cotejada en nube). Ver `vgs.clientStock`:
+                                        #   la VG está en `false` y aun así el módulo opera.
+    cliente_test: "CAR755"              # MULTIDISTRIBUIDORA JAKE — id_client 838, sucursal 54331.
+                                        #   Es además el cliente con más facturas recientes (10 en 120 d).
     cliente_code: "CAR755"
+    producto_test: "ACBA300U"           # Acondicionador BBK de Argan Therapy 300ml (idProduct 1454)
+    producto_con_promedio: "MABBKRI240U"  # 🔴 ÚSALO PARA PEDIDO SUGERIDO: `client_avg_products.average`=12
+                                        #   en la sucursal 54331. ACBA300U/ACBBKRI300U tienen average=0
+                                        #   ⇒ con ellos el sugerido cae en la rama sin historial y da 0.
     # requireClientStock=false ⇒ no bloquea el pedido · signatureStock=false ⇒ sin firma
+    #
+    # ── 🔴 QUIEBRE DE INVENTARIO (cantidad 0) — funcionalidad de la v21 ───────────────
+    # Commit `0a654f43` (2026-07-30): `min="1"`→`min="0"` en el input de cantidad +
+    # `isValidInventoryQuantity()` (finito y >= 0) reemplazando 5 chequeos `>0`/`<=0`.
+    # VALIDADA END-TO-END EL 2026-08-13 (móvil + web + BD). Oráculo barato para futuras
+    # corridas: leer el atributo `min` del `input[placeholder="Ingrese cantidad"]` —
+    # si dice `0`, la APK trae la 21.
+    #
+    # ── expirationBatch=true: ALCANCE EN INVENTARIOS ──
+    # 🔴 Acá SÍ bloquea (a diferencia de DEVOLUCIONES, donde es inocuo — ver `modules.devoluciones`).
+    #   Alerta exacta: `Inventario` / "Complete cantidad, unidad, fecha y lote para continuar." [OK].
+    #   El campo que bloquea es el **LOTE**: la fecha nunca queda vacía (trae default HOY) y la
+    #   unidad llega preseleccionada. Alinea con el_palmar; contradice globalmp. **Es por módulo.**
+    #
+    # ── MEDIDO EN LA CORRIDA 2026-08-13 ──
+    # · Envío = **3 alertas**, la 3.ª da la Ref del servidor ("Inventario nro. 20 enviado exitosamente").
+    #   Títulos inconsistentes: `Denario Inventario` (guardar/enviar) vs `Denario Premium` (la 3.ª).
+    # · Guardar = 2 alertas [Cancelar/Aceptar] → [OK]. Guardar NO navega fuera del formulario.
+    # · Sync a nube **INMEDIATA** (como PEDIDOS; contrasta con DEVOLUCIONES, 5-12 min en este cliente).
+    # · `st_client_stock=1` = Enviado (patrón El Yaque, ya visto en dm-electronica/alipascua).
+    # · 1.er click en INVENTARIO abrió el form y NO hubo alerta de geolocalización.
+    # · Comentario del form: **maxlength 255** con contador visible ("Mín. 0 - Máx. 255 caracteres"),
+    #   ⚠ NO 120 como en alipascua. Reconfirma que la constante NO es fija dentro de "v1.0/db19": medirla.
+    # · `userCanSaveGPS=false` y la coordenada igual viajó: `"11.0490572,-63.8649906"` en el payload.
 
   depositos:
     aplica: false

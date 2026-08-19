@@ -1,0 +1,828 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Perfil QA — RUN VZLA · empresa CORPORACION FERRE 19, C.A.
+#
+# Cliente NUEVO: nunca se ha corrido. Perfil construido ANTES de la 1ª corrida desde
+#   los dumps global_configuration_202608181441 + global_configuration_client_202608181441
+#   (2026-08-18) y pre-poblado desde BD read-only.
+#
+# ── CONFLICTOS ENTRE DUMPS (contados, no estimados) ───────────────────────────
+#   claves en el GLOBAL .............. 176
+#   claves en el OVERRIDE de cliente .. 74
+#   presentes en AMBOS ................ 64
+#   con VALOR DISTINTO ................ 29
+#   gana el GLOBAL .................... 28
+#   🔴 gana el CLIENT ................. 1   <-- `validateWarehouses` (ver abajo)
+#   solo en el override ............... 10  (todas de 2022-10-17)
+#   solo en el global ................. 112
+#
+# ✅ **GANA EL GLOBAL EN LAS 29 CLAVES EN DISPUTA — incluida `validateWarehouses`.**
+#   🔴 **CORREGIDO 2026-08-18.** La 1ª versión de este perfil decía que `validateWarehouses` era
+#   "el primer caso donde gana el override del cliente", porque el override (`false`, 2026-02-10)
+#   es 4 meses MÁS NUEVO que el global (`true`, 2025-10-13). **Falso, medido en vivo:**
+#   `orderServ.validateWarehouses` en el dispositivo devuelve **`true`** — gana el GLOBAL —, y es
+#   coherente con que la UI sí muestra almacenes e inventario en la toma de pedido.
+#   ⇒ **Al resolver el dump: el global gana siempre que la clave exista en ambos, sin mirar fechas.**
+#     `da_update` NO es criterio de precedencia. Solo las 10 claves que existen únicamente en el
+#     override se toman de ahí. La lectura en vivo del servicio Angular es el desempate definitivo.
+#
+#   ✅ **REFUERZO INDEPENDIENTE (PRODUCTOS, 18/08).** `globalConfig.variables` es un `Map` legible en
+#     runtime desde cualquier componente (`ng.getComponent(el).globalConfig.variables`) y trae
+#     **exactamente 176 claves = las del dump GLOBAL**. Las 10 exclusivas del override
+#     (`listProductsBy`, `showProductByGrid`, `setQuUnit1`, …) **ni siquiera llegan al dispositivo**.
+#     ⇒ segunda prueba, por otra vía y otro módulo, de que gana el global.
+#
+# ⚠ Los dos dumps traen columnas EN ORDEN DISTINTO (el del cliente pone `clave` en la 3ª
+#   posición y el global en la 4ª) ⇒ parsear leyendo la CABECERA, nunca por índice fijo.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+cliente_id: run_vzla
+cliente_nombre: "CORPORACION FERRE 19, C.A."   # ✅ de BD (`enterprise`) · confirmado por QA 2026-08-18
+apk_package: com.kiberno.denarioPremiumPro
+db_name: run_vzla                        # base en savia · GRANT read-only ✅ **185/185 tablas**
+
+# ── Última corrida ────────────────────────────────────────────────────────────
+ultima_corrida:
+  run_id: "20260818_152824_smoke-completo"
+  fecha: "2026-08-19"
+  # 1ª corrida · playa **La Tortuga** · móvil 18/08 (8 módulos) + 19/08 (cobros) · web 18 y 19/08
+  # Resultado: móvil **132 casos** (110 PASS · 20 N/A · 1 FAIL · 1 SKIP) ·
+  #            web   **147 casos** (130 PASS ·  9 N/A · 3 FAIL · 5 SKIP)  ⇒ 279 casos · 4 FAIL
+  # Manifiesto BD: 19 registros, esquema 100 % correcto.
+  # Enviados y cotejados BD-FIELD-OK + WEB-OK: cliente potencial 194 · pedido 2820 ·
+  #   devolución 351 · inventario 53 · visitas 2084 y 2086.
+  # 🔴 **DEPÓSITOS NO se corrió**: sin insumo (los 4 cobros quedaron en Guardado por
+  #   `requiredCollectionAttachments=true`). Ver `modules.depositos`.
+  # 📄 Consolidado: `automation/reports/run_vzla/smoke_run_vzla_20260818_152824/consolidado.md`
+  # 📄 Incidencia 🔴 del comentario >120 car.: `automation/reports/INCIDENCIA-comentario-visita-120.md`
+
+# Modelo por módulo: Haiku en los no-transaccionales, Opus en los que llevan cotejo BD.
+model_by_module:
+  login: haiku
+  productos: haiku
+  vendedores: haiku
+  clientes: opus
+  pedidos: opus
+  cobros: opus
+  devoluciones: opus
+  inventarios: opus
+  depositos: opus
+  visitas: opus
+
+# ── 🔴 EL SLUG SE ESCRIBE DISTINTO SEGÚN EL ARCHIVO ───────────────────────────
+#   perfil / base de datos / bloque de qa-db.env .... `run_vzla`
+#   bloque de qa-credentials.env ................... **`run`**
+#   ⇒ El login NO se resuelve con el slug del perfil: anclar al bloque "# Cliente: run".
+#   ⚠ Ese bloque está **DUPLICADO** en qa-credentials.env (líneas 25 y 70). Se comparó por
+#     huella: **son idénticos**, así que el duplicado es inofensivo — el parser toma el
+#     primero. 📋 Conviene borrar uno para que nadie edite el equivocado.
+
+# ── ✅ PLAYA CONFIRMADA EMPÍRICAMENTE (2026-08-18) ────────────────────────────
+#   **LA TORTUGA** — `http://denariolatortuga.ddns.net:8081/PremiumWS/services/...`
+#   Leído del host de 6 POST reales capturados por el hook (5 `syncservice/getsync` +
+#   1 `potentialclientservice/potentialclient`); el `Set` de hosts tiene 1 solo elemento.
+#   ⚠ **`http://localhost/home` NO sirve como evidencia de playa** — es el webview local que
+#     sirve Capacitor, idéntico en todas las playas y todos los clientes. Un agente lo usó
+#     como prueba y hubo que retirarlo. La playa solo se confirma desde el host de un POST.
+#   📌 Ver [[feedback-no-guardar-playa-en-yaml]]: esto se anota en el REPORTE, no como campo
+#     del perfil — la playa es rotativa. Queda aquí como nota de método, no como configuración.
+
+# ── 🟢 TENANT MONO-MONEDA — el defecto H-1 NO aplica acá ──────────────────────
+#   Medido en pantalla el 18/08: `localCurrency="US$"`, **`hardCurrency=""`**,
+#   `multiCurrency=false`, `showConversion=false`.
+#   El detalle del cliente pinta DOS líneas, ambas en US$ (`Crédito` / `Crédito Disp.`), y
+#   `availableCreditConversion` / `nuCreditLimitConversion` llegan **como cadena vacía** —
+#   justo el campo donde vivía el defecto de moneda cruzada en kron.
+#   ⇒ **H-1 (Crédito Disp. con monedas cruzadas) es 🚫 N/A ESTRUCTURAL en run_vzla**: no existe
+#     el par BS/USD que necesita para cruzarse. Aritmética verificada correcta.
+#   ⚠ Oráculo de saldos por componente: en tenants mono-moneda el saldo vive en **`saldoLocal`**
+#     y `saldoFuerte` queda en `0`. **Elegir el campo según `hardCurrency`**, no fijo.
+
+# ── EMPRESA — UNA SOLA ────────────────────────────────────────────────────────
+#   FERRE_N · CORPORACION FERRE 19, C.A.  ·  co_operation='I'
+#   ⚠ `lb_enterprise` = "CORPORACION FERRE 19" (SIN el ", C.A.") ⇒ cotejar contra
+#     `lb_enterprise` en la app, y contra `na_enterprise` (con el sufijo) en la web.
+#     En kron se midió que el DETALLE web usa `na_enterprise` y la app usa `lb_enterprise`.
+#   ✅ Coherente con enterpriseEnabled=false.
+#   ⚠ El nombre de la empresa NO dice "RUN": el tenant se llama run_vzla pero opera como
+#     CORPORACION FERRE 19. **Confirmado por QA el 2026-08-18** — no es un DSN equivocado.
+
+# ── 🔴 USUARIO QA ─────────────────────────────────────────────────────────────
+#   Login (qa-credentials.env, bloque "# Cliente: run") → `001`
+#   Resolución en BD:
+#     users      → login_user='001' ⇒ id_user = **470**
+#     users_data → id_user=470      ⇒ **co_user = '000208'**
+#     client_template_user → co_user='000208' ⇒ **1.569 clientes asignados**
+#   ⚠ `name_user` del usuario es **"000208"** (un código, no un nombre de persona).
+#   🔴 El usuario QA tiene **CERO cobros** en todo el tenant (ver `modules.depositos`).
+
+# ── 🔴🔴 TENANT PRODUCTIVO Y VIVO — LEER ANTES DE CUALQUIER BASELINE ──────────
+#   A diferencia de grupo_fiel y kron, acá hay **101 usuarios**, **7.966 clientes** y
+#   **1.649 productos**, con vendedores reales transaccionando **durante la corrida**.
+#   El 2026-08-18 hubo actividad de 7 vendedores distintos (JESUS ALFREDO, MARCUS TEODOSIO,
+#   JORGE JAVIER, MARIA VANESSA, YANELYS KAROLINA, JUAN MIGUEL, y el QA).
+#   ⇒ **TODO baseline y todo diff DEBEN filtrarse por `id_user = 470`.** Un `max(id)+1` o un
+#     `count(*)` global se mueve solo y produce falsos "falta un registro" / "se creó de más".
+#   ⇒ Tomar el baseline **inmediatamente antes** de Enviar, nunca al inicio del módulo.
+
+# ── Variables Globales (186 resueltas) ────────────────────────────────────────
+vgs:
+  # ── Cobros ──
+  colletionPayment: "true-false-true-true-true-true"
+                                        # Efectivo=SÍ · Cheque=NO · Transferencia=SÍ ·
+                                        #   Depósito=SÍ · Otros=SÍ · Pago Móvil=SÍ
+                                        #   (hideColletionPayment=true ⇒ manda esta)
+  requiredCollectionAttachments: true   # 🔴🔴 **EL COBRO EXIGE ADJUNTO PARA ENVIARSE** ✅ confirmado 19/08
+  requiredAnticipoAttachments: true     # 🔴 idem anticipo
+  requiredRetentionAttachments: true    # 🔴 idem retención
+                                        # ⇒ Política QA ([[feedback-adjuntos-dejar-guardado]]):
+                                        #   NO usar mock de cámara; dejar el registro en
+                                        #   **Guardado** y que QA lo envíe a mano. Reportar SKIP.
+                                        # ⇒ **Consecuencia operativa medida:** con esta VG en `true`
+                                        #   guardar borradores es el FLUJO NORMAL del vendedor, así que
+                                        #   el defecto del botón Guardar (ver `modules.cobros`) NO es
+                                        #   marginal en este tenant. Y **DEPÓSITOS se queda sin insumo**
+                                        #   salvo que la QA envíe cobros en efectivo a mano.
+  tolerancia0: true
+  TipoTolerancia: 0                     # 0 = Importe
+  RangoToleranciaNegativa: 100000       # ⚠ ambos rangos enormes ⇒ tolerancia efectivamente libre
+  RangoToleranciaPositiva: 100000
+  MonedaTolerancia: "US$"               # ✅ coherente: los documentos están en US$
+  enablePartialPayment: true
+  historicPartialPayment: true
+  alwaysPartialPayment: false
+  cobroPrepago: true                    # botón ANTICIPO/PREPAGO
+  automatedPrepaid: true                # 🟢 anticipo AUTOMÁTICO por vuelto (visto en kron como
+                                        #   forma de pago "Prepago Automático")
+  prepaidPaymentMethod: "pa"
+  prepaidRangeAmount: 1
+  prepaidRangeCurrency: "US$"
+  cobroRetencion: true
+  retencion: true                       # 🟢 retención DENTRO del cobro normal SÍ aplica
+  alwaysRetention: false
+  missingRetention: false
+  dynamicRetentions: false
+  sizeRetention: 14
+  formatRetention: "0"                  # 0 = Números
+  userCanAddRetention: false            # ⚠️ **NO impidió cargar retención** (medido 19/08): la retención
+                                        #   por documento funcionó completa y el Tab Total del cobro tipo
+                                        #   Retención muestra un botón "AGREGAR RETENCIÓN". La VG parece
+                                        #   gobernar OTRA cosa (probablemente la variante
+                                        #   `dynamicRetentions`). 📋 Confirmar con desarrollo.
+                                        #   ⇒ **NO marcar N/A por esta VG**: la pantalla se abre y la
+                                        #     funcionalidad está presente.
+  retentionDocTypeCR: true
+  userCanSelectIGTF: false              # ✅ **RESUELTO 19/08 — `userCanSelectIGTF=false` MANDA.**
+  igtfDefault: true                     #   `igtfDefault=true` queda **INERTE**. Medido en el modelo vivo
+  disableCheckIGTF: false               #   y en pantalla: sin botón IGTF en el menú, 0 menciones de IGTF
+                                        #   en Tab Documentos ni Tab Total, `montoIgtf=0`, `separateIgtf=false`.
+                                        #   **2.ª confirmación de la regla (tras grupo_fiel)** ⇒ el par
+                                        #   `igtfDefault`/`disableCheckIGTF` **NO debe marcarse ⚠️VERIFICAR**
+                                        #   mientras `userCanSelectIGTF=false`. IGTF = 🚫 N/A ESTRUCTURAL.
+                                        #   📌 El tenant SÍ tiene 1 documento tipo `IGTF` (cliente 006831,
+                                        #     28,45 US$): sería el elegible si algún día se enciende la VG.
+  userCanCollectIva: false              # 🔴 cobro 25 % IVA N/A
+  userCanSelectCollectDiscount: false   # 🔴 descuento en cobro N/A
+  clientBankAccount: false
+  currencyBank: true                    # ⚠ se listan TODOS los bancos, sin filtrar por moneda
+  validateCollectionDate: false
+  conversionDocument: false             # solo-client
+  reconciliation: false
+  enableDifferenceCodes: false
+  # ── Pedidos / productos ──
+  suggestedOrder: true                  # 🟢 SÍ se ofrece pedido sugerido
+  suggestedOrderByDispatchAndReturn: false
+                                        # ⇒ algoritmo VIEJO (promedio de `client_avg_product`).
+                                        #   ⚠ En grupo_fiel los datos eran huérfanos y en kron la
+                                        #   tabla estaba VACÍA ⇒ **medir el insumo antes de juzgar**:
+                                        #   sin datos, el sugerido es 🚫 N/A por datos, nunca FAIL.
+  selectOrderType: false                # 🔴 **NO hay "tipo de pedido"** (≠ grupo_fiel y kron)
+  orderTypeByEnterprise: false
+  pricelistByOrderType: false
+  orderPedidoSeleccion: false
+  userCanSelectGlobalDiscount: false    # 🔴 descuento GLOBAL N/A
+  userCanSelectProductDiscount: false
+  setProductDiscount: false
+  setMaxProductDiscount: 0
+  userCanSelectIVA: false
+  vatExemptProducts: false
+  userCanChangePaymentConditions: true  # 🟢 SÍ cambia condiciones de pago
+  userCanChangePriceList: false
+  userCanChangePriceListProduct: false
+  userCanChangeWarehouse: false         # el select "Almacén" debería llegar disabled
+  validateWarehouses: true              # ✅ **CORREGIDO** — medido en vivo en `orderServ` el 18/08.
+                                        #   Gana el GLOBAL (`true`, 2025-10-13) sobre el override del
+                                        #   cliente (`false`, 2026-02-10) pese a ser este más nuevo.
+                                        #   ⇒ SÍ se muestran almacenes e inventario en la toma de pedido
+  showWarehouseDetails: true
+  showWarehouseNotification: false
+  validStock: false                     # NO alerta al cargar producto sin inventario
+  stock0: false                         # 🔴 NO se pueden pedir productos con inventario 0
+  productStock0: false
+  hideStock0: true                      # 🟠 **NO OCULTA NADA EN EL MÓDULO PRODUCTOS** (medido 18/08).
+                                        #   `productService.catalogHideStock0===true` y aun así:
+                                        #   HERRAMIENTAS MANUALES 348/348 listados (131 con `Inventario: 0`),
+                                        #   CERRADURAS 109/109 (37 en 0), ELECTRODOS 4/4 (1 en 0).
+                                        #   **Brecha badge↔lista = CERO** ⇒ la receta de kron
+                                        #   `badge − listados = ocultos` **no aplica acá**.
+                                        #   ⚠ Esto ACOTA el alcance de la VG, no prueba que esté rota en
+                                        #     toda la app: el bloqueo de venta real lo da `stock0=false` en
+                                        #     el selector de PEDIDOS, que es otro widget. **Medir por módulo.**
+  showStock: true
+  productMinMul: true                   # ✅ **EJERCIDA Y VALIDADA 18/08 — 4/4 productos.** La app **NO
+                                        #   rechaza: AUTO-CORRIGE** (5→20, 30→40, 1→10) con el alert
+                                        #   `Denario / "La Cantidad Mínima de este Producto es N y el
+                                        #   múltiplo es M"` `[OK]`, y **el valor corregido es el que viaja
+                                        #   a la nube** (`order_detail_unit.qu_order`).
+                                        #   ⚠ Las etiquetas `Mínimo:`/`Múltiplo:` se renderizan **POR
+                                        #     PRODUCTO** (`LLA-01`/`ELE0x` 20/20 · `DICGU01` 10/10 ·
+                                        #     `TM01` 25/25 · **`GU01` NO las trae**) ⇒ **no leer su
+                                        #     ausencia como "la VG no rinde"**: la VG habilita la función,
+                                        #     el DATO la activa. Rotulado en lista y en detalle.
+                                        #     En CERRADURAS solo 5 de 109 productos las traen; 0 de 348 en
+                                        #     HERRAMIENTAS MANUALES. Campos del carrito: `quMinimum`/`quMultiple`.
+  nameProductLine: "Destacados"         # línea de productos destacados
+  featuredProducts: true
+  quUnitDecimals: false                 # cantidades ENTERAS
+  validateNuOrder: false
+  disableDaDispatch: true               # ⚠ la fecha de despacho llega deshabilitada
+  nuOrderEmail: true
+  hideProdWithoutPrice: false           # ⚠ EL NOMBRE ENGAÑA: leer la descripción del dump
+  showProductImages: true
+  showProductByGrid: false              # solo-client
+  listProductsBy: "lineas"              # ✅ **RESUELTO 18/08 — la VG NO nombra el tipo de estructura.**
+                                        #   El `ion-select` ofrece exactamente **`Marca`** (default,
+                                        #   `idTypeProductStructure:1`, 36 estructuras) y **`Sub-Linea`**
+                                        #   (`:2`, 107 estructuras). Ningún rótulo dice "lineas".
+                                        #   🔴 Y la clave **ni siquiera llega al dispositivo**: es
+                                        #   solo-override y el `Map` de runtime trae solo el global.
+                                        #   ⇒ **Leer el rótulo del `ion-select` en runtime, nunca derivarlo
+                                        #     de la VG.** Confirma kron con evidencia más fuerte.
+  quPageProduct: 150                    # 🟡 **NO GOBIERNA el tamaño de página de `product-list`** (18/08).
+                                        #   La VG vale "150" en el `Map` de runtime, pero la paginación
+                                        #   avanza **de 50 en 50** (50→100→…→348, `comp.page` 0→6).
+                                        #   Sin pérdida de datos (348 = badge = BD) y el corte por
+                                        #   `ion-infinite-scroll.disabled` es correcto; el efecto es **3× más
+                                        #   viajes de `ionInfinite`** de los configurados. Severidad baja.
+  productsOrderBy: "co_product"
+  clientsOrderBy: "due_date"            # 🔴 **ordena por FECHA DE VENCIMIENTO** — no por código ni
+                                        #   por nombre. Valor no visto en los clientes anteriores.
+  showCreditLimit: true
+  totalUnit: true
+  showTotalization: true
+  showTotalProductUnit: false
+  codeTotalProductUnit: 1
+  productBonification: false
+  productValor: false
+  nameProductValor: "KG"
+  groupByTotalByLines: false
+  unitByPriceList: false
+  priceListByZone: false
+  setQuUnit1: false                     # solo-client
+  # ── Devoluciones ──
+  validateReturn: false                 # NO valida que el producto esté en una factura enviada
+  requeridedNroFactura: true            # 🔴 el Nro. de factura **SÍ** es obligatorio
+  multiInvoices: true                   # ✅ **EJERCIDA Y CONFIRMADA HASTA LA NUBE 18/08** — la devolución
+                                        #   **Ref 351** cerró DOS facturas reales del mismo cliente
+                                        #   (`FACT6855` en LLA-01×2 y `FACT6561` en TM01×3), con
+                                        #   `co_document` distinto por `return_detail` y `coInvoice` de
+                                        #   cabecera en `null`. **La web muestra las dos** (2/2 exactas).
+                                        #   🔴 ⚠ **La VG NO existe como propiedad de `returnLogic`** (45
+                                        #     claves) ni en `globalConfig.variables` ⇒ buscarla por nombre
+                                        #     devuelve "no existe" y se lee como "no bajó al dispositivo".
+                                        #     **Su oráculo es `returnLogic.bloquearFactura === false` + el
+                                        #     comportamiento del 2.º acordeón** (factura vacía, no
+                                        #     precargada; `readonly=false`; sin alerta al poner otra).
+  # ── Inventarios ──
+  clientStock: true                     # 🟢 INVENTARIOS APLICA
+  requireClientStock: false
+  expirationBatch: false                # ✅ **1.er CONTRAFACTUAL MEDIDO CON EL CAMPO VACÍO 18/08.**
+                                        #   `inventariosLogicService.expirationBatch=false`;
+                                        #   `input[placeholder="Ingrese lote"].required = false`; el
+                                        #   `.save-btn` **ACEPTÓ dos capturas con el lote VACÍO, 0 alertas**
+                                        #   (nunca salió "Complete cantidad, unidad, fecha y lote para
+                                        #   continuar."), y la nube guardó `nu_batch=''` con
+                                        #   `da_expiration` = HOY. Cuando el lote SÍ se llena
+                                        #   (`TM01` → `QA-INV-0818`), también cuadra.
+                                        #   ⇒ Cierra por el otro lado la regla graduada en `RUNTIME §3`
+                                        #     (el_palmar/grupo_fiel/kron, con la VG en `true`, bloqueaban):
+                                        #     **la VG discrimina de verdad, no es cosmética.**
+                                        #   ⚠ El modal SIEMPRE pinta Lote y Fecha: la VG gobierna la
+                                        #     VALIDACIÓN, no la visibilidad.
+                                        #   ⚠ El lote capturado **NO se muestra en la web**
+                                        #     (`detalleInventario` no genera esas columnas) — ver consolidado.
+  # ── Firmas — TODAS activas ──
+  signatureOrder: true
+  signatureCollection: true
+  signatureReturn: true
+  signatureDeposit: true
+  signatureVisit: true
+  signatureStock: true
+  signatureClient: true
+                                        # ⚠ **NO es defecto** que se pueda Enviar sin firma: la VG
+                                        #   habilita la función, no la vuelve obligatoria
+                                        #   (aclarado por QA el 2026-07-29).
+  # ── Visitas / GPS / roles ──
+  visitRout: true                       # 🟢 "Ruta de hoy" debe traer datos
+  userCanSaveGPS: true
+  userMustActivateGPS: true             # 🔴 **EXIGE GPS ACTIVO** — el device lo tiene (mode 3)
+                                        # 🟠 **DEFECTO MEDIDO 18/08 — la guarda bloquea la NAVEGACIÓN sin
+                                        #   indicador útil.** `router.navigate` vive DENTRO del `.then()` de
+                                        #   `geoLoc.getCurrentPosition()` y la caché de posición **expira a
+                                        #   los 60 s** ⇒ cada ingreso pasado un minuto vuelve a pagar el fix.
+                                        #   Peor espera por módulo, mismo device y misma corrida:
+                                        #     inventarios **~87 s** (`ion-loading` con mensaje **VACÍO**)
+                                        #     devoluciones **43,1 s** (**sin ningún indicador**)
+                                        #     pedidos      **30,3 s** (**sin ningún indicador**)
+                                        #     visitas        6,85 s  (`ion-loading` con "Cargando…")
+                                        #     cobros         2,3 s
+                                        #   🔑 **NO escala con lo ligado al GPS que esté el módulo** —
+                                        #     VISITAS es el más atado al GPS y de los más rápidos. La
+                                        #     correlación que sobrevive es con el **volumen de datos que el
+                                        #     formulario carga al abrir**.
+                                        #   ⇒ **Techo de espera de automatización: ≥ 120 s** en cualquier
+                                        #     navegación que atraviese la guarda, o se marca BLOCKED sin serlo.
+                                        #     (Reabrir un Guardado desde la lista NO atraviesa la guarda.)
+  transactionCoordinateRadius: false    # ⚠ booleano en una clave que en otros clientes es un radio
+  checkAddressClient: false
+  addressByUser: false
+  promoterRole: false
+  rolPlanta: true                       # ✅ **RESUELTO 18/08 — habilita algo, pero SOLO en el modelo.**
+                                        #   `app-visita` expone `rolTransportista`, `estadoDespacho`,
+                                        #   `observacionDespacho`, `showReagendarModal`, `reagendarData`,
+                                        #   `motivoReagendo`, `fechaReagendo`. **Ninguno se renderiza** con
+                                        #   este usuario (`transportRole=false`).
+  transportRole: false                  # 🔴 **Y explica el recorte del catálogo de actividades:**
+                                        #   nube `incidence_type` 46 → 14 activas (`co_operation<>'D'`)
+                                        #   → **11 en la BD LOCAL** y en el `ion-select`. Las 3 ausentes
+                                        #   (89 DESPACHADO · 90 NO DESPACHADO · 91 DESPACHO PARCIAL) son
+                                        #   exactamente las de `required_signature=true`, todas de despacho.
+                                        #   ⇒ **El dispositivo filtra también por ROL, no solo por
+                                        #     `co_operation='D'`. Contar el catálogo en `incidence_types`
+                                        #     (LOCAL), nunca en la nube**, antes de llamar defecto a una
+                                        #     actividad faltante.
+  streetDay: false
+  # ── Tasa / conversión ──
+  multiCurrency: false                  # ⚠ pero multiCurrencyCollection y Deposit están en true
+  multiCurrencyCollection: true
+  multiCurrencyDeposit: true
+  multiCurrencyOrder: false
+  currencyModule: true
+  historicoTasa: false                  # ✅ **RESUELTO 19/08 — TASA = 🚫 N/A ESTRUCTURAL. El control NO
+  mesesTasa: 3                          #   EXISTE, ni `ion-input` ni `ion-select`.** Medido en el DOM del
+  canChangeRate: true                   #   Tab General de un cobro con cliente cargado:
+  enabledManualRate: false              #     · `app-cobro-general` tiene EXACTAMENTE 2 `ion-select`:
+                                        #       [0] Empresa (`disabled=true`) y [1] **Moneda**
+                                        #       (`disabled=false`, **1 sola opción `US$`**).
+                                        #       **No hay 3.er select de tasa** (en kron sí lo había).
+                                        #     · **No existe `#manualRateInput`**. Los 3 `ion-input` del tab
+                                        #       son `#clienteSelect`, `#currency` (⚠ **que es
+                                        #       "Responsable"** — el `id` engaña) y Comentario.
+                                        #     · El único `ion-button` del tab es **"Fecha Cobro"**.
+                                        #     · Modelo: `changeRate=false`, `haveRate=false`, `dateRate=""`,
+                                        #       `disabledCurrency=true`, `currencySelector=false`.
+                                        #   ⇒ `canChangeRate=true` y `mesesTasa=3` son **INOPERANTES**: sin
+                                        #     moneda alterna (`hardCurrency=""`) no hay conversión que tasar.
+                                        #     Coherente con PEDIDOS, donde tampoco existe `#tasa`.
+  showExchangeRateSelector: false
+  conversionByPriceList: false
+  conversionCalculator: true            # 🟢 calculadora de conversión activa
+  paymentCurrency: false
+  paymentCurrencyDefault: "USD"
+  showTransactionCurrency: true
+  # ── Adjuntos ──
+  userCanUploadFiles: true
+  showCamera: true
+  quAttach: 25
+  quFileAttach: 1
+  cloudAttachments: false
+  imageWeightLimit: 30
+  emailWithAttach: true
+  # ── Formato / textos ──
+  tagRif: "RIF"
+  tagIVA: "IVA"
+  parteDecimal: 2
+  parteElntera: 15                      # ⚠ clave con TYPO (con L) en AMBOS dumps
+  longitudComentario: 250               # 🔴🔴 **LA VG NO GOBIERNA NADA — y el desfase COSTÓ UN DEFECTO S1.**
+                                        #   Tope real del input en los 5 módulos medidos: **255**
+                                        #   (`textCommentMaxLength=255`, la UI rotula "Mín. 0 - Máx. 255
+                                        #   caracteres"). El tope lo fija la constante de producto.
+                                        #   🔴 Y la columna destino de VISITAS es
+                                        #   **`incidence.tx_description varchar(120)`** ⇒ **TRES FUENTES,
+                                        #   TRES LÍMITES: VG 250 · input 255 · columna 120.**
+                                        #   Con >120 caracteres la visita **NUNCA llega al servidor** y la
+                                        #   app no avisa. 📄 `automation/reports/INCIDENCIA-comentario-visita-120.md`
+                                        #   ⇒ **Regla operativa: cotejar `character_maximum_length` de la
+                                        #     nube contra el `maxlength` del input ANTES de teclear al tope.**
+                                        #   📋 Pendiente: chequear los `tx_comment` de `order`, `return` y
+                                        #     `client_stock` — en esta corrida NO reprodujo porque los
+                                        #     comentarios cargados eran cortos, no porque esté descartado.
+  requiredComment: true                 # ✅ **RESUELTO — APLICA SOLO A COBROS.** Serie completa de 6
+                                        #   módulos medidos en esta corrida:
+                                        #     clientes      🚫 N/A estructural (el form no tiene comentario)
+                                        #     pedidos       ❌ NO  (`requiredCommentOrder=false` manda)
+                                        #     devoluciones  ❌ NO  (`#comentario` llega `required=false`)
+                                        #     inventarios   ❌ NO  (la UI rotula sola "Mín. 0 - Máx. 255")
+                                        #     visitas       ❌ NO  (`#eventModal` `required=false`)
+                                        #     **cobros      ✅ SÍ** — `required=true`, `ion-invalid`,
+                                        #       literal **"¡Campo Obligatorio!"**, las 4 tabs + Guardar +
+                                        #       Enviar bloqueados; al llenarlo **todo habilita en el mismo
+                                        #       tick**. Modelo: `collectService.requiredComment=true`,
+                                        #       `validComment` false→true.
+                                        #   ⇒ **2.ª confirmación del patrón de grupo_fiel**, ahora en otro
+                                        #     tenant y otra playa.
+  requiredCommentOrder: false           # ✅ confirmado: manda sobre `requiredComment` en PEDIDOS
+  passwordExpiresIn: 0
+  passwordExpirationMail: 7
+  # ── Historial / reportes / web ──
+  transactionHistory: true
+  historyMonths: 3
+  mesesFacturas: 6
+  commisionReport: true                 # 🟢 reporte de comisiones activo
+  allowProductReports: false
+  orderWeb: true                        # solo-client
+  collectionWeb: false                  # solo-client
+  depositWeb: false                     # solo-client
+  returnWeb: false                      # solo-client
+  enterpriseEnabled: false              # ⚠ **NO gobierna la variante del selector de empresa**
+                                        #   (medido en 5 corridas: el predictor es el nº de empresas,
+                                        #   y la variante la fija cada FORMULARIO)
+  orderEnterpriseEnabled: false         # solo-client
+  infoVendedores: false                 # el módulo VENDEDORES se autogenera en la app (confirmado en runtime)
+  esVendedor: true                      # ✅ **RESUELTO 18/08 por el oráculo de UI** (la VG no está en los
+                                        #   dumps, ni como propiedad del componente, ni en el `Map` de 176).
+                                        #   Triple señal: (1) el módulo es visible en HOME y navega a
+                                        #   `/vendedores`; (2) `app-vendedores` renderiza `<h1>Vendedor</h1>`;
+                                        #   (3) el acordeón trae KPIs reales cotejados contra BD.
+                                        #   ⇒ 12.ª corrida seguida **sin un solo cliente con `esVendedor=false`**.
+  activateSavia: false
+  logoClient: false
+  dashboardOnlyAdmin: false
+  userCanSelectChannel: false
+  displayProductPoints: false
+  priceListInfoModal: false
+  showPriceListNotification: false
+  # ── Notificaciones — TODAS EN false ──
+  # 🟢 **NINGUNA transacción del smoke dispara correos.**
+  # (notificationsOrder/Collection/Deposit/Return/PotentialClient/ClientStock/Visit y las
+  #  notificationsClient* están todas en false; las 4 primeras se apagaron el 2026-08-18.)
+
+# ── Datos de prueba por módulo ────────────────────────────────────────────────
+# Pre-poblado desde BD read-only el 2026-08-18 · empresa FERRE_N · vendedor QA co_user '000208'.
+modules:
+  login:
+    # usuario QA: ver secrets/qa-credentials.env → bloque "# Cliente: **run**" (¡NO `run_vzla`!)
+    bad_password: "(ver el mismo bloque → QA_BAD_PASSWORD)"
+
+  clientes:
+    cliente_busqueda: "FERRETERIA"
+    cliente_detalle: "006831"           # FERRETERIA EPA, C.A
+    # 🔴🔴 **NO FIJAR CIFRAS DE DOCUMENTOS POR CLIENTE — DESCUBRIRLAS EN RUNTIME.**
+    #   El tenant es PRODUCTIVO y VIVO: entre el 18 y el 19/08 los documentos cobrables se movieron
+    #   fuerte — `007554` 44→**60** (22.787,73 → **31.832,98**) · `006831` 13→**45** FACT (+1 IGTF,
+    #   +3 NDB) · `006510` 7→**20** (3.085,67 → **4.124,41**) · `006540` 11 FACT (404,64) **+ 4 AJPM
+    #   (635,20)** · `005354` 10 (348,30, sin cambio).
+    #   ⇒ La tabla de abajo se conserva **solo como ejemplo de método** (bruto vs neto), NO como dato
+    #     vigente. Cualquier oráculo de saldos se mide contra BD en el mismo minuto.
+    # 🔴 **CIFRAS CORREGIDAS 2026-08-18** — la 1ª versión de este perfil decía "13 docs,
+    #   12 vencidos, 1.258,92 US$" porque contó SOLO los documentos con `nu_balance > 0`.
+    #   Medido completo (`document_sale`, `co_operation IS DISTINCT FROM 'D'`):
+    #
+    #   | co_client | docs | pos | neg | Σ positivos | Σ negativos | **NETO**   | venc(pos) |
+    #   |-----------|------|-----|-----|-------------|-------------|------------|-----------|
+    #   | 006831    | 129  |  13 | 116 |   1.258,92  |  −1.281,42  | **−22,50** |    12     |
+    #   | 007554    |  63  |  44 |  13 |  22.787,73  | −12.003,69  |  10.784,04 |     0     |
+    #   | 006540    |  11  |  11 |   0 |     404,64  |        —    |     404,64 |     3     |
+    #   | 006510    |   8  |   7 |   1 |   3.085,67  |     −33,60  |   3.052,07 |     0     |
+    #   | 005354    |  10  |  10 |   0 |     348,30  |        —    |     348,30 |     0     |
+    #
+    # ⚠ **006831 tiene 116 notas de crédito y su saldo NETO es a FAVOR (−22,50).**
+    #   La app pinta el neto y coincide **al céntimo** con `Σ nu_balance` (verificado en la
+    #   corrida del 18/08). ⇒ Un detalle que muestre −22,50 **NO es defecto**; es el neto.
+    #   Para un caso "deudor limpio" sin notas de crédito usar **`006540`** (11 docs, todos
+    #   positivos, 3 vencidos). Para deuda vencida usar 006831 (12 vencidos) o 006540 (3).
+    # ✅ La sincronización de documentos es **COMPLETA**, no parcial: 129 en UI = 129 en nube.
+    # ⚠️ **`clientsOrderBy="due_date"` NO gobierna el orden de la lista.** Medido en el modelo
+    #   el 18/08: el orden efectivo es **saldo descendente** (estrictamente decreciente) con
+    #   `daDueDate` desordenado, y al final los de saldo 0 por código ascendente. Observación
+    #   ABIERTA, no defecto: ningún caso del smoke cubre el orden y falta el oráculo de qué
+    #   debería producir `due_date`. Impacto bajo (prioriza deudores).
+    # showCreditLimit=true ⇒ el detalle muestra líneas de crédito
+    # ⚠ 1.569 clientes en la cartera del vendedor QA: la lista es larga, usar el buscador
+    # ✅ **Rótulo literal de empresa en la UI: `CORPORACION FERRE 19`** (= `lb_enterprise`,
+    #   sin `, C.A.`) — idéntico en el select, en `Empresa:` del detalle y en `lblEnterprise`.
+    #   `na_enterprise` (con `, C.A.`) **no se muestra en ningún lado de la app**.
+
+  pedidos:
+    cliente_test: "006831"              # FERRETERIA EPA — el que usó la QA para sus transacciones
+    alerta_deuda_vencida: false         # 🔴 **CORREGIDO 2026-08-18** — con 006831 la alerta NO sale,
+                                        #   y es correcto. La condición real (leída de
+                                        #   `setClientfromSelector`) es `(saldo1+saldo2) > 0` **Y**
+                                        #   `countDueDate > 0`: 006831 tiene 128 vencidos pero saldo
+                                        #   NETO **−22,50** ⇒ falla la 1ª condición.
+    cliente_alerta_vencida: "006540"    # ⇒ Para ejercer esa rama usar **006540** MARIBEL HAMMANI
+                                        #   (404,64 positivo · 3 vencidos): ahí sí dispara.
+    moneda_pedido: "US$"                # ⚠ el rótulo es **US$**, no "USD"
+    producto_test: "LLA-01"             # LLAVE EN BLANCO DERECHA. TIPO CISA — stock 215.074
+    productos_alternos: ["TM01", "ELE01", "GU01"]
+                                        # TOMA CORRIENTE · ELECTRODO 6013 · GORRA UNICOLOR NEGRA
+    # 🔴 selectOrderType=false ⇒ **NO hay que elegir tipo de pedido**
+    # 🔴 userCanSelectGlobalDiscount=false ⇒ descuento global N/A
+    # 🔴 stock0=false + hideStock0=true ⇒ en el SELECTOR de pedidos los productos sin stock no se piden.
+    #   ⚠ En el módulo PRODUCTOS `hideStock0` NO oculta nada (medido) — son widgets distintos.
+    # 🟢 validStock=false ⇒ no alerta al cargar producto sin inventario (confirmado: `DICGU01` con
+    #   inventario 2 aceptó 10 uds y el rótulo se **saturó en `Inventario: 0`**, no bajó a negativo).
+    # ✅ **`validateWarehouses` efectivo en el dispositivo = `true`** (gana el global) ⇒ SÍ se muestran
+    #   almacenes e inventario en la toma de pedido. El inventario **se reserva en vivo** al cargar
+    #   cantidad (215.074 → 215.054 → 215.034 → 215.014), 4.ª confirmación.
+    # ✅ productMinMul=true — **ejercida y validada 4/4**, ver la VG (auto-corrige y el valor corregido
+    #   viaja a la nube). Selector de estructura del Tab Pedido: **`Marca` / `Sub-Linea`**, 36 categorías,
+    #   cabecera `Favoritos 0 / Destacados 791 / Carrito 0`.
+    # ⚠ **`#txComment` puede quedar BAJO EL FOLD** (y≈806 con viewport 744) y su posición VARÍA entre
+    #   aperturas del mismo form ⇒ `scrollIntoView({block:'center'})` + re-leer el rect, y **verificar
+    #   `#txComment.value` antes de Guardar**, o el comentario queda vacío sin error.
+    # 🟡 **`disableDaDispatch=true` NO deshabilita la Fecha de Despacho** (medido): el botón llega
+    #   `disabled=false`, abre el modal y su `ion-datetime` es editable. El default (hoy+2) es el que
+    #   viaja y es correcto. **Falta el oráculo** de qué debe hacer la VG ⇒ 📋 verificar con desarrollo.
+    # signatureOrder=true · disableDaDispatch=true (fecha de despacho deshabilitada)
+    # ⚠ **EL IVA DE ESTE TENANT ES 0 Y NO ES DEFECTO.** Medido en el pedido 2819 de la QA:
+    #   `order_detail.iva = 0.0000` y `nu_amount_tax = 0.0000` **en cada línea** ⇒
+    #   `Monto Base == Monto Total` (409,07 = 17,75 + 391,32, exacto).
+    #   ⇒ El oráculo `Base × (1+IVA) == Total` se cumple con IVA=0. **NO reportar
+    #     "el IVA no se está calculando"**: verificar primero `order_detail.iva` de las líneas.
+    # ⚠ `nu_value_local = 0` en los pedidos porque la moneda del pedido YA ES la de conversión
+    #   (US$) ⇒ tampoco es dato faltante. Los `*_conversion` vienen todos en 0 por lo mismo.
+
+  cobros:
+    # ✅ CORRIDO el 2026-08-19 · 34 casos · 25 PASS · 0 FAIL · 1 SKIP · 8 N/A · 0 BLOCKED
+    # 🔴🔴 requiredCollectionAttachments/Anticipo/Retention = **true** ⇒ el envío EXIGE adjunto.
+    #   Política: dejar en **Guardado** y que QA envíe a mano. NO usar mock de cámara. (DM-COB-019 = SKIP.)
+    cliente_test: "006540"              # 🔴 CAMBIADO: `006540` MARIBEL HAMMANI es el cliente útil para cobros
+                                        #   (11 FACT cobrables, saldo positivo). `006831` tiene saldo NETO
+                                        #   negativo (−22,50) por sus 116 notas de crédito.
+    clientes_con_documentos:            # ⚠️🔴 **SIN CIFRAS A PROPÓSITO — se descubren en runtime.**
+                                        #   Los documentos cobrables se movieron mucho entre el 18 y el
+                                        #   19/08 (ver `modules.clientes`). Estos son los códigos útiles,
+                                        #   no sus montos.
+      - "007554"                        # CORPORACION FERRE 19, C.A. — el de mayor volumen
+      - "006510"                        # PIERRE HAMMANI
+      - "006831"                        # FERRETERIA EPA — 🔴 saldo NETO negativo: NO sirve de "deudor limpio"
+      - "006540"                        # MARIBEL HAMMANI BESERENI — ✅ deudor limpio, el usado en la corrida
+      - "005354"                        # GENESIS CASTILLO — ✅ deudor limpio (usado para el anticipo)
+    moneda_cobro: "US$"
+    metodo_pago: efectivo
+    smoke_na_estructural:               # ✅ los 4 primeros PROBADOS EN PANTALLA, no asumidos
+      - "IGTF — ✅ N/A ESTRUCTURAL confirmado: `userCanSelectIGTF=false` MANDA, `igtfDefault=true` inerte"
+      - "TASA / Fecha tasa — ✅ N/A ESTRUCTURAL: el control NO se renderiza en tenant mono-moneda"
+      - "Moneda del cobro / Moneda del documento — ✅ N/A: 1 sola opción `US$`, sin selector de moneda doc."
+      - "Cobro 25% IVA (userCanCollectIva=false) — sin botón en el menú"
+      - "Descuento en cobro (userCanSelectCollectDiscount=false)"
+      - "Cheque como método de pago (posición 2 = false) — ✅ el modal lista Efectivo/Depósito/Transferencia/Otros/Pago Móvil, SIN Cheque"
+      - "Cuenta bancaria del cliente (clientBankAccount=false) — el `#bankPickerModal` lista 15 cuentas de la EMPRESA, ninguna del cliente, sin filtrar por moneda (`currencyBank=true`)"
+    # ── Lo aprendido en la corrida (no repetir el descubrimiento) ──────────────
+    # 🟠 **DEFECTO S3 — en un cobro NUEVO `imagenGuardar` se apaga al marcar el 1.er documento y NO
+    #   vuelve.** `collectService.disableSavedButton` queda en `true`; el `Subject` `collectValidToSave`
+    #   no vuelve a emitir. **La ruta de guardado es el dirty-guard:** back (`img.fechaAtras`, 32,47) →
+    #   alert `[Guardar y salir · Salir sin guardar · Cancelar]` → **"Guardar y salir"** → alert
+    #   `"El Cobro se ha guardado" [Aceptar]`. Funcionó 4/4. Al reabrir el Guardado el botón vuelve.
+    #   ⚠ No confundir con el `disableSavedButton=true` legítimo TRAS Guardar (anti-doble-guardado).
+    # 🔵 **Cosmético:** el acordeón de Retención del Tab Total rotula `Fecha del documento` con
+    #   `da_voucher` (fecha del comprobante), no con la de emisión de la factura. El dato está bien
+    #   guardado; el rótulo está mal.
+    # 🔑 El `ion-input` de **Comentario** se localiza por `input.required===true`, **no por posición**:
+    #   el Tab General trae `#clienteSelect`, `#currency` (⚠ **que es "Responsable"**) y el comentario
+    #   **sin `id`**. `requiredComment` **SÍ aplica acá** (único módulo).
+    # 🔑 Retención por documento = variante **FIJA** (`dynamicRetentions=false`): Nro. Comp Ret habilita
+    #   Fecha Comp Ret + IVA + ISLR. El `Nro. Comp Ret` es el único `ion-input` editable con `value===''`.
+    #   `Fecha Comp Ret` **no bloquea** el Guardar del detalle.
+    # 🔑 Etiqueta de fecha del Tab General por tipo: `co_type=0` → "Fecha Cobro" · `1` → "Fecha Anticipo"
+    #   · `2` → "Fecha Retención". **No usarla como selector estable.**
+    # 🔑 Forms por tipo: ANTICIPO = 4 tabs **sin Documentos** · RETENCIÓN = 4 tabs **sin Pagos**
+    #   (`pagos=0` por diseño: la retención no lleva método de pago).
+    # ⚠ `#clienteSelectModal` de COBROS filtra **solo con Enter** (teclear deja los 50 ítems).
+    # ⚠ Montos: técnica de **centavos acumulativos** (`focus` → Backspace ×14 → `type('<solo dígitos>')`
+    #   → `blur`+`ionBlur`). `5,00`→`"500"`, `123,17`→`"12317"`. **La coma rompe la acumulación.**
+    # 📋 **Observación abierta:** los 4 documentos tipo `AJPM` de `006540` (635,20 US$ cobrables en nube)
+    #   **NO se listan** en el Tab Documentos — solo los `FACT`. Sin oráculo de qué tipos son cobrables
+    #   desde el móvil ⇒ confirmar con desarrollo si `AJPM` está excluido por diseño.
+
+  devoluciones:
+    cliente_test: "006831"              # FERRETERIA EPA
+    producto_test: "LLA-01"
+    factura_test: "FACT6855"            # FERRETERIA EPA · 426,90 US$, saldo íntegro, 29/01/2025
+    facturas_alternas:
+      - {factura: "FACT6561", saldo: 20.38}
+      - {factura: "NDB395",   saldo: 1.50}
+    # ✅ **multiInvoices=true EJERCIDA Y CONFIRMADA HASTA LA NUBE** (devolución Ref 351) — ver la VG.
+    # 🟠 **`requeridedNroFactura=true` obliga a llenarlo pero NO lo valida** — 2.ª confirmación (tras
+    #   kron), ahora **con `multiInvoices` activo**: `NOEXISTE-ZZZ999` pasó con `ng-invalid=false`, sin
+    #   alert, y Guardar/Enviar siguieron habilitables. El campo es **texto libre**, obligatorio en
+    #   presencia y **no cotejado** contra `document_sale`.
+    #   🔴 El riesgo **escala por línea**: una devolución puede cerrar N facturas y ninguna verificada.
+    #   Confirmado desde la web con datos reales: la devolución **331** trae `N° Factura` = `001`,
+    #   `002`, `003`, `0001`. **Se mantiene el criterio de kron: riesgo de dato, NO defecto**
+    #   (es el diseño con `validateReturn=false`). 📋 Confirmar con desarrollo.
+    # validateReturn=false ⇒ no hay factura de CABECERA (`coInvoice`/`idInvoice` viajan `null`); la
+    #   factura es un campo **por línea** y viaja como `coDocument` del detalle. Tampoco exige que el
+    #   producto esté en la factura. Sin `ion-input#invoiceSelect` en cabecera, `invoices=[]`.
+    # 🟡 **Se puede GUARDAR una devolución sin ninguna línea de producto**: `imagenGuardar` habilita al
+    #   seleccionar el cliente (`imagenEnviar` sí valida y queda `true`) ⇒ el registro vacío **no llega
+    #   a la nube**, pero ensucia la lista de Guardados. **En PEDIDOS sí se valida** ⇒ falta acá.
+    # 🟡 **El buscador de la lista NO filtra por `Nro. Ref` ni por `Estatus`**, que es justo lo que el
+    #   ítem muestra (`351`→0, `Guardado`→0; cliente/código sí). ⚠ **INVENTARIOS sí cubre la Ref**
+    #   (`52`→1) ⇒ es implementación por módulo, no limitación del build. Falta el oráculo.
+    # ✅ Catálogos activos: `return_type` **3** (52 PostVenta · 59 Servicio · 60 Calidad, **sin CxC**) ·
+    #   `return_motive` **7** de 33 (default **38** Dev.-Por Imposibilidad de Pago). Con 7 opciones el
+    #   Motivo abre **`ion-popover`**, no el `ion-alert` de radios.
+    # ⚠ `returnLogic.itemReturns` llega **`[]`** aunque las líneas existan en el DOM y en la BD local
+    #   ⇒ **leer las líneas del DOM o de `returns`/`return_details`, nunca del modelo.**
+    # ⚠ En DEVOLUCIONES **Guardar SÍ deja el form pristine** (el dirty-guard solo sale al salir de un
+    #   form REABIERTO) — al contrario de PEDIDOS de esta misma corrida. **Es por módulo.**
+
+  inventarios:
+    aplica: true                        # clientStock=true
+    cliente_test: "006831"
+    # ✅ **expirationBatch=false MEDIDO CON EL LOTE VACÍO — no bloquea** (ver la VG). 1.er contrafactual.
+    # signatureStock=true ⇒ habilita la firma, **no la obliga** (se envió sin firma).
+    # ✅ **EL MISMO PRODUCTO EN 2 UBICACIONES QUEDÓ EJERCIDO Y VALIDADO** (inventario Ref 53:
+    #   `LLA-01` exh 7 + dep 3). No se fusionan en NINGUNA de las 5 capas: el modal reabre VACÍO desde
+    #   la otra ubicación · el ítem rotula `Inventariado: Exhibición / Depósito` · el Tab Resumen los
+    #   pinta en **2 columnas** (oráculo visual barato, sin abrir nada) · 2 filas en local · 2 en nube.
+    #   🔑 Las dos unidades comparten `co_product_unit='LLA-011'` y solo difieren en su PK — **la
+    #   colisión que rompía el motor**. `cotejo-payload.js` devolvió **`BD-FIELD-OK`, 0 mismatches**
+    #   ⇒ 2.º caso real que valida el arreglo (tras kron). **La web tampoco los fusiona.**
+    # 🔴 **El buscador del Tab Inventario NO filtra on-keyup en este build — exige la lupa**
+    #   (`ion-icon[name="search-circle-sharp"]`). Contradice `[kron-20260817]` ⇒ **medir por corrida.**
+    #   En el mismo módulo conviven 3 buscadores con 2 comportamientos: productos y clientes exigen
+    #   lupa; el `ion-searchbar` de la lista BUSCAR filtra on-keyup **y sí encuentra por Nro. Ref**.
+    # ⚠ El buscador de productos **conserva el texto entre búsquedas del mismo formulario** ⇒ vaciar
+    #   con Backspace leyendo `input.value.length` antes de teclear, o `"LLA-01TM01"` → 0 resultados.
+    # ⚠ Build **v21** confirmado (`min="0"` en el input de cantidad). Modal multi-fila
+    #   `ion-card.capture-row-card` + `.add-lot-button` + `.save-btn`; unidad preseleccionada
+    #   `UNIDADES` y fecha = HOY. Solo cantidad y lote nacen vacíos.
+    # ⚠ **Peor espera de la guarda de GPS de toda la corrida: ~87 s** al entrar al formulario.
+    #   Reabrir un Guardado desde la lista (2,97 s) **no** atraviesa la guarda.
+    # 🟡 El **lote capturado no se muestra en la web**: `detalleInventario` renderiza 6 columnas y
+    #   **no genera** `Lote` ni `Fecha expiración` (verificado en el DOM, no es CSS). 📋 Confirmar si
+    #   es intencional con `expirationBatch=false`.
+
+  depositos:
+    aplica: false                       # 🔴 **NO SE CORRIÓ en la 1ª corrida — sigue SIN INSUMO (2026-08-19)**
+    motivo_na: >
+      🔴 CORRECCIÓN a la premisa original: el usuario QA **YA NO tiene cero cobros** — existe la
+      Ref **32993** (`co_collection 1787087754197.0`, `co_type=0`, cliente `006715`, 227,48 US$,
+      creada el 18/08 21:16 UTC), rotulada **"Por aprobar"** en la app y sin trash.
+      Aun así DEPÓSITOS **sigue sin insumo**: ese cobro no es efectivo disponible del vendedor, y los
+      **4 cobros que creó la corrida quedaron en Guardado** (`st_delivery=3`, `id_collection=0`) porque
+      `requiredCollectionAttachments/Anticipo/Retention = true` exigen adjunto y la instrucción de la QA
+      fue no usar mock de cámara.
+      ⇒ Depósitos debe correrse **junto con cobros**, y con **≥2 cobros en efectivo ENVIADOS**
+        (con uno solo no se pueden cubrir Enviar Y borrar: se consume en el primero — lección de
+        grupo_fiel y kron). **Prerrequisito: que la QA envíe a mano los 4 cobros Guardados.**
+    # signatureDeposit=true · multiCurrencyDeposit=true · currencyBank=true (todos los bancos)
+    # ── Lo que SÍ se pudo medir, por la vía WEB ────────────────────────────────
+    # 🟠 Los **2 depósitos** del tenant (13/07 y 16/07, ninguno del vendedor QA) tienen
+    #   **`deposit.nu_amount_doc = 0.0000` en BD** y la tabla puente `deposit_collection_payment`
+    #   está **VACÍA** (el vínculo existe solo por `collection.id_deposit`: cobros 6418→dep 1 y
+    #   30800→dep 2). ⇒ El `0,00` de la columna `Monto depositado` y del indicador **NO es un
+    #   defecto de la web: es fiel a la fuente.** Lo que hay que revisar es **por qué la app guarda
+    #   el depósito con monto 0 y sin filas puente** — mismo origen que `collection.nu_amount_total=0`.
+    # 🟠 El **detalle web se desmiente a sí mismo**: `Monto depositado: 0,00 US$` sobre una tabla hija
+    #   que muestra `Monto cobrado 266,59 US$`. El oráculo `WEB-RUNTIME §7` falla **en pantalla**, sin
+    #   necesidad de comparar contra BD. La web **no recalcula el total desde los hijos que dibuja**.
+    # 🟡 Columna y campo `Banco:` muestran el **código crudo `006`** teniendo `bank.na_bank='BANCARIBE'`.
+    # ✅ Los 8 filtros web de `/pages/depositos` funcionan (7 PASS · 1 N/A: no existe filtro Moneda).
+    #   Sufijos: `:idEnterprise :idSalesmaView :orderStatus :n_ref :dateB/:dateF` (sin Cliente ni Moneda).
+
+  visitas:
+    cliente_test: "006831"
+    # 🔴🔴 **AQUÍ VIVE EL HALLAZGO MÁS GRAVE DE LA CORRIDA.** Un comentario de actividad de más de
+    #   **120 caracteres** hace que la visita **NUNCA llegue al servidor**, sin ningún aviso:
+    #   `incidence.tx_description` es **`varchar(120)`** y el input admite **255**.
+    #   Salen 2 de las 3 alertas, la app **navega igual**, el ítem queda "Por Enviar",
+    #   `failed_transactions` se queda en **0** y el POST se reintenta en bucle (5 POST medidos).
+    #   ✅ Confirmado a mano por la QA el 19/08: acortó la observación y la visita entró (`id_visit 2152`).
+    #   📄 Reporte completo: `automation/reports/INCIDENCIA-comentario-visita-120.md`
+    #   ⇒ **Para el smoke: NUNCA teclear un comentario de visita de más de 120 caracteres**, salvo que
+    #     se esté reproduciendo el defecto a propósito.
+    # 🔑 **La 3.ª alerta (`Visita nro. <Ref> enviada exitosamente`) es el ÚNICO acuse del servidor.**
+    #   Las alertas 1 y 2 son locales y salen igual cuando el POST falla. Un agente que corte tras la
+    #   2.ª marca PASS sobre un registro perdido.
+    # 🟢 visitRout=true ⇒ "Ruta de hoy" trae datos ✅ (las visitas del día). ⚠ **NO trae ruta
+    #   planificada**: no bajó ninguna visita "No Visitado" del backend ⇒ **INICIAR VISITA no existe
+    #   en pantalla** (N/A estructural probado con 3 señales: componente + BD local + nube).
+    # 🔴 userMustActivateGPS=true ⇒ el GPS debe estar encendido (device en location_mode=3 ✅)
+    #   🟢 **Y la guarda de GPS NO se manifiesta acá**: 7 mediciones, máximo **6,85 s**, con
+    #     `ion-loading` de mensaje legible "Cargando…". Es el módulo más atado al GPS y de los más
+    #     rápidos ⇒ **desmiente la hipótesis de que la lentitud escale con el acoplamiento al GPS.**
+    # signatureVisit=true ⇒ habilita, no obliga (las 3 visitas se enviaron sin firma).
+    # ✅ **11 actividades en el dispositivo**, no 14: la nube tiene 46 (`incidence_type`), 14 activas
+    #   (`co_operation<>'D'`) y **el device baja 11** — las 3 que faltan (89/90/91) son las de
+    #   `required_signature=true`, todas de despacho, coherente con `transportRole=false`.
+    #   ⇒ **`co_operation='D'` explica 32 de las 35 ausencias, no las 35. Contar en `incidence_types`
+    #     (tabla LOCAL), nunca en la nube.** Ids: 2 · 47 · 71 · 75 · 82 · 83 · 84 · 85 · 86 · 87 · 88.
+    # 🔑 **`comp.listaMotivos` trae el catálogo MAESTRO (92) — leerlo hace parecer que el filtro por
+    #   actividad está roto (falso FAIL). El oráculo es `s.querySelectorAll('ion-select-option')`.**
+    #   Motivos por actividad medidos: MERCHANDISING(47) **5** · COBRANZA(82) **4** ·
+    #   NO VISITO(2) **4** · EVENTOS(86) **1**. Carga diferida ~2-2,5 s tras elegir Actividad.
+    # ⚠ `app-visita` **NO expone ninguna clave `*LogicService`** ⇒ caer a los oráculos del DOM + BD local.
+    #   Sí expone `textCommentMaxLength`, `listaActividades`, `listaMotivos`, `listaEventos`,
+    #   `changesMade`, `disableSaveButton`, `disableSendButton`, `rolTransportista`.
+    # ⚠ La tabla local `visits` **NO tiene `st_delivery`**: el discriminador de guardado-local es
+    #   `id_visit=0` y el de estado es `st_visit` — mapa completo medido en La Tortuga v1.0:
+    #   `0`=Guardado · **`1`=Por Enviar (en cola)** ← valor nuevo · `2`=Enviado · `3`=fila de RUTA
+    #   bajada del backend. La prueba negativa se hace sobre `sqlite_sequence.incidences`.
+    # 🟡 `VIS-INCIDENCIA-HUERFANA` — **4.ª confirmación** (3 playas, 4 clientes): al borrar una visita
+    #   Guardada la fila sale de `visits` pero **su `incidences` sobrevive**. Basura acumulativa en la
+    #   BD LOCAL; la nube no se afecta. Candidato ya abierto que gestiona el orquestador.
+    # ✅ El defecto cosmético de «+4 h al reabrir» de `[gmp-20260730]` **NO reproduce** en este build.
+
+  productos:
+    texto_busqueda: "LLAVE"             # ✅ `LLAVE` = 81 en todo el catálogo, **13 en el subárbol
+                                        #   CERRADURAS** — y la UI muestra 13: **el buscador está
+                                        #   ACOTADO a la estructura abierta.** Filtrar el `SELECT` del
+                                        #   oráculo por `id_product_structure IN (idProductStructureList)`.
+    catalogo_total: 1649                # ✅ **Σ de los 36 badges de `Marca` = 1.649 EXACTO** = catálogo
+                                        #   de BD. Σ de los 107 de `Sub-Linea` = 1.648 (1 producto cuelga
+                                        #   directo de una Marca). **Cero brecha badge↔lista** en las 4
+                                        #   estructuras abiertas ⇒ `PRD-LISTA-CORTA-CATALOGO` **no reproduce**.
+                                        #   Paginación real ejercida: 348 productos en **7 páginas de 50**.
+    tipo_estructura_default: "Marca"    # ✅ **RESUELTO** — el `ion-select` ofrece solo `Marca` (default,
+                                        #   36 estructuras) y `Sub-Linea` (107). Ver la VG `listProductsBy`.
+    # 🟠 **`hideStock0=true` NO oculta nada en PRODUCTOS** (medido: 348/348 y 109/109 listados, con 131
+    #   y 37 en `Inventario: 0`) ⇒ **la receta de kron `badge − listados = ocultos` NO aplica acá.**
+    # 🔴 **`productos-search` NO tiene lupa en este build y su único `ion-button` es una TRAMPA**: es el
+    #   **back a `product-structures-list`**. La `.search-row` trae `ion-button.back-button` (~26,95),
+    #   el `input.search-input.inputsSearch` (200,95) y `button.clear-search` (325,95).
+    #   **El disparador de búsqueda es `Enter`.** ⚠ Contrasta con INVENTARIOS/PEDIDOS, donde la lupa
+    #   `search-circle-sharp` SÍ existe y es obligatoria ⇒ **los buscadores no se unifican.**
+    # 🔴 `PRD-BUSCADOR-NO-REPUEBLA` **reproduce (6.ª corrida) + VARIANTE NUEVA**: vaciar+Enter deja
+    #   **0 ítems** con `searchText===""`, y el **botón X** limpia el texto pero **NO re-dispara la
+    #   búsqueda** ⇒ la lista queda **congelada en el filtro anterior**. Recuperación: re-entrar a la
+    #   estructura desde HOME.
+    # 🔑 `globalConfig.variables` = `Map(176)` y `productService.catalog*` (`catalogHideStock0`,
+    #   `catalogProductMinMul`, `catalogListaPricelist`, `catalogProdMinMulMap`, …) exponen las VGs de
+    #   catálogo ya resueltas ⇒ **no hace falta arqueología en `localStorage` ni en la tabla local.**
+    # ⚠ Listas de precio: la nube tiene 2 (`01` 1.597 productos · `05` 86) pero **al device solo bajan
+    #   los precios de la 01** y `priceListService.productlists` = 1 ⇒ coherente con
+    #   `userCanChangePriceList=false`. **No es defecto.**
+    # ⚠ Diacríticos: 🚫 N/A por dato — **0 de 1.649** productos tienen tildes.
+
+  vendedores:
+    aplica: true                        # infoVendedores=false ⇒ se autogenera en la app (confirmado)
+    # ✅ `esVendedor = true` — pendiente CERRADO (ver la VG).
+    # ✅ **`Venta Real Mes` cuadra AL CÉNTIMO contra BD**: UI 300.407,53 US$ =
+    #   `SELECT sum(nu_amount_total) FROM "order" WHERE id_user=470 AND co_operation<>'D'
+    #    AND da_order >= '2026-08-01'` (55 pedidos). ⚠ Filtrar por **`id_user`**, no por `co_user`.
+    # ✅ **1.ª corrida de la serie con `planesCuotaEmpresa` POBLADO** (2 planes: US$ y BULTOS) y el
+    #   bloque *Cuota Mes / Venta Real Mes* renderizado ⇒ **confirma que en kron y el_palmar la
+    #   ausencia era por DATO, no por template.**
+    # 🟡 **`Cartera Clientes` muestra 1.568 con 1.569 asignaciones en BD.** Brecha constante de 1;
+    #   descartados borrado lógico, suspensión, altas recientes y multi-empresa. El KPI lo calcula el
+    #   **servidor** (`userInfo` llega armado) ⇒ **la causa NO es observable desde el device.**
+    #   Observación abierta de severidad muy baja. **No inventar el motivo.**
+    # 🟡 **Cosmético:** los montos del bloque *Plan* se pintan **sin formato** (`6000 US$`,
+    #   `300407.53 US$`) mientras el resto de la app usa es-VE con `parteDecimal=2`. El valor es
+    #   correcto; falla el pipe del template.
+    # ⚠ El oráculo `Activados > Cartera` NO aplica con una sola empresa ⇒ `VND-KPIS-SIN-SEGMENTAR`
+    #   es **no evaluable**, no "no reproduce".
+    # 🔴 **`mouse.click` en el header del acordeón SÍ EXPANDE en este build** (0 → 506 px) — corrige
+    #   6 corridas previas que lo daban por anti-patrón universal. Y el `[slot=content]` ya trae el
+    #   `innerText` COMPLETO estando colapsado ⇒ **usar el texto como oráculo de expansión da falso
+    #   positivo; usar `height > 0` o `accordion-expanded`.**
+    # ⚠ Back: `app-vendedores` **no tiene ningún `<a>`** ⇒ click directo sobre la `<img>`
+    #   (`src=iconosatras.png`, x<100). La 2.ª `img.fechaAtras` en x=323 es decorativa.
+
+# ── Pendientes de la 1ª corrida — TODOS CERRADOS ✅ (2026-08-19) ───────────────
+# 1. ✅ `esVendedor` ................... **true** (oráculo de UI; no está en dumps, ni componente, ni Map)
+# 2. ✅ Contradicción IGTF ............. `userCanSelectIGTF=false` MANDA; `igtfDefault` inerte. N/A estructural
+# 3. ✅ Contradicción TASA ............. N/A estructural: el control NO se renderiza (tenant mono-moneda)
+# 4. ✅ Alcance de `requiredComment` .... **SOLO cobros** (serie completa de 6 módulos)
+# 5. ✅ `listProductsBy="lineas"` ...... NO nombra el tipo: el selector dice `Marca`/`Sub-Linea`,
+#                                        y la clave ni siquiera llega al dispositivo
+# 6. ✅ `productMinMul=true` ........... ejercida 4/4: **AUTO-CORRIGE**, etiquetas POR PRODUCTO
+# 7. ✅ `multiInvoices=true` ........... ejercida hasta la nube (devolución Ref 351, 2 facturas) y la web
+#                                        muestra las dos
+# 8. ✅ `rolPlanta=true` ............... habilita campos en el modelo (no se renderizan) y **explica el
+#                                        recorte del catálogo de actividades por ROL**
+# 9. 📋 **PENDIENTE (higiene):** borrar el bloque `# Cliente: run` duplicado de qa-credentials.env
+
+# ── Pendientes ABIERTOS para la próxima corrida ───────────────────────────────
+# A. 🔴 **Enviar a mano los 4 cobros que quedaron en Guardado** (adjuntando foto) y **releer
+#      `collection.nu_amount_total` en nube** — es lo que cierra la acotación del defecto de captura.
+#      Epochs: `1787144733832.0` (cobro+retención 123,17) · `1787145447779.0` (parcial+depósito 10,00)
+#              `1787145827101.0` (anticipo 5,00) · `1787145921638.0` (retención 3,00)
+# B. 🔴 **Correr DEPÓSITOS** una vez haya ≥ 2 cobros en EFECTIVO enviados.
+# C. 🔴 **Backfill de los ~20 adjuntos anteriores al fix del rutero** (siguen en 404). Lo único que
+#      queda abierto de ese hilo: los registros posteriores al fix dan **19/19 en `200`**.
+# D. 🟠 **Riesgo NO confirmado end-to-end:** `txAddress`/`txAddressDispatch` del form de cliente
+#      potencial **sin `maxlength`** contra `varchar(150)`. Producción: 188 registros, máximo 136/150,
+#      ninguno en 150. **NO se provocó** para no ensuciar un tenant productivo. Misma causa que el
+#      defecto de visitas y **a 14 caracteres de ocurrir**.
+# E. 📋 Chequear `character_maximum_length` de los `tx_comment` de `order`, `return` y `client_stock`.
+# F. 📋 Con desarrollo: `disableDaDispatch` · `clientsOrderBy="due_date"` · `userCanAddRetention` ·
+#      documentos `AJPM` no cobrables desde el móvil · `Devolución en` con código de unidad en la web ·
+#      `Lote`/`Fecha expiración` ausentes en `detalleInventario` · criterio no homogéneo de
+#      `nu_attachments` (clientesPotenciales suma la firma, los otros 4 módulos no).
+# G. 📋 Para ejercer el **Pedido Sugerido** de verdad hay que correr con `007848` o `007494`:
+#      `client_avg_product` tiene 24 filas de solo esos 2 clientes y **0 para `006831`**.
+# H. 📋 `Mapa de Activación` (`/pages/pedidos`) — control web no documentado, no se pulsó.

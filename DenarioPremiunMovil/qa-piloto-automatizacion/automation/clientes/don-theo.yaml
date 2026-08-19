@@ -1,11 +1,10 @@
 # don-theo/perfil.yaml
 # Cliente NUEVO — VGs derivadas del dump global_configuration_don_theo_062026.csv (2026-06-12).
 # Datos de prueba por módulo (modules.*) aún SIN confirmar: se descubren en la 1ª corrida y se consolidan al cierre.
-# Servidor: Isla Coche (mismo host que insumar). Panel admin web: http://denarioislacoche.ddns.net:8080/DenarioPremium/
 
 cliente_id: don-theo
 cliente_nombre: "COMERCIALIZADORA HNOS TORRES 2017, C.A."   # Confirmado por QA 2026-06-12
-ws_url: "http://denarioislacoche.ddns.net:8081/PremiumWS/services/"  # endpoint del web service (app); derivado del host Isla Coche; verificar si responde
+# ws_url: NO se guarda — la playa es del SERVIDOR y es rotativa; se descubre en runtime (ver _schema.yaml).
 apk_package: com.kiberno.denarioPremiumPro
 db_name: don_theo                          # base de este cliente para el Agente 12 / oráculo BD. La conexión completa (host+user+clave read-only) vive en el bloque "# Cliente: don-theo" de secrets/qa-db.env. OJO: los servidores/playas VARÍAN (dev los remonta) — el host autoritativo es el del secret, NO se asume fijo. Read-only confirmado en don_theo 2026-06-15. GRANT en Postgres es POR-BASE: cada cliente nuevo requiere su propio GRANT.
 

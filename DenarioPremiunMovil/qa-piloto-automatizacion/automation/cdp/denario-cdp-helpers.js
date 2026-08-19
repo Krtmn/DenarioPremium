@@ -361,6 +361,59 @@ async function clickIonItem(pg, selector) {
   await pg.waitForTimeout(300);
 }
 
+/**
+ * Click en un BOTÓN QUE VIVE DENTRO DE UN `ion-modal`, vía shadowRoot.
+ *
+ * GRADUADO desde `module-selectors/visitas.md` tras 3 confirmaciones en
+ * 3 clientes y 2 servidores: [el_palmar-20260805][difranca-20260807][grupo_fiel-20260817].
+ *
+ * POR QUÉ NO SIRVE `mouse.click` NI `dispatchEvent` SOBRE EL `ion-button`:
+ *   el rect del botón del modal puede resolver a OTRO elemento — en VISITAS el
+ *   `Agregar` de `ion-modal#eventModal` devuelve por `elementFromPoint` el
+ *   `ion-button.botonAddLila` del formulario de FONDO, así que el click
+ *   re-dispara el form subyacente en vez de agregar el evento.
+ *   Regla general: **rect válido ≠ punto clickeable ≠ punto tuyo.**
+ *
+ * @param {import('playwright').Page} pg
+ * @param {string} modalSelector  ej. 'ion-modal#eventModal'
+ * @param {string} texto          texto del botón, comparado por IGUALDAD EXACTA
+ *                                case-insensitive (nunca `includes`: 'Cancelar'
+ *                                y 'Guardar y salir' se pisan entre sí)
+ */
+async function clickModalButton(pg, modalSelector, texto) {
+  await pg.waitForFunction(
+    (sel) => {
+      const m = document.querySelector(sel);
+      return !!m && m.classList.contains('show-modal');
+    },
+    modalSelector,
+    { timeout: 8000 },
+  );
+  await pg.evaluate(
+    ({ sel, txt }) => {
+      const modal = document.querySelector(sel);
+      if (!modal) throw new Error(`clickModalButton: modal no encontrado → ${sel}`);
+      const objetivo = txt.trim().toLowerCase();
+      const btns = Array.from(modal.querySelectorAll('ion-button')).filter((b) => {
+        const r = b.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      });
+      const b = btns.find((x) => (x.textContent || '').trim().toLowerCase() === objetivo);
+      if (!b) {
+        const vistos = btns.map((x) => (x.textContent || '').trim()).join(' | ');
+        throw new Error(`clickModalButton: no hay botón "${txt}" en ${sel}. Visibles: [${vistos}]`);
+      }
+      // El <button> real vive en el shadowRoot del ion-button; es el único
+      // punto que no puede ser interceptado por el formulario de fondo.
+      const nativo = b.shadowRoot && b.shadowRoot.querySelector('button');
+      if (!nativo) throw new Error(`clickModalButton: sin shadowRoot en el botón "${txt}"`);
+      nativo.click();
+    },
+    { sel: modalSelector, txt: texto },
+  );
+  await pg.waitForTimeout(400);
+}
+
 // ---------------------------------------------------------------------------
 // SCROLL INFINITO
 // ---------------------------------------------------------------------------
@@ -933,6 +986,7 @@ if (typeof module !== 'undefined' && module.exports) {
     clickAlertButton,
     clickBack,
     clickIonItem,
+    clickModalButton,
     scrollInfinite,
     waitSyncOverlay,
     isVisible,
