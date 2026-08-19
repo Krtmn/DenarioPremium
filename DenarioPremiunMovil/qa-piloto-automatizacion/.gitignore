@@ -12,6 +12,12 @@ automation/db/_tmp_server_cache.json
 automation/db/tmp_*
 .playwright-mcp/
 
+# Directorios de corridas — se generan localmente, no van al repo
+automation/reports/playwright_*/
+automation/reports/web_*/
+automation/reports/web-extendido_*/
+automation/reports/consolidado_*/
+
 # Trazas record→replay (RUNTIME §12) — no commitear hasta validarlas con validateTrace
 automation/reports/*/_trace/
 automation/replay/traces/

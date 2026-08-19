@@ -94,13 +94,51 @@ async function volverAHome(pg, ms = 20000) {
     return null;
   }).catch(() => null);
 
+  // Retorna coords del botón "descartar" del ion-alert visible, o null si no hay alerta.
+  // Prioriza etiquetas que descartan cambios ("No", "Salir sin guardar", "Cancelar").
+  const dismissBlockingAlert = () => pg.evaluate(() => {
+    const alerts = [...document.querySelectorAll('ion-alert')].filter(
+      a => !a.classList.contains('overlay-hidden') && a.offsetParent !== null
+    );
+    if (!alerts.length) return null;
+    const alert = alerts[alerts.length - 1];
+    const btns = [...alert.querySelectorAll('.alert-button')]
+      .filter(b => b.getBoundingClientRect().width > 0);
+    const DISCARD = ['salir sin guardar', 'no guardar', 'descartar', 'no', 'salir', 'cancelar'];
+    for (const label of DISCARD) {
+      const btn = btns.find(b => b.textContent.trim().toLowerCase() === label);
+      if (btn) {
+        const r = btn.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2, label: btn.textContent.trim() };
+      }
+    }
+    return null;
+  }).catch(() => null);
+
   const deadline = Date.now() + ms;
   while (Date.now() < deadline) {
+    // Si hay una alerta bloqueando (ej. "¿Desea guardar?"), descartarla antes de intentar back
+    const preAlertCoords = await dismissBlockingAlert();
+    if (preAlertCoords) {
+      await pg.mouse.click(preAlertCoords.x, preAlertCoords.y);
+      await pg.waitForTimeout(600);
+      if (await isHome()) return;
+      continue;
+    }
+
     const coords = await clickBackBtn();
     if (coords) {
       await pg.mouse.click(coords.x, coords.y, { delay: 60 });
     }
     await pg.waitForTimeout(800);
+
+    // Descartar alerta que pudo aparecer tras el click back
+    const postAlertCoords = await dismissBlockingAlert();
+    if (postAlertCoords) {
+      await pg.mouse.click(postAlertCoords.x, postAlertCoords.y);
+      await pg.waitForTimeout(500);
+    }
+
     if (await isHome()) return;
     const s = await getState();
     if (s.loginPresent) throw new Error('volverAHome: llegó a login — iniciar sesión manualmente');

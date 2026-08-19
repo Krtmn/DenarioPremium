@@ -36,8 +36,8 @@ modules:
     bad_password: Test-LOG-003
 
   clientes:
-    cliente_busqueda: "FRISSO"                                      # buscar → FRISSO FERRETERIA, C.A. (cód 006660)
-    cliente_detalle: "FRISSO FERRETERIA, C.A. (FRISSO FERRETERIA, C.A.)"
+    cliente_busqueda: "CORPORACION FERRE"                           # buscar → CORPORACION FERRE 19, C.A.
+    cliente_detalle: "CORPORACION FERRE 19, C.A."
 
   pedidos:
     cliente_test: "FERRETERIA EPA, C.A"          # cód 006831 — solo se necesitan productos en este módulo

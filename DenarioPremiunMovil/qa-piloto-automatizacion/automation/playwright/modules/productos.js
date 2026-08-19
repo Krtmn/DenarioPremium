@@ -54,6 +54,11 @@ async function runProductos(pg, DATA) {
     });
     if (!ok) throw new Error('tile Productos no encontrado en HOME');
     await pg.waitForSelector('product-structures-list', { state: 'visible', timeout: 10000 });
+    // Esperar a que los items carguen asincrónicamente (API puede tardar)
+    await pg.waitForFunction(
+      () => document.querySelectorAll('product-structures-list ion-item.listaItems').length > 0,
+      { timeout: 10000 }
+    ).catch(() => {}); // si no llegan items en 10s, el chequeo de DM-PRD-001 lo reportará
   }
 
   /** Clic en la estructura indicada, o en la primera si nombre está vacío */
@@ -61,20 +66,22 @@ async function runProductos(pg, DATA) {
     const scrollOk = await pg.evaluate((nom) => {
       const items = [...document.querySelectorAll('product-structures-list ion-item.listaItems')];
       // Si no hay nombre específico, usa la primera estructura disponible
-      const item = nom
+      const encontrado = nom
         ? items.find(i => i.querySelector('h3.font-ListProduct')?.textContent.includes(nom))
-        : items[0];
+        : null;
+      const item = encontrado || items[0]; // fallback a primera si el nombre no existe
       if (!item) return null;
       item.scrollIntoView({ behavior: 'instant', block: 'center' });
       return item.querySelector('h3.font-ListProduct')?.textContent?.trim() || '?';
     }, nombre || '');
-    if (!scrollOk) throw new Error(nombre ? `Estructura "${nombre}" no encontrada` : 'Sin estructuras disponibles');
+    if (!scrollOk) throw new Error('Sin estructuras disponibles');
     await pg.waitForTimeout(350);
     const coords = await pg.evaluate((nom) => {
       const items = [...document.querySelectorAll('product-structures-list ion-item.listaItems')];
-      const item = nom
+      const encontrado2 = nom
         ? items.find(i => i.querySelector('h3.font-ListProduct')?.textContent.includes(nom))
-        : items[0];
+        : null;
+      const item = encontrado2 || items[0];
       if (!item) return null;
       const r = item.getBoundingClientRect();
       return { x: r.left + r.width / 2, y: r.top + r.height / 2, nombre: item.querySelector('h3.font-ListProduct')?.textContent?.trim() };

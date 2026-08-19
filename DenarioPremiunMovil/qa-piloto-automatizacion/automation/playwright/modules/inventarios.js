@@ -407,19 +407,49 @@ async function runInventarios(pg, DATA) {
 
   // Acepta el modal (.save-btn con mouse.move previo)
   async function aceptarModal() {
+    // Cerrar teclado Android blureando el input activo (el teclado cubre el botón save)
+    await pg.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
+    await pg.waitForTimeout(600);
+
     await pg.mouse.move(200, 400); // re-engancha listener tras modal.dismiss
     await pg.waitForTimeout(300);
+
     const coords = await pg.evaluate(() => {
       const modal = document.querySelector('ion-modal.inventory-type-stocks-modal');
       if (!modal) return null;
-      const btn = modal.querySelector('.save-btn') || modal.querySelector('ion-icon[name="checkmark-outline"]');
+      // Candidatos en orden de preferencia
+      const candidatos = [
+        modal.querySelector('.save-btn'),
+        modal.querySelector('ion-icon[name="checkmark-outline"]'),
+        modal.querySelector('ion-icon[name="checkmark"]'),
+        [...modal.querySelectorAll('ion-button, button, ion-fab-button')].find(b => {
+          const t = b.textContent.trim().toUpperCase();
+          return b.getBoundingClientRect().width > 0 &&
+            (t.includes('ACEPTAR') || t.includes('GUARDAR') || t.includes('OK') || t.includes('CONFIRMAR'));
+        }),
+        // último botón visible en el modal como fallback
+        [...modal.querySelectorAll('ion-button, button, ion-fab-button')]
+          .filter(b => b.getBoundingClientRect().width > 0).pop(),
+      ];
+      const btn = candidatos.find(Boolean);
       if (!btn) return null;
-      const r = btn.getBoundingClientRect();
+      const target = btn.closest('ion-button, ion-fab-button') || btn;
+      const r = target.getBoundingClientRect();
+      if (!r || r.width === 0) return null;
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     });
-    if (!coords) throw new Error('.save-btn no encontrado en modal');
+    if (!coords) throw new Error('botón de confirmación no encontrado en modal de inventario');
     await pg.mouse.click(coords.x, coords.y, { delay: 80 });
-    await pg.waitForTimeout(1200);
+
+    // Esperar activamente a que el modal cierre (hasta 4s)
+    for (let i = 0; i < 8; i++) {
+      const abierto = await pg.evaluate(() => {
+        const m = document.querySelector('ion-modal.inventory-type-stocks-modal');
+        return !!(m && m.offsetParent !== null);
+      });
+      if (!abierto) break;
+      await pg.waitForTimeout(500);
+    }
   }
 
   // Flujo completo: seleccionar cliente → Tab Inventario → capturar producto → opcionalmente Guardar

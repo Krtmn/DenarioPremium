@@ -500,15 +500,16 @@ async function runLogin(pg, DATA) {
     });
     await pg.waitForTimeout(500);
 
-    // Esperar sync screen o home (max 10s)
-    for (let i = 0; i < 10; i++) {
+    // Esperar sync screen o home (max 60s — FERRETERIA EPA tarda en sincronizar)
+    for (let i = 0; i < 60; i++) {
       const state = await pg.evaluate(() => ({
         sync:  !!(document.querySelector('app-synchronization') && !document.querySelector('app-synchronization').classList.contains('ion-page-hidden')),
         home:  !!(document.querySelector('app-home') && !document.querySelector('app-home').classList.contains('ion-page-hidden')),
         login: !!(document.querySelector('app-login') && !document.querySelector('app-login').classList.contains('ion-page-hidden')),
       }));
       if (state.sync || state.home) { loginOk = true; break; }
-      if (state.login) break;
+      // Permitir al menos 8s antes de concluir que el submit no funcionó
+      if (i >= 8 && state.login && !state.sync && !state.home) break;
       await pg.waitForTimeout(1000);
     }
 

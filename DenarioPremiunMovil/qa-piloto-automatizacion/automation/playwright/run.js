@@ -202,4 +202,7 @@ if (invalidos.length) {
   console.log(`  PASS:${totalCounts.PASS||0}  FAIL:${totalCounts.FAIL||0}  SKIP:${totalCounts.SKIP||0}  N/A:${totalCounts['N/A']||0}  BLOCKED:${totalCounts.BLOCKED||0}  total:${allVerdicts.length}`);
   console.log(`  Reporte: ${RUN_DIR}`);
   console.log('═══════════════════════════════════════════\n');
+  // La conexión CDP (WebSocket al dispositivo) mantiene el event loop vivo indefinidamente.
+  // process.exit(0) permite que && y ; en la terminal encadenen el siguiente comando.
+  process.exit(0);
 })().catch(e => { console.error('ERR FATAL:', e.message); process.exit(1); });
