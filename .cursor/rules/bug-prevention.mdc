@@ -53,6 +53,12 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Guardar tras persistir: OFF hasta `markReturnDirty` / edición de usuario — `DEV-SAVE-002`.
 - Enviar: General OK (cliente + factura si `validateReturn`) habilita botón; productos, firma y GPS se validan al click — `DEV-SEND-001`.
 
+## Visitas
+
+- Guardar/Enviar: no acoplar Guardar a actividades en el botón; validación completa al pulsar (`VIS-SAVE-001`).
+- Guardar tras persistir: OFF hasta `markVisitDirty` / edición de usuario — `VIS-SAVE-002`.
+- Enviar: General OK (cliente + sucursal + iniciada si `fromWeb`) habilita botón; actividades, firma y GPS se validan al click — `VIS-SEND-001`.
+
 ## Clientes potenciales
 
 - Guardar/Enviar: no acoplar botones a `checkForm()` completo; validación completa al pulsar (`POT-SAVE-001`).
@@ -61,6 +67,9 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 
 ## Pedidos
 
+- Guardar/Enviar: no acoplar Guardar a productos en el botón; validación completa al pulsar (`PED-SAVE-001`).
+- Guardar tras persistir: OFF hasta `markOrderDirty` / edición de usuario — `PED-SAVE-002`.
+- Enviar: General OK (cliente + sucursal + nuOrder/comentario si config) habilita botón; productos, firma, almacén y GPS se validan al click — `PED-SEND-001`.
 - `requiredCommentOrder`: no bloquear pestañas al abrir pedido no editable (enviado) con comentario vacío (`PED-COMMENT-001`).
 
 ## Vendedor

@@ -337,6 +337,50 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [PED-SAVE-001] Guardar/Enviar deshabilitados hasta productos completos
+
+- **Síntoma:** Guardar exigía cliente + carrito en el botón; Enviar igual; Guardar persistía sin confirmación.
+- **Causa:** `setChangesMade()` acoplaba Guardar y Enviar a `carrito.length`; validación parcial al click.
+- **Fix:** `updateSaveButtonAvailability()` (General + dirty) y `updateSendButtonAvailability()` (General). `validateOrderBeforeAction()` + `hasOrderFieldErrors()` antes de confirmación.
+- **Evitar:** No volver a acoplar Enviar a productos en tiempo real. Validar carrito, firma, almacén y GPS al click.
+- **Archivos:** `pedidos.service.ts`, `pedido.component.ts`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [PED-SAVE-002] Guardar permanece ON tras guardar sin cambios
+
+- **Síntoma:** Tras guardar pedido, Guardar sigue habilitado; al reabrir igual si no se editaba.
+- **Causa:** No existía baseline/dirty; `saveButton()` volvía a llamar `setChangesMade(true)` tras guardar.
+- **Fix:** `applyOrderPersistSucceededBaseline()` + `notifyOrderEdited()`; `markOrderOpenedFromPersistedCopy()` al reabrir persistido.
+- **Evitar:** No forzar botones desde hidratación sin dirty.
+- **Archivos:** `pedidos.service.ts`, `pedido.component.ts`, specs + smoke Pedidos.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [VIS-SAVE-001] Guardar/Enviar deshabilitados hasta actividades completas
+
+- **Síntoma:** Guardar exigía cliente + actividades en el botón; Enviar igual; validación parcial al click; Guardar persistía sin confirmación.
+- **Causa:** `setChangesMade()` acoplaba Guardar y Enviar a `listaEventos.length`; lógica en `visita.component` sin servicio centralizado.
+- **Fix:** `updateSaveButtonAvailability()` (General + dirty) y `updateSendButtonAvailability()` (General). `validateVisitBeforeAction()` + `hasVisitFieldErrors()` antes de confirmación en Guardar y Enviar.
+- **Evitar:** No volver a acoplar Enviar a eventos en tiempo real. Validar actividades, firma y GPS al click.
+- **Archivos:** `visitas.service.ts`, `visita.component.ts`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [VIS-SAVE-002] Guardar permanece ON tras guardar sin cambios
+
+- **Síntoma:** Tras guardar visita, Guardar sigue habilitado sin más ediciones; al reabrir igual.
+- **Causa:** No existía baseline/dirty; tras guardar se forzaba `disableSendButton = false` manualmente.
+- **Fix:** `applyVisitPersistSucceededBaseline()` + `notifyVisitEdited()`; `markVisitOpenedFromPersistedCopy()` al reabrir persistido.
+- **Evitar:** No forzar botones desde `setChangesMade(false)` en hidratación sin dirty.
+- **Archivos:** `visitas.service.ts`, `visita.component.ts`, specs + smoke Visitas.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## Cómo añadir una entrada nueva
 
 1. ID estable: `[MODULO-TEMA-NNN]`.
