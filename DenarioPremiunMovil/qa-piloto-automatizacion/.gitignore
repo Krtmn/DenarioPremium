@@ -18,6 +18,9 @@ automation/reports/web_*/
 automation/reports/web-extendido_*/
 automation/reports/consolidado_*/
 
+# Perfil duplicado — usar run_vzla.yaml (con guion bajo) de qa-guiones-regresion
+automation/clientes/run-vzla.yaml
+
 # Trazas record→replay (RUNTIME §12) — no commitear hasta validarlas con validateTrace
 automation/reports/*/_trace/
 automation/replay/traces/

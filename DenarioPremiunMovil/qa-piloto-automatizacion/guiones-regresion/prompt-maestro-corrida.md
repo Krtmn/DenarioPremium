@@ -178,7 +178,33 @@ Muestra al usuario el resumen en consola (PASS/FAIL/N/A totales y lista de FAILs
 
 ---
 
-## PASO 5 — CIERRE
+## PASO 5 — ENRIQUECER EL YAML DEL CLIENTE
+
+Lee el `consolidado.md` generado en el Paso 4 y actualiza el archivo `automation/clientes/{cliente_id}.yaml` con lo aprendido en esta corrida.
+
+**Siempre actualizar:**
+
+```yaml
+ultima_corrida:
+  run_id: "{fecha_hora del consolidado}"
+  fecha: "{fecha de hoy}"
+  resultado: "PASS:X FAIL:X N/A:X BLOCKED:X total:X"
+  consolidado: "{ruta relativa al consolidado.md}"
+```
+
+**Actualizar si encontraste algo nuevo:**
+
+- Si un FAIL confirma un defecto conocido → anotarlo como `defectos_abiertos` en `ultima_corrida`
+- Si un módulo quedó N/A por una VG no configurada → verificar que el YAML lo refleje en `vgs`
+- Si encontraste un cliente de prueba mejor (más documentos, más registros) → actualizar `modules.{modulo}.cliente_test`
+- Si `depositos.aplica` cambió (ahora hay cobros enviados) → actualizarlo
+- Si detectaste la playa desde los POSTs reales → anotarla como comentario en el YAML (no como campo fijo — las playas rotan)
+
+**No inventar:** solo actualizar lo que puedes derivar directamente de los reportes generados. Si algo es dudoso, déjalo como `null` con un comentario `# TBD — confirmar en próxima corrida`.
+
+---
+
+## PASO 6 — CIERRE
 
 Al terminar, presenta al usuario:
 
@@ -186,9 +212,8 @@ Al terminar, presenta al usuario:
 2. **FAILs detectados** — ID, descripción y nota de cada uno
 3. **Ruta del consolidado** — dónde quedó el `consolidado.md`
 4. **Defectos conocidos re-verificados** — si algún FAIL coincide con un defecto en `automation/defectos-conocidos.yaml`, indicarlo explícitamente
-5. **Pendientes** — cualquier módulo que quedó sin correr y por qué
-
-Si es la primera corrida de un cliente nuevo, actualiza el campo `ultima_corrida` en su YAML con el run_id y la fecha de hoy.
+5. **Cambios al YAML** — qué campos se actualizaron y por qué
+6. **Pendientes** — cualquier módulo que quedó sin correr y por qué
 
 ---
 
