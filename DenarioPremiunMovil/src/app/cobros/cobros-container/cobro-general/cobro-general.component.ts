@@ -618,6 +618,7 @@ export class CobrosGeneralComponent implements OnInit {
     await this.collectService.calcularMontos('', 0);
     this.collectService.checkTiposPago();
     await this.collectService.validateToSend();
+    this.collectService.updateSendButtonAvailability();
   }
 
   initCollection() {
@@ -738,8 +739,12 @@ export class CobrosGeneralComponent implements OnInit {
 
 
   setChangesMade(value: boolean) {
+    this.collectService.notifyCollectionEdited();
+  }
+
+  private markGeneralEditedAfterValidTabs(validTabs: boolean): void {
+    this.collectService.onCollectionValid(validTabs);
     this.collectService.markCollectionDirty();
-    this.collectService.validateToSend();
   }
 
 
@@ -772,7 +777,7 @@ export class CobrosGeneralComponent implements OnInit {
       if (this.globalConfig.get("requiredComment") === 'false' ? true : false) {
         /* this.collectService.onCollectionValid(true); */
         this.collectService.unlockTabs().then((resp) => {
-          this.collectService.onCollectionValid(resp);
+          this.markGeneralEditedAfterValidTabs(resp);
         })
       }
       /*   } else {
@@ -1183,7 +1188,7 @@ export class CobrosGeneralComponent implements OnInit {
     if (event.target.value.trim() != "") {
       this.collectService.collection.txConversion = this.collectService.cleanString(event.target.value.trim());
       this.collectService.unlockTabs().then((resp) => {
-        this.collectService.onCollectionValid(resp);
+        this.markGeneralEditedAfterValidTabs(resp);
       })
     } else {
       this.collectService.collection.txConversion = event.target.value.trim();
@@ -1193,10 +1198,13 @@ export class CobrosGeneralComponent implements OnInit {
       );
       this.messageService.alertModal(this.messageAlert);
     }
+    this.syncRequiresTxConversionReason();
+    this.collectService.refreshSendBlockedState();
   }
 
   setResponsible() {
     this.collectService.collection.naResponsible = this.collectService.cleanString(this.collectService.collection.naResponsible.trim());
+    this.collectService.markCollectionDirty();
   }
 
   setComment() {
@@ -1215,8 +1223,9 @@ export class CobrosGeneralComponent implements OnInit {
     );
 
     this.collectService.unlockTabs().then((resp) => {
-      this.collectService.onCollectionValid(resp);
+      this.markGeneralEditedAfterValidTabs(resp);
     })
+    this.collectService.refreshSendBlockedState();
   }
 
   onTxCommentInput() {
@@ -1230,6 +1239,7 @@ export class CobrosGeneralComponent implements OnInit {
         this.input.value = clean;
       }
     }
+    this.collectService.refreshSendBlockedState();
   }
 
   setResult(ev: any) {
@@ -1472,6 +1482,7 @@ export class CobrosGeneralComponent implements OnInit {
       this.lastManualRateValue = value!;
       void this.applySelectedRate(value!);
     }
+    this.collectService.refreshSendBlockedState();
   }
 
   /**
@@ -1553,7 +1564,7 @@ export class CobrosGeneralComponent implements OnInit {
       }
 
       const validTabs = await this.collectService.unlockTabs();
-      this.collectService.onCollectionValid(validTabs);
+      this.markGeneralEditedAfterValidTabs(validTabs);
     } finally {
       this.collectService.isRateChangeInProgress = false;
     }
@@ -1841,5 +1852,26 @@ export class CobrosGeneralComponent implements OnInit {
   get clienteTabLabel(): string {
     const collection = this.collectService.collection;
     return formatClientForTab(collection?.naClient, collection?.coClient, collection?.lbClient);
+  }
+
+  shouldShowRequiredCommentError(): boolean {
+    return this.collectService.sendValidationAttempted
+      && this.collectService.requiredComment
+      && !this.collectService.validComment
+      && !this.isSentDelivery;
+  }
+
+  shouldShowTxConversionError(): boolean {
+    return this.collectService.sendValidationAttempted
+      && !!this.changeRate
+      && !this.collectService.collection.txConversion?.trim();
+  }
+
+  shouldShowManualRateSendError(): boolean {
+    return this.collectService.sendValidationAttempted && !!this.manualRateError;
+  }
+
+  private syncRequiresTxConversionReason(): void {
+    this.collectService.requiresTxConversionReason = !!this.changeRate;
   }
 }

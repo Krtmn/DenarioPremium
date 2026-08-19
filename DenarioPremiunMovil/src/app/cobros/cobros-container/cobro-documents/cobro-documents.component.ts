@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, inject, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, DoCheck, inject, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
 import { CollectionDetailDiscounts, CollectionDetailRetentions, CollectionPayment } from 'src/app/modelos/tables/collection';
 import { CollectRetentions } from 'src/app/modelos/tables/collectRetentions';
 import { DocumentSale } from 'src/app/modelos/tables/documentSale';
@@ -32,7 +32,7 @@ import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util
   styleUrls: ['./cobro-documents.component.scss'],
   standalone: false
 })
-export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy {
+export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy, DoCheck {
 
   readonly textCommentMaxLength = TEXT_COMMENT_MAX_LENGTH;
   readonly textCommentMinLength = TEXT_COMMENT_MIN_LENGTH;
@@ -663,6 +663,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
     this.collectService.syncCollectionIgtfFields();
     this.collectService.calculatePayment('', 0, true);
+    this.collectService.notifyCollectionEdited();
     this.refreshOpenDocumentAmountPaidIfNeeded();
     this.cdr.detectChanges();
   }
@@ -674,6 +675,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   separateIgtf() {
     this.collectService.handleSeparateIgtfToggle();
+    this.collectService.markCollectionDirty();
     this.refreshOpenDocumentAmountPaidIfNeeded();
     this.cdr.detectChanges();
     if (this.collectService.igtfSelected.price <= 0 && this.collectService.separateIgtf) {
@@ -1862,7 +1864,8 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
     }
 
-
+    this.collectService.updateSendButtonAvailability();
+    this.collectService.markCollectionDirty();
   }
 
   async initCollectionDetail(documentSale: DocumentSale, id: number) {
@@ -2046,6 +2049,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         this.collectService.copyDocumentSaleOpenToSalesAndDetails();
         this.collectService.clearOpenDetailFaltanteBackup();
         this.collectService.calculatePayment("", 0, true);
+        this.collectService.markCollectionDirty();
         if (this.collectService.dynamicRetentions) {
           this.clearDocumentRetentionState();
         }
@@ -2070,6 +2074,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.centsDiscount = undefined;
     this.centsRetention = undefined;
     this.centsRetention2 = undefined;
+    this.collectService.updateSendButtonAvailability();
   }
 
   dontSaveDocumentSale(action: boolean) {
@@ -2084,6 +2089,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
     this.collectService.validNuRetention = false;
     this.collectService.isOpen = action;
+    this.collectService.updateSendButtonAvailability();
   }
 
   saveStatusDocument() {
@@ -2149,6 +2155,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
     if (validate) {
       this.collectService.calculatePayment("", 0);
+      this.collectService.markCollectionDirty();
       this.cdr.detectChanges();
       console.log("GUARDAR")
       this.collectService.isOpen = false;
@@ -2727,6 +2734,39 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     console.log(this.collectService.collection)
   }
 
+  ngDoCheck(): void {
+    const focusIndex = this.collectService.retentionSendFocusDocIndex;
+    if (focusIndex == null || focusIndex < 0) {
+      return;
+    }
+    this.collectService.retentionSendFocusDocIndex = null;
+    void this.openDocumentSale(focusIndex, new Event('click'));
+  }
+
+  public shouldShowDocumentRetentionSendError(sourceIndex: number): boolean {
+    if (String(this.collectService.collection?.coType ?? '') !== '2') {
+      return false;
+    }
+    if (!this.collectService.sendValidationAttempted) {
+      return false;
+    }
+    const doc = this.collectService.documentSales[sourceIndex];
+    if (!doc?.isSelected) {
+      return false;
+    }
+    const pos = doc.positionCollecDetails;
+    const details = this.collectService.collection?.collectionDetails;
+    if (!Number.isInteger(pos) || pos < 0 || !Array.isArray(details) || pos >= details.length) {
+      return true;
+    }
+    return !this.collectService.isRetentionDetailComplete(details[pos]);
+  }
+
+  public getDocumentRetentionSendErrorHint(): string {
+    return this.collectService.collectionTags.get('COB_HINT_RETENTION_INCOMPLETE_LIST')
+      ?? 'Retención incompleta — abra el documento';
+  }
+
   public shouldShowRetentionLineLengthHint(idCollectRetention: number): boolean {
     if (this.shouldShowRetentionVoucherDigitCounter(idCollectRetention)) {
       return false;
@@ -2755,6 +2795,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     if (hasValue) {
       return true;
     }
+    if (!this.collectService.sendValidationAttempted) {
+      return false;
+    }
     return this.isRetentionVoucherMandatory(idCollectRetention);
   }
 
@@ -2764,6 +2807,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   public shouldShowRetentionLineDateInvalidBorder(idCollectRetention: number): boolean {
     if (this.shouldShowRetentionLineDateValidBorder(idCollectRetention)) {
+      return false;
+    }
+    if (!this.collectService.sendValidationAttempted) {
       return false;
     }
     return this.isRetentionDateMandatory(idCollectRetention);
@@ -2780,6 +2826,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
   public shouldShowCollectRetentionAmountInvalidBorder(idCollectRetention: number): boolean {
     if (this.shouldShowCollectRetentionAmountValidBorder(idCollectRetention)) {
+      return false;
+    }
+    if (!this.collectService.sendValidationAttempted) {
       return false;
     }
     return this.getRetentionLine(idCollectRetention) != null;
