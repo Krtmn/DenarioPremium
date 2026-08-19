@@ -15,7 +15,7 @@
                         <img class="fechaAtras" alt="" src="../../../assets/images/devolucionesNuevoBlanco.svg" />
                     </ion-col>
                     <ion-col size="1" offset-md="1" size-md="1" size-sm="1" size-xs="2" *ngIf="showHeaderButtos">
-                      <ion-button class="imagenGuardar" (click)="saveSendNewReturn(false)" [disabled]="disableSendButton" expand="block" fill="clear">
+                      <ion-button class="imagenGuardar" (click)="buttonSaveReturn()" [disabled]="disableSendButton" expand="block" fill="clear">
                         <!-- <ion-icon slot="icon-only" name="star"></ion-icon> -->
                         <!-- <img class="fechaAtras" alt="" src=" ../../../assets/images/iconosguardarblanco.png" /> -->
                       </ion-button>
@@ -24,7 +24,7 @@
                         </ion-segment-button> -->
                     </ion-col>
                     <ion-col size="1" size-md="1" size-sm="1" size-xs="2" *ngIf="showHeaderButtos">
-                      <ion-button class="imagenEnviar" (click)="saveSendNewReturn(true)" [disabled]="cannotSendReturn" expand="block" fill="clear">
+                      <ion-button class="imagenEnviar" (click)="buttonSendReturn()" [disabled]="cannotSendReturn" expand="block" fill="clear">
                         <!-- <ion-icon slot="icon-only" name="star"></ion-icon> -->
                         <!-- <img class="fechaAtras" alt="" src=" ../../../assets/images/iconosmensaje.png" /> -->
                       </ion-button>
@@ -46,3 +46,7 @@
 <!-- alerta de envio-->
 <ion-alert [isOpen]="alertMessageOpen" header={{header}} message={{mensaje}} [buttons]="alertButtons"
     (didDismiss)="setResult($event)"></ion-alert>
+
+<!-- alerta de guardar -->
+<ion-alert [isOpen]="alertMessageOpenSave" header={{header}} message={{mensaje}} [buttons]="alertButtons"
+    (didDismiss)="setResultSave($event)"></ion-alert>
