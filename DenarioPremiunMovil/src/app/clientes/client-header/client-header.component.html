@@ -19,12 +19,12 @@
         </ion-col>
 
         <ion-col size="1" size-sm="1" size-xs="2" *ngIf="clientLogic.saveSendPotentialClient">
-          <ion-button class="imagenGuardar" (click)="saveSendNewPotentialCliente(true)"
+          <ion-button class="imagenGuardar" (click)="buttonSavePotentialClient()"
             [disabled]="clientLogic.cannotSavePotentialClient" expand="block" fill="clear">
           </ion-button>
         </ion-col>
         <ion-col size="1" size-sm="1" size-xs="2" *ngIf="clientLogic.saveSendPotentialClient">
-          <ion-button class="imagenEnviar" (click)="saveSendNewPotentialCliente(false)"
+          <ion-button class="imagenEnviar" (click)="buttonSendPotentialClient()"
             [disabled]="clientLogic.cannotSendPotentialClient" expand="block" fill="clear">
 
           </ion-button>
@@ -51,3 +51,7 @@
 <!-- alerta de envio-->
 <ion-alert [isOpen]="alertMessageOpen" header="{{this.clientLogic.clientTags.get('CLI_DENARIO_HEADER')}}"
   message={{mensaje}} [buttons]="alertButtons" (didDismiss)="setResult($event)"></ion-alert>
+
+<!-- alerta de guardar -->
+<ion-alert [isOpen]="alertMessageOpenSave" header="{{this.clientLogic.clientTags.get('CLI_DENARIO_HEADER')}}"
+  message={{mensaje}} [buttons]="alertButtons" (didDismiss)="setResultSave($event)"></ion-alert>

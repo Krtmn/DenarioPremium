@@ -95,6 +95,8 @@ Los unitarios validan **lógica de negocio** y regresiones UI críticas. Smoke d
 | **P1 retention invalid** | Suma &gt; saldo o ambos 0 → inválido. |
 | **P1 add payment** | `nuDifference >= 0` bloquea agregar método. |
 | **P1 docs for send** | Sin doc listo → false; seleccionado+save → true. |
+| **COB-SAVE-001** | General válida habilita Guardar sin exigir pagos/docs completos. |
+| **COB-SAVE-002** | Tras baseline limpio Guardar OFF; `markCollectionDirty` / cobro nuevo ON. |
 
 ## 10. Componentes
 
@@ -125,6 +127,14 @@ Los unitarios validan **lógica de negocio** y regresiones UI críticas. Smoke d
 | **COB-DISC-001** | Manual discount solo en el `coDocument` que lo tiene; el otro queda `[]`. |
 | **COB-DISC-001** | Descuentos distintos por doc no se cruzan. |
 | **COB-DISC-001** | Match con `co_document` con espacios vía `normalizeCoDocument`. |
+
+## 13. COB-UX-SEND — disponibilidad del botón Enviar
+
+| ID | Spec | Qué hace |
+|----|------|----------|
+| **COB-UX-SEND-001** | `cobros-header`, `cobro-pagos` | Errores por campo tras pulsar Enviar; no forzar OFF en `setMonto`. |
+| **COB-UX-SEND-002** | `collection-logic`, `cobros-header`, `cobro-pagos` | Prerrequisitos doc+pago por `coType`; `updateSendButtonAvailability`; `addTipoPago` refresca estado. |
+| **COB-RET-SEND-001** | `collection-logic`, `cobros-header`, `cobro-documents` | Mensaje al Enviar retención incompleta; hint en lista; foco en documento. |
 
 ---
 

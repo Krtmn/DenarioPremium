@@ -216,6 +216,13 @@ ion-input.inp-write,
   --highlight-color-valid: #{$colorVerde} !important;
 }
 
+.retention-send-error-hint {
+  color: #e53935;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem 0.5rem;
+}
+
 .retention-selector-label {
   display: block;
   margin: 4px 0 6px;

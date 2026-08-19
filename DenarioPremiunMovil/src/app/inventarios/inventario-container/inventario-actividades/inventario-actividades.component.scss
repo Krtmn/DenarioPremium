@@ -28,6 +28,14 @@ $colorLila: #430197;
   min-width: 100%;
   white-space: nowrap;
   border-collapse: collapse;
+
+  tr.stock-send-error-row {
+    background-color: rgba(235, 68, 90, 0.12);
+
+    td {
+      color: var(--ion-color-danger, #eb445a);
+    }
+  }
   color: #000000;
   font-size: 12px;
 }

@@ -112,6 +112,7 @@ export class CobrosContainerComponent implements OnInit {
       this.collectService.isRetention = false;
       this.collectService.collection = {} as Collection;
       this.collectService.resetCollectionExitBaseline();
+      this.collectService.resetSendValidationUx();
 
       if (this.collectService.userMustActivateGPS) {
         this.collectService.collection.coordenada = this.coordenada;

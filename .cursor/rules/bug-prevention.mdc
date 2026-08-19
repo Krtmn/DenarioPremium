@@ -24,9 +24,11 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Anticipo automático al Enviar: batch cobro→anticipo + dirty-requeue AutoSend (no dos `runPendingQueue` sueltos); ver `COB-PREPAID-002`.
 - Documentos paginados: totales/parciales viven en `collectionDetails`, no en la página de `documentSales` (ver `COB-DOCS-001`).
 - Descuentos/retenciones al reabrir: adjuntar por `coDocument` (no solo `coCollection`); ver `COB-DISC-001`.
-- Retención multi-doc (`coType` 2): Enviar/Guardar exige completitud por documento, no solo suma > 0 (`COB-RET-001`).
+- Retención multi-doc (`coType` 2): Enviar exige completitud por documento, no solo suma > 0 (`COB-RET-001`); Guardar tras General válida (`COB-SAVE-001`).
 - Total General = `nuAmountTotal` (no `montoTotalPagado`); al reabrir no pisar con `forceRecalc` si UI de pagos aún vacía (`COB-TOTAL-001`).
 - Faltante (`nuAmountDiscount`) → 0 en Guardado: refrescar `montoTotalPagar` (no exigir faltante > 0 para Guardar; no congelar con `paid < net` / preserve) — `COB-FALT-001`.
+- Guardar Cobros: habilitado tras General válida (`generalTabValidForSave`); no acoplar a pagos/docs/retención — `COB-SAVE-001`.
+- Tras guardar/reabrir persistido: Guardar OFF hasta `markCollectionDirty` / edición de usuario — `COB-SAVE-002`.
 - `syncCollectionDetailDiscountConversion` / batch sync: no asumir `this.collection` UI; pasar tasa/moneda del cobro persistido.
 - Comentario Cobros/Inventarios: no `trim()` en `cleanString`/`ionInput` (se come el Espacio); ver `COB-INV-COMMENT-001`.
 - Fecha TR/PM al cambiar: escribir `daValue` y `daCollectionPayment` (reabrir usa `daValue`); ver `COB-DATE-001`.
@@ -34,6 +36,32 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 ## Inventarios
 
 - Buscador productos: no refiltrar con `.includes()` crudo tras SQL GLOB accent-insensitive; normalizar tildes en memoria (`INV-SEARCH-001`).
+- Guardar/Enviar: no acoplar ambos a `checkValidStockToSend()`; validación completa al pulsar (`INV-SAVE-001`).
+- Guardar tras persistir: OFF hasta `markStockDirty` / edición de usuario — `INV-SAVE-002`.
+- Enviar: General OK habilita botón; campos obligatorios (productos, firma, GPS) se validan al click — `INV-SEND-001`.
+- Comentario Inventarios: no `trim()` en `cleanString`/`ionInput` (se come el Espacio); ver `COB-INV-COMMENT-001`.
+
+## Depósitos
+
+- Guardar/Enviar: no acoplar Guardar a cobros en el botón; validación completa al pulsar (`DEP-SAVE-001`).
+- Guardar tras persistir: OFF hasta `markDepositDirty` / edición de usuario — `DEP-SAVE-002`.
+- Enviar: General OK (banco) habilita botón; banco, plantilla, cobros, firma y GPS se validan al click — `DEP-SEND-001`.
+
+## Devoluciones
+
+- Guardar/Enviar: no acoplar Guardar a productos en el botón; validación completa al pulsar (`DEV-SAVE-001`).
+- Guardar tras persistir: OFF hasta `markReturnDirty` / edición de usuario — `DEV-SAVE-002`.
+- Enviar: General OK (cliente + factura si `validateReturn`) habilita botón; productos, firma y GPS se validan al click — `DEV-SEND-001`.
+
+## Clientes potenciales
+
+- Guardar/Enviar: no acoplar botones a `checkForm()` completo; validación completa al pulsar (`POT-SAVE-001`).
+- Guardar tras persistir: OFF hasta `markPotentialClientDirty` / edición de usuario — `POT-SAVE-002`.
+- Enviar: General OK (empresa) habilita botón; campos obligatorios (incl. `naResponsible`), firma y GPS se validan al click — `POT-SEND-001`.
+
+## Pedidos
+
+- `requiredCommentOrder`: no bloquear pestañas al abrir pedido no editable (enviado) con comentario vacío (`PED-COMMENT-001`).
 
 ## Vendedor
 
@@ -44,6 +72,7 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Saldo display (lista/detalle): buckets `document_sales` local/hard por empresa — no particionar por `c.co_currency` mentiroso (`CLI-SALDOS-001`).
 - No mutar `client.coCurrency` solo para cuadrar Saldo; crédito/cobros/pedidos usan la moneda del cliente.
 - Lista y detalle: misma regla (`resolveClientBalanceTotals` con semántica docs).
+- Crédito en detalle: etiquetas local/hard como Saldo; no restar `saldo1+saldo2` ni rotular por `coCurrency` (`CLI-CREDIT-001`).
 
 
 ## Al cerrar un bug

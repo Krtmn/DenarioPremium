@@ -47,7 +47,7 @@
       <ion-label>
         {{this.depositService.depositTags.get('DEP_BANCO')}}:
       </ion-label>
-      <div class="listado-enterprise-selector ion-text-center">
+      <div class="listado-enterprise-selector ion-text-center" [class.deposit-send-error-hint]="shouldShowBankSendError()">
         <!-- <ion-select class="ion-text-center always-flip" [(ngModel)]="this.depositService.currencySelected"
           (ionChange)="onChangeCurrencyMsj($event)" disabled="{{this.depositService.disabledCurrency}}"> -->
         <ion-select class="ion-text-center always-flip selectbanco" interface="popover" labelPlacement="stacked"
@@ -69,7 +69,7 @@
     </ion-col>
 
     <!-- NRO PLANTITTA -->
-    <ion-col size="12" size-sm="12" size-xs="12">
+    <ion-col size="12" size-sm="12" size-xs="12" [class.deposit-send-error-hint]="shouldShowDocumentSendError()">
       <ion-input label="{{this.depositService.depositTags.get('DEP_NRO_PLANTILLA')}}:"
         [(ngModel)]="this.depositService.nuDocument" label-placement="floating" fill="outline"
         value="this.depositService.nuDocument" type="text" (ionInput)="onNuDocumentInput()"

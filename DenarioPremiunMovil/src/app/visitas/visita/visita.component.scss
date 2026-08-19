@@ -31,6 +31,23 @@ $fondoLila: #430197;
   border: 1px solid #e60c0c !important;
 }
 
+.visit-send-error-hint {
+  ion-input {
+    --border-color: var(--ion-color-danger, #eb445a);
+    --highlight-color: var(--ion-color-danger, #eb445a);
+  }
+
+  &.segment-button-checked,
+  & {
+    --indicator-color: var(--ion-color-danger, #eb445a);
+    --color: var(--ion-color-danger, #eb445a);
+  }
+}
+
+ion-segment-button.visit-send-error-hint {
+  --color: var(--ion-color-danger, #eb445a);
+}
+
 .fondoVerde {
   background: $fondoVerde;
 }

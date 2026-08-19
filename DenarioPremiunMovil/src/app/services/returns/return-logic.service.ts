@@ -27,7 +27,7 @@ import { ItemListaCobros } from 'src/app/cobros/item-lista-cobros';
 import { ItemListaDevoluciones } from 'src/app/devoluciones/item-lista-devoluciones';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
-import { COLOR_AMARILLO } from 'src/app/utils/appConstants';
+import { COLOR_AMARILLO, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 
 @Injectable({
   providedIn: 'root'
@@ -74,6 +74,14 @@ export class ReturnLogicService {
   validateClient: boolean = false;
   bloquearFactura: boolean = true;
 
+  /** UX Guardar/Enviar (patrón Inventarios/Depósitos). */
+  generalTabValidForSave = false;
+  returnPersistedBaseline = false;
+  returnDirtySincePersist = false;
+  sendValidationAttempted = false;
+  sendBlockedByFields = false;
+  returnSendFocusProductIndex = -1;
+
   backRoute = new Subject<string>;
   showButtons = new Subject<Boolean>;
   returnValid = new Subject<Boolean>;
@@ -85,7 +93,7 @@ export class ReturnLogicService {
   invoiceChanged: Subject<Invoice> = new Subject<Invoice>();
 
   AttachSubscription: Subscription = this.adjuntoService.AttachmentChanged.subscribe(() => {
-    this.setChange(true, true);
+    this.notifyReturnEdited();
   });
 
 
@@ -159,6 +167,251 @@ export class ReturnLogicService {
     this.returnValid.next(valid);
   }
 
+  onReturnGeneralValid(valid: boolean): void {
+    this.generalTabValidForSave = valid;
+    this.onReturnValid(valid);
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
+  }
+
+  isReturnReadOnlyForEdit(): boolean {
+    const stDelivery = Number(this.newReturn?.stDelivery ?? -1);
+    return stDelivery === DELIVERY_STATUS_TO_SEND
+      || stDelivery === DELIVERY_STATUS_SENT;
+  }
+
+  updateSaveButtonAvailability(): void {
+    if (this.isReturnReadOnlyForEdit() || this.returnSent) {
+      this.onReturnValidToSave(false);
+      return;
+    }
+    if (this.adjuntoService.weightLimitExceeded) {
+      this.onReturnValidToSave(false);
+      return;
+    }
+    const generalOk = this.generalTabValidForSave;
+    const hasChangesToSave =
+      !this.returnPersistedBaseline || this.returnDirtySincePersist;
+    this.onReturnValidToSave(generalOk && hasChangesToSave);
+  }
+
+  updateSendButtonAvailability(): void {
+    if (this.isReturnReadOnlyForEdit() || this.returnSent) {
+      this.onReturnValidToSend(false);
+      return;
+    }
+    if (this.adjuntoService.weightLimitExceeded) {
+      this.onReturnValidToSend(false);
+      return;
+    }
+    if (this.sendBlockedByFields) {
+      this.onReturnValidToSend(false);
+      return;
+    }
+    this.onReturnValidToSend(this.generalTabValidForSave);
+  }
+
+  resetSendValidationUx(): void {
+    this.sendValidationAttempted = false;
+    this.sendBlockedByFields = false;
+    this.returnSendFocusProductIndex = -1;
+    this.updateSendButtonAvailability();
+  }
+
+  refreshSendBlockedState(): void {
+    if (!this.sendBlockedByFields) {
+      return;
+    }
+    if (!this.hasReturnFieldErrors()) {
+      this.sendBlockedByFields = false;
+      this.updateSendButtonAvailability();
+    }
+  }
+
+  notifyReturnEdited(): void {
+    this.markReturnDirty();
+    this.returnChanged = true;
+    this.refreshSendBlockedState();
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
+  }
+
+  markReturnDirty(): void {
+    this.returnDirtySincePersist = true;
+  }
+
+  applyReturnPersistSucceededBaseline(): void {
+    this.returnDirtySincePersist = false;
+    this.returnPersistedBaseline = true;
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
+  }
+
+  resetReturnExitBaseline(): void {
+    this.returnPersistedBaseline = false;
+    this.returnDirtySincePersist = false;
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
+  }
+
+  markReturnOpenedFromPersistedCopy(): void {
+    this.returnPersistedBaseline = true;
+    this.returnDirtySincePersist = false;
+    this.returnChanged = false;
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
+  }
+
+  resetReturnValidationUxFlags(): void {
+    this.generalTabValidForSave = false;
+    this.sendValidationAttempted = false;
+    this.sendBlockedByFields = false;
+    this.returnSendFocusProductIndex = -1;
+    this.returnPersistedBaseline = false;
+    this.returnDirtySincePersist = false;
+  }
+
+  private hasClientSelected(): boolean {
+    return Number(this.newReturn?.idClient ?? 0) > 0;
+  }
+
+  private hasInvoiceSelectedWhenRequired(): boolean {
+    if (!this.validateReturn) {
+      return true;
+    }
+    return Number(this.newReturn?.idInvoice ?? 0) > 0;
+  }
+
+  private normalizeProductCoDocument(coDocument: string | null | undefined): string {
+    const doc = (coDocument ?? '').toString().trim();
+    if (doc.length > 0) {
+      return doc;
+    }
+    if (!this.requeridedNroFactura && !this.validateReturn) {
+      return '0';
+    }
+    return '';
+  }
+
+  private isReturnProductLineComplete(product: ReturnDetail, index: number): boolean {
+    const qty = Number(product?.quProduct);
+    if (isNaN(qty) || qty <= 0) {
+      this.returnSendFocusProductIndex = index;
+      return false;
+    }
+
+    const coDocument = this.normalizeProductCoDocument(product?.coDocument);
+    if (this.requeridedNroFactura && coDocument.length === 0) {
+      this.returnSendFocusProductIndex = index;
+      return false;
+    }
+
+    if (this.validateReturn) {
+      const validateUnit = this.newReturn.invoicedetailUnits?.find(
+        (inv) => inv.idProductUnit === product.unit?.idProductUnit,
+      );
+      const maxQty = Number(validateUnit?.quUnit ?? 0);
+      if (qty < 1 || (maxQty > 0 && qty > maxQty)) {
+        this.returnSendFocusProductIndex = index;
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private requiresSignatureAttachments(): boolean {
+    return this.globalConfig.get('signatureReturn') === 'true';
+  }
+
+  private hasMissingSignatureAttachments(): boolean {
+    return this.requiresSignatureAttachments() && !this.adjuntoService.hasItems();
+  }
+
+  private hasMissingGpsCoordinate(): boolean {
+    if (!this.userMustActivateGPS) {
+      return false;
+    }
+    const coord = (this.newReturn?.coordenada ?? '').toString().trim();
+    return coord.length === 0;
+  }
+
+  public hasReturnFieldErrors(): boolean {
+    this.returnSendFocusProductIndex = -1;
+    if (!this.generalTabValidForSave || !this.hasClientSelected()) {
+      return true;
+    }
+    if (!this.hasInvoiceSelectedWhenRequired()) {
+      return true;
+    }
+    if (!this.productList || this.productList.length === 0) {
+      return true;
+    }
+    for (let index = 0; index < this.productList.length; index++) {
+      if (!this.isReturnProductLineComplete(this.productList[index], index)) {
+        return true;
+      }
+    }
+    if (this.hasMissingSignatureAttachments()) {
+      return true;
+    }
+    if (this.hasMissingGpsCoordinate()) {
+      return true;
+    }
+    return false;
+  }
+
+  public getReturnValidationMessage(): string {
+    this.returnSendFocusProductIndex = -1;
+    if (!this.generalTabValidForSave || !this.hasClientSelected()) {
+      return this.tags.get('DEV_MSJ_ERROR_NO_CLIENT')
+        ?? 'Seleccione un cliente para continuar.';
+    }
+    if (!this.hasInvoiceSelectedWhenRequired()) {
+      return this.tags.get('DEV_MSJ_ERROR_NO_INVOICE')
+        ?? 'Seleccione una factura para continuar.';
+    }
+    if (!this.productList || this.productList.length === 0) {
+      return this.tags.get('DEV_MSJ_ERROR_NO_PRODUCTS')
+        ?? 'Debe agregar al menos un producto a la devolución.';
+    }
+    for (let index = 0; index < this.productList.length; index++) {
+      if (!this.isReturnProductLineComplete(this.productList[index], index)) {
+        if (this.validateReturn) {
+          const validateUnit = this.newReturn.invoicedetailUnits?.find(
+            (inv) => inv.idProductUnit === this.productList[index].unit?.idProductUnit,
+          );
+          const maxQty = Number(validateUnit?.quUnit ?? 0);
+          const qty = Number(this.productList[index]?.quProduct ?? 0);
+          if (qty < 1 || (maxQty > 0 && qty > maxQty)) {
+            return this.tags.get('DEV_MSJ_ERROR_INVALID_QTY')
+              ?? this.tags.get('DEV_INVALID_QU_UNIT')
+              ?? 'Cantidad inválida para la unidad seleccionada.';
+          }
+        }
+        return this.tags.get('DEV_MSJ_ERROR_INCOMPLETE_PRODUCT')
+          ?? 'Complete cantidad y documento en todos los productos.';
+      }
+    }
+    if (this.hasMissingSignatureAttachments()) {
+      return this.tags.get('DEV_MSJ_ERROR_NO_ATTACHMENTS')
+        ?? 'Debe adjuntar al menos un documento o firma antes de continuar.';
+    }
+    if (this.hasMissingGpsCoordinate()) {
+      return this.tags.get('DEV_MSJ_ERROR_NO_GPS')
+        ?? 'Debe activar el GPS y obtener la ubicación antes de continuar.';
+    }
+    return this.tags.get('DEV_MSJ_ERROR_INCOMPLETE_PRODUCT')
+      ?? 'Complete los campos obligatorios de la devolución.';
+  }
+
+  public isReturnProductLineIncomplete(index: number): boolean {
+    if (!this.sendValidationAttempted || index < 0 || index >= this.productList.length) {
+      return false;
+    }
+    return !this.isReturnProductLineComplete(this.productList[index], index);
+  }
+
   onReturnValidToSend(validToSend: Boolean) {
     console.log('returnLogicService: onReturnValidToSend');
     this.returnValidToSend.next(validToSend);
@@ -195,15 +448,14 @@ export class ReturnLogicService {
       returnDetail.idUnit = returnDetail.productUnits[0].idUnit;
     });
     returnDetail.showDateModal = false;
-    this.setChange(true, true);
+    this.notifyReturnEdited();
     this.productList.push(returnDetail);
-    this.onReturnValidToSend(false);
     this.productListCart.next(this.productList);
   }
 
   removeProductDev(index: number) {
     this.productList.splice(index, 1);
-    this.setChange(true, true);
+    this.notifyReturnEdited();
     this.productListCart.next(this.productList);
   }
 
@@ -252,21 +504,7 @@ export class ReturnLogicService {
   }
 
   updateSendButtonState() {
-    let valid = true;
-    if (this.productList.length > 0) {
-      for (let index = 0; index < this.productList.length; index++) {
-        const element = this.productList[index];
-        if (!element.coDocument || !element.quProduct) {
-          valid = false;
-          break;
-        }
-      }
-    } else {
-      valid = false;
-    }
-    this.onReturnValidToSend(valid);
-    this.onReturnValidToSave(valid);
-    this.setChange(true, true);
+    this.notifyReturnEdited();
   }
   /*   getTags() {
       this.services.getTags(this.dbServ.getDatabase(), "DEV", "ESP").then(result => {
@@ -318,7 +556,8 @@ export class ReturnLogicService {
       });
       this.findInvoices().then();
       this.findInvoiceDetailUnits().then();
-      this.setChange(false, true);
+      this.onReturnGeneralValid(true);
+      this.markReturnOpenedFromPersistedCopy();
 
     });
   }

@@ -309,10 +309,7 @@ public modalCtrl = inject(ModalController);
     this.inventariosLogicService.productTypeStocksMap = new Map<number, number>();
     this.inventariosLogicService.setVariablesMap();
 
-    if (this.inventariosLogicService.newClientStock.clientStockDetails.length === 0) {
-      this.inventariosLogicService.cannotSendClientStock = true;
-    }
-
+    this.inventariosLogicService.notifyStockEdited();
     this.rebuildTableData();
   }
 
