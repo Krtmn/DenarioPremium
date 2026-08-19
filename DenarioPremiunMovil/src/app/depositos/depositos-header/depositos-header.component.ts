@@ -32,11 +32,8 @@ export class DepositosHeaderComponent implements OnInit {
   public subscriberDisabled: any;
   public subscriberToSend: any;
 
-  private depositGeneralAllowsSave = false;
-  private depositHasSelectedCollection = false;
-
-  //public subscriptionWeightLimit: any;
-  //public subscriptionAttachmentChange: any;
+  public subscriptionWeightLimit: Subscription | undefined;
+  public subscriptionAttachmentChange: Subscription | undefined;
 
   public alertMessageOpenSend: Boolean = false;
   public alertMessageOpenSave: Boolean = false;
@@ -52,13 +49,16 @@ export class DepositosHeaderComponent implements OnInit {
       role: 'save',
       handler: () => {
         console.log('save and exit');
-        this.saveDeposit().then((ok) => {
+        if (!this.validateDepositBeforeAction(false)) {
+          return;
+        }
+        this.persistDepositSaved().then((ok) => {
           if (!ok) {
             return;
           }
           this.depositService.depositValid = false;
-          this.alertMessageOpenSave = true;
           this.depositService.message = this.depositService.depositTags.get('DEP_SAVE_MSG')!;
+          this.alertMessageOpenSave = true;
           setTimeout(() => {
             this.messageService.hideLoading();
             this.depositService.showBackRoute('depositos');
@@ -101,48 +101,22 @@ export class DepositosHeaderComponent implements OnInit {
     });
 
     this.subscriberDisabled = this.depositService.depositValidToSave.subscribe((validToSave: Boolean) => {
-      this.depositGeneralAllowsSave = !!validToSave;
-      this.refreshHeaderSaveDisabled();
+      this.depositService.disabledSaveButton = !validToSave;
     });
 
     this.subscriberToSend = this.depositService.depositValidToSend.subscribe((validToSend: Boolean) => {
-      this.depositHasSelectedCollection = !!validToSend;
-      this.depositService.disabledSendButton = !this.depositHasSelectedCollection;
-      this.refreshHeaderSaveDisabled();
+      this.depositService.disabledSendButton = !validToSend;
     });
 
-    this.depositGeneralAllowsSave = false;
-    this.depositHasSelectedCollection = false;
-    this.refreshHeaderSaveDisabled();
-
-    /*
     this.subscriptionAttachmentChange = this.adjuntoService.AttachmentChanged.subscribe(() => {
-      var disable = (this.depositService.deposit.depositCollect.length == 0);
-      this.depositService.disabledSendButton = disable;
-      this.depositService.disabledSaveButton = disable;
+      this.depositService.notifyDepositEdited();
     });
 
     this.subscriptionWeightLimit = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
-      this.depositService.disabledSendButton = true;
-      this.depositService.disabledSaveButton = true;
+      this.depositService.updateSaveButtonAvailability();
+      this.depositService.updateSendButtonAvailability();
     });
-    */
 
-  }
-
-  private refreshHeaderSaveDisabled(): void {
-    this.depositService.disabledSaveButton = !(
-      this.depositGeneralAllowsSave && this.depositHasSelectedCollection
-    );
-  }
-
-  private alertDepositRequiresAtLeastOneCollection(): void {
-    this.messageService.alertModal({
-      header: this.depositService.depositTags.get('DEP_HEADER_MESSAGE') ?? 'Aviso',
-      message:
-        this.depositService.depositTags.get('DEP_SELECT_COB_DEP') ??
-        'Seleccione al menos un documento (cobro) para el depósito.',
-    });
   }
 
   ngOnDestroy() {
@@ -150,8 +124,37 @@ export class DepositosHeaderComponent implements OnInit {
     this.subscriberDisabled.unsubscribe();
     this.subscriberToSend.unsubscribe();
     this.backButtonSubscription.unsubscribe();
-    //this.subscriptionAttachmentChange.unsubscribe();
-    //this.subscriptionWeightLimit.unsubscribe();
+    this.subscriptionAttachmentChange?.unsubscribe();
+    this.subscriptionWeightLimit?.unsubscribe();
+  }
+
+  private notifyDepositValidationFailure(blockSend: boolean): void {
+    if (blockSend) {
+      this.depositService.sendBlockedByFields = true;
+      this.depositService.updateSendButtonAvailability();
+    }
+    this.messageService.transaccionMsjModalNB(
+      this.depositService.getDepositValidationMessage(),
+    );
+  }
+
+  private validateDepositBeforeAction(blockSendOnError: boolean): boolean {
+    if (!this.depositService.generalTabValidForSave) {
+      return false;
+    }
+
+    this.depositService.sendValidationAttempted = true;
+
+    if (this.depositService.hasDepositFieldErrors()) {
+      this.notifyDepositValidationFailure(blockSendOnError);
+      return false;
+    }
+
+    if (blockSendOnError) {
+      this.depositService.sendBlockedByFields = false;
+      this.depositService.updateSendButtonAvailability();
+    }
+    return true;
   }
 
   setResultSend(ev: any) {
@@ -168,7 +171,14 @@ export class DepositosHeaderComponent implements OnInit {
     console.log('Apretó:' + ev.detail.role);
     if (ev.detail.role === 'confirm') {
       this.alertMessageOpenSave = false;
-      //this.saveDeposit();
+      void this.persistDepositSaved().then((ok) => {
+        if (!ok) {
+          return;
+        }
+        this.depositService.message = this.depositService.depositTags.get('DEP_SAVE_MSG')!;
+        this.alertMessageOpenSave = true;
+        this.messageService.hideLoading();
+      });
     } else {
       this.alertMessageOpenSave = false;
     }
@@ -203,27 +213,27 @@ export class DepositosHeaderComponent implements OnInit {
   });
 
   buttonSave() {
-
-    this.saveDeposit().then((ok) => {
-      if (!ok) {
-        return;
-      }
-      this.depositService.message = this.depositService.depositTags.get('DEP_SAVE_MSG')!;
-      this.alertMessageOpenSave = true;
-      this.messageService.hideLoading();
-    })
+    if (!this.validateDepositBeforeAction(false)) {
+      return;
+    }
+    this.depositService.message =
+      this.depositService.depositTags.get('DEP_MSJ_SAVE_QUESTION')
+      ?? '¿Desea guardar el Depósito?';
+    this.alertMessageOpenSave = true;
   }
 
   buttonSend() {
-    this.depositService.message = this.depositService.depositTags.get('DEP_SEND_MSG')!;
+    if (!this.validateDepositBeforeAction(true)) {
+      return;
+    }
+    this.depositService.message =
+      this.depositService.depositTags.get('DEP_MSJ_SEND_QUESTION')
+      ?? this.depositService.depositTags.get('DEP_SEND_MSG')
+      ?? '¿Desea enviar el Depósito?';
     this.alertMessageOpenSend = true;
   }
 
-  saveDeposit(): Promise<boolean> {
-    if (!this.depositService.hasAtLeastOneDepositCollectRow()) {
-      this.alertDepositRequiresAtLeastOneCollection();
-      return Promise.resolve(false);
-    }
+  persistDepositSaved(): Promise<boolean> {
     return this.messageService.showLoading().then(() => {
       this.depositService.deposit.stDeposit = this.DEPOSITO_STATUS_SAVED;
       this.depositService.deposit.stDelivery = this.DEPOSITO_STATUS_SAVED;
@@ -231,6 +241,7 @@ export class DepositosHeaderComponent implements OnInit {
         console.log("DEPOSIT SAVE");
         this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.depositService.deposit.coDeposit, "depositos");
         this.depositService.applyPersistSucceededBaseline();
+        this.depositService.resetSendValidationUx();
         return true;
       });
     });
@@ -238,16 +249,13 @@ export class DepositosHeaderComponent implements OnInit {
   }
 
   sendDeposit() {
-    if (!this.depositService.hasAtLeastOneDepositCollectRow()) {
-      this.alertDepositRequiresAtLeastOneCollection();
-      return;
-    }
     this.messageService.showLoading().then(() => {
       this.depositService.deposit.stDeposit = this.DEPOSITO_STATUS_TO_SEND;
       this.depositService.deposit.stDelivery = this.DEPOSITO_STATUS_TO_SEND;
       this.depositService.saveDeposit(this.synchronizationServices.getDatabase(), this.depositService.deposit).then(resp => {
         console.log("DEPOSIT SAVE READY TO SEND");
         this.depositService.applyPersistSucceededBaseline();
+        this.depositService.resetSendValidationUx();
         this.messageService.alertModal(
           {
             header: this.depositService.depositTags.get('DENARIO_NOMBRE_APP')!,
@@ -256,6 +264,7 @@ export class DepositosHeaderComponent implements OnInit {
         );
         this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.depositService.deposit.coDeposit, "depositos");
         this.depositService.sendDeposit.next(this.depositService.deposit.coDeposit);
+        this.messageService.hideLoading();
       });
     });
 
