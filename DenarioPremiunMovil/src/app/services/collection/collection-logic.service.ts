@@ -2643,20 +2643,11 @@ export class CollectionService {
         for (let i = 0; i < payments.length; i++) {
           const pago = payments[i];
           const method = (pago.coPaymentMethod ?? pago.coType ?? '').toString().toLowerCase();
-          if (method === 'ot') {
-            const idDiff = pago.idDifferenceCode;
-            const coDiff = (pago.coDifferenceCode ?? '').toString().trim();
-            // Requerimos que idDifferenceCode no sea null/undefined y que coDifferenceCode no sea cadena vacía
-            if (idDiff == null || coDiff === '') {
-              /*  this.mensaje = "Para pagos de tipo 'Otros' debe seleccionar un código de diferencia y su código asociado.";
-               this.messageAlert = new MessageAlert(
-                 this.collectionTags.get('COB_NOMBRE_MODULO') ?? 'Denario Premium',
-                 this.mensaje
-               );
-               this.messageService.alertModal(this.messageAlert);*/
-              this.onCollectionValidToSend(false);
-              return;
-            }
+          if (method === 'ot' && !this.isPersistedDifferenceCodeSelected(pago)) {
+            this.mensaje = this.collectionTags.get('COB_MSJ_ERROR_NO_DIFFERENCE_CODE')
+              ?? 'Seleccione un código de diferencia en el método Otros antes de enviar.';
+            this.onCollectionValidToSend(false);
+            return;
           }
         }
       }
@@ -3016,7 +3007,41 @@ export class CollectionService {
     if (!this.hasPaymentText(pago?.nombre)) {
       errors.push('nombre');
     }
+    if (this.enableDifferenceCodes && !this.isOtrosDifferenceCodeSelected(pago)) {
+      errors.push('differenceCode');
+    }
     return errors;
+  }
+
+  /** Código de diferencia obligatorio en Otros cuando `enableDifferenceCodes=true`. */
+  private isOtrosDifferenceCodeSelected(pago: PagoOtros | null | undefined): boolean {
+    const id = Number(pago?.differenceCode?.idDifferenceCode ?? 0);
+    const co = (pago?.differenceCode?.coDifferenceCode ?? '').toString().trim();
+    return id > 0 && co.length > 0;
+  }
+
+  private isPersistedDifferenceCodeSelected(payment: CollectionPayment): boolean {
+    const id = Number(payment?.idDifferenceCode ?? 0);
+    const co = (payment?.coDifferenceCode ?? '').toString().trim();
+    return id > 0 && co.length > 0;
+  }
+
+  /**
+   * Falta código de diferencia en algún pago Otros (UI o persistido).
+   * Solo aplica con `enableDifferenceCodes`.
+   */
+  public hasMissingOtrosDifferenceCodes(): boolean {
+    if (!this.enableDifferenceCodes) {
+      return false;
+    }
+    if (this.pagoOtros.length > 0) {
+      return this.pagoOtros.some(p => !this.isOtrosDifferenceCodeSelected(p));
+    }
+    const payments = this.getNonEmptyCollectionPayments(this.collection?.collectionPayments);
+    return payments.some((p) => {
+      const method = (p.coPaymentMethod ?? p.coType ?? '').toString().trim().toLowerCase();
+      return method === 'ot' && !this.isPersistedDifferenceCodeSelected(p);
+    });
   }
 
   private isEfectivoPaymentComplete(pago: PagoEfectivo): boolean {
@@ -3127,6 +3152,10 @@ export class CollectionService {
       return true;
     }
 
+    if (coType !== '2' && this.hasMissingOtrosDifferenceCodes()) {
+      return true;
+    }
+
     if (this.hasIncompleteDocumentAmountToPay()) {
       return true;
     }
@@ -3159,6 +3188,11 @@ export class CollectionService {
     if (coType !== '2' && this.hasEmptyCollectionPayments()) {
       return this.collectionTags.get('COB_MSJ_ERROR_EMPTY_PAYMENT')
         ?? 'Hay un método de pago vacío. Complételo o elimínelo antes de enviar.';
+    }
+
+    if (coType !== '2' && this.hasMissingOtrosDifferenceCodes()) {
+      return this.collectionTags.get('COB_MSJ_ERROR_NO_DIFFERENCE_CODE')
+        ?? 'Seleccione un código de diferencia en el método Otros antes de enviar.';
     }
 
     if (coType !== '2' && this.hasIncompletePaymentMethods()) {
@@ -3214,7 +3248,9 @@ export class CollectionService {
     }
 
     if (coType !== '2'
-      && (this.hasEmptyCollectionPayments() || this.hasIncompletePaymentMethods())) {
+      && (this.hasEmptyCollectionPayments()
+        || this.hasIncompletePaymentMethods()
+        || this.hasMissingOtrosDifferenceCodes())) {
       return 'pagos';
     }
 
@@ -3447,7 +3483,13 @@ export class CollectionService {
           && this.hasPaymentText(payment.nuPaymentDoc)
           && this.hasPaymentText(payment.nuBankAccount);
       case 'ot':
-        return this.hasPaymentText(payment.nuPaymentDoc);
+        if (!this.hasPaymentText(payment.nuPaymentDoc)) {
+          return false;
+        }
+        if (this.enableDifferenceCodes && !this.isPersistedDifferenceCodeSelected(payment)) {
+          return false;
+        }
+        return true;
       default:
         return this.hasPaymentText(payment.nuPaymentDoc);
     }

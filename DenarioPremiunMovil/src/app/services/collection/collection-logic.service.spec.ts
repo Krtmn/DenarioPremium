@@ -891,12 +891,42 @@ describe('CollectionService', () => {
 
     it('DM-COB-042: Otros is complete with positive amount and name', () => {
       service.tipoPagoOtros = true;
-      service.pagoOtros = [{ monto: 25, nombre: 'Ajuste QA' } as any];
+      service.enableDifferenceCodes = false;
+      service.pagoOtros = [{
+        monto: 25,
+        nombre: 'Ajuste QA',
+        differenceCode: { idDifferenceCode: null, coDifferenceCode: null },
+      } as any];
       expect(service.isIndexedPaymentMethodComplete('ot', 0)).toBeTrue();
       expect(service.hasIncompletePaymentMethods()).toBeFalse();
 
       service.pagoOtros[0].nombre = '';
       expect(service.hasIncompletePaymentMethods()).toBeTrue();
+    });
+
+    it('COB-DIFF-001: enableDifferenceCodes exige código en Otros', () => {
+      service.tipoPagoOtros = true;
+      service.enableDifferenceCodes = true;
+      service.pagoOtros = [{
+        monto: 25,
+        nombre: 'Ajuste QA',
+        differenceCode: { idDifferenceCode: null, coDifferenceCode: null },
+      } as any];
+      service.collectionTags.set('COB_MSJ_ERROR_NO_DIFFERENCE_CODE', 'Seleccione código diferencia');
+
+      expect(service.isIndexedPaymentMethodComplete('ot', 0)).toBeFalse();
+      expect(service.hasMissingOtrosDifferenceCodes()).toBeTrue();
+      expect(service.hasSendFieldErrors()).toBeTrue();
+      expect(service.getCollectionSendValidationMessage()).toContain('código diferencia');
+      expect(service.getIndexedPaymentFieldErrors('ot', 0)).toContain('differenceCode');
+      expect(service.resolveSendValidationFocusTab()).toBe('pagos');
+
+      service.pagoOtros[0].differenceCode = {
+        idDifferenceCode: 7,
+        coDifferenceCode: 'DIFF-7',
+      };
+      expect(service.isIndexedPaymentMethodComplete('ot', 0)).toBeTrue();
+      expect(service.hasMissingOtrosDifferenceCodes()).toBeFalse();
     });
 
     it('P1: enableDifferenceCodes blocks send when Otros lacks difference code', async () => {

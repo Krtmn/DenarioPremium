@@ -400,6 +400,7 @@ INSERT INTO public.application_tags(
 	('COB_MSJ_ERROR_NO_COMMENT', 'COB', 'COBROS', 'ESP', 'El comentario es obligatorio. Complételo en la pestaña General.'),
 	('COB_MSJ_ERROR_EMPTY_PAYMENT', 'COB', 'COBROS', 'ESP', 'Hay un método de pago vacío. Complételo o elimínelo antes de enviar.'),
 	('COB_MSJ_ERROR_INCOMPLETE_PAYMENT', 'COB', 'COBROS', 'ESP', 'Hay un método de pago incompleto. Complételo o elimínelo antes de enviar.'),
+	('COB_MSJ_ERROR_NO_DIFFERENCE_CODE', 'COB', 'COBROS', 'ESP', 'Seleccione un código de diferencia en el método Otros antes de enviar.'),
 	('COB_MSJ_ERROR_NO_TX_CONVERSION', 'COB', 'COBROS', 'ESP', 'Indique el motivo del cambio de tasa en la pestaña General.'),
 	('COB_MSJ_ERROR_NO_MANUAL_RATE', 'COB', 'COBROS', 'ESP', 'Ingrese una tasa de conversión válida (mayor o igual a 1) en la pestaña General.'),
 	('COB_MSJ_ERROR_NO_DOCUMENTS', 'COB', 'COBROS', 'ESP', 'Seleccione al menos un documento antes de enviar.'),
