@@ -648,10 +648,10 @@ export class ClientLogicService {
       this.cannotSavePotentialClient = true;
       return;
     }
-    const generalOk = this.generalTabValidForSave;
+    // Guardar ON con cambios (dirty); el nombre se valida al pulsar (mensaje si falta).
     const hasChangesToSave =
       !this.potentialClientPersistedBaseline || this.potentialClientDirtySincePersist;
-    this.cannotSavePotentialClient = !(generalOk && hasChangesToSave);
+    this.cannotSavePotentialClient = !hasChangesToSave;
   }
 
   updatePotentialClientSendButtonAvailability(): void {
@@ -663,10 +663,7 @@ export class ClientLogicService {
       this.cannotSendPotentialClient = true;
       return;
     }
-    if (this.sendBlockedByFields) {
-      this.cannotSendPotentialClient = true;
-      return;
-    }
+    // Enviar ON con General (empresa). Campos incompletos no apagan el botón (POT-SEND-001).
     this.cannotSendPotentialClient = !this.generalTabValidForSave;
   }
 
@@ -677,12 +674,9 @@ export class ClientLogicService {
   }
 
   refreshPotentialClientSendBlockedState(): void {
-    if (!this.sendBlockedByFields) {
-      return;
-    }
-    if (!this.hasPotentialClientFieldErrors()) {
+    // Si había bloqueo tras Enviar fallido, liberar en cuanto el form quede completo.
+    if (this.sendBlockedByFields && !this.hasPotentialClientFieldErrors()) {
       this.sendBlockedByFields = false;
-      this.updatePotentialClientSendButtonAvailability();
     }
   }
 
@@ -735,6 +729,16 @@ export class ClientLogicService {
     return !!control && control.errors == null;
   }
 
+  /** Nombre del cliente potencial con texto (mínimo para Guardar). */
+  public hasPotentialClientNameFilled(): boolean {
+    const control = this.getPotentialClientControl('naClient');
+    if (control) {
+      const value = String(control.value ?? '').trim();
+      return value.length > 0 && control.errors == null;
+    }
+    return String(this.potentialClient?.naClient ?? '').trim().length > 0;
+  }
+
   private hasEnterpriseSelected(): boolean {
     if (this.empresaSeleccionada?.idEnterprise) {
       return true;
@@ -777,6 +781,22 @@ export class ClientLogicService {
     return coord.length === 0;
   }
 
+  /** Errores que bloquean Guardar: solo nombre vacío (no formulario completo). */
+  public hasPotentialClientSaveErrors(): boolean {
+    return !this.hasPotentialClientNameFilled();
+  }
+
+  public getPotentialClientSaveValidationMessage(): string {
+    if (!this.hasPotentialClientNameFilled()) {
+      return this.clientTags.get('CLI_NEW_POT_MENSAJE_ERROR_NOMBRE_CLIENTE')
+        ?? this.clientTags.get('CLI_POT_MSJ_ERROR_NO_NAME')
+        ?? 'Indique el nombre del cliente potencial para guardar.';
+    }
+    return this.clientTags.get('CLI_POT_MSJ_ERROR_INCOMPLETE_FORM')
+      ?? 'Complete los campos mínimos para guardar.';
+  }
+
+  /** Errores que bloquean Enviar: formulario completo + firma/GPS si config. */
   public hasPotentialClientFieldErrors(): boolean {
     if (!this.generalTabValidForSave || !this.hasEnterpriseSelected()) {
       return true;
