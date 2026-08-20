@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnDestroy, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
 import { Platform } from '@ionic/angular';
@@ -30,6 +30,7 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
   autoSend = inject(AutoSendService);
   router = inject(Router);
   adjuntoService = inject(AdjuntoService);
+  private cdr = inject(ChangeDetectorRef);
 
   @Input()
   headerTags = new Map<string, string>([]);
@@ -48,6 +49,10 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
   subscriptionAttachmentWeightExceeded: any;
   alertMessageOpen: Boolean = false;
   alertMessageOpenSave: Boolean = false;
+  /** Alerta local de validación (mensaje exacto). */
+  alertMessageOpenValidation = false;
+  validationFailureMessage = '';
+  alertButtonsValidation: any[] = [];
   saveOrExitOpen = false;
   textAlertButtonCancel: String = '';
   textAlertButtonConfirm: String = '';
@@ -101,12 +106,19 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
       },
     ];
 
+    this.alertButtonsValidation = [
+      {
+        text: this.textAlertButtonConfirm,
+        role: 'confirm',
+      },
+    ];
+
     this.buttonsSalvar = [
       {
         text: this.textSave,
         role: 'save',
         handler: () => {
-          if (!this.validateReturnBeforeAction(false)) {
+          if (!this.validateReturnBeforeSave()) {
             return;
           }
           this.saveAndExit(this.synchronizationServices.getDatabase());
@@ -140,49 +152,90 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
   }
 
   onBackClicked() {
-    if (this.returnLogic.returnChanged && this.returnLogic.newReturn.stDelivery == 3) {
-      this.saveOrExitOpen = true;
-    } else {
+    if (this.returnLogic.isReturnReadOnlyForEdit() || this.returnLogic.returnSent) {
+      this.saveOrExitOpen = false;
       this.returnLogic.showBackRoute('devoluciones');
       this.messageService.hideLoading();
+      return;
     }
+
+    if (this.returnLogic.shouldPromptReturnExitSaveOrDiscard()) {
+      this.buttonsSalvar[0].text = this.returnLogic.tags.get('DENARIO_BOTON_SALIR_GUARDAR')
+        ?? this.textSave;
+      this.buttonsSalvar[1].text = this.returnLogic.tags.get('DENARIO_BOTON_SALIR')
+        ?? this.textExit;
+      this.buttonsSalvar[2].text = this.returnLogic.tags.get('DENARIO_BOTON_CANCELAR')
+        ?? this.textAlertButtonCancel;
+      this.saveOrExitOpen = true;
+      return;
+    }
+
+    this.saveOrExitOpen = false;
+    this.returnLogic.showBackRoute('devoluciones');
+    this.messageService.hideLoading();
   }
 
   backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
     this.onBackClicked();
   });
 
-  private notifyReturnValidationFailure(blockSend: boolean): void {
-    if (blockSend) {
+  private notifyReturnValidationFailure(options: {
+    blockSend: boolean;
+    message: string;
+    focusTab?: 'default' | 'productos' | 'adjuntos';
+  }): void {
+    if (options.blockSend) {
       this.returnLogic.sendBlockedByFields = true;
       this.returnLogic.updateSendButtonAvailability();
     }
-    this.messageService.transaccionMsjModalNB(
-      this.returnLogic.getReturnValidationMessage(),
-    );
+    this.returnLogic.requestSendValidationTabFocus(options.focusTab);
+    this.showReturnValidationAlert(options.message);
   }
 
-  private validateReturnBeforeAction(blockSendOnError: boolean): boolean {
-    if (!this.returnLogic.generalTabValidForSave) {
-      return false;
-    }
+  private showReturnValidationAlert(rawMessage: string): void {
+    const message = (rawMessage ?? '').toString().trim()
+      || 'Complete los campos obligatorios antes de continuar.';
+    this.validationFailureMessage = message;
+    this.alertMessageOpenValidation = true;
+    this.cdr.detectChanges();
+  }
 
+  setResultValidation(): void {
+    this.alertMessageOpenValidation = false;
+  }
+
+  /** Guardar / Guardar y salir: solo General (DEV-SAVE-001). */
+  private validateReturnBeforeSave(): boolean {
+    if (!this.returnLogic.hasReturnSaveErrors()) {
+      return true;
+    }
+    this.notifyReturnValidationFailure({
+      blockSend: false,
+      message: this.returnLogic.getReturnSaveValidationMessage(),
+      focusTab: 'default',
+    });
+    return false;
+  }
+
+  /** Enviar: validación completa + mensaje + salto de pestaña. */
+  private validateReturnBeforeSend(): boolean {
     this.returnLogic.sendValidationAttempted = true;
 
     if (this.returnLogic.hasReturnFieldErrors()) {
-      this.notifyReturnValidationFailure(blockSendOnError);
+      this.notifyReturnValidationFailure({
+        blockSend: true,
+        message: this.returnLogic.getReturnValidationMessage(),
+      });
       return false;
     }
 
-    if (blockSendOnError) {
-      this.returnLogic.sendBlockedByFields = false;
-      this.returnLogic.updateSendButtonAvailability();
-    }
+    this.returnLogic.sendBlockedByFields = false;
+    this.returnLogic.updateSendButtonAvailability();
     return true;
   }
 
   buttonSaveReturn(): void {
-    if (!this.validateReturnBeforeAction(false)) {
+    if (!this.validateReturnBeforeSave()) {
       return;
     }
     this.header = this.headerTags.get('DENARIO_DEV')!;
@@ -193,7 +246,7 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
   }
 
   buttonSendReturn(): void {
-    if (!this.validateReturnBeforeAction(true)) {
+    if (!this.validateReturnBeforeSend()) {
       return;
     }
     this.header = this.headerTags.get('DENARIO_DEV')!;
