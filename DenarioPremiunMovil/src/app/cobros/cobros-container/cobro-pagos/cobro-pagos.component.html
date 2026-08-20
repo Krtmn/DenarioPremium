@@ -657,10 +657,12 @@
           </ion-item>
           <div class="ion-padding" slot="content">
             <ion-col size="6" size-sm="12" size-xs="12" *ngIf="this.collectService.enableDifferenceCodes">
-              <div class="listado-enterprise-selector ion-text-center">
+              <div class="listado-enterprise-selector ion-text-center"
+                [ngClass]="{'select-error': shouldShowPaymentFieldError('ot', ot, 'differenceCode')}">
                 <ion-select placeholder="{{this.collectService.collectionTags.get('COB_SELECTOR')}}"
                   class="ion-text-center always-flip" [(ngModel)]="otros.differenceCode"
-                  (ionChange)="selectDifferenceCode(ot)" interface="alert" labelPlacement="stacked">
+                  (ionChange)="selectDifferenceCode(ot)" interface="alert" labelPlacement="stacked"
+                  [ngClass]="{'inp-write': shouldShowPaymentFieldError('ot', ot, 'differenceCode')}">
                   @for (differenceCode of this.collectService.differenceCode; track trackByIndex($index,
                   differenceCode)) {
                   <ion-select-option [value]="differenceCode">{{ differenceCode.coDifferenceCode }} -
@@ -669,6 +671,9 @@
                   }
                 </ion-select>
               </div>
+              @if (shouldShowPaymentFieldError('ot', ot, 'differenceCode')) {
+              <ion-label color="danger" class="campoObligatorio">{{ getDifferenceCodeRequiredFieldLabel() }}</ion-label>
+              }
             </ion-col>
             <ion-col size="6" size-sm="12" size-xs="12">
               <ion-item>

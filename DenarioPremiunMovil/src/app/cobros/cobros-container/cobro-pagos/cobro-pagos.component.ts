@@ -284,6 +284,12 @@ export class CobroPagosComponent implements OnInit {
     return 'Debe seleccionar una cuenta.';
   }
 
+  getDifferenceCodeRequiredFieldLabel(): string {
+    return this.collectService.collectionTags.get('COB_MSJ_ERROR_NO_DIFFERENCE_CODE')
+      ?? this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')
+      ?? 'Debe seleccionar un código de diferencia.';
+  }
+
   private refreshSendUxAfterFieldChange(): void {
     this.collectService.refreshSendBlockedState();
   }
@@ -1679,11 +1685,21 @@ export class CobroPagosComponent implements OnInit {
   }
 
   selectDifferenceCode(index: number) {
-    let posCollectionPayment = this.collectService.pagoOtros[index].posCollectionPayment;
-    const differenceCode = this.collectService.pagoOtros[index].differenceCode;
+    const pago = this.collectService.pagoOtros[index];
+    if (!pago) {
+      return;
+    }
+    const posCollectionPayment = pago.posCollectionPayment;
+    const differenceCode = pago.differenceCode;
+    const payment = this.collectService.collection.collectionPayments?.[posCollectionPayment];
+    if (!payment) {
+      return;
+    }
 
-    this.collectService.collection.collectionPayments![posCollectionPayment]!.idDifferenceCode = differenceCode!.idDifferenceCode;
-    this.collectService.collection.collectionPayments![posCollectionPayment]!.coDifferenceCode = differenceCode!.coDifferenceCode;
-    this.validatePayment("ot", index);
+    payment.idDifferenceCode = differenceCode?.idDifferenceCode ?? null;
+    payment.coDifferenceCode = differenceCode?.coDifferenceCode ?? '';
+    this.validatePayment('ot', index);
+    this.collectService.notifyCollectionEdited();
+    this.refreshSendUxAfterFieldChange();
   }
 }
