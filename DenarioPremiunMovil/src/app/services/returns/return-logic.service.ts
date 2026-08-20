@@ -340,14 +340,6 @@ export class ReturnLogicService {
     return true;
   }
 
-  private requiresSignatureAttachments(): boolean {
-    return this.globalConfig.get('signatureReturn') === 'true';
-  }
-
-  private hasMissingSignatureAttachments(): boolean {
-    return this.requiresSignatureAttachments() && !this.adjuntoService.hasItems();
-  }
-
   private hasMissingGpsCoordinate(): boolean {
     if (!this.userMustActivateGPS) {
       return false;
@@ -356,6 +348,10 @@ export class ReturnLogicService {
     return coord.length === 0;
   }
 
+  /**
+   * Errores que bloquean Enviar: General + productos (+ GPS si config).
+   * Firma/adjuntos no son obligatorios: `signatureReturn` solo muestra el panel de firma.
+   */
   public hasReturnFieldErrors(): boolean {
     this.returnSendFocusProductIndex = -1;
     if (!this.generalTabValidForSave || !this.hasClientSelected()) {
@@ -372,16 +368,13 @@ export class ReturnLogicService {
         return true;
       }
     }
-    if (this.hasMissingSignatureAttachments()) {
-      return true;
-    }
     if (this.hasMissingGpsCoordinate()) {
       return true;
     }
     return false;
   }
 
-  /** Guardar solo exige General (cliente + factura si validateReturn). Productos/firma/GPS van en Enviar. */
+  /** Guardar solo exige General (cliente + factura si validateReturn). Productos/GPS van en Enviar. */
   public hasReturnSaveErrors(): boolean {
     return !this.generalTabValidForSave
       || !this.hasClientSelected()
@@ -433,10 +426,6 @@ export class ReturnLogicService {
           ?? 'Complete cantidad y documento en todos los productos.';
       }
     }
-    if (this.hasMissingSignatureAttachments()) {
-      return this.tags.get('DEV_MSJ_ERROR_NO_ATTACHMENTS')
-        ?? 'Debe adjuntar al menos un documento o firma antes de continuar.';
-    }
     if (this.hasMissingGpsCoordinate()) {
       return this.tags.get('DEV_MSJ_ERROR_NO_GPS')
         ?? 'Debe activar el GPS y obtener la ubicación antes de continuar.';
@@ -458,9 +447,6 @@ export class ReturnLogicService {
       if (!this.isReturnProductLineComplete(this.productList[index], index)) {
         return 'productos';
       }
-    }
-    if (this.hasMissingSignatureAttachments()) {
-      return 'adjuntos';
     }
     if (this.hasMissingGpsCoordinate()) {
       return 'default';

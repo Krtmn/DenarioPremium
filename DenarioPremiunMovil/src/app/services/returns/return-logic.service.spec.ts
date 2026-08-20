@@ -264,12 +264,10 @@ describe('ReturnLogicService', () => {
       service.productList = [{ quProduct: 1, coDocument: '0' } as ReturnDetail];
     });
 
-    it('hasReturnFieldErrors true sin adjuntos cuando signatureReturn', () => {
+    it('signatureReturn no exige adjuntos (solo muestra firma)', () => {
       (service.adjuntoService.hasItems as jasmine.Spy).and.returnValue(false);
 
-      expect(service.hasReturnFieldErrors()).toBeTrue();
-      expect(service.getReturnValidationMessage()).toContain('Adjunte firma');
-      expect(service.resolveSendValidationFocusTab()).toBe('adjuntos');
+      expect(service.hasReturnFieldErrors()).toBeFalse();
     });
   });
 });
