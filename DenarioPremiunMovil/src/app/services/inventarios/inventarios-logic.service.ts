@@ -115,6 +115,7 @@ export class InventariosLogicService {
   public sendValidationAttempted = false;
   public sendBlockedByFields = false;
   public stockSendFocusTypeStockIndex = -1;
+  public focusSendValidationTab = new Subject<'default' | 'inventario' | 'actividades' | 'adjuntos'>();
 
   constructor() {
 
@@ -181,6 +182,7 @@ export class InventariosLogicService {
   notifyStockEdited(): void {
     this.markStockDirty();
     this.refreshSendBlockedState();
+    this.updateSaveButtonAvailability();
     this.updateSendButtonAvailability();
   }
 
@@ -214,10 +216,12 @@ export class InventariosLogicService {
       this.onStockValidToSend(false);
       return;
     }
+    // Tras fallo de Enviar, apagar hasta que el usuario edite (mismo criterio Cobros).
     if (this.sendBlockedByFields) {
       this.onStockValidToSend(false);
       return;
     }
+    // Enviar ON con General. Campos incompletos se validan al click (INV-SEND-001).
     this.onStockValidToSend(this.generalTabValidForSave);
   }
 
@@ -232,10 +236,8 @@ export class InventariosLogicService {
     if (!this.sendBlockedByFields) {
       return;
     }
-    if (!this.hasStockFieldErrors()) {
-      this.sendBlockedByFields = false;
-      this.updateSendButtonAvailability();
-    }
+    // Al editar, reactivar Enviar para reintentar y ver el siguiente mensaje exacto.
+    this.sendBlockedByFields = false;
   }
 
   private requiresSignatureAttachments(): boolean {
@@ -288,31 +290,41 @@ export class InventariosLogicService {
     if (!this.generalTabValidForSave || !this.selectedClient) {
       return true;
     }
+    // Productos antes que GPS/firma (evitar falso positivo de adjuntos en inventario vacío).
+    if (!this.checkValidStockToSend()) {
+      return true;
+    }
     if (this.hasMissingGpsCoordinate()) {
       return true;
     }
     if (this.hasMissingSignatureAttachments()) {
       return true;
     }
-    return !this.checkValidStockToSend();
+    return false;
   }
 
+  /** Guardar solo exige General (cliente + sucursal). Productos/firma/GPS van en Enviar. */
+  public hasStockSaveErrors(): boolean {
+    return !this.generalTabValidForSave || !this.selectedClient;
+  }
+
+  public getStockSaveValidationMessage(): string {
+    return this.inventarioTags.get('INV_ERROR_LIST_ADDRESS')
+      ?? 'Este cliente no tiene sucursal asignada, por favor consulte su administrador';
+  }
+
+  /**
+   * Mensaje al pulsar Enviar: prioridad General → productos → GPS → adjuntos.
+   */
   public getStockValidationMessage(): string {
     if (!this.generalTabValidForSave || !this.selectedClient) {
       return this.inventarioTags.get('INV_ERROR_LIST_ADDRESS')
         ?? 'Este cliente no tiene sucursal asignada, por favor consulte su administrador';
     }
-    if (this.hasMissingGpsCoordinate()) {
-      return this.inventarioTags.get('INV_MSJ_ERROR_NO_GPS')
-        ?? 'Debe activar el GPS y obtener la ubicación antes de continuar.';
-    }
-    if (this.hasMissingSignatureAttachments()) {
-      return this.inventarioTags.get('INV_MSJ_ERROR_NO_ATTACHMENTS')
-        ?? 'Debe adjuntar al menos un documento o firma antes de continuar.';
-    }
     if (this.typeStocks.length === 0) {
-      return this.inventarioTags.get('INV_MSJ_ERROR_TYPESTOCKS')
-        ?? 'Debe ingresar alguna cantidad de Inventario o borrar el tipo de Inventario';
+      // No usar INV_MSJ_ERROR_TYPESTOCKS aquí: habla de cantidad/tipo, no de producto faltante.
+      return this.inventarioTags.get('INV_MSJ_ERROR_NO_PRODUCTS')
+        ?? 'Debe seleccionar al menos un producto para el inventario.';
     }
     const incompleteIndex = this.findFirstIncompleteTypeStockIndex();
     if (incompleteIndex >= 0) {
@@ -326,8 +338,43 @@ export class InventariosLogicService {
           ?? 'Complete el lote en todos los productos inventariados.';
       }
     }
-    return this.inventarioTags.get('INV_MSJ_ERROR_TYPESTOCKS')
-      ?? 'Debe ingresar alguna cantidad de Inventario o borrar el tipo de Inventario';
+    if (this.hasMissingGpsCoordinate()) {
+      return this.inventarioTags.get('INV_MSJ_ERROR_NO_GPS')
+        ?? 'Debe activar el GPS y obtener la ubicación antes de continuar.';
+    }
+    if (this.hasMissingSignatureAttachments()) {
+      return this.inventarioTags.get('INV_MSJ_ERROR_NO_ATTACHMENTS')
+        ?? 'Debe adjuntar al menos un documento o firma antes de continuar.';
+    }
+    return this.inventarioTags.get('INV_MSJ_ERROR_NO_PRODUCTS')
+      ?? 'Debe seleccionar al menos un producto para el inventario.';
+  }
+
+  /** Pestaña del primer error bloqueante (misma prioridad que getStockValidationMessage). */
+  public resolveSendValidationFocusTab(): 'default' | 'inventario' | 'actividades' | 'adjuntos' {
+    if (!this.generalTabValidForSave || !this.selectedClient) {
+      return 'default';
+    }
+    if (this.typeStocks.length === 0) {
+      return this.hideTab ? 'inventario' : 'actividades';
+    }
+    if (this.findFirstIncompleteTypeStockIndex() >= 0) {
+      return this.hideTab ? 'inventario' : 'actividades';
+    }
+    if (this.hasMissingGpsCoordinate()) {
+      return 'default';
+    }
+    if (this.hasMissingSignatureAttachments()) {
+      return 'adjuntos';
+    }
+    return this.hideTab ? 'inventario' : 'actividades';
+  }
+
+  /** Emite la pestaña a enfocar tras un fallo de Enviar/Guardar. */
+  public requestSendValidationTabFocus(
+    tab?: 'default' | 'inventario' | 'actividades' | 'adjuntos',
+  ): void {
+    this.focusSendValidationTab.next(tab ?? this.resolveSendValidationFocusTab());
   }
 
   /** @deprecated Usar notifyStockEdited / updateSaveButtonAvailability / updateSendButtonAvailability */
