@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy, ViewChild, inject } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
@@ -19,6 +20,7 @@ export class CobroComponent implements OnInit, OnDestroy {
   public globalConfig = inject(GlobalConfigService);
 
   public subs: any;
+  private focusTabSub?: Subscription;
 
   // propiedad local usada por la vista en lugar de usar directamente el servicio
   public collectValidTabsLocal: boolean = false;
@@ -47,6 +49,10 @@ export class CobroComponent implements OnInit, OnDestroy {
       }, 0);
       this.segment = "default";
     }
+
+    this.focusTabSub = this.collectService.focusSendValidationTab.subscribe((tab) => {
+      this.applySendValidationTabFocus(tab);
+    });
   }
 
   collectValidFunc() {
@@ -60,6 +66,38 @@ export class CobroComponent implements OnInit, OnDestroy {
         this.collectService.collectValidTabs = data.valueOf();
       }, 0);
     });
+  }
+
+  /** Salta a la pestaña del primer error tras fallo de Enviar (COB-SEND-UX-001). */
+  private applySendValidationTabFocus(
+    tab: 'default' | 'documentos' | 'pagos' | 'adjuntos',
+  ): void {
+    if (tab === 'documentos' && this.collectService.hideDocuments) {
+      tab = 'default';
+    }
+    if (tab === 'pagos' && this.collectService.hidePayments) {
+      tab = 'default';
+    }
+
+    if (tab === 'documentos') {
+      this.documentsTabMounted = true;
+      setTimeout(() => {
+        void this.cobroDocuments?.refreshDocumentsForCurrentClient();
+        this.cobroDocuments?.ensureDocumentsTableResizeObserver();
+        this.cobroDocuments?.invalidateDocumentsTableLayoutCache();
+        this.cobroDocuments?.scheduleDocumentsTableLayoutSync();
+      }, 0);
+    }
+
+    this.segment = tab;
+    this.collectService.tabSelected = tab;
+  }
+
+  shouldShowSendErrorHintOnTab(
+    tab: 'default' | 'documentos' | 'pagos' | 'adjuntos',
+  ): boolean {
+    return this.collectService.sendValidationAttempted
+      && this.collectService.resolveSendValidationFocusTab() === tab;
   }
 
   onSegmentChange(event: CustomEvent): void {
@@ -102,5 +140,6 @@ export class CobroComponent implements OnInit, OnDestroy {
     if (this.subs && typeof this.subs.unsubscribe === 'function') {
       this.subs.unsubscribe();
     }
+    this.focusTabSub?.unsubscribe();
   }
 }
