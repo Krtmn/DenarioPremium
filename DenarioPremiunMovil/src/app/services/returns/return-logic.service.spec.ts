@@ -11,7 +11,7 @@ import { ReturnDatabaseService } from './return-database.service';
 import { ProductService } from '../products/product.service';
 import { MessageService } from '../messageService/message.service';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
-import { DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { DELIVERY_STATUS_NEW, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 
 describe('ReturnLogicService', () => {
   let service: ReturnLogicService;
@@ -114,6 +114,42 @@ describe('ReturnLogicService', () => {
       service.updateSaveButtonAvailability();
       expect(saveEnabled).toBeTrue();
     });
+
+    it('hasReturnSaveErrors false sin productos si General OK', () => {
+      service.generalTabValidForSave = true;
+      service.newReturn.idClient = 10;
+      service.productList = [];
+
+      expect(service.hasReturnSaveErrors()).toBeFalse();
+      expect(service.hasReturnFieldErrors()).toBeTrue();
+    });
+
+    it('DEV-BACK-001: nueva con General OK pide modal al salir', () => {
+      service.generalTabValidForSave = true;
+      service.newReturn.idClient = 10;
+      service.newReturn.stDelivery = DELIVERY_STATUS_NEW;
+      service.resetReturnExitBaseline();
+
+      expect(service.shouldPromptReturnExitSaveOrDiscard()).toBeTrue();
+    });
+
+    it('DEV-BACK-001: sin General ni dirty no pide modal', () => {
+      service.generalTabValidForSave = false;
+      service.returnChanged = false;
+      service.resetReturnExitBaseline();
+
+      expect(service.shouldPromptReturnExitSaveOrDiscard()).toBeFalse();
+    });
+
+    it('DEV-BACK-001: persistida limpia no pide modal; dirty sí', () => {
+      service.generalTabValidForSave = true;
+      service.newReturn.idClient = 10;
+      service.markReturnOpenedFromPersistedCopy();
+      expect(service.shouldPromptReturnExitSaveOrDiscard()).toBeFalse();
+
+      service.notifyReturnEdited();
+      expect(service.shouldPromptReturnExitSaveOrDiscard()).toBeTrue();
+    });
   });
 
   describe('DEV-SEND-001 Enviar y validación al click', () => {
@@ -127,6 +163,20 @@ describe('ReturnLogicService', () => {
       expect(sendEnabled).toBeTrue();
     });
 
+    it('sendBlockedByFields apaga Enviar hasta editar', () => {
+      service.generalTabValidForSave = true;
+      service.sendBlockedByFields = true;
+      let sendEnabled: boolean | undefined;
+      service.returnValidToSend.subscribe((v: Boolean) => sendEnabled = !!v);
+
+      service.updateSendButtonAvailability();
+      expect(sendEnabled).toBeFalse();
+
+      service.notifyReturnEdited();
+      expect(service.sendBlockedByFields).toBeFalse();
+      expect(sendEnabled).toBeTrue();
+    });
+
     it('hasReturnFieldErrors true sin productos', () => {
       service.generalTabValidForSave = true;
       service.newReturn.idClient = 10;
@@ -134,6 +184,7 @@ describe('ReturnLogicService', () => {
 
       expect(service.hasReturnFieldErrors()).toBeTrue();
       expect(service.getReturnValidationMessage()).toContain('Agregue productos');
+      expect(service.resolveSendValidationFocusTab()).toBe('productos');
     });
 
     it('hasReturnFieldErrors true sin cliente', () => {
@@ -142,6 +193,7 @@ describe('ReturnLogicService', () => {
 
       expect(service.hasReturnFieldErrors()).toBeTrue();
       expect(service.getReturnValidationMessage()).toContain('Seleccione un cliente');
+      expect(service.resolveSendValidationFocusTab()).toBe('default');
     });
 
     it('validateReturn exige factura en validación', () => {
@@ -153,6 +205,7 @@ describe('ReturnLogicService', () => {
 
       expect(service.hasReturnFieldErrors()).toBeTrue();
       expect(service.getReturnValidationMessage()).toContain('Seleccione una factura');
+      expect(service.resolveSendValidationFocusTab()).toBe('default');
     });
 
     it('requeridedNroFactura exige coDocument por línea', () => {
@@ -163,6 +216,7 @@ describe('ReturnLogicService', () => {
 
       expect(service.hasReturnFieldErrors()).toBeTrue();
       expect(service.getReturnValidationMessage()).toContain('Complete productos');
+      expect(service.resolveSendValidationFocusTab()).toBe('productos');
     });
 
     it('devolución por enviar queda read-only', () => {
@@ -215,6 +269,7 @@ describe('ReturnLogicService', () => {
 
       expect(service.hasReturnFieldErrors()).toBeTrue();
       expect(service.getReturnValidationMessage()).toContain('Adjunte firma');
+      expect(service.resolveSendValidationFocusTab()).toBe('adjuntos');
     });
   });
 });

@@ -81,6 +81,7 @@ export class ReturnLogicService {
   sendValidationAttempted = false;
   sendBlockedByFields = false;
   returnSendFocusProductIndex = -1;
+  public focusSendValidationTab = new Subject<'default' | 'productos' | 'adjuntos'>();
 
   backRoute = new Subject<string>;
   showButtons = new Subject<Boolean>;
@@ -180,6 +181,27 @@ export class ReturnLogicService {
       || stDelivery === DELIVERY_STATUS_SENT;
   }
 
+  /**
+   * ¿Mostrar modal Guardar y salir / Salir sin guardar al pulsar Atrás?
+   * Misma idea que Cobros/Depósitos (no acoplar a stDelivery === SAVED).
+   */
+  shouldPromptReturnExitSaveOrDiscard(): boolean {
+    if (this.isReturnReadOnlyForEdit() || this.returnSent) {
+      return false;
+    }
+
+    // Sin trabajo iniciado: salir directo.
+    if (!this.generalTabValidForSave
+      && !this.returnDirtySincePersist
+      && !this.returnChanged) {
+      return false;
+    }
+
+    return !this.returnPersistedBaseline
+      || this.returnDirtySincePersist
+      || this.returnChanged;
+  }
+
   updateSaveButtonAvailability(): void {
     if (this.isReturnReadOnlyForEdit() || this.returnSent) {
       this.onReturnValidToSave(false);
@@ -222,10 +244,8 @@ export class ReturnLogicService {
     if (!this.sendBlockedByFields) {
       return;
     }
-    if (!this.hasReturnFieldErrors()) {
-      this.sendBlockedByFields = false;
-      this.updateSendButtonAvailability();
-    }
+    // Al editar, reactivar Enviar para reintentar (mismo criterio Inventarios/Depósitos).
+    this.sendBlockedByFields = false;
   }
 
   notifyReturnEdited(): void {
@@ -361,6 +381,26 @@ export class ReturnLogicService {
     return false;
   }
 
+  /** Guardar solo exige General (cliente + factura si validateReturn). Productos/firma/GPS van en Enviar. */
+  public hasReturnSaveErrors(): boolean {
+    return !this.generalTabValidForSave
+      || !this.hasClientSelected()
+      || !this.hasInvoiceSelectedWhenRequired();
+  }
+
+  public getReturnSaveValidationMessage(): string {
+    if (!this.generalTabValidForSave || !this.hasClientSelected()) {
+      return this.tags.get('DEV_MSJ_ERROR_NO_CLIENT')
+        ?? 'Seleccione un cliente para continuar.';
+    }
+    if (!this.hasInvoiceSelectedWhenRequired()) {
+      return this.tags.get('DEV_MSJ_ERROR_NO_INVOICE')
+        ?? 'Seleccione una factura para continuar.';
+    }
+    return this.tags.get('DEV_MSJ_ERROR_NO_CLIENT')
+      ?? 'Complete la pestaña General para continuar.';
+  }
+
   public getReturnValidationMessage(): string {
     this.returnSendFocusProductIndex = -1;
     if (!this.generalTabValidForSave || !this.hasClientSelected()) {
@@ -403,6 +443,35 @@ export class ReturnLogicService {
     }
     return this.tags.get('DEV_MSJ_ERROR_INCOMPLETE_PRODUCT')
       ?? 'Complete los campos obligatorios de la devolución.';
+  }
+
+  /** Pestaña del primer error (misma prioridad que getReturnValidationMessage). */
+  public resolveSendValidationFocusTab(): 'default' | 'productos' | 'adjuntos' {
+    if (!this.generalTabValidForSave || !this.hasClientSelected()
+      || !this.hasInvoiceSelectedWhenRequired()) {
+      return 'default';
+    }
+    if (!this.productList || this.productList.length === 0) {
+      return 'productos';
+    }
+    for (let index = 0; index < this.productList.length; index++) {
+      if (!this.isReturnProductLineComplete(this.productList[index], index)) {
+        return 'productos';
+      }
+    }
+    if (this.hasMissingSignatureAttachments()) {
+      return 'adjuntos';
+    }
+    if (this.hasMissingGpsCoordinate()) {
+      return 'default';
+    }
+    return 'default';
+  }
+
+  public requestSendValidationTabFocus(
+    tab?: 'default' | 'productos' | 'adjuntos',
+  ): void {
+    this.focusSendValidationTab.next(tab ?? this.resolveSendValidationFocusTab());
   }
 
   public isReturnProductLineIncomplete(index: number): boolean {
