@@ -765,14 +765,6 @@ export class ClientLogicService {
     return requiredFields.every((field) => this.isPotentialClientControlValid(field));
   }
 
-  private requiresSignatureAttachments(): boolean {
-    return this.globalConfig.get('signatureClient') === 'true';
-  }
-
-  private hasMissingSignatureAttachments(): boolean {
-    return this.requiresSignatureAttachments() && !this.adjuntoService.hasItems();
-  }
-
   private hasMissingGpsCoordinate(): boolean {
     if (!this.userMustActivateGPS) {
       return false;
@@ -796,15 +788,15 @@ export class ClientLogicService {
       ?? 'Complete los campos mínimos para guardar.';
   }
 
-  /** Errores que bloquean Enviar: formulario completo + firma/GPS si config. */
+  /**
+   * Errores que bloquean Enviar: General + formulario.
+   * Firma/adjuntos no son obligatorios: `signatureClient` solo muestra el panel de firma.
+   */
   public hasPotentialClientFieldErrors(): boolean {
     if (!this.generalTabValidForSave || !this.hasEnterpriseSelected()) {
       return true;
     }
     if (!this.isPotentialClientFormComplete()) {
-      return true;
-    }
-    if (this.hasMissingSignatureAttachments()) {
       return true;
     }
     if (this.hasMissingGpsCoordinate()) {
@@ -832,10 +824,6 @@ export class ClientLogicService {
       || !this.isPotentialClientControlValid('nuPhone')) {
       return this.clientTags.get('CLI_POT_MSJ_ERROR_INCOMPLETE_FORM')
         ?? 'Complete todos los campos obligatorios del cliente potencial.';
-    }
-    if (this.hasMissingSignatureAttachments()) {
-      return this.clientTags.get('CLI_POT_MSJ_ERROR_NO_ATTACHMENTS')
-        ?? 'Debe adjuntar al menos un documento o firma antes de continuar.';
     }
     if (this.hasMissingGpsCoordinate()) {
       return this.clientTags.get('CLI_POT_MSJ_ERROR_NO_GPS')
