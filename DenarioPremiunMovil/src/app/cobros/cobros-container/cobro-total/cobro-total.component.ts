@@ -452,7 +452,7 @@ export class CobroTotalComponent implements OnInit {
     this.resetManualRetentionState();
     this.validate();
     void this.collectService.calculatePayment('', 0, true);
-    this.collectService.validateToSend();
+    this.collectService.notifyCollectionEdited();
   }
 
   validate() {

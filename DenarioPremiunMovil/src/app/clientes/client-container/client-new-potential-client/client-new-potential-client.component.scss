@@ -53,6 +53,12 @@ $fondoLila: #430197;
   display: none!important;
 }
 
+.potential-send-error-hint {
+  --highlight-color: #eb445a;
+  --border-color: #eb445a;
+  border-color: #eb445a !important;
+}
+
 ion-select::part(icon) {
   content: url('/assets/images/flecha-down.svg');
   color: $colorLila;

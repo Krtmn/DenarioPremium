@@ -56,7 +56,7 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 - **Síntoma:** Módulo Retención (`coType`/`coTypeModule` = `2`): con 2+ facturas seleccionadas, completar retención solo en una y dejar otra en 0 permite Enviar/Guardar; el documento vacío viaja sin monto/comprobante/fecha.
 - **Causa:** `validateToSend` (rama `coType == '2'`) solo exigía suma global `getDetailRetentionTotal` > 0. El header `sendOrSave` para tipo 2 validaba adjuntos, no completitud por documento.
-- **Fix:** Helpers `isRetentionDetailComplete` / `areAllRetentionDetailsComplete` (monto > 0 + voucher/fecha legacy o líneas dinámicas con `idCollectRetention` y `validateRetentionVoucherValue`). `validateToSend` usa el helper (reemplaza criterio de suma). Header bloquea Guardar y Enviar con alerta en español si algún detalle está incompleto. Lista vacía → incompleto.
+- **Fix:** Helpers `isRetentionDetailComplete` / `areAllRetentionDetailsComplete` (monto > 0 + voucher/fecha legacy o líneas dinámicas con `idCollectRetention` y `validateRetentionVoucherValue`). `validateToSend` usa el helper (reemplaza criterio de suma). Header bloquea **Enviar** con alerta si algún detalle está incompleto (Guardar permitido tras General válida; ver COB-SAVE-001). Lista vacía → incompleto.
 - **Evitar:** No habilitar Enviar en retención solo por suma > 0; cada documento seleccionado debe estar completo.
 - **Archivos:** `collection-logic.service.ts`, `cobros-header.component.ts`, `collection-logic.service.spec.ts`.
 - **Estado:** fixed (pendiente QA dispositivo).
@@ -101,6 +101,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [CLI-CREDIT-001] Detalle: Crédito Bs/$ cruzados (Saldo OK)
+
+- **Síntoma:** En detalle de cliente, Saldo local/hard está bien; Crédito/Crédito disponible muestran Bs donde va $ y viceversa.
+- **Causa:** Tras CLI-SALDOS-001, Saldo etiqueta fijo `localCurrency`/`hardCurrency`. Crédito seguía rotulando por `client.coCurrency` y su opuesta (y restaba `saldo1+saldo2` mezclados).
+- **Fix (display-only):** `initializeClientCredits` convierte el límite a local/hard y resta el saldo de la misma moneda. No muta `coCurrency`.
+- **Evitar:** no etiquetar crédito con `coCurrency` del maestro si la pantalla de Saldo ya es local/hard.
+- **Archivos:** `client-detail.component.ts/.html` (+ spec).
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [COB-DOCS-001] Pagos parciales perdidos al paginar Documentos
 
 - **Síntoma:** En Cobros (Normal / 25%), parciales en página 1 no suman en Pago tras ir a página 2 (y viceversa).
@@ -119,6 +130,28 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 - **Fix:** `attachCollectionDetailDiscountsToDetails` por `normalizeCoDocument`; usarlo en lista y `prepareCollectionDetailsForSend`; hidratar UI solo con `checkCollectDiscount`; `clearDocumentDiscountUiState` al abrir/cerrar detalle.
 - **Evitar:** No adjuntar hijos de detalle (descuentos/retenciones) solo por `coCollection`. No mutar `collectionDetailDiscounts` al abrir la lupa.
 - **Archivos:** `collection-logic.service.ts`, `cobros-list.component.ts`, `cobro-documents.component.ts`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [COB-SAVE-001] Guardar deshabilitado tras General válida (pagos incompletos)
+
+- **Síntoma:** Con pestaña General completa, el botón Guardar permanece OFF al agregar método de pago vacío, documentos sin pagar o retención incompleta.
+- **Causa:** `blockSaveAndSendForInvalidPayments`, `validateToSend` y `sendOrSave` acoplaban Guardar a completitud de pagos/documentos/retención (misma regla que Enviar).
+- **Fix:** `updateSaveButtonAvailability()` + `generalTabValidForSave` (desde `unlockTabs`/`onCollectionValid`). Pagos incompletos solo bloquean Enviar. Header: validaciones de pago/retención solo en rama `sendOrSave === true`. Slots vacíos siguen filtrándose al persistir (`getNonEmptyCollectionPayments`).
+- **Evitar:** No volver a llamar `onCollectionValidToSave(false)` desde `validateToSend` por pagos/referencias. No bloquear Guardar en retención multi-doc (solo Enviar).
+- **Archivos:** `collection-logic.service.ts`, `cobros-header.component.ts`, `collection-logic.service.spec.ts`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [COB-SAVE-002] Guardar permanece ON tras guardar sin cambios
+
+- **Síntoma:** Tras pulsar Guardar (sin salir), el botón sigue habilitado aunque no hubo más ediciones; al reabrir borrador igual.
+- **Causa:** `updateSaveButtonAvailability` solo miraba General válida (COB-SAVE-001); no usaba `collectionPersistedBaseline` / `collectionDirtySincePersist`. `validateToSend` marcaba dirty en cada recálculo.
+- **Fix:** `hasChangesToSave = !collectionPersistedBaseline || collectionDirtySincePersist` en `updateSaveButtonAvailability`. `notifyCollectionEdited()` para acciones de usuario; quitar dirty de `validateToSend`. Wiring en Pagos/General/Documents/Total/header adjuntos.
+- **Evitar:** No llamar `markCollectionDirty` desde hidratación/reapertura (`pauseCollectionDirtyTracking`, `recentOpenCollect`). No reactivar Guardar con `validateToSend` solo.
+- **Archivos:** `collection-logic.service.ts`, `cobro-pagos/general/documents/total`, `cobros-header.component.ts`, specs + smoke #12.
 - **Estado:** fixed (pendiente QA dispositivo).
 
 ---
@@ -202,6 +235,149 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 - **Evitar:** No usar `!=` directo sobre login almacenado; alinear validación local con semántica del auth server.
 - **Archivos:** `login.component.ts` (`onLogin`).
 - **Estado:** fixed.
+
+---
+
+## [PED-COMMENT-001] Pedido enviado no abre detalle si `requiredCommentOrder` se activó después
+
+- **Síntoma:** Pedido enviado con comentario vacío (creado cuando `requiredCommentOrder=false`) no deja ver Total/Adjuntos al reabrir si la config ya está en `true`.
+- **Causa:** `isCommentRequiredMissing` / `segmentLock` exigían comentario aunque `pedidoModificable=false` (input disabled); `lockSegments` bloqueaba las pestañas.
+- **Fix:** Si el pedido no es editable (`!pedidoModificable`), no tratar el comentario como faltante obligatorio.
+- **Evitar:** No exigir campos obligatorios de edición en pedidos solo-lectura/enviados; Guardado/nuevo sí siguen la config actual.
+- **Archivos:** `pedido.component.ts` (`isCommentRequiredMissing`).
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [INV-SAVE-001] Guardar/Enviar deshabilitados hasta inventario completo
+
+- **Síntoma:** Tras seleccionar cliente en General, Guardar y Enviar permanecen OFF hasta completar todas las filas de productos (cantidad, lote, etc.).
+- **Causa:** `updateHeaderButtons()` acoplaba ambos botones a `checkValidStockToSend()`. El header abría confirmación sin validar campos al click.
+- **Fix:** `updateSaveButtonAvailability()` (General + dirty) y `updateSendButtonAvailability()` (General). `saveStock()` / `sendStock()` validan con `hasStockFieldErrors()` antes del modal (como `sendCollect()` en Cobros). Guardar también valida al pulsar (simétrico a Enviar).
+- **Evitar:** No volver a acoplar Guardar a `checkValidStockToSend()` en product-list/adjuntos. No forzar `onStockValidToSave(true)` en hidratación sin dirty.
+- **Archivos:** `inventarios-logic.service.ts`, `inventario-header`, `inventario-general`, `inventario-product-list`, `inventario-actividades`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [INV-SAVE-002] Guardar permanece ON tras guardar sin cambios
+
+- **Síntoma:** Tras guardar inventario (sin salir), Guardar sigue habilitado aunque no hubo más ediciones; al reabrir borrador igual.
+- **Causa:** No existía `stockPersistedBaseline` / `stockDirtySincePersist`; selección de cliente forzaba `onStockValidToSave(true)`.
+- **Fix:** `hasChangesToSave` en `updateSaveButtonAvailability`. `notifyStockEdited()` en ediciones de usuario; `markStockOpenedFromPersistedCopy()` al reabrir; `applyPersistSucceededBaseline()` tras persistir.
+- **Evitar:** No llamar `markStockDirty` desde hidratación (`pauseStockDirtyTracking`). No usar `updateHeaderButtons()` para acoplar save+send.
+- **Archivos:** `inventarios-logic.service.ts`, componentes de inventario, specs + smoke Inventarios #1–4.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [DEP-SAVE-001] Guardar/Enviar deshabilitados hasta cobros completos
+
+- **Síntoma:** Guardar exigía banco + cobros en el botón; Enviar solo cobros; validación parcial al click.
+- **Causa:** `refreshHeaderSaveDisabled()` acoplaba Guardar a cobros; `hasAtLeastOneDepositCollectRow()` era la única validación al pulsar.
+- **Fix:** `updateSaveButtonAvailability()` (General + dirty) y `updateSendButtonAvailability()` (General). `validateDepositBeforeAction()` + `hasDepositFieldErrors()` antes de confirmación en Guardar y Enviar.
+- **Evitar:** No volver a acoplar Guardar a `depositCollect.length` en el header. Validar plantilla, banco, firma y GPS al click.
+- **Archivos:** `deposit.service.ts`, `depositos-header`, `deposito-general`, `deposito-cobros`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [DEP-SAVE-002] Guardar permanece ON tras guardar sin cambios
+
+- **Síntoma:** Tras guardar depósito, Guardar sigue habilitado sin más ediciones; al reabrir igual.
+- **Causa:** `applyPersistSucceededBaseline()` no refrescaba botones; dirty existía solo para salida (`goBack`).
+- **Fix:** `updateSaveButtonAvailability()` con `hasChangesToSave`; `notifyDepositEdited()` en general/cobros/adjuntos; baseline al reabrir.
+- **Evitar:** No forzar `onDepositValidToSave(true)` en hidratación sin dirty.
+- **Archivos:** `deposit.service.ts`, componentes depósito, specs + smoke Depósitos.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [POT-SAVE-001] Guardar/Enviar deshabilitados hasta formulario completo
+
+- **Síntoma:** Guardar y Enviar exigían formulario completo en tiempo real (`checkForm`); validación parcial al click; Enviar mostraba éxito antes de persistir.
+- **Causa:** `cannotSavePotentialClient` / `cannotSendPotentialClient` acoplados a `checkForm()`; header sin `validateBeforeAction`; `setResult` disparaba `CLI_SEND_MSG` antes del INSERT.
+- **Fix:** `updatePotentialClientSaveButtonAvailability()` (General + dirty) y `updatePotentialClientSendButtonAvailability()` (General). `validatePotentialClientBeforeAction()` + `hasPotentialClientFieldErrors()` antes de confirmación. Éxito de envío tras persistir.
+- **Evitar:** No volver a acoplar Enviar a `validPotentialClient` en el header. Validar `naResponsible`, firma y GPS al click.
+- **Archivos:** `client-logic.service.ts`, `client-header`, `client-new-potential-client`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [POT-SAVE-002] Guardar permanece ON tras guardar sin cambios
+
+- **Síntoma:** Tras guardar potencial, Guardar sigue habilitado sin más ediciones; al reabrir igual.
+- **Causa:** No existía baseline/dirty para botón Guardar; solo `newPotentialClientChanged` para salida.
+- **Fix:** `applyPotentialClientPersistSucceededBaseline()` + `notifyPotentialClientEdited()`; `markPotentialClientOpenedFromPersistedCopy()` al reabrir guardado.
+- **Evitar:** No forzar `cannotSavePotentialClient = false` en hidratación sin dirty.
+- **Archivos:** `client-logic.service.ts`, formulario potencial, specs + smoke Clientes.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [DEV-SAVE-001] Guardar/Enviar deshabilitados hasta productos completos
+
+- **Síntoma:** Guardar exigía productos completos en el botón; Enviar también; validación parcial al click; Guardar persistía sin confirmación.
+- **Causa:** `updateSendButtonState()` acoplaba Guardar y Enviar a `coDocument` + `quProduct`; lógica duplicada en `devolucion-product-list`.
+- **Fix:** `updateSaveButtonAvailability()` (General + dirty) y `updateSendButtonAvailability()` (General). `validateReturnBeforeAction()` + `hasReturnFieldErrors()` antes de confirmación en Guardar y Enviar.
+- **Evitar:** No volver a llamar `onReturnValidToSave` desde product-list. Validar productos, firma y GPS al click.
+- **Archivos:** `return-logic.service.ts`, `devoluciones-header`, `devolucion-general`, `devolucion-product-list`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [DEV-SAVE-002] Guardar permanece ON tras guardar sin cambios
+
+- **Síntoma:** Tras guardar devolución, Guardar sigue habilitado sin más ediciones; al reabrir igual.
+- **Causa:** `setChange(false, true)` tras guardar dejaba Guardar ON; no existía baseline/dirty para el botón.
+- **Fix:** `applyReturnPersistSucceededBaseline()` + `notifyReturnEdited()`; `markReturnOpenedFromPersistedCopy()` al reabrir persistido.
+- **Evitar:** No forzar `onReturnValidToSave(true)` en hidratación sin dirty.
+- **Archivos:** `return-logic.service.ts`, componentes devoluciones, specs + smoke Devoluciones.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [PED-SAVE-001] Guardar/Enviar deshabilitados hasta productos completos
+
+- **Síntoma:** Guardar exigía cliente + carrito en el botón; Enviar igual; Guardar persistía sin confirmación.
+- **Causa:** `setChangesMade()` acoplaba Guardar y Enviar a `carrito.length`; validación parcial al click.
+- **Fix:** `updateSaveButtonAvailability()` (General + dirty) y `updateSendButtonAvailability()` (General). `validateOrderBeforeAction()` + `hasOrderFieldErrors()` antes de confirmación.
+- **Evitar:** No volver a acoplar Enviar a productos en tiempo real. Validar carrito, firma, almacén y GPS al click.
+- **Archivos:** `pedidos.service.ts`, `pedido.component.ts`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [PED-SAVE-002] Guardar permanece ON tras guardar sin cambios
+
+- **Síntoma:** Tras guardar pedido, Guardar sigue habilitado; al reabrir igual si no se editaba.
+- **Causa:** No existía baseline/dirty; `saveButton()` volvía a llamar `setChangesMade(true)` tras guardar.
+- **Fix:** `applyOrderPersistSucceededBaseline()` + `notifyOrderEdited()`; `markOrderOpenedFromPersistedCopy()` al reabrir persistido.
+- **Evitar:** No forzar botones desde hidratación sin dirty.
+- **Archivos:** `pedidos.service.ts`, `pedido.component.ts`, specs + smoke Pedidos.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [VIS-SAVE-001] Guardar/Enviar deshabilitados hasta actividades completas
+
+- **Síntoma:** Guardar exigía cliente + actividades en el botón; Enviar igual; validación parcial al click; Guardar persistía sin confirmación.
+- **Causa:** `setChangesMade()` acoplaba Guardar y Enviar a `listaEventos.length`; lógica en `visita.component` sin servicio centralizado.
+- **Fix:** `updateSaveButtonAvailability()` (General + dirty) y `updateSendButtonAvailability()` (General). `validateVisitBeforeAction()` + `hasVisitFieldErrors()` antes de confirmación en Guardar y Enviar.
+- **Evitar:** No volver a acoplar Enviar a eventos en tiempo real. Validar actividades, firma y GPS al click.
+- **Archivos:** `visitas.service.ts`, `visita.component.ts`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [VIS-SAVE-002] Guardar permanece ON tras guardar sin cambios
+
+- **Síntoma:** Tras guardar visita, Guardar sigue habilitado sin más ediciones; al reabrir igual.
+- **Causa:** No existía baseline/dirty; tras guardar se forzaba `disableSendButton = false` manualmente.
+- **Fix:** `applyVisitPersistSucceededBaseline()` + `notifyVisitEdited()`; `markVisitOpenedFromPersistedCopy()` al reabrir persistido.
+- **Evitar:** No forzar botones desde `setChangesMade(false)` en hidratación sin dirty.
+- **Archivos:** `visitas.service.ts`, `visita.component.ts`, specs + smoke Visitas.
+- **Estado:** fixed (pendiente QA dispositivo).
 
 ---
 

@@ -40,6 +40,7 @@ Los unitarios validan **lógica de negocio** y ramas de navegación/flags. Overl
 | ID | Qué hace |
 |----|----------|
 | **DM-CLT-009** / **CLI-SALDOS-001** | `initializeClientBalances` usa `resolveClientBalanceTotals` + `isEnabled`. |
+| **CLI-CREDIT-001** | Crédito display local/hard (cliente USD: $ = límite, Bs = × tasa; disponible resta saldo misma moneda). |
 | **DM-CLT-010** | `onChangeAddress` actualiza dirección/coordenada/editable. |
 | **DM-CLT-013** | `showDocVentasTab` oculto si transportista. |
 | **DM-CLT-014** | `openDoc` setea documento y flags de navegación. |

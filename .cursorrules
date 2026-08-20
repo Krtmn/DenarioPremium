@@ -1,0 +1,19 @@
+[Commit Message Generation]
+
+LANGUAGE: Spanish (Español). NEVER write commit messages in English.
+
+FORMAT: Conventional Commits (feat, fix, chore, refactor, docs, test).
+
+SUBJECT: One line in Spanish explaining WHY the change was made, not a file list.
+
+BODY: Optional, also in Spanish. No English bullet points.
+
+EXAMPLES:
+- fix(inventarios): Guardar y Enviar siguen el patrón de Cobros con validación al pulsar
+- feat(cobros): se valida retención incompleta antes de enviar con modal y hints en la lista
+
+INVALID (do not use):
+- fix(inventarios): enhance stock management and UI feedback
+- Updated the inventory activities component to...
+
+If the diff suggests English wording, translate the message to Spanish before outputting.

@@ -24,7 +24,8 @@
                                 </ion-col> -->
                                 <ion-list>
                                     <ion-col size="12" *ngIf="!disabledSelectEnterprise">
-                                        <div class="listado-enterprise-selector ion-text-center">
+                                        <div class="listado-enterprise-selector ion-text-center"
+                                            [class.potential-send-error-hint]="shouldShowEnterpriseSendError()">
                                             <ion-select class="ion-text-center always-flip"
                                                 [disabled]="this.clientLogic.disabledEnterprise == true ? true : false"
                                                 placeholder="{{this.clientLogic.clientTags.get('CLI_SELECTOR')}}"
@@ -55,6 +56,7 @@
                                     placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_NOMBRE')}}:"
                                     formControlName="naClient" [(ngModel)]="clientLogic.potentialClient.naClient"
                                     (ionInput)="onNaClientChange()" #naClientInput [readonly]="isDisabled"
+                                    [class.potential-send-error-hint]="shouldShowFieldSendError('naClient')"
                                     (ionChange)="checkForm()"></ion-input>
                                 <ion-label *ngIf="newPotentialClient.errors?.['required']">
                                     {{this.clientLogic.clientTags.get('CLI_NEW_POT_MENSAJE_ERROR_NOMBRE_CLIENTE')}}
@@ -68,6 +70,7 @@
                                     placeholder="{{this.clientLogic.clientTags.get('CLI_NEW_POT_RIF')}}:"
                                     formControlName="nuRif" [(ngModel)]="clientLogic.potentialClient.nuRif"
                                     (ionInput)="onNuRifChange()" #nuRifInput [readonly]="isDisabled"
+                                    [class.potential-send-error-hint]="shouldShowFieldSendError('nuRif')"
                                     (ionChange)="checkForm()"></ion-input>
                             </ion-col>
                         </ion-row>
@@ -114,6 +117,7 @@
                                     formControlName="naResponsible"
                                     [(ngModel)]="clientLogic.potentialClient.naResponsible"
                                     (ionInput)="onNaResponsibleChange()" [readonly]="isDisabled"
+                                    [class.potential-send-error-hint]="shouldShowFieldSendError('naResponsible')"
                                     (ionChange)="checkForm()"></ion-input>
                             </ion-col>
                         </ion-row>

@@ -110,17 +110,23 @@ export class DepositoGeneralComponent implements OnInit {
     void this.changeEnterprise();
   }
 
-  print() {
-    console.log(this.depositService.deposit);
+  shouldShowBankSendError(): boolean {
+    return this.depositService.sendValidationAttempted
+      && !this.depositService.generalTabValidForSave;
+  }
+
+  shouldShowDocumentSendError(): boolean {
+    return this.depositService.sendValidationAttempted
+      && this.depositService.generalTabValidForSave
+      && !(this.depositService.nuDocument?.trim() || this.depositService.deposit?.nuDocument?.trim());
   }
 
   onBankSelect() {
     this.depositService.deposit.nuAccount = this.depositService.bankSelected.nuAccount;
     this.depositService.deposit.coBank = this.depositService.bankSelected.coBank;
     this.depositService.isSelectedBank = true;
-    this.depositService.depositValid = true;
-    this.depositService.markDepositDirty();
-    this.depositService.onDepositValidToSave(true);
+    this.depositService.onDepositGeneralValid(true);
+    this.depositService.notifyDepositEdited();
   }
 
   onNuDocumentInput() {
@@ -132,7 +138,7 @@ export class DepositoGeneralComponent implements OnInit {
       }
     }
     this.depositService.deposit.nuDocument = this.depositService.nuDocument.trim();
-    this.depositService.markDepositDirty();
+    this.depositService.notifyDepositEdited();
   }
 
   onTxCommentInput() {
@@ -147,7 +153,7 @@ export class DepositoGeneralComponent implements OnInit {
       }
     }
     this.depositService.deposit.txComment = this.depositService.txComment.trim();
-    this.depositService.markDepositDirty();
+    this.depositService.notifyDepositEdited();
   }
 
   cleanString(str: string): string {
@@ -164,7 +170,7 @@ export class DepositoGeneralComponent implements OnInit {
 
   changeDaDocument() {
     this.depositService.deposit.daDocument = this.depositService.daDocument;
-    this.depositService.markDepositDirty();
+    this.depositService.notifyDepositEdited();
   }
 
   changeCurrencyMsj(event: any) {

@@ -151,7 +151,21 @@ export class CollectionService {
   public initCollect: boolean = true;
   public showHeaderButtons: Boolean = false;
   public disableSavedButton: boolean = true;
+  /** Pestaña General válida (unlockTabs): habilita Guardar independiente de pagos/documentos. */
+  public generalTabValidForSave = false;
   public disableSendButton: boolean = true;
+  /** Tras pulsar Enviar: muestra bordes/mensajes en campos obligatorios. */
+  public sendValidationAttempted = false;
+  /** Enviar bloqueado hasta corregir campos tras intento fallido. */
+  public sendBlockedByFields = false;
+  /** Índice en documentSales para abrir modal tras fallo de envío en Retención. */
+  public retentionSendFocusDocIndex: number | null = null;
+  /** Pestaña a enfocar tras fallo de Enviar (General / Documentos / Pagos / Adjuntos). */
+  public focusSendValidationTab = new Subject<'default' | 'documentos' | 'pagos' | 'adjuntos'>();
+  /** Espejo del último resultado de onCollectionValidToSend (incl. anticipo automático). */
+  public lastValidToSend = false;
+  /** Razón de cambio de tasa obligatoria (pestaña General). */
+  public requiresTxConversionReason = false;
   public saveOrExitOpen = false;
   /** Tras guardar o abrir desde lista: hay copia coherente en BD. */
   public collectionPersistedBaseline = false;
@@ -314,6 +328,7 @@ export class CollectionService {
   public coDocumentPaymentPartial: string = '';
   public MonedaTolerancia: string = "";
   public prepaidRangeCurrency: string = "";
+  public prepaidCurrency: string = "";
   public tabSelected: string = "general";
   public totalCollectDiscountsView: string = "";
 
@@ -398,6 +413,7 @@ export class CollectionService {
     this.MonedaTolerancia = this.globalConfig.get('MonedaTolerancia');
     this.multiCurrency = this.globalConfig.get('multiCurrency') === 'true' ? true : false;
     this.prepaidRangeCurrency = this.globalConfig.get('prepaidRangeCurrency');
+    this.prepaidCurrency = this.globalConfig.get('prepaidCurrency');
     this.prepaidRangeAmount = Number(this.globalConfig.get('prepaidRangeAmount'));
     this.igtfDefault = this.globalConfig.get('igtfDefault') === 'true' ? true : false;
     this.automatedPrepaid = this.globalConfig.get('automatedPrepaid') === 'true' ? true : false;
@@ -487,21 +503,31 @@ export class CollectionService {
       return;
     }
     this.collectionDirtySincePersist = true;
+    this.updateSaveButtonAvailability();
   }
 
   applyPersistSucceededBaseline(): void {
     this.collectionDirtySincePersist = false;
     this.collectionPersistedBaseline = true;
+    this.updateSaveButtonAvailability();
   }
 
   resetCollectionExitBaseline(): void {
     this.collectionPersistedBaseline = false;
     this.collectionDirtySincePersist = false;
+    this.updateSaveButtonAvailability();
   }
 
   markCollectionOpenedFromPersistedCopy(): void {
     this.collectionPersistedBaseline = true;
     this.collectionDirtySincePersist = false;
+    this.updateSaveButtonAvailability();
+  }
+
+  /** Marca edición de usuario y revalida Enviar (no usar en hidratación/reapertura). */
+  notifyCollectionEdited(): void {
+    this.markCollectionDirty();
+    void this.validateToSend();
   }
 
   isCollectionReadOnlyForEdit(): boolean {
@@ -1004,7 +1030,7 @@ export class CollectionService {
       this.montoTotalPagado = 0;
       this.montoTotalPagadoConversion = 0;
       this.onCollectionValidToSend(false);
-      this.onCollectionValidToSave(true);
+      this.updateSaveButtonAvailability();
       this.syncAddPaymentMethodDisabledState();
       return Promise.resolve(false);
     }
@@ -2038,6 +2064,75 @@ export class CollectionService {
     return normalizedExcess;
   }
 
+  /** Moneda del anticipo automático persistido (config prepaidCurrency o moneda del cobro). */
+  public resolveAutomatedPrepaidCurrency(): string {
+    const configured = String(this.prepaidCurrency ?? '').trim();
+    if (configured) {
+      return configured;
+    }
+    return String(this.collection?.coCurrency ?? '');
+  }
+
+  private resolveCurrencyIdByCoCurrency(coCurrency: string): number {
+    const match = this.currencyList?.find(
+      item => String(item?.coCurrency ?? '').trim() === String(coCurrency ?? '').trim(),
+    );
+    return Number(match?.idCurrency ?? this.collection?.idCurrency ?? 0);
+  }
+
+  /** Monto excedente expresado en la moneda del anticipo automático. */
+  public getAutomatedPrepaidExcessAmount(): number {
+    const excess = this.syncPrepaidDifferenceAmounts();
+    const targetCurrency = this.resolveAutomatedPrepaidCurrency();
+    if (!targetCurrency || targetCurrency === this.collection.coCurrency) {
+      return excess;
+    }
+
+    const converted = this.convertirMonto(
+      excess,
+      this.getEffectiveExchangeRate(),
+      this.collection.coCurrency,
+    );
+    return converted > 0 ? converted : excess;
+  }
+
+  public resolveAutomatedPrepaidDocumentAmounts(): {
+    coCurrency: string;
+    idCurrency: number;
+    nuAmount: number;
+    nuAmountConversion: number;
+  } {
+    const coCurrency = this.resolveAutomatedPrepaidCurrency();
+    const idCurrency = this.resolveCurrencyIdByCoCurrency(coCurrency);
+    const excessInCollection = this.syncPrepaidDifferenceAmounts();
+    const excessConversionStored = Number(this.collection.nuDifferenceConversion ?? 0);
+
+    if (coCurrency === this.collection.coCurrency) {
+      return {
+        coCurrency,
+        idCurrency,
+        nuAmount: excessInCollection,
+        nuAmountConversion: excessConversionStored,
+      };
+    }
+
+    return {
+      coCurrency,
+      idCurrency,
+      nuAmount: this.getAutomatedPrepaidExcessAmount(),
+      nuAmountConversion: excessInCollection,
+    };
+  }
+
+  public buildAutomatedPrepaidMessage(): string {
+    const template = this.collectionTags.get('COB_MSG_AUTOMATED_PREPAID')
+      ?? 'Se creará un anticipo automático por el monto excedente de {amount}. Se enviará un anticipo junto al cobro.';
+    const currency = this.resolveAutomatedPrepaidCurrency();
+    const amount = this.getAutomatedPrepaidExcessAmount();
+    const amountLabel = `${currency} ${this.currencyService.formatNumber(amount)}`.trim();
+    return template.replace('{amount}', amountLabel);
+  }
+
   /**
    * Excedente para anticipo automático. No usa tolerancia de Enviar:
    * tolerancia positiva habilita Enviar; prepaidRangeAmount decide el anticipo.
@@ -2110,6 +2205,7 @@ export class CollectionService {
       this.anticipoAutomatico = [];
       this.syncAddPaymentMethodDisabledState();
     }
+    this.markCollectionDirty();
     if (!skipValidateToSend) {
       this.validateToSend();
     }
@@ -2434,7 +2530,7 @@ export class CollectionService {
     if (this.coTypeModule == "0") {
       if (this.createAutomatedPrepaid) {
         if (!this.recentOpenCollect && !this.isRateChangeInProgress) {
-          this.mensaje = this.collectionTags.get('COB_MSG_AUTOMATED_PREPAID')! + " " + this.currencyService.formatNumber(this.collection.nuDifference);
+          this.mensaje = this.buildAutomatedPrepaidMessage();
           this.alertMessageOpen = true;
         }
         this.onCollectionValidToSend(true);
@@ -2450,7 +2546,6 @@ export class CollectionService {
   }
 
   async validateToSend() {
-    this.markCollectionDirty();
     const isAlwaysPartialWithFixedMode = this.alwaysPartialPayment && !this.enablePartialPayment;
 
     if (!isAlwaysPartialWithFixedMode && (this.alwaysPartialPayment || this.allPaymentPartial)) {
@@ -2472,7 +2567,7 @@ export class CollectionService {
     this.montoTotalPagado = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado));
 
     this.alertMessageOpen = false;
-    // Cobros/anticipo/IGTF: pagos vacíos o incompletos deshabilitan Guardar y Enviar.
+    // Cobros/anticipo/IGTF: pagos vacíos o incompletos deshabilitan Enviar (no Guardar).
     if (this.collection.coType != '2' && this.blockSaveAndSendForInvalidPayments()) {
       return;
     }
@@ -2514,7 +2609,6 @@ export class CollectionService {
 
       if (!(await this.validateReferencePayment())) {
         this.onCollectionValidToSend(false);
-        this.onCollectionValidToSave(false);
         return;
       }
 
@@ -2599,6 +2693,10 @@ export class CollectionService {
               return;
             }
           }
+        } else {
+          // Parciales sin pagos / sin rama aplicable: no dejar lastValidToSend stale.
+          this.onCollectionValidToSend(false);
+          return;
         }
       } else {
         if (isNaN(this.montoTotalPagado))
@@ -2809,58 +2907,428 @@ export class CollectionService {
     return Number.isFinite(amount) && amount > 0;
   }
 
+  private getEfectivoFieldErrors(pago: PagoEfectivo): string[] {
+    const errors: string[] = [];
+    if (!this.isPositivePaymentAmount(pago?.monto)) {
+      errors.push('monto');
+    }
+    return errors;
+  }
+
+  private getChequeFieldErrors(pago: PagoCheque): string[] {
+    const errors: string[] = [];
+    if (!this.isPositivePaymentAmount(pago?.monto)) {
+      errors.push('monto');
+    }
+    if (!this.hasPaymentText(pago?.fecha)) {
+      errors.push('fecha');
+    }
+    if (!this.hasPaymentText(pago?.fechaValor)) {
+      errors.push('fechaValor');
+    }
+    if (!this.hasPaymentText(pago?.nombreBanco)) {
+      errors.push('nombreBanco');
+    }
+    if (!this.hasPaymentText(pago?.numeroCheque)) {
+      errors.push('numeroCheque');
+    }
+    return errors;
+  }
+
+  private getDepositoFieldErrors(pago: PagoDeposito): string[] {
+    const errors: string[] = [];
+    if (!this.isPositivePaymentAmount(pago?.monto)) {
+      errors.push('monto');
+    }
+    if (!this.hasPaymentText(pago?.fecha)) {
+      errors.push('fecha');
+    }
+    if (!this.hasPaymentText(pago?.nombreBanco)) {
+      errors.push('nombreBanco');
+    }
+    if (!this.hasPaymentText(pago?.numeroCuenta)) {
+      errors.push('numeroCuenta');
+    }
+    if (!this.hasPaymentText(pago?.numeroDeposito)) {
+      errors.push('numeroDeposito');
+    }
+    return errors;
+  }
+
+  private getTransferenciaFieldErrors(pago: PagoTransferencia): string[] {
+    const errors: string[] = [];
+    if (!this.isPositivePaymentAmount(pago?.monto)) {
+      errors.push('monto');
+    }
+    if (!this.hasPaymentText(pago?.fecha)) {
+      errors.push('fecha');
+    }
+    if (!this.hasPaymentText(pago?.nombreBanco)) {
+      errors.push('nombreBanco');
+    }
+    if (!this.hasPaymentText(pago?.numeroTransferencia)) {
+      errors.push('numeroTransferencia');
+    }
+    if (!this.hasPaymentText(pago?.numeroCuenta)) {
+      errors.push('numeroCuenta');
+    }
+    if (this.clientBankAccount) {
+      if (pago.showNuevaCuenta) {
+        if (!this.hasPaymentText(pago?.nuevaCuenta)) {
+          errors.push('nuevaCuenta');
+        }
+      } else if (!this.hasPaymentText(pago?.numeroCuentaCliente)) {
+        errors.push('numeroCuentaCliente');
+        errors.push('nombreBancoEmisor');
+      }
+    }
+    return errors;
+  }
+
+  private getPagoMovilFieldErrors(pago: PagoMovil): string[] {
+    const errors: string[] = [];
+    if (!this.isPositivePaymentAmount(pago?.monto)) {
+      errors.push('monto');
+    }
+    if (!this.hasPaymentText(pago?.fecha)) {
+      errors.push('fecha');
+    }
+    if (!this.hasPaymentText(pago?.nombreBancoEmisor)) {
+      errors.push('nombreBancoEmisor');
+    }
+    if (!this.hasPaymentText(pago?.nombreBancoDestino)) {
+      errors.push('nombreBancoDestino');
+    }
+    if (!this.hasPaymentText(pago?.numeroDocumento)) {
+      errors.push('numeroDocumento');
+    }
+    if (!this.hasPaymentText(pago?.numeroReferencia)) {
+      errors.push('numeroReferencia');
+    }
+    return errors;
+  }
+
+  private getOtrosFieldErrors(pago: PagoOtros): string[] {
+    const errors: string[] = [];
+    if (!this.isPositivePaymentAmount(pago?.monto)) {
+      errors.push('monto');
+    }
+    if (!this.hasPaymentText(pago?.nombre)) {
+      errors.push('nombre');
+    }
+    return errors;
+  }
+
   private isEfectivoPaymentComplete(pago: PagoEfectivo): boolean {
-    return this.isPositivePaymentAmount(pago?.monto);
+    return this.getEfectivoFieldErrors(pago).length === 0;
   }
 
   private isChequePaymentComplete(pago: PagoCheque): boolean {
-    return this.isPositivePaymentAmount(pago?.monto)
-      && this.hasPaymentText(pago?.fecha)
-      && this.hasPaymentText(pago?.fechaValor)
-      && this.hasPaymentText(pago?.nombreBanco)
-      && this.hasPaymentText(pago?.numeroCheque);
+    return this.getChequeFieldErrors(pago).length === 0;
   }
 
   private isDepositoPaymentComplete(pago: PagoDeposito): boolean {
-    return this.isPositivePaymentAmount(pago?.monto)
-      && this.hasPaymentText(pago?.fecha)
-      && this.hasPaymentText(pago?.nombreBanco)
-      && this.hasPaymentText(pago?.numeroCuenta)
-      && this.hasPaymentText(pago?.numeroDeposito);
+    return this.getDepositoFieldErrors(pago).length === 0;
   }
 
   private isTransferenciaPaymentComplete(pago: PagoTransferencia): boolean {
-    if (!this.isPositivePaymentAmount(pago?.monto)
-      || !this.hasPaymentText(pago?.fecha)
-      || !this.hasPaymentText(pago?.nombreBanco)
-      || !this.hasPaymentText(pago?.numeroTransferencia)
-      || !this.hasPaymentText(pago?.numeroCuenta)) {
-      return false;
-    }
-
-    if (!this.clientBankAccount) {
-      return true;
-    }
-
-    // Nueva Cuenta solo exige el campo nuevaCuenta; cuenta existente usa numeroCuentaCliente.
-    if (pago.showNuevaCuenta) {
-      return this.hasPaymentText(pago?.nuevaCuenta);
-    }
-
-    return this.hasPaymentText(pago?.numeroCuentaCliente);
+    return this.getTransferenciaFieldErrors(pago).length === 0;
   }
 
   private isPagoMovilPaymentComplete(pago: PagoMovil): boolean {
-    return this.isPositivePaymentAmount(pago?.monto)
-      && this.hasPaymentText(pago?.fecha)
-      && this.hasPaymentText(pago?.nombreBancoEmisor)
-      && this.hasPaymentText(pago?.nombreBancoDestino)
-      && this.hasPaymentText(pago?.numeroDocumento)
-      && this.hasPaymentText(pago?.numeroReferencia);
+    return this.getPagoMovilFieldErrors(pago).length === 0;
   }
 
   private isOtrosPaymentComplete(pago: PagoOtros): boolean {
-    return this.isPositivePaymentAmount(pago?.monto) && this.hasPaymentText(pago?.nombre);
+    return this.getOtrosFieldErrors(pago).length === 0;
+  }
+
+  public getIndexedPaymentFieldErrors(type: string, index: number): string[] {
+    switch (type) {
+      case 'ef':
+        return this.getEfectivoFieldErrors(this.pagoEfectivo[index]);
+      case 'ch':
+        return this.getChequeFieldErrors(this.pagoCheque[index]);
+      case 'de':
+        return this.getDepositoFieldErrors(this.pagoDeposito[index]);
+      case 'tr':
+        return this.getTransferenciaFieldErrors(this.pagoTransferencia[index]);
+      case 'pm':
+        return this.getPagoMovilFieldErrors(this.pagoMovil[index]);
+      case 'ot':
+        return this.getOtrosFieldErrors(this.pagoOtros[index]);
+      default:
+        return [];
+    }
+  }
+
+  private hasManualRateFieldError(): boolean {
+    if (!this.enabledManualRate) {
+      return false;
+    }
+    const rate = Number(this.collection?.nuValueLocal ?? this.rateSelected);
+    return !Number.isFinite(rate) || rate < 1;
+  }
+
+  private hasTxConversionFieldError(): boolean {
+    if (!this.requiresTxConversionReason) {
+      return false;
+    }
+    return !this.hasPaymentText(this.collection?.txConversion);
+  }
+
+  /**
+   * Documento asignado sin monto a pagar (> 0). Cubre cobro reabierto desde General
+   * antes de abrir el modal del documento (COB-SEND-UX-001 / monto a pagar).
+   */
+  public hasIncompleteDocumentAmountToPay(): boolean {
+    const coType = String(this.collection?.coType ?? '0');
+    if (this.hideDocuments || coType === '1' || coType === '2') {
+      return false;
+    }
+
+    const details = Array.isArray(this.collection?.collectionDetails)
+      ? this.collection.collectionDetails
+      : [];
+    const assigned = details.filter(d => !!d?.coDocument || !!d?.idDocument);
+    if (assigned.length === 0) {
+      return false;
+    }
+
+    return assigned.some(d => !this.isPositivePaymentAmount(d?.nuAmountPaid));
+  }
+
+  /**
+   * Pagos persistidos con método pero sin monto (> 0). No depende de arrays UI
+   * (pagoEfectivo/etc.), que pueden estar vacíos al pulsar Enviar desde General.
+   */
+  public hasIncompletePersistedPaymentAmounts(): boolean {
+    const coType = String(this.collection?.coType ?? '0');
+    if (this.hidePayments || coType === '2') {
+      return false;
+    }
+
+    const payments = this.getNonEmptyCollectionPayments(this.collection?.collectionPayments);
+    if (payments.length === 0) {
+      return false;
+    }
+
+    return payments.some(p => !this.isPositivePaymentAmount(p?.nuAmountPartial));
+  }
+
+  public hasSendFieldErrors(): boolean {
+    const coType = this.collection?.coType;
+
+    if (coType === '2') {
+      return !this.areAllRetentionDetailsComplete(this.collection?.collectionDetails);
+    }
+
+    if (coType !== '2' && (this.hasIncompletePaymentMethods() || this.hasEmptyCollectionPayments())) {
+      return true;
+    }
+
+    if (this.hasIncompleteDocumentAmountToPay()) {
+      return true;
+    }
+
+    if (this.requiredComment && !this.validComment) {
+      return true;
+    }
+
+    if (this.hasTxConversionFieldError() || this.hasManualRateFieldError()) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Mensaje de diagnóstico al pulsar Enviar con campos incompletos (COB-SEND-UX-001).
+   * Prioridad alineada con hasSendFieldErrors / prerequisites / validateToSend.
+   */
+  public getCollectionSendValidationMessage(): string {
+    const coType = String(this.collection?.coType ?? '0');
+    const incompleteFallback = this.collectionTags.get('COB_MSJ_SEND_INCOMPLETE')
+      ?? 'Complete los campos obligatorios antes de enviar.';
+
+    if (coType === '2'
+      && !this.areAllRetentionDetailsComplete(this.collection?.collectionDetails)) {
+      return this.getRetentionSendValidationMessage();
+    }
+
+    if (coType !== '2' && this.hasEmptyCollectionPayments()) {
+      return this.collectionTags.get('COB_MSJ_ERROR_EMPTY_PAYMENT')
+        ?? 'Hay un método de pago vacío. Complételo o elimínelo antes de enviar.';
+    }
+
+    if (coType !== '2' && this.hasIncompletePaymentMethods()) {
+      return this.collectionTags.get('COB_MSJ_ERROR_INCOMPLETE_PAYMENT')
+        ?? 'Hay un método de pago incompleto. Complételo o elimínelo antes de enviar.';
+    }
+
+    if (this.hasIncompleteDocumentAmountToPay()) {
+      return this.collectionTags.get('COB_MSJ_ERROR_NO_AMOUNT_TO_PAY')
+        ?? 'Indique el monto a pagar en Documentos antes de enviar.';
+    }
+
+    if (this.requiredComment && !this.validComment) {
+      return this.collectionTags.get('COB_MSJ_ERROR_NO_COMMENT')
+        ?? 'El comentario es obligatorio. Complételo en la pestaña General.';
+    }
+
+    if (this.hasTxConversionFieldError()) {
+      return this.collectionTags.get('COB_MSJ_ERROR_NO_TX_CONVERSION')
+        ?? 'Indique el motivo del cambio de tasa en la pestaña General.';
+    }
+
+    if (this.hasManualRateFieldError()) {
+      return this.collectionTags.get('COB_MSJ_ERROR_NO_MANUAL_RATE')
+        ?? 'Ingrese una tasa de conversión válida (mayor o igual a 1) en la pestaña General.';
+    }
+
+    if (!this.hideDocuments && coType !== '1' && !this.hasAssignedDocumentForSendUx()) {
+      return this.collectionTags.get('COB_MSJ_ERROR_NO_DOCUMENTS')
+        ?? 'Seleccione al menos un documento antes de enviar.';
+    }
+
+    if (!this.hidePayments && coType !== '2' && !this.hasAddedPaymentMethodForSendUx()) {
+      return this.collectionTags.get('COB_MSJ_ERROR_NO_PAYMENTS')
+        ?? 'Agregue al menos un método de pago antes de enviar.';
+    }
+
+    const validateMsg = (this.mensaje ?? '').toString().trim();
+    if (validateMsg.length > 0) {
+      return validateMsg;
+    }
+
+    return incompleteFallback;
+  }
+
+  /** Pestaña donde está el primer error bloqueante de Enviar. */
+  public resolveSendValidationFocusTab(): 'default' | 'documentos' | 'pagos' | 'adjuntos' {
+    const coType = String(this.collection?.coType ?? '0');
+
+    if (coType === '2'
+      && !this.areAllRetentionDetailsComplete(this.collection?.collectionDetails)) {
+      return 'documentos';
+    }
+
+    if (coType !== '2'
+      && (this.hasEmptyCollectionPayments() || this.hasIncompletePaymentMethods())) {
+      return 'pagos';
+    }
+
+    if (this.hasIncompleteDocumentAmountToPay()) {
+      return 'documentos';
+    }
+
+    if ((this.requiredComment && !this.validComment)
+      || this.hasTxConversionFieldError()
+      || this.hasManualRateFieldError()) {
+      return 'default';
+    }
+
+    if (!this.hideDocuments && coType !== '1' && !this.hasAssignedDocumentForSendUx()) {
+      return 'documentos';
+    }
+
+    if (!this.hidePayments && coType !== '2' && !this.hasAddedPaymentMethodForSendUx()) {
+      return 'pagos';
+    }
+
+    return 'default';
+  }
+
+  /** Emite la pestaña a enfocar tras un fallo de Enviar. */
+  public requestSendValidationTabFocus(
+    tab?: 'default' | 'documentos' | 'pagos' | 'adjuntos',
+  ): void {
+    this.focusSendValidationTab.next(tab ?? this.resolveSendValidationFocusTab());
+  }
+
+  public hasAddedPaymentMethodForSendUx(): boolean {
+    return this.getNonEmptyCollectionPayments(this.collection?.collectionPayments).length > 0;
+  }
+
+  private isDocumentSaleAssignedForSendUx(
+    doc: DocumentSale | undefined,
+    index: number,
+    details: CollectionDetail[],
+  ): boolean {
+    if (!doc?.isSelected) {
+      return false;
+    }
+
+    const pos = doc.positionCollecDetails;
+    if (!Number.isInteger(pos) || pos < 0 || pos >= details.length) {
+      return false;
+    }
+
+    const detail = details[pos];
+    return !!(detail?.coDocument || detail?.idDocument);
+  }
+
+  public hasAssignedDocumentForSendUx(): boolean {
+    const details = Array.isArray(this.collection?.collectionDetails)
+      ? this.collection.collectionDetails
+      : [];
+
+    if (details.length === 0) {
+      return false;
+    }
+
+    if (Array.isArray(this.documentSales) && this.documentSales.length > 0) {
+      if (this.documentSales.some((doc, index) =>
+        this.isDocumentSaleAssignedForSendUx(doc, index, details)
+      )) {
+        return true;
+      }
+    }
+
+    return this.isPersistedCollection()
+      && details.some(detail => !!detail.coDocument || !!detail.idDocument);
+  }
+
+  public hasSendPrerequisites(): boolean {
+    const coType = String(this.collection?.coType ?? '0');
+    const needsDoc = !this.hideDocuments && coType !== '1';
+    const needsPay = !this.hidePayments && coType !== '2';
+
+    if (needsDoc && !this.hasAssignedDocumentForSendUx()) {
+      return false;
+    }
+    if (needsPay && !this.hasAddedPaymentMethodForSendUx()) {
+      return false;
+    }
+    return true;
+  }
+
+  public updateSendButtonAvailability(): void {
+    if (this.isCollectionReadOnlyForEdit()) {
+      this.disableSendButton = true;
+      return;
+    }
+    if (this.sendBlockedByFields) {
+      this.disableSendButton = true;
+      return;
+    }
+    this.disableSendButton = !this.hasSendPrerequisites();
+  }
+
+  public resetSendValidationUx(): void {
+    this.sendValidationAttempted = false;
+    this.sendBlockedByFields = false;
+    this.updateSendButtonAvailability();
+  }
+
+  public refreshSendBlockedState(): void {
+    if (!this.sendBlockedByFields) {
+      return;
+    }
+    if (!this.hasSendFieldErrors()) {
+      this.sendBlockedByFields = false;
+      this.updateSendButtonAvailability();
+    }
   }
 
   public isIndexedPaymentMethodComplete(type: string, index: number): boolean {
@@ -2908,42 +3376,119 @@ export class CollectionService {
     return payments.filter(p => !this.isEmptyCollectionPayment(p));
   }
 
-  /** Deshabilita Guardar y Enviar cuando hay pagos vacíos o incompletos. */
+  /** Deshabilita Enviar cuando hay pagos vacíos o incompletos (Guardar no se bloquea). */
   public blockSaveAndSendForInvalidPayments(): boolean {
     if (!this.hasIncompletePaymentMethods()) {
       return false;
     }
     this.onCollectionValidToSend(false);
-    this.onCollectionValidToSave(false);
-    this.disableSavedButton = true;
-    this.disableSendButton = true;
     return true;
+  }
+
+  /**
+   * Pagos persistidos incompletos (monto u otros campos) sin depender de arrays UI.
+   * Cubre Enviar desde General antes/durante hidratación de Pagos.
+   */
+  public hasIncompletePersistedPaymentMethods(): boolean {
+    const coType = String(this.collection?.coType ?? '0');
+    if (this.hidePayments || coType === '2') {
+      return false;
+    }
+
+    const payments = this.getNonEmptyCollectionPayments(this.collection?.collectionPayments);
+    if (payments.length === 0) {
+      return false;
+    }
+
+    return payments.some(p => !this.isPersistedCollectionPaymentComplete(p));
+  }
+
+  private isPersistedCollectionPaymentComplete(payment: CollectionPayment): boolean {
+    if (!this.isPositivePaymentAmount(payment?.nuAmountPartial)) {
+      return false;
+    }
+
+    const method = (payment.coPaymentMethod ?? payment.coType ?? '').toString().trim().toLowerCase();
+    switch (method) {
+      case 'ef':
+        return true;
+      case 'ch':
+        return this.hasPaymentText(payment.daValue)
+          && this.hasPaymentText(payment.daCollectionPayment)
+          && this.hasPaymentText(payment.naBank)
+          && this.hasPaymentText(payment.nuPaymentDoc);
+      case 'de':
+        return this.hasPaymentText(payment.daValue)
+          && this.hasPaymentText(payment.naBank)
+          && this.hasPaymentText(payment.nuPaymentDoc)
+          && (this.hasPaymentText(payment.nuBankAccount)
+            || this.hasPaymentText(payment.nuClientBankAccount));
+      case 'tr': {
+        const hasReceptor = this.hasPaymentText(payment.nuBankAccount)
+          && this.hasPaymentText(payment.naBank);
+        const hasRef = this.hasPaymentText(payment.nuPaymentDoc)
+          && this.hasPaymentText(payment.daValue);
+        if (!hasReceptor || !hasRef) {
+          return false;
+        }
+        if (!this.clientBankAccount) {
+          return true;
+        }
+        const coClient = String(payment.coClientBankAccount ?? '').trim();
+        const nuClient = String(payment.nuClientBankAccount ?? '').trim();
+        if (coClient === 'Nueva Cuenta' || nuClient === 'Nueva Cuenta') {
+          return this.hasPaymentText(payment.newNuClientBankAccount);
+        }
+        return this.hasPaymentText(payment.nuClientBankAccount);
+      }
+      case 'pm':
+        return this.hasPaymentText(payment.daValue)
+          && this.hasPaymentText(payment.naBank)
+          && this.hasPaymentText(payment.nuPaymentDoc)
+          && this.hasPaymentText(payment.nuBankAccount);
+      case 'ot':
+        return this.hasPaymentText(payment.nuPaymentDoc);
+      default:
+        return this.hasPaymentText(payment.nuPaymentDoc);
+    }
   }
 
   public hasIncompletePaymentMethods(): boolean {
     if (this.hasEmptyCollectionPayments()) {
       return true;
     }
-    if (this.tipoPagoEfectivo && this.pagoEfectivo.some(p => !this.isEfectivoPaymentComplete(p))) {
-      return true;
-    }
-    if (this.tipoPagoCheque && this.pagoCheque.some(p => !this.isChequePaymentComplete(p))) {
-      return true;
-    }
-    if (this.tipoPagoDeposito && this.pagoDeposito.some(p => !this.isDepositoPaymentComplete(p))) {
-      return true;
-    }
-    if (this.tipoPagoTransferencia && this.pagoTransferencia.some(p => !this.isTransferenciaPaymentComplete(p))) {
-      return true;
-    }
-    if (this.tipoPagoPagoMovil && this.pagoMovil.some(p => !this.isPagoMovilPaymentComplete(p))) {
-      return true;
-    }
-    if (this.tipoPagoOtros && this.pagoOtros.some(p => !this.isOtrosPaymentComplete(p))) {
-      return true;
+
+    const hasUiPayments = this.pagoEfectivo.length > 0
+      || this.pagoCheque.length > 0
+      || this.pagoDeposito.length > 0
+      || this.pagoTransferencia.length > 0
+      || this.pagoMovil.length > 0
+      || this.pagoOtros.length > 0;
+
+    if (hasUiPayments) {
+      if (this.pagoEfectivo.some(p => !this.isEfectivoPaymentComplete(p))) {
+        return true;
+      }
+      if (this.pagoCheque.some(p => !this.isChequePaymentComplete(p))) {
+        return true;
+      }
+      if (this.pagoDeposito.some(p => !this.isDepositoPaymentComplete(p))) {
+        return true;
+      }
+      if (this.pagoTransferencia.some(p => !this.isTransferenciaPaymentComplete(p))) {
+        return true;
+      }
+      if (this.pagoMovil.some(p => !this.isPagoMovilPaymentComplete(p))) {
+        return true;
+      }
+      if (this.pagoOtros.some(p => !this.isOtrosPaymentComplete(p))) {
+        return true;
+      }
+      return false;
     }
 
-    return false;
+    // UI aún no hidratada (p. ej. Enviar desde General): validar SQLite.
+    return this.hasIncompletePersistedPaymentMethods();
   }
 
   async validateReferencePayment() {
@@ -3022,38 +3567,46 @@ export class CollectionService {
 
   onCollectionValidToSave(valid: boolean) {
     console.log('returnLogicService: onReturnValid');
-    if (!valid) {
-      if (this.createAutomatedPrepaid) {
-        this.collectValidToSave.next(true);
-      } else {
-        this.collectValidToSave.next(false);
-      }
+    this.collectValidToSave.next(valid);
+  }
+
+  public updateSaveButtonAvailability(): void {
+    if (this.isCollectionReadOnlyForEdit()) {
+      this.onCollectionValidToSave(false);
       return;
     }
-    this.collectValidToSave.next(true);
+    if (this.adjuntoService.weightLimitExceeded) {
+      this.onCollectionValidToSave(false);
+      return;
+    }
+    const generalOk = this.generalTabValidForSave || this.createAutomatedPrepaid;
+    const hasChangesToSave =
+      !this.collectionPersistedBaseline || this.collectionDirtySincePersist;
+    this.onCollectionValidToSave(generalOk && hasChangesToSave);
   }
 
   onCollectionValidToSend(validToSend: boolean) {
     console.log('returnLogicService: onReturnValidToSend');
     // Anticipo automático: el cobro puede enviarse aunque la diferencia no cuadre exactamente.
     if (!validToSend && this.createAutomatedPrepaid) {
+      this.lastValidToSend = true;
       this.collectValidToSend.next(true);
       return;
     }
+    this.lastValidToSend = validToSend;
     this.collectValidToSend.next(validToSend);
   }
 
 
   onCollectionValid(valid: boolean) {
     console.log('clientStockService: onClientStockValid');
+    this.generalTabValidForSave = valid;
     if (valid) {
       if (this.onChangeClient)
         this.cobroValid = true;
 
       if (this.collection.stDelivery == this.COLLECT_STATUS_SAVED || this.collection.stDelivery == this.COLLECT_STATUS_SENT)
         this.cobroValid = true;
-
-      this.onCollectionValidToSave(true);
     } else {
       if (this.onChangeClient)
         this.cobroValid = true;
@@ -3061,6 +3614,7 @@ export class CollectionService {
     if (this.collection.stDelivery == this.COLLECT_STATUS_TO_SEND || this.collection.stDelivery == this.COLLECT_STATUS_SENT)
       this.cobroValid = true;
 
+    this.updateSaveButtonAvailability();
     this.validCollection.next(valid);
   }
 
@@ -3434,6 +3988,70 @@ export class CollectionService {
       return false;
     }
     return details.every(detail => this.isRetentionDetailComplete(detail));
+  }
+
+  /** Primer documento seleccionado cuya retención no está completa (-1 si ninguno). */
+  public findFirstIncompleteRetentionDocumentIndex(): number {
+    const details = Array.isArray(this.collection?.collectionDetails)
+      ? this.collection.collectionDetails
+      : [];
+
+    if (Array.isArray(this.documentSales) && this.documentSales.length > 0) {
+      for (let index = 0; index < this.documentSales.length; index++) {
+        const doc = this.documentSales[index];
+        if (!doc?.isSelected) {
+          continue;
+        }
+        const pos = doc.positionCollecDetails;
+        if (!Number.isInteger(pos) || pos < 0 || pos >= details.length) {
+          return index;
+        }
+        if (!this.isRetentionDetailComplete(details[pos])) {
+          return index;
+        }
+      }
+    }
+
+    if (details.some(detail => !this.isRetentionDetailComplete(detail))) {
+      return -1;
+    }
+
+    return -1;
+  }
+
+  private getFirstIncompleteRetentionDetail(): CollectionDetail | null {
+    const details = Array.isArray(this.collection?.collectionDetails)
+      ? this.collection.collectionDetails
+      : [];
+    const docIndex = this.findFirstIncompleteRetentionDocumentIndex();
+
+    if (docIndex >= 0 && this.documentSales[docIndex]) {
+      const pos = this.documentSales[docIndex].positionCollecDetails;
+      if (Number.isInteger(pos) && pos >= 0 && pos < details.length) {
+        return details[pos];
+      }
+    }
+
+    return details.find(detail => !this.isRetentionDetailComplete(detail)) ?? null;
+  }
+
+  public getRetentionSendValidationMessage(): string {
+    const fallback = this.collectionTags.get('COB_MSJ_RETENTION_INCOMPLETE_SEND')
+      ?? 'Cada documento seleccionado debe tener retención completa (monto, comprobante y fecha). Abra el documento con la lupa, complete los datos y guarde.';
+
+    const detail = this.getFirstIncompleteRetentionDetail();
+    if (!detail) {
+      return fallback;
+    }
+
+    if (this.getDetailRetentionTotal(detail) <= 0) {
+      const amountTemplate = this.collectionTags.get('COB_MSJ_RETENTION_AMOUNT_REQUIRED')
+        ?? 'Debe asignar un monto de retención mayor a 0 en el documento {coDocument}.';
+      const coDocument = this.normalizeCoDocument(detail.coDocument) || 'seleccionado';
+      return amountTemplate.replace('{coDocument}', coDocument);
+    }
+
+    return fallback;
   }
 
   public normalizeCoDocument(value: unknown): string {
@@ -7220,8 +7838,9 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     enqueuePending: boolean = true,
   ): Promise<string | null> {
     this.syncExchangeRateToCollectionHeader();
-    const excessAmount = this.syncPrepaidDifferenceAmounts();
-    const excessConversion = Number(this.collection.nuDifferenceConversion ?? 0);
+    const prepaidAmounts = this.resolveAutomatedPrepaidDocumentAmounts();
+    const excessAmount = prepaidAmounts.nuAmount;
+    const excessConversion = prepaidAmounts.nuAmountConversion;
     const rate = this.getEffectiveExchangeRate();
 
     let inserStatement = "INSERT OR REPLACE INTO collections (" +
@@ -7278,8 +7897,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
         collection.naResponsible,
         collection.idEnterprise,
         collection.coEnterprise,
-        collection.idCurrency,
-        collection.coCurrency,
+        prepaidAmounts.idCurrency,
+        prepaidAmounts.coCurrency,
         1, //TIPO ANTICIPO
         collection.txComment,
         collection.coordenada,

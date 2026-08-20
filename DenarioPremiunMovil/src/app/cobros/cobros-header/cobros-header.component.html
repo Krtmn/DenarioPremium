@@ -46,7 +46,13 @@
 
 <!-- alerta de envio-->
 <ion-alert [isOpen]="alertMessageOpenSend" header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}"
-    message={{this.collectService.mensaje}} [buttons]="alertButtonsSend"
+    [message]="collectService.mensaje" [buttons]="alertButtonsSend"
     (didDismiss)="setResultSend($event)"></ion-alert>
+
+<!-- alerta validación Enviar (campos incompletos) -->
+<ion-alert [isOpen]="alertMessageOpenValidation"
+    [header]="collectService.collectionTags.get('COB_HEADER_MESSAGE') || 'Cobros'"
+    [message]="validationFailureMessage" [buttons]="alertButtonsValidation"
+    (didDismiss)="setResultValidation()"></ion-alert>
 
 

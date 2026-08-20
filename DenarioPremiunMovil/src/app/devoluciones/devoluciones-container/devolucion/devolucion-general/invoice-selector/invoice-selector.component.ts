@@ -77,8 +77,8 @@ export class InvoiceSelectorComponent implements OnInit {
     this.returnLogic.newReturn.coInvoice = selectedInvoice.coInvoice;
     this.returnLogic.newReturn.idInvoice = selectedInvoice.idInvoice;
     this.returnLogic.findInvoiceDetailUnits().then();
-    this.returnLogic.onReturnValid(true);
-    this.returnLogic.setChange(true, true);
+    this.returnLogic.onReturnGeneralValid(true);
+    this.returnLogic.notifyReturnEdited();
     this.invoiceSeleccionado.emit(selectedInvoice);
     this.closeModal();
   }
