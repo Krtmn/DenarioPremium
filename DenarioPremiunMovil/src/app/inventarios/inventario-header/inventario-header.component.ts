@@ -1,5 +1,5 @@
 
-import { Component, Input, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit, inject } from '@angular/core';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { PendingTransaction } from 'src/app/modelos/tables/pendingTransactions';
 import { AutoSendService } from 'src/app/services/autoSend/auto-send.service';
@@ -27,7 +27,8 @@ export class InventarioHeaderComponent implements OnInit {
   private services = inject(ServicesService);
   private synchronizationServices = inject(SynchronizationDBService);
   private autoSend = inject(AutoSendService);
-  public adjuntoService = inject(AdjuntoService)
+  public adjuntoService = inject(AdjuntoService);
+  private cdr = inject(ChangeDetectorRef);
 
   public messageAlert!: MessageAlert;
 
@@ -38,6 +39,7 @@ export class InventarioHeaderComponent implements OnInit {
   public header: string = '';
   public mensaje: string = '';
   public alertButtons: any;
+  public alertButtonsValidation: any;
   public buttonsSalvar: any;
   public subscriberShow: any;
   public subscriberDisabled: any;
@@ -51,6 +53,9 @@ export class InventarioHeaderComponent implements OnInit {
   public saveOrExitOpen = false;
   public alertMessageOpenSend: Boolean = false;
   public alertMessageOpenSave: Boolean = false;
+  /** Alerta local de validación (mensaje exacto; no depende de app-message). */
+  public alertMessageOpenValidation = false;
+  public validationFailureMessage = '';
   backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
     //console.log('backButton was called!');
     this.onBackClicked();
@@ -85,9 +90,6 @@ export class InventarioHeaderComponent implements OnInit {
       this.inventariosLogicService.newClientStock.hasAttachments = this.adjuntoService.hasItems();
       this.inventariosLogicService.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
       this.inventariosLogicService.notifyStockEdited();
-      this.inventariosLogicService.refreshSendBlockedState();
-      this.inventariosLogicService.updateSaveButtonAvailability();
-      this.inventariosLogicService.updateSendButtonAvailability();
     });
 
     this.AttachWeightSubscription = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
@@ -103,6 +105,13 @@ export class InventarioHeaderComponent implements OnInit {
       {
         text: this.textAlertButtonConfirm,
         role: 'confirm'
+      },
+    ];
+
+    this.alertButtonsValidation = [
+      {
+        text: this.textAlertButtonConfirm,
+        role: 'confirm',
       },
     ];
 
@@ -258,41 +267,68 @@ export class InventarioHeaderComponent implements OnInit {
     }
   }
 
-  private notifyStockValidationFailure(blockSend: boolean): void {
+  private notifyStockValidationFailure(options: {
+    blockSend: boolean;
+    message: string;
+    focusTab?: 'default' | 'inventario' | 'actividades' | 'adjuntos';
+  }): void {
     const focusIndex = this.inventariosLogicService.findFirstIncompleteTypeStockIndex();
     if (focusIndex >= 0) {
       this.inventariosLogicService.stockSendFocusTypeStockIndex = focusIndex;
     }
-    if (blockSend) {
+    if (options.blockSend) {
       this.inventariosLogicService.sendBlockedByFields = true;
       this.inventariosLogicService.updateSendButtonAvailability();
     }
-    this.messageService.transaccionMsjModalNB(
-      this.inventariosLogicService.getStockValidationMessage(),
-    );
+    this.inventariosLogicService.requestSendValidationTabFocus(options.focusTab);
+    this.showStockValidationAlert(options.message);
   }
 
-  private validateStockBeforeAction(blockSendOnError: boolean): boolean {
-    if (!this.inventariosLogicService.generalTabValidForSave) {
+  /** Alerta en el header con el fallo exacto (misma capa que Enviar/Guardar). */
+  private showStockValidationAlert(rawMessage: string): void {
+    const message = (rawMessage ?? '').toString().trim()
+      || 'Complete los campos obligatorios antes de continuar.';
+    this.validationFailureMessage = message;
+    this.alertMessageOpenValidation = true;
+    this.cdr.detectChanges();
+  }
+
+  setResultValidation(): void {
+    this.alertMessageOpenValidation = false;
+  }
+
+  /** Guardar: solo General (INV-SAVE-001). */
+  private validateStockBeforeSave(): boolean {
+    if (this.inventariosLogicService.hasStockSaveErrors()) {
+      this.notifyStockValidationFailure({
+        blockSend: false,
+        message: this.inventariosLogicService.getStockSaveValidationMessage(),
+        focusTab: 'default',
+      });
       return false;
-    }
-
-    this.inventariosLogicService.sendValidationAttempted = true;
-
-    if (this.inventariosLogicService.hasStockFieldErrors()) {
-      this.notifyStockValidationFailure(blockSendOnError);
-      return false;
-    }
-
-    if (blockSendOnError) {
-      this.inventariosLogicService.sendBlockedByFields = false;
-      this.inventariosLogicService.updateSendButtonAvailability();
     }
     return true;
   }
 
+  /** Enviar: validación completa (productos → GPS → firma). */
+  private validateStockBeforeSend(): boolean {
+    this.inventariosLogicService.sendValidationAttempted = true;
+
+    if (this.inventariosLogicService.hasStockFieldErrors()) {
+      this.notifyStockValidationFailure({
+        blockSend: true,
+        message: this.inventariosLogicService.getStockValidationMessage(),
+      });
+      return false;
+    }
+
+    this.inventariosLogicService.sendBlockedByFields = false;
+    this.inventariosLogicService.updateSendButtonAvailability();
+    return true;
+  }
+
   saveStock() {
-    if (!this.validateStockBeforeAction(false)) {
+    if (!this.validateStockBeforeSave()) {
       return;
     }
     this.header = this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!;
@@ -301,7 +337,7 @@ export class InventarioHeaderComponent implements OnInit {
   }
 
   sendStock() {
-    if (!this.validateStockBeforeAction(true)) {
+    if (!this.validateStockBeforeSend()) {
       return;
     }
     this.header = this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!;

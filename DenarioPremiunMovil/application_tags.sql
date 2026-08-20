@@ -520,6 +520,7 @@ DELETE FROM public.application_tags WHERE co_module = 'INV';
 	('INV_ERROR_LIST_ADDRESS','INV','INVENTARIO','ESP','Este cliente no tiene sucursal asignada, por favor consulte su administrador'),
 	('INV_MSJ_SAVETYPESTOCK','INV','INVENTARIO','ESP','Inventario guardado con éxito'),
 	('INV_MSJ_ERROR_TYPESTOCKS','INV','INVENTARIO','ESP','Debe ingresar alguna cantidad de Inventario o borrar el tipo de Inventario'),
+	('INV_MSJ_ERROR_NO_PRODUCTS','INV','INVENTARIO','ESP','Debe seleccionar al menos un producto para el inventario.'),
 	('INV_MSJ_ERROR_NO_ATTACHMENTS','INV','INVENTARIO','ESP','Debe adjuntar al menos un documento o firma antes de continuar.'),
 	('INV_MSJ_ERROR_NO_GPS','INV','INVENTARIO','ESP','Debe activar el GPS y obtener la ubicación antes de continuar.'),
 	('INV_MSJ_ERROR_INCOMPLETE_QTY','INV','INVENTARIO','ESP','Complete cantidad, unidad y fecha de vencimiento en todos los productos inventariados.'),
