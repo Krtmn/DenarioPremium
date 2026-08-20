@@ -152,6 +152,17 @@ describe('CobroPagosComponent', () => {
     expect(component.shouldShowPaymentFieldError('ef', 0, 'fecha')).toBeFalse();
   });
 
+  it('COB-DIFF-001: differenceCode error label after send attempt', () => {
+    collectionServiceMock.sendValidationAttempted = true;
+    collectionServiceMock.getIndexedPaymentFieldErrors.and.returnValue(['differenceCode']);
+    collectionServiceMock.collectionTags = new Map([
+      ['COB_MSJ_ERROR_NO_DIFFERENCE_CODE', 'Seleccione código diferencia'],
+    ]);
+
+    expect(component.shouldShowPaymentFieldError('ot', 0, 'differenceCode')).toBeTrue();
+    expect(component.getDifferenceCodeRequiredFieldLabel()).toContain('código diferencia');
+  });
+
   it('COB-DATE-001: getFechaValor TR writes daValue and daCollectionPayment', () => {
     collectionServiceMock.validateCollectionDate = false;
     collectionServiceMock.pagoTransferencia = [{
