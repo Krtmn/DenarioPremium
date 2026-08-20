@@ -54,4 +54,10 @@
 
 <!-- alerta de guardar -->
 <ion-alert [isOpen]="alertMessageOpenSave" header="{{this.clientLogic.clientTags.get('CLI_DENARIO_HEADER')}}"
-  message={{mensaje}} [buttons]="alertButtons" (didDismiss)="setResultSave($event)"></ion-alert>
+  [message]="mensaje" [buttons]="alertButtons" (didDismiss)="setResultSave($event)"></ion-alert>
+
+<!-- alerta validación (nombre / campos incompletos) -->
+<ion-alert [isOpen]="alertMessageOpenValidation"
+  [header]="clientLogic.clientTags.get('CLI_DENARIO_HEADER') || 'Clientes'"
+  [message]="validationFailureMessage" [buttons]="alertButtonsValidation"
+  (didDismiss)="setResultValidation()"></ion-alert>

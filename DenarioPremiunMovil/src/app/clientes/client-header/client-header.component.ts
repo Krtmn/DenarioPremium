@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ClientLocationService } from 'src/app/services/clientes/locationClient/client-location.service';
 import { Subject, Subscription } from 'rxjs';
@@ -26,6 +26,7 @@ export class ClientesHeaderComponent implements OnInit {
   public adjuntoService = inject(AdjuntoService);
   public modalCtrl = inject(ModalController);
   public messageService = inject(MessageService);
+  private cdr = inject(ChangeDetectorRef);
 
   public subscriberShow: any;
   public subscriberDisabled: any;
@@ -42,6 +43,9 @@ export class ClientesHeaderComponent implements OnInit {
   public saveSendLocation: Boolean = false;
   public alertMessageOpen: Boolean = false;
   public alertMessageOpenSave: Boolean = false;
+  /** Alerta de validación Guardar/Enviar (campos incompletos). */
+  public alertMessageOpenValidation = false;
+  public validationFailureMessage = '';
   public header: string = '';
   public mensaje: string = '';
   public texto: string = ""
@@ -61,6 +65,13 @@ export class ClientesHeaderComponent implements OnInit {
     },
   ];
 
+  public alertButtonsValidation = [
+    {
+      text: 'Aceptar',
+      role: 'confirm',
+    },
+  ];
+
   public buttonsSalvar = [
     {
       text: '',
@@ -71,7 +82,7 @@ export class ClientesHeaderComponent implements OnInit {
           this.saveSendLocationFunction()
         }
         if (this.clientLogic.clientNewPotentialClientComponent) {
-          if (!this.validatePotentialClientBeforeAction(false)) {
+          if (!this.validatePotentialClientBeforeSave()) {
             return;
           }
           this.clientLogic.exitToPotentialClientListAfterSave = true;
@@ -122,6 +133,8 @@ export class ClientesHeaderComponent implements OnInit {
         this.buttonsSalvar[2].text = this.clientLogic.clientTagsDenario.get('DENARIO_BOTON_CANCELAR')!
         this.alertButtons[0].text = this.clientLogic.clientTagsDenario.get('DENARIO_BOTON_CANCELAR')!
         this.alertButtons[1].text = this.clientLogic.clientTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
+        this.alertButtonsValidation[0].text =
+          this.clientLogic.clientTagsDenario.get('DENARIO_BOTON_ACEPTAR')! || 'Aceptar';
       }
     })
 
@@ -256,38 +269,48 @@ export class ClientesHeaderComponent implements OnInit {
     this.goBack();
   });
 
-  private notifyPotentialClientValidationFailure(blockSend: boolean): void {
-    if (blockSend) {
-      this.clientLogic.sendBlockedByFields = true;
-      this.clientLogic.updatePotentialClientSendButtonAvailability();
-    }
-    this.messageService.transaccionMsjModalNB(
-      this.clientLogic.getPotentialClientValidationMessage(),
-    );
+  private notifyPotentialClientValidationFailure(message: string): void {
+    const safeMessage = (message ?? '').toString().trim()
+      || 'Complete los campos obligatorios.';
+    this.validationFailureMessage = safeMessage;
+    this.alertMessageOpenValidation = true;
+    this.cdr.detectChanges();
   }
 
-  private validatePotentialClientBeforeAction(blockSendOnError: boolean): boolean {
-    if (!this.clientLogic.generalTabValidForSave) {
-      return false;
-    }
+  setResultValidation(): void {
+    this.alertMessageOpenValidation = false;
+  }
 
+  private validatePotentialClientBeforeSave(): boolean {
     this.clientLogic.sendValidationAttempted = true;
 
-    if (this.clientLogic.hasPotentialClientFieldErrors()) {
-      this.notifyPotentialClientValidationFailure(blockSendOnError);
-      this.clientLogic.potentialClientForm?.markAllAsTouched();
+    if (this.clientLogic.hasPotentialClientSaveErrors()) {
+      this.notifyPotentialClientValidationFailure(
+        this.clientLogic.getPotentialClientSaveValidationMessage(),
+      );
+      this.clientLogic.potentialClientForm?.get('naClient')?.markAsTouched();
       return false;
-    }
-
-    if (blockSendOnError) {
-      this.clientLogic.sendBlockedByFields = false;
-      this.clientLogic.updatePotentialClientSendButtonAvailability();
     }
     return true;
   }
 
+  private validatePotentialClientBeforeSend(): boolean {
+    this.clientLogic.sendValidationAttempted = true;
+
+    if (!this.clientLogic.generalTabValidForSave
+      || this.clientLogic.hasPotentialClientFieldErrors()) {
+      this.notifyPotentialClientValidationFailure(
+        this.clientLogic.getPotentialClientValidationMessage(),
+      );
+      this.clientLogic.potentialClientForm?.markAllAsTouched();
+      return false;
+    }
+
+    return true;
+  }
+
   buttonSavePotentialClient(): void {
-    if (!this.validatePotentialClientBeforeAction(false)) {
+    if (!this.validatePotentialClientBeforeSave()) {
       return;
     }
     this.mensaje =
@@ -297,7 +320,7 @@ export class ClientesHeaderComponent implements OnInit {
   }
 
   buttonSendPotentialClient(): void {
-    if (!this.validatePotentialClientBeforeAction(true)) {
+    if (!this.validatePotentialClientBeforeSend()) {
       return;
     }
     this.mensaje =

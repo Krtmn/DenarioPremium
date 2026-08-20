@@ -160,6 +160,8 @@ export class CollectionService {
   public sendBlockedByFields = false;
   /** Índice en documentSales para abrir modal tras fallo de envío en Retención. */
   public retentionSendFocusDocIndex: number | null = null;
+  /** Pestaña a enfocar tras fallo de Enviar (General / Documentos / Pagos / Adjuntos). */
+  public focusSendValidationTab = new Subject<'default' | 'documentos' | 'pagos' | 'adjuntos'>();
   /** Espejo del último resultado de onCollectionValidToSend (incl. anticipo automático). */
   public lastValidToSend = false;
   /** Razón de cambio de tasa obligatoria (pestaña General). */
@@ -2691,6 +2693,10 @@ export class CollectionService {
               return;
             }
           }
+        } else {
+          // Parciales sin pagos / sin rama aplicable: no dejar lastValidToSend stale.
+          this.onCollectionValidToSend(false);
+          return;
         }
       } else {
         if (isNaN(this.montoTotalPagado))
@@ -3071,6 +3077,45 @@ export class CollectionService {
     return !this.hasPaymentText(this.collection?.txConversion);
   }
 
+  /**
+   * Documento asignado sin monto a pagar (> 0). Cubre cobro reabierto desde General
+   * antes de abrir el modal del documento (COB-SEND-UX-001 / monto a pagar).
+   */
+  public hasIncompleteDocumentAmountToPay(): boolean {
+    const coType = String(this.collection?.coType ?? '0');
+    if (this.hideDocuments || coType === '1' || coType === '2') {
+      return false;
+    }
+
+    const details = Array.isArray(this.collection?.collectionDetails)
+      ? this.collection.collectionDetails
+      : [];
+    const assigned = details.filter(d => !!d?.coDocument || !!d?.idDocument);
+    if (assigned.length === 0) {
+      return false;
+    }
+
+    return assigned.some(d => !this.isPositivePaymentAmount(d?.nuAmountPaid));
+  }
+
+  /**
+   * Pagos persistidos con método pero sin monto (> 0). No depende de arrays UI
+   * (pagoEfectivo/etc.), que pueden estar vacíos al pulsar Enviar desde General.
+   */
+  public hasIncompletePersistedPaymentAmounts(): boolean {
+    const coType = String(this.collection?.coType ?? '0');
+    if (this.hidePayments || coType === '2') {
+      return false;
+    }
+
+    const payments = this.getNonEmptyCollectionPayments(this.collection?.collectionPayments);
+    if (payments.length === 0) {
+      return false;
+    }
+
+    return payments.some(p => !this.isPositivePaymentAmount(p?.nuAmountPartial));
+  }
+
   public hasSendFieldErrors(): boolean {
     const coType = this.collection?.coType;
 
@@ -3079,6 +3124,10 @@ export class CollectionService {
     }
 
     if (coType !== '2' && (this.hasIncompletePaymentMethods() || this.hasEmptyCollectionPayments())) {
+      return true;
+    }
+
+    if (this.hasIncompleteDocumentAmountToPay()) {
       return true;
     }
 
@@ -3091,6 +3140,110 @@ export class CollectionService {
     }
 
     return false;
+  }
+
+  /**
+   * Mensaje de diagnóstico al pulsar Enviar con campos incompletos (COB-SEND-UX-001).
+   * Prioridad alineada con hasSendFieldErrors / prerequisites / validateToSend.
+   */
+  public getCollectionSendValidationMessage(): string {
+    const coType = String(this.collection?.coType ?? '0');
+    const incompleteFallback = this.collectionTags.get('COB_MSJ_SEND_INCOMPLETE')
+      ?? 'Complete los campos obligatorios antes de enviar.';
+
+    if (coType === '2'
+      && !this.areAllRetentionDetailsComplete(this.collection?.collectionDetails)) {
+      return this.getRetentionSendValidationMessage();
+    }
+
+    if (coType !== '2' && this.hasEmptyCollectionPayments()) {
+      return this.collectionTags.get('COB_MSJ_ERROR_EMPTY_PAYMENT')
+        ?? 'Hay un método de pago vacío. Complételo o elimínelo antes de enviar.';
+    }
+
+    if (coType !== '2' && this.hasIncompletePaymentMethods()) {
+      return this.collectionTags.get('COB_MSJ_ERROR_INCOMPLETE_PAYMENT')
+        ?? 'Hay un método de pago incompleto. Complételo o elimínelo antes de enviar.';
+    }
+
+    if (this.hasIncompleteDocumentAmountToPay()) {
+      return this.collectionTags.get('COB_MSJ_ERROR_NO_AMOUNT_TO_PAY')
+        ?? 'Indique el monto a pagar en Documentos antes de enviar.';
+    }
+
+    if (this.requiredComment && !this.validComment) {
+      return this.collectionTags.get('COB_MSJ_ERROR_NO_COMMENT')
+        ?? 'El comentario es obligatorio. Complételo en la pestaña General.';
+    }
+
+    if (this.hasTxConversionFieldError()) {
+      return this.collectionTags.get('COB_MSJ_ERROR_NO_TX_CONVERSION')
+        ?? 'Indique el motivo del cambio de tasa en la pestaña General.';
+    }
+
+    if (this.hasManualRateFieldError()) {
+      return this.collectionTags.get('COB_MSJ_ERROR_NO_MANUAL_RATE')
+        ?? 'Ingrese una tasa de conversión válida (mayor o igual a 1) en la pestaña General.';
+    }
+
+    if (!this.hideDocuments && coType !== '1' && !this.hasAssignedDocumentForSendUx()) {
+      return this.collectionTags.get('COB_MSJ_ERROR_NO_DOCUMENTS')
+        ?? 'Seleccione al menos un documento antes de enviar.';
+    }
+
+    if (!this.hidePayments && coType !== '2' && !this.hasAddedPaymentMethodForSendUx()) {
+      return this.collectionTags.get('COB_MSJ_ERROR_NO_PAYMENTS')
+        ?? 'Agregue al menos un método de pago antes de enviar.';
+    }
+
+    const validateMsg = (this.mensaje ?? '').toString().trim();
+    if (validateMsg.length > 0) {
+      return validateMsg;
+    }
+
+    return incompleteFallback;
+  }
+
+  /** Pestaña donde está el primer error bloqueante de Enviar. */
+  public resolveSendValidationFocusTab(): 'default' | 'documentos' | 'pagos' | 'adjuntos' {
+    const coType = String(this.collection?.coType ?? '0');
+
+    if (coType === '2'
+      && !this.areAllRetentionDetailsComplete(this.collection?.collectionDetails)) {
+      return 'documentos';
+    }
+
+    if (coType !== '2'
+      && (this.hasEmptyCollectionPayments() || this.hasIncompletePaymentMethods())) {
+      return 'pagos';
+    }
+
+    if (this.hasIncompleteDocumentAmountToPay()) {
+      return 'documentos';
+    }
+
+    if ((this.requiredComment && !this.validComment)
+      || this.hasTxConversionFieldError()
+      || this.hasManualRateFieldError()) {
+      return 'default';
+    }
+
+    if (!this.hideDocuments && coType !== '1' && !this.hasAssignedDocumentForSendUx()) {
+      return 'documentos';
+    }
+
+    if (!this.hidePayments && coType !== '2' && !this.hasAddedPaymentMethodForSendUx()) {
+      return 'pagos';
+    }
+
+    return 'default';
+  }
+
+  /** Emite la pestaña a enfocar tras un fallo de Enviar. */
+  public requestSendValidationTabFocus(
+    tab?: 'default' | 'documentos' | 'pagos' | 'adjuntos',
+  ): void {
+    this.focusSendValidationTab.next(tab ?? this.resolveSendValidationFocusTab());
   }
 
   public hasAddedPaymentMethodForSendUx(): boolean {
@@ -3232,30 +3385,110 @@ export class CollectionService {
     return true;
   }
 
+  /**
+   * Pagos persistidos incompletos (monto u otros campos) sin depender de arrays UI.
+   * Cubre Enviar desde General antes/durante hidratación de Pagos.
+   */
+  public hasIncompletePersistedPaymentMethods(): boolean {
+    const coType = String(this.collection?.coType ?? '0');
+    if (this.hidePayments || coType === '2') {
+      return false;
+    }
+
+    const payments = this.getNonEmptyCollectionPayments(this.collection?.collectionPayments);
+    if (payments.length === 0) {
+      return false;
+    }
+
+    return payments.some(p => !this.isPersistedCollectionPaymentComplete(p));
+  }
+
+  private isPersistedCollectionPaymentComplete(payment: CollectionPayment): boolean {
+    if (!this.isPositivePaymentAmount(payment?.nuAmountPartial)) {
+      return false;
+    }
+
+    const method = (payment.coPaymentMethod ?? payment.coType ?? '').toString().trim().toLowerCase();
+    switch (method) {
+      case 'ef':
+        return true;
+      case 'ch':
+        return this.hasPaymentText(payment.daValue)
+          && this.hasPaymentText(payment.daCollectionPayment)
+          && this.hasPaymentText(payment.naBank)
+          && this.hasPaymentText(payment.nuPaymentDoc);
+      case 'de':
+        return this.hasPaymentText(payment.daValue)
+          && this.hasPaymentText(payment.naBank)
+          && this.hasPaymentText(payment.nuPaymentDoc)
+          && (this.hasPaymentText(payment.nuBankAccount)
+            || this.hasPaymentText(payment.nuClientBankAccount));
+      case 'tr': {
+        const hasReceptor = this.hasPaymentText(payment.nuBankAccount)
+          && this.hasPaymentText(payment.naBank);
+        const hasRef = this.hasPaymentText(payment.nuPaymentDoc)
+          && this.hasPaymentText(payment.daValue);
+        if (!hasReceptor || !hasRef) {
+          return false;
+        }
+        if (!this.clientBankAccount) {
+          return true;
+        }
+        const coClient = String(payment.coClientBankAccount ?? '').trim();
+        const nuClient = String(payment.nuClientBankAccount ?? '').trim();
+        if (coClient === 'Nueva Cuenta' || nuClient === 'Nueva Cuenta') {
+          return this.hasPaymentText(payment.newNuClientBankAccount);
+        }
+        return this.hasPaymentText(payment.nuClientBankAccount);
+      }
+      case 'pm':
+        return this.hasPaymentText(payment.daValue)
+          && this.hasPaymentText(payment.naBank)
+          && this.hasPaymentText(payment.nuPaymentDoc)
+          && this.hasPaymentText(payment.nuBankAccount);
+      case 'ot':
+        return this.hasPaymentText(payment.nuPaymentDoc);
+      default:
+        return this.hasPaymentText(payment.nuPaymentDoc);
+    }
+  }
+
   public hasIncompletePaymentMethods(): boolean {
     if (this.hasEmptyCollectionPayments()) {
       return true;
     }
-    if (this.tipoPagoEfectivo && this.pagoEfectivo.some(p => !this.isEfectivoPaymentComplete(p))) {
-      return true;
-    }
-    if (this.tipoPagoCheque && this.pagoCheque.some(p => !this.isChequePaymentComplete(p))) {
-      return true;
-    }
-    if (this.tipoPagoDeposito && this.pagoDeposito.some(p => !this.isDepositoPaymentComplete(p))) {
-      return true;
-    }
-    if (this.tipoPagoTransferencia && this.pagoTransferencia.some(p => !this.isTransferenciaPaymentComplete(p))) {
-      return true;
-    }
-    if (this.tipoPagoPagoMovil && this.pagoMovil.some(p => !this.isPagoMovilPaymentComplete(p))) {
-      return true;
-    }
-    if (this.tipoPagoOtros && this.pagoOtros.some(p => !this.isOtrosPaymentComplete(p))) {
-      return true;
+
+    const hasUiPayments = this.pagoEfectivo.length > 0
+      || this.pagoCheque.length > 0
+      || this.pagoDeposito.length > 0
+      || this.pagoTransferencia.length > 0
+      || this.pagoMovil.length > 0
+      || this.pagoOtros.length > 0;
+
+    if (hasUiPayments) {
+      if (this.pagoEfectivo.some(p => !this.isEfectivoPaymentComplete(p))) {
+        return true;
+      }
+      if (this.pagoCheque.some(p => !this.isChequePaymentComplete(p))) {
+        return true;
+      }
+      if (this.pagoDeposito.some(p => !this.isDepositoPaymentComplete(p))) {
+        return true;
+      }
+      if (this.pagoTransferencia.some(p => !this.isTransferenciaPaymentComplete(p))) {
+        return true;
+      }
+      if (this.pagoMovil.some(p => !this.isPagoMovilPaymentComplete(p))) {
+        return true;
+      }
+      if (this.pagoOtros.some(p => !this.isOtrosPaymentComplete(p))) {
+        return true;
+      }
+      return false;
     }
 
-    return false;
+    // UI aún no hidratada (p. ej. Enviar desde General): validar SQLite.
+    return this.hasIncompletePersistedPaymentMethods();
   }
 
   async validateReferencePayment() {

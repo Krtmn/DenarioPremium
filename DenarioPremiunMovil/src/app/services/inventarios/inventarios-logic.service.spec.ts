@@ -19,8 +19,10 @@ describe('InventariosLogicService', () => {
     service = TestBed.inject(InventariosLogicService);
     service.newClientStock = { stDelivery: DELIVERY_STATUS_SAVED } as any;
     service.inventarioTags.set('INV_MSJ_ERROR_TYPESTOCKS', 'Debe ingresar alguna cantidad de Inventario');
+    service.inventarioTags.set('INV_MSJ_ERROR_NO_PRODUCTS', 'Debe seleccionar al menos un producto para el inventario.');
     service.inventarioTags.set('INV_MSJ_ERROR_NO_ATTACHMENTS', 'Debe adjuntar firma');
     service.inventarioTags.set('INV_MSJ_ERROR_INCOMPLETE_QTY', 'Complete cantidad');
+    service.inventarioTags.set('INV_MSJ_ERROR_NO_GPS', 'Debe activar GPS');
     service.inventarioTags.set('INV_ERROR_LIST_ADDRESS', 'Sin sucursal');
     service.adjuntoService.weightLimitExceeded = false;
     spyOn(service.adjuntoService, 'hasItems').and.returnValue(true);
@@ -80,6 +82,15 @@ describe('InventariosLogicService', () => {
       service.markStockDirty();
       expect(saveEnabled).toBeTrue();
     });
+
+    it('hasStockSaveErrors false sin productos si General OK', () => {
+      service.generalTabValidForSave = true;
+      service.selectedClient = true;
+      service.typeStocks = [];
+
+      expect(service.hasStockSaveErrors()).toBeFalse();
+      expect(service.hasStockFieldErrors()).toBeTrue();
+    });
   });
 
   describe('INV-SEND-001 Enviar y validación al click', () => {
@@ -103,7 +114,20 @@ describe('InventariosLogicService', () => {
       service.typeStocks = [];
 
       expect(service.hasStockFieldErrors()).toBeTrue();
-      expect(service.getStockValidationMessage()).toContain('Debe ingresar alguna cantidad');
+      expect(service.getStockValidationMessage()).toContain('seleccionar al menos un producto');
+      expect(service.getStockValidationMessage()).not.toContain('cantidad de Inventario');
+    });
+
+    it('sin tag NO_PRODUCTS no cae en TYPESTOCKS', () => {
+      service.inventarioTags.delete('INV_MSJ_ERROR_NO_PRODUCTS');
+      service.generalTabValidForSave = true;
+      service.selectedClient = true;
+      service.typeStocks = [];
+
+      const msg = service.getStockValidationMessage();
+      expect(msg).toContain('seleccionar al menos un producto');
+      expect(msg).not.toContain('borrar el tipo');
+      expect(msg).not.toContain('cantidad de Inventario');
     });
 
     it('hasStockFieldErrors true con cantidad incompleta', () => {
@@ -118,7 +142,24 @@ describe('InventariosLogicService', () => {
       expect(service.getStockValidationMessage()).toContain('Complete cantidad');
     });
 
-    it('sendBlockedByFields deshabilita Enviar hasta corregir', () => {
+    it('inventario vacío prioriza mensaje de productos sobre adjuntos', () => {
+      (service.globalConfig.get as jasmine.Spy).and.callFake((key: string) => {
+        if (key === 'signatureStock') {
+          return 'true';
+        }
+        return '';
+      });
+      service.generalTabValidForSave = true;
+      service.selectedClient = true;
+      service.typeStocks = [];
+      (service.adjuntoService.hasItems as jasmine.Spy).and.returnValue(false);
+
+      expect(service.hasStockFieldErrors()).toBeTrue();
+      expect(service.getStockValidationMessage()).toContain('seleccionar al menos un producto');
+      expect(service.getStockValidationMessage()).not.toContain('Debe adjuntar firma');
+    });
+
+    it('sendBlockedByFields apaga Enviar hasta editar', () => {
       service.generalTabValidForSave = true;
       service.sendBlockedByFields = true;
       let sendEnabled: boolean | undefined;
@@ -126,6 +167,26 @@ describe('InventariosLogicService', () => {
 
       service.updateSendButtonAvailability();
       expect(sendEnabled).toBeFalse();
+    });
+
+    it('al editar se limpia sendBlockedByFields y Enviar vuelve ON', () => {
+      service.generalTabValidForSave = true;
+      service.selectedClient = true;
+      service.sendBlockedByFields = true;
+      service.typeStocks = [{
+        validateCantidad: false,
+        validateLote: true,
+      } as unknown as Inventarios];
+      let sendEnabled: boolean | undefined;
+      service.stockValidToSend.subscribe((v: Boolean) => sendEnabled = !!v);
+
+      service.updateSendButtonAvailability();
+      expect(sendEnabled).toBeFalse();
+      expect(service.sendBlockedByFields).toBeTrue();
+
+      service.notifyStockEdited();
+      expect(service.sendBlockedByFields).toBeFalse();
+      expect(sendEnabled).toBeTrue();
     });
 
     it('inventario por enviar queda read-only', () => {
@@ -140,6 +201,42 @@ describe('InventariosLogicService', () => {
       service.updateSendButtonAvailability();
       expect(saveEnabled).toBeFalse();
       expect(sendEnabled).toBeFalse();
+    });
+
+    it('sin productos enfoca pestaña inventario', () => {
+      service.generalTabValidForSave = true;
+      service.selectedClient = true;
+      service.hideTab = true;
+      service.typeStocks = [];
+
+      expect(service.resolveSendValidationFocusTab()).toBe('inventario');
+    });
+
+    it('sin adjuntos enfoca pestaña adjuntos', () => {
+      (service.globalConfig.get as jasmine.Spy).and.callFake((key: string) => {
+        if (key === 'signatureStock') {
+          return 'true';
+        }
+        return '';
+      });
+      service.generalTabValidForSave = true;
+      service.selectedClient = true;
+      service.typeStocks = [{ validateCantidad: true, validateLote: true } as unknown as Inventarios];
+      (service.adjuntoService.hasItems as jasmine.Spy).and.returnValue(false);
+
+      expect(service.resolveSendValidationFocusTab()).toBe('adjuntos');
+    });
+
+    it('requestSendValidationTabFocus emite la pestaña resuelta', () => {
+      service.generalTabValidForSave = true;
+      service.selectedClient = true;
+      service.hideTab = true;
+      service.typeStocks = [];
+      let focused: string | undefined;
+      service.focusSendValidationTab.subscribe((tab) => focused = tab);
+
+      service.requestSendValidationTabFocus();
+      expect(focused).toBe('inventario');
     });
   });
 

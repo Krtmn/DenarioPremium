@@ -502,10 +502,21 @@ describe('CollectionService', () => {
     it('allows save/send when all collectionPayments have method', () => {
       service.collection = {
         collectionPayments: [
-          { coPaymentMethod: 'pm', coType: 'pm', nuAmountPartial: 10, idBank: 9 } as any,
+          {
+            coPaymentMethod: 'pm',
+            coType: 'pm',
+            nuAmountPartial: 10,
+            idBank: 9,
+            daValue: '2026-08-04',
+            naBank: 'Banco QA',
+            nuPaymentDoc: 'REF-PM-1',
+            nuBankAccount: '0102-001',
+          } as any,
         ],
       } as any;
       service.tipoPagoPagoMovil = false;
+      service.hidePayments = false;
+      service.pagoMovil = [];
 
       expect(service.hasEmptyCollectionPayments()).toBeFalse();
       expect(service.hasIncompletePaymentMethods()).toBeFalse();
@@ -1697,6 +1708,110 @@ describe('CollectionService', () => {
       } as DocumentSale];
 
       expect(service.getRetentionSendValidationMessage()).toBe('Complete monto, comprobante y fecha.');
+    });
+  });
+
+  describe('COB-SEND-UX-001 send validation message and focus tab', () => {
+    it('getCollectionSendValidationMessage: comentario obligatorio', () => {
+      service.collection = { coType: '0', collectionPayments: [{ coPaymentMethod: 'ef', nuAmount: 10 } as any] } as any;
+      service.requiredComment = true;
+      service.validComment = false;
+      service.hidePayments = false;
+      spyOn(service, 'hasIncompletePaymentMethods').and.returnValue(false);
+      spyOn(service, 'hasEmptyCollectionPayments').and.returnValue(false);
+      service.collectionTags = new Map([
+        ['COB_MSJ_ERROR_NO_COMMENT', 'El comentario es obligatorio.'],
+      ]);
+
+      expect(service.getCollectionSendValidationMessage()).toBe('El comentario es obligatorio.');
+      expect(service.resolveSendValidationFocusTab()).toBe('default');
+    });
+
+    it('getCollectionSendValidationMessage: pago incompleto enfoca Pagos', () => {
+      service.collection = { coType: '0' } as any;
+      service.hidePayments = false;
+      spyOn(service, 'hasEmptyCollectionPayments').and.returnValue(false);
+      spyOn(service, 'hasIncompletePaymentMethods').and.returnValue(true);
+      service.collectionTags = new Map([
+        ['COB_MSJ_ERROR_INCOMPLETE_PAYMENT', 'Método de pago incompleto.'],
+      ]);
+
+      expect(service.getCollectionSendValidationMessage()).toBe('Método de pago incompleto.');
+      expect(service.resolveSendValidationFocusTab()).toBe('pagos');
+    });
+
+    it('getCollectionSendValidationMessage: retención reusa mensaje de retención', () => {
+      service.collection = { coType: '2', collectionDetails: [] } as any;
+      spyOn(service, 'areAllRetentionDetailsComplete').and.returnValue(false);
+      spyOn(service, 'getRetentionSendValidationMessage').and.returnValue('Retención incompleta.');
+
+      expect(service.getCollectionSendValidationMessage()).toBe('Retención incompleta.');
+      expect(service.resolveSendValidationFocusTab()).toBe('documentos');
+    });
+
+    it('getCollectionSendValidationMessage: monto a pagar faltante enfoca Documentos', () => {
+      service.collection = {
+        coType: '0',
+        collectionDetails: [{ coDocument: 'F-1', nuAmountPaid: 0 }],
+        collectionPayments: [{ coPaymentMethod: 'ef', nuAmountPartial: 10 }],
+      } as any;
+      service.hideDocuments = false;
+      service.hidePayments = false;
+      spyOn(service, 'hasEmptyCollectionPayments').and.returnValue(false);
+      spyOn(service, 'hasIncompletePaymentMethods').and.returnValue(false);
+      service.collectionTags = new Map([
+        ['COB_MSJ_ERROR_NO_AMOUNT_TO_PAY', 'Falta el monto a pagar.'],
+      ]);
+
+      expect(service.hasIncompleteDocumentAmountToPay()).toBeTrue();
+      expect(service.hasSendFieldErrors()).toBeTrue();
+      expect(service.getCollectionSendValidationMessage()).toBe('Falta el monto a pagar.');
+      expect(service.resolveSendValidationFocusTab()).toBe('documentos');
+    });
+
+    it('hasIncompletePersistedPaymentMethods: transferencia sin cuenta receptor', () => {
+      service.collection = {
+        coType: '0',
+        collectionPayments: [{
+          coPaymentMethod: 'tr',
+          nuAmountPartial: 100,
+          daValue: '2026-01-01',
+          naBank: 'Banco',
+          nuPaymentDoc: 'REF1',
+          nuBankAccount: '',
+        }],
+      } as any;
+      service.hidePayments = false;
+      service.clientBankAccount = false;
+      service.pagoTransferencia = [];
+
+      expect(service.hasIncompletePersistedPaymentMethods()).toBeTrue();
+      expect(service.hasIncompletePaymentMethods()).toBeTrue();
+    });
+
+    it('hasIncompletePersistedPaymentAmounts: monto 0 en SQLite sin UI hidratada', () => {
+      service.collection = {
+        coType: '0',
+        collectionPayments: [{ coPaymentMethod: 'ef', nuAmountPartial: 0 }],
+      } as any;
+      service.hidePayments = false;
+      service.pagoEfectivo = [];
+      service.tipoPagoEfectivo = false;
+
+      expect(service.hasIncompletePersistedPaymentAmounts()).toBeTrue();
+      expect(service.hasIncompletePaymentMethods()).toBeTrue();
+    });
+
+    it('requestSendValidationTabFocus emite la pestaña resuelta', () => {
+      service.collection = { coType: '0' } as any;
+      spyOn(service, 'hasEmptyCollectionPayments').and.returnValue(false);
+      spyOn(service, 'hasIncompletePaymentMethods').and.returnValue(true);
+      let focused: string | undefined;
+      service.focusSendValidationTab.subscribe((tab) => { focused = tab; });
+
+      service.requestSendValidationTabFocus();
+
+      expect(focused).toBe('pagos');
     });
   });
 

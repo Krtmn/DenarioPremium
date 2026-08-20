@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output, inject, Input } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, inject, Input, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { Platform } from '@ionic/angular';
 import { Subscription } from 'rxjs';
@@ -35,6 +35,7 @@ export class CobrosHeaderComponent implements OnInit {
   public messageService = inject(MessageService);
   private services = inject(ServicesService);
   private autoSend = inject(AutoSendService);
+  private cdr = inject(ChangeDetectorRef);
   messageAlert!: MessageAlert;
 
 
@@ -44,6 +45,9 @@ export class CobrosHeaderComponent implements OnInit {
   public alertSaveOrExit: Boolean = false;
   public alertMessageOpen: Boolean = false;
   public alertMessageOpenSend: Boolean = false;
+  /** Alerta local de validación Enviar (no depende de app-message). */
+  public alertMessageOpenValidation = false;
+  public validationFailureMessage = '';
 
   public textAlertButtonCancel: String = '';
   public textAlertButtonConfirm: String = '';
@@ -82,6 +86,13 @@ export class CobrosHeaderComponent implements OnInit {
     {
       text: '',
       role: 'confirm'
+    },
+  ];
+
+  public alertButtonsValidation = [
+    {
+      text: 'Aceptar',
+      role: 'confirm',
     },
   ];
 
@@ -160,6 +171,8 @@ export class CobrosHeaderComponent implements OnInit {
 
         this.alertButtonsSend[0].text = this.collectService.collectionTagsDenario.get('DENARIO_BOTON_CANCELAR')!
         this.alertButtonsSend[1].text = this.collectService.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
+        this.alertButtonsValidation[0].text =
+          this.collectService.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')! || 'Aceptar';
       }
     })
 
@@ -486,8 +499,10 @@ export class CobrosHeaderComponent implements OnInit {
     }
 
     if (sendOrSave && this.collectService.collection.coType !== '2') {
-      if (this.collectService.hasIncompletePaymentMethods()) {
+      if (this.collectService.hasIncompletePaymentMethods()
+        || this.collectService.hasIncompleteDocumentAmountToPay()) {
         this.collectService.blockSaveAndSendForInvalidPayments();
+        this.notifySendValidationFailure();
         return;
       }
     }
@@ -581,13 +596,40 @@ export class CobrosHeaderComponent implements OnInit {
     if (focusIndex >= 0) {
       this.collectService.retentionSendFocusDocIndex = focusIndex;
     }
-    this.messageService.transaccionMsjModalNB(
-      this.collectService.getRetentionSendValidationMessage(),
-    );
+    this.showSendValidationAlert(this.collectService.getRetentionSendValidationMessage());
+    this.collectService.requestSendValidationTabFocus('documentos');
+  }
+
+  /** Modal + salto a pestaña ante cualquier fallo de Enviar (COB-SEND-UX-001). */
+  private notifySendValidationFailure(): void {
+    if (this.collectService.collection.coType === '2') {
+      this.notifyRetentionSendValidationFailure();
+      return;
+    }
+    this.showSendValidationAlert(this.collectService.getCollectionSendValidationMessage());
+    this.collectService.requestSendValidationTabFocus();
+  }
+
+  /**
+   * Alerta en el header (misma capa que Enviar).
+   * No depende de app-message / transaccionMsjNB.
+   */
+  private showSendValidationAlert(rawMessage: string): void {
+    const message = (rawMessage ?? '').toString().trim()
+      || 'Complete los campos obligatorios antes de enviar.';
+    this.validationFailureMessage = message;
+    this.alertMessageOpenValidation = true;
+    this.cdr.detectChanges();
+  }
+
+  setResultValidation(): void {
+    this.alertMessageOpenValidation = false;
   }
 
   sendCollect() {
     if (!this.collectService.hasSendPrerequisites()) {
+      this.collectService.sendValidationAttempted = true;
+      this.notifySendValidationFailure();
       return;
     }
 
@@ -596,17 +638,17 @@ export class CobrosHeaderComponent implements OnInit {
     if (this.collectService.hasSendFieldErrors()) {
       this.collectService.sendBlockedByFields = true;
       this.collectService.updateSendButtonAvailability();
-      if (this.collectService.collection.coType === '2') {
-        this.notifyRetentionSendValidationFailure();
-      }
+      this.notifySendValidationFailure();
       return;
     }
 
     void this.collectService.validateToSend().then(() => {
-      if (!this.collectService.lastValidToSend) {
-        if (this.collectService.collection.coType === '2') {
-          this.notifyRetentionSendValidationFailure();
-        }
+      // Revalidar campos: createAutomatedPrepaid puede forzar lastValidToSend=true
+      // aunque falte monto a pagar / monto de pago (COB-SEND-UX-001).
+      if (this.collectService.hasSendFieldErrors() || !this.collectService.lastValidToSend) {
+        this.collectService.sendBlockedByFields = true;
+        this.collectService.updateSendButtonAvailability();
+        this.notifySendValidationFailure();
         return;
       }
 
@@ -639,6 +681,7 @@ export class CobrosHeaderComponent implements OnInit {
       }
 
       this.alertMessageOpenSend = true;
+      this.cdr.detectChanges();
     });
   }
 
