@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output, inject, Input } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { DepositService } from 'src/app/services/deposit/deposit.service';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
@@ -25,8 +25,8 @@ export class DepositosHeaderComponent implements OnInit {
   public depositService = inject(DepositService);
   public adjuntoService = inject(AdjuntoService);
   public synchronizationServices = inject(SynchronizationDBService);
-
-  public messageService = inject(MessageService)
+  public messageService = inject(MessageService);
+  private cdr = inject(ChangeDetectorRef);
 
   public subscriberShow: any;
   public subscriberDisabled: any;
@@ -37,6 +37,10 @@ export class DepositosHeaderComponent implements OnInit {
 
   public alertMessageOpenSend: Boolean = false;
   public alertMessageOpenSave: Boolean = false;
+  /** Alerta local de validación (mensaje exacto). */
+  public alertMessageOpenValidation = false;
+  public validationFailureMessage = '';
+  public alertButtonsValidation: any[] = [];
 
   public DEPOSITO_STATUS_NEW = DEPOSITO_STATUS_NEW;
   public DEPOSITO_STATUS_SAVED = DEPOSITO_STATUS_SAVED;
@@ -49,7 +53,7 @@ export class DepositosHeaderComponent implements OnInit {
       role: 'save',
       handler: () => {
         console.log('save and exit');
-        if (!this.validateDepositBeforeAction(false)) {
+        if (!this.validateDepositBeforeSave()) {
           return;
         }
         this.persistDepositSaved().then((ok) => {
@@ -57,13 +61,13 @@ export class DepositosHeaderComponent implements OnInit {
             return;
           }
           this.depositService.depositValid = false;
-          this.depositService.message = this.depositService.depositTags.get('DEP_SAVE_MSG')!;
-          this.alertMessageOpenSave = true;
-          setTimeout(() => {
-            this.messageService.hideLoading();
-            this.depositService.showBackRoute('depositos');
-          }, 100);
-
+          this.messageService.hideLoading();
+          this.messageService.alertModal({
+            header: this.depositService.depositTags.get('DEP_HEADER_MESSAGE') ?? 'Depósitos',
+            message: this.depositService.depositTags.get('DEP_SAVE_MSG')
+              ?? 'El Depósito se ha guardado',
+          });
+          this.depositService.showBackRoute('depositos');
         });
       },
     },
@@ -117,6 +121,15 @@ export class DepositosHeaderComponent implements OnInit {
       this.depositService.updateSendButtonAvailability();
     });
 
+    const confirmText = this.depositService.depositTagsDenario.get('DENARIO_BOTON_ACEPTAR')
+      ?? 'Aceptar';
+    this.alertButtonsValidation = [
+      {
+        text: confirmText,
+        role: 'confirm',
+      },
+    ];
+
   }
 
   ngOnDestroy() {
@@ -128,32 +141,60 @@ export class DepositosHeaderComponent implements OnInit {
     this.subscriptionWeightLimit?.unsubscribe();
   }
 
-  private notifyDepositValidationFailure(blockSend: boolean): void {
-    if (blockSend) {
+  private notifyDepositValidationFailure(options: {
+    blockSend: boolean;
+    message: string;
+    focusTab?: 'default' | 'cobros' | 'total' | 'adjuntos';
+  }): void {
+    if (options.blockSend) {
       this.depositService.sendBlockedByFields = true;
       this.depositService.updateSendButtonAvailability();
     }
-    this.messageService.transaccionMsjModalNB(
-      this.depositService.getDepositValidationMessage(),
-    );
+    // Primero saltar a la pestaña del error; luego mostrar el mensaje exacto.
+    this.depositService.requestSendValidationTabFocus(options.focusTab);
+    this.showDepositValidationAlert(options.message);
   }
 
-  private validateDepositBeforeAction(blockSendOnError: boolean): boolean {
-    if (!this.depositService.generalTabValidForSave) {
-      return false;
-    }
+  private showDepositValidationAlert(rawMessage: string): void {
+    const message = (rawMessage ?? '').toString().trim()
+      || 'Complete los campos obligatorios antes de continuar.';
+    this.validationFailureMessage = message;
+    this.alertMessageOpenValidation = true;
+    this.cdr.detectChanges();
+  }
 
+  setResultValidation(): void {
+    this.alertMessageOpenValidation = false;
+  }
+
+  /** Guardar / Guardar y salir: SOLO banco en General. Nunca cobros/plantilla/firma/GPS. */
+  private validateDepositBeforeSave(): boolean {
+    // No usar hasDepositFieldErrors() aquí (eso es solo Enviar).
+    if (!this.depositService.hasDepositSaveErrors()) {
+      return true;
+    }
+    this.notifyDepositValidationFailure({
+      blockSend: false,
+      message: this.depositService.getDepositSaveValidationMessage(),
+      focusTab: 'default',
+    });
+    return false;
+  }
+
+  /** Enviar: validación completa (banco → cobros → plantilla → firma → GPS). */
+  private validateDepositBeforeSend(): boolean {
     this.depositService.sendValidationAttempted = true;
 
     if (this.depositService.hasDepositFieldErrors()) {
-      this.notifyDepositValidationFailure(blockSendOnError);
+      this.notifyDepositValidationFailure({
+        blockSend: true,
+        message: this.depositService.getDepositValidationMessage(),
+      });
       return false;
     }
 
-    if (blockSendOnError) {
-      this.depositService.sendBlockedByFields = false;
-      this.depositService.updateSendButtonAvailability();
-    }
+    this.depositService.sendBlockedByFields = false;
+    this.depositService.updateSendButtonAvailability();
     return true;
   }
 
@@ -170,14 +211,19 @@ export class DepositosHeaderComponent implements OnInit {
   setResultSave(ev: any) {
     console.log('Apretó:' + ev.detail.role);
     if (ev.detail.role === 'confirm') {
+      // Cerrar confirmación; el éxito NO reusa este alert (evita loop al Aceptar).
       this.alertMessageOpenSave = false;
       void this.persistDepositSaved().then((ok) => {
         if (!ok) {
+          this.messageService.hideLoading();
           return;
         }
-        this.depositService.message = this.depositService.depositTags.get('DEP_SAVE_MSG')!;
-        this.alertMessageOpenSave = true;
         this.messageService.hideLoading();
+        this.messageService.alertModal({
+          header: this.depositService.depositTags.get('DEP_HEADER_MESSAGE') ?? 'Depósitos',
+          message: this.depositService.depositTags.get('DEP_SAVE_MSG')
+            ?? 'El Depósito se ha guardado',
+        });
       });
     } else {
       this.alertMessageOpenSave = false;
@@ -213,7 +259,8 @@ export class DepositosHeaderComponent implements OnInit {
   });
 
   buttonSave() {
-    if (!this.validateDepositBeforeAction(false)) {
+    // Borrador: no exigir cobros ni firma (DEP-SAVE-001).
+    if (!this.validateDepositBeforeSave()) {
       return;
     }
     this.depositService.message =
@@ -223,7 +270,8 @@ export class DepositosHeaderComponent implements OnInit {
   }
 
   buttonSend() {
-    if (!this.validateDepositBeforeAction(true)) {
+    // Enviar: validación estricta (cobros, plantilla, firma, GPS).
+    if (!this.validateDepositBeforeSend()) {
       return;
     }
     this.depositService.message =

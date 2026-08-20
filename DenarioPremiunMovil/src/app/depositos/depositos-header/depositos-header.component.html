@@ -48,6 +48,12 @@
   message="{{this.depositService.message}}" [buttons]="this.depositService.alertButtons"
   (didDismiss)="setResultSave($event)"></ion-alert>
 
+<!-- alerta validación (mensaje exacto de lo que falta) -->
+<ion-alert [isOpen]="alertMessageOpenValidation"
+  [header]="depositService.depositTags.get('DEP_HEADER_MESSAGE') || 'Depósitos'"
+  [message]="validationFailureMessage" [buttons]="alertButtonsValidation"
+  (didDismiss)="setResultValidation()"></ion-alert>
+
 <!-- alerta de salvar o salir-->
 <ion-alert id="alertSaveOrExit" [isOpen]="this.depositService.saveOrExitOpen"
   header="{{this.depositService.depositTags.get('DEP_HEADER_MESSAGE')}}" [buttons]="buttonsSalvar"
