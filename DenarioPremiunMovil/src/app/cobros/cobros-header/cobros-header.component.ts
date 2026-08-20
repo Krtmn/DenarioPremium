@@ -52,7 +52,6 @@ export class CobrosHeaderComponent implements OnInit {
 
   public subscriberShow: any;
   public subscriberDisabled: any;
-  public subscriberToSend: any;
   public subscriptionAttachmentChanged: any;
   public subscriptionAttachmentWeightExceeded: any;
 
@@ -166,34 +165,30 @@ export class CobrosHeaderComponent implements OnInit {
 
     this.subscriberShow = this.collectService.showButtons.subscribe((data: Boolean) => {
       this.collectService.showHeaderButtons = data;
+      if (data && !this.collectService.isCollectionReadOnlyForEdit()) {
+        this.collectService.resetSendValidationUx();
+      }
     });
 
     this.subscriberDisabled = this.collectService.collectValidToSave.subscribe((data: Boolean) => {
       this.collectService.disableSavedButton = data ? false : true;
     });
 
-    this.subscriberToSend = this.collectService.collectValidToSend.subscribe((validToSend: Boolean) => {
-      this.collectService.disableSendButton = validToSend ? false : true;
-    });
-
     this.subscriptionAttachmentChanged = this.adjuntoService.AttachmentChanged.subscribe(() => {
-      this.collectService.markCollectionDirty();
-      this.collectService.validateToSend();
-      this.collectService.disableSavedButton = this.collectService.disableSendButton;
+      this.collectService.notifyCollectionEdited();
     });
     this.subscriptionAttachmentWeightExceeded = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
-      this.collectService.disableSavedButton = true;
+      this.collectService.updateSaveButtonAvailability();
       this.collectService.disableSendButton = true;
     })
   }
 
   ngOnDestroy() {
-    this.subscriberShow.unsubscribe();
-    this.subscriberDisabled.unsubscribe();
-    this.subscriberToSend.unsubscribe();
-    this.backButtonSubscription.unsubscribe();
-    this.subscriptionAttachmentChanged.unsubscribe();
-    this.subscriptionAttachmentWeightExceeded.unsubscribe();
+    this.subscriberShow?.unsubscribe();
+    this.subscriberDisabled?.unsubscribe();
+    this.backButtonSubscription?.unsubscribe();
+    this.subscriptionAttachmentChanged?.unsubscribe();
+    this.subscriptionAttachmentWeightExceeded?.unsubscribe();
   }
 
   resetValues() {
@@ -248,6 +243,7 @@ export class CobrosHeaderComponent implements OnInit {
     this.collectService.hidePayments = false;
     this.collectService.newCollect = false;
     this.collectService.resetCollectionExitBaseline();
+    this.collectService.resetSendValidationUx();
     this.resetValues();
     this.collectService.showBackRoute('cobros');
   }
@@ -414,14 +410,15 @@ export class CobrosHeaderComponent implements OnInit {
       return;
     }
 
-    if (this.collectService.collection.coType !== '2'
+    if (sendOrSave
+      && this.collectService.collection.coType !== '2'
       && (this.collectService.hasEmptyCollectionPayments()
         || this.collectService.hasIncompletePaymentMethods())) {
       this.collectService.blockSaveAndSendForInvalidPayments();
       this.messageService.transaccionMsjModalNB(
         this.collectService.hasEmptyCollectionPayments()
-          ? 'Hay un método de pago vacío. Complételo o elimínelo antes de guardar o enviar.'
-          : 'Hay un método de pago incompleto. Complételo o elimínelo antes de guardar o enviar.'
+          ? 'Hay un método de pago vacío. Complételo o elimínelo antes de enviar.'
+          : 'Hay un método de pago incompleto. Complételo o elimínelo antes de enviar.'
       );
       return;
     }
@@ -481,10 +478,9 @@ export class CobrosHeaderComponent implements OnInit {
           return;
         }
       }
-      if (!this.collectService.areAllRetentionDetailsComplete(this.collectService.collection.collectionDetails)) {
-        this.messageService.transaccionMsjModalNB(
-          'Cada documento seleccionado debe tener retención completa (monto, comprobante y fecha).'
-        );
+      if (sendOrSave
+        && !this.collectService.areAllRetentionDetailsComplete(this.collectService.collection.collectionDetails)) {
+        this.notifyRetentionSendValidationFailure();
         return;
       }
     }
@@ -580,33 +576,70 @@ export class CobrosHeaderComponent implements OnInit {
 
   }
 
+  private notifyRetentionSendValidationFailure(): void {
+    const focusIndex = this.collectService.findFirstIncompleteRetentionDocumentIndex();
+    if (focusIndex >= 0) {
+      this.collectService.retentionSendFocusDocIndex = focusIndex;
+    }
+    this.messageService.transaccionMsjModalNB(
+      this.collectService.getRetentionSendValidationMessage(),
+    );
+  }
+
   sendCollect() {
-    switch (this.collectService.collection.coType) {
-      case "0": {
-        this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_COLLECT_MSG')!;
-        break;
-      }
-
-      case "1": {
-        this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_ANTICIPO_MSG')!;
-        break;
-      }
-
-      case "2": {
-        this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_RETENTION_MSG')!;
-        break;
-      }
-
-      case "3": {
-        this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_IGTF_MSG')!;
-        break;
-      }
-      default: {
-        this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_COLLECT_MSG')!;
-      }
+    if (!this.collectService.hasSendPrerequisites()) {
+      return;
     }
 
-    this.alertMessageOpenSend = true;
+    this.collectService.sendValidationAttempted = true;
+
+    if (this.collectService.hasSendFieldErrors()) {
+      this.collectService.sendBlockedByFields = true;
+      this.collectService.updateSendButtonAvailability();
+      if (this.collectService.collection.coType === '2') {
+        this.notifyRetentionSendValidationFailure();
+      }
+      return;
+    }
+
+    void this.collectService.validateToSend().then(() => {
+      if (!this.collectService.lastValidToSend) {
+        if (this.collectService.collection.coType === '2') {
+          this.notifyRetentionSendValidationFailure();
+        }
+        return;
+      }
+
+      this.collectService.sendBlockedByFields = false;
+      this.collectService.updateSendButtonAvailability();
+
+      switch (this.collectService.collection.coType) {
+        case "0": {
+          this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_COLLECT_MSG')!;
+          break;
+        }
+
+        case "1": {
+          this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_ANTICIPO_MSG')!;
+          break;
+        }
+
+        case "2": {
+          this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_RETENTION_MSG')!;
+          break;
+        }
+
+        case "3": {
+          this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_IGTF_MSG')!;
+          break;
+        }
+        default: {
+          this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_COLLECT_MSG')!;
+        }
+      }
+
+      this.alertMessageOpenSend = true;
+    });
   }
 
 

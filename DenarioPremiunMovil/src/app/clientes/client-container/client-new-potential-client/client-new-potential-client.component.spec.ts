@@ -52,9 +52,22 @@ describe('NewPotentialClientComponent', () => {
       cannotSendPotentialClient: true,
       validPotentialClient: false,
       newPotentialClientChanged: false,
+      sendValidationAttempted: false,
       empresaSeleccionada: { idEnterprise: 1, coEnterprise: 'E1' },
       enterprises: [{ idEnterprise: 1 }],
       listaEmpresa: [{ idEnterprise: 1 }],
+      clientTags: new Map<string, string>(),
+      registerPotentialClientForm: jasmine.createSpy('registerPotentialClientForm'),
+      clearPotentialClientForm: jasmine.createSpy('clearPotentialClientForm'),
+      resetPotentialClientValidationUxFlags: jasmine.createSpy('resetPotentialClientValidationUxFlags'),
+      resetPotentialClientExitBaseline: jasmine.createSpy('resetPotentialClientExitBaseline'),
+      markPotentialClientOpenedFromPersistedCopy: jasmine.createSpy('markPotentialClientOpenedFromPersistedCopy'),
+      onPotentialClientGeneralValid: jasmine.createSpy('onPotentialClientGeneralValid'),
+      syncPotentialClientFormValidity: jasmine.createSpy('syncPotentialClientFormValidity').and.returnValue(false),
+      updatePotentialClientSaveButtonAvailability: jasmine.createSpy('updatePotentialClientSaveButtonAvailability'),
+      updatePotentialClientSendButtonAvailability: jasmine.createSpy('updatePotentialClientSendButtonAvailability'),
+      notifyPotentialClientEdited: jasmine.createSpy('notifyPotentialClientEdited'),
+      isPotentialClientEnterpriseMissing: jasmine.createSpy('isPotentialClientEnterpriseMissing').and.returnValue(false),
     };
 
     TestBed.configureTestingModule({
@@ -110,46 +123,44 @@ describe('NewPotentialClientComponent', () => {
     expect(component.cleanString(`test;"'string"`)).toBe('teststring');
   });
 
-  it('DM-CLT-020: checkForm vacío deja botones deshabilitados', async () => {
+  it('DM-CLT-020: checkForm vacío deja formulario inválido', async () => {
     await component.checkForm();
-    expect(clientLogicMock.cannotSavePotentialClient).toBeTrue();
-    expect(clientLogicMock.cannotSendPotentialClient).toBeTrue();
-    expect(clientLogicMock.validPotentialClient).toBeFalse();
+    expect(clientLogicMock.syncPotentialClientFormValidity).toHaveBeenCalled();
+    expect(clientLogicMock.updatePotentialClientSaveButtonAvailability).toHaveBeenCalled();
+    expect(clientLogicMock.updatePotentialClientSendButtonAvailability).toHaveBeenCalled();
   });
 
-  it('DM-CLT-021: campos obligatorios válidos habilitan guardar/enviar', async () => {
+  it('DM-CLT-021: campos obligatorios válidos sincronizan formulario', async () => {
     fillValidRequiredFields();
+    clientLogicMock.syncPotentialClientFormValidity.and.returnValue(true);
     const ok = await component.checkForm();
 
     expect(ok).toBeTrue();
-    expect(clientLogicMock.cannotSavePotentialClient).toBeFalse();
-    expect(clientLogicMock.cannotSendPotentialClient).toBeFalse();
-    expect(clientLogicMock.validPotentialClient).toBeTrue();
+    expect(clientLogicMock.syncPotentialClientFormValidity).toHaveBeenCalled();
   });
 
-  it('DM-CLT-022: email inválido mantiene botones deshabilitados', async () => {
+  it('DM-CLT-022: email inválido mantiene formulario inválido', async () => {
     fillValidRequiredFields({ emClient: 'notenemail' });
     const ok = await component.checkForm();
 
     expect(component.newPotentialClient.get('emClient')?.valid).toBeFalse();
     expect(ok).toBeFalse();
-    expect(clientLogicMock.cannotSavePotentialClient).toBeTrue();
   });
 
-  it('DM-CLT-023: teléfono inválido mantiene botones deshabilitados', async () => {
+  it('DM-CLT-023: teléfono inválido mantiene formulario inválido', async () => {
     fillValidRequiredFields({ nuPhone: '123' });
     const ok = await component.checkForm();
 
     expect(component.newPotentialClient.get('nuPhone')?.valid).toBeFalse();
     expect(ok).toBeFalse();
-    expect(clientLogicMock.cannotSavePotentialClient).toBeTrue();
   });
 
-  it('laguna #4: naResponsible vacío no bloquea checkForm (no está en su if)', async () => {
+  it('naResponsible vacío deja syncPotentialClientFormValidity en false', async () => {
     fillValidRequiredFields({ naResponsible: '' });
+    clientLogicMock.syncPotentialClientFormValidity.and.returnValue(false);
     const ok = await component.checkForm();
-    expect(ok).toBeTrue();
-    expect(clientLogicMock.cannotSavePotentialClient).toBeFalse();
+    expect(ok).toBeFalse();
+    expect(component.newPotentialClient.get('naResponsible')?.valid).toBeFalse();
   });
 
   it('should update potentialClient.naClient on onNaClientChange', () => {

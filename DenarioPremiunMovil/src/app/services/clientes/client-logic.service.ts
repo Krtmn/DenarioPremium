@@ -1,5 +1,11 @@
 import { Injectable, ViewChild, inject } from '@angular/core';
+import { AbstractControl, FormGroup } from '@angular/forms';
 import { Subject } from 'rxjs';
+import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
+import {
+  CLIENT_POTENTIAL_STATUS_SENT,
+  CLIENT_POTENTIAL_STATUS_TO_SEND,
+} from 'src/app/utils/appConstants';
 import { ServicesService } from '../services.service';
 import { SynchronizationDBService } from '../synchronization/synchronization-db.service';
 import { CurrencyEnterprise } from 'src/app/modelos/tables/currencyEnterprise';
@@ -36,6 +42,7 @@ export class ClientLogicService {
   public clientesServices = inject(ClientesDatabaseServicesService);
   public globalConfig = inject(GlobalConfigService);
   public potentialClientService = inject(PotentialClientDatabaseServicesService);
+  public adjuntoService = inject(AdjuntoService);
   private modalCtrl = inject(ModalController);
 
   public showButtons = new Subject<Boolean>;
@@ -76,6 +83,15 @@ export class ClientLogicService {
   public cannotSavePotentialClient: Boolean = true;
   public cannotSendPotentialClient: Boolean = true;
   public validPotentialClient: Boolean = false;
+
+  /** Clientes potenciales — UX Guardar/Enviar (patrón Inventarios/Depósitos). */
+  public generalTabValidForSave = false;
+  public potentialClientPersistedBaseline = false;
+  public potentialClientDirtySincePersist = false;
+  public sendValidationAttempted = false;
+  public sendBlockedByFields = false;
+  public potentialClientForm: FormGroup | null = null;
+  public userMustActivateGPS = false;
 
   public clienteNuevoBlancoImg: Boolean = true;//si hay algun cambio en el nuevo cliente potencial
   public newPotentialClientChanged: Boolean = false;//si hay algun cambio en el nuevo cliente potencial
@@ -590,14 +606,229 @@ export class ClientLogicService {
   }
 
   getEnterprisePotentialClient() {
+    this.userMustActivateGPS =
+      this.globalConfig.get('userMustActivateGPS').toLowerCase() === 'true';
     return this.potentialClientService.getEnterprises().then(result => {
       this.enterprises = result;
       if (result.length == 1) {
         this.empresaSeleccionada = result[0];
         this.potentialClient.idEnterprise = result[0].idEnterprise;
+        this.onPotentialClientGeneralValid(true);
       }
-      return result
-    })
+      return result;
+    });
+  }
+
+  registerPotentialClientForm(form: FormGroup): void {
+    this.potentialClientForm = form;
+  }
+
+  clearPotentialClientForm(): void {
+    this.potentialClientForm = null;
+  }
+
+  onPotentialClientGeneralValid(valid: boolean): void {
+    this.generalTabValidForSave = valid;
+    this.updatePotentialClientSaveButtonAvailability();
+    this.updatePotentialClientSendButtonAvailability();
+  }
+
+  isPotentialClientReadOnlyForEdit(): boolean {
+    const st = Number(this.potentialClient?.stPotentialClient ?? -1);
+    return st === CLIENT_POTENTIAL_STATUS_TO_SEND
+      || st === CLIENT_POTENTIAL_STATUS_SENT;
+  }
+
+  updatePotentialClientSaveButtonAvailability(): void {
+    if (this.isPotentialClientReadOnlyForEdit() || !this.saveSendPotentialClient) {
+      this.cannotSavePotentialClient = true;
+      return;
+    }
+    if (this.adjuntoService.weightLimitExceeded) {
+      this.cannotSavePotentialClient = true;
+      return;
+    }
+    const generalOk = this.generalTabValidForSave;
+    const hasChangesToSave =
+      !this.potentialClientPersistedBaseline || this.potentialClientDirtySincePersist;
+    this.cannotSavePotentialClient = !(generalOk && hasChangesToSave);
+  }
+
+  updatePotentialClientSendButtonAvailability(): void {
+    if (this.isPotentialClientReadOnlyForEdit() || !this.saveSendPotentialClient) {
+      this.cannotSendPotentialClient = true;
+      return;
+    }
+    if (this.adjuntoService.weightLimitExceeded) {
+      this.cannotSendPotentialClient = true;
+      return;
+    }
+    if (this.sendBlockedByFields) {
+      this.cannotSendPotentialClient = true;
+      return;
+    }
+    this.cannotSendPotentialClient = !this.generalTabValidForSave;
+  }
+
+  resetPotentialClientSendValidationUx(): void {
+    this.sendValidationAttempted = false;
+    this.sendBlockedByFields = false;
+    this.updatePotentialClientSendButtonAvailability();
+  }
+
+  refreshPotentialClientSendBlockedState(): void {
+    if (!this.sendBlockedByFields) {
+      return;
+    }
+    if (!this.hasPotentialClientFieldErrors()) {
+      this.sendBlockedByFields = false;
+      this.updatePotentialClientSendButtonAvailability();
+    }
+  }
+
+  notifyPotentialClientEdited(): void {
+    this.markPotentialClientDirty();
+    this.refreshPotentialClientSendBlockedState();
+    this.updatePotentialClientSaveButtonAvailability();
+    this.updatePotentialClientSendButtonAvailability();
+  }
+
+  markPotentialClientDirty(): void {
+    this.potentialClientDirtySincePersist = true;
+  }
+
+  applyPotentialClientPersistSucceededBaseline(): void {
+    this.potentialClientDirtySincePersist = false;
+    this.potentialClientPersistedBaseline = true;
+    this.updatePotentialClientSaveButtonAvailability();
+    this.updatePotentialClientSendButtonAvailability();
+  }
+
+  resetPotentialClientExitBaseline(): void {
+    this.potentialClientPersistedBaseline = false;
+    this.potentialClientDirtySincePersist = false;
+    this.updatePotentialClientSaveButtonAvailability();
+    this.updatePotentialClientSendButtonAvailability();
+  }
+
+  markPotentialClientOpenedFromPersistedCopy(): void {
+    this.potentialClientPersistedBaseline = true;
+    this.potentialClientDirtySincePersist = false;
+    this.updatePotentialClientSaveButtonAvailability();
+    this.updatePotentialClientSendButtonAvailability();
+  }
+
+  resetPotentialClientValidationUxFlags(): void {
+    this.generalTabValidForSave = false;
+    this.sendValidationAttempted = false;
+    this.sendBlockedByFields = false;
+    this.potentialClientPersistedBaseline = false;
+    this.potentialClientDirtySincePersist = false;
+  }
+
+  private getPotentialClientControl(name: string): AbstractControl | null {
+    return this.potentialClientForm?.get(name) ?? null;
+  }
+
+  private isPotentialClientControlValid(name: string): boolean {
+    const control = this.getPotentialClientControl(name);
+    return !!control && control.errors == null;
+  }
+
+  private hasEnterpriseSelected(): boolean {
+    if (this.empresaSeleccionada?.idEnterprise) {
+      return true;
+    }
+    return this.isPotentialClientControlValid('idEnterprise');
+  }
+
+  public isPotentialClientEnterpriseMissing(): boolean {
+    return !this.hasEnterpriseSelected();
+  }
+
+  private isPotentialClientFormComplete(): boolean {
+    const requiredFields = [
+      'idEnterprise',
+      'naClient',
+      'nuRif',
+      'txAddress',
+      'txAddressDispatch',
+      'txClient',
+      'naResponsible',
+      'emClient',
+      'nuPhone',
+    ];
+    return requiredFields.every((field) => this.isPotentialClientControlValid(field));
+  }
+
+  private requiresSignatureAttachments(): boolean {
+    return this.globalConfig.get('signatureClient') === 'true';
+  }
+
+  private hasMissingSignatureAttachments(): boolean {
+    return this.requiresSignatureAttachments() && !this.adjuntoService.hasItems();
+  }
+
+  private hasMissingGpsCoordinate(): boolean {
+    if (!this.userMustActivateGPS) {
+      return false;
+    }
+    const coord = (this.potentialClient?.coordenada ?? '').toString().trim();
+    return coord.length === 0;
+  }
+
+  public hasPotentialClientFieldErrors(): boolean {
+    if (!this.generalTabValidForSave || !this.hasEnterpriseSelected()) {
+      return true;
+    }
+    if (!this.isPotentialClientFormComplete()) {
+      return true;
+    }
+    if (this.hasMissingSignatureAttachments()) {
+      return true;
+    }
+    if (this.hasMissingGpsCoordinate()) {
+      return true;
+    }
+    return false;
+  }
+
+  public getPotentialClientValidationMessage(): string {
+    if (!this.generalTabValidForSave || !this.hasEnterpriseSelected()) {
+      return this.clientTags.get('CLI_POT_MSJ_ERROR_NO_ENTERPRISE')
+        ?? 'Seleccione una empresa para continuar.';
+    }
+    if (!this.isPotentialClientControlValid('naClient')) {
+      return this.clientTags.get('CLI_NEW_POT_MENSAJE_ERROR_NOMBRE_CLIENTE')
+        ?? this.clientTags.get('CLI_POT_MSJ_ERROR_INCOMPLETE_FORM')
+        ?? 'Complete el nombre del cliente.';
+    }
+    if (!this.isPotentialClientControlValid('nuRif')
+      || !this.isPotentialClientControlValid('txAddress')
+      || !this.isPotentialClientControlValid('txAddressDispatch')
+      || !this.isPotentialClientControlValid('txClient')
+      || !this.isPotentialClientControlValid('naResponsible')
+      || !this.isPotentialClientControlValid('emClient')
+      || !this.isPotentialClientControlValid('nuPhone')) {
+      return this.clientTags.get('CLI_POT_MSJ_ERROR_INCOMPLETE_FORM')
+        ?? 'Complete todos los campos obligatorios del cliente potencial.';
+    }
+    if (this.hasMissingSignatureAttachments()) {
+      return this.clientTags.get('CLI_POT_MSJ_ERROR_NO_ATTACHMENTS')
+        ?? 'Debe adjuntar al menos un documento o firma antes de continuar.';
+    }
+    if (this.hasMissingGpsCoordinate()) {
+      return this.clientTags.get('CLI_POT_MSJ_ERROR_NO_GPS')
+        ?? 'Debe activar el GPS y obtener la ubicación antes de continuar.';
+    }
+    return this.clientTags.get('CLI_POT_MSJ_ERROR_INCOMPLETE_FORM')
+      ?? 'Complete los campos obligatorios del cliente potencial.';
+  }
+
+  public syncPotentialClientFormValidity(): boolean {
+    const complete = this.isPotentialClientFormComplete();
+    this.validPotentialClient = complete;
+    return complete;
   }
 
   getDocumentSale(idClient: number) {

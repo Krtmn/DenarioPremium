@@ -107,6 +107,15 @@ export class InventariosLogicService {
 
   public message!: string;
 
+  /** General válida: cliente + sucursal (desbloquea pestañas y base de Guardar/Enviar). */
+  public generalTabValidForSave = false;
+  public stockPersistedBaseline = false;
+  public stockDirtySincePersist = false;
+  private stockDirtyTrackingPaused = false;
+  public sendValidationAttempted = false;
+  public sendBlockedByFields = false;
+  public stockSendFocusTypeStockIndex = -1;
+
   constructor() {
 
   }
@@ -127,20 +136,205 @@ export class InventariosLogicService {
 
   onClientStockValid(valid: Boolean) {
     console.log('clientStockService: onClientStockValid');
+    this.generalTabValidForSave = !!valid;
     this.stockValid.next(valid);
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
   }
 
-  updateHeaderButtons() {
+  pauseStockDirtyTracking(): void {
+    this.stockDirtyTrackingPaused = true;
+  }
+
+  resumeStockDirtyTracking(): void {
+    this.stockDirtyTrackingPaused = false;
+  }
+
+  markStockDirty(): void {
+    if (this.stockDirtyTrackingPaused) {
+      return;
+    }
+    this.stockDirtySincePersist = true;
+    this.updateSaveButtonAvailability();
+  }
+
+  applyPersistSucceededBaseline(): void {
+    this.stockDirtySincePersist = false;
+    this.stockPersistedBaseline = true;
+    this.updateSaveButtonAvailability();
+  }
+
+  resetStockExitBaseline(): void {
+    this.stockPersistedBaseline = false;
+    this.stockDirtySincePersist = false;
+    this.updateSaveButtonAvailability();
+  }
+
+  markStockOpenedFromPersistedCopy(): void {
+    this.stockPersistedBaseline = true;
+    this.stockDirtySincePersist = false;
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
+  }
+
+  /** Marca edición de usuario y refresca botones (no usar en hidratación/reapertura). */
+  notifyStockEdited(): void {
+    this.markStockDirty();
+    this.refreshSendBlockedState();
+    this.updateSendButtonAvailability();
+  }
+
+  isStockReadOnlyForEdit(): boolean {
+    const stDelivery = Number(this.newClientStock?.stDelivery ?? 0);
+    return stDelivery === DELIVERY_STATUS_TO_SEND
+      || stDelivery === DELIVERY_STATUS_SENT;
+  }
+
+  public updateSaveButtonAvailability(): void {
+    if (this.isStockReadOnlyForEdit()) {
+      this.onStockValidToSave(false);
+      return;
+    }
     if (this.adjuntoService.weightLimitExceeded) {
       this.onStockValidToSave(false);
+      return;
+    }
+    const generalOk = this.generalTabValidForSave;
+    const hasChangesToSave =
+      !this.stockPersistedBaseline || this.stockDirtySincePersist;
+    this.onStockValidToSave(generalOk && hasChangesToSave);
+  }
+
+  public updateSendButtonAvailability(): void {
+    if (this.isStockReadOnlyForEdit()) {
       this.onStockValidToSend(false);
       return;
     }
-    //si ningun otro flag ha bloqueado el guardado o envio, validamos los stocks
-    var valid = this.checkValidStockToSend();
-    this.onStockValidToSave(valid);
-    this.onStockValidToSend(valid);
-    return;
+    if (this.adjuntoService.weightLimitExceeded) {
+      this.onStockValidToSend(false);
+      return;
+    }
+    if (this.sendBlockedByFields) {
+      this.onStockValidToSend(false);
+      return;
+    }
+    this.onStockValidToSend(this.generalTabValidForSave);
+  }
+
+  public resetSendValidationUx(): void {
+    this.sendValidationAttempted = false;
+    this.sendBlockedByFields = false;
+    this.stockSendFocusTypeStockIndex = -1;
+    this.updateSendButtonAvailability();
+  }
+
+  public refreshSendBlockedState(): void {
+    if (!this.sendBlockedByFields) {
+      return;
+    }
+    if (!this.hasStockFieldErrors()) {
+      this.sendBlockedByFields = false;
+      this.updateSendButtonAvailability();
+    }
+  }
+
+  private requiresSignatureAttachments(): boolean {
+    return this.globalConfig.get('signatureStock') === 'true';
+  }
+
+  private hasMissingSignatureAttachments(): boolean {
+    return this.requiresSignatureAttachments() && !this.adjuntoService.hasItems();
+  }
+
+  private hasMissingGpsCoordinate(): boolean {
+    if (!this.userMustActivateGPS) {
+      return false;
+    }
+    const coord = (this.newClientStock?.coordenada ?? '').toString().trim();
+    return coord.length === 0;
+  }
+
+  public findFirstIncompleteTypeStockIndex(): number {
+    if (this.typeStocks.length === 0) {
+      return -1;
+    }
+    for (let i = 0; i < this.typeStocks.length; i++) {
+      const typeStock = this.typeStocks[i];
+      if (!typeStock.validateCantidad) {
+        return i;
+      }
+      if (this.expirationBatch && !typeStock.validateLote) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  public shouldShowProductStockSendError(coProduct: string): boolean {
+    if (!this.sendValidationAttempted) {
+      return false;
+    }
+    const detail = this.newClientStock.clientStockDetails?.find(d => d.coProduct === coProduct);
+    if (!detail) {
+      return false;
+    }
+    return this.typeStocks.some(typeStock =>
+      typeStock.idProduct === detail.idProduct
+      && (!typeStock.validateCantidad || (this.expirationBatch && !typeStock.validateLote))
+    );
+  }
+
+  public hasStockFieldErrors(): boolean {
+    if (!this.generalTabValidForSave || !this.selectedClient) {
+      return true;
+    }
+    if (this.hasMissingGpsCoordinate()) {
+      return true;
+    }
+    if (this.hasMissingSignatureAttachments()) {
+      return true;
+    }
+    return !this.checkValidStockToSend();
+  }
+
+  public getStockValidationMessage(): string {
+    if (!this.generalTabValidForSave || !this.selectedClient) {
+      return this.inventarioTags.get('INV_ERROR_LIST_ADDRESS')
+        ?? 'Este cliente no tiene sucursal asignada, por favor consulte su administrador';
+    }
+    if (this.hasMissingGpsCoordinate()) {
+      return this.inventarioTags.get('INV_MSJ_ERROR_NO_GPS')
+        ?? 'Debe activar el GPS y obtener la ubicación antes de continuar.';
+    }
+    if (this.hasMissingSignatureAttachments()) {
+      return this.inventarioTags.get('INV_MSJ_ERROR_NO_ATTACHMENTS')
+        ?? 'Debe adjuntar al menos un documento o firma antes de continuar.';
+    }
+    if (this.typeStocks.length === 0) {
+      return this.inventarioTags.get('INV_MSJ_ERROR_TYPESTOCKS')
+        ?? 'Debe ingresar alguna cantidad de Inventario o borrar el tipo de Inventario';
+    }
+    const incompleteIndex = this.findFirstIncompleteTypeStockIndex();
+    if (incompleteIndex >= 0) {
+      const typeStock = this.typeStocks[incompleteIndex];
+      if (!typeStock.validateCantidad) {
+        return this.inventarioTags.get('INV_MSJ_ERROR_INCOMPLETE_QTY')
+          ?? 'Complete cantidad, unidad y fecha de vencimiento en todos los productos inventariados.';
+      }
+      if (this.expirationBatch && !typeStock.validateLote) {
+        return this.inventarioTags.get('INV_MSJ_ERROR_INCOMPLETE_BATCH')
+          ?? 'Complete el lote en todos los productos inventariados.';
+      }
+    }
+    return this.inventarioTags.get('INV_MSJ_ERROR_TYPESTOCKS')
+      ?? 'Debe ingresar alguna cantidad de Inventario o borrar el tipo de Inventario';
+  }
+
+  /** @deprecated Usar notifyStockEdited / updateSaveButtonAvailability / updateSendButtonAvailability */
+  updateHeaderButtons() {
+    this.refreshSendBlockedState();
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
   }
 
 
@@ -201,6 +395,13 @@ export class InventariosLogicService {
     this.inventarioSent = false;
     this.disableSaveButton = true;
     this.cannotSendClientStock = true;
+    this.generalTabValidForSave = false;
+    this.stockPersistedBaseline = false;
+    this.stockDirtySincePersist = false;
+    this.stockDirtyTrackingPaused = false;
+    this.sendValidationAttempted = false;
+    this.sendBlockedByFields = false;
+    this.stockSendFocusTypeStockIndex = -1;
     this.newClientStock = {} as ClientStocks;
     this.newClientStock.clientStockDetails = [] as ClientStocksDetail[];
     /* this.tiposPago = [] as TiposPago[]; */
@@ -419,8 +620,7 @@ export class InventariosLogicService {
       }
     }
 
-    this.onStockValidToSend(true);
-    this.onStockValidToSave(true);
+    this.notifyStockEdited();
   }
 
   async calcularTotalesSugerenciaPedido(dbServ: SQLiteObject) {

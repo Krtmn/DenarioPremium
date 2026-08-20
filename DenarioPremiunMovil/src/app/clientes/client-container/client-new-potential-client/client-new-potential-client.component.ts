@@ -123,6 +123,8 @@ export class NewPotentialClientComponent implements OnInit {
   ngOnInit() {
     /* this.onChanges(); */
     this.clientLogic.setNombreModulo('CLI_POT_LISTADO', 'Clientes');
+    this.clientLogic.registerPotentialClientForm(this.newPotentialClient);
+    this.clientLogic.resetPotentialClientValidationUxFlags();
 
     this.isMultiEnterprise = this.enterpriseServ.esMultiempresa()
     if (!this.isMultiEnterprise)
@@ -132,6 +134,9 @@ export class NewPotentialClientComponent implements OnInit {
     this.clientLogic.getEnterprisePotentialClient().then(resp => {
 
       console.log(resp);
+      if (!this.isMultiEnterprise && this.clientLogic.empresaSeleccionada) {
+        this.newPotentialClient.get('idEnterprise')?.setValue(this.clientLogic.empresaSeleccionada.idEnterprise);
+      }
       if (this.clientLogic.potentialClient.stPotentialClient == undefined) {
         //ES NUEVO
         this.clientLogic.potentialClient = {} as PotentialClient;
@@ -140,6 +145,8 @@ export class NewPotentialClientComponent implements OnInit {
         this.clientLogic.potentialClient.stPotentialClient = 0;
         this.isDisabled = false;
         this.clientLogic.saveSendPotentialClient = true;
+        this.clientLogic.resetPotentialClientExitBaseline();
+        this.clientLogic.onPotentialClientGeneralValid(!!this.clientLogic.empresaSeleccionada);
         this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.config.get('signatureClient') == 'true', false, COLOR_VERDE);
         this.onChanges();
         this.checkForm();
@@ -148,11 +155,11 @@ export class NewPotentialClientComponent implements OnInit {
         this.isDisabled = false;
         this.newPotentialClient.get('idEnterprise')!.setValue(this.clientLogic.potentialClient.idEnterprise);
 
-        this.clientLogic.cannotSavePotentialClient = true;
-        this.clientLogic.cannotSendPotentialClient = false;
         this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.config.get('signatureClient') == 'true', false, COLOR_VERDE);
         this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.clientLogic.potentialClient.coClient, 'clientes');
         this.clientLogic.saveSendPotentialClient = true;
+        this.clientLogic.markPotentialClientOpenedFromPersistedCopy();
+        this.clientLogic.onPotentialClientGeneralValid(true);
         this.onChanges();
         this.checkForm();
 
@@ -175,15 +182,14 @@ export class NewPotentialClientComponent implements OnInit {
   }
 
   ngOnDestroy() {
+    this.clientLogic.clearPotentialClientForm();
     if (this.subs) {
       this.subs.unsubscribe();
     }
   }
 
   async validatePotentialClient(potencialClient: FormGroup, saveSend: Boolean) {
-    if (this.idEnterprise!.errors == null && this.naClient.errors == null && this.nuRif!.errors == null && this.txAddress!.errors == null
-      && this.txAddressDispatch!.errors == null && this.txClient!.errors == null
-      && this.emClient!.errors == null && this.nuPhone!.errors == null) {
+    if (!this.clientLogic.hasPotentialClientFieldErrors()) {
       this.messageService.showLoading().then(() => {
         potencialClient.value.idEnterprise = this.clientLogic.empresaSeleccionada.idEnterprise;
         potencialClient.value.coEnterprise = this.clientLogic.empresaSeleccionada.coEnterprise;
@@ -201,13 +207,6 @@ export class NewPotentialClientComponent implements OnInit {
             pendingTransaction.idTransaction = 0
             pendingTransaction.type = "potentialClient";
             if (localStorage.getItem("connected") == "true") {
-              /*
-              this.messageAlert = new MessageAlert(
-                "Denario Cliente",
-                "¡Cliente potencial sera enviado!"
-              );
-              this.messageService.alertModal(this.messageAlert);
-              */
               this.services.insertPendingTransaction(this.synchronizationServices.getDatabase(), pendingTransaction).then(result => {
                 if (result) {
                   void this.autoSend.runPendingQueue();
@@ -222,15 +221,19 @@ export class NewPotentialClientComponent implements OnInit {
               this.clientLogic.clientPotentialClientComponent = true;
               this.clientLogic.clienteNuevoBlancoImg = true;
               await this.clientLogic.getPotentialClient();
-              /*
-              this.messageAlert = new MessageAlert(
-                "Denario Cliente",
-                "¡Cliente potencial sera enviado al tener conexión de datos!"
-              );
-              this.messageService.alertModal(this.messageAlert);*/
             }
+            this.clientLogic.applyPotentialClientPersistSucceededBaseline();
+            this.clientLogic.resetPotentialClientSendValidationUx();
+            this.messageService.alertModal(
+              {
+                header: this.clientLogic.clientTags.get('DENARIO_NOMBRE_APP')!,
+                message: this.clientLogic.clientTags.get('CLI_SEND_MSG')!,
+              }
+            );
 
           } else {
+            this.clientLogic.applyPotentialClientPersistSucceededBaseline();
+            this.clientLogic.resetPotentialClientSendValidationUx();
             this.messageAlert = new MessageAlert(
               "Denario Cliente",
               "¡Cliente Potencial Guardado con exito!"
@@ -285,38 +288,37 @@ export class NewPotentialClientComponent implements OnInit {
     const ctl = this.newPotentialClient.get('idEnterprise');
     if (ctl) ctl.setValue(enterprise.idEnterprise);
 
+    this.clientLogic.onPotentialClientGeneralValid(true);
+    this.clientLogic.notifyPotentialClientEdited();
     this.checkForm();
   }
 
   checkForm() {
-    if (this.idEnterprise!.errors == null && this.naClient!.errors == null && this.nuRif!.errors == null && this.txAddress!.errors == null
-      && this.txAddressDispatch!.errors == null && this.txClient!.errors == null
-      && this.emClient!.errors == null && this.nuPhone!.errors == null) {
-
-      this.clientLogic.cannotSavePotentialClient = false;
-      this.clientLogic.cannotSendPotentialClient = false;
-      this.clientLogic.validPotentialClient = true;
-      /* this.clientLogic.newPotentialClientChanged = true; */
-      return Promise.resolve(true);
-    } else {
-      this.clientLogic.cannotSendPotentialClient = true;
-      this.clientLogic.cannotSavePotentialClient = true;
-      this.clientLogic.validPotentialClient = false;
-
-      /* this.clientLogic.newPotentialClientChanged = false; */
-      return Promise.resolve(false);
-    }
+    const ok = this.clientLogic.syncPotentialClientFormValidity();
+    this.clientLogic.updatePotentialClientSaveButtonAvailability();
+    this.clientLogic.updatePotentialClientSendButtonAvailability();
+    return Promise.resolve(ok);
   }
 
   onChanges(): void {
-    this.newPotentialClient.valueChanges.subscribe(val => {
-      /* console.log("entre", this.newPotentialClient.valueChanges) */
-      this.checkForm().then(resp => {
-        if (resp)
-          this.clientLogic.newPotentialClientChanged = true;
-      })
-
+    this.newPotentialClient.valueChanges.subscribe(() => {
+      this.checkForm();
+      this.clientLogic.notifyPotentialClientEdited();
+      this.clientLogic.newPotentialClientChanged = true;
     });
+  }
+
+  shouldShowEnterpriseSendError(): boolean {
+    return this.clientLogic.sendValidationAttempted
+      && this.clientLogic.isPotentialClientEnterpriseMissing();
+  }
+
+  shouldShowFieldSendError(controlName: string): boolean {
+    if (!this.clientLogic.sendValidationAttempted) {
+      return false;
+    }
+    const control = this.newPotentialClient.get(controlName);
+    return !!control && control.errors != null;
   }
 
   onChangeTab(tab: string) {

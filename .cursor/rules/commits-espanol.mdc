@@ -1,0 +1,44 @@
+---
+description: Commits y mensajes de git siempre en espanol (agente y autogenerados)
+alwaysApply: true
+---
+
+# Commits en espanol (obligatorio)
+
+**Nunca** escribir mensajes de commit en ingles en este repositorio.
+
+Aplica a:
+- Commits creados por el agente de IA
+- Mensajes del boton **Generate commit message** (icono sparkle) en Source Control
+- Subject y body del commit
+
+> **Nota Cursor:** el boton sparkle de Source Control **no** lee esta regla ni User Rules.
+> Usa el archivo [`.cursorrules`](../.cursorrules) en la raiz del repo (seccion `[Commit Message Generation]`).
+> Mantener ambos archivos alineados si cambias el criterio de commits.
+
+## Formato
+
+- Conventional Commits: `feat`, `fix`, `chore`, `refactor`, `docs`, `test`
+- Subject en espanol, 1-2 oraciones, explica el **por que** (no un listado de archivos)
+- Body opcional, tambien en espanol
+
+## Ejemplos validos
+
+```text
+fix: Guardar y Enviar en Inventarios siguen el patron de Cobros con validacion al pulsar.
+
+feat: se pueden dar de alta bancos y cuentas desde Datos Maestros.
+```
+
+## Ejemplos invalidos (no usar)
+
+```text
+fix: update save button logic in inventory module
+feat: add validation before send
+```
+
+## Al generar desde el diff
+
+1. Leer los cambios y resumir el proposito en espanol.
+2. Si el subject sale en ingles, reescribirlo antes de mostrarlo o commitear.
+3. Mantener el estilo de commits recientes del repo (`git log`).

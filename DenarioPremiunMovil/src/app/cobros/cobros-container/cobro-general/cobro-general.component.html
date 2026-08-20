@@ -69,7 +69,7 @@
           label-placement="floating" fill="outline" min="1" step="0.01" [value]="rateSelected"
           [disabled]="!enabledManualRate" (ionInput)="onManualRateInput($event)" (ionBlur)="onManualRateBlur($event)"
           id="manualRateInput" color="primary" required inputmode="decimal"></ion-input>
-        @if (manualRateError) {
+        @if (manualRateError && shouldShowManualRateSendError()) {
         <ion-label color="danger" class="campoObligatorio">
           {{ manualRateError }}
         </ion-label>
@@ -137,7 +137,12 @@
         <ion-input label="{{this.collectService.collectionTags.get('COB_RAZON_CAMBIO_TASA')}}:"
           label-placement="floating" fill="outline" value="" id="currency" color="primary"
           [(ngModel)]="this.collectService.collection.txConversion" (ionChange)="onChangeTxConversion($event)"
-          required="true" [ngClass]="{'inp-write': !this.collectService.collection.txConversion}"></ion-input>
+          required="true" [ngClass]="{'inp-write': shouldShowTxConversionError()}"></ion-input>
+        @if (shouldShowTxConversionError()) {
+        <ion-label color="danger" class="campoObligatorio">
+          {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}
+        </ion-label>
+        }
       </ion-col>
       }
       }
@@ -157,7 +162,7 @@
           maxlength="80" value="" id="currency" color="primary" (ionChange)="setResponsible()"
           [readonly]="this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SENT || this.collectService.collection.stDelivery == 6"
           [ngClass]="{
-            'inp-write': !this.collectService.validComment && !isSentDelivery,
+            'inp-write': shouldShowRequiredCommentError(),
             'no-validate': isSentDelivery
           }"></ion-input>
       </ion-col>
@@ -167,14 +172,14 @@
           [(ngModel)]="this.collectService.collection.txComment" label-placement="floating" fill="outline"
           (ionChange)="setComment()" (ionInput)="onTxCommentInput()"
           value="this.collectService.collection.txComment" [maxlength]="textCommentMaxLength" [ngClass]="{
-            'inp-write': !this.collectService.validComment && !isSentDelivery,
+            'inp-write': shouldShowRequiredCommentError(),
             'no-validate': isSentDelivery
           }" [required]="this.collectService.requiredComment"
           [readonly]="this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_TO_SEND || this.collectService.collection.stDelivery == this.collectService.COLLECT_STATUS_SENT || this.collectService.collection.stDelivery == 6">
         </ion-input>
         <app-text-comment-counter [value]="this.collectService.collection.txComment"
           [minLength]="textCommentMinLength" [maxLength]="textCommentMaxLength"></app-text-comment-counter>
-        @if (this.collectService.collection.txComment.trim() == '' && this.collectService.requiredComment) {
+        @if (shouldShowRequiredCommentError()) {
         <ion-label color="danger" class="campoObligatorio">
           {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}
         </ion-label>

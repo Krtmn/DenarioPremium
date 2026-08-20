@@ -16,6 +16,7 @@ import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { ItemListaDepositos } from 'src/app/depositos/item-lista-depositos';
 import { DEPOSITO_STATUS_NEW, DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 import { Return } from 'src/app/modelos/tables/return';
+import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 
 @Injectable({
   providedIn: 'root'
@@ -30,6 +31,7 @@ export class DepositService {
   private currencyServices = inject(CurrencyService);
   public enterpriseServ = inject(EnterpriseService);
   public historyTransaction = inject(HistoryTransaction);
+  public adjuntoService = inject(AdjuntoService);
 
 
   private database!: SQLiteObject;
@@ -74,6 +76,12 @@ export class DepositService {
   /** Cambios locales desde el último guardado / apertura limpia. */
   public depositDirtySincePersist = false;
 
+  /** General válida: banco seleccionado (desbloquea pestañas y base Guardar/Enviar). */
+  public generalTabValidForSave = false;
+  public sendValidationAttempted = false;
+  public sendBlockedByFields = false;
+  public depositSendFocusMissingCollect = false;
+
   public coordenadas = '';
   public fechaMayor: string = this.dateServ.hoyISO();
   public fechaMenor!: string;
@@ -103,10 +111,10 @@ export class DepositService {
   public DEPOSITO_STATUS_SENT = DEPOSITO_STATUS_SENT;
 
   public alertButtons = [
-    /*     {
-          text: '',
-          role: 'cancel'
-        }, */
+    {
+      text: '',
+      role: 'cancel'
+    },
     {
       text: '',
       role: 'confirm'
@@ -158,7 +166,8 @@ export class DepositService {
       }
       this.alertButtonsSend[0].text = this.depositTagsDenario.get('DENARIO_BOTON_CANCELAR')!
       this.alertButtonsSend[1].text = this.depositTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
-      this.alertButtons[0].text = this.depositTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
+      this.alertButtons[0].text = this.depositTagsDenario.get('DENARIO_BOTON_CANCELAR')!
+      this.alertButtons[1].text = this.depositTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
       return Promise.resolve(true);
     })
   }
@@ -182,6 +191,169 @@ export class DepositService {
     this.depositValidToSend.next(validToSend);
   }
 
+  onDepositGeneralValid(valid: boolean): void {
+    this.generalTabValidForSave = valid;
+    this.depositValid = valid;
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
+  }
+
+  isDepositReadOnlyForEdit(): boolean {
+    const stDelivery = Number(this.deposit?.stDelivery ?? 0);
+    return stDelivery === DEPOSITO_STATUS_TO_SEND
+      || stDelivery === DEPOSITO_STATUS_SENT;
+  }
+
+  public updateSaveButtonAvailability(): void {
+    if (this.isDepositReadOnlyForEdit() || this.hideDeposit) {
+      this.disabledSaveButton = true;
+      this.onDepositValidToSave(false);
+      return;
+    }
+    if (this.adjuntoService.weightLimitExceeded) {
+      this.disabledSaveButton = true;
+      this.onDepositValidToSave(false);
+      return;
+    }
+    const generalOk = this.generalTabValidForSave;
+    const hasChangesToSave =
+      !this.depositPersistedBaseline || this.depositDirtySincePersist;
+    const saveEnabled = generalOk && hasChangesToSave;
+    this.disabledSaveButton = !saveEnabled;
+    this.onDepositValidToSave(saveEnabled);
+  }
+
+  public updateSendButtonAvailability(): void {
+    if (this.isDepositReadOnlyForEdit() || this.hideDeposit) {
+      this.disabledSendButton = true;
+      this.onDepositValidToSend(false);
+      return;
+    }
+    if (this.adjuntoService.weightLimitExceeded) {
+      this.disabledSendButton = true;
+      this.onDepositValidToSend(false);
+      return;
+    }
+    if (this.sendBlockedByFields) {
+      this.disabledSendButton = true;
+      this.onDepositValidToSend(false);
+      return;
+    }
+    const sendEnabled = this.generalTabValidForSave;
+    this.disabledSendButton = !sendEnabled;
+    this.onDepositValidToSend(sendEnabled);
+  }
+
+  public resetSendValidationUx(): void {
+    this.sendValidationAttempted = false;
+    this.sendBlockedByFields = false;
+    this.depositSendFocusMissingCollect = false;
+    this.updateSendButtonAvailability();
+  }
+
+  public refreshSendBlockedState(): void {
+    if (!this.sendBlockedByFields) {
+      return;
+    }
+    if (!this.hasDepositFieldErrors()) {
+      this.sendBlockedByFields = false;
+      this.updateSendButtonAvailability();
+    }
+  }
+
+  /** Marca edición de usuario y refresca botones (no usar en hidratación/reapertura). */
+  notifyDepositEdited(): void {
+    this.markDepositDirty();
+    this.refreshSendBlockedState();
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
+  }
+
+  private requiresSignatureAttachments(): boolean {
+    return this.globalConfig.get('signatureCollection') === 'true';
+  }
+
+  private hasMissingSignatureAttachments(): boolean {
+    return this.requiresSignatureAttachments() && !this.adjuntoService.hasItems();
+  }
+
+  private hasMissingGpsCoordinate(): boolean {
+    if (!this.userMustActivateGPS) {
+      return false;
+    }
+    const coord = (this.deposit?.coordenada ?? '').toString().trim();
+    return coord.length === 0;
+  }
+
+  private hasBankSelected(): boolean {
+    return this.isSelectedBank
+      && !!(this.deposit?.coBank?.trim())
+      && !!(this.deposit?.nuAccount?.trim());
+  }
+
+  private hasNuDocumentFilled(): boolean {
+    const doc = (this.nuDocument ?? this.deposit?.nuDocument ?? '').toString().trim();
+    return doc.length > 0;
+  }
+
+  private hasDaDocumentFilled(): boolean {
+    const date = (this.daDocument ?? this.deposit?.daDocument ?? '').toString().trim();
+    return date.length > 0;
+  }
+
+  public hasDepositFieldErrors(): boolean {
+    if (!this.generalTabValidForSave || !this.hasBankSelected()) {
+      return true;
+    }
+    if (!this.hasAtLeastOneDepositCollectRow()) {
+      return true;
+    }
+    if (!this.hasNuDocumentFilled()) {
+      return true;
+    }
+    if (!this.hasDaDocumentFilled()) {
+      return true;
+    }
+    if (this.hasMissingSignatureAttachments()) {
+      return true;
+    }
+    if (this.hasMissingGpsCoordinate()) {
+      return true;
+    }
+    return false;
+  }
+
+  public getDepositValidationMessage(): string {
+    if (!this.generalTabValidForSave || !this.hasBankSelected()) {
+      return this.depositTags.get('DEP_MSJ_ERROR_NO_BANK')
+        ?? 'Seleccione un banco para continuar.';
+    }
+    if (!this.hasAtLeastOneDepositCollectRow()) {
+      this.depositSendFocusMissingCollect = true;
+      return this.depositTags.get('DEP_MSJ_ERROR_NO_COLLECT')
+        ?? this.depositTags.get('DEP_SELECT_COB_DEP')
+        ?? 'Seleccione al menos un cobro para el depósito.';
+    }
+    if (!this.hasNuDocumentFilled()) {
+      return this.depositTags.get('DEP_MSJ_ERROR_NO_DOCUMENT')
+        ?? 'Ingrese el número de plantilla para continuar.';
+    }
+    if (!this.hasDaDocumentFilled()) {
+      return this.depositTags.get('DEP_MSJ_ERROR_NO_DATE')
+        ?? 'Ingrese la fecha del documento para continuar.';
+    }
+    if (this.hasMissingSignatureAttachments()) {
+      return this.depositTags.get('DEP_MSJ_ERROR_NO_ATTACHMENTS')
+        ?? 'Debe adjuntar al menos un documento o firma antes de continuar.';
+    }
+    if (this.hasMissingGpsCoordinate()) {
+      return this.depositTags.get('DEP_MSJ_ERROR_NO_GPS')
+        ?? 'Debe activar el GPS y obtener la ubicación antes de continuar.';
+    }
+    return this.depositTags.get('DEP_MSJ_ERROR_NO_COLLECT')
+      ?? 'Complete los campos obligatorios del depósito.';
+  }
+
   /** Al menos una fila en `deposit_collects` cargada/seleccionada (requisito para guardar / enviar). */
   hasAtLeastOneDepositCollectRow(): boolean {
     return !!(this.deposit?.depositCollect && this.deposit.depositCollect.length > 0);
@@ -195,21 +367,35 @@ export class DepositService {
   applyPersistSucceededBaseline(): void {
     this.depositDirtySincePersist = false;
     this.depositPersistedBaseline = true;
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
   }
 
   /** Depósito nuevo en pantalla (aún sin guardar en esta sesión). */
   resetDepositExitBaseline(): void {
     this.depositPersistedBaseline = false;
     this.depositDirtySincePersist = false;
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
   }
 
   /** Depósito abierto desde lista: ya existe en BD, sin edits locales aún. Llamar al cerrar init de apertura. */
   markDepositOpenedFromPersistedCopy(): void {
     this.depositPersistedBaseline = true;
     this.depositDirtySincePersist = false;
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
+  }
+
+  private resetDepositValidationUxFlags(): void {
+    this.generalTabValidForSave = false;
+    this.sendValidationAttempted = false;
+    this.sendBlockedByFields = false;
+    this.depositSendFocusMissingCollect = false;
   }
 
   initServices(dbServ: SQLiteObject) {
+    this.resetDepositValidationUxFlags();
     this.enterpriseServ.setup(dbServ).then(() => {
       this.disabledSaveButton = true;
       this.disabledSendButton = true;
@@ -260,8 +446,7 @@ export class DepositService {
 
       this.resetDepositExitBaseline();
 
-      this.onDepositValidToSend(false);
-      this.onDepositValidToSave(false);
+      this.onDepositGeneralValid(false);
 
       this.getCurrencies(dbServ, this.deposit.idEnterprise).then(resp => {
         this.getBankAccounts(dbServ, this.deposit.idEnterprise, this.currencySelected.coCurrency).then(resp => {
@@ -286,9 +471,8 @@ export class DepositService {
       this.enterpriseList = this.enterpriseServ.empresas;
       this.enterpriseSelected = this.enterpriseList[0];
       this.isSelectedBank = true;
-      this.depositValid = true;
+      this.onDepositGeneralValid(true);
 
-      this.onDepositValidToSave(true);
       return this.getCurrencies(dbServ, this.deposit.idEnterprise).then(resp => {
         for (var i = 0; i < this.currencyList.length; i++) {
           if (this.currencyList[i].idCurrency == this.deposit.idCurrency) {
@@ -343,6 +527,7 @@ export class DepositService {
 
   resetDeposit() {
     this.depositValid = false;
+    this.generalTabValidForSave = false;
     this.enterpriseList = this.enterpriseServ.empresas;
     this.enterpriseSelected = this.enterpriseList[0];
     this.parteDecimal = Number(this.globalConfig.get('parteDecimal'));
@@ -387,8 +572,7 @@ export class DepositService {
     this.bankSelected = {} as BankAccount;
     this.isSelectedBank = false;
 
-    this.onDepositValidToSend(false);
-    this.onDepositValidToSave(false);
+    this.onDepositGeneralValid(false);
 
     return Promise.resolve(true);
   }
@@ -1173,10 +1357,8 @@ export class DepositService {
         item.inDepositCollect = true;
         this.cobrosDetails.push(item);
       }
-      this.onDepositValidToSend(this.hasAtLeastOneDepositCollectRow());
       return this.deposit;
     }).catch(e => {
-      this.onDepositValidToSend(false);
       this.deposit.depositCollect = [] as DepositCollect[];
       console.log(e);
       return this.deposit;

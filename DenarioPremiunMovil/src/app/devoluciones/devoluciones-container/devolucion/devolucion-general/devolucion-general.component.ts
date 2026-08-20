@@ -96,9 +96,8 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
         this.returnLogic.newReturn.naResponsible = '';
         this.returnLogic.newReturn.nuSeal = '';
         this.returnLogic.newReturn.txComment = '';
-        this.returnLogic.onReturnValid(false);
-        this.returnLogic.onReturnValidToSave(false);
-        this.returnLogic.onReturnValidToSend(false);
+        this.returnLogic.resetReturnExitBaseline();
+        this.returnLogic.onReturnGeneralValid(false);
 
       } else {
         //YA TENGO UNA DEVOLUCION VALIDA
@@ -118,10 +117,8 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
         //this.selectorCliente.updateClientList(this.empresaSeleccionada.idEnterprise);
         /* this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
           this.returnLogic.tags.get('DEV_NOMBRE_MODULO')!, "fondoAmarillo", this.cliente, this.returnLogic.validateClient); */
-        this.returnLogic.onReturnValid(true);
-        this.returnLogic.updateSendButtonState();
-        //this.returnLogic.onReturnValidToSave(true);
-        //this.returnLogic.onReturnValidToSend(true);
+        this.returnLogic.onReturnGeneralValid(true);
+
       }
     });
 
@@ -139,8 +136,8 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
       this.returnLogic.newReturn.coInvoice = invoice.coInvoice;
       this.returnLogic.newReturn.idInvoice = invoice.idInvoice;
       this.returnLogic.findInvoiceDetailUnits().then();
-      this.returnLogic.onReturnValid(true);
-      this.returnLogic.setChange(true, true);
+      this.returnLogic.onReturnGeneralValid(true);
+      this.returnLogic.notifyReturnEdited();
     });
   }
 
@@ -151,9 +148,9 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
     this.returnLogic.validateClient = false;
     this.setClientfromSelector(this.cliente);
     if (this.returnLogic.validateReturn) {
-      this.returnLogic.onReturnValid(false);
+      this.returnLogic.onReturnGeneralValid(false);
     } else {
-      this.returnLogic.onReturnValid(true);
+      this.returnLogic.onReturnGeneralValid(true);
     }
   }
 
@@ -202,17 +199,18 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
     this.returnLogic.newReturn.idUser = Number(localStorage.getItem("idUser"));
     this.returnLogic.newReturn.coUser = localStorage.getItem('coUser') || "[]";
     this.returnLogic.enterpriseReturn = this.empresaSeleccionada;
-    this.returnLogic.newReturn.stReturn = DELIVERY_STATUS_NEW; // 0 = Nuevo, 1 = Guardado, 2 = Por Enviar, 3 = Enviado
-    this.returnLogic.newReturn.stDelivery = DELIVERY_STATUS_NEW; // 0 = Nuevo, 1 = Guardado, 2 = Por Enviar, 3 = Enviado
-    this.returnLogic.onReturnValidToSave(true);
+    this.returnLogic.newReturn.stReturn = DELIVERY_STATUS_NEW;
+    this.returnLogic.newReturn.stDelivery = DELIVERY_STATUS_NEW;
+    this.returnLogic.onReturnGeneralValid(!this.returnLogic.validateReturn);
     this.selectorService.checkClient = true;
     this.selectorService.clienteAnterior = this.cliente;
 
     if (this.returnLogic.validateReturn) {
       this.returnLogic.findInvoices();
     } else {
-      this.returnLogic.onReturnValid(true);
+      this.returnLogic.onReturnGeneralValid(true);
     }
+    this.returnLogic.notifyReturnEdited();
   }
 
   setInvoicefromSelector(invoice: Invoice) {
@@ -232,8 +230,18 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
     this.hasClient = false;
     this.nombreCliente = "";
     this.returnValid = false;
-    this.returnLogic.onReturnValid(false);
-    this.returnLogic.updateSendButtonState();
+    this.returnLogic.onReturnGeneralValid(false);
+  }
+
+  shouldShowClientSendError(): boolean {
+    return this.returnLogic.sendValidationAttempted
+      && Number(this.returnLogic.newReturn?.idClient ?? 0) <= 0;
+  }
+
+  shouldShowInvoiceSendError(): boolean {
+    return this.returnLogic.sendValidationAttempted
+      && this.returnLogic.validateReturn
+      && Number(this.returnLogic.newReturn?.idInvoice ?? 0) <= 0;
   }
 
   cleanString(str: string): string {
@@ -256,6 +264,7 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
         this.naResponsibleInput.value = (clean);
       }
     }
+    this.returnLogic.notifyReturnEdited();
   }
 
   onNuSealChange() {
@@ -266,6 +275,7 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
         this.nuSealInput.value = (clean);
       }
     }
+    this.returnLogic.notifyReturnEdited();
   }
 
   onTxCommentChange() {
@@ -279,7 +289,7 @@ export class DevolucionGeneralComponent implements OnInit, OnDestroy {
         this.txCommentInput.value = (clean);
       }
     }
-
+    this.returnLogic.notifyReturnEdited();
   }
 
   get clienteTabLabel(): string {
