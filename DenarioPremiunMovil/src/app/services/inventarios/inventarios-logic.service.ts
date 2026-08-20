@@ -240,14 +240,6 @@ export class InventariosLogicService {
     this.sendBlockedByFields = false;
   }
 
-  private requiresSignatureAttachments(): boolean {
-    return this.globalConfig.get('signatureStock') === 'true';
-  }
-
-  private hasMissingSignatureAttachments(): boolean {
-    return this.requiresSignatureAttachments() && !this.adjuntoService.hasItems();
-  }
-
   private hasMissingGpsCoordinate(): boolean {
     if (!this.userMustActivateGPS) {
       return false;
@@ -286,24 +278,25 @@ export class InventariosLogicService {
     );
   }
 
+  /**
+   * Errores que bloquean Enviar: General + productos (+ GPS si config).
+   * Firma/adjuntos no son obligatorios: `signatureStock` solo muestra el panel de firma.
+   */
   public hasStockFieldErrors(): boolean {
     if (!this.generalTabValidForSave || !this.selectedClient) {
       return true;
     }
-    // Productos antes que GPS/firma (evitar falso positivo de adjuntos en inventario vacío).
+    // Productos antes que GPS (evitar falso positivo en inventario vacío).
     if (!this.checkValidStockToSend()) {
       return true;
     }
     if (this.hasMissingGpsCoordinate()) {
       return true;
     }
-    if (this.hasMissingSignatureAttachments()) {
-      return true;
-    }
     return false;
   }
 
-  /** Guardar solo exige General (cliente + sucursal). Productos/firma/GPS van en Enviar. */
+  /** Guardar solo exige General (cliente + sucursal). Productos/GPS van en Enviar. */
   public hasStockSaveErrors(): boolean {
     return !this.generalTabValidForSave || !this.selectedClient;
   }
@@ -314,7 +307,7 @@ export class InventariosLogicService {
   }
 
   /**
-   * Mensaje al pulsar Enviar: prioridad General → productos → GPS → adjuntos.
+   * Mensaje al pulsar Enviar: prioridad General → productos → GPS.
    */
   public getStockValidationMessage(): string {
     if (!this.generalTabValidForSave || !this.selectedClient) {
@@ -342,10 +335,6 @@ export class InventariosLogicService {
       return this.inventarioTags.get('INV_MSJ_ERROR_NO_GPS')
         ?? 'Debe activar el GPS y obtener la ubicación antes de continuar.';
     }
-    if (this.hasMissingSignatureAttachments()) {
-      return this.inventarioTags.get('INV_MSJ_ERROR_NO_ATTACHMENTS')
-        ?? 'Debe adjuntar al menos un documento o firma antes de continuar.';
-    }
     return this.inventarioTags.get('INV_MSJ_ERROR_NO_PRODUCTS')
       ?? 'Debe seleccionar al menos un producto para el inventario.';
   }
@@ -363,9 +352,6 @@ export class InventariosLogicService {
     }
     if (this.hasMissingGpsCoordinate()) {
       return 'default';
-    }
-    if (this.hasMissingSignatureAttachments()) {
-      return 'adjuntos';
     }
     return this.hideTab ? 'inventario' : 'actividades';
   }

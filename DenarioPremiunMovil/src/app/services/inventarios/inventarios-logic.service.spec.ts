@@ -212,7 +212,7 @@ describe('InventariosLogicService', () => {
       expect(service.resolveSendValidationFocusTab()).toBe('inventario');
     });
 
-    it('sin adjuntos enfoca pestaña adjuntos', () => {
+    it('con productos completos y signatureStock no enfoca adjuntos', () => {
       (service.globalConfig.get as jasmine.Spy).and.callFake((key: string) => {
         if (key === 'signatureStock') {
           return 'true';
@@ -221,10 +221,11 @@ describe('InventariosLogicService', () => {
       });
       service.generalTabValidForSave = true;
       service.selectedClient = true;
+      service.hideTab = true;
       service.typeStocks = [{ validateCantidad: true, validateLote: true } as unknown as Inventarios];
       (service.adjuntoService.hasItems as jasmine.Spy).and.returnValue(false);
 
-      expect(service.resolveSendValidationFocusTab()).toBe('adjuntos');
+      expect(service.resolveSendValidationFocusTab()).toBe('inventario');
     });
 
     it('requestSendValidationTabFocus emite la pestaña resuelta', () => {
@@ -250,14 +251,13 @@ describe('InventariosLogicService', () => {
       });
     });
 
-    it('exige adjuntos cuando signatureStock está activo', () => {
+    it('signatureStock no exige adjuntos (solo muestra firma)', () => {
       service.generalTabValidForSave = true;
       service.selectedClient = true;
       service.typeStocks = [{ validateCantidad: true, validateLote: true } as unknown as Inventarios];
       (service.adjuntoService.hasItems as jasmine.Spy).and.returnValue(false);
 
-      expect(service.hasStockFieldErrors()).toBeTrue();
-      expect(service.getStockValidationMessage()).toContain('Debe adjuntar firma');
+      expect(service.hasStockFieldErrors()).toBeFalse();
     });
   });
 });
