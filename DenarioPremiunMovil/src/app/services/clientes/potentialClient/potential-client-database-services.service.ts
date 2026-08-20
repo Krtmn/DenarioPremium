@@ -161,11 +161,14 @@ export class PotentialClientDatabaseServicesService {
       return this.dbServ.getDatabase().executeSql(
         inserStatement, [
         0, potencialClient.coClient, potencialClient.idUser, potencialClient.coUser,
-        potencialClient.naClient, potencialClient.nuRif, potencialClient.txAddress, potencialClient.txAddressDispatch,
-        potencialClient.txClient, potencialClient.naResponsible, potencialClient.emClient, potencialClient.nuPhone,
-        potencialClient.naWebSite, potencialClient.daPotentialClient, potencialClient.stPotentialClient,
-        potencialClient.idEnterprise, potencialClient.coEnterprise,
-        coordenada, potencialClient.coordenadaClient, potencialClient.nuAttachments, potencialClient.hasAttachments
+        potencialClient.naClient ?? '', potencialClient.nuRif ?? '', potencialClient.txAddress ?? '',
+        potencialClient.txAddressDispatch ?? '',
+        potencialClient.txClient ?? '', potencialClient.naResponsible ?? '',
+        potencialClient.emClient ?? '', potencialClient.nuPhone ?? '',
+        potencialClient.naWebSite ?? '', potencialClient.daPotentialClient, potencialClient.stPotentialClient,
+        potencialClient.idEnterprise ?? 0, potencialClient.coEnterprise ?? '',
+        coordenada ?? '', potencialClient.coordenadaClient ?? '',
+        potencialClient.nuAttachments ?? 0, potencialClient.hasAttachments ?? false
       ]).then(res => {
         console.log("POTENTIAL CLIENT INSERT");
       }).catch(e => {
