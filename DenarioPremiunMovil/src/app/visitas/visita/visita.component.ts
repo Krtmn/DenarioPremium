@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit, ViewChild } from '@angular/core';
 import { Location } from '@angular/common'
 import { DateServiceService } from '../../services/dates/date-service.service';
 import { Client } from '../../modelos/tables/client';
@@ -68,6 +68,7 @@ export class VisitaComponent implements OnInit {
   clientLogic = inject(ClientLogicService);
   clientLocationServ = inject(ClientLocationService);
   clientDBServ = inject(ClientesDatabaseServicesService);
+  private cdr = inject(ChangeDetectorRef);
   messageAlert!: MessageAlert;
 
   segment = 'default';
@@ -167,8 +168,14 @@ export class VisitaComponent implements OnInit {
   public saveOrExitOpen = false;
   public alertConfirmSend = false;
   public alertMessageOpenSave = false;
+  public alertMessageOpenValidation = false;
+  public validationFailureMessage = '';
   public mensajeSaveQuestion = '';
+  public alertButtonsValidation = [
+    { text: 'Aceptar', role: 'confirm' },
+  ];
 
+  private focusTabSub?: Subscription;
   public clientChangeOpen = false;
 
   public headerSave!: string;
@@ -224,6 +231,12 @@ export class VisitaComponent implements OnInit {
     this.subscriberVisitSend = this.visitServ.visitValidToSend.subscribe((valid: Boolean) => {
       this.disableSendButton = !valid;
     });
+    this.focusTabSub = this.visitServ.focusSendValidationTab.subscribe((tab) => {
+      this.applySendValidationTabFocus(tab);
+    });
+    this.alertButtonsValidation = [
+      { text: this.getTag('DENARIO_BOTON_ACEPTAR') || 'Aceptar', role: 'confirm' },
+    ];
 
     this.enterpriseServ.setup(this.syncServ.getDatabase()).then(() => {
 
@@ -397,6 +410,7 @@ export class VisitaComponent implements OnInit {
   ngOnDestroy() {
     this.subscriberVisitSave?.unsubscribe();
     this.subscriberVisitSend?.unsubscribe();
+    this.focusTabSub?.unsubscribe();
     this.AttachSubscription.unsubscribe();
     this.ClientChangeSubscription.unsubscribe();
     this.backButtonSubscription.unsubscribe();
@@ -882,7 +896,7 @@ export class VisitaComponent implements OnInit {
   }
 
   saveButton() {
-    if (!this.validateVisitBeforeAction(false)) {
+    if (!this.validateVisitBeforeSave()) {
       return;
     }
     this.alertMessageOpenSave = true;
@@ -1090,7 +1104,7 @@ export class VisitaComponent implements OnInit {
     if (this.visitServ.visit.stVisit == VISIT_STATUS_VISITED) {
       return;
     }
-    if (!this.validateVisitBeforeAction(true)) {
+    if (!this.validateVisitBeforeSend()) {
       return;
     }
     this.alertConfirmSend = true;
@@ -1111,7 +1125,7 @@ export class VisitaComponent implements OnInit {
   }
 
   saveAndExit() {
-    if (!this.validateVisitBeforeAction(false)) {
+    if (!this.validateVisitBeforeSave()) {
       return;
     }
     this.saveVisit(false).then(() => {
@@ -1168,19 +1182,71 @@ export class VisitaComponent implements OnInit {
     }
   }
 
-  private validateVisitBeforeAction(blockSendOnError: boolean): boolean {
+  private notifyVisitValidationFailure(options: {
+    blockSend: boolean;
+    message: string;
+    focusTab?: 'default' | 'actividades' | 'adjuntos';
+  }): void {
+    if (options.blockSend) {
+      this.visitServ.sendBlockedByFields = true;
+      this.visitServ.updateSendButtonAvailability();
+    }
+    this.visitServ.requestSendValidationTabFocus(options.focusTab);
+    this.showVisitValidationAlert(options.message);
+  }
+
+  private showVisitValidationAlert(rawMessage: string): void {
+    const message = (rawMessage ?? '').toString().trim()
+      || 'Complete los campos obligatorios antes de continuar.';
+    this.validationFailureMessage = message;
+    this.alertMessageOpenValidation = true;
+    this.cdr.detectChanges();
+  }
+
+  setResultValidation(): void {
+    this.alertMessageOpenValidation = false;
+  }
+
+  /** Guardar / Guardar y salir: solo General (VIS-SAVE-001). */
+  private validateVisitBeforeSave(): boolean {
+    this.syncVisitEditContext();
+    if (!this.visitServ.hasVisitSaveErrors()) {
+      return true;
+    }
+    this.notifyVisitValidationFailure({
+      blockSend: false,
+      message: this.visitServ.getVisitSaveValidationMessage(),
+      focusTab: 'default',
+    });
+    return false;
+  }
+
+  /** Enviar: validación completa + mensaje + salto de pestaña. */
+  private validateVisitBeforeSend(): boolean {
     this.syncVisitEditContext();
     this.visitServ.sendValidationAttempted = true;
+
     if (this.visitServ.hasVisitFieldErrors()) {
-      if (blockSendOnError) {
-        this.visitServ.sendBlockedByFields = true;
-        this.visitServ.updateSendButtonAvailability();
-      }
-      this.message.transaccionMsjModalNB(this.visitServ.getVisitValidationMessage());
+      this.notifyVisitValidationFailure({
+        blockSend: true,
+        message: this.visitServ.getVisitValidationMessage(),
+      });
       return false;
     }
+
     this.visitServ.sendBlockedByFields = false;
+    this.visitServ.updateSendButtonAvailability();
     return true;
+  }
+
+  private applySendValidationTabFocus(
+    tab: 'default' | 'actividades' | 'adjuntos',
+  ): void {
+    const generalOk = this.visitServ.generalTabValidForSave;
+    if ((tab === 'actividades' || tab === 'adjuntos') && !generalOk) {
+      tab = 'default';
+    }
+    this.segment = tab;
   }
 
   shouldShowClientSendError(): boolean {

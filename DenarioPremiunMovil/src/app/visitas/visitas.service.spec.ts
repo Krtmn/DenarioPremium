@@ -167,6 +167,24 @@ describe('VisitasService', () => {
       service.updateSaveButtonAvailability();
       expect(saveEnabled).toBeTrue();
     });
+
+    it('hasVisitSaveErrors false sin actividades si General OK', () => {
+      service.generalTabValidForSave = true;
+      service.setVisitEditContext(baseContext());
+
+      expect(service.hasVisitSaveErrors()).toBeFalse();
+      expect(service.hasVisitFieldErrors()).toBeTrue();
+    });
+
+    it('hasVisitSaveErrors true sin cliente', () => {
+      const ctx = baseContext();
+      ctx.idClient = null;
+      service.generalTabValidForSave = false;
+      service.setVisitEditContext(ctx);
+
+      expect(service.hasVisitSaveErrors()).toBeTrue();
+      expect(service.getVisitSaveValidationMessage()).toContain('Seleccione un cliente');
+    });
   });
 
   describe('VIS-SEND-001 Enviar y validación al click', () => {
@@ -186,6 +204,21 @@ describe('VisitasService', () => {
 
       expect(service.hasVisitFieldErrors()).toBeTrue();
       expect(service.getVisitValidationMessage()).toContain('Agregue actividades');
+      expect(service.resolveSendValidationFocusTab()).toBe('actividades');
+    });
+
+    it('sendBlockedByFields se limpia al editar (notifyVisitEdited)', () => {
+      service.generalTabValidForSave = true;
+      service.setVisitEditContext(baseContext());
+      service.sendBlockedByFields = true;
+      let sendEnabled: boolean | undefined;
+      service.visitValidToSend.subscribe((v: Boolean) => sendEnabled = !!v);
+      service.updateSendButtonAvailability();
+      expect(sendEnabled).toBeFalse();
+
+      service.notifyVisitEdited();
+      expect(service.sendBlockedByFields).toBeFalse();
+      expect(sendEnabled).toBeTrue();
     });
 
     it('hasVisitFieldErrors true sin cliente', () => {
@@ -268,11 +301,10 @@ describe('VisitasService', () => {
       service.setVisitEditContext(ctx);
     });
 
-    it('hasVisitFieldErrors true sin adjuntos cuando signatureVisit', () => {
+    it('signatureVisit no exige adjuntos (solo muestra firma)', () => {
       (service.adjuntoService.hasItems as jasmine.Spy).and.returnValue(false);
 
-      expect(service.hasVisitFieldErrors()).toBeTrue();
-      expect(service.getVisitValidationMessage()).toContain('Adjunte firma');
+      expect(service.hasVisitFieldErrors()).toBeFalse();
     });
   });
 });

@@ -1024,10 +1024,6 @@ export class PedidosService {
     );
   }
 
-  private hasMissingSignatureAttachments(): boolean {
-    return this.signatureOrder === true && !this.adjuntoService.hasItems();
-  }
-
   private hasMissingGpsCoordinate(): boolean {
     if (!this.userMustActivateGPS) {
       return false;
@@ -1036,6 +1032,10 @@ export class PedidosService {
     return coord.length === 0;
   }
 
+  /**
+   * Errores que bloquean Enviar: General + productos (+ GPS/almacén si config).
+   * Firma/adjuntos no son obligatorios: `signatureOrder` solo muestra el panel de firma.
+   */
   public hasOrderFieldErrors(): boolean {
     if (!this.generalTabValidForSave || !this.hasClientSelected()) {
       return true;
@@ -1053,9 +1053,6 @@ export class PedidosService {
       return true;
     }
     if (this.hasMissingWarehouseOnCart()) {
-      return true;
-    }
-    if (this.hasMissingSignatureAttachments()) {
       return true;
     }
     if (this.hasMissingGpsCoordinate()) {
@@ -1090,10 +1087,6 @@ export class PedidosService {
     if (this.hasMissingWarehouseOnCart()) {
       return this.tags.get('PED_MSJ_ERROR_NO_WAREHOUSE')
         ?? 'Seleccione almacén en todos los productos.';
-    }
-    if (this.hasMissingSignatureAttachments()) {
-      return this.tags.get('PED_MSJ_ERROR_NO_SIGNATURE')
-        ?? 'Debe adjuntar al menos un documento o firma antes de continuar.';
     }
     if (this.hasMissingGpsCoordinate()) {
       return this.tags.get('PED_MSJ_ERROR_NO_GPS')

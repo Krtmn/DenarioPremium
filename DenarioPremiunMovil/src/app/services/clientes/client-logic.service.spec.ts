@@ -178,7 +178,6 @@ describe('ClientLogicService', () => {
     beforeEach(() => {
       service.clientTags.set('CLI_POT_MSJ_ERROR_NO_ENTERPRISE', 'Seleccione empresa');
       service.clientTags.set('CLI_POT_MSJ_ERROR_INCOMPLETE_FORM', 'Complete campos');
-      service.clientTags.set('CLI_POT_MSJ_ERROR_NO_ATTACHMENTS', 'Adjunte firma');
       service.clientTags.set('CLI_NEW_POT_MENSAJE_ERROR_NOMBRE_CLIENTE', 'Nombre obligatorio');
       service.potentialClient = { coordenada: '10,20' } as any;
       service.empresaSeleccionada = { idEnterprise: 1 } as any;
@@ -186,12 +185,20 @@ describe('ClientLogicService', () => {
       service.userMustActivateGPS = false;
     });
 
-    it('POT-SAVE-001: Guardar ON con General + dirty; OFF tras baseline', () => {
+    it('POT-SAVE-001: Guardar ON con dirty aunque falte nombre; error al validar', () => {
+      service.registerPotentialClientForm(new FormGroup({
+        naClient: new FormControl('', [Validators.required]),
+      }));
       service.onPotentialClientGeneralValid(true);
       service.resetPotentialClientExitBaseline();
 
       service.updatePotentialClientSaveButtonAvailability();
       expect(service.cannotSavePotentialClient).toBeFalse();
+      expect(service.hasPotentialClientSaveErrors()).toBeTrue();
+      expect(service.getPotentialClientSaveValidationMessage()).toContain('Nombre obligatorio');
+
+      service.potentialClientForm?.get('naClient')?.setValue('Cliente QA');
+      expect(service.hasPotentialClientSaveErrors()).toBeFalse();
 
       service.applyPotentialClientPersistSucceededBaseline();
       expect(service.cannotSavePotentialClient).toBeTrue();
@@ -201,12 +208,29 @@ describe('ClientLogicService', () => {
       expect(service.cannotSavePotentialClient).toBeFalse();
     });
 
-    it('POT-SEND-001: Enviar ON con General aunque form incompleto', () => {
+    it('POT-SAVE-001: Guardar no exige formulario completo', () => {
+      service.registerPotentialClientForm(new FormGroup({
+        idEnterprise: new FormControl(1, [Validators.required]),
+        naClient: new FormControl('Solo nombre', [Validators.required]),
+        nuRif: new FormControl('', [Validators.required]),
+        naResponsible: new FormControl('', [Validators.required]),
+      }));
+      service.onPotentialClientGeneralValid(true);
+      service.resetPotentialClientExitBaseline();
+
+      expect(service.hasPotentialClientSaveErrors()).toBeFalse();
+      expect(service.hasPotentialClientFieldErrors()).toBeTrue();
+      service.updatePotentialClientSaveButtonAvailability();
+      expect(service.cannotSavePotentialClient).toBeFalse();
+    });
+
+    it('POT-SEND-001: Enviar ON con General aunque form incompleto; no se apaga tras fallo', () => {
       service.registerPotentialClientForm(new FormGroup({
         idEnterprise: new FormControl(1, [Validators.required]),
         naClient: new FormControl('', [Validators.required]),
       }));
       service.onPotentialClientGeneralValid(true);
+      service.sendBlockedByFields = true;
 
       service.updatePotentialClientSendButtonAvailability();
       expect(service.cannotSendPotentialClient).toBeFalse();
@@ -214,6 +238,22 @@ describe('ClientLogicService', () => {
       expect(service.getPotentialClientValidationMessage()).toContain('Nombre obligatorio');
     });
 
+    it('POT-SEND-001: al completar campos se limpia sendBlockedByFields', () => {
+      const form = buildValidPotentialForm();
+      form.get('naResponsible')?.setValue('');
+      service.registerPotentialClientForm(form);
+      service.onPotentialClientGeneralValid(true);
+      service.sendBlockedByFields = true;
+
+      expect(service.hasPotentialClientFieldErrors()).toBeTrue();
+      service.refreshPotentialClientSendBlockedState();
+      expect(service.sendBlockedByFields).toBeTrue();
+
+      form.get('naResponsible')?.setValue('Resp');
+      service.notifyPotentialClientEdited();
+      expect(service.sendBlockedByFields).toBeFalse();
+      expect(service.cannotSendPotentialClient).toBeFalse();
+    });
     it('POT-SEND-001: naResponsible vacío bloquea validación al click', () => {
       const form = buildValidPotentialForm();
       form.get('naResponsible')?.setValue('');
@@ -224,7 +264,7 @@ describe('ClientLogicService', () => {
       expect(service.getPotentialClientValidationMessage()).toContain('Complete campos');
     });
 
-    it('POT-SEND-001: signatureClient exige adjuntos', () => {
+    it('POT-SEND-001: signatureClient no exige adjuntos (solo muestra firma)', () => {
       spyOn(service['globalConfig'], 'get').and.callFake((key: string) => {
         if (key === 'signatureClient') {
           return 'true';
@@ -235,11 +275,13 @@ describe('ClientLogicService', () => {
       service.onPotentialClientGeneralValid(true);
       spyOn(service.adjuntoService, 'hasItems').and.returnValue(false);
 
-      expect(service.hasPotentialClientFieldErrors()).toBeTrue();
-      expect(service.getPotentialClientValidationMessage()).toContain('Adjunte firma');
+      expect(service.hasPotentialClientFieldErrors()).toBeFalse();
     });
 
     it('POT-SEND-001: estatus por enviar queda read-only', () => {
+      service.registerPotentialClientForm(new FormGroup({
+        naClient: new FormControl('Cliente QA', [Validators.required]),
+      }));
       service.potentialClient.stPotentialClient = CLIENT_POTENTIAL_STATUS_TO_SEND;
       service.onPotentialClientGeneralValid(true);
 
@@ -250,11 +292,18 @@ describe('ClientLogicService', () => {
     });
 
     it('POT-SAVE-002: reabrir guardado deja Guardar OFF hasta editar', () => {
+      service.registerPotentialClientForm(new FormGroup({
+        naClient: new FormControl('Cliente QA', [Validators.required]),
+      }));
       service.onPotentialClientGeneralValid(true);
       service.markPotentialClientOpenedFromPersistedCopy();
 
       expect(service.cannotSavePotentialClient).toBeTrue();
       expect(service.cannotSendPotentialClient).toBeFalse();
+
+      service.markPotentialClientDirty();
+      service.updatePotentialClientSaveButtonAvailability();
+      expect(service.cannotSavePotentialClient).toBeFalse();
     });
   });
 });

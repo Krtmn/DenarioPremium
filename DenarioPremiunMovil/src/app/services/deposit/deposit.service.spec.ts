@@ -47,12 +47,9 @@ describe('DepositService', () => {
     expect(service).toBeTruthy();
   });
 
-  describe('DEP-SAVE-001 Guardar tras General válida', () => {
-    it('depósito nuevo sin baseline permite Guardar con General válida', () => {
-      service.generalTabValidForSave = true;
-      service.isSelectedBank = true;
-      service.deposit.coBank = 'B001';
-      service.deposit.nuAccount = '123';
+  describe('DEP-SAVE-001 Guardar borrador sin exigir cobros/firma', () => {
+    it('depósito nuevo sin baseline habilita Guardar sin General', () => {
+      service.generalTabValidForSave = false;
       service.resetDepositExitBaseline();
       let saveEnabled: boolean | undefined;
       service.depositValidToSave.subscribe((v: Boolean) => saveEnabled = !!v);
@@ -61,11 +58,18 @@ describe('DepositService', () => {
       expect(saveEnabled).toBeTrue();
     });
 
-    it('baseline limpio deshabilita Guardar aunque General sea válida', () => {
+    it('hasDepositSaveErrors false con banco aunque no haya cobros', () => {
       service.generalTabValidForSave = true;
       service.isSelectedBank = true;
       service.deposit.coBank = 'B001';
       service.deposit.nuAccount = '123';
+      service.deposit.depositCollect = [];
+
+      expect(service.hasDepositSaveErrors()).toBeFalse();
+      expect(service.hasDepositFieldErrors()).toBeTrue();
+    });
+
+    it('baseline limpio deshabilita Guardar', () => {
       service.depositPersistedBaseline = true;
       service.depositDirtySincePersist = false;
       let saveEnabled: boolean | undefined;
@@ -76,10 +80,6 @@ describe('DepositService', () => {
     });
 
     it('markDepositDirty re-habilita Guardar tras baseline', () => {
-      service.generalTabValidForSave = true;
-      service.isSelectedBank = true;
-      service.deposit.coBank = 'B001';
-      service.deposit.nuAccount = '123';
       let saveEnabled: boolean | undefined;
       service.depositValidToSave.subscribe((v: Boolean) => saveEnabled = !!v);
       service.applyPersistSucceededBaseline();
@@ -92,15 +92,25 @@ describe('DepositService', () => {
   });
 
   describe('DEP-SEND-001 Enviar y validación al click', () => {
-    it('Enviar ON con General válida aunque no haya cobros', () => {
-      service.generalTabValidForSave = true;
-      service.isSelectedBank = true;
-      service.deposit.coBank = 'B001';
-      service.deposit.nuAccount = '123';
+    it('Enviar ON de entrada aunque General no sea válida', () => {
+      service.generalTabValidForSave = false;
       let sendEnabled: boolean | undefined;
       service.depositValidToSend.subscribe((v: Boolean) => sendEnabled = !!v);
 
       service.updateSendButtonAvailability();
+      expect(sendEnabled).toBeTrue();
+    });
+
+    it('sendBlockedByFields apaga Enviar hasta editar', () => {
+      service.sendBlockedByFields = true;
+      let sendEnabled: boolean | undefined;
+      service.depositValidToSend.subscribe((v: Boolean) => sendEnabled = !!v);
+
+      service.updateSendButtonAvailability();
+      expect(sendEnabled).toBeFalse();
+
+      service.notifyDepositEdited();
+      expect(service.sendBlockedByFields).toBeFalse();
       expect(sendEnabled).toBeTrue();
     });
 
@@ -116,6 +126,7 @@ describe('DepositService', () => {
 
       expect(service.hasDepositFieldErrors()).toBeTrue();
       expect(service.getDepositValidationMessage()).toContain('Seleccione un cobro');
+      expect(service.resolveSendValidationFocusTab()).toBe('cobros');
     });
 
     it('hasDepositFieldErrors true sin número de plantilla', () => {
@@ -127,6 +138,7 @@ describe('DepositService', () => {
 
       expect(service.hasDepositFieldErrors()).toBeTrue();
       expect(service.getDepositValidationMessage()).toContain('Ingrese plantilla');
+      expect(service.resolveSendValidationFocusTab()).toBe('default');
     });
 
     it('depósito por enviar queda read-only', () => {
@@ -157,7 +169,7 @@ describe('DepositService', () => {
       });
     });
 
-    it('exige adjuntos cuando signatureCollection está activo', () => {
+    it('signatureCollection no exige adjuntos en depósito (solo muestra firma)', () => {
       service.generalTabValidForSave = true;
       service.isSelectedBank = true;
       service.deposit.coBank = 'B001';
@@ -169,8 +181,7 @@ describe('DepositService', () => {
       service.deposit.depositCollect = [{ coCollection: 'C1' } as any];
       (service.adjuntoService.hasItems as jasmine.Spy).and.returnValue(false);
 
-      expect(service.hasDepositFieldErrors()).toBeTrue();
-      expect(service.getDepositValidationMessage()).toContain('Adjunte firma');
+      expect(service.hasDepositFieldErrors()).toBeFalse();
     });
   });
 });

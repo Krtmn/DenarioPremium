@@ -185,11 +185,10 @@ describe('PedidosService', () => {
       service.carrito = [buildCartItem()];
     });
 
-    it('hasOrderFieldErrors true sin adjuntos cuando signatureOrder', () => {
+    it('signatureOrder no exige adjuntos (solo muestra firma)', () => {
       (service.adjuntoService.hasItems as jasmine.Spy).and.returnValue(false);
 
-      expect(service.hasOrderFieldErrors()).toBeTrue();
-      expect(service.getOrderValidationMessage()).toContain('Adjunte firma');
+      expect(service.hasOrderFieldErrors()).toBeFalse();
     });
   });
 

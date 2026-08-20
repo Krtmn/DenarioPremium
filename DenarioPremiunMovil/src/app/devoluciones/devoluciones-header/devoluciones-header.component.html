@@ -50,3 +50,9 @@
 <!-- alerta de guardar -->
 <ion-alert [isOpen]="alertMessageOpenSave" header={{header}} message={{mensaje}} [buttons]="alertButtons"
     (didDismiss)="setResultSave($event)"></ion-alert>
+
+<!-- alerta validación (mensaje exacto de lo que falta) -->
+<ion-alert [isOpen]="alertMessageOpenValidation"
+    [header]="headerTags.get('DENARIO_DEV') || returnLogic.tags.get('DENARIO_DEV') || 'Devoluciones'"
+    [message]="validationFailureMessage" [buttons]="alertButtonsValidation"
+    (didDismiss)="setResultValidation()"></ion-alert>

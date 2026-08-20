@@ -317,6 +317,12 @@
   <ion-alert id="alertConfirmSaveModal" [isOpen]="alertMessageOpenSave" header={{headerSave}}
     [message]="mensajeSaveQuestion" [buttons]="buttonsConfirmSave" (didDismiss)="setResultSave($event)"></ion-alert>
 
+  <!-- alerta validación (mensaje exacto de lo que falta) -->
+  <ion-alert [isOpen]="alertMessageOpenValidation"
+    [header]="headerSave || getTag('DENARIO_HEADER_ALERTA') || 'Visitas'"
+    [message]="validationFailureMessage" [buttons]="alertButtonsValidation"
+    (didDismiss)="setResultValidation()"></ion-alert>
+
   <!-- alerta de confirmacion de envio -->
   <ion-alert id="alertConfirmSendModal" [isOpen]='alertConfirmSend' header={{headerConfirm}} message={{mensajeConfirm}}
     [buttons]="buttonsConfirmExit" (didDismiss)="setConfirmSend(false)"></ion-alert>

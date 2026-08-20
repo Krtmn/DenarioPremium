@@ -81,6 +81,7 @@ export class DepositService {
   public sendValidationAttempted = false;
   public sendBlockedByFields = false;
   public depositSendFocusMissingCollect = false;
+  public focusSendValidationTab = new Subject<'default' | 'cobros' | 'total' | 'adjuntos'>();
 
   public coordenadas = '';
   public fechaMayor: string = this.dateServ.hoyISO();
@@ -215,12 +216,11 @@ export class DepositService {
       this.onDepositValidToSave(false);
       return;
     }
-    const generalOk = this.generalTabValidForSave;
+    // Guardar ON al entrar / con cambios (General se valida al pulsar).
     const hasChangesToSave =
       !this.depositPersistedBaseline || this.depositDirtySincePersist;
-    const saveEnabled = generalOk && hasChangesToSave;
-    this.disabledSaveButton = !saveEnabled;
-    this.onDepositValidToSave(saveEnabled);
+    this.disabledSaveButton = !hasChangesToSave;
+    this.onDepositValidToSave(hasChangesToSave);
   }
 
   public updateSendButtonAvailability(): void {
@@ -234,14 +234,15 @@ export class DepositService {
       this.onDepositValidToSend(false);
       return;
     }
+    // Tras fallo de Enviar, apagar hasta que el usuario edite.
     if (this.sendBlockedByFields) {
       this.disabledSendButton = true;
       this.onDepositValidToSend(false);
       return;
     }
-    const sendEnabled = this.generalTabValidForSave;
-    this.disabledSendButton = !sendEnabled;
-    this.onDepositValidToSend(sendEnabled);
+    // Enviar ON de entrada; banco/cobros/firma se validan al click (DEP-SEND-001).
+    this.disabledSendButton = false;
+    this.onDepositValidToSend(true);
   }
 
   public resetSendValidationUx(): void {
@@ -255,10 +256,8 @@ export class DepositService {
     if (!this.sendBlockedByFields) {
       return;
     }
-    if (!this.hasDepositFieldErrors()) {
-      this.sendBlockedByFields = false;
-      this.updateSendButtonAvailability();
-    }
+    // Al editar, reactivar Enviar para reintentar y ver el siguiente mensaje exacto.
+    this.sendBlockedByFields = false;
   }
 
   /** Marca edición de usuario y refresca botones (no usar en hidratación/reapertura). */
@@ -267,14 +266,6 @@ export class DepositService {
     this.refreshSendBlockedState();
     this.updateSaveButtonAvailability();
     this.updateSendButtonAvailability();
-  }
-
-  private requiresSignatureAttachments(): boolean {
-    return this.globalConfig.get('signatureCollection') === 'true';
-  }
-
-  private hasMissingSignatureAttachments(): boolean {
-    return this.requiresSignatureAttachments() && !this.adjuntoService.hasItems();
   }
 
   private hasMissingGpsCoordinate(): boolean {
@@ -301,6 +292,11 @@ export class DepositService {
     return date.length > 0;
   }
 
+  /**
+   * Errores que bloquean Enviar: banco + cobros + plantilla (+ GPS si config).
+   * Firma/adjuntos no son obligatorios: `signatureCollection` solo muestra el panel de firma.
+   * (A diferencia de Cobros, no existe `requiredDepositAttachments`.)
+   */
   public hasDepositFieldErrors(): boolean {
     if (!this.generalTabValidForSave || !this.hasBankSelected()) {
       return true;
@@ -314,13 +310,20 @@ export class DepositService {
     if (!this.hasDaDocumentFilled()) {
       return true;
     }
-    if (this.hasMissingSignatureAttachments()) {
-      return true;
-    }
     if (this.hasMissingGpsCoordinate()) {
       return true;
     }
     return false;
+  }
+
+  /** Guardar solo exige banco en General. Cobros/plantilla/GPS van en Enviar. */
+  public hasDepositSaveErrors(): boolean {
+    return !this.generalTabValidForSave || !this.hasBankSelected();
+  }
+
+  public getDepositSaveValidationMessage(): string {
+    return this.depositTags.get('DEP_MSJ_ERROR_NO_BANK')
+      ?? 'Seleccione un banco para continuar.';
   }
 
   public getDepositValidationMessage(): string {
@@ -342,10 +345,6 @@ export class DepositService {
       return this.depositTags.get('DEP_MSJ_ERROR_NO_DATE')
         ?? 'Ingrese la fecha del documento para continuar.';
     }
-    if (this.hasMissingSignatureAttachments()) {
-      return this.depositTags.get('DEP_MSJ_ERROR_NO_ATTACHMENTS')
-        ?? 'Debe adjuntar al menos un documento o firma antes de continuar.';
-    }
     if (this.hasMissingGpsCoordinate()) {
       return this.depositTags.get('DEP_MSJ_ERROR_NO_GPS')
         ?? 'Debe activar el GPS y obtener la ubicación antes de continuar.';
@@ -354,7 +353,30 @@ export class DepositService {
       ?? 'Complete los campos obligatorios del depósito.';
   }
 
-  /** Al menos una fila en `deposit_collects` cargada/seleccionada (requisito para guardar / enviar). */
+  /** Pestaña del primer error (misma prioridad que getDepositValidationMessage). */
+  public resolveSendValidationFocusTab(): 'default' | 'cobros' | 'total' | 'adjuntos' {
+    if (!this.generalTabValidForSave || !this.hasBankSelected()) {
+      return 'default';
+    }
+    if (!this.hasAtLeastOneDepositCollectRow()) {
+      return 'cobros';
+    }
+    if (!this.hasNuDocumentFilled() || !this.hasDaDocumentFilled()) {
+      return 'default';
+    }
+    if (this.hasMissingGpsCoordinate()) {
+      return 'default';
+    }
+    return 'default';
+  }
+
+  public requestSendValidationTabFocus(
+    tab?: 'default' | 'cobros' | 'total' | 'adjuntos',
+  ): void {
+    this.focusSendValidationTab.next(tab ?? this.resolveSendValidationFocusTab());
+  }
+
+  /** Al menos una fila en `deposit_collects` cargada/seleccionada (requisito para Enviar). */
   hasAtLeastOneDepositCollectRow(): boolean {
     return !!(this.deposit?.depositCollect && this.deposit.depositCollect.length > 0);
   }
@@ -397,8 +419,6 @@ export class DepositService {
   initServices(dbServ: SQLiteObject) {
     this.resetDepositValidationUxFlags();
     this.enterpriseServ.setup(dbServ).then(() => {
-      this.disabledSaveButton = true;
-      this.disabledSendButton = true;
       this.hideDeposit = false;
       this.depositValid = false;
       this.enterpriseList = this.enterpriseServ.empresas;

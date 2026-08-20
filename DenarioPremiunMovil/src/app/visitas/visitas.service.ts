@@ -49,6 +49,8 @@ export class VisitasService {
   sendBlockedByFields = false;
   visitValidToSave = new Subject<Boolean>();
   visitValidToSend = new Subject<Boolean>();
+  /** Salto a pestaña tras fallo de Enviar/Guardar (VIS-SEND-001). */
+  focusSendValidationTab = new Subject<'default' | 'actividades' | 'adjuntos'>();
   private editContext: VisitEditContext = {
     idClient: null,
     idAddressClient: null,
@@ -550,10 +552,8 @@ export class VisitasService {
     if (!this.sendBlockedByFields) {
       return;
     }
-    if (!this.hasVisitFieldErrors()) {
-      this.sendBlockedByFields = false;
-      this.updateSendButtonAvailability();
-    }
+    // Al editar, reactivar Enviar para reintentar (mismo criterio Inventarios/Depósitos/Devoluciones).
+    this.sendBlockedByFields = false;
   }
 
   markVisitDirty(): void {
@@ -644,10 +644,7 @@ export class VisitasService {
     return true;
   }
 
-  private requiresSignatureAttachments(): boolean {
-    return this.signatureVisit === true;
-  }
-
+  /** Firma dibujada obligatoria solo si incidencia/actividad lo exige (transportista). */
   private requiresTransportistaActivitySignature(): boolean {
     if (!this.editContext.rolTransportista) {
       return false;
@@ -657,14 +654,12 @@ export class VisitasService {
     );
   }
 
-  private hasMissingSignatureAttachments(): boolean {
-    if (this.requiresSignatureAttachments() && !this.adjuntoService.hasItems()) {
-      return true;
-    }
-    if (this.requiresTransportistaActivitySignature() && !this.adjuntoService.tieneFirma()) {
-      return true;
-    }
-    return false;
+  /**
+   * Adjuntos de visita: `signatureVisit` solo muestra el panel (no hay requiredVisitAttachments).
+   * Sí se exige firma dibujada cuando la actividad transportista tiene required_signature.
+   */
+  private hasMissingRequiredSignature(): boolean {
+    return this.requiresTransportistaActivitySignature() && !this.adjuntoService.tieneFirma();
   }
 
   private hasMissingGpsCoordinate(): boolean {
@@ -675,6 +670,37 @@ export class VisitasService {
     return coord.length === 0;
   }
 
+  /** Guardar solo exige General (cliente + sucursal + iniciada si fromWeb). Actividades/GPS/firma van en Enviar. */
+  public hasVisitSaveErrors(): boolean {
+    return !this.generalTabValidForSave
+      || !this.hasClientSelected()
+      || !this.hasAddressSelected()
+      || !this.isVisitStartedForGeneral();
+  }
+
+  public getVisitSaveValidationMessage(): string {
+    if (!this.generalTabValidForSave || !this.hasClientSelected()) {
+      return this.tags.get('VIS_MSJ_ERROR_NO_CLIENT')
+        ?? this.tags.get('VIS_MENSAJE_SELEC_CLIENTE')
+        ?? 'Seleccione un cliente para continuar.';
+    }
+    if (!this.hasAddressSelected()) {
+      return this.tags.get('VIS_MSJ_ERROR_NO_ADDRESS')
+        ?? 'Seleccione una sucursal para continuar.';
+    }
+    if (!this.isVisitStartedForGeneral()) {
+      return this.tags.get('VIS_MSJ_ERROR_NOT_STARTED')
+        ?? this.tags.get('VIS_INIT_WARN')
+        ?? 'Debe iniciar la visita para continuar.';
+    }
+    return this.tags.get('VIS_MSJ_ERROR_NO_CLIENT')
+      ?? 'Complete la pestaña General para continuar.';
+  }
+
+  /**
+   * Errores que bloquean Enviar: General + actividades (+ GPS/firma transportista si aplica).
+   * `signatureVisit` solo muestra el panel (ATTACH-SEND-001).
+   */
   public hasVisitFieldErrors(): boolean {
     if (!this.generalTabValidForSave || !this.hasClientSelected()) {
       return true;
@@ -693,7 +719,7 @@ export class VisitasService {
         return true;
       }
     }
-    if (this.hasMissingSignatureAttachments()) {
+    if (this.hasMissingRequiredSignature()) {
       return true;
     }
     if (this.hasMissingGpsCoordinate()) {
@@ -729,9 +755,9 @@ export class VisitasService {
           ?? 'Complete actividad y evento en todas las líneas.';
       }
     }
-    if (this.hasMissingSignatureAttachments()) {
+    if (this.hasMissingRequiredSignature()) {
       return this.tags.get('VIS_MSJ_ERROR_NO_SIGNATURE')
-        ?? 'Debe adjuntar al menos un documento o firma antes de continuar.';
+        ?? 'Debe firmar la visita antes de continuar.';
     }
     if (this.hasMissingGpsCoordinate()) {
       return this.tags.get('VIS_MSJ_ERROR_NO_GPS')
@@ -739,6 +765,35 @@ export class VisitasService {
     }
     return this.tags.get('VIS_MSJ_ERROR_INCOMPLETE_EVENT')
       ?? 'Complete los campos obligatorios de la visita.';
+  }
+
+  /** Pestaña del primer error (misma prioridad que getVisitValidationMessage). */
+  public resolveSendValidationFocusTab(): 'default' | 'actividades' | 'adjuntos' {
+    if (!this.generalTabValidForSave || !this.hasClientSelected()
+      || !this.hasAddressSelected() || !this.isVisitStartedForGeneral()) {
+      return 'default';
+    }
+    if (!this.editContext.listaEventos || this.editContext.listaEventos.length === 0) {
+      return 'actividades';
+    }
+    for (const evento of this.editContext.listaEventos) {
+      if (!this.isEventLineComplete(evento)) {
+        return 'actividades';
+      }
+    }
+    if (this.hasMissingRequiredSignature()) {
+      return 'adjuntos';
+    }
+    if (this.hasMissingGpsCoordinate()) {
+      return 'default';
+    }
+    return 'default';
+  }
+
+  public requestSendValidationTabFocus(
+    tab?: 'default' | 'actividades' | 'adjuntos',
+  ): void {
+    this.focusSendValidationTab.next(tab ?? this.resolveSendValidationFocusTab());
   }
 
   shouldShowActivitiesSendError(): boolean {
