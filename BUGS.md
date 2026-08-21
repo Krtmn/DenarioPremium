@@ -458,6 +458,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [VIS-COMMENT-001] Comentario de actividad >120 deja visita Por Enviar (Ref 0) y no editable
+
+- **Síntoma:** Comentario de actividad con más de 120 caracteres; al Enviar la visita queda Por Enviar con Nro Ref.: 0. No se puede editar después porque `TO_SEND` es readonly.
+- **Causa:** UI usaba `TEXT_COMMENT_MAX_LENGTH` (255) pero `incidences.tx_description` es `VARCHAR(120)`; el backend rechaza el POST.
+- **Fix:** Tope UI/persistencia a 120; motivo reagendo a 200 (`tx_reassigned_motive`). Contador + `applyTextCommentMaxLength` al capturar y al armar incidencias.
+- **Evitar:** No usar 255 genérico en Visitas. No “arreglar” reabriendo edición de visitas enviadas/por enviar.
+- **Archivos:** `visit-field.constants.ts`, `visita.component.ts/html`, specs, bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [ATTACH-SEND-001] `signature*` no debe exigir adjuntos al Enviar
 
 - **Síntoma:** Enviar bloqueaba sin fotos/firma en Devoluciones, Inventarios, Depósitos, Pedidos, Visitas y Cliente potencial aunque no existiera un flag `required*Attachments`.

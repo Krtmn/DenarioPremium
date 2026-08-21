@@ -17,8 +17,12 @@ describe('CobrosDocumentComponent', () => {
   let component: CobrosDocumentComponent;
   let fixture: ComponentFixture<CobrosDocumentComponent>;
   let collectServiceMock: any;
+  let globalConfigMock: { get: jasmine.Spy };
 
   beforeEach(waitForAsync(() => {
+    globalConfigMock = {
+      get: jasmine.createSpy('get').and.returnValue(undefined),
+    };
     collectServiceMock = {
       documentSales: [],
       documentSalesBackup: [],
@@ -45,7 +49,7 @@ describe('CobrosDocumentComponent', () => {
       providers: [
         { provide: CollectionService, useValue: collectServiceMock },
         { provide: ClienteSelectorService, useValue: {} },
-        { provide: GlobalConfigService, useValue: { get: () => undefined } },
+        { provide: GlobalConfigService, useValue: globalConfigMock },
         { provide: CurrencyService, useValue: { formatNumber: (n: number) => String(n) } },
         {
           provide: DateServiceService,
