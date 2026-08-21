@@ -35,10 +35,10 @@ import { ClientLocationService } from 'src/app/services/clientes/locationClient/
 import { ClientesDatabaseServicesService } from 'src/app/services/clientes/clientes-database-services.service';
 import { formatClientForTab } from 'src/app/utils/client-display.util';
 import {
-  TEXT_COMMENT_MAX_LENGTH,
   TEXT_COMMENT_MIN_LENGTH,
 } from 'src/app/utils/text-comment-field.constants';
 import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util';
+import { VISIT_FIELD_MAX } from 'src/app/utils/visit-field.constants';
 
 
 @Component({
@@ -49,8 +49,11 @@ import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util
 })
 export class VisitaComponent implements OnInit {
 
-  readonly textCommentMaxLength = TEXT_COMMENT_MAX_LENGTH;
   readonly textCommentMinLength = TEXT_COMMENT_MIN_LENGTH;
+  /** incidences.tx_description VARCHAR(120) */
+  readonly activityCommentMaxLength = VISIT_FIELD_MAX.incidenceTxDescription;
+  /** visits.tx_reassigned_motive VARCHAR(200) */
+  readonly reassignedMotiveMaxLength = VISIT_FIELD_MAX.txReassignedMotive;
   //injects
   adjuntoService = inject(AdjuntoService);
   dateServ = inject(DateServiceService);
@@ -839,7 +842,10 @@ export class VisitaComponent implements OnInit {
       evento.evento = this.motivoSeleccionado!;
       evento.actividad = this.actividadSeleccionada!;
       evento.saved = false;
-      evento.comentario = this.comentario;
+      evento.comentario = applyTextCommentMaxLength(
+        this.cleanString(this.comentario),
+        this.activityCommentMaxLength,
+      );
       this.eventoAEditar = -1;
       this.notifyVisitEdited();
       this.resetEventSelect();
@@ -879,7 +885,10 @@ export class VisitaComponent implements OnInit {
         coIncid: 0, //coIncid se asigna al guardar la visita
         actividad: this.actividadSeleccionada,
         evento: this.motivoSeleccionado,
-        comentario: this.comentario,
+        comentario: applyTextCommentMaxLength(
+          this.cleanString(this.comentario),
+          this.activityCommentMaxLength,
+        ),
         saved: false
       } as EventoVisita;
 
@@ -1009,7 +1018,10 @@ export class VisitaComponent implements OnInit {
             coIncid: item.coIncid,
             coType: item.actividad.idType,
             coCause: item.evento.idMotive,
-            txDescription: this.cleanString(item.comentario),
+            txDescription: applyTextCommentMaxLength(
+              this.cleanString(item.comentario),
+              this.activityCommentMaxLength,
+            ),
           }
           incidences.push(inc);
           item.saved = true; //marcamos como guardada
@@ -1273,7 +1285,7 @@ export class VisitaComponent implements OnInit {
   onCommentInput() {
     const cleaned = applyTextCommentMaxLength(
       this.cleanString(this.comentario),
-      this.textCommentMaxLength,
+      this.activityCommentMaxLength,
     );
     if (this.comentario !== cleaned) {
       this.comentario = cleaned;
@@ -1286,7 +1298,7 @@ export class VisitaComponent implements OnInit {
   onMotivoReagendoInput() {
     const cleaned = applyTextCommentMaxLength(
       this.motivoReagendo ?? '',
-      this.textCommentMaxLength,
+      this.reassignedMotiveMaxLength,
     );
     if (this.motivoReagendo !== cleaned) {
       this.motivoReagendo = cleaned;
@@ -1535,7 +1547,10 @@ export class VisitaComponent implements OnInit {
     this.visitServ.visit.isReassigned = true;
     this.visitServ.visit.daReassign = this.fechaVisita;
     this.visitServ.visit.daVisit = this.fechaReagendo;
-    this.visitServ.visit.txReassignedMotive = this.motivoReagendo;
+    this.visitServ.visit.txReassignedMotive = applyTextCommentMaxLength(
+      this.motivoReagendo ?? '',
+      this.reassignedMotiveMaxLength,
+    );
     this.visitServ.visit.noDispatchedMotive = "Reasignado";
     this.enviarVisita(false).then(() => {
       this.fechaReagendo = "";
