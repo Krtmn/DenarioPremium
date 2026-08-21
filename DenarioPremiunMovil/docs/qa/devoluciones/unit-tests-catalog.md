@@ -34,7 +34,7 @@ Los unitarios validan **lógica de botones Guardar/Enviar** y validación al cli
 | **DEV-SEND-001** | `validateReturn` sin factura → `DEV_MSJ_ERROR_NO_INVOICE`. |
 | **DEV-SEND-001** | `requeridedNroFactura` + `coDocument` vacío → producto incompleto. |
 | **DEV-SEND-001** | `stDelivery` TO_SEND o SENT → read-only, botones OFF. |
-| **DEV-SEND-001** | `signatureReturn` + sin adjuntos → error de firma. |
+| **DEV-SEND-001** | `signatureReturn` sin adjuntos → **no** error (solo UI). |
 
 ## Fuera de unitarios (manual / N/A)
 

@@ -929,6 +929,78 @@ describe('CollectionService', () => {
       expect(service.hasMissingOtrosDifferenceCodes()).toBeFalse();
     });
 
+    it('COB-SEND-ALL-001: colector acumula varios issues sin anularse', async () => {
+      service.hideDocuments = false;
+      service.hidePayments = false;
+      service.requiredComment = true;
+      service.validComment = false;
+      service.enableDifferenceCodes = true;
+      service.requiredCollectionAttachments = true;
+      service.tipoPagoOtros = true;
+      service.tolerancia0 = false;
+      service.montoTotalPagar = 100;
+      service.montoTotalPagado = 25;
+      service.createAutomatedPrepaid = false;
+      spyOn(service.adjuntoService, 'hasItems').and.returnValue(false);
+      service.collectionTags.set('COB_MSJ_ERROR_NO_COMMENT', 'Falta comentario');
+      service.collectionTags.set('COB_MSJ_ERROR_NO_DIFFERENCE_CODE', 'Falta código diferencia');
+      service.collectionTags.set('COB_ERROR_PARTIAL_PAY', 'Fuera de tolerancia');
+      service.collectionTags.set('COB_RET_MSJ_COLLECTION_NO_ATTACHMENTS', 'Faltan adjuntos');
+
+      service.pagoOtros = [{
+        monto: 25,
+        nombre: 'Ajuste QA',
+        differenceCode: { idDifferenceCode: null, coDifferenceCode: null },
+      } as any];
+      service.collection = {
+        coType: '0',
+        coCurrency: 'USD',
+        collectionDetails: [{
+          idDocument: 1,
+          coDocument: 'FAC-1',
+          isSave: true,
+          nuAmountPaid: 100,
+          inPaymentPartial: false,
+        }],
+        collectionPayments: [{
+          coType: 'ot',
+          coPaymentMethod: 'ot',
+          nuAmountPartial: 25,
+          nuPaymentDoc: 'Ajuste QA',
+          idDifferenceCode: null,
+          coDifferenceCode: '',
+        }],
+      } as any;
+      service.documentSales = [{
+        idDocument: 1,
+        coDocument: 'FAC-1',
+        isSelected: true,
+        isSave: true,
+        positionCollecDetails: 0,
+      } as DocumentSale];
+
+      const issues = await service.collectCollectionSendIssues();
+      const codes = issues.map(i => i.code);
+
+      expect(codes).toContain('NO_COMMENT');
+      expect(codes).toContain('NO_DIFFERENCE_CODE');
+      expect(codes).toContain('NO_ATTACHMENTS');
+      expect(codes.length).toBeGreaterThanOrEqual(3);
+      expect(service.getCollectionSendValidationMessage()).toBe(issues[0].message);
+      expect(service.resolveSendValidationFocusTab()).toBe(issues[0].tab);
+    });
+
+    it('COB-SEND-ALL-001: createAutomatedPrepaid no oculta issues de campos', () => {
+      service.createAutomatedPrepaid = true;
+      service.requiredComment = true;
+      service.validComment = false;
+      service.collection = { coType: '0', collectionPayments: [], collectionDetails: [] } as any;
+
+      service.onCollectionValidToSend(false);
+
+      expect(service.lastValidToSend).toBeFalse();
+    });
+
     it('P1: enableDifferenceCodes blocks send when Otros lacks difference code', async () => {
       service.enableDifferenceCodes = true;
       service.tolerancia0 = false;
@@ -1743,12 +1815,19 @@ describe('CollectionService', () => {
 
   describe('COB-SEND-UX-001 send validation message and focus tab', () => {
     it('getCollectionSendValidationMessage: comentario obligatorio', () => {
-      service.collection = { coType: '0', collectionPayments: [{ coPaymentMethod: 'ef', nuAmount: 10 } as any] } as any;
+      service.collection = {
+        coType: '0',
+        collectionPayments: [{ coPaymentMethod: 'ef', nuAmountPartial: 10 } as any],
+        collectionDetails: [{ coDocument: 'F-1', nuAmountPaid: 10 }],
+      } as any;
       service.requiredComment = true;
       service.validComment = false;
       service.hidePayments = false;
+      service.hideDocuments = true;
       spyOn(service, 'hasIncompletePaymentMethods').and.returnValue(false);
       spyOn(service, 'hasEmptyCollectionPayments').and.returnValue(false);
+      spyOn(service, 'hasIncompletePersistedPaymentAmounts').and.returnValue(false);
+      spyOn(service, 'hasIncompleteDocumentAmountToPay').and.returnValue(false);
       service.collectionTags = new Map([
         ['COB_MSJ_ERROR_NO_COMMENT', 'El comentario es obligatorio.'],
       ]);
