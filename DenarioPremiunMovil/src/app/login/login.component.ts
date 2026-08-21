@@ -22,6 +22,7 @@ import { ScreenOrientation, OrientationType } from '@capawesome/capacitor-screen
 import { Keyboard } from '@capacitor/keyboard';
 import { from } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
+import { AutoSendService } from '../services/autoSend/auto-send.service';
 
 
 @Component({
@@ -38,6 +39,7 @@ export class LoginComponent implements OnInit {
   private globalConfig = inject(GlobalConfigService);
   private services = inject(ServicesService);
   private message = inject(MessageService);
+  private autoSend = inject(AutoSendService);
 
   public database!: SQLiteObject;
   public db!: SQLite;
@@ -270,6 +272,7 @@ export class LoginComponent implements OnInit {
               localStorage.setItem("coUser", result.data.coUser);
               this.user = result.data;
               localStorage.setItem("user", JSON.stringify(this.user));
+              this.autoSend.resetSessionBusinessRejectAlerts();
               this.synchronization.initDb(this.user, conexion);
               break;
             case '104':
