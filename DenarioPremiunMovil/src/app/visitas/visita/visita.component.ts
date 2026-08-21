@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit, ViewChild } from '@angular/core';
 import { Location } from '@angular/common'
 import { DateServiceService } from '../../services/dates/date-service.service';
 import { Client } from '../../modelos/tables/client';
@@ -35,10 +35,10 @@ import { ClientLocationService } from 'src/app/services/clientes/locationClient/
 import { ClientesDatabaseServicesService } from 'src/app/services/clientes/clientes-database-services.service';
 import { formatClientForTab } from 'src/app/utils/client-display.util';
 import {
-  TEXT_COMMENT_MAX_LENGTH,
   TEXT_COMMENT_MIN_LENGTH,
 } from 'src/app/utils/text-comment-field.constants';
 import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util';
+import { VISIT_FIELD_MAX } from 'src/app/utils/visit-field.constants';
 
 
 @Component({
@@ -49,8 +49,11 @@ import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util
 })
 export class VisitaComponent implements OnInit {
 
-  readonly textCommentMaxLength = TEXT_COMMENT_MAX_LENGTH;
   readonly textCommentMinLength = TEXT_COMMENT_MIN_LENGTH;
+  /** incidences.tx_description VARCHAR(120) */
+  readonly activityCommentMaxLength = VISIT_FIELD_MAX.incidenceTxDescription;
+  /** visits.tx_reassigned_motive VARCHAR(200) */
+  readonly reassignedMotiveMaxLength = VISIT_FIELD_MAX.txReassignedMotive;
   //injects
   adjuntoService = inject(AdjuntoService);
   dateServ = inject(DateServiceService);
@@ -68,6 +71,7 @@ export class VisitaComponent implements OnInit {
   clientLogic = inject(ClientLogicService);
   clientLocationServ = inject(ClientLocationService);
   clientDBServ = inject(ClientesDatabaseServicesService);
+  private cdr = inject(ChangeDetectorRef);
   messageAlert!: MessageAlert;
 
   segment = 'default';
@@ -103,10 +107,8 @@ export class VisitaComponent implements OnInit {
 
   showDateModal = false;
 
-  changesMade: boolean = false;
-
-  disableSaveButton = false;
-  disableSendButton = false;
+  disableSaveButton = true;
+  disableSendButton = true;
   disabledButtonEvent = false;
   actividadRequiereEvento = false;
   actividadRequiereFirma = false;
@@ -125,18 +127,21 @@ export class VisitaComponent implements OnInit {
   fechaReagendo: string = '';
   fechaMinimaReagendo: string = '';
 
-  signatureSubscription: Subscription = this.adjuntoService.signatureChanged.subscribe(firma => {
-    this.checkFirmaAndDisableSend();
+  signatureSubscription: Subscription = this.adjuntoService.signatureChanged.subscribe(() => {
+    this.notifyVisitEdited();
   });
 
   AttachSubscription: Subscription = this.adjuntoService.AttachmentChanged.subscribe(() => {
-    this.setChangesMade(true);
-    this.checkFirmaAndDisableSend();
+    this.notifyVisitEdited();
   });
 
   AttachLimitExceededSubscription: Subscription = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
-    this.setChangesMade(false);//no permitimos cambios si se excede el peso
+    this.visitServ.updateSaveButtonAvailability();
+    this.visitServ.updateSendButtonAvailability();
   });
+
+  subscriberVisitSave: Subscription | undefined;
+  subscriberVisitSend: Subscription | undefined;
 
   ClientChangeSubscription: Subscription = this.clientSelectorService.ClientChanged.subscribe(client => {
 
@@ -165,7 +170,15 @@ export class VisitaComponent implements OnInit {
 
   public saveOrExitOpen = false;
   public alertConfirmSend = false;
+  public alertMessageOpenSave = false;
+  public alertMessageOpenValidation = false;
+  public validationFailureMessage = '';
+  public mensajeSaveQuestion = '';
+  public alertButtonsValidation = [
+    { text: 'Aceptar', role: 'confirm' },
+  ];
 
+  private focusTabSub?: Subscription;
   public clientChangeOpen = false;
 
   public headerSave!: string;
@@ -184,6 +197,10 @@ export class VisitaComponent implements OnInit {
 
   public headerConfirm!: string;
   public mensajeConfirm!: string;
+  public buttonsConfirmSave = [
+    { text: '', role: 'cancel' },
+    { text: '', role: 'confirm' },
+  ];
 
   @ViewChild(ClienteSelectorComponent)
   selectorCliente!: ClienteSelectorComponent;
@@ -207,6 +224,22 @@ export class VisitaComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.visitServ.resetVisitValidationUxFlags();
+    this.mensajeSaveQuestion = this.getTag('VIS_MSJ_SAVE_QUESTION')
+      || '¿Desea guardar la visita?';
+
+    this.subscriberVisitSave = this.visitServ.visitValidToSave.subscribe((valid: Boolean) => {
+      this.disableSaveButton = !valid;
+    });
+    this.subscriberVisitSend = this.visitServ.visitValidToSend.subscribe((valid: Boolean) => {
+      this.disableSendButton = !valid;
+    });
+    this.focusTabSub = this.visitServ.focusSendValidationTab.subscribe((tab) => {
+      this.applySendValidationTabFocus(tab);
+    });
+    this.alertButtonsValidation = [
+      { text: this.getTag('DENARIO_BOTON_ACEPTAR') || 'Aceptar', role: 'confirm' },
+    ];
 
     this.enterpriseServ.setup(this.syncServ.getDatabase()).then(() => {
 
@@ -219,8 +252,9 @@ export class VisitaComponent implements OnInit {
       this.listaActividades = this.visitServ.listaActividades;
       this.listaMotivos = this.visitServ.listaMotivos;
       this.listaEventos = [];
-      this.onDateSelect();
-      this.setChangesMade(false);
+      this.onDateSelect(false);
+      this.visitServ.resetVisitExitBaseline();
+      this.syncVisitEditContext();
 
       if (this.visitServ.editVisit) {
         //poblamos la data con lo que esta en la visita guardada
@@ -292,8 +326,9 @@ export class VisitaComponent implements OnInit {
           }
           ;
         }
-        this.disableSendButton = this.fromWeb;
-
+        this.refreshVisitGeneralValid();
+        this.visitServ.markVisitOpenedFromPersistedCopy();
+        this.syncVisitEditContext();
 
       } else {
         this.visitServ.visit = {} as Visit;
@@ -309,6 +344,8 @@ export class VisitaComponent implements OnInit {
             this.getTag("VIS_NOMBRE_MODULO"), "fondoLila", null, false, 'vis');
 
         this.adjuntoService.setup(this.syncServ.getDatabase(), this.visitServ.signatureVisit, this.viewOnly, COLOR_LILA);
+        this.visitServ.resetVisitExitBaseline();
+        this.syncVisitEditContext();
       }
 
 
@@ -331,6 +368,10 @@ export class VisitaComponent implements OnInit {
     this.saveAndExitBtn = this.getTag('DENARIO_BOTON_SALIR_GUARDAR');
     this.exitBtn = this.getTag('DENARIO_BOTON_SALIR');
     this.cancelBtn = this.getTag('DENARIO_BOTON_CANCELAR');
+    this.buttonsConfirmSave = [
+      { text: this.cancelBtn, role: 'cancel' },
+      { text: this.getTag('DENARIO_BOTON_ACEPTAR') || 'Aceptar', role: 'confirm' },
+    ];
 
     //this.mensajeClientChange = this.getTag("VIS_RESET_CONFIRMA");
 
@@ -363,12 +404,16 @@ export class VisitaComponent implements OnInit {
     this.fechaVisita = this.dateServ.hoyISOFullTime();
     this.cliente = {} as Client;
     this.listaEventos = [];
-    this.setChangesMade(false);
+    this.visitServ.resetVisitExitBaseline();
+    this.syncVisitEditContext();
 
     this.adjuntoService.setup(this.syncServ.getDatabase(), this.visitServ.signatureVisit, this.viewOnly, COLOR_LILA);
   }
 
   ngOnDestroy() {
+    this.subscriberVisitSave?.unsubscribe();
+    this.subscriberVisitSend?.unsubscribe();
+    this.focusTabSub?.unsubscribe();
     this.AttachSubscription.unsubscribe();
     this.ClientChangeSubscription.unsubscribe();
     this.backButtonSubscription.unsubscribe();
@@ -406,6 +451,7 @@ export class VisitaComponent implements OnInit {
       this.fechaInitial = fechaInicio;
       this.initialLock = false;
       this.segment = 'actividades';
+      this.refreshVisitGeneralValid();
       this.geoServ.getCurrentPosition().then(coords => {
         if (coords.length > 0) {
           this.setCoordinates(coords);
@@ -421,6 +467,8 @@ export class VisitaComponent implements OnInit {
     console.log("iniciando visita: " + this.fechaInitial);
     this.initialLock = false;
     this.initVisitRedLabel = false;
+    this.refreshVisitGeneralValid();
+    this.syncVisitEditContext();
   }
 
   setClientfromSelector(cliente: Client) {
@@ -444,7 +492,6 @@ export class VisitaComponent implements OnInit {
       }
       this.nombreCliente = cliente.naClient || cliente.lbClient;
       this.cliente.naClient = cliente.naClient || cliente.lbClient;
-      this.setChangesMade(true);
 
       let idAddressClients: number;
       idAddressClients = cliente.idAddressClients;
@@ -492,6 +539,8 @@ export class VisitaComponent implements OnInit {
         }
 
         this.direccionAnterior = this.direccionCliente;
+        this.refreshVisitGeneralValid();
+        this.syncVisitEditContext();
         this.onAddressSelect();
 
       })
@@ -509,10 +558,18 @@ export class VisitaComponent implements OnInit {
     this.selectorCliente.updateClientList(this.empresaSeleccionada.idEnterprise);
     this.cliente = {} as Client;
     this.nombreCliente = "";
-    this.setChangesMade(true);
+    this.direccionCliente = null!;
+    this.hasClient = false;
+    this.visitServ.onVisitGeneralValid(false);
+    this.syncVisitEditContext();
   }
 
   onAddressSelect() {
+    if (!this.direccionCliente) {
+      this.refreshVisitGeneralValid();
+      this.syncVisitEditContext();
+      return;
+    }
     this.cliente.coAddressClients = this.direccionCliente.coAddress;
     this.cliente.idAddressClients = this.direccionCliente.idAddress;
     if (this.direccionCliente != null) {
@@ -539,7 +596,8 @@ export class VisitaComponent implements OnInit {
               role: 'confirm',
               handler: () => {
                 this.direccionAnterior = this.direccionCliente;
-                this.setChangesMade(true);
+                this.refreshVisitGeneralValid();
+                this.notifyVisitEdited();
               },
             }
           ]
@@ -573,6 +631,9 @@ export class VisitaComponent implements OnInit {
             }
           ]
         );
+      } else {
+        this.refreshVisitGeneralValid();
+        this.syncVisitEditContext();
       }
     }
   }
@@ -649,8 +710,10 @@ export class VisitaComponent implements OnInit {
 
 
 
-  onDateSelect() {
-    this.setChangesMade(true);
+  onDateSelect(markDirty = true) {
+    if (markDirty) {
+      this.notifyVisitEdited();
+    }
     this.visitServ.getNuSequence(this.fechaVisita).then(nuSeq => {
       this.nuSequence = nuSeq;
     })
@@ -680,26 +743,11 @@ export class VisitaComponent implements OnInit {
 
     if (this.rolTransportista) {
       this.disabledButtonEvent = true;
-      this.checkFirmaAndDisableSend();
     }
 
     if (this.actividadRequiereFirma) {
       this.message.transaccionMsjModalNB("Esta actividad requiere Firma del cliente");
     }
-  }
-
-  checkFirmaAndDisableSend() {
-    if (this.actividadRequiereFirma) {
-      if (!this.adjuntoService.tieneFirma()) {
-        this.disableSendButton = true;
-      } else {
-
-      }
-    } else {
-      this.disableSendButton = false;
-    }
-    if (this.listaEventos.length == 0)
-      this.disableSendButton = true;
   }
 
   onSelectMotive(e: any) {
@@ -740,7 +788,7 @@ export class VisitaComponent implements OnInit {
       this.listaEventos[index].pos = index;
     }
     //console.log(JSON.stringify(this.listaEventos));
-    this.setChangesMade(true);
+    this.notifyVisitEdited();
 
     if (this.rolTransportista)
       this.disabledButtonEvent = false;
@@ -772,7 +820,7 @@ export class VisitaComponent implements OnInit {
        evento.actividad = this.actividadSeleccionada;
        evento.comentario = this.comentario;
        this.eventoAEditar = -1;
-       this.setChangesMade(true);
+       this.notifyVisitEdited();
        this.resetEventSelect();
        this.showEventModal = false;
      } else {
@@ -794,9 +842,12 @@ export class VisitaComponent implements OnInit {
       evento.evento = this.motivoSeleccionado!;
       evento.actividad = this.actividadSeleccionada!;
       evento.saved = false;
-      evento.comentario = this.comentario;
+      evento.comentario = applyTextCommentMaxLength(
+        this.cleanString(this.comentario),
+        this.activityCommentMaxLength,
+      );
       this.eventoAEditar = -1;
-      this.setChangesMade(true);
+      this.notifyVisitEdited();
       this.resetEventSelect();
       this.showEventModal = false;/*  */
     }
@@ -834,14 +885,17 @@ export class VisitaComponent implements OnInit {
         coIncid: 0, //coIncid se asigna al guardar la visita
         actividad: this.actividadSeleccionada,
         evento: this.motivoSeleccionado,
-        comentario: this.comentario,
+        comentario: applyTextCommentMaxLength(
+          this.cleanString(this.comentario),
+          this.activityCommentMaxLength,
+        ),
         saved: false
       } as EventoVisita;
 
       //console.log(ev);
       this.listaEventos.push(ev);
       this.resetEventSelect();
-      this.setChangesMade(true);
+      this.notifyVisitEdited();
       this.showEventModal = false;
       this.clientSelectorService.checkClient = true;
     }
@@ -851,9 +905,31 @@ export class VisitaComponent implements OnInit {
   }
 
   saveButton() {
-    if (this.changesMade) {
-      this.saveVisit(false);
+    if (!this.validateVisitBeforeSave()) {
+      return;
     }
+    this.alertMessageOpenSave = true;
+  }
+
+  setResultSave(event: CustomEvent): void {
+    this.alertMessageOpenSave = false;
+    if (event.detail?.role !== 'confirm') {
+      return;
+    }
+    this.persistVisitSaved();
+  }
+
+  private persistVisitSaved(): void {
+    this.message.showLoading().then(() => {
+      this.saveVisit(false).then(() => {
+        this.visitServ.applyVisitPersistSucceededBaseline();
+        this.visitServ.resetVisitValidationUx();
+        this.syncVisitEditContext();
+        this.message.hideLoading();
+      }).catch(() => {
+        this.message.hideLoading();
+      });
+    });
   }
 
   private buildDaInitial(isReassigned: boolean): string {
@@ -942,7 +1018,10 @@ export class VisitaComponent implements OnInit {
             coIncid: item.coIncid,
             coType: item.actividad.idType,
             coCause: item.evento.idMotive,
-            txDescription: this.cleanString(item.comentario),
+            txDescription: applyTextCommentMaxLength(
+              this.cleanString(item.comentario),
+              this.activityCommentMaxLength,
+            ),
           }
           incidences.push(inc);
           item.saved = true; //marcamos como guardada
@@ -953,12 +1032,11 @@ export class VisitaComponent implements OnInit {
       }
       //insertamos imagenes si hay en adjuntos
       await this.adjuntoService.savePhotos(this.syncServ.getDatabase(), visita.coVisit, "visitas");
-      this.setChangesMade(false);
       const list = await this.visitServ.saveIncidences(incidences);
+      this.visitServ.applyVisitPersistSucceededBaseline();
+      this.syncVisitEditContext();
       if (!willSend) {
         this.message.transaccionMsjModalNB(this.getTag("VIS_MENSAJE_VISITA_GUARDA"));
-        this.disableSendButton = false;
-      } else {
       }
       return {
         visit: visita,
@@ -969,29 +1047,24 @@ export class VisitaComponent implements OnInit {
   }
 
   sendVisit() {
-    if (this.cliente && this.listaEventos.length > 0) {
-      this.disableSendButton = true;
-      this.message.showLoading().then(() => {
-        this.enviarVisita(true);
-      });
-    } else {
-      this.message.transaccionMsjModalNB(this.getTag("VIS_MENSAJE_AGREGUE_ACT"));
-    }
-
+    this.message.showLoading().then(() => {
+      this.enviarVisita(true);
+    });
   }
 
   async enviarVisita(isVisited: boolean) {
-    //revisamos que tengamos coordenadas
     if (!this.visitServ.coordenadas || this.visitServ.coordenadas.length <= 0) {
-      await this.message.showLoading().then(async () => {
-        await this.geoServ.getCurrentPosition().then(coords => {
-          if (coords.length > 0) {
-            this.setCoordinates(coords);
-          }
-          this.message.hideLoading();
-        });
-
+      await this.geoServ.getCurrentPosition().then(coords => {
+        if (coords.length > 0) {
+          this.setCoordinates(coords);
+        }
       });
+    }
+    if (this.visitServ.userMustActivateGPS
+      && (!this.visitServ.coordenadas || this.visitServ.coordenadas.length <= 0)) {
+      this.message.transaccionMsjModalNB(this.visitServ.getVisitValidationMessage());
+      this.message.hideLoading();
+      return;
     }
     this.visitServ.visit.isVisited = isVisited;
     await this.saveVisit(true).then(async saved => {
@@ -1031,6 +1104,7 @@ export class VisitaComponent implements OnInit {
 
         //finalizamos y regresamos a la pagina de visitas
         void this.autoSend.runPendingQueue();
+        this.visitServ.resetVisitValidationUx();
         this.message.hideLoading();
         this.router.navigate(['visitas']);
       });
@@ -1039,14 +1113,19 @@ export class VisitaComponent implements OnInit {
   }
 
   confirmSend() {
-    if (this.visitServ.visit.stVisit != VISIT_STATUS_VISITED)
-      this.alertConfirmSend = true;
+    if (this.visitServ.visit.stVisit == VISIT_STATUS_VISITED) {
+      return;
+    }
+    if (!this.validateVisitBeforeSend()) {
+      return;
+    }
+    this.alertConfirmSend = true;
   }
 
 
   goBack() {
 
-    if (!this.viewOnly && this.changesMade) {
+    if (!this.viewOnly && this.visitServ.hasUnsavedVisitChanges()) {
       //this.message.saveOrExitOpenMSG();
       this.saveOrExitOpen = true;
     } else {
@@ -1058,8 +1137,14 @@ export class VisitaComponent implements OnInit {
   }
 
   saveAndExit() {
-    this.saveVisit(false);
-    this.router.navigate(['visitas']);
+    if (!this.validateVisitBeforeSave()) {
+      return;
+    }
+    this.saveVisit(false).then(() => {
+      this.visitServ.applyVisitPersistSucceededBaseline();
+      this.visitServ.resetVisitValidationUx();
+      this.router.navigate(['visitas']);
+    });
   }
 
   setsaveOrExitOpen(isOpen: boolean) {
@@ -1080,31 +1165,127 @@ export class VisitaComponent implements OnInit {
     this.clientChangeOpen = value;
   }
 
-  setChangesMade(value: boolean) {
-    this.changesMade = value;
-    if (value) {
-      var disable = !((this.cliente.idClient != null) &&
-        (this.listaEventos.length > 0) &&
-        (!this.adjuntoService.weightLimitExceeded));
-      this.disableSaveButton = disable;
-      this.disableSendButton = disable;
-      if (this.rolTransportista) {
-        //this.initialLock = false;
-        this.disabledButtonViewRoute = false;
-      }
-    } else {
-      this.disableSaveButton = true;
-      this.disableSendButton = true;
+  syncVisitEditContext(): void {
+    this.visitServ.setVisitEditContext({
+      idClient: this.cliente?.idClient ?? null,
+      idAddressClient: this.direccionCliente?.idAddress ?? this.cliente?.idAddressClients ?? null,
+      initialLock: this.initialLock,
+      fromWeb: this.fromWeb,
+      viewOnly: this.viewOnly,
+      fechaInitial: this.fechaInitial,
+      listaEventos: this.listaEventos,
+      rolTransportista: this.rolTransportista,
+    });
+  }
+
+  refreshVisitGeneralValid(): void {
+    const valid = this.cliente?.idClient != null
+      && this.direccionCliente != null
+      && this.isVisitStarted();
+    this.visitServ.onVisitGeneralValid(valid);
+    this.syncVisitEditContext();
+  }
+
+  notifyVisitEdited(): void {
+    this.syncVisitEditContext();
+    this.visitServ.notifyVisitEdited();
+    if (this.rolTransportista && !this.viewOnly) {
+      this.disabledButtonViewRoute = false;
+    }
+  }
+
+  private notifyVisitValidationFailure(options: {
+    blockSend: boolean;
+    message: string;
+    focusTab?: 'default' | 'actividades' | 'adjuntos';
+  }): void {
+    if (options.blockSend) {
+      this.visitServ.sendBlockedByFields = true;
+      this.visitServ.updateSendButtonAvailability();
+    }
+    this.visitServ.requestSendValidationTabFocus(options.focusTab);
+    this.showVisitValidationAlert(options.message);
+  }
+
+  private showVisitValidationAlert(rawMessage: string): void {
+    const message = (rawMessage ?? '').toString().trim()
+      || 'Complete los campos obligatorios antes de continuar.';
+    this.validationFailureMessage = message;
+    this.alertMessageOpenValidation = true;
+    this.cdr.detectChanges();
+  }
+
+  setResultValidation(): void {
+    this.alertMessageOpenValidation = false;
+  }
+
+  /** Guardar / Guardar y salir: solo General (VIS-SAVE-001). */
+  private validateVisitBeforeSave(): boolean {
+    this.syncVisitEditContext();
+    if (!this.visitServ.hasVisitSaveErrors()) {
+      return true;
+    }
+    this.notifyVisitValidationFailure({
+      blockSend: false,
+      message: this.visitServ.getVisitSaveValidationMessage(),
+      focusTab: 'default',
+    });
+    return false;
+  }
+
+  /** Enviar: validación completa + mensaje + salto de pestaña. */
+  private validateVisitBeforeSend(): boolean {
+    this.syncVisitEditContext();
+    this.visitServ.sendValidationAttempted = true;
+
+    if (this.visitServ.hasVisitFieldErrors()) {
+      this.notifyVisitValidationFailure({
+        blockSend: true,
+        message: this.visitServ.getVisitValidationMessage(),
+      });
+      return false;
     }
 
-    if (this.rolTransportista)
-      this.checkFirmaAndDisableSend();
+    this.visitServ.sendBlockedByFields = false;
+    this.visitServ.updateSendButtonAvailability();
+    return true;
+  }
+
+  private applySendValidationTabFocus(
+    tab: 'default' | 'actividades' | 'adjuntos',
+  ): void {
+    const generalOk = this.visitServ.generalTabValidForSave;
+    if ((tab === 'actividades' || tab === 'adjuntos') && !generalOk) {
+      tab = 'default';
+    }
+    this.segment = tab;
+  }
+
+  shouldShowClientSendError(): boolean {
+    return this.visitServ.sendValidationAttempted
+      && Number(this.cliente?.idClient ?? 0) <= 0;
+  }
+
+  shouldShowAddressSendError(): boolean {
+    return this.visitServ.sendValidationAttempted
+      && this.hasClient
+      && Number(this.direccionCliente?.idAddress ?? 0) <= 0;
+  }
+
+  shouldShowInitVisitSendError(): boolean {
+    return this.visitServ.sendValidationAttempted
+      && this.fromWeb
+      && this.initialLock;
+  }
+
+  shouldShowActivitiesSendError(): boolean {
+    return this.visitServ.shouldShowActivitiesSendError();
   }
 
   onCommentInput() {
     const cleaned = applyTextCommentMaxLength(
       this.cleanString(this.comentario),
-      this.textCommentMaxLength,
+      this.activityCommentMaxLength,
     );
     if (this.comentario !== cleaned) {
       this.comentario = cleaned;
@@ -1117,7 +1298,7 @@ export class VisitaComponent implements OnInit {
   onMotivoReagendoInput() {
     const cleaned = applyTextCommentMaxLength(
       this.motivoReagendo ?? '',
-      this.textCommentMaxLength,
+      this.reassignedMotiveMaxLength,
     );
     if (this.motivoReagendo !== cleaned) {
       this.motivoReagendo = cleaned;
@@ -1366,7 +1547,10 @@ export class VisitaComponent implements OnInit {
     this.visitServ.visit.isReassigned = true;
     this.visitServ.visit.daReassign = this.fechaVisita;
     this.visitServ.visit.daVisit = this.fechaReagendo;
-    this.visitServ.visit.txReassignedMotive = this.motivoReagendo;
+    this.visitServ.visit.txReassignedMotive = applyTextCommentMaxLength(
+      this.motivoReagendo ?? '',
+      this.reassignedMotiveMaxLength,
+    );
     this.visitServ.visit.noDispatchedMotive = "Reasignado";
     this.enviarVisita(false).then(() => {
       this.fechaReagendo = "";

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ClientLocationService } from 'src/app/services/clientes/locationClient/client-location.service';
 import { Subject, Subscription } from 'rxjs';
@@ -26,6 +26,7 @@ export class ClientesHeaderComponent implements OnInit {
   public adjuntoService = inject(AdjuntoService);
   public modalCtrl = inject(ModalController);
   public messageService = inject(MessageService);
+  private cdr = inject(ChangeDetectorRef);
 
   public subscriberShow: any;
   public subscriberDisabled: any;
@@ -41,6 +42,10 @@ export class ClientesHeaderComponent implements OnInit {
   public showIconsNewPotentialClient: Boolean = false;
   public saveSendLocation: Boolean = false;
   public alertMessageOpen: Boolean = false;
+  public alertMessageOpenSave: Boolean = false;
+  /** Alerta de validación Guardar/Enviar (campos incompletos). */
+  public alertMessageOpenValidation = false;
+  public validationFailureMessage = '';
   public header: string = '';
   public mensaje: string = '';
   public texto: string = ""
@@ -60,6 +65,13 @@ export class ClientesHeaderComponent implements OnInit {
     },
   ];
 
+  public alertButtonsValidation = [
+    {
+      text: 'Aceptar',
+      role: 'confirm',
+    },
+  ];
+
   public buttonsSalvar = [
     {
       text: '',
@@ -70,8 +82,11 @@ export class ClientesHeaderComponent implements OnInit {
           this.saveSendLocationFunction()
         }
         if (this.clientLogic.clientNewPotentialClientComponent) {
+          if (!this.validatePotentialClientBeforeSave()) {
+            return;
+          }
           this.clientLogic.exitToPotentialClientListAfterSave = true;
-          this.saveSendNewPotentialCliente(true);
+          this.emitPotentialClientSave();
         }
       },
     },
@@ -118,6 +133,8 @@ export class ClientesHeaderComponent implements OnInit {
         this.buttonsSalvar[2].text = this.clientLogic.clientTagsDenario.get('DENARIO_BOTON_CANCELAR')!
         this.alertButtons[0].text = this.clientLogic.clientTagsDenario.get('DENARIO_BOTON_CANCELAR')!
         this.alertButtons[1].text = this.clientLogic.clientTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
+        this.alertButtonsValidation[0].text =
+          this.clientLogic.clientTagsDenario.get('DENARIO_BOTON_ACEPTAR')! || 'Aceptar';
       }
     })
 
@@ -134,14 +151,14 @@ export class ClientesHeaderComponent implements OnInit {
     });
 
     this.subscriberWeightLimitExceeded = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
-      this.clientLogic.cannotSavePotentialClient = true;
-      this.clientLogic.cannotSendPotentialClient = true;
+      this.clientLogic.updatePotentialClientSaveButtonAvailability();
+      this.clientLogic.updatePotentialClientSendButtonAvailability();
     });
 
     this.AttachWeightSubscription = this.adjuntoService.AttachmentChanged.subscribe(() => {
-      var valid = this.clientLogic.validPotentialClient;
-      this.clientLogic.cannotSavePotentialClient = !valid;
-      this.clientLogic.cannotSendPotentialClient = !valid;
+      if (this.clientLogic.clientNewPotentialClientComponent) {
+        this.clientLogic.notifyPotentialClientEdited();
+      }
     });
 
   }
@@ -166,17 +183,11 @@ export class ClientesHeaderComponent implements OnInit {
     if (this.clientLogic.clientNewPotentialClientComponent) {
       if (ev.detail.role === 'confirm') {
         this.alertMessageOpen = false;
-        this.potentialClientService.saveSendNewPotentialCliente(true)
-        this.messageService.alertModal(
-          {
-            header: this.clientLogic.clientTags.get('DENARIO_NOMBRE_APP')!,
-            message: this.clientLogic.clientTags.get('CLI_SEND_MSG')!,
-          }
-        );
-
+        this.emitPotentialClientSend();
       } else {
         this.alertMessageOpen = false;
       }
+      return;
     }
     if (this.clientLogic.clientLocationComponent) {
       this.alertMessageOpen = false;
@@ -257,18 +268,87 @@ export class ClientesHeaderComponent implements OnInit {
     //console.log('backButton was called!');
     this.goBack();
   });
-  saveSendNewPotentialCliente(salvarEnviar: Boolean) {
+
+  private notifyPotentialClientValidationFailure(message: string): void {
+    const safeMessage = (message ?? '').toString().trim()
+      || 'Complete los campos obligatorios.';
+    this.validationFailureMessage = safeMessage;
+    this.alertMessageOpenValidation = true;
+    this.cdr.detectChanges();
+  }
+
+  setResultValidation(): void {
+    this.alertMessageOpenValidation = false;
+  }
+
+  private validatePotentialClientBeforeSave(): boolean {
+    this.clientLogic.sendValidationAttempted = true;
+
+    if (this.clientLogic.hasPotentialClientSaveErrors()) {
+      this.notifyPotentialClientValidationFailure(
+        this.clientLogic.getPotentialClientSaveValidationMessage(),
+      );
+      this.clientLogic.potentialClientForm?.get('naClient')?.markAsTouched();
+      return false;
+    }
+    return true;
+  }
+
+  private validatePotentialClientBeforeSend(): boolean {
+    this.clientLogic.sendValidationAttempted = true;
+
+    if (!this.clientLogic.generalTabValidForSave
+      || this.clientLogic.hasPotentialClientFieldErrors()) {
+      this.notifyPotentialClientValidationFailure(
+        this.clientLogic.getPotentialClientValidationMessage(),
+      );
+      this.clientLogic.potentialClientForm?.markAllAsTouched();
+      return false;
+    }
+
+    return true;
+  }
+
+  buttonSavePotentialClient(): void {
+    if (!this.validatePotentialClientBeforeSave()) {
+      return;
+    }
+    this.mensaje =
+      this.clientLogic.clientTags.get('CLI_POT_MSJ_SAVE_QUESTION')
+      ?? '¿Desea guardar el Cliente Potencial?';
+    this.alertMessageOpenSave = true;
+  }
+
+  buttonSendPotentialClient(): void {
+    if (!this.validatePotentialClientBeforeSend()) {
+      return;
+    }
+    this.mensaje =
+      this.clientLogic.clientTags.get('CLI_POT_MSJ_SEND_QUESTION')
+      ?? this.clientLogic.clientTags.get('CLI_DENARIO_CONFIRM_SEND_POTENTIAL_CLIENT')
+      ?? '¿Desea enviar el Cliente Potencial?';
+    this.alertMessageOpen = true;
+  }
+
+  setResultSave(ev: any): void {
+    if (ev.detail.role === 'confirm') {
+      this.alertMessageOpenSave = false;
+      this.clientLogic.saveOrExitOpen = false;
+      this.clientLogic.newPotentialClientChanged = false;
+      this.emitPotentialClientSave();
+    } else {
+      this.alertMessageOpenSave = false;
+    }
+  }
+
+  private emitPotentialClientSave(): void {
+    this.potentialClientService.saveSendNewPotentialCliente(false);
+  }
+
+  private emitPotentialClientSend(): void {
     this.clientLogic.saveOrExitOpen = false;
     this.clientLogic.newPotentialClientChanged = false;
-    if (salvarEnviar) {
-      console.log("SALVAR");
-      this.potentialClientService.saveSendNewPotentialCliente(false);
-
-    } else {
-      console.log("ENVIAR");
-      this.mensaje = this.clientLogic.clientTags.get('CLI_DENARIO_CONFIRM_SEND_POTENTIAL_CLIENT')!;
-      this.alertMessageOpen = true;
-    }
+    this.potentialClientService.saveSendNewPotentialCliente(true);
   }
 
   saveSendLocationFunction() {

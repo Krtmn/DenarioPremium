@@ -1,5 +1,5 @@
 
-import { Component, Input, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit, inject } from '@angular/core';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { PendingTransaction } from 'src/app/modelos/tables/pendingTransactions';
 import { AutoSendService } from 'src/app/services/autoSend/auto-send.service';
@@ -27,7 +27,8 @@ export class InventarioHeaderComponent implements OnInit {
   private services = inject(ServicesService);
   private synchronizationServices = inject(SynchronizationDBService);
   private autoSend = inject(AutoSendService);
-  public adjuntoService = inject(AdjuntoService)
+  public adjuntoService = inject(AdjuntoService);
+  private cdr = inject(ChangeDetectorRef);
 
   public messageAlert!: MessageAlert;
 
@@ -38,6 +39,7 @@ export class InventarioHeaderComponent implements OnInit {
   public header: string = '';
   public mensaje: string = '';
   public alertButtons: any;
+  public alertButtonsValidation: any;
   public buttonsSalvar: any;
   public subscriberShow: any;
   public subscriberDisabled: any;
@@ -51,6 +53,9 @@ export class InventarioHeaderComponent implements OnInit {
   public saveOrExitOpen = false;
   public alertMessageOpenSend: Boolean = false;
   public alertMessageOpenSave: Boolean = false;
+  /** Alerta local de validación (mensaje exacto; no depende de app-message). */
+  public alertMessageOpenValidation = false;
+  public validationFailureMessage = '';
   backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
     //console.log('backButton was called!');
     this.onBackClicked();
@@ -84,14 +89,12 @@ export class InventarioHeaderComponent implements OnInit {
     this.AttachSubscription = this.adjuntoService.AttachmentChanged.subscribe(() => {
       this.inventariosLogicService.newClientStock.hasAttachments = this.adjuntoService.hasItems();
       this.inventariosLogicService.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
-      var valid = this.inventariosLogicService.checkValidStockToSend();
-      this.inventariosLogicService.onStockValidToSave(valid);
-      this.inventariosLogicService.onStockValidToSend(valid);
+      this.inventariosLogicService.notifyStockEdited();
     });
 
     this.AttachWeightSubscription = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
-      this.inventariosLogicService.onStockValidToSave(false);
-      this.inventariosLogicService.onStockValidToSend(false);
+      this.inventariosLogicService.updateSaveButtonAvailability();
+      this.inventariosLogicService.updateSendButtonAvailability();
     });
 
     this.alertButtons = [
@@ -102,6 +105,13 @@ export class InventarioHeaderComponent implements OnInit {
       {
         text: this.textAlertButtonConfirm,
         role: 'confirm'
+      },
+    ];
+
+    this.alertButtonsValidation = [
+      {
+        text: this.textAlertButtonConfirm,
+        role: 'confirm',
       },
     ];
 
@@ -173,6 +183,8 @@ export class InventarioHeaderComponent implements OnInit {
             await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.inventariosLogicService.newClientStock.coClientStock, "inventarios");
 
             console.log(res);
+            this.inventariosLogicService.applyPersistSucceededBaseline();
+            this.inventariosLogicService.resetSendValidationUx();
             if (send) {
               //SE ENVIARA Y GUARDARA CLIENTSTOCK
               let pendingTransaction = {} as PendingTransaction;
@@ -255,18 +267,89 @@ export class InventarioHeaderComponent implements OnInit {
     }
   }
 
-  sendOrSave(sendOrSave: Boolean) {
-    this.header = this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!;
-    /* this.mensaje = this.inventariosLogicService.inventarioTags.get('DENARIO_DEV_CONFIRM_SEND')!; */
-    if (sendOrSave) {
-      //envio
+  private notifyStockValidationFailure(options: {
+    blockSend: boolean;
+    message: string;
+    focusTab?: 'default' | 'inventario' | 'actividades' | 'adjuntos';
+  }): void {
+    const focusIndex = this.inventariosLogicService.findFirstIncompleteTypeStockIndex();
+    if (focusIndex >= 0) {
+      this.inventariosLogicService.stockSendFocusTypeStockIndex = focusIndex;
+    }
+    if (options.blockSend) {
+      this.inventariosLogicService.sendBlockedByFields = true;
+      this.inventariosLogicService.updateSendButtonAvailability();
+    }
+    this.inventariosLogicService.requestSendValidationTabFocus(options.focusTab);
+    this.showStockValidationAlert(options.message);
+  }
 
-      this.mensaje = this.inventariosLogicService.inventarioTags.get('INV_MSJ_SEND_QUESTION_TYPESTOCK')!
-      this.alertMessageOpenSend = true;
+  /** Alerta en el header con el fallo exacto (misma capa que Enviar/Guardar). */
+  private showStockValidationAlert(rawMessage: string): void {
+    const message = (rawMessage ?? '').toString().trim()
+      || 'Complete los campos obligatorios antes de continuar.';
+    this.validationFailureMessage = message;
+    this.alertMessageOpenValidation = true;
+    this.cdr.detectChanges();
+  }
+
+  setResultValidation(): void {
+    this.alertMessageOpenValidation = false;
+  }
+
+  /** Guardar: solo General (INV-SAVE-001). */
+  private validateStockBeforeSave(): boolean {
+    if (this.inventariosLogicService.hasStockSaveErrors()) {
+      this.notifyStockValidationFailure({
+        blockSend: false,
+        message: this.inventariosLogicService.getStockSaveValidationMessage(),
+        focusTab: 'default',
+      });
+      return false;
+    }
+    return true;
+  }
+
+  /** Enviar: validación completa (productos → GPS → firma). */
+  private validateStockBeforeSend(): boolean {
+    this.inventariosLogicService.sendValidationAttempted = true;
+
+    if (this.inventariosLogicService.hasStockFieldErrors()) {
+      this.notifyStockValidationFailure({
+        blockSend: true,
+        message: this.inventariosLogicService.getStockValidationMessage(),
+      });
+      return false;
+    }
+
+    this.inventariosLogicService.sendBlockedByFields = false;
+    this.inventariosLogicService.updateSendButtonAvailability();
+    return true;
+  }
+
+  saveStock() {
+    if (!this.validateStockBeforeSave()) {
+      return;
+    }
+    this.header = this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!;
+    this.mensaje = this.inventariosLogicService.inventarioTags.get('INV_MSJ_SAVE_QUESTION_TYPESTOCK')!;
+    this.alertMessageOpenSave = true;
+  }
+
+  sendStock() {
+    if (!this.validateStockBeforeSend()) {
+      return;
+    }
+    this.header = this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!;
+    this.mensaje = this.inventariosLogicService.inventarioTags.get('INV_MSJ_SEND_QUESTION_TYPESTOCK')!;
+    this.alertMessageOpenSend = true;
+  }
+
+  sendOrSave(sendOrSave: Boolean) {
+    if (sendOrSave) {
+      this.sendStock();
     } else {
-      //salvo
-      this.mensaje = this.inventariosLogicService.inventarioTags.get('INV_MSJ_SAVE_QUESTION_TYPESTOCK')!
-      this.alertMessageOpenSave = true;
+      this.saveStock();
     }
   }
 

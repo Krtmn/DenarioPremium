@@ -18,6 +18,8 @@ import { ClienteSelectorService } from 'src/app/cliente-selector/cliente-selecto
 import { ClientLogicService } from 'src/app/services/clientes/client-logic.service';
 import { ClientLocationService } from 'src/app/services/clientes/locationClient/client-location.service';
 import { ClientesDatabaseServicesService } from 'src/app/services/clientes/clientes-database-services.service';
+import { IncidenceType } from 'src/app/modelos/tables/incidenceType';
+import { IncidenceMotive } from 'src/app/modelos/tables/incidenceMotive';
 import { Visit } from 'src/app/modelos/tables/visit';
 import {
   VISIT_STATUS_SAVED,
@@ -29,7 +31,26 @@ describe('VisitaComponent', () => {
   let component: VisitaComponent;
   let fixture: ComponentFixture<VisitaComponent>;
   let dateServ: jasmine.SpyObj<DateServiceService>;
-  let visitServ: { visit: Visit };
+  let visitServ: {
+    visit: Visit;
+    getTag: jasmine.Spy<(tag: string) => string>;
+    visitValidToSave: Subject<boolean>;
+    visitValidToSend: Subject<boolean>;
+    updateSaveButtonAvailability: jasmine.Spy<() => void>;
+    updateSendButtonAvailability: jasmine.Spy<() => void>;
+    resetVisitValidationUxFlags: jasmine.Spy<() => void>;
+    resetVisitExitBaseline: jasmine.Spy<() => void>;
+    markVisitOpenedFromPersistedCopy: jasmine.Spy<() => void>;
+    coordenadas: string;
+    signatureVisit: string;
+    userMustActivateGPS: boolean;
+    editVisit: boolean;
+    enterpriseEnabled: boolean;
+    checkAddressClient: boolean;
+    rolTransportista: boolean;
+    listaActividades: IncidenceType[];
+    listaMotivos: IncidenceMotive[];
+  };
 
   const buildVisit = (overrides: Partial<Visit> = {}): Visit => ({
     idVisit: 1,
@@ -76,6 +97,23 @@ describe('VisitaComponent', () => {
 
     visitServ = {
       visit: buildVisit(),
+      getTag: jasmine.createSpy('getTag').and.callFake((tag: string) => tag),
+      visitValidToSave: new Subject<boolean>(),
+      visitValidToSend: new Subject<boolean>(),
+      updateSaveButtonAvailability: jasmine.createSpy('updateSaveButtonAvailability'),
+      updateSendButtonAvailability: jasmine.createSpy('updateSendButtonAvailability'),
+      resetVisitValidationUxFlags: jasmine.createSpy('resetVisitValidationUxFlags'),
+      resetVisitExitBaseline: jasmine.createSpy('resetVisitExitBaseline'),
+      markVisitOpenedFromPersistedCopy: jasmine.createSpy('markVisitOpenedFromPersistedCopy'),
+      coordenadas: '',
+      signatureVisit: 'false',
+      userMustActivateGPS: false,
+      editVisit: false,
+      enterpriseEnabled: false,
+      checkAddressClient: false,
+      rolTransportista: false,
+      listaActividades: [],
+      listaMotivos: [],
     };
 
     const adjuntoServiceMock = {
@@ -143,8 +181,8 @@ describe('VisitaComponent', () => {
       component.fechaInitial = '';
       component.fechaVisita = '2026-08-03T00:00:00';
 
-      expect(component.visitDateButtonLabel).toBe('short:2026-08-03 00:00:00');
-      expect(dateServ.formatShort).toHaveBeenCalledWith('2026-08-03 00:00:00');
+      expect(component.visitDateButtonLabel).toBe('short:2026-08-03T00:00:00');
+      expect(dateServ.formatShort).toHaveBeenCalledWith('2026-08-03T00:00:00');
     });
 
     it('shows da_initial with time after visit is started', () => {
@@ -183,6 +221,28 @@ describe('VisitaComponent', () => {
       });
 
       expect(component.visitDateButtonLabel).toBe('complete:2026-08-03 12:00:00');
+    });
+  });
+
+  describe('VIS-COMMENT-001 activity comment max length', () => {
+    it('onCommentInput caps comentario at incidences.tx_description length (120)', () => {
+      component.comentario = 'x'.repeat(130);
+      component.comentarioInput = { value: component.comentario };
+
+      component.onCommentInput();
+
+      expect(component.activityCommentMaxLength).toBe(120);
+      expect(component.comentario.length).toBe(120);
+      expect(component.comentarioInput.value.length).toBe(120);
+    });
+
+    it('onMotivoReagendoInput caps motivo at tx_reassigned_motive length (200)', () => {
+      component.motivoReagendo = 'y'.repeat(220);
+
+      component.onMotivoReagendoInput();
+
+      expect(component.reassignedMotiveMaxLength).toBe(200);
+      expect(component.motivoReagendo.length).toBe(200);
     });
   });
 });

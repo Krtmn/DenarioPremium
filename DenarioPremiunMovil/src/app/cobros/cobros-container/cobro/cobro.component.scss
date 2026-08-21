@@ -94,3 +94,14 @@ ion-modal#eventModal .contenedorModalActividades {
     height: 100%;
     min-height: 0;
 }
+
+.collection-send-error-hint {
+    --color: #e60c0c;
+    color: #e60c0c;
+}
+
+ion-segment-button.collection-send-error-hint {
+    --color: #e60c0c;
+    --color-checked: #e60c0c;
+    --indicator-color: #e60c0c;
+}

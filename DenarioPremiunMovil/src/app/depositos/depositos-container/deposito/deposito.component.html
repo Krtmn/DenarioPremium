@@ -1,21 +1,25 @@
 <ion-item-divider class="segmentWidth" sticky>
   <div class="cobroComponent" sticky-below-view>
     <ion-segment value="default" [(ngModel)]="segment">
-      <ion-segment-button value="default" (click)="onChangeTab('general')">
+      <ion-segment-button value="default" (click)="onChangeTab('general')"
+        [class.deposit-send-error-hint]="shouldShowSendErrorHintOnTab('default')">
         <ion-label>{{this.depositService.depositTags.get('DEP_PESTANA_GENERAL')}}</ion-label>
       </ion-segment-button>
 
       <ion-segment-button *ngIf="!this.depositService.hideDeposit" value="cobros"
-        [disabled]="!this.depositService.depositValid" (click)="onChangeTab('cobros')">
+        [disabled]="!this.depositService.depositValid" (click)="onChangeTab('cobros')"
+        [class.deposit-send-error-hint]="shouldShowSendErrorHintOnTab('cobros')">
         <ion-label> {{this.depositService.depositTags.get('DEP_PESTANA_COBROS')}}</ion-label>
       </ion-segment-button>
 
-      <ion-segment-button value="total" [disabled]="!this.depositService.depositValid" (click)="onChangeTab('total')">
+      <ion-segment-button value="total" [disabled]="!this.depositService.depositValid" (click)="onChangeTab('total')"
+        [class.deposit-send-error-hint]="shouldShowSendErrorHintOnTab('total')">
         <ion-label>{{this.depositService.depositTags.get('DEP_PESTANA_TOTAL')}}</ion-label>
       </ion-segment-button>
 
       <ion-segment-button value="adjuntos" [disabled]="!this.depositService.depositValid"
-        (click)="onChangeTab('adjuntos')">
+        (click)="onChangeTab('adjuntos')"
+        [class.deposit-send-error-hint]="shouldShowSendErrorHintOnTab('adjuntos')">
         <ion-label>{{this.depositService.depositTags.get('DEP_PESTANA_ADJUNTOS')}}</ion-label>
       </ion-segment-button>
 

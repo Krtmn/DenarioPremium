@@ -5,7 +5,7 @@
       <ion-accordion-group expand="inset">
         <ion-accordion *ngFor="let product of productList; index as i; trackBy: trackByCoReturnDetail"
           [value]="product.coReturnDetail">
-          <ion-item slot="header" color="light">
+          <ion-item slot="header" color="light" [class.return-send-error-hint]="shouldShowProductSendError(i)">
             <ion-label class="textList">
               <p>{{ product.naProduct }}</p>
             </ion-label>

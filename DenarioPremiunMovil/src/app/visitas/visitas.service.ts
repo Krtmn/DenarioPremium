@@ -1,4 +1,5 @@
 import { inject, Injectable } from '@angular/core';
+import { Subject } from 'rxjs';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite/ngx';
 import { SynchronizationDBService } from '../services/synchronization/synchronization-db.service';
 import { IncidenceType } from 'src/app/modelos/tables/incidenceType';
@@ -11,6 +12,20 @@ import { AddresClient } from '../modelos/tables/addresClient';
 import { ImageServicesService } from '../services/imageServices/image-services.service';
 import { FileOpener } from '@awesome-cordova-plugins/file-opener/ngx';
 import { MessageService } from '../services/messageService/message.service';
+import { EventoVisita } from '../modelos/evento-visita';
+import { AdjuntoService } from '../adjuntos/adjunto.service';
+import { VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED } from '../utils/appConstants';
+
+export interface VisitEditContext {
+  idClient: number | null;
+  idAddressClient: number | null;
+  initialLock: boolean;
+  fromWeb: boolean;
+  viewOnly: boolean;
+  fechaInitial: string;
+  listaEventos: EventoVisita[];
+  rolTransportista: boolean;
+}
 
 
 @Injectable({
@@ -24,6 +39,28 @@ export class VisitasService {
   private dbServ = inject(SynchronizationDBService);
   public imageServices = inject(ImageServicesService);
   private message = inject(MessageService);
+  public adjuntoService = inject(AdjuntoService);
+
+  /** UX Guardar/Enviar (patrón Depósitos/Inventarios/Devoluciones). */
+  generalTabValidForSave = false;
+  visitPersistedBaseline = false;
+  visitDirtySincePersist = false;
+  sendValidationAttempted = false;
+  sendBlockedByFields = false;
+  visitValidToSave = new Subject<Boolean>();
+  visitValidToSend = new Subject<Boolean>();
+  /** Salto a pestaña tras fallo de Enviar/Guardar (VIS-SEND-001). */
+  focusSendValidationTab = new Subject<'default' | 'actividades' | 'adjuntos'>();
+  private editContext: VisitEditContext = {
+    idClient: null,
+    idAddressClient: null,
+    initialLock: false,
+    fromWeb: false,
+    viewOnly: false,
+    fechaInitial: '',
+    listaEventos: [],
+    rolTransportista: false,
+  };
 
   public editVisit: boolean = false;
   public visit = {} as Visit;
@@ -443,6 +480,328 @@ export class VisitasService {
       }
       return list;
     })
+  }
+
+  setVisitEditContext(ctx: VisitEditContext): void {
+    this.editContext = ctx;
+  }
+
+  onVisitValidToSave(valid: boolean): void {
+    this.visitValidToSave.next(valid);
+  }
+
+  onVisitValidToSend(valid: boolean): void {
+    this.visitValidToSend.next(valid);
+  }
+
+  onVisitGeneralValid(valid: boolean): void {
+    this.generalTabValidForSave = valid;
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
+  }
+
+  isVisitReadOnlyForEdit(): boolean {
+    if (this.editContext.viewOnly) {
+      return true;
+    }
+    const visit = this.visit;
+    const daReal = (visit?.daReal ?? '').trim();
+    return daReal.length > 0
+      || visit?.stVisit === VISIT_STATUS_TO_SEND
+      || visit?.stVisit === VISIT_STATUS_VISITED;
+  }
+
+  updateSaveButtonAvailability(): void {
+    if (this.isVisitReadOnlyForEdit()) {
+      this.onVisitValidToSave(false);
+      return;
+    }
+    if (this.adjuntoService.weightLimitExceeded) {
+      this.onVisitValidToSave(false);
+      return;
+    }
+    const generalOk = this.generalTabValidForSave;
+    const hasChangesToSave =
+      !this.visitPersistedBaseline || this.visitDirtySincePersist;
+    this.onVisitValidToSave(generalOk && hasChangesToSave);
+  }
+
+  updateSendButtonAvailability(): void {
+    if (this.isVisitReadOnlyForEdit()) {
+      this.onVisitValidToSend(false);
+      return;
+    }
+    if (this.adjuntoService.weightLimitExceeded) {
+      this.onVisitValidToSend(false);
+      return;
+    }
+    if (this.sendBlockedByFields) {
+      this.onVisitValidToSend(false);
+      return;
+    }
+    this.onVisitValidToSend(this.generalTabValidForSave);
+  }
+
+  resetVisitValidationUx(): void {
+    this.sendValidationAttempted = false;
+    this.sendBlockedByFields = false;
+    this.updateSendButtonAvailability();
+  }
+
+  refreshSendBlockedState(): void {
+    if (!this.sendBlockedByFields) {
+      return;
+    }
+    // Al editar, reactivar Enviar para reintentar (mismo criterio Inventarios/Depósitos/Devoluciones).
+    this.sendBlockedByFields = false;
+  }
+
+  markVisitDirty(): void {
+    this.visitDirtySincePersist = true;
+  }
+
+  notifyVisitEdited(ctx?: VisitEditContext): void {
+    if (ctx) {
+      this.setVisitEditContext(ctx);
+    }
+    this.markVisitDirty();
+    this.refreshSendBlockedState();
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
+  }
+
+  applyVisitPersistSucceededBaseline(): void {
+    this.visitDirtySincePersist = false;
+    this.visitPersistedBaseline = true;
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
+  }
+
+  resetVisitExitBaseline(): void {
+    this.visitPersistedBaseline = false;
+    this.visitDirtySincePersist = false;
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
+  }
+
+  markVisitOpenedFromPersistedCopy(): void {
+    this.visitPersistedBaseline = true;
+    this.visitDirtySincePersist = false;
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
+  }
+
+  resetVisitValidationUxFlags(): void {
+    this.generalTabValidForSave = false;
+    this.sendValidationAttempted = false;
+    this.sendBlockedByFields = false;
+    this.visitPersistedBaseline = false;
+    this.visitDirtySincePersist = false;
+  }
+
+  hasUnsavedVisitChanges(): boolean {
+    return !this.visitPersistedBaseline || this.visitDirtySincePersist;
+  }
+
+  private hasClientSelected(): boolean {
+    return Number(this.editContext.idClient ?? 0) > 0;
+  }
+
+  private hasAddressSelected(): boolean {
+    return Number(this.editContext.idAddressClient ?? 0) > 0;
+  }
+
+  private isVisitStartedForGeneral(): boolean {
+    if (!this.editContext.fromWeb) {
+      return true;
+    }
+    return !this.editContext.initialLock;
+  }
+
+  private isIncidenceRequiredEvent(actividad: IncidenceType | undefined): boolean {
+    if (!actividad) {
+      return false;
+    }
+    const value = actividad.requiredEvent as boolean | string;
+    return value === true || value === 'true';
+  }
+
+  private isIncidenceRequiredSignature(actividad: IncidenceType | undefined): boolean {
+    if (!actividad) {
+      return false;
+    }
+    const value = actividad.requiredSignature as boolean | string;
+    return value === true || value === 'true';
+  }
+
+  private isEventLineComplete(evento: EventoVisita): boolean {
+    if (!evento?.actividad) {
+      return false;
+    }
+    if (this.isIncidenceRequiredEvent(evento.actividad)) {
+      return Number(evento.evento?.idMotive ?? 0) > 0;
+    }
+    return true;
+  }
+
+  /** Firma dibujada obligatoria solo si incidencia/actividad lo exige (transportista). */
+  private requiresTransportistaActivitySignature(): boolean {
+    if (!this.editContext.rolTransportista) {
+      return false;
+    }
+    return this.editContext.listaEventos.some(
+      (ev) => this.isIncidenceRequiredSignature(ev.actividad),
+    );
+  }
+
+  /**
+   * Adjuntos de visita: `signatureVisit` solo muestra el panel (no hay requiredVisitAttachments).
+   * Sí se exige firma dibujada cuando la actividad transportista tiene required_signature.
+   */
+  private hasMissingRequiredSignature(): boolean {
+    return this.requiresTransportistaActivitySignature() && !this.adjuntoService.tieneFirma();
+  }
+
+  private hasMissingGpsCoordinate(): boolean {
+    if (!this.userMustActivateGPS) {
+      return false;
+    }
+    const coord = (this.coordenadas ?? '').toString().trim();
+    return coord.length === 0;
+  }
+
+  /** Guardar solo exige General (cliente + sucursal + iniciada si fromWeb). Actividades/GPS/firma van en Enviar. */
+  public hasVisitSaveErrors(): boolean {
+    return !this.generalTabValidForSave
+      || !this.hasClientSelected()
+      || !this.hasAddressSelected()
+      || !this.isVisitStartedForGeneral();
+  }
+
+  public getVisitSaveValidationMessage(): string {
+    if (!this.generalTabValidForSave || !this.hasClientSelected()) {
+      return this.tags.get('VIS_MSJ_ERROR_NO_CLIENT')
+        ?? this.tags.get('VIS_MENSAJE_SELEC_CLIENTE')
+        ?? 'Seleccione un cliente para continuar.';
+    }
+    if (!this.hasAddressSelected()) {
+      return this.tags.get('VIS_MSJ_ERROR_NO_ADDRESS')
+        ?? 'Seleccione una sucursal para continuar.';
+    }
+    if (!this.isVisitStartedForGeneral()) {
+      return this.tags.get('VIS_MSJ_ERROR_NOT_STARTED')
+        ?? this.tags.get('VIS_INIT_WARN')
+        ?? 'Debe iniciar la visita para continuar.';
+    }
+    return this.tags.get('VIS_MSJ_ERROR_NO_CLIENT')
+      ?? 'Complete la pestaña General para continuar.';
+  }
+
+  /**
+   * Errores que bloquean Enviar: General + actividades (+ GPS/firma transportista si aplica).
+   * `signatureVisit` solo muestra el panel (ATTACH-SEND-001).
+   */
+  public hasVisitFieldErrors(): boolean {
+    if (!this.generalTabValidForSave || !this.hasClientSelected()) {
+      return true;
+    }
+    if (!this.hasAddressSelected()) {
+      return true;
+    }
+    if (!this.isVisitStartedForGeneral()) {
+      return true;
+    }
+    if (!this.editContext.listaEventos || this.editContext.listaEventos.length === 0) {
+      return true;
+    }
+    for (const evento of this.editContext.listaEventos) {
+      if (!this.isEventLineComplete(evento)) {
+        return true;
+      }
+    }
+    if (this.hasMissingRequiredSignature()) {
+      return true;
+    }
+    if (this.hasMissingGpsCoordinate()) {
+      return true;
+    }
+    return false;
+  }
+
+  public getVisitValidationMessage(): string {
+    if (!this.generalTabValidForSave || !this.hasClientSelected()) {
+      return this.tags.get('VIS_MSJ_ERROR_NO_CLIENT')
+        ?? this.tags.get('VIS_MENSAJE_SELEC_CLIENTE')
+        ?? 'Seleccione un cliente para continuar.';
+    }
+    if (!this.hasAddressSelected()) {
+      return this.tags.get('VIS_MSJ_ERROR_NO_ADDRESS')
+        ?? 'Seleccione una sucursal para continuar.';
+    }
+    if (!this.isVisitStartedForGeneral()) {
+      return this.tags.get('VIS_MSJ_ERROR_NOT_STARTED')
+        ?? this.tags.get('VIS_INIT_WARN')
+        ?? 'Debe iniciar la visita para continuar.';
+    }
+    if (!this.editContext.listaEventos || this.editContext.listaEventos.length === 0) {
+      return this.tags.get('VIS_MSJ_ERROR_NO_EVENTS')
+        ?? this.tags.get('VIS_MENSAJE_AGREGUE_ACT')
+        ?? 'Debe agregar al menos una actividad.';
+    }
+    for (const evento of this.editContext.listaEventos) {
+      if (!this.isEventLineComplete(evento)) {
+        return this.tags.get('VIS_MSJ_ERROR_INCOMPLETE_EVENT')
+          ?? this.tags.get('VIS_MENSAJE_AGREGUE_ACT')
+          ?? 'Complete actividad y evento en todas las líneas.';
+      }
+    }
+    if (this.hasMissingRequiredSignature()) {
+      return this.tags.get('VIS_MSJ_ERROR_NO_SIGNATURE')
+        ?? 'Debe firmar la visita antes de continuar.';
+    }
+    if (this.hasMissingGpsCoordinate()) {
+      return this.tags.get('VIS_MSJ_ERROR_NO_GPS')
+        ?? 'Debe activar el GPS y obtener la ubicación antes de continuar.';
+    }
+    return this.tags.get('VIS_MSJ_ERROR_INCOMPLETE_EVENT')
+      ?? 'Complete los campos obligatorios de la visita.';
+  }
+
+  /** Pestaña del primer error (misma prioridad que getVisitValidationMessage). */
+  public resolveSendValidationFocusTab(): 'default' | 'actividades' | 'adjuntos' {
+    if (!this.generalTabValidForSave || !this.hasClientSelected()
+      || !this.hasAddressSelected() || !this.isVisitStartedForGeneral()) {
+      return 'default';
+    }
+    if (!this.editContext.listaEventos || this.editContext.listaEventos.length === 0) {
+      return 'actividades';
+    }
+    for (const evento of this.editContext.listaEventos) {
+      if (!this.isEventLineComplete(evento)) {
+        return 'actividades';
+      }
+    }
+    if (this.hasMissingRequiredSignature()) {
+      return 'adjuntos';
+    }
+    if (this.hasMissingGpsCoordinate()) {
+      return 'default';
+    }
+    return 'default';
+  }
+
+  public requestSendValidationTabFocus(
+    tab?: 'default' | 'actividades' | 'adjuntos',
+  ): void {
+    this.focusSendValidationTab.next(tab ?? this.resolveSendValidationFocusTab());
+  }
+
+  shouldShowActivitiesSendError(): boolean {
+    if (!this.sendValidationAttempted) {
+      return false;
+    }
+    return !this.editContext.listaEventos?.length
+      || this.editContext.listaEventos.some((ev) => !this.isEventLineComplete(ev));
   }
 
 

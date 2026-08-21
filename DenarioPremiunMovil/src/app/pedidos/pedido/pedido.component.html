@@ -53,7 +53,8 @@
         </ion-segment-button>
 
         @if(!viewOnly){
-        <ion-segment-button value="pedido" [disabled]="lockSegments">
+        <ion-segment-button value="pedido" [disabled]="lockSegments"
+          [class.order-send-error-hint]="shouldShowProductsSendError()">
           <ion-label>{{ orderServ.getTag("PED_TAB_PEDIDO")}}</ion-label>
         </ion-segment-button>
         }
@@ -93,7 +94,8 @@
               <!-- ### CLIENTE ### -->
               <ion-col size="12" size-sm="12" size-xs="12">
                 <div id="inputClient">
-                  <ion-input [label]="orderServ.getTag('PED_CLIENTE')+':'" [ngClass]="{'inp-write': clientRedLabel}"
+                  <ion-input [label]="orderServ.getTag('PED_CLIENTE')+':'"
+                    [ngClass]="{'inp-write': clientRedLabel || shouldShowClientSendError()}"
                     label-placement="floating" fill="outline" [disabled]="orderServ.openOrder"
                     value="{{ clienteTabLabel }}" id="clienteSelect" color="primary">
                   </ion-input>
@@ -145,7 +147,7 @@
                 <ion-col size="12" size-sm="12" size-xs="12">
                   <ion-label>{{ orderServ.getTag("PED_SUCURSAL")}}:</ion-label>
                   <div class="listado-tps-selector ion-text-center" id="inputAddress"
-                    [ngClass]="{'inp-write2': addressRedLabel}">
+                    [ngClass]="{'inp-write2': addressRedLabel || shouldShowAddressSendError()}">
                     <ion-select (ionChange)="onAddressChange()" [(ngModel)]="direccionCliente"
                       [disabled]=" (!orderServ.pedidoModificable) || (listaDirecciones.length < 1)"
                       labelPlacement="stacked">
@@ -220,7 +222,7 @@
                   <div id="inputNuPurchase">
                     <ion-input [label]="orderServ.getTag('PED_NUMERO_ORDEN')+':'" label-placement="floating"
                       fill="outline" [(ngModel)]="nuPurchase" id="nuPurchase" #nuPurchaseInput
-                      [ngClass]="{'inp-write': nuOrderRedLabel}" (ionChange)="onNuOrderChange()" color="primary"
+                      [ngClass]="{'inp-write': nuOrderRedLabel || shouldShowNuOrderSendError()}" (ionChange)="onNuOrderChange()" color="primary"
                       (ionInput)="onNuOrderInput()" [disabled]="!orderServ.pedidoModificable"
                       [required]="orderServ.validateNuOrder"></ion-input>
                     @if(nuOrderRedLabel){
@@ -303,7 +305,7 @@
                       (ionChange)="onTxCommentChange()" color="primary" (ionInput)="onTxCommentInput()"
                       [maxlength]="textCommentMaxLength"
                       [ngClass]="{
-                        'inp-write': orderServ.requiredCommentOrder && commentRedLabel,
+                        'inp-write': orderServ.requiredCommentOrder && (commentRedLabel || shouldShowCommentSendError()),
                         'good': orderServ.requiredCommentOrder && !commentRedLabel && !!txComment?.trim()
                       }"
                       [required]="orderServ.requiredCommentOrder"
@@ -1055,6 +1057,11 @@
       <!-- alerta de salvar o salir-->
       <ion-alert id="alertSaveOrExit" [isOpen]="saveOrExitOpen" [header]="orderServ.getTag('DENARIO_HEADER_ALERTA')"
         [buttons]="buttonsSalvar" (didDismiss)="setsaveOrExitOpen(false)">
+      </ion-alert>
+
+      <!-- alerta de confirmacion de guardar -->
+      <ion-alert id="alertConfirmSaveModal" [isOpen]="alertMessageOpenSave" [header]="headerSave"
+        [message]="mensajeSaveQuestion" [buttons]="buttonsConfirmSave" (didDismiss)="setResultSave($event)">
       </ion-alert>
 
 

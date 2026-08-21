@@ -13,7 +13,7 @@
       </div>
     </ion-col>
     <ion-col size="12" size-xs="12" size-sm="12" size-md="12">
-      <div id="inputClient">
+      <div id="inputClient" [class.return-send-error-hint]="shouldShowClientSendError()">
         <ion-input disabled="{{ this.returnLogic.returnSent }}" label="Cliente:" label-placement="floating"
           fill="outline" value="{{ clienteTabLabel }}" id="clienteSelect" color="primary"></ion-input>
       </div>
@@ -29,7 +29,7 @@
       <ion-grid>
         <ion-row>
     <ion-col size="12" size-xs="12" size-sm="12" size-md="12" *ngIf="returnLogic.validateReturn">
-      <div id="inputInvoice">
+      <div id="inputInvoice" [class.return-send-error-hint]="shouldShowInvoiceSendError()">
         <ion-input label="Factura:" label-placement="floating" fill="outline"
           [disabled]="returnLogic.returnSent" [readonly]="true"
           [(ngModel)]="returnLogic.newReturn.coInvoice"

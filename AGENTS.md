@@ -61,7 +61,8 @@ DenarioPremiunMovil/src/app/
 
 ## Git (solo si el usuario lo pide)
 
-- Commit solo con pedido explícito; mensajes en estilo del repo (corto, orientado al porqué).
+- Commit solo con pedido explícito; mensajes **siempre en español** (ver `.cursor/rules/commits-espanol.mdc` y `.cursorrules` para el botón sparkle de Source Control).
+- Estilo: Conventional Commits (`fix`, `feat`, …) con subject orientado al porqué, no al listado de archivos.
 - No `push --force`, no `--no-verify`, no tocar `git config`.
 - No incluir `local.properties`, secrets ni ruido CRLF de Android.
 

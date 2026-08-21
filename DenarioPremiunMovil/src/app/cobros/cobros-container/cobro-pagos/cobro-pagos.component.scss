@@ -80,6 +80,30 @@
   --border-color: #e60c0c !important;
 }
 
+.campoObligatorio {
+  font-size: 0.75rem;
+  display: block;
+  margin-top: 4px;
+}
+
+.bank-picker-trigger.inp-write {
+  --border-color: #e60c0c;
+  border: 1px solid #e60c0c;
+  border-radius: 4px;
+}
+
+.select-error ion-select,
+ion-select.inp-write {
+  --border-color: #e60c0c !important;
+  border: 1px solid #e60c0c;
+  border-radius: 4px;
+}
+
+.payment-date-error {
+  border: 1px solid #e60c0c;
+  border-radius: 4px;
+}
+
 
 $colorVerde: #59b02d;
 $colorVerdeRegistrar: #7dc60f;

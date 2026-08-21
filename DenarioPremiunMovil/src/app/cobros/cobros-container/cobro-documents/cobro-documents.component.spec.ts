@@ -248,4 +248,22 @@ describe('CobrosDocumentComponent', () => {
     expect(collectServiceMock.collection.collectionDetails[0].nuAmountPaid).toBe(500);
     expect(collectServiceMock.collection.collectionDetails[0].nuAmountPaidConversion).toBe(500);
   });
+
+  it('COB-RET-SEND-001: shouldShowDocumentRetentionSendError after send attempt', () => {
+    collectServiceMock.sendValidationAttempted = true;
+    collectServiceMock.collection = {
+      coType: '2',
+      collectionDetails: [{ coDocument: 'FAC-1', nuAmountRetention: 0, nuAmountRetention2: 0 }],
+    };
+    collectServiceMock.documentSales = [{
+      isSelected: true,
+      positionCollecDetails: 0,
+    }];
+    collectServiceMock.isRetentionDetailComplete = jasmine.createSpy('isRetentionDetailComplete').and.returnValue(false);
+
+    expect(component.shouldShowDocumentRetentionSendError(0)).toBeTrue();
+
+    collectServiceMock.sendValidationAttempted = false;
+    expect(component.shouldShowDocumentRetentionSendError(0)).toBeFalse();
+  });
 });

@@ -37,7 +37,8 @@
       <ion-label>{{ getTag("VIS_TAB_GENERAL") }}</ion-label>
     </ion-segment-button>
     <ion-segment-button value="actividades"
-      [disabled]="(cliente.idClient == null) || initialLock || (direccionCliente == null)">
+      [disabled]="(cliente.idClient == null) || initialLock || (direccionCliente == null)"
+      [class.visit-send-error-hint]="shouldShowActivitiesSendError()">
       <ion-label>{{ getTag("VIS_TAB_ACTIVIDADES") }}</ion-label>
     </ion-segment-button>
     <ion-segment-button value="adjuntos"
@@ -67,7 +68,8 @@
 
           <!-- CLIENTE -->
           <ion-col size="6" size-sm="12" size-xs="12">
-            <ion-input label-placement="floating" fill="outline" [ngClass]="{'inp-write': clientRedLabel}"
+            <ion-input label-placement="floating" fill="outline"
+              [ngClass]="{'inp-write': clientRedLabel || shouldShowClientSendError()}"
               label='{{ getTag("VIS_CLIENTE") }}' value="{{ clienteTabLabel }}" id="clienteSelect"
               [disabled]="viewOnly || fromWeb"></ion-input>
             <ion-label *ngIf="clientRedLabel" color="danger" class="campoObligatorio">
@@ -81,7 +83,7 @@
             <ion-col size="12" size-sm="12" size-xs="12">
               <ion-label>{{ getTag("VIS_SUCURSAL")}}:</ion-label>
               <div class="listado-tps-selector ion-text-center" id="inputAddress"
-                [ngClass]="{'inp-write2': addressRedLabel}">
+                [ngClass]="{'inp-write2': addressRedLabel || shouldShowAddressSendError()}">
                 <ion-select [(ngModel)]="direccionCliente"
                   [disabled]="viewOnly || fromWeb || listaDirecciones.length < 1" class="ion-text-center always-flip"
                   labelPlacement="stacked" (ionChange)="onAddressSelect()">
@@ -126,7 +128,8 @@
 
       <!-- Boton Iniciar Visita -->
       <ion-col size="6" size-sm="12" size-xs="12" *ngIf="fromWeb">
-        <ion-button id="initVisit" class="botonAddVerde" expand="block" [ngClass]="{'inp-write': initVisitRedLabel}"
+        <ion-button id="initVisit" class="botonAddVerde" expand="block"
+          [ngClass]="{'inp-write': initVisitRedLabel || shouldShowInitVisitSendError()}"
           *ngIf="!viewOnly" (click)="iniciarVisita()">
           {{ rolTransportista ? getTag('VIS_BOTON_INICIAR_DESPACHO') : getTag('VIS_BOTON_INICIAR') }}
         </ion-button>
@@ -225,9 +228,9 @@
 
                 <ion-input label='{{ getTag("VIS_COMENTARIO") }}' #comentarioInput [(ngModel)]="comentario"
                   (ionInput)="onCommentInput()" labelPlacement="floating" fill="outline"
-                  placeholder='{{ getTag("VIS_COMENTARIO") }}' [maxlength]="textCommentMaxLength"></ion-input>
+                  placeholder='{{ getTag("VIS_COMENTARIO") }}' [maxlength]="activityCommentMaxLength"></ion-input>
                 <app-text-comment-counter [value]="comentario" [minLength]="textCommentMinLength"
-                  [maxLength]="textCommentMaxLength"></app-text-comment-counter>
+                  [maxLength]="activityCommentMaxLength"></app-text-comment-counter>
 
               </ion-col>
               <!-- <ion-col class="" size="12" size-sm="12" size-xs="12"> -->
@@ -310,6 +313,16 @@
   <ion-alert id="alertSaveOrExit" [isOpen]="saveOrExitOpen" header={{headerSave}} [buttons]="buttonsSalvar"
     (didDismiss)="setsaveOrExitOpen(false)"></ion-alert>
 
+  <!-- alerta de confirmacion de guardar -->
+  <ion-alert id="alertConfirmSaveModal" [isOpen]="alertMessageOpenSave" header={{headerSave}}
+    [message]="mensajeSaveQuestion" [buttons]="buttonsConfirmSave" (didDismiss)="setResultSave($event)"></ion-alert>
+
+  <!-- alerta validación (mensaje exacto de lo que falta) -->
+  <ion-alert [isOpen]="alertMessageOpenValidation"
+    [header]="headerSave || getTag('DENARIO_HEADER_ALERTA') || 'Visitas'"
+    [message]="validationFailureMessage" [buttons]="alertButtonsValidation"
+    (didDismiss)="setResultValidation()"></ion-alert>
+
   <!-- alerta de confirmacion de envio -->
   <ion-alert id="alertConfirmSendModal" [isOpen]='alertConfirmSend' header={{headerConfirm}} message={{mensajeConfirm}}
     [buttons]="buttonsConfirmExit" (didDismiss)="setConfirmSend(false)"></ion-alert>
@@ -360,10 +373,10 @@
             <ion-input label="Motivo" [(ngModel)]="motivoReagendo" placeholder="Ingrese el motivo"
               [ngClass]="{'input-rojo': !motivoReagendo, 'input-verde': motivoReagendo}" class="customInput"
               label-placement="floating" fill="outline" color="primary" required
-              [maxlength]="textCommentMaxLength" (ionInput)="onMotivoReagendoInput()">
+              [maxlength]="reassignedMotiveMaxLength" (ionInput)="onMotivoReagendoInput()">
             </ion-input>
             <app-text-comment-counter [value]="motivoReagendo" [minLength]="textCommentMinLength"
-              [maxLength]="textCommentMaxLength"></app-text-comment-counter>
+              [maxLength]="reassignedMotiveMaxLength"></app-text-comment-counter>
           </ion-item>
         </ion-list>
         <ion-footer class="footer-separado">
