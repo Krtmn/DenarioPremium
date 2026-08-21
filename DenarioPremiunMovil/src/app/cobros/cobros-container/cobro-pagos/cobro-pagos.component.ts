@@ -12,6 +12,11 @@ import { PagoOtros } from 'src/app/modelos/pago-otros';
 import { PagoMovil } from 'src/app/modelos/pago-movil';
 import { DateServiceService } from 'src/app/services/dates/date-service.service';
 import { DifferenceCode } from 'src/app/modelos/tables/differenceCode';
+import {
+  TEXT_COMMENT_MIN_LENGTH,
+} from 'src/app/utils/text-comment-field.constants';
+import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util';
+import { COLLECTION_PAYMENT_FIELD_MAX } from 'src/app/utils/collection-payment-field.constants';
 
 type BankSearchSource = 'banks' | 'accounts' | 'clientAccounts';
 
@@ -35,6 +40,16 @@ export class CobroPagosComponent implements OnInit {
    * Se resetea cuando createAutomatedPrepaid pasa a false.
    */
   private hasShownAutomatedPrepaidMsg = false;
+
+  readonly textFieldMinLength = TEXT_COMMENT_MIN_LENGTH;
+  /** nu_payment_doc VARCHAR(50) */
+  readonly paymentDocMaxLength = COLLECTION_PAYMENT_FIELD_MAX.nuPaymentDoc;
+  /** nu_client_bank_account VARCHAR(50) */
+  readonly nuevaCuentaMaxLength = COLLECTION_PAYMENT_FIELD_MAX.nuClientBankAccount;
+  /** nu_document VARCHAR(50) */
+  readonly pagoMovilDocumentoMaxLength = COLLECTION_PAYMENT_FIELD_MAX.nuDocument;
+  /** Dígitos locales Pago Móvil (sin prefijo del selector). */
+  readonly pagoMovilTelefonoMaxLength = COLLECTION_PAYMENT_FIELD_MAX.pagoMovilLocalPhone;
 
   public collectService = inject(CollectionService);
   public globalConfig = inject(GlobalConfigService);
@@ -979,7 +994,10 @@ export class CobroPagosComponent implements OnInit {
 
   setNroTransanccion(nroTrans: string, index: number, type: string) {
 
-    nroTrans = this.collectService.cleanString(nroTrans);
+    nroTrans = applyTextCommentMaxLength(
+      this.collectService.cleanString(nroTrans),
+      this.paymentDocMaxLength,
+    );
 
     switch (type) {
       case "ef": {
@@ -1016,7 +1034,7 @@ export class CobroPagosComponent implements OnInit {
       }
 
       case "pm": {
-        const onlyNumbers = (nroTrans || '').replace(/\D/g, '');
+        const onlyNumbers = (nroTrans || '').replace(/\D/g, '').slice(0, this.paymentDocMaxLength);
         this.collectService.pagoMovil[index].numeroReferencia = onlyNumbers;
         this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.nuPaymentDoc = onlyNumbers;
         this.validatePayment("pm", index);
@@ -1050,21 +1068,21 @@ export class CobroPagosComponent implements OnInit {
   }
 
   onPagoMovilNumeroDocumentoInput(index: number, value: string) {
-    const onlyNumbers = (value || '').replace(/\D/g, '');
+    const onlyNumbers = (value || '').replace(/\D/g, '').slice(0, this.pagoMovilDocumentoMaxLength);
     this.collectService.pagoMovil[index].numeroDocumento = onlyNumbers;
     this.syncPagoMovilDocumento(index);
     this.validatePayment('pm', index);
   }
 
   onPagoMovilReferenciaInput(index: number, value: string) {
-    const onlyNumbers = (value || '').replace(/\D/g, '');
+    const onlyNumbers = (value || '').replace(/\D/g, '').slice(0, this.paymentDocMaxLength);
     this.collectService.pagoMovil[index].numeroReferencia = onlyNumbers;
     this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.nuPaymentDoc = onlyNumbers;
     this.validatePayment('pm', index);
   }
 
   onPagoMovilTelefonoInput(index: number, value: string) {
-    const onlyNumbers = (value || '').replace(/\D/g, '').slice(0, 8);
+    const onlyNumbers = (value || '').replace(/\D/g, '').slice(0, this.pagoMovilTelefonoMaxLength);
     this.collectService.pagoMovil[index].numeroTelefono = onlyNumbers;
     this.syncPagoMovilTelefono(index);
     this.validatePayment('pm', index);
@@ -1096,35 +1114,41 @@ export class CobroPagosComponent implements OnInit {
   }
 
   setNuevaCuenta(dato: string, index: number, type: string) {
+    const limited = applyTextCommentMaxLength(
+      this.collectService.cleanString(dato || ''),
+      this.nuevaCuentaMaxLength,
+    );
 
     switch (type) {
       case "ef": {
-        this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[index].posCollectionPayment]!.newNuClientBankAccount = dato;
-        this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[index].posCollectionPayment]!.nuClientBankAccount = dato;
+        this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[index].posCollectionPayment]!.newNuClientBankAccount = limited;
+        this.collectService.collection.collectionPayments![this.collectService.pagoEfectivo[index].posCollectionPayment]!.nuClientBankAccount = limited;
         break
       }
 
       case "ch": {
-        this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.newNuClientBankAccount = dato;
-        this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.nuClientBankAccount = dato;
+        this.collectService.pagoCheque[index].nuevaCuenta = limited;
+        this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.newNuClientBankAccount = limited;
+        this.collectService.collection.collectionPayments![this.collectService.pagoCheque[index].posCollectionPayment]!.nuClientBankAccount = limited;
         break;
       }
 
       case "de": {
-        this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.newNuClientBankAccount = dato;
-        this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.nuClientBankAccount = dato;
+        this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.newNuClientBankAccount = limited;
+        this.collectService.collection.collectionPayments![this.collectService.pagoDeposito[index].posCollectionPayment]!.nuClientBankAccount = limited;
         break
       }
 
       case "tr": {
-        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.newNuClientBankAccount = dato;
-        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.nuClientBankAccount = dato;;
+        this.collectService.pagoTransferencia[index].nuevaCuenta = limited;
+        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.newNuClientBankAccount = limited;
+        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.nuClientBankAccount = limited;
         break;
       }
 
       case "pm": {
-        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.newNuClientBankAccount = dato;
-        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.nuClientBankAccount = dato;;
+        this.collectService.collection.collectionPayments![this.collectService.pagoMovil[index].posCollectionPayment]!.newNuClientBankAccount = limited;
+        this.collectService.collection.collectionPayments![this.collectService.pagoTransferencia[index].posCollectionPayment]!.nuClientBankAccount = limited;;
         break;
       }
 

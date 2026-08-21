@@ -21,10 +21,13 @@ import { GlobalConfigService } from 'src/app/services/globalConfig/global-config
 import { Subscription } from 'rxjs';
 import { GeolocationService } from 'src/app/services/geolocation/geolocation.service';
 import {
-  TEXT_COMMENT_MAX_LENGTH,
   TEXT_COMMENT_MIN_LENGTH,
 } from 'src/app/utils/text-comment-field.constants';
 import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util';
+import {
+  POTENTIAL_CLIENT_FIELD_MAX,
+  PotentialClientTextField,
+} from 'src/app/utils/potential-client-field.constants';
 
 
 @Component({
@@ -36,7 +39,7 @@ import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util
 
 export class NewPotentialClientComponent implements OnInit {
 
-  readonly textCommentMaxLength = TEXT_COMMENT_MAX_LENGTH;
+  readonly fieldMax = POTENTIAL_CLIENT_FIELD_MAX;
   readonly textCommentMinLength = TEXT_COMMENT_MIN_LENGTH;
 
   public messageService = inject(MessageService);
@@ -393,96 +396,109 @@ export class NewPotentialClientComponent implements OnInit {
     return str;
   }
 
+  private applyPotentialTextMax(
+    raw: string | null | undefined,
+    field: PotentialClientTextField,
+  ): string {
+    return applyTextCommentMaxLength(
+      this.cleanString(raw || ''),
+      this.fieldMax[field],
+    );
+  }
+
   onNaClientChange() {
-    const clean = this.cleanString(this.newPotentialClient.get('naClient')?.value || '');
+    const clean = this.applyPotentialTextMax(this.newPotentialClient.get('naClient')?.value, 'naClient');
     if (this.clientLogic.potentialClient.naClient !== clean) {
       this.clientLogic.potentialClient.naClient = clean;
     }
     if (this.naClientInput && this.naClientInput.value !== clean) {
-      this.naClientInput.value = (clean);
+      this.naClientInput.value = clean;
     }
   }
 
   onNuRifChange() {
-    const clean = this.cleanString(this.newPotentialClient.get('nuRif')?.value || '');
+    const clean = this.applyPotentialTextMax(this.newPotentialClient.get('nuRif')?.value, 'nuRif');
     if (this.clientLogic.potentialClient.nuRif !== clean) {
       this.clientLogic.potentialClient.nuRif = clean;
     }
     if (this.nuRifInput && this.nuRifInput.value !== clean) {
-      this.nuRifInput.value = (clean);;
+      this.nuRifInput.value = clean;
     }
   }
 
   onTxAddressChange() {
-    const clean = this.cleanString(this.newPotentialClient.get('txAddress')?.value || '');
+    const clean = this.applyPotentialTextMax(this.newPotentialClient.get('txAddress')?.value, 'txAddress');
     if (this.clientLogic.potentialClient.txAddress !== clean) {
       this.clientLogic.potentialClient.txAddress = clean;
     }
     if (this.txAddressInput && this.txAddressInput.value !== clean) {
-      this.txAddressInput.value = (clean);;
+      this.txAddressInput.value = clean;
     }
   }
 
   onTxAddressDispatchChange() {
-    const clean = this.cleanString(this.newPotentialClient.get('txAddressDispatch')?.value || '');
+    const clean = this.applyPotentialTextMax(
+      this.newPotentialClient.get('txAddressDispatch')?.value,
+      'txAddressDispatch',
+    );
     if (this.clientLogic.potentialClient.txAddressDispatch !== clean) {
       this.clientLogic.potentialClient.txAddressDispatch = clean;
     }
     if (this.txAddressDispatchInput && this.txAddressDispatchInput.value !== clean) {
-      this.txAddressDispatchInput.value = (clean);;
+      this.txAddressDispatchInput.value = clean;
     }
   }
 
   onTxClientChange() {
-    const clean = applyTextCommentMaxLength(
-      this.cleanString(this.newPotentialClient.get('txClient')?.value || ''),
-      this.textCommentMaxLength,
-    );
+    const clean = this.applyPotentialTextMax(this.newPotentialClient.get('txClient')?.value, 'txClient');
     if (this.clientLogic.potentialClient.txClient !== clean) {
       this.clientLogic.potentialClient.txClient = clean;
     }
     if (this.txClientInput && this.txClientInput.value !== clean) {
-      this.txClientInput.value = (clean);;
+      this.txClientInput.value = clean;
     }
   }
 
   onNaResponsibleChange() {
-    const clean = this.cleanString(this.newPotentialClient.get('naResponsible')?.value || '');
+    const clean = this.applyPotentialTextMax(
+      this.newPotentialClient.get('naResponsible')?.value,
+      'naResponsible',
+    );
     if (this.clientLogic.potentialClient.naResponsible !== clean) {
       this.clientLogic.potentialClient.naResponsible = clean;
     }
     if (this.naResponsibleInput && this.naResponsibleInput.value !== clean) {
-      this.naResponsibleInput.value = (clean);;
+      this.naResponsibleInput.value = clean;
     }
   }
 
   onEmClientChange() {
-    const clean = this.cleanString(this.newPotentialClient.get('emClient')?.value || '');
+    const clean = this.applyPotentialTextMax(this.newPotentialClient.get('emClient')?.value, 'emClient');
     if (this.clientLogic.potentialClient.emClient !== clean) {
       this.clientLogic.potentialClient.emClient = clean;
     }
     if (this.emClientInput && this.emClientInput.value !== clean) {
-      this.emClientInput.value = (clean);
+      this.emClientInput.value = clean;
     }
   }
 
   onNuPhoneChange() {
-    const clean = this.cleanString(this.newPotentialClient.get('nuPhone')?.value || '');
+    const clean = this.applyPotentialTextMax(this.newPotentialClient.get('nuPhone')?.value, 'nuPhone');
     if (this.clientLogic.potentialClient.nuPhone !== clean) {
       this.clientLogic.potentialClient.nuPhone = clean;
     }
     if (this.nuPhoneInput && this.nuPhoneInput.value !== clean) {
-      this.nuPhoneInput.value = (clean);
+      this.nuPhoneInput.value = clean;
     }
   }
 
   onNaWebSiteChange() {
-    const clean = this.cleanString(this.newPotentialClient.get('naWebSite')?.value || '');
+    const clean = this.applyPotentialTextMax(this.newPotentialClient.get('naWebSite')?.value, 'naWebSite');
     if (this.clientLogic.potentialClient.naWebSite !== clean) {
       this.clientLogic.potentialClient.naWebSite = clean;
     }
     if (this.naWebSiteInput && this.naWebSiteInput.value !== clean) {
-      this.naWebSiteInput.value = (clean);;
+      this.naWebSiteInput.value = clean;
     }
   }
 
