@@ -21,6 +21,8 @@ Los unitarios validan **lógica de botones Guardar/Enviar** y validación al cli
 |-----------|----------|
 | **VIS-SAVE-001** | `updateSaveButtonAvailability`: General OK + sin baseline → Guardar ON. |
 | **VIS-SAVE-001** | Baseline limpio sin dirty → Guardar OFF aunque General OK. |
+| **VIS-SAVE-001** | `hasVisitSaveErrors` false sin actividades si General OK (borrador). |
+| **VIS-SAVE-001** | Sin cliente → `hasVisitSaveErrors` + mensaje General. |
 | **VIS-SAVE-002** | `markVisitDirty` tras `applyVisitPersistSucceededBaseline` → Guardar ON de nuevo. |
 | — | `markVisitOpenedFromPersistedCopy` (reapertura) → Guardar OFF hasta dirty (smoke manual). |
 
@@ -29,12 +31,13 @@ Los unitarios validan **lógica de botones Guardar/Enviar** y validación al cli
 | ID / caso | Qué hace |
 |-----------|----------|
 | **VIS-SEND-001** | `updateSendButtonAvailability`: General OK → Enviar ON sin eventos. |
-| **VIS-SEND-001** | `hasVisitFieldErrors` true con lista de eventos vacía. |
+| **VIS-SEND-001** | `hasVisitFieldErrors` true con lista de eventos vacía + foco `actividades`. |
+| **VIS-SEND-001** | Tras `sendBlockedByFields`, `notifyVisitEdited` reactiva Enviar. |
 | **VIS-SEND-001** | Sin cliente → `VIS_MSJ_ERROR_NO_CLIENT`. |
 | **VIS-SEND-001** | `fromWeb` + `initialLock` → `VIS_MSJ_ERROR_NOT_STARTED`. |
 | **VIS-SEND-001** | `required_event` + motivo vacío → evento incompleto. |
 | **VIS-SEND-001** | `stVisit` TO_SEND o VISITED / viewOnly → read-only, botones OFF. |
-| **VIS-SEND-001** | `signatureVisit` + sin adjuntos → error de firma. |
+| **VIS-SEND-001** | `signatureVisit` sin adjuntos → **no** error (solo UI). |
 
 ## Fuera de unitarios (manual / N/A)
 

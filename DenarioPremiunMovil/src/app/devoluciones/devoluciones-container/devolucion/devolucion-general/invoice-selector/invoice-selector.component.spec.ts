@@ -1,22 +1,22 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { IonicModule } from '@ionic/angular';
 
 import { InvoiceSelectorComponent } from './invoice-selector.component';
+import {
+  configureIonicComponentTestingModule,
+  createShallowComponentFixture,
+} from 'src/app/testing/ionic-component-spec.helpers';
 
 describe('InvoiceSelectorComponent', () => {
   let component: InvoiceSelectorComponent;
   let fixture: ComponentFixture<InvoiceSelectorComponent>;
 
   beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      declarations: [ InvoiceSelectorComponent ],
-      imports: [IonicModule.forRoot()]
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(InvoiceSelectorComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+    configureIonicComponentTestingModule(InvoiceSelectorComponent).compileComponents();
   }));
+
+  beforeEach(() => {
+    ({ fixture, component } = createShallowComponentFixture(InvoiceSelectorComponent));
+  });
 
   it('should create', () => {
     expect(component).toBeTruthy();

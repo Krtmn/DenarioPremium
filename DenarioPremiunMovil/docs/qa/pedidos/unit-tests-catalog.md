@@ -21,5 +21,5 @@ Archivo: `src/app/pedidos/pedidos.service.spec.ts`
 | **PED-SEND-001** | `requiredCommentOrder` + comentario vacío → error comentario. |
 | **PED-SEND-001** | `!pedidoModificable` → read-only, botones OFF. |
 | **PED-SEND-001** | `validateWarehouses` + línea sin almacén → error almacén. |
-| **PED-SEND-001** | `signatureOrder` + sin adjuntos → error de firma. |
+| **PED-SEND-001** | `signatureOrder` sin adjuntos → **no** error (solo UI). |
 | **PED-SEND-001** | `userMustActivateGPS` + sin coordenadas → error GPS. |

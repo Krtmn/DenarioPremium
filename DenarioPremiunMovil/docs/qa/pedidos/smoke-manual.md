@@ -8,5 +8,5 @@
 6. **PED-SEND-001:** General OK → Enviar ON aunque falten productos → pulsar Enviar → modal + hint en pestaña Pedido.
 7. **validateNuOrder=true** sin `#` → pestañas bloqueadas; Enviar OFF; hint en número de orden tras intento.
 8. **requiredCommentOrder=true** → comentario obligatorio solo en editable; pedido enviado vacío sigue abriendo (**PED-COMMENT-001**).
-9. **signatureOrder** / **userMustActivateGPS** → modal al Enviar sin firma/GPS según config.
+9. **userMustActivateGPS** → modal al Enviar sin GPS si está activo. `signatureOrder` solo muestra firma (no exige adjuntos).
 10. Enviar completo → confirmación `PED_PREGUNTA_GUARDADO` → éxito tras persistir + AutoSend.

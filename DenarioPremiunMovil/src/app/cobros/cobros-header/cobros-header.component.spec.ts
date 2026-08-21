@@ -36,6 +36,7 @@ describe('CobrosHeaderComponent', () => {
       ]),
       hasSendFieldErrors: jasmine.createSpy('hasSendFieldErrors').and.returnValue(false),
       hasSendPrerequisites: jasmine.createSpy('hasSendPrerequisites').and.returnValue(true),
+      lastSendIssues: [] as Array<{ code: string; message: string; tab: string }>,
       findFirstIncompleteRetentionDocumentIndex: jasmine.createSpy('findFirstIncompleteRetentionDocumentIndex').and.returnValue(0),
       getRetentionSendValidationMessage: jasmine.createSpy('getRetentionSendValidationMessage').and.returnValue('Retención incompleta.'),
       getCollectionSendValidationMessage: jasmine.createSpy('getCollectionSendValidationMessage').and.returnValue('Complete los campos obligatorios.'),
@@ -46,7 +47,10 @@ describe('CobrosHeaderComponent', () => {
           this.disableSendButton = true;
         }
       }),
-      validateToSend: jasmine.createSpy('validateToSend').and.returnValue(Promise.resolve()),
+      validateToSend: jasmine.createSpy('validateToSend').and.callFake(async function (this: typeof collectServiceMock) {
+        // Por defecto: sin issues y válido (los tests reconfiguran lastValidToSend / lastSendIssues).
+        return;
+      }),
       resetSendValidationUx: jasmine.createSpy('resetSendValidationUx'),
       isCollectionReadOnlyForEdit: jasmine.createSpy('isCollectionReadOnlyForEdit').and.returnValue(false),
       getTagsDenario: jasmine.createSpy('getTagsDenario').and.returnValue(Promise.resolve(false)),
@@ -82,37 +86,31 @@ describe('CobrosHeaderComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('COB-SEND-UX-001: sendCollect shows modal for cobro when required fields are missing', async () => {
-    collectServiceMock.hasSendFieldErrors.and.returnValue(true);
+  it('COB-SEND-ALL-001: sendCollect shows modal when collector reports field issues', async () => {
+    collectServiceMock.lastValidToSend = false;
+    collectServiceMock.lastSendIssues = [{
+      code: 'INCOMPLETE_PAYMENT',
+      message: 'Complete los campos obligatorios.',
+      tab: 'pagos',
+    }];
 
     component.sendCollect();
+    await collectServiceMock.validateToSend.calls.mostRecent().returnValue;
     await Promise.resolve();
 
     expect(collectServiceMock.sendValidationAttempted).toBeTrue();
     expect(collectServiceMock.sendBlockedByFields).toBeTrue();
     expect(collectServiceMock.updateSendButtonAvailability).toHaveBeenCalled();
-    expect(collectServiceMock.validateToSend).not.toHaveBeenCalled();
+    expect(collectServiceMock.validateToSend).toHaveBeenCalled();
     expect(component.alertMessageOpenValidation).toBeTrue();
     expect(component.validationFailureMessage).toBe('Complete los campos obligatorios.');
-    expect(collectServiceMock.requestSendValidationTabFocus).toHaveBeenCalled();
+    expect(collectServiceMock.requestSendValidationTabFocus).toHaveBeenCalledWith('pagos');
     expect(component.alertMessageOpenSend).toBeFalse();
   });
 
-  it('COB-SEND-UX-001: sendCollect shows modal when prerequisites missing', () => {
-    collectServiceMock.hasSendPrerequisites.and.returnValue(false);
-
-    component.sendCollect();
-
-    expect(collectServiceMock.sendValidationAttempted).toBeTrue();
-    expect(collectServiceMock.hasSendFieldErrors).not.toHaveBeenCalled();
-    expect(collectServiceMock.validateToSend).not.toHaveBeenCalled();
-    expect(component.alertMessageOpenValidation).toBeTrue();
-    expect(collectServiceMock.requestSendValidationTabFocus).toHaveBeenCalled();
-  });
-
-  it('COB-UX-SEND-001: sendCollect opens confirmation when fields and business validation pass', async () => {
-    collectServiceMock.hasSendFieldErrors.and.returnValue(false);
+  it('COB-SEND-ALL-001: sendCollect opens confirmation when collector has no issues', async () => {
     collectServiceMock.lastValidToSend = true;
+    collectServiceMock.lastSendIssues = [];
 
     component.sendCollect();
     await collectServiceMock.validateToSend.calls.mostRecent().returnValue;
@@ -123,37 +121,54 @@ describe('CobrosHeaderComponent', () => {
     expect(component.alertMessageOpenValidation).toBeFalse();
   });
 
-  it('COB-SEND-UX-001: sendCollect shows modal when validateToSend fails for cobro', async () => {
-    collectServiceMock.hasSendFieldErrors.and.returnValue(false);
+  it('COB-SEND-ALL-001: sendCollect shows modal when validateToSend fails', async () => {
     collectServiceMock.lastValidToSend = false;
+    collectServiceMock.lastSendIssues = [{
+      code: 'TOLERANCIA',
+      message: 'Monto fuera de tolerancia.',
+      tab: 'pagos',
+    }];
 
     component.sendCollect();
     await collectServiceMock.validateToSend.calls.mostRecent().returnValue;
     await Promise.resolve();
 
     expect(component.alertMessageOpenValidation).toBeTrue();
-    expect(collectServiceMock.requestSendValidationTabFocus).toHaveBeenCalled();
+    expect(component.validationFailureMessage).toBe('Monto fuera de tolerancia.');
+    expect(collectServiceMock.requestSendValidationTabFocus).toHaveBeenCalledWith('pagos');
     expect(component.alertMessageOpenSend).toBeFalse();
   });
 
-  it('COB-SEND-UX-001: sendCollect shows modal when prepaid forces valid but fields incomplete', async () => {
-    collectServiceMock.hasSendFieldErrors.and.returnValues(false, true);
-    collectServiceMock.lastValidToSend = true;
-
-    component.sendCollect();
-    await collectServiceMock.validateToSend.calls.mostRecent().returnValue;
-    await Promise.resolve();
-
-    expect(component.alertMessageOpenValidation).toBeTrue();
-    expect(collectServiceMock.requestSendValidationTabFocus).toHaveBeenCalled();
-    expect(component.alertMessageOpenSend).toBeFalse();
-  });
-
-  it('COB-RET-SEND-001: sendCollect shows modal when retention fields are incomplete', () => {
-    collectServiceMock.collection.coType = '2';
+  it('COB-SEND-ALL-001: sendCollect blocks when fields incomplete even if lastValidToSend forced', async () => {
+    collectServiceMock.lastValidToSend = false;
+    collectServiceMock.lastSendIssues = [{
+      code: 'NO_COMMENT',
+      message: 'Complete los campos obligatorios.',
+      tab: 'default',
+    }];
     collectServiceMock.hasSendFieldErrors.and.returnValue(true);
 
     component.sendCollect();
+    await collectServiceMock.validateToSend.calls.mostRecent().returnValue;
+    await Promise.resolve();
+
+    expect(component.alertMessageOpenValidation).toBeTrue();
+    expect(collectServiceMock.requestSendValidationTabFocus).toHaveBeenCalledWith('default');
+    expect(component.alertMessageOpenSend).toBeFalse();
+  });
+
+  it('COB-RET-SEND-001: sendCollect shows modal when retention fields are incomplete', async () => {
+    collectServiceMock.collection.coType = '2';
+    collectServiceMock.lastValidToSend = false;
+    collectServiceMock.lastSendIssues = [{
+      code: 'INCOMPLETE_RETENTION',
+      message: 'Retención incompleta.',
+      tab: 'documentos',
+    }];
+
+    component.sendCollect();
+    await collectServiceMock.validateToSend.calls.mostRecent().returnValue;
+    await Promise.resolve();
 
     expect(collectServiceMock.sendValidationAttempted).toBeTrue();
     expect(collectServiceMock.sendBlockedByFields).toBeTrue();

@@ -9,5 +9,5 @@ Checklist corta. No automatizar todavía.
 5. **INV-SAVE-002:** Reabrir inventario guardado → Guardar OFF hasta primer cambio de usuario.
 6. **INV-SEND-001:** General OK → Enviar ON aunque falten productos por completar → pulsar Enviar → modal de error; fila incompleta resaltada en Actividades.
 7. **INV-SEND-001:** Inventario completo → Enviar → confirmación → cola/envío según conexión.
-8. **Firma (`signatureStock`):** sin adjuntos → Guardar/Enviar muestran modal de adjunto obligatorio.
+8. **Firma (`signatureStock`):** solo muestra el panel; no exige adjuntos al Guardar/Enviar (sin `requiredStockAttachments`).
 9. **GPS (`userMustActivateGPS`):** sin coordenada → modal al Guardar/Enviar.
