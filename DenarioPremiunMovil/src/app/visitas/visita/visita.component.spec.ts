@@ -223,4 +223,26 @@ describe('VisitaComponent', () => {
       expect(component.visitDateButtonLabel).toBe('complete:2026-08-03 12:00:00');
     });
   });
+
+  describe('VIS-COMMENT-001 activity comment max length', () => {
+    it('onCommentInput caps comentario at incidences.tx_description length (120)', () => {
+      component.comentario = 'x'.repeat(130);
+      component.comentarioInput = { value: component.comentario };
+
+      component.onCommentInput();
+
+      expect(component.activityCommentMaxLength).toBe(120);
+      expect(component.comentario.length).toBe(120);
+      expect(component.comentarioInput.value.length).toBe(120);
+    });
+
+    it('onMotivoReagendoInput caps motivo at tx_reassigned_motive length (200)', () => {
+      component.motivoReagendo = 'y'.repeat(220);
+
+      component.onMotivoReagendoInput();
+
+      expect(component.reassignedMotiveMaxLength).toBe(200);
+      expect(component.motivoReagendo.length).toBe(200);
+    });
+  });
 });

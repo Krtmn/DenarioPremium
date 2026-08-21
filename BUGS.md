@@ -156,6 +156,39 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-SEND-UX-001] Enviar en cobro/anticipo sin alerta al faltar campos
+
+- **Síntoma:** Cobro guardado reabierto; al pulsar Enviar con campos incompletos (comentario, pagos, tasa, etc.) no hay modal; el usuario no sabe por qué no avanzó (solo retención mostraba alerta).
+- **Causa:** `sendCollect()` hacía `return` silencioso si `hasSendFieldErrors()` / `!lastValidToSend` / prerequisites fallaban, excepto `coType === '2'`. Además, “Monto a pagar” del documento y montos `nuAmountPartial` en SQLite no entraban en `hasSendFieldErrors` (sobre todo al pulsar desde General antes de hidratar UI de Pagos); `createAutomatedPrepaid` podía forzar `lastValidToSend=true`.
+- **Fix:** `getCollectionSendValidationMessage` + `resolveSendValidationFocusTab` + `focusSendValidationTab`. Header siempre llama `notifySendValidationFailure()` (modal + salto a pestaña). Hint suave en `ion-segment-button` de la pestaña destino. `hasIncompleteDocumentAmountToPay` / `hasIncompletePersistedPaymentAmounts`; rechequeo de campos tras `validateToSend`.
+- **Evitar:** No silenciar fallos de Enviar en cobro/anticipo. No confiar solo en arrays UI de pagos al validar desde General. Reusar el mismo helper para retención (no ramificar solo `coType === '2'`).
+- **Archivos:** `collection-logic.service.ts`, `cobros-header.component.ts`, `cobro.component.ts/html/scss`, `application_tags.sql`, specs.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [COB-DIFF-001] Código de diferencia obligatorio en Otros (`enableDifferenceCodes`)
+
+- **Síntoma:** Con `enableDifferenceCodes=true` el selector de código en método Otros no se exigía al Enviar (o se bloqueaba Enviar sin mensaje/UI en rojo).
+- **Causa:** `getOtrosFieldErrors` no incluía `differenceCode`; la validación en `validateToSend` apagaba Enviar en silencio; no había hint en el selector.
+- **Fix:** Incluir `differenceCode` en completitud de Otros / persistido; `hasMissingOtrosDifferenceCodes` + mensaje `COB_MSJ_ERROR_NO_DIFFERENCE_CODE` al Enviar; selector en rojo + label tras `sendValidationAttempted`.
+- **Evitar:** No tratar el selector como opcional cuando `enableDifferenceCodes` está activo. Validar UI y SQLite (`idDifferenceCode` > 0 y `coDifferenceCode` no vacío).
+- **Archivos:** `collection-logic.service.ts`, `cobro-pagos.component.ts/html/scss`, `application_tags.sql`, specs.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [COB-SEND-ALL-001] Validaciones de Enviar se anulaban entre capas
+
+- **Síntoma:** Tras COB-SEND-UX / validación de inputs, fallos de campos cortaban `validateToSend` y se saltaban tolerancia, referencias, docs listos y adjuntos; `createAutomatedPrepaid` podía forzar Enviar ON con campos incompletos.
+- **Causa:** Pipeline en capas con early return (`hasSendPrerequisites` → `hasSendFieldErrors` → `validateToSend` → adjuntos en `sendOrSave`).
+- **Fix:** `collectCollectionSendIssues()` acumula todas las reglas aplicables; `sendCollect` usa ese resultado; adjuntos entran antes de confirmar; prepaid solo omite exceso/tolerancia si no hay errores de campos.
+- **Evitar:** No short-circuit al evaluar validadores de Enviar. No duplicar gates en `sendOrSave`. Guardar sigue solo General+dirty.
+- **Archivos:** `collection-logic.service.ts`, `cobros-header.component.ts`, specs, bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [COB-FALT-001] Pagos: monto total a pagar no se actualiza al poner faltante en 0 (Guardado)
 
 - **Síntoma:** Cobro Guardado reabierto con Diferencia/Faltante > 0; al poner faltante en 0,0000, en Pagos el “monto total a pagar” sigue en el neto viejo (doc − faltante) y no refleja el saldo completo.
@@ -251,11 +284,22 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ## [INV-SAVE-001] Guardar/Enviar deshabilitados hasta inventario completo
 
-- **Síntoma:** Tras seleccionar cliente en General, Guardar y Enviar permanecen OFF hasta completar todas las filas de productos (cantidad, lote, etc.).
-- **Causa:** `updateHeaderButtons()` acoplaba ambos botones a `checkValidStockToSend()`. El header abría confirmación sin validar campos al click.
-- **Fix:** `updateSaveButtonAvailability()` (General + dirty) y `updateSendButtonAvailability()` (General). `saveStock()` / `sendStock()` validan con `hasStockFieldErrors()` antes del modal (como `sendCollect()` en Cobros). Guardar también valida al pulsar (simétrico a Enviar).
-- **Evitar:** No volver a acoplar Guardar a `checkValidStockToSend()` en product-list/adjuntos. No forzar `onStockValidToSave(true)` en hidratación sin dirty.
+- **Síntoma:** Tras seleccionar cliente en General, Guardar y Enviar permanecen OFF hasta completar todas las filas de productos (cantidad, lote, etc.). Luego Guardar sin productos mostraba el mismo error de Enviar.
+- **Causa:** `updateHeaderButtons()` acoplaba ambos botones a `checkValidStockToSend()`. El header validaba Guardar con `hasStockFieldErrors()` (productos/firma/GPS).
+- **Fix:** Botones ON con General (+ dirty en Guardar). Al pulsar Guardar solo exige General; Enviar valida productos → GPS (`signatureStock` solo UI, ver `ATTACH-SEND-001`).
+- **Evitar:** No acoplar Guardar a productos/adjuntos/GPS. No exigir inventario completo para guardar borrador.
 - **Archivos:** `inventarios-logic.service.ts`, `inventario-header`, `inventario-general`, `inventario-product-list`, `inventario-actividades`.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [INV-SEND-001] Mensaje de Enviar engañoso y botón sin reactividad
+
+- **Síntoma:** Inventario vacío mostraba alerta de adjuntos/firma; tras corregir productos/fotos, Enviar seguía apagado hasta Guardar.
+- **Causa:** `getStockValidationMessage` priorizaba GPS/firma antes que productos; `sendBlockedByFields` apagaba Enviar tras el primer fallo sin reactivar al editar; mensaje vía `transaccionMsjModalNB` poco visible.
+- **Fix:** Prioridad de mensaje General → productos → GPS. Tras fallo de Enviar: apagar botón + alerta local con fallo exacto; al editar (`notifyStockEdited`) reactivar Enviar; salto a pestaña del error (`requestSendValidationTabFocus`). Tag `INV_MSJ_ERROR_NO_PRODUCTS`. Adjuntos no obligatorios (`ATTACH-SEND-001`).
+- **Evitar:** No mostrar GPS si aún faltan productos. No exigir Guardar para desbloquear Enviar tras un fallo. Sin productos → pestaña Inventario.
+- **Archivos:** `inventarios-logic.service.ts`, `inventario-header`, `inventario.component`, `application_tags.sql`, specs.
 - **Estado:** fixed (pendiente QA dispositivo).
 
 ---
@@ -271,13 +315,24 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [DEP-SAVE-LOOP-001] Mensaje "Depósito guardado" en loop al Aceptar
+
+- **Síntoma:** Tras Guardar, el modal de éxito al Aceptar vuelve a abrirse; solo Cancelar lo cierra.
+- **Causa:** El mismo `alertMessageOpenSave` servía para confirmación y éxito; `setResultSave(confirm)` persistía otra vez y reabría el alert.
+- **Fix:** Éxito vía `messageService.alertModal` (como Enviar); `alertMessageOpenSave` solo para "¿Desea guardar?".
+- **Evitar:** No reutilizar el ion-alert de confirmación para el mensaje de éxito.
+- **Archivos:** `depositos-header.component.ts`, spec.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [DEP-SAVE-001] Guardar/Enviar deshabilitados hasta cobros completos
 
-- **Síntoma:** Guardar exigía banco + cobros en el botón; Enviar solo cobros; validación parcial al click.
-- **Causa:** `refreshHeaderSaveDisabled()` acoplaba Guardar a cobros; `hasAtLeastOneDepositCollectRow()` era la única validación al pulsar.
-- **Fix:** `updateSaveButtonAvailability()` (General + dirty) y `updateSendButtonAvailability()` (General). `validateDepositBeforeAction()` + `hasDepositFieldErrors()` antes de confirmación en Guardar y Enviar.
-- **Evitar:** No volver a acoplar Guardar a `depositCollect.length` en el header. Validar plantilla, banco, firma y GPS al click.
-- **Archivos:** `deposit.service.ts`, `depositos-header`, `deposito-general`, `deposito-cobros`.
+- **Síntoma:** Guardar exigía banco + cobros en el botón; Enviar solo cobros; al pulsar Guardar/Guardar y salir exigía firma/adjuntos/plantilla como Enviar. Botones arrancaban OFF hasta General.
+- **Causa:** `refreshHeaderSaveDisabled()` acoplaba Guardar a cobros; `validateDepositBeforeAction` usaba `hasDepositFieldErrors()` también para Guardar; Enviar/Guardar exigían `generalTabValidForSave` en el botón.
+- **Fix:** Guardar ON al entrar/con dirty (al pulsar solo banco). Enviar ON de entrada; validación completa + alerta local + salto a pestaña al click. Tras fallo Enviar se apaga y al editar reactiva.
+- **Evitar:** No acoplar Guardar a cobros/firma/GPS/plantilla. No exigir Guardar para desbloquear Enviar.
+- **Archivos:** `deposit.service.ts`, `depositos-header`, `deposito.component`, specs.
 - **Estado:** fixed (pendiente QA dispositivo).
 
 ---
@@ -295,10 +350,10 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ## [POT-SAVE-001] Guardar/Enviar deshabilitados hasta formulario completo
 
-- **Síntoma:** Guardar y Enviar exigían formulario completo en tiempo real (`checkForm`); validación parcial al click; Enviar mostraba éxito antes de persistir.
-- **Causa:** `cannotSavePotentialClient` / `cannotSendPotentialClient` acoplados a `checkForm()`; header sin `validateBeforeAction`; `setResult` disparaba `CLI_SEND_MSG` antes del INSERT.
-- **Fix:** `updatePotentialClientSaveButtonAvailability()` (General + dirty) y `updatePotentialClientSendButtonAvailability()` (General). `validatePotentialClientBeforeAction()` + `hasPotentialClientFieldErrors()` antes de confirmación. Éxito de envío tras persistir.
-- **Evitar:** No volver a acoplar Enviar a `validPotentialClient` en el header. Validar `naResponsible`, firma y GPS al click.
+- **Síntoma:** Guardar y Enviar exigían formulario completo en tiempo real (`checkForm`); validación parcial al click; Enviar mostraba éxito antes de persistir. Luego Guardar seguía exigiendo el mismo set completo que Enviar al pulsar; sin nombre el botón Guardar quedaba OFF y no había mensaje; tras Enviar fallido el botón podía quedar apagado.
+- **Causa:** `cannotSavePotentialClient` / `cannotSendPotentialClient` acoplados a `checkForm()`; header sin `validateBeforeAction`; `setResult` disparaba `CLI_SEND_MSG` antes del INSERT. Guardar exigía nombre en el botón; Enviar usaba `sendBlockedByFields` para apagar el botón.
+- **Fix:** Guardar ON con dirty; al pulsar exige **nombre** con alerta local si falta. Enviar ON con General (empresa); campos (+ GPS si config) solo al click. Adjuntos/firma **no** obligatorios (`signatureClient` solo muestra el panel). Éxito de envío tras persistir.
+- **Evitar:** No acoplar Guardar al formulario completo ni a firma/GPS. No apagar Enviar con `sendBlockedByFields`. No tratar `signatureClient` como “adjunto obligatorio” (no hay flag de required attachments en potencial). Validar GPS solo si `userMustActivateGPS`.
 - **Archivos:** `client-logic.service.ts`, `client-header`, `client-new-potential-client`.
 - **Estado:** fixed (pendiente QA dispositivo).
 
@@ -315,13 +370,24 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [DEV-BACK-001] Atrás en creación pierde datos sin modal
+
+- **Síntoma:** En creación de devolución, Atrás sale de inmediato y pierde datos/firma; no aparece "Guardar y salir / Salir sin guardar".
+- **Causa:** `onBackClicked` solo abría el modal si `returnChanged && stDelivery == 3` (SAVED). Las nuevas tienen `stDelivery = 0` (NEW).
+- **Fix:** `shouldPromptReturnExitSaveOrDiscard()` como Cobros/Depósitos (General iniciada / dirty / sin baseline limpio). Read-only (por enviar/enviada) sale sin modal.
+- **Evitar:** No acoplar el modal de salida a `stDelivery === SAVED`.
+- **Archivos:** `return-logic.service.ts`, `devoluciones-header`, specs.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [DEV-SAVE-001] Guardar/Enviar deshabilitados hasta productos completos
 
-- **Síntoma:** Guardar exigía productos completos en el botón; Enviar también; validación parcial al click; Guardar persistía sin confirmación.
-- **Causa:** `updateSendButtonState()` acoplaba Guardar y Enviar a `coDocument` + `quProduct`; lógica duplicada en `devolucion-product-list`.
-- **Fix:** `updateSaveButtonAvailability()` (General + dirty) y `updateSendButtonAvailability()` (General). `validateReturnBeforeAction()` + `hasReturnFieldErrors()` antes de confirmación en Guardar y Enviar.
-- **Evitar:** No volver a llamar `onReturnValidToSave` desde product-list. Validar productos, firma y GPS al click.
-- **Archivos:** `return-logic.service.ts`, `devoluciones-header`, `devolucion-general`, `devolucion-product-list`.
+- **Síntoma:** Guardar exigía productos/firma en el botón o al pulsar; Enviar sin mensaje claro ni salto de pestaña.
+- **Causa:** `validateReturnBeforeAction` usaba `hasReturnFieldErrors()` también para Guardar; mensaje vía `transaccionMsjModalNB`.
+- **Fix:** Guardar solo General (cliente + factura si `validateReturn`). Enviar: alerta local + salto a pestaña + apaga hasta editar.
+- **Evitar:** No acoplar Guardar a productos/adjuntos/GPS. No exigir Guardar para desbloquear Enviar.
+- **Archivos:** `return-logic.service.ts`, `devoluciones-header`, `devolucion.component`, specs.
 - **Estado:** fixed (pendiente QA dispositivo).
 
 ---
@@ -342,7 +408,7 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 - **Síntoma:** Guardar exigía cliente + carrito en el botón; Enviar igual; Guardar persistía sin confirmación.
 - **Causa:** `setChangesMade()` acoplaba Guardar y Enviar a `carrito.length`; validación parcial al click.
 - **Fix:** `updateSaveButtonAvailability()` (General + dirty) y `updateSendButtonAvailability()` (General). `validateOrderBeforeAction()` + `hasOrderFieldErrors()` antes de confirmación.
-- **Evitar:** No volver a acoplar Enviar a productos en tiempo real. Validar carrito, firma, almacén y GPS al click.
+- **Evitar:** No volver a acoplar Enviar a productos en tiempo real. Validar carrito, almacén y GPS al click (`signatureOrder` solo UI; `ATTACH-SEND-001`).
 - **Archivos:** `pedidos.service.ts`, `pedido.component.ts`.
 - **Estado:** fixed (pendiente QA dispositivo).
 
@@ -361,11 +427,22 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ## [VIS-SAVE-001] Guardar/Enviar deshabilitados hasta actividades completas
 
-- **Síntoma:** Guardar exigía cliente + actividades en el botón; Enviar igual; validación parcial al click; Guardar persistía sin confirmación.
-- **Causa:** `setChangesMade()` acoplaba Guardar y Enviar a `listaEventos.length`; lógica en `visita.component` sin servicio centralizado.
-- **Fix:** `updateSaveButtonAvailability()` (General + dirty) y `updateSendButtonAvailability()` (General). `validateVisitBeforeAction()` + `hasVisitFieldErrors()` antes de confirmación en Guardar y Enviar.
-- **Evitar:** No volver a acoplar Enviar a eventos en tiempo real. Validar actividades, firma y GPS al click.
-- **Archivos:** `visitas.service.ts`, `visita.component.ts`.
+- **Síntoma:** Guardar exigía cliente + actividades en el botón; Enviar igual; validación parcial al click; Guardar persistía sin confirmación. Luego Guardar / Guardar y salir seguían ejecutando `hasVisitFieldErrors()` (actividades/firma/GPS).
+- **Causa:** `setChangesMade()` acoplaba Guardar y Enviar a `listaEventos.length`. Después, `validateVisitBeforeAction` reutilizaba la validación de Enviar también para Guardar.
+- **Fix:** `updateSaveButtonAvailability()` (General + dirty) y `updateSendButtonAvailability()` (General). Guardar / Guardar y salir: `hasVisitSaveErrors()` solo General. Enviar: `hasVisitFieldErrors()` + alerta local + salto de pestaña.
+- **Evitar:** No acoplar Guardar a actividades/GPS/firma. No usar `hasVisitFieldErrors` en Guardar.
+- **Archivos:** `visitas.service.ts`, `visita.component.ts` / `.html`, specs + smoke.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [VIS-SEND-001] Enviar se apaga tras fallo y no se reactiva al editar
+
+- **Síntoma:** Tras fallar Enviar (sin actividad/firma), el botón queda OFF hasta Guardar.
+- **Causa:** `refreshSendBlockedState` solo limpiaba `sendBlockedByFields` si ya no había errores de Enviar (exigía actividades completas para reactivar).
+- **Fix:** Al editar (`notifyVisitEdited`) se limpia `sendBlockedByFields` siempre (mismo criterio Inventarios/Depósitos/Devoluciones) para reintentar Enviar.
+- **Evitar:** No exigir formulario completo de Enviar para reactivar el botón tras un fallo.
+- **Archivos:** `visitas.service.ts`, `visita.component.ts`, specs.
 - **Estado:** fixed (pendiente QA dispositivo).
 
 ---
@@ -377,6 +454,28 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 - **Fix:** `applyVisitPersistSucceededBaseline()` + `notifyVisitEdited()`; `markVisitOpenedFromPersistedCopy()` al reabrir persistido.
 - **Evitar:** No forzar botones desde `setChangesMade(false)` en hidratación sin dirty.
 - **Archivos:** `visitas.service.ts`, `visita.component.ts`, specs + smoke Visitas.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [VIS-COMMENT-001] Comentario de actividad >120 deja visita Por Enviar (Ref 0) y no editable
+
+- **Síntoma:** Comentario de actividad con más de 120 caracteres; al Enviar la visita queda Por Enviar con Nro Ref.: 0. No se puede editar después porque `TO_SEND` es readonly.
+- **Causa:** UI usaba `TEXT_COMMENT_MAX_LENGTH` (255) pero `incidences.tx_description` es `VARCHAR(120)`; el backend rechaza el POST.
+- **Fix:** Tope UI/persistencia a 120; motivo reagendo a 200 (`tx_reassigned_motive`). Contador + `applyTextCommentMaxLength` al capturar y al armar incidencias.
+- **Evitar:** No usar 255 genérico en Visitas. No “arreglar” reabriendo edición de visitas enviadas/por enviar.
+- **Archivos:** `visit-field.constants.ts`, `visita.component.ts/html`, specs, bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
+## [ATTACH-SEND-001] `signature*` no debe exigir adjuntos al Enviar
+
+- **Síntoma:** Enviar bloqueaba sin fotos/firma en Devoluciones, Inventarios, Depósitos, Pedidos, Visitas y Cliente potencial aunque no existiera un flag `required*Attachments`.
+- **Causa:** La validación de Enviar usaba `signatureReturn|Stock|Order|Visit|Collection|Client` (pensado para mostrar el panel de firma en `adjuntoService.setup`) como si fuera obligatoriedad de adjuntos. Solo Cobros tiene `requiredCollectionAttachments` / Anticipo / Retention.
+- **Fix:** Quitar `hasMissingSignatureAttachments` de Enviar en esos módulos. `signature*` queda solo UI. Cobros sigue con `required*Attachments`. Visitas: firma dibujada solo si incidencia transportista `required_signature`.
+- **Evitar:** No tratar `signature*` como required attachments. Si negocio necesita adjunto obligatorio fuera de Cobros, hay que añadir un flag `required*` dedicado (como Cobros).
+- **Archivos:** `return-logic`, `inventarios-logic`, `deposit.service`, `pedidos.service`, `visitas.service`, `client-logic`, specs + bug-prevention.
 - **Estado:** fixed (pendiente QA dispositivo).
 
 ---

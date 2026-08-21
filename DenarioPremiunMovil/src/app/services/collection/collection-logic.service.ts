@@ -50,6 +50,16 @@ export interface DocumentSalesPagination {
   includeSelected?: boolean;
 }
 
+/** Issue de validación al Enviar (COB-SEND-ALL-001). Todas las aplicables se acumulan. */
+export type CollectionSendTab = 'default' | 'documentos' | 'pagos' | 'adjuntos';
+
+export interface CollectionSendIssue {
+  code: string;
+  message: string;
+  tab: CollectionSendTab;
+}
+
+
 
 @Injectable({
   providedIn: 'root'
@@ -164,6 +174,8 @@ export class CollectionService {
   public focusSendValidationTab = new Subject<'default' | 'documentos' | 'pagos' | 'adjuntos'>();
   /** Espejo del último resultado de onCollectionValidToSend (incl. anticipo automático). */
   public lastValidToSend = false;
+  /** Último resultado de `collectCollectionSendIssues` (mensaje/foco al Enviar). */
+  public lastSendIssues: CollectionSendIssue[] = [];
   /** Razón de cambio de tasa obligatoria (pestaña General). */
   public requiresTxConversionReason = false;
   public saveOrExitOpen = false;
@@ -2563,330 +2575,31 @@ export class CollectionService {
       }
     }
 
-    this.montoTotalPagar = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagar));
-    this.montoTotalPagado = this.cleanFormattedNumber(this.currencyService.formatNumber(this.montoTotalPagado));
-
     this.alertMessageOpen = false;
-    // Cobros/anticipo/IGTF: pagos vacíos o incompletos deshabilitan Enviar (no Guardar).
-    if (this.collection.coType != '2' && this.blockSaveAndSendForInvalidPayments()) {
+
+    // COB-SEND-ALL-001: una sola fuente de verdad (todas las reglas aplicables).
+    const issues = await this.collectCollectionSendIssues();
+    if (issues.length === 0) {
+      this.onCollectionValidToSend(true);
       return;
     }
-    if (this.collection.coType == '1') {
-      //SI ERES ANTICIPO
-      if (this.collection.collectionPayments.length > 0) {
-        if (this.collection && Array.isArray(this.collection.collectionPayments) && this.collection.collectionPayments.length > 0) {
-          const hasPartialAmount = this.collection.collectionPayments.some(p => {
-            const amt = p?.nuAmountPartial;
-            return amt !== null && amt !== undefined && !isNaN(Number(amt)) && Number(amt) > 0;
-          });
 
-          if (hasPartialAmount) {
-            this.onCollectionValidToSend(true);
-          } else {
-            this.onCollectionValidToSend(false);
-            return;
-          }
-        }
-      } else {
-        this.onCollectionValidToSend(false);
-        return;
-      }
-
-    } else if (this.collection.coType == '2') {
-      // Retención: todos los documentos seleccionados deben estar completos (no basta suma global > 0).
-      if (this.areAllRetentionDetailsComplete(this.collection.collectionDetails)) {
-        this.onCollectionValidToSend(true);
-      } else {
-        this.onCollectionValidToSend(false);
-        return;
-      }
-    } else {
-
-      if (this.hasIncompletePaymentMethods()) {
-        this.blockSaveAndSendForInvalidPayments();
-        return;
-      }
-
-      if (!(await this.validateReferencePayment())) {
-        this.onCollectionValidToSend(false);
-        return;
-      }
-
-      if (!this.hasValidDocumentSalesForSend()) {
-        this.onCollectionValidToSend(false);
-        return;
-      }
-
-      //DEBO VALIDAR SI HAY ALGUN PAGO PARCIAL, EL MONTO DEBE PAGADO DEBE SER IGUAL AL MONTO A PAGAR
-      let onlyPaymentPartial = 0;
-      // Seguridad: normalizar array
-      const details = Array.isArray(this.collection.collectionDetails) ? this.collection.collectionDetails : [];
-
-      // Helper local para interpretar 'true' (acepta boolean o string)
-      const isTrue = (v: any) => v === true || String(v ?? '').toLowerCase() === 'true';
-
-      // Contar cuantos detalles están marcado como pago parcial
-      onlyPaymentPartial = details.reduce((count, d) => {
-        return count + (isTrue(d?.inPaymentPartial) ? 1 : 0);
-      }, 0);
-
-      // Existencia: true si hay al menos uno marcado
-      this.existPartialPayment = onlyPaymentPartial > 0;
-
-      this.allPaymentPartial = false;
-      if (this.collection.collectionDetails.length > 0)
-        if (onlyPaymentPartial == this.collection.collectionDetails.length)
-          this.allPaymentPartial = true;
-
-      if (this.enableDifferenceCodes) {
-        const payments = Array.isArray(this.collection.collectionPayments) ? this.collection.collectionPayments : [];
-        for (let i = 0; i < payments.length; i++) {
-          const pago = payments[i];
-          const method = (pago.coPaymentMethod ?? pago.coType ?? '').toString().toLowerCase();
-          if (method === 'ot' && !this.isPersistedDifferenceCodeSelected(pago)) {
-            this.mensaje = this.collectionTags.get('COB_MSJ_ERROR_NO_DIFFERENCE_CODE')
-              ?? 'Seleccione un código de diferencia en el método Otros antes de enviar.';
-            this.onCollectionValidToSend(false);
-            return;
-          }
-        }
-      }
-
-      if (this.existPartialPayment) {
-        if (this.alwaysPartialPayment) {
-          this.checkTolerancia();
-        } else if (this.allPaymentPartial && this.collection.collectionPayments.length > 0 && this.tabSelected == "pagos") {
-          if (this.alwaysPartialPayment) {
-            if (this.tolerancia0) {
-              this.checkTolerancia();
-            } else {
-              if (Math.abs(this.montoTotalPagado) == Math.abs(this.montoTotalPagar)) {
-                this.onCollectionValidToSend(true);
-              } else {
-                this.onCollectionValidToSend(false);
-                return;
-              }
-            }
-          } else if (this.montoTotalPagado == this.montoTotalPagar) {
-            this.onCollectionValidToSend(true);
-          } else {
-            this.onCollectionValidToSend(false);
-            return;
-          }
-        } else if (this.collection.collectionPayments.length > 0) {
-          if (this.tolerancia0) {
-            this.checkTolerancia();
-          } else {
-            if (Math.abs(this.montoTotalPagado) == Math.abs(this.montoTotalPagar)) {
-              this.onCollectionValidToSend(true);
-            } else {
-              this.onCollectionValidToSend(false);
-              return;
-            }
-          }
-        } else {
-          // Parciales sin pagos / sin rama aplicable: no dejar lastValidToSend stale.
-          this.onCollectionValidToSend(false);
-          return;
-        }
-      } else {
-        if (isNaN(this.montoTotalPagado))
-          this.montoTotalPagado = 0;
-        if (isNaN(this.montoTotalPagar))
-          this.montoTotalPagar = 0;
-
-        if (this.collection.collectionPayments.length == 0) {
-          this.onCollectionValidToSend(false);
-          return;
-        } else {
-
-          if (this.tolerancia0) {
-            this.checkTolerancia();
-          } else {
-            if (Math.abs(this.montoTotalPagado) == Math.abs(this.montoTotalPagar)) {
-              this.onCollectionValidToSend(true);
-            } else {
-              this.onCollectionValidToSend(false);
-              return;
-            }
-          }
-        }
-      }
+    // Anticipo automático: si lo único que falla es tolerancia por exceso, permitir Enviar.
+    const onlyToleranciaExcess = issues.length === 1
+      && issues[0].code === 'TOLERANCIA'
+      && this.createAutomatedPrepaid
+      && (Number(this.montoTotalPagado) - Number(this.montoTotalPagar)) > 0;
+    if (onlyToleranciaExcess) {
+      this.lastSendIssues = [];
+      this.onCollectionValidToSend(true);
+      return;
     }
+
+    this.onCollectionValidToSend(false);
   }
 
   checkTolerancia() {
-    const isAlwaysPartialWithFixedMode = this.alwaysPartialPayment && !this.enablePartialPayment;
-
-    if (this.alwaysPartialPayment && this.existPartialPayment && !isAlwaysPartialWithFixedMode) {
-      if (this.montoTotalPagado != this.montoTotalPagar) {
-        this.onCollectionValidToSend(false);
-        /* if (!this.messageSended) {
-          this.mensaje = this.collectionTags.get('COB_ERROR_PARTIAL_PAY')!;
-
-          this.messageAlert = new MessageAlert(
-            this.collectionTags.get('COB_NOMBRE_MODULO')!,
-            this.mensaje,
-          );
-          this.messageService.alertModal(this.messageAlert);
-          this.messageSended = true;
-
-        } */
-      } else {
-        this.onCollectionValidToSend(true);
-      }
-      return;
-    } else if (this.montoTotalPagado <= 0)
-      this.onCollectionValidToSend(false);
-    else if (this.TipoTolerancia == 0) {
-      //TOLERANCIA0 TRUE PERMITO DIFERENCIA SE DEBEN VALIDAR LAS SIGUIENTES VARIABLES TipoTolerancia, RangoTolerancia, MonedaTolerancia
-      if (this.collection.coCurrency == this.MonedaTolerancia) {
-        //COMO LA MONEDA DEL COBRO Y LA MONEDA DE LA TOLERANCIA SON IGUALES, ENTONCES COMPARO DIRECTAMENTE
-        let amount = this.montoTotalPagado - this.montoTotalPagar;
-        if (amount > 0) {
-          if (amount < this.RangoToleranciaPositiva)
-            this.onCollectionValidToSend(true);
-          else {
-            this.onCollectionValidToSend(false);
-            return;
-          }
-        } else if (amount < 0) {
-          if (Math.abs(amount) > this.RangoToleranciaNegativa)
-            this.onCollectionValidToSend(false);
-          else {
-            this.onCollectionValidToSend(true);
-          }
-        } else {
-          this.onCollectionValidToSend(true);
-        }
-
-
-      } else {
-        //LA MONEDA DEL COBRO Y DE LA TOLERANCIA SON DISTINTAS, DEBO SABER QUE MONEDA ES PARA REALIZAR LA CONVERSION
-        //CORRESPONDIENTE PARA CALCULAR BIEN LA DIFERENCIA
-        if (this.MonedaToleranciaIsLocal) {
-          if (this.collection.coCurrency == this.MonedaTolerancia) {
-            //LA MONEDA ES LOCAL, NO DEBO CONVERTIR
-            let amount = this.montoTotalPagado - this.montoTotalPagar;
-            if (amount > 0) {
-              if (amount < this.RangoToleranciaPositiva)
-                this.onCollectionValidToSend(true);
-              else {
-                this.onCollectionValidToSend(false);
-                return;
-              }
-            } else if (amount < 0) {
-              if (Math.abs(amount) > this.RangoToleranciaNegativa)
-                this.onCollectionValidToSend(false);
-              else {
-                this.onCollectionValidToSend(true);
-              }
-            } else {
-              this.onCollectionValidToSend(true);
-            }
-          } else {
-            //LA MONEDA TOLERANCIA ES LOCA, PERO LA MONEDA DEL COBRO ES LA HARD, DEBO CONVERTIR LA TOLERANCIA A HARD
-            let amount = this.montoTotalPagado - this.montoTotalPagar;
-            if (amount > 0) {
-              if (amount < this.convertirMonto(this.RangoToleranciaPositiva, 0, this.collection.coCurrency))
-                this.onCollectionValidToSend(true);
-              else {
-                this.onCollectionValidToSend(false);
-                return;
-              }
-            } else if (amount < 0) {
-              if (Math.abs(amount) < this.convertirMonto(this.RangoToleranciaNegativa, 0, this.collection.coCurrency))
-                this.onCollectionValidToSend(true);
-              else {
-                this.onCollectionValidToSend(false);
-                return;
-              }
-            } else {
-              this.onCollectionValidToSend(true);
-            }
-          }
-        } else {
-          //LA MONEDA TOLERANCIA ES HARD
-          if (this.collection.coCurrency == this.MonedaTolerancia) {
-            //LA MONEDA ES LOCAL, NO DEBO CONVERTIR
-            let amount = this.montoTotalPagado - this.montoTotalPagar;
-            if (amount > 0) {
-              if (amount < this.RangoToleranciaPositiva)
-                this.onCollectionValidToSend(true);
-              else {
-                this.onCollectionValidToSend(false);
-                return;
-              }
-            } else if (amount < 0) {
-              if (Math.abs(amount) > this.RangoToleranciaNegativa)
-                this.onCollectionValidToSend(false);
-              else {
-                this.onCollectionValidToSend(true);
-              }
-            } else {
-              this.onCollectionValidToSend(true);
-            }
-          } else {
-            //LA MONEDA TOLERANCIA ES HARD, PERO LA MONEDA DEL COBRO ES LA HARD, DEBO CONVERTIR LA TOLERANCIA A LOCAL
-            let amount = this.montoTotalPagado - this.montoTotalPagar;
-            if (amount > 0) {
-              if (amount < this.convertirMonto(this.RangoToleranciaPositiva, 0, this.MonedaTolerancia))
-                this.onCollectionValidToSend(true);
-              else {
-                this.onCollectionValidToSend(false);
-                return;
-              }
-            } else if (amount < 0) {
-              if ((Math.abs(amount)) > this.convertirMonto(this.RangoToleranciaNegativa, 0, this.MonedaTolerancia))
-                this.onCollectionValidToSend(false);
-              else {
-                this.onCollectionValidToSend(true);
-              }
-            } else {
-              this.onCollectionValidToSend(true);
-            }
-
-          }
-        }
-      }
-    } else {
-      //EL TIPO DE TOLERANCIA ES POR RANGO, SE DEBE SACAR PORCENTAJE Y CALCULAR SI SE PUEDE ENVIAR O NO
-      const delta = Number(((Number(this.montoTotalPagado) || 0) - (Number(this.montoTotalPagar) || 0)).toFixed(this.parteDecimal));
-      const base = Math.abs(Number(this.montoTotalPagar) || 0);
-
-
-      // Si el monto a pagar es 0, exigir igualdad exacta
-      if (base === 0) {
-        if (Math.abs(delta) === 0) {
-          this.onCollectionValidToSend(true);
-        } else {
-          this.onCollectionValidToSend(false);
-          return;
-        }
-      }
-
-      // RangoToleranciaPositiva y RangoToleranciaNegativa son porcentajes
-      const allowedPositive = (base * (Number(this.RangoToleranciaPositiva) || 0)) / 100;
-      const allowedNegative = (base * (Number(this.RangoToleranciaNegativa) || 0)) / 100;
-
-      if (delta >= 0) {
-        // Sobrepago: comparar contra rango positivo
-        if (delta <= allowedPositive) {
-          this.onCollectionValidToSend(true);
-        } else {
-          this.onCollectionValidToSend(false);
-          return;
-        }
-      } else {
-        // Falta pago: comparar magnitud contra rango negativo
-        if (Math.abs(delta) <= allowedNegative) {
-          this.onCollectionValidToSend(true);
-        } else {
-          this.onCollectionValidToSend(false);
-          return;
-        }
-      }
-    }
+    this.onCollectionValidToSend(this.computeIsWithinTolerancia());
   }
 
   private hasPaymentText(value: unknown): boolean {
@@ -3142,137 +2855,572 @@ export class CollectionService {
   }
 
   public hasSendFieldErrors(): boolean {
-    const coType = this.collection?.coType;
-
-    if (coType === '2') {
-      return !this.areAllRetentionDetailsComplete(this.collection?.collectionDetails);
-    }
-
-    if (coType !== '2' && (this.hasIncompletePaymentMethods() || this.hasEmptyCollectionPayments())) {
-      return true;
-    }
-
-    if (coType !== '2' && this.hasMissingOtrosDifferenceCodes()) {
-      return true;
-    }
-
-    if (this.hasIncompleteDocumentAmountToPay()) {
-      return true;
-    }
-
-    if (this.requiredComment && !this.validComment) {
-      return true;
-    }
-
-    if (this.hasTxConversionFieldError() || this.hasManualRateFieldError()) {
-      return true;
-    }
-
-    return false;
+    return this.collectSyncFieldSendIssues().length > 0;
   }
 
   /**
-   * Mensaje de diagnóstico al pulsar Enviar con campos incompletos (COB-SEND-UX-001).
-   * Prioridad alineada con hasSendFieldErrors / prerequisites / validateToSend.
+   * Mensaje al pulsar Enviar: prioriza evaluación sync de campos; si no hay, usa último collect.
    */
   public getCollectionSendValidationMessage(): string {
-    const coType = String(this.collection?.coType ?? '0');
-    const incompleteFallback = this.collectionTags.get('COB_MSJ_SEND_INCOMPLETE')
-      ?? 'Complete los campos obligatorios antes de enviar.';
-
-    if (coType === '2'
-      && !this.areAllRetentionDetailsComplete(this.collection?.collectionDetails)) {
-      return this.getRetentionSendValidationMessage();
+    const sync = this.collectSyncFieldSendIssues();
+    if (sync.length > 0) {
+      return sync[0].message;
     }
-
-    if (coType !== '2' && this.hasEmptyCollectionPayments()) {
-      return this.collectionTags.get('COB_MSJ_ERROR_EMPTY_PAYMENT')
-        ?? 'Hay un método de pago vacío. Complételo o elimínelo antes de enviar.';
+    if (this.lastSendIssues.length > 0) {
+      return this.lastSendIssues[0].message;
     }
-
-    if (coType !== '2' && this.hasMissingOtrosDifferenceCodes()) {
-      return this.collectionTags.get('COB_MSJ_ERROR_NO_DIFFERENCE_CODE')
-        ?? 'Seleccione un código de diferencia en el método Otros antes de enviar.';
-    }
-
-    if (coType !== '2' && this.hasIncompletePaymentMethods()) {
-      return this.collectionTags.get('COB_MSJ_ERROR_INCOMPLETE_PAYMENT')
-        ?? 'Hay un método de pago incompleto. Complételo o elimínelo antes de enviar.';
-    }
-
-    if (this.hasIncompleteDocumentAmountToPay()) {
-      return this.collectionTags.get('COB_MSJ_ERROR_NO_AMOUNT_TO_PAY')
-        ?? 'Indique el monto a pagar en Documentos antes de enviar.';
-    }
-
-    if (this.requiredComment && !this.validComment) {
-      return this.collectionTags.get('COB_MSJ_ERROR_NO_COMMENT')
-        ?? 'El comentario es obligatorio. Complételo en la pestaña General.';
-    }
-
-    if (this.hasTxConversionFieldError()) {
-      return this.collectionTags.get('COB_MSJ_ERROR_NO_TX_CONVERSION')
-        ?? 'Indique el motivo del cambio de tasa en la pestaña General.';
-    }
-
-    if (this.hasManualRateFieldError()) {
-      return this.collectionTags.get('COB_MSJ_ERROR_NO_MANUAL_RATE')
-        ?? 'Ingrese una tasa de conversión válida (mayor o igual a 1) en la pestaña General.';
-    }
-
-    if (!this.hideDocuments && coType !== '1' && !this.hasAssignedDocumentForSendUx()) {
-      return this.collectionTags.get('COB_MSJ_ERROR_NO_DOCUMENTS')
-        ?? 'Seleccione al menos un documento antes de enviar.';
-    }
-
-    if (!this.hidePayments && coType !== '2' && !this.hasAddedPaymentMethodForSendUx()) {
-      return this.collectionTags.get('COB_MSJ_ERROR_NO_PAYMENTS')
-        ?? 'Agregue al menos un método de pago antes de enviar.';
-    }
-
     const validateMsg = (this.mensaje ?? '').toString().trim();
     if (validateMsg.length > 0) {
       return validateMsg;
     }
-
-    return incompleteFallback;
+    return this.collectionTags.get('COB_MSJ_SEND_INCOMPLETE')
+      ?? 'Complete los campos obligatorios antes de enviar.';
   }
 
-  /** Pestaña donde está el primer error bloqueante de Enviar. */
-  public resolveSendValidationFocusTab(): 'default' | 'documentos' | 'pagos' | 'adjuntos' {
+  /** Pestaña del primer error bloqueante de Enviar. */
+  public resolveSendValidationFocusTab(): CollectionSendTab {
+    const sync = this.collectSyncFieldSendIssues();
+    if (sync.length > 0) {
+      return sync[0].tab;
+    }
+    if (this.lastSendIssues.length > 0) {
+      return this.lastSendIssues[0].tab;
+    }
+    return 'default';
+  }
+
+  /**
+   * Evalúa TODAS las reglas aplicables al Enviar (sin short-circuit).
+   * Modal = primer issue; campos en rojo = todos vía sendValidationAttempted + helpers UI.
+   */
+  public async collectCollectionSendIssues(): Promise<CollectionSendIssue[]> {
+    const issues: CollectionSendIssue[] = [];
+    const push = (issue: CollectionSendIssue | null | undefined): void => {
+      if (issue) {
+        issues.push(issue);
+      }
+    };
+
     const coType = String(this.collection?.coType ?? '0');
 
-    if (coType === '2'
-      && !this.areAllRetentionDetailsComplete(this.collection?.collectionDetails)) {
-      return 'documentos';
+    // Orden = prioridad de mensaje modal (todos se acumulan; el primero se muestra).
+    if (coType === '2') {
+      push(this.issueIncompleteRetention());
+    } else {
+      push(this.issueEmptyPayments());
+      push(this.issueMissingDifferenceCodes());
+      push(this.issueIncompletePayments());
+      push(this.issueIncompletePersistedPaymentAmounts());
     }
 
-    if (coType !== '2'
-      && (this.hasEmptyCollectionPayments()
-        || this.hasIncompletePaymentMethods()
-        || this.hasMissingOtrosDifferenceCodes())) {
-      return 'pagos';
+    push(this.issueIncompleteDocumentAmountToPay());
+    push(this.issueRequiredComment());
+    push(this.issueTxConversion());
+    push(this.issueManualRate());
+    push(this.issueMissingDocuments());
+    push(this.issueMissingPaymentMethods());
+
+    if (coType !== '2') {
+      push(await this.issueInvalidPaymentReferences());
+      push(this.issueDocumentsNotReady());
+      push(this.issueAmountOrTolerancia());
     }
 
-    if (this.hasIncompleteDocumentAmountToPay()) {
-      return 'documentos';
+    push(this.issueMissingAttachments());
+
+    this.lastSendIssues = issues;
+    this.mensaje = issues[0]?.message ?? '';
+    this.lastValidToSend = issues.length === 0;
+    this.collectValidToSend.next(this.lastValidToSend);
+    return issues;
+  }
+
+  /** Subconjunto sync (campos) para hasSendFieldErrors / reactivar Enviar al editar. */
+  private collectSyncFieldSendIssues(): CollectionSendIssue[] {
+    const issues: CollectionSendIssue[] = [];
+    const push = (issue: CollectionSendIssue | null | undefined): void => {
+      if (issue) {
+        issues.push(issue);
+      }
+    };
+    const coType = String(this.collection?.coType ?? '0');
+
+    if (coType === '2') {
+      push(this.issueIncompleteRetention());
+    } else {
+      push(this.issueEmptyPayments());
+      push(this.issueMissingDifferenceCodes());
+      push(this.issueIncompletePayments());
+      push(this.issueIncompletePersistedPaymentAmounts());
+    }
+    push(this.issueIncompleteDocumentAmountToPay());
+    push(this.issueRequiredComment());
+    push(this.issueTxConversion());
+    push(this.issueManualRate());
+    push(this.issueMissingDocuments());
+    push(this.issueMissingPaymentMethods());
+    return issues;
+  }
+
+  private makeSendIssue(
+    code: string,
+    message: string,
+    tab: CollectionSendTab,
+  ): CollectionSendIssue {
+    return { code, message, tab };
+  }
+
+  private issueMissingDocuments(): CollectionSendIssue | null {
+    const coType = String(this.collection?.coType ?? '0');
+    // coType 2 (retención): la completitud de documentos la cubre issueIncompleteRetention.
+    if (this.hideDocuments || coType === '1' || coType === '2') {
+      return null;
+    }
+    if (this.hasAssignedDocumentForSendUx()) {
+      return null;
+    }
+    return this.makeSendIssue(
+      'NO_DOCUMENTS',
+      this.collectionTags.get('COB_MSJ_ERROR_NO_DOCUMENTS')
+        ?? 'Seleccione al menos un documento antes de enviar.',
+      'documentos',
+    );
+  }
+
+  private issueMissingPaymentMethods(): CollectionSendIssue | null {
+    const coType = String(this.collection?.coType ?? '0');
+    if (this.hidePayments || coType === '2') {
+      return null;
+    }
+    if (this.hasAddedPaymentMethodForSendUx()) {
+      return null;
+    }
+    return this.makeSendIssue(
+      'NO_PAYMENTS',
+      this.collectionTags.get('COB_MSJ_ERROR_NO_PAYMENTS')
+        ?? 'Agregue al menos un método de pago antes de enviar.',
+      'pagos',
+    );
+  }
+
+  private issueIncompleteRetention(): CollectionSendIssue | null {
+    if (this.areAllRetentionDetailsComplete(this.collection?.collectionDetails)) {
+      return null;
+    }
+    return this.makeSendIssue(
+      'INCOMPLETE_RETENTION',
+      this.getRetentionSendValidationMessage(),
+      'documentos',
+    );
+  }
+
+  private issueEmptyPayments(): CollectionSendIssue | null {
+    if (!this.hasEmptyCollectionPayments()) {
+      return null;
+    }
+    return this.makeSendIssue(
+      'EMPTY_PAYMENT',
+      this.collectionTags.get('COB_MSJ_ERROR_EMPTY_PAYMENT')
+        ?? 'Hay un método de pago vacío. Complételo o elimínelo antes de enviar.',
+      'pagos',
+    );
+  }
+
+  private issueIncompletePayments(): CollectionSendIssue | null {
+    if (!this.hasIncompletePaymentMethods()) {
+      return null;
+    }
+    // Evitar duplicar el issue de differenceCode (mensaje más específico).
+    if (this.hasMissingOtrosDifferenceCodes()
+      && !this.hasEmptyCollectionPayments()
+      && this.pagoOtros.length > 0
+      && this.pagoOtros.every(p =>
+        this.isPositivePaymentAmount(p?.monto) && this.hasPaymentText(p?.nombre)
+      )
+      && this.pagoOtros.some(p => !this.isOtrosDifferenceCodeSelected(p))) {
+      return null;
+    }
+    return this.makeSendIssue(
+      'INCOMPLETE_PAYMENT',
+      this.collectionTags.get('COB_MSJ_ERROR_INCOMPLETE_PAYMENT')
+        ?? 'Hay un método de pago incompleto. Complételo o elimínelo antes de enviar.',
+      'pagos',
+    );
+  }
+
+  private issueMissingDifferenceCodes(): CollectionSendIssue | null {
+    if (!this.hasMissingOtrosDifferenceCodes()) {
+      return null;
+    }
+    return this.makeSendIssue(
+      'NO_DIFFERENCE_CODE',
+      this.collectionTags.get('COB_MSJ_ERROR_NO_DIFFERENCE_CODE')
+        ?? 'Seleccione un código de diferencia en el método Otros antes de enviar.',
+      'pagos',
+    );
+  }
+
+  private issueIncompletePersistedPaymentAmounts(): CollectionSendIssue | null {
+    if (!this.hasIncompletePersistedPaymentAmounts()) {
+      return null;
+    }
+    return this.makeSendIssue(
+      'NO_PAYMENT_AMOUNT',
+      this.collectionTags.get('COB_MSJ_ERROR_INCOMPLETE_PAYMENT')
+        ?? 'Hay un método de pago incompleto. Complételo o elimínelo antes de enviar.',
+      'pagos',
+    );
+  }
+
+  private issueIncompleteDocumentAmountToPay(): CollectionSendIssue | null {
+    if (!this.hasIncompleteDocumentAmountToPay()) {
+      return null;
+    }
+    return this.makeSendIssue(
+      'NO_AMOUNT_TO_PAY',
+      this.collectionTags.get('COB_MSJ_ERROR_NO_AMOUNT_TO_PAY')
+        ?? 'Indique el monto a pagar en Documentos antes de enviar.',
+      'documentos',
+    );
+  }
+
+  private issueRequiredComment(): CollectionSendIssue | null {
+    if (!this.requiredComment || this.validComment) {
+      return null;
+    }
+    return this.makeSendIssue(
+      'NO_COMMENT',
+      this.collectionTags.get('COB_MSJ_ERROR_NO_COMMENT')
+        ?? 'El comentario es obligatorio. Complételo en la pestaña General.',
+      'default',
+    );
+  }
+
+  private issueTxConversion(): CollectionSendIssue | null {
+    if (!this.hasTxConversionFieldError()) {
+      return null;
+    }
+    return this.makeSendIssue(
+      'NO_TX_CONVERSION',
+      this.collectionTags.get('COB_MSJ_ERROR_NO_TX_CONVERSION')
+        ?? 'Indique el motivo del cambio de tasa en la pestaña General.',
+      'default',
+    );
+  }
+
+  private issueManualRate(): CollectionSendIssue | null {
+    if (!this.hasManualRateFieldError()) {
+      return null;
+    }
+    return this.makeSendIssue(
+      'NO_MANUAL_RATE',
+      this.collectionTags.get('COB_MSJ_ERROR_NO_MANUAL_RATE')
+        ?? 'Ingrese una tasa de conversión válida (mayor o igual a 1) en la pestaña General.',
+      'default',
+    );
+  }
+
+  private async issueInvalidPaymentReferences(): Promise<CollectionSendIssue | null> {
+    const coType = String(this.collection?.coType ?? '0');
+    if (coType === '2' || this.hidePayments) {
+      return null;
+    }
+    if (!this.hasAddedPaymentMethodForSendUx()) {
+      return null;
+    }
+    const valid = await this.validateReferencePaymentForCollect();
+    if (valid) {
+      return null;
+    }
+    return this.makeSendIssue(
+      'INVALID_REFERENCE',
+      this.collectionTags.get('COB_MSJ_ERROR_INCOMPLETE_PAYMENT')
+        ?? 'Hay un método de pago incompleto. Complételo o elimínelo antes de enviar.',
+      'pagos',
+    );
+  }
+
+  private issueDocumentsNotReady(): CollectionSendIssue | null {
+    const coType = String(this.collection?.coType ?? '0');
+    if (this.hideDocuments || coType === '1') {
+      return null;
+    }
+    if (!this.hasAssignedDocumentForSendUx()) {
+      return null;
+    }
+    if (this.hasValidDocumentSalesForSend()) {
+      return null;
+    }
+    return this.makeSendIssue(
+      'DOCUMENTS_NOT_READY',
+      this.collectionTags.get('COB_MSJ_ERROR_NO_DOCUMENTS')
+        ?? 'Seleccione al menos un documento antes de enviar.',
+      'documentos',
+    );
+  }
+
+  /**
+   * Montos / tolerancia / parciales (coType 0/3) y montos de anticipo (coType 1).
+   * `createAutomatedPrepaid` solo omite el bloqueo por exceso (sobrante).
+   */
+  private issueAmountOrTolerancia(): CollectionSendIssue | null {
+    const coType = String(this.collection?.coType ?? '0');
+    if (coType === '2' || this.hidePayments) {
+      return null;
     }
 
-    if ((this.requiredComment && !this.validComment)
-      || this.hasTxConversionFieldError()
-      || this.hasManualRateFieldError()) {
-      return 'default';
+    this.montoTotalPagar = this.cleanFormattedNumber(
+      this.currencyService.formatNumber(this.montoTotalPagar),
+    );
+    this.montoTotalPagado = this.cleanFormattedNumber(
+      this.currencyService.formatNumber(this.montoTotalPagado),
+    );
+
+    if (coType === '1') {
+      const payments = Array.isArray(this.collection?.collectionPayments)
+        ? this.collection.collectionPayments
+        : [];
+      if (payments.length === 0
+        || !payments.some(p => this.isPositivePaymentAmount(p?.nuAmountPartial))) {
+        return this.makeSendIssue(
+          'ANTICIPO_NO_AMOUNT',
+          this.collectionTags.get('COB_MSJ_ERROR_INCOMPLETE_PAYMENT')
+            ?? 'Indique un monto de pago mayor a 0 antes de enviar.',
+          'pagos',
+        );
+      }
+      return null;
     }
 
-    if (!this.hideDocuments && coType !== '1' && !this.hasAssignedDocumentForSendUx()) {
-      return 'documentos';
+    if (!this.hasAddedPaymentMethodForSendUx()) {
+      return null;
     }
 
-    if (!this.hidePayments && coType !== '2' && !this.hasAddedPaymentMethodForSendUx()) {
-      return 'pagos';
+    const delta = Number(this.montoTotalPagado) - Number(this.montoTotalPagar);
+    if (this.createAutomatedPrepaid && delta > 0) {
+      // Exceso con anticipo automático: no bloquear por tolerancia positiva.
+      if (this.isWithinToleranciaOrExactOrPartialRules() || delta > 0) {
+        return null;
+      }
     }
 
-    return 'default';
+    if (this.isWithinToleranciaOrExactOrPartialRules()) {
+      return null;
+    }
+
+    return this.makeSendIssue(
+      'TOLERANCIA',
+      this.collectionTags.get('COB_ERROR_PARTIAL_PAY')
+        ?? 'El monto pagado no coincide con el monto a pagar según la tolerancia configurada.',
+      'pagos',
+    );
+  }
+
+  private issueMissingAttachments(): CollectionSendIssue | null {
+    const coType = String(this.collection?.coType ?? '0');
+    const hasItems = this.adjuntoService.hasItems();
+
+    if (coType === '0') {
+      if (this.requiredCollectionAttachments && !hasItems) {
+        return this.makeSendIssue(
+          'NO_ATTACHMENTS',
+          this.collectionTags.get('COB_RET_MSJ_COLLECTION_NO_ATTACHMENTS')
+            ?? 'Debe adjuntar al menos un documento antes de enviar.',
+          'adjuntos',
+        );
+      }
+      const details = this.collection?.collectionDetails;
+      const hasRetentions = Array.isArray(details)
+        && details.some(d => this.getDetailRetentionTotal(d) > 0);
+      if (hasRetentions && !hasItems) {
+        return this.makeSendIssue(
+          'NO_ATTACHMENTS_RETENTION',
+          this.collectionTags.get('COB_MSJ_RETENTION_NO_ATTACHMENTS')
+            ?? 'Debe adjuntar al menos un documento por la retención antes de enviar.',
+          'adjuntos',
+        );
+      }
+    }
+
+    if (coType === '1' && this.requiredAnticipoAttachments && !hasItems) {
+      return this.makeSendIssue(
+        'NO_ATTACHMENTS_ANTICIPO',
+        this.collectionTags.get('COB_RET_MSJ_ANTICIPO_NO_ATTACHMENTS')
+          ?? 'Debe adjuntar al menos un documento antes de enviar.',
+        'adjuntos',
+      );
+    }
+
+    if (coType === '2' && this.requiredRetentionAttachments && !hasItems) {
+      return this.makeSendIssue(
+        'NO_ATTACHMENTS_RETENTION_TYPE',
+        this.collectionTags.get('COB_RET_MSJ_RETENTION_NO_ATTACHMENTS')
+          ?? 'Debe adjuntar al menos un documento antes de enviar.',
+        'adjuntos',
+      );
+    }
+
+    return null;
+  }
+
+  /**
+   * Valida referencias sin mutar lastValidToSend (para el colector).
+   */
+  private async validateReferencePaymentForCollect(): Promise<boolean> {
+    const payments = this.getNonEmptyCollectionPayments(this.collection?.collectionPayments);
+    if (payments.length === 0) {
+      return true;
+    }
+
+    const invalidAmount = payments.some(p => !this.isPositivePaymentAmount(p?.nuAmountPartial));
+    if (invalidAmount) {
+      return false;
+    }
+
+    const faltaReferencia = payments.some((pago) => {
+      const payType = (pago.coType ?? pago.coPaymentMethod ?? '').toString().toLowerCase();
+      if (payType === 'ef') {
+        return false;
+      }
+      const refs = [
+        pago.nuPaymentDoc,
+        pago.nuCollectionPayment,
+        pago.nuClientBankAccount,
+      ];
+      return !refs.some(r => r !== undefined && r !== null && String(r).trim() !== '');
+    });
+    return !faltaReferencia;
+  }
+
+  /**
+   * Reglas de monto del cobro normal (parciales / exacto / tolerancia).
+   * Sin side-effects sobre el botón Enviar.
+   */
+  private isWithinToleranciaOrExactOrPartialRules(): boolean {
+    const isAlwaysPartialWithFixedMode = this.alwaysPartialPayment && !this.enablePartialPayment;
+
+    // Contar parciales (misma lógica que validateToSend).
+    const details = Array.isArray(this.collection?.collectionDetails)
+      ? this.collection.collectionDetails
+      : [];
+    const isTrue = (v: unknown) => v === true || String(v ?? '').toLowerCase() === 'true';
+    const onlyPaymentPartial = details.reduce(
+      (count, d) => count + (isTrue(d?.inPaymentPartial) ? 1 : 0),
+      0,
+    );
+    this.existPartialPayment = onlyPaymentPartial > 0;
+    this.allPaymentPartial = details.length > 0 && onlyPaymentPartial === details.length;
+
+    if (this.existPartialPayment) {
+      if (this.alwaysPartialPayment) {
+        return this.computeIsWithinTolerancia();
+      }
+      if (this.allPaymentPartial && (this.collection?.collectionPayments?.length ?? 0) > 0) {
+        if (this.alwaysPartialPayment) {
+          if (this.tolerancia0) {
+            return this.computeIsWithinTolerancia();
+          }
+          return Math.abs(this.montoTotalPagado) === Math.abs(this.montoTotalPagar);
+        }
+        return this.montoTotalPagado === this.montoTotalPagar;
+      }
+      if ((this.collection?.collectionPayments?.length ?? 0) > 0) {
+        if (this.tolerancia0) {
+          return this.computeIsWithinTolerancia();
+        }
+        return Math.abs(this.montoTotalPagado) === Math.abs(this.montoTotalPagar);
+      }
+      return false;
+    }
+
+    if ((this.collection?.collectionPayments?.length ?? 0) > 0) {
+      if (this.tolerancia0) {
+        return this.computeIsWithinTolerancia();
+      }
+      return Math.abs(this.montoTotalPagado) === Math.abs(this.montoTotalPagar);
+    }
+
+    if (!isAlwaysPartialWithFixedMode && (this.alwaysPartialPayment || this.allPaymentPartial)) {
+      return false;
+    }
+    return false;
+  }
+
+  /** Lógica pura de `checkTolerancia` (sin mutar botón). */
+  private computeIsWithinTolerancia(): boolean {
+    const isAlwaysPartialWithFixedMode = this.alwaysPartialPayment && !this.enablePartialPayment;
+
+    if (this.alwaysPartialPayment && this.existPartialPayment && !isAlwaysPartialWithFixedMode) {
+      return this.montoTotalPagado === this.montoTotalPagar;
+    }
+    if (this.montoTotalPagado <= 0) {
+      return false;
+    }
+
+    if (this.TipoTolerancia == 0) {
+      if (this.collection.coCurrency == this.MonedaTolerancia) {
+        const amount = this.montoTotalPagado - this.montoTotalPagar;
+        if (amount > 0) {
+          return amount < this.RangoToleranciaPositiva;
+        }
+        if (amount < 0) {
+          return Math.abs(amount) <= this.RangoToleranciaNegativa;
+        }
+        return true;
+      }
+
+      if (this.MonedaToleranciaIsLocal) {
+        const amount = this.montoTotalPagado - this.montoTotalPagar;
+        if (this.collection.coCurrency == this.MonedaTolerancia) {
+          if (amount > 0) {
+            return amount < this.RangoToleranciaPositiva;
+          }
+          if (amount < 0) {
+            return Math.abs(amount) <= this.RangoToleranciaNegativa;
+          }
+          return true;
+        }
+        if (amount > 0) {
+          return amount < this.convertirMonto(this.RangoToleranciaPositiva, 0, this.collection.coCurrency);
+        }
+        if (amount < 0) {
+          return Math.abs(amount) <= this.convertirMonto(this.RangoToleranciaNegativa, 0, this.collection.coCurrency);
+        }
+        return true;
+      }
+
+      // Moneda tolerancia hard
+      const amount = this.montoTotalPagado - this.montoTotalPagar;
+      if (this.collection.coCurrency == this.MonedaTolerancia) {
+        if (amount > 0) {
+          return amount < this.RangoToleranciaPositiva;
+        }
+        if (amount < 0) {
+          return Math.abs(amount) <= this.RangoToleranciaNegativa;
+        }
+        return true;
+      }
+      if (amount > 0) {
+        return amount < this.convertirMonto(this.RangoToleranciaPositiva, 0, this.collection.coCurrency);
+      }
+      if (amount < 0) {
+        return Math.abs(amount) <= this.convertirMonto(this.RangoToleranciaNegativa, 0, this.collection.coCurrency);
+      }
+      return true;
+    }
+
+    // Tolerancia porcentual
+    const delta = Number(((Number(this.montoTotalPagado) || 0) - (Number(this.montoTotalPagar) || 0)).toFixed(this.parteDecimal));
+    const base = Math.abs(Number(this.montoTotalPagar) || 0);
+    if (base === 0) {
+      return Math.abs(delta) === 0;
+    }
+    const allowedPositive = (base * (Number(this.RangoToleranciaPositiva) || 0)) / 100;
+    const allowedNegative = (base * (Number(this.RangoToleranciaNegativa) || 0)) / 100;
+    if (delta >= 0) {
+      return delta <= allowedPositive;
+    }
+    return Math.abs(delta) <= allowedNegative;
   }
 
   /** Emite la pestaña a enfocar tras un fallo de Enviar. */
@@ -3628,9 +3776,8 @@ export class CollectionService {
   }
 
   onCollectionValidToSend(validToSend: boolean) {
-    console.log('returnLogicService: onReturnValidToSend');
-    // Anticipo automático: el cobro puede enviarse aunque la diferencia no cuadre exactamente.
-    if (!validToSend && this.createAutomatedPrepaid) {
+    // Anticipo automático: solo omite falla de tolerancia/exceso si no hay errores de campos.
+    if (!validToSend && this.createAutomatedPrepaid && !this.hasSendFieldErrors()) {
       this.lastValidToSend = true;
       this.collectValidToSend.next(true);
       return;

@@ -1,7 +1,8 @@
 /* ...existing styles ... */
 
 .global-calc-fab {
-    z-index: 9999;
+  z-index: 9999;
+  margin-right: max(8px, env(safe-area-inset-right, 0px));
 }
 
 /* estilo para el icono de la calculadora dentro del FAB */

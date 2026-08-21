@@ -423,88 +423,13 @@ export class CobrosHeaderComponent implements OnInit {
       return;
     }
 
-    if (sendOrSave
-      && this.collectService.collection.coType !== '2'
-      && (this.collectService.hasEmptyCollectionPayments()
-        || this.collectService.hasIncompletePaymentMethods())) {
-      this.collectService.blockSaveAndSendForInvalidPayments();
-      this.messageService.transaccionMsjModalNB(
-        this.collectService.hasEmptyCollectionPayments()
-          ? 'Hay un método de pago vacío. Complételo o elimínelo antes de enviar.'
-          : 'Hay un método de pago incompleto. Complételo o elimínelo antes de enviar.'
-      );
+    // Enviar: validaciones ya corridas en sendCollect via collectCollectionSendIssues.
+    // Safety mínimo por si el estado cambió entre confirmar y persistir.
+    if (sendOrSave && this.collectService.hasSendFieldErrors()) {
+      this.collectService.sendBlockedByFields = true;
+      this.collectService.updateSendButtonAvailability();
+      this.notifySendValidationFailure();
       return;
-    }
-
-    if (this.collectService.collection.coType == "0" && sendOrSave) {
-      //ES UN COBRO, SE DEBE BUSCAR EN TODOS LOS DETAILS SI HAY RETENCIONES, SI HAY RETENCIONES HAY QUE BUSCAR
-      // SI HAY ADJUNTOS, SI NO HAY, SE DEBE ENVIAR MSJ DE ALERTA Y
-      //NO SE DEBE PERMITIR EL ENVIO HASTA QUE SE ADJUNTE AL MENOS UN DOCUMENTO
-      try {
-        const details = this.collectService.collection?.collectionDetails;
-        const hasRetentions = Array.isArray(details) && details.some(d =>
-          this.collectService.getDetailRetentionTotal(d) > 0
-        );
-
-
-        //NUEVA VALIDACION, SI LA CONFIGURACION DE LA EMPRESA INDICA QUE LOS COBROS REQUIEREN ADJUNTOS, SE VALIDA QUE HAYA ADJUNTOS INDEPENDIENTEMENTE DE SI HAY RETENCIONES O NO
-        if (this.collectService.requiredCollectionAttachments) {
-          if (!this.adjuntoService.hasItems()) {
-            //NO HAY ADJUNTOS
-            this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_RET_MSJ_COLLECTION_NO_ATTACHMENTS')!);
-            return;
-          }
-        }
-
-        // Guardar resultado en el servicio para uso posterior y log para depuración
-        //this.collectService.isRetention = !!hasRetentions;
-        if (hasRetentions) {
-          console.log('CobrosHeader: Detected retention amounts in collectionDetails', {
-            collectionId: this.collectService.collection?.coCollection,
-            hasRetentions
-          });
-
-          if (!this.adjuntoService.hasItems()) {
-            //NO HAY ADJUNTOS
-            this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_MSJ_RETENTION_NO_ATTACHMENTS')!);
-            return;
-          }
-        }
-      } catch (err) {
-        console.error('CobrosHeader: error comprobando retenciones en collectionDetails', err);
-      }
-    }
-    
-    if (this.collectService.collection.coType == "1" && sendOrSave) {
-      if (this.collectService.requiredAnticipoAttachments) {
-        if (!this.adjuntoService.hasItems()) {
-          this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_RET_MSJ_ANTICIPO_NO_ATTACHMENTS')!);
-          return;
-        }
-      }
-    }
-
-    if (this.collectService.collection.coType == "2") {
-      if (sendOrSave && this.collectService.requiredRetentionAttachments) {
-        if (!this.adjuntoService.hasItems()) {
-          this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_RET_MSJ_RETENTION_NO_ATTACHMENTS')!);
-          return;
-        }
-      }
-      if (sendOrSave
-        && !this.collectService.areAllRetentionDetailsComplete(this.collectService.collection.collectionDetails)) {
-        this.notifyRetentionSendValidationFailure();
-        return;
-      }
-    }
-
-    if (sendOrSave && this.collectService.collection.coType !== '2') {
-      if (this.collectService.hasIncompletePaymentMethods()
-        || this.collectService.hasIncompleteDocumentAmountToPay()) {
-        this.collectService.blockSaveAndSendForInvalidPayments();
-        this.notifySendValidationFailure();
-        return;
-      }
     }
 
     this.collectService.collectionIsSave = true;
@@ -627,28 +552,21 @@ export class CobrosHeaderComponent implements OnInit {
   }
 
   sendCollect() {
-    if (!this.collectService.hasSendPrerequisites()) {
-      this.collectService.sendValidationAttempted = true;
-      this.notifySendValidationFailure();
-      return;
-    }
-
     this.collectService.sendValidationAttempted = true;
 
-    if (this.collectService.hasSendFieldErrors()) {
-      this.collectService.sendBlockedByFields = true;
-      this.collectService.updateSendButtonAvailability();
-      this.notifySendValidationFailure();
-      return;
-    }
-
     void this.collectService.validateToSend().then(() => {
-      // Revalidar campos: createAutomatedPrepaid puede forzar lastValidToSend=true
-      // aunque falte monto a pagar / monto de pago (COB-SEND-UX-001).
-      if (this.collectService.hasSendFieldErrors() || !this.collectService.lastValidToSend) {
+      if (!this.collectService.lastValidToSend) {
         this.collectService.sendBlockedByFields = true;
         this.collectService.updateSendButtonAvailability();
-        this.notifySendValidationFailure();
+        const issue = this.collectService.lastSendIssues[0];
+        if (this.collectService.collection.coType === '2') {
+          this.collectService.retentionSendFocusDocIndex =
+            this.collectService.findFirstIncompleteRetentionDocumentIndex();
+        }
+        this.showSendValidationAlert(
+          issue?.message ?? this.collectService.getCollectionSendValidationMessage(),
+        );
+        this.collectService.requestSendValidationTabFocus(issue?.tab);
         return;
       }
 
