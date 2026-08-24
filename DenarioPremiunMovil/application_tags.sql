@@ -333,6 +333,7 @@ INSERT INTO public.application_tags(
 	('COB_DEV_FALT','COB','COBROS','ESP','Dev/Falt.'),
 	('COB_MONTO_DOC','COB','COBROS','ESP','Monto Doc.'),
 	('COB_MONTO_PAGO','COB','COBROS','ESP','Monto Pago'),
+	('COB_MONTO_SALDO','COB','COBROS','ESP','Monto Saldo'),
 	('COB_NRO_DOC','COB','COBROS','ESP','Nro. Doc.'),
 	('COB_TOTAL_EFECTIVO','COB','COBROS','ESP','Total Efectivo'),
 	('COB_TOTAL_CHEQUES','COB','COBROS','ESP','Total Cheques'),
