@@ -1194,13 +1194,80 @@ export class CollectionService {
     detail: CollectionDetail | undefined,
     backup?: { nuBalance?: number },
   ): number {
+    const original = Number(detail?.nuBalanceDocOriginal ?? 0);
+    if (Number.isFinite(original) && original > 0) {
+      return original;
+    }
     const candidates = [
       Number(detail?.nuBalanceDoc ?? 0),
-      Number(detail?.nuBalanceDocOriginal ?? 0),
       Number(backup?.nuBalance ?? 0),
       Number(detail?.nuAmountDoc ?? 0),
     ];
     return candidates.find(value => Number.isFinite(value) && value > 0) ?? 0;
+  }
+
+  /**
+   * Tras un pago parcial guardado, nuBalanceDoc debe reflejar el saldo restante
+   * (balance original − monto pagado), no el balance bruto del documento.
+   */
+  public applyRemainingBalanceDocAfterPartialPayment(detail: CollectionDetail): void {
+    if (detail?.inPaymentPartial !== true) {
+      return;
+    }
+    const paid = Number(detail.nuAmountPaid ?? 0);
+    if (!(paid > 0)) {
+      return;
+    }
+
+    const gross = Number(detail.nuBalanceDocOriginal ?? 0);
+    if (!(gross > 0)) {
+      return;
+    }
+    const grossConv = Number(detail.nuBalanceDocOriginalConversion ?? 0);
+    let paidConv = Number(detail.nuAmountPaidConversion ?? 0);
+    if (!(paidConv > 0) && this.collection) {
+      paidConv = this.convertirMonto(
+        paid,
+        detail.nuValueLocal ?? this.collection.nuValueLocal,
+        detail.coOriginal ?? this.collection.coCurrency,
+      );
+    }
+
+    detail.nuBalanceDoc = Math.max(0, gross - paid);
+    detail.nuBalanceDocConversion = Math.max(0, grossConv - paidConv);
+  }
+
+  private isDetailPartialPayment(detail: CollectionDetail): boolean {
+    return detail.inPaymentPartial === true
+      || String(detail.inPaymentPartial ?? '').toLowerCase() === 'true';
+  }
+
+  private resolveDetailBalanceDocFieldsForSend(detail: CollectionDetail): {
+    nuBalanceDoc: number;
+    nuBalanceDocConversion: number;
+  } {
+    if (this.isDetailPartialPayment(detail) && Number(detail.nuBalanceDocOriginal ?? 0) > 0) {
+      const sendDetail = { ...detail };
+      this.applyRemainingBalanceDocAfterPartialPayment(sendDetail);
+      return {
+        nuBalanceDoc: Number(sendDetail.nuBalanceDoc ?? 0),
+        nuBalanceDocConversion: Number(sendDetail.nuBalanceDocConversion ?? 0),
+      };
+    }
+
+    if (this.isDetailPartialPayment(detail)) {
+      return {
+        nuBalanceDoc: Number(detail.nuBalanceDoc ?? 0),
+        nuBalanceDocConversion: Number(detail.nuBalanceDocConversion ?? 0),
+      };
+    }
+
+    return {
+      nuBalanceDoc: Number(detail.nuBalanceDocOriginal ?? detail.nuBalanceDoc ?? 0),
+      nuBalanceDocConversion: Number(
+        detail.nuBalanceDocOriginalConversion ?? detail.nuBalanceDocConversion ?? 0,
+      ),
+    };
   }
 
   private findDocumentSaleIndexForDetail(detail: CollectionDetail): number {
@@ -3903,8 +3970,7 @@ export class CollectionService {
     const collectionDetails = await this.getCollectionDetails(dbServ, coCollection);
     const details = collectionDetails.map(detail => ({
       ...detail,
-      nuBalanceDoc: detail.nuBalanceDocOriginal,
-      nuBalanceDocConversion: detail.nuBalanceDocOriginalConversion,
+      ...this.resolveDetailBalanceDocFieldsForSend(detail),
     }));
 
     if (options.includeDiscounts) {
@@ -3975,6 +4041,10 @@ export class CollectionService {
 
       detail.nuBalanceDocOriginal = originalBalance;
       detail.nuBalanceDocOriginalConversion = originalBalanceConversion;
+
+      if (this.isPaymentPartial && Number(this.amountPaid) > 0) {
+        this.applyRemainingBalanceDocAfterPartialPayment(detail);
+      }
     }
 
     this.documentSales[idx].inPaymentPartial = this.isPaymentPartial;
@@ -4841,11 +4911,22 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       this.documentSalesBackup[index].daVoucher = detail.daVoucher!;
 
       if (this.collection.stDelivery != 3) {
-        detail.nuBalanceDoc = this.resolveAmountInCollectionCurrency(doc.nuBalance, doc.coCurrency);
-        detail.nuBalanceDocConversion = doc.nuBalance;
-        if (!detail.isSave && !isPartial) {
-          detail.nuAmountPaid = this.resolveAmountInCollectionCurrency(doc.nuBalance, doc.coCurrency);
-          detail.nuAmountPaidConversion = doc.nuBalance;
+        if (isPartial && detail.isSave) {
+          if (!(Number(detail.nuBalanceDocOriginal) > 0)) {
+            detail.nuBalanceDocOriginal = this.resolveAmountInCollectionCurrency(
+              doc.nuBalance,
+              doc.coCurrency,
+            );
+            detail.nuBalanceDocOriginalConversion = doc.nuBalance;
+          }
+          this.applyRemainingBalanceDocAfterPartialPayment(detail);
+        } else {
+          detail.nuBalanceDoc = this.resolveAmountInCollectionCurrency(doc.nuBalance, doc.coCurrency);
+          detail.nuBalanceDocConversion = doc.nuBalance;
+          if (!detail.isSave && !isPartial) {
+            detail.nuAmountPaid = this.resolveAmountInCollectionCurrency(doc.nuBalance, doc.coCurrency);
+            detail.nuAmountPaidConversion = doc.nuBalance;
+          }
         }
       }
 
