@@ -1780,8 +1780,12 @@ export class CobrosGeneralComponent implements OnInit {
         nuAmountCollectDiscountConversion: this.collectService.convertirMonto(nuAmountCollectDiscount, this.collectService.collection.nuValueLocal, this.collectService.collection.coCurrency),
         collectionDetailDiscounts: previousDetail?.collectionDetailDiscounts,
       });
-      // Actualizar positionCollecDetails en los arrays de documentos
       const newPos = this.collectService.collection.collectionDetails.length - 1;
+      const newDetail = this.collectService.collection.collectionDetails[newPos];
+      if (doc.inPaymentPartial && (doc.isSave || previousDetail?.isSave)) {
+        this.collectService.applyRemainingBalanceDocAfterPartialPayment(newDetail);
+      }
+      // Actualizar positionCollecDetails en los arrays de documentos
       const docIndex = this.collectService.documentSales.findIndex(documentSale => documentSale.idDocument === doc.idDocument);
       if (docIndex >= 0) {
         this.collectService.documentSales[docIndex].positionCollecDetails = newPos;

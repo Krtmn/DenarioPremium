@@ -563,6 +563,15 @@ export class CobroTotalComponent implements OnInit {
     return this.currencyService.formatNumber(this.normalizeTotalizationAmount(amount));
   }
 
+  resolveDetailRemainingBalance(detail: CollectionDetail): number {
+    const balance = this.normalizeTotalizationAmount(detail?.nuBalanceDoc);
+    const paid = this.normalizeTotalizationAmount(detail?.nuAmountPaid);
+    if (detail?.inPaymentPartial === true) {
+      return balance;
+    }
+    return balance - paid;
+  }
+
   hasTotalizationColumnAmount(
     field: 'discount' | 'retentionIva' | 'retentionIslr' | 'igtf' | 'collectDiscount',
   ): boolean {

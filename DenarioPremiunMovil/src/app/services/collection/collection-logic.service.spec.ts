@@ -887,6 +887,142 @@ describe('CollectionService', () => {
       expect(service.documentSales[0].inPaymentPartial).toBeTrue();
       expect(service.documentSales[0].nuAmountPaid).toBe(40);
       expect(service.documentSales[0].positionCollecDetails).toBe(0);
+      expect(service.collection.collectionDetails[0].nuBalanceDoc).toBe(60);
+    });
+
+    it('applyRemainingBalanceDocAfterPartialPayment sets remaining balance from original minus paid', () => {
+      const detail = {
+        inPaymentPartial: true,
+        nuAmountPaid: 100,
+        nuAmountPaidConversion: 100,
+        nuBalanceDocOriginal: 500,
+        nuBalanceDocOriginalConversion: 500,
+        nuBalanceDoc: 500,
+        nuBalanceDocConversion: 500,
+      } as CollectionDetail;
+
+      service.applyRemainingBalanceDocAfterPartialPayment(detail);
+
+      expect(detail.nuBalanceDoc).toBe(400);
+      expect(detail.nuBalanceDocConversion).toBe(400);
+      expect(detail.nuBalanceDocOriginal).toBe(500);
+    });
+
+    it('copyDocumentSaleOpenToSalesAndDetails sets nuBalanceDoc to remaining after partial save', () => {
+      spyOn(service, 'convertirMonto').and.callFake((amount: number) => Number(amount) || 0);
+      spyOn(service, 'shouldApplyIgtfToCollection').and.returnValue(false);
+      service.collection = {
+        coCurrency: 'USD',
+        nuValueLocal: 1,
+        collectionDetails: [{
+          idDocument: 1,
+          coDocument: 'FAC-1',
+          nuBalanceDoc: 500,
+          nuBalanceDocConversion: 500,
+          nuBalanceDocOriginal: 500,
+          nuBalanceDocOriginalConversion: 500,
+          nuAmountPaid: 0,
+          nuAmountDiscount: 0,
+          nuAmountCollectDiscount: 0,
+          nuAmountRetention: 0,
+          nuAmountRetention2: 0,
+          nuValueLocal: 1,
+          coOriginal: 'USD',
+          isSave: false,
+          inPaymentPartial: false,
+          daVoucher: '',
+          nuVoucherRetention: '',
+        }],
+      } as any;
+      service.documentSaleOpen = {
+        positionCollecDetails: 0,
+        daVoucher: '2026-08-24',
+        nuAmountRetention: 0,
+        nuAmountRetention2: 0,
+        nuVaucherRetention: '',
+        nuValueLocal: 1,
+        coCurrency: 'USD',
+      } as any;
+      service.indexDocumentSaleOpen = 0;
+      service.documentSales = [{
+        idDocument: 1,
+        coDocument: 'FAC-1',
+        nuBalance: 500,
+        isSave: false,
+        inPaymentPartial: false,
+        nuAmountPaid: 0,
+        nuAmountRetention: 0,
+        nuAmountRetention2: 0,
+        positionCollecDetails: 0,
+      } as DocumentSale];
+      service.documentSalesBackup = [{ ...service.documentSales[0], nuBalance: 500 } as DocumentSale];
+      service.isPaymentPartial = true;
+      service.amountPaid = 100;
+
+      service.copyDocumentSaleOpenToSalesAndDetails();
+
+      expect(service.collection.collectionDetails[0].nuBalanceDoc).toBe(400);
+      expect(service.collection.collectionDetails[0].nuBalanceDocOriginal).toBe(500);
+      expect(service.collection.collectionDetails[0].nuAmountPaid).toBe(100);
+    });
+
+    it('prepareCollectionDetailsForSend sends remaining nuBalanceDoc on partial payment', async () => {
+      spyOn(service, 'getCollectionDetails').and.resolveTo([{
+        coDocument: 'FAC-1',
+        inPaymentPartial: true,
+        nuAmountPaid: 100,
+        nuAmountPaidConversion: 100,
+        nuBalanceDoc: 400,
+        nuBalanceDocConversion: 400,
+        nuBalanceDocOriginal: 500,
+        nuBalanceDocOriginalConversion: 500,
+      } as CollectionDetail]);
+      spyOn(service, 'getCollectionDetailsRetentions').and.resolveTo([]);
+      spyOn(service, 'getCollectionDetailsDiscounts').and.resolveTo([]);
+
+      const details = await service.prepareCollectionDetailsForSend({} as any, 'COB-1');
+
+      expect(details[0].nuBalanceDoc).toBe(400);
+      expect(details[0].nuBalanceDocConversion).toBe(400);
+      expect(details[0].nuBalanceDocOriginal).toBe(500);
+    });
+
+    it('prepareCollectionDetailsForSend sends original nuBalanceDoc on full payment', async () => {
+      spyOn(service, 'getCollectionDetails').and.resolveTo([{
+        coDocument: 'FAC-2',
+        inPaymentPartial: false,
+        nuAmountPaid: 500,
+        nuBalanceDoc: 500,
+        nuBalanceDocConversion: 500,
+        nuBalanceDocOriginal: 500,
+        nuBalanceDocOriginalConversion: 500,
+      } as CollectionDetail]);
+      spyOn(service, 'getCollectionDetailsRetentions').and.resolveTo([]);
+      spyOn(service, 'getCollectionDetailsDiscounts').and.resolveTo([]);
+
+      const details = await service.prepareCollectionDetailsForSend({} as any, 'COB-2');
+
+      expect(details[0].nuBalanceDoc).toBe(500);
+      expect(details[0].nuBalanceDocConversion).toBe(500);
+    });
+
+    it('prepareCollectionDetailsForSend recomputes partial nuBalanceDoc from original minus paid', async () => {
+      spyOn(service, 'getCollectionDetails').and.resolveTo([{
+        coDocument: 'FAC-3',
+        inPaymentPartial: true,
+        nuAmountPaid: 100,
+        nuAmountPaidConversion: 100,
+        nuBalanceDoc: 500,
+        nuBalanceDocConversion: 500,
+        nuBalanceDocOriginal: 500,
+        nuBalanceDocOriginalConversion: 500,
+      } as CollectionDetail]);
+      spyOn(service, 'getCollectionDetailsRetentions').and.resolveTo([]);
+
+      const details = await service.prepareCollectionDetailsForSend({} as any, 'COB-3');
+
+      expect(details[0].nuBalanceDoc).toBe(400);
+      expect(details[0].nuBalanceDocConversion).toBe(400);
     });
 
     it('DM-COB-042: Otros is complete with positive amount and name', () => {
