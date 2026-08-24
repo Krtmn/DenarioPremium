@@ -15,8 +15,10 @@ import { DateServiceService } from '../services/dates/date-service.service';
 describe('PedidosComponent', () => {
   let component: PedidosComponent;
   let fixture: ComponentFixture<PedidosComponent>;
+  let ensureModuleReadySpy: jasmine.Spy;
 
   beforeEach(waitForAsync(() => {
+    ensureModuleReadySpy = jasmine.createSpy('ensureModuleReady').and.returnValue(Promise.resolve());
     TestBed.configureTestingModule({
       declarations: [ PedidosComponent ],
       imports: [IonicModule.forRoot()],
@@ -26,9 +28,7 @@ describe('PedidosComponent', () => {
           useValue: {
             coordenadas: '',
             userMustActivateGPS: false,
-            getTags: () => undefined,
-            getLists: () => undefined,
-            getConfiguration: () => undefined,
+            ensureModuleReady: ensureModuleReadySpy,
           },
         },
         { provide: Router, useValue: { navigate: jasmine.createSpy('navigate') } },
@@ -70,5 +70,13 @@ describe('PedidosComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('ngOnInit invoca ensureModuleReady con la BD local', async () => {
+    ensureModuleReadySpy.calls.reset();
+
+    await component.ngOnInit();
+
+    expect(ensureModuleReadySpy).toHaveBeenCalledTimes(1);
   });
 });

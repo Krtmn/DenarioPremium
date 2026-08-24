@@ -90,6 +90,7 @@ export class PedidosService {
   public historyTransaction = inject(HistoryTransaction);
 
   public db = inject(PedidosDbService);
+  private router = inject(Router);
 
   public get database(): SQLiteObject {
     return this.dbServ.getDatabase();
@@ -295,13 +296,6 @@ export class PedidosService {
       //this.cliente = client;
     })
   */
-
-
-
-  constructor(private router: Router) {
-    this.getTags();
-    this.getConfig();
-  }
 
 
 
@@ -723,36 +717,32 @@ export class PedidosService {
     }
     return this.getProdMinMulByProduct(idProduct);
   }
-  getTags() {
-    if (this.tags.size > 0) {
-      //ya tenemos los tags, no hay que hacer nada.
-    } else {
-      this.services.getTags(this.dbServ.getDatabase(), "PED", "ESP").then(result => {
-        for (var i = 0; i < result.length; i++) {
-          this.tags.set(
-            result[i].coApplicationTag, result[i].tag
-          )
-        }
-      });
-      this.services.getTags(this.dbServ.getDatabase(), "PROD", "ESP").then(result => {
-        for (var i = 0; i < result.length; i++) {
-          this.ProdSelecttags.set(
-            result[i].coApplicationTag, result[i].tag
-          )
-        }
-      });
-      this.services.getTags(this.dbServ.getDatabase(), "DEN", "ESP").then(result => {
-        for (var i = 0; i < result.length; i++) {
-          this.ProdSelecttags.set(
-            result[i].coApplicationTag, result[i].tag
-          )
-          this.tags.set(
-            result[i].coApplicationTag, result[i].tag
-          )
-        }
-      });
+  async ensureModuleReady(dbServ: SQLiteObject): Promise<void> {
+    this.getConfig();
+    await this.getTags(dbServ);
+  }
 
+  getTags(dbServ: SQLiteObject): Promise<boolean> {
+    if (this.tags.size > 0) {
+      return Promise.resolve(true);
     }
+    return this.services.getTags(dbServ, 'PED', 'ESP').then(result => {
+      for (let i = 0; i < result.length; i++) {
+        this.tags.set(result[i].coApplicationTag, result[i].tag);
+      }
+      return this.services.getTags(dbServ, 'PROD', 'ESP');
+    }).then(result => {
+      for (let i = 0; i < result.length; i++) {
+        this.ProdSelecttags.set(result[i].coApplicationTag, result[i].tag);
+      }
+      return this.services.getTags(dbServ, 'DEN', 'ESP');
+    }).then(result => {
+      for (let i = 0; i < result.length; i++) {
+        this.ProdSelecttags.set(result[i].coApplicationTag, result[i].tag);
+        this.tags.set(result[i].coApplicationTag, result[i].tag);
+      }
+      return true;
+    });
   }
 
   getTag(tagName: string) {
