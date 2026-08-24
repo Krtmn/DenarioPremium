@@ -89,9 +89,11 @@ export class PedidosService {
   public adjuntoService = inject(AdjuntoService);
   public historyTransaction = inject(HistoryTransaction);
 
-  public database: SQLiteObject;
-
   public db = inject(PedidosDbService);
+
+  public get database(): SQLiteObject {
+    return this.dbServ.getDatabase();
+  }
 
   public empresaSeleccionada!: Enterprise;
   public monedaSeleccionada!: CurrencyEnterprise;
@@ -299,7 +301,6 @@ export class PedidosService {
   constructor(private router: Router) {
     this.getTags();
     this.getConfig();
-    this.database = this.dbServ.getDatabase();
   }
 
 
