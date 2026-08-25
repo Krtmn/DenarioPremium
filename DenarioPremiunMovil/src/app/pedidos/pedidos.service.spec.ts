@@ -2,13 +2,26 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { FileOpener } from '@awesome-cordova-plugins/file-opener/ngx';
+import { Router } from '@angular/router';
 
 import { OrderEditContext, PedidosService } from './pedidos.service';
 import { SynchronizationDBService } from '../services/synchronization/synchronization-db.service';
+import { ServicesService } from '../services/services.service';
 import { OrderUtil } from '../modelos/orderUtil';
 
 describe('PedidosService', () => {
   let service: PedidosService;
+  let servicesSpy: jasmine.SpyObj<ServicesService>;
+  const mockDb = {} as import('@awesome-cordova-plugins/sqlite').SQLiteObject;
+
+  const tagRow = (coApplicationTag: string, tag: string) => ({
+    idApplicationTag: 1,
+    coApplicationTag,
+    coLanguage: 'ESP',
+    coModule: 'PED',
+    naModule: 'Pedidos',
+    tag,
+  });
 
   const baseContext = (): OrderEditContext => ({
     idClient: 10,
@@ -26,12 +39,25 @@ describe('PedidosService', () => {
     }) as OrderUtil;
 
   beforeEach(() => {
+    servicesSpy = jasmine.createSpyObj('ServicesService', ['getTags']);
+    servicesSpy.getTags.and.callFake((_db, module: string) => {
+      if (module === 'PED') {
+        return Promise.resolve([tagRow('PED_NOMBRE_MODULO', 'Pedidos')]);
+      }
+      if (module === 'PROD') {
+        return Promise.resolve([tagRow('PROD_BUSCAR', 'Buscar')]);
+      }
+      return Promise.resolve([tagRow('DENARIO_BOTON_ACEPTAR', 'Aceptar')]);
+    });
+
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: FileOpener, useValue: { open: () => Promise.resolve() } },
-        { provide: SynchronizationDBService, useValue: { getDatabase: () => ({}) } },
+        { provide: Router, useValue: { navigate: jasmine.createSpy('navigate') } },
+        { provide: SynchronizationDBService, useValue: { getDatabase: () => mockDb } },
+        { provide: ServicesService, useValue: servicesSpy },
       ],
     });
     service = TestBed.inject(PedidosService);
@@ -58,6 +84,38 @@ describe('PedidosService', () => {
 
   it('should be created', () => {
     expect(service).toBeTruthy();
+  });
+
+  describe('getTags / ensureModuleReady', () => {
+    beforeEach(() => {
+      service.tags.clear();
+      service.ProdSelecttags.clear();
+      servicesSpy.getTags.calls.reset();
+    });
+
+    it('getTags puebla tags y ProdSelecttags desde SQLite', async () => {
+      const loaded = await service.getTags(mockDb);
+
+      expect(loaded).toBeTrue();
+      expect(service.getTag('PED_NOMBRE_MODULO')).toBe('Pedidos');
+      expect(service.ProdSelecttags.get('PROD_BUSCAR')).toBe('Buscar');
+      expect(service.getTag('DENARIO_BOTON_ACEPTAR')).toBe('Aceptar');
+    });
+
+    it('getTags usa cache y no re-ejecuta SQL', async () => {
+      await service.getTags(mockDb);
+      servicesSpy.getTags.calls.reset();
+
+      await service.getTags(mockDb);
+
+      expect(servicesSpy.getTags).not.toHaveBeenCalled();
+    });
+
+    it('ensureModuleReady carga config y tags', async () => {
+      await service.ensureModuleReady(mockDb);
+
+      expect(service.getTag('PED_NOMBRE_MODULO')).toBe('Pedidos');
+    });
   });
 
   describe('PED-SAVE-001 Guardar tras General válida', () => {

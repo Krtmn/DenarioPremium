@@ -207,6 +207,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
   }
 
   async ngOnInit() {
+    await this.orderServ.ensureModuleReady(this.dbServ.getDatabase());
     this.orderServ.resetOrderValidationUxFlags();
     this.mensajeSaveQuestion = this.orderServ.getTag('PED_MSJ_SAVE_QUESTION')
       || '¿Desea guardar el pedido?';

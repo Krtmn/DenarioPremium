@@ -1,4 +1,4 @@
-import { Component, inject, } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { PedidosService } from './pedidos.service';
 import { Router } from '@angular/router';
 import { EnterpriseService } from '../services/enterprise/enterprise.service';
@@ -17,7 +17,7 @@ import { SynchronizationDBService } from '../services/synchronization/synchroniz
     styleUrls: ['./pedidos.component.scss'],
     standalone: false
 })
-export class PedidosComponent {
+export class PedidosComponent implements OnInit {
   public pedidoComponent: Boolean = false;
   public pedidosComponent: Boolean = true;
 
@@ -54,7 +54,8 @@ export class PedidosComponent {
     this.backButtonSubscription.unsubscribe();
   }
 
-  ngOnInit() {
+  async ngOnInit() {
+    await this.pedidoService.ensureModuleReady(this.dbServ.getDatabase());
     this.enterpriseServ.setup(this.dbServ.getDatabase()).then(() => {
       this.pedidoService.empresaSeleccionada = this.enterpriseServ.defaultEnterprise();
       //this.pedidoService.setup();
@@ -70,7 +71,7 @@ export class PedidosComponent {
   }
 
   getTag(tagName: string) {
-    var tag = this.pedidoService.tags.get(tagName);
+    var tag = this.pedidoService.getTag(tagName);
     if (tag == undefined) {
       console.log("Error al buscar tag " + tagName);
       tag = '';

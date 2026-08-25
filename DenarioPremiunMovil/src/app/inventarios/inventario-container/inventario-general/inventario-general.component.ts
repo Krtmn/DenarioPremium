@@ -151,22 +151,22 @@ export class InventarioGeneralComponent implements OnInit {
 
     }
 
-    this.message.showLoading().then(() => {
-      this.enterpriseServ.setup(this.dbServ.getDatabase()).then(() => {
-        this.inventariosLogicService.listaEmpresa = this.enterpriseServ.empresas;
-        if (!this.inventariosLogicService.inventarioSent && this.canModifyClient()) {
-          //this.selectorCliente.updateClientList(this.inventariosLogicService.listaEmpresa[0].idEnterprise);
-          //this.selectorCliente.setSkin(this.inventariosLogicService.inventarioTags.get('INV_NOMBRE_MODULO')!, "fondoAmarillo");
-          this.selectorCliente.setup(this.inventariosLogicService.listaEmpresa[0].idEnterprise, "Inventarios", 'fondoAmarillo', null, true, 'inv');
-          /*  this.clientService.getClientById(this.inventariosLogicService.newClientStock.idClient).then(client => {
-            this.inventariosLogicService.client = client;
-            this.selectorCliente.setup(this.inventariosLogicService.empresaSeleccionada.idEnterprise, "Inventarios", 'fondoVerde', client, false);
+    this.message.showLoading().then(async () => {
+      await this.enterpriseServ.setup(this.dbServ.getDatabase());
+      this.inventariosLogicService.listaEmpresa = this.enterpriseServ.empresas;
+      if (!this.inventariosLogicService.inventarioSent && this.canModifyClient()) {
+        //this.selectorCliente.updateClientList(this.inventariosLogicService.listaEmpresa[0].idEnterprise);
+        //this.selectorCliente.setSkin(this.inventariosLogicService.inventarioTags.get('INV_NOMBRE_MODULO')!, "fondoAmarillo");
+        this.selectorCliente.setup(this.inventariosLogicService.listaEmpresa[0].idEnterprise, "Inventarios", 'fondoAmarillo', null, true, 'inv');
+        /*  this.clientService.getClientById(this.inventariosLogicService.newClientStock.idClient).then(client => {
+          this.inventariosLogicService.client = client;
+          this.selectorCliente.setup(this.inventariosLogicService.empresaSeleccionada.idEnterprise, "Inventarios", 'fondoVerde', client, false);
 
 
-           }) */
-        }
-        this.orderServ.empresaSeleccionada = this.inventariosLogicService.listaEmpresa[0];
-        this.orderServ.setup();
+         }) */
+      }
+      this.orderServ.empresaSeleccionada = this.inventariosLogicService.listaEmpresa[0];
+      await this.orderServ.setup();
         //ESTO ES PARA CUANDO CAMBIE DE PESTANAS, RECUPERAR LA INFORMACION YA COLOCADA
         this.txComment = this.inventariosLogicService.newClientStock.txComment;
         this.daysSinceLastInventory = this.inventariosLogicService.newClientStock.daysSinceLast;
@@ -278,8 +278,7 @@ export class InventarioGeneralComponent implements OnInit {
           this.selectorCliente.updateClientList(this.inventariosLogicService.empresaSeleccionada.idEnterprise)
             .then(() => this.finalizeSavedInventoryClientGuard());
         }
-      });
-    })
+    });
   }
 
   setDaysSinceLastInventory(){
@@ -309,7 +308,7 @@ export class InventarioGeneralComponent implements OnInit {
 
   }
 
-  private reiniciarInventarioPorEnterprise(enterprise: Enterprise) {
+  private async reiniciarInventarioPorEnterprise(enterprise: Enterprise) {
     this.inventariosLogicService.onClientStockValid(false);
     this.inventariosLogicService.initClientStockDetails();
 
@@ -343,7 +342,7 @@ export class InventarioGeneralComponent implements OnInit {
 
     this.selectorCliente.setup(enterprise.idEnterprise, "Inventarios", 'fondoAmarillo', null, true, 'inv');
     this.orderServ.empresaSeleccionada = enterprise;
-    this.orderServ.setup();
+    await this.orderServ.setup();
 
   }
 
