@@ -106,6 +106,7 @@ import { installGlobalClipboardEnablers } from 'src/app/utils/clipboard-enablers
 import { CalculatorComponent } from './calculator/calculator.component';
 import { InventarioSugeridoPreviewComponent } from './inventarios/inventario-container/inventario-sugerido-preview/inventario-sugerido-preview.component';
 import { TextCommentCounterComponent } from './components/text-comment-counter/text-comment-counter.component';
+import { DraggableFabDirective } from './directives/draggable-fab.directive';
 //import { HomeSidebarComponent } from './home-sidebar/home-sidebar.component';
 
 
@@ -207,7 +208,8 @@ import { TextCommentCounterComponent } from './components/text-comment-counter/t
     HammerModule,
     GoogleMapsModule,
     CalculatorComponent,
-    TextCommentCounterComponent],
+    TextCommentCounterComponent,
+    DraggableFabDirective],
   providers: [{ provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     SQLite,
     ServicesService,
