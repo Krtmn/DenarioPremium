@@ -221,10 +221,41 @@ export class ClientLogicService {
   }
 
   setNombreModulo(tagKey: string, fallback: string = 'Clientes') {
-    const tagValue = this.clientTags.get(tagKey);
-    const moduleTitle = (tagValue && tagValue.trim().length > 0) ? tagValue.trim() : fallback;
+    const moduleTitle = this.getClientTag(tagKey, fallback);
     this.nombreModulo = moduleTitle;
     this.nombreModuloEsLargo = moduleTitle.length > 12;
+  }
+
+  /** CLI + DEN: clientTags primero, luego clientTagsDenario (mismo patrón que collectionTagsDenario en Cobros). */
+  getClientTag(tagKey: string, fallback = ''): string {
+    const key = tagKey?.trim() ?? '';
+    if (!key) {
+      return fallback;
+    }
+
+    const fromClientTags = this.clientTags.get(key);
+    if (fromClientTags != null && String(fromClientTags).trim().length > 0) {
+      return String(fromClientTags).trim();
+    }
+
+    const fromDenarioTags = this.clientTagsDenario.get(key);
+    if (fromDenarioTags != null && String(fromDenarioTags).trim().length > 0) {
+      return String(fromDenarioTags).trim();
+    }
+
+    return fallback;
+  }
+
+  private storeClientTag(key: string, value: string, denarioMap = false): void {
+    const normalizedKey = key?.trim() ?? '';
+    if (!normalizedKey) {
+      return;
+    }
+    const normalizedValue = value != null ? String(value) : '';
+    this.clientTags.set(normalizedKey, normalizedValue);
+    if (denarioMap) {
+      this.clientTagsDenario.set(normalizedKey, normalizedValue);
+    }
   }
 
   getEnterprise() {
@@ -247,33 +278,27 @@ export class ClientLogicService {
   }
 
   getTags() {
-    return this.services.getTags(this.dbServ.getDatabase(), "CLI", "ESP").then(result => {
-      for (var i = 0; i < result.length; i++) {
-        this.clientTags.set(
-          result[i].coApplicationTag, result[i].tag
-        )
+    return this.services.getTags(this.dbServ.getDatabase(), 'CLI', 'ESP').then(result => {
+      for (let i = 0; i < result.length; i++) {
+        this.storeClientTag(result[i].coApplicationTag, result[i].tag);
       }
-      return this.services.getTags(this.dbServ.getDatabase(), "DEN", "ESP").then(result => {
-        for (var i = 0; i < result.length; i++) {
-          this.clientTags.set(
-            result[i].coApplicationTag, result[i].tag
-          )
+      return this.services.getTags(this.dbServ.getDatabase(), 'DEN', 'ESP').then(denarioResult => {
+        for (let i = 0; i < denarioResult.length; i++) {
+          this.storeClientTag(denarioResult[i].coApplicationTag, denarioResult[i].tag, true);
         }
 
         return Promise.resolve(true);
       });
-    })
+    });
   }
 
   getTagsDenario() {
-    return this.services.getTags(this.dbServ.getDatabase(), "DEN", "ESP").then(result => {
-      for (var i = 0; i < result.length; i++) {
-        this.clientTagsDenario.set(
-          result[i].coApplicationTag, result[i].tag
-        )
+    return this.services.getTags(this.dbServ.getDatabase(), 'DEN', 'ESP').then(result => {
+      for (let i = 0; i < result.length; i++) {
+        this.storeClientTag(result[i].coApplicationTag, result[i].tag, true);
       }
       return Promise.resolve(true);
-    })
+    });
   }
 
   getClients(idEnterprise: number) {

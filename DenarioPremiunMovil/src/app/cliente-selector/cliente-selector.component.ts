@@ -116,12 +116,7 @@ export class ClienteSelectorComponent implements OnInit {
   }
 
   getTag(tagName: string) {
-    var tag = this.tags.get(tagName);
-    if (tag == undefined) {
-      console.log("Error al buscar tag " + tagName);
-      tag = '';
-    }
-    return tag;
+    return this.service.getTag(tagName);
   }
 
   formatNum(num: number) {
@@ -152,6 +147,7 @@ export class ClienteSelectorComponent implements OnInit {
     this.searchText = '';
     this.scrollDisable = false;
     this.clientes = this.service.clientes;
+    void this.service.ensureTagsLoaded(true);
     if (this.clientes.length == 0) {
       this.updateClientList(this.service.idEnterprise);
     }
@@ -178,6 +174,40 @@ export class ClienteSelectorComponent implements OnInit {
     return this.multimoneda
       && this.showConversion
       && this.currencyService.hasValidExchangeRate();
+  }
+
+  /** Etiqueta de la moneda primaria según localCurrencyDefault del módulo. */
+  getPrimaryCurrencyLabel(): string {
+    if (this.localCurrencyDefault) {
+      return this.localCurrency?.coCurrency ?? '';
+    }
+    return this.hardCurrency?.coCurrency ?? '';
+  }
+
+  /** Etiqueta de la moneda secundaria (conversión). */
+  getSecondaryCurrencyLabel(): string {
+    if (this.localCurrencyDefault) {
+      return this.hardCurrency?.coCurrency ?? '';
+    }
+    return this.localCurrency?.coCurrency ?? '';
+  }
+
+  /**
+   * Saldo primario: saldo1=local / saldo2=hard (CLI-SALDOS-001).
+   * No muta buckets; solo elige cuál mostrar primero según el módulo.
+   */
+  getPrimarySaldo(client: Client): number {
+    if (this.localCurrencyDefault) {
+      return client.saldo1 ?? 0;
+    }
+    return client.saldo2 ?? 0;
+  }
+
+  getSecondarySaldo(client: Client): number {
+    if (this.localCurrencyDefault) {
+      return client.saldo2 ?? 0;
+    }
+    return client.saldo1 ?? 0;
   }
 
   updateClientList(idEnterprise: number): Promise<any> {

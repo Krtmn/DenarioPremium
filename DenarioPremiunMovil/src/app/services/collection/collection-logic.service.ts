@@ -515,7 +515,9 @@ export class CollectionService {
       return;
     }
     this.collectionDirtySincePersist = true;
+    this.sendBlockedByFields = false;
     this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
   }
 
   applyPersistSucceededBaseline(): void {
@@ -1232,21 +1234,23 @@ export class CollectionService {
     detail: CollectionDetail | undefined,
     backup?: { nuBalance?: number },
   ): number {
-    const original = Number(detail?.nuBalanceDocOriginal ?? 0);
-    if (Number.isFinite(original) && original > 0) {
+    const original = Number(detail?.nuBalanceDocOriginal ?? NaN);
+    if (Number.isFinite(original)) {
       return original;
     }
     const candidates = [
-      Number(detail?.nuBalanceDoc ?? 0),
-      Number(backup?.nuBalance ?? 0),
-      Number(detail?.nuAmountDoc ?? 0),
+      Number(detail?.nuBalanceDoc ?? NaN),
+      Number(backup?.nuBalance ?? NaN),
+      Number(detail?.nuAmountDoc ?? NaN),
     ];
-    return candidates.find(value => Number.isFinite(value) && value > 0) ?? 0;
+    const match = candidates.find(value => Number.isFinite(value));
+    return match ?? 0;
   }
 
   /**
-   * Tras un pago parcial guardado, nuBalanceDoc debe reflejar el saldo restante
-   * (balance original − monto pagado), no el balance bruto del documento.
+   * Solo para payload de envío: saldo restante = original − pagado.
+   * En UI (Total), `nuBalanceDoc` debe permanecer como saldo bruto del documento
+   * (`nuBalanceDocOriginal`); no mutar el detalle en memoria con este helper.
    */
   public applyRemainingBalanceDocAfterPartialPayment(detail: CollectionDetail): void {
     if (detail?.inPaymentPartial !== true) {
@@ -1273,6 +1277,21 @@ export class CollectionService {
 
     detail.nuBalanceDoc = Math.max(0, gross - paid);
     detail.nuBalanceDocConversion = Math.max(0, grossConv - paidConv);
+  }
+
+  /** Restaura nuBalanceDoc al bruto (original) para UI tras apagar parcial o al guardar. */
+  public restoreGrossBalanceDocForDisplay(detail: CollectionDetail | null | undefined): void {
+    if (!detail) {
+      return;
+    }
+    const gross = Number(detail.nuBalanceDocOriginal ?? 0);
+    if (Number.isFinite(gross) && gross > 0) {
+      detail.nuBalanceDoc = gross;
+    }
+    const grossConv = Number(detail.nuBalanceDocOriginalConversion ?? 0);
+    if (Number.isFinite(grossConv) && grossConv > 0) {
+      detail.nuBalanceDocConversion = grossConv;
+    }
   }
 
   private isDetailPartialPayment(detail: CollectionDetail): boolean {
@@ -1342,7 +1361,12 @@ export class CollectionService {
       index,
     );
 
-    return Math.max(0, gross - deductions);
+    const net = gross - deductions;
+    // Notas de crédito / saldo negativo restan del total (no recortar a 0).
+    if (gross < 0) {
+      return net;
+    }
+    return Math.max(0, net);
   }
 
   /** Neto a pagar del documento: saldo − descuentos − descuentos de cobro − retenciones. */
@@ -2608,10 +2632,6 @@ export class CollectionService {
     await this.calculatePayment(type, index);
     if (this.coTypeModule == "0") {
       if (this.createAutomatedPrepaid) {
-        if (!this.recentOpenCollect && !this.isRateChangeInProgress) {
-          this.mensaje = this.buildAutomatedPrepaidMessage();
-          this.alertMessageOpen = true;
-        }
         this.onCollectionValidToSend(true);
       }
       if (this.recentOpenCollect)
@@ -2642,27 +2662,53 @@ export class CollectionService {
       }
     }
 
-    this.alertMessageOpen = false;
-
-    // COB-SEND-ALL-001: una sola fuente de verdad (todas las reglas aplicables).
-    const issues = await this.collectCollectionSendIssues();
-    if (issues.length === 0) {
-      this.onCollectionValidToSend(true);
-      return;
+    if (this.sendValidationAttempted) {
+      this.alertMessageOpen = false;
     }
 
-    // Anticipo automático: si lo único que falla es tolerancia por exceso, permitir Enviar.
-    const onlyToleranciaExcess = issues.length === 1
+    // COB-SEND-ALL-001: una sola fuente de verdad (todas las reglas aplicables).
+    // Prepaid solo omite TOLERANCIA por exceso (applySendIssuesGate); no adjuntos ni campos.
+    await this.evaluateSendReadiness();
+  }
+
+  /**
+   * Única excepción prepaid: el único issue es TOLERANCIA y hay sobrante (anticipo automático).
+   * No aplica a adjuntos, campos, refs ni faltante.
+   */
+  public isOnlyToleranciaExcessForPrepaid(issues: CollectionSendIssue[]): boolean {
+    return issues.length === 1
       && issues[0].code === 'TOLERANCIA'
       && this.createAutomatedPrepaid
       && (Number(this.montoTotalPagado) - Number(this.montoTotalPagar)) > 0;
-    if (onlyToleranciaExcess) {
+  }
+
+  /**
+   * Aplica el gate de Enviar sobre issues ya colectados.
+   * @returns issues bloqueantes (vacío = puede enviar).
+   */
+  public applySendIssuesGate(issues: CollectionSendIssue[]): CollectionSendIssue[] {
+    if (issues.length === 0 || this.isOnlyToleranciaExcessForPrepaid(issues)) {
       this.lastSendIssues = [];
       this.onCollectionValidToSend(true);
-      return;
+      return [];
     }
-
+    this.lastSendIssues = issues;
     this.onCollectionValidToSend(false);
+    return issues;
+  }
+
+  /** True solo si no hay issues bloqueantes tras validateToSend / evaluateSendReadiness. */
+  public canProceedSendAfterValidation(): boolean {
+    return this.lastValidToSend === true && this.lastSendIssues.length === 0;
+  }
+
+  /**
+   * Reevalúa todas las reglas de Enviar (COB-SEND-ATTACH-001).
+   * Usar en sendCollect y antes de persistir en sendOrSave.
+   */
+  public async evaluateSendReadiness(): Promise<CollectionSendIssue[]> {
+    const issues = await this.collectCollectionSendIssues();
+    return this.applySendIssuesGate(issues);
   }
 
   checkTolerancia() {
@@ -2957,76 +3003,146 @@ export class CollectionService {
   }
 
   /**
-   * Evalúa TODAS las reglas aplicables al Enviar (sin short-circuit).
-   * Modal = primer issue; campos en rojo = todos vía sendValidationAttempted + helpers UI.
+   * Evalúa reglas de Enviar en orden de prioridad; fail-fast al primer bloqueo.
+   * Modal = ese issue; hints en rojo = sendValidationAttempted + helpers UI por pestaña.
    */
   public async collectCollectionSendIssues(): Promise<CollectionSendIssue[]> {
-    const issues: CollectionSendIssue[] = [];
-    const push = (issue: CollectionSendIssue | null | undefined): void => {
-      if (issue) {
-        issues.push(issue);
-      }
-    };
-
-    const coType = String(this.collection?.coType ?? '0');
-
-    // Orden = prioridad de mensaje modal (todos se acumulan; el primero se muestra).
-    if (coType === '2') {
-      push(this.issueIncompleteRetention());
-    } else {
-      push(this.issueEmptyPayments());
-      push(this.issueMissingDifferenceCodes());
-      push(this.issueIncompletePayments());
-      push(this.issueIncompletePersistedPaymentAmounts());
-    }
-
-    push(this.issueIncompleteDocumentAmountToPay());
-    push(this.issueRequiredComment());
-    push(this.issueTxConversion());
-    push(this.issueManualRate());
-    push(this.issueMissingDocuments());
-    push(this.issueMissingPaymentMethods());
-
-    if (coType !== '2') {
-      push(await this.issueInvalidPaymentReferences());
-      push(this.issueDocumentsNotReady());
-      push(this.issueAmountOrTolerancia());
-    }
-
-    push(this.issueMissingAttachments());
-
+    const issue = await this.findFirstBlockingSendIssue();
+    const issues = issue ? [issue] : [];
     this.lastSendIssues = issues;
-    this.mensaje = issues[0]?.message ?? '';
     this.lastValidToSend = issues.length === 0;
     this.collectValidToSend.next(this.lastValidToSend);
     return issues;
   }
 
-  /** Subconjunto sync (campos) para hasSendFieldErrors / reactivar Enviar al editar. */
+  /** Fail-fast: primer issue sync de campos (sin refs, tolerancia ni adjuntos). */
   private collectSyncFieldSendIssues(): CollectionSendIssue[] {
-    const issues: CollectionSendIssue[] = [];
-    const push = (issue: CollectionSendIssue | null | undefined): void => {
-      if (issue) {
-        issues.push(issue);
-      }
-    };
+    const issue = this.findFirstSyncFieldSendIssue();
+    return issue ? [issue] : [];
+  }
+
+  /**
+   * Orden fijo de prioridad modal/foco; retorna al primer issue no nulo.
+   */
+  private async findFirstBlockingSendIssue(): Promise<CollectionSendIssue | null> {
     const coType = String(this.collection?.coType ?? '0');
 
     if (coType === '2') {
-      push(this.issueIncompleteRetention());
+      const retention = this.issueIncompleteRetention();
+      if (retention) {
+        return retention;
+      }
     } else {
-      push(this.issueEmptyPayments());
-      push(this.issueMissingDifferenceCodes());
-      push(this.issueIncompletePayments());
-      push(this.issueIncompletePersistedPaymentAmounts());
+      const emptyPayments = this.issueEmptyPayments();
+      if (emptyPayments) {
+        return emptyPayments;
+      }
+      const differenceCodes = this.issueMissingDifferenceCodes();
+      if (differenceCodes) {
+        return differenceCodes;
+      }
+      const incompletePayments = this.issueIncompletePayments();
+      if (incompletePayments) {
+        return incompletePayments;
+      }
+      const persistedAmounts = this.issueIncompletePersistedPaymentAmounts();
+      if (persistedAmounts) {
+        return persistedAmounts;
+      }
     }
-    push(this.issueIncompleteDocumentAmountToPay());
-    push(this.issueRequiredComment());
-    push(this.issueTxConversion());
-    push(this.issueManualRate());
-    push(this.issueMissingDocuments());
-    push(this.issueMissingPaymentMethods());
-    return issues;
+
+    const documentAmount = this.issueIncompleteDocumentAmountToPay();
+    if (documentAmount) {
+      return documentAmount;
+    }
+    const comment = this.issueRequiredComment();
+    if (comment) {
+      return comment;
+    }
+    const txConversion = this.issueTxConversion();
+    if (txConversion) {
+      return txConversion;
+    }
+    const manualRate = this.issueManualRate();
+    if (manualRate) {
+      return manualRate;
+    }
+    const documents = this.issueMissingDocuments();
+    if (documents) {
+      return documents;
+    }
+    const paymentMethods = this.issueMissingPaymentMethods();
+    if (paymentMethods) {
+      return paymentMethods;
+    }
+
+    if (coType !== '2') {
+      const references = await this.issueInvalidPaymentReferences();
+      if (references) {
+        return references;
+      }
+      const documentsReady = this.issueDocumentsNotReady();
+      if (documentsReady) {
+        return documentsReady;
+      }
+      const tolerancia = this.issueAmountOrTolerancia();
+      if (tolerancia) {
+        return tolerancia;
+      }
+    }
+
+    return this.issueMissingAttachments();
+  }
+
+  /** Mismo orden que findFirstBlockingSendIssue, solo chequeos sync de campos. */
+  private findFirstSyncFieldSendIssue(): CollectionSendIssue | null {
+    const coType = String(this.collection?.coType ?? '0');
+
+    if (coType === '2') {
+      const retention = this.issueIncompleteRetention();
+      if (retention) {
+        return retention;
+      }
+    } else {
+      const emptyPayments = this.issueEmptyPayments();
+      if (emptyPayments) {
+        return emptyPayments;
+      }
+      const differenceCodes = this.issueMissingDifferenceCodes();
+      if (differenceCodes) {
+        return differenceCodes;
+      }
+      const incompletePayments = this.issueIncompletePayments();
+      if (incompletePayments) {
+        return incompletePayments;
+      }
+      const persistedAmounts = this.issueIncompletePersistedPaymentAmounts();
+      if (persistedAmounts) {
+        return persistedAmounts;
+      }
+    }
+
+    const documentAmount = this.issueIncompleteDocumentAmountToPay();
+    if (documentAmount) {
+      return documentAmount;
+    }
+    const comment = this.issueRequiredComment();
+    if (comment) {
+      return comment;
+    }
+    const txConversion = this.issueTxConversion();
+    if (txConversion) {
+      return txConversion;
+    }
+    const manualRate = this.issueManualRate();
+    if (manualRate) {
+      return manualRate;
+    }
+    const documents = this.issueMissingDocuments();
+    if (documents) {
+      return documents;
+    }
+    return this.issueMissingPaymentMethods();
   }
 
   private makeSendIssue(
@@ -3536,8 +3652,20 @@ export class CollectionService {
       }
     }
 
-    return this.isPersistedCollection()
-      && details.some(detail => !!detail.coDocument || !!detail.idDocument);
+    const hasDetailWithDocument = details.some(
+      detail => !!detail.coDocument || !!detail.idDocument,
+    );
+    if (!hasDetailWithDocument) {
+      return false;
+    }
+
+    const coType = String(this.collection?.coType ?? '0');
+    // COB-SEND-UX-003: cobro nuevo con detalle en memoria (p. ej. Retención vía Total).
+    if (coType === '0' || coType === '2' || coType === '3' || coType === '4') {
+      return true;
+    }
+
+    return this.isPersistedCollection();
   }
 
   public hasSendPrerequisites(): boolean {
@@ -3566,20 +3694,107 @@ export class CollectionService {
     this.disableSendButton = !this.hasSendPrerequisites();
   }
 
+  /**
+   * Limpia todo el estado de sesión del singleton entre cobros (COB-SESSION-001).
+   * Usar al terminar Enviar o como base de beginNewCollectionSession.
+   */
+  public resetCollectionSessionState(): void {
+    this.sendValidationAttempted = false;
+    this.sendBlockedByFields = false;
+    this.lastValidToSend = false;
+    this.lastSendIssues = [];
+    this.retentionSendFocusDocIndex = null;
+    this.sendCollection = false;
+    this.createAutomatedPrepaid = false;
+    this.messageSended = false;
+
+    this.generalTabValidForSave = false;
+    this.collectValid = false;
+    this.cobroValid = false;
+    this.collectionIsSave = false;
+    this.collectionPersistedBaseline = false;
+    this.collectionDirtySincePersist = false;
+
+    this.cobro25 = false;
+    this.isAnticipo = false;
+    this.isRetention = false;
+    this.hideDocuments = false;
+    this.hidePayments = false;
+    this.collectValidTabs = true;
+    this.tabSelected = 'general';
+    this.isOpenCollect = false;
+    this.recentOpenCollect = false;
+    this.skipDocumentReloadInLoadData = false;
+
+    this.isOpen = false;
+    this.alertMessageOpen = false;
+    this.resetPartialPaymentSessionState();
+    this.clearDocumentSalesState();
+
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
+  }
+
+  /** Defaults de módulo según coType (siempre parte de flags neutros). */
+  public applyNewCobroModuleType(coType: number): void {
+    this.coTypeModule = String(coType);
+
+    switch (coType) {
+      case 1:
+        this.isAnticipo = true;
+        this.hideDocuments = true;
+        this.hidePayments = false;
+        this.disabledSelectCollectMethodDisabled = false;
+        this.titleModule = this.collectionTags.get('COB_NOMBRE_MODULO_ANTICIPO') ?? '';
+        break;
+      case 2:
+        this.isRetention = true;
+        this.hideDocuments = false;
+        this.hidePayments = true;
+        this.titleModule = this.collectionTags.get('COB_NOMBRE_MODULO_RETENTION') ?? '';
+        break;
+      case 3:
+        this.titleModule = this.collectionTags.get('COB_NOMBRE_MODULO_IGTF') ?? '';
+        break;
+      case 4:
+        this.cobro25 = true;
+        this.titleModule = this.collectionTags.get('COB_MODULE_COBRO25') ?? '';
+        break;
+      default:
+        this.titleModule = this.collectionTags.get('COB_NOMBRE_MODULO') ?? '';
+        break;
+    }
+  }
+
+  /** Único orquestador para abrir un cobro nuevo idéntico a la primera vez (COB-SESSION-001). */
+  public beginNewCollectionSession(coType: number): void {
+    this.collection = {} as Collection;
+    this.resetCollectionSessionState();
+    this.applyNewCobroModuleType(coType);
+    this.newCollect = true;
+    this.initCollect = true;
+  }
+
   public resetSendValidationUx(): void {
     this.sendValidationAttempted = false;
+    this.sendBlockedByFields = false;
+    this.lastValidToSend = false;
+    this.lastSendIssues = [];
+    this.retentionSendFocusDocIndex = null;
+    this.updateSendButtonAvailability();
+  }
+
+  /** Tras edición de usuario: desbloquea Enviar y recalcula prerrequisitos (COB-SEND-UX-003). */
+  public refreshSendUxAfterEdit(): void {
     this.sendBlockedByFields = false;
     this.updateSendButtonAvailability();
   }
 
   public refreshSendBlockedState(): void {
-    if (!this.sendBlockedByFields) {
-      return;
-    }
-    if (!this.hasSendFieldErrors()) {
+    if (this.sendBlockedByFields) {
       this.sendBlockedByFields = false;
-      this.updateSendButtonAvailability();
     }
+    this.updateSendButtonAvailability();
   }
 
   public isIndexedPaymentMethodComplete(type: string, index: number): boolean {
@@ -3836,19 +4051,14 @@ export class CollectionService {
       this.onCollectionValidToSave(false);
       return;
     }
-    const generalOk = this.generalTabValidForSave || this.createAutomatedPrepaid;
     const hasChangesToSave =
       !this.collectionPersistedBaseline || this.collectionDirtySincePersist;
-    this.onCollectionValidToSave(generalOk && hasChangesToSave);
+    this.onCollectionValidToSave(hasChangesToSave);
   }
 
   onCollectionValidToSend(validToSend: boolean) {
-    // Anticipo automático: solo omite falla de tolerancia/exceso si no hay errores de campos.
-    if (!validToSend && this.createAutomatedPrepaid && !this.hasSendFieldErrors()) {
-      this.lastValidToSend = true;
-      this.collectValidToSend.next(true);
-      return;
-    }
+    // COB-SEND-ATTACH-001: no forzar true por createAutomatedPrepaid aquí.
+    // La única excepción (TOLERANCIA por exceso) vive en applySendIssuesGate / validateToSend.
     this.lastValidToSend = validToSend;
     this.collectValidToSend.next(validToSend);
   }
@@ -4849,9 +5059,8 @@ export class CollectionService {
       detail.nuBalanceDocOriginal = originalBalance;
       detail.nuBalanceDocOriginalConversion = originalBalanceConversion;
 
-      if (this.isPaymentPartial && Number(this.amountPaid) > 0) {
-        this.applyRemainingBalanceDocAfterPartialPayment(detail);
-      }
+      // UI: nuBalanceDoc = bruto del documento. El restante solo se calcula al enviar.
+      this.restoreGrossBalanceDocForDisplay(detail);
     }
 
     this.documentSales[idx].inPaymentPartial = this.isPaymentPartial;
@@ -5726,7 +5935,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
             );
             detail.nuBalanceDocOriginalConversion = doc.nuBalance;
           }
-          this.applyRemainingBalanceDocAfterPartialPayment(detail);
+          // UI: mantener bruto en nuBalanceDoc (COB-TOTAL-002). Remaining solo al enviar.
+          this.restoreGrossBalanceDocForDisplay(detail);
         } else {
           detail.nuBalanceDoc = this.resolveAmountInCollectionCurrency(doc.nuBalance, doc.coCurrency);
           detail.nuBalanceDocConversion = doc.nuBalance;

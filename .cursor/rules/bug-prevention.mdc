@@ -26,6 +26,7 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Descuentos/retenciones al reabrir: adjuntar por `coDocument` (no solo `coCollection`); ver `COB-DISC-001`.
 - Retención multi-doc (`coType` 2): Enviar exige completitud por documento, no solo suma > 0 (`COB-RET-001`); Guardar tras General válida (`COB-SAVE-001`).
 - Total General = `nuAmountTotal` (no `montoTotalPagado`); al reabrir no pisar con `forceRecalc` si UI de pagos aún vacía (`COB-TOTAL-001`).
+- Total Monto Doc. = bruto (`nuBalanceDocOriginal`); Monto Saldo = bruto − pagado; no mutar `nuBalanceDoc` UI con remaining de parcial (`COB-TOTAL-002`).
 - Faltante (`nuAmountDiscount`) → 0 en Guardado: refrescar `montoTotalPagar` (no exigir faltante > 0 para Guardar; no congelar con `paid < net` / preserve) — `COB-FALT-001`.
 - Guardar Cobros: habilitado tras General válida (`generalTabValidForSave`); no acoplar a pagos/docs/retención — `COB-SAVE-001`.
 - Tras guardar/reabrir persistido: Guardar OFF hasta `markCollectionDirty` / edición de usuario — `COB-SAVE-002`.

@@ -34,6 +34,7 @@ describe('CobroPagosComponent', () => {
       markCollectionDirty: jasmine.createSpy('markCollectionDirty'),
       updateSendButtonAvailability: jasmine.createSpy('updateSendButtonAvailability'),
       refreshSendBlockedState: jasmine.createSpy('refreshSendBlockedState'),
+      refreshSendUxAfterEdit: jasmine.createSpy('refreshSendUxAfterEdit'),
       sendValidationAttempted: false,
       isAddPaymentMethodDisabled: jasmine.createSpy('isAddPaymentMethodDisabled').and.returnValue(false),
       blockSaveAndSendForInvalidPayments: jasmine.createSpy('blockSaveAndSendForInvalidPayments'),
@@ -44,6 +45,9 @@ describe('CobroPagosComponent', () => {
       getIndexedPaymentFieldErrors: jasmine.createSpy('getIndexedPaymentFieldErrors').and.returnValue([]),
       collectionTags: new Map<string, string>(),
       cleanString: (value: string) => value,
+      buildAutomatedPrepaidMessage: jasmine.createSpy('buildAutomatedPrepaidMessage').and.returnValue('Mensaje anticipo automático'),
+      createAutomatedPrepaid: false,
+      recentOpenCollect: false,
     };
 
     TestBed.configureTestingModule({
@@ -137,9 +141,9 @@ describe('CobroPagosComponent', () => {
     expect(component.validatePayment).toHaveBeenCalledWith('ef', 0);
   });
 
-  it('validatePaymentMethodsForSend refreshes send blocked state', () => {
+  it('validatePaymentMethodsForSend refreshes send UX after field change', () => {
     component.validatePaymentMethodsForSend();
-    expect(collectionServiceMock.refreshSendBlockedState).toHaveBeenCalled();
+    expect(collectionServiceMock.refreshSendUxAfterEdit).toHaveBeenCalled();
   });
 
   it('shouldShowPaymentFieldError is true only after send attempt with field errors', () => {
@@ -210,5 +214,18 @@ describe('CobroPagosComponent', () => {
 
     expect(collectionServiceMock.collection.collectionPayments.length).toBe(1);
     expect(collectionServiceMock.updateSendButtonAvailability).toHaveBeenCalled();
+  });
+
+  it('COB-PREPAID-003: checkCreateAutomatedPrepaid usa mensaje dedicado aunque mensaje global sea de adjuntos', () => {
+    collectionServiceMock.createAutomatedPrepaid = true;
+    collectionServiceMock.recentOpenCollect = false;
+    collectionServiceMock.mensaje = 'Para poder enviar el Cobro, debe agregar al menos un adjunto';
+
+    component.checkCreateAutomatedPrepaid();
+
+    expect(collectionServiceMock.buildAutomatedPrepaidMessage).toHaveBeenCalled();
+    expect(component.automatedPrepaidAlertMessage).toBe('Mensaje anticipo automático');
+    expect(component.alertMessageOpen).toBeTrue();
+    expect(collectionServiceMock.mensaje).toBe('Para poder enviar el Cobro, debe agregar al menos un adjunto');
   });
 });

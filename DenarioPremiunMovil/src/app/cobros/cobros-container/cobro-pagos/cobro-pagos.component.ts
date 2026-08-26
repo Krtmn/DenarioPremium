@@ -59,6 +59,7 @@ export class CobroPagosComponent implements OnInit {
   public collectionPayment!: CollectionPayment;
 
   public alertMessageOpen: Boolean = false;
+  public automatedPrepaidAlertMessage = '';
   public showEventModal: Boolean = false;
   public listBankAccount!: any;
 
@@ -306,7 +307,7 @@ export class CobroPagosComponent implements OnInit {
   }
 
   private refreshSendUxAfterFieldChange(): void {
-    this.collectService.refreshSendBlockedState();
+    this.collectService.refreshSendUxAfterEdit();
   }
 
   private getPosCollectionPaymentByType(type: string, index: number): number {
@@ -1187,7 +1188,7 @@ export class CobroPagosComponent implements OnInit {
 
   checkCreateAutomatedPrepaid() {
     if (!this.collectService.recentOpenCollect && this.collectService.createAutomatedPrepaid && !this.hasShownAutomatedPrepaidMsg) {
-      this.collectService.mensaje = this.collectService.buildAutomatedPrepaidMessage();
+      this.automatedPrepaidAlertMessage = this.collectService.buildAutomatedPrepaidMessage();
       this.alertMessageOpen = true;
       this.hasShownAutomatedPrepaidMsg = true;
     }
@@ -1353,6 +1354,7 @@ export class CobroPagosComponent implements OnInit {
     console.log('Apretó:' + ev.detail.role);
     this.collectService.alertMessageOpen = false;
     this.alertMessageOpen = false;
+    this.automatedPrepaidAlertMessage = '';
     this.collectService.mensaje = '';
   }
 
