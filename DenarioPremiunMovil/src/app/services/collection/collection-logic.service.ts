@@ -176,6 +176,8 @@ export class CollectionService {
   public lastValidToSend = false;
   /** Último resultado de `collectCollectionSendIssues` (mensaje/foco al Enviar). */
   public lastSendIssues: CollectionSendIssue[] = [];
+  /** Handlers de componentes para volcar inputs pendientes antes de validar Enviar. */
+  private sendValidationFlushHandlers: Array<() => void> = [];
   /** Razón de cambio de tasa obligatoria (pestaña General). */
   public requiresTxConversionReason = false;
   public saveOrExitOpen = false;
@@ -2703,6 +2705,39 @@ export class CollectionService {
   }
 
   /**
+   * Registra un callback que vuelca inputs UI pendientes (sin blur) antes de Enviar.
+   * Devuelve función para desregistrar en ngOnDestroy.
+   */
+  public registerSendValidationFlushHandler(handler: () => void): () => void {
+    this.sendValidationFlushHandlers.push(handler);
+    return () => {
+      const index = this.sendValidationFlushHandlers.indexOf(handler);
+      if (index >= 0) {
+        this.sendValidationFlushHandlers.splice(index, 1);
+      }
+    };
+  }
+
+  /**
+   * Sincroniza flags/campos derivados y ejecuta flush de componentes antes de validar Enviar.
+   * Evita falsos "campo faltante" cuando el usuario pulsa Enviar sin salir del foco del input.
+   */
+  public syncPendingInputsBeforeSendValidation(): void {
+    if (this.requiredComment) {
+      const comment = (this.collection?.txComment ?? '').toString().trim();
+      this.validComment = comment.length > 0;
+    }
+
+    for (const handler of this.sendValidationFlushHandlers) {
+      try {
+        handler();
+      } catch (err) {
+        console.warn('[CollectionService] syncPendingInputsBeforeSendValidation handler failed', err);
+      }
+    }
+  }
+
+  /**
    * Reevalúa todas las reglas de Enviar (COB-SEND-ATTACH-001).
    * Usar en sendCollect y antes de persistir en sendOrSave.
    */
@@ -3007,6 +3042,7 @@ export class CollectionService {
    * Modal = ese issue; hints en rojo = sendValidationAttempted + helpers UI por pestaña.
    */
   public async collectCollectionSendIssues(): Promise<CollectionSendIssue[]> {
+    this.syncPendingInputsBeforeSendValidation();
     const issue = await this.findFirstBlockingSendIssue();
     const issues = issue ? [issue] : [];
     this.lastSendIssues = issues;
