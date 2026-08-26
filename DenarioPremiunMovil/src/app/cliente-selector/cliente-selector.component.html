@@ -74,12 +74,12 @@
               <p>{{this.getTag('CLI_CODIGO')}}: {{ client.coClient}}</p>
               @if(!this.transportista){
               <p [ngStyle]="{color: client.countDueDate >0 ? 'Red' : 'Blue' }">
-                {{this.getTag('CLI_SALDO')}} {{localCurrency?.coCurrency}}: {{formatNum(client.saldo1)}}
+                {{this.getTag('CLI_SALDO')}} {{getPrimaryCurrencyLabel()}}: {{formatNum(getPrimarySaldo(client))}}
               </p>
               @if(canShowConversion){
               <p [ngStyle]="{color: client.countDueDate >0 ? 'Red' : 'Blue' }">
-                {{this.getTag('CLI_SALDO')}} {{hardCurrency?.coCurrency}}:
-                {{formatNum(client.saldo2)}}
+                {{this.getTag('CLI_SALDO')}} {{getSecondaryCurrencyLabel()}}:
+                {{formatNum(getSecondarySaldo(client))}}
               </p>
               }
               }
