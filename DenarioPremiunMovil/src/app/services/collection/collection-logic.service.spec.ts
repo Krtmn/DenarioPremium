@@ -887,7 +887,9 @@ describe('CollectionService', () => {
       expect(service.documentSales[0].inPaymentPartial).toBeTrue();
       expect(service.documentSales[0].nuAmountPaid).toBe(40);
       expect(service.documentSales[0].positionCollecDetails).toBe(0);
-      expect(service.collection.collectionDetails[0].nuBalanceDoc).toBe(60);
+      // UI: nuBalanceDoc = bruto del documento; remaining solo al enviar (COB-TOTAL-002).
+      expect(service.collection.collectionDetails[0].nuBalanceDoc).toBe(100);
+      expect(service.collection.collectionDetails[0].nuBalanceDocOriginal).toBe(100);
     });
 
     it('applyRemainingBalanceDocAfterPartialPayment sets remaining balance from original minus paid', () => {
@@ -908,7 +910,21 @@ describe('CollectionService', () => {
       expect(detail.nuBalanceDocOriginal).toBe(500);
     });
 
-    it('copyDocumentSaleOpenToSalesAndDetails sets nuBalanceDoc to remaining after partial save', () => {
+    it('restoreGrossBalanceDocForDisplay restores nuBalanceDoc from original', () => {
+      const detail = {
+        nuBalanceDoc: 400,
+        nuBalanceDocConversion: 400,
+        nuBalanceDocOriginal: 500,
+        nuBalanceDocOriginalConversion: 500,
+      } as CollectionDetail;
+
+      service.restoreGrossBalanceDocForDisplay(detail);
+
+      expect(detail.nuBalanceDoc).toBe(500);
+      expect(detail.nuBalanceDocConversion).toBe(500);
+    });
+
+    it('copyDocumentSaleOpenToSalesAndDetails keeps gross nuBalanceDoc after partial save', () => {
       spyOn(service, 'convertirMonto').and.callFake((amount: number) => Number(amount) || 0);
       spyOn(service, 'shouldApplyIgtfToCollection').and.returnValue(false);
       service.collection = {
@@ -961,7 +977,7 @@ describe('CollectionService', () => {
 
       service.copyDocumentSaleOpenToSalesAndDetails();
 
-      expect(service.collection.collectionDetails[0].nuBalanceDoc).toBe(400);
+      expect(service.collection.collectionDetails[0].nuBalanceDoc).toBe(500);
       expect(service.collection.collectionDetails[0].nuBalanceDocOriginal).toBe(500);
       expect(service.collection.collectionDetails[0].nuAmountPaid).toBe(100);
     });
