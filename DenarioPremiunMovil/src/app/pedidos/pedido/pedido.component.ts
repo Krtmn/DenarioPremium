@@ -1819,7 +1819,8 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           const unitStrings: string[] = [];
 
           unitList.forEach(unit => {
-            if (unit.quAmount > 0 || unit.quUnit > 0) {
+            // Solo unidades pedidas/bonificadas (quUnit es factor de empaque, no cantidad).
+            if (unit.quAmount > 0 || (Number(unit.quBonified) || 0) > 0) {
               const qty = Number(unit.quAmount ?? 0);
               const bonus = Number(unit.quBonified ?? 0);
               if (showBonifiedColumn) {
