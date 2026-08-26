@@ -205,6 +205,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-DOC-NEG-001] Documento con saldo negativo no resta del total a pagar
+
+- **Síntoma:** Cobro normal con factura 1000 + nota de crédito -200: el saldo a pagar queda 1000 en lugar de 800.
+- **Causa:** Regresión COB-TOTAL-002: `resolveDetailGrossBalanceForTotals` y `computeDetailExpectedNet` solo consideraban saldos `> 0` y aplicaban `Math.max(0, net)`; el NC aportaba 0 al sumar `collectionDetails`.
+- **Fix:** Bruto finito incluye negativos; neto con bruto negativo no se recorta a 0; mismo criterio en `resolveDetailGrossBalance` de documentos.
+- **Evitar:** No filtrar `value > 0` al resolver bruto para totales; NC/notas de crédito deben restar del `montoTotalPagar`.
+- **Archivos:** `collection-logic.service.ts`, `cobro-documents.component.ts`, specs.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [LOGIN-CASE-001] Cambio de usuario falso por mayúsculas/minúsculas
 
 - **Síntoma:** Usuario guardado en "Recuérdame" con distinta capitalización (ej. `Vendedor01` vs `vendedor01`) dispara modal de cambio de usuario y borra BD local al aceptar.

@@ -27,6 +27,7 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Retención multi-doc (`coType` 2): Enviar/Guardar exige completitud por documento, no solo suma > 0 (`COB-RET-001`).
 - Total General = `nuAmountTotal` (no `montoTotalPagado`); al reabrir no pisar con `forceRecalc` si UI de pagos aún vacía (`COB-TOTAL-001`).
 - Total Monto Doc. = bruto (`nuBalanceDocOriginal`); Monto Saldo = bruto − pagado; no mutar `nuBalanceDoc` UI con remaining de parcial (`COB-TOTAL-002`).
+- Saldo negativo / NC: bruto finito incluye negativos al sumar `montoTotalPagar`; no filtrar `> 0` en totales — `COB-DOC-NEG-001`.
 - Faltante (`nuAmountDiscount`) → 0 en Guardado: refrescar `montoTotalPagar` (no exigir faltante > 0 para Guardar; no congelar con `paid < net` / preserve) — `COB-FALT-001`.
 - `syncCollectionDetailDiscountConversion` / batch sync: no asumir `this.collection` UI; pasar tasa/moneda del cobro persistido.
 - Comentario Cobros/Inventarios: no `trim()` en `cleanString`/`ionInput` (se come el Espacio); ver `COB-INV-COMMENT-001`.
