@@ -159,9 +159,11 @@ export class AdjuntoComponent implements OnInit, OnDestroy {
   }
 
   getImgSrc(input: Foto) {
-    var fp: String;
-    fp = this.getImgURL(input.data);
-    return fp
+    if (input.previewSrc && input.previewSrc.trim().length > 0) {
+      return input.previewSrc;
+    }
+    const mime = (input.tipo || 'jpeg').toLowerCase();
+    return `data:image/${mime};base64,${input.data}`;
   }
 
   getImgURL(base64: string) {
@@ -244,35 +246,58 @@ export class AdjuntoComponent implements OnInit, OnDestroy {
   }
 
   async tomarImg() {
-    if (this.checkImgLimit()) {
-      Camera.getPhoto({
-        resultType: CameraResultType.Base64,
-        source: CameraSource.Camera,
-        quality: 100
-      }).then(p => {
-        if (p.base64String) {
-          var muyPesado = this.service.getFileWeight(p.base64String) > this.service.imageWeightLimit
-          var f = new Foto(
-            "jpeg",
-            p.base64String,
-            '',
-            muyPesado
-          );
-          if (muyPesado) {
-            this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_FOTO") + this.service.imageWeightLimit + " MB");
-            this.service.weightLimitExceeded = true;
-          } else {
-
-          }
-          this.service.fotos.push(f);
-          this.checkCarousel();
-          this.onAttachmentChanged();
-
-
-        }
-
-      });
+    if (!this.checkImgLimit()) {
+      return;
     }
+
+    this.disablePhotos = true;
+    try {
+      const permissions = await Camera.checkPermissions();
+      if (permissions.camera !== 'granted') {
+        const requested = await Camera.requestPermissions({ permissions: ['camera'] });
+        if (requested.camera !== 'granted') {
+          this.message.transaccionMsjModalNB(
+            this.getTag('ADJ_MSJ_ERROR_NO_CAMERA')
+              || 'Debe permitir el acceso a la cámara para tomar fotos.',
+          );
+          return;
+        }
+      }
+
+      const photo = await Camera.getPhoto({
+        source: CameraSource.Camera,
+        resultType: CameraResultType.Uri,
+        quality: this.service.cameraCaptureQuality,
+        width: this.service.cameraCaptureMaxWidth,
+        correctOrientation: true,
+      });
+
+      const foto = await this.service.addPhotoFromCamera(photo);
+      if (foto?.weightLimitExceeded) {
+        this.message.transaccionMsjModalNB(
+          this.getTag('ADJ_EXCEDE_FOTO') + this.service.imageWeightLimit + ' MB',
+        );
+      }
+      if (foto) {
+        this.checkCarousel();
+        this.onAttachmentChanged();
+      }
+    } catch (error) {
+      if (!this.isUserCancelledCamera(error)) {
+        console.error('tomarImg', error);
+        this.message.transaccionMsjModalNB(
+          this.getTag('ADJ_MSJ_ERROR_CAMERA')
+            || 'No se pudo capturar la foto. Intente nuevamente.',
+        );
+      }
+    } finally {
+      this.disablePhotos = false;
+    }
+  }
+
+  private isUserCancelledCamera(error: unknown): boolean {
+    const message = String((error as Error)?.message ?? error ?? '').toLowerCase();
+    return message.includes('cancel') || message.includes('cancelled');
   }
 
   getTag(tagName: string) {
