@@ -3,7 +3,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { DepositService } from './deposit.service';
-import { DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { DEPOSIT_APPROVAL_STATUS_REJECTED, DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { SQLiteObject } from '@awesome-cordova-plugins/sqlite/ngx';
 
 describe('DepositService', () => {
   let service: DepositService;
@@ -185,6 +186,106 @@ describe('DepositService', () => {
     it('getStatusOrderName cae a stDelivery cuando no hay na_status util', () => {
       const label = service.getStatusOrderName(0, DEPOSITO_STATUS_SAVED, null);
       expect(label).toBe('Guardado');
+    });
+  });
+
+  describe('Liberación de cobros en depósito rechazado', () => {
+    it('isDepositRejectedForCollectRelease true cuando Web rechazó depósito enviado', () => {
+      expect(service.isDepositRejectedForCollectRelease(2, DEPOSITO_STATUS_SENT, 123)).toBeTrue();
+    });
+
+    it('isDepositRejectedForCollectRelease false en borrador local Por Enviar', () => {
+      expect(service.isDepositRejectedForCollectRelease(
+        DEPOSITO_STATUS_TO_SEND,
+        DEPOSITO_STATUS_TO_SEND,
+        0,
+      )).toBeFalse();
+    });
+
+    it('isDepositRejectedForCollectRelease false en depósito aprobado o pendiente', () => {
+      expect(service.isDepositRejectedForCollectRelease(1, DEPOSITO_STATUS_SENT, 123)).toBeFalse();
+      expect(service.isDepositRejectedForCollectRelease(3, DEPOSITO_STATUS_SENT, 123)).toBeFalse();
+    });
+
+    it('saveDepositBatch borra deposit_collects cuando sync trae depósito rechazado sin cobros', async () => {
+      const executed: Array<[string, unknown[]]> = [];
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.returnValue(Promise.resolve({ rows: { length: 0, item: () => ({}) } })),
+        sqlBatch: jasmine.createSpy('sqlBatch').and.callFake((queries: Array<[string, unknown[]]>) => {
+          executed.push(...queries);
+          return Promise.resolve(true);
+        }),
+      } as unknown as SQLiteObject;
+
+      await service.saveDepositBatch(dbMock, [{
+        idDeposit: 99,
+        coDeposit: 'DEP-REJ-1',
+        daDeposit: '2026-01-01 00:00:00',
+        coBank: 'B001',
+        nuAccount: '123',
+        nuDocument: 'PLT',
+        daDocument: '2026-01-01',
+        nuAmountDoc: 100,
+        coCurrency: '$',
+        idEnterprise: 1,
+        coEnterprise: 'DIESE',
+        stDeposit: DEPOSIT_APPROVAL_STATUS_REJECTED,
+        stDelivery: DEPOSITO_STATUS_SENT,
+        txComment: '',
+        nuAmountDocConversion: 0,
+        nuValueLocal: 1,
+        idCurrency: 1,
+        coordenada: '',
+        collectionIds: [],
+      } as any]);
+
+      const deleteCollects = executed.filter(([sql]) =>
+        sql.includes('DELETE FROM deposit_collects') && (sql as string).includes('co_deposit = ?'),
+      );
+      expect(deleteCollects.length).toBe(1);
+      expect(deleteCollects[0][1]).toEqual(['DEP-REJ-1']);
+
+      const insertCollects = executed.filter(([sql]) => sql.includes('INSERT OR REPLACE INTO deposit_collects'));
+      expect(insertCollects.length).toBe(0);
+    });
+
+    it('saveDepositBatch borra deposit_collects cuando id servidor sync sin collectionIds', async () => {
+      const executed: Array<[string, unknown[]]> = [];
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.returnValue(Promise.resolve({ rows: { length: 0, item: () => ({}) } })),
+        sqlBatch: jasmine.createSpy('sqlBatch').and.callFake((queries: Array<[string, unknown[]]>) => {
+          executed.push(...queries);
+          return Promise.resolve(true);
+        }),
+      } as unknown as SQLiteObject;
+
+      await service.saveDepositBatch(dbMock, [{
+        idDeposit: 55,
+        coDeposit: 'DEP-CLR-1',
+        daDeposit: '2026-01-01 00:00:00',
+        coBank: 'B001',
+        nuAccount: '123',
+        nuDocument: 'PLT',
+        daDocument: '2026-01-01',
+        nuAmountDoc: 100,
+        coCurrency: '$',
+        idEnterprise: 1,
+        coEnterprise: 'DIESE',
+        stDeposit: 3,
+        stDelivery: DEPOSITO_STATUS_SENT,
+        txComment: '',
+        nuAmountDocConversion: 0,
+        nuValueLocal: 1,
+        idCurrency: 1,
+        coordenada: '',
+        collectionIds: [],
+      } as any]);
+
+      const deleteCollects = executed.filter(([sql]) =>
+        sql.includes('DELETE FROM deposit_collects'),
+      );
+      expect(deleteCollects.length).toBe(1);
+      expect(deleteCollects[0][1]).toEqual(['DEP-CLR-1']);
     });
   });
 
