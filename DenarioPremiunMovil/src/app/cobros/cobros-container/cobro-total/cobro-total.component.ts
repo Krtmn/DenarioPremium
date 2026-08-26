@@ -563,13 +563,26 @@ export class CobroTotalComponent implements OnInit {
     return this.currencyService.formatNumber(this.normalizeTotalizationAmount(amount));
   }
 
-  resolveDetailRemainingBalance(detail: CollectionDetail): number {
-    const balance = this.normalizeTotalizationAmount(detail?.nuBalanceDoc);
-    const paid = this.normalizeTotalizationAmount(detail?.nuAmountPaid);
-    if (detail?.inPaymentPartial === true) {
-      return balance;
+  /**
+   * Monto Doc.: saldo bruto del documento (contra el que se cobra).
+   * Usa original si existe; no el restante tras pago parcial.
+   */
+  resolveDetailDocumentBalance(detail: CollectionDetail): number {
+    const original = this.normalizeTotalizationAmount(detail?.nuBalanceDocOriginal);
+    if (original > 0) {
+      return original;
     }
-    return balance - paid;
+    return this.normalizeTotalizationAmount(detail?.nuBalanceDoc);
+  }
+
+  /**
+   * Monto Saldo: lo que quedará después del pago de esta línea.
+   * Siempre bruto − monto pagado (parcial o total).
+   */
+  resolveDetailRemainingBalance(detail: CollectionDetail): number {
+    const balance = this.resolveDetailDocumentBalance(detail);
+    const paid = this.normalizeTotalizationAmount(detail?.nuAmountPaid);
+    return Math.max(0, balance - paid);
   }
 
   hasTotalizationColumnAmount(

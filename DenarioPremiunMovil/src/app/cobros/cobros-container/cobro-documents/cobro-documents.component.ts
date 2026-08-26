@@ -2397,11 +2397,17 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
     this.valuePartialPayment = 0;
     const positionCollecDetails = this.collectService.documentSales[index]?.positionCollecDetails;
+    if (Number.isInteger(positionCollecDetails)) {
+      const detail = this.collectService.collection.collectionDetails?.[positionCollecDetails as number];
+      this.collectService.restoreGrossBalanceDocForDisplay(detail);
+    }
 
     this.calculateSaldo(index).then(() => {
       return this.calculateDocumentSaleOpen(index).then(() => {
         if (Number.isInteger(positionCollecDetails)) {
           this.collectService.documentSaleOpen.positionCollecDetails = positionCollecDetails as number;
+          const detail = this.collectService.collection.collectionDetails?.[positionCollecDetails as number];
+          this.collectService.restoreGrossBalanceDocForDisplay(detail);
         }
         this.collectService.documentSaleOpen.isSelected = true;
         this.collectService.documentSaleOpen.inPaymentPartial = false;

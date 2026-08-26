@@ -1772,7 +1772,7 @@ export class CobrosGeneralComponent implements OnInit {
       const newPos = this.collectService.collection.collectionDetails.length - 1;
       const newDetail = this.collectService.collection.collectionDetails[newPos];
       if (doc.inPaymentPartial && (doc.isSave || previousDetail?.isSave)) {
-        this.collectService.applyRemainingBalanceDocAfterPartialPayment(newDetail);
+        this.collectService.restoreGrossBalanceDocForDisplay(newDetail);
       }
       // Actualizar positionCollecDetails en los arrays de documentos
       const docIndex = this.collectService.documentSales.findIndex(documentSale => documentSale.idDocument === doc.idDocument);

@@ -1207,8 +1207,9 @@ export class CollectionService {
   }
 
   /**
-   * Tras un pago parcial guardado, nuBalanceDoc debe reflejar el saldo restante
-   * (balance original − monto pagado), no el balance bruto del documento.
+   * Solo para payload de envío: saldo restante = original − pagado.
+   * En UI (Total), `nuBalanceDoc` debe permanecer como saldo bruto del documento
+   * (`nuBalanceDocOriginal`); no mutar el detalle en memoria con este helper.
    */
   public applyRemainingBalanceDocAfterPartialPayment(detail: CollectionDetail): void {
     if (detail?.inPaymentPartial !== true) {
@@ -1235,6 +1236,21 @@ export class CollectionService {
 
     detail.nuBalanceDoc = Math.max(0, gross - paid);
     detail.nuBalanceDocConversion = Math.max(0, grossConv - paidConv);
+  }
+
+  /** Restaura nuBalanceDoc al bruto (original) para UI tras apagar parcial o al guardar. */
+  public restoreGrossBalanceDocForDisplay(detail: CollectionDetail | null | undefined): void {
+    if (!detail) {
+      return;
+    }
+    const gross = Number(detail.nuBalanceDocOriginal ?? 0);
+    if (Number.isFinite(gross) && gross > 0) {
+      detail.nuBalanceDoc = gross;
+    }
+    const grossConv = Number(detail.nuBalanceDocOriginalConversion ?? 0);
+    if (Number.isFinite(grossConv) && grossConv > 0) {
+      detail.nuBalanceDocConversion = grossConv;
+    }
   }
 
   private isDetailPartialPayment(detail: CollectionDetail): boolean {
@@ -4042,9 +4058,8 @@ export class CollectionService {
       detail.nuBalanceDocOriginal = originalBalance;
       detail.nuBalanceDocOriginalConversion = originalBalanceConversion;
 
-      if (this.isPaymentPartial && Number(this.amountPaid) > 0) {
-        this.applyRemainingBalanceDocAfterPartialPayment(detail);
-      }
+      // UI: nuBalanceDoc = bruto del documento. El restante solo se calcula al enviar.
+      this.restoreGrossBalanceDocForDisplay(detail);
     }
 
     this.documentSales[idx].inPaymentPartial = this.isPaymentPartial;
@@ -4919,7 +4934,8 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
             );
             detail.nuBalanceDocOriginalConversion = doc.nuBalance;
           }
-          this.applyRemainingBalanceDocAfterPartialPayment(detail);
+          // UI: mantener bruto en nuBalanceDoc (COB-TOTAL-002). Remaining solo al enviar.
+          this.restoreGrossBalanceDocForDisplay(detail);
         } else {
           detail.nuBalanceDoc = this.resolveAmountInCollectionCurrency(doc.nuBalance, doc.coCurrency);
           detail.nuBalanceDocConversion = doc.nuBalance;
