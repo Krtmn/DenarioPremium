@@ -27,7 +27,7 @@ export class ClientesComponent implements OnInit {
         this.clientLogic.localCurrencyDefault = this.clientLogic.currencyModule.localCurrencyDefault.toString() === 'true' ? true : false;
         this.clientLogic.showConversion = this.clientLogic.currencyModule.showConversion.toString() === 'true' ? true : false;
 
-        this.clientLogic.getTags().then(resp => {
+        this.clientLogic.getTags().then(() => this.clientLogic.getTagsDenario()).then(resp => {
           if (resp) {
             this.messageService.hideLoading();
           }

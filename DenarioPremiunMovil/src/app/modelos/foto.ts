@@ -1,8 +1,9 @@
-export class Foto{
-    constructor(
-       public tipo: string,
-       public data: string,
-       public naImage: string,
-       public weightLimitExceeded: boolean
-    ){}
+export class Foto {
+  constructor(
+    public tipo: string,
+    public data: string,
+    public naImage: string,
+    public weightLimitExceeded: boolean,
+    public previewSrc = '',
+  ) {}
 }

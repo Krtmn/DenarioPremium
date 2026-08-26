@@ -306,4 +306,19 @@ describe('ClientLogicService', () => {
       expect(service.cannotSavePotentialClient).toBeFalse();
     });
   });
+
+  describe('getClientTag', () => {
+    it('resuelve DENARIO_DOC_VIGENTE desde clientTagsDenario si falta en clientTags', () => {
+      service.clientTagsDenario.set('DENARIO_DOC_VIGENTE', 'Documento vigente');
+
+      expect(service.getClientTag('DENARIO_DOC_VIGENTE')).toBe('Documento vigente');
+    });
+
+    it('prioriza clientTags sobre clientTagsDenario', () => {
+      service.clientTags.set('DENARIO_DOC_VIGENTE', 'Vigente lista');
+      service.clientTagsDenario.set('DENARIO_DOC_VIGENTE', 'Documento vigente');
+
+      expect(service.getClientTag('DENARIO_DOC_VIGENTE')).toBe('Vigente lista');
+    });
+  });
 });

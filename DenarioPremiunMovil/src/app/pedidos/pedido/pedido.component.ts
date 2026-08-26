@@ -245,14 +245,6 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           console.error('Tipo de orden original no encontrado: ' + this.orderServ.order.idOrderType);
         }
 
-        this.orderServ.getClient(this.orderServ.order.idClient).then(c => {
-          this.setClientfromSelector(c);
-          if (!this.viewOnly) {
-            this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
-              "Pedidos", 'fondoVerde', c, true, 'ped');
-          }
-        });
-
         /*//removido temporalmente
         //SI EL STORDER ES 6, NO DEBO MOSTRAR LA PESTAÑA ADJUNTOS
         if (this.orderServ.order.stOrder == 6) {
@@ -272,13 +264,8 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
       }
 
       this.multiempresa = this.enterpriseServ.esMultiempresa();
-      if (!this.viewOnly) {
-        this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
-          "Pedidos", 'fondoVerde', null, false, 'ped');
-      }
 
-
-      //setup monedas
+      //setup monedas antes del selector (PED-CURRENCY-001)
       await this.currencyServ.setup(this.dbServ.getDatabase());
       this.multimoneda = this.currencyServ.multimoneda;
       this.orderServ.currencyModule = this.currencyServ.getCurrencyModule('ped');
@@ -309,6 +296,18 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
         this.hardCurrency = this.currencyServ.getHardCurrency();
       }
 
+      // selector de clientes con currency_modules ya cargado
+      if (!this.viewOnly) {
+        if (this.orderServ.openOrder) {
+          const c = await this.orderServ.getClient(this.orderServ.order.idClient);
+          this.setClientfromSelector(c);
+          this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
+            "Pedidos", 'fondoVerde', c, true, 'ped');
+        } else {
+          this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
+            "Pedidos", 'fondoVerde', null, false, 'ped');
+        }
+      }
 
       if (this.orderServ.openOrder) {
         await this.abrirPedido();
@@ -1820,7 +1819,8 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           const unitStrings: string[] = [];
 
           unitList.forEach(unit => {
-            if (unit.quAmount > 0 || unit.quUnit > 0) {
+            // Solo unidades pedidas/bonificadas (quUnit es factor de empaque, no cantidad).
+            if (unit.quAmount > 0 || (Number(unit.quBonified) || 0) > 0) {
               const qty = Number(unit.quAmount ?? 0);
               const bonus = Number(unit.quBonified ?? 0);
               if (showBonifiedColumn) {

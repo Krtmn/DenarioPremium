@@ -515,7 +515,9 @@ export class CollectionService {
       return;
     }
     this.collectionDirtySincePersist = true;
+    this.sendBlockedByFields = false;
     this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
   }
 
   applyPersistSucceededBaseline(): void {
@@ -2608,10 +2610,6 @@ export class CollectionService {
     await this.calculatePayment(type, index);
     if (this.coTypeModule == "0") {
       if (this.createAutomatedPrepaid) {
-        if (!this.recentOpenCollect && !this.isRateChangeInProgress) {
-          this.mensaje = this.buildAutomatedPrepaidMessage();
-          this.alertMessageOpen = true;
-        }
         this.onCollectionValidToSend(true);
       }
       if (this.recentOpenCollect)
@@ -2642,7 +2640,9 @@ export class CollectionService {
       }
     }
 
-    this.alertMessageOpen = false;
+    if (this.sendValidationAttempted) {
+      this.alertMessageOpen = false;
+    }
 
     // COB-SEND-ALL-001: una sola fuente de verdad (todas las reglas aplicables).
     const issues = await this.collectCollectionSendIssues();
@@ -2996,7 +2996,6 @@ export class CollectionService {
     push(this.issueMissingAttachments());
 
     this.lastSendIssues = issues;
-    this.mensaje = issues[0]?.message ?? '';
     this.lastValidToSend = issues.length === 0;
     this.collectValidToSend.next(this.lastValidToSend);
     return issues;
@@ -3576,10 +3575,8 @@ export class CollectionService {
     if (!this.sendBlockedByFields) {
       return;
     }
-    if (!this.hasSendFieldErrors()) {
-      this.sendBlockedByFields = false;
-      this.updateSendButtonAvailability();
-    }
+    this.sendBlockedByFields = false;
+    this.updateSendButtonAvailability();
   }
 
   public isIndexedPaymentMethodComplete(type: string, index: number): boolean {
@@ -3836,10 +3833,9 @@ export class CollectionService {
       this.onCollectionValidToSave(false);
       return;
     }
-    const generalOk = this.generalTabValidForSave || this.createAutomatedPrepaid;
     const hasChangesToSave =
       !this.collectionPersistedBaseline || this.collectionDirtySincePersist;
-    this.onCollectionValidToSave(generalOk && hasChangesToSave);
+    this.onCollectionValidToSave(hasChangesToSave);
   }
 
   onCollectionValidToSend(validToSend: boolean) {

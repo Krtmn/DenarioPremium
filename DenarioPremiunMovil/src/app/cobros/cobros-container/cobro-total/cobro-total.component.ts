@@ -381,6 +381,7 @@ export class CobroTotalComponent implements OnInit {
       this.collectService.onCollectionValidToSend(false);
     else
       void this.collectService.calculatePayment('', 0, true);
+    this.collectService.notifyCollectionEdited();
   }
 
   saveRetention(isSave: Boolean) {
