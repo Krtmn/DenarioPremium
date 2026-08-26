@@ -2661,24 +2661,48 @@ export class CollectionService {
     }
 
     // COB-SEND-ALL-001: una sola fuente de verdad (todas las reglas aplicables).
-    const issues = await this.collectCollectionSendIssues();
-    if (issues.length === 0) {
-      this.onCollectionValidToSend(true);
-      return;
-    }
+    // Prepaid solo omite TOLERANCIA por exceso (applySendIssuesGate); no adjuntos ni campos.
+    await this.evaluateSendReadiness();
+  }
 
-    // Anticipo automático: si lo único que falla es tolerancia por exceso, permitir Enviar.
-    const onlyToleranciaExcess = issues.length === 1
+  /**
+   * Única excepción prepaid: el único issue es TOLERANCIA y hay sobrante (anticipo automático).
+   * No aplica a adjuntos, campos, refs ni faltante.
+   */
+  public isOnlyToleranciaExcessForPrepaid(issues: CollectionSendIssue[]): boolean {
+    return issues.length === 1
       && issues[0].code === 'TOLERANCIA'
       && this.createAutomatedPrepaid
       && (Number(this.montoTotalPagado) - Number(this.montoTotalPagar)) > 0;
-    if (onlyToleranciaExcess) {
+  }
+
+  /**
+   * Aplica el gate de Enviar sobre issues ya colectados.
+   * @returns issues bloqueantes (vacío = puede enviar).
+   */
+  public applySendIssuesGate(issues: CollectionSendIssue[]): CollectionSendIssue[] {
+    if (issues.length === 0 || this.isOnlyToleranciaExcessForPrepaid(issues)) {
       this.lastSendIssues = [];
       this.onCollectionValidToSend(true);
-      return;
+      return [];
     }
-
+    this.lastSendIssues = issues;
     this.onCollectionValidToSend(false);
+    return issues;
+  }
+
+  /** True solo si no hay issues bloqueantes tras validateToSend / evaluateSendReadiness. */
+  public canProceedSendAfterValidation(): boolean {
+    return this.lastValidToSend === true && this.lastSendIssues.length === 0;
+  }
+
+  /**
+   * Reevalúa todas las reglas de Enviar (COB-SEND-ATTACH-001).
+   * Usar en sendCollect y antes de persistir en sendOrSave.
+   */
+  public async evaluateSendReadiness(): Promise<CollectionSendIssue[]> {
+    const issues = await this.collectCollectionSendIssues();
+    return this.applySendIssuesGate(issues);
   }
 
   checkTolerancia() {
@@ -2973,75 +2997,146 @@ export class CollectionService {
   }
 
   /**
-   * Evalúa TODAS las reglas aplicables al Enviar (sin short-circuit).
-   * Modal = primer issue; campos en rojo = todos vía sendValidationAttempted + helpers UI.
+   * Evalúa reglas de Enviar en orden de prioridad; fail-fast al primer bloqueo.
+   * Modal = ese issue; hints en rojo = sendValidationAttempted + helpers UI por pestaña.
    */
   public async collectCollectionSendIssues(): Promise<CollectionSendIssue[]> {
-    const issues: CollectionSendIssue[] = [];
-    const push = (issue: CollectionSendIssue | null | undefined): void => {
-      if (issue) {
-        issues.push(issue);
-      }
-    };
-
-    const coType = String(this.collection?.coType ?? '0');
-
-    // Orden = prioridad de mensaje modal (todos se acumulan; el primero se muestra).
-    if (coType === '2') {
-      push(this.issueIncompleteRetention());
-    } else {
-      push(this.issueEmptyPayments());
-      push(this.issueMissingDifferenceCodes());
-      push(this.issueIncompletePayments());
-      push(this.issueIncompletePersistedPaymentAmounts());
-    }
-
-    push(this.issueIncompleteDocumentAmountToPay());
-    push(this.issueRequiredComment());
-    push(this.issueTxConversion());
-    push(this.issueManualRate());
-    push(this.issueMissingDocuments());
-    push(this.issueMissingPaymentMethods());
-
-    if (coType !== '2') {
-      push(await this.issueInvalidPaymentReferences());
-      push(this.issueDocumentsNotReady());
-      push(this.issueAmountOrTolerancia());
-    }
-
-    push(this.issueMissingAttachments());
-
+    const issue = await this.findFirstBlockingSendIssue();
+    const issues = issue ? [issue] : [];
     this.lastSendIssues = issues;
     this.lastValidToSend = issues.length === 0;
     this.collectValidToSend.next(this.lastValidToSend);
     return issues;
   }
 
-  /** Subconjunto sync (campos) para hasSendFieldErrors / reactivar Enviar al editar. */
+  /** Fail-fast: primer issue sync de campos (sin refs, tolerancia ni adjuntos). */
   private collectSyncFieldSendIssues(): CollectionSendIssue[] {
-    const issues: CollectionSendIssue[] = [];
-    const push = (issue: CollectionSendIssue | null | undefined): void => {
-      if (issue) {
-        issues.push(issue);
-      }
-    };
+    const issue = this.findFirstSyncFieldSendIssue();
+    return issue ? [issue] : [];
+  }
+
+  /**
+   * Orden fijo de prioridad modal/foco; retorna al primer issue no nulo.
+   */
+  private async findFirstBlockingSendIssue(): Promise<CollectionSendIssue | null> {
     const coType = String(this.collection?.coType ?? '0');
 
     if (coType === '2') {
-      push(this.issueIncompleteRetention());
+      const retention = this.issueIncompleteRetention();
+      if (retention) {
+        return retention;
+      }
     } else {
-      push(this.issueEmptyPayments());
-      push(this.issueMissingDifferenceCodes());
-      push(this.issueIncompletePayments());
-      push(this.issueIncompletePersistedPaymentAmounts());
+      const emptyPayments = this.issueEmptyPayments();
+      if (emptyPayments) {
+        return emptyPayments;
+      }
+      const differenceCodes = this.issueMissingDifferenceCodes();
+      if (differenceCodes) {
+        return differenceCodes;
+      }
+      const incompletePayments = this.issueIncompletePayments();
+      if (incompletePayments) {
+        return incompletePayments;
+      }
+      const persistedAmounts = this.issueIncompletePersistedPaymentAmounts();
+      if (persistedAmounts) {
+        return persistedAmounts;
+      }
     }
-    push(this.issueIncompleteDocumentAmountToPay());
-    push(this.issueRequiredComment());
-    push(this.issueTxConversion());
-    push(this.issueManualRate());
-    push(this.issueMissingDocuments());
-    push(this.issueMissingPaymentMethods());
-    return issues;
+
+    const documentAmount = this.issueIncompleteDocumentAmountToPay();
+    if (documentAmount) {
+      return documentAmount;
+    }
+    const comment = this.issueRequiredComment();
+    if (comment) {
+      return comment;
+    }
+    const txConversion = this.issueTxConversion();
+    if (txConversion) {
+      return txConversion;
+    }
+    const manualRate = this.issueManualRate();
+    if (manualRate) {
+      return manualRate;
+    }
+    const documents = this.issueMissingDocuments();
+    if (documents) {
+      return documents;
+    }
+    const paymentMethods = this.issueMissingPaymentMethods();
+    if (paymentMethods) {
+      return paymentMethods;
+    }
+
+    if (coType !== '2') {
+      const references = await this.issueInvalidPaymentReferences();
+      if (references) {
+        return references;
+      }
+      const documentsReady = this.issueDocumentsNotReady();
+      if (documentsReady) {
+        return documentsReady;
+      }
+      const tolerancia = this.issueAmountOrTolerancia();
+      if (tolerancia) {
+        return tolerancia;
+      }
+    }
+
+    return this.issueMissingAttachments();
+  }
+
+  /** Mismo orden que findFirstBlockingSendIssue, solo chequeos sync de campos. */
+  private findFirstSyncFieldSendIssue(): CollectionSendIssue | null {
+    const coType = String(this.collection?.coType ?? '0');
+
+    if (coType === '2') {
+      const retention = this.issueIncompleteRetention();
+      if (retention) {
+        return retention;
+      }
+    } else {
+      const emptyPayments = this.issueEmptyPayments();
+      if (emptyPayments) {
+        return emptyPayments;
+      }
+      const differenceCodes = this.issueMissingDifferenceCodes();
+      if (differenceCodes) {
+        return differenceCodes;
+      }
+      const incompletePayments = this.issueIncompletePayments();
+      if (incompletePayments) {
+        return incompletePayments;
+      }
+      const persistedAmounts = this.issueIncompletePersistedPaymentAmounts();
+      if (persistedAmounts) {
+        return persistedAmounts;
+      }
+    }
+
+    const documentAmount = this.issueIncompleteDocumentAmountToPay();
+    if (documentAmount) {
+      return documentAmount;
+    }
+    const comment = this.issueRequiredComment();
+    if (comment) {
+      return comment;
+    }
+    const txConversion = this.issueTxConversion();
+    if (txConversion) {
+      return txConversion;
+    }
+    const manualRate = this.issueManualRate();
+    if (manualRate) {
+      return manualRate;
+    }
+    const documents = this.issueMissingDocuments();
+    if (documents) {
+      return documents;
+    }
+    return this.issueMissingPaymentMethods();
   }
 
   private makeSendIssue(
@@ -3855,12 +3950,8 @@ export class CollectionService {
   }
 
   onCollectionValidToSend(validToSend: boolean) {
-    // Anticipo automático: solo omite falla de tolerancia/exceso si no hay errores de campos.
-    if (!validToSend && this.createAutomatedPrepaid && !this.hasSendFieldErrors()) {
-      this.lastValidToSend = true;
-      this.collectValidToSend.next(true);
-      return;
-    }
+    // COB-SEND-ATTACH-001: no forzar true por createAutomatedPrepaid aquí.
+    // La única excepción (TOLERANCIA por exceso) vive en applySendIssuesGate / validateToSend.
     this.lastValidToSend = validToSend;
     this.collectValidToSend.next(validToSend);
   }

@@ -1081,7 +1081,7 @@ describe('CollectionService', () => {
       expect(service.hasMissingOtrosDifferenceCodes()).toBeFalse();
     });
 
-    it('COB-SEND-ALL-001: colector acumula varios issues sin anularse', async () => {
+    it('COB-SEND-ALL-001: colector fail-fast devuelve solo el primer issue', async () => {
       service.hideDocuments = false;
       service.hidePayments = false;
       service.requiredComment = true;
@@ -1131,15 +1131,18 @@ describe('CollectionService', () => {
         positionCollecDetails: 0,
       } as DocumentSale];
 
-      const issues = await service.collectCollectionSendIssues();
-      const codes = issues.map(i => i.code);
+      const attachmentsSpy = spyOn(service as any, 'issueMissingAttachments').and.callThrough();
+      const refsSpy = spyOn(service as any, 'issueInvalidPaymentReferences').and.callThrough();
 
-      expect(codes).toContain('NO_COMMENT');
-      expect(codes).toContain('NO_DIFFERENCE_CODE');
-      expect(codes).toContain('NO_ATTACHMENTS');
-      expect(codes.length).toBeGreaterThanOrEqual(3);
+      const issues = await service.collectCollectionSendIssues();
+
+      expect(issues.length).toBe(1);
+      expect(issues[0].code).toBe('NO_DIFFERENCE_CODE');
+      expect(issues[0].message).toBe('Falta código diferencia');
       expect(service.getCollectionSendValidationMessage()).toBe(issues[0].message);
       expect(service.resolveSendValidationFocusTab()).toBe(issues[0].tab);
+      expect(attachmentsSpy).not.toHaveBeenCalled();
+      expect(refsSpy).not.toHaveBeenCalled();
     });
 
     it('COB-SEND-ALL-001: createAutomatedPrepaid no oculta issues de campos', () => {
@@ -1151,6 +1154,107 @@ describe('CollectionService', () => {
       service.onCollectionValidToSend(false);
 
       expect(service.lastValidToSend).toBeFalse();
+    });
+
+    it('COB-SEND-ATTACH-001: prepaid no fuerza Enviar ON si faltan adjuntos', async () => {
+      service.hideDocuments = false;
+      service.hidePayments = false;
+      service.requiredComment = false;
+      service.requiredCollectionAttachments = true;
+      service.createAutomatedPrepaid = true;
+      spyOn(service.adjuntoService, 'hasItems').and.returnValue(false);
+      service.collectionTags.set('COB_RET_MSJ_COLLECTION_NO_ATTACHMENTS', 'Faltan adjuntos');
+      service.collection = {
+        coType: '0',
+        coCurrency: 'USD',
+        collectionDetails: [{
+          idDocument: 1,
+          coDocument: 'FAC-1',
+          isSave: true,
+          nuAmountPaid: 100,
+          inPaymentPartial: false,
+        }],
+        collectionPayments: [{
+          coType: 'ef',
+          coPaymentMethod: 'ef',
+          nuAmountPartial: 150,
+        }],
+      } as any;
+      service.documentSales = [{
+        idDocument: 1,
+        coDocument: 'FAC-1',
+        isSelected: true,
+        isSave: true,
+        positionCollecDetails: 0,
+      } as DocumentSale];
+      service.pagoEfectivo = [{ monto: 150 } as any];
+      service.montoTotalPagar = 100;
+      service.montoTotalPagado = 150;
+      service.tolerancia0 = true;
+      service.TipoTolerancia = 0;
+      service.RangoToleranciaPositiva = 100000;
+      service.MonedaTolerancia = 'USD';
+      spyOn(service as any, 'validateReferencePaymentForCollect').and.resolveTo(true);
+      spyOn(service as any, 'hasValidDocumentSalesForSend').and.returnValue(true);
+      spyOn(service as any, 'hasIncompletePaymentMethods').and.returnValue(false);
+      spyOn(service as any, 'hasEmptyCollectionPayments').and.returnValue(false);
+      spyOn(service as any, 'hasIncompletePersistedPaymentAmounts').and.returnValue(false);
+      spyOn(service as any, 'hasIncompleteDocumentAmountToPay').and.returnValue(false);
+
+      await service.validateToSend();
+
+      expect(service.lastValidToSend).toBeFalse();
+      expect(service.lastSendIssues.some(i => i.code === 'NO_ATTACHMENTS')).toBeTrue();
+      expect(service.canProceedSendAfterValidation()).toBeFalse();
+    });
+
+    it('COB-SEND-ATTACH-001: prepaid con exceso y adjuntos OK permite Enviar', async () => {
+      service.hideDocuments = false;
+      service.hidePayments = false;
+      service.requiredComment = false;
+      service.requiredCollectionAttachments = true;
+      service.createAutomatedPrepaid = true;
+      spyOn(service.adjuntoService, 'hasItems').and.returnValue(true);
+      service.collection = {
+        coType: '0',
+        coCurrency: 'USD',
+        collectionDetails: [{
+          idDocument: 1,
+          coDocument: 'FAC-1',
+          isSave: true,
+          nuAmountPaid: 100,
+          inPaymentPartial: false,
+        }],
+        collectionPayments: [{
+          coType: 'ef',
+          coPaymentMethod: 'ef',
+          nuAmountPartial: 150,
+        }],
+      } as any;
+      service.documentSales = [{
+        idDocument: 1,
+        coDocument: 'FAC-1',
+        isSelected: true,
+        isSave: true,
+        positionCollecDetails: 0,
+      } as DocumentSale];
+      service.pagoEfectivo = [{ monto: 150 } as any];
+      service.montoTotalPagar = 100;
+      service.montoTotalPagado = 150;
+      service.tolerancia0 = false;
+      spyOn(service as any, 'validateReferencePaymentForCollect').and.resolveTo(true);
+      spyOn(service as any, 'hasValidDocumentSalesForSend').and.returnValue(true);
+      spyOn(service as any, 'hasIncompletePaymentMethods').and.returnValue(false);
+      spyOn(service as any, 'hasEmptyCollectionPayments').and.returnValue(false);
+      spyOn(service as any, 'hasIncompletePersistedPaymentAmounts').and.returnValue(false);
+      spyOn(service as any, 'hasIncompleteDocumentAmountToPay').and.returnValue(false);
+      spyOn(service as any, 'isWithinToleranciaOrExactOrPartialRules').and.returnValue(false);
+
+      const blocking = await service.evaluateSendReadiness();
+
+      expect(blocking.length).toBe(0);
+      expect(service.lastValidToSend).toBeTrue();
+      expect(service.canProceedSendAfterValidation()).toBeTrue();
     });
 
     it('COB-PREPAID-003: collectCollectionSendIssues no pisa mensaje global con adjuntos', async () => {
