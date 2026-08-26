@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { DepositService } from './deposit.service';
-import { DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 
 describe('DepositService', () => {
   let service: DepositService;
@@ -153,6 +153,38 @@ describe('DepositService', () => {
       service.updateSendButtonAvailability();
       expect(saveEnabled).toBeFalse();
       expect(sendEnabled).toBeFalse();
+    });
+
+    it('depósito rechazado o integrado queda read-only por stDeposit', () => {
+      service.deposit.stDelivery = DEPOSITO_STATUS_SAVED;
+      service.deposit.stDeposit = 2;
+      expect(service.isDepositReadOnlyForEdit()).toBeTrue();
+
+      service.deposit.stDeposit = 6;
+      expect(service.isDepositReadOnlyForEdit()).toBeTrue();
+    });
+  });
+
+  describe('Estatus de aprobación en lista', () => {
+    beforeEach(() => {
+      service.depositTags.set('DEP_DEV_SAVED', 'Guardado');
+      service.depositTags.set('DEP_DEV_TO_BE_SENDED', 'Por Enviar');
+      service.depositTags.set('DEP_DEV_SENDED', 'Enviado');
+    });
+
+    it('getStatusOrderName prioriza na_status del servidor cuando stDeposit != 0', () => {
+      const label = service.getStatusOrderName(2, DEPOSITO_STATUS_SENT, 'Rechazado');
+      expect(label).toBe('Rechazado');
+    });
+
+    it('getStatusOrderName usa historial integrado tras sync', () => {
+      const label = service.getStatusOrderName(6, DEPOSITO_STATUS_SENT, 'Integrado');
+      expect(label).toBe('Integrado');
+    });
+
+    it('getStatusOrderName cae a stDelivery cuando no hay na_status util', () => {
+      const label = service.getStatusOrderName(0, DEPOSITO_STATUS_SAVED, null);
+      expect(label).toBe('Guardado');
     });
   });
 

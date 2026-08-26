@@ -14,7 +14,7 @@ import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 import { CollectDeposit } from 'src/app/modelos/collect-deposit';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { ItemListaDepositos } from 'src/app/depositos/item-lista-depositos';
-import { DEPOSITO_STATUS_NEW, DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { DEPOSITO_STATUS_NEW, DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 import { Return } from 'src/app/modelos/tables/return';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 
@@ -201,8 +201,12 @@ export class DepositService {
 
   isDepositReadOnlyForEdit(): boolean {
     const stDelivery = Number(this.deposit?.stDelivery ?? 0);
+    const stDeposit = Number(this.deposit?.stDeposit ?? 0);
     return stDelivery === DEPOSITO_STATUS_TO_SEND
-      || stDelivery === DEPOSITO_STATUS_SENT;
+      || stDelivery === DEPOSITO_STATUS_SENT
+      || stDelivery === 6
+      || stDeposit === 2
+      || stDeposit === 6;
   }
 
   public updateSaveButtonAvailability(): void {
@@ -1661,6 +1665,61 @@ export class DepositService {
     }
 
     return value;
+  }
+
+  getStatusOrderName(stDeposit: number, stDelivery: number, naStatus: unknown): string {
+    const delivery = Number(stDelivery);
+    const deposit = Number(stDeposit);
+    const resolvedNaStatus = this.resolveNaStatusLabel(naStatus);
+
+    if (deposit !== 0 && resolvedNaStatus) {
+      return resolvedNaStatus;
+    }
+    return this.getStatusLabel(delivery, resolvedNaStatus);
+  }
+
+  private resolveNaStatusLabel(naStatus: unknown): string {
+    if (naStatus == null) {
+      return '';
+    }
+    if (typeof naStatus === 'string') {
+      const trimmed = naStatus.trim();
+      if (!trimmed || trimmed === 'Enviado' || trimmed.startsWith('Error')) {
+        return '';
+      }
+      return trimmed;
+    }
+    if (typeof naStatus === 'object') {
+      const fromObject = String((naStatus as { na_status?: string }).na_status ?? '').trim();
+      return fromObject;
+    }
+    return String(naStatus).trim();
+  }
+
+  getStatusLabel(status: number, naStatus: unknown): string {
+    switch (status) {
+      case DELIVERY_STATUS_SAVED:
+        return this.depositTags.get('DEP_DEV_SAVED') ?? '';
+      case DELIVERY_STATUS_TO_SEND:
+        return this.depositTags.get('DEP_DEV_TO_BE_SENDED') ?? '';
+      case DELIVERY_STATUS_SENT:
+        return naStatus == null || String(naStatus).trim() === ''
+          ? (this.depositTags.get('DEP_DEV_SENDED') ?? '')
+          : String(naStatus);
+      case 6:
+        if (naStatus == null || String(naStatus).trim() === '') {
+          return 'Enviado';
+        }
+        if (typeof naStatus === 'string') {
+          return naStatus;
+        }
+        if (typeof naStatus === 'object') {
+          return String((naStatus as { na_status?: string }).na_status ?? '');
+        }
+        return String(naStatus);
+      default:
+        return '';
+    }
   }
 
 }
