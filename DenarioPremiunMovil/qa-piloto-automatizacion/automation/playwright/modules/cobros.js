@@ -66,7 +66,7 @@ async function runCobros(pg, DATA) {
   }
 
   // Orden de ejecución (Fase 1 primero; Fase 2 al final como BLOCKED-fase2)
-  const FASE2 = ['DM-COB-033','DM-COB-034','DM-COB-012','DM-COB-040','DM-COB-043',
+  const FASE2 = ['DM-COB-033','DM-COB-034',
     'DM-COB-014','DM-COB-015','DM-COB-028','DM-COB-029','DM-COB-041','DM-COB-042',
     'DM-COB-046','DM-COB-047','DM-COB-039','DM-COB-038'];
   const TODOS = ['DM-COB-001','DM-COB-002','DM-COB-004','DM-COB-006','DM-COB-007',
@@ -322,16 +322,43 @@ async function runCobros(pg, DATA) {
 
   // Selecciona la moneda documento (1er ion-select del Tab Documentos) = USD por defecto para docs $
   async function seleccionarMonedaDocumento(pref = 'US') {
-    await pg.evaluate((p) => {
+    const res = await pg.evaluate((p) => {
       const sel = document.querySelector('app-cobro-documents ion-select');
-      if (!sel) return;
+      if (!sel) return { ok: false, err: 'ion-select moneda no encontrado' };
       const opts = [...sel.querySelectorAll('ion-select-option')];
+      const labels = opts.map(o => (o.textContent || '').trim());
       const opt = opts.find(o => (o.textContent || '').toUpperCase().includes(p.toUpperCase())) || opts[0];
-      if (!opt) return;
+      if (!opt) return { ok: false, err: 'sin opciones de moneda', labels };
       sel.value = opt.value;
       sel.dispatchEvent(new CustomEvent('ionChange', { bubbles: true, detail: { value: opt.value } }));
+      return { ok: true, elegida: (opt.textContent || '').trim(), labels };
     }, pref);
     await pg.waitForTimeout(1800);
+    return res;
+  }
+
+  // Cuenta documentos (checkboxes) visibles en el Tab Documentos.
+  async function contarDocumentos() {
+    return pg.evaluate(() => {
+      const docs = document.querySelector('app-cobro-documents');
+      if (!docs || docs.offsetParent === null) return 0;
+      return [...docs.querySelectorAll('ion-checkbox')].filter(c => c.getBoundingClientRect().width > 0).length;
+    });
+  }
+
+  // Carga documentos robusta: selecciona Moneda Documento (US$) y reintenta con toggle si no cargan.
+  async function cargarDocumentos() {
+    let moneda = null, cbs = 0;
+    for (let i = 0; i < 5; i++) {
+      moneda = await seleccionarMonedaDocumento('US');
+      await pg.waitForTimeout(1500);
+      cbs = await contarDocumentos();
+      if (cbs > 0) break;
+      // toggle: elegir otra moneda y volver, fuerza recarga de la lista
+      await seleccionarMonedaDocumento('BS');
+      await pg.waitForTimeout(1200);
+    }
+    return { cbs, moneda };
   }
 
   // Marca el primer documento (checkbox) del Tab Documentos → devuelve {ok, count}
@@ -377,6 +404,122 @@ async function runCobros(pg, DATA) {
 
   function blockFase2(motivo = 'Fase 2 — pendiente de construir/depurar en device') {
     FASE2.forEach(id => v(id, id, 'BLOCKED', motivo));
+  }
+
+  // Lee el "Monto total a pagar" y la Diferencia (texto + color) del Tab Pagos.
+  async function leerPagosSticky() {
+    return pg.evaluate(() => {
+      const root = document.querySelector('app-cobro-pagos') || document.body;
+      const txt = root.textContent.replace(/\s+/g, ' ');
+      const totalM = txt.match(/Monto total a pagar[^\d-]*([\d.,-]+)/i);
+      // Diferencia: span hoja con color en style
+      let difColor = null, difVal = null;
+      const spans = [...root.querySelectorAll('span, ion-text, p, div')].filter(n => /Diferencia/i.test(n.textContent || ''));
+      for (const s of spans) {
+        const leaf = [...s.querySelectorAll('*')].filter(x => x.children.length === 0 && /Diferencia/i.test(x.textContent));
+        const node = leaf[0] || s;
+        const st = (node.getAttribute && node.getAttribute('style')) || '';
+        const cs = getComputedStyle(node).color;
+        const m = (node.textContent || '').match(/Diferencia[^\d-]*([\d.,-]+)/i);
+        if (m) { difVal = m[1]; difColor = (/red/i.test(st) ? 'red' : /blue/i.test(st) ? 'blue' : cs); break; }
+      }
+      return { total: totalM ? totalM[1] : null, difVal, difColor };
+    });
+  }
+
+  // Convierte "66.852,91" → "6685291" (dígitos para el input de monto centavos-acumulativo)
+  function montoADigitos(txt) {
+    if (!txt) return '';
+    return String(txt).replace(/[^\d]/g, '').replace(/^0+(?=\d)/, '');
+  }
+
+  // Agrega método Efectivo con monto = total. Devuelve { ok, monto, error }.
+  async function agregarPagoEfectivo() {
+    // 1. Abrir modal (#eventSelect → setShowEventModal(true))
+    const addInfo = await pg.evaluate(() => {
+      const btn = document.querySelector('ion-button#eventSelect, ion-button.pagos-add-method-btn');
+      if (!btn || btn.disabled || btn.getBoundingClientRect().width === 0) return null;
+      const r = btn.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    });
+    if (!addInfo) return { ok: false, error: 'botón Agregar método disabled/ausente' };
+    await pg.mouse.click(addInfo.x, addInfo.y, { delay: 100 });
+    await pg.waitForTimeout(1500);
+
+    // 2. Check Efectivo en el modal (ionChange sobre el checkbox de la fila "Efectivo")
+    const checked = await pg.evaluate(() => {
+      const mod = [...document.querySelectorAll('#eventModal')].find(m => m.offsetParent !== null);
+      if (!mod) return false;
+      const items = [...mod.querySelectorAll('ion-item')];
+      const it = items.find(i => /Efectivo/i.test(i.textContent));
+      if (!it) return false;
+      const cb = it.querySelector('ion-checkbox');
+      if (!cb) return false;
+      cb.checked = true;
+      cb.dispatchEvent(new CustomEvent('ionChange', { bubbles: true, detail: { checked: true } }));
+      return true;
+    });
+    if (!checked) return { ok: false, error: 'checkbox Efectivo no encontrado en #eventModal' };
+    await pg.waitForTimeout(600);
+
+    // 3. Aceptar (.botonAddVerde → onAceptarTiposPago())
+    await pg.evaluate(() => {
+      const mod = [...document.querySelectorAll('#eventModal')].find(m => m.offsetParent !== null);
+      if (!mod) return;
+      const btn = [...mod.querySelectorAll('ion-button.botonAddVerde')].find(b => b.getBoundingClientRect().width > 0);
+      if (btn) btn.click();
+    });
+    await pg.waitForTimeout(1500);
+
+    // 4. Expandir el accordion Efectivo. Setear value en TODOS los accordion-group + click header.
+    await pg.evaluate(() => {
+      document.querySelectorAll('app-cobro-pagos ion-accordion-group').forEach(grp => {
+        const acc = grp.querySelector('ion-accordion');
+        const val = acc ? acc.getAttribute('value') : 'efectivo0';
+        grp.value = val;
+        grp.dispatchEvent(new CustomEvent('ionChange', { bubbles: true, detail: { value: val } }));
+      });
+      // fallback: click en el header "Efectivo"
+      const hdr = [...document.querySelectorAll('app-cobro-pagos ion-accordion ion-item[slot="header"]')]
+        .find(h => /Efectivo/i.test(h.textContent));
+      if (hdr) hdr.click();
+    });
+    await pg.waitForTimeout(1200);
+
+    // 5. Leer total → dígitos → llenar Monto (2º ion-input del bloque efectivo; centavos-acumulativo)
+    const sticky = await leerPagosSticky();
+    const digitos = montoADigitos(sticky.total);
+    if (!digitos) return { ok: false, error: 'no se pudo leer el total a pagar' };
+
+    const focused = await pg.evaluate(() => {
+      // El input de Monto tiene inputmode="numeric" (Nro Recibo no). Preferir ese; fallback al 2º ion-input.
+      const pagos = document.querySelector('app-cobro-pagos');
+      if (!pagos) return { ok: false, diag: 'no app-cobro-pagos' };
+      const allInputs = [...pagos.querySelectorAll('ion-input')].filter(i => i.getBoundingClientRect().width > 0);
+      let montoIon = allInputs.find(i => {
+        const n = i.querySelector('input');
+        return n && (n.getAttribute('inputmode') === 'numeric' || /monto/i.test(i.getAttribute('label') || ''));
+      });
+      if (!montoIon) montoIon = allInputs[1] || allInputs[0];
+      const diag = { accs: [...pagos.querySelectorAll('ion-accordion')].map(a => a.getAttribute('value')),
+        inputs: allInputs.length };
+      if (!montoIon) return { ok: false, diag };
+      const native = montoIon.querySelector('input') || (montoIon.shadowRoot && montoIon.shadowRoot.querySelector('input'));
+      if (!native) return { ok: false, diag };
+      native.focus();
+      window.__qaMontoInput = native;
+      return { ok: true, diag };
+    });
+    if (!focused.ok) return { ok: false, error: `input Monto no encontrado (accs:${JSON.stringify(focused.diag && focused.diag.accs)} inputs:${focused.diag && focused.diag.inputs})` };
+    // Limpiar y teclear dígitos (onMontoKeyDown arma los centavos)
+    for (let i = 0; i < 12; i++) await pg.keyboard.press('Backspace');
+    await pg.keyboard.type(digitos, { delay: 40 });
+    await pg.evaluate(() => {
+      const n = window.__qaMontoInput;
+      if (n) { n.dispatchEvent(new Event('blur', { bubbles: true })); }
+    });
+    await pg.waitForTimeout(1200);
+    return { ok: true, monto: digitos, total: sticky.total };
   }
 
   // Inyecta un adjunto por el PIPELINE REAL de la app (NO fabricando el objeto Foto — eso colgaba
@@ -513,19 +656,17 @@ async function runCobros(pg, DATA) {
   let hayDocs = false;
   try {
     await clickTab('documentos');
-    await seleccionarMonedaDocumento('US');   // docs no cargan hasta elegir Moneda Documento
+    const carga = await cargarDocumentos();   // robusto: US$ + reintento con toggle
     const info = await pg.evaluate(() => {
       const docs = document.querySelector('app-cobro-documents');
-      if (!docs) return { rows: 0, leyenda: false };
-      const rows = [...docs.querySelectorAll('ion-item, ion-row')].filter(el => el.getBoundingClientRect().width > 0).length;
+      if (!docs) return { leyenda: false };
       const txt = docs.textContent.toLowerCase();
-      const leyenda = txt.includes('vigente') || txt.includes('vencido') || txt.includes('favor');
-      const cbs = [...docs.querySelectorAll('ion-checkbox')].filter(c => c.getBoundingClientRect().width > 0).length;
-      return { rows, leyenda, cbs };
+      return { leyenda: txt.includes('vigente') || txt.includes('vencido') || txt.includes('favor') };
     });
-    hayDocs = info.cbs > 0;
-    v('DM-COB-007', 'Tab Documentos → lista + leyenda', info.cbs > 0 ? 'PASS' : 'N/A',
-      info.cbs > 0 ? `documentos: ${info.cbs} · leyenda: ${info.leyenda}` : 'cliente sin documentos pendientes hoy');
+    hayDocs = carga.cbs > 0;
+    v('DM-COB-007', 'Tab Documentos → lista + leyenda', carga.cbs > 0 ? 'PASS' : 'N/A',
+      carga.cbs > 0 ? `documentos: ${carga.cbs} · leyenda: ${info.leyenda}`
+        : `cliente sin documentos (monedas: ${JSON.stringify((carga.moneda && carga.moneda.labels) || [])})`);
   } catch (e) {
     v('DM-COB-007', 'Tab Documentos', 'FAIL', e.message);
   }
@@ -588,6 +729,34 @@ async function runCobros(pg, DATA) {
     }
   } catch (e) {
     v('DM-COB-009', 'Tab Pagos → modal métodos', 'FAIL', e.message);
+  }
+
+  // ─── DM-COB-040/012/043: Completar pago Efectivo = total → diferencia azul ─────
+  let pagoOk = false;
+  try {
+    if (!hayDocs) {
+      ['DM-COB-040', 'DM-COB-012', 'DM-COB-043'].forEach(id => v(id, id, 'N/A', 'sin documento seleccionado'));
+    } else {
+      await clickTab('pagos');
+      const difAntes = await leerPagosSticky();     // sin pago → diferencia roja (negativa)
+      const pago = await agregarPagoEfectivo();
+      if (!pago.ok) throw new Error(pago.error || 'pago falló');
+      const difDespues = await leerPagosSticky();   // pago = total → diferencia azul (0,00)
+      const esAzul = /blue|rgb\(0,\s*0,\s*255\)|#00f/i.test(difDespues.difColor || '');
+      const esCero = /^-?0([.,]0+)?$/.test((difDespues.difVal || '').trim());
+      pagoOk = esAzul || esCero;
+      v('DM-COB-040', 'Completar pago Efectivo = total → diferencia azul', pagoOk ? 'PASS' : 'FAIL',
+        `monto: ${pago.monto} · antes: ${difAntes.difVal}(${difAntes.difColor}) · después: ${difDespues.difVal}(${difDespues.difColor})`);
+      const rojoAntes = /red|rgb\(255,\s*0,\s*0\)/i.test(difAntes.difColor || '');
+      v('DM-COB-012', 'Diferencia rojo (insuf.) → azul (cubre)', (rojoAntes && pagoOk) ? 'PASS' : 'FAIL',
+        `antes: ${difAntes.difColor} · después: ${difDespues.difColor}`);
+      v('DM-COB-043', 'Diferencia se actualiza con el monto', (difAntes.difVal !== difDespues.difVal) ? 'PASS' : 'FAIL',
+        `antes: ${difAntes.difVal} · después: ${difDespues.difVal}`);
+    }
+  } catch (e) {
+    ['DM-COB-040', 'DM-COB-012', 'DM-COB-043'].forEach(id => {
+      if (!verdicts.find(x => x.id === id)) v(id, id, 'FAIL', e.message);
+    });
   }
 
   // ─── DM-COB-016: Tab Adjuntos → acordeones visibles ───────────────────────────
