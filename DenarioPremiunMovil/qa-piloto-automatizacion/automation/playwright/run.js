@@ -41,7 +41,7 @@ const MODULOS = {
   login:       require('./modules/login').runLogin,
   clientes:    require('./modules/clientes').runClientes,
   pedidos:     null,       // pendiente
-  cobros:      null,       // pendiente
+  cobros:      require('./modules/cobros').runCobros,   // Fase 1 (co_type 0)
   devoluciones: require('./modules/devoluciones').runDevoluciones,
   inventarios: require('./modules/inventarios').runInventarios,
   depositos:   require('./modules/depositos').runDepositos,
@@ -94,6 +94,23 @@ function dataParaModulo(modulo) {
       return {
         aplica:     mod.aplica !== false,
         esVendedor: vgs.esVendedor !== false,
+      };
+    case 'cobros':
+      return {
+        aplica:                        mod.aplica !== false,
+        clienteTest:                   mod.cliente_test || '',
+        clientesConDocumentos:         mod.clientes_con_documentos || [],
+        requiredCollectionAttachments: vgs.requiredCollectionAttachments === true,
+        requiredComment:               vgs.requiredComment === true,
+        multiCurrency:                 vgs.multiCurrency === true,
+        retencion:                     vgs.retencion === true,
+        cobroRetencion:                vgs.cobroRetencion === true,
+        cobroPrepago:                  vgs.cobroPrepago === true,
+        userCanSelectIGTF:             vgs.userCanSelectIGTF === true,
+        userCanCollectIva:             vgs.userCanCollectIva === true,
+        sizeRetention:                 Number(vgs.sizeRetention) || 14,
+        metodoPago:                    mod.metodo_pago || 'efectivo',
+        mockCamaraFunciona:            mod.mock_camara_funciona,   // undefined = probar el mock
       };
     case 'devoluciones':
       return {
