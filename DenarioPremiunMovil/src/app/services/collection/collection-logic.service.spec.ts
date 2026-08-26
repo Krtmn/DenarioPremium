@@ -2960,6 +2960,133 @@ describe('CollectionService', () => {
     });
   });
 
+  describe('COB-SEND-UX-003 Enviar refresh and doc prerequisite by coType', () => {
+    function assignInMemoryDocument(coType: string): void {
+      service.collection = {
+        coType,
+        stDelivery: 0,
+        stCollection: 0,
+        isSave: 0,
+        collectionDetails: [{
+          coDocument: 'FAC-TOTAL-1',
+          idDocument: 0,
+        } as CollectionDetail],
+        collectionPayments: [],
+      } as any;
+      service.documentSales = [];
+    }
+
+    function assignCompleteRetentionDetail(): CollectionDetail {
+      return {
+        coDocument: 'FAC-R1',
+        nuAmountRetention: 10,
+        nuAmountRetention2: 0,
+        nuVoucherRetention: '1234567890',
+        daVoucher: '2026-08-01',
+        collectionDetailRetentions: [{
+          idCollectRetention: 1,
+          nuAmountRetention: 10,
+          nuVoucherRetention: '1234567890',
+          daVoucherRetention: '2026-08-01',
+        }],
+      } as CollectionDetail;
+    }
+
+    beforeEach(() => {
+      service.hideDocuments = false;
+      service.hidePayments = false;
+      service.sendBlockedByFields = false;
+      service.disableSendButton = true;
+    });
+
+    it('COB-SEND-UX-003a: coType 0 accepts collectionDetails without documentSales selection', () => {
+      assignInMemoryDocument('0');
+      expect(service.hasAssignedDocumentForSendUx()).toBeTrue();
+      service.updateSendButtonAvailability();
+      expect(service.disableSendButton).toBeTrue();
+      service.collection.collectionPayments = [{
+        coPaymentMethod: 'ef',
+        coType: 'ef',
+        nuAmountPartial: 10,
+      } as any];
+      service.updateSendButtonAvailability();
+      expect(service.disableSendButton).toBeFalse();
+    });
+
+    it('COB-SEND-UX-003a: coType 3 and 4 same in-memory doc rule', () => {
+      for (const coType of ['3', '4']) {
+        assignInMemoryDocument(coType);
+        expect(service.hasAssignedDocumentForSendUx()).toBeTrue();
+      }
+    });
+
+    it('COB-SEND-UX-003b: coType 1 requires payment only', () => {
+      service.hideDocuments = true;
+      service.collection = {
+        coType: '1',
+        collectionDetails: [],
+        collectionPayments: [],
+      } as any;
+      expect(service.hasSendPrerequisites()).toBeFalse();
+      service.collection.collectionPayments = [{
+        coPaymentMethod: 'ef',
+        coType: 'ef',
+        nuAmountPartial: 5,
+      } as any];
+      expect(service.hasSendPrerequisites()).toBeTrue();
+    });
+
+    it('COB-SEND-UX-003: refreshSendUxAfterEdit clears sendBlocked and enables when prerequisites met', () => {
+      service.hidePayments = true;
+      assignInMemoryDocument('2');
+      service.sendBlockedByFields = true;
+      service.updateSendButtonAvailability();
+      expect(service.disableSendButton).toBeTrue();
+
+      service.refreshSendUxAfterEdit();
+      expect(service.sendBlockedByFields).toBeFalse();
+      expect(service.disableSendButton).toBeFalse();
+    });
+
+    it('COB-RET-SEND-002: coType 2 two complete details enable Enviar', () => {
+      service.hidePayments = true;
+      service.dynamicRetentions = true;
+      service.collectRetentions = [{
+        idCollectRetention: 1,
+        requireInput: true,
+        nuVoucherLength: 10,
+      } as any];
+      service.collection = {
+        coType: '2',
+        collectionDetails: [
+          assignCompleteRetentionDetail(),
+          { ...assignCompleteRetentionDetail(), coDocument: 'FAC-R2' },
+        ],
+      } as any;
+      service.sendBlockedByFields = false;
+      service.updateSendButtonAvailability();
+      expect(service.hasSendPrerequisites()).toBeTrue();
+      expect(service.disableSendButton).toBeFalse();
+    });
+
+    it('COB-RET-SEND-004: coType 2 second detail via Total (collectionDetails only)', () => {
+      service.hidePayments = true;
+      service.collection = {
+        coType: '2',
+        stDelivery: 0,
+        stCollection: 0,
+        isSave: 0,
+        collectionDetails: [
+          assignCompleteRetentionDetail(),
+          { ...assignCompleteRetentionDetail(), coDocument: 'FAC-MANUAL-2' },
+        ],
+      } as any;
+      service.documentSales = [];
+      expect(service.hasAssignedDocumentForSendUx()).toBeTrue();
+      expect(service.hasSendPrerequisites()).toBeTrue();
+    });
+  });
+
   describe('COB-INV-COMMENT-001 cleanString', () => {
     it('preserves trailing and internal spaces (no trim on ionInput path)', () => {
       expect(service.cleanString('hola ')).toBe('hola ');

@@ -307,7 +307,7 @@ export class CobroPagosComponent implements OnInit {
   }
 
   private refreshSendUxAfterFieldChange(): void {
-    this.collectService.refreshSendBlockedState();
+    this.collectService.refreshSendUxAfterEdit();
   }
 
   private getPosCollectionPaymentByType(type: string, index: number): number {

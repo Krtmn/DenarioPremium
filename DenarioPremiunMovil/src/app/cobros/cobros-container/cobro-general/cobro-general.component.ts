@@ -1199,7 +1199,7 @@ export class CobrosGeneralComponent implements OnInit {
       this.messageService.alertModal(this.messageAlert);
     }
     this.syncRequiresTxConversionReason();
-    this.collectService.refreshSendBlockedState();
+    this.collectService.refreshSendUxAfterEdit();
   }
 
   setResponsible() {
@@ -1225,7 +1225,7 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.unlockTabs().then((resp) => {
       this.markGeneralEditedAfterValidTabs(resp);
     })
-    this.collectService.refreshSendBlockedState();
+    this.collectService.refreshSendUxAfterEdit();
   }
 
   onTxCommentInput() {
@@ -1239,7 +1239,7 @@ export class CobrosGeneralComponent implements OnInit {
         this.input.value = clean;
       }
     }
-    this.collectService.refreshSendBlockedState();
+    this.collectService.refreshSendUxAfterEdit();
   }
 
   setResult(ev: any) {
@@ -1482,7 +1482,7 @@ export class CobrosGeneralComponent implements OnInit {
       this.lastManualRateValue = value!;
       void this.applySelectedRate(value!);
     }
-    this.collectService.refreshSendBlockedState();
+    this.collectService.refreshSendUxAfterEdit();
   }
 
   /**

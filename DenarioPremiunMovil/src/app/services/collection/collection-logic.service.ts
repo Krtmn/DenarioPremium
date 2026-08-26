@@ -3646,8 +3646,20 @@ export class CollectionService {
       }
     }
 
-    return this.isPersistedCollection()
-      && details.some(detail => !!detail.coDocument || !!detail.idDocument);
+    const hasDetailWithDocument = details.some(
+      detail => !!detail.coDocument || !!detail.idDocument,
+    );
+    if (!hasDetailWithDocument) {
+      return false;
+    }
+
+    const coType = String(this.collection?.coType ?? '0');
+    // COB-SEND-UX-003: cobro nuevo con detalle en memoria (p. ej. Retención vía Total).
+    if (coType === '0' || coType === '2' || coType === '3' || coType === '4') {
+      return true;
+    }
+
+    return this.isPersistedCollection();
   }
 
   public hasSendPrerequisites(): boolean {
@@ -3682,11 +3694,16 @@ export class CollectionService {
     this.updateSendButtonAvailability();
   }
 
-  public refreshSendBlockedState(): void {
-    if (!this.sendBlockedByFields) {
-      return;
-    }
+  /** Tras edición de usuario: desbloquea Enviar y recalcula prerrequisitos (COB-SEND-UX-003). */
+  public refreshSendUxAfterEdit(): void {
     this.sendBlockedByFields = false;
+    this.updateSendButtonAvailability();
+  }
+
+  public refreshSendBlockedState(): void {
+    if (this.sendBlockedByFields) {
+      this.sendBlockedByFields = false;
+    }
     this.updateSendButtonAvailability();
   }
 

@@ -2073,7 +2073,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.centsDiscount = undefined;
     this.centsRetention = undefined;
     this.centsRetention2 = undefined;
-    this.collectService.refreshSendBlockedState();
+    this.collectService.refreshSendUxAfterEdit();
   }
 
   dontSaveDocumentSale(action: boolean) {
@@ -2088,7 +2088,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
     this.collectService.validNuRetention = false;
     this.collectService.isOpen = action;
-    this.collectService.refreshSendBlockedState();
+    this.collectService.refreshSendUxAfterEdit();
   }
 
   saveStatusDocument() {
@@ -2252,11 +2252,12 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     if (!cs.isOpen) {
       return false;
     }
-    const openIndex = cs.indexDocumentSaleOpen;
-    if (openIndex < 0) {
-      return false;
-    }
-    return !cs.documentSales[openIndex]?.isSave;
+    return cs.indexDocumentSaleOpen >= 0;
+  }
+
+  /** COB-SEND-UX-003: recalcular Enviar tras edición en modal documentos. */
+  private refreshSendUxAfterDocumentEdit(): void {
+    this.collectService.refreshSendUxAfterEdit();
   }
 
   setAmountTotal() {
@@ -2564,6 +2565,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         this.disabledSaveButton = true;
       }
       if (!this.validateOpenDocumentRetentionTotals(false)) {
+        this.refreshSendUxAfterDocumentEdit();
         this.cdr.detectChanges();
         return;
       }
@@ -2575,11 +2577,13 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     if (cs.retencion && !cs.missingRetentionValue && cs.dynamicRetentions && this.documentRetentionLines.length > 0) {
       this.syncAllRetentionLinesValidation();
       if (!this.validateOpenDocumentRetentionTotals(false)) {
+        this.refreshSendUxAfterDocumentEdit();
         this.cdr.detectChanges();
         return;
       }
       if (!cs.validNuRetention || !cs.validateDaVoucher) {
         this.disabledSaveButton = true;
+        this.refreshSendUxAfterDocumentEdit();
         this.cdr.detectChanges();
         return;
       }
@@ -2588,6 +2592,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     // Si es pago parcial
     if (cs.isPaymentPartial) {
       if (!this.validateOpenDocumentRetentionTotals(false)) {
+        this.refreshSendUxAfterDocumentEdit();
         this.cdr.detectChanges();
         return;
       }
@@ -2599,6 +2604,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         cs.amountPaid = doc.nuAmountPaid;
         cs.amountPaymentPartial = maxAmountToPay;
         cs.amountPaidDoc = this.currencyService.cleanFormattedNumber(this.currencyService.formatNumber(cs.amountPaid));
+        this.refreshSendUxAfterDocumentEdit();
         return;
       }
       this.disabledSaveButton = false;
@@ -2640,16 +2646,19 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     if (retentionTotal > 0 || doc.nuAmountRetention || doc.nuAmountRetention2) {
       this.syncAllRetentionLinesValidation();
       if (!this.validateOpenDocumentRetentionTotals(false)) {
+        this.refreshSendUxAfterDocumentEdit();
         return;
       }
       if (cs.validNuRetention) {
         // Usa el helper aquí también
         if (this.isEmptyOrZeroRetention()) {
           this.disabledSaveButton = true;
+          this.refreshSendUxAfterDocumentEdit();
           return;
         }
         if (!cs.validateDaVoucher) {
           this.disabledSaveButton = true;
+          this.refreshSendUxAfterDocumentEdit();
           return;
         }
         if ((!isAlwaysPartialWithFixedMode && this.exceedsMaxAmountToPay(cs.amountPaid, maxAmountToPay))
@@ -2659,6 +2668,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
             this.alertMessageOpen = true;
           }
           this.disabledSaveButton = true;
+          this.refreshSendUxAfterDocumentEdit();
           return;
         }
         cs.documentSales[index].nuAmountPaid = cs.amountPaid;
@@ -2678,6 +2688,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     if (!isAlwaysPartialWithFixedMode && this.exceedsMaxAmountToPay(cs.amountPaid, maxAmountToPay)) {
       if (skipAmountExceedAlert) {
         this.disabledSaveButton = true;
+        this.refreshSendUxAfterDocumentEdit();
         return;
       }
       cs.mensaje = cs.isPaymentPartial
@@ -2692,12 +2703,14 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       );
       this.centsAmountPaid = Math.round((maxAmountToPay ?? 0) * this.centsFactor());
       this.displayAmountPaid = this.formatFromCents(this.centsAmountPaid);
+      this.refreshSendUxAfterDocumentEdit();
       return;
     }
 
     // Validación de retenciones vacías usando el helper
     if (cs.validNuRetention && this.isEmptyOrZeroRetention()) {
       this.disabledSaveButton = true;
+      this.refreshSendUxAfterDocumentEdit();
       return;
     }
 
@@ -2715,6 +2728,8 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       // forceRecalc: tras cambiar faltante, no dejar montoTotalPagar en neto viejo (SAVED/preserve).
       cs.calculatePayment("", 0, true, this.shouldSkipSendValidationOnPaymentRecalc());
       this.cdr.detectChanges();
+    } else {
+      this.refreshSendUxAfterDocumentEdit();
     }
 
     if (cs.isChangePaymentPartial && !cs.isPaymentPartial) {
@@ -4711,6 +4726,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.syncAllRetentionLinesValidation();
     this.setAmountTotal();
     this.validate();
+    this.collectService.refreshSendUxAfterEdit();
   }
 
   public removeCollectRetention(idCollectRetention: number): void {
