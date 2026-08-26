@@ -134,6 +134,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   private lastLoadedClientId: number | null = null;
   private clientChangedSub?: Subscription;
   private documentReloadSub?: Subscription;
+  private unregisterSendValidationFlush?: () => void;
 
 
   public alertButtons = [
@@ -180,6 +181,12 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       this.applyDocumentFilter(this.collectService.documentCurrency || 'Moneda');
       this.cdr.detectChanges();
     });
+
+    if (typeof this.collectService.registerSendValidationFlushHandler === 'function') {
+      this.unregisterSendValidationFlush = this.collectService.registerSendValidationFlushHandler(
+        () => this.flushPendingDocumentInputsBeforeSend(),
+      );
+    }
   }
 
   ngAfterViewInit(): void {
@@ -206,6 +213,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   ngOnDestroy(): void {
+    this.unregisterSendValidationFlush?.();
     this.clientChangedSub?.unsubscribe();
     this.documentReloadSub?.unsubscribe();
     this.documentsTableResizeObserver?.disconnect();
@@ -294,11 +302,66 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   public getSourceIndex(documentSale: DocumentSale): number {
-    const byId = this.collectService.documentSales.findIndex(d => d.idDocument === documentSale.idDocument);
-    if (byId >= 0) return byId;
+    return this.resolveDocumentSaleIndex(documentSale);
+  }
+
+  /** Índice en documentSales; tolera id numérico/string y cae a coDocument+empresa. */
+  public resolveDocumentSaleIndex(documentSale: DocumentSale | null | undefined): number {
+    if (!documentSale) {
+      return -1;
+    }
+
+    const targetId = Number(documentSale.idDocument);
+    if (Number.isFinite(targetId) && targetId > 0) {
+      const byId = this.collectService.documentSales.findIndex(
+        d => Number(d.idDocument) === targetId,
+      );
+      if (byId >= 0) {
+        return byId;
+      }
+    }
 
     return this.collectService.documentSales.findIndex(
-      d => d.coDocument === documentSale.coDocument && d.idEnterprise === documentSale.idEnterprise
+      d => d.coDocument === documentSale.coDocument && d.idEnterprise === documentSale.idEnterprise,
+    );
+  }
+
+  private syncDocumentSelectionAtIndex(index: number, isSelected: boolean): void {
+    if (index < 0) {
+      return;
+    }
+
+    const cs = this.collectService;
+    if (cs.documentSales[index]) {
+      cs.documentSales[index].isSelected = isSelected;
+    }
+    if (cs.documentSalesBackup[index]) {
+      cs.documentSalesBackup[index].isSelected = isSelected;
+    }
+    if (cs.documentSalesView[index]) {
+      cs.documentSalesView[index].isSelected = isSelected;
+    }
+  }
+
+  /** Alinea documentSales con la vista (documentSalesView) antes de abrir detalle. */
+  private isDocumentSelectedForOpen(index: number, viewDoc?: DocumentSale): boolean {
+    const cs = this.collectService;
+    if (index >= 0 && cs.documentSales[index]?.isSelected) {
+      return true;
+    }
+
+    if (!viewDoc?.isSelected) {
+      return false;
+    }
+
+    if (index >= 0) {
+      this.syncDocumentSelectionAtIndex(index, true);
+      return true;
+    }
+
+    return (cs.collection.collectionDetails ?? []).some(
+      d => Number(d.idDocument) === Number(viewDoc.idDocument)
+        || String(d.coDocument) === String(viewDoc.coDocument),
     );
   }
 
@@ -1557,12 +1620,27 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
   }
 
-  async openDocumentSale(index: number, e: Event) {
-    if (index < 0) return;
-    const factor = this.centsFactor();
+  async openDocumentSale(indexOrDoc: number | DocumentSale, e: Event) {
+    try {
+      const viewDoc = typeof indexOrDoc === 'object' ? indexOrDoc : undefined;
+      let index = typeof indexOrDoc === 'number'
+        ? indexOrDoc
+        : this.resolveDocumentSaleIndex(indexOrDoc);
 
-    this.indexDocumentSaleOpen = index;
-    if (this.collectService.documentSales[index].isSelected) {
+      if (index < 0 && viewDoc) {
+        index = this.resolveDocumentSaleIndex(viewDoc);
+      }
+
+      if (index < 0) {
+        console.warn('openDocumentSale: documento no encontrado en documentSales');
+        return;
+      }
+
+      if (!this.isDocumentSelectedForOpen(index, viewDoc)) {
+        return;
+      }
+
+      this.indexDocumentSaleOpen = index;
       // COB-DISC-001: limpiar buffers compartidos antes de hidratar este documento.
       this.clearDocumentDiscountUiState();
 
@@ -1571,7 +1649,6 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       // Mejor manejo: si es null o undefined asignar string vacío, si no asignar su valor
       const detail = this.collectService.collection.collectionDetails[positionCollecDetails];
       const comment = detail?.discountComment ?? '';
-      const doc = this.collectService.documentSales[index];
       this.discountComment = comment;
 
       const openDetail = this.collectService.collection.collectionDetails[positionCollecDetails];
@@ -1586,23 +1663,33 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       if (this.collectService.documentSales[index].isSave) {
         const savedDetailPos = this.collectService.documentSales[index].positionCollecDetails;
         const savedDetail = this.collectService.collection.collectionDetails[savedDetailPos];
-        const isPaymentPartial = this.resolvePartialPaymentForOpenDocument(
-          savedDetail,
-          this.collectService.documentSales[index],
-        );
-        this.syncDocumentPaymentPartialState(index, savedDetailPos, isPaymentPartial);
-        this.collectService.nuBalance = savedDetail.nuBalanceDoc;
-        voucherRetentionValue = savedDetail.nuVoucherRetention;
-        daVoucherValue = savedDetail.daVoucher!;
-        const docBalance = Number(savedDetail.nuBalanceDoc ?? this.collectService.documentSales[index].nuBalance ?? 0);
-        const savedPartialFromDoc = Number(this.collectService.documentSales[index]?.nuAmountPaid ?? 0);
-        const savedPartialFromDetail = Number(savedDetail.nuAmountPaid ?? 0);
-        if (isPaymentPartial && savedPartialFromDoc > 0 && savedPartialFromDoc < docBalance) {
-          this.valuePartialPayment = savedPartialFromDoc;
-        } else if (isPaymentPartial && savedPartialFromDetail > 0 && savedPartialFromDetail < docBalance) {
-          this.valuePartialPayment = savedPartialFromDetail;
+        if (savedDetail) {
+          const isPaymentPartial = this.resolvePartialPaymentForOpenDocument(
+            savedDetail,
+            this.collectService.documentSales[index],
+          );
+          this.syncDocumentPaymentPartialState(index, savedDetailPos, isPaymentPartial);
+          this.collectService.nuBalance = savedDetail.nuBalanceDoc;
+          voucherRetentionValue = savedDetail.nuVoucherRetention;
+          daVoucherValue = savedDetail.daVoucher!;
+          const docBalance = Number(savedDetail.nuBalanceDoc ?? this.collectService.documentSales[index].nuBalance ?? 0);
+          const savedPartialFromDoc = Number(this.collectService.documentSales[index]?.nuAmountPaid ?? 0);
+          const savedPartialFromDetail = Number(savedDetail.nuAmountPaid ?? 0);
+          if (isPaymentPartial && savedPartialFromDoc > 0 && savedPartialFromDoc < docBalance) {
+            this.valuePartialPayment = savedPartialFromDoc;
+          } else if (isPaymentPartial && savedPartialFromDetail > 0 && savedPartialFromDetail < docBalance) {
+            this.valuePartialPayment = savedPartialFromDetail;
+          } else {
+            this.valuePartialPayment = 0;
+          }
         } else {
-          this.valuePartialPayment = 0;
+          this.collectService.nuBalance = this.collectService.documentSales[index].nuBalance;
+          const defaultPartial = this.resolvePartialPaymentForOpenDocument(
+            this.collectService.collection.collectionDetails[positionCollecDetails],
+            this.collectService.documentSales[index],
+          );
+          this.syncDocumentPaymentPartialState(index, positionCollecDetails, defaultPartial);
+          this.resetOpenPartialPaymentAmountState();
         }
       } else {
         this.collectService.nuBalance = this.collectService.documentSales[index].nuBalance;
@@ -1652,7 +1739,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
           this.collectService.documentSaleOpen.nuVaucherRetention = detail.nuVoucherRetention;
           this.collectService.documentSaleOpen.inPaymentPartial = detail.inPaymentPartial;
           this.collectService.documentSaleOpen.nuBalance = detail.nuBalanceDoc;
-          this.collectService.nuBalance = this.collectService.documentSalesBackup[index].nuBalance;
+          this.collectService.nuBalance = this.collectService.documentSalesBackup[index]?.nuBalance
+            ?? this.collectService.documentSales[index]?.nuBalance
+            ?? detail.nuBalanceDoc;
           this.collectService.isPaymentPartial = this.resolvePartialPaymentForOpenDocument(
             detail,
             this.collectService.documentSales[index],
@@ -1711,22 +1800,27 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       this.collectService.cobrosComponent = false;
       this.collectService.isOpen = true;
 
-      if (this.collectService.userCanSelectCollectDiscount)
+      if (this.collectService.userCanSelectCollectDiscount) {
         this.checkCollectDiscount();
-    }
+      }
 
-    if (this.collectService.retencion)
-      this.validateNuVaucherRetention(false);
-    else
-      this.collectService.validNuRetention = true;
+      if (this.collectService.retencion) {
+        this.validateNuVaucherRetention(false);
+      } else {
+        this.collectService.validNuRetention = true;
+      }
 
-    const isReopeningSavedPartial = this.collectService.documentSaleOpen?.isSave === true
-      && this.collectService.isPaymentPartial;
+      const isReopeningSavedPartial = this.collectService.documentSaleOpen?.isSave === true
+        && this.collectService.isPaymentPartial;
 
-    if (isReopeningSavedPartial) {
-      this.syncPersistedPartialPaymentAmount(index);
-    } else {
-      this.applyDefaultPartialPaymentIfNeeded(index);
+      if (isReopeningSavedPartial) {
+        this.syncPersistedPartialPaymentAmount(index);
+      } else {
+        this.applyDefaultPartialPaymentIfNeeded(index);
+      }
+    } catch (err) {
+      console.error('openDocumentSale error:', err);
+      this.collectService.isOpen = false;
     }
   }
 
@@ -1762,9 +1856,14 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   selectDocumentSale(documentSale: DocumentSale, indexDocumentSale: number, event: any) {
-    if (indexDocumentSale < 0) return;
+    const index = indexDocumentSale >= 0
+      ? indexDocumentSale
+      : this.resolveDocumentSaleIndex(documentSale);
+    if (index < 0) {
+      return;
+    }
     documentSale.isSelected = event.detail.checked;
-    console.log(indexDocumentSale);
+    console.log(index);
     if (documentSale.nuBalance < 0 && this.collectService.collection.collectionDetails.length == 0 && this.collectService.coTypeModule == '0') {
       /*     if (documentSale.coDocumentSaleType == "NC" && this.collectService.collection.collectionDetails.length == 0) {
        */
@@ -1781,35 +1880,33 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       }
 
     } else if (documentSale.isSelected) {
-      this.collectService.documentSales[indexDocumentSale].isSelected = true;
-      this.collectService.documentSalesBackup[indexDocumentSale].isSelected = true;
-      this.collectService.documentSalesView[indexDocumentSale].isSelected = true;
+      this.syncDocumentSelectionAtIndex(index, true);
       this.collectService.haveDocumentSale = true;
 
       if (this.collectService.alwaysPartialPayment) {
-        this.collectService.documentSales[indexDocumentSale].inPaymentPartial = true;
-        this.collectService.documentSalesBackup[indexDocumentSale].inPaymentPartial = true;
-        this.collectService.documentSalesView[indexDocumentSale].inPaymentPartial = true;
+        this.collectService.documentSales[index].inPaymentPartial = true;
+        this.collectService.documentSalesBackup[index].inPaymentPartial = true;
+        this.collectService.documentSalesView[index].inPaymentPartial = true;
         if (!this.collectService.isChangePaymentPartialPersistence) {
           this.collectService.isPaymentPartial = true;
         }
       }
 
-      this.initCollectionDetail(documentSale, indexDocumentSale);
+      this.initCollectionDetail(documentSale, index);
     } else {
       //se reinician los valores del documento
-      this.collectService.documentSales[indexDocumentSale].daDueDate = "";
-      this.collectService.documentSales[indexDocumentSale].nuVaucherRetention = "";
-      this.collectService.documentSales[indexDocumentSale].nuAmountPaid = this.collectService.documentSales[indexDocumentSale].nuBalance;
-      this.collectService.documentSales[indexDocumentSale].nuAmountRetention = 0;
-      this.collectService.documentSales[indexDocumentSale].nuAmountRetention2 = 0;
-      this.collectService.documentSales[indexDocumentSale].isSelected = false;
-      this.collectService.documentSales[indexDocumentSale].isSave = false;
-      this.collectService.documentSalesView[indexDocumentSale].isSave = false;
+      this.collectService.documentSales[index].daDueDate = "";
+      this.collectService.documentSales[index].nuVaucherRetention = "";
+      this.collectService.documentSales[index].nuAmountPaid = this.collectService.documentSales[index].nuBalance;
+      this.collectService.documentSales[index].nuAmountRetention = 0;
+      this.collectService.documentSales[index].nuAmountRetention2 = 0;
+      this.collectService.documentSales[index].isSelected = false;
+      this.collectService.documentSales[index].isSave = false;
+      this.collectService.documentSalesView[index].isSave = false;
 
-      this.collectService.documentSalesBackup[indexDocumentSale] = JSON.parse(JSON.stringify(this.collectService.documentSales[indexDocumentSale]));
+      this.collectService.documentSalesBackup[index] = JSON.parse(JSON.stringify(this.collectService.documentSales[index]));
       let pos;
-      pos = this.collectService.documentSales[indexDocumentSale].positionCollecDetails;
+      pos = this.collectService.documentSales[index].positionCollecDetails;
       console.log(pos);
       // Eliminar solo el elemento en la posición `pos` con validación de rangos
       if (Number.isInteger(pos) && pos >= 0 && pos < this.collectService.collection.collectionDetails.length) {
@@ -1828,11 +1925,11 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         console.log(this.collectService.documentSales[i].positionCollecDetails);
       }
 
-      this.collectService.documentSales[indexDocumentSale].positionCollecDetails = -1;
-      this.collectService.documentSalesBackup[indexDocumentSale].positionCollecDetails = -1;
+      this.collectService.documentSales[index].positionCollecDetails = -1;
+      this.collectService.documentSalesBackup[index].positionCollecDetails = -1;
 
-      this.collectService.documentSales[indexDocumentSale].inPaymentPartial = false;
-      this.collectService.documentSalesBackup[indexDocumentSale].inPaymentPartial = false;
+      this.collectService.documentSales[index].inPaymentPartial = false;
+      this.collectService.documentSalesBackup[index].inPaymentPartial = false;
 
       if (this.collectService.collection.collectionDetails.length == 0) {
 
@@ -1859,10 +1956,10 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         this.collectService.onCollectionValidToSend(false);
       }
 
-      this.collectService.documentSales[indexDocumentSale].isSelected = false
-      this.collectService.documentSalesBackup[indexDocumentSale].isSelected = false;
-      this.collectService.documentSales[indexDocumentSale].isSave = false
-      this.collectService.documentSalesBackup[indexDocumentSale].isSave = false;
+      this.collectService.documentSales[index].isSelected = false
+      this.collectService.documentSalesBackup[index].isSelected = false;
+      this.collectService.documentSales[index].isSave = false
+      this.collectService.documentSalesBackup[index].isSave = false;
       this.collectService.calculatePayment("", 0);
       this.cdr.detectChanges();
 
@@ -3626,6 +3723,25 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
     // mantener la lógica existente
     if (typeof (this as any).setPartialPay === 'function') this.setPartialPay();
+  }
+
+  /** Volcar inputs del modal de documento abiertos sin blur antes de Enviar. */
+  public flushPendingDocumentInputsBeforeSend(): void {
+    if (!this.collectService.isOpen) {
+      return;
+    }
+
+    this.onAmountPaidBlur();
+    this.syncOpenDetailNuAmountPaidFromAmountPaid();
+
+    if (this.usesLegacyRetentionInputs()) {
+      this.onRetentionBlur();
+      this.onRetention2Blur();
+    }
+
+    for (const line of this.documentRetentionLines) {
+      this.onCollectRetentionBlur(line.idCollectRetention);
+    }
   }
 
   public onAmountPaidInput(ev: any): void {

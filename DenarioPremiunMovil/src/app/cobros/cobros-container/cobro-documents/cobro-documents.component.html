@@ -200,7 +200,7 @@
   <ion-row class="tabladocumentSalesVenta tablaDocVentas row" [class.documents-row-selected]="documentSale.isSelected">
     @if(this.collectService.retentionDocTypeCR){
     <ion-col size="2" class="ion-text-center col borderInferiorIzquierdo">
-      <ion-button (click)="openDocumentSale(getSourceIndex(documentSale), $event)" size="small" disabled="{{!documentSale.isSelected}}">
+      <ion-button (click)="openDocumentSale(documentSale, $event)" size="small" [disabled]="!documentSale.isSelected">
         <!-- <ion-icon slot="icon-only" src=" ../../../assets/icon/search-circle-outline.svg"></ion-icon> -->
         <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
       </ion-button>
