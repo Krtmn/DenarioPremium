@@ -825,6 +825,6 @@
   header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}" message={{this.collectService.mensaje}}
   [buttons]="alertButtons" (didDismiss)="setResult($event)"></ion-alert>
 
-<!-- alerta de envio-->
+<!-- alerta anticipo automático -->
 <ion-alert [isOpen]="this.alertMessageOpen" header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}"
-  message={{this.collectService.mensaje}} [buttons]="alertButtons" (didDismiss)="setResult($event)"></ion-alert>
+  [message]="automatedPrepaidAlertMessage" [buttons]="alertButtons" (didDismiss)="setResult($event)"></ion-alert>

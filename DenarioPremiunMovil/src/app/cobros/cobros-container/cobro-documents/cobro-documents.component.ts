@@ -1864,7 +1864,6 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
     }
 
-    this.collectService.updateSendButtonAvailability();
     this.collectService.markCollectionDirty();
   }
 
@@ -2074,7 +2073,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.centsDiscount = undefined;
     this.centsRetention = undefined;
     this.centsRetention2 = undefined;
-    this.collectService.updateSendButtonAvailability();
+    this.collectService.refreshSendBlockedState();
   }
 
   dontSaveDocumentSale(action: boolean) {
@@ -2089,7 +2088,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
     this.collectService.validNuRetention = false;
     this.collectService.isOpen = action;
-    this.collectService.updateSendButtonAvailability();
+    this.collectService.refreshSendBlockedState();
   }
 
   saveStatusDocument() {

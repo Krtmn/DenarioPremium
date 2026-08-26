@@ -1137,6 +1137,65 @@ describe('CollectionService', () => {
       expect(service.lastValidToSend).toBeFalse();
     });
 
+    it('COB-PREPAID-003: collectCollectionSendIssues no pisa mensaje global con adjuntos', async () => {
+      service.hideDocuments = false;
+      service.hidePayments = false;
+      service.requiredComment = false;
+      service.requiredCollectionAttachments = true;
+      service.createAutomatedPrepaid = true;
+      spyOn(service.adjuntoService, 'hasItems').and.returnValue(false);
+      service.collectionTags.set('COB_RET_MSJ_COLLECTION_NO_ATTACHMENTS', 'Faltan adjuntos');
+      service.mensaje = 'Aviso anticipo automático';
+      service.collection = {
+        coType: '0',
+        coCurrency: 'USD',
+        collectionDetails: [{
+          idDocument: 1,
+          coDocument: 'FAC-1',
+          isSave: true,
+          nuAmountPaid: 100,
+          inPaymentPartial: false,
+        }],
+        collectionPayments: [{
+          coType: 'ef',
+          coPaymentMethod: 'ef',
+          nuAmountPartial: 100,
+        }],
+      } as any;
+      service.documentSales = [{
+        idDocument: 1,
+        coDocument: 'FAC-1',
+        isSelected: true,
+        isSave: true,
+        positionCollecDetails: 0,
+      } as DocumentSale];
+      service.montoTotalPagar = 100;
+      service.montoTotalPagado = 150;
+      service.tolerancia0 = true;
+      service.TipoTolerancia = 0;
+      service.RangoToleranciaPositiva = 100000;
+      service.MonedaTolerancia = 'USD';
+
+      const issues = await service.collectCollectionSendIssues();
+
+      expect(issues.some(i => i.code === 'NO_ATTACHMENTS')).toBeTrue();
+      expect(service.mensaje).toBe('Aviso anticipo automático');
+      expect(service.getCollectionSendValidationMessage()).toContain('Faltan adjuntos');
+    });
+
+    it('COB-PREPAID-003: validateToSend sin sendValidationAttempted no cierra alert informativo', async () => {
+      service.sendValidationAttempted = false;
+      service.alertMessageOpen = true;
+      service.mensaje = 'Aviso anticipo automático';
+      service.collection = { coType: '0', collectionDetails: [], collectionPayments: [] } as any;
+      spyOn(service, 'collectCollectionSendIssues').and.resolveTo([]);
+
+      await service.validateToSend();
+
+      expect(service.alertMessageOpen).toBeTrue();
+      expect(service.mensaje).toBe('Aviso anticipo automático');
+    });
+
     it('P1: enableDifferenceCodes blocks send when Otros lacks difference code', async () => {
       service.enableDifferenceCodes = true;
       service.tolerancia0 = false;
@@ -2275,29 +2334,11 @@ describe('CollectionService', () => {
     });
   });
 
-  describe('COB-SAVE-001 Guardar habilitado tras General válida', () => {
-    it('onCollectionValid(true) habilita Guardar en cobro nuevo; false lo deshabilita', () => {
+  describe('COB-SAVE-001 Guardar habilitado sin validar campos', () => {
+    it('cobro nuevo habilita Guardar sin General válida', () => {
       service.collection = { stDelivery: 3 } as any;
-      const emissions: boolean[] = [];
-      service.collectValidToSave.subscribe((v: Boolean) => emissions.push(!!v));
-
-      service.onCollectionValid(true);
-      expect(service.generalTabValidForSave).toBeTrue();
-      expect(emissions[emissions.length - 1]).toBeTrue();
-
-      service.applyPersistSucceededBaseline();
-      expect(emissions[emissions.length - 1]).toBeFalse();
-
-      service.onCollectionValid(false);
-      expect(service.generalTabValidForSave).toBeFalse();
-      expect(emissions[emissions.length - 1]).toBeFalse();
-    });
-
-    it('createAutomatedPrepaid mantiene Guardar aunque General no sea válida si hay cambios', () => {
-      service.collection = { stDelivery: 3 } as any;
-      service.createAutomatedPrepaid = true;
+      service.resetCollectionExitBaseline();
       service.generalTabValidForSave = false;
-      service.collectionDirtySincePersist = true;
       let saveEnabled: boolean | undefined;
       service.collectValidToSave.subscribe((v: Boolean) => saveEnabled = !!v);
 
@@ -2305,9 +2346,21 @@ describe('CollectionService', () => {
       expect(saveEnabled).toBeTrue();
     });
 
+    it('applyPersistSucceededBaseline deshabilita Guardar hasta dirty', () => {
+      service.collection = { stDelivery: 3 } as any;
+      service.resetCollectionExitBaseline();
+      let saveEnabled: boolean | undefined;
+      service.collectValidToSave.subscribe((v: Boolean) => saveEnabled = !!v);
+
+      service.updateSaveButtonAvailability();
+      expect(saveEnabled).toBeTrue();
+
+      service.applyPersistSucceededBaseline();
+      expect(saveEnabled).toBeFalse();
+    });
+
     it('colección solo lectura deshabilita Guardar', () => {
       service.collection = { stDelivery: service.COLLECT_STATUS_TO_SEND } as any;
-      service.generalTabValidForSave = true;
       service.collectionDirtySincePersist = true;
       let saveEnabled: boolean | undefined;
       service.collectValidToSave.subscribe((v: Boolean) => saveEnabled = !!v);
@@ -2320,7 +2373,6 @@ describe('CollectionService', () => {
   describe('COB-SAVE-002 Guardar OFF tras guardar hasta editar', () => {
     it('baseline limpio deshabilita Guardar aunque General sea válida', () => {
       service.collection = { stDelivery: 3 } as any;
-      service.generalTabValidForSave = true;
       service.collectionPersistedBaseline = true;
       service.collectionDirtySincePersist = false;
       let saveEnabled: boolean | undefined;
@@ -2332,7 +2384,6 @@ describe('CollectionService', () => {
 
     it('markCollectionDirty re-habilita Guardar tras baseline', () => {
       service.collection = { stDelivery: 3 } as any;
-      service.generalTabValidForSave = true;
       let saveEnabled: boolean | undefined;
       service.collectValidToSave.subscribe((v: Boolean) => saveEnabled = !!v);
       service.applyPersistSucceededBaseline();
@@ -2344,7 +2395,6 @@ describe('CollectionService', () => {
 
     it('reapertura persistida deja Guardar OFF hasta dirty', () => {
       service.collection = { stDelivery: 3 } as any;
-      service.generalTabValidForSave = true;
       let saveEnabled: boolean | undefined;
       service.collectValidToSave.subscribe((v: Boolean) => saveEnabled = !!v);
 
@@ -2355,10 +2405,10 @@ describe('CollectionService', () => {
       expect(saveEnabled).toBeTrue();
     });
 
-    it('cobro nuevo sin baseline permite Guardar con General válida', () => {
+    it('cobro nuevo sin baseline permite Guardar sin General válida', () => {
       service.collection = { stDelivery: 3 } as any;
       service.resetCollectionExitBaseline();
-      service.generalTabValidForSave = true;
+      service.generalTabValidForSave = false;
       let saveEnabled: boolean | undefined;
       service.collectValidToSave.subscribe((v: Boolean) => saveEnabled = !!v);
 
@@ -2756,11 +2806,10 @@ describe('CollectionService', () => {
       expect(service.disableSendButton).toBeTrue();
     });
 
-    it('refreshSendBlockedState re-enables only when fields fixed and prerequisites met', () => {
+    it('refreshSendBlockedState re-enables Enviar when prerequisites met', () => {
       assignDocument();
       assignPayment();
       service.sendBlockedByFields = true;
-      spyOn(service, 'hasSendFieldErrors').and.returnValue(false);
 
       service.refreshSendBlockedState();
 
@@ -2770,12 +2819,24 @@ describe('CollectionService', () => {
 
     it('refreshSendBlockedState stays disabled when prerequisites lost after unblock', () => {
       service.sendBlockedByFields = true;
-      spyOn(service, 'hasSendFieldErrors').and.returnValue(false);
 
       service.refreshSendBlockedState();
 
       expect(service.sendBlockedByFields).toBeFalse();
       expect(service.disableSendButton).toBeTrue();
+    });
+
+    it('COB-SEND-UX-002: markCollectionDirty re-enables Enviar tras fallo al pulsar', () => {
+      service.hidePayments = true;
+      service.collection.coType = '2';
+      assignDocument();
+      service.sendBlockedByFields = true;
+      service.updateSendButtonAvailability();
+      expect(service.disableSendButton).toBeTrue();
+
+      service.markCollectionDirty();
+      expect(service.sendBlockedByFields).toBeFalse();
+      expect(service.disableSendButton).toBeFalse();
     });
   });
 
