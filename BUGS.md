@@ -260,6 +260,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-TOTAL-002] Monto Doc. muestra restante tras pago parcial (Total)
+
+- **Síntoma:** Pago parcial (ej. 57 de saldo 157.75): en Total, Monto Doc. = Monto Saldo = restante (100.75) en lugar de Monto Doc. = bruto (157.75) y Monto Saldo = restante. Al apagar Pago Parcial, Monto Doc. no vuelve al bruto.
+- **Causa:** `applyRemainingBalanceDocAfterPartialPayment` mutaba `nuBalanceDoc` en memoria para UI; Total bindeaba `nuBalanceDoc` como Monto Doc. y `resolveDetailRemainingBalance` en parcial devolvía ese valor ya restante → ambas columnas iguales. Al desactivar parcial no se restauraba el bruto desde `nuBalanceDocOriginal`.
+- **Fix:** UI: Monto Doc. = `nuBalanceDocOriginal` (bruto); Monto Saldo = bruto − pagado siempre. En memoria `nuBalanceDoc` permanece bruto (`restoreGrossBalanceDocForDisplay`); remaining solo en copia de envío (`prepareCollectionDetailsForSend`). Al apagar parcial, restaurar bruto.
+- **Evitar:** No mutar `nuBalanceDoc` de UI con remaining tras parcial; remaining solo en payload de envío.
+- **Archivos:** `collection-logic.service.ts`, `cobro-total.component.ts/html`, `cobro-documents.component.ts`, `cobro-general.component.ts` (+ specs).
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [LOGIN-CASE-001] Cambio de usuario falso por mayúsculas/minúsculas
 
 - **Síntoma:** Usuario guardado en "Recuérdame" con distinta capitalización (ej. `Vendedor01` vs `vendedor01`) dispara modal de cambio de usuario y borra BD local al aceptar.

@@ -163,7 +163,7 @@
         <ion-col class="ion-text-center col" size="7">
           {{collectionDetails.coDocument}}</ion-col>
         <ion-col class="ion-text-center col"
-          size="4">{{this.currencyService.formatNumber(collectionDetails.nuBalanceDoc)}}</ion-col>
+          size="4">{{this.currencyService.formatNumber(resolveDetailDocumentBalance(collectionDetails))}}</ion-col>
          
         @if (hasTotalizationColumnAmount('discount')) {
         <ion-col class="ion-text-center col"
