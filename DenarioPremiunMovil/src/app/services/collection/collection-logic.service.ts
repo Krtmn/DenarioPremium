@@ -1340,16 +1340,12 @@ export class CollectionService {
     );
   }
 
-  /** Neto esperado sin normalizar abonos persistidos (hoja del árbol de cálculo). */
-  private computeDetailExpectedNet(
+  /** Neto esperado del documento (bruto − deducciones), sin atajo de pago parcial. */
+  private computeDetailFullExpectedNet(
     detail: CollectionDetail,
     backup?: { nuBalance?: number; nuAmountRetention?: number; nuAmountRetention2?: number },
     docIndex: number = -1,
   ): number {
-    if (detail?.inPaymentPartial === true) {
-      return Number(detail.nuAmountPaid ?? 0);
-    }
-
     const index = docIndex >= 0 ? docIndex : this.findDocumentSaleIndexForDetail(detail);
     const gross = this.resolveDetailGrossBalanceForTotals(detail, backup);
     const resolvedBackup = index >= 0 ? (backup ?? this.documentSalesBackup[index]) : backup;
@@ -1364,11 +1360,23 @@ export class CollectionService {
     );
 
     const net = gross - deductions;
-    // Notas de crédito / saldo negativo restan del total (no recortar a 0).
     if (gross < 0) {
       return net;
     }
     return Math.max(0, net);
+  }
+
+  /** Neto esperado sin normalizar abonos persistidos (hoja del árbol de cálculo). */
+  private computeDetailExpectedNet(
+    detail: CollectionDetail,
+    backup?: { nuBalance?: number; nuAmountRetention?: number; nuAmountRetention2?: number },
+    docIndex: number = -1,
+  ): number {
+    if (detail?.inPaymentPartial === true) {
+      return Number(detail.nuAmountPaid ?? 0);
+    }
+
+    return this.computeDetailFullExpectedNet(detail, backup, docIndex);
   }
 
   /** Neto a pagar del documento: saldo − descuentos − descuentos de cobro − retenciones. */
@@ -6616,6 +6624,24 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       igtfAmount: this.shouldDisplayIgtfInTotals() ? igtfAmount : 0,
       amountToPay,
     };
+  }
+
+  /**
+   * Monto Saldo en Total: neto esperado (bruto − deducciones) − monto pagado.
+   * Con retenciones/descuentos no usar solo bruto − pagado (COB-TOTAL-003).
+   */
+  resolveCollectionDetailRemainingBalance(detail: CollectionDetail): number {
+    const backup = this.resolveCollectionDetailBackup(detail);
+    const docIndex = this.findDocumentSaleIndexForDetail(detail);
+    const gross = this.resolveDetailGrossBalanceForTotals(detail, backup);
+    const expectedNet = this.computeDetailFullExpectedNet(detail, backup, docIndex);
+    const paid = Number(detail?.nuAmountPaid ?? 0);
+    const remaining = expectedNet - paid;
+
+    if (gross < 0) {
+      return remaining;
+    }
+    return Math.max(0, remaining);
   }
 
   resolveAmountToPayWithIgtfFromBase(netAfterDeductions: number, igtfBase: number): number {

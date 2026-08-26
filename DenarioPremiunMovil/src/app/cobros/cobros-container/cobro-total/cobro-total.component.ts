@@ -603,13 +603,11 @@ export class CobroTotalComponent implements OnInit {
   }
 
   /**
-   * Monto Saldo: lo que quedará después del pago de esta línea.
-   * Siempre bruto − monto pagado (parcial o total).
+   * Monto Saldo: lo que quedará por pagar del documento tras este cobro.
+   * Neto esperado (bruto − retenciones/descuentos) − monto pagado.
    */
   resolveDetailRemainingBalance(detail: CollectionDetail): number {
-    const balance = this.resolveDetailDocumentBalance(detail);
-    const paid = this.normalizeTotalizationAmount(detail?.nuAmountPaid);
-    return Math.max(0, balance - paid);
+    return this.collectService.resolveCollectionDetailRemainingBalance(detail);
   }
 
   hasTotalizationColumnAmount(
