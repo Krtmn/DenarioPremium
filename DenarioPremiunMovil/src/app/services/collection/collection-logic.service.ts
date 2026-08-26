@@ -176,6 +176,8 @@ export class CollectionService {
   public lastValidToSend = false;
   /** Último resultado de `collectCollectionSendIssues` (mensaje/foco al Enviar). */
   public lastSendIssues: CollectionSendIssue[] = [];
+  /** Handlers de componentes para volcar inputs pendientes antes de validar Enviar. */
+  private sendValidationFlushHandlers: Array<() => void> = [];
   /** Razón de cambio de tasa obligatoria (pestaña General). */
   public requiresTxConversionReason = false;
   public saveOrExitOpen = false;
@@ -1338,16 +1340,12 @@ export class CollectionService {
     );
   }
 
-  /** Neto esperado sin normalizar abonos persistidos (hoja del árbol de cálculo). */
-  private computeDetailExpectedNet(
+  /** Neto esperado del documento (bruto − deducciones), sin atajo de pago parcial. */
+  private computeDetailFullExpectedNet(
     detail: CollectionDetail,
     backup?: { nuBalance?: number; nuAmountRetention?: number; nuAmountRetention2?: number },
     docIndex: number = -1,
   ): number {
-    if (detail?.inPaymentPartial === true) {
-      return Number(detail.nuAmountPaid ?? 0);
-    }
-
     const index = docIndex >= 0 ? docIndex : this.findDocumentSaleIndexForDetail(detail);
     const gross = this.resolveDetailGrossBalanceForTotals(detail, backup);
     const resolvedBackup = index >= 0 ? (backup ?? this.documentSalesBackup[index]) : backup;
@@ -1362,11 +1360,23 @@ export class CollectionService {
     );
 
     const net = gross - deductions;
-    // Notas de crédito / saldo negativo restan del total (no recortar a 0).
     if (gross < 0) {
       return net;
     }
     return Math.max(0, net);
+  }
+
+  /** Neto esperado sin normalizar abonos persistidos (hoja del árbol de cálculo). */
+  private computeDetailExpectedNet(
+    detail: CollectionDetail,
+    backup?: { nuBalance?: number; nuAmountRetention?: number; nuAmountRetention2?: number },
+    docIndex: number = -1,
+  ): number {
+    if (detail?.inPaymentPartial === true) {
+      return Number(detail.nuAmountPaid ?? 0);
+    }
+
+    return this.computeDetailFullExpectedNet(detail, backup, docIndex);
   }
 
   /** Neto a pagar del documento: saldo − descuentos − descuentos de cobro − retenciones. */
@@ -2703,6 +2713,39 @@ export class CollectionService {
   }
 
   /**
+   * Registra un callback que vuelca inputs UI pendientes (sin blur) antes de Enviar.
+   * Devuelve función para desregistrar en ngOnDestroy.
+   */
+  public registerSendValidationFlushHandler(handler: () => void): () => void {
+    this.sendValidationFlushHandlers.push(handler);
+    return () => {
+      const index = this.sendValidationFlushHandlers.indexOf(handler);
+      if (index >= 0) {
+        this.sendValidationFlushHandlers.splice(index, 1);
+      }
+    };
+  }
+
+  /**
+   * Sincroniza flags/campos derivados y ejecuta flush de componentes antes de validar Enviar.
+   * Evita falsos "campo faltante" cuando el usuario pulsa Enviar sin salir del foco del input.
+   */
+  public syncPendingInputsBeforeSendValidation(): void {
+    if (this.requiredComment) {
+      const comment = (this.collection?.txComment ?? '').toString().trim();
+      this.validComment = comment.length > 0;
+    }
+
+    for (const handler of this.sendValidationFlushHandlers) {
+      try {
+        handler();
+      } catch (err) {
+        console.warn('[CollectionService] syncPendingInputsBeforeSendValidation handler failed', err);
+      }
+    }
+  }
+
+  /**
    * Reevalúa todas las reglas de Enviar (COB-SEND-ATTACH-001).
    * Usar en sendCollect y antes de persistir en sendOrSave.
    */
@@ -3007,6 +3050,7 @@ export class CollectionService {
    * Modal = ese issue; hints en rojo = sendValidationAttempted + helpers UI por pestaña.
    */
   public async collectCollectionSendIssues(): Promise<CollectionSendIssue[]> {
+    this.syncPendingInputsBeforeSendValidation();
     const issue = await this.findFirstBlockingSendIssue();
     const issues = issue ? [issue] : [];
     this.lastSendIssues = issues;
@@ -6580,6 +6624,24 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       igtfAmount: this.shouldDisplayIgtfInTotals() ? igtfAmount : 0,
       amountToPay,
     };
+  }
+
+  /**
+   * Monto Saldo en Total: neto esperado (bruto − deducciones) − monto pagado.
+   * Con retenciones/descuentos no usar solo bruto − pagado (COB-TOTAL-003).
+   */
+  resolveCollectionDetailRemainingBalance(detail: CollectionDetail): number {
+    const backup = this.resolveCollectionDetailBackup(detail);
+    const docIndex = this.findDocumentSaleIndexForDetail(detail);
+    const gross = this.resolveDetailGrossBalanceForTotals(detail, backup);
+    const expectedNet = this.computeDetailFullExpectedNet(detail, backup, docIndex);
+    const paid = Number(detail?.nuAmountPaid ?? 0);
+    const remaining = expectedNet - paid;
+
+    if (gross < 0) {
+      return remaining;
+    }
+    return Math.max(0, remaining);
   }
 
   resolveAmountToPayWithIgtfFromBase(netAfterDeductions: number, igtfBase: number): number {

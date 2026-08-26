@@ -465,7 +465,9 @@ INSERT INTO public.application_tags(
 	('VND_CLIENTES_NUEVOSACT', 'VND', 'VENDEDOR', 'ESP', 'Clientes Nuevos Activados'),
 	('VND_TIPO_PLAN', 'VND', 'VENDEDOR', 'ESP', 'Plan por'),
 	('VND_CUOTA_MES', 'VND', 'VENDEDOR', 'ESP', 'Cuota Mes'),
-	('VND_VENTA_REAL', 'VND', 'VENDEDOR', 'ESP', 'Venta Real Mes');
+	('VND_VENTA_REAL', 'VND', 'VENDEDOR', 'ESP', 'Venta Real Mes'),
+	('VND_VENTA_PEDIDO', 'VND', 'VENDEDOR', 'ESP', 'Venta por pedido'),
+	('VND_VENTA_FACTURADA', 'VND', 'VENDEDOR', 'ESP', 'Venta facturada');
 
 --TAGS INVENTARIO
 DELETE FROM public.application_tags WHERE co_module = 'INV';

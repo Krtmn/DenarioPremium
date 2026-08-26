@@ -56,6 +56,7 @@ export class CobrosGeneralComponent implements OnInit {
   @ViewChild(ClienteSelectorComponent) selectorCliente!: ClienteSelectorComponent;
 
   private subscriptions: Subscription[] = [];
+  private unregisterSendValidationFlush?: () => void;
 
   // Servicios públicos solo si los usas en el template
   public collectService = inject(CollectionService);
@@ -152,6 +153,12 @@ export class CobrosGeneralComponent implements OnInit {
       );
 
       this.initGeneralState();
+    }
+
+    if (typeof this.collectService.registerSendValidationFlushHandler === 'function') {
+      this.unregisterSendValidationFlush = this.collectService.registerSendValidationFlushHandler(
+        () => this.flushPendingGeneralInputsBeforeSend(),
+      );
     }
   }
 
@@ -751,6 +758,7 @@ export class CobrosGeneralComponent implements OnInit {
 
 
   ngOnDestroy() {
+    this.unregisterSendValidationFlush?.();
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
@@ -1240,7 +1248,38 @@ export class CobrosGeneralComponent implements OnInit {
         this.input.value = clean;
       }
     }
+    if (this.collectService.requiredComment) {
+      this.collectService.validComment = clean.trim().length > 0;
+    }
     this.collectService.refreshSendUxAfterEdit();
+  }
+
+  /** Volcar inputs de General pendientes de blur antes de Enviar. */
+  private flushPendingGeneralInputsBeforeSend(): void {
+    if (this.collectService.requiredComment) {
+      const clean = applyTextCommentMaxLength(
+        this.collectService.cleanString(this.collectService.collection.txComment),
+        this.textCommentMaxLength,
+      );
+      this.collectService.collection.txComment = clean;
+      this.collectService.validComment = clean.trim().length > 0;
+    }
+
+    if (this.collectService.requiresTxConversionReason) {
+      const raw = (this.collectService.collection.txConversion ?? '').toString();
+      if (raw.trim()) {
+        this.collectService.collection.txConversion = this.collectService.cleanString(raw.trim());
+      }
+    }
+
+    if (this.collectService.enabledManualRate) {
+      const value = this.parseManualRateInput(String(this.rateSelected ?? '').trim());
+      if (this.isValidManualRate(value)) {
+        this.collectService.collection.nuValueLocal = value!;
+        this.collectService.rateSelected = value!;
+        this.manualRateError = '';
+      }
+    }
   }
 
   setResult(ev: any) {

@@ -14,7 +14,7 @@ import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 import { CollectDeposit } from 'src/app/modelos/collect-deposit';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { ItemListaDepositos } from 'src/app/depositos/item-lista-depositos';
-import { DEPOSITO_STATUS_NEW, DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { DEPOSIT_APPROVAL_STATUS_REJECTED, DEPOSITO_STATUS_NEW, DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 import { Return } from 'src/app/modelos/tables/return';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 
@@ -24,6 +24,18 @@ import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 export class DepositService {
 
   private static readonly DEPOSIT_PAYMENT_METHODS_SQL = "('ef', 'ch')";
+
+  /** Excluye cobros ya usados en depósitos activos; libera los de depósitos rechazados en Web. */
+  private static readonly DEPOSIT_COLLECTS_BLOCKING_SUBQUERY =
+    'c.co_collection NOT IN (' +
+    '  SELECT dc.co_collection FROM deposit_collects dc' +
+    '  INNER JOIN deposits d ON d.co_deposit = dc.co_deposit' +
+    '  WHERE NOT (' +
+    '    d.st_deposit = ' + DEPOSIT_APPROVAL_STATUS_REJECTED +
+    '    AND d.st_delivery = ' + DEPOSITO_STATUS_SENT +
+    '    AND IFNULL(d.id_deposit, 0) > 0' +
+    '  )' +
+    ')';
 
   public globalConfig = inject(GlobalConfigService);
   public services = inject(ServicesService);
@@ -201,8 +213,26 @@ export class DepositService {
 
   isDepositReadOnlyForEdit(): boolean {
     const stDelivery = Number(this.deposit?.stDelivery ?? 0);
+    const stDeposit = Number(this.deposit?.stDeposit ?? 0);
     return stDelivery === DEPOSITO_STATUS_TO_SEND
-      || stDelivery === DEPOSITO_STATUS_SENT;
+      || stDelivery === DEPOSITO_STATUS_SENT
+      || stDelivery === 6
+      || stDeposit === DEPOSIT_APPROVAL_STATUS_REJECTED
+      || stDeposit === 6;
+  }
+
+  /**
+   * Depósito rechazado en Web (st_deposit=status_action 2, ya enviado y con id servidor).
+   * Distinto del borrador local Por Enviar (st_delivery=2, id_deposit=0).
+   */
+  isDepositRejectedForCollectRelease(
+    stDeposit: number,
+    stDelivery: number,
+    idDeposit: number | null,
+  ): boolean {
+    return Number(stDeposit) === DEPOSIT_APPROVAL_STATUS_REJECTED
+      && Number(stDelivery) === DEPOSITO_STATUS_SENT
+      && Number(idDeposit ?? 0) > 0;
   }
 
   public updateSaveButtonAvailability(): void {
@@ -772,7 +802,7 @@ export class DepositService {
       " WHERE c.co_currency = ? AND c.id_enterprise = ? AND c.st_delivery <> 0 " +
       " AND cp.co_payment_method IN " + depositPaymentMethods + " " +
       " AND cd.co_type_doc <> 'CR' AND c.id_collection <> 0 " +
-      " AND c.co_collection NOT IN (SELECT dc.co_collection FROM deposit_collects dc) " +
+      " AND " + DepositService.DEPOSIT_COLLECTS_BLOCKING_SUBQUERY + " " +
       " GROUP BY c.co_collection ORDER BY c.co_collection DESC";
 
     return this.database.executeSql(selectStatement,
@@ -818,7 +848,7 @@ export class DepositService {
       "  AND cp.co_payment_method IN " + depositPaymentMethods + " " +
       "  AND c.id_collection <> 0 " +
       "  AND c.co_type = '1' " +
-      "  AND c.co_collection NOT IN (SELECT dc.co_collection FROM deposit_collects dc) " +
+      "  AND " + DepositService.DEPOSIT_COLLECTS_BLOCKING_SUBQUERY + " " +
       "GROUP BY c.co_collection";
 
     return this.database.executeSql(selectStatement,
@@ -1059,7 +1089,18 @@ export class DepositService {
       ]]);
 
       const collects = await this.resolveDepositCollectsForPersist(dbServ, deposit);
-      if (collects.length > 0) {
+      const syncedServerId = Number(deposit.idDeposit ?? 0) > 0;
+      const shouldClearCollects =
+        this.isDepositRejectedForCollectRelease(
+          Number(deposit.stDeposit ?? 0),
+          Number(deposit.stDelivery ?? 0),
+          deposit.idDeposit,
+        )
+        || (collects.length === 0 && syncedServerId);
+
+      if (shouldClearCollects) {
+        allQueries.push([deleteCollectsStatement, [deposit.coDeposit]]);
+      } else if (collects.length > 0) {
         allQueries.push([deleteCollectsStatement, [deposit.coDeposit]]);
         for (const collect of collects) {
           allQueries.push([insertDepositCollect, [
@@ -1661,6 +1702,61 @@ export class DepositService {
     }
 
     return value;
+  }
+
+  getStatusOrderName(stDeposit: number, stDelivery: number, naStatus: unknown): string {
+    const delivery = Number(stDelivery);
+    const deposit = Number(stDeposit);
+    const resolvedNaStatus = this.resolveNaStatusLabel(naStatus);
+
+    if (deposit !== 0 && resolvedNaStatus) {
+      return resolvedNaStatus;
+    }
+    return this.getStatusLabel(delivery, resolvedNaStatus);
+  }
+
+  private resolveNaStatusLabel(naStatus: unknown): string {
+    if (naStatus == null) {
+      return '';
+    }
+    if (typeof naStatus === 'string') {
+      const trimmed = naStatus.trim();
+      if (!trimmed || trimmed === 'Enviado' || trimmed.startsWith('Error')) {
+        return '';
+      }
+      return trimmed;
+    }
+    if (typeof naStatus === 'object') {
+      const fromObject = String((naStatus as { na_status?: string }).na_status ?? '').trim();
+      return fromObject;
+    }
+    return String(naStatus).trim();
+  }
+
+  getStatusLabel(status: number, naStatus: unknown): string {
+    switch (status) {
+      case DELIVERY_STATUS_SAVED:
+        return this.depositTags.get('DEP_DEV_SAVED') ?? '';
+      case DELIVERY_STATUS_TO_SEND:
+        return this.depositTags.get('DEP_DEV_TO_BE_SENDED') ?? '';
+      case DELIVERY_STATUS_SENT:
+        return naStatus == null || String(naStatus).trim() === ''
+          ? (this.depositTags.get('DEP_DEV_SENDED') ?? '')
+          : String(naStatus);
+      case 6:
+        if (naStatus == null || String(naStatus).trim() === '') {
+          return 'Enviado';
+        }
+        if (typeof naStatus === 'string') {
+          return naStatus;
+        }
+        if (typeof naStatus === 'object') {
+          return String((naStatus as { na_status?: string }).na_status ?? '');
+        }
+        return String(naStatus);
+      default:
+        return '';
+    }
   }
 
 }

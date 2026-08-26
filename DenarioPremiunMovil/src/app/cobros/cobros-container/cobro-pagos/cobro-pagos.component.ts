@@ -1,4 +1,4 @@
-import { Input, inject, AfterViewInit } from '@angular/core';
+import { Input, inject, AfterViewInit, OnDestroy } from '@angular/core';
 import { Component, OnInit } from '@angular/core';
 import { CollectionService } from 'src/app/services/collection/collection-logic.service';
 import { CurrencyService } from 'src/app/services/currency/currency.service';
@@ -33,7 +33,9 @@ interface BankOption {
   styleUrls: ['./cobro-pagos.component.scss'],
   standalone: false
 })
-export class CobroPagosComponent implements OnInit {
+export class CobroPagosComponent implements OnInit, AfterViewInit, OnDestroy {
+
+  private unregisterSendValidationFlush?: () => void;
 
   /**
    * Flag para mostrar el mensaje de automated prepaid solo una vez por ciclo de true.
@@ -118,7 +120,16 @@ export class CobroPagosComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.alertButtons[0].text = this.collectService.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
+    this.alertButtons[0].text = this.collectService.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')!;
+    if (typeof this.collectService.registerSendValidationFlushHandler === 'function') {
+      this.unregisterSendValidationFlush = this.collectService.registerSendValidationFlushHandler(
+        () => this.flushPendingPaymentInputsBeforeSend(),
+      );
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.unregisterSendValidationFlush?.();
   }
 
   ngAfterViewInit(): void {
@@ -1055,6 +1066,77 @@ export class CobroPagosComponent implements OnInit {
     this.collectService.validateReferencePayment();
 
   }
+
+  /** ionInput: volcar referencia/doc de pago sin esperar blur. */
+  onPaymentDocInput(event: Event, index: number, type: string): void {
+    const value = (event as CustomEvent)?.detail?.value ?? '';
+    this.setNroTransanccion(String(value), index, type);
+  }
+
+  /** ionInput: volcar nueva cuenta sin esperar blur. */
+  onNuevaCuentaInput(event: Event, index: number, type: string): void {
+    const value = (event as CustomEvent)?.detail?.value ?? '';
+    this.setNuevaCuenta(String(value), index, type);
+  }
+
+  /**
+   * Antes de Enviar: aplicar montos debounced y sincronizar refs con collectionPayments.
+   */
+  public flushPendingPaymentInputsBeforeSend(): void {
+    const cs = this.collectService;
+
+    const flushMontos = (pagos: Array<{ monto?: number }>, type: string): void => {
+      pagos.forEach((pago, index) => {
+        const uid = this.ensureInitFor(pago);
+        if (this.debounceTimers[uid]) {
+          clearTimeout(this.debounceTimers[uid]);
+          delete this.debounceTimers[uid];
+        }
+        try {
+          this.setMonto(pago.monto ?? 0, index, type);
+        } catch {
+          /* ignore */
+        }
+      });
+    };
+
+    flushMontos(cs.pagoEfectivo, 'ef');
+    flushMontos(cs.pagoCheque, 'ch');
+    flushMontos(cs.pagoDeposito, 'de');
+    flushMontos(cs.pagoTransferencia, 'tr');
+    flushMontos(cs.pagoMovil, 'pm');
+    flushMontos(cs.pagoOtros, 'ot');
+
+    cs.pagoEfectivo.forEach((pago, index) => {
+      this.setNroTransanccion(pago.nuRecibo ?? '', index, 'ef');
+    });
+    cs.pagoCheque.forEach((pago, index) => {
+      this.setNroTransanccion(pago.numeroCheque ?? '', index, 'ch');
+      if (pago.nuevaCuenta) {
+        this.setNuevaCuenta(pago.nuevaCuenta, index, 'ch');
+      }
+    });
+    cs.pagoDeposito.forEach((pago, index) => {
+      this.setNroTransanccion(pago.numeroDeposito ?? '', index, 'de');
+    });
+    cs.pagoTransferencia.forEach((pago, index) => {
+      this.setNroTransanccion(pago.numeroTransferencia ?? '', index, 'tr');
+      if (pago.nuevaCuenta) {
+        this.setNuevaCuenta(pago.nuevaCuenta, index, 'tr');
+      }
+    });
+    cs.pagoMovil.forEach((pago, index) => {
+      this.onPagoMovilTelefonoInput(index, pago.numeroTelefono ?? '');
+      this.onPagoMovilNumeroDocumentoInput(index, pago.numeroDocumento ?? '');
+      this.onPagoMovilReferenciaInput(index, pago.numeroReferencia ?? '');
+    });
+    cs.pagoOtros.forEach((pago, index) => {
+      this.setNroTransanccion(pago.nombre ?? '', index, 'ot');
+    });
+
+    void cs.validateReferencePayment();
+  }
+
 
   setTipoDocumentoPagoMovil(index: number, tipo: string) {
     this.collectService.pagoMovil[index].tipoDocumento = tipo;

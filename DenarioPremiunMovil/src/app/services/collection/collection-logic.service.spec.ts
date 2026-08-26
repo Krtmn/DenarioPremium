@@ -2264,6 +2264,56 @@ describe('CollectionService', () => {
     });
   });
 
+  describe('COB-TOTAL-003 Monto Saldo restante con retenciones', () => {
+    it('full payment with retention shows 0 remaining (500 - 100 ret - 400 paid)', () => {
+      const detail = {
+        nuBalanceDoc: 500,
+        nuBalanceDocOriginal: 500,
+        nuAmountPaid: 400,
+        nuAmountDiscount: 0,
+        nuAmountCollectDiscount: 0,
+        nuAmountRetention: 100,
+        nuAmountRetention2: 0,
+        inPaymentPartial: false,
+        isSave: true,
+      } as CollectionDetail;
+
+      expect(service.resolveCollectionDetailRemainingBalance(detail)).toBe(0);
+    });
+
+    it('partial payment without deductions keeps gross minus paid (COB-TOTAL-002)', () => {
+      const detail = {
+        nuBalanceDoc: 157.75,
+        nuBalanceDocOriginal: 157.75,
+        nuAmountPaid: 57,
+        nuAmountDiscount: 0,
+        nuAmountCollectDiscount: 0,
+        nuAmountRetention: 0,
+        nuAmountRetention2: 0,
+        inPaymentPartial: true,
+        isSave: true,
+      } as CollectionDetail;
+
+      expect(service.resolveCollectionDetailRemainingBalance(detail)).toBe(100.75);
+    });
+
+    it('partial payment with retention uses net minus paid', () => {
+      const detail = {
+        nuBalanceDoc: 500,
+        nuBalanceDocOriginal: 500,
+        nuAmountPaid: 200,
+        nuAmountDiscount: 0,
+        nuAmountCollectDiscount: 0,
+        nuAmountRetention: 100,
+        nuAmountRetention2: 0,
+        inPaymentPartial: true,
+        isSave: true,
+      } as CollectionDetail;
+
+      expect(service.resolveCollectionDetailRemainingBalance(detail)).toBe(200);
+    });
+  });
+
   describe('COB-TOTAL-001 Total General nuAmountTotal on reopen/persist', () => {
     function stubTotalSideEffects(): void {
       const svc = service as any;
