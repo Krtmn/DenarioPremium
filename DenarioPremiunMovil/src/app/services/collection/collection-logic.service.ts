@@ -1234,16 +1234,17 @@ export class CollectionService {
     detail: CollectionDetail | undefined,
     backup?: { nuBalance?: number },
   ): number {
-    const original = Number(detail?.nuBalanceDocOriginal ?? 0);
-    if (Number.isFinite(original) && original > 0) {
+    const original = Number(detail?.nuBalanceDocOriginal ?? NaN);
+    if (Number.isFinite(original)) {
       return original;
     }
     const candidates = [
-      Number(detail?.nuBalanceDoc ?? 0),
-      Number(backup?.nuBalance ?? 0),
-      Number(detail?.nuAmountDoc ?? 0),
+      Number(detail?.nuBalanceDoc ?? NaN),
+      Number(backup?.nuBalance ?? NaN),
+      Number(detail?.nuAmountDoc ?? NaN),
     ];
-    return candidates.find(value => Number.isFinite(value) && value > 0) ?? 0;
+    const match = candidates.find(value => Number.isFinite(value));
+    return match ?? 0;
   }
 
   /**
@@ -1360,7 +1361,12 @@ export class CollectionService {
       index,
     );
 
-    return Math.max(0, gross - deductions);
+    const net = gross - deductions;
+    // Notas de crédito / saldo negativo restan del total (no recortar a 0).
+    if (gross < 0) {
+      return net;
+    }
+    return Math.max(0, net);
   }
 
   /** Neto a pagar del documento: saldo − descuentos − descuentos de cobro − retenciones. */
@@ -3766,7 +3772,7 @@ export class CollectionService {
     this.resetCollectionSessionState();
     this.applyNewCobroModuleType(coType);
     this.newCollect = true;
-    this.initCollect = false;
+    this.initCollect = true;
   }
 
   public resetSendValidationUx(): void {

@@ -797,14 +797,18 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     backup?: { nuBalance?: number },
     documentSaleOpen?: { nuBalance?: number },
   ): number {
+    const original = Number(detail?.nuBalanceDocOriginal ?? NaN);
+    if (Number.isFinite(original)) {
+      return original;
+    }
     const candidates = [
-      Number(detail?.nuBalanceDoc ?? 0),
-      Number(detail?.nuBalanceDocOriginal ?? 0),
-      Number(backup?.nuBalance ?? 0),
-      Number(documentSaleOpen?.nuBalance ?? 0),
-      Number(detail?.nuAmountDoc ?? 0),
+      Number(detail?.nuBalanceDoc ?? NaN),
+      Number(backup?.nuBalance ?? NaN),
+      Number(documentSaleOpen?.nuBalance ?? NaN),
+      Number(detail?.nuAmountDoc ?? NaN),
     ];
-    return candidates.find(value => Number.isFinite(value) && value > 0) ?? 0;
+    const match = candidates.find(value => Number.isFinite(value));
+    return match ?? 0;
   }
 
   private isPersistedDocumentOpen(index: number): boolean {

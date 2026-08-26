@@ -271,6 +271,31 @@ describe('CollectionService', () => {
       expect(service.montoTotalPagar).toBe(350);
     });
 
+    it('COB-DOC-NEG-001: negative balance document subtracts from montoTotalPagar', async () => {
+      setupEditableCollection([
+        makeDetail({
+          idDocument: 10,
+          coDocument: 'FAC-10',
+          nuBalanceDoc: 1000,
+          nuBalanceDocOriginal: 1000,
+          nuAmountPaid: 1000,
+          nuAmountPaidConversion: 1000,
+        }),
+        makeDetail({
+          idDocument: 20,
+          coDocument: 'NC-20',
+          nuBalanceDoc: -200,
+          nuBalanceDocOriginal: -200,
+          nuAmountPaid: -200,
+          nuAmountPaidConversion: -200,
+        }),
+      ]);
+
+      await service.calculatePayment('', 0, true, true);
+
+      expect(service.montoTotalPagar).toBe(800);
+    });
+
     it('COB-DOCS-001: partials from all details even if documentSales has only current page', async () => {
       setupEditableCollection([
         makeDetail({
@@ -3154,7 +3179,7 @@ describe('CollectionService', () => {
       expect(baseline.sendBlockedByFields).toBeFalse();
       expect(baseline.disableSendButton).toBeTrue();
       expect(baseline.newCollect).toBeTrue();
-      expect(baseline.initCollect).toBeFalse();
+      expect(baseline.initCollect).toBeTrue();
       expect(baseline.hidePayments).toBeFalse();
       expect(baseline.cobro25).toBeFalse();
       expect(baseline.documentSalesLength).toBe(0);
@@ -3198,6 +3223,15 @@ describe('CollectionService', () => {
       expect(service.lastSendIssues).toEqual([]);
       expect(service.collectionPersistedBaseline).toBeFalse();
       expect(service.documentSales.length).toBe(0);
+    });
+  });
+
+  describe('COB-TAB-GENERAL-001 General tab remount', () => {
+    it('beginNewCollectionSession sets initCollect for first mount only', () => {
+      service.initCollect = false;
+      service.beginNewCollectionSession(0);
+      expect(service.initCollect).toBeTrue();
+      expect(service.newCollect).toBeTrue();
     });
   });
 

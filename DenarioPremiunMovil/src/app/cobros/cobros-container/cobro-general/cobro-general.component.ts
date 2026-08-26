@@ -713,6 +713,7 @@ export class CobrosGeneralComponent implements OnInit {
           } else {
             this.collectService.restoreCollectionIgtfFields();
           }
+          this.collectService.newCollect = false;
         }
 
         this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);
