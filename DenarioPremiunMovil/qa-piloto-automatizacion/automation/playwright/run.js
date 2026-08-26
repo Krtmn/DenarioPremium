@@ -42,7 +42,7 @@ const MODULOS = {
   clientes:    require('./modules/clientes').runClientes,
   pedidos:     null,       // pendiente
   cobros:      null,       // pendiente
-  devoluciones:null,       // pendiente
+  devoluciones: require('./modules/devoluciones').runDevoluciones,
   inventarios: require('./modules/inventarios').runInventarios,
   depositos:   require('./modules/depositos').runDepositos,
   visitas:     require('./modules/visitas').runVisitas,
@@ -50,7 +50,7 @@ const MODULOS = {
   vendedores:  require('./modules/vendedores').runVendedores,
 };
 
-const ORDEN_DEFAULT = ['login','clientes','inventarios','depositos','visitas','productos','vendedores'];
+const ORDEN_DEFAULT = ['login','clientes','inventarios','depositos','visitas','productos','vendedores','devoluciones'];
 
 // ── Construir DATA para cada módulo desde el perfil YAML ──────────────────────
 function dataParaModulo(modulo) {
@@ -94,6 +94,19 @@ function dataParaModulo(modulo) {
       return {
         aplica:     mod.aplica !== false,
         esVendedor: vgs.esVendedor !== false,
+      };
+    case 'devoluciones':
+      return {
+        aplica:             mod.aplica !== false,
+        clienteTest:        mod.cliente_test || '',
+        productoTest:       mod.producto_test || '',
+        // factura_test presente en el perfil ⇒ el cliente exige nro. de factura por
+        // producto (requeridedNroFactura). Si falta, DEV-018 (Enviar) queda N/A.
+        facturaTest:        mod.factura_test || '',
+        validateReturn:     vgs.validateReturn === true,
+        signatureReturn:    vgs.signatureReturn === true,
+        userCanUploadFiles: vgs.userCanUploadFiles === true,
+        userMustActivateGPS: vgs.userMustActivateGPS === true,
       };
     default:
       return {};

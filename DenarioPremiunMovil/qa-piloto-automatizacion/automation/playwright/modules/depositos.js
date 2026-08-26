@@ -88,15 +88,17 @@ async function runDepositos(pg, DATA) {
     await pg.mouse.click(coords.x, coords.y, { delay: 60 });
   }
 
-  // Botón de alert por igualdad EXACTA
+  // Botón de alert por igualdad EXACTA — Ionic 7 pattern
   async function clickAlertBtn(labels = ['Aceptar', 'OK']) {
     await pg.waitForTimeout(900);
     await dismissIonLoadings();
     await pg.waitForTimeout(300);
     const coords = await pg.evaluate((lbls) => {
-      const alerts = [...document.querySelectorAll('ion-alert')].filter(
-        a => !a.classList.contains('overlay-hidden') && a.offsetParent !== null
-      );
+      const alerts = [...document.querySelectorAll('ion-alert')].filter(a => {
+        const isTraditional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
+        const hasVisibleBtn = [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+        return isTraditional || hasVisibleBtn;
+      });
       if (!alerts.length) return null;
       const alert = alerts[alerts.length - 1];
       for (const lbl of lbls) {
@@ -119,15 +121,19 @@ async function runDepositos(pg, DATA) {
   // Descarta dirty-guard con "Salir sin guardar" (EXACT match — anti-patrón /salir/i)
   async function dismissDirtyGuard() {
     const hasDirty = await pg.evaluate(() =>
-      [...document.querySelectorAll('ion-alert')].some(
-        a => !a.classList.contains('overlay-hidden') && a.offsetParent !== null
-      )
+      [...document.querySelectorAll('ion-alert')].some(a => {
+        const isTraditional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
+        const hasVisibleBtn = [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+        return isTraditional || hasVisibleBtn;
+      })
     );
     if (!hasDirty) return false;
     const coords = await pg.evaluate(() => {
-      const alerts = [...document.querySelectorAll('ion-alert')].filter(
-        a => !a.classList.contains('overlay-hidden') && a.offsetParent !== null
-      );
+      const alerts = [...document.querySelectorAll('ion-alert')].filter(a => {
+        const isTraditional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
+        const hasVisibleBtn = [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+        return isTraditional || hasVisibleBtn;
+      });
       if (!alerts.length) return null;
       const btn = [...alerts[alerts.length - 1].querySelectorAll('.alert-button')].find(b =>
         b.textContent.trim().toLowerCase() === 'salir sin guardar' &&
@@ -150,7 +156,18 @@ async function runDepositos(pg, DATA) {
       const r = btns[0].getBoundingClientRect();
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     }, texto);
-    if (!coords) throw new Error(`Botón "${texto}" no encontrado en home depositos`);
+    if (!coords) {
+      const diag = await pg.evaluate(() => {
+        const all = [...document.querySelectorAll('app-depositos ion-button')].map(b => ({
+          text: b.textContent.trim().slice(0, 30),
+          w: Math.round(b.getBoundingClientRect().width),
+          disabled: b.disabled
+        }));
+        const page = document.querySelector('[class*="ion-page"]:not(.ion-page-hidden)')?.tagName || 'unknown';
+        return { btns: all, page };
+      });
+      throw new Error(`Botón "${texto}" no encontrado en home depositos — diag: ${JSON.stringify(diag)}`);
+    }
     await pg.mouse.click(coords.x, coords.y, { delay: 80 });
   }
 
@@ -397,11 +414,36 @@ async function runDepositos(pg, DATA) {
       await pg.mouse.click(gCoords.x, gCoords.y, { delay: 120 });
       const alertLbl = await clickAlertBtn(['Aceptar', 'OK']);
       await pg.waitForTimeout(800);
-      // Volver a home depositos
-      await clickBack();
-      await pg.waitForTimeout(800);
-      await dismissDirtyGuard();
-      await pg.waitForTimeout(500);
+      // Volver a home: loop igual al de DEP-009
+      for (let intento = 0; intento < 5; intento++) {
+        const buscarOk = await pg.evaluate(() =>
+          [...document.querySelectorAll('app-depositos ion-button')]
+            .some(b => b.textContent.trim() === 'BUSCAR' && b.getBoundingClientRect().width > 0)
+        );
+        if (buscarOk) break;
+        try { await clickBack(); } catch (_) {}
+        await pg.waitForTimeout(1200);
+        const dismissed = await pg.evaluate(() => {
+          const alert = [...document.querySelectorAll('ion-alert')].find(a => {
+            const isTraditional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
+            const hasVisibleBtn = [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+            return isTraditional || hasVisibleBtn;
+          });
+          if (!alert) return null;
+          const btn = [...alert.querySelectorAll('.alert-button')].find(b => {
+            const t = b.textContent.trim().toLowerCase();
+            return b.getBoundingClientRect().width > 0 && (t.includes('salir') || t.includes('continuar') || t.includes('descartar'));
+          }) || [...alert.querySelectorAll('.alert-button')].find(b => {
+            const t = b.textContent.trim().toLowerCase();
+            return b.getBoundingClientRect().width > 0 && !t.includes('cancel') && !t.includes('quedar');
+          });
+          if (!btn) return null;
+          const r = btn.getBoundingClientRect();
+          return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        });
+        if (dismissed) { await pg.mouse.click(dismissed.x, dismissed.y); await pg.waitForTimeout(800); }
+        await pg.waitForTimeout(400);
+      }
       return { ok: true, alertLbl, cobros: cobroRes.count };
     } catch (e) {
       try { await dismissDirtyGuard(); } catch (_) {}
@@ -577,12 +619,53 @@ async function runDepositos(pg, DATA) {
     const alertLbl = await clickAlertBtn(['Aceptar', 'OK']);
     await pg.waitForTimeout(800);
 
-    // Volver a home depositos
-    await clickBack();
-    await pg.waitForTimeout(800);
-    await dismissDirtyGuard();
-    await pg.waitForTimeout(500);
-    await irAHomeDepositos();
+    // Depositos no auto-navega al guardar — el app se queda en el form.
+    // Loop: back → esperar alert → descartarlo → verificar que llegamos a home (BUSCAR visible).
+    let buscarAlcanzado = false;
+    for (let intento = 0; intento < 5 && !buscarAlcanzado; intento++) {
+      // ¿Ya estamos en home depositos (botón BUSCAR visible)?
+      buscarAlcanzado = await pg.evaluate(() =>
+        [...document.querySelectorAll('app-depositos ion-button')]
+          .some(b => b.textContent.trim() === 'BUSCAR' && b.getBoundingClientRect().width > 0)
+      );
+      if (buscarAlcanzado) break;
+
+      // Intentar back
+      try { await clickBack(); } catch (_) {}
+      // Dar tiempo al dirty-guard de aparecer (Ionic 7 puede tardar en animarse)
+      await pg.waitForTimeout(1200);
+
+      // Descartar dirty-guard si aparece — buscar cualquier botón "salir" en alerts visibles
+      const dismissed = await pg.evaluate(() => {
+        const alert = [...document.querySelectorAll('ion-alert')].find(a => {
+          const isTraditional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
+          const hasVisibleBtn = [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+          return isTraditional || hasVisibleBtn;
+        });
+        if (!alert) return null;
+        // Busca botón de salir (puede llamarse "Salir sin guardar", "Salir", "Continuar", etc.)
+        // Excluye el botón de cancelar/quedarse
+        const btn = [...alert.querySelectorAll('.alert-button')].find(b => {
+          const t = b.textContent.trim().toLowerCase();
+          const r = b.getBoundingClientRect();
+          if (r.width === 0) return false;
+          // preferir botón que contenga "salir" o "continuar" y NO "cancel" ni "quedar"
+          return t.includes('salir') || t.includes('continuar') || t.includes('descartar');
+        }) || [...alert.querySelectorAll('.alert-button')].find(b => {
+          // fallback: primer botón visible que no diga "cancel" ni "quedar"
+          const t = b.textContent.trim().toLowerCase();
+          return b.getBoundingClientRect().width > 0 && !t.includes('cancel') && !t.includes('quedar');
+        });
+        if (!btn) return null;
+        const r = btn.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      });
+      if (dismissed) {
+        await pg.mouse.click(dismissed.x, dismissed.y);
+        await pg.waitForTimeout(800);
+      }
+      await pg.waitForTimeout(400);
+    }
     await clickBotonHome('BUSCAR');
     await pg.waitForTimeout(2000);
 

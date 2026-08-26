@@ -1,0 +1,100 @@
+cliente_id: el_eden
+cliente_nombre: EL EDEN IMPORT TCN, C.A.
+apk_package: com.kiberno.denarioPremiumPro
+db_name: el_eden
+ws_url: "http://denariocaribe.ddns.net:8081/PremiumWS"  # playa CARIBE · descubierto 2026-08-20 · web en :8080/DenarioPremium
+
+# ── Variables Globales ──────────────────────────────────────────────────────
+# Fuente: global_configuration + global_configuration_client (client overrides global)
+# Consultado: 2026-08-20
+vgs:
+  multiCurrency: true
+  expirationBatch: false
+  suggestedOrderByDispatchAndReturn: false
+  requiredCollectionAttachments: true   # DM-COB-019 requiere adjunto manual en APK
+  requiredComment: false
+  validateReturn: false
+  signatureReturn: true
+  signatureCollection: true
+  signatureVisit: true
+  userCanUploadFiles: true
+  esVendedor: true
+  enterpriseEnabled: false
+  enabledManualRate: false
+  cobroPrepago: true
+  cobroRetencion: true
+  retencion: true
+  sizeRetention: 14
+  formatRetention: alfanumerico        # formatRetention=0 → alfanumérico
+  userCanSelectIGTF: true              # override cliente: true
+  userCanCollectIva: false
+  transportRole: false
+  userMustActivateGPS: true
+
+# ── Datos de prueba por módulo ──────────────────────────────────────────────
+# wpalencia (id=306) tiene 8 clientes asignados:
+#   01778 AUTOMERCADOS FRESCO MARKET AFN - CAURIMARE  ← con muchas facturas
+#   01620 CROQUEMBOUCHE C.A.
+#   01622 CHARCUTERIA Y VIVERES LA POPULAR DEL CENTRO
+#   01623 DELICATESES GALLINA LINDA, C.A.
+#   01624 DELICATESSES CAMINO REAL, C.A
+#   01625 PANADERIA Y PASTELERIA LA PONDEROSA
+#   01626 INVERSIONES HIBEVI. C.A.
+#   01627 PANADERIA Y PASTELERIA BARINITAS, C.A.  ← sin facturas pendientes
+modules:
+  login:
+    bad_password: wrong123
+
+  clientes:
+    cliente_busqueda: CROQUEMBOUCHE
+    cliente_detalle: CROQUEMBOUCHE C.A.
+
+  pedidos:
+    cliente_test: AUTOMERCADOS FRESCO MARKET AFN, C.A. -  CAURIMARE
+    estructura_producto: lineas
+    alerta_deuda_vencida: true
+
+  cobros:
+    cliente_test: PANADERIA Y PASTELERIA BARINITAS, C.A.     # sin facturas pendientes
+    cliente_code: "01627"
+    clientes_con_documentos:
+      - "01778"     # AUTOMERCADOS FRESCO MARKET AFN — facturas US$ activas
+      - "01620"     # CROQUEMBOUCHE
+    cliente_25iva: ""                   # ninguno habilitado para 25% IVA
+    metodo_pago: efectivo
+    banco_deposito: ""                  # no aplica para efectivo
+    documento_retencion: AJPM50001869   # factura 01778 US$383.09 — confirmar en app que esté pendiente
+    monto_retencion_iva: 10
+    monto_retencion_islr: 1
+    moneda_cobro: US$
+    smoke_na_estructural: []
+
+  devoluciones:
+    cliente_test: AUTOMERCADOS FRESCO MARKET AFN, C.A. -  CAURIMARE
+    factura_test: "38649"               # factura enviada con productos MANI
+    producto_test: MANI SALADO X Kg
+
+  inventarios:
+    cliente_test: AUTOMERCADOS FRESCO MARKET AFN, C.A. -  CAURIMARE   # búsqueda usa primeros 6 chars: "AUTOME"
+    cliente_code: "01778"
+
+  depositos:
+    aplica: true
+    motivo_na: ""
+
+  visitas:
+    cliente_test: AUTOMERCADOS FRESCO MARKET AFN, C.A. -  CAURIMARE
+    smoke_na_estructural: []
+
+  productos:
+    tipo_estructura_default: lineas
+    texto_busqueda: MANI
+
+  vendedores:
+    aplica: false                       # infoVendedores=false en este cliente
+
+# ── Última corrida ──────────────────────────────────────────────────────────
+ultima_corrida:
+  run_id: ""
+  fecha: ""
+  defectos_abiertos: []

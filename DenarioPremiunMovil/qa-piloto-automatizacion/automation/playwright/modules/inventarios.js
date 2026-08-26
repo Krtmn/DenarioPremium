@@ -65,7 +65,9 @@ async function runInventarios(pg, DATA) {
   async function dismissResidualAlerts() {
     await pg.evaluate(() => {
       document.querySelectorAll('ion-alert').forEach(a => {
-        if (!a.classList.contains('overlay-hidden') && a.offsetParent !== null)
+        const isTraditional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
+        const hasVisibleBtn = [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+        if (isTraditional || hasVisibleBtn)
           try { a.dismiss(); } catch (_) {}
       });
     });
@@ -88,9 +90,11 @@ async function runInventarios(pg, DATA) {
     await dismissIonLoadings();
     await pg.waitForTimeout(300);
     const coords = await pg.evaluate((lbls) => {
-      const alerts = [...document.querySelectorAll('ion-alert')].filter(
-        a => !a.classList.contains('overlay-hidden') && a.offsetParent !== null
-      );
+      const alerts = [...document.querySelectorAll('ion-alert')].filter(a => {
+        const isTraditional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
+        const hasVisibleBtn = [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+        return isTraditional || hasVisibleBtn;
+      });
       if (!alerts.length) return null;
       const alert = alerts[alerts.length - 1];
       for (const lbl of lbls) {
@@ -129,7 +133,9 @@ async function runInventarios(pg, DATA) {
       await pg.waitForTimeout(800);
       await pg.evaluate(() => {
         document.querySelectorAll('ion-alert').forEach(a => {
-          if (!a.classList.contains('overlay-hidden') && a.offsetParent !== null)
+          const isTraditional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
+          const hasVisibleBtn = [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+          if (isTraditional || hasVisibleBtn)
             try { a.dismiss(); } catch (_) {}
         });
       });
@@ -158,11 +164,13 @@ async function runInventarios(pg, DATA) {
     const deadline = Date.now() + 12000;
     while (Date.now() < deadline) {
       await pg.waitForTimeout(1200);
-      // Aceptar alert de geolocalización si aparece
+      // Aceptar alert de geolocalización si aparece (Ionic 7: usa hasVisibleBtn)
       const hasGeoAlert = await pg.evaluate(() => {
-        const alerts = [...document.querySelectorAll('ion-alert')].filter(
-          a => !a.classList.contains('overlay-hidden') && a.offsetParent !== null
-        );
+        const alerts = [...document.querySelectorAll('ion-alert')].filter(a => {
+          const isTraditional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
+          const hasVisibleBtn = [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+          return isTraditional || hasVisibleBtn;
+        });
         return alerts.some(a => a.textContent.includes('localización') || a.textContent.includes('ubicación'));
       });
       if (hasGeoAlert) {
@@ -199,15 +207,19 @@ async function runInventarios(pg, DATA) {
     });
     if (!selCoords) throw new Error('ion-input#clienteSelect no encontrado');
     await pg.mouse.click(selCoords.x, selCoords.y, { delay: 80 });
+    // Espera inicial: el modal en Ionic 7 puede tardar en animarse y cargar su contenido
+    await pg.waitForTimeout(2000);
 
-    // Poll hasta 8s esperando que el modal muestre el input de búsqueda
+    // Poll hasta 15s esperando que el modal muestre el input de búsqueda.
+    // Detecta input visible independientemente de overlay-hidden (la clase puede persistir durante animación).
+    // Si tras 7s no apareció, reintenta el click.
     let searchCoords = null;
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 26; i++) {
       await pg.waitForTimeout(500);
       searchCoords = await pg.evaluate(() => {
-        const containers = [...document.querySelectorAll('ion-modal, ion-popover')]
-          .filter(c => c.offsetParent !== null && !c.classList.contains('overlay-hidden'));
-        for (const c of containers) {
+        // Busca input visible en cualquier modal/popover, sin filtrar por overlay-hidden,
+        // ya que Ionic 7 puede mantener la clase durante la animación de entrada.
+        for (const c of document.querySelectorAll('ion-modal, ion-popover')) {
           const inp = c.querySelector('input[type="search"], input[type="text"], input:not([type="hidden"])');
           if (inp && inp.getBoundingClientRect().width > 0) {
             const r = inp.getBoundingClientRect();
@@ -217,6 +229,19 @@ async function runInventarios(pg, DATA) {
         return null;
       });
       if (searchCoords) break;
+      // Reintentar click tras ~7s si el modal no cargó
+      if (i === 10) {
+        const reCoords = await pg.evaluate(() => {
+          const inp = document.querySelector('ion-input#clienteSelect');
+          if (!inp) return null;
+          const r = inp.getBoundingClientRect();
+          return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        });
+        if (reCoords) {
+          await pg.mouse.click(reCoords.x, reCoords.y, { delay: 80 });
+          await pg.waitForTimeout(2000);
+        }
+      }
     }
     if (!searchCoords) {
       // Diagnóstico: qué hay en pantalla ahora
@@ -229,26 +254,33 @@ async function runInventarios(pg, DATA) {
       throw new Error(`Modal cliente no abrió en 8s — diag: ${JSON.stringify(diag)}`);
     }
 
-    // Escribir término de búsqueda
+    // Escribir término de búsqueda y disparar búsqueda
     await pg.mouse.click(searchCoords.x, searchCoords.y, { delay: 50, clickCount: 3 });
     await pg.keyboard.type(nombre ? nombre.slice(0, 8) : 'A', { delay: 30 });
+    await pg.keyboard.press('Enter');
     await pg.waitForTimeout(2000);
 
-    // Elegir resultado: exacto primero, luego primero disponible
-    const resultado = await pg.evaluate((n) => {
+    // Elegir resultado: exacto primero (usando los mismos 8 chars tipeados, sin dependencia de acentos), luego primero disponible
+    const termBusq = nombre ? nombre.slice(0, 8).toLowerCase() : '';
+    const resultado = await pg.evaluate((term) => {
+      // Ionic 7: modal puede mantener overlay-hidden durante animación — detectar por botón visible
       const containers = [...document.querySelectorAll('ion-modal, ion-popover, ion-alert')]
-        .filter(c => c.offsetParent !== null);
+        .filter(c => {
+          const isTraditional = !c.classList.contains('overlay-hidden') && c.offsetParent !== null;
+          const hasVisibleContent = [...c.querySelectorAll('p, ion-label, ion-item')].some(el => el.getBoundingClientRect().width > 0);
+          return isTraditional || hasVisibleContent;
+        });
       for (const c of containers) {
         const candidatos = [...c.querySelectorAll('p, ion-label, ion-item')]
           .filter(el => el.getBoundingClientRect().width > 0 && el.textContent.trim().length > 2);
         if (!candidatos.length) continue;
-        const exacto = n ? candidatos.find(el => el.textContent.includes(n)) : null;
+        const exacto = term ? candidatos.find(el => el.textContent.toLowerCase().includes(term)) : null;
         const target = exacto || candidatos[0];
         const r = target.getBoundingClientRect();
         return { x: r.left + r.width / 2, y: r.top + r.height / 2, nombre: target.textContent.trim().slice(0, 60) };
       }
       return null;
-    }, nombre ? nombre.slice(0, 20) : '');
+    }, termBusq);
 
     if (!resultado) throw new Error('Sin resultados en selector de clientes tras búsqueda');
     await pg.mouse.click(resultado.x, resultado.y, { delay: 80 });
@@ -388,8 +420,14 @@ async function runInventarios(pg, DATA) {
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     }, cantidad);
 
-    if (expirationBatch) {
-      // Lote (input type=text nativo — no ion-input[type="text"])
+    // Lote: llenar si el campo está visible (independiente de expirationBatch — algunos clientes lo muestran igual)
+    const loteVisible = await pg.evaluate(() => {
+      const modal = document.querySelector('ion-modal.inventory-type-stocks-modal');
+      if (!modal) return false;
+      const inp = modal.querySelector('input[type="text"]');
+      return !!(inp && inp.getBoundingClientRect().width > 0);
+    });
+    if (loteVisible || expirationBatch) {
       await fillNgModel(() => {
         const modal = document.querySelector('ion-modal.inventory-type-stocks-modal');
         if (!modal) return null;
@@ -399,9 +437,15 @@ async function runInventarios(pg, DATA) {
         return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
       }, lote);
 
-      // Fecha vencimiento via ion-datetime-button
-      const hoy = new Date().toISOString().slice(0, 10);
-      await confirmarFechaModal(hoy);
+      // Fecha vencimiento — solo si expirationBatch o si hay ion-datetime-button visible
+      const fechaVisible = await pg.evaluate(() => {
+        const modal = document.querySelector('ion-modal.inventory-type-stocks-modal');
+        return !!(modal && modal.querySelector('ion-datetime-button'));
+      });
+      if (expirationBatch || fechaVisible) {
+        const hoy = new Date().toISOString().slice(0, 10);
+        await confirmarFechaModal(hoy);
+      }
     }
   }
 
@@ -441,11 +485,15 @@ async function runInventarios(pg, DATA) {
     if (!coords) throw new Error('botón de confirmación no encontrado en modal de inventario');
     await pg.mouse.click(coords.x, coords.y, { delay: 80 });
 
-    // Esperar activamente a que el modal cierre (hasta 4s)
+    // Esperar activamente a que el modal cierre (hasta 4s) — Ionic 7: también revisar overlay-hidden y rect
     for (let i = 0; i < 8; i++) {
       const abierto = await pg.evaluate(() => {
         const m = document.querySelector('ion-modal.inventory-type-stocks-modal');
-        return !!(m && m.offsetParent !== null);
+        if (!m) return false;
+        if (m.classList.contains('overlay-hidden')) return false;
+        if (m.offsetParent === null) return false;
+        const r = m.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
       });
       if (!abierto) break;
       await pg.waitForTimeout(500);
@@ -658,7 +706,11 @@ async function runInventarios(pg, DATA) {
       await aceptarModal();
       const modalClosed = await pg.evaluate(() => {
         const m = document.querySelector('ion-modal.inventory-type-stocks-modal');
-        return !m || m.offsetParent === null;
+        if (!m) return true;
+        if (m.classList.contains('overlay-hidden')) return true;
+        if (m.offsetParent === null) return true;
+        const r = m.getBoundingClientRect();
+        return r.width === 0 || r.height === 0;
       });
       if (!modalClosed) throw new Error('Modal sigue abierto tras Aceptar');
       v('DM-INV-012', 'Aceptar modal → producto marcado', 'PASS', '');

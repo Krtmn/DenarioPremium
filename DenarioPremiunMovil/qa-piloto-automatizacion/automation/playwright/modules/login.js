@@ -93,8 +93,11 @@ async function runLogin(pg, DATA) {
   async function getAlert() {
     await pg.waitForTimeout(1200);
     return pg.evaluate(() => {
-      const a = [...document.querySelectorAll('ion-alert')]
-        .find(x => !x.classList.contains('overlay-hidden') && x.offsetParent !== null);
+      const a = [...document.querySelectorAll('ion-alert')].find(x => {
+        const isTraditional = !x.classList.contains('overlay-hidden') && x.offsetParent !== null;
+        const hasVisibleBtn = [...x.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+        return isTraditional || hasVisibleBtn;
+      });
       if (!a) return null;
       const msg = a.querySelector('.alert-message') || a.querySelector('.alert-title');
       return msg ? msg.textContent.trim() : (a.textContent.trim().slice(0, 120));
@@ -102,13 +105,19 @@ async function runLogin(pg, DATA) {
   }
 
   async function dismissAlert() {
-    await pg.evaluate(() => {
-      const a = [...document.querySelectorAll('ion-alert')]
-        .find(x => !x.classList.contains('overlay-hidden'));
-      if (!a) return;
-      const btn = a.querySelector('.alert-button');
-      if (btn) btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    const coords = await pg.evaluate(() => {
+      const a = [...document.querySelectorAll('ion-alert')].find(x => {
+        const isTraditional = !x.classList.contains('overlay-hidden') && x.offsetParent !== null;
+        const hasVisibleBtn = [...x.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+        return isTraditional || hasVisibleBtn;
+      });
+      if (!a) return null;
+      const btn = [...a.querySelectorAll('.alert-button')].find(b => b.getBoundingClientRect().width > 0);
+      if (!btn) return null;
+      const r = btn.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     });
+    if (coords) await pg.mouse.click(coords.x, coords.y);
     await pg.waitForTimeout(500);
   }
 
@@ -408,21 +417,37 @@ async function runLogin(pg, DATA) {
 
   // ══════════════════════════════════════════════════════════════════════════════
   // DM-LOG-003: Contraseña incorrecta → alert "contraseña incorrectos"
+  // Requiere llamada de red → polling hasta 10s
   // ══════════════════════════════════════════════════════════════════════════════
   try {
     await clearAllFields();
     await fillField(0, creds.user);
     await fillField(1, badPass);
     await clickSubmit();
-    const alert = await getAlert();
-    const ok = !!(alert && (
-      alert.toLowerCase().includes('incorrecta') ||
-      alert.toLowerCase().includes('incorrectos') ||
-      alert.toLowerCase().includes('invalid') ||
-      alert.toLowerCase().includes('error')
+    let alert003 = null;
+    for (let i = 0; i < 14 && !alert003; i++) {
+      await pg.waitForTimeout(700);
+      alert003 = await pg.evaluate(() => {
+        const a = [...document.querySelectorAll('ion-alert')].find(x => {
+          const isTraditional = !x.classList.contains('overlay-hidden') && x.offsetParent !== null;
+          const hasVisibleBtn = [...x.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+          return isTraditional || hasVisibleBtn;
+        });
+        if (!a) return null;
+        const msg = a.querySelector('.alert-message') || a.querySelector('.alert-title');
+        return msg ? msg.textContent.trim() : (a.textContent.trim().slice(0, 120));
+      });
+    }
+    const ok = !!(alert003 && (
+      alert003.toLowerCase().includes('incorrecta') ||
+      alert003.toLowerCase().includes('incorrectos') ||
+      alert003.toLowerCase().includes('invalid') ||
+      alert003.toLowerCase().includes('error') ||
+      alert003.toLowerCase().includes('contraseña') ||
+      alert003.toLowerCase().includes('credencial')
     ));
     v('DM-LOG-003', 'Contraseña incorrecta → alert de error', ok ? 'PASS' : 'FAIL',
-      `alert: "${alert || 'ninguno'}"`);
+      `alert: "${alert003 || 'ninguno'}"`);
     await dismissAlert();
   } catch (e) {
     v('DM-LOG-003', 'Contraseña incorrecta → alert de error', 'FAIL', e.message);
@@ -489,15 +514,21 @@ async function runLogin(pg, DATA) {
     await clickSubmit();
 
     // Confirmar alert si aparece (ej. "Sesión activa en otro dispositivo")
-    await pg.evaluate(() => {
-      const a = [...document.querySelectorAll('ion-alert')]
-        .find(x => !x.classList.contains('overlay-hidden') && x.offsetParent !== null);
-      if (!a) return;
-      const btns = [...a.querySelectorAll('.alert-button')];
+    const sessionAlertCoords = await pg.evaluate(() => {
+      const a = [...document.querySelectorAll('ion-alert')].find(x => {
+        const isTraditional = !x.classList.contains('overlay-hidden') && x.offsetParent !== null;
+        const hasVisibleBtn = [...x.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+        return isTraditional || hasVisibleBtn;
+      });
+      if (!a) return null;
+      const btns = [...a.querySelectorAll('.alert-button')].filter(b => b.getBoundingClientRect().width > 0);
       const confirm = btns.find(b => ['aceptar','ok','sí','si','continuar'].some(t => b.textContent.toLowerCase().includes(t)));
       const btn = confirm || btns[btns.length - 1];
-      if (btn) btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      if (!btn) return null;
+      const r = btn.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     });
+    if (sessionAlertCoords) await pg.mouse.click(sessionAlertCoords.x, sessionAlertCoords.y);
     await pg.waitForTimeout(500);
 
     // Esperar sync screen o home (max 60s — FERRETERIA EPA tarda en sincronizar)

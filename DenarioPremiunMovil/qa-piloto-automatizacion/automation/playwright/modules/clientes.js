@@ -100,9 +100,11 @@ async function runClientes(pg, DATA) {
     await dismissIonLoadings();
     await pg.waitForTimeout(300);
     const coords = await pg.evaluate((lbls) => {
-      const alerts = [...document.querySelectorAll('ion-alert')].filter(
-        a => !a.classList.contains('overlay-hidden') && a.offsetParent !== null
-      );
+      const alerts = [...document.querySelectorAll('ion-alert')].filter(a => {
+        const isTraditional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
+        const hasVisibleBtn = [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+        return isTraditional || hasVisibleBtn;
+      });
       if (!alerts.length) return null;
       const alert = alerts[alerts.length - 1];
       const btns = [...alert.querySelectorAll('.alert-button')];
@@ -498,37 +500,45 @@ async function runClientes(pg, DATA) {
     const alertLabel = await clickAlertBtn(['Aceptar', 'OK']);
     await pg.waitForTimeout(600);
 
-    // Navegar: back → home clientes → BUSCAR CLIENTE POTENCIAL → verificar item
-    await clickBack();
-    await pg.waitForTimeout(800);
-    // Si apareció dirty-guard, salir sin guardar (ya guardamos)
-    const hasDirty = await pg.evaluate(() =>
-      [...document.querySelectorAll('ion-alert')].some(
-        a => !a.classList.contains('overlay-hidden') && a.offsetParent !== null
-      )
-    );
-    if (hasDirty) {
-      // Dirty-guard: click "Salir sin guardar" (EXACT match)
-      const dirtyCoords = await pg.evaluate(() => {
-        const alerts = [...document.querySelectorAll('ion-alert')].filter(
-          a => !a.classList.contains('overlay-hidden') && a.offsetParent !== null
-        );
-        if (!alerts.length) return null;
-        const alert = alerts[alerts.length - 1];
-        const btn = [...alert.querySelectorAll('.alert-button')].find(b =>
-          b.textContent.trim().toLowerCase() === 'salir sin guardar' &&
-          b.getBoundingClientRect().width > 0
-        );
-        if (!btn) return null;
-        const r = btn.getBoundingClientRect();
-        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-      });
-      if (dirtyCoords) await pg.mouse.click(dirtyCoords.x, dirtyCoords.y);
-      await pg.waitForTimeout(800);
+    // Navegar a home clientes tras Guardar.
+    // El app puede quedar en: (A) form todavía, (B) lista de potenciales, (C) home clientes.
+    // Hacemos hasta 2 backs hasta que check3Botones >= 3.
+    await pg.waitForTimeout(1000);
+    for (let intento = 0; intento < 2; intento++) {
+      if (await check3Botones() >= 3) break;
+      // Comprobar dirty-guard antes de hacer back
+      const hasDirty = await pg.evaluate(() =>
+        [...document.querySelectorAll('ion-alert')].some(a => {
+          const isTraditional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
+          const hasVisibleBtn = [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+          return isTraditional || hasVisibleBtn;
+        })
+      );
+      if (hasDirty) {
+        const dirtyCoords = await pg.evaluate(() => {
+          const alerts = [...document.querySelectorAll('ion-alert')].filter(a => {
+            const isTraditional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
+            const hasVisibleBtn = [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+            return isTraditional || hasVisibleBtn;
+          });
+          if (!alerts.length) return null;
+          const alert = alerts[alerts.length - 1];
+          const btn = [...alert.querySelectorAll('.alert-button')].find(b =>
+            b.textContent.trim().toLowerCase() === 'salir sin guardar' &&
+            b.getBoundingClientRect().width > 0
+          );
+          if (!btn) return null;
+          const r = btn.getBoundingClientRect();
+          return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        });
+        if (dirtyCoords) { await pg.mouse.click(dirtyCoords.x, dirtyCoords.y); await pg.waitForTimeout(600); continue; }
+      }
+      await clickBack();
+      await pg.waitForTimeout(900);
     }
 
-    // Ahora deberíamos estar en home clientes — navegar a BUSCAR
-    await pg.waitForTimeout(500);
+    // Esperar home clientes y navegar a BUSCAR CLIENTE POTENCIAL
+    await pg.waitForSelector('app-clientes ion-button.colorBorderBuscar', { state: 'visible', timeout: 8000 });
     await clickBotonClientes('BUSCAR CLIENTE POTENCIAL');
     await pg.waitForTimeout(2000);
 
@@ -728,33 +738,41 @@ async function runClientes(pg, DATA) {
     await clickAlertBtn(['OK', 'Aceptar']); // alert de guardado exitoso
     await pg.waitForTimeout(600);
 
-    // Volver a home clientes desde el form (form limpio tras Guardar → no dirty-guard)
-    await clickBack();
-    await pg.waitForTimeout(1200);
-    // Si apareció dirty-guard de todas formas, salir sin guardar
-    const hasDirtyBack = await pg.evaluate(() =>
-      [...document.querySelectorAll('ion-alert')].some(
-        a => !a.classList.contains('overlay-hidden') && a.offsetParent !== null
-      )
-    );
-    if (hasDirtyBack) {
-      const sdCoords = await pg.evaluate(() => {
-        const alerts = [...document.querySelectorAll('ion-alert')].filter(
-          a => !a.classList.contains('overlay-hidden') && a.offsetParent !== null
-        );
-        if (!alerts.length) return null;
-        const btn = [...alerts[alerts.length - 1].querySelectorAll('.alert-button')].find(b =>
-          b.textContent.trim().toLowerCase() === 'salir sin guardar' &&
-          b.getBoundingClientRect().width > 0
-        );
-        if (!btn) return null;
-        const r = btn.getBoundingClientRect();
-        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-      });
-      if (sdCoords) { await pg.mouse.click(sdCoords.x, sdCoords.y); await pg.waitForTimeout(800); }
+    // Volver a home clientes: igual que en CLT-024, hasta 2 backs con detección de estado.
+    await pg.waitForTimeout(1000);
+    for (let intento = 0; intento < 2; intento++) {
+      if (await check3Botones() >= 3) break;
+      const hasDirtyBack = await pg.evaluate(() =>
+        [...document.querySelectorAll('ion-alert')].some(a => {
+          const isTraditional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
+          const hasVisibleBtn = [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+          return isTraditional || hasVisibleBtn;
+        })
+      );
+      if (hasDirtyBack) {
+        const sdCoords = await pg.evaluate(() => {
+          const alerts = [...document.querySelectorAll('ion-alert')].filter(a => {
+            const isTraditional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
+            const hasVisibleBtn = [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+            return isTraditional || hasVisibleBtn;
+          });
+          if (!alerts.length) return null;
+          const btn = [...alerts[alerts.length - 1].querySelectorAll('.alert-button')].find(b =>
+            b.textContent.trim().toLowerCase() === 'salir sin guardar' &&
+            b.getBoundingClientRect().width > 0
+          );
+          if (!btn) return null;
+          const r = btn.getBoundingClientRect();
+          return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        });
+        if (sdCoords) { await pg.mouse.click(sdCoords.x, sdCoords.y); await pg.waitForTimeout(600); continue; }
+      }
+      await clickBack();
+      await pg.waitForTimeout(900);
     }
 
     // Abrir BUSCAR CLIENTE POTENCIAL → lista fresca
+    await pg.waitForSelector('app-clientes ion-button.colorBorderBuscar', { state: 'visible', timeout: 8000 });
     await clickBotonClientes('BUSCAR CLIENTE POTENCIAL');
     await pg.waitForTimeout(2000);
 

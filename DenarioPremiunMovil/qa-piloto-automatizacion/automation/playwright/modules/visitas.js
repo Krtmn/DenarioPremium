@@ -68,24 +68,61 @@ async function runVisitas(pg, DATA) {
 
   // ─── Helpers ────────────────────────────────────────────────────────────────
 
+  // Ionic 7: alert visible = sin overlay-hidden O tiene botón con ancho > 0
+  function ionAlertVisible(a) {
+    const isTraditional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
+    const hasVisibleBtn = [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+    return isTraditional || hasVisibleBtn;
+  }
+
   async function dismissResidualAlerts() {
-    await pg.evaluate(() => {
-      document.querySelectorAll('ion-alert').forEach(a => {
-        if (!a.classList.contains('overlay-hidden') && a.offsetParent !== null)
-          try { a.dismiss(); } catch (_) {}
-      });
+    // Clic real en el botón "salir" del alert (Ionic 7 no responde a .dismiss()).
+    // Prefiere "salir sin guardar" / "salir" / "descartar" — nunca "cancelar" ni "quedar".
+    const coordsList = await pg.evaluate(() => {
+      function alertVisible(a) {
+        const isTraditional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
+        const hasVisibleBtn = [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+        return isTraditional || hasVisibleBtn;
+      }
+      return [...document.querySelectorAll('ion-alert')]
+        .filter(alertVisible)
+        .map(a => {
+          const btns = [...a.querySelectorAll('.alert-button')].filter(b => b.getBoundingClientRect().width > 0);
+          // Prioridad: "Salir sin guardar" (salir SIN guardar), luego descartar/continuar,
+          // NUNCA "Guardar y salir" ni "Cancelar".
+          const salir = btns.find(b => {
+            const t = b.textContent.trim().toLowerCase();
+            return t.includes('salir') && !t.includes('guardar');
+          }) || btns.find(b => {
+            const t = b.textContent.trim().toLowerCase();
+            return t.includes('descartar') || t.includes('continuar');
+          }) || btns.find(b => {
+            const t = b.textContent.trim().toLowerCase();
+            return !t.includes('cancel') && !t.includes('quedar') && !t.includes('volver') && !t.includes('guardar');
+          });
+          const btn = salir || btns[0];
+          if (!btn) return null;
+          const r = btn.getBoundingClientRect();
+          return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        }).filter(Boolean);
     });
-    await pg.waitForTimeout(400);
+    for (const c of coordsList) {
+      await pg.mouse.click(c.x, c.y, { delay: 60 });
+      await pg.waitForTimeout(400);
+    }
+    await pg.waitForTimeout(300);
   }
 
   async function clickAlertBtn(labels = ['Aceptar', 'OK']) {
     await pg.waitForTimeout(900);
     const coords = await pg.evaluate((lbls) => {
-      const alerts = [...document.querySelectorAll('ion-alert')].filter(
-        a => !a.classList.contains('overlay-hidden') && a.offsetParent !== null
-      );
+      const alerts = [...document.querySelectorAll('ion-alert')].filter(a => {
+        const isTraditional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
+        const hasVisibleBtn = [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+        return isTraditional || hasVisibleBtn;
+      });
       if (!alerts.length) return null;
-      const btns = [...alerts[0].querySelectorAll('.alert-button')];
+      const btns = [...alerts[0].querySelectorAll('.alert-button')].filter(b => b.getBoundingClientRect().width > 0);
       for (const lbl of lbls) {
         const b = btns.find(b => b.textContent.trim() === lbl);
         if (b) { const r = b.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, lbl: b.textContent.trim() }; }
@@ -126,8 +163,12 @@ async function runVisitas(pg, DATA) {
     for (let i = 0; i < maxAttempts; i++) {
       if (await isHomeVisVisible()) return;
       try { await clickBack(); } catch (_) {}
-      await pg.waitForTimeout(800);
+      // Dar tiempo al dirty-guard de animarse Y a la transición de home (Ionic 7 tarda más)
+      await pg.waitForTimeout(2000);
       await dismissResidualAlerts();
+      await pg.waitForTimeout(600);
+      // Segunda oportunidad: si ya estamos en home no hacer otro back
+      if (await isHomeVisVisible()) return;
     }
     if (!(await isHomeVisVisible())) throw new Error('No se pudo llegar a home visitas');
   }
@@ -164,14 +205,13 @@ async function runVisitas(pg, DATA) {
     if (!selCoords) throw new Error('Campo selector de cliente no encontrado');
     await pg.mouse.click(selCoords.x, selCoords.y, { delay: 80 });
 
-    // Poll modal hasta 8s
+    // Poll modal hasta 15s — Ionic 7 puede tardar; detecta input visible sin filtrar overlay-hidden
+    await pg.waitForTimeout(2000);
     let searchCoords = null;
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 26; i++) {
       await pg.waitForTimeout(500);
       searchCoords = await pg.evaluate(() => {
-        const containers = [...document.querySelectorAll('ion-modal, ion-popover')]
-          .filter(c => c.offsetParent !== null && !c.classList.contains('overlay-hidden'));
-        for (const c of containers) {
+        for (const c of document.querySelectorAll('ion-modal, ion-popover')) {
           const inp = c.querySelector('input[type="search"], input[type="text"], input:not([type="hidden"])');
           if (inp && inp.getBoundingClientRect().width > 0) {
             const r = inp.getBoundingClientRect();
@@ -181,27 +221,44 @@ async function runVisitas(pg, DATA) {
         return null;
       });
       if (searchCoords) break;
+      // Reintentar click tras ~7s si el modal no cargó
+      if (i === 10) {
+        const reCoords = await pg.evaluate(() => {
+          const cands = [
+            document.querySelector('ion-input#clienteSelect'),
+            ...[...document.querySelectorAll('ion-input')].filter(i =>
+              (i.getAttribute('placeholder') || '').toLowerCase().includes('cliente')
+            ),
+          ].filter(Boolean);
+          if (!cands.length) return null;
+          const r = cands[0].getBoundingClientRect();
+          return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        });
+        if (reCoords) { await pg.mouse.click(reCoords.x, reCoords.y, { delay: 80 }); await pg.waitForTimeout(2000); }
+      }
     }
-    if (!searchCoords) throw new Error('Modal cliente no abrió en 8s');
+    if (!searchCoords) throw new Error('Modal cliente no abrió en 15s');
 
     await pg.mouse.click(searchCoords.x, searchCoords.y, { delay: 50, clickCount: 3 });
     await pg.keyboard.type(nombre ? nombre.slice(0, 8) : 'A', { delay: 30 });
+    await pg.keyboard.press('Enter');
     await pg.waitForTimeout(2000);
 
-    const resultado = await pg.evaluate((n) => {
+    const termBusq = nombre ? nombre.slice(0, 8).toLowerCase() : '';
+    const resultado = await pg.evaluate((term) => {
       const containers = [...document.querySelectorAll('ion-modal, ion-popover')]
         .filter(c => c.offsetParent !== null);
       for (const c of containers) {
         const cands = [...c.querySelectorAll('p, ion-label, ion-item')]
           .filter(el => el.getBoundingClientRect().width > 0 && el.textContent.trim().length > 2);
         if (!cands.length) continue;
-        const exacto = n ? cands.find(el => el.textContent.includes(n)) : null;
+        const exacto = term ? cands.find(el => el.textContent.toLowerCase().includes(term)) : null;
         const target = exacto || cands[0];
         const r = target.getBoundingClientRect();
         return { x: r.left + r.width / 2, y: r.top + r.height / 2, nombre: target.textContent.trim().slice(0, 60) };
       }
       return null;
-    }, nombre ? nombre.slice(0, 20) : '');
+    }, termBusq);
     if (!resultado) throw new Error('Sin resultados en selector de clientes');
     await pg.mouse.click(resultado.x, resultado.y, { delay: 80 });
     await pg.waitForTimeout(1500);
@@ -260,37 +317,10 @@ async function runVisitas(pg, DATA) {
   }
 
   // ══════════════════════════════════════════════════════════════════════════════
-  // DM-VIS-003: NUEVA VISITA → tabs ACTIVIDADES/ADJUNTOS disabled
-  // ══════════════════════════════════════════════════════════════════════════════
-  let formAbiertoOk = false;
-  try {
-    await clickBotonVis('NUEVA VISITA');
-    await pg.waitForTimeout(1200);
-
-    const formInfo = await pg.evaluate(() => {
-      const segs = [...document.querySelectorAll('ion-segment-button')]
-        .filter(s => s.getBoundingClientRect().width > 0);
-      const actDisabled = segs.find(s => s.textContent.includes('ACTIVIDADES'))?.disabled;
-      const adjDisabled = segs.find(s => s.textContent.includes('ADJUNTOS'))?.disabled;
-      const tabs = segs.map(s => s.textContent.trim());
-      return { tabs, actDisabled, adjDisabled };
-    });
-
-    if (!formInfo.tabs.length) throw new Error('Tabs no encontradas en form NUEVA VISITA');
-    const tabsDisabled = formInfo.actDisabled !== false || formInfo.adjDisabled !== false;
-    formAbiertoOk = true;
-    v('DM-VIS-003', 'NUEVA VISITA → form / tabs disabled', tabsDisabled ? 'PASS' : 'FAIL',
-      `tabs: [${formInfo.tabs.join(', ')}] · ACTIVIDADES disabled: ${formInfo.actDisabled} · ADJUNTOS disabled: ${formInfo.adjDisabled}`);
-  } catch (e) {
-    v('DM-VIS-003', 'NUEVA VISITA → form / tabs disabled', 'FAIL', e.message);
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════════
-  // DM-VIS-004: RUTA DE HOY → lista + searchbar
+  // DM-VIS-004: RUTA DE HOY → lista + searchbar (desde home, antes de abrir form)
   // ══════════════════════════════════════════════════════════════════════════════
   let listaOk = false;
   try {
-    await irAHomeVis();
     await clickBotonVis('RUTA DE HOY');
     await pg.waitForSelector('ion-searchbar', { state: 'visible', timeout: 8000 });
     await dismissResidualAlerts();
@@ -310,7 +340,7 @@ async function runVisitas(pg, DATA) {
   }
 
   // ══════════════════════════════════════════════════════════════════════════════
-  // DM-VIS-006: Trash de visita Guardada en lista (si existe)
+  // DM-VIS-006: Trash de visita Guardada en lista (cleanup previo, si existe)
   // ══════════════════════════════════════════════════════════════════════════════
   try {
     // Asegurarse de estar en RUTA DE HOY
@@ -394,32 +424,69 @@ async function runVisitas(pg, DATA) {
   }
 
   // ══════════════════════════════════════════════════════════════════════════════
-  // DM-VIS-010: Seleccionar cliente → tabs ACTIVIDADES/ADJUNTOS habilitadas
+  // DM-VIS-003: NUEVA VISITA → tabs ACTIVIDADES/ADJUNTOS disabled
+  // (se hace desde home después del cleanup; el form queda abierto para VIS-010)
   // ══════════════════════════════════════════════════════════════════════════════
-  let clienteOk = false;
+  let formAbiertoOk = false;
   try {
     await irAHomeVis();
     await clickBotonVis('NUEVA VISITA');
     await pg.waitForTimeout(1200);
 
-    const clienteElegido = await seleccionarCliente(DATA.clienteTest);
-
-    const tabsHabilitadas = await pg.evaluate(() => {
+    const formInfo = await pg.evaluate(() => {
       const segs = [...document.querySelectorAll('ion-segment-button')]
         .filter(s => s.getBoundingClientRect().width > 0);
-      const act = segs.find(s => s.textContent.includes('ACTIVIDADES'));
-      const adj = segs.find(s => s.textContent.includes('ADJUNTOS'));
-      const sucursal = document.querySelector('ion-select[formControlName*="sucur"], ion-select[id*="sucur"]')
-        || [...document.querySelectorAll('ion-select')].find(s => {
-          const lbl = s.previousElementSibling || s.closest('ion-item');
-          return lbl && lbl.textContent.toLowerCase().includes('sucursal');
-        });
-      return {
-        actEnabled: act && !act.disabled,
-        adjEnabled: adj && !adj.disabled,
-        sucursalVisible: !!sucursal && sucursal.getBoundingClientRect().width > 0,
-      };
+      const actDisabled = segs.find(s => s.textContent.includes('ACTIVIDADES'))?.disabled;
+      const adjDisabled = segs.find(s => s.textContent.includes('ADJUNTOS'))?.disabled;
+      const tabs = segs.map(s => s.textContent.trim());
+      return { tabs, actDisabled, adjDisabled };
     });
+
+    if (!formInfo.tabs.length) throw new Error('Tabs no encontradas en form NUEVA VISITA');
+    const tabsDisabled = formInfo.actDisabled !== false || formInfo.adjDisabled !== false;
+    formAbiertoOk = true;
+    v('DM-VIS-003', 'NUEVA VISITA → form / tabs disabled', tabsDisabled ? 'PASS' : 'FAIL',
+      `tabs: [${formInfo.tabs.join(', ')}] · ACTIVIDADES disabled: ${formInfo.actDisabled} · ADJUNTOS disabled: ${formInfo.adjDisabled}`);
+  } catch (e) {
+    v('DM-VIS-003', 'NUEVA VISITA → form / tabs disabled', 'FAIL', e.message);
+    // Si no abrió el form, no podemos continuar con el flujo principal
+    ['DM-VIS-010','DM-VIS-014','DM-VIS-015','DM-VIS-019','DM-VIS-020',
+     'DM-VIS-021','DM-VIS-022','DM-VIS-023','DM-VIS-031','DM-VIS-032'].forEach(id =>
+      v(id, id, 'BLOCKED', 'VIS-003 falló'));
+    try { await irAHomeVis(); } catch (_) {}
+    return { verdicts, msTotal: Date.now() - t0 };
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // DM-VIS-010: Seleccionar cliente → tabs ACTIVIDADES/ADJUNTOS habilitadas
+  // (continuamos en el form que VIS-003 ya abrió, NO re-abrimos NUEVA VISITA)
+  // ══════════════════════════════════════════════════════════════════════════════
+  let clienteOk = false;
+  try {
+    const clienteElegido = await seleccionarCliente(DATA.clienteTest);
+
+    // Esperar a que Angular procese la selección y habilite los tabs (poll 5s)
+    let tabsHabilitadas = { actEnabled: false, adjEnabled: false, sucursalVisible: false };
+    for (let i = 0; i < 10; i++) {
+      await pg.waitForTimeout(600);
+      tabsHabilitadas = await pg.evaluate(() => {
+        const segs = [...document.querySelectorAll('ion-segment-button')]
+          .filter(s => s.getBoundingClientRect().width > 0);
+        const act = segs.find(s => s.textContent.includes('ACTIVIDADES'));
+        const adj = segs.find(s => s.textContent.includes('ADJUNTOS'));
+        const sucursal = document.querySelector('ion-select[formControlName*="sucur"], ion-select[id*="sucur"]')
+          || [...document.querySelectorAll('ion-select')].find(s => {
+            const lbl = s.previousElementSibling || s.closest('ion-item');
+            return lbl && lbl.textContent.toLowerCase().includes('sucursal');
+          });
+        return {
+          actEnabled: act ? !act.disabled : false,
+          adjEnabled: adj ? !adj.disabled : false,
+          sucursalVisible: !!sucursal && sucursal.getBoundingClientRect().width > 0,
+        };
+      });
+      if (tabsHabilitadas.actEnabled) break;
+    }
 
     if (!tabsHabilitadas.actEnabled) throw new Error('Tab ACTIVIDADES sigue disabled tras seleccionar cliente');
     clienteOk = true;
@@ -893,10 +960,14 @@ async function runVisitas(pg, DATA) {
     await pg.waitForTimeout(1200);
 
     modalBtns = await pg.evaluate(() => {
-      const alerts = [...document.querySelectorAll('ion-alert')]
-        .filter(a => !a.classList.contains('overlay-hidden') && a.offsetParent !== null);
+      const alerts = [...document.querySelectorAll('ion-alert')].filter(a => {
+        const isTraditional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
+        const hasVisibleBtn = [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+        return isTraditional || hasVisibleBtn;
+      });
       if (!alerts.length) return [];
       return [...alerts[0].querySelectorAll('.alert-button')]
+        .filter(b => b.getBoundingClientRect().width > 0)
         .map(b => b.textContent.trim()).filter(t => t);
     });
 
@@ -922,11 +993,14 @@ async function runVisitas(pg, DATA) {
       );
 
       const salidaCoords = await pg.evaluate(() => {
-        const alerts = [...document.querySelectorAll('ion-alert')]
-          .filter(a => !a.classList.contains('overlay-hidden') && a.offsetParent !== null);
+        const alerts = [...document.querySelectorAll('ion-alert')].filter(a => {
+          const isTraditional = !a.classList.contains('overlay-hidden') && a.offsetParent !== null;
+          const hasVisibleBtn = [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0);
+          return isTraditional || hasVisibleBtn;
+        });
         if (!alerts.length) return null;
         const btn = [...alerts[0].querySelectorAll('.alert-button')].find(b =>
-          b.textContent.toLowerCase().includes('salir sin')
+          b.textContent.toLowerCase().includes('salir sin') && b.getBoundingClientRect().width > 0
         );
         if (!btn) return null;
         const r = btn.getBoundingClientRect();
