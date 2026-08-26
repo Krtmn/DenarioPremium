@@ -178,6 +178,8 @@ export class CollectionService {
   public lastSendIssues: CollectionSendIssue[] = [];
   /** Handlers de componentes para volcar inputs pendientes antes de validar Enviar. */
   private sendValidationFlushHandlers: Array<() => void> = [];
+  /** Evita bucle validateToSend → flush → setMonto → validateToSend (COB-SEND-FLUSH-001). */
+  private sendValidationSyncInProgress = false;
   /** Razón de cambio de tasa obligatoria (pestaña General). */
   public requiresTxConversionReason = false;
   public saveOrExitOpen = false;
@@ -543,6 +545,9 @@ export class CollectionService {
   /** Marca edición de usuario y revalida Enviar (no usar en hidratación/reapertura). */
   notifyCollectionEdited(): void {
     this.markCollectionDirty();
+    if (this.sendValidationSyncInProgress) {
+      return;
+    }
     void this.validateToSend();
   }
 
@@ -2655,6 +2660,10 @@ export class CollectionService {
   }
 
   async validateToSend() {
+    if (this.sendValidationSyncInProgress) {
+      return;
+    }
+
     const isAlwaysPartialWithFixedMode = this.alwaysPartialPayment && !this.enablePartialPayment;
 
     if (!isAlwaysPartialWithFixedMode && (this.alwaysPartialPayment || this.allPaymentPartial)) {
@@ -2731,17 +2740,26 @@ export class CollectionService {
    * Evita falsos "campo faltante" cuando el usuario pulsa Enviar sin salir del foco del input.
    */
   public syncPendingInputsBeforeSendValidation(): void {
-    if (this.requiredComment) {
-      const comment = (this.collection?.txComment ?? '').toString().trim();
-      this.validComment = comment.length > 0;
+    if (this.sendValidationSyncInProgress) {
+      return;
     }
 
-    for (const handler of this.sendValidationFlushHandlers) {
-      try {
-        handler();
-      } catch (err) {
-        console.warn('[CollectionService] syncPendingInputsBeforeSendValidation handler failed', err);
+    this.sendValidationSyncInProgress = true;
+    try {
+      if (this.requiredComment) {
+        const comment = (this.collection?.txComment ?? '').toString().trim();
+        this.validComment = comment.length > 0;
       }
+
+      for (const handler of this.sendValidationFlushHandlers) {
+        try {
+          handler();
+        } catch (err) {
+          console.warn('[CollectionService] syncPendingInputsBeforeSendValidation handler failed', err);
+        }
+      }
+    } finally {
+      this.sendValidationSyncInProgress = false;
     }
   }
 

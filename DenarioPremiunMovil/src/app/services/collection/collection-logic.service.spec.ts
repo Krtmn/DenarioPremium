@@ -2264,6 +2264,47 @@ describe('CollectionService', () => {
     });
   });
 
+  describe('COB-SEND-FLUSH-001 flush pre-envío sin bucle validateToSend', () => {
+    it('notifyCollectionEdited durante syncPendingInputs no dispara validateToSend', () => {
+      service.collection = { coType: '0' } as any;
+      const validateSpy = spyOn(service, 'validateToSend').and.resolveTo();
+
+      const unregister = service.registerSendValidationFlushHandler(() => {
+        service.notifyCollectionEdited();
+      });
+
+      service.syncPendingInputsBeforeSendValidation();
+
+      expect(validateSpy).not.toHaveBeenCalled();
+      unregister();
+    });
+
+    it('validateToSend termina en una pasada aunque el flush llame notifyCollectionEdited', async () => {
+      service.collection = { coType: '0' } as any;
+
+      let validateCalls = 0;
+      const originalValidate = service.validateToSend.bind(service);
+      spyOn(service, 'validateToSend').and.callFake(async function (this: CollectionService) {
+        validateCalls++;
+        if (validateCalls > 5) {
+          fail('validateToSend entró en bucle');
+        }
+        return originalValidate.call(this);
+      });
+
+      spyOn(service, 'evaluateSendReadiness').and.resolveTo([]);
+
+      const unregister = service.registerSendValidationFlushHandler(() => {
+        service.notifyCollectionEdited();
+      });
+
+      await service.validateToSend();
+
+      expect(validateCalls).toBe(1);
+      unregister();
+    });
+  });
+
   describe('COB-TOTAL-003 Monto Saldo restante con retenciones', () => {
     it('full payment with retention shows 0 remaining (500 - 100 ret - 400 paid)', () => {
       const detail = {
