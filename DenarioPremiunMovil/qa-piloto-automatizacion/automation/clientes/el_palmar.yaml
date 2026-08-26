@@ -136,9 +136,11 @@ vgs:
   cobroRetencion: true                  # solo-global 2025-10-06 ⇒ existe botón RETENCIÓN (co_type=2)
   retencion: true                       # AMBOS ⇒ 🟢 retención DENTRO del cobro normal SÍ aplica
                                         #   → DM-COB-041/042 APLICAN (a diferencia de alipascua)
-  sizeRetention: 0                      # ⚠️VERIFICAR — global 2025-11-11=0 GANA sobre client=14.
-                                        #   "0 dígitos" es sospechoso para un nro. de comprobante;
-                                        #   leer la longitud REAL exigida por la UI y corregir aquí.
+  sizeRetention: 5                      # ✅ VERIFICADO EN UI 2026-08-26 (dos corridas independientes).
+                                        #   La UI rotula y valida: "Debe tener 5 caracteres".
+                                        #   Ni el 0 del dump global ni el 14 del dump del cliente eran
+                                        #   el valor efectivo ⇒ para esta VG la UI en vivo es el único
+                                        #   oráculo; los dos dumps mienten.
   formatRetention: "0"                  # AMBOS · items = Numeros,Letras,Alfanumerico ⇒ 0 = Números
   userCanSelectIGTF: true               # AMBOS ⇒ 🟢 IGTF APLICA (≠ alipascua)
                                         #   Recordatorio: la base del IGTF es el TOTAL A PAGAR,

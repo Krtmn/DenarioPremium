@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Corrección — Defecto en Monto Saldo con retención</title>
+<style>
+  :root {
+    --morado: #5501AA; --morado-osc: #3D0179; --morado-claro: #F2EAFB;
+    --verde: #91BA3F;  --verde-osc: #4A6B1B;  --verde-claro: #F0F6E4;
+    --ambar: #F5BA2E;  --ambar-claro: #FEF7E6;
+    --rojo: #A5121B;   --rojo-claro: #FDF0F0;
+    --gris: #5D5A63;   --linea: #D8D2E0;
+  }
+  @page { size: A4; margin: 14mm 14mm 15mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 10.2pt; color: #1F1B24;
+         line-height: 1.44; margin: 0; }
+  .marca { display: flex; align-items: center; justify-content: space-between; gap: 8mm;
+           border-bottom: 2.2pt solid var(--morado); padding-bottom: 3mm; margin-bottom: 4mm; }
+  .marca img { width: 52mm; display: block; }
+  .marca .quien { text-align: right; font-size: 8.6pt; color: var(--gris); line-height: 1.35; }
+  .marca .quien b { color: var(--rojo); font-size: 9.4pt; display: block; letter-spacing: .2px; }
+  .cinta { height: 2.2mm; display: flex; margin: -4mm 0 4mm; }
+  .cinta i { flex: 1; }
+  .cinta i:nth-child(1) { background: var(--morado); }
+  .cinta i:nth-child(2) { background: var(--verde); }
+  .cinta i:nth-child(3) { background: var(--ambar); }
+  h1 { font-size: 18pt; color: var(--morado); margin: 0 0 1mm; letter-spacing: -.3px; }
+  h2 { font-size: 12.5pt; color: var(--morado); margin: 7mm 0 2.5mm; padding-bottom: 1.2mm;
+       border-bottom: 1.6pt solid var(--morado); page-break-after: avoid; }
+  h3 { font-size: 10.6pt; margin: 4mm 0 1.5mm; color: var(--morado-osc); page-break-after: avoid; }
+  .sub { color: var(--gris); font-size: 10pt; margin: 0 0 4mm; }
+  table { border-collapse: collapse; width: 100%; margin: 2mm 0 3mm; font-size: 9.2pt;
+          page-break-inside: avoid; }
+  th { background: var(--morado); color: #fff; text-align: left; padding: 1.7mm 2.3mm; font-weight: 600; }
+  td { border: .6pt solid var(--linea); padding: 1.5mm 2.3mm; vertical-align: top; }
+  tr:nth-child(even) td { background: #FAF7FD; }
+  .num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap;
+         font-family: Consolas, "Courier New", monospace; }
+  .ok { color: var(--verde-osc); font-weight: 700; }
+  .bad { color: var(--rojo); font-weight: 700; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: .93em; color: var(--morado-osc); }
+  .ficha { width: 100%; margin: 0 0 4mm; font-size: 9.4pt; }
+  .ficha td { border: none; border-bottom: .5pt solid var(--linea); padding: 1.2mm 0; background: none !important; }
+  .ficha td:first-child { color: var(--gris); width: 42mm; }
+  .alerta { border-left: 4pt solid var(--rojo); background: var(--rojo-claro); padding: 3mm 4mm;
+            margin: 4mm 0 5mm; }
+  .alerta .t { font-size: 12.5pt; font-weight: 700; color: var(--rojo); margin-bottom: 1.5mm; }
+  .bien { border-left: 4pt solid var(--verde); background: var(--verde-claro); padding: 3mm 4mm; margin: 4mm 0; }
+  .bien .t { font-size: 11pt; font-weight: 700; color: var(--verde-osc); margin-bottom: 1.5mm; }
+  .nota { background: var(--ambar-claro); border-left: 3pt solid var(--ambar); padding: 2.5mm 3.5mm;
+          margin: 3mm 0; font-size: 9.4pt; page-break-inside: avoid; }
+  .calc { font-family: Consolas, "Courier New", monospace; background: var(--morado-claro);
+          border: .5pt solid var(--linea); padding: 1.7mm 3mm; margin: 2mm 0; font-size: 9.1pt; }
+  .cap { page-break-inside: avoid; margin: 2.5mm 0 3.5mm; }
+  .cap img { max-width: 100%; border: .7pt solid var(--linea); display: block; }
+  .cap .pie { font-size: 8.3pt; color: var(--gris); margin-top: 1mm; font-style: italic; }
+  .pill { display: inline-block; padding: .4mm 2mm; border-radius: 2mm; font-size: 8.5pt; font-weight: 700; }
+  .p-ok { background: var(--verde-claro); color: var(--verde-osc); border: .5pt solid var(--verde); }
+  .p-mal { background: var(--rojo-claro); color: var(--rojo); border: .5pt solid var(--rojo); }
+  .p-na { background: #EFEDF2; color: var(--gris); border: .5pt solid var(--linea); }
+  .fin { margin-top: 6mm; padding-top: 2.5mm; border-top: 1.2pt solid var(--morado); font-size: 8.5pt;
+         color: var(--gris); display: flex; gap: 5mm; align-items: flex-start; }
+  .fin img { width: 26mm; opacity: .85; }
+  .pb { page-break-before: always; }
+</style></head><body>
+
+<div class="marca">
+  <img src="../../_assets/logo-denario-premium.svg" alt="Denario Premium">
+  <div class="quien"><b>CORRECCIÓN DE INFORME</b>Control de Calidad<br>26 de agosto de 2026</div>
+</div>
+<div class="cinta"><i></i><i></i><i></i></div>
+
+<h1>Defecto abierto: «Monto Saldo» no descuenta la retención</h1>
+<p class="sub">Corrige el informe «Fix Monto Doc. en pago parcial — validación completa» del 26/08/2026</p>
+
+<table class="ficha">
+  <tr><td>Cliente</td><td><b>CENTRAL EL PALMAR, S.A.</b> &nbsp;<code>el_palmar</code></td></tr>
+  <tr><td>Playa</td><td>ISLA COCHE</td></tr>
+  <tr><td>Módulo</td><td>Cobros — Tab TOTAL</td></tr>
+  <tr><td>Naturaleza</td><td><b>Defecto preexistente</b> — no lo introdujo el fix <code>54af300e</code></td></tr>
+  <tr><td>Alcance</td><td><b>App móvil · dato enviado al servidor · web administrativa</b></td></tr>
+</table>
+
+<div class="alerta">
+  <div class="t">🔴 Qué corrige este documento</div>
+  El informe anterior daba por válido el escenario <b>«pago parcial con retención»</b>. <b>Ese resultado
+  era incorrecto.</b> Al validarlo de nuevo con el caso que faltaba —retención sin pago parcial— se
+  confirmó que <b>la columna «Monto Saldo» no descuenta el monto retenido</b>, y que el saldo que se
+  envía al servidor tampoco lo descuenta.<br><br>
+  <b>El resto del informe se mantiene:</b> el fix de la columna «Monto Doc.» funciona y los otros
+  escenarios siguen siendo válidos. Lo que cambia es un escenario que pasó a defecto y uno nuevo que
+  se añade.
+</div>
+
+<h2>El defecto, en una línea</h2>
+
+<p>Cuando un documento lleva <b>retención</b>, la deuda del cliente baja por <b>el pago más lo
+retenido</b>. La aplicación solo descuenta el pago, de modo que <b>el saldo pendiente queda inflado
+exactamente en el monto retenido</b>.</p>
+
+<div class="calc">
+MUESTRA:&nbsp;&nbsp; Monto Saldo = saldo − pago<br>
+DEBERÍA:&nbsp;&nbsp; Monto Saldo = saldo − pago − retención IVA − retención ISLR
+</div>
+
+<h2>La prueba, en una sola captura</h2>
+
+<p>Las tres filas pertenecen <b>al mismo cobro y a la misma tabla</b>. La del medio no lleva retención
+y cierra correctamente en cero. Las otras dos sí llevan retención y no cierran. <b>La única variable
+es la retención.</b></p>
+
+<div class="cap"><img src="img/zoom/R1R2-c-pago-saldo-zoom.png">
+<div class="pie">Tab TOTAL. Fila 1: se pagó todo lo que faltaba y aún así muestra 11,00 pendientes.
+Fila 2 (control, sin retención): cierra en 0,0000. Fila 3: pago parcial, inflada en 25,00.</div></div>
+
+<table>
+  <tr><th>Caso</th><th class="num">Saldo del doc.</th><th class="num">Pago</th><th class="num">Retenido</th><th class="num">Muestra</th><th class="num">Debería</th><th class="num">Infla</th></tr>
+  <tr><td><b>Cobro con retención</b><br><span style="font-size:8.5pt;color:var(--gris)">pago completo</span></td>
+      <td class="num">3.838,56</td><td class="num">3.827,56</td><td class="num">11,00</td>
+      <td class="num bad">11,0000</td><td class="num">0,0000</td><td class="num bad">11,00</td></tr>
+  <tr><td><b>Parcial con retención</b><br><span style="font-size:8.5pt;color:var(--gris)">el que se dio por bueno</span></td>
+      <td class="num">38.581,82</td><td class="num">1.000,00</td><td class="num">25,00</td>
+      <td class="num bad">37.581,8200</td><td class="num">37.556,8200</td><td class="num bad">25,00</td></tr>
+  <tr><td><b>Control — sin retención</b></td>
+      <td class="num">19.361,44</td><td class="num">19.361,44</td><td class="num">—</td>
+      <td class="num ok">0,0000</td><td class="num">0,0000</td><td class="num ok">0</td></tr>
+</table>
+
+<p><b>El primer caso es el más claro:</b> el cliente saldó el documento por completo —3.827,56 pagados
+más 11,00 retenidos son exactamente los 3.838,56 que debía— y la aplicación sigue mostrando 11,00
+pendientes.</p>
+
+<h2>No es solo la pantalla: el dato enviado también está mal</h2>
+
+<p>Los cobros se enviaron y se consultó lo que quedó guardado en la nube. En el cobro con pago parcial,
+el saldo restante que se persiste <b>tampoco descuenta la retención</b>:</p>
+
+<table>
+  <tr><th>Documento</th><th class="num">Saldo</th><th class="num">Pago</th><th class="num">Retenido</th><th class="num">Guardado en la nube</th><th class="num">Debería</th></tr>
+  <tr><td><code>010000016710032023</code></td><td class="num">38.581,82</td><td class="num">1.000,00</td>
+      <td class="num">25,00</td><td class="num bad">37.581,8200</td><td class="num">37.556,8200</td></tr>
+</table>
+
+<p>Esto sube la gravedad del hallazgo: <b>no es un problema de presentación</b>. El saldo pendiente que
+llega al servidor queda sobrestimado en el monto retenido, y sobre ese dato trabajan después los
+procesos de cobranza.</p>
+
+<h3>Y el mismo valor inflado se ve en la web</h3>
+
+<p>Se consultó el cobro en la web administrativa. El detalle tiene una columna <b>«Saldo doc.»</b> que
+muestra <b>exactamente el mismo número equivocado</b>. El defecto no se queda en el teléfono del
+vendedor: llega a la pantalla que usa la oficina.</p>
+
+<table>
+  <tr><th>Documento</th><th>Parcial</th><th class="num">Monto doc</th><th class="num">Saldo doc. (web)</th><th class="num">Retenido</th><th class="num">Debería</th></tr>
+  <tr><td><code>010000016710032023</code></td><td>SÍ</td><td class="num">38.581,8200</td>
+      <td class="num bad">37.581,8200</td><td class="num">25,00</td><td class="num">37.556,8200</td></tr>
+  <tr><td><code>0099000045</code> <span style="font-size:8.5pt;color:var(--gris)">control</span></td><td>NO</td>
+      <td class="num">19.361,4400</td><td class="num ok">19.361,4400</td><td class="num">—</td><td class="num">19.361,4400</td></tr>
+</table>
+
+<div class="cap"><img src="img/WEB-detalle-saldo-doc.png">
+<div class="pie">Detalle del cobro 27144 en la web. La columna «Saldo doc.» arrastra el valor inflado.</div></div>
+
+<div class="nota">
+<b>El resto de la web sí es correcto.</b> Ambos cobros se listan bien —tipo, montos, retenciones,
+conversión y estatus coinciden con la base de datos—, y la cabecera del detalle desglosa correctamente
+las retenciones (IVA 30,00 · ISLR 6,00). El único dato equivocado es «Saldo doc.».
+</div>
+
+<div class="nota">
+<b>Incoherencia interna que confirma el diagnóstico:</b> el modal de pago y los totales de la cabecera
+<b>sí</b> descuentan la retención — el «Monto total a Pagar» bajó de 23.200,00 a 23.189,00 al aplicarla.
+Es decir, la propia aplicación reconoce que lo retenido reduce la deuda; solo esta columna y el saldo
+enviado lo ignoran.
+</div>
+
+<div class="pb"></div>
+<h2>El tercer caso: cobro de tipo Retención</h2>
+
+<p>Se montó también un cobro cuyo tipo es <b>Retención</b>. Ese flujo <b>no tiene columna de saldo</b>:
+presenta un acordeón por documento con el monto del documento, las retenciones y el total retenido, y
+su «Monto total a Pagar» es correcto. <b>No aplica el defecto</b>, y así queda documentado.</p>
+
+<table>
+  <tr><th style="width:52mm">Caso</th><th>Resultado</th></tr>
+  <tr><td><b>Cobro con retención</b></td><td><span class="pill p-mal">❌ DEFECTO</span> saldo inflado en lo retenido</td></tr>
+  <tr><td><b>Parcial con retención</b></td><td><span class="pill p-mal">❌ DEFECTO</span> corrige el resultado anterior</td></tr>
+  <tr><td><b>Retención como tipo de cobro</b></td><td><span class="pill p-na">🚫 N/A</span> ese flujo no tiene columna de saldo</td></tr>
+  <tr><td><b>Control sin retención</b></td><td><span class="pill p-ok">✅ correcto</span> aísla la causa</td></tr>
+</table>
+
+<div class="bien">
+  <div class="t">✅ Lo que sigue siendo válido del informe anterior</div>
+  El fix de la columna <b>«Monto Doc.»</b> funciona: muestra el saldo bruto en pago parcial, la
+  separación entre lo que se ve y lo que se envía es correcta, y los escenarios de multi-documento,
+  bolívares, guardado-y-reapertura, IGTF e IVA se mantienen válidos. <b>Este defecto es independiente y
+  anterior:</b> se verificó que la fórmula tampoco descontaba la retención antes del fix.
+</div>
+
+<h2>Aviso importante para quien haga la corrección</h2>
+
+<div class="nota">
+<b>El monto pagado no significa lo mismo en todos los tipos de cobro.</b> En un cobro normal excluye las
+retenciones, de modo que hay que restarlas aparte. En un cobro de tipo Retención, en cambio, ese monto
+<b>ya equivale a lo retenido</b>: restarlas de nuevo lo duplicaría. Una corrección que no distinga por
+tipo de cobro romperá el flujo de Retención.
+</div>
+
+<h2>Por qué nuestra validación anterior no lo detectó</h2>
+
+<p>Es importante dejarlo escrito, porque la causa es corregible y afecta a otras validaciones:</p>
+
+<table>
+  <tr><th style="width:8mm">#</th><th>Causa</th><th>Corrección adoptada</th></tr>
+  <tr><td>1</td><td>Se comprobó que <i>saldo − pago = saldo mostrado</i>, que es <b>exactamente la fórmula del código</b>. Se validó el cálculo contra sí mismo en vez de contra la deuda real del cliente</td><td>El criterio pasa a ser la regla de negocio, no la fórmula implementada</td></tr>
+  <tr><td>2</td><td>La captura publicada como prueba <b>no mostraba la columna «Monto Saldo»</b>: con retención aparecen columnas adicionales y la tabla se desplaza</td><td>Toda captura debe contener las columnas citadas en el texto; si no caben, recortes solapados</td></tr>
+  <tr><td>3</td><td>No hubo <b>caso de control</b> sin retención con el que comparar</td><td>Todo escenario con una variable añadida lleva su control</td></tr>
+</table>
+
+<h2>Cómo reproducirlo</h2>
+
+<ol>
+  <li>Cobros → nuevo cobro → empresa <b>1003</b> → cliente <code>1000002025</code>.</li>
+  <li>Elegir un documento con saldo y abrir su detalle (la lupa).</li>
+  <li>Aplicar una <b>retención</b> (IVA y/o ISLR). El número de comprobante debe tener <b>5 dígitos</b>.</li>
+  <li>Pagar el resto del documento, <b>sin activar el pago parcial</b>.</li>
+  <li>Ir al <b>Tab TOTAL</b> y desplazar la tabla hasta ver <b>«Monto Saldo»</b>.</li>
+  <li><b>Resultado:</b> muestra el monto retenido como pendiente, cuando el documento quedó saldado.</li>
+</ol>
+
+<div class="fin">
+  <img src="../../_assets/logo-denario-premium.svg" alt="">
+  <div>
+    <b>Denario Premium · Control de Calidad.</b> Corrección emitida el 26/08/2026 a partir de la corrida
+    <code>defecto_saldo_retencion_20260826</code>. Detalle técnico, mediciones de modelo y trazas en
+    <code>defecto-saldo-retencion.md</code>. Cobros de evidencia: <code>27143</code> y <code>27144</code>.
+  </div>
+</div>
+
+</body></html>
