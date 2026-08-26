@@ -3688,9 +3688,93 @@ export class CollectionService {
     this.disableSendButton = !this.hasSendPrerequisites();
   }
 
+  /**
+   * Limpia todo el estado de sesión del singleton entre cobros (COB-SESSION-001).
+   * Usar al terminar Enviar o como base de beginNewCollectionSession.
+   */
+  public resetCollectionSessionState(): void {
+    this.sendValidationAttempted = false;
+    this.sendBlockedByFields = false;
+    this.lastValidToSend = false;
+    this.lastSendIssues = [];
+    this.retentionSendFocusDocIndex = null;
+    this.sendCollection = false;
+    this.createAutomatedPrepaid = false;
+    this.messageSended = false;
+
+    this.generalTabValidForSave = false;
+    this.collectValid = false;
+    this.cobroValid = false;
+    this.collectionIsSave = false;
+    this.collectionPersistedBaseline = false;
+    this.collectionDirtySincePersist = false;
+
+    this.cobro25 = false;
+    this.isAnticipo = false;
+    this.isRetention = false;
+    this.hideDocuments = false;
+    this.hidePayments = false;
+    this.collectValidTabs = true;
+    this.tabSelected = 'general';
+    this.isOpenCollect = false;
+    this.recentOpenCollect = false;
+    this.skipDocumentReloadInLoadData = false;
+
+    this.isOpen = false;
+    this.alertMessageOpen = false;
+    this.resetPartialPaymentSessionState();
+    this.clearDocumentSalesState();
+
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
+  }
+
+  /** Defaults de módulo según coType (siempre parte de flags neutros). */
+  public applyNewCobroModuleType(coType: number): void {
+    this.coTypeModule = String(coType);
+
+    switch (coType) {
+      case 1:
+        this.isAnticipo = true;
+        this.hideDocuments = true;
+        this.hidePayments = false;
+        this.disabledSelectCollectMethodDisabled = false;
+        this.titleModule = this.collectionTags.get('COB_NOMBRE_MODULO_ANTICIPO') ?? '';
+        break;
+      case 2:
+        this.isRetention = true;
+        this.hideDocuments = false;
+        this.hidePayments = true;
+        this.titleModule = this.collectionTags.get('COB_NOMBRE_MODULO_RETENTION') ?? '';
+        break;
+      case 3:
+        this.titleModule = this.collectionTags.get('COB_NOMBRE_MODULO_IGTF') ?? '';
+        break;
+      case 4:
+        this.cobro25 = true;
+        this.titleModule = this.collectionTags.get('COB_MODULE_COBRO25') ?? '';
+        break;
+      default:
+        this.titleModule = this.collectionTags.get('COB_NOMBRE_MODULO') ?? '';
+        break;
+    }
+  }
+
+  /** Único orquestador para abrir un cobro nuevo idéntico a la primera vez (COB-SESSION-001). */
+  public beginNewCollectionSession(coType: number): void {
+    this.collection = {} as Collection;
+    this.resetCollectionSessionState();
+    this.applyNewCobroModuleType(coType);
+    this.newCollect = true;
+    this.initCollect = false;
+  }
+
   public resetSendValidationUx(): void {
     this.sendValidationAttempted = false;
     this.sendBlockedByFields = false;
+    this.lastValidToSend = false;
+    this.lastSendIssues = [];
+    this.retentionSendFocusDocIndex = null;
     this.updateSendButtonAvailability();
   }
 

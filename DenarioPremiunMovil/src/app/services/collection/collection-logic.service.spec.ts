@@ -3087,6 +3087,120 @@ describe('CollectionService', () => {
     });
   });
 
+  describe('COB-SESSION-001 Nuevo Cobro idéntico desde 0 tras enviar', () => {
+    interface NewSessionSnapshot {
+      sendBlockedByFields: boolean;
+      sendValidationAttempted: boolean;
+      lastValidToSend: boolean;
+      lastSendIssues: unknown[];
+      retentionSendFocusDocIndex: number | null;
+      collectionPersistedBaseline: boolean;
+      collectionDirtySincePersist: boolean;
+      cobro25: boolean;
+      hidePayments: boolean;
+      hideDocuments: boolean;
+      isAnticipo: boolean;
+      isRetention: boolean;
+      newCollect: boolean;
+      initCollect: boolean;
+      disableSendButton: boolean;
+      tabSelected: string;
+      documentSalesLength: number;
+    }
+
+    function captureNewSessionSnapshot(): NewSessionSnapshot {
+      return {
+        sendBlockedByFields: service.sendBlockedByFields,
+        sendValidationAttempted: service.sendValidationAttempted,
+        lastValidToSend: service.lastValidToSend,
+        lastSendIssues: [...service.lastSendIssues],
+        retentionSendFocusDocIndex: service.retentionSendFocusDocIndex,
+        collectionPersistedBaseline: service.collectionPersistedBaseline,
+        collectionDirtySincePersist: service.collectionDirtySincePersist,
+        cobro25: service.cobro25,
+        hidePayments: service.hidePayments,
+        hideDocuments: service.hideDocuments,
+        isAnticipo: service.isAnticipo,
+        isRetention: service.isRetention,
+        newCollect: service.newCollect,
+        initCollect: service.initCollect,
+        disableSendButton: service.disableSendButton,
+        tabSelected: service.tabSelected,
+        documentSalesLength: service.documentSales.length,
+      };
+    }
+
+    function simulatePostSendDirtyState(): void {
+      service.applyPersistSucceededBaseline();
+      service.sendBlockedByFields = true;
+      service.lastValidToSend = false;
+      service.lastSendIssues = [{ message: 'Error', tab: 'pagos' } as any];
+      service.retentionSendFocusDocIndex = 2;
+      service.cobro25 = true;
+      service.hidePayments = true;
+      service.isRetention = true;
+      service.collection = {
+        coType: '2',
+        collectionDetails: [{ coDocument: 'FAC-OLD' }],
+        collectionPayments: [{ coPaymentMethod: 'ef', nuAmountPartial: 100 }],
+      } as any;
+      service.documentSales = [{ coDocument: 'FAC-OLD', isSelected: true } as any];
+    }
+
+    it('COB-SESSION-001a: beginNewCollectionSession(0) matches fresh baseline', () => {
+      service.beginNewCollectionSession(0);
+      const baseline = captureNewSessionSnapshot();
+
+      expect(baseline.sendBlockedByFields).toBeFalse();
+      expect(baseline.disableSendButton).toBeTrue();
+      expect(baseline.newCollect).toBeTrue();
+      expect(baseline.initCollect).toBeFalse();
+      expect(baseline.hidePayments).toBeFalse();
+      expect(baseline.cobro25).toBeFalse();
+      expect(baseline.documentSalesLength).toBe(0);
+    });
+
+    it('COB-SESSION-001b: post-send dirty state resets to same baseline on new cobro', () => {
+      service.beginNewCollectionSession(0);
+      const baseline = captureNewSessionSnapshot();
+
+      simulatePostSendDirtyState();
+      service.beginNewCollectionSession(0);
+      const afterReset = captureNewSessionSnapshot();
+
+      expect(afterReset).toEqual(baseline);
+    });
+
+    it('COB-SESSION-001c: retention then IGTF restores hidePayments', () => {
+      simulatePostSendDirtyState();
+      service.beginNewCollectionSession(3);
+
+      expect(service.hidePayments).toBeFalse();
+      expect(service.hideDocuments).toBeFalse();
+      expect(service.isRetention).toBeFalse();
+      expect(service.coTypeModule).toBe('3');
+    });
+
+    it('COB-SESSION-001d: cobro25 then normal clears cobro25 flag', () => {
+      service.beginNewCollectionSession(4);
+      expect(service.cobro25).toBeTrue();
+
+      simulatePostSendDirtyState();
+      service.beginNewCollectionSession(0);
+      expect(service.cobro25).toBeFalse();
+    });
+
+    it('COB-SESSION-001e: resetCollectionSessionState clears send issues without new session', () => {
+      simulatePostSendDirtyState();
+      service.resetCollectionSessionState();
+
+      expect(service.sendBlockedByFields).toBeFalse();
+      expect(service.lastSendIssues).toEqual([]);
+      expect(service.collectionPersistedBaseline).toBeFalse();
+      expect(service.documentSales.length).toBe(0);
+    });
+  });
+
   describe('COB-INV-COMMENT-001 cleanString', () => {
     it('preserves trailing and internal spaces (no trim on ionInput path)', () => {
       expect(service.cleanString('hola ')).toBe('hola ');

@@ -179,6 +179,7 @@ export class CobrosHeaderComponent implements OnInit {
     this.subscriberShow = this.collectService.showButtons.subscribe((data: Boolean) => {
       this.collectService.showHeaderButtons = data;
       if (data && !this.collectService.isCollectionReadOnlyForEdit()) {
+        this.resetSendValidationAlerts();
         this.collectService.resetSendValidationUx();
       }
     });
@@ -344,15 +345,19 @@ export class CobrosHeaderComponent implements OnInit {
     }
   }
 
+  private resetSendValidationAlerts(): void {
+    this.alertMessageOpenValidation = false;
+    this.validationFailureMessage = '';
+    this.alertMessageOpenSend = false;
+  }
+
   private async finishAfterSendNavigation(): Promise<void> {
+    this.resetSendValidationAlerts();
+    this.collectService.resetCollectionSessionState();
     this.collectService.initCollect = true;
-    this.collectService.disableSavedButton = true;
-    this.collectService.disableSendButton = true;
     this.collectService.showHeaderButtons = false;
     this.collectService.cobroComponent = false;
     this.collectService.cobrosComponent = true;
-    this.collectService.collectValid = false;
-    this.collectService.collectionIsSave = false;
     await this.messageService.hideLoading();
   }
 
