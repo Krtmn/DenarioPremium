@@ -56,6 +56,7 @@ export class CobrosGeneralComponent implements OnInit {
   @ViewChild(ClienteSelectorComponent) selectorCliente!: ClienteSelectorComponent;
 
   private subscriptions: Subscription[] = [];
+  private unregisterSendValidationFlush?: () => void;
 
   // Servicios públicos solo si los usas en el template
   public collectService = inject(CollectionService);
@@ -152,6 +153,12 @@ export class CobrosGeneralComponent implements OnInit {
       );
 
       this.initGeneralState();
+    }
+
+    if (typeof this.collectService.registerSendValidationFlushHandler === 'function') {
+      this.unregisterSendValidationFlush = this.collectService.registerSendValidationFlushHandler(
+        () => this.flushPendingGeneralInputsBeforeSend(),
+      );
     }
   }
 
@@ -618,6 +625,7 @@ export class CobrosGeneralComponent implements OnInit {
     await this.collectService.calcularMontos('', 0);
     this.collectService.checkTiposPago();
     await this.collectService.validateToSend();
+    this.collectService.updateSendButtonAvailability();
   }
 
   initCollection() {
@@ -712,6 +720,7 @@ export class CobrosGeneralComponent implements OnInit {
           } else {
             this.collectService.restoreCollectionIgtfFields();
           }
+          this.collectService.newCollect = false;
         }
 
         this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);
@@ -738,13 +747,18 @@ export class CobrosGeneralComponent implements OnInit {
 
 
   setChangesMade(value: boolean) {
+    this.collectService.notifyCollectionEdited();
+  }
+
+  private markGeneralEditedAfterValidTabs(validTabs: boolean): void {
+    this.collectService.onCollectionValid(validTabs);
     this.collectService.markCollectionDirty();
-    this.collectService.validateToSend();
   }
 
 
 
   ngOnDestroy() {
+    this.unregisterSendValidationFlush?.();
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
@@ -772,7 +786,7 @@ export class CobrosGeneralComponent implements OnInit {
       if (this.globalConfig.get("requiredComment") === 'false' ? true : false) {
         /* this.collectService.onCollectionValid(true); */
         this.collectService.unlockTabs().then((resp) => {
-          this.collectService.onCollectionValid(resp);
+          this.markGeneralEditedAfterValidTabs(resp);
         })
       }
       /*   } else {
@@ -1183,7 +1197,7 @@ export class CobrosGeneralComponent implements OnInit {
     if (event.target.value.trim() != "") {
       this.collectService.collection.txConversion = this.collectService.cleanString(event.target.value.trim());
       this.collectService.unlockTabs().then((resp) => {
-        this.collectService.onCollectionValid(resp);
+        this.markGeneralEditedAfterValidTabs(resp);
       })
     } else {
       this.collectService.collection.txConversion = event.target.value.trim();
@@ -1193,10 +1207,13 @@ export class CobrosGeneralComponent implements OnInit {
       );
       this.messageService.alertModal(this.messageAlert);
     }
+    this.syncRequiresTxConversionReason();
+    this.collectService.refreshSendUxAfterEdit();
   }
 
   setResponsible() {
     this.collectService.collection.naResponsible = this.collectService.cleanString(this.collectService.collection.naResponsible.trim());
+    this.collectService.markCollectionDirty();
   }
 
   setComment() {
@@ -1215,8 +1232,9 @@ export class CobrosGeneralComponent implements OnInit {
     );
 
     this.collectService.unlockTabs().then((resp) => {
-      this.collectService.onCollectionValid(resp);
+      this.markGeneralEditedAfterValidTabs(resp);
     })
+    this.collectService.refreshSendUxAfterEdit();
   }
 
   onTxCommentInput() {
@@ -1228,6 +1246,38 @@ export class CobrosGeneralComponent implements OnInit {
       this.collectService.collection.txComment = clean;
       if (this.input && this.input.value !== clean) {
         this.input.value = clean;
+      }
+    }
+    if (this.collectService.requiredComment) {
+      this.collectService.validComment = clean.trim().length > 0;
+    }
+    this.collectService.refreshSendUxAfterEdit();
+  }
+
+  /** Volcar inputs de General pendientes de blur antes de Enviar. */
+  private flushPendingGeneralInputsBeforeSend(): void {
+    if (this.collectService.requiredComment) {
+      const clean = applyTextCommentMaxLength(
+        this.collectService.cleanString(this.collectService.collection.txComment),
+        this.textCommentMaxLength,
+      );
+      this.collectService.collection.txComment = clean;
+      this.collectService.validComment = clean.trim().length > 0;
+    }
+
+    if (this.collectService.requiresTxConversionReason) {
+      const raw = (this.collectService.collection.txConversion ?? '').toString();
+      if (raw.trim()) {
+        this.collectService.collection.txConversion = this.collectService.cleanString(raw.trim());
+      }
+    }
+
+    if (this.collectService.enabledManualRate) {
+      const value = this.parseManualRateInput(String(this.rateSelected ?? '').trim());
+      if (this.isValidManualRate(value)) {
+        this.collectService.collection.nuValueLocal = value!;
+        this.collectService.rateSelected = value!;
+        this.manualRateError = '';
       }
     }
   }
@@ -1472,6 +1522,7 @@ export class CobrosGeneralComponent implements OnInit {
       this.lastManualRateValue = value!;
       void this.applySelectedRate(value!);
     }
+    this.collectService.refreshSendUxAfterEdit();
   }
 
   /**
@@ -1553,7 +1604,7 @@ export class CobrosGeneralComponent implements OnInit {
       }
 
       const validTabs = await this.collectService.unlockTabs();
-      this.collectService.onCollectionValid(validTabs);
+      this.markGeneralEditedAfterValidTabs(validTabs);
     } finally {
       this.collectService.isRateChangeInProgress = false;
     }
@@ -1845,5 +1896,26 @@ export class CobrosGeneralComponent implements OnInit {
   get clienteTabLabel(): string {
     const collection = this.collectService.collection;
     return formatClientForTab(collection?.naClient, collection?.coClient, collection?.lbClient);
+  }
+
+  shouldShowRequiredCommentError(): boolean {
+    return this.collectService.sendValidationAttempted
+      && this.collectService.requiredComment
+      && !this.collectService.validComment
+      && !this.isSentDelivery;
+  }
+
+  shouldShowTxConversionError(): boolean {
+    return this.collectService.sendValidationAttempted
+      && !!this.changeRate
+      && !this.collectService.collection.txConversion?.trim();
+  }
+
+  shouldShowManualRateSendError(): boolean {
+    return this.collectService.sendValidationAttempted && !!this.manualRateError;
+  }
+
+  private syncRequiresTxConversionReason(): void {
+    this.collectService.requiresTxConversionReason = !!this.changeRate;
   }
 }

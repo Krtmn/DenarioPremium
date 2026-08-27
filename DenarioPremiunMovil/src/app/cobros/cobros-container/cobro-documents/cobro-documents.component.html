@@ -200,7 +200,7 @@
   <ion-row class="tabladocumentSalesVenta tablaDocVentas row" [class.documents-row-selected]="documentSale.isSelected">
     @if(this.collectService.retentionDocTypeCR){
     <ion-col size="2" class="ion-text-center col borderInferiorIzquierdo">
-      <ion-button (click)="openDocumentSale(getSourceIndex(documentSale), $event)" size="small" disabled="{{!documentSale.isSelected}}">
+      <ion-button (click)="openDocumentSale(documentSale, $event)" size="small" [disabled]="!documentSale.isSelected">
         <!-- <ion-icon slot="icon-only" src=" ../../../assets/icon/search-circle-outline.svg"></ion-icon> -->
         <ion-icon slot="icon-only" name="search-sharp"></ion-icon>
       </ion-button>
@@ -332,6 +332,11 @@
     <ion-col size="6" class="ion-text-center col borderInferiorDerecho" [ngStyle]="{color: documentSale.colorRow}">
       {{documentSale.txComment}}
     </ion-col>
+    @if(shouldShowDocumentRetentionSendError(getSourceIndex(documentSale))){
+    <ion-col size="12" class="ion-text-center col retention-send-error-hint">
+      {{getDocumentRetentionSendErrorHint()}}
+    </ion-col>
+    }
   </ion-row>
   }
     </ion-grid>
@@ -346,7 +351,8 @@
 </div>
 
 @if(canShowDocumentPagination){
-<nav class="document-pagination document-pagination--module-footer" aria-label="Paginacion de documentos">
+<nav class="document-pagination document-pagination--module-footer"
+  aria-label="Paginacion de documentos">
     <button type="button" class="document-pagination__btn" (click)="goToPreviousDocumentsPage()"
       [disabled]="!canGoToPreviousDocumentsPage" aria-label="Pagina anterior">
       <ion-icon name="chevron-back-outline"></ion-icon>
@@ -812,7 +818,7 @@
                       'input-rojo': shouldShowRetentionLineDateInvalidBorder(retentionDetail.idCollectRetention)
                     }">
                   </ion-input>
-                  @if(shouldShowRetentionLineDateHint(retentionDetail.idCollectRetention)){
+                  @if(collectService.sendValidationAttempted && shouldShowRetentionLineDateHint(retentionDetail.idCollectRetention)){
                   <ion-label color="danger" class="campoObligatorio">
                     {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}
                   </ion-label>
@@ -898,7 +904,7 @@
                       'input-rojo': this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher
                     }" [disabled]="!this.collectService.validNuRetention">
                   </ion-input>
-                  @if(this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher){
+                  @if(collectService.sendValidationAttempted && this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher){
                   <ion-label color="danger" class="campoObligatorio">
                     {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}
                   </ion-label>
@@ -976,7 +982,7 @@
                   [ngClass]="{'inp-write': !collectService.amountPaymentPartial, 'input-rojo': !collectService.amountPaid}"
                   min="0" [readonly]="!collectService.isPaymentPartial">
                 </ion-input>
-                @if(!this.collectService.amountPaid){
+                @if(collectService.sendValidationAttempted && !this.collectService.amountPaid){
                 <ion-label color="danger" class="campoObligatorio">
                   Este campo es obligatorio
                 </ion-label>
@@ -1271,7 +1277,7 @@
                   'input-rojo': shouldShowRetentionLineDateInvalidBorder(retentionDetail.idCollectRetention)
                 }">
               </ion-input>
-              @if(shouldShowRetentionLineDateHint(retentionDetail.idCollectRetention)){
+              @if(collectService.sendValidationAttempted && shouldShowRetentionLineDateHint(retentionDetail.idCollectRetention)){
               <ion-label color="danger" class="campoObligatorio">
                 {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}
               </ion-label>
@@ -1353,7 +1359,7 @@
                   'input-rojo': this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher
                 }" [disabled]="!this.collectService.validNuRetention">
               </ion-input>
-              @if(this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher){
+              @if(collectService.sendValidationAttempted && this.collectService.documentSaleOpen.nuVaucherRetention && !this.collectService.validateDaVoucher){
               <ion-label color="danger" class="campoObligatorio">
                 {{this.collectService.collectionTagsDenario.get('DENARIO_CAMPO_OBLIGATORIO')}}
               </ion-label>

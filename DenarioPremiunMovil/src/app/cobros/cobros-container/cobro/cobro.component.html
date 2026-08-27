@@ -1,14 +1,16 @@
 <ion-item-divider sticky>
     <div class="cobroComponent" sticky-below-view>
         <ion-segment value="default" [(ngModel)]="segment" scrollable (ionChange)="onSegmentChange($event)">
-            <ion-segment-button value="default" (click)="onChangeTab(segment)">
+            <ion-segment-button value="default" (click)="onChangeTab(segment)"
+                [class.collection-send-error-hint]="shouldShowSendErrorHintOnTab('default')">
                 <ion-label>{{this.collectService.collectionTags.get('COB_PESTANA_GENERAL')}}</ion-label>
             </ion-segment-button>
 
             <!-- SI ES ANTICIPO OCULTO DOCUMENTOS -->
             @if (!this.collectService.hideDocuments) {
                 <ion-segment-button value="documentos" [disabled]="!collectValidTabsLocal"
-                    (click)="onChangeTab(segment)">
+                    (click)="onChangeTab(segment)"
+                    [class.collection-send-error-hint]="shouldShowSendErrorHintOnTab('documentos')">
                     <ion-label> {{this.collectService.collectionTags.get('COB_PESTANA_DOCUMENTOS')}}</ion-label>
                 </ion-segment-button>
             }
@@ -16,7 +18,8 @@
             <!-- SI ES RETENCION OCULTO PAGOS -->
             @if (!this.collectService.hidePayments) {
                 <ion-segment-button value="pagos" [disabled]="!collectValidTabsLocal"
-                    (click)="onChangeTab(segment)">
+                    (click)="onChangeTab(segment)"
+                    [class.collection-send-error-hint]="shouldShowSendErrorHintOnTab('pagos')">
                     <ion-label>{{this.collectService.collectionTags.get('COB_PESTANA_PAGOS')}}</ion-label>
                 </ion-segment-button>
             }
@@ -24,7 +27,8 @@
             <ion-segment-button value="total" [disabled]="!collectValidTabsLocal" (click)="onChangeTab(segment)">
                 <ion-label>{{this.collectService.collectionTags.get('COB_PESTANA_TOTAL')}}</ion-label>
             </ion-segment-button>
-            <ion-segment-button value="adjuntos" [disabled]="!collectValidTabsLocal" (click)="onChangeTab(segment)">
+            <ion-segment-button value="adjuntos" [disabled]="!collectValidTabsLocal" (click)="onChangeTab(segment)"
+                [class.collection-send-error-hint]="shouldShowSendErrorHintOnTab('adjuntos')">
                 <ion-label>{{this.collectService.collectionTags.get('COB_PESTANA_ADJUNTOS')}}</ion-label>
             </ion-segment-button>
         </ion-segment>

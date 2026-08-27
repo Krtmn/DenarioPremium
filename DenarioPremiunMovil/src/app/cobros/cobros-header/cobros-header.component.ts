@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output, inject, Input } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, inject, Input, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { Platform } from '@ionic/angular';
 import { Subscription } from 'rxjs';
@@ -35,6 +35,7 @@ export class CobrosHeaderComponent implements OnInit {
   public messageService = inject(MessageService);
   private services = inject(ServicesService);
   private autoSend = inject(AutoSendService);
+  private cdr = inject(ChangeDetectorRef);
   messageAlert!: MessageAlert;
 
 
@@ -44,6 +45,9 @@ export class CobrosHeaderComponent implements OnInit {
   public alertSaveOrExit: Boolean = false;
   public alertMessageOpen: Boolean = false;
   public alertMessageOpenSend: Boolean = false;
+  /** Alerta local de validación Enviar (no depende de app-message). */
+  public alertMessageOpenValidation = false;
+  public validationFailureMessage = '';
 
   public textAlertButtonCancel: String = '';
   public textAlertButtonConfirm: String = '';
@@ -52,7 +56,6 @@ export class CobrosHeaderComponent implements OnInit {
 
   public subscriberShow: any;
   public subscriberDisabled: any;
-  public subscriberToSend: any;
   public subscriptionAttachmentChanged: any;
   public subscriptionAttachmentWeightExceeded: any;
 
@@ -83,6 +86,13 @@ export class CobrosHeaderComponent implements OnInit {
     {
       text: '',
       role: 'confirm'
+    },
+  ];
+
+  public alertButtonsValidation = [
+    {
+      text: 'Aceptar',
+      role: 'confirm',
     },
   ];
 
@@ -161,39 +171,39 @@ export class CobrosHeaderComponent implements OnInit {
 
         this.alertButtonsSend[0].text = this.collectService.collectionTagsDenario.get('DENARIO_BOTON_CANCELAR')!
         this.alertButtonsSend[1].text = this.collectService.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
+        this.alertButtonsValidation[0].text =
+          this.collectService.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')! || 'Aceptar';
       }
     })
 
     this.subscriberShow = this.collectService.showButtons.subscribe((data: Boolean) => {
       this.collectService.showHeaderButtons = data;
+      if (data && !this.collectService.isCollectionReadOnlyForEdit()) {
+        this.resetSendValidationAlerts();
+        this.collectService.resetSendValidationUx();
+      }
     });
 
     this.subscriberDisabled = this.collectService.collectValidToSave.subscribe((data: Boolean) => {
       this.collectService.disableSavedButton = data ? false : true;
     });
 
-    this.subscriberToSend = this.collectService.collectValidToSend.subscribe((validToSend: Boolean) => {
-      this.collectService.disableSendButton = validToSend ? false : true;
-    });
-
     this.subscriptionAttachmentChanged = this.adjuntoService.AttachmentChanged.subscribe(() => {
-      this.collectService.markCollectionDirty();
-      this.collectService.validateToSend();
-      this.collectService.disableSavedButton = this.collectService.disableSendButton;
+      this.collectService.notifyCollectionEdited();
+      this.cdr.detectChanges();
     });
     this.subscriptionAttachmentWeightExceeded = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
-      this.collectService.disableSavedButton = true;
+      this.collectService.updateSaveButtonAvailability();
       this.collectService.disableSendButton = true;
     })
   }
 
   ngOnDestroy() {
-    this.subscriberShow.unsubscribe();
-    this.subscriberDisabled.unsubscribe();
-    this.subscriberToSend.unsubscribe();
-    this.backButtonSubscription.unsubscribe();
-    this.subscriptionAttachmentChanged.unsubscribe();
-    this.subscriptionAttachmentWeightExceeded.unsubscribe();
+    this.subscriberShow?.unsubscribe();
+    this.subscriberDisabled?.unsubscribe();
+    this.backButtonSubscription?.unsubscribe();
+    this.subscriptionAttachmentChanged?.unsubscribe();
+    this.subscriptionAttachmentWeightExceeded?.unsubscribe();
   }
 
   resetValues() {
@@ -248,6 +258,7 @@ export class CobrosHeaderComponent implements OnInit {
     this.collectService.hidePayments = false;
     this.collectService.newCollect = false;
     this.collectService.resetCollectionExitBaseline();
+    this.collectService.resetSendValidationUx();
     this.resetValues();
     this.collectService.showBackRoute('cobros');
   }
@@ -335,15 +346,19 @@ export class CobrosHeaderComponent implements OnInit {
     }
   }
 
+  private resetSendValidationAlerts(): void {
+    this.alertMessageOpenValidation = false;
+    this.validationFailureMessage = '';
+    this.alertMessageOpenSend = false;
+  }
+
   private async finishAfterSendNavigation(): Promise<void> {
+    this.resetSendValidationAlerts();
+    this.collectService.resetCollectionSessionState();
     this.collectService.initCollect = true;
-    this.collectService.disableSavedButton = true;
-    this.collectService.disableSendButton = true;
     this.collectService.showHeaderButtons = false;
     this.collectService.cobroComponent = false;
     this.collectService.cobrosComponent = true;
-    this.collectService.collectValid = false;
-    this.collectService.collectionIsSave = false;
     await this.messageService.hideLoading();
   }
 
@@ -414,92 +429,40 @@ export class CobrosHeaderComponent implements OnInit {
       return;
     }
 
-    if (this.collectService.collection.coType !== '2'
-      && (this.collectService.hasEmptyCollectionPayments()
-        || this.collectService.hasIncompletePaymentMethods())) {
-      this.collectService.blockSaveAndSendForInvalidPayments();
-      this.messageService.transaccionMsjModalNB(
-        this.collectService.hasEmptyCollectionPayments()
-          ? 'Hay un método de pago vacío. Complételo o elimínelo antes de guardar o enviar.'
-          : 'Hay un método de pago incompleto. Complételo o elimínelo antes de guardar o enviar.'
-      );
+    if (sendOrSave) {
+      void this.persistSendAfterRevalidation();
       return;
     }
 
-    if (this.collectService.collection.coType == "0" && sendOrSave) {
-      //ES UN COBRO, SE DEBE BUSCAR EN TODOS LOS DETAILS SI HAY RETENCIONES, SI HAY RETENCIONES HAY QUE BUSCAR
-      // SI HAY ADJUNTOS, SI NO HAY, SE DEBE ENVIAR MSJ DE ALERTA Y
-      //NO SE DEBE PERMITIR EL ENVIO HASTA QUE SE ADJUNTE AL MENOS UN DOCUMENTO
-      try {
-        const details = this.collectService.collection?.collectionDetails;
-        const hasRetentions = Array.isArray(details) && details.some(d =>
-          this.collectService.getDetailRetentionTotal(d) > 0
-        );
+    this.persistSaveOnly();
+  }
 
-
-        //NUEVA VALIDACION, SI LA CONFIGURACION DE LA EMPRESA INDICA QUE LOS COBROS REQUIEREN ADJUNTOS, SE VALIDA QUE HAYA ADJUNTOS INDEPENDIENTEMENTE DE SI HAY RETENCIONES O NO
-        if (this.collectService.requiredCollectionAttachments) {
-          if (!this.adjuntoService.hasItems()) {
-            //NO HAY ADJUNTOS
-            this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_RET_MSJ_COLLECTION_NO_ATTACHMENTS')!);
-            return;
-          }
-        }
-
-        // Guardar resultado en el servicio para uso posterior y log para depuración
-        //this.collectService.isRetention = !!hasRetentions;
-        if (hasRetentions) {
-          console.log('CobrosHeader: Detected retention amounts in collectionDetails', {
-            collectionId: this.collectService.collection?.coCollection,
-            hasRetentions
-          });
-
-          if (!this.adjuntoService.hasItems()) {
-            //NO HAY ADJUNTOS
-            this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_MSJ_RETENTION_NO_ATTACHMENTS')!);
-            return;
-          }
-        }
-      } catch (err) {
-        console.error('CobrosHeader: error comprobando retenciones en collectionDetails', err);
+  /**
+   * Enviar: revalida el colector completo antes de persistir (COB-SEND-ATTACH-001).
+   * Evita que confirmación abierta o prepaid dejen pasar adjuntos/campos/tolerancia.
+   */
+  private async persistSendAfterRevalidation(): Promise<void> {
+    this.collectService.sendValidationAttempted = true;
+    const blocking = await this.collectService.evaluateSendReadiness();
+    if (blocking.length > 0 || !this.collectService.canProceedSendAfterValidation()) {
+      this.collectService.sendBlockedByFields = true;
+      this.collectService.updateSendButtonAvailability();
+      const issue = blocking[0] ?? this.collectService.lastSendIssues[0];
+      if (this.collectService.collection.coType === '2') {
+        this.collectService.retentionSendFocusDocIndex =
+          this.collectService.findFirstIncompleteRetentionDocumentIndex();
       }
-    }
-    
-    if (this.collectService.collection.coType == "1" && sendOrSave) {
-      if (this.collectService.requiredAnticipoAttachments) {
-        if (!this.adjuntoService.hasItems()) {
-          this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_RET_MSJ_ANTICIPO_NO_ATTACHMENTS')!);
-          return;
-        }
-      }
-    }
-
-    if (this.collectService.collection.coType == "2") {
-      if (sendOrSave && this.collectService.requiredRetentionAttachments) {
-        if (!this.adjuntoService.hasItems()) {
-          this.messageService.transaccionMsjModalNB(this.collectService.collectionTags.get('COB_RET_MSJ_RETENTION_NO_ATTACHMENTS')!);
-          return;
-        }
-      }
-      if (!this.collectService.areAllRetentionDetailsComplete(this.collectService.collection.collectionDetails)) {
-        this.messageService.transaccionMsjModalNB(
-          'Cada documento seleccionado debe tener retención completa (monto, comprobante y fecha).'
-        );
-        return;
-      }
-    }
-
-    if (sendOrSave && this.collectService.collection.coType !== '2') {
-      if (this.collectService.hasIncompletePaymentMethods()) {
-        this.collectService.blockSaveAndSendForInvalidPayments();
-        return;
-      }
+      this.showSendValidationAlert(
+        issue?.message ?? this.collectService.getCollectionSendValidationMessage(),
+      );
+      this.collectService.requestSendValidationTabFocus(issue?.tab);
+      return;
     }
 
     this.collectService.collectionIsSave = true;
 
-    // Cobro normal Enviar: online=loading+AutoSend; offline=aviso cola (sin “será enviado” online).
-    if (sendOrSave && this.collectService.collection.coType === '0') {
+    // Cobro normal Enviar: online=loading+AutoSend; offline=aviso cola.
+    if (this.collectService.collection.coType === '0') {
       this.collectService.collection.stDelivery = 2;
       this.collectService.collection.stCollection = this.COLLECT_STATUS_TO_SEND;
       void this.sendNormalCollectionWithOptionalPrepaid().catch(err => {
@@ -516,97 +479,156 @@ export class CobrosHeaderComponent implements OnInit {
         this.collectService.syncAnticipoTotalsBeforePersist();
       }
 
-      if (sendOrSave) {
-        this.collectService.collection.stDelivery = 2;
-        this.collectService.collection.stCollection = this.COLLECT_STATUS_TO_SEND;
+      this.collectService.collection.stDelivery = 2;
+      this.collectService.collection.stCollection = this.COLLECT_STATUS_TO_SEND;
 
-        // Otros tipos (anticipo manual / retención / IGTF): flujo previo
-        this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(response => {
-          this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros").then(() => {
-            console.log(response);
-            this.collectService.applyPersistSucceededBaseline();
-            this.saveSendNewCollection(true, this.collectService.collection.coCollection);
-            this.collectService.refreshAutomatedPrepaidBeforeSend().then((shouldCreatePrepaid) => {
-              if (shouldCreatePrepaid) {
-                this.collectService.createAnticipoCollection(this.synchronizationServices.getDatabase(), this.collectService.collection).then(resp => {
-                  console.log(resp, " SE CREO ANTICIPO AUTOMATICO");
-                  this.collectService.createAutomatedPrepaid = false;
-                  this.collectService.anticipoAutomatico = [];
-                });
-              }
-
-              this.finishAfterSendNavigation();
-            });
-          })
-        })
-      } else {
-        //salvo
-        this.collectService.collection.stDelivery = 3;
-        this.collectService.collection.stCollection = 3;
-        this.collectService.saveCollection(this.synchronizationServices.getDatabase(), this.collectService.collection, sendOrSave).then(async response => {
-          await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, "cobros");
+      this.collectService.saveCollection(
+        this.synchronizationServices.getDatabase(),
+        this.collectService.collection,
+        true,
+      ).then(response => {
+        this.adjuntoService.savePhotos(
+          this.synchronizationServices.getDatabase(),
+          this.collectService.collection.coCollection,
+          'cobros',
+        ).then(() => {
           console.log(response);
           this.collectService.applyPersistSucceededBaseline();
-          this.saveSendNewCollection(false, this.collectService.collection.coCollection);
-          switch (this.collectService.collection.coType) {
-            case "0": {
-              this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
-              break;
+          this.saveSendNewCollection(true, this.collectService.collection.coCollection);
+          this.collectService.refreshAutomatedPrepaidBeforeSend().then((shouldCreatePrepaid) => {
+            if (shouldCreatePrepaid) {
+              this.collectService.createAnticipoCollection(
+                this.synchronizationServices.getDatabase(),
+                this.collectService.collection,
+              ).then(resp => {
+                console.log(resp, ' SE CREO ANTICIPO AUTOMATICO');
+                this.collectService.createAutomatedPrepaid = false;
+                this.collectService.anticipoAutomatico = [];
+              });
             }
 
-            case "1": {
-              this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_ANTICIPO_MSG')!;
-              break;
-            }
-
-            case "2": {
-              this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_RETENTION_MSG')!;
-              break;
-            }
-
-            case "3": {
-              this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_IGTF_MSG')!;
-              break;
-            }
-            default: {
-              this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
-            }
-          }
-          this.alertMessageOpen = true;
-          this.messageService.hideLoading();
-        })
-      }
+            this.finishAfterSendNavigation();
+          });
+        });
+      });
     });
+  }
 
+  private persistSaveOnly(): void {
+    this.collectService.collectionIsSave = true;
+
+    this.messageService.showLoading().then(async () => {
+      if (this.collectService.collection.coType === '1') {
+        await this.collectService.calcularMontos('', 0);
+        this.collectService.syncAnticipoTotalsBeforePersist();
+      }
+
+      this.collectService.collection.stDelivery = 3;
+      this.collectService.collection.stCollection = 3;
+      this.collectService.saveCollection(
+        this.synchronizationServices.getDatabase(),
+        this.collectService.collection,
+        false,
+      ).then(async response => {
+        await this.adjuntoService.savePhotos(
+          this.synchronizationServices.getDatabase(),
+          this.collectService.collection.coCollection,
+          'cobros',
+        );
+        console.log(response);
+        this.collectService.applyPersistSucceededBaseline();
+        this.saveSendNewCollection(false, this.collectService.collection.coCollection);
+        switch (this.collectService.collection.coType) {
+          case '0': {
+            this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
+            break;
+          }
+          case '1': {
+            this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_ANTICIPO_MSG')!;
+            break;
+          }
+          case '2': {
+            this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_RETENTION_MSG')!;
+            break;
+          }
+          case '3': {
+            this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_IGTF_MSG')!;
+            break;
+          }
+          default: {
+            this.collectService.mensaje = this.collectService.collectionTags.get('COB_SAVE_COLLECT_MSG')!;
+          }
+        }
+        this.alertMessageOpen = true;
+        this.messageService.hideLoading();
+      });
+    });
+  }
+
+  /**
+   * Alerta en el header (misma capa que Enviar).
+   * No depende de app-message / transaccionMsjNB.
+   */
+  private showSendValidationAlert(rawMessage: string): void {
+    const message = (rawMessage ?? '').toString().trim()
+      || 'Complete los campos obligatorios antes de enviar.';
+    this.validationFailureMessage = message;
+    this.alertMessageOpenValidation = true;
+    this.cdr.detectChanges();
+  }
+
+  setResultValidation(): void {
+    this.alertMessageOpenValidation = false;
   }
 
   sendCollect() {
-    switch (this.collectService.collection.coType) {
-      case "0": {
-        this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_COLLECT_MSG')!;
-        break;
+    this.collectService.sendValidationAttempted = true;
+
+    void this.collectService.validateToSend().then(() => {
+      // COB-SEND-ATTACH-001: no confiar solo en lastValidToSend (prepaid podía forzarlo).
+      if (!this.collectService.canProceedSendAfterValidation()) {
+        this.collectService.sendBlockedByFields = true;
+        this.collectService.updateSendButtonAvailability();
+        const issue = this.collectService.lastSendIssues[0];
+        if (this.collectService.collection.coType === '2') {
+          this.collectService.retentionSendFocusDocIndex =
+            this.collectService.findFirstIncompleteRetentionDocumentIndex();
+        }
+        this.showSendValidationAlert(
+          issue?.message ?? this.collectService.getCollectionSendValidationMessage(),
+        );
+        this.collectService.requestSendValidationTabFocus(issue?.tab);
+        return;
       }
 
-      case "1": {
-        this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_ANTICIPO_MSG')!;
-        break;
+      this.collectService.sendBlockedByFields = false;
+      this.collectService.updateSendButtonAvailability();
+
+      switch (this.collectService.collection.coType) {
+        case '0': {
+          this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_COLLECT_MSG')!;
+          break;
+        }
+        case '1': {
+          this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_ANTICIPO_MSG')!;
+          break;
+        }
+        case '2': {
+          this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_RETENTION_MSG')!;
+          break;
+        }
+        case '3': {
+          this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_IGTF_MSG')!;
+          break;
+        }
+        default: {
+          this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_COLLECT_MSG')!;
+        }
       }
 
-      case "2": {
-        this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_RETENTION_MSG')!;
-        break;
-      }
-
-      case "3": {
-        this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_IGTF_MSG')!;
-        break;
-      }
-      default: {
-        this.collectService.mensaje = this.collectService.collectionTags.get('COB_SEND_COLLECT_MSG')!;
-      }
-    }
-
-    this.alertMessageOpenSend = true;
+      this.alertMessageOpenSend = true;
+      this.cdr.detectChanges();
+    });
   }
 
 

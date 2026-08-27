@@ -64,6 +64,8 @@ export class AutoSendService implements OnInit {
   private static readonly MAX_PENDING_QUEUE_PASSES = 5;
   /** Evita POST duplicado de la misma visita mientras un envÃ­o sigue en curso. */
   private visitsInFlight = new Set<string>();
+  /** Modal 118/119: solo la primera vez por sesión de app/usuario. */
+  private sessionBusinessRejectAlertShown = false;
 
   constructor(
     private dbService: SynchronizationDBService,
@@ -90,6 +92,11 @@ export class AutoSendService implements OnInit {
 
   ngOnInit(): void {
     void this.runPendingQueue();
+  }
+
+  /** Reinicia el aviso 118/119 (login nuevo / nueva sesión de usuario). */
+  resetSessionBusinessRejectAlerts(): void {
+    this.sessionBusinessRejectAlertShown = false;
   }
 
   async runPendingQueue(): Promise<void> {
@@ -643,9 +650,13 @@ export class AutoSendService implements OnInit {
       }
 
       if (result && (result.errorCode === '118' || result.errorCode === '119')) {
-        this.messageAlert = new MessageAlert('Denario Premium', result.errorMessage);
-        this.messageService.alertModal(this.messageAlert);
-        return false;
+        if (!this.sessionBusinessRejectAlertShown) {
+          this.messageAlert = new MessageAlert('Denario Premium', result.errorMessage);
+          this.messageService.alertModal(this.messageAlert);
+          this.sessionBusinessRejectAlertShown = true;
+        }
+        // Mantener pendiente; no cortar cola ni spamear en reintentos de BackgroundSync.
+        return true;
       }
 
       if (this.isBadRequestResponse(result)) {

@@ -120,6 +120,46 @@ describe('AutoSendService', () => {
     );
   });
 
+  it('shows 118 alert once per session and keeps pending without stopping retries', async () => {
+    localStorage.setItem('connected', 'true');
+    (service as any).callService.and.returnValue(
+      of({
+        errorCode: '118',
+        errorMessage: 'Rechazo de negocio 118',
+      })
+    );
+
+    const first = await service.sendTransaction({ payload: 'x' }, 'order', 'CO-118');
+    const second = await service.sendTransaction({ payload: 'x' }, 'order', 'CO-118');
+
+    expect(first).toBeTrue();
+    expect(second).toBeTrue();
+    expect(alertModalSpy).toHaveBeenCalledTimes(1);
+    expect(executeSqlSpy).not.toHaveBeenCalledWith(
+      jasmine.stringMatching(/DELETE FROM pending_transactions/),
+      jasmine.any(Array)
+    );
+
+    service.resetSessionBusinessRejectAlerts();
+    await service.sendTransaction({ payload: 'x' }, 'order', 'CO-118b');
+    expect(alertModalSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('treats 119 like 118 for session alert dedupe', async () => {
+    localStorage.setItem('connected', 'true');
+    (service as any).callService.and.returnValue(
+      of({
+        errorCode: '119',
+        errorMessage: 'Rechazo de negocio 119',
+      })
+    );
+
+    await service.sendTransaction({ payload: 'x' }, 'visit', 'V-119');
+    await service.sendTransaction({ payload: 'x' }, 'visit', 'V-119');
+
+    expect(alertModalSpy).toHaveBeenCalledTimes(1);
+  });
+
   it('delegates ngOnInit to runPendingQueue', () => {
     service.ngOnInit();
     expect(runPendingQueueSpy).toHaveBeenCalled();

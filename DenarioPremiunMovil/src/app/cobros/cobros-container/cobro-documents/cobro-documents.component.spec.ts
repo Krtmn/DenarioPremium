@@ -17,8 +17,12 @@ describe('CobrosDocumentComponent', () => {
   let component: CobrosDocumentComponent;
   let fixture: ComponentFixture<CobrosDocumentComponent>;
   let collectServiceMock: any;
+  let globalConfigMock: { get: jasmine.Spy };
 
   beforeEach(waitForAsync(() => {
+    globalConfigMock = {
+      get: jasmine.createSpy('get').and.returnValue(undefined),
+    };
     collectServiceMock = {
       documentSales: [],
       documentSalesBackup: [],
@@ -45,7 +49,7 @@ describe('CobrosDocumentComponent', () => {
       providers: [
         { provide: CollectionService, useValue: collectServiceMock },
         { provide: ClienteSelectorService, useValue: {} },
-        { provide: GlobalConfigService, useValue: { get: () => undefined } },
+        { provide: GlobalConfigService, useValue: globalConfigMock },
         { provide: CurrencyService, useValue: { formatNumber: (n: number) => String(n) } },
         {
           provide: DateServiceService,
@@ -243,5 +247,23 @@ describe('CobrosDocumentComponent', () => {
 
     expect(collectServiceMock.collection.collectionDetails[0].nuAmountPaid).toBe(500);
     expect(collectServiceMock.collection.collectionDetails[0].nuAmountPaidConversion).toBe(500);
+  });
+
+  it('COB-RET-SEND-001: shouldShowDocumentRetentionSendError after send attempt', () => {
+    collectServiceMock.sendValidationAttempted = true;
+    collectServiceMock.collection = {
+      coType: '2',
+      collectionDetails: [{ coDocument: 'FAC-1', nuAmountRetention: 0, nuAmountRetention2: 0 }],
+    };
+    collectServiceMock.documentSales = [{
+      isSelected: true,
+      positionCollecDetails: 0,
+    }];
+    collectServiceMock.isRetentionDetailComplete = jasmine.createSpy('isRetentionDetailComplete').and.returnValue(false);
+
+    expect(component.shouldShowDocumentRetentionSendError(0)).toBeTrue();
+
+    collectServiceMock.sendValidationAttempted = false;
+    expect(component.shouldShowDocumentRetentionSendError(0)).toBeFalse();
   });
 });

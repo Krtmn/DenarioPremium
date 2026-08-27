@@ -30,7 +30,24 @@ describe('CobroPagosComponent', () => {
       syncExchangeRateToCollectionHeader: jasmine.createSpy('syncExchangeRateToCollectionHeader').and.returnValue(1),
       convertirMonto: jasmine.createSpy('convertirMonto').and.callFake((amount: number) => amount),
       validateToSend: jasmine.createSpy('validateToSend'),
+      notifyCollectionEdited: jasmine.createSpy('notifyCollectionEdited'),
+      markCollectionDirty: jasmine.createSpy('markCollectionDirty'),
+      updateSendButtonAvailability: jasmine.createSpy('updateSendButtonAvailability'),
+      refreshSendBlockedState: jasmine.createSpy('refreshSendBlockedState'),
+      refreshSendUxAfterEdit: jasmine.createSpy('refreshSendUxAfterEdit'),
+      sendValidationAttempted: false,
+      isAddPaymentMethodDisabled: jasmine.createSpy('isAddPaymentMethodDisabled').and.returnValue(false),
+      blockSaveAndSendForInvalidPayments: jasmine.createSpy('blockSaveAndSendForInvalidPayments'),
+      lengthMethodPaid: 0,
+      tiposPago: [],
+      dateRate: '2026-08-04',
+      validateCollectionDate: false,
+      getIndexedPaymentFieldErrors: jasmine.createSpy('getIndexedPaymentFieldErrors').and.returnValue([]),
+      collectionTags: new Map<string, string>(),
       cleanString: (value: string) => value,
+      buildAutomatedPrepaidMessage: jasmine.createSpy('buildAutomatedPrepaidMessage').and.returnValue('Mensaje anticipo automático'),
+      createAutomatedPrepaid: false,
+      recentOpenCollect: false,
     };
 
     TestBed.configureTestingModule({
@@ -100,7 +117,7 @@ describe('CobroPagosComponent', () => {
     expect(component.getFilteredBanks(banks, searchKey)).toEqual(banks);
   });
 
-  it('COB-TR-002: setMonto forces Enviar OFF before revalidation when lowering amount', () => {
+  it('COB-UX-SEND-001: setMonto refreshes send UX state instead of forcing Enviar OFF', () => {
     collectionServiceMock.disableSendButton = false;
     collectionServiceMock.pagoEfectivo = [{
       monto: 100,
@@ -118,10 +135,36 @@ describe('CobroPagosComponent', () => {
 
     component.setMonto(50, 0, 'ef');
 
-    expect(collectionServiceMock.disableSendButton).toBeTrue();
+    expect(collectionServiceMock.disableSendButton).toBeFalse();
     expect(collectionServiceMock.pagoEfectivo[0].monto).toBe(50);
     expect(collectionServiceMock.collection.collectionPayments[0].nuAmountPartial).toBe(50);
     expect(component.validatePayment).toHaveBeenCalledWith('ef', 0);
+  });
+
+  it('validatePaymentMethodsForSend refreshes send UX after field change', () => {
+    component.validatePaymentMethodsForSend();
+    expect(collectionServiceMock.refreshSendUxAfterEdit).toHaveBeenCalled();
+  });
+
+  it('shouldShowPaymentFieldError is true only after send attempt with field errors', () => {
+    collectionServiceMock.sendValidationAttempted = false;
+    collectionServiceMock.getIndexedPaymentFieldErrors.and.returnValue(['monto']);
+    expect(component.shouldShowPaymentFieldError('ef', 0, 'monto')).toBeFalse();
+
+    collectionServiceMock.sendValidationAttempted = true;
+    expect(component.shouldShowPaymentFieldError('ef', 0, 'monto')).toBeTrue();
+    expect(component.shouldShowPaymentFieldError('ef', 0, 'fecha')).toBeFalse();
+  });
+
+  it('COB-DIFF-001: differenceCode error label after send attempt', () => {
+    collectionServiceMock.sendValidationAttempted = true;
+    collectionServiceMock.getIndexedPaymentFieldErrors.and.returnValue(['differenceCode']);
+    collectionServiceMock.collectionTags = new Map([
+      ['COB_MSJ_ERROR_NO_DIFFERENCE_CODE', 'Seleccione código diferencia'],
+    ]);
+
+    expect(component.shouldShowPaymentFieldError('ot', 0, 'differenceCode')).toBeTrue();
+    expect(component.getDifferenceCodeRequiredFieldLabel()).toContain('código diferencia');
   });
 
   it('COB-DATE-001: getFechaValor TR writes daValue and daCollectionPayment', () => {
@@ -164,5 +207,25 @@ describe('CobroPagosComponent', () => {
     expect(collectionServiceMock.pagoMovil[0].fecha).toBe('2026-08-01');
     expect(payment.daValue).toBe('2026-08-01');
     expect(payment.daCollectionPayment).toBe('2026-08-01');
+  });
+
+  it('COB-UX-SEND-002: addTipoPago refreshes Enviar button availability', () => {
+    component.addTipoPago('ef');
+
+    expect(collectionServiceMock.collection.collectionPayments.length).toBe(1);
+    expect(collectionServiceMock.updateSendButtonAvailability).toHaveBeenCalled();
+  });
+
+  it('COB-PREPAID-003: checkCreateAutomatedPrepaid usa mensaje dedicado aunque mensaje global sea de adjuntos', () => {
+    collectionServiceMock.createAutomatedPrepaid = true;
+    collectionServiceMock.recentOpenCollect = false;
+    collectionServiceMock.mensaje = 'Para poder enviar el Cobro, debe agregar al menos un adjunto';
+
+    component.checkCreateAutomatedPrepaid();
+
+    expect(collectionServiceMock.buildAutomatedPrepaidMessage).toHaveBeenCalled();
+    expect(component.automatedPrepaidAlertMessage).toBe('Mensaje anticipo automático');
+    expect(component.alertMessageOpen).toBeTrue();
+    expect(collectionServiceMock.mensaje).toBe('Para poder enviar el Cobro, debe agregar al menos un adjunto');
   });
 });
