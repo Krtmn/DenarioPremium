@@ -695,26 +695,25 @@ export class CollectionService {
       return Promise.resolve(true);
     }
 
-    const findByCo = (co?: string) => {
-      if (!co) return undefined;
-      return this.currencyList.find(c => ((c?.coCurrency ?? '').toString() === co.toString()));
-    };
-
     const st = Number(this.collection?.stDelivery ?? this.COLLECT_STATUS_NEW);
     let chosen: Currencies | undefined;
 
     // 1) Si la colección ya tiene estado distinto de 0 -> respetar collection.coCurrency
+    //    (lookup case-insensitive + alias hard USD/$ para anticipo prepaidCurrency).
     if (st !== 0) {
-      const co = (this.collection?.coCurrency ?? '').toString();
-      chosen = findByCo(co);
+      const co = String(this.collection?.coCurrency ?? '').trim();
+      chosen = this.resolveCurrencyForPersistedCollection(co, this.collection?.idCurrency);
       if (chosen) {
         console.debug('[CollectionService] setCurrency: seleccionada por collection.coCurrency:', chosen.coCurrency);
+        this.applyChosenCurrency(chosen);
       } else {
-        console.warn('[CollectionService] setCurrency: collection.coCurrency no encontrada en currencyList:', co);
-        // fallback razonable: intentar enterprise default u otra heurística más abajo
+        console.warn(
+          '[CollectionService] setCurrency: collection.coCurrency no encontrada en currencyList; se preserva persistido:',
+          co,
+        );
+        // No caer a currencyList[0] (local): eso mostraba BSD con anticipo hard en BD.
+        this.applyChosenCurrency(undefined, { preservePersistedCurrency: true });
       }
-      // aplicar elección (si chosen undefined, applyChosenCurrency manejará fallback)
-      this.applyChosenCurrency(chosen);
       return Promise.resolve(true);
     }
 
@@ -746,7 +745,7 @@ export class CollectionService {
       // Si no encontró por flag, fallback a enterprise default o primera moneda
       if (!chosen) {
         const enterpriseCo = (this.enterpriseSelected?.coCurrencyDefault ?? '').toString();
-        if (enterpriseCo) chosen = findByCo(enterpriseCo);
+        if (enterpriseCo) chosen = this.findCurrencyByCoCurrency(enterpriseCo);
       }
 
       if (!chosen) {
@@ -761,7 +760,7 @@ export class CollectionService {
     // 3) currencyModule deshabilitado -> usar enterpriseSelected.coCurrencyDefault
     const enterpriseDefaultCo = (this.enterpriseSelected?.coCurrencyDefault ?? '').toString();
     if (enterpriseDefaultCo) {
-      chosen = findByCo(enterpriseDefaultCo);
+      chosen = this.findCurrencyByCoCurrency(enterpriseDefaultCo);
       if (chosen) {
         console.debug('[CollectionService] currencyModule deshabilitado: selected by enterprise default:', chosen.coCurrency);
         this.applyChosenCurrency(chosen);
@@ -787,30 +786,80 @@ export class CollectionService {
   }
 
   /**
-   * Aplica la moneda elegida: sincroniza collection, detecta local/hard si faltan,
-   * actualiza flags y dispara conversiones/documentos cuando corresponda.
+   * Resuelve moneda de catálogo para un cobro/anticipo ya persistido.
+   * Prioridad: código (alias hard) → idCurrency → lado local/hard.
    */
-  private applyChosenCurrency(chosen?: Currencies) {
-    const isTrue = (v: any) => v === true || String(v ?? '').toLowerCase() === 'true';
+  private resolveCurrencyForPersistedCollection(
+    coCurrency?: string,
+    idCurrency?: number | null,
+  ): Currencies | undefined {
+    const byCode = this.findCurrencyByCoCurrency(String(coCurrency ?? ''));
+    if (byCode) {
+      return byCode;
+    }
 
-    // Garantizar un objeto válido
-    this.currencySelected = (chosen ?? (this.currencyList.length ? this.currencyList[0] : ({} as Currencies))) as Currencies;
-
-    // Asegurar referencias local/hard si aún no están establecidas
-    if (!this.localCurrency || !this.localCurrency.coCurrency) {
-      if (isTrue(this.currencySelected?.localCurrency)) {
-        this.localCurrency = this.currencySelected;
-      } else {
-        const detectedLocal = this.currencyList.find(c => isTrue(c?.localCurrency));
-        if (detectedLocal) this.localCurrency = detectedLocal;
+    const id = Number(idCurrency ?? 0);
+    if (id > 0 && Array.isArray(this.currencyList)) {
+      const byId = this.currencyList.find(c => Number(c?.idCurrency) === id);
+      if (byId) {
+        return byId;
       }
     }
 
-    if (!this.hardCurrency || !this.hardCurrency.coCurrency) {
-      const detectedHard = this.currencyList.find(c => isTrue(c?.hardCurrency) && c !== this.localCurrency);
-      if (detectedHard) this.hardCurrency = detectedHard;
-      else this.hardCurrency = this.currencyList.find(c => c !== this.localCurrency) ?? this.currencyList[0];
+    const co = String(coCurrency ?? '').trim();
+    if (!co || !Array.isArray(this.currencyList)) {
+      return undefined;
     }
+
+    // Último intento: lado local vs hard según flags/aliases conocidos.
+    if (this.isAutomatedPrepaidCurrencyLocal(co)) {
+      return this.currencyList.find(c => this.isCurrencyFlagTrue(c?.localCurrency));
+    }
+    return this.currencyList.find(c => this.isCurrencyFlagTrue(c?.hardCurrency));
+  }
+
+  /**
+   * Aplica la moneda elegida: sincroniza collection, detecta local/hard si faltan,
+   * actualiza flags y dispara conversiones/documentos cuando corresponda.
+   */
+  private applyChosenCurrency(
+    chosen?: Currencies,
+    options?: { preservePersistedCurrency?: boolean },
+  ) {
+    const isTrue = (v: any) => v === true || String(v ?? '').toLowerCase() === 'true';
+    const preservePersisted = options?.preservePersistedCurrency === true;
+    const persistedCo = String(this.collection?.coCurrency ?? '').trim();
+
+    if (chosen) {
+      this.currencySelected = chosen;
+    } else if (preservePersisted && persistedCo) {
+      // Reabrir sin match: no usar currencyList[0] (local) ni pisar BD en memoria.
+      console.warn(
+        '[CollectionService] applyChosenCurrency: sin match; se preserva coCurrency=',
+        persistedCo,
+      );
+      this.ensureLocalHardCurrencyRefs();
+      this.currencyLocal = false;
+      this.currencyHard = !this.isAutomatedPrepaidCurrencyLocal(persistedCo);
+      try {
+        if (this.multiCurrency || this.userCanSelectIGTF) {
+          this.setCurrencyConversion();
+        }
+      } catch (err) {
+        console.warn('[CollectionService] setCurrencyConversion failed', err);
+      }
+      try {
+        this.setCurrencyDocument();
+      } catch (err) {
+        console.warn('[CollectionService] setCurrencyDocument failed', err);
+      }
+      return;
+    } else {
+      this.currencySelected = (this.currencyList.length ? this.currencyList[0] : ({} as Currencies)) as Currencies;
+    }
+
+    // Asegurar referencias local/hard si aún no están establecidas
+    this.ensureLocalHardCurrencyRefs();
 
     // Sincronizar colección con la moneda seleccionada
     if (this.currencySelected && this.currencySelected.coCurrency) {
@@ -822,8 +871,10 @@ export class CollectionService {
     }
 
     // Flags para UI/uso posterior
-    this.currencyLocal = String(this.currencySelected?.localCurrency ?? '').toString() === 'true';
-    this.currencyHard = String(this.currencySelected?.hardCurrency ?? '').toString() === 'true';
+    this.currencyLocal = String(this.currencySelected?.localCurrency ?? '').toString() === 'true'
+      || this.currencySelected?.localCurrency === true;
+    this.currencyHard = String(this.currencySelected?.hardCurrency ?? '').toString() === 'true'
+      || this.currencySelected?.hardCurrency === true;
 
     // Configurar conversiones/documentos si procede
     try {
@@ -838,6 +889,26 @@ export class CollectionService {
       this.setCurrencyDocument();
     } catch (err) {
       console.warn('[CollectionService] setCurrencyDocument failed', err);
+    }
+  }
+
+  /** Garantiza localCurrency / hardCurrency desde currencyList sin mutar el cobro. */
+  private ensureLocalHardCurrencyRefs(): void {
+    const isTrue = (v: any) => v === true || String(v ?? '').toLowerCase() === 'true';
+
+    if (!this.localCurrency || !this.localCurrency.coCurrency) {
+      if (isTrue(this.currencySelected?.localCurrency)) {
+        this.localCurrency = this.currencySelected;
+      } else {
+        const detectedLocal = this.currencyList.find(c => isTrue(c?.localCurrency));
+        if (detectedLocal) this.localCurrency = detectedLocal;
+      }
+    }
+
+    if (!this.hardCurrency || !this.hardCurrency.coCurrency) {
+      const detectedHard = this.currencyList.find(c => isTrue(c?.hardCurrency) && c !== this.localCurrency);
+      if (detectedHard) this.hardCurrency = detectedHard;
+      else this.hardCurrency = this.currencyList.find(c => c !== this.localCurrency) ?? this.currencyList[0];
     }
   }
 
@@ -2191,32 +2262,128 @@ export class CollectionService {
   public resolveAutomatedPrepaidCurrency(): string {
     const configured = String(this.prepaidCurrency ?? '').trim();
     if (configured) {
-      return configured;
+      // Preferir el coCurrency canónico de la lista (mismo código, mayúsculas/espacios).
+      const match = this.findCurrencyByCoCurrency(configured);
+      return String(match?.coCurrency ?? configured).trim();
     }
     return String(this.collection?.coCurrency ?? '');
   }
 
-  private resolveCurrencyIdByCoCurrency(coCurrency: string): number {
-    const match = this.currencyList?.find(
-      item => String(item?.coCurrency ?? '').trim() === String(coCurrency ?? '').trim(),
+  private isCurrencyFlagTrue(value: unknown): boolean {
+    return value === true || String(value ?? '').toLowerCase() === 'true';
+  }
+
+  private isHardCurrencyAlias(coCurrency: string): boolean {
+    const target = String(coCurrency ?? '').trim().toLowerCase();
+    return target === 'usd' || target === '$' || target === 'us$' || target === 'dolar' || target === 'dólar';
+  }
+
+  private findCurrencyByCoCurrency(coCurrency: string): Currencies | undefined {
+    const target = String(coCurrency ?? '').trim().toLowerCase();
+    if (!target || !Array.isArray(this.currencyList)) {
+      return undefined;
+    }
+    const exact = this.currencyList.find(
+      item => String(item?.coCurrency ?? '').trim().toLowerCase() === target,
     );
+    if (exact) {
+      return exact;
+    }
+
+    // prepaidCurrency=USD vs catálogo hard="$" (mismo lado, distinto código).
+    if (this.isHardCurrencyAlias(target)) {
+      const byHardFlag = this.currencyList.find(item => this.isCurrencyFlagTrue(item?.hardCurrency));
+      if (byHardFlag) {
+        return byHardFlag;
+      }
+      return this.currencyList.find(item =>
+        this.isHardCurrencyAlias(String(item?.coCurrency ?? '')),
+      );
+    }
+
+    return undefined;
+  }
+
+  private resolveCurrencyIdByCoCurrency(coCurrency: string): number {
+    const match = this.findCurrencyByCoCurrency(coCurrency);
     return Number(match?.idCurrency ?? this.collection?.idCurrency ?? 0);
   }
 
-  /** Monto excedente expresado en la moneda del anticipo automático. */
-  public getAutomatedPrepaidExcessAmount(): number {
-    const excess = this.syncPrepaidDifferenceAmounts();
-    const targetCurrency = this.resolveAutomatedPrepaidCurrency();
-    if (!targetCurrency || targetCurrency === this.collection.coCurrency) {
-      return excess;
+  /**
+   * True si el código de moneda es la moneda local (BS); false si es hard ($/USD).
+   * Usa flags de currencyList / localCurrency / hardCurrency.
+   */
+  public isAutomatedPrepaidCurrencyLocal(coCurrency: string): boolean {
+    const found = this.findCurrencyByCoCurrency(coCurrency);
+    if (found) {
+      if (this.isCurrencyFlagTrue(found.localCurrency)) {
+        return true;
+      }
+      if (this.isCurrencyFlagTrue(found.hardCurrency)) {
+        return false;
+      }
     }
 
-    const converted = this.convertirMonto(
-      excess,
-      this.getEffectiveExchangeRate(),
-      this.collection.coCurrency,
-    );
-    return converted > 0 ? converted : excess;
+    const localCo = String(this.localCurrency?.coCurrency ?? '').trim().toLowerCase();
+    const hardCo = String(this.hardCurrency?.coCurrency ?? '').trim().toLowerCase();
+    const target = String(coCurrency ?? '').trim().toLowerCase();
+    if (target && localCo && target === localCo) {
+      return true;
+    }
+    if (target && hardCo && target === hardCo) {
+      return false;
+    }
+
+    // Fallback: moneda seleccionada del cobro.
+    const collectionCo = String(this.collection?.coCurrency ?? '').trim().toLowerCase();
+    if (target && target === collectionCo) {
+      return this.isCurrencyFlagTrue(this.currencySelected?.localCurrency);
+    }
+    return false;
+  }
+
+  /**
+   * Convierte un monto desde la moneda del cobro hacia prepaidCurrency.
+   * Cobro local → anticipo hard: / tasa; cobro hard → anticipo local: * tasa.
+   */
+  public convertAmountFromCollectionToPrepaidCurrency(amountInCollection: number): number {
+    const amount = Number(amountInCollection) || 0;
+    if (!(amount > 0)) {
+      return 0;
+    }
+
+    const targetCurrency = this.resolveAutomatedPrepaidCurrency();
+    const sourceCurrency = String(this.collection?.coCurrency ?? '').trim();
+    if (!targetCurrency || !sourceCurrency) {
+      return amount;
+    }
+    if (targetCurrency.toLowerCase() === sourceCurrency.toLowerCase()) {
+      return amount;
+    }
+
+    const sourceIsLocal = this.isAutomatedPrepaidCurrencyLocal(sourceCurrency);
+    const targetIsLocal = this.isAutomatedPrepaidCurrencyLocal(targetCurrency);
+    if (sourceIsLocal === targetIsLocal) {
+      // Mismo lado (ambas local o ambas hard), p. ej. "$" vs "USD": sin conversión.
+      return amount;
+    }
+
+    const rate = this.getEffectiveExchangeRate();
+    if (!(rate >= 1)) {
+      return amount;
+    }
+
+    // Local → hard: dividir; hard → local: multiplicar.
+    const raw = sourceIsLocal && !targetIsLocal
+      ? amount / rate
+      : amount * rate;
+    return this.cleanFormattedNumber(this.currencyService.formatNumber(raw));
+  }
+
+  /** Monto excedente expresado en la moneda del anticipo automático (prepaidCurrency). */
+  public getAutomatedPrepaidExcessAmount(): number {
+    const excess = this.syncPrepaidDifferenceAmounts();
+    return this.convertAmountFromCollectionToPrepaidCurrency(excess);
   }
 
   public resolveAutomatedPrepaidDocumentAmounts(): {
@@ -2229,19 +2396,23 @@ export class CollectionService {
     const idCurrency = this.resolveCurrencyIdByCoCurrency(coCurrency);
     const excessInCollection = this.syncPrepaidDifferenceAmounts();
     const excessConversionStored = Number(this.collection.nuDifferenceConversion ?? 0);
+    const collectionCo = String(this.collection?.coCurrency ?? '').trim();
 
-    if (coCurrency === this.collection.coCurrency) {
+    if (!coCurrency || coCurrency.toLowerCase() === collectionCo.toLowerCase()) {
       return {
-        coCurrency,
+        coCurrency: coCurrency || collectionCo,
         idCurrency,
         nuAmount: excessInCollection,
-        nuAmountConversion: excessConversionStored,
+        nuAmountConversion: excessConversionStored > 0
+          ? excessConversionStored
+          : this.convertirMonto(excessInCollection, this.getEffectiveExchangeRate(), collectionCo),
       };
     }
 
     return {
       coCurrency,
       idCurrency,
+      // Documento del anticipo en prepaidCurrency; conversión = excedente en moneda del cobro.
       nuAmount: this.getAutomatedPrepaidExcessAmount(),
       nuAmountConversion: excessInCollection,
     };
@@ -2250,6 +2421,7 @@ export class CollectionService {
   public buildAutomatedPrepaidMessage(): string {
     const template = this.collectionTags.get('COB_MSG_AUTOMATED_PREPAID')
       ?? 'Se creará un anticipo automático por el monto excedente de {amount}. Se enviará un anticipo junto al cobro.';
+    // Etiqueta de moneda = prepaidCurrency (config); monto ya convertido a esa moneda.
     const currency = this.resolveAutomatedPrepaidCurrency();
     const amount = this.getAutomatedPrepaidExcessAmount();
     const amountLabel = `${currency} ${this.currencyService.formatNumber(amount)}`.trim();
@@ -6900,6 +7072,16 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
     }
 
     this.mergePersistedCollectionIgtfFields(source);
+
+    // Moneda del header SQLite (anticipo prepaidCurrency) — no dejar solo la del listado.
+    const persistedCo = String(source.coCurrency ?? '').trim();
+    if (persistedCo) {
+      this.collection.coCurrency = persistedCo;
+    }
+    const persistedId = Number(source.idCurrency ?? 0);
+    if (persistedId > 0) {
+      this.collection.idCurrency = persistedId;
+    }
 
     this.collection.nuAmountFinal = Number(source.nuAmountFinal ?? this.collection.nuAmountFinal ?? 0);
     this.collection.nuAmountFinalConversion = Number(source.nuAmountFinalConversion ?? this.collection.nuAmountFinalConversion ?? 0);

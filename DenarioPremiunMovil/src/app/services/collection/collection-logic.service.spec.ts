@@ -1531,12 +1531,16 @@ describe('CollectionService', () => {
         service.prepaidCurrency = '$';
         service.collection = { coCurrency: 'USD', nuDifference: 0, nuDifferenceConversion: 0 } as any;
         service.multiCurrency = true;
-        service.currencySelected = { localCurrency: 'true' } as any;
-        service.currencyConversion = { coCurrency: 'Bs' } as any;
+        service.currencyList = [
+          { coCurrency: 'Bs', idCurrency: 1, localCurrency: true, hardCurrency: false },
+          { coCurrency: '$', idCurrency: 2, localCurrency: false, hardCurrency: true },
+          { coCurrency: 'USD', idCurrency: 3, localCurrency: false, hardCurrency: true },
+        ] as any;
+        service.localCurrency = service.currencyList[0];
+        service.hardCurrency = service.currencyList[1];
         spyOn(service as any, 'syncPrepaidDifferenceAmounts').and.returnValue(150.5);
         spyOn(service as any, 'syncExchangeRateToCollectionHeader').and.stub();
         spyOn(service, 'getEffectiveExchangeRate').and.returnValue(36);
-        spyOn(service, 'convertirMonto').and.returnValue(150.5);
         spyOn((service as any).currencyService, 'formatNumber').and.returnValue('150.50');
 
         expect(service.buildAutomatedPrepaidMessage()).toBe(
@@ -1544,9 +1548,61 @@ describe('CollectionService', () => {
         );
       });
 
+      it('COB-PREPAID-003: cobro hard → anticipo local convierte * tasa en mensaje y montos', () => {
+        service.collectionTags = new Map([
+          ['COB_MSG_AUTOMATED_PREPAID', 'Anticipo {amount}'],
+        ]);
+        service.prepaidCurrency = 'Bs';
+        service.collection = { coCurrency: 'USD', nuDifference: 0, nuDifferenceConversion: 0 } as any;
+        service.multiCurrency = true;
+        service.currencyList = [
+          { coCurrency: 'Bs', idCurrency: 1, localCurrency: true, hardCurrency: false },
+          { coCurrency: 'USD', idCurrency: 2, localCurrency: false, hardCurrency: true },
+        ] as any;
+        service.localCurrency = service.currencyList[0];
+        service.hardCurrency = service.currencyList[1];
+        spyOn(service as any, 'syncPrepaidDifferenceAmounts').and.returnValue(10);
+        spyOn(service as any, 'syncExchangeRateToCollectionHeader').and.stub();
+        spyOn(service, 'getEffectiveExchangeRate').and.returnValue(36);
+        spyOn(service, 'cleanFormattedNumber').and.callFake((v: string | number) => Number(v) || 0);
+        spyOn((service as any).currencyService, 'formatNumber').and.callFake((n: number) => String(n ?? 0));
+
+        expect(service.getAutomatedPrepaidExcessAmount()).toBe(360);
+        expect(service.buildAutomatedPrepaidMessage()).toBe('Anticipo Bs 360');
+
+        const amounts = service.resolveAutomatedPrepaidDocumentAmounts();
+        expect(amounts.coCurrency).toBe('Bs');
+        expect(amounts.idCurrency).toBe(1);
+        expect(amounts.nuAmount).toBe(360);
+        expect(amounts.nuAmountConversion).toBe(10);
+      });
+
+      it('COB-PREPAID-003: cobro local → anticipo hard convierte / tasa', () => {
+        service.prepaidCurrency = 'USD';
+        service.collection = { coCurrency: 'Bs', nuDifference: 0, nuDifferenceConversion: 0 } as any;
+        service.multiCurrency = true;
+        service.currencyList = [
+          { coCurrency: 'Bs', idCurrency: 1, localCurrency: true, hardCurrency: false },
+          { coCurrency: 'USD', idCurrency: 2, localCurrency: false, hardCurrency: true },
+        ] as any;
+        service.localCurrency = service.currencyList[0];
+        service.hardCurrency = service.currencyList[1];
+        spyOn(service as any, 'syncPrepaidDifferenceAmounts').and.returnValue(360);
+        spyOn(service as any, 'syncExchangeRateToCollectionHeader').and.stub();
+        spyOn(service, 'getEffectiveExchangeRate').and.returnValue(36);
+        spyOn(service, 'cleanFormattedNumber').and.callFake((v: string | number) => Number(v) || 0);
+        spyOn((service as any).currencyService, 'formatNumber').and.callFake((n: number) => String(n ?? 0));
+
+        expect(service.getAutomatedPrepaidExcessAmount()).toBe(10);
+        const amounts = service.resolveAutomatedPrepaidDocumentAmounts();
+        expect(amounts.coCurrency).toBe('USD');
+        expect(amounts.nuAmount).toBe(10);
+        expect(amounts.nuAmountConversion).toBe(360);
+      });
+
       it('COB-PREPAID-003: createAnticipoCollection persiste moneda prepaidCurrency', async () => {
         service.prepaidCurrency = 'Bs';
-        service.currencyList = [{ coCurrency: 'Bs', idCurrency: 99 }] as any;
+        service.currencyList = [{ coCurrency: 'Bs', idCurrency: 99, localCurrency: true, hardCurrency: false }] as any;
         service.anticipoAutomatico = [{ type: 'ef', posCollectionPayment: 0 }];
         service.collection = { coCurrency: 'USD', nuDifference: 25, nuDifferenceConversion: 900 } as any;
         spyOn(service, 'syncExchangeRateToCollectionHeader').and.returnValue(36);
@@ -1600,6 +1656,75 @@ describe('CollectionService', () => {
           25,
           false,
         );
+      });
+
+      it('COB-PREPAID-003: setCurrency al reabrir anticipo USD selecciona hard $ (no BSD)', async () => {
+        const local = { coCurrency: 'BSD', idCurrency: 1, localCurrency: true, hardCurrency: false };
+        const hard = { coCurrency: '$', idCurrency: 2, localCurrency: false, hardCurrency: true };
+        service.currencyList = [local, hard] as any;
+        service.localCurrency = local as any;
+        service.hardCurrency = hard as any;
+        service.collection = {
+          coCollection: 'ANT-1',
+          coCurrency: 'USD',
+          idCurrency: 2,
+          stDelivery: 3,
+        } as any;
+        spyOn(service as any, 'setCurrencyConversion').and.stub();
+        spyOn(service as any, 'setCurrencyDocument').and.stub();
+
+        await service.setCurrency();
+
+        expect(service.currencySelected.coCurrency).toBe('$');
+        expect(service.collection.coCurrency).toBe('$');
+        expect(service.collection.idCurrency).toBe(2);
+        expect(service.currencySelected).not.toBe(local as any);
+      });
+
+      it('COB-PREPAID-003: setCurrency sin match no pisa coCurrency hard con local', async () => {
+        const local = { coCurrency: 'BSD', idCurrency: 1, localCurrency: true, hardCurrency: false };
+        service.currencyList = [local] as any;
+        service.localCurrency = local as any;
+        service.hardCurrency = {} as any;
+        service.collection = {
+          coCollection: 'ANT-2',
+          coCurrency: 'EUR',
+          idCurrency: 99,
+          stDelivery: 2,
+        } as any;
+        spyOn(service as any, 'setCurrencyConversion').and.stub();
+        spyOn(service as any, 'setCurrencyDocument').and.stub();
+
+        await service.setCurrency();
+
+        expect(service.collection.coCurrency).toBe('EUR');
+        expect(service.collection.idCurrency).toBe(99);
+      });
+
+      it('COB-PREPAID-003: mergePersistedCollectionFinancialFields trae coCurrency/idCurrency', () => {
+        service.collection = {
+          coCollection: 'ANT-3',
+          coCurrency: 'BSD',
+          idCurrency: 1,
+        } as any;
+
+        service.mergePersistedCollectionFinancialFields({
+          coCollection: 'ANT-3',
+          coCurrency: 'USD',
+          idCurrency: 2,
+          nuAmountFinal: 10,
+          nuAmountFinalConversion: 360,
+          nuAmountTotal: 10,
+          nuAmountTotalConversion: 360,
+          nuDifference: 0,
+          nuDifferenceConversion: 0,
+          nuAmountPaid: 10,
+          nuAmountPaidConversion: 360,
+          nuValueLocal: 36,
+        } as any);
+
+        expect(service.collection.coCurrency).toBe('USD');
+        expect(service.collection.idCurrency).toBe(2);
       });
     });
 
