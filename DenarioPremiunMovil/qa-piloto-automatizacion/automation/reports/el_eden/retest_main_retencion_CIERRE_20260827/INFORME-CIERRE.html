@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Cierre — Saldo con retención en main</title>
+<style>
+  :root {
+    --morado: #5501AA; --morado-osc: #3D0179; --morado-claro: #F2EAFB;
+    --verde: #91BA3F;  --verde-osc: #4A6B1B;  --verde-claro: #F0F6E4;
+    --ambar: #F5BA2E;  --ambar-claro: #FEF7E6;
+    --rojo: #A5121B;   --rojo-claro: #FDF0F0;
+    --gris: #5D5A63;   --linea: #D8D2E0;
+  }
+  @page { size: A4; margin: 14mm 14mm 15mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 10.2pt; color: #1F1B24;
+         line-height: 1.44; margin: 0; }
+  .marca { display: flex; align-items: center; justify-content: space-between; gap: 8mm;
+           border-bottom: 2.2pt solid var(--morado); padding-bottom: 3mm; margin-bottom: 4mm; }
+  .marca img { width: 52mm; display: block; }
+  .marca .quien { text-align: right; font-size: 8.6pt; color: var(--gris); line-height: 1.35; }
+  .marca .quien b { color: var(--morado); font-size: 9.4pt; display: block; letter-spacing: .2px; }
+  .cinta { height: 2.2mm; display: flex; margin: -4mm 0 4mm; }
+  .cinta i { flex: 1; }
+  .cinta i:nth-child(1) { background: var(--morado); }
+  .cinta i:nth-child(2) { background: var(--verde); }
+  .cinta i:nth-child(3) { background: var(--ambar); }
+  h1 { font-size: 18pt; color: var(--morado); margin: 0 0 1mm; letter-spacing: -.3px; }
+  h2 { font-size: 12.5pt; color: var(--morado); margin: 7mm 0 2.5mm; padding-bottom: 1.2mm;
+       border-bottom: 1.6pt solid var(--morado); page-break-after: avoid; }
+  h3 { font-size: 10.6pt; margin: 4mm 0 1.5mm; color: var(--morado-osc); page-break-after: avoid; }
+  .sub { color: var(--gris); font-size: 10pt; margin: 0 0 4mm; }
+  table { border-collapse: collapse; width: 100%; margin: 2mm 0 3mm; font-size: 9.2pt;
+          page-break-inside: avoid; }
+  th { background: var(--morado); color: #fff; text-align: left; padding: 1.7mm 2.3mm; font-weight: 600; }
+  td { border: .6pt solid var(--linea); padding: 1.5mm 2.3mm; vertical-align: top; }
+  tr:nth-child(even) td { background: #FAF7FD; }
+  .num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap;
+         font-family: Consolas, "Courier New", monospace; }
+  .ok { color: var(--verde-osc); font-weight: 700; }
+  .bad { color: var(--rojo); font-weight: 700; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: .93em; color: var(--morado-osc); }
+  .ficha { width: 100%; margin: 0 0 4mm; font-size: 9.4pt; }
+  .ficha td { border: none; border-bottom: .5pt solid var(--linea); padding: 1.2mm 0; background: none !important; }
+  .ficha td:first-child { color: var(--gris); width: 40mm; }
+  .alerta { border-left: 4pt solid var(--rojo); background: var(--rojo-claro); padding: 3mm 4mm; margin: 4mm 0 5mm; }
+  .alerta .t { font-size: 12.5pt; font-weight: 700; color: var(--rojo); margin-bottom: 1.5mm; }
+  .bien { border-left: 4pt solid var(--verde); background: var(--verde-claro); padding: 3mm 4mm; margin: 4mm 0; }
+  .bien .t { font-size: 11pt; font-weight: 700; color: var(--verde-osc); margin-bottom: 1.5mm; }
+  .nota { background: var(--ambar-claro); border-left: 3pt solid var(--ambar); padding: 2.5mm 3.5mm;
+          margin: 3mm 0; font-size: 9.4pt; page-break-inside: avoid; }
+  .calc { font-family: Consolas, "Courier New", monospace; background: var(--morado-claro);
+          border: .5pt solid var(--linea); padding: 1.7mm 3mm; margin: 2mm 0; font-size: 9.1pt; }
+  .cap { page-break-inside: avoid; margin: 2.5mm 0 3.5mm; }
+  .cap img { max-width: 100%; border: .7pt solid var(--linea); display: block; }
+  .cap .pie { font-size: 8.3pt; color: var(--gris); margin-top: 1mm; font-style: italic; }
+  .par { display: flex; gap: 4mm; align-items: flex-start; page-break-inside: avoid; margin: 3mm 0; }
+  .par > div { flex: 1; }
+  .par .et { font-size: 9pt; font-weight: 700; margin-bottom: 1.2mm; }
+  .et-mal { color: var(--rojo); }
+  .et-bien { color: var(--verde-osc); }
+  .pill { display: inline-block; padding: .4mm 2mm; border-radius: 2mm; font-size: 8.5pt; font-weight: 700; }
+  .p-ok { background: var(--verde-claro); color: var(--verde-osc); border: .5pt solid var(--verde); }
+  .p-mal { background: var(--rojo-claro); color: var(--rojo); border: .5pt solid var(--rojo); }
+  .p-na { background: #EFEDF2; color: var(--gris); border: .5pt solid var(--linea); }
+  .fin { margin-top: 6mm; padding-top: 2.5mm; border-top: 1.2pt solid var(--morado); font-size: 8.5pt;
+         color: var(--gris); display: flex; gap: 5mm; align-items: flex-start; }
+  .fin img { width: 26mm; opacity: .85; }
+  .pb { page-break-before: always; }
+</style></head><body>
+
+<div class="marca">
+  <img src="../../_assets/logo-denario-premium.svg" alt="Denario Premium">
+  <div class="quien"><b>CONTROL DE CALIDAD</b>Cierre de validación<br>27 de agosto de 2026</div>
+</div>
+<div class="cinta"><i></i><i></i><i></i></div>
+
+<h1>Saldo con retención: corregido en pantalla, roto al guardar</h1>
+<p class="sub">Módulo de Cobros · Denario Premium Móvil · versión <b>main</b> · Cliente EL EDEN IMPORT TCN, C.A.</p>
+
+<table class="ficha">
+  <tr><td>Qué se validó</td><td>Si <b>main</b> corrige el defecto reportado el 26/08 en la versión 6.6.21.1</td></tr>
+  <tr><td>Cliente y playa</td><td><b>EL EDEN IMPORT TCN, C.A.</b> · Caribe <span style="color:var(--gris)">(confirmada en runtime)</span></td></tr>
+  <tr><td>Cobro de evidencia</td><td><b># Ref 1037</b> · 3.583,28 US$ · enviado y verificado en la nube</td></tr>
+  <tr><td>Capas medidas</td><td><b>Tres</b>: pantalla del móvil · dato enviado al servidor · web administrativa</td></tr>
+</table>
+
+<div class="alerta">
+  <div class="t">🔴 El arreglo quedó a medias, y el resultado es peor que el defecto original</div>
+  <b>main corrige lo que se ve, pero no lo que se guarda.</b> La pantalla del vendedor ya muestra el saldo
+  correcto; el dato que viaja al servidor sigue sin descontar la retención.<br><br>
+  Antes, pantalla y base de datos estaban mal <b>las dos, de forma coherente</b>: el error era visible en
+  el teléfono y alguien podía notarlo. Ahora <b>la pantalla dice una cosa y el sistema registra otra</b>,
+  y el error queda escondido donde solo aparece aguas abajo, sin nada que lo delate.
+</div>
+
+<h2>El defecto, en una línea</h2>
+
+<p>Cuando un documento lleva <b>retención</b>, la deuda del cliente baja por <b>el pago más lo retenido</b>.
+El saldo pendiente que se guarda solo descuenta el pago, así que <b>queda inflado exactamente en el monto
+retenido</b>.</p>
+
+<div class="calc">
+Documento <b>AJPM50001785</b> · pago parcial<br>
+&nbsp;&nbsp;saldo 1.079,00 − pago 1.000,00 − retención 25,00 = <b>54,00</b> &nbsp;← la deuda real<br>
+&nbsp;&nbsp;saldo 1.079,00 − pago 1.000,00 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= <b>79,00</b> &nbsp;← lo que se guardó
+</div>
+
+<h2>La prueba: la misma transacción, dos números distintos</h2>
+
+<p>Las dos imágenes son del <b>mismo cobro</b>, tomadas con minutos de diferencia. A la izquierda, lo que
+ve el vendedor en su teléfono. A la derecha, lo que quedó registrado y ve la oficina.</p>
+
+<div class="cap">
+  <div class="et et-bien" style="font-size:9pt;font-weight:700;margin-bottom:1.2mm">✓ App móvil — corregido: el saldo baja a 54,00</div>
+  <img src="img/zoom/C1-capa1-zoom.png">
+  <div class="pie">Tab TOTAL del cobro. Fila 3: retención 5,00 (ISLR) + pago 1.000,00 → <b>Monto Saldo 54,00</b>.
+  Las dos primeras filas, pagadas completas, cierran en 0,00.</div>
+</div>
+
+<div class="cap">
+  <div class="et et-mal" style="font-size:9pt;font-weight:700;margin-bottom:1.2mm">✗ Web administrativa — inflado: el mismo documento figura con 79,00</div>
+  <img src="img/zoom/E-web-tabla-zoom.png">
+  <div class="pie">Detalle del cobro # Ref 1037, tabla «Documentos Pagados». Fila 1: <code>AJPM50001785</code>,
+  pago parcial SÍ, monto 1.079,00 y <b>«Saldo doc.» 79,00</b> — 25,00 de más. Las filas 2 y 3, sin pago
+  parcial, muestran su saldo íntegro (comportamiento distinto, ver nota de alcance).</div>
+</div>
+
+<h2>Resultado por capa</h2>
+
+<table>
+  <tr><th>Capa</th><th class="num">Medido</th><th class="num">Debería</th><th>Veredicto</th></tr>
+  <tr><td><b>1 · Pantalla del móvil</b> — columna «Monto Saldo»</td>
+      <td class="num ok">54,00</td><td class="num">54,00</td><td><span class="pill p-ok">✅ CORREGIDA</span></td></tr>
+  <tr><td><b>2 · Dato enviado al servidor</b> — en el envío</td>
+      <td class="num bad">79,00</td><td class="num">54,00</td><td><span class="pill p-mal">❌ SIGUE ROTA</span></td></tr>
+  <tr><td><b>2 · Base de datos de la nube</b></td>
+      <td class="num bad">79,00</td><td class="num">54,00</td><td><span class="pill p-mal">❌ SIGUE ROTA</span></td></tr>
+  <tr><td><b>3 · Web administrativa</b> — columna «Saldo doc.»</td>
+      <td class="num bad">79,00</td><td class="num">54,00</td><td><span class="pill p-mal">❌ PROPAGA EL ERROR</span></td></tr>
+</table>
+
+<p>La diferencia es de <b>25,00 exactos</b> en las tres capas rotas — el IVA (20,00) más el ISLR (5,00).
+No es un redondeo: al convertirlo a bolívares con la tasa del día, el número inflado se multiplica y
+viaja igual de mal.</p>
+
+<div class="nota">
+<b>El error sale mal desde el propio teléfono.</b> Se capturó el envío antes de que saliera del
+dispositivo y ya llevaba el 79,00. No hay ningún eslabón intermedio al que atribuirlo: no es la red, ni
+el servidor, ni la web. Es el cálculo del momento de enviar.
+</div>
+
+<h3>Reproducido tres veces, de forma independiente</h3>
+
+<table>
+  <tr><th>Reproducción</th><th>Documento</th><th class="num">Retenido</th><th class="num">Guardado</th><th class="num">Correcto</th><th class="num">Infla</th></tr>
+  <tr><td>El Palmar · versión 6.6.21.1</td><td><code>010000016710032023</code></td>
+      <td class="num">25,00</td><td class="num bad">37.581,82</td><td class="num">37.556,82</td><td class="num bad">25,00</td></tr>
+  <tr><td>El Edén · <b>main</b></td><td><code>AJPM50001785</code></td>
+      <td class="num">25,00</td><td class="num bad">79,00</td><td class="num">54,00</td><td class="num bad">25,00</td></tr>
+  <tr><td><b>El Edén · main · reproducción manual</b></td><td><code>AJPM50001336</code></td>
+      <td class="num">15,00</td><td class="num bad">51,58</td><td class="num">36,58</td><td class="num bad">15,00</td></tr>
+</table>
+
+<p>La tercera se hizo <b>a mano, sin automatización</b>, siguiendo los pasos de reproducción de este
+informe (cobro <b># Ref 1043</b>). En los tres casos la diferencia es <b>exactamente el monto retenido</b>,
+en dos clientes, dos versiones y dos monedas distintas.</p>
+
+<div class="pb"></div>
+<h2>Comparativa completa: qué cambió de una versión a otra</h2>
+
+<table>
+  <tr><th>Capa</th><th class="num">6.6.21.1</th><th class="num">main</th><th>Cambio</th></tr>
+  <tr><td>Pantalla del móvil</td><td class="num bad">inflado</td><td class="num ok">correcto</td><td class="ok">✔ arreglado</td></tr>
+  <tr><td>Dato enviado</td><td class="num bad">inflado</td><td class="num bad">inflado</td><td>sin cambio</td></tr>
+  <tr><td>Base de datos</td><td class="num bad">inflado</td><td class="num bad">inflado</td><td>sin cambio</td></tr>
+  <tr><td>Web</td><td class="num bad">inflado</td><td class="num bad">inflado</td><td>sin cambio</td></tr>
+  <tr><td><b>¿Coinciden pantalla y sistema?</b></td>
+      <td class="num">sí <span style="color:var(--gris)">(ambos mal)</span></td>
+      <td class="num bad">NO</td><td class="bad">⚠ empeora</td></tr>
+</table>
+
+<p>La última fila es la que importa para el negocio: <b>hasta ahora el vendedor y la oficina veían el
+mismo número.</b> Con este arreglo a medias dejaron de coincidir.</p>
+
+<h2>Qué falta corregir</h2>
+
+<p>El cálculo del saldo en el momento de enviar sigue restando únicamente el pago. Es un punto concreto
+del código, ya identificado y señalado en el reporte técnico.</p>
+
+<div class="nota">
+<b>⚠ Advertencia para quien haga el arreglo.</b> El monto pagado <b>no significa lo mismo en todos los
+tipos de cobro</b>. En un cobro normal excluye las retenciones, así que hay que restarlas aparte. En un
+cobro <b>de tipo Retención</b>, en cambio, ese monto <b>ya equivale a lo retenido</b>: restarlas de nuevo
+las duplicaría. Una corrección que no distinga por tipo de cobro romperá ese flujo.
+</div>
+
+<h2>De paso, dos cosas que sí quedaron bien en main</h2>
+
+<div class="bien">
+  <div class="t">✅ El bloqueo al agregar método de pago ya no ocurre</div>
+  La incidencia reportada ayer —la aplicación se cerraba sola al agregar un método de pago— <b>no
+  reproduce</b>. Se verificó operando la aplicación, no solo leyendo el código.
+</div>
+
+<div class="bien">
+  <div class="t">✅ La columna «Monto Doc.» se mantiene correcta</div>
+  Sigue mostrando el saldo del documento en el pago parcial, pese a que esa lógica fue reescrita en main.
+  Sin regresión.
+</div>
+
+<h2>Alcance: qué no se validó</h2>
+
+<table>
+  <tr><th style="width:8mm">#</th><th>Pendiente</th><th>Por qué importa</th></tr>
+  <tr><td>1</td><td>El <b>cobro de tipo Retención</b> nunca se midió en la capa del dato enviado</td>
+      <td>Es justo el caso donde el arreglo propuesto podría duplicar el descuento. Debería probarse <b>antes</b> de dar la corrección por buena</td></tr>
+  <tr><td>2</td><td><b>Pago parcial sin retención</b></td>
+      <td>Es el control que aislaría si el cálculo es correcto cuando no hay retención de por medio</td></tr>
+</table>
+
+<div class="nota">
+<b>Un dato que acota el problema:</b> el saldo solo se recalcula cuando hay <b>pago parcial</b>. Los dos
+documentos pagados completos enviaron su saldo intacto. Es decir, el dato corrupto se limita a
+<b>documentos con pago parcial y retención</b> — lo que reduce el alcance, pero no la gravedad.
+</div>
+
+<div class="fin">
+  <img src="../../_assets/logo-denario-premium.svg" alt="">
+  <div>
+    <b>Denario Premium · Control de Calidad.</b> Informe emitido el 27/08/2026 a partir de la corrida
+    <code>retest_main_retencion_CIERRE_20260827</code>, que cierra el defecto abierto el 26/08.<br>
+    Detalle técnico, mediciones por capa, aritmética por documento y trazas de operación en
+    <code>retest-cierre.md</code>. Cobro de evidencia: <b># Ref 1037</b>.
+  </div>
+</div>
+
+</body></html>
