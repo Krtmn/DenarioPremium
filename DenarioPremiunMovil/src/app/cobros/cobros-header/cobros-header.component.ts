@@ -190,6 +190,7 @@ export class CobrosHeaderComponent implements OnInit {
 
     this.subscriptionAttachmentChanged = this.adjuntoService.AttachmentChanged.subscribe(() => {
       this.collectService.notifyCollectionEdited();
+      this.cdr.detectChanges();
     });
     this.subscriptionAttachmentWeightExceeded = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
       this.collectService.updateSaveButtonAvailability();
