@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>PLANTILLA — Informe de evidencia QA</title>
+<!--
+  ══════════════════════════════════════════════════════════════════════════════
+  PLANTILLA OFICIAL DE INFORMES QA — Denario Premium · Control de Calidad
+  Regla del equipo desde 2026-08-27: todo informe que salga del equipo usa esta base.
+  ══════════════════════════════════════════════════════════════════════════════
+
+  CÓMO SE USA
+    1. Copiar este archivo al RUN_DIR de la corrida:
+         automation/reports/{cliente}/{corrida}/INFORME-<LO-QUE-SEA>.html
+    2. Rellenar el contenido (todo lo que va entre <body>). Los bloques de abajo
+       son ejemplos listos para duplicar o borrar.
+    3. Generar el PDF:
+         node automation/reports/_build-pdf.js <ruta-al-html>
+       El PDF sale junto al HTML, AUTOCONTENIDO (imágenes empotradas en base64):
+       se envía por correo sin carpeta de imágenes al lado.
+
+  ⚠ LA RUTA DEL LOGO ES RELATIVA AL HTML. Desde `reports/{cliente}/{corrida}/`
+    son DOS niveles: `../../_assets/logo-denario-premium.svg`. A otra profundidad,
+    ajustar los `../`. Si el logo no se empotra, `_build-pdf.js` lo avisa por
+    consola — no ignorarlo: el informe saldría sin marca.
+
+  RECORTES DE EVIDENCIA
+    Las capturas del dispositivo son 720x1600: en A4 la fila que PRUEBA el
+    resultado queda diminuta. Recortar y ampliar con:
+      python automation/reports/_zoom-evidencia.py <entrada.png> <salida.png> [y0] [y1]
+    Bandas verificadas para el Tab TOTAL de Cobros: una fila **0.535-0.585**;
+    dos filas **0.515-0.625**; tres filas **0.528-0.665**.
+    Conservar SIEMPRE los originales sin editar en `img/`.
+
+  🔴 LA CAPTURA DEBE CONTENER LA COLUMNA EN DISPUTA (lección cara, 26/08)
+    Un informe salió con un recorte que NO mostraba la columna que la afirmación
+    acusaba: con retención aparecen columnas extra y la tabla se desplaza. La
+    "prueba" no probaba nada.
+    ⇒ Antes de publicar: confirmar que en el recorte se leen TODAS las columnas
+      citadas en el texto. Si no caben, recortes solapados por una columna bisagra,
+      y explicarlo en el pie.
+
+  CRITERIOS DE REDACCIÓN (no negociables)
+    · El VEREDICTO va ARRIBA y sin ambigüedad.
+    · Toda afirmación va con su evidencia al lado (valor medido + captura).
+    · La sección "Lo que NO cubre" es OBLIGATORIA aunque esté vacía; si está
+      vacía, decirlo explícitamente. Un informe que aparenta más cobertura de la
+      real es peor que no tener informe.
+    · 🔴 El ORÁCULO NUNCA es la implementación. Validar contra la regla de negocio,
+      no contra la fórmula del código: comprobar que "A − B = C" cuando esa es
+      justamente la fórmula que usa el producto no demuestra nada.
+    · Todo escenario con una variable añadida (retención, IGTF, descuento) lleva
+      su CASO DE CONTROL sin esa variable, para aislar la causa.
+    · Cuando exista, poner el ANTES y DESPUÉS lado a lado sobre el mismo registro:
+      es lo que hace entender el hallazgo sin leer una línea.
+  ══════════════════════════════════════════════════════════════════════════════
+-->
+<style>
+  /* ── Identidad Denario Premium — paleta del logo oficial ──────────────────
+     morado #5501AA · verde #91BA3F · ámbar #F5BA2E
+     ⚠ El verde de marca es muy claro para texto sobre blanco (contraste ~2.3:1):
+       usarlo como relleno/acento; para texto va #4A6B1B.
+     💡 El morado coincide con el de las tablas de la app ⇒ las capturas se integran. */
+  :root {
+    --morado: #5501AA; --morado-osc: #3D0179; --morado-claro: #F2EAFB;
+    --verde: #91BA3F;  --verde-osc: #4A6B1B;  --verde-claro: #F0F6E4;
+    --ambar: #F5BA2E;  --ambar-claro: #FEF7E6;
+    --rojo: #A5121B;   --rojo-claro: #FDF0F0;
+    --gris: #5D5A63;   --linea: #D8D2E0;
+  }
+  @page { size: A4; margin: 14mm 14mm 15mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 10.2pt; color: #1F1B24;
+         line-height: 1.44; margin: 0; }
+
+  /* Cabecera de marca */
+  .marca { display: flex; align-items: center; justify-content: space-between; gap: 8mm;
+           border-bottom: 2.2pt solid var(--morado); padding-bottom: 3mm; margin-bottom: 4mm; }
+  .marca img { width: 52mm; display: block; }
+  .marca .quien { text-align: right; font-size: 8.6pt; color: var(--gris); line-height: 1.35; }
+  .marca .quien b { color: var(--morado); font-size: 9.4pt; display: block; letter-spacing: .2px; }
+  .cinta { height: 2.2mm; display: flex; margin: -4mm 0 4mm; }
+  .cinta i { flex: 1; }
+  .cinta i:nth-child(1) { background: var(--morado); }
+  .cinta i:nth-child(2) { background: var(--verde); }
+  .cinta i:nth-child(3) { background: var(--ambar); }
+
+  h1 { font-size: 18pt; color: var(--morado); margin: 0 0 1mm; letter-spacing: -.3px; }
+  h2 { font-size: 12.5pt; color: var(--morado); margin: 7mm 0 2.5mm; padding-bottom: 1.2mm;
+       border-bottom: 1.6pt solid var(--morado); page-break-after: avoid; }
+  h3 { font-size: 10.6pt; margin: 4mm 0 1.5mm; color: var(--morado-osc); page-break-after: avoid; }
+  .sub { color: var(--gris); font-size: 10pt; margin: 0 0 4mm; }
+  table { border-collapse: collapse; width: 100%; margin: 2mm 0 3mm; font-size: 9.2pt;
+          page-break-inside: avoid; }
+  th { background: var(--morado); color: #fff; text-align: left; padding: 1.7mm 2.3mm; font-weight: 600; }
+  td { border: .6pt solid var(--linea); padding: 1.5mm 2.3mm; vertical-align: top; }
+  tr:nth-child(even) td { background: #FAF7FD; }
+  .num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap;
+         font-family: Consolas, "Courier New", monospace; }
+  .ok { color: var(--verde-osc); font-weight: 700; }
+  .bad { color: var(--rojo); font-weight: 700; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: .93em; color: var(--morado-osc); }
+  .ficha { width: 100%; margin: 0 0 4mm; font-size: 9.4pt; }
+  .ficha td { border: none; border-bottom: .5pt solid var(--linea); padding: 1.2mm 0; background: none !important; }
+  .ficha td:first-child { color: var(--gris); width: 42mm; }
+
+  /* Bloques de veredicto — usar el que corresponda */
+  .bien { border-left: 4pt solid var(--verde); background: var(--verde-claro); padding: 3mm 4mm; margin: 4mm 0 5mm; }
+  .bien .t { font-size: 12.5pt; font-weight: 700; color: var(--verde-osc); margin-bottom: 1.5mm; }
+  .alerta { border-left: 4pt solid var(--rojo); background: var(--rojo-claro); padding: 3mm 4mm; margin: 4mm 0 5mm; }
+  .alerta .t { font-size: 12.5pt; font-weight: 700; color: var(--rojo); margin-bottom: 1.5mm; }
+  .nota { background: var(--ambar-claro); border-left: 3pt solid var(--ambar); padding: 2.5mm 3.5mm;
+          margin: 3mm 0; font-size: 9.4pt; page-break-inside: avoid; }
+  .calc { font-family: Consolas, "Courier New", monospace; background: var(--morado-claro);
+          border: .5pt solid var(--linea); padding: 1.7mm 3mm; margin: 2mm 0; font-size: 9.1pt; }
+
+  .cap { page-break-inside: avoid; margin: 2.5mm 0 3.5mm; }
+  .cap img { max-width: 100%; border: .7pt solid var(--linea); display: block; }
+  .cap .pie { font-size: 8.3pt; color: var(--gris); margin-top: 1mm; font-style: italic; }
+  .par { display: flex; gap: 4mm; align-items: flex-start; page-break-inside: avoid; margin: 3mm 0; }
+  .par > div { flex: 1; }
+  .par .et { font-size: 9pt; font-weight: 700; margin-bottom: 1.2mm; }
+  .et-mal { color: var(--rojo); }
+  .et-bien { color: var(--verde-osc); }
+
+  .pill { display: inline-block; padding: .4mm 2mm; border-radius: 2mm; font-size: 8.5pt; font-weight: 700; }
+  .p-ok { background: var(--verde-claro); color: var(--verde-osc); border: .5pt solid var(--verde); }
+  .p-mal { background: var(--rojo-claro); color: var(--rojo); border: .5pt solid var(--rojo); }
+  .p-na { background: #EFEDF2; color: var(--gris); border: .5pt solid var(--linea); }
+  .p-new { background: var(--morado-claro); color: var(--morado); border: .5pt solid var(--morado); }
+
+  .fin { margin-top: 6mm; padding-top: 2.5mm; border-top: 1.2pt solid var(--morado); font-size: 8.5pt;
+         color: var(--gris); display: flex; gap: 5mm; align-items: flex-start; }
+  .fin img { width: 26mm; opacity: .85; }
+  .pb { page-break-before: always; }
+</style></head><body>
+
+<div class="marca">
+  <img src="../../_assets/logo-denario-premium.svg" alt="Denario Premium">
+  <div class="quien"><b>CONTROL DE CALIDAD</b>{{Tipo de informe}}<br>{{fecha}}</div>
+</div>
+<div class="cinta"><i></i><i></i><i></i></div>
+
+<h1>{{Título — el hallazgo, no el proceso}}</h1>
+<p class="sub">Módulo de {{módulo}} · Denario Premium Móvil · versión {{build}} · Cliente {{CLIENTE}}</p>
+
+<table class="ficha">
+  <tr><td>Qué se validó</td><td>{{una línea}}</td></tr>
+  <tr><td>Cliente y playa</td><td><b>{{NOMBRE}}</b> · {{playa}} <span style="color:var(--gris)">(confirmada en runtime)</span></td></tr>
+  <tr><td>Build / fix</td><td><code>{{commit}}</code> · rama <code>{{rama}}</code></td></tr>
+  <tr><td>Empresa · vendedor</td><td><b>{{co_enterprise}}</b> · login <code>{{login}}</code> / <code>id_user {{id}}</code></td></tr>
+  <tr><td>Registro de evidencia</td><td><b># Ref {{n}}</b> · {{monto}} · {{estado}}</td></tr>
+</table>
+
+<!-- VEREDICTO — usar .bien si es favorable, .alerta si es un defecto -->
+<div class="bien">
+  <div class="t">✅ {{Veredicto en una línea, sin ambigüedad}}</div>
+  {{Dos o tres frases: qué se probó, qué resultó, y el dato que lo respalda.}}
+</div>
+
+<h2>{{El hallazgo, en una línea}}</h2>
+<div class="calc">
+{{la aritmética con números reales}}<br>
+&nbsp;&nbsp;{{lo esperado}} &nbsp;← la regla de negocio<br>
+&nbsp;&nbsp;{{lo obtenido}} &nbsp;← lo que hace el producto
+</div>
+
+<h2>Resultado por escenario</h2>
+<table>
+  <tr><th style="width:11mm">ID</th><th>Escenario</th><th style="width:24mm">Resultado</th></tr>
+  <tr><td><b>E1</b></td><td>{{descripción}}</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
+  <tr><td><b>E2</b></td><td>{{descripción}} <span class="pill p-new">nuevo</span></td><td><span class="pill p-mal">❌ FAIL</span></td></tr>
+  <tr><td><b>E3</b></td><td>{{descripción}}</td><td><span class="pill p-na">🚫 N/A</span></td></tr>
+  <tr><td><b>C</b></td><td><b>Control</b> — {{el mismo caso SIN la variable en estudio}}</td><td><span class="pill p-ok">✅ aísla la causa</span></td></tr>
+</table>
+
+<h2>Evidencia</h2>
+<div class="cap">
+  <div class="et et-bien" style="font-size:9pt;font-weight:700;margin-bottom:1.2mm">{{qué se ve}}</div>
+  <img src="img/zoom/{{captura}}.png">
+  <div class="pie">{{Qué muestra y por qué prueba lo que se afirma. Citar los valores visibles.}}</div>
+</div>
+
+<!-- Antes/después lado a lado — el formato más potente cuando aplica -->
+<div class="par">
+  <div><div class="et et-mal">✗ {{antes}}</div>
+    <div class="cap"><img src="img/zoom/{{antes}}.png"></div></div>
+  <div><div class="et et-bien">✓ {{después}}</div>
+    <div class="cap"><img src="img/zoom/{{despues}}.png"></div></div>
+</div>
+
+<div class="nota">
+<b>{{Nota / reserva metodológica / advertencia para desarrollo}}</b>
+</div>
+
+<h2>Lo que este informe NO cubre</h2>
+<p>{{OBLIGATORIO. Si no queda nada pendiente, decirlo explícitamente.}}</p>
+<table>
+  <tr><th style="width:8mm">#</th><th>Pendiente</th><th>Por qué importa</th></tr>
+  <tr><td>1</td><td>{{qué}}</td><td>{{consecuencia de no cubrirlo}}</td></tr>
+</table>
+
+<div class="fin">
+  <img src="../../_assets/logo-denario-premium.svg" alt="">
+  <div>
+    <b>Denario Premium · Control de Calidad.</b> Informe emitido el {{fecha}} a partir de la corrida
+    <code>{{RUN_DIR}}</code>.<br>
+    Detalle técnico, mediciones y trazas de operación en <code>{{reporte}}.md</code>.
+    Las capturas son recortes ampliados de las tomas originales del dispositivo, conservadas sin editar
+    en <code>img/</code>.
+  </div>
+</div>
+
+</body></html>
