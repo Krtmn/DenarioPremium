@@ -70,8 +70,8 @@ export class ProductDetailComponent implements OnInit, OnChanges {
     this.conversionByPriceList = this.globalConfig.get("conversionByPriceList").toLowerCase() === "true";
     this.currencyModuleEnabled = this.globalConfig.get("currencyModule").toLowerCase() === "true";
     this.hideProductWarehouse = this.globalConfig.get("hideProductWarehouse") == "true";
-    var currencyModule: CurrencyModules = this.currencyService.getCurrencyModule('pro');
-    this.showConversionInfo = currencyModule.showConversion;
+    const currencyModule: CurrencyModules = this.currencyService.getCurrencyModule('pro');
+    this.showConversionInfo = this.currencyService.canShowModuleConversion('pro');
     this.localCurrencyDefault = currencyModule.localCurrencyDefault;
     this.enableCurrencySwitch = this.currencyModuleEnabled && currencyModule.idModule > 0;
 

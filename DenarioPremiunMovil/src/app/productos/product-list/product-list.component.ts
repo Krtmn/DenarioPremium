@@ -95,8 +95,8 @@ export class ProductListComponent implements OnInit {
     this.unitByPriceList = this.config.get("unitByPriceList").toLowerCase() === "true";
     this.showStock = this.config.get("showStock").toLowerCase() === "true";
     this.productStock0 = this.config.get("productStock0").toLowerCase() === "true";
-    var currencyModule: CurrencyModules = this.currencyService.getCurrencyModule('pro');
-    this.showConversionInfo = currencyModule.showConversion;
+    const currencyModule: CurrencyModules = this.currencyService.getCurrencyModule('pro');
+    this.showConversionInfo = this.currencyService.canShowModuleConversion('pro');
     this.localCurrencyDefault = currencyModule.localCurrencyDefault;
     this.defaultCurrency = this.productService.empresaSeleccionada.coCurrencyDefault;
     if (this.currencyModuleEnabled) {

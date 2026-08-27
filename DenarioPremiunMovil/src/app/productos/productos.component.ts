@@ -68,13 +68,13 @@ export class ProductosComponent implements OnInit, OnDestroy {
     this.productService.productList = [];
     this.message.showLoading().then(() => {
       this.enterpriseService.setup(this.db.getDatabase()).then(async () => {
+        await this.currencyService.setup(this.db.getDatabase());
         this.productService.listaEmpresa = this.enterpriseService.empresas;
         this.productService.empresaSeleccionada = this.productService.listaEmpresa[0];
         this.orderService.empresaSeleccionada = this.productService.listaEmpresa[0];
         this.productService.multiempresa = this.enterpriseService.esMultiempresa();
         await this.productService.syncOrderPresentationFromPedidos(this.orderService);
       });
-      this.currencyService.setup(this.db.getDatabase());
 
       this.getTags().then(() => {  //buscamos los tags
         this.imageServices.downloadWithConcurrency(this.imageServices.downloadFileList);

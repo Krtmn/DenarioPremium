@@ -220,14 +220,6 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           console.error('Tipo de orden original no encontrado: ' + this.orderServ.order.idOrderType);
         }
 
-        this.orderServ.getClient(this.orderServ.order.idClient).then(c => {
-          this.setClientfromSelector(c);
-          if (!this.viewOnly) {
-            this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
-              "Pedidos", 'fondoVerde', c, true, 'ped');
-          }
-        });
-
         /*//removido temporalmente
         //SI EL STORDER ES 6, NO DEBO MOSTRAR LA PESTAÑA ADJUNTOS
         if (this.orderServ.order.stOrder == 6) {
@@ -247,21 +239,17 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
       }
 
       this.multiempresa = this.enterpriseServ.esMultiempresa();
-      if (!this.viewOnly) {
-        this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
-          "Pedidos", 'fondoVerde', null, false, 'ped');
-      }
 
-
-      //setup monedas
+      //setup monedas antes del selector (PED-CURRENCY-001)
       await this.currencyServ.setup(this.dbServ.getDatabase());
       this.multimoneda = this.currencyServ.multimoneda;
       this.orderServ.currencyModule = this.currencyServ.getCurrencyModule('ped');
       if (this.orderServ.currencyModuleEnabled && this.orderServ.currencyModule.idModule > 0) {
         this.showConversion = this.multimoneda && this.orderServ.currencyModule.showConversion;
+        this.orderServ.disableCurrency = !this.orderServ.currencyModule.currencySelector;
       } else {
         //probablemente no tienen el sistema nuevo.
-        this.showConversion = this.multimoneda && this.orderServ.showTransactionCurrency
+        this.showConversion = this.multimoneda && this.orderServ.showTransactionCurrency;
       }
       this.localCurrency = this.currencyServ.getLocalCurrency();
       if (this.orderServ.openOrder) {
@@ -275,8 +263,6 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
 
         }
       } else {
-        //this.currencySelection();
-        //this.orderServ.monedaSeleccionada = this.currencyServ.getCurrency(this.empresaSeleccionada.coCurrencyDefault);
         this.nuValueLocal = Number.parseFloat(this.currencyServ.getLocalValue());
         this.tasaCambio = this.currencyServ.getLocalValue();
       }
@@ -284,6 +270,18 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
         this.hardCurrency = this.currencyServ.getHardCurrency();
       }
 
+      // selector de clientes con currency_modules ya cargado
+      if (!this.viewOnly) {
+        if (this.orderServ.openOrder) {
+          const c = await this.orderServ.getClient(this.orderServ.order.idClient);
+          this.setClientfromSelector(c);
+          this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
+            "Pedidos", 'fondoVerde', c, true, 'ped');
+        } else {
+          this.selectorCliente.setup(this.empresaSeleccionada.idEnterprise,
+            "Pedidos", 'fondoVerde', null, false, 'ped');
+        }
+      }
 
       if (this.orderServ.openOrder) {
         await this.abrirPedido();
