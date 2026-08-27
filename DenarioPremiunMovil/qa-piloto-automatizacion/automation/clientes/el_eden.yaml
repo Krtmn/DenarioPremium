@@ -1,0 +1,193 @@
+cliente_id: el_eden
+cliente_nombre: EL EDEN IMPORT TCN, C.A.
+apk_package: com.kiberno.denarioPremiumPro
+db_name: el_eden
+ws_url: "http://denariocaribe.ddns.net:8081/PremiumWS"  # playa CARIBE · descubierto 2026-08-20 · web en :8080/DenarioPremium
+
+# ── Variables Globales ──────────────────────────────────────────────────────
+# Fuente: global_configuration + global_configuration_client
+# PRECEDENCIA: si la clave existe en AMBAS tablas → gana el valor de global_configuration
+#   (confirmado en device 2026-08-26: userCanSelectIGTF y userCanChangePriceList usan el GLOBAL,
+#    no el override del cliente). NO tomar el override cuando difiere del global.
+# Consultado: 2026-08-20 · Precedencia validada en device: 2026-08-26
+vgs:
+  multiCurrency: true
+  expirationBatch: false
+  suggestedOrderByDispatchAndReturn: false
+  requiredCollectionAttachments: true   # DM-COB-019 requiere adjunto manual en APK
+  requiredComment: false
+  validateReturn: false
+  signatureReturn: true
+  signatureCollection: true
+  signatureVisit: true
+  userCanUploadFiles: true
+  esVendedor: true
+  enterpriseEnabled: true              # GLOBAL=true gana sobre override cliente=false (era 'false', mal). ⚠ CONFIRMAR EN DEVICE
+  enabledManualRate: false
+  cobroPrepago: true
+  cobroRetencion: true
+  retencion: true
+  sizeRetention: 14
+  formatRetention: alfanumerico        # formatRetention=0 → alfanumérico
+  userCanSelectIGTF: false             # GLOBAL=false gana sobre override cliente=true → IGTF INACTIVO en app (device 2026-08-26). co_type 3 N/A.
+  userCanCollectIva: false             # 25% IVA off
+  # ── VGs adicionales de cobros (global, validadas 2026-08-26) ──
+  retentionDocTypeCR: true             # documentos de retención permiten pagos parciales
+  userCanAddRetention: true            # retenciones libres sin factura permitidas
+  multiCurrencyCollection: true        # selector de moneda en cobros (US$/BS)
+  requiredRetentionAttachments: false  # retención NO exige adjunto
+  requiredAnticipoAttachments: false   # anticipo NO exige adjunto
+  validateCollectionDate: true         # fecha tasa = fecha depósito/transferencia
+  # ── Tolerancia de cobros (global, validada BD 2026-08-26) ──
+  tolerancia0: true                    # GLOBAL=true gana sobre override cliente=false → SÍ se permite diferencia. ⚠ CONFIRMAR EN DEVICE (behavioral)
+  TipoTolerancia: 0                    # 0 = por importe (monto absoluto); ≠0 = por rango (%)
+  MonedaTolerancia: "US$"              # la tolerancia se evalúa en US$ (si el cobro es en otra moneda, se convierte)
+  RangoToleranciaPositiva: 10          # diferencia positiva (sobra) permitida: amount < 10
+  RangoToleranciaNegativa: 10          # diferencia negativa (falta) permitida: |amount| <= 10
+  # ── Anticipo automático (global, BD 2026-08-26) ──
+  automatedPrepaid: true               # ACTIVO: excedente del cobro → anticipo automático (solo co_type 0, no pago parcial)
+  prepaidRangeAmount: 11               # umbral: si excedente >= 11 → crea anticipo automático
+  prepaidCurrency: "US$"               # moneda del anticipo automático
+  prepaidRangeCurrency: "US$"          # moneda en que se evalúa el umbral
+  parteDecimal: 2                      # 2 decimales
+  # ── Pagos parciales (global) ──
+  enablePartialPayment: true           # pagos parciales habilitados
+  alwaysPartialPayment: false          # no forzar pago parcial siempre
+  historicPartialPayment: true         # histórico de pagos parciales
+  # ── Tasa / conversión (global) ──
+  canChangeRate: true                  # el usuario puede cambiar la tasa
+  historicoTasa: true                  # usa histórico de tasa
+  currencyModule: true                 # módulo multi-moneda activo
+  # ── Métodos de pago (colletionPayment, global gana) ──
+  # items: Efectivo,Cheque,Transferencia,Deposito,Otros,Pago Movil
+  # global "true-false-true-true-true-true" → Efectivo✓ Cheque✗ Transferencia✓ Deposito✓ Otros✓ PagoMovil✓
+  colletionPayment: "true-false-true-true-true-true"
+  clientBankAccount: false             # no usa cuenta bancaria del cliente
+  currencyBank: false
+  # ── Descuentos / códigos de diferencia (global) ──
+  userCanSelectCollectDiscount: false  # no permite descuento en cobro
+  enableDifferenceCodes: true          # códigos de diferencia habilitados (al cobrar con diferencia)
+  # ── Retención extra (global) ──
+  dynamicRetentions: false             # usa retenciones fijas (IVA/ISLR), no dinámicas
+  missingRetention: false              # sin selector de falta retención
+  alwaysRetention: false
+  # ── IGTF (global; ver userCanSelectIGTF=false arriba) ──
+  igtfDefault: false
+  disableCheckIGTF: false
+  transportRole: false
+  userMustActivateGPS: true
+
+# ── Datos de prueba por módulo ──────────────────────────────────────────────
+# wpalencia (id=306) tiene 8 clientes asignados:
+#   01778 AUTOMERCADOS FRESCO MARKET AFN - CAURIMARE  ← con muchas facturas
+#   01620 CROQUEMBOUCHE C.A.
+#   01622 CHARCUTERIA Y VIVERES LA POPULAR DEL CENTRO
+#   01623 DELICATESES GALLINA LINDA, C.A.
+#   01624 DELICATESSES CAMINO REAL, C.A
+#   01625 PANADERIA Y PASTELERIA LA PONDEROSA
+#   01626 INVERSIONES HIBEVI. C.A.
+#   01627 PANADERIA Y PASTELERIA BARINITAS, C.A.  ← sin facturas pendientes
+modules:
+  login:
+    bad_password: wrong123
+
+  clientes:
+    cliente_busqueda: CROQUEMBOUCHE
+    cliente_detalle: CROQUEMBOUCHE C.A.
+
+  pedidos:
+    cliente_test: AUTOMERCADOS FRESCO MARKET AFN, C.A. -  CAURIMARE
+    estructura_producto: lineas
+    alerta_deuda_vencida: true
+
+  cobros:
+    # ── Sub-tipos aplicables (co_type) — validado en device 2026-08-26 ──
+    #   0 normal      ✅
+    #   1 anticipo    ✅  (cobroPrepago=true)
+    #   2 retención   ✅  (retencion=true, cobroRetencion=true)
+    #   3 IGTF        ❌  N/A — userCanSelectIGTF=false (global) → campo IGTF no se muestra
+    igtf_aplica: false
+    anticipo_aplica: true
+    retencion_aplica: true
+    tolerancia:                         # por importe absoluto en US$ (TipoTolerancia=0, MonedaTolerancia=US$)
+      permite_diferencia: true          # tolerancia0=true (global) — ⚠ confirmar en device
+      positiva_max: 10                  # cobro que EXCEDE el saldo: pasa si diferencia < US$10, falla si >= US$10
+      negativa_max: 10                  # cobro con FALTA: pasa si diferencia <= US$10, falla si > US$10
+    metodos_pago_habilitados:           # colletionPayment (global) — Cheque queda OFF
+      - Efectivo
+      - Transferencia
+      - Deposito
+      - Otros
+      - Pago Movil
+    anticipo_automatico:                # automatedPrepaid=true — solo co_type 0, no en pago parcial
+      activo: true
+      umbral: 11                        # excedente >= US$11 → crea anticipo automático por el excedente
+      moneda: "US$"
+      # excedente < 11 → NO crea anticipo; entre tolerancia(±10) y umbral(11) hay borde a probar
+    pagos_parciales: true               # enablePartialPayment — cobrar parte del saldo deja documento con saldo
+    # ── Matriz de casos que la CORRIDA COMPLETA debe cubrir ──
+    #  NORMAL (co_type 0):
+    #    - cobro exacto (= saldo) → OK
+    #    - cobro con falta <= US$10 (tolerancia) → OK
+    #    - cobro con falta > US$10 → pago parcial (queda saldo)
+    #    - cobro con exceso < US$10 → OK (dentro tolerancia)
+    #    - cobro con exceso >= US$11 → OK + ANTICIPO AUTOMÁTICO por el excedente
+    #    - métodos: Efectivo / Transferencia / Deposito / Pago Movil (Cheque debe estar OFF)
+    #    - adjunto OBLIGATORIO (requiredCollectionAttachments) · firma habilitada · GPS obligatorio
+    #  ANTICIPO manual (co_type 1): cobroPrepago=true
+    #  RETENCIÓN (co_type 2): retencion=true · IVA+ISLR fijas (dynamicRetentions=false) · comprobante 14 díg alfanumérico · sin pago parcial de retención (retentionDocTypeCR global=true → SÍ permite; ⚠ confirmar)
+    #  IGTF (co_type 3): ❌ N/A (userCanSelectIGTF=false)
+    cliente_test: CROQUEMBOUCHE C.A.                 # con facturas US$ pendientes (verificado BD 2026-08-26)
+    cliente_code: "01620"
+    cliente_sin_documentos: PANADERIA Y PASTELERIA BARINITAS, C.A.   # caso vacío
+    cliente_sin_documentos_code: "01627"
+    clientes_con_documentos:
+      - "01620"     # CROQUEMBOUCHE — muchas facturas US$ (docs 2452, 50000714, 2197...)
+      - "01778"     # AUTOMERCADOS FRESCO MARKET AFN — facturas US$ activas
+    documentos_test:                    # facturas US$ pendientes de 01620 (BD 2026-08-26, st=6, saldo>0)
+      - { nu_document: "2452",     moneda: "US$", saldo: 273.20 }
+      - { nu_document: "50000714", moneda: "US$", saldo: 267.70 }
+      - { nu_document: "2197",     moneda: "US$", saldo: 264.80 }
+    cliente_25iva: ""                   # ninguno habilitado (userCanCollectIva=false)
+    metodo_pago: efectivo
+    bancos:                             # co_bank válidos (BD 2026-08-26)
+      efectivo_bs: "C002"               # BOLIVARES EFECTIVO
+      efectivo_divisas: "C001"          # DIVISAS CASH
+      transferencia: "0002"             # BANCO DE VENEZUELA (o 0006 Banesco, 0004 Mercantil)
+    banco_deposito: ""                  # no aplica para efectivo
+    documento_retencion: AJPM50001869   # TBD — confirmar en app que esté pendiente (no verificado en BD)
+    monto_retencion_iva: 10
+    monto_retencion_islr: 1
+    moneda_cobro: US$
+    smoke_na_estructural:
+      - "DM-COB-IGTF*"                  # todos los casos IGTF → N/A estructural (userCanSelectIGTF=false)
+
+  devoluciones:
+    cliente_test: AUTOMERCADOS FRESCO MARKET AFN, C.A. -  CAURIMARE
+    factura_test: "38649"               # factura enviada con productos MANI
+    producto_test: MANI SALADO X Kg
+
+  inventarios:
+    cliente_test: AUTOMERCADOS FRESCO MARKET AFN, C.A. -  CAURIMARE   # búsqueda usa primeros 6 chars: "AUTOME"
+    cliente_code: "01778"
+
+  depositos:
+    aplica: true
+    motivo_na: ""
+
+  visitas:
+    cliente_test: AUTOMERCADOS FRESCO MARKET AFN, C.A. -  CAURIMARE
+    smoke_na_estructural: []
+
+  productos:
+    tipo_estructura_default: lineas
+    texto_busqueda: MANI
+
+  vendedores:
+    aplica: false                       # infoVendedores=false en este cliente
+
+# ── Última corrida ──────────────────────────────────────────────────────────
+ultima_corrida:
+  run_id: ""
+  fecha: ""
+  defectos_abiertos: []

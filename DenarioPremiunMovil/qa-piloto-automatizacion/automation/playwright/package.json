@@ -1,0 +1,12 @@
+{
+  "name": "qa-playwright-scripts",
+  "private": true,
+  "description": "Scripts determinísticos Denario Premium Móvil — sin Claude, sin tokens",
+  "scripts": {
+    "run": "node run.js"
+  },
+  "dependencies": {
+    "playwright": "^1.48.0",
+    "js-yaml": "^4.1.0"
+  }
+}

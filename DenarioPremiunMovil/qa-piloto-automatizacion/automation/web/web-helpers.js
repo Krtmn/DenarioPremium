@@ -396,7 +396,9 @@ const BUNDLE_DOM = `() => {
       const cols = [...t.querySelectorAll('thead th')].map(txt);
       const vistos = new Set(), idx = [];
       cols.forEach((c, i) => { if (c && !vistos.has(c)) { vistos.add(c); idx.push(i); } });
-      const filas = [...t.querySelectorAll('tbody tr')].slice(0, maxFilas || 50).map((tr) => {
+      const filas = [...t.querySelectorAll('tbody tr')]
+        .filter((tr) => !tr.classList.contains('ui-datatable-empty-message'))
+        .slice(0, maxFilas || 50).map((tr) => {
         const tds = [...tr.querySelectorAll('td')];
         const o = {};
         idx.forEach((i) => {
