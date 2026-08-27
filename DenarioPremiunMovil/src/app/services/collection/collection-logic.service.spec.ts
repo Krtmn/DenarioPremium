@@ -1282,6 +1282,26 @@ describe('CollectionService', () => {
       expect(service.canProceedSendAfterValidation()).toBeTrue();
     });
 
+    it('COB-SEND-ATTACH-002: notifyCollectionEdited desbloquea Enviar tras adjunto aunque dirty tracking esté pausado', () => {
+      service.hideDocuments = false;
+      service.hidePayments = true;
+      service.sendBlockedByFields = true;
+      service.disableSendButton = true;
+      service.pauseCollectionDirtyTracking();
+      service.collection = {
+        coType: '0',
+        collectionDetails: [{ idDocument: 1, coDocument: 'FAC-1' }],
+        collectionPayments: [],
+      } as any;
+      const validateSpy = spyOn(service, 'validateToSend').and.resolveTo();
+
+      service.notifyCollectionEdited();
+
+      expect(service.sendBlockedByFields).toBeFalse();
+      expect(service.disableSendButton).toBeFalse();
+      expect(validateSpy).toHaveBeenCalled();
+    });
+
     it('COB-PREPAID-003: collectCollectionSendIssues no pisa mensaje global con adjuntos', async () => {
       service.hideDocuments = false;
       service.hidePayments = false;

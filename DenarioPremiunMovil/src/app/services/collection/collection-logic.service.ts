@@ -516,6 +516,11 @@ export class CollectionService {
 
   markCollectionDirty(): void {
     if (this.collectionDirtyTrackingPaused || this.recentOpenCollect) {
+      // COB-SEND-ATTACH-002: aunque dirty tracking esté pausado, desbloquear Enviar tras corregir (p. ej. adjuntos).
+      if (this.sendBlockedByFields) {
+        this.sendBlockedByFields = false;
+        this.updateSendButtonAvailability();
+      }
       return;
     }
     this.collectionDirtySincePersist = true;
@@ -2709,6 +2714,8 @@ export class CollectionService {
     if (issues.length === 0 || this.isOnlyToleranciaExcessForPrepaid(issues)) {
       this.lastSendIssues = [];
       this.onCollectionValidToSend(true);
+      this.sendBlockedByFields = false;
+      this.updateSendButtonAvailability();
       return [];
     }
     this.lastSendIssues = issues;
