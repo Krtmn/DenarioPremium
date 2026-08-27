@@ -21,8 +21,28 @@
 | Tab "General" | `ion-segment-button[value="default"]` (**NO** `"general"`) | `[ins-2611]` | otros values: `documentos`/`pagos`/`total`/`adjuntos`. Click por textContent en el segment-button "General" no marca `checked` correctamente |
 | Tab Documentos | checkbox por factura; leyenda Vigente/Vencido/A favor | `[gmp-2606][rom-2606]` | checkbox → `mouse.click` en coords exactas del checkbox |
 | **Abrir detalle de documento (lupa)** | **`await h.openDocumentDetail(pg, {match: '<nroFactura>'})`** — selecciona el checkbox de la fila PRIMERO, espera `isSelected`, y recién entonces click real en el `ion-button` de la lupa (fallback: `openDocumentSale(idx)` vía `window.ng`) | `[prc-2617]` | ⚠ **PRECONDICIÓN**: el botón lupa tiene `disabled="{{!documentSale.isSelected}}"` y el handler hace `if(isSelected){...abre...}` → **NO abre si el documento no está seleccionado**. Causa del SKIP DM-COB-041/042/046 en piercar `[prc-2606]`: se clickeaba la lupa sin marcar el checkbox. Confirmado en `cobro-documents.component.html:203` + `.ts:887`. Necesario para retención por documento (041/042) y toggle pago parcial (046) |
-| Modal métodos pago | `#eventModal` (checkboxes Efectivo/Depósito/Transferencia/Otros) | `[ins-2606][gmp-2606][ins-2610][jerez-2026-07-06]` | abrir con `document.querySelector('#eventModal').present()` (mouse.click en "Agregar método" a veces no dispara); checkbox requiere coords exactas (no ion-item padre) |
+| Modal métodos pago | `#eventModal` (checkboxes Efectivo/Depósito/Transferencia/Otros) | `[ins-2606][gmp-2606][ins-2610][jerez-2026-07-06]` · 🔴 `[el_eden-main-20260826]` | 🔴 **`#eventModal.present()` YA NO SIRVE — TUMBA EL WEBVIEW.** Ver aviso abajo. Usar click real en «Agregar método de pago»; checkbox requiere coords exactas (no ion-item padre) |
 | ⚠ `#eventModal` reutilizado | el mismo id lo usa el modal "Detalle Del Documento" Y el picker de métodos | `[ins-2610]` | pueden coexistir 2 `#eventModal`; filtrar por contenido (`/Efectivo/` vs `/Detalle Del Documento/`) y `dismiss()` el sobrante |
+
+> ## 🔴 `#eventModal.present()` MATA LA APP — no usarlo `[el_eden-main-20260826]`
+>
+> **Reproducido 2 de 2 en el build de `main`**: abrir el modal de métodos de pago con
+> `document.querySelector('#eventModal').present()` y luego pulsar **«Agregar»** ⇒ **el WebView muere.**
+>
+> **Por qué:** `.present()` abre el modal **saltándose el handler del componente**, así que queda
+> a medio inicializar (sin el contexto del cobro). El botón «Agregar» opera sobre ese estado
+> inconsistente y revienta.
+>
+> ⚠ **NO ES UN DEFECTO DEL PRODUCTO.** Un usuario real nunca llega a ese estado: es un artefacto de
+> la automatización. **No reportarlo como hallazgo.**
+>
+> **Qué hacer en su lugar:** click real (`pg.mouse.click` con coords frescas) sobre
+> «Agregar método de pago». Si no dispara, reintentar con coords recalculadas —
+> **no** caer en `.present()`.
+>
+> 💡 El atajo funcionó en builds viejos (`ins-2606`, `jerez`), por eso estaba documentado como válido.
+> **Dejó de servir.** Un atajo que salta la lógica del componente es frágil por definición: sobrevive
+> mientras el componente no cambie, y cuando cambia, falla de la forma más cara (cuelgue sin traza).
 | **Pago parcial (detalle documento)** | `ion-toggle` en el mismo `ion-row` que el `ion-label` "Pago parcial:" (al final del detalle) → click activa (false→true); el `ion-input` justo **debajo** (muestra el saldo, ej "1,50") pasa editable → escribir el monto parcial | `[ins-2611][gmp-2611][ins-2622][run_vzla-20260818]` | ⚠ **Al ACTIVAR el toggle, `Monto a pagar` se RESETEA a `0,00`** y `Dif. Devolución/Faltante` pasa a `disabled=true`; el input parcial es el **último `ion-input` editable** del modal (`[run_vzla-20260818]` precisa y confirma). ⚠ **NO** confundir con la columna "Pago Parcial" de la tabla (íconos `search-sharp`/`receipt-outline` = historial **solo lectura**). El toggle vive en grid `ion-row/ion-col`, **no** en `ion-item`. Localizar: `ion-label` con texto "Pago parcial:" → `.closest('ion-row').querySelector('ion-toggle')`. Detalle doc se abre con `mouse.click` real (coords frescas) sobre `ion-icon[name="search-sharp"]` de la fila; el input editable = último `ion-input` no readOnly/no disabled del modal `#eventModal`; confirmar con "Guardar" (`botonAddVerde`) del modal; persiste round-trip (globalmp DM-COB-046 PASS, don-theo confirma) |
 | Banco (Depósito) — `#bankPickerModal` (vía estándar en COBROS) · ⚠ **romher es la excepción**: `ion-select.selectbanco` + `h.selectIonPopover` `[rom-2606]` (en el módulo DEPÓSITOS globalmp también usa `selectbanco` — la divergencia `#bankPickerModal` es **solo en COBROS**) | `div.listado-enterprise-selector` (texto "Seleccione...") dentro del acordeón → `ion-item.bank-picker-trigger` (Pointer+Mouse) abre `#bankPickerModal` (modal separado) | `[ins-2606][gmp-2611][dth-2612][run_vzla-20260818]` | **5.ª confirmación** (run_vzla: 15 cuentas de la empresa, lista completa a la 1.ª sin `#eventModal` residual). NO ion-select/popover. ⚠ **CORRIGE `[gmp-2606]`**: globalmp/insumar/don-theo COBROS usan `#bankPickerModal`, NO `ion-select.selectbanco`. La lista de bancos varía por cliente (ver YAML) |
 | Expandir acordeón Depósito/Efectivo | asignar `grp.value = acc.value` al `ion-accordion-group` (ej. `"deposito0"`/`"efectivo0"`) + disparar `ionChange` | `[ins-2611][run_vzla-20260818]` | revela inputs Nro/Monto; el click en el header `ion-item` no siempre expande. Tras expandir, los inputs visibles son `[0] Nro. Recibo / Nro. Depósito` y `[1] Monto` |

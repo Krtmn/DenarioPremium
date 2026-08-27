@@ -1,0 +1,60 @@
+### Ventana 1 — entrada al Tab Pagos y RangeError (18:09:27 - 18:09:53)
+08-26 18:09:27.530 I/libPowerHal( 1346): [setGPUFreq] final min/max = (24, 0)
+08-26 18:09:27.530 I/libPowerHal( 1346): INTERACTION: set gpu opp level: 24
+08-26 18:09:27.530 I/libPowerHal( 1346): INTERACTION: set gpu opp level max: 0
+08-26 18:09:27.531 I/libPowerHal( 1346): [PD] INTERACTION update cmd:1000000 param:-1 pr:6
+08-26 18:09:27.532 I/libPowerHal( 1346): [perfLockRel] Done for hdl : 49121
+08-26 18:09:27.534 D/PipelineWatcher(26687): onInputBufferReleased: frameIndex not found (10305); ignored
+08-26 18:09:27.550 I/Capacitor/Console(13242): Line 25362 - Msg: [onChangeTab] start -> pagos
+08-26 18:09:27.550 W/Capacitor/Console(13242): Line 25363 - Msg: Timer '[onChangeTab] duration' already exists
+08-26 18:09:27.550 D/PipelineWatcher(26687): onInputBufferReleased: frameIndex not found (10306); ignored
+08-26 18:09:27.555 I/Capacitor/Console(13242): Line 21441 - Msg: [CobroPagos] constructor start
+08-26 18:09:27.556 D/Capacitor/Console(13242): Line 21444 - Msg: [CobroPagos] constructor: 0.037841796875 ms
+08-26 18:09:27.568 D/PipelineWatcher(26687): onInputBufferReleased: frameIndex not found (10307); ignored
+08-26 18:09:27.574 D/Capacitor(13242): Handling local request: http://localhost/node_modules_ionic_core_dist_esm_ion-accordion_2_entry_js.js
+08-26 18:09:27.577 D/Capacitor/Console(13242): Line 21461 - Msg: [CobroPagos] afterViewInit: 0.005126953125 ms
+08-26 18:09:27.578 I/Capacitor/Console(13242): Line 21462 - Msg: [CobroPagos] montoTotalPagar= 822915.7 items ef= 0
+08-26 18:09:27.588 D/PipelineWatcher(26687): onInputBufferReleased: frameIndex not found (10308); ignored
+08-26 18:09:27.603 D/PipelineWatcher(26687): onInputBufferReleased: frameIndex not found (10309); ignored
+08-26 18:09:27.618 D/PipelineWatcher(26687): onInputBufferReleased: frameIndex not found (10310); ignored
+08-26 18:09:27.633 D/PipelineWatcher(26687): onInputBufferReleased: frameIndex not found (10311); ignored
+08-26 18:09:27.650 D/PipelineWatcher(26687): onInputBufferReleased: frameIndex not found (10312); ignored
+08-26 18:09:27.666 D/PipelineWatcher(26687): onInputBufferReleased: frameIndex not found (10313); ignored
+08-26 18:09:49.130 I/Capacitor/Console(13242): Line 57708 - Msg: returnLogicService: onReturnValid
+08-26 18:09:49.133 I/Capacitor/Console(13242): Line 57708 - Msg: returnLogicService: onReturnValid
+08-26 18:09:49.135 I/Capacitor/Console(13242): Line 57708 - Msg: returnLogicService: onReturnValid
+08-26 18:09:49.138 I/Capacitor/Console(13242): Line 57708 - Msg: returnLogicService: onReturnValid
+08-26 18:09:49.140 W/Capacitor/Console(13242): Line 1 - Msg: [CollectionService] syncPendingInputsBeforeSendValidation handler failed RangeError: Maximum call stack size exceeded
+08-26 18:09:49.141 W/Capacitor/Console(13242): Line 1 - Msg: [CollectionService] syncPendingInputsBeforeSendValidation handler failed RangeError: Maximum call stack size exceeded
+08-26 18:09:49.143 W/Capacitor/Console(13242): Line 56583 - Msg: [CollectionService] syncPendingInputsBeforeSendValidation handler failed RangeError: Maximum call stack size exceeded
+08-26 18:09:49.144 I/mtkpower@impl( 1346): [setMode] type:6, enabled:1
+08-26 18:09:49.144 E/mtkpower@impl( 1346): [setMode] unknown type
+08-26 18:09:49.155 W/Capacitor/Console(13242): Line 56583 - Msg: [CollectionService] syncPendingInputsBeforeSendValidation handler failed RangeError: Maximum call stack size exceeded
+08-26 18:09:49.155 W/Capacitor/Console(13242): Line 56583 - Msg: [CollectionService] syncPendingInputsBeforeSendValidation handler failed RangeError: Maximum call stack size exceeded
+08-26 18:09:49.156 W/Capacitor/Console(13242): Line 56583 - Msg: [CollectionService] syncPendingInputsBeforeSendValidation handler failed RangeError: Maximum call stack size exceeded
+08-26 18:09:49.156 W/Capacitor/Console(13242): Line 56583 - Msg: [CollectionService] syncPendingInputsBeforeSendValidation handler failed RangeError: Maximum call stack size exceeded
+08-26 18:09:49.185 D/PipelineWatcher(26687): onInputBufferReleased: frameIndex not found (10595); ignored
+08-26 18:09:49.204 I/mtkpower@impl( 1346): [setMode] type:6, enabled:0
+08-26 18:09:49.204 E/mtkpower@impl( 1346): [setMode] unknown type
+08-26 18:09:49.211 I/Capacitor/Console(13242): Line 57708 - Msg: returnLogicService: onReturnValid
+08-26 18:09:49.214 I/Capacitor/Console(13242): Line 57708 - Msg: returnLogicService: onReturnValid
+08-26 18:09:49.216 I/Capacitor/Console(13242): Line 57708 - Msg: returnLogicService: onReturnValid
+08-26 18:09:49.219 I/Capacitor/Console(13242): Line 57708 - Msg: returnLogicService: onReturnValid
+08-26 18:09:49.221 I/Capacitor/Console(13242): Line 57708 - Msg: returnLogicService: onReturnValid
+08-26 18:09:52.078 I/Capacitor/Console(13242): Line 57708 - Msg: returnLogicService: onReturnValid
+08-26 18:09:52.080 I/hwcomposer( 1320): [HWCDisplay] (0 updateFps():3676), (type:1, mode:2) fps:9.033951,dur:3874.27,max:2926.63,min:10.26  
+08-26 18:09:52.080 I/Capacitor/Console(13242): Line 57708 - Msg: returnLogicService: onReturnValid
+08-26 18:09:52.083 I/Capacitor/Console(13242): Line 57708 - Msg: returnLogicService: onReturnValid
+08-26 18:09:52.085 I/Capacitor/Console(13242): Line 57708 - Msg: returnLogicService: onReturnValid
+08-26 18:09:52.087 I/Capacitor/Console(13242): Line 57708 - Msg: returnLogicService: onReturnValid
+08-26 18:09:52.088 W/Capacitor/Console(13242): Line 56583 - Msg: [CollectionService] syncPendingInputsBeforeSendValidation handler failed 
+08-26 18:09:52.096 D/PipelineWatcher(26687): onInputBufferReleased: frameIndex not found (10605); ignored
+08-26 18:09:52.097 D/AidlBufferPool( 1323): bufferpool2 0xb400007677980bc8 : 13(54486016 size) total buffers - 13(54486016 size) used buffers - 10593/10619 (recycle/alloc) - 512/10605 (fetch/transfer)
+08-26 18:09:52.109 I/Capacitor/Console(13242): Line 57708 - Msg: returnLogicService: onReturnValid
+08-26 18:09:52.113 I/Capacitor/Console(13242): Line 57708 - Msg: returnLogicService: onReturnValid
+
+### Ventana 2 — muerte del render process (18:20:10 - 18:20:16)
+282021:08-26 18:20:10.325 E/libsigchain(14218): Setting SIGSEGV to SIG_DFL
+282168:--------- beginning of crash
+282406:08-26 18:20:15.514 F/libc    (13242): Fatal signal 5 (SIGTRAP), code 1 (TRAP_BRKPT), fault addr 0x79204258d4 in tid 13242 (narioPremiumPro), pid 13242 (narioPremiumPro)
+282506:08-26 18:20:15.707 I/tombstoned(  728): received crash request for pid 13242
