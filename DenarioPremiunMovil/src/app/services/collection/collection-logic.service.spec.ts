@@ -2358,7 +2358,7 @@ describe('CollectionService', () => {
       expect(service.resolveCollectionDetailRemainingBalance(detail)).toBe(100.75);
     });
 
-    it('partial payment with retention uses net minus paid', () => {
+    it('COB-TOTAL-004: partial + legacy retention uses gross minus paid (not net)', () => {
       const detail = {
         nuBalanceDoc: 500,
         nuBalanceDocOriginal: 500,
@@ -2371,7 +2371,44 @@ describe('CollectionService', () => {
         isSave: true,
       } as CollectionDetail;
 
-      expect(service.resolveCollectionDetailRemainingBalance(detail)).toBe(200);
+      expect(service.resolveCollectionDetailRemainingBalance(detail)).toBe(300);
+    });
+
+    it('COB-TOTAL-004: partial 154.03 + ret 15+35 on 254.03 shows 100', () => {
+      const detail = {
+        nuBalanceDoc: 254.03,
+        nuBalanceDocOriginal: 254.03,
+        nuAmountPaid: 154.03,
+        nuAmountDiscount: 0,
+        nuAmountCollectDiscount: 0,
+        nuAmountRetention: 15,
+        nuAmountRetention2: 35,
+        inPaymentPartial: true,
+        isSave: true,
+      } as CollectionDetail;
+
+      expect(service.resolveCollectionDetailRemainingBalance(detail)).toBeCloseTo(100, 2);
+    });
+
+    it('COB-TOTAL-004: partial + dynamic retentions ignores them for remaining', () => {
+      service.dynamicRetentions = true;
+      const detail = {
+        nuBalanceDoc: 254.03,
+        nuBalanceDocOriginal: 254.03,
+        nuAmountPaid: 154.03,
+        nuAmountDiscount: 0,
+        nuAmountCollectDiscount: 0,
+        nuAmountRetention: 0,
+        nuAmountRetention2: 0,
+        collectionDetailRetentions: [
+          { idCollectRetention: 1, nuAmountRetention: 15 },
+          { idCollectRetention: 2, nuAmountRetention: 35 },
+        ],
+        inPaymentPartial: true,
+        isSave: true,
+      } as CollectionDetail;
+
+      expect(service.resolveCollectionDetailRemainingBalance(detail)).toBeCloseTo(100, 2);
     });
   });
 

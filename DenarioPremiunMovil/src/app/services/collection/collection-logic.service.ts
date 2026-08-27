@@ -6652,15 +6652,26 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
   }
 
   /**
-   * Monto Saldo en Total: neto esperado (bruto − deducciones) − monto pagado.
-   * Con retenciones/descuentos no usar solo bruto − pagado (COB-TOTAL-003).
+   * Monto Saldo en Total.
+   * - Pago parcial (COB-TOTAL-004): bruto − nuAmountPaid (ignora retenciones/descuentos).
+   * - Pago completo (COB-TOTAL-003): neto esperado (bruto − deducciones) − monto pagado.
    */
   resolveCollectionDetailRemainingBalance(detail: CollectionDetail): number {
     const backup = this.resolveCollectionDetailBackup(detail);
     const docIndex = this.findDocumentSaleIndexForDetail(detail);
     const gross = this.resolveDetailGrossBalanceForTotals(detail, backup);
-    const expectedNet = this.computeDetailFullExpectedNet(detail, backup, docIndex);
     const paid = Number(detail?.nuAmountPaid ?? 0);
+
+    // Parcial: el abono es el monto a pagar; restante = bruto − parcial (igual que envío).
+    if (this.isDetailPartialPayment(detail)) {
+      const remainingPartial = gross - paid;
+      if (gross < 0) {
+        return remainingPartial;
+      }
+      return Math.max(0, remainingPartial);
+    }
+
+    const expectedNet = this.computeDetailFullExpectedNet(detail, backup, docIndex);
     const remaining = expectedNet - paid;
 
     if (gross < 0) {
