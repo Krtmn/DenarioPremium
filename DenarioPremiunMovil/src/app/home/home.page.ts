@@ -61,6 +61,10 @@ export class HomePage implements OnInit {
   /* public modulos: any[] = []; */
   public fechaCreacion: string = "2000-01-01 00:00:00";
   public userMustActivateGPS: boolean = false;
+  public versionApp!: string;
+  public currentYear: number = new Date().getFullYear();
+
+  private static readonly FALLBACK_VERSION = '6.6.21';
 
   public esVendedor: boolean = true;
   backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(1, () => {
@@ -252,9 +256,11 @@ export class HomePage implements OnInit {
     this.imageServices.downloadPdfFilesWithConcurrency(3); // Puedes ajustar el número de descargas simultáneas
   }
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     //this.imageServices.uploadPhotos();
     console.log(this.services.tags)
+
+    this.versionApp = await this.resolveAppVersion();
 
     this.alertButtonsSincronice[0].text = "Cancelar"
     this.alertButtonsSincronice[1].text = "Aceptar"
@@ -262,6 +268,15 @@ export class HomePage implements OnInit {
     // Arranca la sincronización en background solo después de ingresar a Home
     this.backgroundSync.start();
 
+  }
+
+  private async resolveAppVersion(): Promise<string> {
+    try {
+      const info = await App.getInfo();
+      return info.version?.trim() || HomePage.FALLBACK_VERSION;
+    } catch {
+      return HomePage.FALLBACK_VERSION;
+    }
   }
 
   ngOnDestroy(): void {
