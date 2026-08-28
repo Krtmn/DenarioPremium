@@ -240,6 +240,11 @@ public modalCtrl = inject(ModalController);
       toSend= true;
     }
 
+    await this.inventariosLogicService.saveSuggestedOrderSnapshot(
+      this.dbServ.getDatabase(),
+      monedaSeleccionadaSugerencia,
+    );
+
     this.orderServ.datosPedidoSugerido = {
       empresa: this.inventariosLogicService.empresaSeleccionada,
       cliente: this.inventariosLogicService.cliente,

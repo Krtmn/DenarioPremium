@@ -24,6 +24,9 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
   @Input() diasHastaSiguienteInventario: number = 0;
   @Input() empresaSeleccionada: Enterprise = {} as Enterprise;
   @Input() monedaLabel = 'Moneda';
+  @Input() blockCreateSuggestedOrder = false;
+  @Input() monedaInicial: CurrencyEnterprise | null = null;
+  @Input() suggestedOrderByDispatchAndReturnOverride: boolean | null = null;
 
   disableOrderButton = true;
   previewReady = false;
@@ -69,9 +72,13 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
 
   ngOnInit(): void {
     this.quUnitDecimals = this.config.get("quUnitDecimals").toLocaleLowerCase() === 'true';
-    this.suggestedOrderByDispatchAndReturn = this.config
-      .get("suggestedOrderByDispatchAndReturn")
-      .toLocaleLowerCase() === 'true';
+    if (this.suggestedOrderByDispatchAndReturnOverride != null) {
+      this.suggestedOrderByDispatchAndReturn = this.suggestedOrderByDispatchAndReturnOverride;
+    } else {
+      this.suggestedOrderByDispatchAndReturn = this.config
+        .get("suggestedOrderByDispatchAndReturn")
+        .toLocaleLowerCase() === 'true';
+    }
 
     this.disableOrderButton = this.computeDisableOrderButton();
     void this.initCurrencyUi();
@@ -123,13 +130,17 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
       this.currencyModulePed = this.currencyService.getCurrencyModule('ped');
       this.localCurrency = this.currencyService.getLocalCurrency();
       this.hardCurrency = this.currencyService.getHardCurrency();
-      this.monedaSeleccionadaPreview = this.resolveDefaultPedidosCurrency(this.empresaSeleccionada);
+      this.monedaSeleccionadaPreview = this.monedaInicial
+        ?? this.resolveDefaultPedidosCurrency(this.empresaSeleccionada);
     } finally {
       this.previewReady = true;
     }
   }
 
   private computeDisableOrderButton(): boolean {
+    if (this.blockCreateSuggestedOrder) {
+      return true;
+    }
     if (this.inventariosLogicService.inventarioSent) {
       return true;
     }

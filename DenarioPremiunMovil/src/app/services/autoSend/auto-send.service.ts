@@ -999,6 +999,26 @@ export class AutoSendService implements OnInit {
           'UPDATE client_stocks SET id_order = ? WHERE co_order = ?',
           [idTransaction, coTransaction],
         ).catch(e => console.log('UPDATE client_stocks.id_order vÃ­nculo', e));
+        try {
+          const orderLink = await db.executeSql(
+            'SELECT co_client_stock FROM orders WHERE co_order = ? LIMIT 1',
+            [coTransaction],
+          );
+          if (orderLink.rows.length > 0) {
+            const coClientStock = orderLink.rows.item(0).co_client_stock as string | null;
+            if (coClientStock) {
+              await this.inventariosLogicService.markSuggestedOrderLinked(
+                db,
+                coClientStock,
+                coTransaction,
+                idTransaction,
+                true,
+              );
+            }
+          }
+        } catch (e) {
+          console.log('[autoSend order] markSuggestedOrderLinked', e);
+        }
         await this.adjuntoService.sendPhotos(db, idTransaction, 'pedidos', coTransaction);
         break;
       }
