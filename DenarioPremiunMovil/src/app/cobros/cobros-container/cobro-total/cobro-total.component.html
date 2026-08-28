@@ -20,7 +20,7 @@
       shouldShowTotalizationIgtfSummary()) {
       <ion-row>
         <ion-col size="4" class="titulosBold">{{this.collectService.collectionTags.get('COB_IGTF_LABEL')}}
-          {{this.collectService.currencyConversion.coCurrency}}</ion-col>
+          {{this.collectService.currencyConversion?.coCurrency}}</ion-col>
         <ion-col>{{formatTotalizationAmount(this.collectService.convertirMonto(this.collectService.montoIgtf,this.collectService.collection.nuValueLocal,
           this.collectService.collection.coCurrency))}}
         </ion-col>
@@ -39,7 +39,7 @@
       @if (this.collectService.multiCurrency && this.collectService.showConversion) {
       <ion-row>
         <ion-col size="4" class="titulosBold">{{this.collectService.collectionTags.get('COB_MONTO_TOTAL_PAGAR')}}
-          {{this.collectService.currencyConversion.coCurrency}}
+          {{this.collectService.currencyConversion?.coCurrency}}
         </ion-col>
         <ion-col>{{this.currencyService.formatNumber(this.collectService.montoTotalPagarConversion)}}
         </ion-col>
@@ -51,7 +51,7 @@
       @if (this.collectService.multiCurrency && this.collectService.showConversion) {
       <ion-row>
         <ion-col size="4" class="titulosBold">{{this.collectService.collectionTags.get('COB_TASA')}}
-          {{this.collectService.currencyConversion.coCurrency}}
+          {{this.collectService.currencyConversion?.coCurrency}}
         </ion-col>
         <ion-col>{{this.currencyService.formatNumber(this.collectService.collection.nuValueLocal)}}</ion-col>
       </ion-row>
@@ -69,7 +69,7 @@
       @if (this.collectService.multiCurrency && this.collectService.showConversion) {
       <ion-row>
         <ion-col size="4" class="titulosBold">{{this.collectService.collectionTags.get('COB_PAGO')}}
-          {{this.collectService.currencyConversion.coCurrency}}
+          {{this.collectService.currencyConversion?.coCurrency}}
         </ion-col>
         <ion-col>{{this.currencyService.formatNumber(
           this.collectService.montoTotalPagadoConversion
@@ -96,7 +96,7 @@
       <ion-row>
         <ion-col size="4" class="titulosBold">
           {{this.collectService.collectionTags.get('COB_DIFERENCIA')}}
-          {{this.collectService.currencyConversion.coCurrency}}
+          {{this.collectService.currencyConversion?.coCurrency}}
         </ion-col>
 
         <!-- CASO QUE TENGAMOS UN DOC CON SALDO NEGATIVO, Y CON TASAS DISTINTAS -->
@@ -225,9 +225,8 @@
             {{this.currencyService.formatNumber(this.collectService.totalEfectivo)}}</p>
           @if (this.collectService.showConversion) {
           <p>
-            {{this.collectService.currencyConversion.coCurrency}}
-            {{this.currencyService.formatNumber(this.collectService.convertirMonto(
-            this.collectService.totalEfectivo,0,this.collectService.collection.coCurrency))}}
+            {{this.collectService.currencyConversion?.coCurrency}}
+            {{this.currencyService.formatNumber(sumPersistedPaymentConversions(this.collectService.pagoEfectivo))}}
           </p>
           }
         </ion-label>
@@ -247,7 +246,7 @@
           <ion-item>
             <ion-label>
               {{this.collectService.collectionTags.get('COB_MONTO')}}
-              {{this.collectService.currencyConversion.coCurrency}}:
+              {{this.collectService.currencyConversion?.coCurrency}}:
               {{this.currencyService.formatNumber(efectivo.montoConversion)}}
             </ion-label>
           </ion-item>
@@ -274,8 +273,8 @@
             {{this.currencyService.formatNumber(this.collectService.totalCheque)}}</p>
           @if (this.collectService.multiCurrency && this.collectService.showConversion) {
           <p>
-            {{this.collectService.currencyConversion.coCurrency}}
-            {{this.currencyService.formatNumber(this.collectService.convertirMonto(this.collectService.totalCheque,0,this.collectService.collection.coCurrency))}}
+            {{this.collectService.currencyConversion?.coCurrency}}
+            {{this.currencyService.formatNumber(sumPersistedPaymentConversions(this.collectService.pagoCheque))}}
           </p>
           }
         </ion-label>
@@ -304,7 +303,7 @@
           <ion-item>
             <ion-label>
               {{this.collectService.collectionTags.get('COB_MONTO')}}
-              {{this.collectService.currencyConversion.coCurrency}}:
+              {{this.collectService.currencyConversion?.coCurrency}}:
               {{this.currencyService.formatNumber(cheque.montoConversion)}}
             </ion-label>
           </ion-item>
@@ -334,8 +333,8 @@
           <p>{{this.collectService.collection.coCurrency}} {{this.collectService.totalDeposito}}</p>
           @if (this.collectService.multiCurrency && this.collectService.showConversion) {
           <p>
-            {{this.collectService.currencyConversion.coCurrency}}
-            {{this.currencyService.formatNumber(this.collectService.convertirMonto(this.collectService.totalDeposito,0,this.collectService.collection.coCurrency))}}
+            {{this.collectService.currencyConversion?.coCurrency}}
+            {{this.currencyService.formatNumber(sumPersistedPaymentConversions(this.collectService.pagoDeposito))}}
           </p>
           }
         </ion-label>
@@ -365,7 +364,7 @@
           <ion-item>
             <ion-label>
               {{this.collectService.collectionTags.get('COB_MONTO')}}
-              {{this.collectService.currencyConversion.coCurrency}}:
+              {{this.collectService.currencyConversion?.coCurrency}}:
               {{this.currencyService.formatNumber(deposito.montoConversion)}}
             </ion-label>
           </ion-item>
@@ -391,8 +390,8 @@
             {{this.currencyService.formatNumber(this.collectService.totalTransferencia)}}</p>
           @if (this.collectService.multiCurrency && this.collectService.showConversion) {
           <p>
-            {{this.collectService.currencyConversion.coCurrency}}
-            {{this.currencyService.formatNumber(this.collectService.convertirMonto(this.collectService.totalTransferencia,0,this.collectService.collection.coCurrency))}}
+            {{this.collectService.currencyConversion?.coCurrency}}
+            {{this.currencyService.formatNumber(sumPersistedPaymentConversions(this.collectService.pagoTransferencia))}}
           </p>
           }
         </ion-label>
@@ -423,7 +422,7 @@
           <ion-item>
             <ion-label>
               {{this.collectService.collectionTags.get('COB_MONTO')}}
-              {{this.collectService.currencyConversion.coCurrency}}:
+              {{this.collectService.currencyConversion?.coCurrency}}:
               {{this.currencyService.formatNumber(transferencia.montoConversion)}}
             </ion-label>
           </ion-item>
@@ -449,8 +448,8 @@
             {{this.currencyService.formatNumber(this.collectService.totalPagoMovil)}}</p>
           @if (this.collectService.multiCurrency && this.collectService.showConversion) {
           <p>
-            {{this.collectService.currencyConversion.coCurrency}}
-            {{this.currencyService.formatNumber(this.collectService.convertirMonto(this.collectService.totalPagoMovil,0,this.collectService.collection.coCurrency))}}
+            {{this.collectService.currencyConversion?.coCurrency}}
+            {{this.currencyService.formatNumber(sumPersistedPaymentConversions(this.collectService.pagoMovil))}}
           </p>
           }
         </ion-label>
@@ -495,7 +494,7 @@
           <ion-item>
             <ion-label>
               {{this.collectService.collectionTags.get('COB_MONTO')}}
-              {{this.collectService.currencyConversion.coCurrency}}:
+              {{this.collectService.currencyConversion?.coCurrency}}:
               {{this.currencyService.formatNumber(pagoMovil.montoConversion)}}
             </ion-label>
           </ion-item>
@@ -520,8 +519,8 @@
             {{this.currencyService.formatNumber(this.collectService.totalOtros)}}</p>
           @if (this.collectService.multiCurrency && this.collectService.showConversion) {
           <p>
-            {{this.collectService.collection.coCurrencyConversion}}
-            {{this.currencyService.formatNumber(this.collectService.convertirMonto(this.collectService.totalOtros,0,this.collectService.collection.coCurrency))}}
+            {{this.collectService.currencyConversion?.coCurrency}}
+            {{this.currencyService.formatNumber(sumPersistedPaymentConversions(this.collectService.pagoOtros))}}
           </p>
           }
         </ion-label>
@@ -548,7 +547,7 @@
           <ion-item>
             <ion-label>
               {{this.collectService.collectionTags.get('COB_MONTO')}}
-              {{this.collectService.currencyConversion.coCurrency}}:
+              {{this.collectService.currencyConversion?.coCurrency}}:
               {{this.currencyService.formatNumber(otros.montoConversion)}}
             </ion-label>
           </ion-item>
@@ -669,7 +668,7 @@
     <ion-row>
       <ion-col size="4" class="titulosBold">
         {{this.collectService.collectionTags.get('COB_MONTO_TOTAL_PAGAR')}}
-        {{this.collectService.currencyConversion.coCurrency}}
+        {{this.collectService.currencyConversion?.coCurrency}}
       </ion-col>
       <ion-col>{{this.currencyService.formatNumber(this.collectService.montoTotalPagarConversion)}}</ion-col>
     </ion-row>

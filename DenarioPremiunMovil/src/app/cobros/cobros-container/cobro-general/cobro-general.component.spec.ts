@@ -140,4 +140,40 @@ describe('CobrosGeneralComponent', () => {
     expect(hydrated.nuevaCuenta).toBe('0123-NUEVA');
     expect(hydrated.numeroCuenta).toBe('0102-RECEPTOR');
   });
+
+  it('COB-SEND-OPEN-001: loadPayments no falla si listBankAccounts es undefined', async () => {
+    collectServiceMock.listBankAccounts = undefined;
+    collectServiceMock.collection = {
+      ...collectServiceMock.collection,
+      collectionPayments: [{
+        coPaymentMethod: 'de',
+        idBank: 1,
+        naBank: 'Banco',
+        nuClientBankAccount: '0102',
+        nuPaymentDoc: 'DEP-1',
+        daValue: '2026-08-04',
+        nuAmountPartial: 10,
+        nuAmountPartialConversion: 10,
+        isAnticipoPrepaid: false,
+      }],
+    };
+    collectServiceMock.pagoEfectivo = [];
+    collectServiceMock.pagoCheque = [];
+    collectServiceMock.pagoDeposito = [];
+    collectServiceMock.pagoTransferencia = [];
+    collectServiceMock.pagoMovil = [];
+    collectServiceMock.pagoOtros = [];
+    collectServiceMock.bankAccountSelected = [];
+    collectServiceMock.restoreCollectionIgtfFields = jasmine.createSpy('restoreCollectionIgtfFields');
+    spyOn(component as any, 'refreshSendStateAfterPaymentsHydrated').and.resolveTo();
+
+    await expectAsync(component.loadPayments()).toBeResolved();
+    expect(collectServiceMock.pagoDeposito.length).toBe(1);
+  });
+
+  it('COB-SEND-OPEN-001: setupClienteSelectorSafe no lanza si ViewChild ausente', () => {
+    (component as any).selectorCliente = undefined;
+    expect(() => (component as any).setupClienteSelectorSafe(1, 'Cobros', 'fondoVerde', null, false, 'cob'))
+      .not.toThrow();
+  });
 });

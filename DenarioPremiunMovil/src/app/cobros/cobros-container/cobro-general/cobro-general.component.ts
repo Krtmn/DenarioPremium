@@ -163,7 +163,16 @@ export class CobrosGeneralComponent implements OnInit {
   }
 
   public async setSendedCollection() {
-    this.collectService.getCurrencies(this.synchronizationServices.getDatabase(), this.collectService.enterpriseSelected.idEnterprise);
+    const db = this.synchronizationServices.getDatabase();
+    const enterpriseId = this.collectService.enterpriseSelected?.idEnterprise
+      ?? this.collectService.collection?.idEnterprise;
+    const coCurrency = String(this.collectService.collection?.coCurrency ?? '');
+    const coClient = String(this.collectService.collection?.coClient ?? '');
+
+    if (enterpriseId) {
+      await this.collectService.getCurrencies(db, enterpriseId);
+    }
+    this.collectService.ensureCurrencyConversionReady();
 
     this.collectService.initLogicService();
     this.collectService.onCollectionValid(true);
@@ -183,20 +192,64 @@ export class CobrosGeneralComponent implements OnInit {
     await this.collectService.loadPaymentMethods();
 
     if (!this.collectService.igtfList?.length) {
-      await this.collectService.getIgtfList(this.synchronizationServices.getDatabase());
+      await this.collectService.getIgtfList(db);
     }
     this.collectService.restoreCollectionIgtfFields();
 
-    void this.loadPayments();
+    // Cuentas bancarias antes de hidratar pagos (loadPayments usa listBankAccounts.find).
+    this.collectService.bankAccountSelected = [] as BankAccount[];
+    if (enterpriseId) {
+      try {
+        const [clientBankAccounts, listBankAccounts] = await Promise.all([
+          this.collectService.getAllClientBankAccountByEnterprise(db, enterpriseId, coClient),
+          this.collectService.getAllBankAccountsByEnterprise(db, enterpriseId, coCurrency),
+        ]);
+        this.collectService.clientBankAccounts = clientBankAccounts ?? [];
+        this.collectService.listBankAccounts = listBankAccounts ?? [];
+        void this.collectService.getAllBanks(db, enterpriseId);
+      } catch (err) {
+        console.warn('[CobrosGeneral] setSendedCollection: error cargando cuentas bancarias', err);
+        this.collectService.clientBankAccounts = this.collectService.clientBankAccounts ?? [];
+        this.collectService.listBankAccounts = this.collectService.listBankAccounts ?? [];
+      }
+    } else {
+      this.collectService.listBankAccounts = this.collectService.listBankAccounts ?? [];
+      this.collectService.clientBankAccounts = this.collectService.clientBankAccounts ?? [];
+    }
+
+    await this.loadPayments();
 
     this.clientService.getClientById(this.collectService.collection.idClient).then(client => {
       this.collectService.client = client;
-      this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", true, COLOR_VERDE);
-      this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.collectService.collection.coCollection, 'cobros');
-      this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, "Cobros", 'fondoVerde', client, false, 'cob');
+      this.adjuntoService.setup(db, this.globalConfig.get("signatureCollection") == "true", true, COLOR_VERDE);
+      this.adjuntoService.getSavedPhotos(db, this.collectService.collection.coCollection, 'cobros');
+      this.setupClienteSelectorSafe(
+        this.collectService.enterpriseSelected?.idEnterprise ?? enterpriseId,
+        'Cobros',
+        'fondoVerde',
+        client,
+        false,
+        'cob',
+      );
       this.collectService.changeEnterprise = false;
       this.finishOpenCollectDirtyTracking();
     });
+  }
+
+  /** ViewChild puede no estar listo aún (enviados / cold start). */
+  private setupClienteSelectorSafe(
+    idEnterprise: number | undefined,
+    nameModule: string,
+    color: string,
+    client: Client | null,
+    enabled: boolean,
+    moduleCode: string,
+  ): void {
+    if (!this.selectorCliente || !idEnterprise) {
+      console.warn('[CobrosGeneral] selectorCliente no disponible aún; se omite setup');
+      return;
+    }
+    this.selectorCliente.setup(idEnterprise, nameModule, color, client, enabled, moduleCode);
   }
 
   private finishOpenCollectDirtyTracking(): void {
@@ -243,7 +296,14 @@ export class CobrosGeneralComponent implements OnInit {
     this.dateCollect = this.collectService.collection.daCollection;
     this.clientService.getClientById(this.collectService.collection.idClient).then(client => {
       this.collectService.client = client;
-      this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, "Cobros", 'fondoVerde', client, false, 'cob');
+      this.setupClienteSelectorSafe(
+        this.collectService.enterpriseSelected?.idEnterprise,
+        'Cobros',
+        'fondoVerde',
+        client,
+        false,
+        'cob',
+      );
 
       this.collectService.loadPaymentMethods();
       this.collectService.initLogicService();
@@ -463,7 +523,7 @@ export class CobrosGeneralComponent implements OnInit {
     this.collectService.pagoOtros = [] as PagoOtros[];
 
     const payments = this.collectService.collection.collectionPayments ?? [];
-    const bankAccounts = this.collectService.listBankAccounts;
+    const bankAccounts = this.collectService.listBankAccounts ?? [];
     for (let i = 0; i < payments.length; i++) {
       const payment = payments[i];
       switch (payment.coPaymentMethod) {
@@ -691,7 +751,14 @@ export class CobrosGeneralComponent implements OnInit {
               break;
             }
           }
-          this.selectorCliente.setup(this.collectService.enterpriseSelected.idEnterprise, nameModule, 'fondoVerde', null, true, 'cob');
+          this.setupClienteSelectorSafe(
+            this.collectService.enterpriseSelected?.idEnterprise,
+            nameModule,
+            'fondoVerde',
+            null,
+            true,
+            'cob',
+          );
           //this.selectorCliente.updateClientList(this.collectService.enterpriseSelected.idEnterprise);
 
           this.collectService.collection.coCollection = this.dateServ.generateCO(0);

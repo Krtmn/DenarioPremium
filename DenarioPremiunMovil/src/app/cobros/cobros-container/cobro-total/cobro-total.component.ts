@@ -718,6 +718,25 @@ export class CobroTotalComponent implements OnInit {
     );
   }
 
+  /**
+   * Suma conversiones ya persistidas/hidratadas de pagos.
+   * No reconvierte con convertirMonto (evita descuadre por redondeo al reabrir).
+   */
+  sumPersistedPaymentConversions(
+    pagos: Array<{ montoConversion?: number }> | null | undefined,
+  ): number {
+    if (!Array.isArray(pagos) || pagos.length === 0) {
+      return 0;
+    }
+    const sum = pagos.reduce(
+      (acc, pago) => acc + (Number(pago?.montoConversion) || 0),
+      0,
+    );
+    return this.currencyService.cleanFormattedNumber(
+      this.currencyService.formatNumber(sum),
+    );
+  }
+
   getRetentionLineDisplayLabel(line: CollectionDetailRetentions): string {
     const catalog = (this.collectService.collectRetentions ?? []).find(
       item => item.idCollectRetention === line.idCollectRetention,

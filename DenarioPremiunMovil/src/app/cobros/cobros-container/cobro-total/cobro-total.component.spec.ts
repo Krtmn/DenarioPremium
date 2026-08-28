@@ -27,7 +27,7 @@ describe('CobroTotalComponent', () => {
       shouldDisplayIgtfInTotals: () => false,
       resolveCollectionDetailPaymentDisplay: () => ({ igtfAmount: 0, amountToPay: 0 }),
       resolveCollectionDetailRemainingBalance: () => 0,
-      convertirMonto: (amount: number) => amount,
+      convertirMonto: jasmine.createSpy('convertirMonto').and.callFake((amount: number) => amount),
     };
 
     TestBed.configureTestingModule({
@@ -38,7 +38,10 @@ describe('CobroTotalComponent', () => {
         { provide: GlobalConfigService, useValue: { get: () => undefined } },
         {
           provide: CurrencyService,
-          useValue: { formatNumber: (n: number) => String(n) },
+          useValue: {
+            formatNumber: (n: number) => String(n),
+            cleanFormattedNumber: (s: string | number) => Number(s) || 0,
+          },
         },
         {
           provide: DateServiceService,
@@ -104,5 +107,21 @@ describe('CobroTotalComponent', () => {
 
     expect(collectServiceMock.difDocsNegativosByRate).toBe(-20);
     expect(collectServiceMock.difference).toBe(0);
+  });
+
+  it('COB-TOTAL-CONV-001: sumPersistedPaymentConversions usa montoConversion (no reconvierte)', () => {
+    const sum = component.sumPersistedPaymentConversions([
+      { montoConversion: 6915.45 },
+      { montoConversion: 1.02 },
+    ]);
+
+    expect(sum).toBe(6916.47);
+    expect(collectServiceMock.convertirMonto).not.toHaveBeenCalled();
+  });
+
+  it('COB-TOTAL-CONV-001: sumPersistedPaymentConversions vacío o inválido → 0', () => {
+    expect(component.sumPersistedPaymentConversions(null)).toBe(0);
+    expect(component.sumPersistedPaymentConversions([])).toBe(0);
+    expect(component.sumPersistedPaymentConversions([{ montoConversion: undefined }])).toBe(0);
   });
 });
