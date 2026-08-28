@@ -6,7 +6,9 @@ import { InventarioSugeridoPreviewComponent } from '../inventario-sugerido-previ
 import { CurrencyEnterprise } from 'src/app/modelos/tables/currencyEnterprise';
 import { ClientStockSuggestedOrder } from 'src/app/modelos/tables/client-stock-suggested-order';
 import { List } from 'src/app/modelos/tables/list';
+import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { InventariosLogicService } from 'src/app/services/inventarios/inventarios-logic.service';
+import { EnterpriseService } from 'src/app/services/enterprise/enterprise.service';
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 import { PedidosService } from 'src/app/pedidos/pedidos.service';
@@ -26,6 +28,7 @@ export class InventarioSugeridoListComponent implements OnInit {
   private modalCtrl = inject(ModalController);
   private orderServ = inject(PedidosService);
   private orderDbServ = inject(PedidosDbService);
+  private enterpriseServ = inject(EnterpriseService);
   private router = inject(Router);
 
   listItems: ItemListaPedidoSugerido[] = [];
@@ -149,6 +152,19 @@ export class InventarioSugeridoListComponent implements OnInit {
     }
   }
 
+  private resolveEnterpriseFromSnapshot(snapshot: ClientStockSuggestedOrder): Enterprise {
+    const fromDb = this.enterpriseServ.empresas.find(
+      (emp) => emp.idEnterprise === snapshot.idEnterprise,
+    );
+    if (fromDb) {
+      return fromDb;
+    }
+    return {
+      idEnterprise: snapshot.idEnterprise,
+      coEnterprise: snapshot.coEnterprise,
+    } as Enterprise;
+  }
+
   private async launchPedidoFromSuggestedSnapshot(
     snapshot: ClientStockSuggestedOrder,
     monedaSeleccionadaSugerencia?: CurrencyEnterprise,
@@ -159,6 +175,10 @@ export class InventarioSugeridoListComponent implements OnInit {
 
     const db = this.dbServ.getDatabase();
     await this.orderServ.ensureModuleReady(db);
+    await this.enterpriseServ.setup(db);
+    const empresa = this.resolveEnterpriseFromSnapshot(snapshot);
+    this.orderServ.empresaSeleccionada = empresa;
+    await this.orderServ.setup();
 
     const preview = this.inventariosLogicService.mapSnapshotToPreviewData(snapshot);
     const cliente = await this.orderServ.getClient(snapshot.idClient);
@@ -196,7 +216,7 @@ export class InventarioSugeridoListComponent implements OnInit {
     }
 
     this.orderServ.datosPedidoSugerido = {
-      empresa: preview.empresaSeleccionada,
+      empresa,
       cliente,
       direccion,
       productUtils: preview.productsSuggested,
