@@ -10,7 +10,15 @@ vgs:
   multiCurrency: false                    # Tab Total solo muestra USD (sin Bs.) — confirmado corrida pedidos
   expirationBatch: true                   # Campos Lote y Fecha de vencimiento presentes en modal inventory-type-stocks-modal — confirmado 2026-06-06
   suggestedOrderByDispatchAndReturn: true # Botón "Pedido Sugerido" visible en Tab Resumen — confirmado 2026-06-06
-  requiredCollectionAttachments: false    # false para cobros normales; true para Retención (dual-mode confirmado 2026-06-06)
+  requiredCollectionAttachments: true     # ✅ CORREGIDO 2026-08-27: la QA lo confirmó en las VG de
+                                          #   cobros de la web, y la corrida lo vivió (bloqueó el envío).
+                                          #   ⚠ El valor anterior (`false`, "dual-mode 2026-06-06") quedó
+                                          #   STALE: la corrida de la mañana del 27/08 envió sin tropezarlo
+                                          #   y la de la noche sí ⇒ o cambió en el tenant ese día, o la
+                                          #   observación de junio era incompleta.
+                                          # 🔑 SE PUEDE ADJUNTAR SIN MOCK DE CÁMARA: firmando en el canvas
+                                          #   del Tab Adjuntos. 100% conducible por CDP — evita el bloqueo
+                                          #   que obligaba a pedirle el envío manual a la QA.
   requiredComment: true                   # Comentario obligatorio en cobros y retención — confirmado 2026-06-06
   validateReturn: false                   # false — sin invoice-selector en form; tabs habilitan directamente tras cliente — confirmado 2026-06-06
   signatureReturn: true                   # Acordeón "Firma" visible en Tab ADJUNTOS — confirmado 2026-06-06

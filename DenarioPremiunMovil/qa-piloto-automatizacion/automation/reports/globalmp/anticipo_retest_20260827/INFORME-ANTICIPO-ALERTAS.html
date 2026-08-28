@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Anticipo automático en USD y alertas de cobro</title>
+<style>
+  :root {
+    --morado: #5501AA; --morado-osc: #3D0179; --morado-claro: #F2EAFB;
+    --verde: #91BA3F;  --verde-osc: #4A6B1B;  --verde-claro: #F0F6E4;
+    --ambar: #F5BA2E;  --ambar-claro: #FEF7E6;
+    --rojo: #A5121B;   --rojo-claro: #FDF0F0;
+    --gris: #5D5A63;   --linea: #D8D2E0;
+  }
+  @page { size: A4; margin: 14mm 14mm 15mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 10.2pt; color: #1F1B24;
+         line-height: 1.44; margin: 0; }
+  .marca { display: flex; align-items: center; justify-content: space-between; gap: 8mm;
+           border-bottom: 2.2pt solid var(--morado); padding-bottom: 3mm; margin-bottom: 4mm; }
+  .marca img { width: 52mm; display: block; }
+  .marca .quien { text-align: right; font-size: 8.6pt; color: var(--gris); line-height: 1.35; }
+  .marca .quien b { color: var(--morado); font-size: 9.4pt; display: block; letter-spacing: .2px; }
+  .cinta { height: 2.2mm; display: flex; margin: -4mm 0 4mm; }
+  .cinta i { flex: 1; }
+  .cinta i:nth-child(1) { background: var(--morado); }
+  .cinta i:nth-child(2) { background: var(--verde); }
+  .cinta i:nth-child(3) { background: var(--ambar); }
+  h1 { font-size: 18pt; color: var(--morado); margin: 0 0 1mm; letter-spacing: -.3px; }
+  h2 { font-size: 12.5pt; color: var(--morado); margin: 7mm 0 2.5mm; padding-bottom: 1.2mm;
+       border-bottom: 1.6pt solid var(--morado); page-break-after: avoid; }
+  h3 { font-size: 10.6pt; margin: 4mm 0 1.5mm; color: var(--morado-osc); page-break-after: avoid; }
+  .sub { color: var(--gris); font-size: 10pt; margin: 0 0 4mm; }
+  table { border-collapse: collapse; width: 100%; margin: 2mm 0 3mm; font-size: 9.2pt;
+          page-break-inside: avoid; }
+  th { background: var(--morado); color: #fff; text-align: left; padding: 1.7mm 2.3mm; font-weight: 600; }
+  td { border: .6pt solid var(--linea); padding: 1.5mm 2.3mm; vertical-align: top; }
+  tr:nth-child(even) td { background: #FAF7FD; }
+  .num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap;
+         font-family: Consolas, "Courier New", monospace; }
+  .ok { color: var(--verde-osc); font-weight: 700; }
+  .bad { color: var(--rojo); font-weight: 700; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: .93em; color: var(--morado-osc); }
+  .ficha { width: 100%; margin: 0 0 4mm; font-size: 9.4pt; }
+  .ficha td { border: none; border-bottom: .5pt solid var(--linea); padding: 1.2mm 0; background: none !important; }
+  .ficha td:first-child { color: var(--gris); width: 44mm; }
+  .bien { border-left: 4pt solid var(--verde); background: var(--verde-claro); padding: 3mm 4mm; margin: 4mm 0 5mm; }
+  .bien .t { font-size: 12.5pt; font-weight: 700; color: var(--verde-osc); margin-bottom: 1.5mm; }
+  .nota { background: var(--ambar-claro); border-left: 3pt solid var(--ambar); padding: 2.5mm 3.5mm;
+          margin: 3mm 0; font-size: 9.4pt; page-break-inside: avoid; }
+  .info { background: var(--morado-claro); border-left: 3pt solid var(--morado); padding: 2.5mm 3.5mm;
+          margin: 3mm 0; font-size: 9.4pt; page-break-inside: avoid; }
+  .calc { font-family: Consolas, "Courier New", monospace; background: var(--morado-claro);
+          border: .5pt solid var(--linea); padding: 1.7mm 3mm; margin: 2mm 0; font-size: 9.1pt; }
+  .cap { page-break-inside: avoid; margin: 2.5mm 0 3.5mm; }
+  .cap img { max-width: 100%; max-height: 125mm; border: .7pt solid var(--linea); display: block; margin: 0 auto; }
+  .cap .pie { font-size: 8.3pt; color: var(--gris); margin-top: 1mm; font-style: italic; }
+  .pill { display: inline-block; padding: .4mm 2mm; border-radius: 2mm; font-size: 8.5pt; font-weight: 700; }
+  .p-ok { background: var(--verde-claro); color: var(--verde-osc); border: .5pt solid var(--verde); }
+  .p-na { background: #EFEDF2; color: var(--gris); border: .5pt solid var(--linea); }
+  .p-info { background: var(--morado-claro); color: var(--morado); border: .5pt solid var(--morado); }
+  .fin { margin-top: 6mm; padding-top: 2.5mm; border-top: 1.2pt solid var(--morado); font-size: 8.5pt;
+         color: var(--gris); display: flex; gap: 5mm; align-items: flex-start; }
+  .fin img { width: 26mm; opacity: .85; }
+  .pb { page-break-before: always; }
+</style></head><body>
+
+<div class="marca">
+  <img src="../../_assets/logo-denario-premium.svg" alt="Denario Premium">
+  <div class="quien"><b>CONTROL DE CALIDAD</b>Validación de fixes<br>27 de agosto de 2026</div>
+</div>
+<div class="cinta"><i></i><i></i><i></i></div>
+
+<h1>Anticipo automático en dólares y alertas de cobro incompleto</h1>
+<p class="sub">Módulo de Cobros · Denario Premium Móvil · rama <b>Fixes-21</b> · Cliente GLOBAL M&amp;P</p>
+
+<table class="ficha">
+  <tr><td>Qué se validó</td><td>Dos fixes montados hoy: la moneda del anticipo automático y las alertas al enviar un cobro incompleto</td></tr>
+  <tr><td>Cliente y playa</td><td><b>COMERCIALIZADORA DE ALIMENTOS GLOBAL M&amp;P, C.A.</b> · Isla Coche · empresa <code>00002</code></td></tr>
+  <tr><td>Build</td><td>rama <code>Fixes-21</code> · commit <code>9e5bfdfe</code> <span style="color:var(--gris)">«enhance currency handling and automated prepaid message logic»</span></td></tr>
+  <tr><td>Evidencia</td><td>3 cobros enviados y 3 anticipos generados por el sistema (<code>11213</code> – <code>11218</code>)</td></tr>
+</table>
+
+<div class="bien">
+  <div class="t">✅ Los dos fixes cumplen lo solicitado</div>
+  <b>El anticipo automático ya se genera en dólares aunque la cobranza sea en bolívares</b>, verificado en
+  <b>las cuatro capas</b> —el mensaje que ve el vendedor, la aplicación, la base de datos y la web
+  administrativa— y con <b>dos mediciones independientes</b>.<br><br>
+  <b>Y las alertas bloquean el envío de un cobro incompleto</b>, tanto si el cobro está guardado como si no.
+</div>
+
+<div class="nota">
+<b>⚠ Se detectaron además DOS defectos distintos, ajenos a estos fixes.</b> Los dos aparecieron al
+revisar a mano las pantallas completas, y los dos afectan <b>sólo a lo que se ve en el teléfono</b>: la
+base de datos y la web son correctas.<br><br>
+<b>1.</b> «Total Depósitos» del anticipo <b>descuadra en 1,66 Bs</b> respecto al detalle.<br>
+<b>2.</b> El total del cobro consultado <b>incluye el importe del anticipo</b>, que ya va aparte.<br><br>
+<b>Ambos están reportados y con corrección prevista.</b> Ver las secciones dedicadas más abajo.
+</div>
+
+<h2>Primer fix · La moneda del anticipo automático</h2>
+
+<h3>Lo que pide la configuración del cliente</h3>
+
+<p>En <b>Empresa → Configuración → Cobros</b> hay dos ajustes distintos, y son la referencia de esta validación:</p>
+
+<table>
+  <tr><th>Ajuste</th><th>Valor</th><th>Qué controla</th></tr>
+  <tr><td>¿En qué moneda debe generarse el anticipo automático?</td><td><b>USD</b></td>
+      <td>🔑 la moneda en la que <b>se crea</b> el anticipo</td></tr>
+  <tr><td>Moneda para evaluar el monto mínimo excedido</td><td><b>USD</b></td>
+      <td>la moneda en la que <b>se decide si</b> se crea</td></tr>
+  <tr><td>Monto mínimo excedido</td><td class="num">5</td><td>el umbral, en la moneda anterior</td></tr>
+</table>
+
+<h3>Qué fallaba antes</h3>
+
+<p>La aplicación respetaba el <b>segundo</b> ajuste pero ignoraba el <b>primero</b>: convertía a dólares
+para decidir <i>si</i> crear el anticipo, pero luego lo creaba en la moneda del cobro. Un cobro en
+bolívares producía un anticipo en bolívares, contra lo que dice la configuración.</p>
+
+<h3>Qué pasa ahora</h3>
+
+<div class="cap">
+  <img src="img/B6_mensaje-anticipo-USD_cobroBS.png">
+  <div class="pie">Cobro en bolívares: la diferencia se muestra como <b>BS 5.943,12</b> y, sobre ella, el
+  mensaje anuncia el anticipo en <b>USD 7,57</b>. Una sola pantalla prueba el fix.</div>
+</div>
+
+<table>
+  <tr><th>Cobro</th><th>Moneda del cobro</th><th class="num">Monto</th><th>Anticipo</th><th>Moneda</th><th class="num">Monto</th></tr>
+  <tr><td><code>11213</code></td><td><b>Bolívares</b></td><td class="num">8.000,00</td>
+      <td><code>11214</code></td><td class="ok">USD</td><td class="num">7,57</td></tr>
+  <tr><td><code>11215</code></td><td><b>Bolívares</b></td><td class="num">61.000,00</td>
+      <td><code>11216</code></td><td class="ok">USD</td><td class="num">8,19</td></tr>
+  <tr><td><code>11217</code></td><td>Dólares</td><td class="num">96,00</td>
+      <td><code>11218</code></td><td class="ok">USD</td><td class="num">6,01</td></tr>
+</table>
+
+<p><b>Los dos cobros en bolívares generaron su anticipo en dólares.</b> Antes, un caso equivalente produjo
+un anticipo de <span class="bad">BS 4.945,56</span>.</p>
+
+<h3>La conversión es correcta</h3>
+
+<div class="calc">
+tasa del día: 785,07<br>
+&nbsp;&nbsp;5.943,12 BS ÷ 785,07 = 7,5702 &nbsp;→&nbsp; <b>USD 7,57</b> ✔<br>
+&nbsp;&nbsp;6.429,78 BS ÷ 785,07 = 8,1901 &nbsp;→&nbsp; <b>USD 8,19</b> ✔
+</div>
+
+<p>No basta con que la moneda sea la correcta: el importe también lo es.</p>
+
+<div class="nota">
+<b>El umbral sigue funcionando.</b> Un cobro en bolívares con una diferencia de 1.429,78 BS —equivalente
+a 1,82 USD— <b>no</b> generó anticipo, pese a superar el número 5 en bolívares. Es el comportamiento
+correcto: el mínimo se evalúa en dólares, tal como está configurado.
+</div>
+
+<h3>Y llega correctamente a la web</h3>
+
+<p>No basta con que la aplicación lo muestre bien: se comprobó que <b>los seis registros llegan a la web
+administrativa</b> con la moneda y el importe correctos.</p>
+
+<div class="cap">
+  <img src="img/WEB-anticipo-11214-zoom.png">
+  <div class="pie">El anticipo <code>11214</code> en la web: <b>Monto total en USD 7,57</b>, con su
+  equivalente <b>BS 5.943,12</b>. Nació de una cobranza en bolívares.</div>
+</div>
+
+<table>
+  <tr><th>Registro</th><th>Tipo en la web</th><th class="num">Monto</th><th class="num">Diferencia del cobro</th></tr>
+  <tr><td><code>11213</code></td><td>Cobros</td><td class="num">8.000,00 BS</td><td class="num">5.943,12 BS = <b>7,57 USD</b></td></tr>
+  <tr><td><code>11214</code></td><td class="ok"><b>Anticipo/Prepago</b></td><td class="num ok"><b>7,57 USD</b></td><td class="num">—</td></tr>
+  <tr><td><code>11215</code></td><td>Cobros</td><td class="num">61.000,00 BS</td><td class="num">6.429,78 BS = <b>8,19 USD</b></td></tr>
+  <tr><td><code>11216</code></td><td class="ok"><b>Anticipo/Prepago</b></td><td class="num ok"><b>8,19 USD</b></td><td class="num">—</td></tr>
+  <tr><td><code>11217</code></td><td>Cobros</td><td class="num">96,00 USD</td><td class="num">6,01 USD</td></tr>
+  <tr><td><code>11218</code></td><td class="ok"><b>Anticipo/Prepago</b></td><td class="num ok"><b>6,01 USD</b></td><td class="num">—</td></tr>
+</table>
+
+<p>🔑 <b>La web valida la conversión por sí sola.</b> Para el cobro <code>11213</code>, hecho en
+bolívares, la propia web muestra su diferencia convertida: <b>7,57 USD</b> — exactamente el importe del
+anticipo que generó. Los tres pares cuadran igual, y todos aparecen clasificados como
+<b>«Anticipo/Prepago»</b>.</p>
+
+<div class="pb"></div>
+<h2>Segundo fix · Alertas al enviar un cobro incompleto</h2>
+
+<p>Se comprobó que la aplicación impide enviar un cobro cuyo método de pago esté incompleto, en cinco
+escenarios:</p>
+
+<table>
+  <tr><th style="width:12mm">Caso</th><th>Escenario</th><th style="width:30mm">Resultado</th></tr>
+  <tr><td><b>A1</b></td><td>Cobro sin guardar, <b>sin monto</b></td><td><span class="pill p-ok">✅ bloquea</span></td></tr>
+  <tr><td><b>A2</b></td><td>Cobro sin guardar, <b>sin referencia</b></td><td><span class="pill p-ok">✅ bloquea</span></td></tr>
+  <tr><td><b>A3</b></td><td>Cobro sin guardar, <b>ambos vacíos</b></td><td><span class="pill p-ok">✅ bloquea</span></td></tr>
+  <tr><td><b>A4</b></td><td><b>Cobro guardado y reabierto</b>, incompleto</td><td><span class="pill p-ok">✅ bloquea</span></td></tr>
+  <tr><td><b>A5</b></td><td>Cobro completo</td><td><span class="pill p-ok">✅ envía</span></td></tr>
+</table>
+
+<p>El mensaje es el mismo en los cuatro casos que bloquean:</p>
+
+<div class="calc">«Hay un método de pago incompleto. Complételo o elimínelo antes de enviar.»</div>
+
+<div class="cap">
+  <img src="img/A4_guardado-reabierto-bloquea.png">
+  <div class="pie">Caso A4: el cobro estaba guardado, se reabrió y al enviarlo la aplicación lo impide.</div>
+</div>
+
+<h2>Una observación de usabilidad</h2>
+
+<div class="nota">
+<b>La alerta no dice qué campo falta.</b> El mensaje es el mismo tanto si falta el monto, como la
+referencia, como ambos. Normalmente esto se compensa con una marca roja <i>«¡Campo Obligatorio!»</i>
+junto al campo incompleto — pero <b>al reabrir un cobro guardado el bloque de pago aparece plegado</b>, de
+modo que esa marca no se ve.<br><br>
+El vendedor sabe que algo falta, pero tiene que desplegar el bloque y buscarlo. <b>No impide trabajar</b>,
+y no afecta a la integridad de los datos: se plantea sólo por si se quiere afinar el mensaje.
+</div>
+
+<h2>🔴 Hallazgo adicional · Descuadre de 1,66 Bs en «Total Depósitos»</h2>
+
+<p>Detectado por QA revisando la pantalla completa del anticipo <code>11210</code> en el teléfono. <b>Es un
+defecto distinto del que se estaba validando</b>, y no se buscaba: apareció al comparar dos cifras que
+deberían coincidir.</p>
+
+<h3>Qué se ve</h3>
+
+<p>En la misma pantalla del anticipo, dos importes que representan lo mismo <b>no coinciden</b>:</p>
+
+<table>
+  <tr><th>Dónde</th><th class="num">Muestra</th><th></th></tr>
+  <tr><td>Aplicación móvil — <b>Total Depósitos</b></td><td class="num bad">5.354,18</td><td class="bad">← descuadra</td></tr>
+  <tr><td>Aplicación móvil — detalle, <b>Monto Bs</b></td><td class="num">5.352,52</td><td></td></tr>
+  <tr><td>Base de datos</td><td class="num ok">5.352,52</td><td class="ok">✔</td></tr>
+  <tr><td>Web administrativa</td><td class="num ok">5.352,52</td><td class="ok">✔</td></tr>
+</table>
+
+<p><b>Diferencia: 1,66 Bs.</b></p>
+
+<h3>De dónde sale</h3>
+
+<div class="calc">
+Cobro origen <b>11209</b> · Bs 18.000,00 · diferencia <b>5.352,52 Bs</b><br>
+&nbsp;&nbsp;5.352,52 ÷ 785,07 = 6,817889 USD<br>
+&nbsp;&nbsp;redondeado a 2 decimales → <b>6,82 USD</b> &nbsp;← el anticipo que se crea<br>
+&nbsp;&nbsp;6,82 × 785,07 = <b>5.354,18 Bs</b> &nbsp;← lo que muestra «Total Depósitos»<br>
+&nbsp;&nbsp;─────────────────────────────<br>
+&nbsp;&nbsp;desfase: <b>1,66 Bs</b>
+</div>
+
+<p>Es un <b>error de redondeo amplificado por la tasa</b>. El anticipo se guarda en dólares con dos
+decimales, y «Total Depósitos» <b>recalcula</b> multiplicando ese valor ya redondeado por la tasa, en vez
+de mostrar el importe en bolívares que la propia aplicación ya tiene guardado.</p>
+
+<p>Con una tasa de 785 bolívares por dólar, medio céntimo de dólar se convierte en <b>1,66 bolívares
+visibles en pantalla</b>. A mayor tasa, mayor el descuadre.</p>
+
+<div class="nota">
+<b>No afecta a la contabilidad.</b> Lo que se guarda y lo que ve la oficina es correcto y coherente en las
+tres capas: el anticipo es de 6,82 USD / 5.352,52 Bs en la base de datos y en la web. <b>El número
+descuadrado existe únicamente en la pantalla del teléfono</b> y no se propaga.<br><br>
+<b>Sí afecta a la confianza del vendedor:</b> ve dos importes distintos para el mismo concepto en la misma
+pantalla, sin forma de saber cuál vale. En un módulo que maneja dinero, eso genera dudas y consultas.
+</div>
+
+<h3>Corrección sugerida</h3>
+
+<p>Que «Total Depósitos» <b>muestre el importe en bolívares que ya está almacenado</b>
+(<code>5.352,52</code>), en lugar de recalcularlo a partir del valor redondeado en dólares. El dato
+correcto ya existe: sólo se está mostrando otro.</p>
+
+<div class="info">
+<b>Por qué la validación automatizada no detectó estos dos defectos.</b> Se comprobó <b>la moneda</b> del
+anticipo y del mensaje —que era lo solicitado— y en eso todo cerró correctamente. Lo que no se hizo fue
+<b>comparar entre sí cifras que deberían coincidir</b>: los dos importes en bolívares de una misma
+pantalla, y el total del cobro frente a lo realmente aplicado a documentos.<br><br>
+Es el patrón de siempre: <b>se valida lo que se pregunta, y lo que no se pregunta pasa</b>. Los dos
+defectos aparecieron al mirar la pantalla completa, no la casilla concreta.<br><br>
+<b>Quedan incorporados como casos fijos para las próximas corridas de cobros:</b> contrastar todo par de
+importes que represente el mismo concepto, y contrastar el total del cobro contra la suma aplicada a
+documentos cuando haya anticipo de por medio.
+</div>
+
+<h2>🔴 Hallazgo adicional · El total del cobro incluye el importe del anticipo</h2>
+
+<p>También detectado por QA, al reabrir un cobro ya realizado y entrar a su pestaña de totales.</p>
+
+<h3>Qué se ve</h3>
+
+<p>Al consultar el cobro terminado, <b>la aplicación móvil muestra como total a pagar el importe completo
+depositado</b>, incluyendo la parte que se destinó al anticipo. <b>La web muestra el importe correcto.</b></p>
+
+<p>El anticipo se genera como un documento aparte, precisamente para separar ese excedente. Si el cobro
+sigue mostrándolo dentro de su total, <b>ese importe queda contado dos veces</b> a ojos de quien lo lee.</p>
+
+<h3>Los datos del cobro <code>11213</code></h3>
+
+<table>
+  <tr><th>Concepto</th><th class="num">Importe</th><th>Qué es</th></tr>
+  <tr><td>Depositado por el cliente</td><td class="num">8.000,00 Bs</td><td>lo que entregó en total</td></tr>
+  <tr><td><b>Aplicado a documentos</b></td><td class="num ok"><b>2.056,88 Bs</b></td><td>🔑 lo que este cobro realmente saldó</td></tr>
+  <tr><td>Excedente</td><td class="num">5.943,12 Bs</td><td>se convirtió en el anticipo <code>11214</code> (7,57 USD)</td></tr>
+</table>
+
+<table>
+  <tr><th>Dónde</th><th class="num">Muestra como total</th><th></th></tr>
+  <tr><td><b>Web administrativa</b></td><td class="num ok">2.056,88 Bs</td><td class="ok">✔ correcto</td></tr>
+  <tr><td><b>Aplicación móvil</b> (al reabrir el cobro)</td><td class="num bad">incluye el anticipo</td><td class="bad">✗ suma de más</td></tr>
+</table>
+
+<div class="nota">
+<b>Por qué importa.</b> El vendedor que revisa un cobro ya enviado ve un total que no corresponde a lo que
+ese cobro saldó. Si además consulta el anticipo por separado, <b>el mismo dinero le aparece dos veces</b>.
+Como el anticipo existe justamente para separar ese excedente, el total del cobro debería reflejar
+únicamente lo aplicado a documentos —<code>2.056,88 Bs</code> en este caso—, tal como ya hace la web.
+</div>
+
+<h3>Corrección sugerida</h3>
+
+<p>Que la pestaña de totales del cobro consultado muestre <b>el importe aplicado a documentos</b>, no el
+depositado. Es el mismo criterio que ya usa la web, y el dato está disponible: la base de datos lo guarda
+separado del importe total.</p>
+
+<h2>Un punto para producto, no un defecto</h2>
+
+<div class="info">
+La configuración del cliente incluye <b>«¿Qué nomenclatura desean utilizar para el método de pago del
+abono automático?» = ANT</b>. Los anticipos generados quedan con el método de pago <b>Depósito</b>, que es
+el del cobro que los originó.<br><br>
+<b>No se reporta como defecto</b> porque <b>«ANT» no existe en el catálogo de métodos de pago del
+cliente</b> (Cheque, Depósito, Efectivo, Otros, Pago Móvil, Transferencia), y el ajuste habla de
+<i>nomenclatura</i>, no de método. Puede tratarse de una etiqueta pensada para mostrarse en pantalla o en
+reportes, en cuyo caso el comportamiento es correcto.<br><br>
+<b>Conviene confirmarlo con quien pidió ese ajuste</b>: qué esperaba ver, y dónde.
+</div>
+
+<h2>Alcance de la validación</h2>
+
+<table>
+  <tr><th>Cubierto</th><th>No cubierto</th></tr>
+  <tr>
+    <td>
+      · Anticipo desde cobranza en <b>bolívares</b> (2 casos)<br>
+      · Anticipo desde cobranza en <b>dólares</b><br>
+      · Verificación en <b>pantalla, aplicación, base de datos y web</b><br>
+      · Comportamiento del <b>umbral mínimo</b><br>
+      · Los <b>5 escenarios</b> de alerta al enviar<br>
+      · Aritmética de la conversión
+    </td>
+    <td>
+      · La empresa <code>00001 HC TRADING</code><br>
+      · Otros métodos de pago además de Depósito y Transferencia<br>
+      · Anticipos con retención o IGTF de por medio<br>
+      · Qué ocurre si la tasa cambia entre guardar y enviar
+    </td>
+  </tr>
+</table>
+
+<div class="nota">
+<b>Nota sobre la configuración del cliente:</b> durante la validación se confirmó que <b>el adjunto es
+obligatorio para enviar un cobro</b>. El perfil de pruebas tenía registrado lo contrario y ya fue
+corregido.
+</div>
+
+<div class="fin">
+  <img src="../../_assets/logo-denario-premium.svg" alt="">
+  <div>
+    <b>Denario Premium · Control de Calidad.</b> Informe emitido el 27/08/2026 a partir de la corrida
+    <code>anticipo_retest_20260827</code>.<br>
+    Detalle técnico, mediciones por capa y trazas de operación en <code>anticipo-retest.md</code>.
+    Cobros de evidencia: <code>11213</code> a <code>11218</code>.
+  </div>
+</div>
+
+</body></html>

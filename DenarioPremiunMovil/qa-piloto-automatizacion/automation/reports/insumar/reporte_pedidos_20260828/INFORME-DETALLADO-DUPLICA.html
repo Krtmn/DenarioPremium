@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Reporte Detallado de Pedidos — importe duplicado</title>
+<style>
+  :root {
+    --morado: #5501AA; --morado-osc: #3D0179; --morado-claro: #F2EAFB;
+    --verde: #91BA3F;  --verde-osc: #4A6B1B;  --verde-claro: #F0F6E4;
+    --ambar: #F5BA2E;  --ambar-claro: #FEF7E6;
+    --rojo: #A5121B;   --rojo-claro: #FDF0F0;
+    --gris: #5D5A63;   --linea: #D8D2E0;
+  }
+  @page { size: A4; margin: 14mm 14mm 15mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 10.2pt; color: #1F1B24;
+         line-height: 1.44; margin: 0; }
+  .marca { display: flex; align-items: center; justify-content: space-between; gap: 8mm;
+           border-bottom: 2.2pt solid var(--morado); padding-bottom: 3mm; margin-bottom: 4mm; }
+  .marca img { width: 52mm; display: block; }
+  .marca .quien { text-align: right; font-size: 8.6pt; color: var(--gris); line-height: 1.35; }
+  .marca .quien b { color: var(--morado); font-size: 9.4pt; display: block; letter-spacing: .2px; }
+  .cinta { height: 2.2mm; display: flex; margin: -4mm 0 4mm; }
+  .cinta i { flex: 1; }
+  .cinta i:nth-child(1) { background: var(--morado); }
+  .cinta i:nth-child(2) { background: var(--verde); }
+  .cinta i:nth-child(3) { background: var(--ambar); }
+  h1 { font-size: 18pt; color: var(--morado); margin: 0 0 1mm; letter-spacing: -.3px; }
+  h2 { font-size: 12.5pt; color: var(--morado); margin: 6mm 0 2.5mm; padding-bottom: 1.2mm;
+       border-bottom: 1.6pt solid var(--morado); page-break-after: avoid; }
+  h3 { font-size: 10.6pt; margin: 4mm 0 1.5mm; color: var(--morado-osc); page-break-after: avoid; }
+  .sub { color: var(--gris); font-size: 10pt; margin: 0 0 4mm; }
+  table { border-collapse: collapse; width: 100%; margin: 2mm 0 3mm; font-size: 9.2pt;
+          page-break-inside: avoid; }
+  th { background: var(--morado); color: #fff; text-align: left; padding: 1.7mm 2.3mm; font-weight: 600; }
+  td { border: .6pt solid var(--linea); padding: 1.5mm 2.3mm; vertical-align: top; }
+  tr:nth-child(even) td { background: #FAF7FD; }
+  .num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap;
+         font-family: Consolas, "Courier New", monospace; }
+  .ok { color: var(--verde-osc); font-weight: 700; }
+  .bad { color: var(--rojo); font-weight: 700; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: .93em; color: var(--morado-osc); }
+  .ficha { width: 100%; margin: 0 0 4mm; font-size: 9.4pt; }
+  .ficha td { border: none; border-bottom: .5pt solid var(--linea); padding: 1.2mm 0; background: none !important; }
+  .ficha td:first-child { color: var(--gris); width: 40mm; }
+  .alerta { border-left: 4pt solid var(--rojo); background: var(--rojo-claro); padding: 3mm 4mm; margin: 4mm 0 5mm; }
+  .alerta .t { font-size: 12.5pt; font-weight: 700; color: var(--rojo); margin-bottom: 1.5mm; }
+  .nota { background: var(--ambar-claro); border-left: 3pt solid var(--ambar); padding: 2.5mm 3.5mm;
+          margin: 3mm 0; font-size: 9.4pt; page-break-inside: avoid; }
+  .calc { font-family: Consolas, "Courier New", monospace; background: var(--morado-claro);
+          border: .5pt solid var(--linea); padding: 1.7mm 3mm; margin: 2mm 0; font-size: 9.1pt; }
+  .fila-mala td { background: var(--rojo-claro) !important; }
+  .pill { display: inline-block; padding: .4mm 2mm; border-radius: 2mm; font-size: 8.5pt; font-weight: 700; }
+  .p-ok { background: var(--verde-claro); color: var(--verde-osc); border: .5pt solid var(--verde); }
+  .p-mal { background: var(--rojo-claro); color: var(--rojo); border: .5pt solid var(--rojo); }
+  .fin { margin-top: 6mm; padding-top: 2.5mm; border-top: 1.2pt solid var(--morado); font-size: 8.5pt;
+         color: var(--gris); display: flex; gap: 5mm; align-items: flex-start; }
+  .fin img { width: 26mm; opacity: .85; }
+</style></head><body>
+
+<div class="marca">
+  <img src="../../_assets/logo-denario-premium.svg" alt="Denario Premium">
+  <div class="quien"><b>CONTROL DE CALIDAD</b>Reporte de Pedidos · Excel Detallado<br>28 de agosto de 2026</div>
+</div>
+<div class="cinta"><i></i><i></i><i></i></div>
+
+<h1>El reporte Detallado duplica el importe de las líneas con dos presentaciones</h1>
+<p class="sub">Reporte de Pedidos · Denario Premium Web · Cliente INSUMAR DISTRIBUIDORA 715, C.A. · playa El Yaque</p>
+
+<table class="ficha">
+  <tr><td>Dónde</td><td><b>Pedidos → Exportar Reporte → Detalle</b> (<code>form:pedidosDT:btnExcelPedidos</code>)</td></tr>
+  <tr><td>Empresa</td><td>INSUMAR DISTRIBUIDORA 715, C.A. · <code>id_enterprise = 1</code></td></tr>
+  <tr><td>Filtro usado</td><td>01/08/2026 – 28/08/2026 · Vendedor y Cliente en «Todos»</td></tr>
+  <tr><td>Caso reproducible</td><td><b># Ref 71</b> · producto <code>0307291</code> · línea <code>order_detail = 597</code></td></tr>
+  <tr><td>Archivo analizado</td><td><code>pedidos.xlsx</code> (Detalle) · 1.085 filas de datos</td></tr>
+</table>
+
+<div class="alerta">
+  <div class="t">🔴 Cuando una línea se pide en dos presentaciones, el importe de la línea se escribe entero en las dos filas</div>
+  El Detallado emite <b>una fila por presentación</b> en lugar de una por línea de pedido, y en cada una
+  escribe el <b>total completo de la línea</b> en vez del importe que corresponde a esa presentación. El
+  importe se cuenta <b>dos veces</b>, y el reporte <b>deja de cuadrar con el General</b>.
+</div>
+
+<h2>El caso, en tres pasos</h2>
+
+<h3>1 · Qué pidió el vendedor</h3>
+
+<p>En el pedido <b># Ref 71</b>, el producto <code>0307291</code> (OREO VAINILLA TUBO) se pidió
+<b>en dos presentaciones a la vez</b>. En el sistema eso es <b>una sola línea</b>
+(<code>order_detail = 597</code>):</p>
+
+<div class="calc">
+línea 597 · producto 0307291<br>
+&nbsp;&nbsp;1 BTO ......&nbsp; 60,4128<br>
+&nbsp;&nbsp;1 UND ......&nbsp;&nbsp; 1,1600<br>
+&nbsp;&nbsp;──────────────────────<br>
+&nbsp;&nbsp;<b>total de la línea&nbsp; 61,5728</b> &nbsp;← <code>order_detail.nu_amount_total</code>
+</div>
+
+<p>El pedido completo tiene <b>3 líneas</b>, que suman <b>182,3984 USD</b> — y ése es exactamente el
+importe que muestran la pantalla y el reporte General. <b>El dato de origen es correcto.</b></p>
+
+<h3>2 · Qué escribe el Excel Detallado</h3>
+
+<table>
+  <tr><th>Producto</th><th>Unidad</th><th class="num">Cantidad</th><th class="num">Total Producto</th><th>Observación</th></tr>
+  <tr><td><code>0307289</code></td><td>BULTO</td><td class="num">1</td><td class="num">60,4128</td><td>correcto</td></tr>
+  <tr><td><code>0307290</code></td><td>BULTO</td><td class="num">1</td><td class="num">60,4128</td><td>correcto</td></tr>
+  <tr class="fila-mala"><td><code>0307291</code></td><td><b>BULTO</b></td><td class="num">1</td><td class="num bad">61,5728</td><td>🔴 debería ser <b>60,4128</b></td></tr>
+  <tr class="fila-mala"><td><code>0307291</code></td><td><b>UNIDADES</b></td><td class="num">1</td><td class="num bad">61,5728</td><td>🔴 debería ser <b>1,1600</b></td></tr>
+</table>
+
+<p>El producto <code>0307291</code> aparece <b>dos veces</b> —una por presentación— y <b>en ambas se
+escribe 61,5728</b>, que es el total de la línea completa. En lugar de <b>repartir</b> el importe entre
+las dos presentaciones, <b>lo repite entero en cada una</b>.</p>
+
+<h3>3 · El resultado</h3>
+
+<div class="calc">
+Excel Detallado ...  60,4128 + 60,4128 + 61,5728 + 61,5728 = <b>243,9712</b><br>
+Valor correcto ....  60,4128 + 60,4128 + 61,5728 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = <b>182,3984</b><br>
+────────────────────────────────────────────────────────────────<br>
+&nbsp;&nbsp;<b>exceso = 61,5728</b> &nbsp;← exactamente una copia de más del total de la línea
+</div>
+
+<h2>Impacto medido sobre el reporte completo</h2>
+
+<p>Sumando la columna de importe de cada fichero, sobre el mismo filtro:</p>
+
+<table>
+  <tr><th>Fichero</th><th class="num">Filas</th><th class="num">Total USD</th><th class="num">Conversión BS</th></tr>
+  <tr><td><b>General</b> <span style="color:var(--gris)">(coincide con pantalla y con la base)</span></td><td class="num">143</td><td class="num ok">20.834,7412</td><td class="num ok">16.111.597,5717</td></tr>
+  <tr><td><b>Detallado</b></td><td class="num">1.085</td><td class="num bad">20.896,3140</td><td class="num bad">16.158.815,2883</td></tr>
+  <tr><td colspan="2"><b>Diferencia</b></td><td class="num bad">+61,5728</td><td class="num bad">+47.217,7166</td></tr>
+</table>
+
+<p>La diferencia es <b>exactamente el importe de la línea duplicada</b>, sin residuo. No es un problema de
+redondeo ni de acumulación: es una única fila de más, y se puede señalar con el dedo.</p>
+
+<div class="nota">
+<b>Dónde parece estar el origen.</b> El Detallado emite <b>1.085 filas</b>. Las líneas de pedido de ese
+conjunto son <b>1.084</b> (<code>order_detail</code>), y los registros de presentación son <b>1.085</b>
+(<code>order_detail_unit</code>). ⇒ el exportador parece recorrer <b>las presentaciones</b> y no las
+líneas, arrastrando el importe de la línea padre a cada una.
+</div>
+
+<h2>Alcance real hoy — y por qué conviene corregirlo igual</h2>
+
+<table>
+  <tr><th>Medición sobre toda la base de INSUMAR</th><th class="num">Valor</th></tr>
+  <tr><td>Líneas con <b>una</b> presentación (caso normal)</td><td class="num">2.511</td></tr>
+  <tr><td><b>Líneas con dos presentaciones</b> (las que fallan)</td><td class="num bad">1</td></tr>
+  <tr><td>Exceso total que produciría hoy en toda la base</td><td class="num bad">61,5728 USD</td></tr>
+</table>
+
+<p><b>Sobre este cliente y a día de hoy, el impacto económico es pequeño y está acotado a ese único caso.</b>
+Se documenta con esa reserva, sin inflarlo. Ahora bien, hay tres razones para tratarlo:</p>
+
+<table>
+  <tr><th style="width:8mm">#</th><th>Motivo</th></tr>
+  <tr><td>1</td><td><b>Los dos reportes dejan de cuadrar entre sí.</b> Quien sume el Detallado obtiene un número distinto del General y del sistema, sin forma de saber cuál creer sin consultar la base</td></tr>
+  <tr><td>2</td><td><b>El error escala con el uso, no con el monto</b>, y siempre <b>hacia arriba</b>: se repite en cada línea con más de una presentación y nunca resta. En un cliente que venda mixto bulto/unidad de forma habitual, el desvío deja de ser marginal</td></tr>
+  <tr><td>3</td><td><b>Es silencioso.</b> El Detallado se ve normal; el producto repetido parece dos renglones legítimos. Sin cotejar contra el General no hay señal de que algo falla</td></tr>
+</table>
+
+<h2>Cómo reproducirlo</h2>
+
+<table>
+  <tr><th style="width:8mm">#</th><th>Paso</th></tr>
+  <tr><td>1</td><td>Un pedido con una línea en <b>dos presentaciones a la vez</b> (bulto + unidad del mismo producto)</td></tr>
+  <tr><td>2</td><td><b>Pedidos</b> → filtrar el rango que lo contenga → <b>Buscar</b></td></tr>
+  <tr><td>3</td><td><b>Exportar Reporte → Detalle</b></td></tr>
+  <tr><td>4</td><td>Localizar el producto: sale en <b>dos filas</b>, y ambas llevan el <b>mismo</b> importe</td></tr>
+  <tr><td>5</td><td>Sumar la columna <code>Total Producto</code> y compararla con <code>Monto Total</code> del General</td></tr>
+</table>
+
+<div class="nota">
+<b>Control barato para la regresión.</b> El General trae la columna <code># Detalles</code> con el número
+de líneas de cada pedido, y es <b>correcta</b>. En el pedido 71 dice <b>3</b>, mientras el Detallado emite
+<b>4 filas</b>. ⇒ <b>comparar «# Detalles» contra el número de filas del Detallado detecta este defecto de
+forma automática</b>, sin necesidad de consultar la base.
+</div>
+
+<h2>Observación relacionada</h2>
+
+<p>Las cuatro filas del ejemplo traen <code>Precio Base Producto = 1,0788</code>, el mismo valor para el
+bulto que para la unidad suelta. El precio está expresado <b>por unidad base</b> y el reporte
+<b>no expone el factor de empaque</b>, de modo que <code>Cantidad × Precio Base ≠ Total Producto</code> en
+las líneas por bulto.</p>
+
+<p><b>No es un error de cálculo</b>, pero tiene una consecuencia práctica: el usuario <b>no puede recalcular
+la línea desde el propio Excel</b>, y por tanto tampoco puede detectar por su cuenta la duplicación
+descrita arriba. Añadir el factor de empaque —o el precio de la presentación— haría el reporte
+verificable.</p>
+
+<h2>Lo que este informe NO cubre</h2>
+
+<table>
+  <tr><th style="width:8mm">#</th><th>Pendiente</th><th>Por qué importa</th></tr>
+  <tr><td>1</td><td>Reproducción en <b>otros rangos de fechas</b> y otros clientes</td><td>Se confirmó el desfase 2.513 vs 2.512 en la base completa de INSUMAR, pero sólo se descargó Excel de una ventana</td></tr>
+  <tr><td>2</td><td>Líneas con <b>tres o más</b> presentaciones</td><td>No existen en estos datos. El comportamiento con N&gt;2 no está medido, aunque cabe esperar N copias</td></tr>
+  <tr><td>3</td><td>Comportamiento con <b>descuentos</b> o <b>bonificación</b> sobre una línea multipresentación</td><td>Todos los descuentos del rango están en 0,00</td></tr>
+  <tr><td>4</td><td>Si el <b>reporte General</b> se ve afectado en algún escenario</td><td>En todo lo medido el General es correcto: coincide con pantalla y con la base</td></tr>
+</table>
+
+<div class="fin">
+  <img src="../../_assets/logo-denario-premium.svg" alt="">
+  <div>
+    <b>Denario Premium · Control de Calidad.</b> Informe emitido el 28 de agosto de 2026.
+    Ficheros analizados y detalle completo de la certificación en
+    <code>reports/insumar/reporte_pedidos_20260828/</code>.<br>
+    Los importes citados se obtuvieron leyendo los propios ficheros descargados y contrastándolos contra
+    la base de datos del cliente. La web no se modificó en ningún momento.
+  </div>
+</div>
+
+</body></html>

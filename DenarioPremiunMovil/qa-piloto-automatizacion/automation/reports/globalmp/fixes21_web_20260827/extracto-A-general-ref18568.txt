@@ -1,0 +1,10 @@
+FILE: A-general-ref18568.xlsx  filas totales(incl. cabecera): 9
+0 Parámetros de Búsqueda
+1 Fecha de exportación: 27/8/2026 14:11:39
+2 Desde: 01/8/2026
+3 Hasta: 27/8/2026
+4 Empresa: COMERCIALIZADORA DE ALIMENTOS GLOBAL M&P, C.A.
+5 Vendedor: Todos
+6 Cliente: Todos
+7 Ref || Estatus || Fecha Pedido || Fecha Creacion || Vendedor || Cliente || # Detalles || Monto Base || Moneda || Monto Total || Monto Conversion || Moneda Conversion || Tasa Conversion || Tipo Pedido || Comentarios || Adjuntos
+8 18568.0 || Enviado || 25/8/2026 14:37:38 || 25/8/2026 14:37:40 || DANIEL MEDINA || GRUPO MEZCA 2023, C.A. || 7.0 || 880.8588 || USD || 980.6282 || 769861.7417 || BS || 785.07 || NOTA DE ENTREGA ||  || NO

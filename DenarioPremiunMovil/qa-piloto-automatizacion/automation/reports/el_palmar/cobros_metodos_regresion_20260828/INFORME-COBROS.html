@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Cobros en Fixes-21 — comportamiento actual</title>
+<style>
+  :root {
+    --morado: #5501AA; --morado-osc: #3D0179; --morado-claro: #F2EAFB;
+    --verde: #91BA3F;  --verde-osc: #4A6B1B;  --verde-claro: #F0F6E4;
+    --ambar: #F5BA2E;  --ambar-claro: #FEF7E6;
+    --rojo: #A5121B;   --rojo-claro: #FDF0F0;
+    --gris: #5D5A63;   --linea: #D8D2E0;
+  }
+  @page { size: A4; margin: 14mm 14mm 15mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 10.2pt; color: #1F1B24;
+         line-height: 1.44; margin: 0; }
+  .marca { display: flex; align-items: center; justify-content: space-between; gap: 8mm;
+           border-bottom: 2.2pt solid var(--morado); padding-bottom: 3mm; margin-bottom: 4mm; }
+  .marca img { width: 52mm; display: block; }
+  .marca .quien { text-align: right; font-size: 8.6pt; color: var(--gris); line-height: 1.35; }
+  .marca .quien b { color: var(--morado); font-size: 9.4pt; display: block; letter-spacing: .2px; }
+  .cinta { height: 2.2mm; display: flex; margin: -4mm 0 4mm; }
+  .cinta i { flex: 1; }
+  .cinta i:nth-child(1) { background: var(--morado); }
+  .cinta i:nth-child(2) { background: var(--verde); }
+  .cinta i:nth-child(3) { background: var(--ambar); }
+  h1 { font-size: 18pt; color: var(--morado); margin: 0 0 1mm; letter-spacing: -.3px; }
+  h2 { font-size: 12.5pt; color: var(--morado); margin: 7mm 0 2.5mm; padding-bottom: 1.2mm;
+       border-bottom: 1.6pt solid var(--morado); page-break-after: avoid; }
+  h3 { font-size: 10.6pt; margin: 4mm 0 1.5mm; color: var(--morado-osc); page-break-after: avoid; }
+  .sub { color: var(--gris); font-size: 10pt; margin: 0 0 4mm; }
+  table { border-collapse: collapse; width: 100%; margin: 2mm 0 3mm; font-size: 9.2pt;
+          page-break-inside: avoid; }
+  th { background: var(--morado); color: #fff; text-align: left; padding: 1.7mm 2.3mm; font-weight: 600; }
+  td { border: .6pt solid var(--linea); padding: 1.5mm 2.3mm; vertical-align: top; }
+  tr:nth-child(even) td { background: #FAF7FD; }
+  .num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap;
+         font-family: Consolas, "Courier New", monospace; }
+  .ok { color: var(--verde-osc); font-weight: 700; }
+  .bad { color: var(--rojo); font-weight: 700; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: .93em; color: var(--morado-osc); }
+  .ficha { width: 100%; margin: 0 0 4mm; font-size: 9.4pt; }
+  .ficha td { border: none; border-bottom: .5pt solid var(--linea); padding: 1.2mm 0; background: none !important; }
+  .ficha td:first-child { color: var(--gris); width: 42mm; }
+  .bien { border-left: 4pt solid var(--verde); background: var(--verde-claro); padding: 3mm 4mm; margin: 4mm 0 5mm; }
+  .bien .t { font-size: 12.5pt; font-weight: 700; color: var(--verde-osc); margin-bottom: 1.5mm; }
+  .alerta { border-left: 4pt solid var(--rojo); background: var(--rojo-claro); padding: 3mm 4mm; margin: 4mm 0 5mm; }
+  .alerta .t { font-size: 12.5pt; font-weight: 700; color: var(--rojo); margin-bottom: 1.5mm; }
+  .info { border-left: 4pt solid var(--morado); background: var(--morado-claro); padding: 3mm 4mm; margin: 4mm 0 5mm; }
+  .info .t { font-size: 12.5pt; font-weight: 700; color: var(--morado); margin-bottom: 1.5mm; }
+  .nota { background: var(--ambar-claro); border-left: 3pt solid var(--ambar); padding: 2.5mm 3.5mm;
+          margin: 3mm 0; font-size: 9.4pt; page-break-inside: avoid; }
+  .calc { font-family: Consolas, "Courier New", monospace; background: var(--morado-claro);
+          border: .5pt solid var(--linea); padding: 1.7mm 3mm; margin: 2mm 0; font-size: 9.1pt; }
+  .cap { page-break-inside: avoid; margin: 2.5mm 0 3.5mm; }
+  .cap img { max-width: 100%; border: .7pt solid var(--linea); display: block; }
+  .cap .pie { font-size: 8.3pt; color: var(--gris); margin-top: 1mm; font-style: italic; }
+  .par { display: flex; gap: 4mm; align-items: flex-start; page-break-inside: avoid; margin: 3mm 0; }
+  .par > div { flex: 1; }
+  .par .et { font-size: 9pt; font-weight: 700; margin-bottom: 1.2mm; }
+  .et-mal { color: var(--rojo); }
+  .et-bien { color: var(--verde-osc); }
+  .pill { display: inline-block; padding: .4mm 2mm; border-radius: 2mm; font-size: 8.5pt; font-weight: 700; }
+  .p-ok { background: var(--verde-claro); color: var(--verde-osc); border: .5pt solid var(--verde); }
+  .p-mal { background: var(--rojo-claro); color: var(--rojo); border: .5pt solid var(--rojo); }
+  .p-na { background: #EFEDF2; color: var(--gris); border: .5pt solid var(--linea); }
+  .p-new { background: var(--morado-claro); color: var(--morado); border: .5pt solid var(--morado); }
+  .fin { margin-top: 6mm; padding-top: 2.5mm; border-top: 1.2pt solid var(--morado); font-size: 8.5pt;
+         color: var(--gris); display: flex; gap: 5mm; align-items: flex-start; }
+  .fin img { width: 26mm; opacity: .85; }
+  .pb { page-break-before: always; }
+</style></head><body>
+
+<div class="marca">
+  <img src="../../_assets/logo-denario-premium.svg" alt="Denario Premium">
+  <div class="quien"><b>CONTROL DE CALIDAD</b>Estado funcional · rama Fixes-21<br>28 de agosto de 2026</div>
+</div>
+<div class="cinta"><i></i><i></i><i></i></div>
+
+<h1>Cobros en Fixes-21: cómo se comporta hoy</h1>
+<p class="sub">Módulo de Cobros · Denario Premium Móvil · versión 6.6.21 · Cliente CENTRAL EL PALMAR, S.A.</p>
+
+<table class="ficha">
+  <tr><td>Qué documenta</td><td>El <b>comportamiento actual</b> del módulo de Cobros: campos obligatorios por método de pago, anticipo automático, IGTF y la tabla de totales con retención</td></tr>
+  <tr><td>Cliente y playa</td><td><b>CENTRAL EL PALMAR, S.A.</b> · empresa 1002 · <code>denariocaribe.ddns.net:8080</code> <span style="color:var(--gris)">(confirmada en runtime)</span></td></tr>
+  <tr><td>Build medido</td><td>APK instalado el <b>28/08 a las 15:07</b> · tasa 710,0000 VES/USD</td></tr>
+  <tr><td>Cliente de prueba</td><td>NESTLE VENEZUELA, S.A. — <code>1000001897</code></td></tr>
+  <tr><td>Registros de evidencia</td><td><b># Ref 27151 – 27160</b> · 10 registros enviados, todos confirmados en la nube · capa web consultada en <code>denariocaribe</code></td></tr>
+</table>
+
+<div class="info">
+  <div class="t">Resumen del estado actual</div>
+  Los <b>cinco métodos de pago</b> validan sus campos obligatorios antes de enviar. El <b>anticipo
+  automático</b> se genera en la moneda configurada, y el <b>IGTF</b> funciona tanto integrado en el cobro
+  como <b>por separado</b>, incluida la generación del documento y su cobro posterior.
+  <b>No quedan defectos abiertos en el módulo.</b> El único punto consultado —el saldo del documento al
+  combinar retención con pago parcial— <b>fue revisado con desarrollo y no se considera defecto</b>: el
+  monto del pago parcial ya incluye la retención ingresada. Queda documentado con sus cifras.
+</div>
+
+<h2>Campos obligatorios por método de pago</h2>
+
+<p>La interfaz ofrece <b>cinco</b> métodos. Cada uno se midió con la técnica de <b>dejar-uno-fuera</b>:
+llenar todos los campos, comprobar que el envío procede, y luego <b>vaciar de a uno</b> para determinar
+cuál es realmente obligatorio. Llenar en cascada sólo demostraría que el último campo hacía falta.</p>
+
+<table>
+  <tr><th>Método</th><th>Campos que presenta</th><th>Cuáles exige</th><th style="width:26mm">¿Envía con sólo el monto?</th></tr>
+  <tr><td><b>Pago Móvil</b></td><td>Nº de Teléfono · Tipo de documento · Banco Emisor · Banco Receptor · Número de referencia · Monto · Fecha</td><td class="ok">Los seis</td><td><span class="pill p-ok">No — bloquea</span></td></tr>
+  <tr><td><b>Depósito</b></td><td>Banco Receptor · Nro. Depósito · Monto · Fecha</td><td>Los tres</td><td><span class="pill p-ok">No — bloquea</span></td></tr>
+  <tr><td><b>Transferencia</b></td><td>Banco Receptor · Nro. Referencia · Monto · Fecha</td><td>Los tres</td><td><span class="pill p-ok">No — bloquea</span></td></tr>
+  <tr><td><b>Otros</b></td><td>Especifique: · Monto · Fecha</td><td>Los dos</td><td><span class="pill p-ok">No — bloquea</span></td></tr>
+  <tr><td><b>Efectivo</b></td><td>Nro. Recibo · Monto · Fecha</td><td>Sólo el Monto</td><td><span class="pill p-na">Sí — «Nro. Recibo» es opcional por diseño</span></td></tr>
+  <tr><td><b>Cheque</b></td><td colspan="3"><span class="pill p-na">No disponible — la interfaz no ofrece este método en este cliente</span></td></tr>
+</table>
+
+<p>Cuando falta un campo obligatorio, el envío se detiene con esta alerta, idéntica en los cuatro métodos
+que bloquean:</p>
+
+<div class="cap">
+  <img src="img/zoom/PM-bloquea.png">
+  <div class="pie">La alerta corta el envío. Detrás se aprecian los campos rotulados
+  «¡Campo Obligatorio!», que es la señal visual coherente con lo que valida el envío.</div>
+</div>
+
+<div class="nota">
+<b>El texto de la alerta no identifica el campo.</b> El mensaje —<i>«Hay un método de pago incompleto.
+Complételo o elimínelo antes de enviar.»</i>— no nombra ni el método ni el campo que falta. Con varios
+métodos cargados en un mismo cobro, el vendedor tiene que revisarlos uno a uno.
+</div>
+
+<div class="nota">
+<b>La configuración de métodos no se lee por el orden del catálogo.</b> El valor
+<code>colletionPayment = true-false-true-true-true-true</code> tiene una posición desactivada, pero
+<b>no corresponde a la que sugiere el orden alfabético</b> del catálogo. El método ausente es Cheque, y
+Depósito sí se ofrece. ⇒ conviene determinar los métodos disponibles <b>en la interfaz</b>, no deduciéndolos
+de la variable.
+</div>
+
+<h2 class="pb">Anticipo automático e IGTF</h2>
+
+<div class="nota">
+<b>Configuración vigente al medir</b> (leída en la nube y en el dispositivo, ~16:00 del 28/08):
+<code>prepaidCurrency = USD</code> · <code>prepaidRangeCurrency = USD</code> ·
+<code>prepaidRangeAmount = 10</code> · <code>automatedPrepaid = true</code>. Esta variable
+<b>se modificó ese mismo día</b>; todo lo que sigue se juzga contra <b>USD</b>.
+</div>
+
+<table>
+  <tr><th style="width:38mm">Comportamiento</th><th>Medición</th><th style="width:22mm">Conforme</th></tr>
+  <tr><td><b>Moneda del anticipo</b></td><td>Cobro <b>27153 en VES</b>, excedente 10.036,89 VES → anticipo <b>27154 en USD</b> (14,1365). Cobro <b>27155 en USD</b> → anticipo <b>27156 en USD</b>. Aritmética: 10.036,89 ÷ 710 = 14,1365</td><td><span class="pill p-ok">✅ sigue <code>prepaidCurrency</code></span></td></tr>
+  <tr><td><b>IGTF dentro del cobro</b><br><span style="color:var(--gris)">sin separar</span></td><td>Sin IGTF: total a pagar 19,7400 USD. Con IGTF 3 %: 0,5922 → total <b>20,3322</b>. Pago de 40,00 ⇒ diferencia <b>19,6678</b>. En la nube, <code>nu_amount_igtf = 0.5922</code></td><td><span class="pill p-ok">✅ aritmética exacta</span></td></tr>
+  <tr><td><b>IGTF por separado</b><br><span style="color:var(--gris)">switch «Pago separado IGTF:»</span></td><td>Cobro <b>27157</b> con el switch <b>ON</b>: total a pagar 22,1965 → <b>21,5500 USD</b> (baja 0,6465 = el IGTF) y en la nube <code>nu_amount_igtf = 0.0000</code>. <b>Genera el documento</b> <code>IGTF-1787947895613.0</code> por 0,6465 USD, que <b>aparece en Cobros → IGTF</b> para el mismo cliente. Control con el switch <b>OFF</b> (27159): 24,8848 USD con <code>nu_amount_igtf = 0.7248</code> y <b>sin</b> documento</td><td><span class="pill p-ok">✅ de punta a punta</span></td></tr>
+  <tr><td><b>Importes del anticipo</b></td><td>Anticipo 27154: <code>Total Efectivo VES 10.036,8900</code> y <code>Monto VES 10.036,8900</code></td><td><span class="pill p-ok">✅ coinciden</span></td></tr>
+  <tr><td>IGTF en un cobro <b>en VES</b></td><td>Con IGTF seleccionado sobre un cobro VES pagado en efectivo, <code>montoIgtf = 0</code> y el total no varía. No aparece línea de IGTF</td><td><span class="pill p-na">coherente con gravar divisas — no confirmado con producto</span></td></tr>
+</table>
+
+<p><b>Cómo se comporta el IGTF dentro del cobro:</b> el impuesto <b>se suma al total a pagar</b>, de modo
+que <b>reduce</b> la diferencia en lugar de aumentarla, y el anticipo generado baja exactamente en el
+importe del IGTF (0,5922 USD).</p>
+
+<p><b>Cómo se comporta el IGTF por separado:</b> el switch <b>«Pago separado IGTF:»</b> (Tab Documentos,
+bajo el selector de IGTF) <b>desglosa el impuesto del total a pagar</b> y, al enviar, <b>genera un
+documento independiente</b> que queda pendiente y se cobra desde <b>Cobros → IGTF</b>. El recorrido se
+verificó completo, incluido el cobro de ese documento: acuse «IGTF nro. 27158 enviado exitosamente», y
+<b>tras cobrarlo el documento desaparece de la lista</b>, de modo que no queda expuesto a un doble cobro.</p>
+
+<div class="nota">
+<b>Comprobación independiente del importe.</b> El saldo del cliente en el buscador pasó de
+<code>875.972.390,8200</code> a <code>875.972.849,8350</code> VES: <b>+459,0150</b>, exactamente el IGTF
+del documento generado. Es un contraste contra <b>la deuda real del cliente</b>, no contra la fórmula del
+producto.
+</div>
+
+<div class="cap">
+  <div class="et et-bien" style="font-size:9pt;font-weight:700;margin-bottom:1.2mm">Anticipo 27154 — los dos importes en bolívares, en una sola vista</div>
+  <img src="img/zoom/G3-dos-importes.png">
+  <div class="pie">«Total Efectivo: VES 10.036,8900» y «Monto VES: 10.036,8900» coinciden al cuarto
+  decimal. Se aprecia además que el anticipo se generó en USD (14,1365), conforme a
+  <code>prepaidCurrency</code>.</div>
+</div>
+
+<h2 class="pb">Retención y saldo del documento</h2>
+
+<div class="info">
+  <div class="t">Cómo queda el saldo al combinar retención y pago parcial</div>
+  <code>Monto Saldo</code> muestra <b>3.027,38</b>, que es el documento menos el importe del pago parcial
+  <b>sin restar además los 300,00 retenidos</b>. <b>Consultado con desarrollo: no se considera un defecto</b>
+  — el monto del pago parcial <b>ya incluye la retención ingresada</b>, de modo que descontarla otra vez
+  sería duplicarla. Se documenta el comportamiento y las cifras para que quede trazado.
+</div>
+
+<h3>Cómo trata el producto la retención</h3>
+
+<p>Al aplicar una retención, el <b>«Monto total a Pagar» baja exactamente en el monto retenido</b>. Medido
+sobre el mismo cobro y los mismos documentos, sin tocar nada más, con una retención de <b>300,00 VES</b>
+(IVA 200,00 + ISLR 100,00) sobre el documento <code>0013000338</code>:</p>
+
+<div class="par">
+  <div><div class="et" style="color:var(--morado-osc)">Antes de aplicar la retención</div>
+    <div class="cap"><img src="img/zoom/H2-ANTES.png"></div></div>
+  <div><div class="et" style="color:var(--morado-osc)">Después de aplicarla</div>
+    <div class="cap"><img src="img/zoom/H2-DESPUES.png"></div></div>
+</div>
+
+<div class="calc">
+Monto total a Pagar VES — ANTES ......  9.478,3100<br>
+Monto total a Pagar VES — DESPUÉS ...  9.178,3100<br>
+─────────────────────────────────────────────────<br>
+&nbsp;&nbsp;<b>Δ = −300,0000</b> &nbsp;= exactamente IVA (200,00) + ISLR (100,00)
+</div>
+
+<p>El importe que la aplicación le pide cobrar al vendedor <b>ya viene neto de la retención</b>: el pago
+que el vendedor introduce <b>no contiene</b> los 300,00 retenidos. Es el mismo criterio que aplica el
+detalle del documento, donde «Monto a pagar VES» pasó de <code>5.027,3800</code> a
+<code>4.727,3800</code> al guardar la retención.</p>
+
+<h3>Las cifras del caso</h3>
+
+<p>Sobre ese mismo documento, activado «Pago parcial» con <code>Monto a pagar VES = 2.000,00</code>. En el
+<b>mismo cobro</b> viaja un segundo documento <b>sin retención</b>, que sirve de contraste:</p>
+
+<table>
+  <tr><th>Documento</th><th class="num">Monto Doc.</th><th class="num">Retención</th><th class="num">Monto Pago</th><th class="num">Monto Saldo<br>(pantalla)</th><th>Lectura</th></tr>
+  <tr><td><code>0013000338</code><br><span style="color:var(--gris)">con retención + parcial</span></td><td class="num">5.027,3800</td><td class="num">300,0000</td><td class="num">2.000,0000</td><td class="num">3.027,3800</td><td>= <code>5.027,38 − 2.000,00</code>. La retención <b>no</b> se resta aparte porque, según desarrollo, ya está contenida en el pago</td></tr>
+  <tr><td><code>0013000339</code><br><span style="color:var(--gris)">sin retención, pago completo</span></td><td class="num">4.450,9300</td><td class="num">—</td><td class="num">4.450,9300</td><td class="num ok">0,0000</td><td>documento saldado</td></tr>
+</table>
+
+<div class="nota">
+<b>Por qué se documenta aunque no sea defecto.</b> Con estas cifras, <b>las dos interpretaciones dan
+resultados distintos y ambas son aritméticamente coherentes</b>: si el pago de 2.000,00 <i>contiene</i> los
+300,00 retenidos, el saldo correcto es <b>3.027,38</b>; si la retención fuese adicional al pago, sería
+<b>2.727,38</b>. <b>La pantalla no distingue una lectura de la otra</b>, porque muestra el pago y la
+retención en columnas separadas sin indicar que la segunda ya está dentro de la primera. Dejarlo trazado
+evita que se reabra como incidencia en cada ciclo.
+</div>
+
+<div class="nota">
+<b>Reserva sobre la comprobación.</b> El contraste definitivo sería observar <b>cuánto baja la deuda real
+del cliente</b> tras enviar el cobro: si baja 2.000,00 la lectura de desarrollo queda confirmada; si baja
+2.300,00, no. <b>No se pudo medir</b>: en este entorno la deuda de los clientes no se actualiza al enviar
+cobros. Se recoge la posición de desarrollo <b>sin verificación independiente</b>.
+</div>
+
+<div class="par">
+  <div><div class="et" style="color:var(--morado-osc)">Columna bisagra: Nro. Doc.</div>
+    <div class="cap"><img src="img/zoom/H2-saldo-IZQ.png"></div></div>
+  <div><div class="et et-mal">Monto Saldo — las dos filas</div>
+    <div class="cap"><img src="img/zoom/H2-saldo-DER.png"></div></div>
+</div>
+<p class="sub" style="font-size:8.3pt;font-style:italic;margin-top:-2mm">La tabla mide 909 px en un
+viewport de 360: se aportan dos recortes solapados por la fila. A la izquierda los números de documento;
+a la derecha, en el mismo orden, <code>Retención ISLR</code>, <code>Monto Pago</code> y
+<code>Monto Saldo</code>. La primera fila es el documento con retención; la segunda, el control.</p>
+
+<h3>El valor queda guardado en la nube</h3>
+
+<table>
+  <tr><th>Documento</th><th class="num">nu_amount_doc</th><th class="num">nu_balance_doc</th><th class="num">nu_amount_retention</th><th class="num">nu_amount_retention2</th><th>in_payment_partial</th></tr>
+  <tr><td><code>0013000338</code></td><td class="num">5027.3800</td><td class="num bad">3027.3800</td><td class="num">200.0000</td><td class="num">100.0000</td><td>true</td></tr>
+  <tr><td><code>0013000339</code></td><td class="num">4450.9300</td><td class="num">4450.9300</td><td class="num">0.0000</td><td class="num">0.0000</td><td>false</td></tr>
+</table>
+
+<p><b>Columna afectada: <code>collection_detail.nu_balance_doc</code>.</b> La nube recibe el mismo valor que
+muestra la pantalla, de modo que cualquier consumidor posterior hereda ese saldo.</p>
+
+<h3>Qué significa «Saldo doc.» — establecido con tres cobros de control</h3>
+
+<p>Antes de interpretar el valor conviene fijar qué representa esa columna, porque su nombre se parece al
+de «Monto Saldo» del móvil y <b>no son la misma magnitud</b>. Se consultaron en la web tres cobros
+<b>sin pago parcial</b>, dos de ellos ajenos a esta corrida:</p>
+
+<table>
+  <tr><th>Cobro</th><th>Documento</th><th class="num">Monto doc</th><th class="num">Saldo doc.</th><th class="num">Monto a pagar</th><th>Qué demuestra</th></tr>
+  <tr><td><b>27129</b><br><span style="color:var(--gris)">ajeno a la corrida</span></td><td><code>0091033060</code></td><td class="num">36.600,0000</td><td class="num ok">939,0100</td><td class="num">939,0100</td><td>🔑 factura de 36.600 de la que <b>ya sólo se debían 939,01</b></td></tr>
+  <tr><td><b>27160</b><br><span style="color:var(--gris)">control de QA</span></td><td><code>010000253810022023</code></td><td class="num">2.764.314,0000</td><td class="num ok">2.764.314,0000</td><td class="num">2.764.314,0000</td><td>se debía todo, y se pagó todo</td></tr>
+  <tr><td><b>27152</b></td><td><code>0013000339</code></td><td class="num">4.450,9300</td><td class="num ok">4.450,9300</td><td class="num">4.450,9300</td><td>ídem, dentro del cobro en estudio</td></tr>
+</table>
+
+<p>La fila del cobro <b>27129</b> lo resuelve: con <code>Monto doc = 36.600,00</code> y
+<code>Saldo doc. = 939,01</code>, esa columna <b>no puede ser</b> ni el importe original del documento ni
+el remanente tras el pago. Es <b>lo que el cliente adeudaba de ese documento en el momento del cobro</b>.</p>
+
+<table>
+  <tr><th style="width:44mm">Columna</th><th>Pregunta que responde</th></tr>
+  <tr><td>Web · <code>Saldo doc.</code></td><td><b>Cuánto debía</b> el cliente de ese documento</td></tr>
+  <tr><td>Móvil · <code>Monto Saldo</code></td><td><b>Cuánto queda</b> tras aplicar el pago</td></tr>
+</table>
+
+<div class="nota">
+<b>No hay inconsistencia entre el móvil y la web.</b> En un cobro completo, «debía todo» y «no queda nada»
+son ambas ciertas: el móvil muestra 0,00 y la web el importe adeudado, y las dos lecturas son correctas.
+La similitud de los nombres es lo que hace parecer que discrepan. <b>Se deja constancia expresa porque
+esa lectura errónea puede llevar a reportar un defecto que no existe.</b>
+</div>
+
+<h3>Qué muestra la web en el caso con pago parcial</h3>
+
+<div class="cap">
+  <img src="img/zoom/WEB-saldo-doc.png">
+  <div class="pie">Detalle del cobro 27152 en la web. La primera fila (<code>0013000338</code>, con
+  retención y pago parcial) muestra <b>3.027,3800</b> sobre un documento de <b>5.027,3800</b>; la segunda,
+  sin pago parcial, refleja el importe íntegro. <b>Ambos valores coinciden con los del móvil y con la
+  nube</b>.</div>
+</div>
+
+<div class="nota">
+<b>Un matiz de la columna que conviene conocer.</b> Cuando hay <b>pago parcial</b>, el valor de
+<code>Saldo doc.</code> deja de ser la deuda previa del documento y pasa a ser <b>el remanente tras el
+pago</b> (5.027,38 − 2.000,00). Los tres cobros sin pago parcial de la tabla anterior guardan la deuda; el
+que tiene parcial guarda el remanente. <b>No afecta a la operación</b>, pero quien lea esa columna en un
+reporte o una integración debe saber que responde a dos preguntas distintas según la bandera de pago
+parcial.
+</div>
+
+<h3>Ese doble criterio, medido sobre todo el histórico</h3>
+
+<p>No es un caso aislado de esta corrida. Contando todas las filas de <code>collection_detail</code> del
+cliente:</p>
+
+<table>
+  <tr><th>Escenario</th><th>Qué guarda <code>nu_balance_doc</code></th><th class="num">Filas</th><th class="num">%</th></tr>
+  <tr><td><b>Sin</b> pago parcial</td><td>la <b>deuda</b> del documento</td><td class="num">9.087</td><td class="num">98,9 %</td></tr>
+  <tr><td><b>Con</b> pago parcial</td><td><b>bruto − pago</b> (el remanente)</td><td class="num">13.124</td><td class="num">97,7 %</td></tr>
+</table>
+
+<p>Los dos comportamientos son <b>sistemáticos</b> y el segundo se remonta al cobro nº 2 ⇒ <b>no es una
+regresión de esta versión</b>: el doble criterio convive en el campo desde el origen. Se documenta como
+característica del dato, no como hallazgo.</p>
+
+<h3>Los otros dos escenarios de retención</h3>
+
+<table>
+  <tr><th>Escenario</th><th>Comportamiento medido</th><th style="width:20mm">Resultado</th></tr>
+  <tr><td>Retención + <b>pago completo</b></td><td>Documento <code>0013000338</code>, retención 300,00, pago 4.727,3800 → <code>Monto Saldo</code> queda en <b>0,0000</b></td><td><span class="pill p-ok">✅ conforme</span></td></tr>
+  <tr><td>Retención + <b>pago parcial</b></td><td>El caso descrito arriba: <code>Monto Saldo = 3.027,38</code></td><td><span class="pill p-na">consultado con desarrollo</span></td></tr>
+  <tr><td><b>Cobro tipo Retención</b> (<code>co_type = 2</code>)</td><td>No ejercitado en este build</td><td><span class="pill p-na">sin medir</span></td></tr>
+</table>
+
+<h2 class="pb">Otros comportamientos observados</h2>
+
+<table>
+  <tr><th style="width:8mm">#</th><th>Comportamiento</th><th>Por qué se documenta</th></tr>
+  <tr><td>1</td><td><b>Al enviar un cobro que genera anticipo no se muestra aviso previo con el importe.</b> Sí aparece el rótulo «Este pago creó el anticipo automático» dentro del Tab Pagos, y el acuse final del envío</td><td>El usuario confirma el envío sin ver de antemano el monto del anticipo que se creará. Observado en 2 de 2 envíos, con la reserva de que en ambos casos el primer clic de Enviar no disparó el handler</td></tr>
+  <tr><td>2</td><td><b>Fecha por defecto desigual entre métodos:</b> Efectivo nace en la fecha del día, mientras Depósito, Transferencia, Otros y Pago Móvil nacen en <b>6/8/2026</b></td><td>Un cobro registrado con fecha de varias semanas atrás afecta a la conciliación. No se investigó si es intencional</td></tr>
+  <tr><td>3</td><td>El <b>Número de referencia de Pago Móvil admite sólo dígitos</b>: al teclear <code>REF-PM-001</code> conservó únicamente <code>001</code>. Los demás métodos aceptan texto</td><td>Una referencia bancaria con letras se recorta sin avisar</td></tr>
+  <tr><td>4</td><td>Un cobro con retención <b>exige adjunto</b> para poder enviarse, aunque <code>requiredCollectionAttachments = false</code></td><td>La <b>firma</b> del Tab Adjuntos satisface el requisito, lo que permite completar el envío sin recurrir a la cámara</td></tr>
+  <tr><td>5</td><td>Una <b>diferencia negativa</b> impide el envío incluso dentro del rango de tolerancia: <i>«…el monto pagado debe ser igual al monto a pagar.»</i></td><td>Esta validación corre <b>después</b> de la de métodos incompletos</td></tr>
+  <tr><td>6</td><td>En el listado de BUSCAR, los <b>cobros recién creados no encabezan la lista</b></td><td>Se localizan por número de referencia sin dificultad. No se profundizó</td></tr>
+</table>
+
+<h2>Lo que este informe NO cubre</h2>
+
+<table>
+  <tr><th style="width:8mm">#</th><th>Pendiente</th><th>Por qué importa</th></tr>
+  <tr><td>1</td><td><b>El saldo con retención en otros escenarios de la web</b></td><td>Se midió el cobro 27152. <b>No</b> se comprobó cómo muestra la web un cobro con retención y <b>pago completo</b>, ni uno con varios documentos mezclados</td></tr>
+  <tr><td>2</td><td><b>IGTF por separado</b> en moneda <b>VES</b>, y combinado con <b>pago parcial, retención o descuento</b></td><td>El flujo se validó completo en USD y con Efectivo. Su comportamiento al mezclarlo con las demás variables no está medido, y son justo las combinaciones donde aparecen las divergencias</td></tr>
+  <tr><td>3</td><td><b>Cobro tipo Retención</b> (<code>co_type = 2</code>)</td><td>No se ejercitó en este build, de modo que su comportamiento actual no está documentado</td></tr>
+  <tr><td>4</td><td><b>Cobro con IVA</b> (<code>co_type = 4</code>)</td><td>Se abrió el formulario pero no se cargaron documentos: se agotó el tiempo disponible</td></tr>
+  <tr><td>5</td><td>Los <b>selectores</b> de Pago Móvil (código de área, tipo de documento)</td><td>Vienen con valor por defecto y no se probó vaciarlos. El control no ofrece opción nula</td></tr>
+  <tr><td>6</td><td><b>Empresa 1003</b> (Destilería Yaracuy)</td><td>Todo se midió sobre la empresa 1002</td></tr>
+  <tr><td>7</td><td>Si «Nro. Recibo» resulta <b>obligatorio en otros clientes</b></td><td>Se midió únicamente en este cliente. Alguna configuración por cliente podría cambiarlo</td></tr>
+</table>
+
+<div class="fin">
+  <img src="../../_assets/logo-denario-premium.svg" alt="">
+  <div>
+    <b>Denario Premium · Control de Calidad.</b> Informe emitido el 28 de agosto de 2026 a partir de la
+    corrida <code>reports/el_palmar/cobros_metodos_regresion_20260828/</code>.<br>
+    Detalle técnico, mediciones y trazas de operación en <code>cobros-metodos-regresion.md</code>.
+    Las capturas son recortes ampliados de las tomas originales del dispositivo, conservadas sin editar
+    en <code>img/</code>. Registros de evidencia: <b># Ref 27151 – 27160</b> (27160 creado por QA como control).
+  </div>
+</div>
+
+</body></html>

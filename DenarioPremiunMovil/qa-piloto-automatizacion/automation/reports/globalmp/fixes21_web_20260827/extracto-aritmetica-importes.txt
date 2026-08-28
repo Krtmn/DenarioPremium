@@ -1,0 +1,12 @@
+--- PASADA 1: comparando SOLO contra "Monto Total" (comparacion incompleta, ver PASADA 2) ---
+pedidos comparados: 139
+OK (Sigma Total Producto == Monto Total, tol 0.02): 32
+"DESCUADRES" 107 -> son pedidos cuya suma cuadra contra "Monto Base", no contra "Monto Total".
+Se reevaluan en la PASADA 2, donde NO queda ninguno sin cuadrar.
+[('18091', 142.506, 122.85), ('18085', 548.216, 472.6), ('18083', 190.4256, 164.16), ('18081', 892.156, 769.1), ('18078', 239.1456, 206.16), ('18077', 69.5072, 59.92), ('18042', 405.072, 349.2), ('18018', 217.7436, 187.71), ('18017', 310.1608, 267.38), ('18012', 83.4968, 71.98)]
+pedidos con codigo de producto repetido: 0 []
+productos distintos en todo el Detalle: 172
+--- PASADA 2: comparando contra "Monto Base" Y contra "Monto Total" (comparacion completa) ---
+Sigma Total Producto == Monto Base : 118
+Sigma Total Producto == Monto Total: 21
+ni una ni otra                     : 0

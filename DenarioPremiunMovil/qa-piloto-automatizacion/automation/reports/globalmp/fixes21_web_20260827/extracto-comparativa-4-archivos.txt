@@ -1,0 +1,30 @@
+======================================================================
+ARCHIVO: A-general-ref18568.xlsx
+  params: Parámetros de Búsqueda | Fecha de exportación: 27/8/2026 14:11:39 | Desde: 01/8/2026 | Hasta: 27/8/2026 | Empresa: COMERCIALIZADORA DE ALIMENTOS GLOBAL M&P, C.A. | Vendedor: Todos | Cliente: Todos
+  columnas (16): Ref | Estatus | Fecha Pedido | Fecha Creacion | Vendedor | Cliente | # Detalles | Monto Base | Moneda | Monto Total | Monto Conversion | Moneda Conversion | Tasa Conversion | Tipo Pedido | Comentarios | Adjuntos
+  filas de datos: 1
+  refs distintos: 1
+  suma "# Detalles" = 7
+  refs min/max: 18568.0 18568.0
+======================================================================
+ARCHIVO: B-detalle-ref18568.xlsx
+  params: Parámetros de Búsqueda | Fecha de exportación: 27/8/2026 14:11:39 | Desde: 01/8/2026 | Hasta: 27/8/2026 | Empresa: COMERCIALIZADORA DE ALIMENTOS GLOBAL M&P, C.A. | Vendedor: Todos | Cliente: Todos
+  columnas (32): Código Empresa | Nombre Empresa | Código Vendedor | Nombre Vendedor | # Ref. Pedido | Código Pedido | Fecha Pedido | Código Cliente | Nombre Cliente | Monto pedido | Moneda pedido | Tasa de cambio | Monto conversión | Moneda conversión | Descuento Global | Código Estructura Producto | Estructura Producto | Código Producto | Nombre Producto | Cantidad Pedida | Código Unidad | Nombre Unidad | Precio Base Producto | Precio Base Conversión | Descuento Producto | Total Producto | Total Conversión | Coordenadas | Sucursal | Dirección | Comentarios | Adjuntos
+  filas de datos: 7
+  refs distintos: 1
+  refs min/max: 18568 18568
+======================================================================
+ARCHIVO: C-general-vendedor-kimberlin.xlsx
+  params: Parámetros de Búsqueda | Fecha de exportación: 27/8/2026 14:11:39 | Desde: 01/8/2026 | Hasta: 27/8/2026 | Empresa: COMERCIALIZADORA DE ALIMENTOS GLOBAL M&P, C.A. | Vendedor: KIMBERLIN LEON | Cliente: Todos
+  columnas (16): Ref | Estatus | Fecha Pedido | Fecha Creacion | Vendedor | Cliente | # Detalles | Monto Base | Moneda | Monto Total | Monto Conversion | Moneda Conversion | Tasa Conversion | Tipo Pedido | Comentarios | Adjuntos
+  filas de datos: 139
+  refs distintos: 139
+  suma "# Detalles" = 700
+  refs min/max: 15996.0 18546.0
+======================================================================
+ARCHIVO: D-detalle-vendedor-kimberlin.xlsx
+  params: Parámetros de Búsqueda | Fecha de exportación: 27/8/2026 14:11:39 | Desde: 01/8/2026 | Hasta: 27/8/2026 | Empresa: COMERCIALIZADORA DE ALIMENTOS GLOBAL M&P, C.A. | Vendedor: KIMBERLIN LEON | Cliente: Todos
+  columnas (32): Código Empresa | Nombre Empresa | Código Vendedor | Nombre Vendedor | # Ref. Pedido | Código Pedido | Fecha Pedido | Código Cliente | Nombre Cliente | Monto pedido | Moneda pedido | Tasa de cambio | Monto conversión | Moneda conversión | Descuento Global | Código Estructura Producto | Estructura Producto | Código Producto | Nombre Producto | Cantidad Pedida | Código Unidad | Nombre Unidad | Precio Base Producto | Precio Base Conversión | Descuento Producto | Total Producto | Total Conversión | Coordenadas | Sucursal | Dirección | Comentarios | Adjuntos
+  filas de datos: 700
+  refs distintos: 139
+  refs min/max: 15996 18546

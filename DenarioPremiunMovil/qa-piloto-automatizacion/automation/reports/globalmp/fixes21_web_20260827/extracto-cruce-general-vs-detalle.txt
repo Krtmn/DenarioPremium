@@ -1,0 +1,15 @@
+General refs: 139  Detalle refs: 139
+IGUALES: True
+solo en General: []
+solo en Detalle: []
+vendedores en Detalle: ['KIMBERLIN LEON']
+vendedores en General: ['KIMBERLIN LEON']
+pedidos donde #Detalles != nro de filas en Detalle: 0 []
+
+--- EJEMPLO pedido 18546 ---
+GENERAL: {'Ref': '18546.0', 'Estatus': 'Enviado', 'Fecha Pedido': '25/8/2026 14:08:28', 'Fecha Creacion': '25/8/2026 14:08:30', 'Vendedor': 'KIMBERLIN LEON', 'Cliente': 'COMERCIAL MEIEN 2011, C.A', '# Detalles': '4.0', 'Monto Base': '35.15', 'Moneda': 'USD', 'Monto Total': '40.774', 'Monto Conversion': '31993.7268', 'Moneda Conversion': 'BS', 'Tasa Conversion': '784.66', 'Tipo Pedido': 'FACTURA', 'Comentarios': '', 'Adjuntos': 'NO'}
+DETALLE (4 filas):
+    HS64 | SALSA INGLESA HEINZ 24/300cc | cant 0.25 | CAJA | precio 53.48 | total 15.5092
+    HS72 | SALSA HEINZ MIX INGL/SOY/AJO 24/150cc | cant 0.25 | CAJA | precio 31.06 | total 9.0074
+    HS31 | SALSA EXTRA PICANTE HEINZ 24/150cc | cant 0.25 | CAJA | precio 37.68 | total 10.9272
+    HS59 | SALSA DE SOYA HEINZ 24/150cc | cant 0.125 | CAJA | precio 36.76 | total 5.3302

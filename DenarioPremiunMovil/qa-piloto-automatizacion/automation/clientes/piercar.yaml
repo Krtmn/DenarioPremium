@@ -19,7 +19,16 @@ db_name: piercar                            # CONFIRMADO 2026-06-16 (current_dat
 #   - userMustActivateGPS=FALSE / enterpriseEnabled=FALSE
 vgs:
   multiCurrency: true                       # CSV multiCurrency=true
-  multiCurrencyCollection: true             # CSV=true
+  multiCurrencyCollection: false            # ✅ CAMBIADO POR QA el 2026-08-28 16:56 (antes true).
+                                            # 🔴 EL SELECTOR DE MONEDA DE COBROS LO CONTROLAN **DOS**
+                                            #   fuentes, y manda la que diga que SÍ (lógica OR):
+                                            #     · esta VG  (Empresa > Configuración > Cobros)
+                                            #     · currency_modules.cob.currency_selector (> Módulos)
+                                            #   Con `currency_selector=false` pero esta VG en `true`,
+                                            #   el selector SEGUÍA APARECIENDO — y un cobro nacido en BS
+                                            #   se envió en USD (Ref 6). Con las DOS en false, desaparece.
+                                            # ⇒ Antes de reportar un selector de más como defecto,
+                                            #   LEER LAS DOS FUENTES. Ver GUION-CONFORMIDAD-CONFIG §K03.
   multiCurrencyDeposit: true                # CSV=true
   currencyModule: true                      # CSV currencyModule=true
   currencyBank: true                        # CSV currencyBank=true → ver todos los bancos sin importar moneda

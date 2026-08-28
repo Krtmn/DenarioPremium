@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Cobros — versión especial v21 · El Palmar</title>
+<style>
+  :root {
+    --morado: #5501AA; --morado-osc: #3D0179; --morado-claro: #F2EAFB;
+    --verde: #91BA3F;  --verde-osc: #4A6B1B;  --verde-claro: #F0F6E4;
+    --ambar: #F5BA2E;  --ambar-claro: #FEF7E6;
+    --rojo: #A5121B;   --rojo-claro: #FDF0F0;
+    --gris: #5D5A63;   --linea: #D8D2E0;
+  }
+  @page { size: A4; margin: 14mm 14mm 15mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 10.2pt; color: #1F1B24;
+         line-height: 1.44; margin: 0; }
+  .marca { display: flex; align-items: center; justify-content: space-between; gap: 8mm;
+           border-bottom: 2.2pt solid var(--morado); padding-bottom: 3mm; margin-bottom: 4mm; }
+  .marca img { width: 52mm; display: block; }
+  .marca .quien { text-align: right; font-size: 8.6pt; color: var(--gris); line-height: 1.35; }
+  .marca .quien b { color: var(--morado); font-size: 9.4pt; display: block; letter-spacing: .2px; }
+  .cinta { height: 2.2mm; display: flex; margin: -4mm 0 4mm; }
+  .cinta i { flex: 1; }
+  .cinta i:nth-child(1) { background: var(--morado); }
+  .cinta i:nth-child(2) { background: var(--verde); }
+  .cinta i:nth-child(3) { background: var(--ambar); }
+  h1 { font-size: 18pt; color: var(--morado); margin: 0 0 1mm; letter-spacing: -.3px; }
+  h2 { font-size: 12.5pt; color: var(--morado); margin: 7mm 0 2.5mm; padding-bottom: 1.2mm;
+       border-bottom: 1.6pt solid var(--morado); page-break-after: avoid; }
+  h3 { font-size: 10.6pt; margin: 4mm 0 1.5mm; color: var(--morado-osc); page-break-after: avoid; }
+  .sub { color: var(--gris); font-size: 10pt; margin: 0 0 4mm; }
+  table { border-collapse: collapse; width: 100%; margin: 2mm 0 3mm; font-size: 9pt;
+          page-break-inside: avoid; }
+  th { background: var(--morado); color: #fff; text-align: left; padding: 1.6mm 2.2mm; font-weight: 600; }
+  td { border: .6pt solid var(--linea); padding: 1.4mm 2.2mm; vertical-align: top; }
+  tr:nth-child(even) td { background: #FAF7FD; }
+  .num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap;
+         font-family: Consolas, "Courier New", monospace; }
+  .ok { color: var(--verde-osc); font-weight: 700; }
+  .bad { color: var(--rojo); font-weight: 700; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: .93em; color: var(--morado-osc); }
+  .ficha { width: 100%; margin: 0 0 4mm; font-size: 9.4pt; }
+  .ficha td { border: none; border-bottom: .5pt solid var(--linea); padding: 1.2mm 0; background: none !important; }
+  .ficha td:first-child { color: var(--gris); width: 42mm; }
+  .alerta { border-left: 4pt solid var(--rojo); background: var(--rojo-claro); padding: 3mm 4mm; margin: 4mm 0 5mm; }
+  .alerta .t { font-size: 12.5pt; font-weight: 700; color: var(--rojo); margin-bottom: 1.5mm; }
+  .bien { border-left: 4pt solid var(--verde); background: var(--verde-claro); padding: 3mm 4mm; margin: 4mm 0; }
+  .bien .t { font-size: 11pt; font-weight: 700; color: var(--verde-osc); margin-bottom: 1.5mm; }
+  .nota { background: var(--ambar-claro); border-left: 3pt solid var(--ambar); padding: 2.5mm 3.5mm;
+          margin: 3mm 0; font-size: 9.4pt; page-break-inside: avoid; }
+  .calc { font-family: Consolas, "Courier New", monospace; background: var(--morado-claro);
+          border: .5pt solid var(--linea); padding: 1.7mm 3mm; margin: 2mm 0; font-size: 9.1pt; }
+  .cap { page-break-inside: avoid; margin: 2.5mm 0 3.5mm; }
+  .cap img { max-width: 100%; max-height: 118mm; border: .7pt solid var(--linea); display: block; margin: 0 auto; }
+  .cap .pie { font-size: 8.3pt; color: var(--gris); margin-top: 1mm; font-style: italic; }
+  .pill { display: inline-block; padding: .4mm 2mm; border-radius: 2mm; font-size: 8.4pt; font-weight: 700; }
+  .p-ok { background: var(--verde-claro); color: var(--verde-osc); border: .5pt solid var(--verde); }
+  .p-mal { background: var(--rojo-claro); color: var(--rojo); border: .5pt solid var(--rojo); }
+  .p-na { background: #EFEDF2; color: var(--gris); border: .5pt solid var(--linea); }
+  .fin { margin-top: 6mm; padding-top: 2.5mm; border-top: 1.2pt solid var(--morado); font-size: 8.5pt;
+         color: var(--gris); display: flex; gap: 5mm; align-items: flex-start; }
+  .fin img { width: 26mm; opacity: .85; }
+  .pb { page-break-before: always; }
+</style></head><body>
+
+<div class="marca">
+  <img src="../../_assets/logo-denario-premium.svg" alt="Denario Premium">
+  <div class="quien"><b>CONTROL DE CALIDAD</b>Validación de Cobros<br>28 de agosto de 2026</div>
+</div>
+<div class="cinta"><i></i><i></i><i></i></div>
+
+<h1>Cobros — versión especial de la v21</h1>
+<p class="sub">CENTRAL EL PALMAR, S.A. · empresa 1002 · Anticipos, retenciones y alertas</p>
+
+<table class="ficha">
+  <tr><td>Alcance</td><td>Anticipo automático · alertas al enviar · regresión de la tabla de totales · riesgos de la versión</td></tr>
+  <tr><td>Registros de evidencia</td><td>5 cobros enviados: <code>27145</code> a <code>27149</code></td></tr>
+  <tr><td>Capas verificadas</td><td>Pantalla del móvil · modelo en memoria · base de datos de la nube</td></tr>
+  <tr><td>Tasa del día</td><td>710,0000 VES = 1 USD</td></tr>
+</table>
+
+<div class="alerta">
+  <div class="t">🔴 Un defecto ya corregido dos veces volvió a aparecer</div>
+  Cuando un documento lleva <b>retención</b> y <b>pago parcial</b>, la columna <b>«Monto Saldo» no
+  descuenta el importe retenido</b>: el saldo pendiente queda inflado exactamente en lo que se retuvo.
+  Ocurre <b>en la pantalla y en la base de datos</b>.<br><br>
+  Es el mismo defecto detectado en este cliente el 26/08. <b>La versión especial no lo corrige.</b><br><br>
+  <b>El resto del módulo funciona:</b> el anticipo automático pasa sus 7 casos, incluido el más exigente,
+  y las alertas bloquean el envío en 4 de 5 escenarios.
+</div>
+
+<h2>El defecto · «Monto Saldo» y la retención</h2>
+
+<p>La deuda de un documento baja por <b>el pago más lo retenido</b>. La aplicación sólo descuenta el pago.</p>
+
+<h3>Los tres escenarios, en un mismo cobro</h3>
+
+<p>Se montaron en la <b>misma transacción</b> (cobro <code>27149</code>) para que la comparación sea directa:</p>
+
+<table>
+  <tr><th>Documento</th><th>Escenario</th><th class="num">Saldo</th><th class="num">Retenido</th><th class="num">Pago</th><th class="num">Muestra</th><th class="num">Debería</th></tr>
+  <tr><td><code>0013000340</code></td><td><b>retención + pago parcial</b></td>
+      <td class="num">1.963,11</td><td class="num">150,00</td><td class="num">800,00</td>
+      <td class="num bad">1.163,11</td><td class="num">1.013,11</td></tr>
+  <tr><td><code>0013000339</code></td><td><b>CONTROL</b> — sin retención</td>
+      <td class="num">4.450,93</td><td class="num">—</td><td class="num">4.450,93</td>
+      <td class="num ok">0,0000</td><td class="num">0,0000</td></tr>
+  <tr><td><code>0013000338</code></td><td>retención + pago completo</td>
+      <td class="num">5.027,38</td><td class="num">300,00</td><td class="num">4.727,38</td>
+      <td class="num ok">0,0000</td><td class="num">0,0000</td></tr>
+</table>
+
+<div class="calc">
+1.963,11 − 800,00 − 150,00 = <b>1.013,11</b> &nbsp;← lo que el cliente queda debiendo<br>
+1.963,11 − 800,00 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= <b>1.163,11</b> &nbsp;← lo que muestra y guarda<br>
+─────────────────────────────<br>
+diferencia: <b>150,00</b> = exactamente la retención
+</div>
+
+<div class="cap">
+  <img src="img/zoom/H2-montosaldo-zoom.png">
+  <div class="pie">Tab TOTAL del mismo cobro. Fila 1: retención ISLR 50,00 + pago 800,00 → saldo
+  <b>1.163,11</b>. Fila 2, el control sin retención, cierra en <b>0,0000</b>.</div>
+</div>
+
+<h3>Por qué el control es importante</h3>
+
+<p>Las dos filas están en <b>el mismo cobro, la misma pantalla y el mismo momento</b>. La única diferencia
+entre ellas es la retención. <b>Eso aísla la causa sin lugar a discusión.</b></p>
+
+<p>Y el tercer escenario acota el disparador: con retención pero <b>pago completo</b>, el saldo cierra
+correctamente en cero. <b>El defecto sólo aparece cuando se combinan retención y pago parcial.</b></p>
+
+<h3>Qué llega a la base de datos</h3>
+
+<table>
+  <tr><th>Capa</th><th class="num">Valor</th><th></th></tr>
+  <tr><td>Pantalla del móvil</td><td class="num bad">1.163,11</td><td class="bad">✗ inflado</td></tr>
+  <tr><td>Modelo en memoria</td><td class="num ok">1.963,11</td><td class="ok">✔ guarda el saldo íntegro</td></tr>
+  <tr><td><b>Base de datos de la nube</b></td><td class="num bad">1.163,11</td><td class="bad">✗ inflado</td></tr>
+  <tr><td>Web administrativa</td><td class="num">—</td><td>⛔ no verificada</td></tr>
+</table>
+
+<div class="nota">
+<b>Hallazgo adicional que conviene resolver:</b> en el mismo cobro, la misma columna de la base de datos
+guarda <b>dos criterios distintos</b>: el saldo íntegro en la fila sin pago parcial (4.450,93) y el saldo
+menos el pago en la fila con parcial (1.163,11). La transformación ocurre <b>al enviar</b>, y sólo para
+las líneas con pago parcial.<br><br>
+Esto significa que la decisión de producto —que el campo sea siempre una foto del saldo y que la web
+calcule el remanente— <b>no está aplicada de forma consistente</b>.
+</div>
+
+<div class="pb"></div>
+<h2>✅ El anticipo automático · 7 de 7</h2>
+
+<p>Este cliente tiene la configuración más exigente probada hasta ahora, porque <b>las dos monedas del
+anticipo son distintas</b>:</p>
+
+<table>
+  <tr><th>Ajuste</th><th>Valor</th><th>Qué controla</th></tr>
+  <tr><td>¿En qué moneda debe generarse el anticipo?</td><td><b>VES</b></td><td>la moneda en que <b>se crea</b></td></tr>
+  <tr><td>Moneda para evaluar el monto mínimo</td><td><b>USD</b></td><td>la moneda del <b>umbral</b></td></tr>
+  <tr><td>Monto mínimo excedido</td><td class="num">10</td><td>10 USD</td></tr>
+</table>
+
+<h3>El caso decisivo: cobro en dólares → anticipo en bolívares</h3>
+
+<p>Si la aplicación confundiera ambos ajustes, un cobro en dólares generaría su anticipo en dólares.
+<b>No ocurre:</b></p>
+
+<table>
+  <tr><th>Cobro</th><th>Moneda del cobro</th><th class="num">Diferencia</th><th>Anticipo</th><th>Moneda</th><th class="num">Monto</th></tr>
+  <tr><td><code>27145</code></td><td>Bolívares</td><td class="num">11.693,00 VES</td><td><code>27146</code></td><td class="ok">VES</td><td class="num">11.693,00</td></tr>
+  <tr><td><code>27147</code></td><td><b>Dólares</b></td><td class="num">18,45 USD</td><td><code>27148</code></td><td class="ok"><b>VES</b></td><td class="num">13.099,50</td></tr>
+</table>
+
+<div class="calc">18,45 USD × 710,00 = <b>13.099,50 VES</b> ✔ &nbsp;&nbsp;·&nbsp;&nbsp; 11.693,00 ÷ 710,00 = 16,4690 USD ✔</div>
+
+<p>El mensaje que ve el vendedor también sale en la moneda correcta:</p>
+
+<div class="calc">«Se creará un anticipo automático por el monto excedente de <b>VES 13.099,5000</b>.
+Se enviará un anticipo junto al cobro.»</div>
+
+<div class="cap">
+  <img src="img/P4-tab-total-cobro-USD.png">
+  <div class="pie">El cobro está en dólares (pago USD 40,00) y su diferencia se expresa en ambas monedas.
+  El anticipo que genera sale en bolívares, como manda la configuración.</div>
+</div>
+
+<p><b>El umbral también funciona:</b> una diferencia de 7,04 USD <b>no</b> generó anticipo; una de
+14,08 USD <b>sí</b>. El mínimo se evalúa en dólares, tal como está configurado.</p>
+
+<h2>Alertas al enviar un cobro incompleto · 4 de 5</h2>
+
+<table>
+  <tr><th style="width:12mm">Caso</th><th>Escenario</th><th style="width:28mm">Resultado</th></tr>
+  <tr><td><b>A1</b></td><td>Sin monto</td><td><span class="pill p-ok">✅ bloquea</span></td></tr>
+  <tr><td><b>A2</b></td><td><b>Sin referencia</b> (Efectivo)</td><td><span class="pill p-mal">❌ no bloquea</span></td></tr>
+  <tr><td><b>A3</b></td><td>Ambos vacíos</td><td><span class="pill p-ok">✅ bloquea</span></td></tr>
+  <tr><td><b>A4</b></td><td>Guardado y reabierto</td><td><span class="pill p-ok">✅ bloquea</span></td></tr>
+  <tr><td><b>A5</b></td><td>Todo completo</td><td><span class="pill p-ok">✅ envía</span></td></tr>
+</table>
+
+<div class="calc">«Hay un método de pago incompleto. Complételo o elimínelo antes de enviar.»</div>
+
+<div class="nota">
+<b>Sobre A2:</b> con el método <b>Efectivo</b>, el campo «Nro. Recibo» admite quedar vacío y el envío
+procede. Puede ser correcto —un pago en efectivo no siempre tiene número de recibo— o puede ser un hueco.
+<b>Conviene confirmarlo con producto</b> antes de tratarlo como defecto. No se midió con Transferencia
+ni Depósito.<br><br>
+<b>Y en los cuatro casos que bloquean, el mensaje no dice qué campo falta.</b> Eso lo indica una marca
+roja junto al campo.
+</div>
+
+<h2>Los riesgos de esta versión</h2>
+
+<table>
+  <tr><th style="width:12mm">ID</th><th>Riesgo evaluado</th><th style="width:26mm">Resultado</th></tr>
+  <tr><td><b>R1</b></td><td>Retención + diferencia positiva: ¿sobre qué base se calcula el anticipo?</td>
+      <td><span class="pill p-ok">✅ correcto</span></td></tr>
+  <tr><td><b>R2</b></td><td>IGTF + diferencia positiva</td><td><span class="pill p-na">⛔ no validado</span></td></tr>
+  <tr><td><b>R3</b></td><td>Cobro de tipo Retención</td><td><span class="pill p-ok">✅ correcto</span></td></tr>
+  <tr><td><b>R4</b></td><td>Pago parcial + retención</td><td><span class="pill p-mal">❌ es el defecto</span></td></tr>
+  <tr><td><b>R5</b></td><td>Los dos importes en bolívares del anticipo</td><td><span class="pill p-ok">✅ coinciden</span></td></tr>
+</table>
+
+<p><b>R1 confirma que el cálculo del anticipo es correcto:</b> se hace sobre el neto <i>después</i> de la
+retención (5.027,38 − 300,00 = 4.727,38). <b>R5 confirma que el descuadre de bolívares detectado en otro
+cliente no reproduce aquí:</b> los tres importes del anticipo coinciden en 11.693,00.</p>
+
+<h2>Registros creados</h2>
+
+<table>
+  <tr><th>Ref</th><th>Tipo</th><th>Moneda</th><th class="num">Monto</th><th>Para qué</th></tr>
+  <tr><td><code>27145</code></td><td>Cobro</td><td>VES</td><td class="num">20.000,00</td><td>anticipo desde bolívares</td></tr>
+  <tr><td><code>27146</code></td><td>Anticipo</td><td>VES</td><td class="num">11.693,00</td><td>generado automáticamente</td></tr>
+  <tr><td><code>27147</code></td><td>Cobro</td><td><b>USD</b></td><td class="num">40,00</td><td>el caso decisivo</td></tr>
+  <tr><td><code>27148</code></td><td>Anticipo</td><td><b>VES</b></td><td class="num">13.099,50</td><td>generado automáticamente</td></tr>
+  <tr><td><code>27149</code></td><td>Cobro</td><td>VES</td><td class="num">5.250,93</td><td>retención + control</td></tr>
+</table>
+
+<p>Los cobros de apoyo de las alertas no llegan a enviarse. El guardado auxiliar se eliminó y el
+formulario de cobro tipo Retención se descartó sin guardar.</p>
+
+<h2>Lo que este informe no cubre</h2>
+
+<table>
+  <tr><th style="width:8mm">#</th><th>Pendiente</th><th>Por qué importa</th></tr>
+  <tr><td>1</td><td>La <b>web administrativa</b> para el defecto de la retención</td>
+      <td>Es la cuarta capa: falta confirmar si el saldo inflado también se muestra allí</td></tr>
+  <tr><td>2</td><td><b>IGTF + diferencia positiva</b> (R2)</td>
+      <td>El IGTF se aplica sobre el total a pagar; queda por ver si altera el excedente</td></tr>
+  <tr><td>3</td><td>A2 con <b>Transferencia y Depósito</b></td>
+      <td>Sólo se midió con Efectivo, donde el número de recibo puede ser opcional por diseño</td></tr>
+  <tr><td>4</td><td>La empresa <b>1003</b></td>
+      <td>Todo se corrió en la 1002</td></tr>
+</table>
+
+<div class="fin">
+  <img src="../../_assets/logo-denario-premium.svg" alt="">
+  <div>
+    <b>Denario Premium · Control de Calidad.</b> Informe emitido el 28/08/2026 a partir de la corrida
+    <code>version_especial_21_cobros_20260828</code>.<br>
+    Detalle técnico, mediciones por capa y trazas de operación en <code>cobros-version-especial.md</code>.
+    Los importes se verificaron contra la base de datos de la nube.
+  </div>
+</div>
+
+</body></html>

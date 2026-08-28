@@ -105,8 +105,32 @@ Abrir el módulo sin tocar el selector y leer el rótulo del primer monto.
 | `true` | Existe, abre, y al cambiar la moneda **cambian rótulo y valor** | No está, no abre, o cambia el rótulo sin cambiar el valor |
 | `false` | **No se renderiza** | 🔴 Aparece (`el_eden`, `kron`, `hidroponias` lo tienen apagado en Pedidos) |
 
-⚠ No confundir con `multiCurrencyOrder` / `multiCurrencyCollection` / `multiCurrencyDeposit`, que lo
-apagan **desde las VGs**. Si cualquiera de las dos fuentes lo apaga, no debe aparecer.
+### 🔴 EL SELECTOR LO CONTROLAN **DOS** FUENTES, Y MANDA LA QUE DIGA QUE SÍ
+
+Medido en piercar el **2026-08-28**. ⚠ **Esta nota estaba escrita AL REVÉS y habría producido reportes
+falsos.** Corregida con evidencia:
+
+| Fuente | Dónde se ve |
+|---|---|
+| `currency_modules.<mod>.currency_selector` | Empresa → Configuración → **Módulos** |
+| `multiCurrencyOrder` · `multiCurrencyCollection` · `multiCurrencyDeposit` | Empresa → Configuración → **Cobros/Pedidos** (VGs) |
+
+**La regla real es un OR: basta que UNA diga «sí» para que el selector aparezca.**
+Para que NO aparezca, **las dos tienen que estar en «no»**.
+
+**Caso medido:** en piercar, `cob.currency_selector = false` desde el 24/08, pero
+`multiCurrencyCollection = true` ⇒ **el selector aparecía**. Al poner la VG en `false` (28/08 16:56),
+desapareció. Las dos apagadas ⇒ oculto.
+
+⇒ 🔑 **Antes de cantar un `K03` de ausencia, LEER LAS DOS FUENTES.** Si solo se mira
+`currency_modules`, un selector legítimo se reporta como defecto — que es exactamente lo que estuvo a
+punto de pasar el 28/08.
+
+⚠ **Y no es solo cosmético cuando divergen:** con el selector visible, un cobro que nace en la moneda por
+defecto puede enviarse en la otra (pasó: el cobro Ref 6 de piercar nació en BS y se envió en USD).
+
+💡 **Recomendación para el perfil del cliente:** las dos deberían estar en el mismo valor. Cuando
+divergen, anotarlo en el YAML — es configuración, no defecto.
 
 ### K04 🔴 · CRUCE DE MÓDULOS — el caso que ningún guión tenía
 
