@@ -115,8 +115,10 @@ public modalCtrl = inject(ModalController);
     this.inventoryRows = Array.from(groupedRows.values());
   }
   async preguntarSugerirPedido(){
-    await this.inventariosLogicService.calcularTotalesSugerenciaPedido(this.dbServ.getDatabase());
-    
+    const db = this.dbServ.getDatabase();
+    await this.inventariosLogicService.calcularTotalesSugerenciaPedido(db);
+    await this.inventariosLogicService.saveSuggestedOrderSnapshot(db);
+
       const modal = await this.modalCtrl.create({
       component: InventarioSugeridoPreviewComponent,
       cssClass: 'inventario-sugerido-modal',
