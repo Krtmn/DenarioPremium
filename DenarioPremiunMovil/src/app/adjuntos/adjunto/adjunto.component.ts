@@ -244,34 +244,39 @@ export class AdjuntoComponent implements OnInit, OnDestroy {
   }
 
   async tomarImg() {
-    if (this.checkImgLimit()) {
-      Camera.getPhoto({
+    if (!this.checkImgLimit()) {
+      return;
+    }
+
+    try {
+      // quality 100 + Base64 a resolución nativa OOM en mid/low RAM (crash intermitente).
+      const photo = await Camera.getPhoto({
         resultType: CameraResultType.Base64,
         source: CameraSource.Camera,
-        quality: 100
-      }).then(p => {
-        if (p.base64String) {
-          var muyPesado = this.service.getFileWeight(p.base64String) > this.service.imageWeightLimit
-          var f = new Foto(
-            "jpeg",
-            p.base64String,
-            '',
-            muyPesado
-          );
-          if (muyPesado) {
-            this.message.transaccionMsjModalNB(this.getTag("ADJ_EXCEDE_FOTO") + this.service.imageWeightLimit + " MB");
-            this.service.weightLimitExceeded = true;
-          } else {
-
-          }
-          this.service.fotos.push(f);
-          this.checkCarousel();
-          this.onAttachmentChanged();
-
-
-        }
-
+        quality: 70,
+        width: 1920,
+        height: 1920,
+        correctOrientation: true,
       });
+
+      if (!photo.base64String) {
+        return;
+      }
+
+      const muyPesado = this.service.getFileWeight(photo.base64String) > this.service.imageWeightLimit;
+      const foto = new Foto('jpeg', photo.base64String, '', muyPesado);
+      if (muyPesado) {
+        this.message.transaccionMsjModalNB(
+          this.getTag('ADJ_EXCEDE_FOTO') + this.service.imageWeightLimit + ' MB',
+        );
+        this.service.weightLimitExceeded = true;
+      }
+      this.service.fotos.push(foto);
+      this.checkCarousel();
+      this.onAttachmentChanged();
+    } catch (err) {
+      // Usuario cancela, permiso denegado o fallo del plugin: no tumbar el flujo.
+      console.warn('[Adjunto] tomarImg cancelado o falló', err);
     }
   }
 
