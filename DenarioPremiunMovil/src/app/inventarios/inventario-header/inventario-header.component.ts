@@ -180,12 +180,14 @@ export class InventarioHeaderComponent implements OnInit {
           //SE GUARDARA CLIENTSTOCK
           this.inventariosLogicService.saveClientStock(this.synchronizationServices.getDatabase(), send).then(async (res) => {
             this.inventariosLogicService.isEdit = false;
-            await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.inventariosLogicService.newClientStock.coClientStock, "inventarios");
+            const db = this.synchronizationServices.getDatabase();
+            await this.adjuntoService.savePhotos(db, this.inventariosLogicService.newClientStock.coClientStock, "inventarios");
 
             console.log(res);
             this.inventariosLogicService.applyPersistSucceededBaseline();
             this.inventariosLogicService.resetSendValidationUx();
             if (send) {
+              await this.inventariosLogicService.persistSuggestedOrderForCurrentStock(db);
               //SE ENVIARA Y GUARDARA CLIENTSTOCK
               let pendingTransaction = {} as PendingTransaction;
               pendingTransaction.coTransaction = this.inventariosLogicService.newClientStock.coClientStock;

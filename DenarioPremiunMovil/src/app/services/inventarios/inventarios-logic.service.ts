@@ -938,13 +938,21 @@ export class InventariosLogicService {
     };
   }
 
+  async persistSuggestedOrderForCurrentStock(
+    dbServ: SQLiteObject,
+    moneda?: CurrencyEnterprise,
+  ): Promise<void> {
+    await this.calcularTotalesSugerenciaPedido(dbServ);
+    await this.saveSuggestedOrderSnapshot(dbServ, moneda);
+  }
+
   async saveSuggestedOrderSnapshot(
     dbServ: SQLiteObject,
     moneda?: CurrencyEnterprise,
   ): Promise<void> {
     const stock = this.newClientStock;
     const coClientStock = stock.coClientStock;
-    if (!coClientStock || !this.productsSuggested?.length) {
+    if (!coClientStock) {
       return;
     }
 
@@ -953,8 +961,9 @@ export class InventariosLogicService {
     const coSuggestedOrder = this.dateServ.generateCO(0);
     const details: ClientStockSuggestedOrderDetail[] = [];
     let posicion = 0;
+    const productsSuggested = this.productsSuggested ?? [];
 
-    for (const product of this.productsSuggested) {
+    for (const product of productsSuggested) {
       for (const unit of product.unitsSuggested) {
         const labels = this.resolveSuggestedProductLabels(
           product.idProduct,
