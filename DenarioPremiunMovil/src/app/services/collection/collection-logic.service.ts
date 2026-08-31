@@ -33,6 +33,7 @@ import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { ItemListaCobros } from 'src/app/cobros/item-lista-cobros';
 import { COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW } from 'src/app/utils/appConstants';
+import { COLLECTION_PAYMENT_FIELD_MAX } from 'src/app/utils/collection-payment-field.constants';
 import { TransactionStatuses } from '../../modelos/tables/transactionStatuses';
 import { MessageService } from '../messageService/message.service';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
@@ -516,6 +517,11 @@ export class CollectionService {
 
   markCollectionDirty(): void {
     if (this.collectionDirtyTrackingPaused || this.recentOpenCollect) {
+      // COB-SEND-ATTACH-002: aunque dirty tracking esté pausado, desbloquear Enviar tras corregir (p. ej. adjuntos).
+      if (this.sendBlockedByFields) {
+        this.sendBlockedByFields = false;
+        this.updateSendButtonAvailability();
+      }
       return;
     }
     this.collectionDirtySincePersist = true;
@@ -2709,6 +2715,8 @@ export class CollectionService {
     if (issues.length === 0 || this.isOnlyToleranciaExcessForPrepaid(issues)) {
       this.lastSendIssues = [];
       this.onCollectionValidToSend(true);
+      this.sendBlockedByFields = false;
+      this.updateSendButtonAvailability();
       return [];
     }
     this.lastSendIssues = issues;
@@ -2871,6 +2879,9 @@ export class CollectionService {
     if (!this.hasPaymentText(pago?.fecha)) {
       errors.push('fecha');
     }
+    if (!this.hasPaymentText(pago?.codigoTelefono) || !this.isPagoMovilTelefonoComplete(pago?.numeroTelefono)) {
+      errors.push('numeroTelefono');
+    }
     if (!this.hasPaymentText(pago?.nombreBancoEmisor)) {
       errors.push('nombreBancoEmisor');
     }
@@ -2884,6 +2895,12 @@ export class CollectionService {
       errors.push('numeroReferencia');
     }
     return errors;
+  }
+
+  /** Teléfono PM: al menos 7 dígitos (UI local exacto; persistido puede traer prefijo). */
+  private isPagoMovilTelefonoComplete(value: unknown): boolean {
+    const digits = String(value ?? '').replace(/\D/g, '');
+    return digits.length >= COLLECTION_PAYMENT_FIELD_MAX.pagoMovilLocalPhone;
   }
 
   private getOtrosFieldErrors(pago: PagoOtros): string[] {
@@ -3973,7 +3990,9 @@ export class CollectionService {
         return this.hasPaymentText(payment.daValue)
           && this.hasPaymentText(payment.naBank)
           && this.hasPaymentText(payment.nuPaymentDoc)
-          && this.hasPaymentText(payment.nuBankAccount);
+          && this.hasPaymentText(payment.nuBankAccount)
+          && this.hasPaymentText(payment.nuDocument)
+          && this.isPagoMovilTelefonoComplete(payment.nuPhoneNumber);
       case 'ot':
         if (!this.hasPaymentText(payment.nuPaymentDoc)) {
           return false;
@@ -6645,15 +6664,26 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
   }
 
   /**
-   * Monto Saldo en Total: neto esperado (bruto − deducciones) − monto pagado.
-   * Con retenciones/descuentos no usar solo bruto − pagado (COB-TOTAL-003).
+   * Monto Saldo en Total.
+   * - Pago parcial (COB-TOTAL-004): bruto − nuAmountPaid (ignora retenciones/descuentos).
+   * - Pago completo (COB-TOTAL-003): neto esperado (bruto − deducciones) − monto pagado.
    */
   resolveCollectionDetailRemainingBalance(detail: CollectionDetail): number {
     const backup = this.resolveCollectionDetailBackup(detail);
     const docIndex = this.findDocumentSaleIndexForDetail(detail);
     const gross = this.resolveDetailGrossBalanceForTotals(detail, backup);
-    const expectedNet = this.computeDetailFullExpectedNet(detail, backup, docIndex);
     const paid = Number(detail?.nuAmountPaid ?? 0);
+
+    // Parcial: el abono es el monto a pagar; restante = bruto − parcial (igual que envío).
+    if (this.isDetailPartialPayment(detail)) {
+      const remainingPartial = gross - paid;
+      if (gross < 0) {
+        return remainingPartial;
+      }
+      return Math.max(0, remainingPartial);
+    }
+
+    const expectedNet = this.computeDetailFullExpectedNet(detail, backup, docIndex);
     const remaining = expectedNet - paid;
 
     if (gross < 0) {

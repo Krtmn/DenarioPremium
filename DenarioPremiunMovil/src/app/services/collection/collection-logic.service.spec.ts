@@ -536,6 +536,8 @@ describe('CollectionService', () => {
             naBank: 'Banco QA',
             nuPaymentDoc: 'REF-PM-1',
             nuBankAccount: '0102-001',
+            nuDocument: 'V12345678',
+            nuPhoneNumber: '1234567',
           } as any,
         ],
       } as any;
@@ -639,11 +641,13 @@ describe('CollectionService', () => {
       expect(service.hasIncompletePaymentMethods()).toBeTrue();
     });
 
-    it('DM-COB-039: pago movil requires amount, date, banks, document and reference', () => {
+    it('DM-COB-039: pago movil requires amount, date, banks, document, phone and reference', () => {
       service.tipoPagoPagoMovil = true;
       service.pagoMovil = [{
         monto: 80,
         fecha: '2026-08-04',
+        codigoTelefono: '0414',
+        numeroTelefono: '1234567',
         nombreBancoEmisor: 'Banco Emisor',
         nombreBancoDestino: 'Banco Destino',
         numeroDocumento: '12345678',
@@ -654,6 +658,11 @@ describe('CollectionService', () => {
 
       service.pagoMovil[0].numeroReferencia = '';
       expect(service.hasIncompletePaymentMethods()).toBeTrue();
+
+      service.pagoMovil[0].numeroReferencia = 'PM-REF-001';
+      service.pagoMovil[0].numeroTelefono = '';
+      expect(service.hasIncompletePaymentMethods()).toBeTrue();
+      expect(service.getIndexedPaymentFieldErrors('pm', 0)).toContain('numeroTelefono');
     });
   });
 
@@ -1280,6 +1289,26 @@ describe('CollectionService', () => {
       expect(blocking.length).toBe(0);
       expect(service.lastValidToSend).toBeTrue();
       expect(service.canProceedSendAfterValidation()).toBeTrue();
+    });
+
+    it('COB-SEND-ATTACH-002: notifyCollectionEdited desbloquea Enviar tras adjunto aunque dirty tracking esté pausado', () => {
+      service.hideDocuments = false;
+      service.hidePayments = true;
+      service.sendBlockedByFields = true;
+      service.disableSendButton = true;
+      service.pauseCollectionDirtyTracking();
+      service.collection = {
+        coType: '0',
+        collectionDetails: [{ idDocument: 1, coDocument: 'FAC-1' }],
+        collectionPayments: [],
+      } as any;
+      const validateSpy = spyOn(service, 'validateToSend').and.resolveTo();
+
+      service.notifyCollectionEdited();
+
+      expect(service.sendBlockedByFields).toBeFalse();
+      expect(service.disableSendButton).toBeFalse();
+      expect(validateSpy).toHaveBeenCalled();
     });
 
     it('COB-PREPAID-003: collectCollectionSendIssues no pisa mensaje global con adjuntos', async () => {
@@ -2338,7 +2367,7 @@ describe('CollectionService', () => {
       expect(service.resolveCollectionDetailRemainingBalance(detail)).toBe(100.75);
     });
 
-    it('partial payment with retention uses net minus paid', () => {
+    it('COB-TOTAL-004: partial + legacy retention uses gross minus paid (not net)', () => {
       const detail = {
         nuBalanceDoc: 500,
         nuBalanceDocOriginal: 500,
@@ -2351,7 +2380,44 @@ describe('CollectionService', () => {
         isSave: true,
       } as CollectionDetail;
 
-      expect(service.resolveCollectionDetailRemainingBalance(detail)).toBe(200);
+      expect(service.resolveCollectionDetailRemainingBalance(detail)).toBe(300);
+    });
+
+    it('COB-TOTAL-004: partial 154.03 + ret 15+35 on 254.03 shows 100', () => {
+      const detail = {
+        nuBalanceDoc: 254.03,
+        nuBalanceDocOriginal: 254.03,
+        nuAmountPaid: 154.03,
+        nuAmountDiscount: 0,
+        nuAmountCollectDiscount: 0,
+        nuAmountRetention: 15,
+        nuAmountRetention2: 35,
+        inPaymentPartial: true,
+        isSave: true,
+      } as CollectionDetail;
+
+      expect(service.resolveCollectionDetailRemainingBalance(detail)).toBeCloseTo(100, 2);
+    });
+
+    it('COB-TOTAL-004: partial + dynamic retentions ignores them for remaining', () => {
+      service.dynamicRetentions = true;
+      const detail = {
+        nuBalanceDoc: 254.03,
+        nuBalanceDocOriginal: 254.03,
+        nuAmountPaid: 154.03,
+        nuAmountDiscount: 0,
+        nuAmountCollectDiscount: 0,
+        nuAmountRetention: 0,
+        nuAmountRetention2: 0,
+        collectionDetailRetentions: [
+          { idCollectRetention: 1, nuAmountRetention: 15 },
+          { idCollectRetention: 2, nuAmountRetention: 35 },
+        ],
+        inPaymentPartial: true,
+        isSave: true,
+      } as CollectionDetail;
+
+      expect(service.resolveCollectionDetailRemainingBalance(detail)).toBeCloseTo(100, 2);
     });
   });
 

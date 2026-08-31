@@ -604,7 +604,7 @@ export class CobroTotalComponent implements OnInit {
 
   /**
    * Monto Saldo: lo que quedará por pagar del documento tras este cobro.
-   * Neto esperado (bruto − retenciones/descuentos) − monto pagado.
+   * Parcial: bruto − pagado; completo: neto (bruto − deducciones) − pagado.
    */
   resolveDetailRemainingBalance(detail: CollectionDetail): number {
     return this.collectService.resolveCollectionDetailRemainingBalance(detail);
