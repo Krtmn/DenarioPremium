@@ -197,8 +197,14 @@ export class ClientLogicService {
     }
   }
 
+  /** Relée currency_modules desde SQLite y aplica flags de módulo cli (p. ej. tras sync). */
+  async refreshCurrencyModuleConfig(): Promise<void> {
+    await this.currencyService.setup(this.dbServ.getDatabase());
+    this.initService();
+  }
+
   getCurrency() {
-    this.currencyService.setup(this.dbServ.getDatabase()).then(() => {
+    this.refreshCurrencyModuleConfig().then(() => {
       this.localCurrency = this.currencyService.getLocalCurrency();
       this.hardCurrency = this.currencyService.getHardCurrency();
     })

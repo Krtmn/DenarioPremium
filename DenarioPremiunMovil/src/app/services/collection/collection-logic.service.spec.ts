@@ -536,6 +536,8 @@ describe('CollectionService', () => {
             naBank: 'Banco QA',
             nuPaymentDoc: 'REF-PM-1',
             nuBankAccount: '0102-001',
+            nuDocument: 'V12345678',
+            nuPhoneNumber: '1234567',
           } as any,
         ],
       } as any;

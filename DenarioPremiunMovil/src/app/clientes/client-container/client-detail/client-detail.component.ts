@@ -71,10 +71,10 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() showHeader: boolean = false;
 
   constructor() {
-    this.clientLogic.initService();
   }
 
-  ngOnInit() {
+  async ngOnInit() {
+    await this.clientLogic.refreshCurrencyModuleConfig();
     //console.log(this.clientDetail);
     this.client = this.clientLogic.datos.client;
     this.clientLogic.checkUserStatus();
