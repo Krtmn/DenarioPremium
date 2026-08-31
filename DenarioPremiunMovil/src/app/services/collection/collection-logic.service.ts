@@ -33,6 +33,7 @@ import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { ItemListaCobros } from 'src/app/cobros/item-lista-cobros';
 import { COLLECT_STATUS_SENT, COLLECT_STATUS_TO_SEND, COLLECT_STATUS_NEW } from 'src/app/utils/appConstants';
+import { COLLECTION_PAYMENT_FIELD_MAX } from 'src/app/utils/collection-payment-field.constants';
 import { TransactionStatuses } from '../../modelos/tables/transactionStatuses';
 import { MessageService } from '../messageService/message.service';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
@@ -2878,6 +2879,9 @@ export class CollectionService {
     if (!this.hasPaymentText(pago?.fecha)) {
       errors.push('fecha');
     }
+    if (!this.hasPaymentText(pago?.codigoTelefono) || !this.isPagoMovilTelefonoComplete(pago?.numeroTelefono)) {
+      errors.push('numeroTelefono');
+    }
     if (!this.hasPaymentText(pago?.nombreBancoEmisor)) {
       errors.push('nombreBancoEmisor');
     }
@@ -2891,6 +2895,12 @@ export class CollectionService {
       errors.push('numeroReferencia');
     }
     return errors;
+  }
+
+  /** Teléfono PM: al menos 7 dígitos (UI local exacto; persistido puede traer prefijo). */
+  private isPagoMovilTelefonoComplete(value: unknown): boolean {
+    const digits = String(value ?? '').replace(/\D/g, '');
+    return digits.length >= COLLECTION_PAYMENT_FIELD_MAX.pagoMovilLocalPhone;
   }
 
   private getOtrosFieldErrors(pago: PagoOtros): string[] {
@@ -3980,7 +3990,9 @@ export class CollectionService {
         return this.hasPaymentText(payment.daValue)
           && this.hasPaymentText(payment.naBank)
           && this.hasPaymentText(payment.nuPaymentDoc)
-          && this.hasPaymentText(payment.nuBankAccount);
+          && this.hasPaymentText(payment.nuBankAccount)
+          && this.hasPaymentText(payment.nuDocument)
+          && this.isPagoMovilTelefonoComplete(payment.nuPhoneNumber);
       case 'ot':
         if (!this.hasPaymentText(payment.nuPaymentDoc)) {
           return false;

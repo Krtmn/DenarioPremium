@@ -536,6 +536,8 @@ describe('CollectionService', () => {
             naBank: 'Banco QA',
             nuPaymentDoc: 'REF-PM-1',
             nuBankAccount: '0102-001',
+            nuDocument: 'V12345678',
+            nuPhoneNumber: '1234567',
           } as any,
         ],
       } as any;
@@ -639,11 +641,13 @@ describe('CollectionService', () => {
       expect(service.hasIncompletePaymentMethods()).toBeTrue();
     });
 
-    it('DM-COB-039: pago movil requires amount, date, banks, document and reference', () => {
+    it('DM-COB-039: pago movil requires amount, date, banks, document, phone and reference', () => {
       service.tipoPagoPagoMovil = true;
       service.pagoMovil = [{
         monto: 80,
         fecha: '2026-08-04',
+        codigoTelefono: '0414',
+        numeroTelefono: '1234567',
         nombreBancoEmisor: 'Banco Emisor',
         nombreBancoDestino: 'Banco Destino',
         numeroDocumento: '12345678',
@@ -654,6 +658,11 @@ describe('CollectionService', () => {
 
       service.pagoMovil[0].numeroReferencia = '';
       expect(service.hasIncompletePaymentMethods()).toBeTrue();
+
+      service.pagoMovil[0].numeroReferencia = 'PM-REF-001';
+      service.pagoMovil[0].numeroTelefono = '';
+      expect(service.hasIncompletePaymentMethods()).toBeTrue();
+      expect(service.getIndexedPaymentFieldErrors('pm', 0)).toContain('numeroTelefono');
     });
   });
 

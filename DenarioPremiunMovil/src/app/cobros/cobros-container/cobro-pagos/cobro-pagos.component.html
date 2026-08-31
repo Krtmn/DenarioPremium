@@ -176,11 +176,15 @@
                   inputmode="numeric" pattern="[0-9]*" [maxlength]="pagoMovilTelefonoMaxLength"
                   [minlength]="pagoMovilTelefonoMaxLength" [(ngModel)]="pagoMovil.numeroTelefono"
                   (ionInput)="onPagoMovilTelefonoInput(pm, $any($event.target).value)"
-                  (ionBlur)="onPagoMovilTelefonoInput(pm, pagoMovil.numeroTelefono)" class="customInput">
+                  (ionBlur)="onPagoMovilTelefonoInput(pm, pagoMovil.numeroTelefono)" class="customInput"
+                  [ngClass]="{'inp-write': shouldShowPaymentFieldError('pm', pm, 'numeroTelefono')}">
                 </ion-input>
               </ion-item>
               <app-text-comment-counter [value]="pagoMovil.numeroTelefono" [minLength]="pagoMovilTelefonoMaxLength"
                 [maxLength]="pagoMovilTelefonoMaxLength"></app-text-comment-counter>
+              @if (shouldShowPaymentFieldError('pm', pm, 'numeroTelefono')) {
+              <ion-label color="danger" class="campoObligatorio">{{ getRequiredFieldLabel() }}</ion-label>
+              }
             </ion-col>
 
 
