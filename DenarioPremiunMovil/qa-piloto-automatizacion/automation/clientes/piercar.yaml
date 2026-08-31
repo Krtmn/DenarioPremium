@@ -167,7 +167,15 @@ modules:
     motivo_na: "sin cobros depositables — cobros quedaron Guardado-local por requiredCollectionAttachments=true; popover selectbanco abre con 0 ion-select-option"
 
   visitas:
-    cliente_test: "G8"                    # Código: G8, sucursal "LA TRINIDAD" — único cliente confirmado con sucursal asignada que habilita tabs [prc-2606]
+    # 🔑 DOS clientes de prueba, ambos verificados en BD con sucursal asignada.
+    #    El 1.º se usa siempre; el 2.º es el relevo si el 1.º no habilita las tabs.
+    #    Criterio de elección (repetible en cualquier cliente):
+    #      SELECT c.co_client, count(ac.id_address_client)
+    #      FROM client c JOIN address_client ac ON ac.co_client = c.co_client
+    #      GROUP BY c.co_client HAVING count(ac.id_address_client) >= 1;
+    #    ⚠ En piercar, 70 de 558 clientes NO tienen sucursal y bloquean el formulario. [prc-20260831]
+    cliente_test: "G8"                    # Código: G8, sucursal "LA TRINIDAD" — SIN coordenada ⇒ ejercita el aviso "¿Desea agregarlas?" [prc-2606]
+    cliente_test_alt: "ANA MANZANARES"    # Código: MANZANARES, 1 sucursal CON coordenada ⇒ relevo limpio, no dispara el aviso [prc-20260831]
     sucursal_test: "LA TRINIDAD"
     actividades: 11                       # todas con requiredEvent:"true" [prc-2606]
     actividad_test: "COBRANZA"            # idType 82; motivos: COBRANZA EFECTIVA(182), PARCIAL(188), RETENCION(189), COBRANZA+RETENCION(190) [prc-2606]

@@ -79,6 +79,9 @@ function dataParaModulo(modulo) {
       return {
         aplica:             true,
         clienteTest:        mod.cliente_test || '',
+        // Relevo: cliente alternativo verificado en BD con sucursal asignada.
+        // Si el principal no habilita las tabs, se reintenta con éste. [prc-20260831]
+        clienteTestAlt:     mod.cliente_test_alt || '',
         signatureVisit:     vgs.signatureVisit === true,
         userCanUploadFiles: vgs.userCanUploadFiles === true,
         smokenaEstructural: mod.smoke_na_estructural || [],

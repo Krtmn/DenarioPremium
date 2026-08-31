@@ -86,6 +86,10 @@ async function runVisitas(pg, DATA) {
       }
       return [...document.querySelectorAll('ion-alert')]
         .filter(alertVisible)
+        // 🔴 El aviso de coordenadas NO se toca aquí: lo cierra
+        // descartarAvisoCoordenadas() con tap fuera. Si se resolviera por botón
+        // se corre el riesgo de pulsar "Agregar" y entrar en un flujo que escribe.
+        .filter(a => !/coordenada/i.test((a.querySelector('.alert-message') || {}).textContent || ''))
         .map(a => {
           const btns = [...a.querySelectorAll('.alert-button')].filter(b => b.getBoundingClientRect().width > 0);
           // Prioridad: "Salir sin guardar" (salir SIN guardar), luego descartar/continuar,
@@ -189,7 +193,62 @@ async function runVisitas(pg, DATA) {
     await pg.waitForTimeout(800);
   }
 
-  async function seleccionarCliente(nombre) {
+  // ────────────────────────────────────────────────────────────────────────────
+  // Aviso "sucursal sin coordenadas" — se cierra con TAP FUERA del cuadro.
+  //
+  //   ion-alert · "Esta sucursal no tiene coordenadas asignadas. ¿Desea agregarlas?"
+  //   botones ["", "Agregar"]  ·  backdropDismiss: true
+  //
+  // 🔴 NO se pulsa ningún botón: el único con etiqueta es "Agregar", que abre el
+  //    flujo de asignar coordenadas (y ESCRIBE). El tap en el fondo la descarta
+  //    sin efectos secundarios — verificado en device [prc-20260831].
+  //
+  // Es CONDICIONAL: si el aviso no está, no hace nada y el guion sigue igual.
+  // Aparece sólo con sucursales sin coordenada (en piercar, 484 de 488).
+  // ────────────────────────────────────────────────────────────────────────────
+  async function descartarAvisoCoordenadas() {
+    for (let intento = 0; intento < 3; intento++) {
+      const info = await pg.evaluate(() => {
+        const vis = el => {
+          const s = getComputedStyle(el), b = el.getBoundingClientRect();
+          return s.display !== 'none' && s.visibility !== 'hidden' && b.width > 0 && b.height > 0;
+        };
+        const al = [...document.querySelectorAll('ion-alert')].filter(vis)[0];
+        if (!al) return null;
+        const msg = ((al.querySelector('.alert-message') || {}).textContent || '') + ' ' +
+                    ((al.querySelector('.alert-title') || {}).textContent || '');
+        const w = al.querySelector('.alert-wrapper');
+        const r = w ? w.getBoundingClientRect() : null;
+        return {
+          esCoordenadas: /coordenada/i.test(msg),
+          msg: msg.trim().slice(0, 120),
+          cuadro: r ? { top: r.top, bottom: r.bottom, left: r.left, right: r.right } : null,
+          vp: { w: window.innerWidth, h: window.innerHeight }
+        };
+      });
+
+      if (!info) return { habia: intento > 0 };          // no hay aviso → seguir
+      if (!info.esCoordenadas) return { habia: true, otra: info.msg };  // otra alerta: no tocarla
+
+      // Punto en el FONDO, fuera del cuadro. Se prefiere arriba; si no cabe, abajo.
+      let x = 12, y = 40;
+      if (info.cuadro) {
+        const arriba = info.cuadro.top;
+        const abajo  = info.vp.h - info.cuadro.bottom;
+        y = arriba >= 60 ? Math.round(arriba / 3)
+                         : (abajo >= 60 ? Math.round(info.cuadro.bottom + abajo / 2) : 40);
+        x = Math.max(8, Math.round(info.cuadro.left / 3));
+      }
+      await pg.mouse.click(x, y, { delay: 60 });
+      await pg.waitForTimeout(900);
+    }
+    const queda = await pg.evaluate(() =>
+      [...document.querySelectorAll('ion-alert')].some(a => a.getBoundingClientRect().width > 0));
+    return { habia: true, descartada: !queda };
+  }
+
+  // `excluir`: nombres ya probados que NO deben volver a elegirse (plan B).
+  async function seleccionarCliente(nombre, excluir = []) {
     // Buscar campo cliente (placeholder "Cliente..." o id clienteSelect)
     const selCoords = await pg.evaluate(() => {
       const cands = [
@@ -239,33 +298,206 @@ async function runVisitas(pg, DATA) {
     }
     if (!searchCoords) throw new Error('Modal cliente no abrió en 15s');
 
+    // Dos modos:
+    //   · por NOMBRE  → se teclea el término y se busca la coincidencia (1.er intento)
+    //   · por ÍNDICE  → se LIMPIA la búsqueda y se toma la fila nº N del listado
+    //
+    // 🔴 El modo por índice existe porque teclear una letra suelta como plan B NO
+    //    sirve: 'A' devuelve casi todo el padrón y el mismo cliente que acaba de
+    //    fallar vuelve a salir el primero. Ir por posición es determinista.
+    const porIndice = Number.isInteger(excluir) ? excluir : null;
+
     await pg.mouse.click(searchCoords.x, searchCoords.y, { delay: 50, clickCount: 3 });
-    await pg.keyboard.type(nombre ? nombre.slice(0, 8) : 'A', { delay: 30 });
+    if (porIndice === null) {
+      await pg.keyboard.type(nombre ? nombre.slice(0, 8) : 'A', { delay: 30 });
+    } else {
+      await pg.keyboard.press('Backspace');       // listado completo, sin filtrar
+    }
     await pg.keyboard.press('Enter');
     await pg.waitForTimeout(2000);
 
     const termBusq = nombre ? nombre.slice(0, 8).toLowerCase() : '';
-    const resultado = await pg.evaluate((term) => {
+    const resultado = await pg.evaluate(({ term, idx }) => {
       const containers = [...document.querySelectorAll('ion-modal, ion-popover')]
         .filter(c => c.offsetParent !== null);
       for (const c of containers) {
-        const cands = [...c.querySelectorAll('p, ion-label, ion-item')]
+        // 🔑 UNA FILA = UN CLIENTE: los `ion-item` son las fichas. Usar `p`/`ion-label`
+        //    devuelve trozos sueltos de la MISMA ficha (nombre, código, saldo…) y el
+        //    plan B acaba "probando" cuatro veces el mismo cliente. [prc-20260831]
+        let filas = [...c.querySelectorAll('ion-item')]
           .filter(el => el.getBoundingClientRect().width > 0 && el.textContent.trim().length > 2);
-        if (!cands.length) continue;
-        const exacto = term ? cands.find(el => el.textContent.toLowerCase().includes(term)) : null;
-        const target = exacto || cands[0];
+        if (!filas.length) {
+          filas = [...c.querySelectorAll('p, ion-label')]
+            .filter(el => el.getBoundingClientRect().width > 0 && el.textContent.trim().length > 2);
+        }
+        if (!filas.length) continue;
+
+        let target;
+        if (idx !== null && idx !== undefined) {
+          if (idx >= filas.length) return null;   // ya no quedan candidatos
+          target = filas[idx];
+        } else {
+          target = (term ? filas.find(el => el.textContent.toLowerCase().includes(term)) : null) || filas[0];
+        }
         const r = target.getBoundingClientRect();
-        return { x: r.left + r.width / 2, y: r.top + r.height / 2, nombre: target.textContent.trim().slice(0, 60) };
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2,
+                 nombre: target.textContent.trim().replace(/\s+/g, ' ').slice(0, 60),
+                 totalFilas: filas.length };
       }
       return null;
-    }, termBusq);
+    }, { term: termBusq, idx: porIndice });
     if (!resultado) throw new Error('Sin resultados en selector de clientes');
     await pg.mouse.click(resultado.x, resultado.y, { delay: 80 });
     await pg.waitForTimeout(1500);
+    // El aviso de coordenadas salta aquí si la sucursal no tiene coordenada.
+    await descartarAvisoCoordenadas();
+    await pg.waitForTimeout(600);
     return resultado.nombre;
   }
 
+  // ────────────────────────────────────────────────────────────────────────────
+  // Lee si las tabs quedaron habilitadas tras elegir cliente (poll ~6 s).
+  // ────────────────────────────────────────────────────────────────────────────
+  async function esperarTabsHabilitadas() {
+    let estado = { actEnabled: false, adjEnabled: false, sucursalVisible: false, sucursalValor: null };
+    for (let i = 0; i < 10; i++) {
+      await pg.waitForTimeout(600);
+      estado = await pg.evaluate(() => {
+        const segs = [...document.querySelectorAll('ion-segment-button')]
+          .filter(s => s.getBoundingClientRect().width > 0);
+        const act = segs.find(s => s.textContent.includes('ACTIVIDADES'));
+        const adj = segs.find(s => s.textContent.includes('ADJUNTOS'));
+        const sucursal = document.querySelector('ion-select[formControlName*="sucur"], ion-select[id*="sucur"]')
+          || [...document.querySelectorAll('ion-select')].find(s => {
+            const lbl = s.previousElementSibling || s.closest('ion-item');
+            return lbl && lbl.textContent.toLowerCase().includes('sucursal');
+          });
+        return {
+          actEnabled: act ? !act.disabled : false,
+          adjEnabled: adj ? !adj.disabled : false,
+          sucursalVisible: !!sucursal && sucursal.getBoundingClientRect().width > 0,
+          sucursalValor: sucursal ? ((sucursal.value && (sucursal.value.na_address || sucursal.value)) ||
+                                     (sucursal.textContent || '').trim() || null) : null,
+        };
+      });
+      if (estado.actEnabled) break;
+    }
+    return estado;
+  }
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // PLAN B: si el cliente del perfil no habilita las tabs — típicamente porque
+  // NO tiene sucursal asignada — se prueba con OTROS clientes del selector.
+  //
+  //   En piercar: 70 de 558 clientes no tienen sucursal ⇒ 1 de cada 8.
+  //   Sin este reintento, que el perfil apunte a uno de ésos tumba 9 casos.
+  //
+  // Devuelve el cliente que SÍ funcionó y cuántos hicieron falta, para que el
+  // veredicto diga con cuál se midió de verdad. [prc-20260831]
+  // ────────────────────────────────────────────────────────────────────────────
+  // 🔴 Un formulario que se atascó con un cliente sin sucursal NO se recupera
+  //    cambiando de cliente: hay que rehacerlo. Medido — tras fallar con "7 CARS",
+  //    seleccionar "ANA MANZANARES" (que funciona por sí solo) seguía sin habilitar
+  //    las tabs. Por eso cada reintento reabre NUEVA VISITA. [prc-20260831]
+  // 🔴 Reabrir NUEVA VISITA deja un `ion-loading` PEGADO con backdrop no-tappable:
+  //    la app queda bloqueada y el guion no avanza más. Hay que descartarlo a mano
+  //    antes y después de cada reapertura. [gmp-2606][rom-2606][prc-20260831]
+  async function limpiarOverlaysColgados() {
+    const quitados = await pg.evaluate(async () => {
+      let n = 0;
+      for (const l of document.querySelectorAll('ion-loading')) {
+        try { await l.dismiss(); n++; } catch (_) {}
+      }
+      // backdrops huérfanos (sin overlay vivo detrás) bloquean los clicks
+      for (const bd of document.querySelectorAll('ion-backdrop')) {
+        const padre = bd.closest('ion-alert, ion-modal, ion-popover, ion-loading, ion-action-sheet');
+        if (!padre) { try { bd.remove(); n++; } catch (_) {} }
+      }
+      return n;
+    });
+
+    // 🔴 Acuses informativos pegados ("La visita se ha guardado" + OK) TAPAN los
+    //    botones de la pantalla de abajo: el clic en NUEVA VISITA no llega nunca.
+    //    Se descartan SOLO los de UN botón de confirmación — las alertas de varias
+    //    opciones son decisiones y las resuelve dismissResidualAlerts(). [prc-20260831]
+    for (let i = 0; i < 4; i++) {
+      const acuse = await pg.evaluate(() => {
+        const vis = el => el.getBoundingClientRect().width > 0;
+        const al = [...document.querySelectorAll('ion-alert')].filter(vis)[0];
+        if (!al) return null;
+        const btns = [...al.querySelectorAll('.alert-button')].filter(vis);
+        if (btns.length !== 1) return null;                    // decisión: no tocar
+        const t = btns[0].textContent.trim();
+        if (!/^(ok|aceptar|entendido|cerrar)$/i.test(t)) return null;
+        const r = btns[0].getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2, txt: t,
+                 msg: ((al.querySelector('.alert-message') || {}).textContent || '').slice(0, 60) };
+      });
+      if (!acuse) break;
+      await pg.mouse.click(acuse.x, acuse.y, { delay: 60 });
+      await pg.waitForTimeout(900);
+    }
+    return quitados;
+  }
+
+  async function reabrirFormularioVisita() {
+    await limpiarOverlaysColgados();
+    try { await irAHomeVis(); } catch (_) { return false; }
+    await limpiarOverlaysColgados();
+    await pg.waitForTimeout(800);
+    try { await clickBotonVis('NUEVA VISITA'); } catch (_) { return false; }
+    await pg.waitForTimeout(2000);
+    await limpiarOverlaysColgados();       // el loading pegado sale JUSTO aquí
+    await descartarAvisoCoordenadas();
+    // Confirmar que el formulario está realmente utilizable antes de seguir
+    const listo = await pg.evaluate(() => !!document.querySelector('ion-input#clienteSelect'));
+    return listo;
+  }
+
+  async function seleccionarClienteUtil(preferido, alternativo) {
+    // Orden de candidatos: el del perfil, su relevo del perfil, y como último
+    // recurso las primeras filas del listado (por índice, no por texto).
+    const candidatos = [
+      { modo: 'nombre', valor: preferido,    origen: 'cliente_test' },
+      { modo: 'nombre', valor: alternativo,  origen: 'cliente_test_alt' },
+      { modo: 'indice', valor: 0,            origen: 'listado[0]' },
+      { modo: 'indice', valor: 1,            origen: 'listado[1]' },
+    ].filter(c => c.modo === 'indice' || (c.valor && String(c.valor).trim()));
+
+    const probados = [];
+    for (let n = 0; n < candidatos.length; n++) {
+      const cand = candidatos[n];
+
+      // A partir del 2.º intento, el formulario puede estar atascado: rehacerlo.
+      if (n > 0 && !(await reabrirFormularioVisita())) break;
+
+      let elegido;
+      try {
+        elegido = cand.modo === 'nombre'
+          ? await seleccionarCliente(cand.valor)
+          : await seleccionarCliente(null, cand.valor);
+      } catch (e) {
+        continue;                       // ese candidato no apareció: probar el siguiente
+      }
+      if (!elegido) continue;
+
+      const clave = String(elegido).toLowerCase().slice(0, 20);
+      if (probados.some(p => String(p.nombre).toLowerCase().slice(0, 20) === clave)) continue;
+      const registro = { nombre: elegido, origen: cand.origen, fallo: false };
+      probados.push(registro);
+
+      const tabs = await esperarTabsHabilitadas();
+      if (tabs.actEnabled) {
+        return { elegido, tabs, probados, usoPlanB: n > 0, origen: cand.origen };
+      }
+      registro.fallo = true;      // no habilitó: queda anotado para el reporte
+    }
+    return { elegido: null, tabs: null, probados, usoPlanB: true, origen: null };
+  }
+
   async function clickTab(texto) {
+    // También puede saltar al cambiar de pestaña — condicional, no molesta si no está.
+    await descartarAvisoCoordenadas();
     const coords = await pg.evaluate((txt) => {
       const seg = [...document.querySelectorAll('ion-segment-button')]
         .find(s => s.getBoundingClientRect().width > 0 && s.textContent.trim().includes(txt));
@@ -463,35 +695,42 @@ async function runVisitas(pg, DATA) {
   // ══════════════════════════════════════════════════════════════════════════════
   let clienteOk = false;
   try {
-    const clienteElegido = await seleccionarCliente(DATA.clienteTest);
+    // Con PLAN B: si el cliente del perfil no habilita las tabs (p.ej. no tiene
+    // sucursal), reintenta con otros del listado antes de darse por vencido.
+    const sel = await seleccionarClienteUtil(DATA.clienteTest, DATA.clienteTestAlt);
 
-    // Esperar a que Angular procese la selección y habilite los tabs (poll 5s)
-    let tabsHabilitadas = { actEnabled: false, adjEnabled: false, sucursalVisible: false };
-    for (let i = 0; i < 10; i++) {
-      await pg.waitForTimeout(600);
-      tabsHabilitadas = await pg.evaluate(() => {
-        const segs = [...document.querySelectorAll('ion-segment-button')]
-          .filter(s => s.getBoundingClientRect().width > 0);
-        const act = segs.find(s => s.textContent.includes('ACTIVIDADES'));
-        const adj = segs.find(s => s.textContent.includes('ADJUNTOS'));
-        const sucursal = document.querySelector('ion-select[formControlName*="sucur"], ion-select[id*="sucur"]')
-          || [...document.querySelectorAll('ion-select')].find(s => {
-            const lbl = s.previousElementSibling || s.closest('ion-item');
-            return lbl && lbl.textContent.toLowerCase().includes('sucursal');
-          });
-        return {
-          actEnabled: act ? !act.disabled : false,
-          adjEnabled: adj ? !adj.disabled : false,
-          sucursalVisible: !!sucursal && sucursal.getBoundingClientRect().width > 0,
-        };
-      });
-      if (tabsHabilitadas.actEnabled) break;
+    // ── HALLAZGO DE DATOS ────────────────────────────────────────────────────
+    // Un cliente cuya sucursal no carga NO es un fallo del guion: es un problema
+    // de datos que implementación debe revisar. Se REPORTA siempre, y el ciclo
+    // CONTINÚA con el cliente de relevo. [prc-20260831]
+    const sinSucursal = sel.probados.filter(p => p.fallo);
+    if (sinSucursal.length) {
+      v('DM-VIS-DATA-001', 'Cliente de prueba con sucursal utilizable', 'FAIL',
+        `🔴 DATO A REVISAR POR IMPLEMENTACIÓN — ${sinSucursal.length} cliente(s) no habilitan el ` +
+        `formulario de visita porque su sucursal no carga: ` +
+        `${sinSucursal.map(p => `"${p.nombre.split('Código')[0].trim()}" (${p.origen})`).join(', ')}. ` +
+        `El guion NO se detuvo: continuó con el relevo.`);
+    } else {
+      v('DM-VIS-DATA-001', 'Cliente de prueba con sucursal utilizable', 'PASS',
+        `"${(sel.elegido || '').split('Código')[0].trim()}" habilitó el formulario al primer intento`);
     }
 
-    if (!tabsHabilitadas.actEnabled) throw new Error('Tab ACTIVIDADES sigue disabled tras seleccionar cliente');
+    if (!sel.elegido) {
+      throw new Error(
+        `Ningún cliente habilitó las tabs tras ${sel.probados.length} intento(s): ` +
+        `${sel.probados.map(p => `"${p.nombre.split('Código')[0].trim()}" (${p.origen})`).join(', ')} — ` +
+        `revisar en BD que los clientes de prueba tengan sucursal asignada`);
+    }
+
+    const tabsHabilitadas = sel.tabs;
     clienteOk = true;
+    const notaPlanB = sel.usoPlanB
+      ? ` · ⚠ RELEVO: el cliente del perfil ("${DATA.clienteTest}") no habilitó las tabs; ` +
+        `se midió con "${sel.elegido.split('Código')[0].trim()}" (${sel.origen})`
+      : '';
     v('DM-VIS-010', 'Seleccionar cliente → tabs habilitadas', 'PASS',
-      `"${clienteElegido}" · ACTIVIDADES: ${tabsHabilitadas.actEnabled} · ADJUNTOS: ${tabsHabilitadas.adjEnabled} · sucursal: ${tabsHabilitadas.sucursalVisible}`);
+      `"${sel.elegido}" · ACTIVIDADES: ${tabsHabilitadas.actEnabled} · ADJUNTOS: ${tabsHabilitadas.adjEnabled} · ` +
+      `sucursal: ${tabsHabilitadas.sucursalVisible}${notaPlanB}`);
   } catch (e) {
     v('DM-VIS-010', 'Seleccionar cliente → tabs habilitadas', 'FAIL', e.message);
     ['DM-VIS-014','DM-VIS-015','DM-VIS-019','DM-VIS-020',
@@ -510,8 +749,17 @@ async function runVisitas(pg, DATA) {
     await pg.waitForTimeout(500);
 
     // Esperar el botón AÑADIR con poll (puede tardar en renderizar)
+    //
+    // 🔴 El aviso "sucursal sin coordenadas" es ASÍNCRONO: puede saltar DESPUÉS de
+    //    cambiar de pestaña y tapar el botón. Descartarlo antes del bucle no basta —
+    //    hay que reintentarlo DENTRO, en cada vuelta. Sin esto el caso falla con
+    //    "botón no encontrado" cuando en realidad el botón está detrás. [prc-20260831]
     let btnCoords = null;
+    let avisoTapaba = false;
     for (let i = 0; i < 10; i++) {
+      const r = await descartarAvisoCoordenadas();
+      if (r && r.habia && !r.otra) avisoTapaba = true;
+
       btnCoords = await pg.evaluate(() => {
         const btn = [...document.querySelectorAll('ion-button, button')]
           .find(b => {
@@ -526,6 +774,7 @@ async function runVisitas(pg, DATA) {
       await pg.waitForTimeout(400);
     }
     if (!btnCoords) throw new Error('Botón AÑADIR ACTIVIDAD/EVENTO no encontrado (10 intentos)');
+    // `avisoTapaba` se anota en el veredicto de VIS-014 más abajo.
     await pg.mouse.click(btnCoords.x, btnCoords.y, { delay: 80 });
 
     // Esperar modal — Ionic 6: ion-modal puede tener width=0 en host, verificar por overlay-hidden
@@ -547,7 +796,8 @@ async function runVisitas(pg, DATA) {
     if (!modalInfo) throw new Error('Modal AÑADIR ACTIVIDAD no abrió');
     modalActividadOk = true;
     v('DM-VIS-014', 'AÑADIR ACTIVIDAD/EVENTO → modal', 'PASS',
-      `select: ${modalInfo.hasSelect} · input: ${modalInfo.hasInput} · btns: [${modalInfo.btns.join(', ')}]`);
+      `select: ${modalInfo.hasSelect} · input: ${modalInfo.hasInput} · btns: [${modalInfo.btns.join(', ')}]` +
+      (avisoTapaba ? ' · ⚠ hubo que descartar el aviso de coordenadas, que tapaba el botón' : ''));
   } catch (e) {
     v('DM-VIS-014', 'AÑADIR ACTIVIDAD/EVENTO → modal', 'FAIL', e.message);
     ['DM-VIS-015','DM-VIS-019','DM-VIS-020','DM-VIS-021','DM-VIS-022',
@@ -591,17 +841,37 @@ async function runVisitas(pg, DATA) {
     await pg.mouse.click(optCoords.x, optCoords.y, { delay: 80 });
     // Esperar a que el popover cierre
     await pg.waitForSelector('ion-popover', { state: 'hidden', timeout: 3000 }).catch(() => {});
-    await pg.waitForTimeout(400);
-    return true;
+    await pg.waitForTimeout(600);
+
+    // 🔴 CONFIRMAR que el ion-select se quedó con valor. El clic puede "pasar" y el
+    //    select seguir vacío (el popover tarda en pintar sus ítems): entonces AGREGAR
+    //    no valida, el modal no cierra y el caso muere con "lista vacía" — un mensaje
+    //    que apunta al sitio equivocado. [prc-20260831]
+    const tieneValor = await pg.evaluate((nth) => {
+      const modal = [...document.querySelectorAll('ion-modal')].find(m => !m.classList.contains('overlay-hidden'));
+      if (!modal) return false;
+      const sels = [...modal.querySelectorAll('ion-select')].filter(s => s.getBoundingClientRect().width > 0);
+      return !!(sels[nth] && sels[nth].value !== null && sels[nth].value !== undefined && sels[nth].value !== '');
+    }, nthSelect);
+    return tieneValor;
+  }
+
+  // Reintenta la selección hasta que el ion-select quede realmente con valor.
+  async function seleccionarEnPopoverFirme(nthSelect, intentos = 3) {
+    for (let i = 0; i < intentos; i++) {
+      if (await seleccionarEnPopover(nthSelect)) return true;
+      await pg.waitForTimeout(800);
+    }
+    return false;
   }
 
   try {
-    // 1) Seleccionar Actividad (primer ion-select del modal)
-    const selAct = await seleccionarEnPopover(0);
-    if (!selAct) throw new Error('ion-select Actividad no encontrado en modal');
+    // 1) Seleccionar Actividad (primer ion-select del modal) — con reintento firme
+    const selAct = await seleccionarEnPopoverFirme(0);
+    if (!selAct) throw new Error('ion-select Actividad no quedó con valor tras 3 intentos');
 
     // 2) Seleccionar Motivo (segundo ion-select, si existe)
-    await seleccionarEnPopover(1); // no lanza si no existe
+    await seleccionarEnPopoverFirme(1); // no lanza si no existe
 
     // 3) Comentario — ngModel → triple click + keyboard.type
     const inputCoords = await pg.evaluate(() => {
@@ -612,16 +882,74 @@ async function runVisitas(pg, DATA) {
       const r = inp.getBoundingClientRect();
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     });
-    if (inputCoords) {
-      await pg.mouse.click(inputCoords.x, inputCoords.y, { delay: 60, clickCount: 3 });
+    // 🔴 Si el campo no aparece NO se sigue en silencio: el comentario es el texto
+    //    que debe viajar hasta la web, y sin él el caso no prueba nada. [prc-20260831]
+    if (!inputCoords) throw new Error('Campo Comentario no encontrado en el modal de actividad');
+
+    // 🔴 El comentario es un `[(ngModel)]` dentro de un `ion-modal`: hay que
+    //    FOCALIZAR el input y teclear (RUNTIME §S2v). Un click de ratón sitúa el
+    //    cursor pero Angular NO recoge el valor: el campo queda VACÍO y el texto
+    //    nunca llega a la nube (`incidence.tx_description` = ''). [prc-20260831]
+    const leerComentario = () => pg.evaluate(() => {
+      const modal = [...document.querySelectorAll('ion-modal')].find(m => !m.classList.contains('overlay-hidden'));
+      if (!modal) return null;
+      const inp = modal.querySelector('ion-input input, textarea, ion-textarea textarea');
+      return inp ? inp.value : null;
+    });
+
+    // Marcar el input para poder focalizarlo por selector estable
+    const marcado = await pg.evaluate(() => {
+      const modal = [...document.querySelectorAll('ion-modal')].find(m => !m.classList.contains('overlay-hidden'));
+      if (!modal) return false;
+      const inp = modal.querySelector('ion-input input, textarea, ion-textarea textarea');
+      if (!inp) return false;
+      inp.id = inp.id || 'qa-comentario-visita';
+      return inp.id;
+    });
+
+    let comentarioEnCampo = null;
+    if (marcado) {
+      await pg.focus(`#${marcado}`);
       await pg.keyboard.type(comentarioQA, { delay: 25 });
-      await pg.waitForTimeout(400);
+      await pg.waitForTimeout(500);
+      comentarioEnCampo = await leerComentario();
     }
 
-    // 4) Click AGREGAR — buscar en document completo (no solo dentro del modal)
+    // Reserva: si el focus no bastó, reintentar con click + teclado
+    if (comentarioEnCampo !== comentarioQA) {
+      await pg.mouse.click(inputCoords.x, inputCoords.y, { delay: 60, clickCount: 3 });
+      await pg.keyboard.type(comentarioQA, { delay: 25 });
+      await pg.waitForTimeout(500);
+      comentarioEnCampo = await leerComentario();
+    }
+
+    if (comentarioEnCampo !== comentarioQA) {
+      throw new Error(`El comentario no quedó en el campo — tecleado "${comentarioQA}", ` +
+                      `leído "${comentarioEnCampo === null ? 'campo ausente' : comentarioEnCampo}"`);
+    }
+
+    // 4) Click AGREGAR
+    //
+    // 🔴 CERRAR EL TECLADO ANTES DE MEDIR. Tras teclear el comentario el teclado
+    //    virtual está abierto y COMPRIME la maquetación: las coordenadas del botón
+    //    se calculan con el teclado puesto y, cuando se pulsa, el botón ya se movió.
+    //    Síntoma: el clic no hace nada, el modal no cierra y el caso muere con
+    //    "lista de actividades vacía" — apuntando al sitio equivocado. [prc-20260831]
+    await pg.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
+    await pg.waitForTimeout(1200);   // dejar que la maquetación se reasiente
+    //
+    // 🔴 NO buscar en todo el documento: la alerta "sucursal sin coordenadas" tiene
+    //    un botón llamado **"Agregar"**. Si está abierta, se pulsa ÉSE — se entra en
+    //    el flujo de asignar coordenadas (que ESCRIBE), el modal se cierra y la lista
+    //    de actividades queda vacía. Se busca DENTRO del modal y se excluyen los
+    //    `.alert-button`. [prc-20260831]
+    await descartarAvisoCoordenadas();
     const agregarCoords = await pg.evaluate(() => {
-      const btn = [...document.querySelectorAll('ion-button, button')]
+      const modal = [...document.querySelectorAll('ion-modal')].find(m => !m.classList.contains('overlay-hidden'));
+      const ambito = modal || document;
+      const btn = [...ambito.querySelectorAll('ion-button, button')]
         .filter(b => {
+          if (b.classList.contains('alert-button') || b.closest('ion-alert')) return false;
           const r = b.getBoundingClientRect();
           return r.width > 0 && r.height > 0 && r.top >= 0 && r.top <= window.innerHeight;
         })
@@ -634,15 +962,48 @@ async function runVisitas(pg, DATA) {
     await pg.mouse.click(agregarCoords.x, agregarCoords.y, { delay: 80 });
     await pg.waitForTimeout(1500);
 
-    // 5) Verificar: modal cerró y evento aparece en lista
-    const nEventos = await pg.evaluate(() =>
-      [...document.querySelectorAll('ion-list ion-item')]
-        .filter(i => i.getBoundingClientRect().width > 0).length
-    );
-    if (nEventos === 0) throw new Error('Modal cerró pero lista de actividades vacía');
+    // 5) Verificar: modal cerró, evento en lista Y el comentario SOBREVIVIÓ
+    //
+    // 🔴 ESPERA ACTIVA: la fila del evento tarda en pintarse tras cerrar el modal.
+    //    Con un waitForTimeout fijo de 1,5 s la lista se leía VACÍA y el caso moría
+    //    con "lista vacía" aunque el evento sí se había agregado. Se sondea hasta 8 s.
+    //    [prc-20260831]
+    let lista = { n: 0, textos: [] };
+    for (let i = 0; i < 16; i++) {
+      lista = await pg.evaluate(() => {
+        const items = [...document.querySelectorAll('ion-list ion-item')]
+          .filter(i => i.getBoundingClientRect().width > 0);
+        return { n: items.length, textos: items.map(i => (i.innerText || '').replace(/\s+/g, ' ').trim()) };
+      });
+      if (lista.n > 0) break;
+      await pg.waitForTimeout(500);
+    }
+    if (lista.n === 0) {
+      const diag = await pg.evaluate(() => {
+        const m = [...document.querySelectorAll('ion-modal')].find(x => !x.classList.contains('overlay-hidden'));
+        return {
+          modalAbierto: !!m,
+          modalTexto: m ? (m.innerText || '').replace(/\s+/g, ' ').slice(0, 120) : null,
+          segmento: (document.querySelector('ion-segment') || {}).value,
+          listas: document.querySelectorAll('ion-list').length,
+        };
+      });
+      throw new Error(`Lista de actividades vacía tras 8 s — ${JSON.stringify(diag)}`);
+    }
+
+    // 🔑 ORÁCULO REAL: el comentario debe LEERSE en la fila del evento.
+    //    Repetir la variable que se tecleó no demuestra que se haya guardado.
+    const comentarioEnLista = lista.textos.some(t => t.includes(comentarioQA));
     actividadOk = true;
-    v('DM-VIS-015', 'Agregar actividad → evento en lista', 'PASS',
-      `comentario: "${comentarioQA}" · eventos: ${nEventos}`);
+    if (comentarioEnLista) {
+      v('DM-VIS-015', 'Agregar actividad → evento con su comentario', 'PASS',
+        `comentario "${comentarioQA}" LEÍDO en la fila del evento · eventos: ${lista.n}`);
+    } else {
+      v('DM-VIS-015', 'Agregar actividad → evento con su comentario', 'FAIL',
+        `🔴 El evento se agregó (${lista.n} en lista) pero el comentario "${comentarioQA}" ` +
+        `NO aparece en su fila. Filas leídas: ${JSON.stringify(lista.textos.slice(0, 3))}. ` +
+        `⚠ Verificar en la web/BD si el texto llega: si no, se pierde al enviar.`);
+    }
   } catch (e) {
     v('DM-VIS-015', 'Agregar actividad → evento en lista', 'FAIL', e.message);
     ['DM-VIS-019','DM-VIS-020','DM-VIS-021','DM-VIS-022',
