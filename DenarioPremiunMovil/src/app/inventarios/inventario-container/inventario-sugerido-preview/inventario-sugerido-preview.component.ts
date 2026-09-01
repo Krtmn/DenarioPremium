@@ -9,6 +9,7 @@ import { CurrencyService } from 'src/app/services/currency/currency.service';
 import { GlobalConfigService } from 'src/app/services/globalConfig/global-config.service';
 import { InventariosLogicService } from 'src/app/services/inventarios/inventarios-logic.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
+import { PedidosService } from 'src/app/pedidos/pedidos.service';
 
 @Component({
   selector: 'app-inventario-sugerido-preview',
@@ -42,6 +43,7 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
   private currencyService = inject(CurrencyService);
   private config = inject(GlobalConfigService);
   private dbServ = inject(SynchronizationDBService);
+  private pedidosService = inject(PedidosService);
   public inventariosLogicService = inject(InventariosLogicService);
 
   quUnitDecimals = false;
@@ -127,6 +129,10 @@ export class InventarioSugeridoPreviewComponent implements OnInit {
   private async initCurrencyUi(): Promise<void> {
     try {
       await this.currencyService.setup(this.dbServ.getDatabase());
+      await this.pedidosService.ensureModuleReady(this.dbServ.getDatabase());
+      if (!this.monedaLabel?.trim()) {
+        this.monedaLabel = this.pedidosService.getTag('PED_MONEDA') || 'Moneda';
+      }
       this.currencyModulePed = this.currencyService.getCurrencyModule('ped');
       this.localCurrency = this.currencyService.getLocalCurrency();
       this.hardCurrency = this.currencyService.getHardCurrency();
