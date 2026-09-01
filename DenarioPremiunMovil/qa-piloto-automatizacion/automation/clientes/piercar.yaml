@@ -142,14 +142,44 @@ modules:
       - "DM-COB-039/047: rateList.length=1 → N/A-DATA (sin segunda tasa histórica para probar cambio)"
       - "DM-COB-045: igtfList.length=1 → N/A (sin tasa IGTF alternativa)"
 
+  # ══════════════════════════════════════════════════════════════════════════════
+  # 🔑 DOS SABORES DE DEVOLUCIÓN — los fija `validateReturn`, y el guion debe
+  #    ramificar, no asumir uno:
+  #
+  #    TIPO A (validateReturn=false): cliente → PRODUCTOS. Elegir el cliente ya
+  #            habilita las pestañas.
+  #    TIPO B (validateReturn=true):  cliente → FACTURA → productos DE ESA FACTURA.
+  #            Elegir el cliente NO habilita nada: **la FACTURA es la que habilita
+  #            las pestañas**. Comprobado en device 2026-08-31 con RAFAEL PIT STOP:
+  #            tras cliente → PRODUCTOS disabled=true; tras factura 10056 → false.
+  #
+  #    ⇒ PIERCAR ES TIPO B. El cliente de prueba DEBE tener facturas activas con
+  #      productos devolvibles, o el módulo entero queda inejecutable.
+  #
+  #    Criterio de elección, repetible en cualquier cliente:
+  #      SELECT c.co_client, count(DISTINCT i.id_invoice) AS facturas,
+  #             count(DISTINCT idt.id_invoice_detail) AS lineas,
+  #             count(DISTINCT ac.id_address_client) AS sucursales
+  #      FROM client c
+  #      JOIN invoice i ON i.co_client = c.co_client
+  #      JOIN invoice_detail idt ON idt.id_invoice = i.id_invoice
+  #      LEFT JOIN address_client ac ON ac.co_client = c.co_client
+  #      GROUP BY c.co_client HAVING count(DISTINCT ac.id_address_client) >= 1
+  #      ORDER BY facturas DESC;
+  # ══════════════════════════════════════════════════════════════════════════════
   devoluciones:
-    cliente_test: "ANA MANZANARES"        # Código: MANZANARES — tiene facturas con productos válidos [prc-2606]
-    factura_test: "9683"                  # Fecha: 19/04/2026; id_invoice=9683 — disponible en InvoiceeSelectModal (doble 'e') [prc-2606]
+    cliente_test: "RAFAEL PIT STOP"       # RAFAPITSOP — 44 facturas / 154 líneas / 1 sucursal · 31 facturas visibles en el modal [prc-20260831]
+    cliente_test_alt: "EMPRENDIMIENTO JOSE HEREDIA 12"  # J506451182 — 36 facturas / 198 líneas / 1 sucursal · relevo [prc-20260831]
+    factura_test: "10056"                 # 01/06/2026 — de RAFAEL PIT STOP; al elegirla PRODUCTOS pasa a habilitada [prc-20260831]
     producto_test: "Sensor Map Silverado 1500/2500/3500"  # código 1624993 — existe en factura 9683 [prc-2606]
     tipos_devolucion: [60, 52, 59]        # Calidad(60) / PostVenta(52) / Servicio(59) — sin Cambio X Cambio(63) [prc-2606]
     facturas_disponibles:
-      - "9683"                            # 19/04/2026
-      - "9915"                            # 14/05/2026
+      - "10056"                           # 01/06/2026 — RAFAEL PIT STOP [prc-20260831]
+      - "10071"                           # 02/06/2026 — RAFAEL PIT STOP [prc-20260831]
+    # ⚠ ANA MANZANARES (perfil anterior) sólo tiene 4 facturas: sirve, pero es pobre
+    #   para un módulo que necesita elegir factura y productos dentro de ella.
+    # ⚠ El `factura_test` antiguo decía "9683": ese número NO existe como id ni como
+    #   nro. de documento — el real era `0000009683` (id_document_sale 1270). [prc-20260831]
     nu_amount_null: true                  # Las devoluciones en piercar no registran nu_amount en BD → no juzgar como BD-MISMATCH [prc-2606]
     st_return_enviado: 1                  # st_return=1 = Enviado en piercar (consistente con otros módulos) [prc-2606]
 

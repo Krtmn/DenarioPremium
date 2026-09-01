@@ -1,0 +1,108 @@
+# mio_parts/perfil.yaml
+# Cliente NUEVO — VGs derivadas de los dumps `global_configuration_*_MIO PARTS.md` (2026-08-31 18:22).
+# Datos de prueba tomados de la BD del cliente el 2026-08-31 (no de una corrida previa: perfil de estreno).
+# APK 6.6.21.3 instalado 2026-08-31 18:16 · rama main.
+
+cliente_id: mio_parts
+cliente_nombre: "MIO LUBRICANTES Y FILTROS, CA"   # BD: enterprise.na_enterprise · co_enterprise=MIOP_ADM
+# ws_url / playa: NO se registran — es propiedad del SERVIDOR, rotativa, se descubre en runtime.
+# (Al 31/08 estaba en El Yaque, pero eso caduca en días: ver _schema.yaml.)
+apk_package: com.kiberno.denarioPremiumPro
+db_name: mio_parts        # bloque "# Cliente: mio_parts" de secrets/qa-db.env · GRANT read-only verificado 2026-08-31
+                          # Empresa ÚNICA: id_enterprise=1 / co_enterprise="MIOP_ADM"
+
+# ── VGs — leídas de los dumps del 2026-08-31 ─────────────────────────────────
+# 🔑 DIFERENCIAS QUE CAMBIAN LA COBERTURA (vs piercar, el perfil más reciente):
+#   - validateReturn=FALSE            → devoluciones TIPO A: el CLIENTE habilita las
+#                                       tabs; NO hay paso de factura. (piercar era TIPO B)
+#   - requiredCollectionAttachments=FALSE → los cobros SÍ se pueden enviar sin adjunto
+#   - enterpriseEnabled=TRUE          → aparece el campo Empresa en los módulos
+#   - userMustActivateGPS=TRUE        → GPS OBLIGATORIO: conceder permisos antes de correr
+#   - userCanSelectIGTF=FALSE         → sin selector de IGTF
+#   - multiInvoices=FALSE             → una sola factura por devolución
+vgs:
+  multiCurrency: true
+  multiCurrencyCollection: true
+  multiCurrencyDeposit: true
+  clientStock: true
+  suggestedOrder: true
+  expirationBatch: true                     # ⚠ true en config: el modal de inventario debe pedir Lote+Fecha
+  requiredCollectionAttachments: false      # ⇒ cobros ENVIABLES sin adjunto (a diferencia de piercar)
+  validateReturn: false                     # 🔑 TIPO A en devoluciones: el cliente habilita las tabs
+  requeridedNroFactura: true                # nro. de factura obligatorio POR PRODUCTO en devoluciones
+  multiInvoices: false                      # una sola factura por devolución
+  signatureReturn: true
+  signatureCollection: true
+  signatureVisit: false                     # ⚠ visitas NO pide firma en este cliente
+  userCanUploadFiles: true
+  showCamera: true
+  enterpriseEnabled: true                   # 🔑 campo Empresa presente en los módulos
+  userMustActivateGPS: true                 # 🔑 GPS obligatorio para transacciones
+  infoVendedores: false
+  cobroPrepago: true
+  automatedPrepaid: true
+  prepaidCurrency: "USD"                    # el anticipo automático se genera en USD
+  cobroRetencion: true
+  retencion: true
+  sizeRetention: 14                         # nro. de comprobante de retención = 14 dígitos
+  userCanAddRetention: true
+  userCanSelectIGTF: false                  # ⇒ casos de IGTF N/A
+  userCanCollectIva: false                  # ⇒ cobro 25% IVA N/A
+  enablePartialPayment: true
+  tolerancia0: true
+  colletionPayment: "true-false-true-true-false-true"
+  # ⚠ NO deducir qué métodos hay por el orden alfabético del catálogo: en piercar el
+  #   `false` NO correspondía al que sugería el orden. Medir en la UI. [prc-20260831]
+
+# ── Datos de prueba — verificados en BD el 2026-08-31 ────────────────────────
+modules:
+  clientes:
+    cliente_test: "MIO PARTS & SERVICES, C.A."   # J409074560 — 1 sucursal, 112 documentos con saldo
+
+  visitas:
+    # Criterio: cliente con sucursal asignada (sin ella el formulario no habilita las tabs).
+    #   SELECT c.co_client, count(ac.id_address_client) FROM client c
+    #   JOIN address_client ac ON ac.co_client=c.co_client GROUP BY c.co_client;
+    cliente_test: "MIO PARTS & SERVICES, C.A."   # J409074560 — 1 sucursal
+    cliente_test_alt: "TRANSMONAGAS, S.A"        # G200116129 — 1 sucursal · relevo
+
+  devoluciones:
+    # 🔑 TIPO A (validateReturn=false): el CLIENTE habilita las tabs, sin paso de factura.
+    #    El guion ramifica solo; no hace falta factura_test para llegar a Productos.
+    #    PERO requeridedNroFactura=true ⇒ el nro. de factura sí se pide POR PRODUCTO.
+    cliente_test: "MIO PARTS & SERVICES, C.A."   # J409074560
+    cliente_test_alt: "TRANSMONAGAS, S.A"        # G200116129 · relevo
+    producto_test: "PDV SUPRA PREMIUN SL 15W40 (LT)"   # PDV-001
+    # factura_test anotado en la 1.ª corrida (2026-08-31). OJO: NO significa "el cliente no
+    # exige factura" — con requeridedNroFactura=true el campo `inputDocument` SÍ aparece por
+    # producto; sin este dato el guion salta DEV-018 y nunca se ejercita el envío (TIPO A).
+    # Nro. real tomado de document_sale (co_client=J409074560, la factura más reciente).
+    factura_test: "3446"                               # FACT3446 · 2026-08-19
+
+  cobros:
+    # Criterio: mayor nº de documentos con saldo pendiente.
+    cliente_test: "MIO PARTS & SERVICES, C.A."   # J409074560 — 112 docs · saldo 260.979,64
+    cliente_test_alt: "EMPRENDIMIENTO PAULIMAR ROJAS"  # J506314720 — 75 docs · saldo 10.592,19
+    # requiredCollectionAttachments=false ⇒ los cobros se pueden ENVIAR (no quedan Guardados)
+
+  inventarios:
+    cliente_test: "MIO PARTS & SERVICES, C.A."
+    producto_test: "PDV SUPRA PREMIUN SL 15W40 (LT)"
+    expirationBatch_real: true                 # config=true ⇒ el modal debe pedir Lote + Fecha
+
+  depositos:
+    # Aplica sii el cliente cobra en EFECTIVO (ver métodos de pago de Cobros) y hay
+    # cobros enviados que depositar. Con requiredCollectionAttachments=false los cobros
+    # SÍ se envían, así que a priori es ejecutable — confirmar en la 1.ª corrida.
+    aplica: true
+
+  productos:
+    # solo lectura
+  vendedores:
+    # solo lectura
+
+# ── Pendientes de la 1.ª corrida ─────────────────────────────────────────────
+# · Confirmar en la UI qué métodos de pago ofrece de verdad (el vector tiene 2 en false).
+# · Anotar el nro. de factura real para devoluciones (requeridedNroFactura=true).
+# · GPS: userMustActivateGPS=true ⇒ conceder ACCESS_FINE_LOCATION y COARSE antes de correr.
+# · Verificar si el campo Empresa (enterpriseEnabled=true) altera algún flujo.

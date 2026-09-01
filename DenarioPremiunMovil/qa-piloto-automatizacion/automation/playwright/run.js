@@ -119,6 +119,10 @@ function dataParaModulo(modulo) {
       return {
         aplica:             mod.aplica !== false,
         clienteTest:        mod.cliente_test || '',
+        // Relevo: cliente alternativo con facturas activas verificadas en BD.
+        // En TIPO B (validateReturn=true) el cliente SIN facturas deja el módulo
+        // inejecutable, así que hace falta un suplente. [prc-20260831]
+        clienteTestAlt:     mod.cliente_test_alt || '',
         productoTest:       mod.producto_test || '',
         // factura_test presente en el perfil ⇒ el cliente exige nro. de factura por
         // producto (requeridedNroFactura). Si falta, DEV-018 (Enviar) queda N/A.

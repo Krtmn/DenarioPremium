@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>REQ Botón Enviar — validación en los 7 módulos</title>
+<style>
+  :root {
+    --morado: #5501AA; --morado-osc: #3D0179; --morado-claro: #F2EAFB;
+    --verde: #91BA3F;  --verde-osc: #4A6B1B;  --verde-claro: #F0F6E4;
+    --ambar: #F5BA2E;  --ambar-claro: #FEF7E6;
+    --rojo: #A5121B;   --rojo-claro: #FDF0F0;
+    --gris: #5D5A63;   --linea: #D8D2E0;
+  }
+  @page { size: A4; margin: 14mm 14mm 15mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 10.2pt; color: #1F1B24;
+         line-height: 1.44; margin: 0; }
+  .marca { display: flex; align-items: center; justify-content: space-between; gap: 8mm;
+           border-bottom: 2.2pt solid var(--morado); padding-bottom: 3mm; margin-bottom: 4mm; }
+  .marca img { width: 52mm; display: block; }
+  .marca .quien { text-align: right; font-size: 8.6pt; color: var(--gris); line-height: 1.35; }
+  .marca .quien b { color: var(--morado); font-size: 9.4pt; display: block; letter-spacing: .2px; }
+  .cinta { height: 2.2mm; display: flex; margin: -4mm 0 4mm; }
+  .cinta i { flex: 1; }
+  .cinta i:nth-child(1) { background: var(--morado); }
+  .cinta i:nth-child(2) { background: var(--verde); }
+  .cinta i:nth-child(3) { background: var(--ambar); }
+  h1 { font-size: 18pt; color: var(--morado); margin: 0 0 1mm; letter-spacing: -.3px; }
+  h2 { font-size: 12.5pt; color: var(--morado); margin: 7mm 0 2.5mm; padding-bottom: 1.2mm;
+       border-bottom: 1.6pt solid var(--morado); page-break-after: avoid; }
+  h3 { font-size: 10.6pt; margin: 4mm 0 1.5mm; color: var(--morado-osc); page-break-after: avoid; }
+  .sub { color: var(--gris); font-size: 10pt; margin: 0 0 4mm; }
+  table { border-collapse: collapse; width: 100%; margin: 2mm 0 3mm; font-size: 9.2pt;
+          page-break-inside: avoid; }
+  th { background: var(--morado); color: #fff; text-align: left; padding: 1.7mm 2.3mm; font-weight: 600; }
+  td { border: .6pt solid var(--linea); padding: 1.5mm 2.3mm; vertical-align: top; }
+  tr:nth-child(even) td { background: #FAF7FD; }
+  .c { text-align: center; }
+  .ok { color: var(--verde-osc); font-weight: 700; }
+  .bad { color: var(--rojo); font-weight: 700; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: .93em; color: var(--morado-osc); }
+  .ficha { width: 100%; margin: 0 0 4mm; font-size: 9.4pt; }
+  .ficha td { border: none; border-bottom: .5pt solid var(--linea); padding: 1.2mm 0; background: none !important; }
+  .ficha td:first-child { color: var(--gris); width: 40mm; }
+  .bien { border-left: 4pt solid var(--verde); background: var(--verde-claro); padding: 3mm 4mm; margin: 4mm 0 5mm; }
+  .bien .t { font-size: 12.5pt; font-weight: 700; color: var(--verde-osc); margin-bottom: 1.5mm; }
+  .alerta { border-left: 4pt solid var(--rojo); background: var(--rojo-claro); padding: 3mm 4mm; margin: 4mm 0 5mm; }
+  .alerta .t { font-size: 12.5pt; font-weight: 700; color: var(--rojo); margin-bottom: 1.5mm; }
+  .nota { background: var(--ambar-claro); border-left: 3pt solid var(--ambar); padding: 2.5mm 3.5mm;
+          margin: 3mm 0; font-size: 9.4pt; page-break-inside: avoid; }
+  .calc { font-family: Consolas, "Courier New", monospace; background: var(--morado-claro);
+          border: .5pt solid var(--linea); padding: 1.7mm 3mm; margin: 2mm 0; font-size: 9.1pt; }
+  .cap { page-break-inside: avoid; margin: 2.5mm 0 3.5mm; }
+  .cap img { max-width: 100%; border: .7pt solid var(--linea); display: block; }
+  .cap .pie { font-size: 8.3pt; color: var(--gris); margin-top: 1mm; font-style: italic; }
+  .pill { display: inline-block; padding: .4mm 2mm; border-radius: 2mm; font-size: 8.5pt; font-weight: 700; }
+  .p-ok { background: var(--verde-claro); color: var(--verde-osc); border: .5pt solid var(--verde); }
+  .p-mal { background: var(--rojo-claro); color: var(--rojo); border: .5pt solid var(--rojo); }
+  .p-na { background: #EFEDF2; color: var(--gris); border: .5pt solid var(--linea); }
+  .fin { margin-top: 6mm; padding-top: 2.5mm; border-top: 1.2pt solid var(--morado); font-size: 8.5pt;
+         color: var(--gris); display: flex; gap: 5mm; align-items: flex-start; }
+  .fin img { width: 26mm; opacity: .85; }
+  .pb { page-break-before: always; }
+</style></head><body>
+
+<div class="marca">
+  <img src="../../_assets/logo-denario-premium.svg" alt="Denario Premium">
+  <div class="quien"><b>CONTROL DE CALIDAD</b>Validación de requerimiento<br>31 de agosto de 2026</div>
+</div>
+<div class="cinta"><i></i><i></i><i></i></div>
+
+<h1>El botón Enviar cumple en 6 de 7 módulos; el aviso visual falla en 4</h1>
+<p class="sub">REQ «Mejora del botón Enviar y campos obligatorios» · Denario Premium Móvil · versión 6.6.21.3 · rama main</p>
+
+<table class="ficha">
+  <tr><td>Qué se validó</td><td>El comportamiento del botón <b>Enviar</b> y el señalamiento de campos obligatorios en los <b>7 módulos transaccionales</b></td></tr>
+  <tr><td>Cliente y playa</td><td><b>MIO LUBRICANTES Y FILTROS, CA</b> · empresa única <code>MIOP_ADM</code> · El Yaque <span style="color:var(--gris)">(confirmada en runtime)</span></td></tr>
+  <tr><td>Módulos</td><td>Pedidos · Inventarios · Cobros · Clientes · Devoluciones · Depósitos · Visitas</td></tr>
+  <tr><td>Alcance</td><td><b>Ninguna transacción se envió</b>: los diálogos de confirmación se cancelaron y todos los formularios se descartaron sin guardar</td></tr>
+</table>
+
+<h2>El requerimiento</h2>
+
+<div class="calc">
+1 · Dejar el botón Enviar <b>HABILITADO al iniciar</b> la transacción<br>
+2 · <b>Validar al pulsar Enviar</b>: si hay campos con error, deshabilitar Enviar, poner los<br>
+&nbsp;&nbsp;&nbsp;&nbsp;obligatorios <b>en ROJO</b> y un <b>mensaje debajo del input</b><br>
+3 · Tras llenarlos, <b>volver a validar</b>: si es correcta habilitar; si no, dejar los campos con error
+</div>
+
+<h3>Los dos criterios de aceptación</h3>
+
+<p>Acordados con QA antes de medir. <b>Sólo estas dos cosas cuentan como fallo:</b></p>
+
+<table>
+  <tr><th style="width:14mm">#</th><th>Criterio</th></tr>
+  <tr><td><b>C1</b></td><td><b>No debe dejar enviar</b> con campos obligatorios vacíos</td></tr>
+  <tr><td><b>C2</b></td><td>Si no deja enviar, <b>debe comunicar al usuario QUÉ le falta</b></td></tr>
+</table>
+
+<div class="nota">
+<b>La forma de comunicarlo no es un fallo.</b> Que un módulo lo resalte en rojo, otro lo escriba bajo
+el input y otro lo diga en una alerta que nombre el campo es <b>información de cada módulo</b>, no un
+defecto — mientras el usuario se entere de qué le falta.
+</div>
+
+<h2>Resultado</h2>
+
+<div class="bien">
+  <div class="t">✅ El REQ cumple en 6 de los 7 módulos</div>
+  <b>Ningún módulo deja enviar con campos obligatorios vacíos</b>, y todos salvo uno comunican qué
+  falta. La validación se rehace en cada pulsación: se comprobó que el botón no se enciende por
+  teclear en un campo cualquiera.
+</div>
+
+<table>
+  <tr><th>Módulo</th><th class="c" style="width:26mm">C1 · No deja enviar</th><th class="c" style="width:28mm">C2 · Comunica qué falta</th><th>Cómo lo comunica</th></tr>
+  <tr><td><b>Cobros</b></td><td class="c ok">✅</td><td class="c ok">✅</td><td>«¡Campo Obligatorio!» <b>bajo el input</b> + borde rojo</td></tr>
+  <tr><td><b>Clientes</b></td><td class="c ok">✅</td><td class="c ok">✅</td><td>8 campos en rojo + alerta que nombra el primero</td></tr>
+  <tr><td><b>Depósitos</b></td><td class="c ok">✅</td><td class="c ok">✅</td><td>alerta nombrando el campo: <i>«Seleccione un banco…»</i></td></tr>
+  <tr><td><b>Pedidos</b></td><td class="c ok">✅</td><td class="c ok">✅</td><td>alerta específica + pestaña PEDIDO en rojo</td></tr>
+  <tr><td><b>Inventarios</b></td><td class="c ok">✅</td><td class="c ok">✅</td><td>alerta específica</td></tr>
+  <tr><td><b>Visitas</b></td><td class="c ok">✅</td><td class="c ok">✅</td><td>alerta específica</td></tr>
+  <tr><td><b>Devoluciones</b></td><td class="c ok">✅</td><td class="c bad">🔴 NO</td><td>con la fila del producto <b>colapsada no se ve nada</b></td></tr>
+</table>
+
+<h3>Cobros es la implementación de referencia</h3>
+
+<div class="cap">
+  <img src="img/zoom/cobros-campo-obligatorio.png">
+  <div class="pie">Campo <b>Monto</b> con borde rojo y <b>«¡Campo Obligatorio!»</b> justo debajo del
+  input. Es literalmente lo que describe el punto 2 del requerimiento.</div>
+</div>
+
+<h2 class="pb">🔴 Defecto 1 · Una pestaña queda en ROJO sin que falte nada</h2>
+
+<div class="alerta">
+  <div class="t">Afecta a 4 de los 7 módulos, y aparece justo al terminar de corregir</div>
+  El usuario completa el formulario, la app deja de quejarse… y <b>una pestaña se queda marcada en
+  rojo señalando un problema que no existe</b>. La transacción se envía igual.
+</div>
+
+<div class="cap">
+  <img src="img/zoom/tabs-general-roja.png">
+  <div class="pie">Devoluciones: <b>GENERAL en rojo</b> con el formulario completo — factura, cantidad,
+  unidad y motivo llenos. En esa pestaña no falta ningún dato obligatorio.</div>
+</div>
+
+<h3>Dónde ocurre</h3>
+
+<table>
+  <tr><th>Módulo</th><th class="c" style="width:22mm">¿Ocurre?</th><th>Pestaña que se marca mal</th><th>Origen</th></tr>
+  <tr><td><b>Devoluciones</b></td><td class="c bad">🔴 SÍ</td><td>GENERAL</td><td><code>return-logic.service.ts:454</code></td></tr>
+  <tr><td><b>Depósitos</b></td><td class="c bad">🔴 SÍ</td><td>GENERAL</td><td><code>deposit.service.ts:400</code></td></tr>
+  <tr><td><b>Cobros</b></td><td class="c bad">🔴 SÍ</td><td>GENERAL</td><td><code>collection-logic.service.ts:3080</code></td></tr>
+  <tr><td><b>Inventarios</b></td><td class="c bad">🔴 SÍ</td><td>INVENTARIO</td><td><code>inventarios-logic.service.ts:356</code></td></tr>
+  <tr><td>Pedidos</td><td class="c ok">no</td><td colspan="2">el marcador se retira correctamente</td></tr>
+  <tr><td>Visitas</td><td class="c ok">no</td><td colspan="2">usa el mismo patrón correcto que Pedidos</td></tr>
+  <tr><td>Clientes</td><td class="c"><span class="pill p-na">N/A</span></td><td colspan="2">tiene pestañas, pero nunca reciben el marcador</td></tr>
+</table>
+
+<h3>Por qué pasa</h3>
+
+<p>Existe una función que responde a la pregunta <b>«¿en qué pestaña está el primer error?»</b> para
+que la app salte ahí y la marque. El problema es que <b>esa función siempre responde con una pestaña:
+nunca puede decir “ninguna”</b>.</p>
+
+<div class="calc">
+if (…falta el cliente…)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return 'default';<br>
+if (…faltan productos…)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return 'productos';<br>
+if (…falta la coordenada…)&nbsp;&nbsp;return 'default';<br>
+<b>return 'default';</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← se llega aquí cuando NO falta nada
+</div>
+
+<p>Esa última línea es la causa. <b>Cuando ya está todo correcto, la función cae ahí y contesta
+«General»</b>, y la app la pinta de rojo. Por eso el aviso <b>aparece al corregir, no al fallar</b>:
+mientras hay un error real la función acierta; en cuanto se resuelve, señala una pestaña por defecto.</p>
+
+<div class="nota">
+<b>La solución ya existe dentro del producto.</b> Pedidos y Visitas no fallan porque usan un
+<b>predicado de condición</b> —«¿esta pestaña tiene error, sí o no?»— en vez de un resolvedor de
+«primer error». Esa pregunta sí admite un “no”. No hay que diseñar nada nuevo: basta con llevar ese
+patrón a los otros cuatro.
+</div>
+
+<div class="nota">
+<b>Qué NO es este defecto.</b> No compromete los datos: la validación real funciona y <b>no se puede
+enviar con obligatorios vacíos</b>. Lo único incorrecto es el aviso visual. Se comprobó pulsando
+Enviar con la pestaña en rojo: la app llega al diálogo de confirmación, lo que demuestra que
+considera el formulario válido. <i>(El diálogo se canceló en los 6 casos.)</i>
+</div>
+
+<h2>🔴 Defecto 2 · La marca roja se arrastra a la siguiente transacción</h2>
+
+<p>Pulsar Enviar, <b>descartar sin guardar</b> y abrir otra devolución <b>desde el listado</b>: la
+nueva <b>nace ya marcada</b>, y al elegir cliente la pestaña PRODUCTOS sale en rojo sin haber pulsado
+Enviar. Abriéndola desde el menú principal nace limpia.</p>
+
+<p>📷 <code>img/devoluciones-tabroja-arrastrada-de-transaccion-descartada.png</code></p>
+
+<h2>🔴 Defecto 3 · Devoluciones no comunica qué falta con la fila colapsada</h2>
+
+<p>Con el producto agregado pero incompleto, al pulsar Enviar:</p>
+
+<table>
+  <tr><th>Qué ocurre</th><th>Consecuencia</th></tr>
+  <tr><td>Alerta <code>Complete cantidad y documento en todos los productos.</code></td><td>No dice <b>cuál</b> producto ni <b>cuál</b> campo — con varios productos es inservible</td></tr>
+  <tr><td>La fila del producto <b>no cambia de aspecto</b></td><td>La app le aplica la clase <code>return-send-error-hint</code> con <code>--border-color:#c5000f</code>, pero <b>no produce ningún efecto visible</b></td></tr>
+  <tr><td>Sólo al <b>expandir la fila</b> aparecen los campos en rojo</td><td>El usuario que no la expanda <b>no tiene forma de saber qué corregir</b></td></tr>
+</table>
+
+<div class="nota">
+<b>Arreglo sugerido.</b> La clase ya se aplica: sólo falta que pinte. Alternativamente, que la fila se
+expanda sola al fallar la validación.
+</div>
+
+<h2 class="pb">Observaciones — comprobadas y descartadas como defecto</h2>
+
+<table>
+  <tr><th style="width:8mm">#</th><th>Observación</th><th>Por qué NO es un fallo</th></tr>
+  <tr><td>1</td><td><b>Cobros nace con Enviar deshabilitado</b></td><td>Es coherente: un cobro no puede enviarse sin un método de pago, así que aún no hay nada que validar. Se habilita al cargar documento y método</td></tr>
+  <tr><td>2</td><td><b>Clientes no deshabilita el botón</b> tras el rechazo</td><td>Pero <b>tampoco deja enviar</b>: muestra <code>Nombre obligatorio.</code> y marca 8 campos en rojo. C1 y C2 se cumplen</td></tr>
+  <tr><td>3</td><td><b>Cada módulo comunica de forma distinta</b></td><td>Tres mecanismos conviven: mensaje bajo el input (Cobros), campo en rojo (Clientes, Devoluciones) y alerta que nombra el campo (los demás). Todos informan</td></tr>
+  <tr><td>4</td><td><b>Visitas aplica la clase pero nunca pinta</b></td><td>Su estilo define <code>--color</code> sin el <code>color</code> plano. Es la razón por la que Visitas <b>no sufre</b> el defecto 1</td></tr>
+  <tr><td>5</td><td><b>Inventarios: el modal de captura valida como antes</b></td><td>Alerta <code>Complete cantidad, unidad, fecha y lote…</code> sin marcar campos. Es un botón del modal, no <code>Enviar</code> — <b>fuera del alcance del REQ</b>, pero conviene saber que quedó sin tocar</td></tr>
+  <tr><td>6</td><td><b>Clientes degrada el aviso</b> en la 2.ª pulsación</td><td>Pasa de <code>Nombre obligatorio.</code> a un genérico. No incumple —la información sigue en los campos rojos— pero va en contra de la intención del REQ</td></tr>
+</table>
+
+<h2>Recomendación</h2>
+
+<table>
+  <tr><th style="width:8mm">#</th><th>Acción</th><th>Alcance</th></tr>
+  <tr><td>1</td><td><b>Añadir el caso “ninguna pestaña con error”</b> a los 4 resolvedores, o sustituirlos por el predicado que ya usan Pedidos y Visitas</td><td>Corrige el defecto 1 en los 4 módulos con un cambio de una línea en cada uno</td></tr>
+  <tr><td>2</td><td><b>Que la clase <code>return-send-error-hint</code> pinte</b> la fila del producto</td><td>Corrige el defecto 3</td></tr>
+  <tr><td>3</td><td><b>Limpiar el estado de validación</b> al abrir una transacción nueva desde el listado</td><td>Corrige el defecto 2</td></tr>
+</table>
+
+<h2>Lo que este informe NO cubre</h2>
+
+<table>
+  <tr><th style="width:8mm">#</th><th>Pendiente</th><th>Por qué importa</th></tr>
+  <tr><td>1</td><td>El REQ en la <b>capa web</b></td><td>Sólo se midió la aplicación móvil</td></tr>
+  <tr><td>2</td><td><b>Otros clientes</b></td><td>Todo se midió en MIO LUBRICANTES. Las validaciones dependen de variables globales (<code>validateReturn</code>, <code>expirationBatch</code>, <code>requeridedNroFactura</code>…), así que <b>otro cliente puede exigir campos distintos</b></td></tr>
+  <tr><td>3</td><td>Comparación con <b>RUN y EL EDEN</b></td><td>El REQ se probó allí en su momento; ese material no está disponible y no se pudo contrastar</td></tr>
+  <tr><td>4</td><td>Si el <b>texto de los mensajes es comprensible</b></td><td>Se verificó que existe y dónde aparece, no si el usuario lo entiende</td></tr>
+  <tr><td>5</td><td><b>Pedidos</b>: comportamiento al quitar un producto ya agregado</td><td>No aplica al caso de campos, pero no se comprobó si vuelve a marcar</td></tr>
+</table>
+
+<div class="fin">
+  <img src="../../_assets/logo-denario-premium.svg" alt="">
+  <div>
+    <b>Denario Premium · Control de Calidad.</b> Informe emitido el 31 de agosto de 2026 a partir de la
+    corrida <code>reports/mio_parts/req_boton_enviar_20260831/</code>.<br>
+    Detalle técnico, trazas vuelta a vuelta y mediciones en <code>req-boton-enviar.md</code>.
+    Las capturas son recortes ampliados de las tomas originales del dispositivo, conservadas sin editar
+    en <code>img/</code> (35 capturas). Método reutilizable en
+    <code>guiones-regresion/guion-req-boton-enviar.md</code>.
+  </div>
+</div>
+
+</body></html>

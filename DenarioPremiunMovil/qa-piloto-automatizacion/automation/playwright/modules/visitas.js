@@ -416,12 +416,22 @@ async function runVisitas(pg, DATA) {
       return n;
     });
 
-    // 🔴 Acuses informativos pegados ("La visita se ha guardado" + OK) TAPAN los
-    //    botones de la pantalla de abajo: el clic en NUEVA VISITA no llega nunca.
-    //    Se descartan SOLO los de UN botón de confirmación — las alertas de varias
-    //    opciones son decisiones y las resuelve dismissResidualAlerts(). [prc-20260831]
+    // 🔴🔴 NO DESCARTAR POR NÚMERO DE BOTONES — LEER EL MENSAJE.
+    //
+    //    Los acuses pegados ("La visita se ha guardado" + OK) tapan los botones de
+    //    debajo y hay que quitarlos. Pero una alerta de UN SOLO BOTÓN también puede
+    //    ser un RECHAZO de validación, que trae [OK] porque no te deja otra cosa.
+    //
+    //    La regla "1 botón ⇒ acuse ⇒ descartar" silenció una validación real en
+    //    Devoluciones ("La cantidad a devolver debe estar entre 1 y 1"): el guion
+    //    envió un registro que a mano la app IMPIDE. Un caso que se salta un aviso
+    //    prueba con ventaja y su PASS no vale. [prc-20260831]
+    //
+    //    ⇒ LISTA BLANCA: sólo se descarta lo reconocido como acuse. Lo demás se DEJA
+    //      en pantalla para que el caso lo vea y falle.
+    const ACUSES = /(se ha guardado|se ha eliminado|guardad|eliminad|enviad|exitosa|correctamente)/i;
     for (let i = 0; i < 4; i++) {
-      const acuse = await pg.evaluate(() => {
+      const acuse = await pg.evaluate((patron) => {
         const vis = el => el.getBoundingClientRect().width > 0;
         const al = [...document.querySelectorAll('ion-alert')].filter(vis)[0];
         if (!al) return null;
@@ -429,10 +439,12 @@ async function runVisitas(pg, DATA) {
         if (btns.length !== 1) return null;                    // decisión: no tocar
         const t = btns[0].textContent.trim();
         if (!/^(ok|aceptar|entendido|cerrar)$/i.test(t)) return null;
+        const msg = ((al.querySelector('.alert-message') || {}).textContent || '') + ' ' +
+                    ((al.querySelector('.alert-title') || {}).textContent || '');
+        if (!new RegExp(patron, 'i').test(msg)) return null;    // no reconocido ⇒ NO tocar
         const r = btns[0].getBoundingClientRect();
-        return { x: r.left + r.width / 2, y: r.top + r.height / 2, txt: t,
-                 msg: ((al.querySelector('.alert-message') || {}).textContent || '').slice(0, 60) };
-      });
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      }, ACUSES.source);
       if (!acuse) break;
       await pg.mouse.click(acuse.x, acuse.y, { delay: 60 });
       await pg.waitForTimeout(900);
