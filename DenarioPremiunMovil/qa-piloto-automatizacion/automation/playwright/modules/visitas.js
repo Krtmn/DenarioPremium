@@ -5,6 +5,7 @@ const fs   = require('fs');
 const os   = require('os');
 const path = require('path');
 const { selectIonPopover, installPayloadCapture, getCapturedPayloads } = require('../../cdp/denario-cdp-helpers');
+const { reqInicio, reqRechazo, reqPestanaRoja, reqIds, conReq } = require('../req-enviar');
 
 const LOCAL_QUERY_PATH    = path.resolve(__dirname, '../../db/local-query.js');
 const COTEJO_PAYLOAD_PATH = path.resolve(__dirname, '../../db/cotejo-payload.js');
@@ -41,11 +42,15 @@ async function runVisitas(pg, DATA) {
     verdicts.push({ id, descripcion: desc, resultado, nota, ms: Date.now() - t0 });
   }
 
+  // Regresión permanente del REQ «Botón Enviar y campos obligatorios» (../req-enviar.js)
+  const reqV = (r) => v(r.id, r.descripcion, r.resultado, r.nota);
+
   const TODOS = [
     'DM-VIS-001','DM-VIS-003','DM-VIS-004','DM-VIS-006',
     'DM-VIS-010','DM-VIS-014','DM-VIS-015','DM-VIS-019',
     'DM-VIS-020','DM-VIS-021','DM-VIS-022','DM-VIS-023',
     'DM-VIS-025','DM-VIS-026','DM-VIS-031','DM-VIS-032',
+    ...reqIds('VIS'),
   ];
 
   const naEstructural = new Set(
@@ -752,6 +757,16 @@ async function runVisitas(pg, DATA) {
   }
 
   // ══════════════════════════════════════════════════════════════════════════════
+  // REQ Enviar · E1 + E2 — cliente elegido, sin añadir todavía ninguna actividad
+  // ══════════════════════════════════════════════════════════════════════════════
+  // 🔴 R1 · después de DM-VIS-010: la transacción empieza al elegir el cliente.
+  // 🔴 Ojo con Visitas: lo que falta aquí no es un CAMPO sino una ACTIVIDAD (una
+  //    lista vacía). El REQ se cumple igual si la app comunica que falta —da
+  //    igual el mecanismo (C2)—, pero la marca no será un borde rojo en un input.
+  reqV(await reqInicio(pg, 'VIS'));
+  reqV(await reqRechazo(pg, 'VIS'));
+
+  // ══════════════════════════════════════════════════════════════════════════════
   // DM-VIS-014: Click AÑADIR ACTIVIDAD/EVENTO → modal
   // ══════════════════════════════════════════════════════════════════════════════
   let modalActividadOk = false;
@@ -1217,6 +1232,13 @@ async function runVisitas(pg, DATA) {
       if (cc) { await pg.mouse.click(cc.x, cc.y, { delay: 80 }); await pg.waitForTimeout(1500); }
     }
 
+    // ── REQ Enviar · E5 ───────────────────────────────────────────────────────
+    // La visita se guardó en VIS-019 y se reabrió completa: si alguna pestaña
+    // sigue en rojo aquí, el rojo no corresponde a nada pendiente (F1).
+    // Se rota entre pestañas —la visita ya está guardada, navegar no pierde nada—
+    // para juzgar también la que estuviera activa.
+    reqV(await reqPestanaRoja(pg, 'VIS', { rotar: true }));
+
     const enviarCoords = await pg.evaluate(() => {
       const btn = document.querySelector('ion-button.imagenEnviar');
       if (!btn || btn.disabled) return null;
@@ -1402,4 +1424,4 @@ async function runVisitas(pg, DATA) {
   return { verdicts, msTotal: Date.now() - t0 };
 }
 
-module.exports = { runVisitas };
+module.exports = { runVisitas: conReq('VIS', runVisitas) };

@@ -40,7 +40,7 @@ try {
 const MODULOS = {
   login:       require('./modules/login').runLogin,
   clientes:    require('./modules/clientes').runClientes,
-  pedidos:     null,       // pendiente
+  pedidos:     require('./modules/pedidos').runPedidos,
   cobros:      require('./modules/cobros').runCobros,   // Fase 1 (co_type 0)
   devoluciones: require('./modules/devoluciones').runDevoluciones,
   inventarios: require('./modules/inventarios').runInventarios,
@@ -50,7 +50,9 @@ const MODULOS = {
   vendedores:  require('./modules/vendedores').runVendedores,
 };
 
-const ORDEN_DEFAULT = ['login','clientes','inventarios','depositos','visitas','productos','vendedores','devoluciones'];
+// `pedidos` va al final: es el módulo que más escribe y el que más tarda.
+// `cobros` sigue fuera del orden por defecto — se corre con --modulo=cobros.
+const ORDEN_DEFAULT = ['login','clientes','inventarios','depositos','visitas','productos','vendedores','devoluciones','pedidos'];
 
 // ── Construir DATA para cada módulo desde el perfil YAML ──────────────────────
 function dataParaModulo(modulo) {
@@ -114,6 +116,26 @@ function dataParaModulo(modulo) {
         sizeRetention:                 Number(vgs.sizeRetention) || 14,
         metodoPago:                    mod.metodo_pago || 'efectivo',
         mockCamaraFunciona:            mod.mock_camara_funciona,   // undefined = probar el mock
+      };
+    case 'pedidos':
+      return {
+        aplica:       mod.aplica !== false,
+        clienteTest:  mod.cliente_test  || '',
+        productoTest: mod.producto_test || '',
+        // 🔴 El Tab Pedido filtra por (lista de precios activa × MONEDA). Si el
+        //    perfil declara una moneda, es porque con la otra el catálogo sale
+        //    VACÍO — no es una preferencia, es un prerequisito. (el_palmar)
+        monedaPedido:        mod.moneda_pedido || '',
+        estructuraProducto:  mod.estructura_producto || '',
+        alertaDeudaVencida:  mod.alerta_deuda_vencida === true,
+        // Se pasan como CONTRASTE contra lo que se lea en la UI, no como verdad:
+        // difranca demostró que el YAML puede estar desactualizado y que manda
+        // el select. Una divergencia se anota en DM-PED-VG-001/002.
+        multiCurrency:               vgs.multiCurrency === true,
+        userCanSelectProductDiscount: vgs.userCanSelectProductDiscount === true,
+        userCanSelectGlobalDiscount:  vgs.userCanSelectGlobalDiscount === true,
+        userCanSelectIVA:             vgs.userCanSelectIVA === true,
+        userMustActivateGPS:          vgs.userMustActivateGPS === true,
       };
     case 'devoluciones':
       return {

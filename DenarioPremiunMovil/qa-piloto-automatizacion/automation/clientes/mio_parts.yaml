@@ -59,6 +59,31 @@ modules:
   clientes:
     cliente_test: "MIO PARTS & SERVICES, C.A."   # J409074560 — 1 sucursal, 112 documentos con saldo
 
+  pedidos:
+    # Descubierto en BD el 2026-09-01 al montar modules/pedidos.js.
+    cliente_test: "J507679705"          # ACCESORIOS Y AUTOREPUESTOS JOTA, C.A. — 20 pedidos
+                                        #   históricos ⇒ opera de verdad, no es un alta muerta.
+    producto_test: "SKY083"             # ACEITE SKY EVOLUB 20W50 CI4 DIESEL (TT)
+                                        #   US$ 8,74 · stock 11.000
+                                        #   🔴 stock0=false ⇒ un producto con Inventario 0 NO
+                                        #      expande su panel y NO avisa: elegir siempre uno
+                                        #      con stock holgado o se diagnostica un no-defecto.
+    moneda_pedido: "US$"                # 🔴 Las 957 filas de price_list están en US$ y CERO en
+                                        #   VES. El Tab Pedido filtra por (lista × moneda): con
+                                        #   la moneda local el catálogo saldría vacío entero.
+    estructura_producto: TBD            # leer el rótulo del selector en la 1.ª corrida
+    alerta_deuda_vencida: TBD           # el guion la descarta si aparece; confirmar y anotar
+
+    # ── Ramas condicionales: este cliente NO puede ejercitarlas ────────────────
+    # Leído de global_configuration (2026-09-01):
+    #   userCanSelectProductDiscount=false · setProductDiscount=false · setMaxProductDiscount=0
+    #   userCanSelectGlobalDiscount=false  · userCanSelectIVA=false   · vatExemptProducts=false
+    #   productMinMul=false · validateNuOrder=false · multiCurrencyOrder=false
+    # ⇒ DM-PED-DSC-001, DSC-002 e IVA-001 saldrán N/A **con motivo**, no por omisión.
+    #   Para validar de verdad esas ramas hace falta un cliente que las tenga
+    #   prendidas (alipascua tuvo desc. producto 5 % + global 7 %; grupo_fiel,
+    #   descuento global "DESC 7 TEST").
+
   visitas:
     # Criterio: cliente con sucursal asignada (sin ella el formulario no habilita las tabs).
     #   SELECT c.co_client, count(ac.id_address_client) FROM client c

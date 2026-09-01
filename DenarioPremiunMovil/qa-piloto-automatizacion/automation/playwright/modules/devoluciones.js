@@ -5,6 +5,7 @@ const fs   = require('fs');
 const os   = require('os');
 const path = require('path');
 const { installPayloadCapture, getCapturedPayloads } = require('../../cdp/denario-cdp-helpers');
+const { reqInicio, reqRechazo, reqPestanaRoja, reqIds, conReq } = require('../req-enviar');
 
 const COTEJO_PAYLOAD_PATH = path.resolve(__dirname, '../../db/cotejo-payload.js');
 
@@ -37,6 +38,9 @@ async function runDevoluciones(pg, DATA) {
     verdicts.push({ id, descripcion: desc, resultado, nota, ms: Date.now() - t0 });
   }
 
+  // Regresión permanente del REQ «Botón Enviar y campos obligatorios» (../req-enviar.js)
+  const reqV = (r) => v(r.id, r.descripcion, r.resultado, r.nota);
+
   const TODOS = [
     'DM-DEV-001','DM-DEV-002','DM-DEV-003','DM-DEV-004','DM-DEV-005',
     'DM-DEV-006','DM-DEV-007','DM-DEV-008','DM-DEV-009','DM-DEV-010',
@@ -46,6 +50,7 @@ async function runDevoluciones(pg, DATA) {
     // Cobertura añadida 2026-08-31: la app debe RECHAZAR cantidades mayores a lo
     // facturado. Faltaba, y su ausencia dejó pasar un envío inválido del guion.
     'DM-DEV-VAL-001',
+    ...reqIds('DEV'),
   ];
 
   if (!DATA.aplica) {
@@ -1180,6 +1185,13 @@ async function runDevoluciones(pg, DATA) {
     return { verdicts, msTotal: Date.now() - t0 };
   }
 
+  // ─── REQ Enviar · E1 + E2 ────────────────────────────────────────────────────
+  // 🔴 R1 · aquí, y no antes: el cliente YA está seleccionado, que es donde
+  //    empieza la transacción. Medirlo antes daría «nace deshabilitado» y sería
+  //    falso — eso ya lo cubre DEV-017, que es otro caso distinto.
+  reqV(await reqInicio(pg, 'DEV'));
+  reqV(await reqRechazo(pg, 'DEV'));
+
   // ─── DEV-006: Campos editables del Tab General ───────────────────────────────
   try {
     const ts = Date.now();
@@ -1416,6 +1428,15 @@ async function runDevoluciones(pg, DATA) {
     const prod = await agregarProducto(DATA.productoTest);
     if (!prod.ok) throw new Error('No se pudo agregar producto para envío: ' + prod.error);
     await pg.waitForTimeout(600);
+
+    // ── REQ Enviar · E5 ───────────────────────────────────────────────────────
+    // Se mide AQUÍ, desde la pestaña Producto y ANTES de volver a General, porque
+    // así es exactamente como se manifiesta F1: el formulario ya está completo
+    // (cliente + factura + producto con cantidad) y GENERAL está INACTIVA, que es
+    // la única forma de verle el color (regla R3).
+    // `rotar:false` a propósito: cambiar de pestaña aquí deshabilitaría Enviar y
+    // rompería el envío que viene justo después.
+    reqV(await reqPestanaRoja(pg, 'DEV', { rotar: false }));
 
     // 🔴 VOLVER A GENERAL ANTES DE ENVIAR. El botón Enviar se habilita al teclear la
     //    cantidad, pero **se vuelve a deshabilitar al perder el foco el campo** y
@@ -1791,4 +1812,4 @@ async function runDevoluciones(pg, DATA) {
   return { verdicts, msTotal: Date.now() - t0 };
 }
 
-module.exports = { runDevoluciones };
+module.exports = { runDevoluciones: conReq('DEV', runDevoluciones) };

@@ -6,6 +6,47 @@ Informe de referencia: `automation/reports/mio_parts/req_boton_enviar_20260831/r
 
 ---
 
+## ⚙ Desde el 01/09 el REQ se mide SOLO, en cada corrida
+
+Los casos E1, E2 y E5 están **incorporados a los scripts**: `automation/playwright/req-enviar.js`
+se engancha en los módulos y cada corrida normal hace regresión del REQ sin vuelta aparte.
+
+| ID que aparece en el reporte | Qué mide | Falla cuando |
+|---|---|---|
+| `DM-{ABREV}-REQ-001` | E1 · Enviar habilitado al iniciar | nace deshabilitado sin motivo declarado |
+| `DM-{ABREV}-REQ-002` | E2 · rechaza en blanco **y** dice qué falta | **C1** deja llegar a confirmación · **C2** no comunica nada |
+| `DM-{ABREV}-REQ-003` | E5 · ninguna pestaña en rojo con el form completo | **F1** queda una roja sin causa |
+
+**Dónde se mide en cada módulo** — el punto importa tanto como la medición:
+
+| Módulo | E1 + E2 | E5 (form completo) |
+|---|---|---|
+| Cobros | tras elegir cliente (`COB-004`) | antes de Guardar (`COB-018`) |
+| Clientes | al abrir el form potencial (`CLT-019`) | al reabrir el guardado (`CLT-026`) |
+| Devoluciones | tras elegir cliente (`DEV-004`) | **en la pestaña Producto**, antes de volver a General |
+| Depósitos | al abrir el form (`DEP-002`) | antes de Enviar (`DEP-017`) |
+| Inventarios | tras elegir cliente (`INV-004`) | antes de Enviar (`INV-022`) |
+| Visitas | tras elegir cliente (`VIS-010`) | antes de Enviar (`VIS-020`) |
+| **Pedidos** | 🔴 **sin cobertura** — no existe `modules/pedidos.js` | 🔴 igual |
+
+🔑 **Devoluciones se mide desde Producto a propósito.** F1 se manifiesta como «estoy en
+Productos y GENERAL está en rojo»; una pestaña ACTIVA siempre se ve blanca (R3), así que
+medir desde General no lo vería nunca.
+
+**Garantías del bloque automático:**
+- 🔴 **Nunca envía.** Si al pulsar Enviar aparece el diálogo de confirmación, lo CANCELA —
+  y con el formulario en blanco eso ES el fallo C1, así que se reporta como tal.
+- 🔴 **Nunca tumba el módulo.** Todo error interno sale como `BLOCKED` en su propio caso.
+- Si el flujo sale antes de llegar al punto de medición, el envoltorio `conReq()` emite los
+  casos que falten como `BLOCKED`: **un caso ausente se leería como "no falló"**, que es
+  justo el escape que se está cerrando.
+
+Lo que **sigue siendo manual**: el bucle iterativo completo de E5 (Enviar → falta X → llenar
+→ repetir), E3 y E4. El script mide el **estado final**, que es donde F1 se ve; la traza
+vuelta a vuelta sigue necesitando ojo humano.
+
+---
+
 ## El REQ
 
 > 1. Dejar el botón **Enviar HABILITADO al iniciar** la transacción.

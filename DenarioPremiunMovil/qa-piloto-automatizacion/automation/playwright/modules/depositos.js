@@ -5,6 +5,7 @@ const fs   = require('fs');
 const os   = require('os');
 const path = require('path');
 const { installPayloadCapture, getCapturedPayloads } = require('../../cdp/denario-cdp-helpers');
+const { reqInicio, reqRechazo, reqPestanaRoja, reqIds, conReq } = require('../req-enviar');
 
 const LOCAL_QUERY_PATH    = path.resolve(__dirname, '../../db/local-query.js');
 const COTEJO_PAYLOAD_PATH = path.resolve(__dirname, '../../db/cotejo-payload.js');
@@ -43,10 +44,14 @@ async function runDepositos(pg, DATA) {
     verdicts.push({ id, descripcion: desc, resultado, nota, ms: Date.now() - t0 });
   }
 
+  // Regresión permanente del REQ «Botón Enviar y campos obligatorios» (ver ../req-enviar.js)
+  const reqV = (r) => v(r.id, r.descripcion, r.resultado, r.nota);
+
   const TODOS = [
     'DM-DEP-001','DM-DEP-002','DM-DEP-004','DM-DEP-005','DM-DEP-006',
     'DM-DEP-009','DM-DEP-010','DM-DEP-014','DM-DEP-017','DM-DEP-018',
     'DM-DEP-019','DM-DEP-020',
+    ...reqIds('DEP'),
   ];
 
   if (!DATA.aplica) {
@@ -516,10 +521,20 @@ async function runDepositos(pg, DATA) {
   } catch (e) {
     v('DM-DEP-002', 'Click DEPÓSITO → form', 'FAIL', e.message);
     ['DM-DEP-004','DM-DEP-005','DM-DEP-006','DM-DEP-009','DM-DEP-010',
-     'DM-DEP-014','DM-DEP-017','DM-DEP-018','DM-DEP-019','DM-DEP-020'].forEach(id =>
+     'DM-DEP-014','DM-DEP-017','DM-DEP-018','DM-DEP-019','DM-DEP-020',
+     ...reqIds('DEP')].forEach(id =>
       v(id, id, 'BLOCKED', 'DEP-002 falló'));
     return { verdicts, msTotal: Date.now() - t0 };
   }
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // REQ Enviar · E1 + E2 — formulario recién abierto, todo vacío
+  // ══════════════════════════════════════════════════════════════════════════════
+  // Depósitos no tiene selector de cliente: la transacción empieza al abrirse el
+  // formulario, así que éste es el momento equivalente al que exige la regla R1.
+  // Ambas funciones capturan sus propios errores: nunca tumban el módulo.
+  reqV(await reqInicio(pg, 'DEP'));
+  reqV(await reqRechazo(pg, 'DEP'));
 
   // ══════════════════════════════════════════════════════════════════════════════
   // DM-DEP-004: Seleccionar banco
@@ -775,6 +790,12 @@ async function runDepositos(pg, DATA) {
   // DM-DEP-017: Click Enviar → 2-3 alertas → Enviado
   // ══════════════════════════════════════════════════════════════════════════════
   if (detalleOk) {
+    // ── REQ Enviar · E5 ───────────────────────────────────────────────────────
+    // El depósito está COMPLETO y a punto de enviarse: si alguna pestaña sigue
+    // en rojo aquí, el rojo no corresponde a ningún campo pendiente (F1).
+    // Sólo observa — no pulsa Enviar.
+    reqV(await reqPestanaRoja(pg, 'DEP'));
+
     try {
       const enviarCoords = await pg.evaluate(() => {
         const btn = document.querySelector('ion-button.imagenEnviar');
@@ -969,4 +990,4 @@ async function runDepositos(pg, DATA) {
   return { verdicts, msTotal: Date.now() - t0 };
 }
 
-module.exports = { runDepositos };
+module.exports = { runDepositos: conReq('DEP', runDepositos) };

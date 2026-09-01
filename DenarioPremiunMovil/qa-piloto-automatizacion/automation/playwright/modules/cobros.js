@@ -5,6 +5,7 @@ const fs   = require('fs');
 const os   = require('os');
 const path = require('path');
 const { installPayloadCapture, getCapturedPayloads } = require('../../cdp/denario-cdp-helpers');
+const { reqInicio, reqRechazo, reqPestanaRoja, reqIds, conReq } = require('../req-enviar');
 
 const LOCAL_QUERY_PATH    = path.resolve(__dirname, '../../db/local-query.js');
 const COTEJO_PAYLOAD_PATH = path.resolve(__dirname, '../../db/cotejo-payload.js');
@@ -65,6 +66,9 @@ async function runCobros(pg, DATA) {
     verdicts.push({ id, descripcion: desc, resultado, nota, ms: Date.now() - t0 });
   }
 
+  // Regresión permanente del REQ «Botón Enviar y campos obligatorios» (../req-enviar.js)
+  const reqV = (r) => v(r.id, r.descripcion, r.resultado, r.nota);
+
   // Orden de ejecución (Fase 1 primero; Fase 2 al final como BLOCKED-fase2)
   const FASE2 = ['DM-COB-033','DM-COB-034',
     'DM-COB-014','DM-COB-015','DM-COB-028','DM-COB-029','DM-COB-041','DM-COB-042',
@@ -72,7 +76,7 @@ async function runCobros(pg, DATA) {
   const TODOS = ['DM-COB-001','DM-COB-002','DM-COB-004','DM-COB-006','DM-COB-007',
     'DM-COB-008','DM-COB-009','DM-COB-016','DM-COB-018','DM-COB-019','DM-COB-022',
     'DM-COB-024','DM-COB-026','DM-COB-020','DM-COB-021','DM-COB-036','DM-COB-037',
-    'DM-COB-044','DM-COB-045', ...FASE2];
+    'DM-COB-044','DM-COB-045', ...FASE2, ...reqIds('COB')];
 
   if (!DATA.aplica) {
     TODOS.forEach(id => v(id, id, 'N/A', 'aplica=false en perfil cobros'));
@@ -652,6 +656,17 @@ async function runCobros(pg, DATA) {
     v('DM-COB-004', 'Seleccionar cliente → tabs habilitadas', 'FAIL', e.message);
   }
 
+  // ─── REQ Enviar · E1 + E2 — cliente elegido, aún sin documento ni pago ────────
+  // 🔴 R1 · después de DM-COB-004: la transacción empieza al elegir el cliente.
+  // `naceDeshabilitado` declarado: en Cobros es COHERENTE que Enviar nazca
+  // deshabilitado, porque antes hay que agregar un método de pago. Así queda
+  // como PASS con motivo y no como una falsa alarma en cada corrida — pero si
+  // algún día naciera habilitado, la nota del caso lo dirá.
+  reqV(await reqInicio(pg, 'COB', {
+    naceDeshabilitado: 'primero hay que agregar un método de pago',
+  }));
+  reqV(await reqRechazo(pg, 'COB'));
+
   // ─── DM-COB-007: Tab Documentos → lista + leyenda ─────────────────────────────
   let hayDocs = false;
   try {
@@ -786,6 +801,15 @@ async function runCobros(pg, DATA) {
     if (!clienteOk || !hayDocs) {
       v('DM-COB-018', 'Guardar cobro → alert', 'N/A', 'sin cliente/documento válido para guardar');
     } else {
+      // ── REQ Enviar · E5 ─────────────────────────────────────────────────────
+      // El cobro está completo: documento marcado y pago cuadrado con el total
+      // (DM-COB-040/012/043 dejaron la diferencia en azul). Si alguna pestaña
+      // sigue en rojo aquí, no corresponde a ningún campo pendiente (F1).
+      // Se mide antes de Guardar, que es el punto más avanzado al que llega la
+      // Fase 1 del guion: el Enviar de Cobros vive en DM-COB-019 y depende del
+      // adjunto obligatorio.
+      reqV(await reqPestanaRoja(pg, 'COB', { rotar: true }));
+
       await clickGuardarEnviar('imagenGuardar');
       await pg.waitForTimeout(1500);
       const alertMsg = await readAlert();
@@ -930,4 +954,4 @@ async function runCobros(pg, DATA) {
   return { verdicts, msTotal: Date.now() - t0 };
 }
 
-module.exports = { runCobros };
+module.exports = { runCobros: conReq('COB', runCobros) };

@@ -3,6 +3,7 @@ const fs   = require('fs');
 const os   = require('os');
 const path = require('path');
 const { installPayloadCapture, getCapturedPayloads } = require('../../cdp/denario-cdp-helpers');
+const { reqInicio, reqRechazo, reqPestanaRoja, reqIds, conReq } = require('../req-enviar');
 
 const LOCAL_QUERY_PATH    = path.resolve(__dirname, '../../db/local-query.js');
 const COTEJO_PAYLOAD_PATH = path.resolve(__dirname, '../../db/cotejo-payload.js');
@@ -48,10 +49,13 @@ async function runClientes(pg, DATA) {
     verdicts.push({ id, descripcion: desc, resultado, nota, ms: Date.now() - t0 });
   }
 
+  // Regresión permanente del REQ «Botón Enviar y campos obligatorios» (../req-enviar.js)
+  const reqV = (r) => v(r.id, r.descripcion, r.resultado, r.nota);
+
   if (!DATA.aplica) {
     ['DM-CLT-001','DM-CLT-002','DM-CLT-003','DM-CLT-009','DM-CLT-013',
      'DM-CLT-016','DM-CLT-017','DM-CLT-019','DM-CLT-021','DM-CLT-024',
-     'DM-CLT-026','DM-CLT-031'].forEach(id =>
+     'DM-CLT-026','DM-CLT-031', ...reqIds('CLT')].forEach(id =>
       v(id, id, 'N/A', 'aplica=false en perfil cliente')
     );
     return { verdicts, msTotal: Date.now() - t0 };
@@ -411,11 +415,24 @@ async function runClientes(pg, DATA) {
     );
   } catch (e) {
     v('DM-CLT-019', 'CLIENTE POTENCIAL → formulario con botones disabled', 'FAIL', e.message);
-    ['DM-CLT-021','DM-CLT-024','DM-CLT-026','DM-CLT-031'].forEach(id =>
+    ['DM-CLT-021','DM-CLT-024','DM-CLT-026','DM-CLT-031',
+     ...reqIds('CLT')].forEach(id =>
       v(id, id, 'BLOCKED', 'CLT-019 falló')
     );
     return { verdicts, msTotal: Date.now() - t0 };
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // REQ Enviar · E1 + E2 — formulario de cliente potencial recién abierto
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Clientes NO tiene paso de «elegir cliente»: la transacción arranca al abrir
+  // el formulario, así que aquí es donde manda la regla R1.
+  // 1.ª vuelta (mio_parts, 31/08): el botón NACE HABILITADO y, al pulsar en
+  // blanco, marca 8 campos + alerta `Nombre obligatorio.` ⇒ C1 y C2 cumplidos
+  // aunque el botón no se deshabilite. Si algún día nace deshabilitado, E1 lo
+  // reportará como FAIL y habrá que decidir si es una regresión o un cambio.
+  reqV(await reqInicio(pg, 'CLT'));
+  reqV(await reqRechazo(pg, 'CLT'));
 
   // ═══════════════════════════════════════════════════════════════════════════
   // DM-CLT-021: Llenar campos obligatorios → botones habilitados
@@ -612,6 +629,13 @@ async function runClientes(pg, DATA) {
     await pg.mouse.click(reabrirCoords.x, reabrirCoords.y, { delay: 80 });
     await pg.waitForSelector('app-client-new-potential-client', { state: 'visible', timeout: 8000 });
     await pg.waitForTimeout(600);
+
+    // ── REQ Enviar · E5 ───────────────────────────────────────────────────────
+    // El potencial se guardó y se reabrió completo. En la 1.ª vuelta este caso
+    // salió N/A porque las pestañas de Clientes (GENERAL/ADJUNTOS) nunca reciben
+    // el marcador, así que el defecto F1 no puede darse aquí — se mide igual
+    // para que un cambio de comportamiento no pase inadvertido.
+    reqV(await reqPestanaRoja(pg, 'CLT', { rotar: true }));
 
     // Click Enviar (buscar globalmente)
     const enviarCoords = await pg.evaluate(() => {
@@ -821,4 +845,4 @@ async function runClientes(pg, DATA) {
   return { verdicts, msTotal: Date.now() - t0 };
 }
 
-module.exports = { runClientes };
+module.exports = { runClientes: conReq('CLT', runClientes) };

@@ -5,6 +5,7 @@ const fs   = require('fs');
 const os   = require('os');
 const path = require('path');
 const { installPayloadCapture, getCapturedPayloads } = require('../../cdp/denario-cdp-helpers');
+const { reqInicio, reqRechazo, reqPestanaRoja, reqIds, conReq } = require('../req-enviar');
 
 const LOCAL_QUERY_PATH    = path.resolve(__dirname, '../../db/local-query.js');
 const COTEJO_PAYLOAD_PATH = path.resolve(__dirname, '../../db/cotejo-payload.js');
@@ -39,10 +40,14 @@ async function runInventarios(pg, DATA) {
     verdicts.push({ id, descripcion: desc, resultado, nota, ms: Date.now() - t0 });
   }
 
+  // Regresión permanente del REQ «Botón Enviar y campos obligatorios» (../req-enviar.js)
+  const reqV = (r) => v(r.id, r.descripcion, r.resultado, r.nota);
+
   const TODOS = [
     'DM-INV-001','DM-INV-002','DM-INV-004','DM-INV-008','DM-INV-010',
     'DM-INV-011','DM-INV-012','DM-INV-016','DM-INV-017','DM-INV-020',
     'DM-INV-021','DM-INV-022','DM-INV-023','DM-INV-025','DM-INV-026','DM-INV-028',
+    ...reqIds('INV'),
   ];
 
   if (!DATA.aplica) {
@@ -631,6 +636,14 @@ async function runInventarios(pg, DATA) {
   }
 
   // ══════════════════════════════════════════════════════════════════════════════
+  // REQ Enviar · E1 + E2 — cliente elegido, sin capturar todavía ningún producto
+  // ══════════════════════════════════════════════════════════════════════════════
+  // 🔴 R1 · después de DM-INV-004 a propósito: la transacción empieza al elegir
+  //    el cliente. Antes de eso el botón está deshabilitado por otro motivo.
+  reqV(await reqInicio(pg, 'INV'));
+  reqV(await reqRechazo(pg, 'INV'));
+
+  // ══════════════════════════════════════════════════════════════════════════════
   // DM-INV-008: Tab Inventario → lista de productos (al menos 1 item)
   // ══════════════════════════════════════════════════════════════════════════════
   try {
@@ -864,6 +877,13 @@ async function runInventarios(pg, DATA) {
   // ══════════════════════════════════════════════════════════════════════════════
   // DM-INV-022: Click Enviar → 2-3 alertas → navega a home inventarios
   // ══════════════════════════════════════════════════════════════════════════════
+  // ── REQ Enviar · E5 ─────────────────────────────────────────────────────────
+  // El inventario ya se guardó con éxito en INV-021: está completo. Cualquier
+  // pestaña en rojo a estas alturas no corresponde a un campo pendiente (F1).
+  // Aquí sí se rota entre pestañas —el registro ya está guardado, así que navegar
+  // no puede perder datos— para poder juzgar también la que estuviera activa.
+  reqV(await reqPestanaRoja(pg, 'INV', { rotar: true }));
+
   try {
     const eCoords = await pg.evaluate(() => {
       const btn = document.querySelector('ion-button.imagenEnviar');
@@ -1088,4 +1108,4 @@ async function runInventarios(pg, DATA) {
   return { verdicts, msTotal: Date.now() - t0 };
 }
 
-module.exports = { runInventarios };
+module.exports = { runInventarios: conReq('INV', runInventarios) };
