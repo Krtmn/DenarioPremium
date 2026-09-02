@@ -50,6 +50,7 @@ describe('ClienteSelectorComponent', () => {
       selectionCoModule: 'ped',
       currencyModule: new CurrencyModules(1, 1, false, false, true),
       idEnterprise: 1,
+      getTag: (t: string) => t,
       ensureTagsLoaded: jasmine.createSpy('ensureTagsLoaded').and.resolveTo(),
       onCLientChanged: jasmine.createSpy('onCLientChanged'),
     } as Partial<ClienteSelectorService>;

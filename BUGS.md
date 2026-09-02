@@ -8,6 +8,17 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-PM-PHONE-001] Pago Móvil: teléfono obligatorio en Enviar
+
+- **Síntoma:** En Pagos / Pago Móvil, Nº de Teléfono vacío no marcaba error (rojo + "Campo Obligatorio") aunque el resto de campos sí.
+- **Causa:** `getPagoMovilFieldErrors` no incluía `numeroTelefono`/`codigoTelefono`; el HTML no aplicaba `shouldShowPaymentFieldError` en ese input.
+- **Fix:** Validar prefijo + al menos 7 dígitos; UI con `inp-write` + mensaje; persistido PM exige `nuPhoneNumber` (y `nuDocument`).
+- **Evitar:** No omitir el teléfono al validar completitud de PM.
+- **Archivos:** `collection-logic.service.ts` (+ spec), `cobro-pagos.component.html`, bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [COB-TR-001] Transferencia: Enviar OFF con monto exacto (`clientBankAccount`)
 
 - **Síntoma:** Con Transferencia y monto exacto, Enviar no se habilitaba; con exceso sí (anticipo automático).

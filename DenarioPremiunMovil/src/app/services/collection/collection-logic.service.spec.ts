@@ -1619,6 +1619,8 @@ describe('CollectionService', () => {
         ] as any;
         service.localCurrency = service.currencyList[0];
         service.hardCurrency = service.currencyList[1];
+        service.currencySelected = { localCurrency: 'true' } as any;
+        service.currencyConversion = { coCurrency: 'Bs' } as any;
         spyOn(service as any, 'syncPrepaidDifferenceAmounts').and.returnValue(150.5);
         spyOn(service as any, 'syncExchangeRateToCollectionHeader').and.stub();
         spyOn(service, 'getEffectiveExchangeRate').and.returnValue(36);

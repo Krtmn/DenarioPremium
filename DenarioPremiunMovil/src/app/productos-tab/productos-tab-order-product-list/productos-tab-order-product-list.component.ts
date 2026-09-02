@@ -14,7 +14,10 @@ import { ImageServicesService } from 'src/app/services/imageServices/image-servi
 import { MessageService } from 'src/app/services/messageService/message.service';
 import { ProductStructureService } from 'src/app/services/productStructures/product-structure.service';
 import { ProductService } from 'src/app/services/products/product.service';
+import { register } from 'swiper/element/bundle';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
+
+register();
 
 @Component({
   selector: 'productos-tab-order-product-list',
@@ -74,6 +77,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   detailModal = false;
   discountModal = false;
+  imageZoomOpen = false;
   productoModal!: OrderUtil;
   noProductsAlertShown = false;
 
@@ -327,9 +331,27 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.detailModal = show;
 
     if (!show) {
+      this.closeImageZoom();
       //al ocultar el modal agregamos el producto al carrito
       this.orderServ.alCarrito(this.productoModal);
     }
+  }
+
+  openImageZoom(event?: Event): void {
+    event?.stopPropagation();
+    this.imageZoomOpen = true;
+  }
+
+  closeImageZoom(): void {
+    this.imageZoomOpen = false;
+  }
+
+  getProductZoomImageSrc(): string {
+    if (!this.productoModal?.coProduct) {
+      return '../../../assets/images/nodisponible.png';
+    }
+    return this.imageServices.getImgForProduct(this.productoModal.coProduct)
+      || '../../../assets/images/nodisponible.png';
   }
 
   // orderServ.getTag(tagName: string){

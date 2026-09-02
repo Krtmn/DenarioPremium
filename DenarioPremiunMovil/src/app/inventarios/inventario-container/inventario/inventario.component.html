@@ -1,15 +1,20 @@
 <div class="cobroComponent" sticky-below-view>
     <ion-segment value="default" [(ngModel)]="segment" scrollable>
-        <ion-segment-button value="default" (click)="onChangeTab(segment)">
+        <ion-segment-button value="default" (click)="onChangeTab(segment)"
+            [class.stock-send-error-hint]="shouldShowSendErrorHintOnTab('default')">
             <ion-label>{{this.inventariosLogicService.inventarioTags.get('INV_GENERAL_TAB')}}</ion-label>
         </ion-segment-button>
-        <ion-segment-button *ngIf="this.inventariosLogicService.hideTab" value="inventario" [disabled]="!stockValid" (click)="onChangeTab(segment)">
+        <ion-segment-button *ngIf="this.inventariosLogicService.hideTab" value="inventario" [disabled]="!stockValid"
+            (click)="onChangeTab(segment)"
+            [class.stock-send-error-hint]="shouldShowSendErrorHintOnTab('inventario')">
             <ion-label>{{this.inventariosLogicService.inventarioTags.get('INV_INVENTARIO_TAB')}}</ion-label>
         </ion-segment-button>
-        <ion-segment-button value="actividades" [disabled]="!stockValid" (click)="onChangeTab(segment)">
+        <ion-segment-button value="actividades" [disabled]="!stockValid" (click)="onChangeTab(segment)"
+            [class.stock-send-error-hint]="shouldShowSendErrorHintOnTab('actividades')">
             <ion-label>{{this.inventariosLogicService.inventarioTags.get('INV_ACTIVIDADES_TAB')}}</ion-label>
         </ion-segment-button>
-        <ion-segment-button value="adjuntos" [disabled]="!stockValid" (click)="onChangeTab(segment)">
+        <ion-segment-button value="adjuntos" [disabled]="!stockValid" (click)="onChangeTab(segment)"
+            [class.stock-send-error-hint]="shouldShowSendErrorHintOnTab('adjuntos')">
             <ion-label>{{this.inventariosLogicService.inventarioTags.get('INV_ADJUNTOS_TAB')}}</ion-label>
         </ion-segment-button>
     </ion-segment>

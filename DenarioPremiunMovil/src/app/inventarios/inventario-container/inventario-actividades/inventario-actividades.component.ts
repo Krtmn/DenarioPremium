@@ -115,8 +115,10 @@ public modalCtrl = inject(ModalController);
     this.inventoryRows = Array.from(groupedRows.values());
   }
   async preguntarSugerirPedido(){
-    await this.inventariosLogicService.calcularTotalesSugerenciaPedido(this.dbServ.getDatabase());
-    
+    const db = this.dbServ.getDatabase();
+    await this.inventariosLogicService.calcularTotalesSugerenciaPedido(db);
+    await this.inventariosLogicService.saveSuggestedOrderSnapshot(db);
+
       const modal = await this.modalCtrl.create({
       component: InventarioSugeridoPreviewComponent,
       cssClass: 'inventario-sugerido-modal',
@@ -240,6 +242,11 @@ public modalCtrl = inject(ModalController);
       toSend= true;
     }
 
+    await this.inventariosLogicService.saveSuggestedOrderSnapshot(
+      this.dbServ.getDatabase(),
+      monedaSeleccionadaSugerencia,
+    );
+
     this.orderServ.datosPedidoSugerido = {
       empresa: this.inventariosLogicService.empresaSeleccionada,
       cliente: this.inventariosLogicService.cliente,
@@ -309,10 +316,7 @@ public modalCtrl = inject(ModalController);
     this.inventariosLogicService.productTypeStocksMap = new Map<number, number>();
     this.inventariosLogicService.setVariablesMap();
 
-    if (this.inventariosLogicService.newClientStock.clientStockDetails.length === 0) {
-      this.inventariosLogicService.cannotSendClientStock = true;
-    }
-
+    this.inventariosLogicService.notifyStockEdited();
     this.rebuildTableData();
   }
 

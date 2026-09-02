@@ -1,25 +1,17 @@
 $colorVerde: #59b02d;
-$colorVerdeRegistrar: #7dc60f;
-$colorAmarillo: #daab19;
-$colorGris: #666666;
 $colorLila: #430197;
-$fondoVerde: #59b02d;
-$fondoAmarillo: #daab19;
-$fondoLila: #430197;
 
 .tablaInfoClientes ion-col {
-    // border: 1px solid #000000;
-    display: block;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.fondoVerde {
-  background: #59b02d !important; /* Usa tu color verde corporativo */
-  --background: #59b02d !important;
-  color: #fff !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+.fondoVerde {
+  background: $colorVerde !important;
+  --background: #{$colorVerde} !important;
+  color: #fff !important;
+}
 
 .col {
   border: solid 1px $colorLila;
@@ -35,65 +27,34 @@ $fondoLila: #430197;
   border-bottom: solid 1px $colorLila;
 }
 
-
-
-.tablaDocumentosVenta ion-col {
-    border: 1px solid $colorLila;
-    flex-wrap: nowrap;
-    overflow: auto;
-    white-space: nowrap;
-}
-
-.titulodepositos{
-  font-size: 18px;
-  color: $colorLila;
-  text-align: center;
-}
-
 .cabecera .col {
-  background-color:$colorLila;
-  color: #ffffff;
+  background-color: $colorLila;
+  color: #fff;
 }
 
-
-.tablaDocVentas {
-    flex-wrap: nowrap;
+.tablaDocVentas,
+.tablaDocVentasGrip {
+  flex-wrap: nowrap;
 }
 
 .tablaDocVentasGrip {
-    flex-wrap: nowrap;
-    overflow-x: scroll !important;
-    overflow-y: hidden;
-    color: #000000;
-    font-size: 12px;
-}
-
-
-
-.popover {
-    --width: 100% !important;
-    --offset-x: 0% !important;
-    ;
-    --offset-y: 72% !important;
-    ;
-}
-
-.good {
-    --border-color: #0ce642;
+  overflow-x: scroll !important;
+  overflow-y: hidden;
+  color: #000;
+  font-size: 12px;
 }
 
 ion-checkbox {
   --size: 15px;
-  --checkbox-background-checked: #59b02d;
+  --checkbox-background-checked: #{$colorVerde};
 }
 
 ion-checkbox::part(container) {
-  // border-radius: 6px;
-  border: 2px solid #59b02d;
+  border: 2px solid $colorVerde;
 }
 
-.padding0{
-  padding: 0!important;
+.padding0 {
+  padding: 0 !important;
 }
 
 ion-modal.collectDiscounts {
@@ -102,25 +63,29 @@ ion-modal.collectDiscounts {
   --height: 50%;
   --border-radius: 6px;
   --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
+  --backdrop-opacity: 0.75;
+}
+
+.collectDiscounts::part(backdrop) {
+  background: rgba(0, 0, 0, 0.75);
 }
 
 .compartirDoc-header {
   --background: var(--ion-background-color);
   z-index: 10;
+
   ion-item {
     --inner-padding-end: 12px;
     --inner-padding-start: 12px;
   }
 }
 
-/* Dejamos espacio en el contenido para header y footer */
 .compartirDoc-content {
-  padding-top: 56px;   /* ajustar si tu header ocupa más/menos */
-  padding-bottom: 82px; /* igual que antes para no tapar footer */
+  padding-top: 56px;
+  padding-bottom: 82px;
   --overflow: auto;
 }
 
-/* Asegurar que el footer esté por delante del contenido */
 .compartirDoc-footer {
   z-index: 11;
 }
@@ -138,10 +103,10 @@ ion-modal.detail-doc-modal::part(content) {
 .detail-doc-modal-content {
   flex: 1 1 auto;
   --background: #fff;
-}
 
-.detail-doc-modal-content .contenedorModalActividades {
-  padding-bottom: 8px;
+  .contenedorModalActividades {
+    padding-bottom: 8px;
+  }
 }
 
 .detailDoc-scroll {
@@ -153,16 +118,16 @@ ion-modal.detail-doc-modal::part(content) {
   flex-shrink: 0;
   z-index: 12;
   box-shadow: 0 -4px 12px rgba(67, 1, 151, 0.08);
-}
 
-.detail-doc-modal-footer ion-toolbar {
-  --background: #fff;
-  --padding-top: 8px;
-  --padding-start: 0;
-  --padding-end: 0;
-  --padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
-  --min-height: auto;
-  border-top: 1px solid rgba(67, 1, 151, 0.12);
+  ion-toolbar {
+    --background: #fff;
+    --padding-top: 8px;
+    --padding-start: 0;
+    --padding-end: 0;
+    --padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    --min-height: auto;
+    border-top: 1px solid rgba(67, 1, 151, 0.12);
+  }
 }
 
 .detail-doc-modal-footer__grid {
@@ -179,57 +144,39 @@ ion-modal.detail-doc-modal::part(content) {
   margin-top: 4px;
 }
 
-// ...existing code...
-/* oscurecer backdrop del ion-modal */
-.collectDiscounts {
-  --backdrop-opacity: 0.75; /* ajusta opacidad */
-}
-
-/* en caso de que la parte backdrop esté disponible */
-.collectDiscounts::part(backdrop) {
-  background: rgba(0,0,0,0.75);
-}
-
-/* fallback: overlay fijo que se muestra cuando el modal está abierto */
-.modal-dim-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  z-index: 9990;
-  pointer-events: none;
-}
-
 ion-input.input-rojo,
 .input-rojo ion-input {
   --border-color: #e53935 !important;
-  --highlight-color: #e53935 !important;
   --highlight-color-focused: #e53935 !important;
-  --highlight-color-valid: #e53935 !important;
-  --highlight-color-invalid: #e53935 !important;
 }
 
 ion-input.inp-write,
 .inp-write ion-input {
   --border-color: #{$colorVerde} !important;
-  --highlight-color: #{$colorVerde} !important;
   --highlight-color-focused: #{$colorVerde} !important;
-  --highlight-color-valid: #{$colorVerde} !important;
+}
+
+.retention-selector-label,
+.retention-selector-empty-msg {
+  display: block;
+  font-size: 12px;
+  color: #666;
+}
+
+.retention-send-error-hint {
+  color: #e53935;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem 0.5rem;
 }
 
 .retention-selector-label {
-  display: block;
   margin: 4px 0 6px;
-  font-size: 12px;
   font-weight: 600;
-  color: #666666;
 }
 
 .retention-selector-empty-msg {
-  display: block;
   margin-top: 4px;
-  font-size: 12px;
-  font-weight: 400;
-  color: #666666;
 }
 
 .retention-selector-item {
@@ -246,10 +193,10 @@ ion-input.inp-write,
   padding-left: 5%;
   width: 100%;
   margin-bottom: 2px;
-}
 
-.retention-selector-box ion-select::part(icon) {
-  display: none !important;
+  ion-select::part(icon) {
+    display: none !important;
+  }
 }
 
 .retention-detail-title {
@@ -257,7 +204,6 @@ ion-input.inp-write,
   margin: 6px 0 4px;
   font-size: 12px;
   font-weight: 600;
-  color: #000000;
 }
 
 .retention-line-block {
@@ -299,7 +245,7 @@ ion-input.inp-write,
   align-items: center;
   font-size: 12px;
   color: #333;
-  margin: 4px 0 8px 0;
+  margin: 4px 0 8px;
   white-space: nowrap;
   overflow: hidden;
 }
@@ -314,9 +260,8 @@ ion-input.inp-write,
   appearance: none;
   -webkit-appearance: none;
   background: transparent;
-  border: none;
+  border: 0;
   box-shadow: none;
-  text-shadow: none;
   padding: 0;
   color: inherit;
   font: inherit;
@@ -337,17 +282,9 @@ ion-input.inp-write,
   display: inline-block;
 }
 
-.legend-blue {
-  background: #2f6fdd;
-}
-
-.legend-red {
-  background: #d64545;
-}
-
-.legend-black {
-  background: #000000;
-}
+.legend-blue { background: #2f6fdd; }
+.legend-red { background: #d64545; }
+.legend-black { background: #000; }
 
 .legend-popover {
   padding: 10px 12px;
@@ -356,33 +293,30 @@ ion-input.inp-write,
   max-width: 220px;
 }
 
-:host {
+:host,
+.cobro-documents-viewport,
+.cobro-documents-shell,
+.documents-view,
+.documents-table-panel {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
   width: 100%;
-  height: 100%;
   min-height: 0;
   overflow: hidden;
 }
 
-:host > ion-item {
-  flex-shrink: 0;
+:host {
+  height: 100%;
 }
 
-:host > .cobro-documents-viewport {
-  flex: 1 1 auto;
-  min-height: 0;
+:host > ion-item,
+.cobro-documents-shell > ion-item {
+  flex-shrink: 0;
 }
 
 .cobro-documents-viewport {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  width: 100%;
-  min-height: 0;
-  overflow: hidden;
   --documents-pagination-height: 52px;
 }
 
@@ -399,38 +333,12 @@ ion-input.inp-write,
   padding-bottom: calc(var(--documents-pagination-height) + env(safe-area-inset-bottom, 0px));
 }
 
-.cobro-documents-shell {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  width: 100%;
-  min-height: 0;
-  overflow: hidden;
-  gap: 0;
-}
-
-.cobro-documents-shell > ion-item {
-  flex-shrink: 0;
-}
-
-.cobro-documents-shell > .documents-view {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
-}
-
+.cobro-documents-shell > .documents-view,
 .documents-view {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  width: 100%;
-  min-height: 0;
-  overflow: hidden;
   gap: 4px;
 }
 
 .documents-view .saldo-legend {
-  flex-shrink: 0;
   margin: 0;
   padding: 6px 8px;
   border-radius: 8px;
@@ -439,12 +347,6 @@ ion-input.inp-write,
 }
 
 .documents-table-panel {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  width: 100%;
-  min-height: 0;
-  overflow: hidden;
   position: relative;
   border: 1px solid rgba(67, 1, 151, 0.14);
   border-radius: 10px;
@@ -462,7 +364,6 @@ ion-input.inp-write,
   padding: 12px;
   background: #fafafa;
   pointer-events: none;
-  transition: opacity 0.18s ease;
 }
 
 .documents-table-panel--ready .documents-table-skeleton {
@@ -471,35 +372,18 @@ ion-input.inp-write,
 
 .documents-table-skeleton__header,
 .documents-table-skeleton__row {
+  flex-shrink: 0;
   border-radius: 6px;
-  background: linear-gradient(
-    90deg,
-    rgba(67, 1, 151, 0.08) 0%,
-    rgba(67, 1, 151, 0.14) 50%,
-    rgba(67, 1, 151, 0.08) 100%
-  );
+  background: linear-gradient(90deg, rgba(67, 1, 151, 0.08), rgba(67, 1, 151, 0.14), rgba(67, 1, 151, 0.08));
   background-size: 200% 100%;
   animation: documents-table-skeleton-shimmer 1.2s ease-in-out infinite;
 }
 
-.documents-table-skeleton__header {
-  flex-shrink: 0;
-  height: 44px;
-}
-
-.documents-table-skeleton__row {
-  flex-shrink: 0;
-  height: 42px;
-}
+.documents-table-skeleton__header { height: 44px; }
+.documents-table-skeleton__row { height: 42px; }
 
 @keyframes documents-table-skeleton-shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-
-  100% {
-    background-position: -200% 0;
-  }
+  to { background-position: -200% 0; }
 }
 
 .documents-table-scroll {
@@ -507,28 +391,15 @@ ion-input.inp-write,
   min-height: 0;
   overflow: auto;
   opacity: 0;
-  transition: opacity 0.18s ease;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   touch-action: pan-x pan-y;
   contain: strict;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(67, 1, 151, 0.35) transparent;
   background: #fafafa;
 }
 
 .documents-table-panel--ready .documents-table-scroll {
   opacity: 1;
-}
-
-.documents-table-scroll::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-.documents-table-scroll::-webkit-scrollbar-thumb {
-  background: rgba(67, 1, 151, 0.35);
-  border-radius: 999px;
 }
 
 .documents-table-stack {
@@ -604,7 +475,6 @@ ion-input.inp-write,
   color: #fff;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.01em;
   padding: 10px 7px;
   min-height: 44px;
   border-right-color: rgba(255, 255, 255, 0.18);
@@ -659,15 +529,10 @@ ion-input.inp-write,
   gap: 8px;
   width: 100%;
   flex: 0 0 auto;
-  flex-shrink: 0;
   margin-top: auto;
   padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid rgba(67, 1, 151, 0.12);
   background: #fff;
-  box-shadow: 0 -4px 12px rgba(67, 1, 151, 0.08);
-}
-
-.document-pagination--module-footer {
   box-shadow: 0 -4px 12px rgba(67, 1, 151, 0.08);
 }
 
@@ -684,7 +549,6 @@ ion-input.inp-write,
   min-width: 36px;
   min-height: 36px;
   flex: 0 0 auto;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
 
   &:not(:disabled):active {
     background: rgba(67, 1, 151, 0.08);
@@ -731,35 +595,36 @@ ion-input.inp-write,
   align-items: center;
   flex-wrap: nowrap;
   column-gap: 8px;
-}
 
-.missing-retention-row .label-col {
-  flex: 0 0 auto;
-  padding-right: 6px;
-}
+  .label-col {
+    flex: 0 0 auto;
+    padding-right: 6px;
 
-.missing-retention-row .label-col ion-label {
-  white-space: nowrap;
-  margin-right: 0;
-}
+    ion-label {
+      white-space: nowrap;
+      margin-right: 0;
+    }
+  }
 
-.missing-retention-row .toggle-col {
-  flex: 0 0 auto;
+  .toggle-col {
+    flex: 0 0 auto;
+  }
 }
 
 ion-grid.ion-margin-top ion-row > ion-col.padding0:first-child {
   flex: 0 0 auto;
+
+  ion-label {
+    white-space: nowrap;
+  }
 }
 
-ion-grid.ion-margin-top ion-row > ion-col.padding0:first-child ion-label {
-  white-space: nowrap;
-}
 .tituloModulos {
-    color: #fff;
-    font-weight: 700;
-    font-family: sans-serif;
-    margin: 0;
-    font-size: 24px;
-    padding-top: 7px;
-    text-transform: capitalize !important;
+  color: #fff;
+  font-weight: 700;
+  font-family: sans-serif;
+  margin: 0;
+  font-size: 24px;
+  padding-top: 7px;
+  text-transform: capitalize !important;
 }

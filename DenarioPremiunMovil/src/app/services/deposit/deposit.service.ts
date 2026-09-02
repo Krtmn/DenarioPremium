@@ -14,8 +14,9 @@ import { BankAccount } from 'src/app/modelos/tables/bankAccount';
 import { CollectDeposit } from 'src/app/modelos/collect-deposit';
 import { HistoryTransaction } from '../historyTransaction/historyTransaction';
 import { ItemListaDepositos } from 'src/app/depositos/item-lista-depositos';
-import { DEPOSITO_STATUS_NEW, DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { DEPOSIT_APPROVAL_STATUS_REJECTED, DEPOSITO_STATUS_NEW, DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 import { Return } from 'src/app/modelos/tables/return';
+import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
 
 @Injectable({
   providedIn: 'root'
@@ -24,12 +25,25 @@ export class DepositService {
 
   private static readonly DEPOSIT_PAYMENT_METHODS_SQL = "('ef', 'ch')";
 
+  /** Excluye cobros ya usados en depósitos activos; libera los de depósitos rechazados en Web. */
+  private static readonly DEPOSIT_COLLECTS_BLOCKING_SUBQUERY =
+    'c.co_collection NOT IN (' +
+    '  SELECT dc.co_collection FROM deposit_collects dc' +
+    '  INNER JOIN deposits d ON d.co_deposit = dc.co_deposit' +
+    '  WHERE NOT (' +
+    '    d.st_deposit = ' + DEPOSIT_APPROVAL_STATUS_REJECTED +
+    '    AND d.st_delivery = ' + DEPOSITO_STATUS_SENT +
+    '    AND IFNULL(d.id_deposit, 0) > 0' +
+    '  )' +
+    ')';
+
   public globalConfig = inject(GlobalConfigService);
   public services = inject(ServicesService);
   public dateServ = inject(DateServiceService);
   private currencyServices = inject(CurrencyService);
   public enterpriseServ = inject(EnterpriseService);
   public historyTransaction = inject(HistoryTransaction);
+  public adjuntoService = inject(AdjuntoService);
 
 
   private database!: SQLiteObject;
@@ -74,6 +88,13 @@ export class DepositService {
   /** Cambios locales desde el último guardado / apertura limpia. */
   public depositDirtySincePersist = false;
 
+  /** General válida: banco seleccionado (desbloquea pestañas y base Guardar/Enviar). */
+  public generalTabValidForSave = false;
+  public sendValidationAttempted = false;
+  public sendBlockedByFields = false;
+  public depositSendFocusMissingCollect = false;
+  public focusSendValidationTab = new Subject<'default' | 'cobros' | 'total' | 'adjuntos'>();
+
   public coordenadas = '';
   public fechaMayor: string = this.dateServ.hoyISO();
   public fechaMenor!: string;
@@ -103,10 +124,10 @@ export class DepositService {
   public DEPOSITO_STATUS_SENT = DEPOSITO_STATUS_SENT;
 
   public alertButtons = [
-    /*     {
-          text: '',
-          role: 'cancel'
-        }, */
+    {
+      text: '',
+      role: 'cancel'
+    },
     {
       text: '',
       role: 'confirm'
@@ -158,7 +179,8 @@ export class DepositService {
       }
       this.alertButtonsSend[0].text = this.depositTagsDenario.get('DENARIO_BOTON_CANCELAR')!
       this.alertButtonsSend[1].text = this.depositTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
-      this.alertButtons[0].text = this.depositTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
+      this.alertButtons[0].text = this.depositTagsDenario.get('DENARIO_BOTON_CANCELAR')!
+      this.alertButtons[1].text = this.depositTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
       return Promise.resolve(true);
     })
   }
@@ -182,7 +204,209 @@ export class DepositService {
     this.depositValidToSend.next(validToSend);
   }
 
-  /** Al menos una fila en `deposit_collects` cargada/seleccionada (requisito para guardar / enviar). */
+  onDepositGeneralValid(valid: boolean): void {
+    this.generalTabValidForSave = valid;
+    this.depositValid = valid;
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
+  }
+
+  isDepositReadOnlyForEdit(): boolean {
+    const stDelivery = Number(this.deposit?.stDelivery ?? 0);
+    const stDeposit = Number(this.deposit?.stDeposit ?? 0);
+    return stDelivery === DEPOSITO_STATUS_TO_SEND
+      || stDelivery === DEPOSITO_STATUS_SENT
+      || stDelivery === 6
+      || stDeposit === DEPOSIT_APPROVAL_STATUS_REJECTED
+      || stDeposit === 6;
+  }
+
+  /**
+   * Depósito rechazado en Web (st_deposit=status_action 2, ya enviado y con id servidor).
+   * Distinto del borrador local Por Enviar (st_delivery=2, id_deposit=0).
+   */
+  isDepositRejectedForCollectRelease(
+    stDeposit: number,
+    stDelivery: number,
+    idDeposit: number | null,
+  ): boolean {
+    return Number(stDeposit) === DEPOSIT_APPROVAL_STATUS_REJECTED
+      && Number(stDelivery) === DEPOSITO_STATUS_SENT
+      && Number(idDeposit ?? 0) > 0;
+  }
+
+  public updateSaveButtonAvailability(): void {
+    if (this.isDepositReadOnlyForEdit() || this.hideDeposit) {
+      this.disabledSaveButton = true;
+      this.onDepositValidToSave(false);
+      return;
+    }
+    if (this.adjuntoService.weightLimitExceeded) {
+      this.disabledSaveButton = true;
+      this.onDepositValidToSave(false);
+      return;
+    }
+    // Guardar ON al entrar / con cambios (General se valida al pulsar).
+    const hasChangesToSave =
+      !this.depositPersistedBaseline || this.depositDirtySincePersist;
+    this.disabledSaveButton = !hasChangesToSave;
+    this.onDepositValidToSave(hasChangesToSave);
+  }
+
+  public updateSendButtonAvailability(): void {
+    if (this.isDepositReadOnlyForEdit() || this.hideDeposit) {
+      this.disabledSendButton = true;
+      this.onDepositValidToSend(false);
+      return;
+    }
+    if (this.adjuntoService.weightLimitExceeded) {
+      this.disabledSendButton = true;
+      this.onDepositValidToSend(false);
+      return;
+    }
+    // Tras fallo de Enviar, apagar hasta que el usuario edite.
+    if (this.sendBlockedByFields) {
+      this.disabledSendButton = true;
+      this.onDepositValidToSend(false);
+      return;
+    }
+    // Enviar ON de entrada; banco/cobros/firma se validan al click (DEP-SEND-001).
+    this.disabledSendButton = false;
+    this.onDepositValidToSend(true);
+  }
+
+  public resetSendValidationUx(): void {
+    this.sendValidationAttempted = false;
+    this.sendBlockedByFields = false;
+    this.depositSendFocusMissingCollect = false;
+    this.updateSendButtonAvailability();
+  }
+
+  public refreshSendBlockedState(): void {
+    if (!this.sendBlockedByFields) {
+      return;
+    }
+    // Al editar, reactivar Enviar para reintentar y ver el siguiente mensaje exacto.
+    this.sendBlockedByFields = false;
+  }
+
+  /** Marca edición de usuario y refresca botones (no usar en hidratación/reapertura). */
+  notifyDepositEdited(): void {
+    this.markDepositDirty();
+    this.refreshSendBlockedState();
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
+  }
+
+  private hasMissingGpsCoordinate(): boolean {
+    if (!this.userMustActivateGPS) {
+      return false;
+    }
+    const coord = (this.deposit?.coordenada ?? '').toString().trim();
+    return coord.length === 0;
+  }
+
+  private hasBankSelected(): boolean {
+    return this.isSelectedBank
+      && !!(this.deposit?.coBank?.trim())
+      && !!(this.deposit?.nuAccount?.trim());
+  }
+
+  private hasNuDocumentFilled(): boolean {
+    const doc = (this.nuDocument ?? this.deposit?.nuDocument ?? '').toString().trim();
+    return doc.length > 0;
+  }
+
+  private hasDaDocumentFilled(): boolean {
+    const date = (this.daDocument ?? this.deposit?.daDocument ?? '').toString().trim();
+    return date.length > 0;
+  }
+
+  /**
+   * Errores que bloquean Enviar: banco + cobros + plantilla (+ GPS si config).
+   * Firma/adjuntos no son obligatorios: `signatureCollection` solo muestra el panel de firma.
+   * (A diferencia de Cobros, no existe `requiredDepositAttachments`.)
+   */
+  public hasDepositFieldErrors(): boolean {
+    if (!this.generalTabValidForSave || !this.hasBankSelected()) {
+      return true;
+    }
+    if (!this.hasAtLeastOneDepositCollectRow()) {
+      return true;
+    }
+    if (!this.hasNuDocumentFilled()) {
+      return true;
+    }
+    if (!this.hasDaDocumentFilled()) {
+      return true;
+    }
+    if (this.hasMissingGpsCoordinate()) {
+      return true;
+    }
+    return false;
+  }
+
+  /** Guardar solo exige banco en General. Cobros/plantilla/GPS van en Enviar. */
+  public hasDepositSaveErrors(): boolean {
+    return !this.generalTabValidForSave || !this.hasBankSelected();
+  }
+
+  public getDepositSaveValidationMessage(): string {
+    return this.depositTags.get('DEP_MSJ_ERROR_NO_BANK')
+      ?? 'Seleccione un banco para continuar.';
+  }
+
+  public getDepositValidationMessage(): string {
+    if (!this.generalTabValidForSave || !this.hasBankSelected()) {
+      return this.depositTags.get('DEP_MSJ_ERROR_NO_BANK')
+        ?? 'Seleccione un banco para continuar.';
+    }
+    if (!this.hasAtLeastOneDepositCollectRow()) {
+      this.depositSendFocusMissingCollect = true;
+      return this.depositTags.get('DEP_MSJ_ERROR_NO_COLLECT')
+        ?? this.depositTags.get('DEP_SELECT_COB_DEP')
+        ?? 'Seleccione al menos un cobro para el depósito.';
+    }
+    if (!this.hasNuDocumentFilled()) {
+      return this.depositTags.get('DEP_MSJ_ERROR_NO_DOCUMENT')
+        ?? 'Ingrese el número de plantilla para continuar.';
+    }
+    if (!this.hasDaDocumentFilled()) {
+      return this.depositTags.get('DEP_MSJ_ERROR_NO_DATE')
+        ?? 'Ingrese la fecha del documento para continuar.';
+    }
+    if (this.hasMissingGpsCoordinate()) {
+      return this.depositTags.get('DEP_MSJ_ERROR_NO_GPS')
+        ?? 'Debe activar el GPS y obtener la ubicación antes de continuar.';
+    }
+    return this.depositTags.get('DEP_MSJ_ERROR_NO_COLLECT')
+      ?? 'Complete los campos obligatorios del depósito.';
+  }
+
+  /** Pestaña del primer error (misma prioridad que getDepositValidationMessage). */
+  public resolveSendValidationFocusTab(): 'default' | 'cobros' | 'total' | 'adjuntos' {
+    if (!this.generalTabValidForSave || !this.hasBankSelected()) {
+      return 'default';
+    }
+    if (!this.hasAtLeastOneDepositCollectRow()) {
+      return 'cobros';
+    }
+    if (!this.hasNuDocumentFilled() || !this.hasDaDocumentFilled()) {
+      return 'default';
+    }
+    if (this.hasMissingGpsCoordinate()) {
+      return 'default';
+    }
+    return 'default';
+  }
+
+  public requestSendValidationTabFocus(
+    tab?: 'default' | 'cobros' | 'total' | 'adjuntos',
+  ): void {
+    this.focusSendValidationTab.next(tab ?? this.resolveSendValidationFocusTab());
+  }
+
+  /** Al menos una fila en `deposit_collects` cargada/seleccionada (requisito para Enviar). */
   hasAtLeastOneDepositCollectRow(): boolean {
     return !!(this.deposit?.depositCollect && this.deposit.depositCollect.length > 0);
   }
@@ -195,24 +419,36 @@ export class DepositService {
   applyPersistSucceededBaseline(): void {
     this.depositDirtySincePersist = false;
     this.depositPersistedBaseline = true;
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
   }
 
   /** Depósito nuevo en pantalla (aún sin guardar en esta sesión). */
   resetDepositExitBaseline(): void {
     this.depositPersistedBaseline = false;
     this.depositDirtySincePersist = false;
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
   }
 
   /** Depósito abierto desde lista: ya existe en BD, sin edits locales aún. Llamar al cerrar init de apertura. */
   markDepositOpenedFromPersistedCopy(): void {
     this.depositPersistedBaseline = true;
     this.depositDirtySincePersist = false;
+    this.updateSaveButtonAvailability();
+    this.updateSendButtonAvailability();
+  }
+
+  private resetDepositValidationUxFlags(): void {
+    this.generalTabValidForSave = false;
+    this.sendValidationAttempted = false;
+    this.sendBlockedByFields = false;
+    this.depositSendFocusMissingCollect = false;
   }
 
   initServices(dbServ: SQLiteObject) {
+    this.resetDepositValidationUxFlags();
     this.enterpriseServ.setup(dbServ).then(() => {
-      this.disabledSaveButton = true;
-      this.disabledSendButton = true;
       this.hideDeposit = false;
       this.depositValid = false;
       this.enterpriseList = this.enterpriseServ.empresas;
@@ -260,8 +496,7 @@ export class DepositService {
 
       this.resetDepositExitBaseline();
 
-      this.onDepositValidToSend(false);
-      this.onDepositValidToSave(false);
+      this.onDepositGeneralValid(false);
 
       this.getCurrencies(dbServ, this.deposit.idEnterprise).then(resp => {
         this.getBankAccounts(dbServ, this.deposit.idEnterprise, this.currencySelected.coCurrency).then(resp => {
@@ -286,9 +521,8 @@ export class DepositService {
       this.enterpriseList = this.enterpriseServ.empresas;
       this.enterpriseSelected = this.enterpriseList[0];
       this.isSelectedBank = true;
-      this.depositValid = true;
+      this.onDepositGeneralValid(true);
 
-      this.onDepositValidToSave(true);
       return this.getCurrencies(dbServ, this.deposit.idEnterprise).then(resp => {
         for (var i = 0; i < this.currencyList.length; i++) {
           if (this.currencyList[i].idCurrency == this.deposit.idCurrency) {
@@ -343,6 +577,7 @@ export class DepositService {
 
   resetDeposit() {
     this.depositValid = false;
+    this.generalTabValidForSave = false;
     this.enterpriseList = this.enterpriseServ.empresas;
     this.enterpriseSelected = this.enterpriseList[0];
     this.parteDecimal = Number(this.globalConfig.get('parteDecimal'));
@@ -387,8 +622,7 @@ export class DepositService {
     this.bankSelected = {} as BankAccount;
     this.isSelectedBank = false;
 
-    this.onDepositValidToSend(false);
-    this.onDepositValidToSave(false);
+    this.onDepositGeneralValid(false);
 
     return Promise.resolve(true);
   }
@@ -568,7 +802,7 @@ export class DepositService {
       " WHERE c.co_currency = ? AND c.id_enterprise = ? AND c.st_delivery <> 0 " +
       " AND cp.co_payment_method IN " + depositPaymentMethods + " " +
       " AND cd.co_type_doc <> 'CR' AND c.id_collection <> 0 " +
-      " AND c.co_collection NOT IN (SELECT dc.co_collection FROM deposit_collects dc) " +
+      " AND " + DepositService.DEPOSIT_COLLECTS_BLOCKING_SUBQUERY + " " +
       " GROUP BY c.co_collection ORDER BY c.co_collection DESC";
 
     return this.database.executeSql(selectStatement,
@@ -614,7 +848,7 @@ export class DepositService {
       "  AND cp.co_payment_method IN " + depositPaymentMethods + " " +
       "  AND c.id_collection <> 0 " +
       "  AND c.co_type = '1' " +
-      "  AND c.co_collection NOT IN (SELECT dc.co_collection FROM deposit_collects dc) " +
+      "  AND " + DepositService.DEPOSIT_COLLECTS_BLOCKING_SUBQUERY + " " +
       "GROUP BY c.co_collection";
 
     return this.database.executeSql(selectStatement,
@@ -855,7 +1089,18 @@ export class DepositService {
       ]]);
 
       const collects = await this.resolveDepositCollectsForPersist(dbServ, deposit);
-      if (collects.length > 0) {
+      const syncedServerId = Number(deposit.idDeposit ?? 0) > 0;
+      const shouldClearCollects =
+        this.isDepositRejectedForCollectRelease(
+          Number(deposit.stDeposit ?? 0),
+          Number(deposit.stDelivery ?? 0),
+          deposit.idDeposit,
+        )
+        || (collects.length === 0 && syncedServerId);
+
+      if (shouldClearCollects) {
+        allQueries.push([deleteCollectsStatement, [deposit.coDeposit]]);
+      } else if (collects.length > 0) {
         allQueries.push([deleteCollectsStatement, [deposit.coDeposit]]);
         for (const collect of collects) {
           allQueries.push([insertDepositCollect, [
@@ -1173,10 +1418,8 @@ export class DepositService {
         item.inDepositCollect = true;
         this.cobrosDetails.push(item);
       }
-      this.onDepositValidToSend(this.hasAtLeastOneDepositCollectRow());
       return this.deposit;
     }).catch(e => {
-      this.onDepositValidToSend(false);
       this.deposit.depositCollect = [] as DepositCollect[];
       console.log(e);
       return this.deposit;
@@ -1459,6 +1702,61 @@ export class DepositService {
     }
 
     return value;
+  }
+
+  getStatusOrderName(stDeposit: number, stDelivery: number, naStatus: unknown): string {
+    const delivery = Number(stDelivery);
+    const deposit = Number(stDeposit);
+    const resolvedNaStatus = this.resolveNaStatusLabel(naStatus);
+
+    if (deposit !== 0 && resolvedNaStatus) {
+      return resolvedNaStatus;
+    }
+    return this.getStatusLabel(delivery, resolvedNaStatus);
+  }
+
+  private resolveNaStatusLabel(naStatus: unknown): string {
+    if (naStatus == null) {
+      return '';
+    }
+    if (typeof naStatus === 'string') {
+      const trimmed = naStatus.trim();
+      if (!trimmed || trimmed === 'Enviado' || trimmed.startsWith('Error')) {
+        return '';
+      }
+      return trimmed;
+    }
+    if (typeof naStatus === 'object') {
+      const fromObject = String((naStatus as { na_status?: string }).na_status ?? '').trim();
+      return fromObject;
+    }
+    return String(naStatus).trim();
+  }
+
+  getStatusLabel(status: number, naStatus: unknown): string {
+    switch (status) {
+      case DELIVERY_STATUS_SAVED:
+        return this.depositTags.get('DEP_DEV_SAVED') ?? '';
+      case DELIVERY_STATUS_TO_SEND:
+        return this.depositTags.get('DEP_DEV_TO_BE_SENDED') ?? '';
+      case DELIVERY_STATUS_SENT:
+        return naStatus == null || String(naStatus).trim() === ''
+          ? (this.depositTags.get('DEP_DEV_SENDED') ?? '')
+          : String(naStatus);
+      case 6:
+        if (naStatus == null || String(naStatus).trim() === '') {
+          return 'Enviado';
+        }
+        if (typeof naStatus === 'string') {
+          return naStatus;
+        }
+        if (typeof naStatus === 'object') {
+          return String((naStatus as { na_status?: string }).na_status ?? '');
+        }
+        return String(naStatus);
+      default:
+        return '';
+    }
   }
 
 }

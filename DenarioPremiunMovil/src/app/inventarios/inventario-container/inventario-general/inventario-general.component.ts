@@ -136,9 +136,9 @@ export class InventarioGeneralComponent implements OnInit {
   }
 
   setChangesMade(value: boolean) {
-    //ESTA FUNCION SE USARA PARA CONTROLAR SI PUEDO ENVIAR O GUARDAR, CVER QUE HAGO ACA
-    this.inventariosLogicService.onStockValidToSave(value);
-    this.inventariosLogicService.onStockValidToSend(value);
+    if (value) {
+      this.inventariosLogicService.notifyStockEdited();
+    }
   }
 
   initInventario() {
@@ -151,22 +151,22 @@ export class InventarioGeneralComponent implements OnInit {
 
     }
 
-    this.message.showLoading().then(() => {
-      this.enterpriseServ.setup(this.dbServ.getDatabase()).then(() => {
-        this.inventariosLogicService.listaEmpresa = this.enterpriseServ.empresas;
-        if (!this.inventariosLogicService.inventarioSent && this.canModifyClient()) {
-          //this.selectorCliente.updateClientList(this.inventariosLogicService.listaEmpresa[0].idEnterprise);
-          //this.selectorCliente.setSkin(this.inventariosLogicService.inventarioTags.get('INV_NOMBRE_MODULO')!, "fondoAmarillo");
-          this.selectorCliente.setup(this.inventariosLogicService.listaEmpresa[0].idEnterprise, "Inventarios", 'fondoAmarillo', null, true, 'inv');
-          /*  this.clientService.getClientById(this.inventariosLogicService.newClientStock.idClient).then(client => {
-            this.inventariosLogicService.client = client;
-            this.selectorCliente.setup(this.inventariosLogicService.empresaSeleccionada.idEnterprise, "Inventarios", 'fondoVerde', client, false);
+    this.message.showLoading().then(async () => {
+      await this.enterpriseServ.setup(this.dbServ.getDatabase());
+      this.inventariosLogicService.listaEmpresa = this.enterpriseServ.empresas;
+      if (!this.inventariosLogicService.inventarioSent && this.canModifyClient()) {
+        //this.selectorCliente.updateClientList(this.inventariosLogicService.listaEmpresa[0].idEnterprise);
+        //this.selectorCliente.setSkin(this.inventariosLogicService.inventarioTags.get('INV_NOMBRE_MODULO')!, "fondoAmarillo");
+        this.selectorCliente.setup(this.inventariosLogicService.listaEmpresa[0].idEnterprise, "Inventarios", 'fondoAmarillo', null, true, 'inv');
+        /*  this.clientService.getClientById(this.inventariosLogicService.newClientStock.idClient).then(client => {
+          this.inventariosLogicService.client = client;
+          this.selectorCliente.setup(this.inventariosLogicService.empresaSeleccionada.idEnterprise, "Inventarios", 'fondoVerde', client, false);
 
 
-           }) */
-        }
-        this.orderServ.empresaSeleccionada = this.inventariosLogicService.listaEmpresa[0];
-        this.orderServ.setup();
+         }) */
+      }
+      this.orderServ.empresaSeleccionada = this.inventariosLogicService.listaEmpresa[0];
+      await this.orderServ.setup();
         //ESTO ES PARA CUANDO CAMBIE DE PESTANAS, RECUPERAR LA INFORMACION YA COLOCADA
         this.txComment = this.inventariosLogicService.newClientStock.txComment;
         this.daysSinceLastInventory = this.inventariosLogicService.newClientStock.daysSinceLast;
@@ -221,6 +221,8 @@ export class InventarioGeneralComponent implements OnInit {
 
                 if (clientStock.clientStockDetails.length == 0) {
                   this.inventariosLogicService.newClientStock.clientStockDetails = [] as ClientStocksDetail[];
+                  this.inventariosLogicService.markStockOpenedFromPersistedCopy();
+                  this.message.hideLoading();
                 } else {
                   const detailUnitPromises = clientStock.clientStockDetails.map((detail, detailIndex) =>
                     this.inventariosLogicService
@@ -232,10 +234,11 @@ export class InventarioGeneralComponent implements OnInit {
                   );
 
                   Promise.all(detailUnitPromises).then(() => {
+                    this.inventariosLogicService.pauseStockDirtyTracking();
                     this.inventariosLogicService.newClientStock.clientStockDetails = clientStock.clientStockDetails;
                     this.inventariosLogicService.setVariablesMap();
-                    this.inventariosLogicService.onStockValidToSave(true);
-                    this.inventariosLogicService.onStockValidToSend(true);
+                    this.inventariosLogicService.markStockOpenedFromPersistedCopy();
+                    this.inventariosLogicService.resumeStockDirtyTracking();
 
                     if (clientStock.stDelivery == 1 || clientStock.stDelivery == null) {
                       this.inventariosLogicService.getInfoUnit(this.dbServ.getDatabase(), clientStock).then(() => {
@@ -275,8 +278,7 @@ export class InventarioGeneralComponent implements OnInit {
           this.selectorCliente.updateClientList(this.inventariosLogicService.empresaSeleccionada.idEnterprise)
             .then(() => this.finalizeSavedInventoryClientGuard());
         }
-      });
-    })
+    });
   }
 
   setDaysSinceLastInventory(){
@@ -286,6 +288,7 @@ export class InventarioGeneralComponent implements OnInit {
     }else{
       this.inventariosLogicService.newClientStock.daysSinceLast = this.daysSinceLastInventory;
     }
+    this.inventariosLogicService.notifyStockEdited();
   }
 
   setDaysUntilNextInventory(){
@@ -295,6 +298,7 @@ export class InventarioGeneralComponent implements OnInit {
     }else{
       this.inventariosLogicService.newClientStock.daysUntilNext = this.daysUntilNextInventory;
     }
+    this.inventariosLogicService.notifyStockEdited();
   }
 
   onEnterpriseSelect() {
@@ -304,9 +308,7 @@ export class InventarioGeneralComponent implements OnInit {
 
   }
 
-  private reiniciarInventarioPorEnterprise(enterprise: Enterprise) {
-    this.inventariosLogicService.onStockValidToSave(false);
-    this.inventariosLogicService.onStockValidToSend(false);
+  private async reiniciarInventarioPorEnterprise(enterprise: Enterprise) {
     this.inventariosLogicService.onClientStockValid(false);
     this.inventariosLogicService.initClientStockDetails();
 
@@ -340,7 +342,7 @@ export class InventarioGeneralComponent implements OnInit {
 
     this.selectorCliente.setup(enterprise.idEnterprise, "Inventarios", 'fondoAmarillo', null, true, 'inv');
     this.orderServ.empresaSeleccionada = enterprise;
-    this.orderServ.setup();
+    await this.orderServ.setup();
 
   }
 
@@ -367,7 +369,6 @@ export class InventarioGeneralComponent implements OnInit {
             this.clientSelectorService.checkClient = true;
           }
           this.newClient = {} as Client;
-          this.inventariosLogicService.onStockValidToSave(true);
           this.inventariosLogicService.isEdit = true;
 
           const isNewInventory = !this.inventariosLogicService.newClientStock.coClientStock;
@@ -401,11 +402,10 @@ export class InventarioGeneralComponent implements OnInit {
               this.coDireccionAnterior = this.inventariosLogicService.newClientStock.coAddressClient;
               this.inventariosLogicService.selectedClient = true;
               this.inventariosLogicService.onClientStockValid(true);
+              this.inventariosLogicService.notifyStockEdited();
             } else {
               //setTimeout(() => {
               this.inventariosLogicService.selectedClient = false;
-              this.inventariosLogicService.onStockValidToSave(false);
-              this.inventariosLogicService.onStockValidToSend(false);
               this.inventariosLogicService.onClientStockValid(false);
               this.inventariosLogicService.message = this.inventariosLogicService.inventarioTags.get('INV_ERROR_LIST_ADDRESS')!;
               this.inventariosLogicService.alertMessageOpen = true;
@@ -439,6 +439,7 @@ export class InventarioGeneralComponent implements OnInit {
     } else {
       this.inventariosLogicService.newClientStock.txComment = this.txComment;
     }
+    this.inventariosLogicService.notifyStockEdited();
   }
 
   cleanString(str: string): string {
