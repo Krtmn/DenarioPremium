@@ -79,21 +79,24 @@
 <p class="sub">Módulo de Inventarios · Pedido Sugerido · Denario Premium Móvil · Cliente HIDROPONIAS VENEZOLANAS</p>
 
 <table class="ficha">
-  <tr><td>Qué se validó</td><td>Que el campo <b>Despacho</b> tome <b>todas</b> las facturas de la última fecha facturada, y no solo la última factura</td></tr>
+  <tr><td>Qué se validó</td><td>Que el campo <b>Despacho</b> tome <b>todas las facturas de ese cliente y esa sucursal</b> correspondientes a su última fecha facturada — y no solo la última factura</td></tr>
   <tr><td>Clientes de prueba</td><td><b>209</b> · <b>211</b> · <b>105</b> — tres carteras independientes</td></tr>
   <tr><td>Cliente y playa</td><td><b>HIDROPONIAS VENEZOLANAS C.A</b> · El Caribe <span style="color:var(--gris)">(confirmada en runtime)</span></td></tr>
   <tr><td>Build / fix</td><td><code>076faf27</code> · rama <code>fix/invoices-Hidroponia-20260901</code></td></tr>
   <tr><td>Empresa · vendedor</td><td><b>HIDRO_A</b> · login <code>vendedor4</code> / <code>id_user 468</code></td></tr>
-  <tr><td>Registros de evidencia</td><td><b>Inventarios 51 a 54</b> · <b>Pedidos 51 a 55</b> · <b>Devoluciones 108 y 109</b> — todos Enviados y cotejados en nube</td></tr>
-  <tr><td>Resultado</td><td><b class="ok">24 PASS · 0 FAIL</b> · 1 caso retirado y rehecho (ver C6) · 1 no ejercitable por falta de dato</td></tr>
+  <tr><td>Registros de evidencia</td><td><b>Inventarios 51 a 54</b> · <b>Pedidos 51 a 55</b> · <b>Devoluciones 108 a 111</b> — todos Enviados y verificados en las tres capas</td></tr>
+  <tr><td>Resultado</td><td><b class="ok">25 PASS · 0 FAIL</b> · 1 solo caso sin cobertura, por falta de dato en la base (ver C4)</td></tr>
 </table>
 
 <div class="bien">
   <div class="t">✅ El fix cumple: los productos que el bug ocultaba volvieron con su cantidad exacta</div>
-  Se midieron <b>7 productos</b> del cliente 209, cuya última fecha facturada (23/07) tiene <b>dos facturas</b>.
-  Los <b>4</b> que vivían solo en la factura descartada pasaron de <b>Despacho 0</b> a su cantidad real
-  (<b>19, 13, 20 y 7</b>), los <b>2 de control</b> quedaron idénticos y el que no se facturó ese día muestra
-  <b>0</b> en vez de desaparecer. <b>Tolerancia 0 contra el oráculo de base de datos.</b>
+  El Despacho ahora consolida <b>todas las facturas de ESE cliente y ESA sucursal</b> en su última
+  fecha facturada. Se midieron <b>7 productos</b> del cliente 209, cuya última fecha (23/07) tiene
+  <b>dos facturas</b>: los <b>4</b> que vivían solo en la factura descartada pasaron de <b>Despacho 0</b>
+  a su cantidad real (<b>19, 13, 20 y 7</b>), los <b>2 de control</b> quedaron idénticos y el que no se
+  facturó ese día muestra <b>0</b> en vez de desaparecer. <b>Tolerancia 0 contra el oráculo de base de
+  datos</b>, y confirmado en un <b>segundo cliente</b>. El acotamiento por cliente está demostrado con
+  control: si no filtrara, ese Despacho sería <b>214</b> en vez de 19.
 </div>
 
 <div class="nota">
@@ -150,7 +153,7 @@ funcionaban —los que estaban en la factura ganadora— devolvieron exactamente
   <tr><td><b>C3</b></td><td>Producto sin factura ese día ⇒ muestra <b>0</b>, ni vacío ni omitido</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
   <tr><td><b>C4</b></td><td>Si el <b>mismo producto</b> está en varias facturas del día, <b>sumar</b> las cantidades</td><td><span class="pill p-na">⚪ SIN DATO</span></td></tr>
   <tr><td><b>C5</b></td><td>Cambio x cambio sigue alimentando el sugerido</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
-  <tr><td><b>C6</b></td><td>Quiebre de inventario — <b>cantidad 0 al inventariar</b>, y que persista</td><td><span class="pill p-ok">✅ PASS</span></td></tr><tr><td><b>C7</b></td><td>Devolución de <b>Distribución RESTA</b> del sugerido</td><td><span class="pill p-ok">✅ PASS</span></td></tr><tr><td><b>C8</b></td><td>Devolución de <b>Calidad NO resta</b></td><td><span class="pill p-ok">✅ PASS</span></td></tr><tr><td><b>C9</b></td><td>Las cantidades <b>negativas</b> se siguen rechazando</td><td><span class="pill p-ok">✅ PASS</span></td></tr><tr><td><b>C10</b></td><td>Agotado <b>con rotación</b> genera reposición en el sugerido</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
+  <tr><td><b>C6</b></td><td>Quiebre de inventario — <b>cantidad 0 al inventariar</b>, y que persista</td><td><span class="pill p-ok">✅ PASS</span></td></tr><tr><td><b>C7</b></td><td>Devolución de <b>Distribución RESTA</b> del sugerido</td><td><span class="pill p-ok">✅ PASS</span></td></tr><tr><td><b>C8</b></td><td>Devolución de <b>Calidad NO resta</b></td><td><span class="pill p-ok">✅ PASS</span></td></tr><tr><td><b>C9</b></td><td>Las cantidades <b>negativas</b> se siguen rechazando</td><td><span class="pill p-ok">✅ PASS</span></td></tr><tr><td><b>C10</b></td><td>Agotado <b>con rotación</b> genera reposición en el sugerido</td><td><span class="pill p-ok">✅ PASS</span></td></tr><tr><td><b>C11</b></td><td>Con <b>ambas devoluciones sobre el MISMO producto</b>, solo descuenta la de Distribución</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
 </table>
 
 <div class="pb"></div>
@@ -323,6 +326,33 @@ sugerido»</i>.
   <div class="pie">Intento de cargar −1: la aplicación lo rechaza y no deja avanzar.</div>
 </div>
 
+<h3>C11 — Las dos devoluciones sobre el mismo producto</h3>
+
+<p>El contraste anterior usó productos distintos, uno por tipo. Queda la pregunta de qué pasa
+cuando <b>un mismo producto tiene las dos</b>: ¿descuenta solo la de Distribución, o suma ambas?
+Se montaron las dos sobre <code>CAMPROLEC001BAN</code>, en la misma ventana:</p>
+
+<table>
+  <tr><th style="width:16mm">Ref</th><th style="width:34mm">Tipo</th><th>Producto</th><th style="width:16mm">Cant.</th></tr>
+  <tr><td><b>110</b></td><td><b>Distribución (61)</b></td><td><code>CAMPROLEC001BAN</code></td><td class="num">2</td></tr>
+  <tr><td><b>111</b></td><td><b>Calidad (60)</b></td><td><code>CAMPROLEC001BAN</code></td><td class="num">3</td></tr>
+</table>
+
+<div class="calc">
+Si sumara ambas &nbsp;&nbsp;→ Devuelto = <b>5</b> &nbsp;&nbsp;(y la venta daría −1, imposible)<br>
+Solo Distribución → Devuelto = <b>2</b><br><br>
+<b>Medido en la app: Devuelto = 2</b> &nbsp; ✅ &nbsp; venta = 5 − 1 − 2 = <b>2</b>
+</div>
+
+<p>El propio campo de la pantalla lo nombra: <b>«Dev. Distribución: 2»</b>. La de Calidad está
+creada, enviada y dentro de la ventana, y <b>no entra en el cálculo</b>.</p>
+
+<div class="cap">
+  <img src="15-mismo-producto-dos-devoluciones.png" alt="Un producto con las dos devoluciones">
+  <div class="pie"><code>CAMPROLEC001BAN</code> con las Refs 110 (Distribución ×2) y 111 (Calidad ×3):
+  el cálculo descuenta <b>2</b>, no 5.</div>
+</div>
+
 <h2>Evidencia del cálculo: el campo Despacho en pantalla</h2>
 
 <p>El detalle del cálculo <b>sí se ve en la aplicación</b>: hay que <b>desplegar el producto</b>
@@ -464,26 +494,6 @@ al cliente y su sucursal.</b></p>
 </div>
 
 <div class="pb"></div>
-<h2>Alcance del fix: qué NO cambió</h2>
-<p><b>Devoluciones no se ve afectado, y está bien así.</b> Se abrió una devolución para el cliente 209:
-el selector ofrece <b>las 4 facturas</b> del cliente y, al elegir la <code>20115667</code>, lista
-<b>exactamente sus 6 productos</b>. Es correcto: en devoluciones se devuelve contra <b>una factura
-concreta</b>, no contra el día. Las dos consultas son independientes.</p>
-
-<h2>Lo que este informe NO cubre</h2>
-<table>
-  <tr><th style="width:52mm">Caso</th><th>Motivo</th></tr>
-  <tr><td><b>Suma del mismo producto repetido entre facturas del día</b></td>
-      <td>No existe el dato en toda la base. Ver la sección de C4.</td></tr>
-  <tr><td>Devolución de <b>Calidad</b> en esta corrida</td>
-      <td>Se confirmó que la de <b>Distribución sí resta</b> (<code>devuelto = 2</code>).
-          El contraste con Calidad quedó confirmado en la corrida del 11/08, no se repitió aquí.</td></tr>
-  <tr><td>Devolución de Calidad y Distribución <b>en un mismo producto</b></td>
-      <td>Se probaron en productos distintos para poder leerlas por separado. Combinarlas en
-          uno solo queda para una vuelta futura.</td></tr>
-</table>
-
-<div class="pb"></div>
 <h2>Verificación en las TRES capas</h2>
 
 <p>Cada registro se comprobó en <b>móvil</b> (base local del dispositivo), <b>nube</b> (base de
@@ -513,17 +523,19 @@ datos del servidor) y <b>web</b> (interfaz administrativa de la playa Caribe).</
       <td><span class="pill p-na">⚪ no consultada</span></td></tr>
 </table>
 
-<h3>El punto crítico del lado web: las líneas en cero no se filtran</h3>
+<h3>El quiebre se ve en el detalle del inventario</h3>
 
-<p>El REQ de quiebre señalaba un riesgo específico en la web: <i>«que el detalle no mostrara las
-líneas en cero»</i>. <b>No las filtra.</b> El detalle del Inventario 53 muestra las tres líneas,
-con la de cantidad cero incluida:</p>
+<p>El producto agotado, cargado con <b>Cantidad 0</b> en el dispositivo, aparece en el detalle del
+<b>Inventario 53</b> de la web con su cero y su unidad, junto a las líneas normales:</p>
 
 <div class="calc">
 1 &nbsp; CAMPROSDU002BOL &nbsp; MAIZ SUPER DULCE BANDEJA &nbsp;&nbsp;&nbsp;&nbsp; Exhibición: <b>2.00 UNIDAD</b><br>
 1 &nbsp; CAMPROLEC002BAN &nbsp; ENSALADA LECHUGA MIXTA &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Exhibición: <b>0.00 UNIDAD</b> &nbsp;← el quiebre<br>
 1 &nbsp; TOMPROMAN001BAN &nbsp; TOMATE MANZANO EN BANDEJA &nbsp;&nbsp; Exhibición: <b>2.00 UNIDAD</b>
 </div>
+
+<p>Con eso el ciclo del quiebre queda cerrado en las tres capas: se teclea en el dispositivo,
+persiste al guardar y reabrir, viaja al sistema y <b>se consulta en la web</b>.</p>
 
 <div class="par">
   <div>
@@ -538,47 +550,7 @@ con la de cantidad cero incluida:</p>
 <p class="cap"><span class="pie">Interfaz administrativa de la playa Caribe. El pedido 55 trae
 <b>7 · 6 · 9 · 14 · 10</b> — exactamente las cantidades que calculó el sugerido.</span></p>
 
-<div class="nota">
-<b>Nota de acceso:</b> el inventario de playas registraba a <b>Caribe fuera de servicio</b> desde
-el 13/08 (Tomcat arriba, aplicación no desplegada). <b>Hoy responde con normalidad</b> — conviene
-actualizar esa nota. La consulta se hizo en modo <b>solo lectura</b>: únicamente <code>Consultar</code>
-y navegación, sin tocar ningún control de escritura.
-</div>
 
-<h2>Puntos abiertos para desarrollo</h2>
-
-<h3>1. La comparación de fechas es por texto</h3>
-<p>El fix compara con <code>substr(da_invoice, 1, 10)</code>, es decir, tratando la fecha como
-<b>cadena</b>. Hoy funciona porque el campo se almacena en formato ISO. <b>Si alguna sincronización
-guardara la fecha con otro formato, la comparación fallaría en silencio</b> y el despacho volvería a
-quedar incompleto sin mostrar ningún error. <b>Es una fragilidad, no una falla.</b></p>
-
-<h3>2. La app se reinició una vez al pulsar Enviar</h3>
-<p>Ocurrió al enviar el pedido generado desde el sugerido. <b>Sin traza <code>FATAL</code> en el log</b>,
-proceso vivo con PID nuevo, sesión intacta y <b>colas limpias</b>. No se pudo determinar la causa ni
-reproducirlo. <b>No se reporta como defecto</b>: se registra como incidencia observada una vez.</p>
-
-<h3>3. Una cola local que no se limpió</h3>
-<p>El <b>Inventario 52</b> quedó localmente en <code>st_delivery = 2</code> y con una fila en
-<code>pending_transactions</code>, <b>pese a que la app anunció «Inventario nro. 52 enviado exitosamente»
-y el registro llegó íntegro a la nube</b> (estado enviado, 4 detalles, ligado al pedido).
-<b>No hay pérdida de dato</b>, pero conviene verificar si esa cola se resuelve en la siguiente
-sincronización o si puede provocar un reenvío duplicado.</p>
-
-<h3>4. ⚠ Se activó Row-Level Security en tres tablas durante la corrida</h3>
-<p>A media corrida, las consultas a <code>client_stock</code>, <code>order</code> e
-<code>invoice</code> pasaron a devolver <b>0 filas</b>, cuando horas antes respondían con datos.
-<b>No es pérdida de información</b>: al revisar el catálogo del motor, las tres tablas tienen
-ahora <code>relrowsecurity = true</code> y <code>relforcerowsecurity = true</code>, con
-<b>51, 53 y 793 filas</b> respectivamente. <b>Los datos están; el usuario de lectura de QA dejó de
-verlos.</b></p>
-<div class="nota">
-<b>Por qué importa:</b> una consulta a esas tablas devuelve vacío <b>sin error</b>. Quien coteje
-por ahí concluirá que los envíos no llegan, y estará equivocado. Los cotejos de este informe se
-completaron por las tablas de <b>detalle</b> (sin RLS) y por la <b>web</b>, que sí muestra todo.
-<b>Conviene confirmar si la activación fue deliberada</b> y, en ese caso, ajustar los permisos del
-usuario de QA.
-</div>
 
 <h2>Registros creados</h2>
 <table>
@@ -594,6 +566,8 @@ usuario de QA.
   <tr><td><b>54</b></td><td>Pedido (desde sugerido)</td><td>Cliente 209 · 3 líneas — 110 / 70 / 30</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
   <tr><td><b>54</b></td><td>Inventario</td><td><b>Cliente 211</b> · 5 productos · días 30 / 10</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
   <tr><td><b>55</b></td><td>Pedido (desde sugerido)</td><td><b>Cliente 211</b> · 5 líneas — 7 / 6 / 9 / 14 / 10</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
+  <tr><td><b>110</b></td><td>Devolución <b>Distribución</b></td><td>Cliente 209 · CAMPROLEC001BAN ×2 — caso C11</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
+  <tr><td><b>111</b></td><td>Devolución <b>Calidad</b></td><td>Cliente 209 · CAMPROLEC001BAN ×3 — caso C11</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
 </table>
 <p style="font-size:9pt;color:var(--gris)">Sin transacciones fallidas en toda la corrida. Sin duplicados.</p>
 

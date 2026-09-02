@@ -11,7 +11,7 @@
 | Vendedor | **vendedor4** (`V4`, idUser 468) |
 | Dispositivo | `14678405BR003855` (Infinix X6728, Android 15) |
 | VGs relevantes | `suggestedOrderByDispatchAndReturn=true` · `suggestedOrder=true` · `stock0=true` · `hideStock0=false` · `validStock=false` |
-| Resultado | ✅ **Despacho 7/7 · swaps 4/4 · quiebre y devoluciones cubiertos** — 24 PASS / 0 FAIL |
+| Resultado | ✅ **Despacho, swaps, quiebre y devoluciones cubiertos en 3 capas** — 26 PASS / 0 FAIL |
 
 ---
 
@@ -423,6 +423,29 @@ otros clientes no hay contraste posible — consta el filtro en el código, no l
 
 ---
 
+## 8.g C11 — Las dos devoluciones sobre el MISMO producto
+
+El contraste de §8.d.1 usó productos distintos, uno por tipo. Faltaba el caso en que **un mismo
+producto tiene las dos**. Se montaron ambas sobre `CAMPROLEC001BAN`, en la misma ventana:
+
+| Ref | Tipo | Producto | Cant. |
+|---|---|---|---:|
+| **110** | **Distribución (61)** | `CAMPROLEC001BAN` | 2 |
+| **111** | **Calidad (60)** | `CAMPROLEC001BAN` | 3 |
+
+```
+Si sumara ambas   → Devuelto = 5   (y la venta daría −1, imposible)
+Solo Distribución → Devuelto = 2
+
+Medido: Devuelto = 2  ✅   venta = 5 − 1 − 2 = 2
+```
+
+El campo de pantalla lo nombra literalmente: **«Dev. Distribución: 2»**. La de Calidad está
+creada, enviada y en ventana, y **no entra en el cálculo**.
+*(Captura `15-mismo-producto-dos-devoluciones.png`.)*
+
+---
+
 ## 8.f Verificación en las TRES capas
 
 | Registro | Móvil (BD local) | Nube (BD) | **Web (interfaz)** |
@@ -538,12 +561,14 @@ también el inventario.
 | SUG-F-024 | **Devolución de Distribución RESTA** | ✅ PASS (`devuelto = 2`) |
 | SUG-F-025 | **Devolución de Calidad NO resta** | ✅ PASS (`devuelto = 0`) |
 | SUG-F-026 | **Agotado con rotación → reposición en el sugerido** | ✅ PASS (0 actual, despacho 7 ⇒ sugerido 70) |
+| SUG-F-027 | **Ambas devoluciones en el MISMO producto: solo resta Distribución** | ✅ PASS (devuelto 2, no 5) |
+| SUG-F-028 | **Verificación en la capa WEB** (inventarios y pedidos) | ✅ PASS |
 | SUG-F-016 | Producto con stock 0 de almacén entra a un pedido enviado | ✅ PASS (Pedido 53) — **dato válido, pero ajeno al REQ de quiebre** |
 | SUG-F-019 | Sugerido → pedido enviado, 2.º ciclo (cliente 105) | ✅ PASS (Inventario 52 + Pedido 52) |
 | SUG-F-017 | Pedido enviado y cotejado en nube | ✅ PASS (Ref 51, BD-OK) |
 | SUG-F-018 | Inventario ligado al pedido (`client_stock.id_order`) | ✅ PASS |
 
-**24 PASS · 0 FAIL · 1 RETIRADO (rehecho bien en §8.d) · 1 no ejercitado (sin dato en la base) · 1 incidencia sin causa · 2 puntos a vigilar.**
+**26 PASS · 0 FAIL · 1 RETIRADO (rehecho bien en §8.d) · 1 no ejercitado (sin dato en la base) · 1 incidencia sin causa · 3 puntos a vigilar.**
 
 ---
 
