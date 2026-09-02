@@ -2316,6 +2316,18 @@ describe('CollectionService', () => {
       expect(service.resolveSendValidationFocusTab()).toBe('default');
     });
 
+    it('SEND-TAB-001: sin issues resolve es null y request no emite', () => {
+      service.collection = { coType: '0' } as any;
+      service.lastSendIssues = [];
+      spyOn(service as any, 'collectSyncFieldSendIssues').and.returnValue([]);
+      let focused: string | undefined = 'sentinel';
+      service.focusSendValidationTab.subscribe((tab) => focused = tab);
+
+      expect(service.resolveSendValidationFocusTab()).toBeNull();
+      service.requestSendValidationTabFocus();
+      expect(focused).toBe('sentinel');
+    });
+
     it('getCollectionSendValidationMessage: pago incompleto enfoca Pagos', () => {
       service.collection = { coType: '0' } as any;
       service.hidePayments = false;

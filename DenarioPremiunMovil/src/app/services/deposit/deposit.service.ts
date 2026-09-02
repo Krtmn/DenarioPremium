@@ -383,8 +383,8 @@ export class DepositService {
       ?? 'Complete los campos obligatorios del depósito.';
   }
 
-  /** Pestaña del primer error (misma prioridad que getDepositValidationMessage). */
-  public resolveSendValidationFocusTab(): 'default' | 'cobros' | 'total' | 'adjuntos' {
+  /** Pestaña del primer error (misma prioridad que getDepositValidationMessage). Null = sin error (SEND-TAB-001). */
+  public resolveSendValidationFocusTab(): 'default' | 'cobros' | 'total' | 'adjuntos' | null {
     if (!this.generalTabValidForSave || !this.hasBankSelected()) {
       return 'default';
     }
@@ -397,13 +397,17 @@ export class DepositService {
     if (this.hasMissingGpsCoordinate()) {
       return 'default';
     }
-    return 'default';
+    return null;
   }
 
   public requestSendValidationTabFocus(
-    tab?: 'default' | 'cobros' | 'total' | 'adjuntos',
+    tab?: 'default' | 'cobros' | 'total' | 'adjuntos' | null,
   ): void {
-    this.focusSendValidationTab.next(tab ?? this.resolveSendValidationFocusTab());
+    const focus = tab === undefined ? this.resolveSendValidationFocusTab() : tab;
+    if (focus == null) {
+      return;
+    }
+    this.focusSendValidationTab.next(focus);
   }
 
   /** Al menos una fila en `deposit_collects` cargada/seleccionada (requisito para Enviar). */
