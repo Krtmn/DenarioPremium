@@ -1,0 +1,26 @@
+{"modulo":"devoluciones","id":"DM-DEV-001","descripcion":"Tile Devoluciones → home con 2 botones","resultado":"FAIL","nota":"Tile Devoluciones no encontrado en Home","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-002","descripcion":"DM-DEV-002","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-003","descripcion":"DM-DEV-003","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-004","descripcion":"DM-DEV-004","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-005","descripcion":"DM-DEV-005","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-006","descripcion":"DM-DEV-006","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-007","descripcion":"DM-DEV-007","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-008","descripcion":"DM-DEV-008","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-009","descripcion":"DM-DEV-009","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-010","descripcion":"DM-DEV-010","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-011","descripcion":"DM-DEV-011","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-012","descripcion":"DM-DEV-012","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-013","descripcion":"DM-DEV-013","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-014","descripcion":"DM-DEV-014","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-015","descripcion":"DM-DEV-015","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-016","descripcion":"DM-DEV-016","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-017","descripcion":"DM-DEV-017","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-018","descripcion":"DM-DEV-018","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-019","descripcion":"DM-DEV-019","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-020","descripcion":"DM-DEV-020","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-021","descripcion":"DM-DEV-021","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-022","descripcion":"DM-DEV-022","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-023","descripcion":"DM-DEV-023","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-024","descripcion":"DM-DEV-024","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-025","descripcion":"DM-DEV-025","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}
+{"modulo":"devoluciones","id":"DM-DEV-VAL-001","descripcion":"DM-DEV-VAL-001","resultado":"BLOCKED","nota":"DEV-001 falló","ms":20,"runner":"playwright-standalone"}

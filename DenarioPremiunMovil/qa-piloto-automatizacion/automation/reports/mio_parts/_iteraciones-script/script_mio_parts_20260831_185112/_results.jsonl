@@ -1,0 +1,12 @@
+{"modulo":"depositos","id":"DM-DEP-001","descripcion":"Tile Depósitos → home","resultado":"PASS","nota":"botones: DEPÓSITO, BUSCAR","ms":1608,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-002","descripcion":"Click DEPÓSITO → form","resultado":"PASS","nota":"banco: true; tab Cobros disabled: true","ms":3879,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-004","descripcion":"Seleccionar banco","resultado":"PASS","nota":"\"BANCO MERCANTIL - *** 7177163\" (1 opciones)","ms":4931,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-005","descripcion":"Fecha Doc seleccionada","resultado":"PASS","nota":"fecha: 31/8/2026","ms":7796,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-006","descripcion":"Nro. Plantilla + cobro → Guardar","resultado":"N/A","nota":"Tab Cobros vacío (sin cobros depositables)","ms":11084,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-009","descripcion":"DM-DEP-009","resultado":"N/A","nota":"sin cobros depositables","ms":11084,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-010","descripcion":"DM-DEP-010","resultado":"N/A","nota":"sin cobros depositables","ms":11084,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-014","descripcion":"DM-DEP-014","resultado":"N/A","nota":"sin cobros depositables","ms":11084,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-017","descripcion":"DM-DEP-017","resultado":"N/A","nota":"sin cobros depositables","ms":11084,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-018","descripcion":"DM-DEP-018","resultado":"N/A","nota":"sin cobros depositables","ms":11084,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-019","descripcion":"DM-DEP-019","resultado":"N/A","nota":"sin cobros depositables","ms":11084,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-020","descripcion":"DM-DEP-020","resultado":"N/A","nota":"sin cobros depositables","ms":11084,"runner":"playwright-standalone"}

@@ -50,19 +50,64 @@ vgs:
   tagIVA: "IVA"
 
   # ── Cobros ──────────────────────────────────────────────────────────────
+  # ✅ LEÍDAS DEL DISPOSITIVO el 2026-09-02 con
+  #    `node automation/playwright/leer-vg-dispositivo.js cobros`
+  #    Eso resuelve los conflictos entre los 2 dumps: mandan estos valores.
+  #    🔴 La BD **no** sirve para esto: `global_configuration` es un catálogo
+  #       (valor='true' = "la variable existe"), no los valores efectivos.
   requiredCollectionAttachments: true  # 🔴 exige adjunto para ENVIAR
                                        #    ⇒ dejar el cobro GUARDADO y que QA lo envíe a mano
-  requiredComment: true
-  colletionPayment: "true-false-true-true-false-false"   # [⚔] el global trae 6 posiciones; el cliente, 5
-                                       #    🔴 LEER EN LA UI qué métodos ofrece de verdad:
-                                       #       deducirlos del orden del catálogo ya falló antes.
-  retencion: true
-  cobroRetencion: false
-  cobroPrepago: true
-  sizeRetention: 5                    # [⚔] global 5 · cliente 14
-  userCanSelectIGTF: false            # [⚔] global false · cliente true
+  requiredComment: true                # longitudComentario está arriba, en Generales
+  colletionPayment: "true-false-true-true-false-true"   # 6 posiciones (ganó el global)
+                                       #    🔴 Igual LEER EN LA UI qué métodos ofrece: deducirlos
+                                       #       del orden del catálogo ya falló antes.
+  enablePartialPayment: true
+  alwaysPartialPayment: false
+  historicPartialPayment: true
+
+  # Retención
+  retencion: true                     # el campo de retención dentro del cobro
+  cobroRetencion: false               # ⇒ el SUBMÓDULO «Retención» del menú NO aplica
+  userCanAddRetention: true
+  alwaysRetention: false
+  missingRetention: false
+  dynamicRetentions: false
+  sizeRetention: 5                    # 🔑 dígitos EXACTOS del nro. de comprobante
+  formatRetention: 0
+  retentionDocTypeCR: true
+  requiredRetentionAttachments: false
+
+  # IGTF
+  userCanSelectIGTF: false            # ⇒ el IGTF NO se muestra en el cobro en 4K
+  igtfDefault: false
+  disableCheckIGTF: false
   userCanCollectIva: false
-  tolerancia0: true                   # [⚔] global true · cliente false
+
+  # Tolerancias y anticipo  ── los números que hay que probar ──
+  tolerancia0: true                   # permite enviar cobros que no cierran en 0
+  TipoTolerancia: 0                   # 0 = Importe · 1 = Porcentaje
+  RangoToleranciaPositiva: 9          # USD
+  RangoToleranciaNegativa: 15         # USD
+  MonedaTolerancia: "USD"
+  cobroPrepago: true                  # submódulo «Anticipo» disponible en el menú
+  automatedPrepaid: true              # anticipo automático por excedente
+  prepaidRangeAmount: 10              # 🔑 excedente MÍNIMO que dispara el anticipo
+  prepaidRangeCurrency: "USD"
+  prepaidCurrency: "USD"
+  prepaidPaymentMethod: "pa"
+  # 🔴 OJO: tolerancia positiva (9) ≠ umbral de anticipo (10). Son dos reglas
+  #    distintas y dejan una BANDA MUERTA entre 9,01 y 9,99: excede la tolerancia
+  #    y no alcanza para generar el anticipo ⇒ Enviar debe quedar bloqueado ahí.
+  #    (`collection-logic.service.ts`: "tolerancia positiva habilita Enviar;
+  #     prepaidRangeAmount decide el anticipo")
+
+  # Otros
+  enableDifferenceCodes: false        # ⇒ Dif. Devolución/Faltante NO aplica en 4K
+  clientBankAccount: false
+  currencyBank: false
+  historicoTasa: true
+  validateCollectionDate: true
+  signatureCollection: false
 
   # ── Pedidos ─────────────────────────────────────────────────────────────
   orderEnterpriseEnabled: false       # solo en el dump de cliente
@@ -96,7 +141,7 @@ vgs:
   validateReturn: true                # 🔑 TIPO B: es la FACTURA la que habilita las tabs
   requeridedNroFactura: false         # [⚔] global false · cliente true
   signatureReturn: true
-  retentionDocTypeCR: true            # [⚔]
+  # retentionDocTypeCR vive en el bloque de Cobros (es una variable de retención)
 
   # ── Visitas ─────────────────────────────────────────────────────────────
   signatureVisit: false

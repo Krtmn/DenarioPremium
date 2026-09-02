@@ -12,16 +12,38 @@ const REPORTS_DIR = path.resolve(__dirname, '../reports');
 const ICONOS = { PASS: '✅', FAIL: '❌', 'N/A': '⬜', BLOCKED: '⛔' };
 
 /**
- * Crea la carpeta de la corrida y devuelve su ruta.
- * Nombre: playwright_{cliente}_{YYYYMMDD_HHMMSS}
+ * Nombre de carpeta de una corrida de script.
+ *
+ * 🔴 Va DENTRO de la carpeta del cliente, igual que las corridas manuales
+ *    (`automation/reports/README.md`). Antes caía suelta en la raíz de
+ *    `reports/` y se acumularon 82 carpetas mezcladas con los informes reales.
+ *
+ *    reports/{cliente}/script_{cliente}_{YYYYMMDD}_{HHMMSS}/          ← corrida completa
+ *    reports/{cliente}/script-cobros_{cliente}_{YYYYMMDD}_{HHMMSS}/   ← un solo módulo
+ *
+ * El prefijo `script` es el identificador que distingue estas corridas de los
+ * informes que se redactan a mano.
  */
-function crearCarpetaRun(clienteSlug) {
+function nombreRun(clienteSlug, modulo) {
   const now = new Date();
   const pad = n => String(n).padStart(2, '0');
   const ts = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}`
            + `_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-  const nombre = `playwright_${clienteSlug}_${ts}`;
-  const dir = path.join(REPORTS_DIR, nombre);
+  const tipo = modulo ? `script-${modulo}` : 'script';
+  return `${tipo}_${clienteSlug}_${ts}`;
+}
+
+/** Prefijo con el que empiezan TODAS las corridas de script de un cliente. */
+const PREFIJO_RUN = 'script';
+
+/**
+ * Crea la carpeta de la corrida —dentro de la del cliente— y devuelve su ruta.
+ * @param {string} clienteSlug  el mismo QA_CLIENTE del perfil `clientes/{slug}.yaml`
+ * @param {string} [modulo]     si se corrió un solo módulo, para poder distinguirlo
+ */
+function crearCarpetaRun(clienteSlug, modulo) {
+  const nombre = nombreRun(clienteSlug, modulo);
+  const dir = path.join(REPORTS_DIR, clienteSlug, nombre);
   fs.mkdirSync(dir, { recursive: true });
   return { dir, nombre };
 }
@@ -76,4 +98,4 @@ function escribirReporte(dir, modulo, verdicts, msTotal) {
   return { pass, fail, na, blocked };
 }
 
-module.exports = { crearCarpetaRun, escribirReporte };
+module.exports = { crearCarpetaRun, escribirReporte, nombreRun, PREFIJO_RUN };

@@ -1,0 +1,14 @@
+{"modulo":"visitas","id":"DM-VIS-001","descripcion":"Click módulo Visitas → home","resultado":"FAIL","nota":"page.waitForSelector: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('app-visitas') to be visible\u001b[22m\n\u001b[2m    22 × locator resolved to hidden <app-visitas aria-hidden=\"true\" _nghost-ng-c990933610=\"\" class=\"ion-page can-go-back ion-page-hidden\">…</app-visitas>\u001b[22m\n","ms":10160,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-003","descripcion":"DM-VIS-003","resultado":"BLOCKED","nota":"VIS-001 falló","ms":10160,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-004","descripcion":"DM-VIS-004","resultado":"BLOCKED","nota":"VIS-001 falló","ms":10160,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-006","descripcion":"DM-VIS-006","resultado":"BLOCKED","nota":"VIS-001 falló","ms":10160,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-010","descripcion":"DM-VIS-010","resultado":"BLOCKED","nota":"VIS-001 falló","ms":10160,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-014","descripcion":"DM-VIS-014","resultado":"BLOCKED","nota":"VIS-001 falló","ms":10160,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-015","descripcion":"DM-VIS-015","resultado":"BLOCKED","nota":"VIS-001 falló","ms":10160,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-019","descripcion":"DM-VIS-019","resultado":"BLOCKED","nota":"VIS-001 falló","ms":10160,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-020","descripcion":"DM-VIS-020","resultado":"BLOCKED","nota":"VIS-001 falló","ms":10160,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-021","descripcion":"DM-VIS-021","resultado":"BLOCKED","nota":"VIS-001 falló","ms":10160,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-022","descripcion":"DM-VIS-022","resultado":"BLOCKED","nota":"VIS-001 falló","ms":10160,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-023","descripcion":"DM-VIS-023","resultado":"BLOCKED","nota":"VIS-001 falló","ms":10160,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-031","descripcion":"DM-VIS-031","resultado":"BLOCKED","nota":"VIS-001 falló","ms":10160,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-032","descripcion":"DM-VIS-032","resultado":"BLOCKED","nota":"VIS-001 falló","ms":10160,"runner":"playwright-standalone"}

@@ -1,0 +1,9 @@
+{"modulo":"login","id":"DM-LOG-008","descripcion":"Segundo usuario en pantalla login","resultado":"N/A","nota":"has_second_user no configurado en perfil","ms":0,"runner":"playwright-standalone"}
+{"modulo":"login","id":"DM-LOG-009","descripcion":"Login como segundo usuario","resultado":"N/A","nota":"depende de DM-LOG-008 → N/A","ms":0,"runner":"playwright-standalone"}
+{"modulo":"login","id":"DM-LOG-017","descripcion":"Login post-reinstalación","resultado":"N/A","nota":"fuera de alcance smoke — requiere reinstalación","ms":0,"runner":"playwright-standalone"}
+{"modulo":"login","id":"DM-LOG-002","descripcion":"Enviar vacío → alert campos obligatorios","resultado":"PASS","nota":"alert: \"Usuario y/o password no pueden ser vacios\"","ms":17392,"runner":"playwright-standalone"}
+{"modulo":"login","id":"DM-LOG-003","descripcion":"Contraseña incorrecta → alert de error","resultado":"PASS","nota":"alert: \"Usuario y/o contraseña incorrectos.\"","ms":19000,"runner":"playwright-standalone"}
+{"modulo":"login","id":"DM-LOG-004","descripcion":"Checkbox \"Recordar Usuario\" togglea","resultado":"PASS","nota":"antes: false · después: true · cambió: true","ms":20017,"runner":"playwright-standalone"}
+{"modulo":"login","id":"DM-LOG-001","descripcion":"Login correcto → entra a app","resultado":"PASS","nota":"credenciales aceptadas","ms":21300,"runner":"playwright-standalone"}
+{"modulo":"login","id":"DM-LOG-011","descripcion":"Sync screen visible con progress-bar","resultado":"PASS","nota":"progress: true · texto: \"Sincronizando - Etiquetas\nPor favor espere...\"","ms":21322,"runner":"playwright-standalone"}
+{"modulo":"login","id":"DM-LOG-012","descripcion":"HOME visible con módulos","resultado":"PASS","nota":"módulos (10): [Visitas, Inventarios, Pedidos, Devoluciones, Cobros, Depósitos, Vendedores, Productos, Clientes, Sincronizar]","ms":33522,"runner":"playwright-standalone"}

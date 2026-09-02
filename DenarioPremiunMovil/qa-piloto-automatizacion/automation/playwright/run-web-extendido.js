@@ -127,7 +127,9 @@ const now = new Date();
 const pad = (n) => String(n).padStart(2, '0');
 const fecha = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}`;
 const hora  = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-const RUN_DIR = path.join(ROOT, 'automation', 'reports', `web-extendido_${QA_CLIENTE}_${fecha}_${hora}`);
+// 🔴 Dentro de la carpeta del cliente — ver `automation/reports/README.md`.
+const RUN_DIR = path.join(ROOT, 'automation', 'reports', QA_CLIENTE,
+                          `script-web-ext_${QA_CLIENTE}_${fecha}_${hora}`);
 fs.mkdirSync(RUN_DIR, { recursive: true });
 
 const RESULTS_FILE = path.join(RUN_DIR, '_web-results.jsonl');

@@ -1,0 +1,12 @@
+{"modulo":"depositos","id":"DM-DEP-001","descripcion":"Tile Depósitos → home","resultado":"PASS","nota":"botones: DEPÓSITO, BUSCAR","ms":1471,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-002","descripcion":"Click DEPÓSITO → form","resultado":"PASS","nota":"banco: true; tab Cobros disabled: true","ms":3720,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-004","descripcion":"Seleccionar banco","resultado":"PASS","nota":"\"BANCO MERCANTIL - *** 7177163\" (1 opciones)","ms":4772,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-005","descripcion":"Fecha Doc seleccionada","resultado":"PASS","nota":"fecha: 31/8/2026","ms":7611,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-006","descripcion":"Nro. Plantilla + cobro → Guardar","resultado":"PASS","nota":"1 cobros; Guardar enabled=true","ms":11978,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-009","descripcion":"Click Guardar → Guardado","resultado":"PASS","nota":"alert: \"Aceptar\"; 1 ítems · BD-SAVED(st=3)","ms":20476,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-010","descripcion":"BUSCAR → lista","resultado":"PASS","nota":"1 ítems","ms":20488,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-014","descripcion":"Click Guardado → form con datos","resultado":"PASS","nota":"Nro.Plantilla: \"DEP-QA-783448\"","ms":22736,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-017","descripcion":"Click Enviar → Enviado","resultado":"PASS","nota":"ref: N/A · BD-LOCAL-OK(id=9,st=1) · BD-FIELD-OK","ms":34389,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-018","descripcion":"BUSCAR tras enviar → lista","resultado":"PASS","nota":"1 ítems","ms":36577,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-019","descripcion":"Click Enviado → solo lectura","resultado":"PASS","nota":"sin Guardar/Enviar/trash: true","ms":38835,"runner":"playwright-standalone"}
+{"modulo":"depositos","id":"DM-DEP-020","descripcion":"Trash Guardado → desaparece","resultado":"N/A","nota":"sin segundo cobro depositable","ms":49407,"runner":"playwright-standalone"}

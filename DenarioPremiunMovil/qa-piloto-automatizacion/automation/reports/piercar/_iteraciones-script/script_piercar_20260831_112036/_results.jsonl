@@ -1,0 +1,14 @@
+{"modulo":"visitas","id":"DM-VIS-001","descripcion":"Click módulo Visitas → home","resultado":"PASS","nota":"botones: NUEVA VISITA, RUTA DE HOY, Ver mejor ruta · mejorRuta: true","ms":1537,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-004","descripcion":"RUTA DE HOY → lista + searchbar","resultado":"PASS","nota":"searchbar: true · ítems: 1 (puede ser 0 = OK)","ms":2942,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-006","descripcion":"Trash visita Guardada → desaparece","resultado":"PASS","nota":"sin visitas Guardadas previas en lista","ms":3366,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-003","descripcion":"NUEVA VISITA → form / tabs disabled","resultado":"PASS","nota":"tabs: [GENERAL, ACTIVIDADES, ADJUNTOS] · ACTIVIDADES disabled: true · ADJUNTOS disabled: true","ms":8663,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-010","descripcion":"Seleccionar cliente → tabs habilitadas","resultado":"FAIL","nota":"Tab ACTIVIDADES sigue disabled tras probar 4 cliente(s): \"7 CARSCódigo: 7CARS Saldo USD: 1.350,14  Saldo BS: 1.068.865\", \"7 CARS\", \"Código: 7CARS\", \"Saldo USD: 1.350,14\" — posible falta de sucursal asignada","ms":65919,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-014","descripcion":"DM-VIS-014","resultado":"BLOCKED","nota":"VIS-010 falló","ms":65919,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-015","descripcion":"DM-VIS-015","resultado":"BLOCKED","nota":"VIS-010 falló","ms":65919,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-019","descripcion":"DM-VIS-019","resultado":"BLOCKED","nota":"VIS-010 falló","ms":65919,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-020","descripcion":"DM-VIS-020","resultado":"BLOCKED","nota":"VIS-010 falló","ms":65919,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-021","descripcion":"DM-VIS-021","resultado":"BLOCKED","nota":"VIS-010 falló","ms":65919,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-022","descripcion":"DM-VIS-022","resultado":"BLOCKED","nota":"VIS-010 falló","ms":65919,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-023","descripcion":"DM-VIS-023","resultado":"BLOCKED","nota":"VIS-010 falló","ms":65919,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-031","descripcion":"DM-VIS-031","resultado":"BLOCKED","nota":"VIS-010 falló","ms":65919,"runner":"playwright-standalone"}
+{"modulo":"visitas","id":"DM-VIS-032","descripcion":"DM-VIS-032","resultado":"BLOCKED","nota":"VIS-010 falló","ms":65919,"runner":"playwright-standalone"}

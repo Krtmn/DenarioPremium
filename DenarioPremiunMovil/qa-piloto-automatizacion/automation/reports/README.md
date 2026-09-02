@@ -27,6 +27,34 @@ reports/
 El nombre de la corrida **sigue llevando el cliente**, aunque ahora sea redundante con la carpeta: así los
 nombres siguen siendo únicos y no se rompe nada que los referencie.
 
+### Corridas de SCRIPT: prefijo `script`, y también dentro de la carpeta del cliente
+
+🔴 **Cambio del 2026-09-02.** Los runners escribían en la **raíz** de `reports/`
+(`playwright_{cliente}_{fecha}_{hora}`) y se acumularon **82 carpetas** mezcladas con los informes reales.
+Ahora van donde va todo lo demás — dentro de `{cliente}/` — con el prefijo **`script`** como identificador:
+
+| Qué se corrió | Carpeta | Runner |
+|---|---|---|
+| Todos los módulos | `{cliente}/script_{cliente}_{fecha}_{hora}/` | `playwright/run.js` |
+| **Un solo módulo** (`--modulo=cobros`) | `{cliente}/script-cobros_{cliente}_{fecha}_{hora}/` | `playwright/run.js` |
+| Capa web | `{cliente}/script-web_{cliente}_{fecha}_{hora}/` | `playwright/run-web.js` |
+| Web extendido | `{cliente}/script-web-ext_{cliente}_{fecha}_{hora}/` | `playwright/run-web-extendido.js` |
+
+Así, dentro de la carpeta de un cliente se distingue de un vistazo lo que **generó un script** de lo que
+**se redactó a mano** (`fix_*`, `req_*`, `smoke-*`, informes sueltos).
+
+**Quién depende de estos nombres** — si se cambian, hay que tocar los tres:
+`playwright/report.js` (`nombreRun`) · `playwright/consolidar.js` (`ultimoDir`) ·
+`web/manifest.js` (`detectarUltimoRun`).
+
+⚠ **Al detectar «la última corrida», ordenar por el TIMESTAMP del final, nunca por el nombre completo.**
+En ASCII `_` (0x5F) va después de `-` (0x2D), así que `script_…_20260901` queda alfabéticamente **después**
+de `script-cobros_…_20260902` y se elige la corrida **más vieja**. Ya pasó al hacer este cambio.
+
+**`{cliente}/_iteraciones-script/`** guarda las corridas viejas de la raíz — iteraciones de depuración de
+los días en que se construyeron los scripts, con minutos de diferencia entre sí. Se conservan por si acaso;
+se pueden borrar sin perder nada.
+
 **Archivos globales (raíz):** este `README.md` (índice + convención) · `leer-corrida.js` · `aggregate.js` ·
 e informes **transversales** que abarcan varios clientes (p. ej.
 `PENDIENTE-pedidos-ocultos-salesman-view.md`, que mide el mismo defecto en 4 tenants).

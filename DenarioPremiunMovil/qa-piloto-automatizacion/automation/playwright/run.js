@@ -160,11 +160,18 @@ function dataParaModulo(modulo) {
 }
 
 // ── Crear carpeta de reporte ──────────────────────────────────────────────────
+// 🔴 Va DENTRO de la carpeta del cliente, igual que las corridas manuales
+//    (ver `automation/reports/README.md`). Antes caía suelta en la raíz de
+//    `reports/` y se acumularon 82 carpetas mezcladas con los informes reales.
+//      reports/{cliente}/script_{cliente}_{fecha}_{hora}/          ← corrida completa
+//      reports/{cliente}/script-cobros_{cliente}_{fecha}_{hora}/   ← un solo módulo
 const now = new Date();
 const pad = (n) => String(n).padStart(2, '0');
 const fecha = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}`;
 const hora  = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-const RUN_DIR = path.join(ROOT, 'automation', 'reports', `playwright_${QA_CLIENTE}_${fecha}_${hora}`);
+const TIPO_RUN = QA_MODULO ? `script-${QA_MODULO}` : 'script';
+const RUN_DIR = path.join(ROOT, 'automation', 'reports', QA_CLIENTE,
+                          `${TIPO_RUN}_${QA_CLIENTE}_${fecha}_${hora}`);
 fs.mkdirSync(RUN_DIR, { recursive: true });
 
 const RESULTS_FILE = path.join(RUN_DIR, '_results.jsonl');

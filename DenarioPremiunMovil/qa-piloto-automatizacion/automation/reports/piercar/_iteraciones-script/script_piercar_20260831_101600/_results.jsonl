@@ -1,0 +1,10 @@
+{"modulo":"productos","id":"DM-PRD-001","descripcion":"Navegar a Productos desde Home","resultado":"PASS","nota":"24 estructuras visibles","ms":1056,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-002","descripcion":"Cambiar tipo de estructura","resultado":"PASS","nota":"cambió a \"Sub-Linea\" → 53 estructuras","ms":1982,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-004","descripcion":"Click \"AMORTIGUADORES\" → lista productos","resultado":"PASS","nota":"24 productos","ms":4777,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-009","descripcion":"Scroll infinito","resultado":"PASS","nota":"catálogo completo, spinner desapareció","ms":6687,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-006","descripcion":"Buscar \"amortiguador\"","resultado":"PASS","nota":"24 resultados filtrados","ms":9321,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-007","descripcion":"Buscar \"ZZZZZZZ\" → lista vacía","resultado":"PASS","nota":"Mensaje \"No hay productos\" visible","ms":11894,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-012","descripcion":"Click producto \"Amortiguador DELANTERO DERECHO-IZQUIERDO\" → detalle","resultado":"PASS","nota":"campos presentes: nombre ✓ precio ✓","ms":14903,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-013","descripcion":"Cambiar lista de precio","resultado":"N/A","nota":"solo 1 lista(s) — N/A","ms":14912,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-020","descripcion":"Back detalle → lista productos","resultado":"PASS","nota":"","ms":15742,"runner":"playwright-standalone"}
+{"modulo":"productos","id":"DM-PRD-021","descripcion":"Volver a Home","resultado":"PASS","nota":"","ms":15865,"runner":"playwright-standalone"}

@@ -1,0 +1,16 @@
+{"modulo":"inventarios","id":"DM-INV-001","descripcion":"Tile Inventarios → home","resultado":"PASS","nota":"botones: INVENTARIO, BUSCAR","ms":1469,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-002","descripcion":"Click INVENTARIO → form","resultado":"PASS","nota":"tabs: [General, Inventario, Resumen, Adjuntos]; Inventario disabled: true","ms":4921,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-004","descripcion":"Seleccionar cliente","resultado":"PASS","nota":"\"MIO PARTS & SERVICES, C.A.Código: J409074560 Saldo BS: 3.858\" · tabs habilitadas","ms":13064,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-008","descripcion":"Tab Inventario → lista productos","resultado":"PASS","nota":"7 ítems visibles","ms":14901,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-010","descripcion":"Click producto → modal captura","resultado":"PASS","nota":"modal abierto (intento 2)","ms":20789,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-011","descripcion":"Llenar campos modal","resultado":"PASS","nota":"cantidad: 5; expirationBatch: true; lote: LOTE-QA-4952","ms":26559,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-012","descripcion":"Aceptar modal → producto marcado","resultado":"PASS","nota":"","ms":28239,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-016","descripcion":"Tab Resumen → productos capturados","resultado":"PASS","nota":"1 ítems (app-inventario ion-row)","ms":30006,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-017","descripcion":"Pedido Sugerido visible","resultado":"N/A","nota":"suggestedOrderByDispatchAndReturn=false","ms":30006,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-020","descripcion":"Días para siguiente inventario","resultado":"N/A","nota":"suggestedOrderByDispatchAndReturn=false","ms":30006,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-021","descripcion":"Click Guardar → Guardado","resultado":"PASS","nota":"alerts: \"Aceptar\"/\"OK\" · BD-SAVED(st=3)","ms":34607,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-022","descripcion":"Click Enviar → Enviado","resultado":"PASS","nota":"ref: N/A · BD-LOCAL-OK(id=143,st=1) · BD-FIELD-OK","ms":49835,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-023","descripcion":"BUSCAR → lista","resultado":"PASS","nota":"1 ítems","ms":52490,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-025","descripcion":"Searchbar filtra","resultado":"PASS","nota":"\"MIO PA\" → 1 resultado(s)","ms":54400,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-026","descripcion":"Click Guardado → form abre","resultado":"PASS","nota":"(defecto conocido: puede abrir en tab General)","ms":97594,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-028","descripcion":"Trash Guardado → desaparece","resultado":"PASS","nota":"alert: \"OK\" · form visible: false","ms":108134,"runner":"playwright-standalone"}

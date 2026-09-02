@@ -1,0 +1,34 @@
+{"modulo":"cobros","id":"DM-COB-006","descripcion":"Comentario obligatorio","resultado":"N/A","nota":"requiredComment=false","ms":11,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-036","descripcion":"DM-COB-036","resultado":"N/A","nota":"userCanSelectIGTF=false (IGTF inactivo)","ms":11,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-044","descripcion":"DM-COB-044","resultado":"N/A","nota":"userCanSelectIGTF=false (IGTF inactivo)","ms":11,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-045","descripcion":"DM-COB-045","resultado":"N/A","nota":"userCanSelectIGTF=false (IGTF inactivo)","ms":11,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-037","descripcion":"Cobro 25% IVA","resultado":"N/A","nota":"userCanCollectIva=false","ms":11,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-001","descripcion":"Módulo Cobros → home (COBRO + BUSCAR)","resultado":"PASS","nota":"botones: COBRO, ANTICIPO/PREPAGO, RETENCIÓN, BUSCAR","ms":2524,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-002","descripcion":"COBRO → form 5 tabs; resto disabled sin cliente","resultado":"PASS","nota":"tabs: 5 (General/Documentos/Pagos/Total/Adjuntos) · habilitadas: 1","ms":4571,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-004","descripcion":"Seleccionar cliente → tabs habilitadas","resultado":"PASS","nota":"cliente: \"MIO PARTS & SERVICES, C.A.\" · tabs habilitadas: 5","ms":12258,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-007","descripcion":"Tab Documentos → lista + leyenda","resultado":"PASS","nota":"documentos: 4 · leyenda: true","ms":16882,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-008","descripcion":"Marcar documento → total en Pagos","resultado":"PASS","nota":"marcados: 4 · total: \"Monto total a pagar BS: 2.677.302,32 Diferencia BS: -2.677.3\"","ms":19413,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-009","descripcion":"Tab Pagos → modal métodos de pago","resultado":"PASS","nota":"métodos: Efectivo, Depósito, Transferencia, Pago Móvil","ms":22577,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-040","descripcion":"Completar pago Efectivo = total → diferencia azul","resultado":"PASS","nota":"monto: 267730232 · antes: -2.677.302,32(red) · después: 0,00(blue)","ms":32897,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-012","descripcion":"Diferencia rojo (insuf.) → azul (cubre)","resultado":"PASS","nota":"antes: red · después: blue","ms":32897,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-043","descripcion":"Diferencia se actualiza con el monto","resultado":"PASS","nota":"antes: -2.677.302,32 · después: 0,00","ms":32897,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-016","descripcion":"Tab Adjuntos → acordeones visibles","resultado":"PASS","nota":"imágenes: true · archivo: true · firma: true","ms":34002,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-018","descripcion":"Guardar cobro → alert confirmación","resultado":"PASS","nota":"alert: \"Denario Cobros · El Cobro se ha guardado\"","ms":35764,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-019","descripcion":"Enviar cobro (con adjunto)","resultado":"BLOCKED","nota":"Fase 2 — ensureAdjunto/mock cámara standalone pendiente","ms":37510,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-022","descripcion":"BUSCAR → lista con searchbar","resultado":"PASS","nota":"lista: true · ítems: 1 · searchbar: true","ms":40215,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-024","descripcion":"Abrir Guardado → form editable","resultado":"PASS","nota":"tabs accesibles: 5","ms":42680,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-026","descripcion":"Eliminar Guardado → desaparece","resultado":"PASS","nota":"antes: 1 · después: 0","ms":53614,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-020","descripcion":"Atrás con cambios → modal Salir/Guardar","resultado":"PASS","nota":"modal: \"Denario Cobros\"","ms":67446,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-021","descripcion":"Salir sin guardar → no persiste","resultado":"PASS","nota":"salió por modal: true · home: true","ms":68355,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-033","descripcion":"DM-COB-033","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":68400,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-034","descripcion":"DM-COB-034","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":68400,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-014","descripcion":"DM-COB-014","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":68400,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-015","descripcion":"DM-COB-015","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":68400,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-028","descripcion":"DM-COB-028","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":68400,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-029","descripcion":"DM-COB-029","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":68400,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-041","descripcion":"DM-COB-041","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":68400,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-042","descripcion":"DM-COB-042","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":68400,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-046","descripcion":"DM-COB-046","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":68400,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-047","descripcion":"DM-COB-047","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":68400,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-039","descripcion":"DM-COB-039","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":68400,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-038","descripcion":"DM-COB-038","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":68400,"runner":"playwright-standalone"}

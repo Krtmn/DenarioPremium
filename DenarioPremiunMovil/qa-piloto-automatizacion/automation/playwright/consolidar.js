@@ -6,9 +6,9 @@
 //     → busca automáticamente los últimos dirs de cada runner
 //
 //   node automation/playwright/consolidar.js run-vzla \
-//     --movil=automation/reports/playwright_run-vzla_FECHA \
-//     --web=automation/reports/web_run-vzla_FECHA \
-//     --extendido=automation/reports/web-extendido_run-vzla_FECHA
+//     --movil=automation/reports/run-vzla/script_run-vzla_FECHA \
+//     --web=automation/reports/run-vzla/script-web_run-vzla_FECHA \
+//     --extendido=automation/reports/run-vzla/script-web-ext_run-vzla_FECHA
 //
 //   Cualquiera de los 3 flags es opcional. Si no se pasa, ese runner
 //   aparece como "(no ejecutado)" en el consolidado.
@@ -34,18 +34,34 @@ if (!QA_CLIENTE) {
 }
 
 // ── Auto-detectar último dir de cada runner si no se pasa explícito ──────────
-function ultimoDir(prefix) {
+// 🔴 Las corridas de script viven en `reports/{cliente}/`, no en la raíz.
+//    El móvil admite dos formas: `script_{cliente}_...` (corrida completa) y
+//    `script-{modulo}_{cliente}_...` (un solo módulo) — pero `script-web…`
+//    pertenece a los otros runners, así que hay que excluirlo.
+const BASE_CLIENTE = path.join(REPORTS_DIR, QA_CLIENTE);
+
+// 🔴 Ordenar por el TIMESTAMP del final, no por el nombre completo: en ASCII
+//    `_` (0x5F) > `-` (0x2D), así que un `script_…_20260901` alfabéticamente
+//    queda DESPUÉS de un `script-cobros_…_20260902` y "la última corrida"
+//    terminaba siendo la más vieja.
+const tsDe = (d) => (d.match(/(\d{8}_\d{6})$/) || ['', ''])[1];
+
+function ultimoDir(match) {
   try {
-    const dirs = fs.readdirSync(REPORTS_DIR)
-      .filter(d => d.startsWith(prefix))
-      .sort();
-    return dirs.length ? path.join(REPORTS_DIR, dirs[dirs.length - 1]) : null;
+    const dirs = fs.readdirSync(BASE_CLIENTE).filter(match)
+      .sort((a, b) => tsDe(a).localeCompare(tsDe(b)));
+    return dirs.length ? path.join(BASE_CLIENTE, dirs[dirs.length - 1]) : null;
   } catch (_) { return null; }
 }
 
-if (!DIR_MOVIL)  DIR_MOVIL = ultimoDir(`playwright_${QA_CLIENTE}_`);
-if (!DIR_WEB)    DIR_WEB   = ultimoDir(`web_${QA_CLIENTE}_`);
-if (!DIR_EXT)    DIR_EXT   = ultimoDir(`web-extendido_${QA_CLIENTE}_`);
+const esMovil = (d) =>
+  (d.startsWith('script_') || d.startsWith('script-')) &&
+  !d.startsWith('script-web') &&
+  d.includes(`_${QA_CLIENTE}_`);
+
+if (!DIR_MOVIL)  DIR_MOVIL = ultimoDir(esMovil);
+if (!DIR_WEB)    DIR_WEB   = ultimoDir(d => d.startsWith(`script-web_${QA_CLIENTE}_`));
+if (!DIR_EXT)    DIR_EXT   = ultimoDir(d => d.startsWith(`script-web-ext_${QA_CLIENTE}_`));
 
 // ── Leer jsonl ────────────────────────────────────────────────────────────────
 function leerJsonl(dir, filename) {

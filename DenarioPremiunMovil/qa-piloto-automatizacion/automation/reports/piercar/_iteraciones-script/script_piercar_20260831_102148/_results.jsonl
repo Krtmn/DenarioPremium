@@ -1,0 +1,16 @@
+{"modulo":"inventarios","id":"DM-INV-001","descripcion":"Tile Inventarios → home","resultado":"PASS","nota":"botones: INVENTARIO, BUSCAR","ms":1440,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-002","descripcion":"Click INVENTARIO → form","resultado":"PASS","nota":"tabs: [General, Inventario, Resumen, Adjuntos]; Inventario disabled: true","ms":5529,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-004","descripcion":"Seleccionar cliente","resultado":"PASS","nota":"\"ANA MANZANARESCódigo: MANZANARES Saldo USD: 489,65  Saldo BS\" · tabs habilitadas","ms":13625,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-008","descripcion":"Tab Inventario → lista productos","resultado":"PASS","nota":"24 ítems visibles","ms":15450,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-010","descripcion":"Click producto → modal captura","resultado":"PASS","nota":"modal abierto (intento 2)","ms":21357,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-011","descripcion":"Llenar campos modal","resultado":"PASS","nota":"cantidad: 5; expirationBatch: false; lote: N/A","ms":27312,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-012","descripcion":"Aceptar modal → producto marcado","resultado":"PASS","nota":"","ms":29007,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-016","descripcion":"Tab Resumen → productos capturados","resultado":"PASS","nota":"1 ítems (app-inventario ion-row)","ms":30781,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-017","descripcion":"Pedido Sugerido visible","resultado":"N/A","nota":"suggestedOrderByDispatchAndReturn=false","ms":30781,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-020","descripcion":"Días para siguiente inventario","resultado":"N/A","nota":"suggestedOrderByDispatchAndReturn=false","ms":30781,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-021","descripcion":"Click Guardar → Guardado","resultado":"PASS","nota":"alerts: \"Aceptar\"/\"OK\" · BD-LOCAL-EMPTY","ms":35042,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-022","descripcion":"Click Enviar → Enviado","resultado":"PASS","nota":"ref: N/A · BD-N/A · BD-FIELD-OK","ms":49620,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-023","descripcion":"BUSCAR → lista","resultado":"PASS","nota":"1 ítems","ms":52246,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-025","descripcion":"Searchbar filtra","resultado":"PASS","nota":"\"ANA MA\" → 1 resultado(s)","ms":54101,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-026","descripcion":"Click Guardado → form abre","resultado":"PASS","nota":"(defecto conocido: puede abrir en tab General)","ms":97820,"runner":"playwright-standalone"}
+{"modulo":"inventarios","id":"DM-INV-028","descripcion":"Trash Guardado → desaparece","resultado":"PASS","nota":"alert: \"OK\" · form visible: false","ms":107001,"runner":"playwright-standalone"}

@@ -1,0 +1,12 @@
+{"modulo":"clientes","id":"DM-CLT-001","descripcion":"Navegar a Clientes desde Home","resultado":"PASS","nota":"3 botones visibles","ms":1659,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-002","descripcion":"Click CLIENTES → lista de clientes","resultado":"PASS","nota":"50 clientes","ms":4343,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-003","descripcion":"Buscar \"7 CARS\" en lista","resultado":"PASS","nota":"3 resultados","ms":6951,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-009","descripcion":"Click en cliente → detalle","resultado":"PASS","nota":"detalle visible","ms":8126,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-013","descripcion":"Tab \"Doc. de Venta\"","resultado":"PASS","nota":"2 filas en tabla","ms":10157,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-017","descripcion":"Volver a lista desde detalle","resultado":"PASS","nota":"","ms":10412,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-016","descripcion":"Volver a home clientes desde lista","resultado":"PASS","nota":"","ms":11943,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-019","descripcion":"CLIENTE POTENCIAL → formulario con botones disabled","resultado":"PASS","nota":"9 inputs; Guardar disabled=true, Enviar disabled=true","ms":13170,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-021","descripcion":"Llenar campos → botones Guardar/Enviar habilitados","resultado":"PASS","nota":"Guardar enabled=true, Enviar enabled=true; idEmpresa: none (disabled (1 empresa auto-asignada))","ms":21379,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-024","descripcion":"Click Guardar → cliente potencial guardado","resultado":"PASS","nota":"alert btn: \"OK\"; \"Test-CLT-SMOKE-830606\" visible en BUSCAR · BD-LOCAL-NOT-FOUND","ms":27945,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-026","descripcion":"Re-abrir Guardado → Enviar → 3 alertas → Enviado","resultado":"PASS","nota":"ref potencial: 1; en home clientes: 3 botones · BD-LOCAL-PENDING(id=-1,st=?) · BD-FIELD-OK","ms":38056,"runner":"playwright-standalone"}
+{"modulo":"clientes","id":"DM-CLT-031","descripcion":"Borrar cliente Guardado → desaparece de lista","resultado":"FAIL","nota":"Alert button no encontrado: OK/Aceptar","ms":46615,"runner":"playwright-standalone"}

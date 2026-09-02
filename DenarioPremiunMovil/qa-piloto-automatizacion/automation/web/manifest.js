@@ -90,14 +90,22 @@ function buildManifest(resultsPath) {
  * @returns {string|null}
  */
 function detectarUltimoRun(repoRoot, clienteSlug) {
-  const reportsDir = path.join(repoRoot, 'automation', 'reports');
-  if (!fs.existsSync(reportsDir)) return null;
-  const dirs = fs.readdirSync(reportsDir)
-    .filter((d) => d.startsWith(`playwright_${clienteSlug}_`))
-    .sort()
-    .reverse();
+  // 🔴 Las corridas de script viven en `reports/{cliente}/`, no en la raíz.
+  //    Formas válidas del runner móvil: `script_{cliente}_...` (completa) y
+  //    `script-{modulo}_{cliente}_...`; `script-web…` es de los runners web.
+  const baseCliente = path.join(repoRoot, 'automation', 'reports', clienteSlug);
+  if (!fs.existsSync(baseCliente)) return null;
+  // 🔴 Ordenar por el TIMESTAMP del final, no por el nombre: en ASCII `_` > `-`,
+  //    así que `script_…_20260901` quedaba después de `script-cobros_…_20260902`
+  //    y "la última corrida" salía siendo la más vieja.
+  const tsDe = (d) => (d.match(/(\d{8}_\d{6})$/) || ['', ''])[1];
+  const dirs = fs.readdirSync(baseCliente)
+    .filter((d) => (d.startsWith('script_') || d.startsWith('script-')) &&
+                   !d.startsWith('script-web') &&
+                   d.includes(`_${clienteSlug}_`))
+    .sort((a, b) => tsDe(b).localeCompare(tsDe(a)));
   for (const d of dirs) {
-    const f = path.join(reportsDir, d, '_results.jsonl');
+    const f = path.join(baseCliente, d, '_results.jsonl');
     if (fs.existsSync(f)) return f;
   }
   return null;

@@ -4,7 +4,7 @@
 // Uso:
 //   node automation/playwright/run-web.js run-vzla
 //   node automation/playwright/run-web.js run-vzla --modulo=visitas
-//   node automation/playwright/run-web.js run-vzla --run-dir=automation/reports/playwright_run-vzla_20260819_090803
+//   node automation/playwright/run-web.js run-vzla --run-dir=automation/reports/run-vzla/script_run-vzla_20260819_090803
 
 const path = require('path');
 const fs   = require('fs');
@@ -151,7 +151,10 @@ const now = new Date();
 const pad = (n) => String(n).padStart(2, '0');
 const fecha = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}`;
 const hora  = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-const RUN_DIR = path.join(ROOT, 'automation', 'reports', `web_${QA_CLIENTE}_${fecha}_${hora}`);
+// 🔴 Dentro de la carpeta del cliente, igual que el runner móvil y que las
+//    corridas manuales — ver `automation/reports/README.md`.
+const RUN_DIR = path.join(ROOT, 'automation', 'reports', QA_CLIENTE,
+                          `script-web_${QA_CLIENTE}_${fecha}_${hora}`);
 fs.mkdirSync(RUN_DIR, { recursive: true });
 
 const RESULTS_FILE = path.join(RUN_DIR, '_web-results.jsonl');

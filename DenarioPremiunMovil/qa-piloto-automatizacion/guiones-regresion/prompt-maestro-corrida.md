@@ -169,9 +169,9 @@ El script detecta automáticamente los últimos directorios de cada runner. Si q
 
 ```bash
 node automation/playwright/consolidar.js {cliente_id} \
-  --movil=automation/reports/playwright_{cliente_id}_FECHA \
-  --web=automation/reports/web_{cliente_id}_FECHA \
-  --extendido=automation/reports/web-extendido_{cliente_id}_FECHA
+  --movil=automation/reports/{cliente_id}/script_{cliente_id}_FECHA \
+  --web=automation/reports/{cliente_id}/script-web_{cliente_id}_FECHA \
+  --extendido=automation/reports/{cliente_id}/script-web-ext_{cliente_id}_FECHA
 ```
 
 Muestra al usuario el resumen en consola (PASS/FAIL/N/A totales y lista de FAILs) y la ruta del `consolidado.md` generado.
