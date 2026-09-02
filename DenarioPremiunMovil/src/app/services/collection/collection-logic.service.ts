@@ -3084,8 +3084,8 @@ export class CollectionService {
       ?? 'Complete los campos obligatorios antes de enviar.';
   }
 
-  /** Pestaña del primer error bloqueante de Enviar. */
-  public resolveSendValidationFocusTab(): CollectionSendTab {
+  /** Pestaña del primer error bloqueante de Enviar. Null = sin error (SEND-TAB-001). */
+  public resolveSendValidationFocusTab(): CollectionSendTab | null {
     const sync = this.collectSyncFieldSendIssues();
     if (sync.length > 0) {
       return sync[0].tab;
@@ -3093,7 +3093,7 @@ export class CollectionService {
     if (this.lastSendIssues.length > 0) {
       return this.lastSendIssues[0].tab;
     }
-    return 'default';
+    return null;
   }
 
   /**
@@ -3701,9 +3701,13 @@ export class CollectionService {
 
   /** Emite la pestaña a enfocar tras un fallo de Enviar. */
   public requestSendValidationTabFocus(
-    tab?: 'default' | 'documentos' | 'pagos' | 'adjuntos',
+    tab?: CollectionSendTab | null,
   ): void {
-    this.focusSendValidationTab.next(tab ?? this.resolveSendValidationFocusTab());
+    const focus = tab === undefined ? this.resolveSendValidationFocusTab() : tab;
+    if (focus == null) {
+      return;
+    }
+    this.focusSendValidationTab.next(focus);
   }
 
   public hasAddedPaymentMethodForSendUx(): boolean {

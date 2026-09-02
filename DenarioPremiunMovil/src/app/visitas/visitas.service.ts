@@ -780,8 +780,8 @@ export class VisitasService {
       ?? 'Complete los campos obligatorios de la visita.';
   }
 
-  /** Pestaña del primer error (misma prioridad que getVisitValidationMessage). */
-  public resolveSendValidationFocusTab(): 'default' | 'actividades' | 'adjuntos' {
+  /** Pestaña del primer error. Null = sin error (SEND-TAB-001). */
+  public resolveSendValidationFocusTab(): 'default' | 'actividades' | 'adjuntos' | null {
     if (!this.generalTabValidForSave || !this.hasClientSelected()
       || !this.hasAddressSelected() || !this.isVisitStartedForGeneral()) {
       return 'default';
@@ -800,13 +800,17 @@ export class VisitasService {
     if (this.hasMissingGpsCoordinate()) {
       return 'default';
     }
-    return 'default';
+    return null;
   }
 
   public requestSendValidationTabFocus(
-    tab?: 'default' | 'actividades' | 'adjuntos',
+    tab?: 'default' | 'actividades' | 'adjuntos' | null,
   ): void {
-    this.focusSendValidationTab.next(tab ?? this.resolveSendValidationFocusTab());
+    const focus = tab === undefined ? this.resolveSendValidationFocusTab() : tab;
+    if (focus == null) {
+      return;
+    }
+    this.focusSendValidationTab.next(focus);
   }
 
   shouldShowActivitiesSendError(): boolean {
