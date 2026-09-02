@@ -25,9 +25,21 @@ playas:
     nombre: "Isla Coche"
     base:   "http://denarioislacoche.ddns.net:8080/DenarioPremium"
     # Empresa observada 2026-07-28: CAPITALINA DE ALIMENTOS 212, C.A.
-  # 🔴 CARIBE FUERA DE SERVICIO (2026-08-13, indicado por QA): HTTP 404 en :8080 —
-  #   Tomcat levantado pero la app DenarioPremium NO desplegada (ni /DenarioPremium ni la raiz).
-  #   NO incluirla en barridos playa-por-playa salvo confirmacion explicita de QA.
+  # ✅ CARIBE OPERATIVA de nuevo — verificado 2026-09-02 en corrida real.
+  #   `/DenarioPremium` responde **HTTP 302** (redirige a login) y la sesión entra sin
+  #   problema con el bloque "# USUARIO WEB ISLA COCHE / LA TORTUGA / EL YAQUE / CARIBE".
+  #   Se consultaron /pages/inventarios, /pages/detalleInventario, /pages/pedidos y
+  #   /pages/detallePedido: todo con datos y tiempos normales.
+  #   ⚠ La raíz `:8080/` sigue dando 404 — eso es normal y NO indica caída: la app vive
+  #     bajo /DenarioPremium. Medir la salud SIEMPRE contra esa ruta, no contra la raíz.
+  #     (Fue lo que llevó a darla por caída el 13/08.)
+  #
+  # 🕐 HISTÓRICO — 2026-08-13 al 2026-09-01: FUERA DE SERVICIO, HTTP 404 en :8080;
+  #   Tomcat levantado pero la app no desplegada. Resuelto sin fecha exacta conocida.
+  #
+  #   👤 Cliente actual: **HIDROPONIAS VENEZOLANAS C.A** (`HIDRO_A`), vendedor `vendedor4`.
+  #      ⚠ Esto CONVIVE con la nota de abajo sobre COVADONGA (agosto): la playa cambió de
+  #        cliente. Leer la empresa en runtime antes de dar por buena cualquier nota previa.
   caribe:
     nombre: "Caribe"
     base:   "http://denariocaribe.ddns.net:8080/DenarioPremium"
