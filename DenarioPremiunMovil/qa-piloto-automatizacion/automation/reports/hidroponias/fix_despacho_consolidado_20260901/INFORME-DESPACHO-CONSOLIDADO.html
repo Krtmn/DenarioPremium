@@ -80,10 +80,11 @@
 
 <table class="ficha">
   <tr><td>Qué se validó</td><td>Que el campo <b>Despacho</b> tome <b>todas</b> las facturas de la última fecha facturada, y no solo la última factura</td></tr>
+  <tr><td>Clientes de prueba</td><td><b>209</b> · <b>211</b> · <b>105</b> — tres carteras independientes</td></tr>
   <tr><td>Cliente y playa</td><td><b>HIDROPONIAS VENEZOLANAS C.A</b> · El Caribe <span style="color:var(--gris)">(confirmada en runtime)</span></td></tr>
   <tr><td>Build / fix</td><td><code>076faf27</code> · rama <code>fix/invoices-Hidroponia-20260901</code></td></tr>
   <tr><td>Empresa · vendedor</td><td><b>HIDRO_A</b> · login <code>vendedor4</code> / <code>id_user 468</code></td></tr>
-  <tr><td>Registros de evidencia</td><td><b>Inventarios 51, 52 y 53</b> · <b>Pedidos 51, 52, 53 y 54</b> · <b>Devoluciones 108 y 109</b> — todos Enviados y cotejados en nube</td></tr>
+  <tr><td>Registros de evidencia</td><td><b>Inventarios 51 a 54</b> · <b>Pedidos 51 a 55</b> · <b>Devoluciones 108 y 109</b> — todos Enviados y cotejados en nube</td></tr>
   <tr><td>Resultado</td><td><b class="ok">24 PASS · 0 FAIL</b> · 1 caso retirado y rehecho (ver C6) · 1 no ejercitable por falta de dato</td></tr>
 </table>
 
@@ -362,6 +363,62 @@ están en el DOM, hay que leerlos del modelo». <b>Sí están</b>: se ven al des
 dentro del modal. Lo que ocurre es que el acordeón nace colapsado y las tablas se recortan.
 </div>
 
+<h2>Segundo cliente: el fix se confirma en el 211</h2>
+
+<p>Para que la conclusión no dependiera de un solo caso, se repitió el ciclo completo en otro
+cliente con la misma condición. <b>Cliente 211 — EXCELSIOR GAMA (LAS MERCEDES)</b>,
+<code>id_client 171</code> · <code>id_address_client 786</code>, última fecha facturada
+<b>23/07</b> con <b>dos facturas</b>. <code>daysSinceLast = 30</code>.</p>
+
+<table>
+  <tr><th>Producto</th><th style="width:22mm">Antes (bug)</th><th style="width:20mm">Oráculo</th>
+      <th style="width:22mm">Medido en app</th><th style="width:26mm"></th></tr>
+  <tr><td><code>GERPROALF002CAJ</code></td><td class="num bad">0</td><td class="num">25</td><td class="num ok">25</td><td>✅</td></tr>
+  <tr><td><code>046013ESP001BOL</code></td><td class="num bad">0</td><td class="num">15</td><td class="num ok">15</td><td>✅</td></tr>
+  <tr><td><code>CAMPROCEB002ATA</code></td><td class="num bad">0</td><td class="num">10</td><td class="num ok">10</td><td>✅</td></tr>
+  <tr><td><code>TOMPROCHE001CAJ</code></td><td class="num">20</td><td class="num">20</td><td class="num ok">20</td><td><b>control</b> — no se movió</td></tr>
+  <tr><td><code>FRUPRO005001025</code></td><td class="num">30</td><td class="num">30</td><td class="num ok">30</td><td><b>control</b> — no se movió</td></tr>
+</table>
+
+<p><b>Tres productos más recuperados, dos controles intactos.</b> Sumados a los del cliente 209,
+son <b>siete productos</b> que el bug ocultaba y que ahora traen su cantidad exacta, en
+<b>dos clientes independientes</b>.</p>
+
+<div class="cap">
+  <img src="12-sugerido-211-despacho.png" alt="Detalle del cálculo en el cliente 211">
+  <div class="pie">Cliente 211 · <code>GERPROALF002CAJ</code>: <b>Inv. Anterior 18 + Despacho 25 = Inv. Inicial 43</b>.
+  Bajo el bug ese Despacho era 0.</div>
+</div>
+
+<p>Este ciclo también aportó un <b>término de devolución preexistente</b>: <code>CAMPROCEB002ATA</code>
+traía <b>Dev. Distribución 6</b> de una devolución anterior del propio cliente, y el cálculo la
+descontó. Cerró en <b>Inventario 54</b> + <b>Pedido 55</b> (5 líneas: 7 · 6 · 9 · 14 · 10).</p>
+
+<h2>Las devoluciones que montamos, y cómo las recoge el sugerido</h2>
+
+<p>Se crearon las dos devoluciones desde la aplicación, sobre el mismo cliente y la misma
+factura, y quedaron <b>Enviadas</b>:</p>
+
+<div class="par">
+  <div>
+    <div class="et">Las dos devoluciones creadas</div>
+    <img src="10-devoluciones-creadas.png" alt="Listado con las devoluciones 108 y 109">
+  </div>
+  <div>
+    <div class="et et-bien">Ref. 108 — tipo <b>Distribución</b></div>
+    <img src="11-devolucion-108-distribucion.png" alt="Detalle de la devolución 108">
+  </div>
+</div>
+<p class="cap"><span class="pie">Refs. <b>108</b> y <b>109</b>, cliente 209, ambas Enviadas.
+A la derecha, la 108 con su tipo <b>Distribución</b>.</span></p>
+
+<div class="calc">
+Devolución <b>108</b> · Distribución · CAMPROSDU002BOL × <b>2</b><br>
+&nbsp;&nbsp;→ el sugerido de ese cliente muestra <b>Dev. Distribución = 2</b> &nbsp;<b>✅ la recoge</b><br><br>
+Devolución <b>109</b> · Calidad · TOMPROMAN001BAN × <b>3</b><br>
+&nbsp;&nbsp;→ el sugerido muestra <b>Dev. Distribución = 0</b> &nbsp;<b>✅ NO la cuenta, como debe ser</b>
+</div>
+
 <h2>Cada término trae los datos de ESE cliente — control de aislamiento</h2>
 
 <p>No basta con que los números cuadren: hay que probar que <b>no se mezclan con los de otros
@@ -446,6 +503,20 @@ y el registro llegó íntegro a la nube</b> (estado enviado, 4 detalles, ligado 
 <b>No hay pérdida de dato</b>, pero conviene verificar si esa cola se resuelve en la siguiente
 sincronización o si puede provocar un reenvío duplicado.</p>
 
+<h3>4. ⚠ Las tablas de cabecera de la nube quedaron vacías durante la corrida</h3>
+<p>Al cotejar el último ciclo, <code>client_stock</code>, <code>order</code> e <code>invoice</code>
+devolvían <b>0 filas</b>, cuando horas antes esas mismas tablas respondían con datos (los
+cotejos de los Inventarios 51-53 y los Pedidos 51-54 se hicieron contra ellas).</p>
+<p><b>No es una pérdida de datos ni un fallo de los envíos.</b> Las tablas de <b>detalle</b>
+conservan todo: <code>client_stock_detail</code> con 526 filas y <code>order_detail</code> con
+583, y ahí están íntegros nuestros registros —incluida la línea en cantidad <b>0</b> del
+Inventario 53—. La verificación de los últimos envíos se hizo por esa vía.</p>
+<div class="nota">
+<b>Qué conviene revisar:</b> que un proceso deje las <b>cabeceras vacías con los detalles
+poblados</b> es un estado inconsistente. No sabemos qué lo provocó y no lo causó esta prueba
+—la app solo inserta—. <b>Se reporta como observación del ambiente</b>, para que quien
+corresponda verifique si es una recarga en curso o algo que quedó a medias.
+</div>
 <h2>Registros creados</h2>
 <table>
   <tr><th style="width:14mm">Ref</th><th>Tipo</th><th>Detalle</th><th style="width:26mm">Nube</th></tr>
@@ -453,7 +524,13 @@ sincronización o si puede provocar un reenvío duplicado.</p>
   <tr><td><b>51</b></td><td>Pedido (desde sugerido)</td><td>3 líneas — 9 / 5 / 7</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
   <tr><td><b>52</b></td><td>Inventario</td><td>Cliente 105 / sucursal CAFETAL · 4 productos · días 29 / 10</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
   <tr><td><b>52</b></td><td>Pedido (desde sugerido)</td><td>2 líneas — 2 / 2</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
-  <tr><td><b>53</b></td><td>Pedido (quiebre de stock)</td><td>1 línea — <code>046013ESP003BOL</code> ×2, existencia 0</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
+  <tr><td><b>53</b></td><td>Pedido</td><td>1 línea — <code>046013ESP003BOL</code> ×2</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
+  <tr><td><b>108</b></td><td>Devolución <b>Distribución</b></td><td>Cliente 209 · CAMPROSDU002BOL ×2</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
+  <tr><td><b>109</b></td><td>Devolución <b>Calidad</b></td><td>Cliente 209 · TOMPROMAN001BAN ×3</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
+  <tr><td><b>53</b></td><td>Inventario</td><td>Cliente 209 · 3 líneas, <b>una en cantidad 0</b></td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
+  <tr><td><b>54</b></td><td>Pedido (desde sugerido)</td><td>Cliente 209 · 3 líneas — 110 / 70 / 30</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
+  <tr><td><b>54</b></td><td>Inventario</td><td><b>Cliente 211</b> · 5 productos · días 30 / 10</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
+  <tr><td><b>55</b></td><td>Pedido (desde sugerido)</td><td><b>Cliente 211</b> · 5 líneas — 7 / 6 / 9 / 14 / 10</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
 </table>
 <p style="font-size:9pt;color:var(--gris)">Sin transacciones fallidas en toda la corrida. Sin duplicados.</p>
 
