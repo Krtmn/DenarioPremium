@@ -6,5 +6,13 @@
   {
     "sql": "ALTER TABLE incidence_motives ADD COLUMN active INTEGER NOT NULL DEFAULT 1;",
     "description": "Soft-delete flag for motivos (incidence_motives)."
+  },
+  {
+    "sql": "ALTER TABLE incidence_motives ADD COLUMN required_comment INTEGER NOT NULL DEFAULT 0;",
+    "description": "Flag Comentario Requerido en motivos de visita."
+  },
+  {
+    "sql": "UPDATE versionsTables SET last_update = '1970-01-01 00:00:00.000', numreg = 0 WHERE id_table IN (9, 10);",
+    "description": "VIS-INC-001: fuerza re-sync de incidence_motives (9) e incidence_types (10) para poblar active/required_comment tras migraciones v20/v21."
   }
 ]

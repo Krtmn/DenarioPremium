@@ -15,6 +15,7 @@ import { MessageService } from '../services/messageService/message.service';
 import { EventoVisita } from '../modelos/evento-visita';
 import { AdjuntoService } from '../adjuntos/adjunto.service';
 import { VISIT_STATUS_TO_SEND, VISIT_STATUS_VISITED } from '../utils/appConstants';
+import { parseSyncBoolean } from '../utils/sync-boolean.util';
 
 export interface VisitEditContext {
   idClient: number | null;
@@ -165,15 +166,15 @@ export class VisitasService {
     }
   }
 
-  getLists() {
-    this.getIncidenceTypes().then((result: IncidenceType[]) => {
-      this.listaActividades = result;
-
-    });
-    this.getIncidenceMotives().then((result: IncidenceMotive[]) => {
-      this.listaMotivos = result;
-
-    })
+  getLists(): Promise<void> {
+    return Promise.all([
+      this.getIncidenceTypes().then((result: IncidenceType[]) => {
+        this.listaActividades = result;
+      }),
+      this.getIncidenceMotives().then((result: IncidenceMotive[]) => {
+        this.listaMotivos = result;
+      }),
+    ]).then(() => undefined);
   }
 
   /* getListFilesPremiumDispatch() {
@@ -219,7 +220,14 @@ export class VisitasService {
     return this.dbServ.getDatabase().executeSql(query, []).then(data => {
       let lists: IncidenceMotive[] = [];
       for (let i = 0; i < data.rows.length; i++) {
-        lists.push(data.rows.item(i));
+        const row = data.rows.item(i);
+        lists.push({
+          idType: row.idType,
+          idMotive: row.idMotive,
+          naMotive: row.naMotive,
+          active: parseSyncBoolean(row.active, true),
+          requiredComment: parseSyncBoolean(row.requiredComment, false),
+        } as IncidenceMotive);
       }
       return lists;
     })
@@ -228,9 +236,16 @@ export class VisitasService {
   getIncidenceTypes() {
     var query = 'SELECT id_type as idType, na_type as naType, required_event as requiredEvent, required_signature as requiredSignature, active FROM incidence_types';
     return this.dbServ.getDatabase().executeSql(query, []).then(data => {
-      let lists = [];
+      let lists: IncidenceType[] = [];
       for (let i = 0; i < data.rows.length; i++) {
-        lists.push(data.rows.item(i));
+        const row = data.rows.item(i);
+        lists.push({
+          idType: row.idType,
+          naType: row.naType,
+          requiredEvent: row.requiredEvent,
+          requiredSignature: row.requiredSignature,
+          active: parseSyncBoolean(row.active, true),
+        } as IncidenceType);
       }
       return lists;
     })
@@ -622,16 +637,14 @@ export class VisitasService {
     if (!actividad) {
       return false;
     }
-    const value = actividad.requiredEvent as boolean | string;
-    return value === true || value === 'true';
+    return parseSyncBoolean(actividad.requiredEvent, false);
   }
 
   private isIncidenceRequiredSignature(actividad: IncidenceType | undefined): boolean {
     if (!actividad) {
       return false;
     }
-    const value = actividad.requiredSignature as boolean | string;
-    return value === true || value === 'true';
+    return parseSyncBoolean(actividad.requiredSignature, false);
   }
 
   private isEventLineComplete(evento: EventoVisita): boolean {

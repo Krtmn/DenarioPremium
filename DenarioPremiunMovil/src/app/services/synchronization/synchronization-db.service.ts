@@ -26,6 +26,7 @@ import { Bank } from 'src/app/modelos/tables/bank';
 import { Enterprise } from 'src/app/modelos/tables/enterprise';
 import { IncidenceMotive } from 'src/app/modelos/tables/incidenceMotive';
 import { IncidenceType } from 'src/app/modelos/tables/incidenceType';
+import { parseSyncBoolean } from 'src/app/utils/sync-boolean.util';
 import { ReturnMotive } from 'src/app/modelos/tables/returnMotive';
 import { ReturnType } from 'src/app/modelos/tables/returnType';
 import { BankAccount } from 'src/app/modelos/tables/bankAccount';
@@ -790,9 +791,16 @@ export class SynchronizationDBService {
       'VALUES(?,?,?,?,?)'
 
     for (var i = 0; i < arr.length; i++) {
-      var obj = arr[i];
-      const activeVal = (obj.active === false || obj.active === 0 || (obj as any).active === '0') ? 0 : 1;
-      const reqCommentVal = (obj.requiredComment === true || obj.requiredComment === 1 || (obj as any).requiredComment === '1') ? 1 : 0;
+      var obj = arr[i] as IncidenceMotive & { required_comment?: unknown };
+      // Sync puede mandar boolean, 0/1 o 'true'/'false' (mismo patrón que required_event).
+      const activeVal = parseSyncBoolean(
+        obj.active ?? (obj as { Active?: unknown }).Active,
+        true,
+      ) ? 1 : 0;
+      const reqCommentVal = parseSyncBoolean(
+        obj.requiredComment ?? obj.required_comment,
+        false,
+      ) ? 1 : 0;
       statements.push([insertStatement, [obj.idMotive, obj.idType, obj.naMotive, activeVal, reqCommentVal]]);
     }
 
@@ -812,7 +820,10 @@ export class SynchronizationDBService {
 
     for (var i = 0; i < arr.length; i++) {
       var obj = arr[i];
-      const activeVal = (obj.active === false || obj.active === 0 || (obj as any).active === '0') ? 0 : 1;
+      const activeVal = parseSyncBoolean(
+        obj.active ?? (obj as { Active?: unknown }).Active,
+        true,
+      ) ? 1 : 0;
       statements.push([insertStatement, [obj.idType, obj.naType, obj.requiredEvent, obj.requiredSignature, activeVal]]);
     }
 
