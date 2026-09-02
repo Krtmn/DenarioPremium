@@ -78,6 +78,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
   detailModal = false;
   discountModal = false;
   imageZoomOpen = false;
+  productImages: string[] = [];
   productoModal!: OrderUtil;
   noProductsAlertShown = false;
 
@@ -323,6 +324,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
   loadProductToModal(prod: OrderUtil) {
     this.productoModal = prod;
+    void this.loadProductImages();
     this.showDetailModal(true);
   }
 
@@ -332,6 +334,7 @@ export class ProductosTabOrderProductListComponent implements OnInit {
 
     if (!show) {
       this.closeImageZoom();
+      this.productImages = [];
       //al ocultar el modal agregamos el producto al carrito
       this.orderServ.alCarrito(this.productoModal);
     }
@@ -346,12 +349,30 @@ export class ProductosTabOrderProductListComponent implements OnInit {
     this.imageZoomOpen = false;
   }
 
-  getProductZoomImageSrc(): string {
-    if (!this.productoModal?.coProduct) {
-      return '../../../assets/images/nodisponible.png';
+  getZoomImages(): string[] {
+    if (this.productImages.length > 0) {
+      return this.productImages;
     }
-    return this.imageServices.getImgForProduct(this.productoModal.coProduct)
-      || '../../../assets/images/nodisponible.png';
+    const fallback = this.productoModal?.coProduct
+      ? this.imageServices.getImgForProduct(this.productoModal.coProduct)
+      : '../../../assets/images/nodisponible.png';
+    return [fallback || '../../../assets/images/nodisponible.png'];
+  }
+
+  private async loadProductImages(): Promise<void> {
+    const productId = this.productoModal?.coProduct;
+    if (!productId || !this.orderServ.showProductImages) {
+      this.productImages = [];
+      return;
+    }
+
+    try {
+      this.productImages = await this.imageServices.getImagesForProduct(productId);
+    } catch (err) {
+      console.warn('[Pedidos] failed loading product images for', productId, err);
+      this.productImages = [];
+    }
+    this.cd.markForCheck();
   }
 
   // orderServ.getTag(tagName: string){
