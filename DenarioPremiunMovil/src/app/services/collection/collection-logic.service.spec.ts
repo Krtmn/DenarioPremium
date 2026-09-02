@@ -1115,6 +1115,45 @@ describe('CollectionService', () => {
       expect(service.hasMissingOtrosDifferenceCodes()).toBeFalse();
     });
 
+    it('COB-SEND-GENERAL-001: comentario obligatorio solo si requiredComment y vacío', () => {
+      service.requiredComment = false;
+      service.collection = { txComment: 'Ttt' } as any;
+      expect(service.hasRequiredCommentFieldError()).toBeFalse();
+
+      service.requiredComment = true;
+      service.collection = { txComment: 'Ttt' } as any;
+      expect(service.hasRequiredCommentFieldError()).toBeFalse();
+
+      service.collection = { txComment: '' } as any;
+      expect(service.hasRequiredCommentFieldError()).toBeTrue();
+
+      service.syncCommentValidityFromCollection();
+      expect(service.validComment).toBeFalse();
+
+      service.requiredComment = false;
+      service.syncCommentValidityFromCollection();
+      expect(service.validComment).toBeTrue();
+    });
+
+    it('COB-SEND-GENERAL-001: tasa manual y motivo de cambio solo si config activa', () => {
+      service.enabledManualRate = false;
+      service.collection = { nuValueLocal: 0 } as any;
+      expect(service.hasManualRateFieldError()).toBeFalse();
+
+      service.enabledManualRate = true;
+      expect(service.hasManualRateFieldError()).toBeTrue();
+
+      service.requiresTxConversionReason = false;
+      service.collection = { txConversion: '' } as any;
+      expect(service.hasTxConversionFieldError()).toBeFalse();
+
+      service.requiresTxConversionReason = true;
+      expect(service.hasTxConversionFieldError()).toBeTrue();
+
+      service.collection = { txConversion: 'Cambio de tasa' } as any;
+      expect(service.hasTxConversionFieldError()).toBeFalse();
+    });
+
     it('COB-SEND-ALL-001: colector fail-fast devuelve solo el primer issue', async () => {
       service.hideDocuments = false;
       service.hidePayments = false;

@@ -2754,10 +2754,7 @@ export class CollectionService {
 
     this.sendValidationSyncInProgress = true;
     try {
-      if (this.requiredComment) {
-        const comment = (this.collection?.txComment ?? '').toString().trim();
-        this.validComment = comment.length > 0;
-      }
+      this.syncCommentValidityFromCollection();
 
       for (const handler of this.sendValidationFlushHandlers) {
         try {
@@ -2991,7 +2988,8 @@ export class CollectionService {
     }
   }
 
-  private hasManualRateFieldError(): boolean {
+  /** Tasa manual inválida solo cuando `enabledManualRate` está activo. */
+  public hasManualRateFieldError(): boolean {
     if (!this.enabledManualRate) {
       return false;
     }
@@ -2999,11 +2997,29 @@ export class CollectionService {
     return !Number.isFinite(rate) || rate < 1;
   }
 
-  private hasTxConversionFieldError(): boolean {
+  /** Motivo de cambio de tasa obligatorio solo si `requiresTxConversionReason`. */
+  public hasTxConversionFieldError(): boolean {
     if (!this.requiresTxConversionReason) {
       return false;
     }
     return !this.hasPaymentText(this.collection?.txConversion);
+  }
+
+  /** Comentario obligatorio solo si `requiredComment` y el texto está vacío. */
+  public hasRequiredCommentFieldError(): boolean {
+    if (!this.requiredComment) {
+      return false;
+    }
+    return !this.hasPaymentText(this.collection?.txComment);
+  }
+
+  /** Alinea `validComment` con el texto persistido (reapertura / antes de Enviar). */
+  public syncCommentValidityFromCollection(): void {
+    if (!this.requiredComment) {
+      this.validComment = true;
+      return;
+    }
+    this.validComment = this.hasPaymentText(this.collection?.txComment);
   }
 
   /**
@@ -3347,7 +3363,7 @@ export class CollectionService {
   }
 
   private issueRequiredComment(): CollectionSendIssue | null {
-    if (!this.requiredComment || this.validComment) {
+    if (!this.hasRequiredCommentFieldError()) {
       return null;
     }
     return this.makeSendIssue(
