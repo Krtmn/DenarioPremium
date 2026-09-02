@@ -52,6 +52,18 @@ Formato por entrada: síntoma → causa → fix → cómo evitar → archivos �
 
 ---
 
+## [COB-TOL-001] Tolerancia negativa falla en moneda local (mensaje de “pago parcial”)
+
+- **Síntoma:** Cobro en BS, documento sin pago parcial (toggle OFF), se paga menos que el total; con `MonedaTolerancia` en moneda fuerte y `RangoToleranciaNegativa` alto (ej. 100000) el Enviar muestra *“Todos los documentos están marcados como pago parcial…”*. En moneda fuerte el mismo faltante sí pasa.
+- **Causa:** (1) `computeIsWithinTolerancia` convertía el rango con `convertirMonto(rango, 0, collection.coCurrency)` → con cobro local divide por tasa y deja un límite ridículo (o 0). El arreglo `81604a79` (pasar `MonedaTolerancia`) se perdió en el refactor del colector. (2) El issue `TOLERANCIA` reutilizaba el tag `COB_ERROR_PARTIAL_PAY`, texto engañoso.
+- **Fix:** Convertir rango hard→local con `× tasa` (y local→hard con `÷ tasa`) vía `convertToleranceRangeToCollectionCurrency`. Mensaje de `TOLERANCIA` separado (`COB_ERROR_TOLERANCIA` / fallback claro).
+- **Evitar:** No usar `convertirMonto(rango, 0, coCurrency del cobro)` para rangos expresados en `MonedaTolerancia`. No confundir diferencia de Pagos con `inPaymentPartial`.
+- **Tests:** `collection-logic.service.spec.ts` — `COB-TOL-001`.
+- **Archivos:** `collection-logic.service.ts` (+ spec); checklist bug-prevention.
+- **Estado:** fixed (pendiente QA dispositivo).
+
+---
+
 ## [COB-RET-001] Retención multi-documento permite enviar con docs en blanco
 
 - **Síntoma:** Módulo Retención (`coType`/`coTypeModule` = `2`): con 2+ facturas seleccionadas, completar retención solo en una y dejar otra en 0 permite Enviar/Guardar; el documento vacío viaja sin monto/comprobante/fecha.
