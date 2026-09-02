@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Informe QA — Despacho consolidado · hidroponias</title>
+<style>
+  :root {
+    --morado: #5501AA; --morado-osc: #3D0179; --morado-claro: #F2EAFB;
+    --verde: #91BA3F;  --verde-osc: #4A6B1B;  --verde-claro: #F0F6E4;
+    --ambar: #F5BA2E;  --ambar-claro: #FEF7E6;
+    --rojo: #A5121B;   --rojo-claro: #FDF0F0;
+    --gris: #5D5A63;   --linea: #D8D2E0;
+  }
+  @page { size: A4; margin: 14mm 14mm 15mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 10.2pt; color: #1F1B24;
+         line-height: 1.44; margin: 0; }
+  .marca { display: flex; align-items: center; justify-content: space-between; gap: 8mm;
+           border-bottom: 2.2pt solid var(--morado); padding-bottom: 3mm; margin-bottom: 4mm; }
+  .marca img { width: 52mm; display: block; }
+  .marca .quien { text-align: right; font-size: 8.6pt; color: var(--gris); line-height: 1.35; }
+  .marca .quien b { color: var(--morado); font-size: 9.4pt; display: block; letter-spacing: .2px; }
+  .cinta { height: 2.2mm; display: flex; margin: -4mm 0 4mm; }
+  .cinta i { flex: 1; }
+  .cinta i:nth-child(1) { background: var(--morado); }
+  .cinta i:nth-child(2) { background: var(--verde); }
+  .cinta i:nth-child(3) { background: var(--ambar); }
+  h1 { font-size: 18pt; color: var(--morado); margin: 0 0 1mm; letter-spacing: -.3px; }
+  h2 { font-size: 12.5pt; color: var(--morado); margin: 7mm 0 2.5mm; padding-bottom: 1.2mm;
+       border-bottom: 1.6pt solid var(--morado); page-break-after: avoid; }
+  h3 { font-size: 10.6pt; margin: 4mm 0 1.5mm; color: var(--morado-osc); page-break-after: avoid; }
+  .sub { color: var(--gris); font-size: 10pt; margin: 0 0 4mm; }
+  table { border-collapse: collapse; width: 100%; margin: 2mm 0 3mm; font-size: 9.2pt;
+          page-break-inside: avoid; }
+  th { background: var(--morado); color: #fff; text-align: left; padding: 1.7mm 2.3mm; font-weight: 600; }
+  td { border: .6pt solid var(--linea); padding: 1.5mm 2.3mm; vertical-align: top; }
+  tr:nth-child(even) td { background: #FAF7FD; }
+  .num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap;
+         font-family: Consolas, "Courier New", monospace; }
+  .ok { color: var(--verde-osc); font-weight: 700; }
+  .bad { color: var(--rojo); font-weight: 700; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: .93em; color: var(--morado-osc); }
+  .ficha { width: 100%; margin: 0 0 4mm; font-size: 9.4pt; }
+  .ficha td { border: none; border-bottom: .5pt solid var(--linea); padding: 1.2mm 0; background: none !important; }
+  .ficha td:first-child { color: var(--gris); width: 44mm; }
+  .bien { border-left: 4pt solid var(--verde); background: var(--verde-claro); padding: 3mm 4mm; margin: 4mm 0 5mm; }
+  .bien .t { font-size: 12.5pt; font-weight: 700; color: var(--verde-osc); margin-bottom: 1.5mm; }
+  .alerta { border-left: 4pt solid var(--rojo); background: var(--rojo-claro); padding: 3mm 4mm; margin: 4mm 0 5mm; }
+  .alerta .t { font-size: 12.5pt; font-weight: 700; color: var(--rojo); margin-bottom: 1.5mm; }
+  .nota { background: var(--ambar-claro); border-left: 3pt solid var(--ambar); padding: 2.5mm 3.5mm;
+          margin: 3mm 0; font-size: 9.4pt; page-break-inside: avoid; }
+  .calc { font-family: Consolas, "Courier New", monospace; background: var(--morado-claro);
+          border: .5pt solid var(--linea); padding: 1.7mm 3mm; margin: 2mm 0; font-size: 9.1pt; }
+  .cap { page-break-inside: avoid; margin: 2.5mm 0 3.5mm; }
+  .cap img { max-width: 100%; max-height: 118mm; border: .7pt solid var(--linea); display: block; }
+  .cap .pie { font-size: 8.3pt; color: var(--gris); margin-top: 1mm; font-style: italic; }
+  .par { display: flex; gap: 4mm; align-items: flex-start; page-break-inside: avoid; margin: 3mm 0; }
+  .par > div { flex: 1; }
+  .par .et { font-size: 9pt; font-weight: 700; margin-bottom: 1.2mm; }
+  .par img { max-width: 100%; max-height: 108mm; border: .7pt solid var(--linea); display: block; }
+  .et-mal { color: var(--rojo); }
+  .et-bien { color: var(--verde-osc); }
+  .pill { display: inline-block; padding: .4mm 2mm; border-radius: 2mm; font-size: 8.5pt; font-weight: 700; }
+  .p-ok { background: var(--verde-claro); color: var(--verde-osc); border: .5pt solid var(--verde); }
+  .p-mal { background: var(--rojo-claro); color: var(--rojo); border: .5pt solid var(--rojo); }
+  .p-na { background: #EFEDF2; color: var(--gris); border: .5pt solid var(--linea); }
+  .p-new { background: var(--morado-claro); color: var(--morado); border: .5pt solid var(--morado); }
+  .fin { margin-top: 6mm; padding-top: 2.5mm; border-top: 1.2pt solid var(--morado); font-size: 8.5pt;
+         color: var(--gris); display: flex; gap: 5mm; align-items: flex-start; }
+  .fin img { width: 26mm; opacity: .85; }
+  .pb { page-break-before: always; }
+</style></head><body>
+
+<div class="marca">
+  <img src="../../_assets/logo-denario-premium.svg" alt="Denario Premium">
+  <div class="quien"><b>CONTROL DE CALIDAD</b>Validación de fix<br>01/09/2026</div>
+</div>
+<div class="cinta"><i></i><i></i><i></i></div>
+
+<h1>El despacho del pedido sugerido ya consolida todas las facturas del día</h1>
+<p class="sub">Módulo de Inventarios · Pedido Sugerido · Denario Premium Móvil · Cliente HIDROPONIAS VENEZOLANAS</p>
+
+<table class="ficha">
+  <tr><td>Qué se validó</td><td>Que el campo <b>Despacho</b> tome <b>todas</b> las facturas de la última fecha facturada, y no solo la última factura</td></tr>
+  <tr><td>Cliente y playa</td><td><b>HIDROPONIAS VENEZOLANAS C.A</b> · El Caribe <span style="color:var(--gris)">(confirmada en runtime)</span></td></tr>
+  <tr><td>Build / fix</td><td><code>076faf27</code> · rama <code>fix/invoices-Hidroponia-20260901</code></td></tr>
+  <tr><td>Empresa · vendedor</td><td><b>HIDRO_A</b> · login <code>vendedor4</code> / <code>id_user 468</code></td></tr>
+  <tr><td>Registros de evidencia</td><td><b>Inventarios 51 y 52</b> · <b>Pedidos 51, 52 y 53</b> — los cinco Enviados y cotejados en nube</td></tr>
+  <tr><td>Resultado</td><td><b class="ok">18 PASS · 0 FAIL</b> · 2 casos no ejercitables por falta de dato</td></tr>
+</table>
+
+<div class="bien">
+  <div class="t">✅ El fix cumple: los productos que el bug ocultaba volvieron con su cantidad exacta</div>
+  Se midieron <b>7 productos</b> del cliente 209, cuya última fecha facturada (23/07) tiene <b>dos facturas</b>.
+  Los <b>4</b> que vivían solo en la factura descartada pasaron de <b>Despacho 0</b> a su cantidad real
+  (<b>19, 13, 20 y 7</b>), los <b>2 de control</b> quedaron idénticos y el que no se facturó ese día muestra
+  <b>0</b> en vez de desaparecer. <b>Tolerancia 0 contra el oráculo de base de datos.</b>
+</div>
+
+<h2>El defecto, en una línea</h2>
+<p>El despacho salía de <b>una sola factura</b> —la que ganaba el desempate <code>ORDER BY da_invoice DESC, id_invoice DESC LIMIT 1</code>—
+y todo lo facturado ese mismo día en <b>otras</b> facturas se perdía.</p>
+
+<div class="calc">
+Cliente 209 · última fecha facturada <b>23/07/2026</b> · 2 facturas<br>
+&nbsp;&nbsp;20115667 (id 3828) → <b>ganaba</b> el desempate · 6 productos<br>
+&nbsp;&nbsp;20115666 (id 3827) → <b>se descartaba entera</b> · 8 productos &nbsp;← se perdían
+</div>
+
+<div class="nota">
+<b>El «antes» no es una suposición: está medido por nosotros.</b> En la corrida del <b>11/08</b>
+(<code>hidroponias_sugerido_20260811</code>) dejamos registrado que <code>GERPROGCH002BOL</code> y
+<code>GERPROALF002CAJ</code> daban <code>dispatchedStock = 0</code> justamente porque vivían en la factura perdedora.
+Ese registro es la mitad «antes» de esta comparación.
+</div>
+
+<h2>Medición — cliente 209, tolerancia 0</h2>
+<p>El oráculo se construyó ejecutando la consulta del fix <b>contra la base de datos del propio dispositivo</b>
+—la misma que consulta la app—, y el «antes» ejecutando la consulta vieja sobre los mismos datos.</p>
+
+<table>
+  <tr>
+    <th>Producto</th><th style="width:19mm">Stock tecleado</th>
+    <th style="width:20mm">Antes (bug)</th><th style="width:20mm">Oráculo (fix)</th>
+    <th style="width:22mm">Medido en app</th><th style="width:24mm"></th>
+  </tr>
+  <tr><td><code>GERPROALF002CAJ</code></td><td class="num">3</td><td class="num bad">0</td><td class="num">19</td><td class="num ok">19</td><td>✅</td></tr>
+  <tr><td><code>046013ESP001BOL</code></td><td class="num">2</td><td class="num bad">0</td><td class="num">13</td><td class="num ok">13</td><td>✅</td></tr>
+  <tr><td><code>MAL013PLS098MOR</code></td><td class="num">5</td><td class="num bad">0</td><td class="num">20</td><td class="num ok">20</td><td>✅</td></tr>
+  <tr><td><code>046013461003BAN</code></td><td class="num">4</td><td class="num bad">0</td><td class="num">7</td><td class="num ok">7</td><td>✅</td></tr>
+  <tr><td><code>CAMPROLEC001BAN</code></td><td class="num">1</td><td class="num">5</td><td class="num">5</td><td class="num ok">5</td><td><b>control</b> — sin cambio</td></tr>
+  <tr><td><code>TOMPROCHE001CAJ</code></td><td class="num">12</td><td class="num">14</td><td class="num">14</td><td class="num ok">14</td><td><b>control</b> — sin cambio</td></tr>
+  <tr><td><code>046013ACG002BOL</code></td><td class="num">2</td><td class="num">0</td><td class="num">0</td><td class="num ok">0</td><td>sin factura ese día</td></tr>
+</table>
+
+<p><b>Los controles son la parte que prueba que el fix no rompió nada:</b> los dos productos que ya
+funcionaban —los que estaban en la factura ganadora— devolvieron exactamente el mismo valor que antes.</p>
+
+<h2>Resultado por criterio del encargo</h2>
+<table>
+  <tr><th style="width:11mm">ID</th><th>Criterio</th><th style="width:26mm">Resultado</th></tr>
+  <tr><td><b>C1</b></td><td>Consolidar <b>todas</b> las facturas de la última fecha facturada</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
+  <tr><td><b>C2</b></td><td>No romper el comportamiento previo (factura ganadora)</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
+  <tr><td><b>C3</b></td><td>Producto sin factura ese día ⇒ muestra <b>0</b>, ni vacío ni omitido</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
+  <tr><td><b>C4</b></td><td>Si el <b>mismo producto</b> está en varias facturas del día, <b>sumar</b> las cantidades</td><td><span class="pill p-na">⚪ SIN DATO</span></td></tr>
+  <tr><td><b>C5</b></td><td>Cambio x cambio sigue alimentando el sugerido</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
+  <tr><td><b>C6</b></td><td>Quiebre de inventario: producto con stock 0 se puede pedir</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
+</table>
+
+<div class="pb"></div>
+<h2>🔴 C4 — el único criterio que no pudimos probar, y por qué</h2>
+
+<p><b>Hay que separar dos cosas que suenan parecidas:</b></p>
+
+<table>
+  <tr><th style="width:56mm">Comportamiento</th><th>Estado</th></tr>
+  <tr>
+    <td><b>Consolidar varias facturas</b> del mismo día — tomar los productos de todas ellas</td>
+    <td><span class="pill p-ok">✅ PROBADO</span> — es justo lo que demuestra la tabla de arriba:
+        4 productos entraron desde la factura que antes se descartaba.</td>
+  </tr>
+  <tr>
+    <td><b>Sumar el mismo producto repetido</b> — cuando un producto aparece en dos facturas del día,
+        acumular sus cantidades</td>
+    <td><span class="pill p-na">⚪ NO PROBADO</span> — <b>no existe ese caso en la base de datos.</b></td>
+  </tr>
+</table>
+
+<div class="nota">
+<b>Por qué no se pudo.</b> El fix implementa la suma con
+<code>existing.quInvoice += item.qu_invoice</code>. Para ejercitar esa línea hace falta un producto que
+aparezca en <b>dos facturas distintas de la misma fecha</b> para el mismo cliente y sucursal.
+<br><br>
+Se consultó <b>la base de datos completa de hidroponias</b> —no solo la cartera del vendedor de prueba—
+buscando cualquier producto en esa condición. El resultado fue <b>cero filas</b>: ningún cliente, en
+ninguna fecha, repite un producto entre dos facturas del mismo día.
+<br><br>
+⇒ <b>La línea de código existe y está bien escrita, pero nunca llegó a ejecutarse.</b> No podemos
+afirmar que la suma funcione, ni que falle. <b>Queda sin cobertura.</b>
+</div>
+
+<p><b>Qué haría falta para cerrarlo:</b> que alguien genere en el ambiente dos facturas del mismo día para
+un mismo cliente y sucursal, con al menos un producto repetido en ambas. Con ese dato el caso se mide en
+una sola corrida.</p>
+
+<h2>C5 — Cambio x cambio, medido en un segundo ciclo</h2>
+
+<p>En el cliente 209 el término salió <b>0</b> en los 7 productos, y es <b>correcto</b>: sus cambios x cambio
+son del 04/08 y su último inventario del 11/08, así que caen fuera de la ventana de cálculo. Para medirlo
+de verdad se usó el <b>cliente 105 — CENTRAL MADEIRENSE (CAFETAL)</b>, el único de la cartera cuyo último
+inventario (03/08) es <b>anterior</b> a sus cambios (04/08).</p>
+
+<table>
+  <tr>
+    <th>Producto</th><th style="width:16mm">Despacho</th>
+    <th style="width:22mm">Swap medido</th><th style="width:20mm">Oráculo</th>
+    <th style="width:16mm">Inicial</th><th style="width:16mm">Sugerido</th><th style="width:28mm"></th>
+  </tr>
+  <tr><td><code>046013461003BAN</code></td><td class="num">2</td><td class="num ok">4</td><td class="num">4</td><td class="num">7</td><td class="num">2</td><td>✅</td></tr>
+  <tr><td><code>CAMPROSDU002BOL</code></td><td class="num">5</td><td class="num ok">1</td><td class="num">1</td><td class="num">6</td><td class="num">2</td><td>✅</td></tr>
+  <tr><td><code>GERPROGCH002BOL</code></td><td class="num bad">0</td><td class="num ok">2</td><td class="num">2</td><td class="num">5</td><td class="num">0</td><td>✅ <b>solo el swap aporta</b></td></tr>
+  <tr><td><code>HIDPROBER001ATA</code></td><td class="num bad">0</td><td class="num ok">1</td><td class="num">1</td><td class="num">1</td><td class="num">0</td><td>✅ <b>el inicial ES el swap</b></td></tr>
+</table>
+
+<p>Los dos últimos son los más concluyentes: tienen <b>despacho 0</b>, de modo que el cambio x cambio es
+<b>el único término</b> que alimenta el stock inicial. En <code>HIDPROBER001ATA</code> el inicial es
+exactamente el swap.</p>
+
+<div class="calc">
+Comprobaciones de aritmética, los 4 productos:<br>
+&nbsp;&nbsp;inicial = previo + despacho + swap &nbsp;&nbsp;→ ✅<br>
+&nbsp;&nbsp;vendido = inicial − actual − devuelto &nbsp;→ ✅<br>
+&nbsp;&nbsp;diaria&nbsp;&nbsp;= vendido / 29 días &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ ✅
+</div>
+
+<h2>El sugerido genera unidades y llega a pedido enviado</h2>
+
+<p>La primera medición dio <b>sugerido 0 en los 7 productos</b>. No era un fallo: el formulario trae
+<b>«Días para siguiente Inventario» = 1</b> por defecto, y con ese valor el sugerido bruto queda por debajo
+del stock actual en todos los casos, de modo que la guarda <code>actual ≥ sugerido ⇒ 0</code> los apaga.
+Al teclear <b>10 días</b>, el sugerido cobró vida.</p>
+
+<div class="par">
+  <div>
+    <div class="et et-mal">Con 1 día — todos en 0</div>
+    <img src="01-sugerido-dias1-todos-cero.png" alt="Sugerido con 1 día">
+  </div>
+  <div>
+    <div class="et et-bien">Con 10 días — unidades reales</div>
+    <img src="02-sugerido-dias10-con-unidades.png" alt="Sugerido con 10 días">
+  </div>
+</div>
+<p class="cap"><span class="pie">El mismo inventario, cambiando únicamente «Días para siguiente Inventario».</span></p>
+
+<table>
+  <tr><th>Producto</th><th style="width:20mm">Venta diaria</th><th style="width:16mm">× 10</th>
+      <th style="width:20mm">Sugerido</th><th style="width:16mm">Actual</th><th>Qué prueba</th></tr>
+  <tr><td><code>GERPROALF002CAJ</code></td><td class="num">0,9048</td><td class="num">9,048</td><td class="num ok">9</td><td class="num">3</td><td>redondeo hacia abajo</td></tr>
+  <tr><td><code>046013ESP001BOL</code></td><td class="num">0,5238</td><td class="num">5,238</td><td class="num ok">5</td><td class="num">2</td><td>redondeo hacia abajo</td></tr>
+  <tr><td><code>MAL013PLS098MOR</code></td><td class="num">0,7143</td><td class="num">7,143</td><td class="num ok">7</td><td class="num">5</td><td>redondeo hacia abajo</td></tr>
+  <tr><td><code>CAMPROLEC001BAN</code></td><td class="num">0,1429</td><td class="num">1,429 → 1</td><td class="num">0</td><td class="num">1</td><td><b>guarda por IGUALDAD</b> (1 vs 1)</td></tr>
+  <tr><td><code>046013ACG002BOL</code></td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">2</td><td>venta negativa ⇒ diaria 0</td></tr>
+</table>
+
+<p><b>El sugerido llegó íntegro al pedido</b>, con las 3 líneas de sugerido &gt; 0 y excluyendo las de 0.
+Verificado en la nube sobre el <b>Pedido 51</b>: <code>qu_order</code> = <b>9</b>, <b>5</b> y <b>7</b>,
+exactamente lo sugerido. El inventario queda ligado al pedido que lo generó
+(<code>client_stock.id_order = 51</code>).</p>
+
+<h2>C6 — Quiebre de inventario</h2>
+
+<div class="nota">
+<b>Corrección metodológica, la decimos porque cambia lo que vale la prueba.</b> El primer intento usó un
+producto elegido con <code>WHERE qu_stock &lt;= 0</code>, pero <b>el stock es por almacén</b>: ese producto
+tenía <b>365 unidades en un almacén y 16 en otro</b>. <b>No estaba en quiebre y esa prueba no valía.</b>
+Se rehízo con el criterio correcto —<code>SUM(qu_stock) = 0</code> en <b>todos</b> los almacenes—, que en
+hidroponias deja solo <b>4 productos</b>.
+</div>
+
+<p>Prueba válida con <code>046013ESP003BOL</code> — ESPINACA BOLSA 150 GRS (E), <b>stock total 0</b>:</p>
+
+<table>
+  <tr><th>Comprobación</th><th style="width:30mm">Resultado</th></tr>
+  <tr><td>¿Se lista en el árbol de Pedidos pese al stock 0?</td><td><span class="pill p-ok">✅ sí</span></td></tr>
+  <tr><td>¿Abre su panel de cantidad?</td><td><span class="pill p-ok">✅ sí</span></td></tr>
+  <tr><td>¿Muestra alguna alerta de bloqueo?</td><td><span class="pill p-ok">✅ ninguna</span></td></tr>
+  <tr><td>¿Entra al carrito?</td><td><span class="pill p-ok">✅ sí, ×2</span></td></tr>
+  <tr><td><b>¿Persiste en un pedido ENVIADO?</b></td><td><span class="pill p-ok">✅ Pedido 53</span></td></tr>
+</table>
+
+<div class="cap">
+  <img src="06-quiebre-real-stock0.png" alt="Producto con stock 0 agregado al pedido">
+  <div class="pie">Producto con existencia 0 en todos los almacenes, cargado sin fricción en el pedido.</div>
+</div>
+
+<div class="nota">
+<b>Matiz necesario para no sobrevender el resultado.</b> En hidroponias
+<code>validStock = false</code> y <code>validateWarehouses = false</code>, y la interfaz
+<b>ni siquiera muestra la etiqueta «Inventario:»</b> en el producto. Es decir: <b>aquí no hay validación de
+existencias que vencer</b>. El quiebre se permite —que es el comportamiento buscado—, pero <b>no queda
+demostrado que sea <code>stock0 = true</code> quien lo habilita</b>: con la validación apagada no hay nada
+que bloquee. Para atribuirlo a esa variable haría falta un cliente con <code>validStock = true</code>.
+</div>
+
+<div class="pb"></div>
+<h2>Alcance del fix: qué NO cambió</h2>
+<p><b>Devoluciones no se ve afectado, y está bien así.</b> Se abrió una devolución para el cliente 209:
+el selector ofrece <b>las 4 facturas</b> del cliente y, al elegir la <code>20115667</code>, lista
+<b>exactamente sus 6 productos</b>. Es correcto: en devoluciones se devuelve contra <b>una factura
+concreta</b>, no contra el día. Las dos consultas son independientes.</p>
+
+<h2>Lo que este informe NO cubre</h2>
+<table>
+  <tr><th style="width:52mm">Caso</th><th>Motivo</th></tr>
+  <tr><td><b>Suma del mismo producto repetido entre facturas del día</b></td>
+      <td>No existe el dato en toda la base. Ver la sección de C4.</td></tr>
+  <tr><td>Devolución de <b>Calidad</b> en esta corrida</td>
+      <td>Se confirmó que la de <b>Distribución sí resta</b> (<code>devuelto = 2</code>).
+          El contraste con Calidad quedó confirmado en la corrida del 11/08, no se repitió aquí.</td></tr>
+  <tr><td>Atribución del quiebre a <code>stock0</code></td>
+      <td>Con <code>validStock = false</code> no hay validación que vencer. Requiere un cliente con
+          la validación activa.</td></tr>
+</table>
+
+<h2>Puntos abiertos para desarrollo</h2>
+
+<h3>1. La comparación de fechas es por texto</h3>
+<p>El fix compara con <code>substr(da_invoice, 1, 10)</code>, es decir, tratando la fecha como
+<b>cadena</b>. Hoy funciona porque el campo se almacena en formato ISO. <b>Si alguna sincronización
+guardara la fecha con otro formato, la comparación fallaría en silencio</b> y el despacho volvería a
+quedar incompleto sin mostrar ningún error. <b>Es una fragilidad, no una falla.</b></p>
+
+<h3>2. La app se reinició una vez al pulsar Enviar</h3>
+<p>Ocurrió al enviar el pedido generado desde el sugerido. <b>Sin traza <code>FATAL</code> en el log</b>,
+proceso vivo con PID nuevo, sesión intacta y <b>colas limpias</b>. No se pudo determinar la causa ni
+reproducirlo. <b>No se reporta como defecto</b>: se registra como incidencia observada una vez.</p>
+
+<h3>3. Una cola local que no se limpió</h3>
+<p>El <b>Inventario 52</b> quedó localmente en <code>st_delivery = 2</code> y con una fila en
+<code>pending_transactions</code>, <b>pese a que la app anunció «Inventario nro. 52 enviado exitosamente»
+y el registro llegó íntegro a la nube</b> (estado enviado, 4 detalles, ligado al pedido).
+<b>No hay pérdida de dato</b>, pero conviene verificar si esa cola se resuelve en la siguiente
+sincronización o si puede provocar un reenvío duplicado.</p>
+
+<h2>Registros creados</h2>
+<table>
+  <tr><th style="width:14mm">Ref</th><th>Tipo</th><th>Detalle</th><th style="width:26mm">Nube</th></tr>
+  <tr><td><b>51</b></td><td>Inventario</td><td>Cliente 209 / sucursal MACARACUAY · 7 productos · días 21 / 10</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
+  <tr><td><b>51</b></td><td>Pedido (desde sugerido)</td><td>3 líneas — 9 / 5 / 7</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
+  <tr><td><b>52</b></td><td>Inventario</td><td>Cliente 105 / sucursal CAFETAL · 4 productos · días 29 / 10</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
+  <tr><td><b>52</b></td><td>Pedido (desde sugerido)</td><td>2 líneas — 2 / 2</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
+  <tr><td><b>53</b></td><td>Pedido (quiebre de stock)</td><td>1 línea — <code>046013ESP003BOL</code> ×2, existencia 0</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
+</table>
+<p style="font-size:9pt;color:var(--gris)">Sin transacciones fallidas en toda la corrida. Sin duplicados.</p>
+
+<div class="fin">
+  <img src="../../_assets/isotipo-denario.png" alt="">
+  <div>
+    <b>Denario Premium · Control de Calidad</b><br>
+    Informe generado el 01/09/2026 · corrida <code>fix_despacho_consolidado_20260901</code><br>
+    Evidencia completa y consultas de oráculo en el reporte técnico de la corrida.
+  </div>
+</div>
+
+</body></html>
