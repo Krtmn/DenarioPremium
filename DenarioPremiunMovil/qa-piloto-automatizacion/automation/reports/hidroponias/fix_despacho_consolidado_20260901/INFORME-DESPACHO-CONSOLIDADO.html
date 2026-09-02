@@ -84,7 +84,7 @@
   <tr><td>Build / fix</td><td><code>076faf27</code> · rama <code>fix/invoices-Hidroponia-20260901</code></td></tr>
   <tr><td>Empresa · vendedor</td><td><b>HIDRO_A</b> · login <code>vendedor4</code> / <code>id_user 468</code></td></tr>
   <tr><td>Registros de evidencia</td><td><b>Inventarios 51 y 52</b> · <b>Pedidos 51, 52 y 53</b> — los cinco Enviados y cotejados en nube</td></tr>
-  <tr><td>Resultado</td><td><b class="ok">18 PASS · 0 FAIL</b> · 2 casos no ejercitables por falta de dato</td></tr>
+  <tr><td>Resultado</td><td><b class="ok">17 PASS · 0 FAIL</b> · 1 caso retirado (ver C6) · 2 no ejercitables por falta de dato</td></tr>
 </table>
 
 <div class="bien">
@@ -93,6 +93,12 @@
   Los <b>4</b> que vivían solo en la factura descartada pasaron de <b>Despacho 0</b> a su cantidad real
   (<b>19, 13, 20 y 7</b>), los <b>2 de control</b> quedaron idénticos y el que no se facturó ese día muestra
   <b>0</b> en vez de desaparecer. <b>Tolerancia 0 contra el oráculo de base de datos.</b>
+</div>
+
+<div class="nota">
+<b>Alcance de este informe:</b> valida el <b>fix del despacho consolidado</b> y, de paso, el
+<b>cambio x cambio</b> y la generación del pedido sugerido. <b>No valida el REQ de quiebre de
+inventario</b> — ver la sección C6, donde se explica el error y cómo probarlo bien.
 </div>
 
 <h2>El defecto, en una línea</h2>
@@ -142,7 +148,7 @@ funcionaban —los que estaban en la factura ganadora— devolvieron exactamente
   <tr><td><b>C3</b></td><td>Producto sin factura ese día ⇒ muestra <b>0</b>, ni vacío ni omitido</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
   <tr><td><b>C4</b></td><td>Si el <b>mismo producto</b> está en varias facturas del día, <b>sumar</b> las cantidades</td><td><span class="pill p-na">⚪ SIN DATO</span></td></tr>
   <tr><td><b>C5</b></td><td>Cambio x cambio sigue alimentando el sugerido</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
-  <tr><td><b>C6</b></td><td>Quiebre de inventario: producto con stock 0 se puede pedir</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
+  <tr><td><b>C6</b></td><td>Quiebre de inventario — <b>cantidad 0 al inventariar</b></td><td><span class="pill p-mal">❌ NO PROBADO</span></td></tr>
 </table>
 
 <div class="pb"></div>
@@ -245,40 +251,56 @@ Verificado en la nube sobre el <b>Pedido 51</b>: <code>qu_order</code> = <b>9</b
 exactamente lo sugerido. El inventario queda ligado al pedido que lo generó
 (<code>client_stock.id_order = 51</code>).</p>
 
-<h2>C6 — Quiebre de inventario</h2>
+<h2>C6 — Quiebre de inventario: <span style="color:var(--rojo)">retractación</span></h2>
 
-<div class="nota">
-<b>Corrección metodológica, la decimos porque cambia lo que vale la prueba.</b> El primer intento usó un
-producto elegido con <code>WHERE qu_stock &lt;= 0</code>, pero <b>el stock es por almacén</b>: ese producto
-tenía <b>365 unidades en un almacén y 16 en otro</b>. <b>No estaba en quiebre y esa prueba no valía.</b>
-Se rehízo con el criterio correcto —<code>SUM(qu_stock) = 0</code> en <b>todos</b> los almacenes—, que en
-hidroponias deja solo <b>4 productos</b>.
+<div class="alerta">
+  <div class="t">❌ Este informe NO validó el REQ de quiebre de inventario</div>
+  Una versión anterior de este documento afirmaba que sí. <b>Era incorrecto: se midió una
+  funcionalidad distinta.</b> La afirmación queda retirada.
 </div>
 
-<p>Prueba válida con <code>046013ESP003BOL</code> — ESPINACA BOLSA 150 GRS (E), <b>stock total 0</b>:</p>
+<h3>Qué dice el REQ</h3>
+<p>El REQ «Quiebre de inventario (cantidad 0)», validado el <b>13/08 en DIFRANCA</b>, es sobre el
+<b>módulo de Inventarios</b>:</p>
+
+<div class="calc">
+«Cuando el vendedor levanta el inventario en el punto de venta, necesita poder dejar constancia<br>
+de que un producto <b>se agotó</b>. Antes esto no se podía: la aplicación <b>exigía una cantidad de 1 o más</b>.<br>
+<b>El cambio permite escribir 0 como cantidad válida</b>, con su lote y su fecha.»
+</div>
+
+<p>Y su punto delicado era <b>la persistencia</b>: la app tenía varios lugares internos donde
+<b>las líneas en cero se descartaban</b> al volver a mostrar el inventario, así que el eje de la
+prueba fue guardar, salir y reabrir.</p>
+
+<h3>Qué se midió aquí, en cambio</h3>
+<p>Se agregó <b>a un PEDIDO</b> un producto cuyo <b>stock de almacén</b> era 0. <b>Es otra cosa.</b>
+Ni siquiera roza el requerimiento: en esta corrida las cantidades inventariadas fueron
+<b>1, 2, 3, 4, 5 y 12</b> — <b>nunca se tecleó un 0</b>, que es justamente el corazón del REQ.</p>
 
 <table>
-  <tr><th>Comprobación</th><th style="width:30mm">Resultado</th></tr>
-  <tr><td>¿Se lista en el árbol de Pedidos pese al stock 0?</td><td><span class="pill p-ok">✅ sí</span></td></tr>
-  <tr><td>¿Abre su panel de cantidad?</td><td><span class="pill p-ok">✅ sí</span></td></tr>
-  <tr><td>¿Muestra alguna alerta de bloqueo?</td><td><span class="pill p-ok">✅ ninguna</span></td></tr>
-  <tr><td>¿Entra al carrito?</td><td><span class="pill p-ok">✅ sí, ×2</span></td></tr>
-  <tr><td><b>¿Persiste en un pedido ENVIADO?</b></td><td><span class="pill p-ok">✅ Pedido 53</span></td></tr>
+  <tr><th>Afirmación anterior</th><th style="width:34mm">Estado</th></tr>
+  <tr><td>«Quiebre de inventario ✅ PASS»</td><td><span class="pill p-mal">❌ RETIRADA</span></td></tr>
+  <tr><td>«El producto con stock 0 entra al pedido enviado» (Pedido 53)</td>
+      <td>el dato es correcto, pero <b>no prueba este REQ</b></td></tr>
+  <tr><td>«No queda demostrado que sea <code>stock0</code> quien lo habilita»</td>
+      <td>irrelevante: la variable en juego no era ésa</td></tr>
 </table>
 
-<div class="cap">
-  <img src="06-quiebre-real-stock0.png" alt="Producto con stock 0 agregado al pedido">
-  <div class="pie">Producto con existencia 0 en todos los almacenes, cargado sin fricción en el pedido.</div>
+<div class="nota">
+<b>Consecuencia:</b> el REQ de quiebre <b>queda sin validar en Hidroponias</b>. La referencia
+válida sigue siendo únicamente la validación de <b>Difranca del 13/08</b>.
 </div>
 
-<div class="nota">
-<b>Matiz necesario para no sobrevender el resultado.</b> En hidroponias
-<code>validStock = false</code> y <code>validateWarehouses = false</code>, y la interfaz
-<b>ni siquiera muestra la etiqueta «Inventario:»</b> en el producto. Es decir: <b>aquí no hay validación de
-existencias que vencer</b>. El quiebre se permite —que es el comportamiento buscado—, pero <b>no queda
-demostrado que sea <code>stock0 = true</code> quien lo habilita</b>: con la validación apagada no hay nada
-que bloquee. Para atribuirlo a esa variable haría falta un cliente con <code>validStock = true</code>.
-</div>
+<h3>Cómo se prueba bien — pendiente</h3>
+<ol style="font-size:9.6pt">
+  <li>Inventariar un producto con <b>Cantidad = 0</b>, con su <b>lote</b> y su <b>fecha de vencimiento</b>.</li>
+  <li><b>Guardar</b>, salir del inventario y <b>reabrirlo</b> → el 0 debe seguir ahí, no desaparecer.</li>
+  <li><b>Enviar</b> y verificar en la web que el detalle <b>muestra la línea en cero</b> con su ubicación, lote y fecha.</li>
+  <li>Comprobar que <b>las cantidades negativas se siguen rechazando</b>.</li>
+  <li>🔑 <b>El punto que conecta con este informe:</b> que un producto agotado <b>con rotación</b>
+      genere la <b>reposición esperada en el pedido sugerido</b>.</li>
+</ol>
 
 <div class="pb"></div>
 <h2>Alcance del fix: qué NO cambió</h2>
@@ -295,9 +317,9 @@ concreta</b>, no contra el día. Las dos consultas son independientes.</p>
   <tr><td>Devolución de <b>Calidad</b> en esta corrida</td>
       <td>Se confirmó que la de <b>Distribución sí resta</b> (<code>devuelto = 2</code>).
           El contraste con Calidad quedó confirmado en la corrida del 11/08, no se repitió aquí.</td></tr>
-  <tr><td>Atribución del quiebre a <code>stock0</code></td>
-      <td>Con <code>validStock = false</code> no hay validación que vencer. Requiere un cliente con
-          la validación activa.</td></tr>
+  <tr><td><b>El REQ de quiebre de inventario (cantidad 0)</b></td>
+      <td><b>No se probó.</b> Se midió otra funcionalidad por no haber leído el REQ previo antes de
+          la corrida. Ver la sección C6.</td></tr>
 </table>
 
 <h2>Puntos abiertos para desarrollo</h2>

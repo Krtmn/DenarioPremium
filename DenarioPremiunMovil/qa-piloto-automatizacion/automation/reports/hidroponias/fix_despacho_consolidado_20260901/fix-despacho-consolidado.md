@@ -11,7 +11,7 @@
 | Vendedor | **vendedor4** (`V4`, idUser 468) |
 | Dispositivo | `14678405BR003855` (Infinix X6728, Android 15) |
 | VGs relevantes | `suggestedOrderByDispatchAndReturn=true` · `suggestedOrder=true` · `stock0=true` · `hideStock0=false` · `validStock=false` |
-| Resultado | ✅ **Despacho 7/7 y swaps 4/4 exactos · 3 pedidos enviados (51, 52, 53) · 18 PASS / 0 FAIL** |
+| Resultado | ✅ **Despacho 7/7 y swaps 4/4 exactos** · ⚠ el caso de «quiebre» quedó RETIRADO (§8.c) |
 
 ---
 
@@ -28,7 +28,7 @@ productos no facturados ese día muestran **0** en lugar de quedar fuera.
 | Producto sin factura ese día ⇒ **0**, ni vacío ni omitido | ✅ **PASA** |
 | Si el producto está en varias facturas del día, **sumar** | ⚪ **NO EJERCITABLE** — ver §5.1 |
 | Cambio x cambio sigue alimentando el sugerido | ✅ **PASA** — 4/4 exactos (§8.b) |
-| Quiebre de inventario: producto en stock 0 se puede pedir | ✅ **PASA** — Pedido 53 (§8.c) |
+| Quiebre de inventario (cantidad 0 al inventariar) | ❌ **NO PROBADO** — se midió otra cosa, ver §8.c |
 
 ---
 
@@ -155,10 +155,10 @@ nuestra corrida anterior): quedan fuera de ventana y `swap = 0` en los 7 product
 Se cerró con un **segundo ciclo sobre el cliente `105`**, el único de la cartera cuyo
 último inventario (03/08 15:13) es anterior a sus swaps (04/08).
 
-### 5.3 ✅ Quiebre de inventario — **cubierto, tras corregir el criterio** (§8.c)
+### 5.3 ❌ Quiebre de inventario — **NO validado**: se probó otra funcionalidad
 
-El primer intento (§8) usó un producto que **no estaba realmente en cero** —el stock es
-por almacén—. Se rehízo con `SUM(qu_stock)=0` y quedó cerrado en el **Pedido 53**.
+Ver la retractación completa en §8.c. El REQ es teclear **cantidad 0 al inventariar** y que
+ese 0 **persista**; aquí se midió agregar a un pedido un producto sin stock de almacén.
 
 ### 5.4 ⚪ Devolución de Calidad en esta corrida
 
@@ -274,38 +274,56 @@ sugerido > 0 (`046013461003BAN` ×2 y `CAMPROSDU002BOL` ×2). Secuencia de 4 ale
 
 ---
 
-## 8.c 🔴 Corrección al quiebre de §8: el primer producto NO estaba en cero
+## 8.c 🔴 RETRACTACIÓN — lo que llamamos «quiebre de inventario» NO era el REQ
 
-**El stock es POR ALMACÉN.** El `046013HIR01BOL` de §8 se eligió con un
-`SELECT … WHERE qu_stock <= 0`, que devuelve filas de **un** almacén: ese producto tenía
-**365 en AVE y 16 en DEVO**. **No estaba en quiebre**, así que aquella prueba no valía.
+**Esta sección corrige un error de la corrida. Lo que se probó no es la funcionalidad
+que se creyó estar probando.**
 
-Se rehízo con el criterio correcto — `SUM(qu_stock) = 0` **en todos** los almacenes —,
-que en hidroponias deja **4 productos**:
-`046013ESP003BOL` · `CAMPROLEC001GRA` · `GERPROGCH001BOL` · `HIDPROLEH001ENT`.
+### Qué dice realmente el REQ
 
-**Prueba válida:** `046013ESP003BOL` — ESPINACA BOLSA 150 GRS (E), **stock total 0**.
+El REQ «Quiebre de inventario (cantidad 0)», validado el **13/08 en DIFRANCA**
+(`req-validados-qa/req-quiebre-inventario_20260813`), es sobre el **módulo de
+INVENTARIOS**, y dice, textualmente:
 
-| Comprobación | Resultado |
+> «Cuando el vendedor levanta el inventario en el punto de venta, necesita poder dejar
+> constancia de que un producto **se agotó**. Antes esto no se podía: la aplicación
+> **exigía una cantidad de 1 o más** […] **El cambio permite escribir 0 como cantidad
+> válida**. De esa forma el producto agotado queda registrado en el inventario, con su
+> lote y su fecha.»
+
+Y su eje de prueba era **la persistencia**:
+
+> «La aplicación tenía varios puntos internos donde **las líneas con cantidad cero o menos
+> se descartaban** al volver a mostrar el inventario […] Por eso el eje de esta prueba fue
+> la persistencia: guardar, salir [y reabrir].»
+
+### Qué se probó aquí, en cambio
+
+Se agregó **a un PEDIDO** un producto cuyo **stock de almacén** era 0. **Es otra cosa.**
+Ni siquiera roza el REQ: en esta corrida las cantidades inventariadas fueron
+**1, 2, 3, 4, 5 y 12** — **nunca se tecleó un 0**, que es justamente el corazón del
+requerimiento.
+
+### Consecuencia
+
+| Afirmación anterior | Estado |
 |---|---|
-| ¿Se lista en el árbol de Pedidos pese al stock 0? | ✅ **Sí**, en FRESCALES |
-| ¿Expande su panel? | ✅ **Sí** — 1 input de cantidad |
-| ¿Alerta de bloqueo? | ✅ **Ninguna** |
-| ¿Entra al carrito? | ✅ **Sí**, ×2 |
-| ¿**Persiste en un pedido ENVIADO**? | ✅ **Sí** — **Pedido 53**, `st_order=1`, `046013ESP003BOL` `qu_order=2` en la nube |
+| «Quiebre de inventario ✅ PASS» | ❌ **RETIRADA** — se midió otra funcionalidad |
+| «El producto con stock 0 entra al pedido (Pedido 53)» | ✅ el dato es correcto, pero **no prueba este REQ** |
+| «No queda demostrado que sea `stock0` quien lo habilita» | irrelevante: la VG en juego no era ésa |
 
-*(Captura `06-quiebre-real-stock0.png`.)*
+⇒ **El REQ de quiebre queda SIN VALIDAR en hidroponias.** Lo que sí sigue en pie es la
+validación de DIFRANCA del 13/08, que lo probó correctamente.
 
-⚠ **Matiz necesario:** en hidroponias `validStock=false` y `validateWarehouses=false`, y
-**la UI ni siquiera rotula «Inventario:»** en el ítem del producto (medido: el texto trae
-Código, Precio, IVA y Unidad, pero no stock). Es decir: **aquí no hay validación de
-inventario que vencer**. El quiebre se permite, que es lo que se quería, pero **no se
-demostró que sea `stock0=true` lo que lo habilita** — con la validación apagada no hay
-nada que bloquee. Para atribuirlo a la VG haría falta un cliente con `validStock=true`.
+### Cómo se prueba bien (pendiente)
 
-⚠ `GERPROGCH001BOL` está en la lista de precios pero **no aparece en el árbol de Pedidos
-del cliente 105** — el catálogo se filtra por (lista de precios × moneda). No es defecto,
-es el filtro conocido.
+1. Inventariar un producto con **Cantidad = 0**, con su **lote** y su **fecha de vencimiento**.
+2. **Guardar**, salir del inventario y **reabrirlo** → el 0 debe seguir ahí, no desaparecer.
+3. **Enviar** y verificar en la web que el detalle **muestra la línea en cero** con su
+   ubicación, lote y fecha.
+4. Comprobar que **las cantidades negativas se siguen rechazando**.
+5. 🔑 **El punto que conecta con este informe:** que un producto agotado **con rotación**
+   genere la **reposición esperada en el pedido sugerido**.
 
 ---
 
@@ -376,13 +394,13 @@ también el inventario.
 | SUG-F-012 | Guarda `currentStock >= sugerido ⇒ 0`, **incluida la igualdad** | ✅ PASS (1 vs 1) |
 | SUG-F-013 | Guarda de venta negativa ⇒ diaria 0 | ✅ PASS |
 | SUG-F-014 | **Sugerido → líneas del pedido** (los 0 excluidos) | ✅ PASS |
-| SUG-F-015 | **Quiebre de stock: producto con inventario 0 se agrega** | ✅ PASS (`046013ESP003BOL`, stock total 0) |
-| SUG-F-016 | La línea de stock 0 **persiste en el pedido enviado** | ✅ **PASS** — Pedido 53 en nube |
+| SUG-F-015 | ~~Quiebre de inventario~~ | ❌ **RETIRADO** — lo medido no es el REQ (§8.c) |
+| SUG-F-016 | Producto con stock 0 de almacén entra a un pedido enviado | ✅ PASS (Pedido 53) — **dato válido, pero ajeno al REQ de quiebre** |
 | SUG-F-019 | Sugerido → pedido enviado, 2.º ciclo (cliente 105) | ✅ PASS (Inventario 52 + Pedido 52) |
 | SUG-F-017 | Pedido enviado y cotejado en nube | ✅ PASS (Ref 51, BD-OK) |
 | SUG-F-018 | Inventario ligado al pedido (`client_stock.id_order`) | ✅ PASS |
 
-**18 PASS · 0 FAIL · 2 no ejercitados (sin dato en la base) · 1 incidencia sin causa · 1 punto a vigilar.**
+**17 PASS · 0 FAIL · 1 RETIRADO · 2 no ejercitados (sin dato en la base) · 1 incidencia sin causa · 1 punto a vigilar.**
 
 ---
 
