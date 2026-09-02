@@ -595,7 +595,7 @@ export class AutoSendService implements OnInit {
         db,
         coTransaction,
       );
-      if (snapshot) {
+      if (snapshot && this.inventariosLogicService.shouldAttachSuggestedOrderOnStockSend(coTransaction)) {
         request.clientStockSuggestedOrder = this.inventariosLogicService.prepareSuggestedOrderSnapshotForUpload(
           snapshot,
           clientStock.stDelivery == DELIVERY_STATUS_TO_SEND,
@@ -1083,6 +1083,7 @@ export class AutoSendService implements OnInit {
             serverResult,
           );
         }
+        this.inventariosLogicService.clearSuggestedOrderSendFlags(coTransaction);
         console.log('UPDATE EXITOSO clientStock', coTransaction);
         break;
       }

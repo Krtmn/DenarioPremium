@@ -733,6 +733,9 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
 
           if (this.orderServ.coClientStockAEnviar.length > 1) {
             await this.orderServ.marcarInventarioSugeridoStPorEnviar();
+            this.inventariosLogicService.setForceAttachSuggestedOrderOnStockSend(
+              this.orderServ.coClientStockAEnviar,
+            );
             transactions.push({
               coTransaction: this.orderServ.coClientStockAEnviar,
               idTransaction: this.orderServ.idClientStockAEnviar,

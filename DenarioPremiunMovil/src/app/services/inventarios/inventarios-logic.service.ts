@@ -86,6 +86,10 @@ export class InventariosLogicService {
   public idProductsUnitsSuggested: number[] = [];
   public idUnitsSuggested: number[] = [];
 
+  /** Decisión de adjuntar sugerencia al POST inventario (por co_client_stock). */
+  private suggestedOrderAttachOnStockSend = new Map<string, boolean>();
+  /** Envío pedido desde sugerencia: adjuntar snapshot si existe (obligatorio). */
+  private forceSuggestedOrderAttachOnStockSend = new Set<string>();
 
   public enterpriseClientStock: Enterprise = {} as Enterprise;
   public clientClientStock: Client = {} as Client;
@@ -941,12 +945,39 @@ export class InventariosLogicService {
     };
   }
 
-  async persistSuggestedOrderForCurrentStock(
-    dbServ: SQLiteObject,
-    moneda?: CurrencyEnterprise,
-  ): Promise<void> {
-    await this.calcularTotalesSugerenciaPedido(dbServ);
-    await this.saveSuggestedOrderSnapshot(dbServ, moneda);
+  setAttachSuggestedOrderOnStockSend(coClientStock: string, attach: boolean): void {
+    if (!coClientStock) {
+      return;
+    }
+    this.suggestedOrderAttachOnStockSend.set(coClientStock, attach);
+  }
+
+  setForceAttachSuggestedOrderOnStockSend(coClientStock: string): void {
+    if (!coClientStock) {
+      return;
+    }
+    this.forceSuggestedOrderAttachOnStockSend.add(coClientStock);
+  }
+
+  shouldAttachSuggestedOrderOnStockSend(coClientStock: string): boolean {
+    if (!coClientStock) {
+      return false;
+    }
+    if (this.forceSuggestedOrderAttachOnStockSend.has(coClientStock)) {
+      return true;
+    }
+    if (this.suggestedOrderAttachOnStockSend.has(coClientStock)) {
+      return this.suggestedOrderAttachOnStockSend.get(coClientStock) ?? false;
+    }
+    return false;
+  }
+
+  clearSuggestedOrderSendFlags(coClientStock: string): void {
+    if (!coClientStock) {
+      return;
+    }
+    this.suggestedOrderAttachOnStockSend.delete(coClientStock);
+    this.forceSuggestedOrderAttachOnStockSend.delete(coClientStock);
   }
 
   async saveSuggestedOrderSnapshot(
@@ -959,9 +990,16 @@ export class InventariosLogicService {
       return;
     }
 
-    await this.deleteSuggestedOrderSnapshot(dbServ, coClientStock);
+    const existing = await this.getSuggestedOrderSnapshotByClientStock(dbServ, coClientStock);
+    const coSuggestedOrder = existing?.coClientStockSuggestedOrder ?? this.dateServ.generateCO(0);
 
-    const coSuggestedOrder = this.dateServ.generateCO(0);
+    if (existing?.coClientStockSuggestedOrder) {
+      await dbServ.executeSql(
+        'DELETE FROM client_stock_suggested_order_details WHERE co_client_stock_suggested_order = ?',
+        [existing.coClientStockSuggestedOrder],
+      );
+    }
+
     const details: ClientStockSuggestedOrderDetail[] = [];
     let posicion = 0;
     const productsSuggested = this.productsSuggested ?? [];
@@ -1003,7 +1041,7 @@ export class InventariosLogicService {
     }
 
     const header = new ClientStockSuggestedOrder(
-      null,
+      existing?.idClientStockSuggestedOrder ?? null,
       coSuggestedOrder,
       coClientStock,
       stock.idClientStock ?? null,
@@ -1018,26 +1056,22 @@ export class InventariosLogicService {
       stock.daysSinceLast ?? 1,
       stock.daysUntilNext ?? 1,
       this.suggestedOrderByDispatchAndReturn ? 1 : 0,
-      moneda?.idCurrency ?? null,
-      moneda?.coCurrency ?? null,
+      moneda?.idCurrency ?? existing?.idCurrency ?? null,
+      moneda?.coCurrency ?? existing?.coCurrency ?? null,
       this.dateServ.hoyISOFullTime(),
       details.length,
-      null,
-      null,
-      0,
+      existing?.coOrder ?? null,
+      existing?.idOrder ?? null,
+      existing?.inOrderSent ?? 0,
       details,
     );
 
-    const insertHeader = this.suggestedOrderHeaderInsertSql;
-
-    const insertDetail = this.suggestedOrderDetailInsertSql;
-
     const batch: (string | (string | number | null)[])[][] = [
-      [insertHeader, this.buildSuggestedOrderHeaderBatchRow(header)],
+      [this.suggestedOrderHeaderInsertSql, this.buildSuggestedOrderHeaderBatchRow(header)],
     ];
 
     for (const detail of details) {
-      batch.push([insertDetail, this.buildSuggestedOrderDetailBatchRow(detail)]);
+      batch.push([this.suggestedOrderDetailInsertSql, this.buildSuggestedOrderDetailBatchRow(detail)]);
     }
 
     await dbServ.sqlBatch(batch);

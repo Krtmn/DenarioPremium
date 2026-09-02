@@ -62,10 +62,12 @@ export class InventarioSugeridoListComponent implements OnInit {
     }
     const coClient = (item.coClient ?? '').toLowerCase();
     const lbClient = (item.lbClient ?? '').toLowerCase();
+    const idSuggested = String(item.idClientStockSuggestedOrder ?? 0);
     const coStock = (item.coClientStock ?? '').toLowerCase();
     const coSuggested = (item.coClientStockSuggestedOrder ?? '').toLowerCase();
     return coClient.includes(this.searchText)
       || lbClient.includes(this.searchText)
+      || idSuggested.includes(this.searchText)
       || coStock.includes(this.searchText)
       || coSuggested.includes(this.searchText);
   }

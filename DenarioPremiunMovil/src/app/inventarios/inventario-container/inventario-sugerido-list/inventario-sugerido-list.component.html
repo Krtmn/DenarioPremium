@@ -1,7 +1,7 @@
 <div class="clientStock-list">
   <div class="sticky-searchbar">
     <ion-searchbar class="lupamorada" show-clear-button="always" search-icon="search-circle" clear-icon="trash-bin"
-      [placeholder]="inventariosLogicService.inventarioTags.get('INV_PED_SUG_LIST') || 'Pedidos sugeridos'"
+      [placeholder]="inventariosLogicService.inventarioTags.get('INV_PED_SUG_LIST') || 'SUGERENCIAS DE PEDIDO'"
       (ionInput)="handleInput($event)"></ion-searchbar>
   </div>
   <div class="clientStock-card">
@@ -23,7 +23,7 @@
               </p>
               <p>
                 {{ inventariosLogicService.inventarioTags.get('INV_NRO_REF') || 'Nro. Ref.' }}:
-                {{ item.coClientStock }}
+                {{ item.idClientStockSuggestedOrder ?? 0 }}
               </p>
               <p>
                 {{ inventariosLogicService.inventarioTags.get('INV_STATUS') || 'Estatus' }}:
