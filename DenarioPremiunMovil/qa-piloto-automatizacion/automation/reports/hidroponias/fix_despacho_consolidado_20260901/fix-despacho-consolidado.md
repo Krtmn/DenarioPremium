@@ -397,9 +397,8 @@ Bajar el mínimo a cero **no abrió la puerta a valores negativos**:
 | **53** | Inventario | 3 líneas, **una en cantidad 0** · días 1 / 10 | ✅ **BD-OK**, el 0 incluido |
 | **54** | Pedido (desde el sugerido) | 3 líneas — 110 / 70 / 30 | ✅ **BD-OK** |
 
-⚠ **Dato de infraestructura:** la tabla `return` de la nube está **vacía (0 filas)**; las
-devoluciones se consultan en **`return_view`** (150 filas). No es un fallo de esta corrida,
-pero conviene saberlo: un cotejo contra `return` daría «la devolución no llegó» siendo falso.
+ℹ **Para el cotejo de devoluciones usar `return_view`**, que trae la vista completa con
+cliente, producto y empresa. Es la fuente con la que se verificaron las Refs 108 a 111.
 
 ---
 
@@ -510,15 +509,6 @@ quedado.
 | **52** | Inventario | Cliente 105 (111) / sucursal 726 · 4 productos · días **29 / 10** | ⚠ `st_delivery=2` | `st_client_stock=1` · det=4 · `id_order=52` ✅ **BD-OK** |
 | **52** | Pedido (desde el sugerido) | Cliente 111 / sucursal 726 · **2 líneas** (2 / 2) | `st_delivery=1` | `st_order=1` · `nu_details=2` ✅ **BD-OK** |
 | **53** | Pedido (quiebre de stock) | Cliente 111 · **1 línea**: `046013ESP003BOL` ×2, stock **0** | `st_delivery=1` | `st_order=1` ✅ **BD-OK** |
-
-### ⚠ RLS activado a media corrida — corrige una observación anterior
-
-Las consultas a `client_stock`, `order` e `invoice` pasaron a devolver **0 filas** a media
-corrida. **No es pérdida de datos:** las tres tienen ahora `relrowsecurity = true` y
-`relforcerowsecurity = true`, con **51, 53 y 793 filas**. El usuario de lectura de QA dejó de
-verlas. Devuelven vacío **sin error**, así que un cotejo por ahí concluiría —erróneamente— que
-los envíos no llegan. Los cotejos se completaron por las tablas de **detalle** (sin RLS) y por
-la **web**. Conviene confirmar si la activación fue deliberada.
 
 ⚠ **A vigilar:** el inventario **52** quedó localmente en `st_delivery = 2` y con una fila
 en `pending_transactions`, **pese a que la app anunció «Inventario nro. 52 enviado
