@@ -245,6 +245,10 @@ async function runCobros(pg, DATA) {
     return false;
   }
 
+  // Qué cliente se clickeó DE VERDAD. El reporte debe decir esto, no lo que
+  // pedía el perfil: son cosas distintas y confundirlas ya hizo mentir a un reporte.
+  let ultimoClienteClickeado = null;
+
   // Modal cliente: #clienteSelectModal.present() (click en ion-input NO lo abre)
   async function seleccionarCliente(nombre) {
     await pg.evaluate(() => {
@@ -268,21 +272,60 @@ async function runCobros(pg, DATA) {
     }
 
     // Click en el <p> del nombre (NO el centro del item → zona de saldos activa masInfo→BUSCAR)
-    const coords = await pg.evaluate((nom) => {
-      const ps = [...document.querySelectorAll('ion-modal.show-modal p, #clienteSelectModal p')]
-        .filter(p => p.getBoundingClientRect().width > 0);
-      let target = null;
-      if (nom) {
-        const key = nom.trim().slice(0, 10).toLowerCase();
-        target = ps.find(p => p.textContent.trim().toLowerCase().includes(key));
+    //
+    // 🔴 ANTES CAÍA EN `ps[0]` SIN AVISAR. La línea era `target = target || ps[0]`:
+    //    si el cliente pedido no aparecía, elegía **el primero de la lista** y
+    //    seguía como si nada. El reporte imprimía el cliente del PERFIL, no el
+    //    que se había clickeado, así que mentía. Se detectó en 4K (02/09): el
+    //    perfil pide `C.0507` —un CÓDIGO— y el modal lista NOMBRES, así que no
+    //    casaba nunca; se cobraba contra un cliente cualquiera y los casos
+    //    siguientes morían con "cliente sin documentos".
+    //
+    // Ahora: se busca por CÓDIGO o por NOMBRE sobre el texto completo del ítem,
+    // y si no está, **falla con nombre y apellido**. Un cliente equivocado en
+    // silencio es peor que un FAIL.
+    const hallazgo = await pg.evaluate((nom) => {
+      const visible = (el) => el.getBoundingClientRect().width > 0;
+      const modal = document.querySelector('#clienteSelectModal') ||
+                    document.querySelector('ion-modal.show-modal');
+      if (!modal) return { err: 'el modal de clientes no está abierto' };
+
+      const items = [...modal.querySelectorAll('ion-item')].filter(visible);
+      const norm = (s) => (s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+      const clave = norm(nom);
+
+      // El <p> es el punto SEGURO donde clickear; el texto del ion-item es lo
+      // que se compara, porque ahí vienen código y nombre juntos.
+      const candidatos = items.map(it => ({
+        it,
+        txt: norm(it.innerText),
+        p: [...it.querySelectorAll('p')].filter(visible)[0] || null,
+      })).filter(c => c.p);
+
+      if (!candidatos.length) return { err: 'el modal no listó clientes', n: items.length };
+      if (!clave) return { err: 'no se indicó cliente_test en el perfil del cliente' };
+
+      // exacto primero, luego por substring (el código suele venir con prefijo)
+      const elegido = candidatos.find(c => c.txt === clave)
+                   || candidatos.find(c => c.txt.includes(clave));
+      if (!elegido) {
+        return { err: 'no encontrado', n: candidatos.length,
+                 muestra: candidatos.slice(0, 5).map(c => c.txt.slice(0, 60)) };
       }
-      target = target || ps[0];
-      if (!target) return null;
-      target.scrollIntoView({ block: 'center' });
-      const r = target.getBoundingClientRect();
-      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      elegido.p.scrollIntoView({ block: 'center' });
+      const r = elegido.p.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2,
+               elegido: elegido.txt.slice(0, 80), n: candidatos.length };
     }, nombre);
-    if (!coords) throw new Error('Cliente no encontrado en #clienteSelectModal');
+
+    if (hallazgo.err) {
+      const extra = hallazgo.muestra
+        ? ` · ${hallazgo.n} listados, p.ej.: ${hallazgo.muestra.join(' | ')}`
+        : hallazgo.n !== undefined ? ` · ${hallazgo.n} ítems` : '';
+      throw new Error(`Cliente "${nombre}" ${hallazgo.err}${extra}`);
+    }
+    ultimoClienteClickeado = hallazgo.elegido;
+    const coords = { x: hallazgo.x, y: hallazgo.y };
     await pg.mouse.click(coords.x, coords.y, { delay: 80 });
     await pg.waitForTimeout(2500);
     // Reintento (el 1er click a veces no marca)
@@ -387,23 +430,94 @@ async function runCobros(pg, DATA) {
     return { ok: true, count: info.count };
   }
 
-  // Guardar / Enviar: Pointer(down/up) + shadow button.click() + mouse.click (el header fijo y≈32 no siempre recibe mouse)
+  // ── Guardar / Enviar ────────────────────────────────────────────────────────
+  //
+  // 🔴 ANTES DISPARABA CUATRO VECES. La versión previa hacía, sin condición:
+  //       pointerdown + pointerup + inner.click()   (en el DOM)
+  //       + pg.mouse.click(x, y)                    (clic real)
+  //    Ionic atiende el `inner.click()` Y el clic real ⇒ **dos activaciones del
+  //    mismo botón**. En Guardar deja un cobro duplicado; en Enviar, un envío
+  //    duplicado. La razón de que estuvieran los dos era que «el header fijo en
+  //    y≈32 no siempre recibe el mouse» — cierto, pero eso se resuelve con un
+  //    fallback CONDICIONADO, no disparando ambos a ciegas.
+  //
+  // Ahora: **un solo disparo**, se comprueba si la pantalla reaccionó, y solo si
+  // no reaccionó se intenta la vía alterna. Nunca las dos.
+  //
+  // Devuelve { ok, via, motivo } — ⚠ es un OBJETO: `if (await clickGuardarEnviar())`
+  // siempre da verdadero. Evaluar `.ok`.
+
+  /** Huella de la pantalla, para saber si el botón produjo algo. */
+  async function huellaPantalla() {
+    return pg.evaluate(() => {
+      const vis = (el) => el && el.getBoundingClientRect().width > 0 && el.offsetParent !== null;
+      const alerts = [...document.querySelectorAll('ion-alert')].filter(a =>
+        (!a.classList.contains('overlay-hidden') && a.offsetParent !== null) ||
+        [...a.querySelectorAll('.alert-button')].some(b => b.getBoundingClientRect().width > 0));
+      return {
+        alerts:   alerts.length,
+        loadings: [...document.querySelectorAll('ion-loading')].filter(vis).length,
+        enCobro:  !!document.querySelector('app-cobro:not(.ion-page-hidden)'),
+        url:      location.hash || location.pathname,
+      };
+    });
+  }
+
+  /** ¿Cambió algo respecto de `antes`? Sondea hasta `msMax`. */
+  async function esperarReaccion(antes, msMax = 2500) {
+    const t0 = Date.now();
+    while (Date.now() - t0 < msMax) {
+      await pg.waitForTimeout(250);
+      const ahora = await huellaPantalla();
+      if (ahora.alerts   > antes.alerts)   return { reacciono: true, senal: 'alert' };
+      if (ahora.loadings > antes.loadings) return { reacciono: true, senal: 'loading' };
+      if (antes.enCobro && !ahora.enCobro) return { reacciono: true, senal: 'navego' };
+      if (ahora.url !== antes.url)         return { reacciono: true, senal: 'url' };
+    }
+    return { reacciono: false };
+  }
+
   async function clickGuardarEnviar(cls) {
-    const coords = await pg.evaluate((sel) => {
-      const btn = document.querySelector(`ion-button.${sel}`);
-      if (!btn || btn.disabled || btn.getBoundingClientRect().width === 0) return null;
-      const inner = btn.shadowRoot && btn.shadowRoot.querySelector('button');
-      try {
-        (inner || btn).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
-        (inner || btn).dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
-        if (inner) inner.click();
-      } catch (_) {}
-      const r = btn.getBoundingClientRect();
-      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    // 🔴 El teclado desplaza el header: si se acaba de escribir, las coordenadas
+    //    medidas antes del blur apuntan a otro sitio y el clic «no hace nada».
+    await pg.evaluate(() => {
+      const a = document.activeElement;
+      if (a && typeof a.blur === 'function') a.blur();
+    });
+    await pg.waitForTimeout(400);
+
+    const btn = await pg.evaluate((sel) => {
+      const b = document.querySelector(`ion-button.${sel}`);
+      if (!b) return { estado: 'ausente' };
+      if (b.disabled) return { estado: 'deshabilitado' };
+      const r = b.getBoundingClientRect();
+      if (r.width === 0) return { estado: 'invisible' };
+      return { estado: 'ok', x: r.left + r.width / 2, y: r.top + r.height / 2 };
     }, cls);
-    if (!coords) return false;
-    await pg.mouse.click(coords.x, coords.y, { delay: 120 });
-    return true;
+
+    if (btn.estado !== 'ok') return { ok: false, via: null, motivo: `botón ${btn.estado}` };
+
+    const antes = await huellaPantalla();
+
+    // Intento 1 — clic REAL. Es el que reproduce lo que hace la QA a mano.
+    await pg.mouse.click(btn.x, btn.y, { delay: 120 });
+    let r = await esperarReaccion(antes);
+    if (r.reacciono) return { ok: true, via: 'mouse', motivo: r.senal };
+
+    // Intento 2 — solo porque el primero NO produjo nada: el header fijo puede
+    // quedar fuera del área que recibe el mouse. Una sola activación más.
+    const disparo = await pg.evaluate((sel) => {
+      const b = document.querySelector(`ion-button.${sel}`);
+      if (!b || b.disabled) return false;
+      const inner = b.shadowRoot && b.shadowRoot.querySelector('button');
+      try { (inner || b).click(); return true; } catch (_) { return false; }
+    }, cls);
+    if (!disparo) return { ok: false, via: 'mouse', motivo: 'sin reacción y no se pudo reintentar' };
+
+    r = await esperarReaccion(antes);
+    return r.reacciono
+      ? { ok: true,  via: 'dom', motivo: r.senal }
+      : { ok: false, via: 'ambas', motivo: 'el botón no produjo ninguna reacción' };
   }
 
   function blockFase2(motivo = 'Fase 2 — pendiente de construir/depurar en device') {
@@ -650,8 +764,9 @@ async function runCobros(pg, DATA) {
     let habil = 0;
     for (let i = 0; i < 8; i++) { habil = await tabsHabilitadas(); if (habil >= 4) break; await pg.waitForTimeout(700); }
     clienteOk = habil >= 4;
+    // Se anota el cliente REALMENTE clickeado, no el que pedía el perfil.
     v('DM-COB-004', 'Seleccionar cliente → tabs habilitadas', clienteOk ? 'PASS' : 'FAIL',
-      `cliente: "${DATA.clienteTest}" · tabs habilitadas: ${habil}`);
+      `pedido: "${DATA.clienteTest}" · clickeado: "${ultimoClienteClickeado || '—'}" · tabs habilitadas: ${habil}`);
   } catch (e) {
     v('DM-COB-004', 'Seleccionar cliente → tabs habilitadas', 'FAIL', e.message);
   }
@@ -810,11 +925,16 @@ async function runCobros(pg, DATA) {
       // adjunto obligatorio.
       reqV(await reqPestanaRoja(pg, 'COB', { rotar: true }));
 
-      await clickGuardarEnviar('imagenGuardar');
+      const clic = await clickGuardarEnviar('imagenGuardar');
       await pg.waitForTimeout(1500);
       const alertMsg = await readAlert();
       guardadoOk = !!(alertMsg && /guardad/i.test(alertMsg));
-      v('DM-COB-018', 'Guardar cobro → alert confirmación', guardadoOk ? 'PASS' : 'FAIL', `alert: "${alertMsg || 'ninguno'}"`);
+      // La vía por la que respondió el botón se anota siempre: si empieza a
+      // resolverse por 'dom' de forma sistemática, es que el clic real dejó de
+      // llegar al header y hay que revisar las coordenadas, no seguir tapándolo.
+      const viaTxt = clic.ok ? `clic:${clic.via}/${clic.motivo}` : `clic FALLÓ (${clic.motivo})`;
+      v('DM-COB-018', 'Guardar cobro → alert confirmación', guardadoOk ? 'PASS' : 'FAIL',
+        `${viaTxt} · alert: "${alertMsg || 'ninguno'}"`);
       if (alertMsg) await clickAlertBtn(['Aceptar', 'OK']);
     }
   } catch (e) {
