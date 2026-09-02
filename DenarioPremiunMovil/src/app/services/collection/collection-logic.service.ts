@@ -3488,8 +3488,8 @@ export class CollectionService {
 
     return this.makeSendIssue(
       'TOLERANCIA',
-      this.collectionTags.get('COB_ERROR_PARTIAL_PAY')
-        ?? 'El monto pagado no coincide con el monto a pagar según la tolerancia configurada.',
+      this.collectionTags.get('COB_ERROR_TOLERANCIA')
+        ?? 'El monto pagado está fuera del rango de tolerancia permitido.',
       'pagos',
     );
   }
@@ -3624,6 +3624,43 @@ export class CollectionService {
     return false;
   }
 
+  /**
+   * Convierte un rango de tolerancia (en `MonedaTolerancia`) a la moneda del cobro.
+   * COB-TOL-001: no usar `convertirMonto(rango, 0, collection.coCurrency)` — con cobro local
+   * y tolerancia hard eso divide por la tasa y deja el rango ~0 (bloqueo falso).
+   * Restaura la intención de 81604a79 (hard→local = × tasa; local→hard = ÷ tasa).
+   */
+  private convertToleranceRangeToCollectionCurrency(rangeInToleranceCurrency: number): number {
+    const range = Number(rangeInToleranceCurrency) || 0;
+    const collectionCo = this.collection?.coCurrency;
+    if (!collectionCo || collectionCo === this.MonedaTolerancia) {
+      return range;
+    }
+
+    const rate = this.getEffectiveExchangeRate();
+    const localCo = this.localCurrency?.coCurrency;
+    const toleranceIsLocal =
+      this.MonedaToleranciaIsLocal
+      || (!!localCo && this.MonedaTolerancia === localCo)
+      || (!!this.MonedaTolerancia && this.currencyService?.isLocalCurrency?.(this.MonedaTolerancia) === true);
+    const collectionIsLocal =
+      this.currencyLocal
+      || (!!localCo && collectionCo === localCo)
+      || this.currencyService?.isLocalCurrency?.(collectionCo) === true;
+
+    let converted: number;
+    if (rate >= 1 && !toleranceIsLocal && collectionIsLocal) {
+      converted = range * rate;
+    } else if (rate >= 1 && toleranceIsLocal && !collectionIsLocal) {
+      converted = range / rate;
+    } else {
+      // Fallback: pasar MonedaTolerancia (mismo criterio que 81604a79).
+      converted = this.convertirMonto(range, 0, this.MonedaTolerancia);
+    }
+
+    return this.cleanFormattedNumber(this.currencyService.formatNumber(converted));
+  }
+
   /** Lógica pura de `checkTolerancia` (sin mutar botón). */
   private computeIsWithinTolerancia(): boolean {
     const isAlwaysPartialWithFixedMode = this.alwaysPartialPayment && !this.enablePartialPayment;
@@ -3636,53 +3673,14 @@ export class CollectionService {
     }
 
     if (this.TipoTolerancia == 0) {
-      if (this.collection.coCurrency == this.MonedaTolerancia) {
-        const amount = this.montoTotalPagado - this.montoTotalPagar;
-        if (amount > 0) {
-          return amount < this.RangoToleranciaPositiva;
-        }
-        if (amount < 0) {
-          return Math.abs(amount) <= this.RangoToleranciaNegativa;
-        }
-        return true;
-      }
-
-      if (this.MonedaToleranciaIsLocal) {
-        const amount = this.montoTotalPagado - this.montoTotalPagar;
-        if (this.collection.coCurrency == this.MonedaTolerancia) {
-          if (amount > 0) {
-            return amount < this.RangoToleranciaPositiva;
-          }
-          if (amount < 0) {
-            return Math.abs(amount) <= this.RangoToleranciaNegativa;
-          }
-          return true;
-        }
-        if (amount > 0) {
-          return amount < this.convertirMonto(this.RangoToleranciaPositiva, 0, this.collection.coCurrency);
-        }
-        if (amount < 0) {
-          return Math.abs(amount) <= this.convertirMonto(this.RangoToleranciaNegativa, 0, this.collection.coCurrency);
-        }
-        return true;
-      }
-
-      // Moneda tolerancia hard
       const amount = this.montoTotalPagado - this.montoTotalPagar;
-      if (this.collection.coCurrency == this.MonedaTolerancia) {
-        if (amount > 0) {
-          return amount < this.RangoToleranciaPositiva;
-        }
-        if (amount < 0) {
-          return Math.abs(amount) <= this.RangoToleranciaNegativa;
-        }
-        return true;
-      }
+      const positiveLimit = this.convertToleranceRangeToCollectionCurrency(this.RangoToleranciaPositiva);
+      const negativeLimit = this.convertToleranceRangeToCollectionCurrency(this.RangoToleranciaNegativa);
       if (amount > 0) {
-        return amount < this.convertirMonto(this.RangoToleranciaPositiva, 0, this.collection.coCurrency);
+        return amount < positiveLimit;
       }
       if (amount < 0) {
-        return Math.abs(amount) <= this.convertirMonto(this.RangoToleranciaNegativa, 0, this.collection.coCurrency);
+        return Math.abs(amount) <= negativeLimit;
       }
       return true;
     }
