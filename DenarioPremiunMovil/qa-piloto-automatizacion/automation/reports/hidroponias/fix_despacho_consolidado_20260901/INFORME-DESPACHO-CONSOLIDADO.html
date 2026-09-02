@@ -83,8 +83,8 @@
   <tr><td>Cliente y playa</td><td><b>HIDROPONIAS VENEZOLANAS C.A</b> · El Caribe <span style="color:var(--gris)">(confirmada en runtime)</span></td></tr>
   <tr><td>Build / fix</td><td><code>076faf27</code> · rama <code>fix/invoices-Hidroponia-20260901</code></td></tr>
   <tr><td>Empresa · vendedor</td><td><b>HIDRO_A</b> · login <code>vendedor4</code> / <code>id_user 468</code></td></tr>
-  <tr><td>Registros de evidencia</td><td><b>Inventarios 51 y 52</b> · <b>Pedidos 51, 52 y 53</b> — los cinco Enviados y cotejados en nube</td></tr>
-  <tr><td>Resultado</td><td><b class="ok">17 PASS · 0 FAIL</b> · 1 caso retirado (ver C6) · 2 no ejercitables por falta de dato</td></tr>
+  <tr><td>Registros de evidencia</td><td><b>Inventarios 51, 52 y 53</b> · <b>Pedidos 51, 52, 53 y 54</b> · <b>Devoluciones 108 y 109</b> — todos Enviados y cotejados en nube</td></tr>
+  <tr><td>Resultado</td><td><b class="ok">24 PASS · 0 FAIL</b> · 1 caso retirado y rehecho (ver C6) · 1 no ejercitable por falta de dato</td></tr>
 </table>
 
 <div class="bien">
@@ -97,8 +97,9 @@
 
 <div class="nota">
 <b>Alcance de este informe:</b> valida el <b>fix del despacho consolidado</b> y, de paso, el
-<b>cambio x cambio</b> y la generación del pedido sugerido. <b>No valida el REQ de quiebre de
-inventario</b> — ver la sección C6, donde se explica el error y cómo probarlo bien.
+<b>cambio x cambio</b>, la generación del pedido sugerido, el <b>REQ de quiebre de inventario</b>
+y el contraste <b>Calidad vs Distribución</b> en las devoluciones. La sección C6 documenta un
+error de método cometido en el primer intento del quiebre, y cómo se rehizo.
 </div>
 
 <h2>El defecto, en una línea</h2>
@@ -148,7 +149,7 @@ funcionaban —los que estaban en la factura ganadora— devolvieron exactamente
   <tr><td><b>C3</b></td><td>Producto sin factura ese día ⇒ muestra <b>0</b>, ni vacío ni omitido</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
   <tr><td><b>C4</b></td><td>Si el <b>mismo producto</b> está en varias facturas del día, <b>sumar</b> las cantidades</td><td><span class="pill p-na">⚪ SIN DATO</span></td></tr>
   <tr><td><b>C5</b></td><td>Cambio x cambio sigue alimentando el sugerido</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
-  <tr><td><b>C6</b></td><td>Quiebre de inventario — <b>cantidad 0 al inventariar</b></td><td><span class="pill p-mal">❌ NO PROBADO</span></td></tr>
+  <tr><td><b>C6</b></td><td>Quiebre de inventario — <b>cantidad 0 al inventariar</b>, y que persista</td><td><span class="pill p-ok">✅ PASS</span></td></tr><tr><td><b>C7</b></td><td>Devolución de <b>Distribución RESTA</b> del sugerido</td><td><span class="pill p-ok">✅ PASS</span></td></tr><tr><td><b>C8</b></td><td>Devolución de <b>Calidad NO resta</b></td><td><span class="pill p-ok">✅ PASS</span></td></tr><tr><td><b>C9</b></td><td>Las cantidades <b>negativas</b> se siguen rechazando</td><td><span class="pill p-ok">✅ PASS</span></td></tr><tr><td><b>C10</b></td><td>Agotado <b>con rotación</b> genera reposición en el sugerido</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
 </table>
 
 <div class="pb"></div>
@@ -251,56 +252,115 @@ Verificado en la nube sobre el <b>Pedido 51</b>: <code>qu_order</code> = <b>9</b
 exactamente lo sugerido. El inventario queda ligado al pedido que lo generó
 (<code>client_stock.id_order = 51</code>).</p>
 
-<h2>C6 — Quiebre de inventario: <span style="color:var(--rojo)">retractación</span></h2>
+<h2>C6 a C10 — Quiebre de inventario y devoluciones</h2>
 
-<div class="alerta">
-  <div class="t">❌ Este informe NO validó el REQ de quiebre de inventario</div>
-  Una versión anterior de este documento afirmaba que sí. <b>Era incorrecto: se midió una
-  funcionalidad distinta.</b> La afirmación queda retirada.
+<div class="nota">
+<b>Corrección de método, la contamos porque cambia lo que valen las pruebas.</b> El primer
+intento de validar el quiebre midió otra funcionalidad: se agregó <b>a un pedido</b> un producto
+sin stock de almacén. <b>Ese no es el REQ.</b> El REQ —validado en Difranca el 13/08— es poder
+escribir <b>cantidad 0 al INVENTARIAR</b> un producto agotado y que <b>ese 0 persista</b>.
+Se rehizo el ciclo completo con el requerimiento a la vista, y es lo que sigue.
 </div>
 
-<h3>Qué dice el REQ</h3>
-<p>El REQ «Quiebre de inventario (cantidad 0)», validado el <b>13/08 en DIFRANCA</b>, es sobre el
-<b>módulo de Inventarios</b>:</p>
-
-<div class="calc">
-«Cuando el vendedor levanta el inventario en el punto de venta, necesita poder dejar constancia<br>
-de que un producto <b>se agotó</b>. Antes esto no se podía: la aplicación <b>exigía una cantidad de 1 o más</b>.<br>
-<b>El cambio permite escribir 0 como cantidad válida</b>, con su lote y su fecha.»
-</div>
-
-<p>Y su punto delicado era <b>la persistencia</b>: la app tenía varios lugares internos donde
-<b>las líneas en cero se descartaban</b> al volver a mostrar el inventario, así que el eje de la
-prueba fue guardar, salir y reabrir.</p>
-
-<h3>Qué se midió aquí, en cambio</h3>
-<p>Se agregó <b>a un PEDIDO</b> un producto cuyo <b>stock de almacén</b> era 0. <b>Es otra cosa.</b>
-Ni siquiera roza el requerimiento: en esta corrida las cantidades inventariadas fueron
-<b>1, 2, 3, 4, 5 y 12</b> — <b>nunca se tecleó un 0</b>, que es justamente el corazón del REQ.</p>
+<h3>C7 y C8 — Calidad frente a Distribución</h3>
+<p>Se crearon <b>dos devoluciones sobre productos distintos</b> del mismo cliente y la misma
+factura, para poder leer su efecto por separado en un único sugerido:</p>
 
 <table>
-  <tr><th>Afirmación anterior</th><th style="width:34mm">Estado</th></tr>
-  <tr><td>«Quiebre de inventario ✅ PASS»</td><td><span class="pill p-mal">❌ RETIRADA</span></td></tr>
-  <tr><td>«El producto con stock 0 entra al pedido enviado» (Pedido 53)</td>
-      <td>el dato es correcto, pero <b>no prueba este REQ</b></td></tr>
-  <tr><td>«No queda demostrado que sea <code>stock0</code> quien lo habilita»</td>
-      <td>irrelevante: la variable en juego no era ésa</td></tr>
+  <tr><th style="width:16mm">Ref</th><th style="width:32mm">Tipo</th><th>Producto</th>
+      <th style="width:14mm">Cant.</th><th style="width:22mm">Devuelto</th><th style="width:26mm"></th></tr>
+  <tr><td><b>108</b></td><td><b>Distribución (61)</b></td><td><code>CAMPROSDU002BOL</code></td>
+      <td class="num">2</td><td class="num ok">2</td><td>✅ <b>sí resta</b></td></tr>
+  <tr><td><b>109</b></td><td><b>Calidad (60)</b></td><td><code>TOMPROMAN001BAN</code></td>
+      <td class="num">3</td><td class="num ok">0</td><td>✅ <b>NO resta</b></td></tr>
+</table>
+
+<p>Es la prueba limpia: misma corrida, mismo cliente, mismo formulario. Se ve en la aritmética:</p>
+
+<div class="calc">
+CAMPROSDU002BOL &nbsp; vendido = 15 − 2 − <b>2</b> = 11 &nbsp;&nbsp;← el 2 de la Distribución SÍ entra<br>
+TOMPROMAN001BAN &nbsp; vendido = &nbsp;5 − 2 − <b>0</b> = &nbsp;3 &nbsp;&nbsp;← si Calidad restara, sería 0
+</div>
+
+<p>El mecanismo real no es un tipo fijo en el código, sino la columna
+<code>return_category.subtract_suggestion</code>: Calidad → <code>'false'</code>,
+Distribución → <code>'true'</code>.</p>
+
+<div class="cap">
+  <img src="07-sugerido-calidad-vs-distribucion.png" alt="Sugerido con las dos devoluciones">
+  <div class="pie">Un solo sugerido con las dos devoluciones aplicadas: la de Distribución descuenta, la de Calidad no.</div>
+</div>
+
+<h3>C6 — Quiebre de inventario: cantidad 0 y su persistencia</h3>
+<table>
+  <tr><th>Paso</th><th style="width:30mm">Resultado</th></tr>
+  <tr><td>Teclear <b>Cantidad = 0</b> al inventariar <code>CAMPROLEC002BAN</code></td><td><span class="pill p-ok">✅ aceptado</span></td></tr>
+  <tr><td><b>Guardar</b> → la línea en la base local</td><td><span class="pill p-ok">✅ <code>qu_stock = 0</code></span></td></tr>
+  <tr><td><b>Salir y reabrir</b> el inventario guardado</td><td><span class="pill p-ok">✅ las 3 líneas, el 0 incluido</span></td></tr>
+  <tr><td><b>Enviar</b> → llegada a la nube (Inventario <b>53</b>)</td><td><span class="pill p-ok">✅ <code>0.00</code> en la nube</span></td></tr>
 </table>
 
 <div class="nota">
-<b>Consecuencia:</b> el REQ de quiebre <b>queda sin validar en Hidroponias</b>. La referencia
-válida sigue siendo únicamente la validación de <b>Difranca del 13/08</b>.
+🔑 <b>C10 — el punto que conecta los dos requerimientos.</b> <code>CAMPROLEC002BAN</code> quedó
+<b>agotado (actual 0) pero con rotación (despacho 7)</b>, y el sugerido le calculó
+<b>reposición 70</b> (7 × 10 días). Es exactamente el escenario que el REQ de quiebre pedía
+comprobar: <i>«un producto agotado con rotación genera la reposición esperada en el pedido
+sugerido»</i>.
 </div>
 
-<h3>Cómo se prueba bien — pendiente</h3>
-<ol style="font-size:9.6pt">
-  <li>Inventariar un producto con <b>Cantidad = 0</b>, con su <b>lote</b> y su <b>fecha de vencimiento</b>.</li>
-  <li><b>Guardar</b>, salir del inventario y <b>reabrirlo</b> → el 0 debe seguir ahí, no desaparecer.</li>
-  <li><b>Enviar</b> y verificar en la web que el detalle <b>muestra la línea en cero</b> con su ubicación, lote y fecha.</li>
-  <li>Comprobar que <b>las cantidades negativas se siguen rechazando</b>.</li>
-  <li>🔑 <b>El punto que conecta con este informe:</b> que un producto agotado <b>con rotación</b>
-      genere la <b>reposición esperada en el pedido sugerido</b>.</li>
-</ol>
+<h3>C9 — Los negativos siguen rechazados</h3>
+<p>Bajar el mínimo a cero <b>no abrió la puerta a valores negativos</b>:</p>
+<ul style="font-size:9.6pt">
+  <li>El campo de cantidad declara <b><code>min="0"</code></b> — el piso es cero, no negativo.</li>
+  <li>Al intentar aceptar con <code>−1</code>, la app responde
+      <b>«Complete cantidad, unidad, fecha y lote para continuar.»</b></li>
+  <li><b>El modal no se cierra</b> y <b>no se agrega ninguna línea</b> al inventario.</li>
+</ul>
+
+<div class="cap">
+  <img src="08-negativo-rechazado.png" alt="Cantidad negativa rechazada">
+  <div class="pie">Intento de cargar −1: la aplicación lo rechaza y no deja avanzar.</div>
+</div>
+
+<h2>Evidencia del cálculo: el campo Despacho en pantalla</h2>
+
+<p>El detalle del cálculo <b>sí se ve en la aplicación</b>: hay que <b>desplegar el producto</b>
+dentro del modal del sugerido. Se muestra el testigo más claro —<code>GERPROALF002CAJ</code>,
+el que bajo el bug daba <b>Despacho 0</b> y ahora trae <b>19</b>.</p>
+
+<div class="nota">
+⚠ <b>Las tablas del detalle se desplazan en horizontal:</b> en pantalla solo caben dos columnas
+de las cuatro. Por eso van <b>dos capturas solapadas</b>, con <b>«Inv. Anterior» como columna
+bisagra</b> — aparece en las dos, de modo que se puede seguir la lectura sin cortes.
+</div>
+
+<div class="par">
+  <div>
+    <div class="et">Vista inicial de la tabla</div>
+    <img src="09-detalle-calculo-despacho.png" alt="Detalle del cálculo, primeras columnas">
+  </div>
+  <div>
+    <div class="et et-bien">Desplazada: <b>Despacho = 19</b></div>
+    <img src="09b-detalle-despacho-columna.png" alt="Detalle del cálculo con la columna Despacho">
+  </div>
+</div>
+<p class="cap"><span class="pie">Izquierda: <code>Inv. Inicial 19 · Inv. Anterior 0</code>.
+Derecha, tras desplazar: <code>Inv. Anterior 0 · <b>Despacho 19</b></code>. La columna bisagra
+(Inv. Anterior = 0) permite empalmar las dos vistas.</span></p>
+
+<p>La aritmética completa que muestra la pantalla, para este producto:</p>
+
+<div class="calc">
+Inv. Anterior 0 &nbsp;+&nbsp; <b>Despacho 19</b> &nbsp;+&nbsp; Cambio por cambio 0 &nbsp;=&nbsp; <b>Inv. Inicial 19</b><br>
+Inv. Inicial 19 &nbsp;−&nbsp; Inv. Actual 2 &nbsp;−&nbsp; Dev. Distribución 0 &nbsp;=&nbsp; <b>Venta 17</b><br>
+Venta 17 &nbsp;/&nbsp; 1 día &nbsp;=&nbsp; <b>Ventas Diarias Estimadas 17,00</b> &nbsp;→&nbsp; × 10 días &nbsp;=&nbsp; <b>Sugerido 170</b>
+</div>
+
+<div class="nota">
+<b>Corrección a una nota del ciclo de agosto.</b> Aquel informe registró que «los términos no
+están en el DOM, hay que leerlos del modelo». <b>Sí están</b>: se ven al desplegar el producto
+dentro del modal. Lo que ocurre es que el acordeón nace colapsado y las tablas se recortan.
+</div>
 
 <div class="pb"></div>
 <h2>Alcance del fix: qué NO cambió</h2>
@@ -317,9 +377,9 @@ concreta</b>, no contra el día. Las dos consultas son independientes.</p>
   <tr><td>Devolución de <b>Calidad</b> en esta corrida</td>
       <td>Se confirmó que la de <b>Distribución sí resta</b> (<code>devuelto = 2</code>).
           El contraste con Calidad quedó confirmado en la corrida del 11/08, no se repitió aquí.</td></tr>
-  <tr><td><b>El REQ de quiebre de inventario (cantidad 0)</b></td>
-      <td><b>No se probó.</b> Se midió otra funcionalidad por no haber leído el REQ previo antes de
-          la corrida. Ver la sección C6.</td></tr>
+  <tr><td>Devolución de Calidad y Distribución <b>en un mismo producto</b></td>
+      <td>Se probaron en productos distintos para poder leerlas por separado. Combinarlas en
+          uno solo queda para una vuelta futura.</td></tr>
 </table>
 
 <h2>Puntos abiertos para desarrollo</h2>

@@ -11,7 +11,7 @@
 | Vendedor | **vendedor4** (`V4`, idUser 468) |
 | Dispositivo | `14678405BR003855` (Infinix X6728, Android 15) |
 | VGs relevantes | `suggestedOrderByDispatchAndReturn=true` · `suggestedOrder=true` · `stock0=true` · `hideStock0=false` · `validStock=false` |
-| Resultado | ✅ **Despacho 7/7 y swaps 4/4 exactos** · ⚠ el caso de «quiebre» quedó RETIRADO (§8.c) |
+| Resultado | ✅ **Despacho 7/7 · swaps 4/4 · quiebre y devoluciones cubiertos** — 24 PASS / 0 FAIL |
 
 ---
 
@@ -28,7 +28,11 @@ productos no facturados ese día muestran **0** en lugar de quedar fuera.
 | Producto sin factura ese día ⇒ **0**, ni vacío ni omitido | ✅ **PASA** |
 | Si el producto está en varias facturas del día, **sumar** | ⚪ **NO EJERCITABLE** — ver §5.1 |
 | Cambio x cambio sigue alimentando el sugerido | ✅ **PASA** — 4/4 exactos (§8.b) |
-| Quiebre de inventario (cantidad 0 al inventariar) | ❌ **NO PROBADO** — se midió otra cosa, ver §8.c |
+| **Quiebre de inventario (cantidad 0 al inventariar)** | ✅ **PASA** — ver §8.d.2 *(el 1.er intento fue erróneo: §8.c)* |
+| Devolución de **Calidad NO resta** del sugerido | ✅ **PASA** — §8.d.1 |
+| Devolución de **Distribución SÍ resta** | ✅ **PASA** — §8.d.1 |
+| Las cantidades **negativas** se siguen rechazando | ✅ **PASA** — §8.d.3 |
+| Agotado **con rotación** genera reposición en el sugerido | ✅ **PASA** — §8.d.2 |
 
 ---
 
@@ -155,12 +159,16 @@ nuestra corrida anterior): quedan fuera de ventana y `swap = 0` en los 7 product
 Se cerró con un **segundo ciclo sobre el cliente `105`**, el único de la cartera cuyo
 último inventario (03/08 15:13) es anterior a sus swaps (04/08).
 
-### 5.3 ❌ Quiebre de inventario — **NO validado**: se probó otra funcionalidad
+### 5.3 ✅ Quiebre de inventario — validado en §8.d.2 tras la retractación de §8.c
 
 Ver la retractación completa en §8.c. El REQ es teclear **cantidad 0 al inventariar** y que
 ese 0 **persista**; aquí se midió agregar a un pedido un producto sin stock de almacén.
 
-### 5.4 ⚪ Devolución de Calidad en esta corrida
+### 5.4 ✅ Devolución de Calidad — **cubierta en §8.d.1**
+
+*(Lo que sigue describe el estado ANTES de rehacer el ciclo.)*
+
+#### Redacción original
 
 El contraste Distribución-sí / Calidad-no quedó **medio cubierto**: se confirmó que la
 Distribución resta (#5). La Calidad no se ejercitó porque el producto de la Ref 107
@@ -327,6 +335,74 @@ validación de DIFRANCA del 13/08, que lo probó correctamente.
 
 ---
 
+## 8.d ✅ CICLO COMPLETO — devoluciones y quiebre, esta vez con el REQ leído
+
+Tras la retractación de §8.c se rehízo el ciclo **cubriendo los escenarios que faltaban**.
+Cliente **209**, `daysSinceLast = 1` (el inventario anterior es de ayer), `daysUntilNext = 10`.
+
+### 8.d.1 — Calidad vs Distribución: el contraste que faltaba
+
+Se crearon **dos devoluciones sobre productos distintos** del mismo cliente y factura, para
+poder leer su efecto por separado en el mismo sugerido:
+
+| Devolución | Tipo | Producto | Cant. | `devuelto` medido | Esperado | |
+|---|---|---|---:|---:|---|---|
+| **108** | **Distribución (61)** | CAMPROSDU002BOL | 2 | **2** | resta | ✅ |
+| **109** | **Calidad (60)** | TOMPROMAN001BAN | 3 | **0** | **NO resta** | ✅ |
+
+**Es la prueba limpia:** misma corrida, mismo cliente, mismo formulario. La de Distribución
+descuenta sus 2 unidades del cálculo; la de Calidad **no descuenta nada**, y se ve en la
+aritmética:
+
+```
+CAMPROSDU002BOL   vendido = 15 − 2 − 2 = 11    ← el 2 de la Distribución SÍ entra
+TOMPROMAN001BAN   vendido =  5 − 2 − 0 =  3    ← si Calidad restara, sería 0
+```
+
+El mecanismo real es `return_category.subtract_suggestion`, verificado en la BD del device:
+Calidad → `'false'` · Distribución → `'true'`.
+
+### 8.d.2 — Quiebre de inventario: el REQ, ahora sí
+
+| Paso | Resultado |
+|---|---|
+| Teclear **Cantidad = 0** al inventariar `CAMPROLEC002BAN` | ✅ **aceptado** |
+| **Guardar** → la línea en la BD local | ✅ `qu_stock = 0`, junto a las otras 2 |
+| **Salir y reabrir** el inventario Guardado | ✅ el modelo trae **las 3 líneas**, la del 0 incluida |
+| **Enviar** → llegada a la nube (Inventario **53**) | ✅ `CAMPROLEC002BAN 0.00` en `client_stock_detail_unit` |
+| **Cantidad negativa (−1)** | ✅ **RECHAZADA** — ver 8.d.3 |
+
+🔑 **Y el punto que conecta los dos REQ:** `CAMPROLEC002BAN` está **agotado (actual 0) pero
+con rotación (despacho 7)**, y el sugerido le calculó **reposición 70** (7 × 10 días). Es
+exactamente el escenario que el REQ de quiebre pedía comprobar: *«un producto agotado con
+rotación genera la reposición esperada en el pedido sugerido»*.
+
+### 8.d.3 — Los negativos siguen rechazados
+
+Bajar el mínimo a cero **no abrió la puerta a valores negativos**:
+
+- El input de cantidad declara **`min="0"`** — el piso es 0, no negativo.
+- Al intentar aceptar con `−1`, la app responde
+  **«Complete cantidad, unidad, fecha y lote para continuar.»**
+- **El modal no se cierra** y **no se agrega ninguna línea** (`clientStockDetail` = 0).
+
+*(Capturas `07-sugerido-calidad-vs-distribucion.png` y `08-negativo-rechazado.png`.)*
+
+### 8.d.4 — Registros del ciclo
+
+| Ref | Tipo | Detalle | Nube |
+|---|---|---|---|
+| **108** | Devolución **Distribución** | Cliente 209 · CAMPROSDU002BOL ×2 · factura 20115667 | ✅ en `return_view` |
+| **109** | Devolución **Calidad** | Cliente 209 · TOMPROMAN001BAN ×3 · factura 20115667 | ✅ en `return_view` |
+| **53** | Inventario | 3 líneas, **una en cantidad 0** · días 1 / 10 | ✅ **BD-OK**, el 0 incluido |
+| **54** | Pedido (desde el sugerido) | 3 líneas — 110 / 70 / 30 | ✅ **BD-OK** |
+
+⚠ **Dato de infraestructura:** la tabla `return` de la nube está **vacía (0 filas)**; las
+devoluciones se consultan en **`return_view`** (150 filas). No es un fallo de esta corrida,
+pero conviene saberlo: un cotejo contra `return` daría «la devolución no llegó» siendo falso.
+
+---
+
 ## 9. Incidencia de la corrida: la app se reinició al pulsar Enviar
 
 Al pulsar Enviar en el pedido generado desde el sugerido —con la línea de stock 0 ya
@@ -394,13 +470,20 @@ también el inventario.
 | SUG-F-012 | Guarda `currentStock >= sugerido ⇒ 0`, **incluida la igualdad** | ✅ PASS (1 vs 1) |
 | SUG-F-013 | Guarda de venta negativa ⇒ diaria 0 | ✅ PASS |
 | SUG-F-014 | **Sugerido → líneas del pedido** (los 0 excluidos) | ✅ PASS |
-| SUG-F-015 | ~~Quiebre de inventario~~ | ❌ **RETIRADO** — lo medido no es el REQ (§8.c) |
+| SUG-F-015 | ~~Quiebre de inventario (1.er intento)~~ | ❌ **RETIRADO** — lo medido no era el REQ (§8.c) |
+| SUG-F-020 | **Quiebre: cantidad 0 aceptada al inventariar** | ✅ PASS |
+| SUG-F-021 | **El 0 PERSISTE al guardar y reabrir** | ✅ PASS |
+| SUG-F-022 | **El 0 llega a la nube** (Inventario 53) | ✅ PASS |
+| SUG-F-023 | **Cantidad negativa rechazada** (`min=0` + alerta) | ✅ PASS |
+| SUG-F-024 | **Devolución de Distribución RESTA** | ✅ PASS (`devuelto = 2`) |
+| SUG-F-025 | **Devolución de Calidad NO resta** | ✅ PASS (`devuelto = 0`) |
+| SUG-F-026 | **Agotado con rotación → reposición en el sugerido** | ✅ PASS (0 actual, despacho 7 ⇒ sugerido 70) |
 | SUG-F-016 | Producto con stock 0 de almacén entra a un pedido enviado | ✅ PASS (Pedido 53) — **dato válido, pero ajeno al REQ de quiebre** |
 | SUG-F-019 | Sugerido → pedido enviado, 2.º ciclo (cliente 105) | ✅ PASS (Inventario 52 + Pedido 52) |
 | SUG-F-017 | Pedido enviado y cotejado en nube | ✅ PASS (Ref 51, BD-OK) |
 | SUG-F-018 | Inventario ligado al pedido (`client_stock.id_order`) | ✅ PASS |
 
-**17 PASS · 0 FAIL · 1 RETIRADO · 2 no ejercitados (sin dato en la base) · 1 incidencia sin causa · 1 punto a vigilar.**
+**24 PASS · 0 FAIL · 1 RETIRADO (rehecho bien en §8.d) · 1 no ejercitado (sin dato en la base) · 1 incidencia sin causa · 2 puntos a vigilar.**
 
 ---
 
