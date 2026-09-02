@@ -1,0 +1,165 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Perfil QA · IMPORTADORA 4K  (slug: 4k)
+# Construido 2026-09-02 desde los 2 dumps de global_configuration + BD.
+# Motivo del alta: REQ «CRUD de Bancos» (se valida en MÓVIL y en WEB).
+# ═══════════════════════════════════════════════════════════════════════════
+
+cliente_id: 4k
+cliente_nombre: "GRUPO 4K"          # BD: enterprise.na_enterprise
+db_name: 4k                          # GRANT read-only aplicado y verificado 2026-09-02 (250/250 tablas)
+
+# ⚠ ws_url / playa NO se guardan: la playa es rotativa y se descubre en runtime.
+#   Al 02/09/2026 el APK apunta a ISLA COCHE, informado por QA.
+
+empresa:
+  co_enterprise: "DIESE"
+  na_enterprise: "GRUPO 4K"
+  nu_rif: "J401702600"
+  # 🔴 EMPRESA ÚNICA. Dato relevante para el REQ de Bancos: el caso
+  #    MULTI-EMPRESA **no se puede cubrir con este cliente**.
+
+# ── Volumen de la base (2026-09-02) ────────────────────────────────────────
+volumen:
+  bancos: 30          # ← el objeto del REQ
+  clientes: 1113
+  productos: 1619
+  facturas: 4598
+  cobros: 2549
+
+# ═══════════════════════════════════════════════════════════════════════════
+# VARIABLES GLOBALES
+#
+# 🔴 Los dos dumps CHOCAN en 22 claves. Se aplicó la regla conocida:
+#    **gana el GLOBAL**, aunque el override de cliente parezca más nuevo
+#    (el del cliente es de 2023; el global, de 2025).
+#    Las marcadas [⚔] son las que difieren — la UI en vivo desempata, así que
+#    conviene confirmarlas en la primera corrida antes de dar por buena una N/A.
+# ═══════════════════════════════════════════════════════════════════════════
+vgs:
+  # ── Generales ───────────────────────────────────────────────────────────
+  enterpriseEnabled: true
+  multiCurrency: true
+  multiCurrencyCollection: true
+  multiCurrencyOrder: true
+  multiCurrencyDeposit: true
+  userMustActivateGPS: false          # ⇒ sin la guarda de GPS que cuelga la navegación
+  userCanUploadFiles: true
+  longitudComentario: 200             # [⚔] global 200 · cliente 185
+  quPageProduct: 50                   # [⚔] global 50 · cliente 100
+  tagRif: "RIF"
+  tagIVA: "IVA"
+
+  # ── Cobros ──────────────────────────────────────────────────────────────
+  requiredCollectionAttachments: true  # 🔴 exige adjunto para ENVIAR
+                                       #    ⇒ dejar el cobro GUARDADO y que QA lo envíe a mano
+  requiredComment: true
+  colletionPayment: "true-false-true-true-false-false"   # [⚔] el global trae 6 posiciones; el cliente, 5
+                                       #    🔴 LEER EN LA UI qué métodos ofrece de verdad:
+                                       #       deducirlos del orden del catálogo ya falló antes.
+  retencion: true
+  cobroRetencion: false
+  cobroPrepago: true
+  sizeRetention: 5                    # [⚔] global 5 · cliente 14
+  userCanSelectIGTF: false            # [⚔] global false · cliente true
+  userCanCollectIva: false
+  tolerancia0: true                   # [⚔] global true · cliente false
+
+  # ── Pedidos ─────────────────────────────────────────────────────────────
+  orderEnterpriseEnabled: false       # solo en el dump de cliente
+  listProductsBy: "lineas"            # solo en el dump de cliente
+  selectOrderType: true               # [⚔]
+  orderPedidoSeleccion: true          # [⚔]
+  userCanChangePriceList: false
+  userCanChangePaymentConditions: true # [⚔]
+  userCanChangeWarehouse: true        # [⚔]
+  userCanSelectProductDiscount: false
+  userCanSelectGlobalDiscount: false
+  userCanSelectIVA: false
+  validateNuOrder: false
+  productMinMul: false                # [⚔] global false · cliente true
+  conversionByPriceList: false        # [⚔]
+
+  # ── Inventarios / stock ─────────────────────────────────────────────────
+  expirationBatch: true               # [⚔] ⇒ Lote y Fecha OBLIGATORIOS al inventariar
+  validStock: true                    # [⚔] 🔑 la validación de stock está ACTIVA
+  validateWarehouses: true            # [⚔]
+  stock0: false                       # 🔴 con validStock=true y stock0=false, un producto
+                                      #    agotado NO abre su panel y NO avisa. Antes de
+                                      #    reportar "el ítem no responde", mirar su Inventario.
+  hideStock0: false                   # [⚔]
+  showStock: false                    # [⚔]
+  requireClientStock: false           # [⚔]
+  suggestedOrder: true
+  suggestedOrderByDispatchAndReturn: false   # ⇒ el sugerido por despacho/devolución NO aplica
+
+  # ── Devoluciones ────────────────────────────────────────────────────────
+  validateReturn: true                # 🔑 TIPO B: es la FACTURA la que habilita las tabs
+  requeridedNroFactura: false         # [⚔] global false · cliente true
+  signatureReturn: true
+  retentionDocTypeCR: true            # [⚔]
+
+  # ── Visitas ─────────────────────────────────────────────────────────────
+  signatureVisit: false
+
+# ═══════════════════════════════════════════════════════════════════════════
+# DATOS DE PRUEBA POR MÓDULO
+# ═══════════════════════════════════════════════════════════════════════════
+modules:
+  # 🆕 El módulo del REQ. Sin datos de prueba todavía: hay que reconocer en la
+  #    UI cómo se llega al CRUD y qué campos tiene. La tabla `bank` de la nube
+  #    trae: co_bank · na_bank · id_enterprise · id_bank_reconciliation.
+  bancos:
+    aplica: true
+    total_en_bd: 30
+    # Ejemplos reales del catálogo, para reconocer la pantalla:
+    #   01/ZELLE · 134/BANESCO CUENTA VERDE · 108/PROVINCIAL · 22/BINANCE
+    banco_lectura: "PROVINCIAL"       # existente, para el caso de consulta/edición
+    caso_multiempresa: false          # 🔴 NO cubrible: el tenant tiene 1 sola empresa
+
+  clientes:
+    cliente_test: "VENTA DE REPUESTOS DIESEL MSL EL GRAN AVIVAMIENTO"   # C.0507
+
+  cobros:
+    aplica: true
+    cliente_test: "C.0507"            # 318 documentos con saldo · US$ 39.855,61
+    clientes_con_documentos:
+      - "C.0507"                      # 318 docs · 39.855,61
+      - "C.0627"                      # 181 docs · 31.407,27  (MS DIESEL 2022)
+      - "C.0525"                      # 164 docs · 34.809,82  (INVERSIONES DOCTOR DIESEL)
+    metodo_pago: TBD                  # leer en la UI: colletionPayment tiene los 2 dumps en conflicto
+
+  pedidos:
+    cliente_test: "C.0507"
+    producto_test: "4400-01202"       # GOMAS DE MANITO PARA POLEA MACK · stock 6.890
+                                      # 🔴 con stock0=false hace falta stock holgado
+    estructura_producto: TBD          # `listProductsBy: lineas` — leer el rótulo en runtime
+    moneda_pedido: TBD                # multiCurrency=true: verificar que la lista activa
+                                      #   tenga precios en la moneda por defecto
+
+  devoluciones:
+    # TIPO B (validateReturn=true): la FACTURA habilita las tabs, no el cliente.
+    cliente_test: "C.0507"            # 157 facturas
+    cliente_test_alt: "C.0525"        # 91 facturas · relevo
+    producto_test: TBD                # elegir uno de la factura escogida
+    factura_test: TBD                 # 🔴 sin este dato el envío de devolución queda N/A
+
+  inventarios:
+    cliente_test: "C.0507"
+    # ⚠ expirationBatch=true ⇒ el modal de cantidad exige LOTE y FECHA.
+
+  visitas:
+    cliente_test: TBD                 # criterio: cliente CON sucursal asignada,
+                                      #   si no, el formulario no habilita las tabs
+  depositos:
+    aplica: TBD                       # depende de si EFECTIVO está entre los métodos de
+                                      #   pago de Cobros — verificar en la UI primero
+
+# ═══════════════════════════════════════════════════════════════════════════
+# NOTAS PARA LA PRIMERA CORRIDA
+# ═══════════════════════════════════════════════════════════════════════════
+# 1. 🔴 Confirmar en la UI las 22 VG en conflicto marcadas [⚔]. Se aplicó
+#    "gana el global", pero quien desempata de verdad es la pantalla.
+# 2. 🔴 `requiredCollectionAttachments=true` ⇒ los cobros se dejan GUARDADOS.
+# 3. 🔴 `validStock=true` + `stock0=false` ⇒ elegir SIEMPRE productos con stock.
+# 4. `userMustActivateGPS=false` ⇒ no aplica la espera larga por la guarda de GPS.
+# 5. El REQ de Bancos NO cubre el caso multi-empresa con este cliente.

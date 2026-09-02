@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Informe QA — CRUD de Bancos · 4K</title>
+<style>
+  :root {
+    --morado: #5501AA; --morado-osc: #3D0179; --morado-claro: #F2EAFB;
+    --verde: #91BA3F;  --verde-osc: #4A6B1B;  --verde-claro: #F0F6E4;
+    --ambar: #F5BA2E;  --ambar-claro: #FEF7E6;
+    --rojo: #A5121B;   --rojo-claro: #FDF0F0;
+    --gris: #5D5A63;   --linea: #D8D2E0;
+  }
+  @page { size: A4; margin: 14mm 14mm 15mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 10.2pt; color: #1F1B24;
+         line-height: 1.44; margin: 0; }
+  .marca { display: flex; align-items: center; justify-content: space-between; gap: 8mm;
+           border-bottom: 2.2pt solid var(--morado); padding-bottom: 3mm; margin-bottom: 4mm; }
+  .marca img { width: 52mm; display: block; }
+  .marca .quien { text-align: right; font-size: 8.6pt; color: var(--gris); line-height: 1.35; }
+  .marca .quien b { color: var(--morado); font-size: 9.4pt; display: block; letter-spacing: .2px; }
+  .cinta { height: 2.2mm; display: flex; margin: -4mm 0 4mm; }
+  .cinta i { flex: 1; }
+  .cinta i:nth-child(1) { background: var(--morado); }
+  .cinta i:nth-child(2) { background: var(--verde); }
+  .cinta i:nth-child(3) { background: var(--ambar); }
+  h1 { font-size: 18pt; color: var(--morado); margin: 0 0 1mm; letter-spacing: -.3px; }
+  h2 { font-size: 12.5pt; color: var(--morado); margin: 7mm 0 2.5mm; padding-bottom: 1.2mm;
+       border-bottom: 1.6pt solid var(--morado); page-break-after: avoid; }
+  h3 { font-size: 10.6pt; margin: 4mm 0 1.5mm; color: var(--morado-osc); page-break-after: avoid; }
+  .sub { color: var(--gris); font-size: 10pt; margin: 0 0 4mm; }
+  table { border-collapse: collapse; width: 100%; margin: 2mm 0 3mm; font-size: 9.2pt;
+          page-break-inside: avoid; }
+  th { background: var(--morado); color: #fff; text-align: left; padding: 1.7mm 2.3mm; font-weight: 600; }
+  td { border: .6pt solid var(--linea); padding: 1.5mm 2.3mm; vertical-align: top; }
+  tr:nth-child(even) td { background: #FAF7FD; }
+  .num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap;
+         font-family: Consolas, "Courier New", monospace; }
+  .ok { color: var(--verde-osc); font-weight: 700; }
+  .bad { color: var(--rojo); font-weight: 700; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: .93em; color: var(--morado-osc); }
+  .ficha { width: 100%; margin: 0 0 4mm; font-size: 9.4pt; }
+  .ficha td { border: none; border-bottom: .5pt solid var(--linea); padding: 1.2mm 0; background: none !important; }
+  .ficha td:first-child { color: var(--gris); width: 44mm; }
+  .bien { border-left: 4pt solid var(--verde); background: var(--verde-claro); padding: 3mm 4mm; margin: 4mm 0 5mm; }
+  .bien .t { font-size: 12.5pt; font-weight: 700; color: var(--verde-osc); margin-bottom: 1.5mm; }
+  .mal { border-left: 4pt solid var(--rojo); background: var(--rojo-claro); padding: 3mm 4mm; margin: 4mm 0 5mm; }
+  .mal .t { font-size: 12pt; font-weight: 700; color: var(--rojo); margin-bottom: 1.5mm; }
+  .nota { background: var(--ambar-claro); border-left: 3pt solid var(--ambar); padding: 2.5mm 3.5mm;
+          margin: 3mm 0; font-size: 9.4pt; page-break-inside: avoid; }
+  .calc { font-family: Consolas, "Courier New", monospace; background: var(--morado-claro);
+          border: .5pt solid var(--linea); padding: 1.7mm 3mm; margin: 2mm 0; font-size: 9.1pt; }
+  .cap { page-break-inside: avoid; margin: 2.5mm 0 3.5mm; }
+  .cap img { max-width: 100%; max-height: 110mm; border: .7pt solid var(--linea); display: block; }
+  .cap .pie { font-size: 8.3pt; color: var(--gris); margin-top: 1mm; font-style: italic; }
+  .par { display: flex; gap: 4mm; align-items: flex-start; page-break-inside: avoid; margin: 3mm 0; }
+  .par > div { flex: 1; }
+  .par .et { font-size: 9pt; font-weight: 700; margin-bottom: 1.2mm; }
+  .par img { max-width: 100%; max-height: 95mm; border: .7pt solid var(--linea); display: block; }
+  .et-bien { color: var(--verde-osc); }
+  .et-mal { color: var(--rojo); }
+  .pill { display: inline-block; padding: .4mm 2mm; border-radius: 2mm; font-size: 8.5pt; font-weight: 700; }
+  .p-ok { background: var(--verde-claro); color: var(--verde-osc); border: .5pt solid var(--verde); }
+  .p-mal { background: var(--rojo-claro); color: var(--rojo); border: .5pt solid var(--rojo); }
+  .p-na { background: #EFEDF2; color: var(--gris); border: .5pt solid var(--linea); }
+  .fin { margin-top: 6mm; padding-top: 2.5mm; border-top: 1.2pt solid var(--morado); font-size: 8.5pt;
+         color: var(--gris); display: flex; gap: 5mm; align-items: flex-start; }
+  .fin img { width: 26mm; opacity: .85; }
+  .pb { page-break-before: always; }
+</style></head><body>
+
+<div class="marca">
+  <img src="../../_assets/logo-denario-premium.svg" alt="Denario Premium">
+  <div class="quien"><b>CONTROL DE CALIDAD</b>Validación de requerimiento<br>02/09/2026</div>
+</div>
+<div class="cinta"><i></i><i></i><i></i></div>
+
+<h1>Validación del requerimiento «CRUD de Bancos»</h1>
+<p class="sub">Datos Maestros · Bancos · Denario Premium web y móvil · Cliente IMPORTADORA 4K · 02/09/2026</p>
+
+<table class="ficha">
+  <tr><td>Qué se validó</td><td>El <b>CRUD de bancos</b> en la web —listar, crear, editar y cambiar estatus— y que lo creado <b>llegue hasta un cobro real</b>, visible en la web</td></tr>
+  <tr><td>Cliente y playa</td><td><b>GRUPO 4K</b> (<code>DIESE</code>) · Isla Coche <span style="color:var(--gris)">(confirmada en runtime)</span></td></tr>
+  <tr><td>Usuario móvil</td><td><code>V.0002</code> — ANGEL BETANCOURT (<code>id_user 300</code>)</td></tr>
+  <tr><td>Banco de prueba</td><td><b>Código 9901</b> · <code>id_bank 31</code> — creado, editado, deshabilitado y rehabilitado</td></tr>
+  <tr><td>Cobros de cierre</td><td><b>REF 2679</b> (banco editado · 21,00 USD) y <b>REF 2680</b> (banco nuevo · 50,00 USD con excedente) — EURO REPUESTOS FIOVAL, C.A.</td></tr>
+  <tr><td>Resultado</td><td><b class="ok">6 criterios PASS</b> · <b style="color:#8A6100">1 con observación</b> · <b>0 FAIL</b> · 1 no verificable con este cliente<br>
+      <b class="bad">Se devuelve a desarrollo con 2 errores por corregir</b></td></tr>
+</table>
+
+<div class="mal">
+  <div class="t">Se devuelve a desarrollo · 2 errores por corregir</div>
+  <table style="margin:2mm 0 0">
+    <tr><th style="width:10mm">#</th><th>Qué hay que corregir</th><th style="width:24mm">Capa</th><th style="width:28mm">¿Del REQ de Bancos?</th><th style="width:24mm">¿Toca importes?</th></tr>
+    <tr><td><b>1</b></td><td>«Banco Emisor» aparece <b>duplicado</b> (la primera columna vacía) y hay una columna <b>«Cuenta»</b> que muestra el nombre del banco. Un banco emisor no tiene cuenta</td><td><b>Web</b></td><td><b>Sí</b> — es cómo se presenta el banco del catálogo</td><td>No</td></tr>
+    <tr><td><b>2</b></td><td><b>«Monto doc. conversión»</b> llega sin convertir: repite el monto en divisa en vez de convertirlo</td><td><b>Web + envío</b></td><td>No — apareció al revisar los mismos cobros</td><td>No</td></tr>
+  </table>
+</div>
+
+<h2>Resumen</h2>
+
+<p><b>El CRUD cumple los cuatro criterios del requerimiento.</b> Se listó el catálogo, se crearon dos
+bancos desde cero, se editó el nombre de uno y se alternó su estatus en ambos sentidos, verificando
+cada acción en la base de datos. Los dos bancos bajaron al dispositivo y cada uno se usó como
+<b>Banco Emisor</b> de un cobro real; ambos cobros se ven en la web con el banco correcto, con sus
+cálculos cuadrados y su adjunto descargable.</p>
+
+<p><b>Aun así, el requerimiento no se puede dar por cerrado.</b> La pantalla que consume el catálogo
+—el detalle del cobro <b>en la web</b>— presenta el banco emisor de forma <b>incorrecta</b>: repite la
+columna <i>Banco Emisor</i>, deja la primera vacía y agrega una columna <i>Cuenta</i> que muestra el
+nombre del banco. Un banco emisor <b>no tiene cuenta</b>: la tabla <code>bank</code> del propio
+requerimiento solo guarda código y nombre. <b>El dato viaja bien y se guarda bien; el problema está
+en la web</b>, en cómo lo presenta. <span style="color:var(--gris)">Detalle completo en el hallazgo 1.</span></p>
+
+<p>Revisando esos mismos cobros apareció un <b>segundo error</b>, este <b>ajeno al requerimiento de
+Bancos</b>: el <i>Monto doc. conversión</i> llega sin convertir, en los <b>10 de 10</b> cobros creados
+el 01 y el 02/09. Se incluye en este mismo informe —y en esta misma devolución— porque se detectó en
+la misma revisión y conviene que no se pierda.
+<span style="color:var(--gris)">Detalle completo en el hallazgo 2.</span></p>
+
+<h2>Criterios de aceptación</h2>
+<table>
+  <tr><th style="width:11mm">ID</th><th>Criterio</th><th style="width:26mm">Resultado</th></tr>
+  <tr><td><b>C1</b></td><td>El administrador ve la lista de bancos registrados para su empresa</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
+  <tr><td><b>C2</b></td><td>Puede <b>agregar</b> un banco escribiendo su nombre y guardando</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
+  <tr><td><b>C3</b></td><td>Puede <b>editar</b> el nombre de un banco existente</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
+  <tr><td><b>C4</b></td><td>Puede <b>desactivar</b> un banco sin borrar la data dura</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
+  <tr><td><b>C5</b></td><td>El guardado queda <b>amarrado a la empresa</b> del tenant</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
+  <tr><td><b>C6</b></td><td>Lo creado <b>alimenta los módulos transaccionales</b> del móvil</td><td><span class="pill p-ok">✅ PASS</span></td></tr>
+  <tr><td><b>C7</b></td><td>El banco elegido en el móvil <b>se ve en el cobro en la web</b><br>
+      <span style="color:var(--gris)">El dato llega y es el correcto, pero la tabla lo presenta mal — ver hallazgo 1</span></td>
+      <td><span class="pill" style="background:var(--ambar-claro);color:#8A6100;border:.5pt solid var(--ambar)">⚠ CON OBSERVACIÓN</span></td></tr>
+  <tr><td><b>C8</b></td><td>Al crear un banco, se crea <b>para todas las empresas</b></td><td><span class="pill p-na">⚪ NO VERIFICABLE</span></td></tr>
+</table>
+
+<div class="nota">
+<b>Por qué C8 no se pudo verificar:</b> <b>4K tiene una sola empresa</b> (<code>DIESE</code> / GRUPO 4K).
+Con un único tenant no hay forma de comprobar que el alta se replique ni que las listas no se crucen
+entre empresas. <b>Queda pendiente para un cliente multi-empresa.</b> Lo que sí consta es que la
+aplicación <b>opera con criterio multi-empresa</b>: al desactivar pregunta expresamente
+<i>«¿Deshabilitar este banco en todas las empresas?»</i> (ver C4).
+</div>
+
+<h2>C1 · La pantalla y el listado</h2>
+<p>La vista vive en <b>Datos Maestros → Bancos</b> (<code>/pages/bancos</code>) y presenta las columnas
+que pedía el requerimiento —<b>Código · Nombre · Estado</b>— más las acciones <b>Detalle</b>,
+<b>Editar</b> y <b>Deshabilitar/Habilitar</b>, con ordenamiento y paginación.
+Listó los <b>30 bancos</b> que tenía el cliente, cifra que coincide con la tabla <code>bank</code>.</p>
+
+<div class="cap">
+  <img src="01-listado.png" alt="Listado de bancos">
+  <div class="pie">Datos Maestros → Bancos. 30 registros, todos <b>Habilitado</b>.</div>
+</div>
+
+<h2>C2 · Crear, y la validación de campo obligatorio</h2>
+<p>El requerimiento pedía validar que el nombre no llegue vacío. <b>Se cumple:</b> al pulsar Guardar
+con el formulario en blanco, la pantalla responde <b>«Campo obligatorio.»</b> y <b>no guarda</b>.</p>
+
+<div class="par">
+  <div>
+    <div class="et">Guardar en blanco → rechazado</div>
+    <img src="02-validacion-obligatorio.png" alt="Validación de campo obligatorio">
+  </div>
+  <div>
+    <div class="et et-bien">Banco creado y en el listado</div>
+    <img src="03-creado.png" alt="Banco creado">
+  </div>
+</div>
+
+<p>Con datos válidos, el alta quedó registrada de inmediato:</p>
+
+<div class="calc">
+id_bank <b>31</b> · co_bank <b>9901</b> · na_bank <b>QA BANCO PRUEBA 0209</b><br>
+co_operation <b>I</b> &nbsp;·&nbsp; id_enterprise <b>1</b> / co_enterprise <b>DIESE</b> &nbsp;← <b>C5: amarrado a la empresa</b><br>
+total de bancos: 30 → <b>31</b>
+</div>
+
+<h2>C3 · Editar el nombre</h2>
+<p>El formulario de edición carga los valores del banco y <b>bloquea el código</b>, dejando editable
+solo el nombre — coherente con el requerimiento, que pide editar el nombre.</p>
+
+<div class="calc">
+Antes:   na_bank <b>QA BANCO PRUEBA 0209</b> · co_operation <b>I</b><br>
+Después: na_bank <b>QA BANCO EDITADO 0209</b> · co_operation <b>U</b><br>
+total de bancos: <b>31</b> &nbsp;← no duplicó
+</div>
+
+<div class="cap">
+  <img src="04-editado.png" alt="Banco editado en el listado">
+  <div class="pie">El nombre cambió en el listado sin crear un registro nuevo.</div>
+</div>
+
+<div class="pb"></div>
+<h2>C4 · Desactivar sin borrar la data</h2>
+
+<p>El botón <b>Deshabilitar</b> abre una confirmación explícita, y su texto es informativo por sí mismo:</p>
+
+<div class="par">
+  <div>
+    <div class="et">La confirmación</div>
+    <img src="05-confirmacion-todas-empresas.png" alt="Confirmación de deshabilitar">
+  </div>
+  <div>
+    <div class="et et-bien">Queda «Deshabilitado»</div>
+    <img src="06-deshabilitado.png" alt="Banco deshabilitado">
+  </div>
+</div>
+<p class="cap"><span class="pie">«¿Deshabilitar este banco en <b>todas las empresas</b>?» — la aplicación
+razona en términos multi-empresa aunque este tenant tenga una sola.</span></p>
+
+<p><b>Es un borrado lógico, no físico</b>, que es justo lo que pedía el criterio:</p>
+
+<div class="calc">
+Tras confirmar: co_operation <b>D</b> &nbsp;·&nbsp; el registro <b>SIGUE</b> en la base<br>
+total de bancos: <b>31</b> (1 marcado como D) &nbsp;← <b>no se borró la data dura</b><br><br>
+Y el toggle va en los dos sentidos: al pulsar <b>Habilitar</b>, co_operation vuelve a <b>U</b>
+</div>
+
+<p>En el listado, la fila pasa a <b>Deshabilitado</b> y el botón cambia a <b>Habilitar</b>.</p>
+
+<h2>C6 · Lo creado alimenta el móvil</h2>
+
+<p>Es el propósito declarado del requerimiento: poblar la tabla maestra <i>«que servirá posteriormente
+para alimentar otros módulos transaccionales»</i>. Se comprobó la cadena completa.</p>
+
+<table>
+  <tr><th style="width:34mm">Paso</th><th>Resultado</th></tr>
+  <tr><td><b>Antes de sincronizar</b></td><td>el dispositivo tenía <b>30</b> bancos</td></tr>
+  <tr><td><b>Sincronizar</b></td><td>pasó a <b>31</b></td></tr>
+  <tr><td><b>El registro en el móvil</b></td><td><code>id_bank 31</code> · <code>co_bank 9901</code> ·
+      <b>QA BANCO EDITADO 0209</b> — <b>con el nombre ya editado</b> · empresa <code>DIESE</code></td></tr>
+  <tr><td><b>En el selector</b></td><td>aparece en <b>Banco Emisor</b> del método <b>Pago Móvil</b></td></tr>
+</table>
+
+<div class="par">
+  <div>
+    <div class="et et-bien">El banco creado, en el selector del móvil</div>
+    <img src="07-movil-picker-banco-nuevo.png" alt="Banco nuevo en el selector del móvil">
+  </div>
+  <div>
+    <div class="et">El selector trae el catálogo completo</div>
+    <img src="08-movil-picker-catalogo.png" alt="Selector de Banco Emisor">
+  </div>
+</div>
+<p class="cap"><span class="pie">A la izquierda, <b>QA BANCO EDITADO 0209</b> al final de la lista.
+A la derecha, el selector con buscador: lista los bancos del <b>catálogo maestro</b>, no cuentas del cliente.</span></p>
+
+<div class="nota">
+<b>Un punto que conviene dejar dicho:</b> el selector de Banco Emisor toma los bancos de la
+<b>tabla maestra</b>, no de las cuentas bancarias del cliente. Se verificó por conteo: los
+<b>30</b> bancos de <code>bank</code> aparecían en el selector antes del alta, y <b>31</b> después.
+</div>
+
+<h3>Alta y edición, lado a lado en el mismo selector</h3>
+<p>Para cerrar el criterio sin margen de duda se dio de alta un <b>segundo banco</b> desde la web y
+se buscó «QA» en el selector del móvil. Aparecen <b>los dos</b>: el que se <b>editó</b> y el que se
+<b>creó</b>. Las dos operaciones del CRUD llegan al dispositivo.</p>
+
+<div class="par">
+  <div>
+    <div class="et et-bien">Buscar «QA» en el Banco Emisor → los dos bancos de prueba</div>
+    <img src="14-movil-picker-crear-y-editar.png" alt="Selector con los dos bancos de prueba">
+  </div>
+  <div>
+    <div class="et">Lo que hay detrás, en la nube</div>
+    <div class="calc" style="margin-top:0">
+      <b>id_bank 31</b> · co_bank 9901<br>
+      QA BANCO <b>EDITADO</b> 0209 · <code>U</code><br>
+      &nbsp;&nbsp;<span style="color:var(--gris)">← prueba la EDICIÓN</span><br><br>
+      <b>id_bank 32</b> · co_bank 7777777<br>
+      QA <b>NUEVO</b> BANCO · <code>I</code><br>
+      &nbsp;&nbsp;<span style="color:var(--gris)">← prueba el ALTA</span><br><br>
+      Ambos en <b>id_enterprise 1 / DIESE</b><br>
+      Total de bancos: <b>32</b>
+    </div>
+  </div>
+</div>
+<p class="cap"><span class="pie">El buscador del selector filtra sobre el catálogo ya sincronizado:
+que los dos respondan a «QA» confirma que bajaron al dispositivo con su nombre definitivo.</span></p>
+
+<div class="pb"></div>
+<h2>C7 · El banco en un cobro real: REF 2679</h2>
+
+<p>QA envió desde el móvil un cobro usando ese banco. El dato llega a la web y es el correcto.
+La <b>presentación</b> de esa misma tabla tiene un defecto, que se trata aparte en el hallazgo 1.</p>
+
+<table>
+  <tr><th style="width:44mm">Campo</th><th>En la web</th></tr>
+  <tr><td>No. de Ref.</td><td><b>2679</b> · Estatus <b>Por aprobar</b> · 02/09/2026 15:42:32</td></tr>
+  <tr><td>Cliente / Vendedor</td><td><code>C.0010</code> EURO REPUESTOS FIOVAL, C.A. — ANGEL BETANCOURT — GRUPO 4K</td></tr>
+  <tr><td>Comentario</td><td>QA-BANCOS <span style="color:var(--gris)">(el comentario obligatorio del móvil)</span></td></tr>
+  <tr><td>Forma de pago</td><td><b>Pago Movil</b></td></tr>
+  <tr><td><b>Banco Emisor</b></td><td><b class="ok">QA BANCO EDITADO 0209</b> &nbsp;← <b>el banco creado en esta prueba</b></td></tr>
+  <tr><td>Banco receptor / Cuenta</td><td>BANESCO PANAMA · 201800391132</td></tr>
+  <tr><td>Referencia · Teléfono · Documento</td><td>5148455555 · 0414-7862514 · V-78983108</td></tr>
+</table>
+
+<div class="cap">
+  <img src="09-web-cobro-2679-banco-emisor.png" alt="Detalle del cobro 2679 con Banco Emisor">
+  <div class="pie">Detalle del cobro en la web: la columna <b>Banco Emisor</b> trae el banco dado de alta hoy.</div>
+</div>
+
+<h3>Los cálculos cuadran</h3>
+<div class="calc">
+Σ pagos = 21,00 USD  ==  Monto cobrado 21,00 USD                    ✅<br>
+Diferencia = Total por cobrar 21,00 − Monto cobrado 21,00 = 0,00     ✅<br>
+Conversión = 21,00 × 905,00 = <b>19.005,00 Bs</b>  ==  Monto conv.   ✅<br>
+Base 21,00 − descuento 0,00 + IGTF 0,00 = <b>Total a pagar 21,00</b> ✅<br>
+Documento FAC 00020157: monto 21,00 · saldo 21,00 · a pagar 21,00 · faltante 0,00  ✅
+</div>
+
+<h3>El adjunto: se ve y se descarga</h3>
+<p>La cabecera ofrece <b>Ver adjuntos</b> y <b>Descargar adjuntos</b>. <b>Los dos funcionan.</b></p>
+
+<div class="par">
+  <div>
+    <div class="et et-bien">Ver adjuntos — abre el visor</div>
+    <img src="11-web-adjunto-ver.png" alt="Visor de adjuntos">
+  </div>
+  <div>
+    <div class="et et-bien">Descargar adjuntos</div>
+    <div class="calc" style="margin-top:0">
+      Archivo: <b>cobro_2679.zip</b><br>
+      Contenido: <b>2679_0.jpeg</b> · 93.205 bytes<br><br>
+      La imagen del visor resuelve contra<br>
+      <code>/denario/resources/images/<br>cobros/2679_0.jpeg</code><br>
+      y carga a <b>720 × 1600 px</b>.
+    </div>
+  </div>
+</div>
+<p class="cap"><span class="pie">El adjunto es el que se cargó desde el móvil (<code>has_attachments = true</code>,
+<code>nu_attachments = 1</code>). El ZIP se descargó y se abrió para verificar que trae la imagen, no un archivo vacío.</span></p>
+
+<div class="pb"></div>
+<h2>Segundo caso: el cobro REF 2680</h2>
+
+<p>Con un solo caso el recorrido queda probado, pero no repetido. Se creó un <b>segundo banco</b> desde
+la web —<b>QA NUEVO BANCO</b>, código 7777777— y se cobró con él, esta vez sobre un escenario distinto:
+<b>un pago mayor al saldo del documento</b>, para que el cobro tuviera algo que calcular.</p>
+
+<table>
+  <tr><th style="width:44mm">Campo</th><th>En la web</th></tr>
+  <tr><td>No. de Ref.</td><td><b>2680</b> · Estatus <b>Por aprobar</b> · 02/09/2026 16:01:17</td></tr>
+  <tr><td>Documento</td><td>FAC <b>00020158</b> · saldo 30,00 USD</td></tr>
+  <tr><td>Pago</td><td>Pago Móvil por <b>50,00 USD</b> · referencia 8 · 0414-8646497 · V-4686494</td></tr>
+  <tr><td><b>Banco Emisor</b></td><td><b class="ok">QA NUEVO BANCO</b> &nbsp;← <b>el segundo banco creado hoy</b></td></tr>
+  <tr><td>Adjunto</td><td><code>cobro_2680.zip</code> → <b>2680_0.jpeg</b>, 93.205 bytes <span class="pill p-ok">✅</span></td></tr>
+</table>
+
+<div class="cap">
+  <img src="16-web-cobro-2680-banco-emisor.png" alt="Cobro 2680 con QA NUEVO BANCO">
+  <div class="pie">El banco creado minutos antes en la web, ya usado en un cobro y de vuelta en la web.</div>
+</div>
+
+<h3>El excedente se calcula bien</h3>
+<div class="calc">
+Pagó 50,00 USD sobre un documento de 30,00 USD<br><br>
+Monto cobrado          = <b>50,00 USD</b>  → conv. 50 × 905 = <b>45.250,00 Bs</b>  ✅<br>
+Total por cobrar       = <b>30,00 USD</b>  → conv. 30 × 905 = <b>27.150,00 Bs</b>  ✅<br>
+<b>Diferencia de cobro</b> = 50 − 30 = <b>20,00 USD</b> → conv. <b>18.100,00 Bs</b>  ✅<br>
+Total a pagar 30,00 = base 30,00 − descuento 0,00 + IGTF 0,00                       ✅
+</div>
+
+<p>Las tres cifras derivadas —el excedente, su conversión y la diferencia cambiaria— salen correctas.
+Es un escenario que vale la pena dejar registrado porque ejercita la resta que el cobro simple no toca.</p>
+
+<div class="pb"></div>
+<h2>Regresión: el fix de los métodos de pago en la web</h2>
+
+<p>Aprovechando los cobros nuevos se revisó el defecto que veníamos arrastrando —<b>los métodos de pago
+no se mostraban en el detalle del cobro en la web</b>—. <b>No reproduce.</b></p>
+
+<table>
+  <tr><th style="width:24mm">Cobro</th><th>Métodos que envió el móvil</th><th>Lo que muestra la web</th><th style="width:22mm">Veredicto</th></tr>
+  <tr><td><b>REF 2679</b></td><td>Pago Móvil</td><td>1 fila: Pago Movil, con banco emisor, receptor, cuenta, referencia, teléfono y documento</td><td><span class="pill p-ok">✅ OK</span></td></tr>
+  <tr><td><b>REF 2680</b></td><td>Pago Móvil</td><td>1 fila completa, con el segundo banco de prueba</td><td><span class="pill p-ok">✅ OK</span></td></tr>
+  <tr><td><b>REF 2676</b></td><td><b>Efectivo + Depósito + Transferencia</b></td><td><b>las 3 filas</b>, cada una con su banco y su monto</td><td><span class="pill p-ok">✅ OK</span></td></tr>
+</table>
+
+<div class="cap">
+  <img src="13-web-cobro-2676-tres-metodos.png" alt="Cobro 2676 con tres métodos de pago">
+  <div class="pie">REF 2676 — un cobro de <b>tres métodos</b> en un mismo documento. La web los lista los tres.</div>
+</div>
+
+<div class="calc">
+70,00 + 205,00 + 100,00 = <b>375,00 USD</b>  ==  Monto a pagar del documento  ✅<br>
+63.350,00 + 185.525,00 + 90.500,00 = <b>339.375,00 Bs</b>  ==  Saldo doc. conversión  ✅
+</div>
+
+<div class="nota">
+<b>Detalle útil para no confundirse en el futuro:</b> las columnas de la tabla <i>Tipos de Pago</i>
+<b>cambian según los métodos presentes</b>. En los cobros con Pago Móvil aparecen <i>Banco Emisor</i>,
+<i>Tipo Documento</i>, <i>Nº teléfono</i> y <i>Referencia</i>; en el de Efectivo/Depósito/Transferencia
+no, porque a esos métodos no les aplican. No es que falten datos.
+</div>
+
+<h2 style="border-color:var(--rojo);color:var(--rojo)">Hallazgo 1 · Columna «Banco Emisor» duplicada, y una «Cuenta» que no debería existir</h2>
+
+<div class="mal">
+  <div class="t">🔴 Es el hallazgo que impide cerrar el requerimiento</div>
+  En los cobros con Pago Móvil, la tabla trae <b>dos columnas «Banco Emisor»</b>: la primera viene
+  <b>vacía</b> y la que sí trae el banco es la segunda. Entre ambas hay una columna <b>«Cuenta»</b>
+  que muestra otra vez el <b>nombre del banco</b>. <b>Un banco emisor no tiene cuenta</b> — así lo
+  define el propio requerimiento.
+</div>
+
+<div class="cap">
+  <img src="15-web-cobro-2680-columna-duplicada.png" alt="Columna Banco Emisor duplicada">
+  <div class="pie">REF 2680: <b>Banco Emisor</b> (vacía) · <b>Cuenta</b> = «QA NUEVO BANCO» · <b>Banco receptor</b> = BANESCO PANAMA.
+  Más a la derecha reaparece <b>Banco Emisor</b>, esta vez con el banco.</div>
+</div>
+
+<p>Las 14 columnas de esa tabla, en orden, y lo que trae cada una:</p>
+
+<table>
+  <tr><th style="width:9mm">#</th><th style="width:38mm">Columna</th><th>Valor en REF 2680</th><th style="width:22mm"></th></tr>
+  <tr><td>3</td><td><b>Banco Emisor</b></td><td><i>(vacía)</i></td><td><span class="pill p-mal">❌</span></td></tr>
+  <tr><td>4</td><td><b>Cuenta</b></td><td>QA NUEVO BANCO — <i>es el nombre del banco, no una cuenta</i></td><td><span class="pill p-mal">❌</span></td></tr>
+  <tr><td>5</td><td>Banco receptor</td><td>BANESCO PANAMA</td><td><span class="pill p-ok">✅</span></td></tr>
+  <tr><td>6</td><td>Numero de Cuenta</td><td>201800391132</td><td><span class="pill p-ok">✅</span></td></tr>
+  <tr><td>7</td><td><b>Banco Emisor</b> <i>(otra vez)</i></td><td>QA NUEVO BANCO</td><td><span class="pill p-ok">✅</span></td></tr>
+</table>
+
+<h3>Qué dice el modelo de datos: el banco emisor no tiene cuenta</h3>
+
+<p>La columna «Cuenta» no está mostrando un dato equivocado: está mostrando <b>un dato que no existe</b>.
+Las tres tablas involucradas dejan clara la separación:</p>
+
+<table>
+  <tr><th style="width:38mm">Tabla</th><th>Qué guarda</th><th style="width:30mm">En 4K</th></tr>
+  <tr><td><code>bank</code><br><span style="color:var(--gris)">el catálogo de este REQ</span></td>
+      <td><code>co_bank</code> + <code>na_bank</code> (+ empresa y conciliación).
+          <b>No tiene ninguna columna de cuenta.</b> Un banco del catálogo es código y nombre, nada más</td>
+      <td>32 filas</td></tr>
+  <tr><td><code>bank_account</code><br><span style="color:var(--gris)">cuentas de la EMPRESA</span></td>
+      <td>Aquí sí vive <code>nu_account</code>. Es lo que alimenta el <b>banco RECEPTOR</b> del cobro</td>
+      <td>8 filas</td></tr>
+  <tr><td><code>client_bank_account</code><br><span style="color:var(--gris)">cuentas del CLIENTE</span></td>
+      <td>Es la fuente de las columnas 3 y 4 de la tabla</td>
+      <td><b class="bad">0 filas</b></td></tr>
+</table>
+
+<div class="calc">
+La cuenta <b>201800391132</b> que muestra el cobro pertenece a <b>BANESCO PANAMA</b> (<code>bank_account</code>),<br>
+que es el <b>banco receptor</b>. Ahí la pareja banco + cuenta es correcta.<br><br>
+El <b>banco emisor</b> no tiene contraparte en ninguna tabla de cuentas: es solo un nombre.
+</div>
+
+<p>Es decir: <b>la columna «Cuenta» junto al banco emisor sobra</b>, y la primera «Banco Emisor»
+duplica una columna que ya existe más adelante en la misma tabla.</p>
+
+<h3>De dónde saca la web esos dos valores</h3>
+
+<p>El registro del pago trae el <b>banco emisor por partida doble</b>. La web lo lee de los dos lados,
+y de ahí salen las dos columnas:</p>
+
+<div class="calc">
+En <code>collection_payment</code>, para los dos cobros de esta prueba:<br><br>
+&nbsp;&nbsp;nu_collection_payment&nbsp;&nbsp; = <b>QA NUEVO BANCO</b> &nbsp;← alimenta la columna 7, la que está <b>bien</b><br><br>
+&nbsp;&nbsp;co_client_bank_account = <b>7777777</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← el <b>código</b> del mismo banco<br>
+&nbsp;&nbsp;nu_client_bank_account = <b>QA NUEVO BANCO</b> &nbsp;← alimenta la columna 4, rotulada «Cuenta»<br>
+&nbsp;&nbsp;na_client_bank_account = <b>null</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← alimenta la columna 3, y por eso sale <b>vacía</b>
+</div>
+
+<p>Los tres últimos son campos de <b>cuenta bancaria del cliente</b> — una tabla que en 4K está
+<b>vacía</b> y cuya variable, <code>clientBankAccount</code>, está en <b><code>false</code></b>.</p>
+
+<h3>Qué se recomienda</h3>
+
+<div class="bien" style="border-color:var(--morado);background:var(--morado-claro)">
+  <div class="t" style="color:var(--morado)">La corrección que hace falta es en la web</div>
+  Quitar del bloque de Pago Móvil la columna <b>Cuenta</b> y la primera <b>Banco Emisor</b>.
+  Debe quedar <b>una sola</b> columna <i>Banco Emisor</i>: la que ya lee
+  <code>nu_collection_payment</code> y muestra el dato correcto.
+</div>
+
+<div class="nota">
+<b>Un dato de contexto para desarrollo, no un pedido de QA:</b> el banco emisor viaja <b>repetido</b>
+en el registro del pago, y una de las dos copias ocupa campos que son de <i>cuenta bancaria del
+cliente</i>. Desde afuera no se puede determinar cuál de las dos fuentes es la canónica ni si esa
+redundancia es intencional — eso lo decide desarrollo al mirar el código. Se deja anotado porque
+explica de dónde salen las columnas de más.
+</div>
+
+<h3>El fix debe cubrir más de un método de pago</h3>
+
+<p>Lo aquí reportado se midió con <b>Pago Móvil</b>, el único método con banco emisor alcanzable en
+4K. <b>Hay al menos dos más que también lo tienen</b>, y conviene que la corrección los contemple:</p>
+
+<table>
+  <tr><th style="width:38mm">Método</th><th>Cómo llega al Banco Emisor</th><th style="width:26mm">¿Probado aquí?</th></tr>
+  <tr><td><b>Pago Móvil</b></td><td>Directo — es donde se detectó</td><td><span class="pill p-ok">✅ sí</span></td></tr>
+  <tr><td><b>Cheque</b></td><td>También tiene Banco Emisor</td><td><span class="pill p-na">⚪ no</span></td></tr>
+  <tr><td><b>Transferencia</b></td><td>El emisor <b>no se ve por defecto</b>: requiere
+      <code>clientBankAccount = true</code> en la empresa, sincronizar config y reabrir el cobro</td>
+      <td><span class="pill p-na">⚪ no</span></td></tr>
+</table>
+
+<div class="nota">
+<b>El escenario que falta y que más importa:</b> con <code>clientBankAccount = true</code>, los campos
+<code>co_/nu_/na_client_bank_account</code> pasan a tener un <b>uso legítimo</b> — ahí sí hay una cuenta
+de cliente real que mostrar. Queda por ver si en ese caso la columna duplicada <b>desaparece</b>,
+<b>sigue igual</b> o <b>empeora</b>. En 4K la variable está en <code>false</code> y la tabla tiene
+0 filas, así que <b>no se pudo probar</b>. Se verificará en el ciclo del fix.
+</div>
+
+<div class="nota">
+<b>Lo que no se puede afirmar:</b> en toda la base de 4K solo hay <b>4 pagos con Pago Móvil</b>, y los
+cuatro son de hoy, de esta prueba. <b>No hay histórico contra el cual comparar</b>, así que no se puede
+decir si esto es nuevo o si siempre fue así. Se reporta como está: reproduce hoy, en los dos cobros.
+</div>
+
+<div class="pb"></div>
+<h2 style="border-color:var(--rojo);color:var(--rojo)">Hallazgo 2 · «Monto doc. conversión» viene sin convertir</h2>
+<p style="color:var(--gris);font-size:9.4pt;margin-top:-1mm"><b>Ajeno al requerimiento de Bancos.</b>
+Se detectó revisando los cobros de cierre y viaja en esta misma devolución para que no se pierda;
+si desarrollo prefiere tratarlo aparte, la incidencia está lista para abrirse como tarjeta propia.</p>
+
+<div class="mal">
+  <div class="t">🔴 Es una regresión: no pasaba hasta el 24/08 y pasa en el 100% de los cobros nuevos</div>
+  En la tabla <b>Documentos Pagados</b>, la columna <b>Monto doc. conversión</b> repite el monto en
+  divisa en vez de convertirlo. En el mismo renglón, <b>Saldo doc. conversión</b> sí está convertido.
+</div>
+
+<div class="cap">
+  <img src="12-web-monto-doc-conversion.png" alt="Monto doc conversión sin convertir">
+  <div class="pie">REF 2679: <b>Monto doc. conversión 21,00</b> junto a <b>Saldo doc. conversión 19.005,00</b>,
+  ambas rotuladas en <b>Bs</b>. El documento vale 21,00 USD; convertido son 19.005,00 Bs.</div>
+</div>
+
+<p><b>Viene así desde el móvil</b> —no es un problema de cómo pinta la web—. El campo
+<code>nu_amount_doc_conversion</code> llega a la nube con el valor sin convertir:</p>
+
+<table>
+  <tr><th style="width:18mm"># Ref</th><th style="width:24mm">Fecha</th><th>Monto doc</th><th>Monto doc. <b>conversión</b></th><th>Saldo doc. <b>conversión</b></th><th style="width:22mm"></th></tr>
+  <tr><td>2667</td><td>24/08/2026</td><td class="num">308,00 USD</td><td class="num">278.740,00</td><td class="num">278.740,00</td><td><span class="pill p-ok">✅ bien</span></td></tr>
+  <tr><td>2664</td><td>24/08/2026</td><td class="num">1.168,00 USD</td><td class="num">1.057.040,00</td><td class="num">646.622,50</td><td><span class="pill p-ok">✅ bien</span></td></tr>
+  <tr><td><b>2671</b></td><td><b>01/09/2026</b></td><td class="num">609,00 USD</td><td class="num bad">609,00</td><td class="num">551.145,00</td><td><span class="pill p-mal">❌ sin convertir</span></td></tr>
+  <tr><td><b>2676</b></td><td><b>02/09/2026</b></td><td class="num">375,00 USD</td><td class="num bad">375,00</td><td class="num">339.375,00</td><td><span class="pill p-mal">❌ sin convertir</span></td></tr>
+  <tr><td><b>2679</b></td><td><b>02/09/2026</b></td><td class="num">21,00 USD</td><td class="num bad">21,00</td><td class="num">19.005,00</td><td><span class="pill p-mal">❌ sin convertir</span></td></tr>
+  <tr><td><b>2680</b></td><td><b>02/09/2026</b></td><td class="num">30,00 USD</td><td class="num bad">30,00</td><td class="num">27.150,00</td><td><span class="pill p-mal">❌ sin convertir</span></td></tr>
+</table>
+
+<div class="calc">
+Barrido sobre los <b>2.338</b> renglones de cobro en divisa de toda la base:<br>
+&nbsp;&nbsp;afectados: <b>10</b> — y son <b>2671 … 2680</b>: <b>todos</b> los cobros del 01 y el 02/09,<br>
+&nbsp;&nbsp;seguidos, sin una sola excepción<br>
+&nbsp;&nbsp;último renglón correcto: <b>24/08/2026</b> &nbsp;·&nbsp; primero afectado: <b>01/09/2026</b><br>
+&nbsp;&nbsp;misma tasa (905), misma moneda (USD), mismo tenant, incluso el <b>mismo vendedor</b>
+</div>
+
+<p><b>Qué NO rompe:</b> el dinero está bien. El monto cobrado, el total a pagar, la conversión del
+total y el saldo del documento cuadran todos. El daño es de <b>lectura</b>: quien mire esa columna
+—o un reporte que la sume— verá el importe en divisa rotulado como bolívares.</p>
+
+<div class="nota">
+<b>Cómo leerlo:</b> los renglones del 24/08 se crearon con el build que el cliente tenía entonces;
+los del 01–02/09, con el APK compilado para este ciclo. <b>Sano antes, roto ahora</b>, con todo lo
+demás igual. No se puede afirmar <i>qué</i> cambio lo introdujo, pero sí que <b>reproduce hoy</b>
+y que antes no reproducía.
+</div>
+
+<div class="pb"></div>
+<h2>Verificación en las TRES capas</h2>
+<table>
+  <tr><th>Acción</th><th style="width:32mm">Web</th><th style="width:38mm">Nube (BD)</th><th style="width:32mm">Móvil</th></tr>
+  <tr><td><b>Listar bancos</b></td><td><span class="pill p-ok">✅ 30 filas</span></td><td><span class="pill p-ok">✅ 30 en <code>bank</code></span></td><td><span class="pill p-ok">✅ 30 en el selector</span></td></tr>
+  <tr><td><b>Crear</b></td><td><span class="pill p-ok">✅ aparece</span></td><td><span class="pill p-ok">✅ <code>I</code> · empresa DIESE</span></td><td><span class="pill p-ok">✅ tras sincronizar</span></td></tr>
+  <tr><td><b>Editar</b></td><td><span class="pill p-ok">✅ nombre nuevo</span></td><td><span class="pill p-ok">✅ <code>U</code>, sin duplicar</span></td><td><span class="pill p-ok">✅ con el nombre editado</span></td></tr>
+  <tr><td><b>Desactivar</b></td><td><span class="pill p-ok">✅ «Deshabilitado»</span></td><td><span class="pill p-ok">✅ <code>D</code>, dato intacto</span></td><td>—</td></tr>
+  <tr><td><b>Reactivar</b></td><td><span class="pill p-ok">✅ «Habilitado»</span></td><td><span class="pill p-ok">✅ <code>U</code></span></td><td>—</td></tr>
+  <tr><td><b>Segunda alta (7777777)</b></td><td><span class="pill p-ok">✅ creado</span></td><td><span class="pill p-ok">✅ <code>id_bank 32</code> · <code>I</code></span></td><td><span class="pill p-ok">✅ en el selector</span></td></tr>
+  <tr><td><b>Banco usado en un cobro</b></td><td><span class="pill" style="background:var(--ambar-claro);color:#8A6100;border:.5pt solid var(--ambar)">⚠ el dato sí; la presentación no</span></td><td><span class="pill p-ok">✅ <code>collection_payment</code></span></td><td><span class="pill p-ok">✅ elegido y enviado</span></td></tr>
+  <tr><td><b>Adjunto del cobro</b></td><td><span class="pill p-ok">✅ se ve y se descarga</span></td><td><span class="pill p-ok">✅ <code>nu_attachments = 1</code></span></td><td><span class="pill p-ok">✅ cargado por QA</span></td></tr>
+</table>
+
+<div class="nota">
+<b>Cómo se materializa el estatus en el móvil:</b> la tabla local <code>banks</code> del dispositivo
+<b>no tiene columna de operación</b> — solo bajan los bancos activos. Es decir, un banco deshabilitado
+<b>desaparece</b> del móvil en la siguiente sincronización, en vez de bajar marcado. Es coherente con
+el objetivo de «que quede oculto», y conviene saberlo para no buscar una bandera que no existe.
+</div>
+
+<div class="nota">
+<b>Dónde guarda la nube el Banco Emisor:</b> en <code>collection_payment.nu_collection_payment</code>,
+<b>como texto</b> — no como referencia al banco. <code>id_bank</code> / <code>na_bank</code> de esa
+misma fila son el <b>banco receptor</b>. Consecuencia práctica: si mañana se renombra un banco, los
+cobros ya emitidos conservan el nombre con el que se emitieron.
+</div>
+
+<h2>Lo que este informe no cubre</h2>
+<table>
+  <tr><th style="width:56mm">Caso</th><th>Motivo</th></tr>
+  <tr><td><b>Replicación a todas las empresas (C8)</b></td>
+      <td>4K tiene <b>una sola empresa</b>. Requiere un cliente multi-empresa.</td></tr>
+  <tr><td><b>CRUD de cuentas bancarias de CLIENTE</b></td>
+      <td>La variable <code>clientBankAccount</code> está en <b>false</b> en 4K; por el propio
+          requerimiento ese caso solo aplica cuando está activa.</td></tr>
+  <tr><td><b>Banco emisor en Cheque y en Transferencia</b></td>
+      <td>Solo se alcanzó <b>Pago Móvil</b>. Transferencia exige
+          <code>clientBankAccount = true</code> para mostrar el emisor. Ambos entran en el ciclo
+          del fix — ver el cierre del hallazgo 1.</td></tr>
+</table>
+
+<h2>Registros creados</h2>
+<table>
+  <tr><th style="width:22mm">Código</th><th>Nombre final</th><th style="width:26mm">Estado al cierre</th><th style="width:22mm">Nube</th></tr>
+  <tr><td><b>9901</b></td><td>QA BANCO EDITADO 0209 <span style="color:var(--gris)">— usado en el cobro REF 2679</span></td><td>Habilitado</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
+  <tr><td><b>7777777</b></td><td>QA NUEVO BANCO <span style="color:var(--gris)">— usado en el cobro REF 2680</span></td><td>Habilitado</td><td><span class="pill p-ok">✅ BD-OK</span></td></tr>
+</table>
+<p style="font-size:9pt;color:var(--gris)">Dos bancos de prueba. Conviene dejarlos
+<b>deshabilitados</b> al cerrar la validación para que no aparezcan en los selectores de los vendedores;
+los cobros ya emitidos conservan el nombre igual, porque viaja como texto.</p>
+
+<div class="fin">
+  <img src="../../_assets/isotipo-denario.png" alt="">
+  <div>
+    <b>Denario Premium · Control de Calidad</b><br>
+    Informe generado el 02/09/2026 · corrida <code>req_crud_bancos_20260902</code><br>
+    Requerimiento «Bancos y Cuentas Bancarias» · validado en web, base de datos y aplicación móvil.
+  </div>
+</div>
+
+</body></html>
