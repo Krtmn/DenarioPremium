@@ -4,7 +4,8 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { InventariosLogicService } from './inventarios-logic.service';
 import { Inventarios } from 'src/app/modelos/inventarios';
-import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
+import { ClientStockSuggestedOrder } from 'src/app/modelos/tables/client-stock-suggested-order';
 
 describe('InventariosLogicService', () => {
   let service: InventariosLogicService;
@@ -258,6 +259,117 @@ describe('InventariosLogicService', () => {
       (service.adjuntoService.hasItems as jasmine.Spy).and.returnValue(false);
 
       expect(service.hasStockFieldErrors()).toBeFalse();
+    });
+  });
+
+  describe('Pedidos sugeridos sync merge', () => {
+    it('no pisa snapshot local pendiente de subir si servidor no trae id', async () => {
+      const executeCalls: string[] = [];
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.callFake((sql: string) => {
+          executeCalls.push(sql);
+          if (sql.includes('cs_st_delivery')) {
+            return Promise.resolve({
+              rows: {
+                length: 1,
+                item: () => ({
+                  id_client_stock_suggested_order: null,
+                  co_client_stock_suggested_order: 'CO-SUG-1',
+                  co_client_stock: 'CO-CS-1',
+                  cs_st_delivery: DELIVERY_STATUS_TO_SEND,
+                }),
+              },
+            });
+          }
+          return Promise.resolve({ rows: { length: 0, item: () => null } });
+        }),
+        sqlBatch: jasmine.createSpy('sqlBatch').and.resolveTo([]),
+      } as any;
+
+      await service.mergeSyncedSuggestedOrdersWithLocal(dbMock, [
+        ClientStockSuggestedOrder.fromJson({
+          coClientStockSuggestedOrder: 'CO-SUG-1',
+          coClientStock: 'CO-CS-1',
+          idClientStockSuggestedOrder: null,
+        } as ClientStockSuggestedOrder),
+      ]);
+
+      expect(dbMock.sqlBatch).not.toHaveBeenCalled();
+      expect(executeCalls.some(sql => sql.includes('INSERT OR REPLACE INTO client_stock_suggested_orders'))).toBeFalse();
+    });
+
+    it('actualiza id servidor en snapshot local pendiente cuando sync trae id', async () => {
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.callFake((sql: string) => {
+          if (sql.includes('cs_st_delivery')) {
+            return Promise.resolve({
+              rows: {
+                length: 1,
+                item: () => ({
+                  id_client_stock_suggested_order: null,
+                  co_client_stock_suggested_order: 'CO-SUG-1',
+                  co_client_stock: 'CO-CS-1',
+                  cs_st_delivery: DELIVERY_STATUS_TO_SEND,
+                }),
+              },
+            });
+          }
+          if (sql.startsWith('UPDATE client_stock_suggested_orders SET id_client_stock_suggested_order')) {
+            return Promise.resolve({ rows: { length: 0, item: () => null } });
+          }
+          return Promise.resolve({ rows: { length: 0, item: () => null } });
+        }),
+        sqlBatch: jasmine.createSpy('sqlBatch').and.resolveTo([]),
+      } as any;
+
+      await service.mergeSyncedSuggestedOrdersWithLocal(dbMock, [
+        ClientStockSuggestedOrder.fromJson({
+          coClientStockSuggestedOrder: 'CO-SUG-1',
+          coClientStock: 'CO-CS-1',
+          idClientStockSuggestedOrder: 99,
+        } as ClientStockSuggestedOrder),
+      ]);
+
+      expect(dbMock.executeSql).toHaveBeenCalledWith(
+        jasmine.stringMatching(/UPDATE client_stock_suggested_orders SET id_client_stock_suggested_order/),
+        jasmine.arrayContaining([99]),
+      );
+    });
+
+    it('inserta fila nueva del servidor cuando no hay local', async () => {
+      const dbMock = {
+        executeSql: jasmine.createSpy('executeSql').and.callFake((sql: string) => {
+          if (sql.includes('cs_st_delivery')) {
+            return Promise.resolve({ rows: { length: 0, item: () => null } });
+          }
+          if (sql.includes('INSERT OR REPLACE INTO client_stock_suggested_orders')) {
+            return Promise.resolve({ rows: { length: 0, item: () => null } });
+          }
+          return Promise.resolve({ rows: { length: 0, item: () => null } });
+        }),
+        sqlBatch: jasmine.createSpy('sqlBatch').and.resolveTo([]),
+      } as any;
+
+      await service.mergeSyncedSuggestedOrdersWithLocal(dbMock, [
+        ClientStockSuggestedOrder.fromJson({
+          coClientStockSuggestedOrder: 'CO-SUG-NEW',
+          coClientStock: 'CO-CS-2',
+          idClientStockSuggestedOrder: 50,
+          idClient: 1,
+          coClient: 'C1',
+          idAddressClient: 1,
+          coAddressClient: 'A1',
+          idEnterprise: 1,
+          coEnterprise: 'E1',
+          idUser: 1,
+          coUser: 'U1',
+        } as ClientStockSuggestedOrder),
+      ]);
+
+      expect(dbMock.executeSql).toHaveBeenCalledWith(
+        jasmine.stringMatching(/INSERT OR REPLACE INTO client_stock_suggested_orders/),
+        jasmine.any(Array),
+      );
     });
   });
 });
