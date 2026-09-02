@@ -835,23 +835,95 @@ describe('CollectionService', () => {
     });
 
     it('DM-COB-012: cross-currency absolute tolerance uses converted positive range', () => {
-      service.collection = { coCurrency: 'USD' } as any;
+      service.collection = { coCurrency: 'USD', nuValueLocal: 40 } as any;
       service.MonedaTolerancia = 'VES';
       service.MonedaToleranciaIsLocal = true;
+      service.localCurrency = { coCurrency: 'VES', localCurrency: 'true' } as any;
+      service.hardCurrency = { coCurrency: 'USD', hardCurrency: 'true' } as any;
+      service.currencyLocal = false;
       service.TipoTolerancia = 0;
-      service.RangoToleranciaPositiva = 10;
+      service.RangoToleranciaPositiva = 400; // VES → 400/40 = 10 USD
       service.RangoToleranciaNegativa = 100;
       service.alwaysPartialPayment = false;
       service.enablePartialPayment = true;
       service.existPartialPayment = false;
       service.montoTotalPagar = 100;
       service.montoTotalPagado = 105;
-      spyOn(service, 'convertirMonto').and.callFake((amount: number) => Number(amount) || 0);
+      (service as any).currencyService = {
+        formatNumber: (n: number) => String(n ?? 0),
+        isLocalCurrency: (co: string) => co === 'VES',
+      };
+      spyOn(service, 'cleanFormattedNumber').and.callFake((v: string | number) => Number(v) || 0);
       const spy = spyOn(service, 'onCollectionValidToSend');
 
       service.checkTolerancia();
 
       expect(spy).toHaveBeenCalledWith(true);
+    });
+
+    it('COB-TOL-001: underpayment in local currency vs hard MonedaTolerancia converts range × rate', () => {
+      // Caso real: cobro BS, tolerancia $ 100000, faltante ~4382 BS (toggle parcial OFF).
+      service.collection = { coCurrency: 'BS', nuValueLocal: 795 } as any;
+      service.MonedaTolerancia = 'USD';
+      service.MonedaToleranciaIsLocal = false;
+      service.MonedaToleranciaIsHard = true;
+      service.localCurrency = { coCurrency: 'BS', localCurrency: 'true' } as any;
+      service.hardCurrency = { coCurrency: 'USD', hardCurrency: 'true' } as any;
+      service.currencyLocal = true;
+      service.TipoTolerancia = 0;
+      service.RangoToleranciaPositiva = 100000;
+      service.RangoToleranciaNegativa = 100000;
+      service.alwaysPartialPayment = false;
+      service.enablePartialPayment = true;
+      service.existPartialPayment = false;
+      service.allPaymentPartial = false;
+      service.montoTotalPagar = 5382.08;
+      service.montoTotalPagado = 1000; // faltante 4382.08 BS << 100000*795
+      (service as any).currencyService = {
+        formatNumber: (n: number) => String(n ?? 0),
+        isLocalCurrency: (co: string) => co === 'BS',
+      };
+      spyOn(service, 'cleanFormattedNumber').and.callFake((v: string | number) => Number(v) || 0);
+      const spy = spyOn(service, 'onCollectionValidToSend');
+
+      service.checkTolerancia();
+
+      expect(spy).toHaveBeenCalledWith(true);
+    });
+
+    it('COB-TOL-001: issueAmountOrTolerancia no usa mensaje de pago parcial', async () => {
+      service.tolerancia0 = true;
+      service.TipoTolerancia = 0;
+      service.collection = {
+        coType: '0',
+        coCurrency: 'BS',
+        nuValueLocal: 795,
+        collectionDetails: [{ inPaymentPartial: false, isSave: true, idDocument: 1, coDocument: 'F1' }],
+        collectionPayments: [{ coType: 'de', coPaymentMethod: 'de', nuAmountPartial: 1000 }],
+      } as any;
+      service.MonedaTolerancia = 'USD';
+      service.localCurrency = { coCurrency: 'BS', localCurrency: 'true' } as any;
+      service.hardCurrency = { coCurrency: 'USD', hardCurrency: 'true' } as any;
+      service.currencyLocal = true;
+      service.RangoToleranciaNegativa = 100000;
+      service.RangoToleranciaPositiva = 100000;
+      service.alwaysPartialPayment = false;
+      service.enablePartialPayment = true;
+      service.hidePayments = false;
+      service.createAutomatedPrepaid = false;
+      service.montoTotalPagar = 5382.08;
+      service.montoTotalPagado = 1000;
+      service.collectionTags.set('COB_ERROR_PARTIAL_PAY', 'Todos los documentos estan marcados como pago parcial');
+      service.collectionTags.set('COB_ERROR_TOLERANCIA', 'Fuera de tolerancia');
+      (service as any).currencyService = {
+        formatNumber: (n: number) => String(n ?? 0),
+        isLocalCurrency: (co: string) => co === 'BS',
+      };
+      spyOn(service, 'cleanFormattedNumber').and.callFake((v: string | number) => Number(v) || 0);
+      spyOn(service as any, 'hasAddedPaymentMethodForSendUx').and.returnValue(true);
+
+      const issue = (service as any).issueAmountOrTolerancia();
+      expect(issue).toBeNull();
     });
   });
 
