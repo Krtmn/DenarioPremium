@@ -18,13 +18,6 @@ import { AutoSendService } from '../services/autoSend/auto-send.service';
 
 const TABLAS_CATALOGO = [8, 13, 15, 23, 25, 29, 32, 34, 35, 37, 39, 42, 43, 44, 46, 48, 50, 51, 53, 54, 59, 60, 72, 74, 81, 84];
 
-interface SyncTableFailure {
-  tableId: number;
-  key: string;
-  label: string;
-  reason: 'missing_response' | 'http_error' | 'invalid_payload';
-}
-
 @Component({
   selector: 'app-synchronization',
   templateUrl: './synchronization.component.html',
@@ -46,7 +39,6 @@ export class SynchronizationComponent implements OnInit {
   private sqlTableMapById: Record<number, { table: string, id: string, idName: string }> = {};
   private tableKeyOrder: number[] = []; // Orden de sincronización de tablas
   private selectedTableIds: number[] | null = null;
-  private syncFailures: SyncTableFailure[] = [];
 
   private N = 0;
   private PROGRESS = 0;
@@ -157,8 +149,6 @@ export class SynchronizationComponent implements OnInit {
     81: 'unit_pricelist',
     83: 'collectRetention',
     84: 'product_bonus_fav',
-    85: 'client_stock_suggested_orders',
-    86: 'client_stock_suggested_order_details',
   };
 
   /**
@@ -230,8 +220,6 @@ export class SynchronizationComponent implements OnInit {
     unit_pricelist: 'Lista de Precio por Unidad',
     collectRetention: 'Tipos de Retención',
     product_bonus_fav: 'Bonificaciones de Producto',
-    client_stock_suggested_orders: 'Pedido sugerido',
-    client_stock_suggested_order_details: 'Detalle pedido sugerido',
   };
 
   constructor(
@@ -277,8 +265,6 @@ export class SynchronizationComponent implements OnInit {
 
       //con esta funcion definimos que tabla se sincroniza primero
       this.adjustTableOrderDependency(63, 68); //queremos que la tabla 63 se sincronice desues que la 68
-      this.adjustTableOrderDependency(85, 67);
-      this.adjustTableOrderDependency(86, 85);
 
       this.applyTableFilters();
 
@@ -402,58 +388,6 @@ export class SynchronizationComponent implements OnInit {
     if (typeof updateTime === 'string' && updateTime.trim() !== '') {
       (this.tables as Record<string, string>)[tableKey as string] = updateTime;
     }
-  }
-
-  private resetSyncFailures(): void {
-    this.syncFailures = [];
-  }
-
-  private recordSyncFailure(
-    tableId: number,
-    key: string,
-    reason: SyncTableFailure['reason'],
-    detail?: unknown,
-  ): void {
-    const label = this.tableLabelMap[key] ?? key;
-    this.syncFailures.push({ tableId, key, label, reason });
-    console.error(`[sync] Tabla no sincronizada: id=${tableId} key=${key} label=${label} reason=${reason}`, detail);
-  }
-
-  private finalizeSync(): void {
-    if (this.syncFailures.length > 0) {
-      const lista = this.syncFailures
-        .map(f => `• ${f.label} (tabla ${f.tableId})`)
-        .join('\n');
-      this.messageAlert = new MessageAlert(
-        'Denario Premium',
-        `La sincronización terminó con errores. Estas tablas no se actualizaron:\n\n${lista}\n\n`
-        + 'Revise la conexión e intente sincronizar de nuevo. Si el problema persiste, contacte soporte.',
-      );
-      this.message.alertModal(this.messageAlert);
-      return;
-    }
-
-    if (this.user.transportista) {
-      this.router.navigate(['home']);
-      return;
-    }
-
-    this.imageServices.getServerImageList().then(obs => {
-      obs.subscribe({
-        complete: () => {
-          this.imageServices.getServerLogoList().then(logoObs => {
-            logoObs.subscribe({
-              complete: () => {
-                this.router.navigate(['home']).then(() => {
-                  this.imageServices.downloadWithConcurrency(this.imageServices.downloadFileList);
-                  this.imageServices.downloadLogosWithConcurrency(this.imageServices.downloadFileListLogos);
-                });
-              },
-            });
-          });
-        },
-      });
-    });
   }
 
   /**
@@ -819,16 +753,6 @@ export class SynchronizationComponent implements OnInit {
             this.tables.page = 0;
             break;
           }
-          case 85: {
-            this.tables.clientStockSuggestedOrdersTableLastUpdate = result[i].last_update;
-            this.tables.page = 0;
-            break;
-          }
-          case 86: {
-            this.tables.clientStockSuggestedOrderDetailsTableLastUpdate = result[i].last_update;
-            this.tables.page = 0;
-            break;
-          }
 
           default: {
             //statements;
@@ -847,7 +771,6 @@ export class SynchronizationComponent implements OnInit {
   syncronice(table: TablesLastUpdate) {
     Object.getOwnPropertyNames(table);
     Object.values(table);
-    this.resetSyncFailures();
     this.syncNextTable(table);
   }
 
@@ -858,8 +781,31 @@ export class SynchronizationComponent implements OnInit {
   syncNextTable(table: TablesLastUpdate) {
     const promesa = new Promise<string>((resolve, reject) => {
       if (this.currentTableIndex == this.tableKeyOrder.length) {
-        this.finalizeSync();
-        return;
+        // Terminaste todas las tablas
+        // 1. Obtén la lista de imágenes del servidor
+
+        if (this.user.transportista) {
+          this.router.navigate(['home']);
+          return;
+        } else {
+          this.imageServices.getServerImageList().then(obs => {
+            obs.subscribe({
+              complete: () => {
+                this.imageServices.getServerLogoList().then(logoObs => {
+                  logoObs.subscribe({
+                    complete: () => {
+                      this.router.navigate(['home']).then(() => {
+                        this.imageServices.downloadWithConcurrency(this.imageServices.downloadFileList);
+                        this.imageServices.downloadLogosWithConcurrency(this.imageServices.downloadFileListLogos);
+                      });
+                    }
+                  });
+                });
+              }
+            });
+          });
+          return;
+        }
       }
 
       // Filtra las tablas si el usuario es transportista
@@ -919,11 +865,7 @@ export class SynchronizationComponent implements OnInit {
               const sqlInfo = this.sqlTableMapById[tableId];
 
               if (!resTable) {
-                this.recordSyncFailure(tableId, key, 'missing_response');
-                this.initProgress(this.PROGRESS, this.BUFF);
-                table.page = 0;
-                resolve(rowKey);
-                return;
+                console.error(`[sync] No se recibió data para la tabla con key=${key} (tableId=${tableId})`);
               }
 
               // 1. Borra filas si corresponde
@@ -963,7 +905,6 @@ export class SynchronizationComponent implements OnInit {
               }
             },
             error: (e) => {
-              this.recordSyncFailure(tableId, key, 'http_error', e);
               this.initProgress(this.PROGRESS, this.BUFF);
 
               table.page = 0;
@@ -1020,7 +961,7 @@ export class SynchronizationComponent implements OnInit {
     if ([59, 60].includes(tableId)) {
       return cfgTrue('userCanSelectChannel');
     }
-    if ([61, 62, 65, 64, 66, 67, 68, 63, 85, 86].includes(tableId)) {
+    if ([61, 62, 65, 64, 66, 67, 68, 63].includes(tableId)) {
       return cfgTrue('transactionHistory');
     }
     // LA VALIDACIÓN SOLICITADA: tabla 72 depende de conversionCalculator
@@ -1544,20 +1485,6 @@ export class SynchronizationComponent implements OnInit {
       pageKey: 'page',
       numberOfPagesKey: 'numberOfPages'
     },
-    client_stock_suggested_orders: {
-      batchFn: this.synchronizationServices.insertClientStockSuggestedOrderBatch.bind(this.synchronizationServices),
-      rowKey: 'clientStockSuggestedOrdersTable',
-      tableKey: 'clientStockSuggestedOrdersTableLastUpdate',
-      pageKey: 'page',
-      numberOfPagesKey: 'numberOfPages'
-    },
-    client_stock_suggested_order_details: {
-      batchFn: this.synchronizationServices.insertClientStockSuggestedOrderDetailBatch.bind(this.synchronizationServices),
-      rowKey: 'clientStockSuggestedOrderDetailsTable',
-      tableKey: 'clientStockSuggestedOrderDetailsTableLastUpdate',
-      pageKey: 'page',
-      numberOfPagesKey: 'numberOfPages'
-    },
   };
 
   /**
@@ -1605,28 +1532,6 @@ export class SynchronizationComponent implements OnInit {
     }
     if (tableName === 'deposits' && idField === 'id_deposit') {
       this.synchronizationServices.deleteDepositRowsSafely(deletedRowsIds);
-      return;
-    }
-    if (tableName === 'client_stock_suggested_orders' && idField === 'co_client_stock_suggested_order') {
-      const coList = Array.isArray(deletedRowsIds)
-        ? deletedRowsIds.map((id: unknown) => String(id))
-        : [String(deletedRowsIds)];
-      void this.synchronizationServices.deleteSuggestedOrderRowsByCo(
-        this.synchronizationServices.getDatabase(),
-        coList,
-        'header',
-      );
-      return;
-    }
-    if (tableName === 'client_stock_suggested_order_details' && idField === 'co_client_stock_suggested_order_detail') {
-      const coList = Array.isArray(deletedRowsIds)
-        ? deletedRowsIds.map((id: unknown) => String(id))
-        : [String(deletedRowsIds)];
-      void this.synchronizationServices.deleteSuggestedOrderRowsByCo(
-        this.synchronizationServices.getDatabase(),
-        coList,
-        'detail',
-      );
       return;
     }
     this.synchronizationServices.deleteDataTable(deletedRowsIds, tableName, idField);

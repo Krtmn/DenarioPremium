@@ -1,11 +1,5 @@
 import { Injectable, ViewChild, inject } from '@angular/core';
-import { AbstractControl, FormGroup } from '@angular/forms';
 import { Subject } from 'rxjs';
-import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
-import {
-  CLIENT_POTENTIAL_STATUS_SENT,
-  CLIENT_POTENTIAL_STATUS_TO_SEND,
-} from 'src/app/utils/appConstants';
 import { ServicesService } from '../services.service';
 import { SynchronizationDBService } from '../synchronization/synchronization-db.service';
 import { CurrencyEnterprise } from 'src/app/modelos/tables/currencyEnterprise';
@@ -42,7 +36,6 @@ export class ClientLogicService {
   public clientesServices = inject(ClientesDatabaseServicesService);
   public globalConfig = inject(GlobalConfigService);
   public potentialClientService = inject(PotentialClientDatabaseServicesService);
-  public adjuntoService = inject(AdjuntoService);
   private modalCtrl = inject(ModalController);
 
   public showButtons = new Subject<Boolean>;
@@ -83,15 +76,6 @@ export class ClientLogicService {
   public cannotSavePotentialClient: Boolean = true;
   public cannotSendPotentialClient: Boolean = true;
   public validPotentialClient: Boolean = false;
-
-  /** Clientes potenciales — UX Guardar/Enviar (patrón Inventarios/Depósitos). */
-  public generalTabValidForSave = false;
-  public potentialClientPersistedBaseline = false;
-  public potentialClientDirtySincePersist = false;
-  public sendValidationAttempted = false;
-  public sendBlockedByFields = false;
-  public potentialClientForm: FormGroup | null = null;
-  public userMustActivateGPS = false;
 
   public clienteNuevoBlancoImg: Boolean = true;//si hay algun cambio en el nuevo cliente potencial
   public newPotentialClientChanged: Boolean = false;//si hay algun cambio en el nuevo cliente potencial
@@ -227,41 +211,10 @@ export class ClientLogicService {
   }
 
   setNombreModulo(tagKey: string, fallback: string = 'Clientes') {
-    const moduleTitle = this.getClientTag(tagKey, fallback);
+    const tagValue = this.clientTags.get(tagKey);
+    const moduleTitle = (tagValue && tagValue.trim().length > 0) ? tagValue.trim() : fallback;
     this.nombreModulo = moduleTitle;
     this.nombreModuloEsLargo = moduleTitle.length > 12;
-  }
-
-  /** CLI + DEN: clientTags primero, luego clientTagsDenario (mismo patrón que collectionTagsDenario en Cobros). */
-  getClientTag(tagKey: string, fallback = ''): string {
-    const key = tagKey?.trim() ?? '';
-    if (!key) {
-      return fallback;
-    }
-
-    const fromClientTags = this.clientTags.get(key);
-    if (fromClientTags != null && String(fromClientTags).trim().length > 0) {
-      return String(fromClientTags).trim();
-    }
-
-    const fromDenarioTags = this.clientTagsDenario.get(key);
-    if (fromDenarioTags != null && String(fromDenarioTags).trim().length > 0) {
-      return String(fromDenarioTags).trim();
-    }
-
-    return fallback;
-  }
-
-  private storeClientTag(key: string, value: string, denarioMap = false): void {
-    const normalizedKey = key?.trim() ?? '';
-    if (!normalizedKey) {
-      return;
-    }
-    const normalizedValue = value != null ? String(value) : '';
-    this.clientTags.set(normalizedKey, normalizedValue);
-    if (denarioMap) {
-      this.clientTagsDenario.set(normalizedKey, normalizedValue);
-    }
   }
 
   getEnterprise() {
@@ -284,27 +237,33 @@ export class ClientLogicService {
   }
 
   getTags() {
-    return this.services.getTags(this.dbServ.getDatabase(), 'CLI', 'ESP').then(result => {
-      for (let i = 0; i < result.length; i++) {
-        this.storeClientTag(result[i].coApplicationTag, result[i].tag);
+    return this.services.getTags(this.dbServ.getDatabase(), "CLI", "ESP").then(result => {
+      for (var i = 0; i < result.length; i++) {
+        this.clientTags.set(
+          result[i].coApplicationTag, result[i].tag
+        )
       }
-      return this.services.getTags(this.dbServ.getDatabase(), 'DEN', 'ESP').then(denarioResult => {
-        for (let i = 0; i < denarioResult.length; i++) {
-          this.storeClientTag(denarioResult[i].coApplicationTag, denarioResult[i].tag, true);
+      return this.services.getTags(this.dbServ.getDatabase(), "DEN", "ESP").then(result => {
+        for (var i = 0; i < result.length; i++) {
+          this.clientTags.set(
+            result[i].coApplicationTag, result[i].tag
+          )
         }
 
         return Promise.resolve(true);
       });
-    });
+    })
   }
 
   getTagsDenario() {
-    return this.services.getTags(this.dbServ.getDatabase(), 'DEN', 'ESP').then(result => {
-      for (let i = 0; i < result.length; i++) {
-        this.storeClientTag(result[i].coApplicationTag, result[i].tag, true);
+    return this.services.getTags(this.dbServ.getDatabase(), "DEN", "ESP").then(result => {
+      for (var i = 0; i < result.length; i++) {
+        this.clientTagsDenario.set(
+          result[i].coApplicationTag, result[i].tag
+        )
       }
       return Promise.resolve(true);
-    });
+    })
   }
 
   getClients(idEnterprise: number) {
@@ -637,237 +596,14 @@ export class ClientLogicService {
   }
 
   getEnterprisePotentialClient() {
-    this.userMustActivateGPS =
-      this.globalConfig.get('userMustActivateGPS').toLowerCase() === 'true';
     return this.potentialClientService.getEnterprises().then(result => {
       this.enterprises = result;
       if (result.length == 1) {
         this.empresaSeleccionada = result[0];
         this.potentialClient.idEnterprise = result[0].idEnterprise;
-        this.onPotentialClientGeneralValid(true);
       }
-      return result;
-    });
-  }
-
-  registerPotentialClientForm(form: FormGroup): void {
-    this.potentialClientForm = form;
-  }
-
-  clearPotentialClientForm(): void {
-    this.potentialClientForm = null;
-  }
-
-  onPotentialClientGeneralValid(valid: boolean): void {
-    this.generalTabValidForSave = valid;
-    this.updatePotentialClientSaveButtonAvailability();
-    this.updatePotentialClientSendButtonAvailability();
-  }
-
-  isPotentialClientReadOnlyForEdit(): boolean {
-    const st = Number(this.potentialClient?.stPotentialClient ?? -1);
-    return st === CLIENT_POTENTIAL_STATUS_TO_SEND
-      || st === CLIENT_POTENTIAL_STATUS_SENT;
-  }
-
-  updatePotentialClientSaveButtonAvailability(): void {
-    if (this.isPotentialClientReadOnlyForEdit() || !this.saveSendPotentialClient) {
-      this.cannotSavePotentialClient = true;
-      return;
-    }
-    if (this.adjuntoService.weightLimitExceeded) {
-      this.cannotSavePotentialClient = true;
-      return;
-    }
-    // Guardar ON con cambios (dirty); el nombre se valida al pulsar (mensaje si falta).
-    const hasChangesToSave =
-      !this.potentialClientPersistedBaseline || this.potentialClientDirtySincePersist;
-    this.cannotSavePotentialClient = !hasChangesToSave;
-  }
-
-  updatePotentialClientSendButtonAvailability(): void {
-    if (this.isPotentialClientReadOnlyForEdit() || !this.saveSendPotentialClient) {
-      this.cannotSendPotentialClient = true;
-      return;
-    }
-    if (this.adjuntoService.weightLimitExceeded) {
-      this.cannotSendPotentialClient = true;
-      return;
-    }
-    // Enviar ON con General (empresa). Campos incompletos no apagan el botón (POT-SEND-001).
-    this.cannotSendPotentialClient = !this.generalTabValidForSave;
-  }
-
-  resetPotentialClientSendValidationUx(): void {
-    this.sendValidationAttempted = false;
-    this.sendBlockedByFields = false;
-    this.updatePotentialClientSendButtonAvailability();
-  }
-
-  refreshPotentialClientSendBlockedState(): void {
-    // Si había bloqueo tras Enviar fallido, liberar en cuanto el form quede completo.
-    if (this.sendBlockedByFields && !this.hasPotentialClientFieldErrors()) {
-      this.sendBlockedByFields = false;
-    }
-  }
-
-  notifyPotentialClientEdited(): void {
-    this.markPotentialClientDirty();
-    this.refreshPotentialClientSendBlockedState();
-    this.updatePotentialClientSaveButtonAvailability();
-    this.updatePotentialClientSendButtonAvailability();
-  }
-
-  markPotentialClientDirty(): void {
-    this.potentialClientDirtySincePersist = true;
-  }
-
-  applyPotentialClientPersistSucceededBaseline(): void {
-    this.potentialClientDirtySincePersist = false;
-    this.potentialClientPersistedBaseline = true;
-    this.updatePotentialClientSaveButtonAvailability();
-    this.updatePotentialClientSendButtonAvailability();
-  }
-
-  resetPotentialClientExitBaseline(): void {
-    this.potentialClientPersistedBaseline = false;
-    this.potentialClientDirtySincePersist = false;
-    this.updatePotentialClientSaveButtonAvailability();
-    this.updatePotentialClientSendButtonAvailability();
-  }
-
-  markPotentialClientOpenedFromPersistedCopy(): void {
-    this.potentialClientPersistedBaseline = true;
-    this.potentialClientDirtySincePersist = false;
-    this.updatePotentialClientSaveButtonAvailability();
-    this.updatePotentialClientSendButtonAvailability();
-  }
-
-  resetPotentialClientValidationUxFlags(): void {
-    this.generalTabValidForSave = false;
-    this.sendValidationAttempted = false;
-    this.sendBlockedByFields = false;
-    this.potentialClientPersistedBaseline = false;
-    this.potentialClientDirtySincePersist = false;
-  }
-
-  private getPotentialClientControl(name: string): AbstractControl | null {
-    return this.potentialClientForm?.get(name) ?? null;
-  }
-
-  private isPotentialClientControlValid(name: string): boolean {
-    const control = this.getPotentialClientControl(name);
-    return !!control && control.errors == null;
-  }
-
-  /** Nombre del cliente potencial con texto (mínimo para Guardar). */
-  public hasPotentialClientNameFilled(): boolean {
-    const control = this.getPotentialClientControl('naClient');
-    if (control) {
-      const value = String(control.value ?? '').trim();
-      return value.length > 0 && control.errors == null;
-    }
-    return String(this.potentialClient?.naClient ?? '').trim().length > 0;
-  }
-
-  private hasEnterpriseSelected(): boolean {
-    if (this.empresaSeleccionada?.idEnterprise) {
-      return true;
-    }
-    return this.isPotentialClientControlValid('idEnterprise');
-  }
-
-  public isPotentialClientEnterpriseMissing(): boolean {
-    return !this.hasEnterpriseSelected();
-  }
-
-  private isPotentialClientFormComplete(): boolean {
-    const requiredFields = [
-      'idEnterprise',
-      'naClient',
-      'nuRif',
-      'txAddress',
-      'txAddressDispatch',
-      'txClient',
-      'naResponsible',
-      'emClient',
-      'nuPhone',
-    ];
-    return requiredFields.every((field) => this.isPotentialClientControlValid(field));
-  }
-
-  private hasMissingGpsCoordinate(): boolean {
-    if (!this.userMustActivateGPS) {
-      return false;
-    }
-    const coord = (this.potentialClient?.coordenada ?? '').toString().trim();
-    return coord.length === 0;
-  }
-
-  /** Errores que bloquean Guardar: solo nombre vacío (no formulario completo). */
-  public hasPotentialClientSaveErrors(): boolean {
-    return !this.hasPotentialClientNameFilled();
-  }
-
-  public getPotentialClientSaveValidationMessage(): string {
-    if (!this.hasPotentialClientNameFilled()) {
-      return this.clientTags.get('CLI_NEW_POT_MENSAJE_ERROR_NOMBRE_CLIENTE')
-        ?? this.clientTags.get('CLI_POT_MSJ_ERROR_NO_NAME')
-        ?? 'Indique el nombre del cliente potencial para guardar.';
-    }
-    return this.clientTags.get('CLI_POT_MSJ_ERROR_INCOMPLETE_FORM')
-      ?? 'Complete los campos mínimos para guardar.';
-  }
-
-  /**
-   * Errores que bloquean Enviar: General + formulario.
-   * Firma/adjuntos no son obligatorios: `signatureClient` solo muestra el panel de firma.
-   */
-  public hasPotentialClientFieldErrors(): boolean {
-    if (!this.generalTabValidForSave || !this.hasEnterpriseSelected()) {
-      return true;
-    }
-    if (!this.isPotentialClientFormComplete()) {
-      return true;
-    }
-    if (this.hasMissingGpsCoordinate()) {
-      return true;
-    }
-    return false;
-  }
-
-  public getPotentialClientValidationMessage(): string {
-    if (!this.generalTabValidForSave || !this.hasEnterpriseSelected()) {
-      return this.clientTags.get('CLI_POT_MSJ_ERROR_NO_ENTERPRISE')
-        ?? 'Seleccione una empresa para continuar.';
-    }
-    if (!this.isPotentialClientControlValid('naClient')) {
-      return this.clientTags.get('CLI_NEW_POT_MENSAJE_ERROR_NOMBRE_CLIENTE')
-        ?? this.clientTags.get('CLI_POT_MSJ_ERROR_INCOMPLETE_FORM')
-        ?? 'Complete el nombre del cliente.';
-    }
-    if (!this.isPotentialClientControlValid('nuRif')
-      || !this.isPotentialClientControlValid('txAddress')
-      || !this.isPotentialClientControlValid('txAddressDispatch')
-      || !this.isPotentialClientControlValid('txClient')
-      || !this.isPotentialClientControlValid('naResponsible')
-      || !this.isPotentialClientControlValid('emClient')
-      || !this.isPotentialClientControlValid('nuPhone')) {
-      return this.clientTags.get('CLI_POT_MSJ_ERROR_INCOMPLETE_FORM')
-        ?? 'Complete todos los campos obligatorios del cliente potencial.';
-    }
-    if (this.hasMissingGpsCoordinate()) {
-      return this.clientTags.get('CLI_POT_MSJ_ERROR_NO_GPS')
-        ?? 'Debe activar el GPS y obtener la ubicación antes de continuar.';
-    }
-    return this.clientTags.get('CLI_POT_MSJ_ERROR_INCOMPLETE_FORM')
-      ?? 'Complete los campos obligatorios del cliente potencial.';
-  }
-
-  public syncPotentialClientFormValidity(): boolean {
-    const complete = this.isPotentialClientFormComplete();
-    this.validPotentialClient = complete;
-    return complete;
+      return result
+    })
   }
 
   getDocumentSale(idClient: number) {

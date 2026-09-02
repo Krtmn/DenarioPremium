@@ -1,5 +1,5 @@
 
-import { ChangeDetectorRef, Component, Input, OnInit, inject } from '@angular/core';
+import { Component, Input, OnInit, inject } from '@angular/core';
 import { MessageAlert } from 'src/app/modelos/tables/messageAlert';
 import { PendingTransaction } from 'src/app/modelos/tables/pendingTransactions';
 import { AutoSendService } from 'src/app/services/autoSend/auto-send.service';
@@ -27,8 +27,7 @@ export class InventarioHeaderComponent implements OnInit {
   private services = inject(ServicesService);
   private synchronizationServices = inject(SynchronizationDBService);
   private autoSend = inject(AutoSendService);
-  public adjuntoService = inject(AdjuntoService);
-  private cdr = inject(ChangeDetectorRef);
+  public adjuntoService = inject(AdjuntoService)
 
   public messageAlert!: MessageAlert;
 
@@ -39,7 +38,6 @@ export class InventarioHeaderComponent implements OnInit {
   public header: string = '';
   public mensaje: string = '';
   public alertButtons: any;
-  public alertButtonsValidation: any;
   public buttonsSalvar: any;
   public subscriberShow: any;
   public subscriberDisabled: any;
@@ -53,10 +51,6 @@ export class InventarioHeaderComponent implements OnInit {
   public saveOrExitOpen = false;
   public alertMessageOpenSend: Boolean = false;
   public alertMessageOpenSave: Boolean = false;
-  public alertMessageOpenSendSuggested = false;
-  /** Alerta local de validación (mensaje exacto; no depende de app-message). */
-  public alertMessageOpenValidation = false;
-  public validationFailureMessage = '';
   backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
     //console.log('backButton was called!');
     this.onBackClicked();
@@ -90,12 +84,14 @@ export class InventarioHeaderComponent implements OnInit {
     this.AttachSubscription = this.adjuntoService.AttachmentChanged.subscribe(() => {
       this.inventariosLogicService.newClientStock.hasAttachments = this.adjuntoService.hasItems();
       this.inventariosLogicService.newClientStock.nuAttachments = this.adjuntoService.getNuAttachment();
-      this.inventariosLogicService.notifyStockEdited();
+      var valid = this.inventariosLogicService.checkValidStockToSend();
+      this.inventariosLogicService.onStockValidToSave(valid);
+      this.inventariosLogicService.onStockValidToSend(valid);
     });
 
     this.AttachWeightSubscription = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
-      this.inventariosLogicService.updateSaveButtonAvailability();
-      this.inventariosLogicService.updateSendButtonAvailability();
+      this.inventariosLogicService.onStockValidToSave(false);
+      this.inventariosLogicService.onStockValidToSend(false);
     });
 
     this.alertButtons = [
@@ -106,13 +102,6 @@ export class InventarioHeaderComponent implements OnInit {
       {
         text: this.textAlertButtonConfirm,
         role: 'confirm'
-      },
-    ];
-
-    this.alertButtonsValidation = [
-      {
-        text: this.textAlertButtonConfirm,
-        role: 'confirm',
       },
     ];
 
@@ -181,12 +170,9 @@ export class InventarioHeaderComponent implements OnInit {
           //SE GUARDARA CLIENTSTOCK
           this.inventariosLogicService.saveClientStock(this.synchronizationServices.getDatabase(), send).then(async (res) => {
             this.inventariosLogicService.isEdit = false;
-            const db = this.synchronizationServices.getDatabase();
-            await this.adjuntoService.savePhotos(db, this.inventariosLogicService.newClientStock.coClientStock, "inventarios");
+            await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.inventariosLogicService.newClientStock.coClientStock, "inventarios");
 
             console.log(res);
-            this.inventariosLogicService.applyPersistSucceededBaseline();
-            this.inventariosLogicService.resetSendValidationUx();
             if (send) {
               //SE ENVIARA Y GUARDARA CLIENTSTOCK
               let pendingTransaction = {} as PendingTransaction;
@@ -255,12 +241,11 @@ export class InventarioHeaderComponent implements OnInit {
     if (ev.detail.role === 'confirm') {
       if (this.alertMessageOpenSend) {
         this.alertMessageOpenSend = false;
-        void this.proceedAfterSendConfirm();
-        return;
+        this.saveSendNewReturn(true, false)
       }
       if (this.alertMessageOpenSave) {
         this.alertMessageOpenSave = false;
-        this.saveSendNewReturn(false, false);
+        this.saveSendNewReturn(false, false)
       }
 
     } else {
@@ -270,117 +255,18 @@ export class InventarioHeaderComponent implements OnInit {
     }
   }
 
-  private async proceedAfterSendConfirm(): Promise<void> {
-    const db = this.synchronizationServices.getDatabase();
-    const coClientStock = this.inventariosLogicService.newClientStock.coClientStock;
-    const snapshot = await this.inventariosLogicService.getSuggestedOrderSnapshotByClientStock(
-      db,
-      coClientStock,
-    );
-
-    if (snapshot) {
-      this.header = this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!;
-      this.mensaje = this.inventariosLogicService.inventarioTags.get('INV_MSJ_SEND_SUGGESTED_ORDER')
-        ?? '¿Desea enviar también la sugerencia de pedido?';
-      this.alertMessageOpenSendSuggested = true;
-      return;
-    }
-
-    this.inventariosLogicService.setAttachSuggestedOrderOnStockSend(coClientStock, false);
-    this.saveSendNewReturn(true, false);
-  }
-
-  setResultSendSuggested(ev: { detail: { role?: string } }): void {
-    const coClientStock = this.inventariosLogicService.newClientStock.coClientStock;
-    const attach = ev.detail.role === 'confirm';
-    this.inventariosLogicService.setAttachSuggestedOrderOnStockSend(coClientStock, attach);
-    this.alertMessageOpenSendSuggested = false;
-    this.saveSendNewReturn(true, false);
-  }
-
-  private notifyStockValidationFailure(options: {
-    blockSend: boolean;
-    message: string;
-    focusTab?: 'default' | 'inventario' | 'actividades' | 'adjuntos';
-  }): void {
-    const focusIndex = this.inventariosLogicService.findFirstIncompleteTypeStockIndex();
-    if (focusIndex >= 0) {
-      this.inventariosLogicService.stockSendFocusTypeStockIndex = focusIndex;
-    }
-    if (options.blockSend) {
-      this.inventariosLogicService.sendBlockedByFields = true;
-      this.inventariosLogicService.updateSendButtonAvailability();
-    }
-    this.inventariosLogicService.requestSendValidationTabFocus(options.focusTab);
-    this.showStockValidationAlert(options.message);
-  }
-
-  /** Alerta en el header con el fallo exacto (misma capa que Enviar/Guardar). */
-  private showStockValidationAlert(rawMessage: string): void {
-    const message = (rawMessage ?? '').toString().trim()
-      || 'Complete los campos obligatorios antes de continuar.';
-    this.validationFailureMessage = message;
-    this.alertMessageOpenValidation = true;
-    this.cdr.detectChanges();
-  }
-
-  setResultValidation(): void {
-    this.alertMessageOpenValidation = false;
-  }
-
-  /** Guardar: solo General (INV-SAVE-001). */
-  private validateStockBeforeSave(): boolean {
-    if (this.inventariosLogicService.hasStockSaveErrors()) {
-      this.notifyStockValidationFailure({
-        blockSend: false,
-        message: this.inventariosLogicService.getStockSaveValidationMessage(),
-        focusTab: 'default',
-      });
-      return false;
-    }
-    return true;
-  }
-
-  /** Enviar: validación completa (productos → GPS → firma). */
-  private validateStockBeforeSend(): boolean {
-    this.inventariosLogicService.sendValidationAttempted = true;
-
-    if (this.inventariosLogicService.hasStockFieldErrors()) {
-      this.notifyStockValidationFailure({
-        blockSend: true,
-        message: this.inventariosLogicService.getStockValidationMessage(),
-      });
-      return false;
-    }
-
-    this.inventariosLogicService.sendBlockedByFields = false;
-    this.inventariosLogicService.updateSendButtonAvailability();
-    return true;
-  }
-
-  saveStock() {
-    if (!this.validateStockBeforeSave()) {
-      return;
-    }
-    this.header = this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!;
-    this.mensaje = this.inventariosLogicService.inventarioTags.get('INV_MSJ_SAVE_QUESTION_TYPESTOCK')!;
-    this.alertMessageOpenSave = true;
-  }
-
-  sendStock() {
-    if (!this.validateStockBeforeSend()) {
-      return;
-    }
-    this.header = this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!;
-    this.mensaje = this.inventariosLogicService.inventarioTags.get('INV_MSJ_SEND_QUESTION_TYPESTOCK')!;
-    this.alertMessageOpenSend = true;
-  }
-
   sendOrSave(sendOrSave: Boolean) {
+    this.header = this.inventariosLogicService.inventarioTags.get('INV_HEADER_MESSAGE')!;
+    /* this.mensaje = this.inventariosLogicService.inventarioTags.get('DENARIO_DEV_CONFIRM_SEND')!; */
     if (sendOrSave) {
-      this.sendStock();
+      //envio
+
+      this.mensaje = this.inventariosLogicService.inventarioTags.get('INV_MSJ_SEND_QUESTION_TYPESTOCK')!
+      this.alertMessageOpenSend = true;
     } else {
-      this.saveStock();
+      //salvo
+      this.mensaje = this.inventariosLogicService.inventarioTags.get('INV_MSJ_SAVE_QUESTION_TYPESTOCK')!
+      this.alertMessageOpenSave = true;
     }
   }
 

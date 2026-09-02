@@ -159,11 +159,9 @@ export class AdjuntoComponent implements OnInit, OnDestroy {
   }
 
   getImgSrc(input: Foto) {
-    if (input.previewSrc && input.previewSrc.trim().length > 0) {
-      return input.previewSrc;
-    }
-    const mime = (input.tipo || 'jpeg').toLowerCase();
-    return `data:image/${mime};base64,${input.data}`;
+    var fp: String;
+    fp = this.getImgURL(input.data);
+    return fp
   }
 
   getImgURL(base64: string) {
@@ -250,54 +248,36 @@ export class AdjuntoComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.disablePhotos = true;
     try {
-      const permissions = await Camera.checkPermissions();
-      if (permissions.camera !== 'granted') {
-        const requested = await Camera.requestPermissions({ permissions: ['camera'] });
-        if (requested.camera !== 'granted') {
-          this.message.transaccionMsjModalNB(
-            this.getTag('ADJ_MSJ_ERROR_NO_CAMERA')
-              || 'Debe permitir el acceso a la cámara para tomar fotos.',
-          );
-          return;
-        }
-      }
-
+      // quality 100 + Base64 a resolución nativa OOM en mid/low RAM (crash intermitente).
       const photo = await Camera.getPhoto({
+        resultType: CameraResultType.Base64,
         source: CameraSource.Camera,
-        resultType: CameraResultType.Uri,
-        quality: this.service.cameraCaptureQuality,
-        width: this.service.cameraCaptureMaxWidth,
+        quality: 70,
+        width: 1920,
+        height: 1920,
         correctOrientation: true,
       });
 
-      const foto = await this.service.addPhotoFromCamera(photo);
-      if (foto?.weightLimitExceeded) {
+      if (!photo.base64String) {
+        return;
+      }
+
+      const muyPesado = this.service.getFileWeight(photo.base64String) > this.service.imageWeightLimit;
+      const foto = new Foto('jpeg', photo.base64String, '', muyPesado);
+      if (muyPesado) {
         this.message.transaccionMsjModalNB(
           this.getTag('ADJ_EXCEDE_FOTO') + this.service.imageWeightLimit + ' MB',
         );
+        this.service.weightLimitExceeded = true;
       }
-      if (foto) {
-        this.checkCarousel();
-        this.onAttachmentChanged();
-      }
-    } catch (error) {
-      if (!this.isUserCancelledCamera(error)) {
-        console.error('tomarImg', error);
-        this.message.transaccionMsjModalNB(
-          this.getTag('ADJ_MSJ_ERROR_CAMERA')
-            || 'No se pudo capturar la foto. Intente nuevamente.',
-        );
-      }
-    } finally {
-      this.disablePhotos = false;
+      this.service.fotos.push(foto);
+      this.checkCarousel();
+      this.onAttachmentChanged();
+    } catch (err) {
+      // Usuario cancela, permiso denegado o fallo del plugin: no tumbar el flujo.
+      console.warn('[Adjunto] tomarImg cancelado o falló', err);
     }
-  }
-
-  private isUserCancelledCamera(error: unknown): boolean {
-    const message = String((error as Error)?.message ?? error ?? '').toLowerCase();
-    return message.includes('cancel') || message.includes('cancelled');
   }
 
   getTag(tagName: string) {

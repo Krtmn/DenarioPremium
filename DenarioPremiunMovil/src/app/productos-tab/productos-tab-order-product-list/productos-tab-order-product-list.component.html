@@ -308,7 +308,6 @@
                 <ion-col class="" size="12" size-sm="12" size-xs="12">
                   <ion-label *ngIf="orderServ.showProductImages">
                     <ion-img class="imgProductInvent" alt="" loading="lazy"
-                      (click)="openImageZoom($event)"
                       (ionError)="productoModal.imagenProduct = orderServ.imgNoDisponible"
                       [src]="productoModal.coProduct ? (imageServices.getImgForProduct(productoModal.coProduct)) : '../../../assets/images/nodisponible.png'">
                     </ion-img>
@@ -516,38 +515,6 @@
         </ion-card>
       </ion-content>
 
-    </ng-template>
-  </ion-modal>
-
-  <!-- modal zoom de imagen de producto -->
-  <ion-modal [isOpen]="imageZoomOpen" (didDismiss)="closeImageZoom()" class="product-image-zoom-modal">
-    <ng-template>
-      <ion-toolbar>
-        <ion-title class="fondoVerde">
-          <ion-grid>
-            <ion-row>
-              <ion-col size="1" size-sm="1" size-xs="2">
-                <a (click)="closeImageZoom()">
-                  <img class="fechaAtras" alt="" src="../../../assets/images/flecha-blanca.png" />
-                </a>
-              </ion-col>
-              <ion-col size="11" size-sm="11" size-xs="10">
-                <h1 class="tituloModulos">{{ orderServ.getTag("PED_NOMBRE_MODULO") }}</h1>
-              </ion-col>
-            </ion-row>
-          </ion-grid>
-        </ion-title>
-      </ion-toolbar>
-      <ion-content class="product-image-zoom-content">
-        <swiper-container [pagination]="false" navigation="false" zoom="true" [loop]="false"
-          class="product-image-zoom-swiper">
-          <swiper-slide>
-            <div class="swiper-zoom-container">
-              <img class="product-image-zoom-img" [src]="getProductZoomImageSrc()" />
-            </div>
-          </swiper-slide>
-        </swiper-container>
-      </ion-content>
     </ng-template>
   </ion-modal>
 

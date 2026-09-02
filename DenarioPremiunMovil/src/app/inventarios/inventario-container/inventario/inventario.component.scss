@@ -9,14 +9,3 @@ ion-modal#eventModal {
 ion-modal#eventModal .contenedorModalActividades {
   padding: 5%;
 }
-
-.stock-send-error-hint {
-  --color: #e60c0c;
-  color: #e60c0c;
-}
-
-ion-segment-button.stock-send-error-hint {
-  --color: #e60c0c;
-  --color-checked: #e60c0c;
-  --indicator-color: #e60c0c;
-}

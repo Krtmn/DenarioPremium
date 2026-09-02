@@ -73,9 +73,10 @@ export class DepositoGeneralComponent implements OnInit {
     this.adjuntoService.setup(this.synchronizationServices.getDatabase(), this.globalConfig.get("signatureCollection") == "true", this.depositService.hideDeposit, COLOR_LILA);
     this.adjuntoService.getSavedPhotos(this.synchronizationServices.getDatabase(), this.depositService.deposit.coDeposit, 'depositos');
 
-    if (this.depositService.isDepositReadOnlyForEdit()) {
+    if (this.depositService.deposit.stDeposit == 1) {
       this.depositService.disabledEnterprise = true;
       this.depositService.disabledCurrency = true;
+
     } else {
       this.geoServ.getCurrentPosition().then(coords => {
         if (this.depositService.userMustActivateGPS) {
@@ -109,23 +110,17 @@ export class DepositoGeneralComponent implements OnInit {
     void this.changeEnterprise();
   }
 
-  shouldShowBankSendError(): boolean {
-    return this.depositService.sendValidationAttempted
-      && !this.depositService.generalTabValidForSave;
-  }
-
-  shouldShowDocumentSendError(): boolean {
-    return this.depositService.sendValidationAttempted
-      && this.depositService.generalTabValidForSave
-      && !(this.depositService.nuDocument?.trim() || this.depositService.deposit?.nuDocument?.trim());
+  print() {
+    console.log(this.depositService.deposit);
   }
 
   onBankSelect() {
     this.depositService.deposit.nuAccount = this.depositService.bankSelected.nuAccount;
     this.depositService.deposit.coBank = this.depositService.bankSelected.coBank;
     this.depositService.isSelectedBank = true;
-    this.depositService.onDepositGeneralValid(true);
-    this.depositService.notifyDepositEdited();
+    this.depositService.depositValid = true;
+    this.depositService.markDepositDirty();
+    this.depositService.onDepositValidToSave(true);
   }
 
   onNuDocumentInput() {
@@ -137,7 +132,7 @@ export class DepositoGeneralComponent implements OnInit {
       }
     }
     this.depositService.deposit.nuDocument = this.depositService.nuDocument.trim();
-    this.depositService.notifyDepositEdited();
+    this.depositService.markDepositDirty();
   }
 
   onTxCommentInput() {
@@ -152,7 +147,7 @@ export class DepositoGeneralComponent implements OnInit {
       }
     }
     this.depositService.deposit.txComment = this.depositService.txComment.trim();
-    this.depositService.notifyDepositEdited();
+    this.depositService.markDepositDirty();
   }
 
   cleanString(str: string): string {
@@ -169,7 +164,7 @@ export class DepositoGeneralComponent implements OnInit {
 
   changeDaDocument() {
     this.depositService.deposit.daDocument = this.depositService.daDocument;
-    this.depositService.notifyDepositEdited();
+    this.depositService.markDepositDirty();
   }
 
   changeCurrencyMsj(event: any) {

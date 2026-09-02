@@ -49,10 +49,6 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
   public selectedAddress!: AddresClient;
   public saldoLocal: number = 0;
   public saldoFuerte: number = 0;
-  public creditoLocal: number = 0;
-  public creditoFuerte: number = 0;
-  public availableCreditLocal: number = 0;
-  public availableCreditFuerte: number = 0;
 
   subjectClientShareModalOpen: any;
   // selección múltiple de documentos
@@ -95,7 +91,16 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
     this.decimales = this.currencyService.precision;
 
     this.initializeClientBalances();
-    this.initializeClientCredits();
+
+    if (this.clientLogic.multiCurrency && this.currencyService.multimoneda) {
+      if (this.client.coCurrency === this.clientLogic.localCurrency.coCurrency) {
+        this.nuCreditLimitConversion = this.formatNumber(this.currencyService.toHardCurrency(this.client.nuCreditLimit));
+        this.availableCreditConversion = this.formatNumber(this.currencyService.toHardCurrency(this.getAvailableCredit()));
+      } else {
+        this.nuCreditLimitConversion = this.formatNumber(this.currencyService.toLocalCurrency(this.client.nuCreditLimit));
+        this.availableCreditConversion = this.formatNumber(this.currencyService.toLocalCurrency(this.getAvailableCredit()));
+      }
+    }
 
 
     this.allDocuments = Array.isArray(this.clientLogic.datos.document)
@@ -192,37 +197,6 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
     );
     this.saldoLocal = totals.saldoLocal;
     this.saldoFuerte = totals.saldoFuerte;
-  }
-
-  /**
-   * Display-only: Crédito usa las mismas etiquetas local/hard que Saldo.
-   * No muta client.coCurrency (cobros/pedidos siguen con la moneda del cliente).
-   */
-  private initializeClientCredits(): void {
-    const limit = Number(this.client?.nuCreditLimit ?? 0);
-    const coCurrency = this.client?.coCurrency ?? this.localCurrency;
-
-    if (!this.clientLogic.multiCurrency || !this.currencyService.multimoneda) {
-      this.creditoLocal = limit;
-      this.creditoFuerte = 0;
-      this.availableCreditLocal = limit - this.saldoLocal;
-      this.availableCreditFuerte = 0;
-      this.nuCreditLimitConversion = '';
-      this.availableCreditConversion = '';
-      return;
-    }
-
-    const isLocalLimit = coCurrency === this.localCurrency;
-    this.creditoLocal = isLocalLimit
-      ? limit
-      : this.currencyService.toLocalCurrency(limit);
-    this.creditoFuerte = isLocalLimit
-      ? this.currencyService.toHardCurrency(limit)
-      : limit;
-    this.availableCreditLocal = this.creditoLocal - this.saldoLocal;
-    this.availableCreditFuerte = this.creditoFuerte - this.saldoFuerte;
-    this.nuCreditLimitConversion = this.formatNumber(this.creditoFuerte);
-    this.availableCreditConversion = this.formatNumber(this.availableCreditFuerte);
   }
 
   private getClientSaldo1(): number {
@@ -567,7 +541,7 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getAvailableCredit(): number {
-    return this.availableCreditLocal;
+    return Number(this.client?.nuCreditLimit ?? 0) - (this.getClientSaldo1() + this.getClientSaldo2());
   }
 
   getDaDueDate(daDueDate: string) {

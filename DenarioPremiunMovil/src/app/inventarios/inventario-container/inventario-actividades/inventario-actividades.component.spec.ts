@@ -1,22 +1,22 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { IonicModule } from '@ionic/angular';
 
 import { InventarioActividadesComponent } from './inventario-actividades.component';
-import {
-  configureIonicComponentTestingModule,
-  createShallowComponentFixture,
-} from 'src/app/testing/ionic-component-spec.helpers';
 
 describe('InventarioActividadesComponent', () => {
   let component: InventarioActividadesComponent;
   let fixture: ComponentFixture<InventarioActividadesComponent>;
 
   beforeEach(waitForAsync(() => {
-    configureIonicComponentTestingModule(InventarioActividadesComponent).compileComponents();
-  }));
+    TestBed.configureTestingModule({
+      declarations: [ InventarioActividadesComponent ],
+      imports: [IonicModule.forRoot()]
+    }).compileComponents();
 
-  beforeEach(() => {
-    ({ fixture, component } = createShallowComponentFixture(InventarioActividadesComponent));
-  });
+    fixture = TestBed.createComponent(InventarioActividadesComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  }));
 
   it('should create', () => {
     expect(component).toBeTruthy();

@@ -42,18 +42,6 @@ $fondoLila: #430197;
   font-size: 18px;
   color: $colorLila;
   text-align: center;
-
-  &.deposit-send-error-hint {
-    color: var(--ion-color-danger, #eb445a);
-  }
-}
-
-.deposit-send-error-hint {
-  ion-select,
-  ion-input {
-    --border-color: var(--ion-color-danger, #eb445a);
-    --highlight-color: var(--ion-color-danger, #eb445a);
-  }
 }
 
 .cabecera .col {

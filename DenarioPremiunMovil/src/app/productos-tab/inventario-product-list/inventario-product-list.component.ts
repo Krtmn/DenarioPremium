@@ -151,7 +151,7 @@ export class InventarioProductListComponent implements OnInit {
 
       this.inventoryFilter = 'inventoried';
       this.inventariosLogicService.showProductList = true;
-      this.inventariosLogicService.updateSendButtonAvailability();
+      this.inventariosLogicService.onStockValidToSend(true);
 
       const inventoriedProducts = await this.buildInventoriedProductListFromDetails();
       if (inventoriedProducts.length > 0) {
@@ -340,7 +340,7 @@ export class InventarioProductListComponent implements OnInit {
     }
 
     this.applyRowsToInventory(cleanRows);
-    this.inventariosLogicService.notifyStockEdited();
+    this.inventariosLogicService.updateHeaderButtons();
     this.inventariosLogicService.isEdit = true;
     this.closeTypeStocksModal();
   }
@@ -429,7 +429,8 @@ export class InventarioProductListComponent implements OnInit {
 
     this.inventariosLogicService.typeExh = this.inventariosLogicService.typeStocks.some(stock => stock.tipo === 'exh');
     this.inventariosLogicService.typeDep = this.inventariosLogicService.typeStocks.some(stock => stock.tipo === 'dep');
-    this.inventariosLogicService.notifyStockEdited();
+    this.inventariosLogicService.onStockValidToSave(true);
+    this.inventariosLogicService.onStockValidToSend(true);
     this.refreshInventoriedProducts();
   }
 

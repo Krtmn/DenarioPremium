@@ -10,12 +10,12 @@
 
 ## Gaps / siguientes tramos
 
-1. ~~**Header** (`client-header`): DM-CLT-027/028 (modal salir con cambios), send confirm.~~ Cubierto por POT-SAVE-001 (validación Guardar/Enviar + confirmaciones).
+1. **Header** (`client-header`): DM-CLT-027/028 (modal salir con cambios), send confirm.
 2. ~~**CLI-SALDOS-001** blindaje display-from-docs~~ (app). Maestro `co_currency` sigue recomendado.
 3. **Share modal / coordenadas internas / adjuntos / firma** — fuera del guion actual.
 4. Specs scaffold restantes (`clientes.component`, document-sale, location, DB services) — no incluir en CI hasta reescribirlos.
-5. ~~Documentar/decidir laguna #4 (`naResponsible` en FormGroup pero no en `checkForm`).~~ Incluido en `hasPotentialClientFieldErrors()` (POT-SAVE-001).
-6. Laguna #5: modal salir con `newPotentialClientChanged` en cualquier edición — revisar en dispositivo.
+5. Documentar/decidir laguna #4 (`naResponsible` en FormGroup pero no en `checkForm`).
+6. Laguna #5: modal salir solo si form válido — posible defecto UX.
 
 ## Prioridad sugerida
 

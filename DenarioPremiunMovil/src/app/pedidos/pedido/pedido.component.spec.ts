@@ -39,10 +39,6 @@ describe('PedidoComponent', () => {
       'getTag',
       'setup',
       'productSummary',
-      'resetOrderValidationUxFlags',
-      'resetOrderExitBaseline',
-      'updateSaveButtonAvailability',
-      'updateSendButtonAvailability',
     ]);
     Object.assign(orderServMock, {
       openOrder: false,
@@ -55,10 +51,6 @@ describe('PedidoComponent', () => {
       pedidoModificable: true,
       ProdSelecttags: new Map<string, string>(),
       signatureOrder: false,
-      disableSaveButton: true,
-      disableSendButton: true,
-      orderValidToSave: new Subject<boolean>(),
-      orderValidToSend: new Subject<boolean>(),
     });
     orderServMock.getTag.and.returnValue('');
     orderServMock.setup.and.resolveTo(undefined);

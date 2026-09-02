@@ -33,8 +33,8 @@
 
               @if(enableCarousel){
               <swiper-container slides-per-view="1" space-between="10" pagination="true" style="width: 100%;">
-                @for(item of getFotos(); track $index; let i = $index){
                 <swiper-slide>
+                  @for(item of getFotos(); track item.naImage ; let i = $index){
                   @if(item.weightLimitExceeded){
                   <ion-label color="danger">
                     {{ getTag('ADJ_ELIMINE_IMAGEN') }}
@@ -54,8 +54,8 @@
                       </ion-col>
                     </ion-row>
                   </ion-grid>
+                  }
                 </swiper-slide>
-                }
               </swiper-container>
               }
             </div>

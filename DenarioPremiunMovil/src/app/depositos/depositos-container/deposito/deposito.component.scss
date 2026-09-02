@@ -22,14 +22,3 @@ ion-segment-button {
     --padding-end: 0px !important;
 }
 
-.deposit-send-error-hint {
-  --color: #e60c0c;
-  color: #e60c0c;
-}
-
-ion-segment-button.deposit-send-error-hint {
-  --color: #e60c0c;
-  --color-checked: #e60c0c;
-  --indicator-color: #e60c0c;
-}
-

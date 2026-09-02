@@ -60,14 +60,6 @@ export interface SelectedUnitPricingRow {
   coCurrency: string;
 }
 
-export interface OrderEditContext {
-  idClient: number | null;
-  idAddressClient: number | null;
-  nuPurchase: string;
-  txComment: string;
-  pedidoModificable: boolean;
-}
-
 @Injectable({
   providedIn: 'root'
 })
@@ -89,12 +81,9 @@ export class PedidosService {
   public adjuntoService = inject(AdjuntoService);
   public historyTransaction = inject(HistoryTransaction);
 
-  public db = inject(PedidosDbService);
-  private router = inject(Router);
+  public database: SQLiteObject;
 
-  public get database(): SQLiteObject {
-    return this.dbServ.getDatabase();
-  }
+  public db = inject(PedidosDbService);
 
   public empresaSeleccionada!: Enterprise;
   public monedaSeleccionada!: CurrencyEnterprise;
@@ -143,24 +132,8 @@ export class PedidosService {
   /* fin userCanSelectChannel */
 
   public changesMade = false;
-  public disableSaveButton = true;
-  public disableSendButton = true;
-
-  /** UX Guardar/Enviar (patrón Visitas/Depósitos). */
-  generalTabValidForSave = false;
-  orderPersistedBaseline = false;
-  orderDirtySincePersist = false;
-  sendValidationAttempted = false;
-  sendBlockedByFields = false;
-  orderValidToSave = new Subject<boolean>();
-  orderValidToSend = new Subject<boolean>();
-  private editContext: OrderEditContext = {
-    idClient: null,
-    idAddressClient: null,
-    nuPurchase: '',
-    txComment: '',
-    pedidoModificable: false,
-  };
+  public disableSaveButton = false;
+  public disableSendButton = false;
   public pedidoModificable = false; // el pedido que se esta abriendo se podra modificar luego (pedido guardado/copiado)
   public openOrder = false; // flag: se esta abriendo un pedido, (guardado/copiado/enviado)
   public copiandoPedido = false; // Flag: copia el pedido que se esta abriendo
@@ -296,6 +269,14 @@ export class PedidosService {
       //this.cliente = client;
     })
   */
+
+
+
+  constructor(private router: Router) {
+    this.getTags();
+    this.getConfig();
+    this.database = this.dbServ.getDatabase();
+  }
 
 
 
@@ -717,32 +698,36 @@ export class PedidosService {
     }
     return this.getProdMinMulByProduct(idProduct);
   }
-  async ensureModuleReady(dbServ: SQLiteObject): Promise<void> {
-    this.getConfig();
-    await this.getTags(dbServ);
-  }
-
-  getTags(dbServ: SQLiteObject): Promise<boolean> {
+  getTags() {
     if (this.tags.size > 0) {
-      return Promise.resolve(true);
+      //ya tenemos los tags, no hay que hacer nada.
+    } else {
+      this.services.getTags(this.dbServ.getDatabase(), "PED", "ESP").then(result => {
+        for (var i = 0; i < result.length; i++) {
+          this.tags.set(
+            result[i].coApplicationTag, result[i].tag
+          )
+        }
+      });
+      this.services.getTags(this.dbServ.getDatabase(), "PROD", "ESP").then(result => {
+        for (var i = 0; i < result.length; i++) {
+          this.ProdSelecttags.set(
+            result[i].coApplicationTag, result[i].tag
+          )
+        }
+      });
+      this.services.getTags(this.dbServ.getDatabase(), "DEN", "ESP").then(result => {
+        for (var i = 0; i < result.length; i++) {
+          this.ProdSelecttags.set(
+            result[i].coApplicationTag, result[i].tag
+          )
+          this.tags.set(
+            result[i].coApplicationTag, result[i].tag
+          )
+        }
+      });
+
     }
-    return this.services.getTags(dbServ, 'PED', 'ESP').then(result => {
-      for (let i = 0; i < result.length; i++) {
-        this.tags.set(result[i].coApplicationTag, result[i].tag);
-      }
-      return this.services.getTags(dbServ, 'PROD', 'ESP');
-    }).then(result => {
-      for (let i = 0; i < result.length; i++) {
-        this.ProdSelecttags.set(result[i].coApplicationTag, result[i].tag);
-      }
-      return this.services.getTags(dbServ, 'DEN', 'ESP');
-    }).then(result => {
-      for (let i = 0; i < result.length; i++) {
-        this.ProdSelecttags.set(result[i].coApplicationTag, result[i].tag);
-        this.tags.set(result[i].coApplicationTag, result[i].tag);
-      }
-      return true;
-    });
   }
 
   getTag(tagName: string) {
@@ -854,245 +839,21 @@ export class PedidosService {
     this.productSummary();
   }
 
-  setOrderEditContext(ctx: OrderEditContext): void {
-    this.editContext = ctx;
-  }
-
-  onOrderValidToSave(valid: boolean): void {
-    this.disableSaveButton = !valid;
-    this.orderValidToSave.next(valid);
-  }
-
-  onOrderValidToSend(valid: boolean): void {
-    this.disableSendButton = !valid;
-    this.orderValidToSend.next(valid);
-  }
-
-  onOrderGeneralValid(valid: boolean): void {
-    this.generalTabValidForSave = valid;
-    this.updateSaveButtonAvailability();
-    this.updateSendButtonAvailability();
-  }
-
-  isOrderReadOnlyForEdit(): boolean {
-    return !this.pedidoModificable;
-  }
-
-  updateSaveButtonAvailability(): void {
-    if (this.isOrderReadOnlyForEdit()) {
-      this.onOrderValidToSave(false);
-      return;
+  setChangesMade(value: boolean) {
+    this.changesMade = value;
+    if (value) {
+      const hasCommentIfRequired = !this.requiredCommentOrder
+        || !!String(this.order?.txComment ?? '').trim();
+      var disable = !((this.cliente.idClient != null) &&
+        (this.carrito.length > 0) &&
+        (!this.adjuntoService.weightLimitExceeded) &&
+        hasCommentIfRequired);
+      this.disableSaveButton = disable;
+      this.disableSendButton = disable;
+    } else {
+      this.disableSaveButton = true;
+      this.disableSendButton = true;
     }
-    if (this.adjuntoService.weightLimitExceeded) {
-      this.onOrderValidToSave(false);
-      return;
-    }
-    const generalOk = this.generalTabValidForSave;
-    const hasChangesToSave =
-      !this.orderPersistedBaseline || this.orderDirtySincePersist;
-    this.onOrderValidToSave(generalOk && hasChangesToSave);
-  }
-
-  updateSendButtonAvailability(): void {
-    if (this.isOrderReadOnlyForEdit()) {
-      this.onOrderValidToSend(false);
-      return;
-    }
-    if (this.adjuntoService.weightLimitExceeded) {
-      this.onOrderValidToSend(false);
-      return;
-    }
-    if (this.sendBlockedByFields) {
-      this.onOrderValidToSend(false);
-      return;
-    }
-    this.onOrderValidToSend(this.generalTabValidForSave);
-  }
-
-  resetOrderValidationUx(): void {
-    this.sendValidationAttempted = false;
-    this.sendBlockedByFields = false;
-    this.updateSendButtonAvailability();
-  }
-
-  refreshSendBlockedState(): void {
-    if (!this.sendBlockedByFields) {
-      return;
-    }
-    if (!this.hasOrderFieldErrors()) {
-      this.sendBlockedByFields = false;
-      this.updateSendButtonAvailability();
-    }
-  }
-
-  markOrderDirty(): void {
-    this.orderDirtySincePersist = true;
-    this.changesMade = true;
-  }
-
-  notifyOrderEdited(ctx?: OrderEditContext): void {
-    if (ctx) {
-      this.setOrderEditContext(ctx);
-    }
-    this.markOrderDirty();
-    this.refreshSendBlockedState();
-    this.updateSaveButtonAvailability();
-    this.updateSendButtonAvailability();
-  }
-
-  applyOrderPersistSucceededBaseline(): void {
-    this.orderDirtySincePersist = false;
-    this.orderPersistedBaseline = true;
-    this.changesMade = false;
-    this.updateSaveButtonAvailability();
-    this.updateSendButtonAvailability();
-  }
-
-  resetOrderExitBaseline(): void {
-    this.orderPersistedBaseline = false;
-    this.orderDirtySincePersist = false;
-    this.changesMade = false;
-    this.updateSaveButtonAvailability();
-    this.updateSendButtonAvailability();
-  }
-
-  markOrderOpenedFromPersistedCopy(): void {
-    this.orderPersistedBaseline = true;
-    this.orderDirtySincePersist = false;
-    this.changesMade = false;
-    this.updateSaveButtonAvailability();
-    this.updateSendButtonAvailability();
-  }
-
-  resetOrderValidationUxFlags(): void {
-    this.generalTabValidForSave = false;
-    this.sendValidationAttempted = false;
-    this.sendBlockedByFields = false;
-    this.orderPersistedBaseline = false;
-    this.orderDirtySincePersist = false;
-    this.changesMade = false;
-  }
-
-  hasUnsavedOrderChanges(): boolean {
-    return !this.orderPersistedBaseline || this.orderDirtySincePersist;
-  }
-
-  private hasClientSelected(): boolean {
-    return Number(this.editContext.idClient ?? 0) > 0;
-  }
-
-  private hasAddressSelected(): boolean {
-    return Number(this.editContext.idAddressClient ?? 0) > 0;
-  }
-
-  private isNuOrderMissing(): boolean {
-    if (!this.validateNuOrder) {
-      return false;
-    }
-    return !String(this.editContext.nuPurchase ?? '').trim();
-  }
-
-  private isCommentRequiredMissingInContext(): boolean {
-    if (!this.requiredCommentOrder) {
-      return false;
-    }
-    if (!this.editContext.pedidoModificable) {
-      return false;
-    }
-    return !String(this.editContext.txComment ?? '').trim();
-  }
-
-  private hasMissingProductsInCart(): boolean {
-    return !this.carrito || this.carrito.length === 0;
-  }
-
-  private hasMissingWarehouseOnCart(): boolean {
-    if (!this.validateWarehouses) {
-      return false;
-    }
-    return this.carrito.some(
-      (item) => !item.idWarehouse || Number(item.idWarehouse) <= 0,
-    );
-  }
-
-  private hasMissingGpsCoordinate(): boolean {
-    if (!this.userMustActivateGPS) {
-      return false;
-    }
-    const coord = (this.coordenadas ?? '').toString().trim();
-    return coord.length === 0;
-  }
-
-  /**
-   * Errores que bloquean Enviar: General + productos (+ GPS/almacén si config).
-   * Firma/adjuntos no son obligatorios: `signatureOrder` solo muestra el panel de firma.
-   */
-  public hasOrderFieldErrors(): boolean {
-    if (!this.generalTabValidForSave || !this.hasClientSelected()) {
-      return true;
-    }
-    if (!this.hasAddressSelected()) {
-      return true;
-    }
-    if (this.isNuOrderMissing()) {
-      return true;
-    }
-    if (this.isCommentRequiredMissingInContext()) {
-      return true;
-    }
-    if (this.hasMissingProductsInCart()) {
-      return true;
-    }
-    if (this.hasMissingWarehouseOnCart()) {
-      return true;
-    }
-    if (this.hasMissingGpsCoordinate()) {
-      return true;
-    }
-    return false;
-  }
-
-  public getOrderValidationMessage(): string {
-    if (!this.generalTabValidForSave || !this.hasClientSelected()) {
-      return this.tags.get('PED_MSJ_ERROR_NO_CLIENT')
-        ?? this.tags.get('PED_CHECK_CLIENTE')
-        ?? 'Seleccione un cliente para continuar.';
-    }
-    if (!this.hasAddressSelected()) {
-      return this.tags.get('PED_MSJ_ERROR_NO_ADDRESS')
-        ?? 'Seleccione una sucursal para continuar.';
-    }
-    if (this.isNuOrderMissing()) {
-      return this.tags.get('PED_MSJ_ERROR_NO_NU_ORDER')
-        ?? 'Ingrese el número de orden para continuar.';
-    }
-    if (this.isCommentRequiredMissingInContext()) {
-      return this.tags.get('PED_MSJ_ERROR_NO_COMMENT')
-        ?? this.tags.get('DENARIO_CAMPO_OBLIGATORIO')
-        ?? 'Campo obligatorio';
-    }
-    if (this.hasMissingProductsInCart()) {
-      return this.tags.get('PED_MSJ_ERROR_NO_PRODUCTS')
-        ?? 'Debe agregar al menos un producto al pedido.';
-    }
-    if (this.hasMissingWarehouseOnCart()) {
-      return this.tags.get('PED_MSJ_ERROR_NO_WAREHOUSE')
-        ?? 'Seleccione almacén en todos los productos.';
-    }
-    if (this.hasMissingGpsCoordinate()) {
-      return this.tags.get('PED_MSJ_ERROR_NO_GPS')
-        ?? 'Debe activar el GPS y obtener la ubicación antes de continuar.';
-    }
-    return this.tags.get('DENARIO_CAMPO_OBLIGATORIO')
-      ?? 'Complete los campos obligatorios del pedido.';
-  }
-
-  shouldShowProductsSendError(): boolean {
-    if (!this.sendValidationAttempted) {
-      return false;
-    }
-    return this.hasMissingProductsInCart()
-      || this.hasMissingWarehouseOnCart();
   }
 
 
@@ -1870,7 +1631,7 @@ export class PedidosService {
     }
 
 
-    this.notifyOrderEdited();
+    this.setChangesMade(true);
   }
 
   /**
@@ -2215,7 +1976,7 @@ export class PedidosService {
 
     return this.db.saveOrder(this.database, order).then(result => {
       console.log("Pedido #" + order.coOrder + " Guardado!");
-      this.applyOrderPersistSucceededBaseline();
+      this.setChangesMade(false);
       return result;
     });
 
@@ -2225,7 +1986,7 @@ export class PedidosService {
     //Guarda un batch de pedidos, se usa para guardar pedidos que vienen de una sincronizacion
     return this.db.saveOrderBatch(this.database, orders).then(result => {
       console.log(orders.length + " Pedidos Guardados!");
-      this.applyOrderPersistSucceededBaseline();
+      this.setChangesMade(false);
       return result;
     });
 

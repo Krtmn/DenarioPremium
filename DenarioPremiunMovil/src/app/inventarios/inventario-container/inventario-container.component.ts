@@ -49,7 +49,6 @@ export class InventarioContainerComponent implements OnInit {
         this.inventariosLogicService.isEdit = false;
         this.inventariosLogicService.inventarioComp = false;
         this.inventariosLogicService.inventarioList = false;
-        this.inventariosLogicService.inventarioSuggestedList = false;
         this.inventariosLogicService.containerComp = true;
         this.inventariosLogicService.showHeaderButtonsFunction(false);
         this.inventariosLogicService.newClientStock = {} as ClientStocks;
@@ -58,18 +57,9 @@ export class InventarioContainerComponent implements OnInit {
         this.inventariosLogicService.isEdit = false;
         this.inventariosLogicService.inventarioComp = false;
         this.inventariosLogicService.inventarioList = false;
-        this.inventariosLogicService.inventarioSuggestedList = false;
         this.inventariosLogicService.containerComp = true;
         this.inventariosLogicService.showHeaderButtonsFunction(false);
         this.inventariosLogicService.newClientStock = {} as ClientStocks;
-        this.router.navigate(['inventarios']);
-      } else if (this.inventariosLogicService.inventarioSuggestedList) {
-        this.inventariosLogicService.isEdit = false;
-        this.inventariosLogicService.inventarioComp = false;
-        this.inventariosLogicService.inventarioList = false;
-        this.inventariosLogicService.inventarioSuggestedList = false;
-        this.inventariosLogicService.containerComp = true;
-        this.inventariosLogicService.showHeaderButtonsFunction(false);
         this.router.navigate(['inventarios']);
       } else if (this.inventariosLogicService.containerComp) {
         this.inventariosLogicService.isEdit = false;
@@ -120,14 +110,6 @@ export class InventarioContainerComponent implements OnInit {
 
     this.inventariosLogicService.showHeaderButtonsFunction(false);
 
-  }
-
-  openSuggestedOrdersList() {
-    this.inventariosLogicService.inventarioComp = false;
-    this.inventariosLogicService.containerComp = false;
-    this.inventariosLogicService.inventarioList = false;
-    this.inventariosLogicService.inventarioSuggestedList = true;
-    this.inventariosLogicService.showHeaderButtonsFunction(false);
   }
 
 }

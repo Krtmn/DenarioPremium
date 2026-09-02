@@ -16,8 +16,6 @@ import { TextService } from 'src/app/services/text/text.service';
 import { UnitInfo } from 'src/app/modelos/unitInfo';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
-register();
-
 @Component({
     selector: 'product-detail',
     templateUrl: './product-detail.component.html',
@@ -60,7 +58,6 @@ export class ProductDetailComponent implements OnInit, OnChanges {
   selectedIdUnit = 0;
   basePriceLocal = 0;
   basePriceHard: number | null = null;
-  imageZoomOpen = false;
 
   public swiper!: Swiper;
 
@@ -177,29 +174,6 @@ export class ProductDetailComponent implements OnInit, OnChanges {
       return 0;
     }
     return this.productService.resolveDisplayPriceForUnit(this.basePriceHard, this.getSelectedUnit());
-  }
-
-  hasConversionRate(): boolean {
-    const rate = this.pSeleccionado?.conversion;
-    return rate != null && String(rate).trim().length > 0;
-  }
-
-  openImageZoom(): void {
-    this.imageZoomOpen = true;
-  }
-
-  closeImageZoom(): void {
-    this.imageZoomOpen = false;
-  }
-
-  getZoomImages(): string[] {
-    if (this.productImages.length > 0) {
-      return this.productImages;
-    }
-    const fallback = this.pSeleccionado?.coProduct
-      ? this.imageServices.getImgForProduct(this.pSeleccionado.coProduct)
-      : '../../../assets/images/nodisponible.png';
-    return [fallback || '../../../assets/images/nodisponible.png'];
   }
 
   private syncBasePricesFromDetail(): void {

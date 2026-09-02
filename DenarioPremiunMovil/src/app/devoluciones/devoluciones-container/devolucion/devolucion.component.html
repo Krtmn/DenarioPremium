@@ -1,15 +1,12 @@
 <div class="cobroComponent">
   <ion-segment value="default" [(ngModel)]="segment">
-    <ion-segment-button value="default" (click)="onChangeTab(segment)"
-      [class.return-send-error-hint]="shouldShowSendErrorHintOnTab('default')">
+    <ion-segment-button value="default" (click)="onChangeTab(segment)">
       <ion-label>{{this.devolucionTags.get('DEV_GENERAL_TAB')}}</ion-label>
     </ion-segment-button>
-    <ion-segment-button value="productos" [disabled]="!returnValid" (click)="onChangeTab(segment)"
-      [class.return-send-error-hint]="shouldShowSendErrorHintOnTab('productos')">
+    <ion-segment-button value="productos" [disabled]="!returnValid" (click)="onChangeTab(segment)">
       <ion-label>{{this.devolucionTags.get('DEV_PRODUCTOS_TAB')}}</ion-label>
     </ion-segment-button>
-    <ion-segment-button value="adjuntos" [disabled]="!returnValid" (click)="onChangeTab(segment)"
-      [class.return-send-error-hint]="shouldShowSendErrorHintOnTab('adjuntos')">
+    <ion-segment-button value="adjuntos" [disabled]="!returnValid" (click)="onChangeTab(segment)">
       <ion-label>{{this.devolucionTags.get('DEV_ADJUNTOS_TAB')}}</ion-label>
     </ion-segment-button>
   </ion-segment>

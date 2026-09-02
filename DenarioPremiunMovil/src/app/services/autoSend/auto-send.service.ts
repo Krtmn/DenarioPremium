@@ -314,8 +314,6 @@ export class AutoSendService implements OnInit {
         return this.dispatchReturnTransaction(pt.coTransaction);
       case "clientStock":
         return this.dispatchClientStockTransaction(pt.coTransaction);
-      case "suggestedOrderLink":
-        return this.dispatchSuggestedOrderLinkTransaction(pt.coTransaction);
       default:
         console.warn("[AutoSendService] Tipo de pendiente desconocido:", pt.type);
         return true;
@@ -583,24 +581,13 @@ export class AutoSendService implements OnInit {
       clientStock: {} as ClientStocks,
     };
     try {
-      const db = this.dbService.getDatabase();
       const clientStock = await this.inventariosLogicService.getClientStock(
-        db,
+        this.dbService.getDatabase(),
         coTransaction,
       );
       console.log(clientStock);
       request.clientStock = clientStock;
       request.clientStock.daClientStock = request.clientStock.daClientStock.replace("T", " ");
-      const snapshot = await this.inventariosLogicService.getSuggestedOrderSnapshotByClientStock(
-        db,
-        coTransaction,
-      );
-      if (snapshot && this.inventariosLogicService.shouldAttachSuggestedOrderOnStockSend(coTransaction)) {
-        request.clientStockSuggestedOrder = this.inventariosLogicService.prepareSuggestedOrderSnapshotForUpload(
-          snapshot,
-          clientStock.stDelivery == DELIVERY_STATUS_TO_SEND,
-        );
-      }
       if (clientStock.stDelivery == DELIVERY_STATUS_TO_SEND) {
         request.clientStock.idClientStock = null as any;
         request.clientStock.daClientStock = request.clientStock.daClientStock.replace("T", " ");
@@ -614,17 +601,6 @@ export class AutoSendService implements OnInit {
       console.log(e);
       return false;
     }
-  }
-
-  private async dispatchSuggestedOrderLinkTransaction(coClientStock: string): Promise<boolean> {
-    const ok = await this.inventariosLogicService.dispatchSuggestedOrderLinkSync(
-      this.dbService.getDatabase(),
-      coClientStock,
-    );
-    if (ok) {
-      await this.deletePendingTransaction(coClientStock, 'suggestedOrderLink');
-    }
-    return ok;
   }
 
   async sendTransaction(request: any, type: string, coTransaction: string): Promise<boolean> {
@@ -748,7 +724,7 @@ export class AutoSendService implements OnInit {
         this.updateTransaction(result.coTransaction, result.returnId, result.type);
         return;
       case 'clientStock':
-        await this.updateTransaction(result.coTransaction, result.clientStockId, result.type, result);
+        await this.updateTransaction(result.coTransaction, result.clientStockId, result.type);
         return;
       case 'collect':
         this.updateTransaction(result.coTransaction, result.collectionId, result.type);
@@ -978,7 +954,7 @@ export class AutoSendService implements OnInit {
       );
   }
 
-  async updateTransaction(coTransaction: string, idTransaction: number, type: string, serverResult?: Record<string, unknown>) {
+  async updateTransaction(coTransaction: string, idTransaction: number, type: string) {
     const updatePendingTransactionsAttachments = 'UPDATE pending_transactions_attachments SET id_transaction = ? WHERE co_transaction = ?';
     await this.dbService.getDatabase().executeSql(updatePendingTransactionsAttachments, [idTransaction, coTransaction]);
 
@@ -1023,26 +999,6 @@ export class AutoSendService implements OnInit {
           'UPDATE client_stocks SET id_order = ? WHERE co_order = ?',
           [idTransaction, coTransaction],
         ).catch(e => console.log('UPDATE client_stocks.id_order vÃ­nculo', e));
-        try {
-          const orderLink = await db.executeSql(
-            'SELECT co_client_stock FROM orders WHERE co_order = ? LIMIT 1',
-            [coTransaction],
-          );
-          if (orderLink.rows.length > 0) {
-            const coClientStock = orderLink.rows.item(0).co_client_stock as string | null;
-            if (coClientStock) {
-              await this.inventariosLogicService.markSuggestedOrderLinked(
-                db,
-                coClientStock,
-                coTransaction,
-                idTransaction,
-                true,
-              );
-            }
-          }
-        } catch (e) {
-          console.log('[autoSend order] markSuggestedOrderLinked', e);
-        }
         await this.adjuntoService.sendPhotos(db, idTransaction, 'pedidos', coTransaction);
         break;
       }
@@ -1076,14 +1032,6 @@ export class AutoSendService implements OnInit {
           'UPDATE orders SET id_client_stock = ? WHERE co_client_stock = ?',
           [idTransaction, coTransaction],
         );
-        if (serverResult) {
-          await this.inventariosLogicService.applyServerSuggestedOrderIdsFromResponse(
-            db,
-            coTransaction,
-            serverResult,
-          );
-        }
-        this.inventariosLogicService.clearSuggestedOrderSendFlags(coTransaction);
         console.log('UPDATE EXITOSO clientStock', coTransaction);
         break;
       }

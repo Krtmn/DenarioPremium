@@ -2,14 +2,6 @@
     --border-color: #e60c0c!important;
   }
 
-.deposit-send-error-hint {
-  ion-select,
-  ion-input {
-    --border-color: var(--ion-color-danger, #eb445a);
-    --highlight-color: var(--ion-color-danger, #eb445a);
-  }
-}
-
   $colorVerde: #59b02d;
   $colorVerdeRegistrar: #7dc60f;
   $colorAmarillo: #daab19;

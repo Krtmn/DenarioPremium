@@ -11,7 +11,6 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { formatClientForList } from 'src/app/utils/client-display.util';
 import { buildModuleSearchPlaceholder } from 'src/app/utils/search-placeholder.util';
-import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
 
 @Component({
   selector: 'app-pedidos-lista',
@@ -22,7 +21,6 @@ import { SynchronizationDBService } from 'src/app/services/synchronization/synch
 export class PedidosListaComponent implements OnInit {
   orderServ = inject(PedidosService);
   geoLoc = inject(GeolocationService);
-  dbServ = inject(SynchronizationDBService);
   DELIVERY_STATUS_SAVED = DELIVERY_STATUS_SAVED; //para usarlo en el html hay que hacer esto.
   public alertDelete = false;
   public headerDelete = '';
@@ -54,7 +52,6 @@ export class PedidosListaComponent implements OnInit {
   }
 
   async ngOnInit() {
-    await this.orderServ.ensureModuleReady(this.dbServ.getDatabase());
     this.searchPlaceholder = buildModuleSearchPlaceholder(this.getTag('PED_NOMBRE_MODULO'));
     if (this.orderServ.userMustActivateGPS) {
       this.orderServ.coordenadas = "";

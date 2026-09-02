@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ModalController } from '@ionic/angular';
@@ -13,11 +12,6 @@ import { PotentialClientDatabaseServicesService } from './potentialClient/potent
 import { MessageService } from '../messageService/message.service';
 import { EnterpriseService } from '../enterprise/enterprise.service';
 import { ServicesService } from '../services.service';
-import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
-import {
-  CLIENT_POTENTIAL_STATUS_SENT,
-  CLIENT_POTENTIAL_STATUS_TO_SEND,
-} from 'src/app/utils/appConstants';
 
 describe('ClientLogicService', () => {
   let service: ClientLogicService;
@@ -36,13 +30,6 @@ describe('ClientLogicService', () => {
         { provide: MessageService, useValue: {} },
         { provide: EnterpriseService, useValue: {} },
         { provide: ServicesService, useValue: {} },
-        {
-          provide: AdjuntoService,
-          useValue: {
-            weightLimitExceeded: false,
-            hasItems: () => true,
-          },
-        },
         { provide: ModalController, useValue: { create: () => Promise.resolve({}) } },
         {
           provide: GlobalConfigService,
@@ -157,168 +144,6 @@ describe('ClientLogicService', () => {
       expect(service.isDueSoon(yesterday)).toBeTrue();
       expect(service.isDueSoon(tomorrow)).toBeFalse();
       expect(service.isDueSoon(null)).toBeFalse();
-    });
-  });
-
-  describe('POT-SAVE-001 / POT-SEND-001 Clientes potenciales', () => {
-    function buildValidPotentialForm(): FormGroup {
-      return new FormGroup({
-        idEnterprise: new FormControl(1, [Validators.required]),
-        naClient: new FormControl('Cliente QA', [Validators.required]),
-        nuRif: new FormControl('J-00000021-1', [Validators.required]),
-        txAddress: new FormControl('Dir 1', [Validators.required]),
-        txAddressDispatch: new FormControl('Dir 2', [Validators.required]),
-        txClient: new FormControl('Obs', [Validators.required]),
-        naResponsible: new FormControl('Resp', [Validators.required]),
-        emClient: new FormControl('qa@test.com', [Validators.required, Validators.email]),
-        nuPhone: new FormControl('04121234021', [Validators.required]),
-      });
-    }
-
-    beforeEach(() => {
-      service.clientTags.set('CLI_POT_MSJ_ERROR_NO_ENTERPRISE', 'Seleccione empresa');
-      service.clientTags.set('CLI_POT_MSJ_ERROR_INCOMPLETE_FORM', 'Complete campos');
-      service.clientTags.set('CLI_NEW_POT_MENSAJE_ERROR_NOMBRE_CLIENTE', 'Nombre obligatorio');
-      service.potentialClient = { coordenada: '10,20' } as any;
-      service.empresaSeleccionada = { idEnterprise: 1 } as any;
-      service.saveSendPotentialClient = true;
-      service.userMustActivateGPS = false;
-    });
-
-    it('POT-SAVE-001: Guardar ON con dirty aunque falte nombre; error al validar', () => {
-      service.registerPotentialClientForm(new FormGroup({
-        naClient: new FormControl('', [Validators.required]),
-      }));
-      service.onPotentialClientGeneralValid(true);
-      service.resetPotentialClientExitBaseline();
-
-      service.updatePotentialClientSaveButtonAvailability();
-      expect(service.cannotSavePotentialClient).toBeFalse();
-      expect(service.hasPotentialClientSaveErrors()).toBeTrue();
-      expect(service.getPotentialClientSaveValidationMessage()).toContain('Nombre obligatorio');
-
-      service.potentialClientForm?.get('naClient')?.setValue('Cliente QA');
-      expect(service.hasPotentialClientSaveErrors()).toBeFalse();
-
-      service.applyPotentialClientPersistSucceededBaseline();
-      expect(service.cannotSavePotentialClient).toBeTrue();
-
-      service.markPotentialClientDirty();
-      service.updatePotentialClientSaveButtonAvailability();
-      expect(service.cannotSavePotentialClient).toBeFalse();
-    });
-
-    it('POT-SAVE-001: Guardar no exige formulario completo', () => {
-      service.registerPotentialClientForm(new FormGroup({
-        idEnterprise: new FormControl(1, [Validators.required]),
-        naClient: new FormControl('Solo nombre', [Validators.required]),
-        nuRif: new FormControl('', [Validators.required]),
-        naResponsible: new FormControl('', [Validators.required]),
-      }));
-      service.onPotentialClientGeneralValid(true);
-      service.resetPotentialClientExitBaseline();
-
-      expect(service.hasPotentialClientSaveErrors()).toBeFalse();
-      expect(service.hasPotentialClientFieldErrors()).toBeTrue();
-      service.updatePotentialClientSaveButtonAvailability();
-      expect(service.cannotSavePotentialClient).toBeFalse();
-    });
-
-    it('POT-SEND-001: Enviar ON con General aunque form incompleto; no se apaga tras fallo', () => {
-      service.registerPotentialClientForm(new FormGroup({
-        idEnterprise: new FormControl(1, [Validators.required]),
-        naClient: new FormControl('', [Validators.required]),
-      }));
-      service.onPotentialClientGeneralValid(true);
-      service.sendBlockedByFields = true;
-
-      service.updatePotentialClientSendButtonAvailability();
-      expect(service.cannotSendPotentialClient).toBeFalse();
-      expect(service.hasPotentialClientFieldErrors()).toBeTrue();
-      expect(service.getPotentialClientValidationMessage()).toContain('Nombre obligatorio');
-    });
-
-    it('POT-SEND-001: al completar campos se limpia sendBlockedByFields', () => {
-      const form = buildValidPotentialForm();
-      form.get('naResponsible')?.setValue('');
-      service.registerPotentialClientForm(form);
-      service.onPotentialClientGeneralValid(true);
-      service.sendBlockedByFields = true;
-
-      expect(service.hasPotentialClientFieldErrors()).toBeTrue();
-      service.refreshPotentialClientSendBlockedState();
-      expect(service.sendBlockedByFields).toBeTrue();
-
-      form.get('naResponsible')?.setValue('Resp');
-      service.notifyPotentialClientEdited();
-      expect(service.sendBlockedByFields).toBeFalse();
-      expect(service.cannotSendPotentialClient).toBeFalse();
-    });
-    it('POT-SEND-001: naResponsible vacío bloquea validación al click', () => {
-      const form = buildValidPotentialForm();
-      form.get('naResponsible')?.setValue('');
-      service.registerPotentialClientForm(form);
-      service.onPotentialClientGeneralValid(true);
-
-      expect(service.hasPotentialClientFieldErrors()).toBeTrue();
-      expect(service.getPotentialClientValidationMessage()).toContain('Complete campos');
-    });
-
-    it('POT-SEND-001: signatureClient no exige adjuntos (solo muestra firma)', () => {
-      spyOn(service['globalConfig'], 'get').and.callFake((key: string) => {
-        if (key === 'signatureClient') {
-          return 'true';
-        }
-        return '';
-      });
-      service.registerPotentialClientForm(buildValidPotentialForm());
-      service.onPotentialClientGeneralValid(true);
-      spyOn(service.adjuntoService, 'hasItems').and.returnValue(false);
-
-      expect(service.hasPotentialClientFieldErrors()).toBeFalse();
-    });
-
-    it('POT-SEND-001: estatus por enviar queda read-only', () => {
-      service.registerPotentialClientForm(new FormGroup({
-        naClient: new FormControl('Cliente QA', [Validators.required]),
-      }));
-      service.potentialClient.stPotentialClient = CLIENT_POTENTIAL_STATUS_TO_SEND;
-      service.onPotentialClientGeneralValid(true);
-
-      service.updatePotentialClientSaveButtonAvailability();
-      service.updatePotentialClientSendButtonAvailability();
-      expect(service.cannotSavePotentialClient).toBeTrue();
-      expect(service.cannotSendPotentialClient).toBeTrue();
-    });
-
-    it('POT-SAVE-002: reabrir guardado deja Guardar OFF hasta editar', () => {
-      service.registerPotentialClientForm(new FormGroup({
-        naClient: new FormControl('Cliente QA', [Validators.required]),
-      }));
-      service.onPotentialClientGeneralValid(true);
-      service.markPotentialClientOpenedFromPersistedCopy();
-
-      expect(service.cannotSavePotentialClient).toBeTrue();
-      expect(service.cannotSendPotentialClient).toBeFalse();
-
-      service.markPotentialClientDirty();
-      service.updatePotentialClientSaveButtonAvailability();
-      expect(service.cannotSavePotentialClient).toBeFalse();
-    });
-  });
-
-  describe('getClientTag', () => {
-    it('resuelve DENARIO_DOC_VIGENTE desde clientTagsDenario si falta en clientTags', () => {
-      service.clientTagsDenario.set('DENARIO_DOC_VIGENTE', 'Documento vigente');
-
-      expect(service.getClientTag('DENARIO_DOC_VIGENTE')).toBe('Documento vigente');
-    });
-
-    it('prioriza clientTags sobre clientTagsDenario', () => {
-      service.clientTags.set('DENARIO_DOC_VIGENTE', 'Vigente lista');
-      service.clientTagsDenario.set('DENARIO_DOC_VIGENTE', 'Documento vigente');
-
-      expect(service.getClientTag('DENARIO_DOC_VIGENTE')).toBe('Vigente lista');
     });
   });
 });

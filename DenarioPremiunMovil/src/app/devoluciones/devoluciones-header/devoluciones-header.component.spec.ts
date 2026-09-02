@@ -1,22 +1,22 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { IonicModule } from '@ionic/angular';
 
 import { DevolucionesHeaderComponent } from './devoluciones-header.component';
-import {
-  configureIonicComponentTestingModule,
-  createShallowComponentFixture,
-} from 'src/app/testing/ionic-component-spec.helpers';
 
 describe('DevolucionesHeaderComponent', () => {
   let component: DevolucionesHeaderComponent;
   let fixture: ComponentFixture<DevolucionesHeaderComponent>;
 
   beforeEach(waitForAsync(() => {
-    configureIonicComponentTestingModule(DevolucionesHeaderComponent).compileComponents();
-  }));
+    TestBed.configureTestingModule({
+      declarations: [ DevolucionesHeaderComponent ],
+      imports: [IonicModule.forRoot()]
+    }).compileComponents();
 
-  beforeEach(() => {
-    ({ fixture, component } = createShallowComponentFixture(DevolucionesHeaderComponent));
-  });
+    fixture = TestBed.createComponent(DevolucionesHeaderComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  }));
 
   it('should create', () => {
     expect(component).toBeTruthy();

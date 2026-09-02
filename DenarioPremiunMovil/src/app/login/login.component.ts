@@ -22,7 +22,6 @@ import { ScreenOrientation, OrientationType } from '@capawesome/capacitor-screen
 import { Keyboard } from '@capacitor/keyboard';
 import { from } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
-import { AutoSendService } from '../services/autoSend/auto-send.service';
 
 
 @Component({
@@ -39,7 +38,6 @@ export class LoginComponent implements OnInit {
   private globalConfig = inject(GlobalConfigService);
   private services = inject(ServicesService);
   private message = inject(MessageService);
-  private autoSend = inject(AutoSendService);
 
   public database!: SQLiteObject;
   public db!: SQLite;
@@ -66,7 +64,7 @@ export class LoginComponent implements OnInit {
   public showFooter: boolean = true; // <-- NUEVA PROPIEDAD
   public currentYear: number = new Date().getFullYear();
 
-  private static readonly FALLBACK_VERSION = '6.6.21.4';
+  private static readonly FALLBACK_VERSION = '6.6.21';
 
   async ngOnInit() {
     this.versionApp = await this.resolveAppVersion();
@@ -272,7 +270,6 @@ export class LoginComponent implements OnInit {
               localStorage.setItem("coUser", result.data.coUser);
               this.user = result.data;
               localStorage.setItem("user", JSON.stringify(this.user));
-              this.autoSend.resetSessionBusinessRejectAlerts();
               this.synchronization.initDb(this.user, conexion);
               break;
             case '104':

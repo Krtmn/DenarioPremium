@@ -65,8 +65,6 @@ export interface TablesLastUpdate {
   codePhoneNumberTableLastUpdate: string,
   unitPriceListTableLastUpdate: string,
   collectRetentionTableLastUpdate: string,
-  clientStockSuggestedOrdersTableLastUpdate: string,
-  clientStockSuggestedOrderDetailsTableLastUpdate: string,
   page: number
 
 }

@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { Directory, Filesystem } from '@capacitor/filesystem';
-import { GalleryPhoto, Photo } from '@capacitor/camera';
+import { Directory, Filesystem, ReadFileOptions } from '@capacitor/filesystem';
+import { GalleryPhoto } from '@capacitor/camera';
 import { Foto } from '../modelos/foto';
 import { PendingTransaction } from '../modelos/tables/pendingTransactions';
 import { TransactionImage } from '../modelos/tables/transactionImage';
@@ -64,10 +64,6 @@ export class AdjuntoService {
 
   private uploadQueue: Promise<void> = Promise.resolve();
   private isUploadingAttachments = false;
-
-  /** Perfil balanceado captura cámara (nativo downsampling antes de JS). */
-  readonly cameraCaptureQuality = 75;
-  readonly cameraCaptureMaxWidth = 1280;
 
   constructor() { }
 
@@ -158,74 +154,32 @@ export class AdjuntoService {
     return ((Math.ceil(file.length / 4)) * 3) / 1000000
   }
 
-  private buildFotoFromBase64(
-    tipo: string,
-    base64: string,
-    naImage = '',
-    previewSrc = '',
-  ): Foto {
-    const muyPesado = this.getFileWeight(base64) > this.imageWeightLimit;
-    if (muyPesado) {
-      this.weightLimitExceeded = true;
-    }
-    return new Foto(tipo, base64, naImage, muyPesado, previewSrc);
-  }
-
-  async addPhotoFromCamera(photo: Photo): Promise<Foto | null> {
-    try {
-      let base64Data: string;
-      let tipo = 'jpeg';
-      const previewSrc = photo.webPath ?? '';
-
-      if (photo.path) {
-        const file = await Filesystem.readFile({ path: photo.path });
-        base64Data = file.data as string;
-        const ext = photo.path.split('.').pop()?.toLowerCase();
-        if (ext) {
-          tipo = ext;
-        }
-      } else if (photo.webPath) {
-        const response = await fetch(photo.webPath);
-        const blob = await response.blob();
-        base64Data = await this.blobToBase64(blob);
-        tipo = blob.type.replace('image/', '') || 'jpeg';
-      } else {
-        return null;
-      }
-
-      const foto = this.buildFotoFromBase64(tipo, base64Data, '', previewSrc);
-      this.fotos.push(foto);
-      return foto;
-    } catch (error) {
-      console.error('[AdjuntoService] addPhotoFromCamera', error);
-      return null;
-    }
-  }
-
-  private blobToBase64(blob: Blob): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        const commaIndex = result.indexOf(',');
-        resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
-      };
-      reader.onerror = () => reject(reader.error ?? new Error('blobToBase64 failed'));
-      reader.readAsDataURL(blob);
-    });
-  }
-
   async addImg(img: GalleryPhoto) {
-    if (!img.path) {
-      return;
+    var options: ReadFileOptions = {
+      path: img.path ? img.path : ''
+    }
+    var webpath = img.webPath.split('.')
+
+    if (img.path && img.path != '') {
+      var file = await Filesystem.readFile(options);
+      //console.log('PESO DE IMG: '+ this.getFileWeight(file.data as string) + " MB");
+      var peso = this.getFileWeight(file.data as string);
+      var muyPesado = peso > this.imageWeightLimit
+      if (muyPesado) {
+        this.weightLimitExceeded = true;
+      } else {
+        //this.weightLimitExceeded = false;
+      }
+      var foto = new Foto(
+        webpath[webpath.length - 1],
+        file.data as string,
+        "",
+        muyPesado
+      )
+      this.fotos.push(foto);
+
     }
 
-    const file = await Filesystem.readFile({ path: img.path });
-    const webpath = img.webPath.split('.');
-    const tipo = webpath[webpath.length - 1] || 'jpeg';
-    const previewSrc = img.webPath ?? '';
-    const foto = this.buildFotoFromBase64(tipo, file.data as string, '', previewSrc);
-    this.fotos.push(foto);
   }
 
   async savePhotos(dbServ: SQLiteObject, coTransaction: string, naTransaction: string) {

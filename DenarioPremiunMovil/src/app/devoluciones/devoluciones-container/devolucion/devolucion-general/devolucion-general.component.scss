@@ -2,13 +2,6 @@
     height: 40px;
 }
 
-.return-send-error-hint {
-  ion-input {
-    --border-color: var(--ion-color-danger, #eb445a);
-    --highlight-color: var(--ion-color-danger, #eb445a);
-  }
-}
-
 ion-select::part(label),
 ion-select::part(text) {
   font-size: 16px!important;

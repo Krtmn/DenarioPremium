@@ -116,17 +116,20 @@ export class CalculatorComponent implements OnInit {
 
   private updateFabVisibility(): void {
     try {
-      const url = (this.router?.url ?? '').toLowerCase();
-      const isCobrosRoute = url.includes('/cobros');
+      const url = (this.router && this.router.url) ? this.router.url.toLowerCase() : '';
+      const denyTokens = ['login', 'synchronization'];
+      const isDenied = denyTokens.some(t => url.includes(t));
 
       const conv = this.globalConfig.get('conversionCalculator');
       const convEnabled = (typeof conv === 'boolean')
         ? conv
         : String(conv).toLowerCase() === 'true';
 
-      this.showFab = convEnabled && isCobrosRoute;
+      console.log('[Calculator] updateFabVisibility', { url, conv, convEnabled, isDenied });
 
-      if (!convEnabled || !isCobrosRoute) {
+      this.showFab = convEnabled && !isDenied;
+
+      if (!convEnabled) {
         this.showCalculator = false;
       }
     } catch (e) {

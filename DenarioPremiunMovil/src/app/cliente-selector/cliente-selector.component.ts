@@ -116,7 +116,12 @@ export class ClienteSelectorComponent implements OnInit {
   }
 
   getTag(tagName: string) {
-    return this.service.getTag(tagName);
+    var tag = this.tags.get(tagName);
+    if (tag == undefined) {
+      console.log("Error al buscar tag " + tagName);
+      tag = '';
+    }
+    return tag;
   }
 
   formatNum(num: number) {
@@ -147,7 +152,6 @@ export class ClienteSelectorComponent implements OnInit {
     this.searchText = '';
     this.scrollDisable = false;
     this.clientes = this.service.clientes;
-    void this.service.ensureTagsLoaded(true);
     if (this.clientes.length == 0) {
       this.updateClientList(this.service.idEnterprise);
     }

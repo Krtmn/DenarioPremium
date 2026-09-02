@@ -26,8 +26,10 @@ export class DepositoCobrosComponent implements OnInit {
 
 
   selectCobro(cobroDetails: CollectDeposit, index: number) {
+    this.depositService.markDepositDirty();
     if (cobroDetails.isSelected) {
       cobroDetails.inDepositCollect = true;
+      this.depositService.onDepositValidToSend(true);
       this.depositService.deposit.depositCollect.push({
         idDepositCollect: 0,
         coDepositCollect: this.dateServ.generateCO(0),
@@ -53,15 +55,12 @@ export class DepositoCobrosComponent implements OnInit {
       if (idx !== -1) {
         this.depositService.deposit.depositCollect.splice(idx, 1);
       }
+      if (this.depositService.deposit.depositCollect.length === 0) {
+        this.depositService.onDepositValidToSend(false);
+      }
     }
 
     this.depositService.totalizarDeposito();
-    this.depositService.notifyDepositEdited();
 
-  }
-
-  shouldShowCollectSendError(): boolean {
-    return this.depositService.sendValidationAttempted
-      && !this.depositService.hasAtLeastOneDepositCollectRow();
   }
 }

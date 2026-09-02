@@ -18,11 +18,11 @@
       <div class="saldo-legend">
         <span class="legend-item">
           <span class="legend-dot legend-blue" aria-hidden="true"></span>
-          {{this.clientLogic.getClientTag('DENARIO_DOC_VIGENTE')}}
+          {{this.clientLogic.clientTags.get('DENARIO_DOC_VIGENTE')}}
         </span>
         <span class="legend-item">
           <span class="legend-dot legend-red" aria-hidden="true"></span>
-          {{this.clientLogic.getClientTag('DENARIO_DOC_VENCIDO')}}
+          {{this.clientLogic.clientTags.get('DENARIO_DOC_VENCIDO')}}
         </span>
       </div>
       }
@@ -74,25 +74,25 @@
         @if(!this.clientLogic.esTransportista){
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO")}}
-            {{localCurrency}}:</ion-col>
-          <ion-col>{{formatNumber(this.creditoLocal)}} </ion-col>
+            {{client.coCurrency}}:</ion-col>
+          <ion-col>{{formatNumber(client.nuCreditLimit)}} </ion-col>
         </ion-row>
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO_DISPONIBLE")}}
-            {{localCurrency}}:</ion-col>
-          <ion-col>{{formatNumber(this.availableCreditLocal)}}</ion-col>
+            {{client.coCurrency}}:</ion-col>
+          <ion-col>{{formatNumber(this.getAvailableCredit())}}</ion-col>
         </ion-row>
         }
         @if(this.clientLogic.showConversion && !this.clientLogic.esTransportista){
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO")}}
-            {{hardCurrency}}:</ion-col>
-          <ion-col>{{formatNumber(this.creditoFuerte)}}</ion-col>
+            {{oppositeCoCurrency(client.coCurrency)}}:</ion-col>
+          <ion-col>{{this.nuCreditLimitConversion}}</ion-col>
         </ion-row>
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO_DISPONIBLE")}}
-            {{hardCurrency}}:</ion-col>
-          <ion-col>{{formatNumber(this.availableCreditFuerte)}}</ion-col>
+            {{oppositeCoCurrency(client.coCurrency)}}:</ion-col>
+          <ion-col>{{this.availableCreditConversion}}</ion-col>
         </ion-row>
         }
         @if(!this.clientLogic.esTransportista){
@@ -167,17 +167,17 @@
       <div class="saldo-legend">
         <button class="legend-item legend-button" id="legendBlueHint" type="button">
           <span class="legend-dot legend-blue" aria-hidden="true"></span>
-          {{this.clientLogic.getClientTag('DENARIO_VIGENTE')}}
+          {{this.clientLogic.clientTags.get('DENARIO_VIGENTE')}}
           <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
         </button>
         <button class="legend-item legend-button" id="legendRedHint" type="button">
           <span class="legend-dot legend-red" aria-hidden="true"></span>
-          {{this.clientLogic.getClientTag('DENARIO_VENCIDO')}}
+          {{this.clientLogic.clientTags.get('DENARIO_VENCIDO')}}
           <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
         </button>
         <button class="legend-item legend-button" id="legendBlackHint" type="button">
           <span class="legend-dot legend-black" aria-hidden="true"></span>
-          {{this.clientLogic.getClientTag('DENARIO_FAVOR')}}
+          {{this.clientLogic.clientTags.get('DENARIO_FAVOR')}}
           <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
         </button>
       </div>
@@ -186,7 +186,7 @@
       <ion-popover trigger="legendBlueHint" triggerAction="click">
         <ng-template>
           <div class="legend-popover">
-            {{this.clientLogic.getClientTag('DENARIO_HINT_VIGENTE')}}
+            {{this.clientLogic.clientTags.get('DENARIO_HINT_VIGENTE')}}
           </div>
         </ng-template>
       </ion-popover>
@@ -194,7 +194,7 @@
       <ion-popover trigger="legendRedHint" triggerAction="click">
         <ng-template>
           <div class="legend-popover">
-            {{this.clientLogic.getClientTag('DENARIO_HINT_VENCIDO')}}
+            {{this.clientLogic.clientTags.get('DENARIO_HINT_VENCIDO')}}
           </div>
         </ng-template>
       </ion-popover>
@@ -202,7 +202,7 @@
       <ion-popover trigger="legendBlackHint" triggerAction="click">
         <ng-template>
           <div class="legend-popover">
-            {{this.clientLogic.getClientTag('DENARIO_HINT_FAVOR')}}
+            {{this.clientLogic.clientTags.get('DENARIO_HINT_FAVOR')}}
           </div>
         </ng-template>
       </ion-popover>

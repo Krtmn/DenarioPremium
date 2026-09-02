@@ -1,15 +1,13 @@
 import { TestBed } from '@angular/core/testing';
-import { FilesystemWeb } from '@capacitor/filesystem/dist/esm/web';
+import { Directory, Filesystem } from '@capacitor/filesystem';
 
 import { AdjuntoService } from './adjunto.service';
 import { ServicesService } from '../services/services.service';
-import { GlobalConfigService } from '../services/globalConfig/global-config.service';
 
 describe('AdjuntoService', () => {
   let service: AdjuntoService;
   let servicesServ: jasmine.SpyObj<ServicesService>;
   let dbServ: { executeSql: jasmine.Spy };
-  let readFileSpy: jasmine.Spy;
 
   beforeEach(() => {
     servicesServ = jasmine.createSpyObj('ServicesService', ['sendImage', 'getTags']);
@@ -19,18 +17,9 @@ describe('AdjuntoService', () => {
       executeSql: jasmine.createSpy('executeSql').and.resolveTo({ rows: { length: 0, item: () => ({}) } }),
     };
 
-    TestBed.configureTestingModule({
-      providers: [
-        AdjuntoService,
-        { provide: ServicesService, useValue: servicesServ },
-        {
-          provide: GlobalConfigService,
-          useValue: { get: () => '' },
-        },
-      ],
-    });
+    TestBed.configureTestingModule({});
     service = TestBed.inject(AdjuntoService);
-    readFileSpy = spyOn(FilesystemWeb.prototype, 'readFile').and.resolveTo({ data: 'base64data' });
+    (service as any).servicesServ = servicesServ;
     localStorage.setItem('connected', 'true');
   });
 
@@ -60,6 +49,7 @@ describe('AdjuntoService', () => {
   });
 
   it('upload flow should not delete pending row when sendImage fails', async () => {
+    spyOn(Filesystem, 'readFile').and.resolveTo({ data: 'base64data' } as any);
     servicesServ.sendImage.and.rejectWith(new Error('upload failed'));
     const deleteSpy = spyOn(service, 'deletePendingTransactionAttachmentsByKey').and.resolveTo(true);
     const recordSpy = spyOn(service as any, 'recordUploadAttemptFailure').and.resolveTo();
@@ -91,6 +81,7 @@ describe('AdjuntoService', () => {
   });
 
   it('upload flow should delete pending row only after successful sendImage', async () => {
+    spyOn(Filesystem, 'readFile').and.resolveTo({ data: 'base64data' } as any);
     servicesServ.sendImage.and.resolveTo({ errorCode: '000' });
     const deleteSpy = spyOn(service, 'deletePendingTransactionAttachmentsByKey').and.resolveTo(true);
 
@@ -124,37 +115,5 @@ describe('AdjuntoService', () => {
 
     const id = await service.resolveServerTransactionId(dbServ as any, 'COB-001', 'cobros');
     expect(id).toBe(42);
-  });
-
-  it('addPhotoFromCamera crea Foto desde path de cámara', async () => {
-    readFileSpy.and.resolveTo({ data: 'cameraBase64' });
-    service.fotos = [];
-    service.imageWeightLimit = 30;
-
-    const foto = await service.addPhotoFromCamera({
-      path: '/cache/photo.jpg',
-      webPath: 'capacitor://localhost/photo.jpg',
-    } as any);
-
-    expect(foto).not.toBeNull();
-    expect(foto?.data).toBe('cameraBase64');
-    expect(foto?.previewSrc).toBe('capacitor://localhost/photo.jpg');
-    expect(service.fotos.length).toBe(1);
-    expect(service.weightLimitExceeded).toBeFalse();
-  });
-
-  it('addPhotoFromCamera marca weightLimitExceeded si excede límite', async () => {
-    const hugePayload = 'A'.repeat(80_000_000);
-    readFileSpy.and.resolveTo({ data: hugePayload });
-    service.fotos = [];
-    service.imageWeightLimit = 1;
-
-    const foto = await service.addPhotoFromCamera({
-      path: '/cache/huge.jpg',
-      webPath: 'capacitor://localhost/huge.jpg',
-    } as any);
-
-    expect(foto?.weightLimitExceeded).toBeTrue();
-    expect(service.weightLimitExceeded).toBeTrue();
   });
 });

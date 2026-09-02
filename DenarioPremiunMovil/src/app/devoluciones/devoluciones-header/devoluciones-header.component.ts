@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, Input, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { SQLiteObject } from '@awesome-cordova-plugins/sqlite';
 import { Platform } from '@ionic/angular';
@@ -22,6 +22,7 @@ import { DELIVERY_STATUS_SAVED, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/ap
 })
 export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
 
+
   returnLogic = inject(ReturnLogicService);
   returnDatabaseService = inject(ReturnDatabaseService);
   messageService = inject(MessageService);
@@ -29,8 +30,10 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
   synchronizationServices = inject(SynchronizationDBService);
   autoSend = inject(AutoSendService);
   router = inject(Router);
+
+  adjuntoServ = inject(AdjuntoService);
+
   adjuntoService = inject(AdjuntoService);
-  private cdr = inject(ChangeDetectorRef);
 
   @Input()
   headerTags = new Map<string, string>([]);
@@ -48,12 +51,10 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
   subscriptionAttachmentChanged: any;
   subscriptionAttachmentWeightExceeded: any;
   alertMessageOpen: Boolean = false;
-  alertMessageOpenSave: Boolean = false;
-  /** Alerta local de validación (mensaje exacto). */
-  alertMessageOpenValidation = false;
-  validationFailureMessage = '';
-  alertButtonsValidation: any[] = [];
   saveOrExitOpen = false;
+  saveAndExitBtn!: string;
+  exitBtn!: string;
+  cancelBtn!: string;
   textAlertButtonCancel: String = '';
   textAlertButtonConfirm: String = '';
   textSave: String = '';
@@ -67,12 +68,11 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit() {
-    this.textAlertButtonCancel = this.returnLogic.tags.get('DENARIO_BOTON_CANCELAR')! ? this.returnLogic.tags.get('DENARIO_BOTON_CANCELAR')! : 'Cancelar';
-    this.textAlertButtonConfirm = this.returnLogic.tags.get('DENARIO_BOTON_ACEPTAR')! ? this.returnLogic.tags.get('DENARIO_BOTON_ACEPTAR')! : 'Aceptar';
-    this.textSave = this.returnLogic.tags.get('DENARIO_BOTON_SALIR_GUARDAR')! ? this.returnLogic.tags.get('DENARIO_BOTON_SALIR_GUARDAR')! : 'Guardar y salir';
-    this.textExit = this.returnLogic.tags.get('DENARIO_BOTON_SALIR')! ? this.returnLogic.tags.get('DENARIO_BOTON_SALIR')! : 'Salir sin guardar';
+    this.textAlertButtonCancel = this.returnLogic.tags.get('DENARIO_BOTON_CANCELAR')! ? this.returnLogic.tags.get('DENARIO_BOTON_CANCELAR')! : "Cancelar";
+    this.textAlertButtonConfirm = this.returnLogic.tags.get('DENARIO_BOTON_ACEPTAR')! ? this.returnLogic.tags.get('DENARIO_BOTON_ACEPTAR')! : "Aceptar";
+    this.textSave = this.returnLogic.tags.get('DENARIO_BOTON_SALIR_GUARDAR')! ? this.returnLogic.tags.get('DENARIO_BOTON_SALIR_GUARDAR')! : "Guardar y salir";
+    this.textExit = this.returnLogic.tags.get('DENARIO_BOTON_SALIR')! ? this.returnLogic.tags.get('DENARIO_BOTON_SALIR')! : "Salir sin guardar";
 
-    this.returnLogic.resetReturnValidationUxFlags();
     this.returnLogic.setChange(false, false);
     this.subscriberShow = this.returnLogic.showButtons.subscribe((data: Boolean) => {
       this.showHeaderButtos = data;
@@ -86,13 +86,14 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
       this.cannotSendReturn = !validToSend;
     });
 
-    this.subscriptionAttachmentWeightExceeded = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
-      this.returnLogic.updateSaveButtonAvailability();
-      this.returnLogic.updateSendButtonAvailability();
+    this.subscriptionAttachmentWeightExceeded = this.adjuntoServ.AttachmentWeightExceeded.subscribe(() => {
+      this.disableSendButton = true;
+      this.cannotSendReturn = true;
     });
 
     this.subscriptionAttachmentChanged = this.adjuntoService.AttachmentChanged.subscribe(() => {
-      this.returnLogic.notifyReturnEdited();
+      //this.returnLogic.setChange(true, true); //dupe
+      this.returnLogic.updateSendButtonState();
     });
 
     this.alertButtons = [
@@ -106,21 +107,12 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
       },
     ];
 
-    this.alertButtonsValidation = [
-      {
-        text: this.textAlertButtonConfirm,
-        role: 'confirm',
-      },
-    ];
-
     this.buttonsSalvar = [
       {
         text: this.textSave,
         role: 'save',
         handler: () => {
-          if (!this.validateReturnBeforeSave()) {
-            return;
-          }
+          console.log('save and exit');
           this.saveAndExit(this.synchronizationServices.getDatabase());
         },
       },
@@ -128,6 +120,7 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
         text: this.textExit,
         role: 'exit',
         handler: () => {
+          console.log('exit w/o save');
           this.returnLogic.setChange(false, false);
           this.returnLogic.showBackRoute('devoluciones');
         },
@@ -151,179 +144,82 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
     this.subscriptionAttachmentChanged.unsubscribe();
   }
 
+
   onBackClicked() {
-    if (this.returnLogic.isReturnReadOnlyForEdit() || this.returnLogic.returnSent) {
-      this.saveOrExitOpen = false;
+    if (this.returnLogic.returnChanged && this.returnLogic.newReturn.stDelivery == 3) {
+      this.saveOrExitOpen = true;
+    } else {
       this.returnLogic.showBackRoute('devoluciones');
       this.messageService.hideLoading();
-      return;
     }
-
-    if (this.returnLogic.shouldPromptReturnExitSaveOrDiscard()) {
-      this.buttonsSalvar[0].text = this.returnLogic.tags.get('DENARIO_BOTON_SALIR_GUARDAR')
-        ?? this.textSave;
-      this.buttonsSalvar[1].text = this.returnLogic.tags.get('DENARIO_BOTON_SALIR')
-        ?? this.textExit;
-      this.buttonsSalvar[2].text = this.returnLogic.tags.get('DENARIO_BOTON_CANCELAR')
-        ?? this.textAlertButtonCancel;
-      this.saveOrExitOpen = true;
-      return;
-    }
-
-    this.saveOrExitOpen = false;
-    this.returnLogic.showBackRoute('devoluciones');
-    this.messageService.hideLoading();
   }
 
   backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(10, () => {
+    //console.log('backButton was called!');
     this.onBackClicked();
   });
 
-  private notifyReturnValidationFailure(options: {
-    blockSend: boolean;
-    message: string;
-    focusTab?: 'default' | 'productos' | 'adjuntos';
-  }): void {
-    if (options.blockSend) {
-      this.returnLogic.sendBlockedByFields = true;
-      this.returnLogic.updateSendButtonAvailability();
-    }
-    this.returnLogic.requestSendValidationTabFocus(options.focusTab);
-    this.showReturnValidationAlert(options.message);
-  }
-
-  private showReturnValidationAlert(rawMessage: string): void {
-    const message = (rawMessage ?? '').toString().trim()
-      || 'Complete los campos obligatorios antes de continuar.';
-    this.validationFailureMessage = message;
-    this.alertMessageOpenValidation = true;
-    this.cdr.detectChanges();
-  }
-
-  setResultValidation(): void {
-    this.alertMessageOpenValidation = false;
-  }
-
-  /** Guardar / Guardar y salir: solo General (DEV-SAVE-001). */
-  private validateReturnBeforeSave(): boolean {
-    if (!this.returnLogic.hasReturnSaveErrors()) {
-      return true;
-    }
-    this.notifyReturnValidationFailure({
-      blockSend: false,
-      message: this.returnLogic.getReturnSaveValidationMessage(),
-      focusTab: 'default',
-    });
-    return false;
-  }
-
-  /** Enviar: validación completa + mensaje + salto de pestaña. */
-  private validateReturnBeforeSend(): boolean {
-    this.returnLogic.sendValidationAttempted = true;
-
-    if (this.returnLogic.hasReturnFieldErrors()) {
-      this.notifyReturnValidationFailure({
-        blockSend: true,
-        message: this.returnLogic.getReturnValidationMessage(),
-      });
-      return false;
-    }
-
-    this.returnLogic.sendBlockedByFields = false;
-    this.returnLogic.updateSendButtonAvailability();
-    return true;
-  }
-
-  buttonSaveReturn(): void {
-    if (!this.validateReturnBeforeSave()) {
-      return;
-    }
-    this.header = this.headerTags.get('DENARIO_DEV')!;
-    this.mensaje =
-      this.returnLogic.tags.get('DEV_MSJ_SAVE_QUESTION')
-      ?? '¿Desea guardar la devolución?';
-    this.alertMessageOpenSave = true;
-  }
-
-  buttonSendReturn(): void {
-    if (!this.validateReturnBeforeSend()) {
-      return;
-    }
-    this.header = this.headerTags.get('DENARIO_DEV')!;
-    this.mensaje = this.headerTags.get('DENARIO_DEV_CONFIRM_SEND')!;
-    this.alertMessageOpen = true;
-  }
-
-  setResultSave(ev: any): void {
-    if (ev.detail.role === 'confirm') {
-      this.alertMessageOpenSave = false;
-      void this.persistReturnSaved();
-    } else {
-      this.alertMessageOpenSave = false;
-    }
-  }
-
-  private persistReturnSaved(): Promise<void> {
+  saveSendNewReturn(send: Boolean) {
     this.returnLogic.newReturn.details = this.returnLogic.productList;
-    return this.messageService.showLoading().then(() => {
-      this.returnLogic.newReturn.stDelivery = DELIVERY_STATUS_SAVED;
-      this.returnLogic.newReturn.hasAttachments = this.adjuntoService.hasItems();
-      this.returnLogic.newReturn.nuAttachments = this.adjuntoService.getNuAttachment();
-      return this.returnDatabaseService.saveReturn(
-        this.synchronizationServices.getDatabase(),
-        this.returnLogic.newReturn,
-      ).then(async () => {
-        await this.returnDatabaseService.deleteReturnDetails(
-          this.synchronizationServices.getDatabase(),
-          this.returnLogic.newReturn.coReturn,
-        );
-        await this.returnDatabaseService.saveReturnDetails(
-          this.synchronizationServices.getDatabase(),
-          this.returnLogic.newReturn.details,
-        );
-        await this.adjuntoService.savePhotos(
-          this.synchronizationServices.getDatabase(),
-          this.returnLogic.newReturn.coReturn,
-          'devoluciones',
-        );
-        this.returnLogic.applyReturnPersistSucceededBaseline();
-        this.returnLogic.resetSendValidationUx();
-        this.returnLogic.setChange(false, true);
-        this.messageAlert = new MessageAlert(
-          this.headerTags.get('DENARIO_DEV')!,
-          this.headerTags.get('DENARIO_DEV_TO_SAVE')!,
-        );
-        this.messageService.alertModal(this.messageAlert);
-        this.messageService.hideLoading();
-      }).catch(err => {
-        console.log('saveReturn: ' + err);
-        this.messageService.hideLoading();
+    if (send) { // se quiere enviar la devolucion
+      this.header = this.headerTags.get('DENARIO_DEV')!;
+      this.mensaje = this.headerTags.get('DENARIO_DEV_CONFIRM_SEND')!;
+      this.alertMessageOpen = true;
+    } else {
+      // SOLO SE VA A GUARDAR LA DEVOLUCION, NO SERA ENVIADA
+      this.messageService.showLoading().then(() => {
+        console.log('daReturn ' + this.returnLogic.newReturn.daReturn);
+        this.returnLogic.newReturn.stDelivery = 3;
+        this.returnLogic.newReturn.hasAttachments = this.adjuntoService.hasItems();
+        this.returnLogic.newReturn.nuAttachments = this.adjuntoService.getNuAttachment();
+        this.returnDatabaseService.saveReturn(this.synchronizationServices.getDatabase(), this.returnLogic.newReturn).then(async () => {
+          //aqui voy a llamar a insertar los detalles
+          this.returnDatabaseService.saveReturnDetails(this.synchronizationServices.getDatabase(), this.returnLogic.newReturn.details).then(() => {
+            this.messageAlert = new MessageAlert(
+              this.headerTags.get('DENARIO_DEV')!,
+              this.headerTags.get('DENARIO_DEV_TO_SAVE')!,
+            );
+            this.messageService.alertModal(this.messageAlert);
+          });
+
+          //guardamos adjuntos
+          await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.returnLogic.newReturn.coReturn, "devoluciones");
+          this.messageService.hideLoading();
+          this.returnLogic.setChange(false, true);
+        }).catch(err => console.log('saveReturn: ' + err));
       });
-    });
+
+    }
   }
 
   sendReturn(dbServ: SQLiteObject) {
-    const pendingTransaction = {} as PendingTransaction;
+    let pendingTransaction = {} as PendingTransaction;
     this.returnLogic.newReturn.stDelivery = DELIVERY_STATUS_TO_SEND;
     this.returnLogic.newReturn.hasAttachments = this.adjuntoService.hasItems();
     this.returnLogic.newReturn.nuAttachments = this.adjuntoService.getNuAttachment();
     this.messageService.showLoading().then(() => {
       this.returnDatabaseService.saveReturn(dbServ, this.returnLogic.newReturn).then(async () => {
-        await this.adjuntoService.savePhotos(
-          this.synchronizationServices.getDatabase(),
-          this.returnLogic.newReturn.coReturn,
-          'devoluciones',
-        );
+
+        //guardamos y enviamos adjuntos
+        await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.returnLogic.newReturn.coReturn,
+          "devoluciones").then(() => {
+
+          });
+
+        //aqui voy a llamar a insertar los detalles
         this.returnDatabaseService.saveReturnDetails(dbServ, this.returnLogic.newReturn.details).then(() => {
+
+          // COMO SE VA A ENVIAR, DESPUES DE GUARDAR LA DEVOLUCION SE VA
           pendingTransaction.coTransaction = this.returnLogic.newReturn.coReturn;
           pendingTransaction.idTransaction = this.returnLogic.newReturn.idReturn;
-          pendingTransaction.type = 'return';
-          if (localStorage.getItem('connected') == 'true') {
+          pendingTransaction.type = "return";
+          if (localStorage.getItem("connected") == "true") {
             this.messageAlert = new MessageAlert(
               this.headerTags.get('DENARIO_DEV')!,
               this.headerTags.get('DENARIO_DEV_TO_SEND')!,
             );
             this.messageService.alertModal(this.messageAlert);
+
           } else {
             this.messageAlert = new MessageAlert(
               this.headerTags.get('DENARIO_DEV')!,
@@ -335,43 +231,48 @@ export class DevolucionesHeaderComponent implements OnInit, OnDestroy {
           this.services.insertPendingTransaction(this.synchronizationServices.getDatabase(), pendingTransaction).then(result => {
             if (result) {
               void this.autoSend.runPendingQueue();
-              this.returnLogic.applyReturnPersistSucceededBaseline();
-              this.returnLogic.resetSendValidationUx();
               this.returnLogic.returnChanged = false;
               this.onBackClicked();
             }
           });
+
+          this.returnLogic.onReturnValidToSave(false);
+          this.returnLogic.onReturnValidToSend(false);
         });
-      }).catch(err => console.log('saveSendNewReturn: ' + err))
-        .finally(() => this.messageService.hideLoading());
+      }).catch(err => console.log('saveSendNewReturn: ' + err));
     });
+
   }
 
   saveAndExit(dbServ: SQLiteObject) {
-    this.returnLogic.newReturn.details = this.returnLogic.productList;
     this.messageService.showLoading().then(() => {
+      this.returnLogic.newReturn.details = this.returnLogic.productList;
+      // SOLO SE VA A GUARDAR LA DEVOLUCION, NO SERA ENVIADA
+      console.log('daReturn ' + this.returnLogic.newReturn.daReturn);
       this.returnLogic.newReturn.stDelivery = DELIVERY_STATUS_SAVED;
       this.returnLogic.newReturn.hasAttachments = this.adjuntoService.hasItems();
       this.returnLogic.newReturn.nuAttachments = this.adjuntoService.getNuAttachment();
       this.returnDatabaseService.saveReturn(dbServ, this.returnLogic.newReturn).then(async () => {
-        await this.adjuntoService.savePhotos(
-          this.synchronizationServices.getDatabase(),
-          this.returnLogic.newReturn.coReturn,
-          'devoluciones',
-        );
+        //guardo adjuntos
+        await this.adjuntoService.savePhotos(this.synchronizationServices.getDatabase(), this.returnLogic.newReturn.coReturn,
+          "devoluciones");
+
+        //primero debo eliminar detalles si hay
         this.returnDatabaseService.deleteReturnDetails(dbServ, this.returnLogic.newReturn.coReturn).then();
+        // inserto los detalles finales
         this.returnDatabaseService.saveReturnDetails(dbServ, this.returnLogic.newReturn.details).then();
         this.returnLogic.setChange(false, false);
         this.returnLogic.showBackRoute('devoluciones');
         this.messageService.hideLoading();
       }).catch(err => console.log('saveReturn: ' + err));
     });
+
   }
 
   setResult(ev: any) {
+    console.log('Apretó:' + ev.detail.role);
     if (ev.detail.role === 'confirm') {
       this.alertMessageOpen = false;
-      this.returnLogic.newReturn.details = this.returnLogic.productList;
       this.sendReturn(this.synchronizationServices.getDatabase());
     } else {
       this.alertMessageOpen = false;

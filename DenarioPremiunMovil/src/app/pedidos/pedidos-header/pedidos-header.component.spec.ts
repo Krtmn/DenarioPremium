@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { IonicModule } from '@ionic/angular';
 
 import { PedidosHeaderComponent } from './pedidos-header.component';
-import { PedidosService } from '../pedidos.service';
 
 describe('PedidosHeaderComponent', () => {
   let component: PedidosHeaderComponent;
@@ -11,18 +10,8 @@ describe('PedidosHeaderComponent', () => {
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [ PedidosHeaderComponent ],
-      imports: [IonicModule.forRoot()],
-      providers: [
-        {
-          provide: PedidosService,
-          useValue: {
-            getTag: (tag: string) => tag,
-          },
-        },
-      ],
-    })
-      .overrideComponent(PedidosHeaderComponent, { set: { template: '' } })
-      .compileComponents();
+      imports: [IonicModule.forRoot()]
+    }).compileComponents();
 
     fixture = TestBed.createComponent(PedidosHeaderComponent);
     component = fixture.componentInstance;

@@ -1,8 +1,6 @@
 export class PlanCuotaEmpresaView {
 
     static PlanCuotaEmpresaViewJson(obj: PlanCuotaEmpresaView){
-        const ventaPedidoMes = obj['ventaPedidoMes'] ?? obj['ventaRealMes'];
-        const ventaFacturadaMes = obj['ventaFacturadaMes'];
         return new PlanCuotaEmpresaView(
             obj['id'],
             obj['idPresupuesto'],
@@ -13,9 +11,7 @@ export class PlanCuotaEmpresaView {
             obj['coUnit'],
             obj['naUnit'],
             obj['cuotaMes'],
-            obj['ventaRealMes'],
-            ventaPedidoMes,
-            ventaFacturadaMes
+            obj['ventaRealMes']
         )
     }
     
@@ -29,8 +25,6 @@ export class PlanCuotaEmpresaView {
         public coUnit: String,
         public naUnit: String,
         public cuotaMes: number,
-        public ventaRealMes: number,
-        public ventaPedidoMes?: number,
-        public ventaFacturadaMes?: number
+        public ventaRealMes: number
     ) {}
 }

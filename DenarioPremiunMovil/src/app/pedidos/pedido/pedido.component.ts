@@ -36,7 +36,6 @@ import { AutoSendService } from 'src/app/services/autoSend/auto-send.service';
 import { Router } from '@angular/router';
 import { ServicesService } from 'src/app/services/services.service';
 import { SynchronizationDBService } from 'src/app/services/synchronization/synchronization-db.service';
-import { InventariosLogicService } from 'src/app/services/inventarios/inventarios-logic.service';
 import { OrderUtil } from 'src/app/modelos/orderUtil';
 import { UnitInfo } from 'src/app/modelos/unitInfo';
 import { SelectedUnitPricingRow } from '../pedidos.service';
@@ -79,7 +78,6 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
   public message = inject(MessageService);
   public router = inject(Router);
   public dbServ = inject(SynchronizationDBService);
-  public inventariosLogicService = inject(InventariosLogicService);
   public services = inject(ServicesService);
   public autoSend = inject(AutoSendService);
   private pdfCreator = inject(PdfCreatorService);
@@ -146,15 +144,6 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
   commentRedLabel = false;
   public modalInfoClienteOpen: boolean = false;
   saveOrExitOpen = false;
-  alertMessageOpenSave = false;
-  mensajeSaveQuestion = '';
-  headerSave = '';
-  buttonsConfirmSave = [
-    { text: '', role: 'cancel' },
-    { text: '', role: 'confirm' },
-  ];
-  subscriberOrderSave: Subscription | undefined;
-  subscriberOrderSend: Subscription | undefined;
   parteDecimal = 2;
   public DELIVERY_STATUS_NEW = DELIVERY_STATUS_NEW;
   public DELIVERY_STATUS_SAVED = DELIVERY_STATUS_SAVED;
@@ -194,12 +183,11 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
   });
 
   attachmentChangedSubscription: Subscription = this.adjuntoService.AttachmentChanged.subscribe(() => {
-    this.notifyOrderEdited();
+    this.orderServ.setChangesMade(true);
   });
 
   AttachLimitExceededSubscription: Subscription = this.adjuntoService.AttachmentWeightExceeded.subscribe(() => {
-    this.orderServ.updateSaveButtonAvailability();
-    this.orderServ.updateSendButtonAvailability();
+    this.orderServ.setChangesMade(false);
   });
 
   constructor(
@@ -209,22 +197,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
   }
 
   async ngOnInit() {
-    await this.orderServ.ensureModuleReady(this.dbServ.getDatabase());
-    this.orderServ.resetOrderValidationUxFlags();
-    this.mensajeSaveQuestion = this.orderServ.getTag('PED_MSJ_SAVE_QUESTION')
-      || '¿Desea guardar el pedido?';
-    this.headerSave = this.orderServ.getTag('DENARIO_HEADER_ALERTA') || 'Alerta';
-    this.buttonsConfirmSave = [
-      { text: this.orderServ.getTag('DENARIO_BOTON_CANCELAR') || 'Cancelar', role: 'cancel' },
-      { text: this.orderServ.getTag('DENARIO_BOTON_ACEPTAR') || 'Aceptar', role: 'confirm' },
-    ];
 
-    this.subscriberOrderSave = this.orderServ.orderValidToSave.subscribe((valid: boolean) => {
-      this.orderServ.disableSaveButton = !valid;
-    });
-    this.subscriberOrderSend = this.orderServ.orderValidToSend.subscribe((valid: boolean) => {
-      this.orderServ.disableSendButton = !valid;
-    });
 
     this.productsTabTags = this.orderServ.ProdSelecttags;
     this.adjuntoService.setup(this.dbServ.getDatabase(), this.orderServ.signatureOrder, false, COLOR_VERDE);
@@ -316,8 +289,6 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
       } else {
         this.reset();
         this.orderServ.coOrder = this.dateServ.generateCO(0);
-        this.orderServ.resetOrderExitBaseline();
-        this.syncOrderEditContext();
       }
       //fin setup monedas
 
@@ -346,8 +317,6 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
     this.backButtonSubscription.unsubscribe();
     this.attachmentChangedSubscription.unsubscribe();
     this.AttachLimitExceededSubscription.unsubscribe();
-    this.subscriberOrderSave?.unsubscribe();
-    this.subscriberOrderSend?.unsubscribe();
   }
 
   reset() {
@@ -530,9 +499,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
       this.checkComment();
       this.segmentLock();
       if (this.orderServ.pedidoModificable) {
-        this.refreshOrderGeneralValid();
-        this.orderServ.markOrderOpenedFromPersistedCopy();
-        this.syncOrderEditContext();
+        this.orderServ.setChangesMade(true);
       }
     });
     //fin openOrder()
@@ -580,85 +547,10 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
     this.commentRedLabel = needsComment;
 
     this.lockSegments = needsNuOrder || needsClient || needsAddress || needsComment;
-    this.refreshOrderGeneralValid();
-  }
-
-  syncOrderEditContext(): void {
-    this.orderServ.setOrderEditContext({
-      idClient: this.orderServ.cliente?.idClient ?? null,
-      idAddressClient: this.direccionCliente?.idAddress ?? null,
-      nuPurchase: this.nuPurchase ?? '',
-      txComment: this.txComment ?? '',
-      pedidoModificable: this.orderServ.pedidoModificable,
-    });
-  }
-
-  refreshOrderGeneralValid(): void {
-    const needsClient = this.orderServ.cliente?.idClient == null;
-    const needsAddress = this.direccionCliente == null;
-    let needsNuOrder = false;
-    if (this.orderServ.validateNuOrder) {
-      needsNuOrder = this.nuPurchase == null || this.nuPurchase.trim().length === 0;
-    }
-    const needsComment = this.isCommentRequiredMissing();
-    const valid = !needsClient && !needsAddress && !needsNuOrder && !needsComment;
-    this.orderServ.onOrderGeneralValid(valid);
-    this.syncOrderEditContext();
-  }
-
-  notifyOrderEdited(): void {
-    this.syncOrderEditContext();
-    this.orderServ.notifyOrderEdited();
-  }
-
-  private validateOrderBeforeAction(blockSendOnError: boolean): boolean {
-    this.syncOrderCommentFromInput();
-    this.syncOrderEditContext();
-    this.orderServ.sendValidationAttempted = true;
-    if (this.orderServ.hasOrderFieldErrors()) {
-      this.commentRedLabel = this.isCommentRequiredMissing();
-      this.segmentLock();
-      if (blockSendOnError) {
-        this.orderServ.sendBlockedByFields = true;
-        this.orderServ.updateSendButtonAvailability();
-      }
-      this.message.transaccionMsjModalNB(this.orderServ.getOrderValidationMessage());
-      return false;
-    }
-    this.orderServ.sendBlockedByFields = false;
-    return true;
-  }
-
-  shouldShowClientSendError(): boolean {
-    return this.orderServ.sendValidationAttempted
-      && Number(this.orderServ.cliente?.idClient ?? 0) <= 0;
-  }
-
-  shouldShowAddressSendError(): boolean {
-    return this.orderServ.sendValidationAttempted
-      && this.hasClient
-      && Number(this.direccionCliente?.idAddress ?? 0) <= 0;
-  }
-
-  shouldShowNuOrderSendError(): boolean {
-    return this.orderServ.sendValidationAttempted
-      && this.orderServ.validateNuOrder
-      && !(this.nuPurchase ?? '').trim();
-  }
-
-  shouldShowCommentSendError(): boolean {
-    return this.orderServ.sendValidationAttempted
-      && this.isCommentRequiredMissing();
-  }
-
-  shouldShowProductsSendError(): boolean {
-    return this.orderServ.shouldShowProductsSendError();
   }
 
   goBack() {
-    if (this.orderServ.pedidoModificable
-      && this.orderServ.hasUnsavedOrderChanges()
-      && this.orderServ.hasItems()) {
+    if (this.orderServ.pedidoModificable && this.orderServ.changesMade && this.orderServ.hasItems()) {
       //this.location.back(); //CAMBIAR
       this.saveOrExitOpen = true;
     } else {
@@ -667,57 +559,42 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
   }
 
   saveButton() {
-    if (this.orderServ.disableSaveButton) {
-      return;
-    }
-    if (!this.validateOrderBeforeAction(false)) {
-      return;
-    }
-    this.alertMessageOpenSave = true;
-  }
-
-  setResultSave(event: CustomEvent): void {
-    this.alertMessageOpenSave = false;
-    if (event.detail?.role !== 'confirm') {
-      return;
-    }
-    this.persistOrderSaved();
-  }
-
-  private persistOrderSaved(): void {
-    this.message.showLoading().then(() => {
-      this.saveOrder(DELIVERY_STATUS_SAVED).then(() => {
-        this.orderServ.applyOrderPersistSucceededBaseline();
-        this.orderServ.resetOrderValidationUx();
+    if (this.orderServ.changesMade) {
+      this.syncOrderCommentFromInput();
+      if (this.isCommentRequiredMissing()) {
+        this.commentRedLabel = true;
+        this.segmentLock();
+        this.orderServ.setChangesMade(true);
+        this.message.transaccionMsjModalNB(
+          this.orderServ.getTag('DENARIO_CAMPO_OBLIGATORIO') || 'Campo obligatorio'
+        );
+        return;
+      }
+      this.saveOrder(3).then(s => {
+        this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_AVISO_GUARDADO")); //TAG THIS
         this.syncOrderCommentFromInput();
-        this.syncOrderEditContext();
-        this.message.hideLoading();
-        this.message.transaccionMsjModalNB(this.orderServ.getTag('PED_AVISO_GUARDADO'));
-      }).catch(() => {
-        this.message.hideLoading();
+        this.orderServ.setChangesMade(true);
       });
-    });
+
+    }
   }
 
-  async confirmSend() {
+  confirmSend() {
+    this.syncOrderCommentFromInput();
+    if (this.isCommentRequiredMissing()) {
+      this.commentRedLabel = true;
+      this.segmentLock();
+      this.orderServ.setChangesMade(true);
+      this.message.transaccionMsjModalNB(
+        this.orderServ.getTag('DENARIO_CAMPO_OBLIGATORIO') || 'Campo obligatorio'
+      );
+      return;
+    }
     if (!canCreateOrderForClient(this.orderServ.cliente)) {
       this.message.transaccionMsjModalNB(MSG_CLIENT_SUSPENDED_ORDER);
       return;
     }
-    if (this.orderServ.userMustActivateGPS
-      && (!this.orderServ.coordenadas || this.orderServ.coordenadas.length <= 0)) {
-      await this.geoServ.getCurrentPosition().then(coords => {
-        if (coords.length > 0) {
-          this.orderServ.coordenadas = coords;
-        }
-      });
-    }
-    if (this.orderServ.userMustActivateGPS
-      && (!this.orderServ.coordenadas || this.orderServ.coordenadas.length <= 0)) {
-      this.message.transaccionMsjModalNB(this.orderServ.getOrderValidationMessage());
-      return;
-    }
-    if (this.orderServ.cliente.idClient != null) {
+    if (this.orderServ.cliente.idClient != null && this.orderServ.carrito.length > 0) {
       this.orderServ.disableSendButton = true;
       this.message.showLoading().then(() => {
         this.saveOrder(DELIVERY_STATUS_TO_SEND).then(async (order) => {
@@ -732,9 +609,6 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
 
           if (this.orderServ.coClientStockAEnviar.length > 1) {
             await this.orderServ.marcarInventarioSugeridoStPorEnviar();
-            this.inventariosLogicService.setForceAttachSuggestedOrderOnStockSend(
-              this.orderServ.coClientStockAEnviar,
-            );
             transactions.push({
               coTransaction: this.orderServ.coClientStockAEnviar,
               idTransaction: this.orderServ.idClientStockAEnviar,
@@ -778,15 +652,6 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
     await this.orderServ.deleteOrder(this.orderServ.coOrder); //borramos el pedido si este existe para evitar conflictos en BD
     await this.orderServ.saveOrder(order);
     await this.adjuntoService.savePhotos(this.dbServ.getDatabase(), order.coOrder, 'pedidos'); //guardamos adjuntos
-    if (order.coClientStock) {
-      await this.inventariosLogicService.markSuggestedOrderLinked(
-        this.dbServ.getDatabase(),
-        order.coClientStock,
-        order.coOrder,
-        order.idOrder,
-        stDelivery === DELIVERY_STATUS_TO_SEND,
-      );
-    }
     this.orderServ.getListaPedidos(); //actualizamos lista de pedidos
     return order;
   }
@@ -805,14 +670,21 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
     // guardamos luego de abrir para que tenga todos los cambios
     this.saveOrder(DELIVERY_STATUS_SAVED).then(() => {
       this.message.transaccionMsjModalNB(this.orderServ.getTag("PED_AVISO_COPIADO"));
-      this.orderServ.applyOrderPersistSucceededBaseline();
-      this.notifyOrderEdited();
+      this.orderServ.setChangesMade(true);
     });
 
   }
 
   sendButton() {
-    if (!this.validateOrderBeforeAction(true)) {
+    console.log("Send Button");
+    this.syncOrderCommentFromInput();
+    if (this.isCommentRequiredMissing()) {
+      this.commentRedLabel = true;
+      this.segmentLock();
+      this.orderServ.setChangesMade(true);
+      this.message.transaccionMsjModalNB(
+        this.orderServ.getTag('DENARIO_CAMPO_OBLIGATORIO') || 'Campo obligatorio'
+      );
       return;
     }
     let buttonsConfirmSend = [
@@ -1016,14 +888,14 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
 
   }
   onPricelistSelect() {
-    this.notifyOrderEdited();
+    this.orderServ.setChangesMade(true);
     if (this.orderServ.hasItems()) {
       this.confirmPriceListChange(this.orderServ.listaSeleccionada);
     } else {
       this.listaAnterior = this.orderServ.listaSeleccionada;
       this.orderServ.listaPriceListFiltrada = this.orderServ.listaPricelist.filter((pl) => pl.idList == this.orderServ.listaSeleccionada?.idList)
       this.orderServ.productListToOrderUtil(this.productService.productList);
-      this.notifyOrderEdited();
+      this.orderServ.setChangesMade(true);
     }
   }
 
@@ -1038,8 +910,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
         role: 'cancel',
         handler: () => {
           console.log('Alert canceled');
-          this.orderServ.updateSaveButtonAvailability();
-          this.orderServ.updateSendButtonAvailability();
+          this.orderServ.setChangesMade(false);
           this.orderServ.listaSeleccionada = this.listaAnterior;
         },
       },
@@ -1118,7 +989,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
     } else {
       this.commitPriceListSelection(newList);
       this.orderServ.productListToOrderUtil(this.productService.productList);
-      this.notifyOrderEdited();
+      this.orderServ.setChangesMade(true);
     }
   }
 
@@ -1147,7 +1018,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
     this.changeDetector.detectChanges();
     // ^^ hack estupido para que se actualice correctamente el selector
     console.log("cambiada moneda");
-    this.notifyOrderEdited();
+    this.orderServ.setChangesMade(true);
     if (this.orderServ.hasItems()) {
       //si el pedido ya tiene cosas, hay que resetear
       let buttonsRevertCurrency = [
@@ -1156,8 +1027,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           role: 'cancel',
           handler: () => {
             console.log('Alert canceled');
-            this.orderServ.updateSaveButtonAvailability();
-            this.orderServ.updateSendButtonAvailability();
+            this.orderServ.setChangesMade(false);
             /*this.orderServ.monedaSeleccionada =
                this.currencyServ.getOppositeCurrency(this.orderServ.monedaSeleccionada.coCurrency);*/
           },
@@ -1212,7 +1082,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
   }
 
   onChange() {
-    this.notifyOrderEdited();
+    this.orderServ.setChangesMade(true);
   }
 
   onAddressChange() {
@@ -1259,8 +1129,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           role: 'cancel',
           handler: () => {
             console.log('Alert canceled');
-            this.orderServ.updateSaveButtonAvailability();
-            this.orderServ.updateSendButtonAvailability();
+            this.orderServ.setChangesMade(false);
             this.tipoOrden = this.tipoOrdenAnterior;
 
           },
@@ -1304,8 +1173,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
             text: this.orderServ.getTag("DENARIO_BOTON_CANCELAR"),
             role: 'cancel',
             handler: () => {
-              this.orderServ.updateSaveButtonAvailability();
-            this.orderServ.updateSendButtonAvailability();
+              this.orderServ.setChangesMade(false);
               this.tipoOrden = this.tipoOrdenAnterior;
             },
           },
@@ -1458,8 +1326,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           role: 'cancel',
           handler: () => {
             console.log('Alert canceled');
-            this.orderServ.updateSaveButtonAvailability();
-            this.orderServ.updateSendButtonAvailability();
+            this.orderServ.setChangesMade(false);
             this.empresaSeleccionada = this.orderServ.empresaSeleccionada
 
           },
@@ -1832,8 +1699,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           const unitStrings: string[] = [];
 
           unitList.forEach(unit => {
-            // Solo unidades pedidas/bonificadas (quUnit es factor de empaque, no cantidad).
-            if (unit.quAmount > 0 || (Number(unit.quBonified) || 0) > 0) {
+            if (unit.quAmount > 0 || unit.quUnit > 0) {
               const qty = Number(unit.quAmount ?? 0);
               const bonus = Number(unit.quBonified ?? 0);
               if (showBonifiedColumn) {
@@ -2067,12 +1933,9 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
       role: 'save',
       handler: () => {
         console.log('save and exit');
-        if (!this.validateOrderBeforeAction(false)) {
-          return;
-        }
-        this.saveOrder(DELIVERY_STATUS_SAVED).then(() => {
-          this.router.navigate(['pedidos']);
-        });
+        this.saveOrder(DELIVERY_STATUS_SAVED);
+        this.router.navigate(['pedidos']);
+
       },
     },
     {
@@ -2221,7 +2084,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
   }
 
   onPaymentCurrencySelect(): void {
-    this.notifyOrderEdited();
+    this.orderServ.setChangesMade(true);
   }
   getNaPaymentCondition(coPaymentCondition: string) {
     let payCond = this.orderServ.listaPaymentCondition.find((pc) => pc.coPaymentCondition == coPaymentCondition);
@@ -2268,8 +2131,7 @@ export class PedidoComponent implements OnInit, ViewWillEnter {
           role: 'cancel',
           handler: () => {
             this.paymentCondition = this.paymentConditionAnterior;
-            this.orderServ.updateSaveButtonAvailability();
-            this.orderServ.updateSendButtonAvailability();
+            this.orderServ.setChangesMade(false);
           },
         },
         {

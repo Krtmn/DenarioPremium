@@ -1,5 +1,4 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { Component, OnInit, inject, Input } from '@angular/core';
 import { InventariosLogicService } from 'src/app/services/inventarios/inventarios-logic.service';
 
 
@@ -9,15 +8,13 @@ import { InventariosLogicService } from 'src/app/services/inventarios/inventario
     styleUrls: ['./inventario.component.scss'],
     standalone: false
 })
-export class InventarioComponent implements OnInit, OnDestroy {
+export class InventarioComponent implements OnInit {
 
   public inventariosLogicService = inject(InventariosLogicService);
 
   public segment: string = 'default';
   public previousSegment: string = 'default';
   public stockValid: Boolean = false;
-  private focusTabSub?: Subscription;
-  private stockValidSub?: Subscription;
 
   constructor() { }
 
@@ -28,27 +25,6 @@ export class InventarioComponent implements OnInit, OnDestroy {
       this.stockValid = true;
       this.segment = "inventario";
     }
-
-    this.focusTabSub = this.inventariosLogicService.focusSendValidationTab.subscribe((tab) => {
-      this.applySendValidationTabFocus(tab);
-    });
-  }
-
-  /** Salta a la pestaña del primer error tras fallo de Enviar/Guardar (INV-SEND-001). */
-  private applySendValidationTabFocus(
-    tab: 'default' | 'inventario' | 'actividades' | 'adjuntos',
-  ): void {
-    if (tab === 'inventario' && !this.inventariosLogicService.hideTab) {
-      tab = 'actividades';
-    }
-    this.onChangeTab(tab);
-  }
-
-  shouldShowSendErrorHintOnTab(
-    tab: 'default' | 'inventario' | 'actividades' | 'adjuntos',
-  ): boolean {
-    return this.inventariosLogicService.sendValidationAttempted
-      && this.inventariosLogicService.resolveSendValidationFocusTab() === tab;
   }
 
   onChangeTab(tab: string) {
@@ -60,14 +36,9 @@ export class InventarioComponent implements OnInit, OnDestroy {
   }
 
   stockValidFunc() {
-    this.stockValidSub = this.inventariosLogicService.stockValid.subscribe((data: Boolean) => {
+    this.inventariosLogicService.stockValid.subscribe((data: Boolean) => {
       this.stockValid = data;
     });
-  }
-
-  ngOnDestroy() {
-    this.focusTabSub?.unsubscribe();
-    this.stockValidSub?.unsubscribe();
   }
 
 }

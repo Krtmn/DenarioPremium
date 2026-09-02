@@ -1,22 +1,22 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { IonicModule } from '@ionic/angular';
 
 import { DepositoGeneralComponent } from './deposito-general.component';
-import {
-  configureIonicComponentTestingModule,
-  createShallowComponentFixture,
-} from 'src/app/testing/ionic-component-spec.helpers';
 
 describe('DepositoGeneralComponent', () => {
   let component: DepositoGeneralComponent;
   let fixture: ComponentFixture<DepositoGeneralComponent>;
 
   beforeEach(waitForAsync(() => {
-    configureIonicComponentTestingModule(DepositoGeneralComponent).compileComponents();
-  }));
+    TestBed.configureTestingModule({
+      declarations: [ DepositoGeneralComponent ],
+      imports: [IonicModule.forRoot()]
+    }).compileComponents();
 
-  beforeEach(() => {
-    ({ fixture, component } = createShallowComponentFixture(DepositoGeneralComponent));
-  });
+    fixture = TestBed.createComponent(DepositoGeneralComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  }));
 
   it('should create', () => {
     expect(component).toBeTruthy();
