@@ -76,7 +76,7 @@ export class CobrosGeneralComponent implements OnInit {
   public segment = 'default';
   public cobroValid: Boolean = false;
   public viewOnly: boolean = false;
-  public changeRate: Boolean = false;
+  public changeRate = false;
   public dateCollect: string = this.dateServ.hoyISOFullTime();
   public dateRate: string = this.dateServ.hoyISO();
   public multiCurrency: Boolean = false;
@@ -212,7 +212,7 @@ export class CobrosGeneralComponent implements OnInit {
     this.alertButtonsSend[0].text = this.collectService.collectionTagsDenario.get('DENARIO_BOTON_CANCELAR')!
     this.alertButtonsSend[1].text = this.collectService.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')!
     this.collectService.requiredComment = this.globalConfig.get('requiredComment') === 'true';
-    this.collectService.validComment = !this.collectService.requiredComment;
+    this.collectService.syncCommentValidityFromCollection();
 
     if (this.collectService.isOpenCollect) {
       this.handleOpenCollect();
@@ -255,6 +255,8 @@ export class CobrosGeneralComponent implements OnInit {
         this.collectService.onCollectionValid(resp);
         this.finishOpenCollectDirtyTracking();
       });
+
+      this.collectService.syncCommentValidityFromCollection();
 
       if (this.collectService.enableDifferenceCodes) {
         this.collectService.getDifferenceCodes(this.synchronizationServices.getDatabase())
@@ -1219,12 +1221,13 @@ export class CobrosGeneralComponent implements OnInit {
   setComment() {
     if (this.collectService.changeClient)
       this.collectService.changeClient = false;
-    else if (this.collectService.collection.txComment.trim() == "") {
+    else if (this.collectService.requiredComment && this.collectService.collection.txComment.trim() == "") {
       this.collectService.validComment = false;
       this.mensaje = this.collectService.collectionTags.get('COB_EMPTY_TXCOMMENT')!,
         this.collectService.alertMessageOpen = true;
-    } else
-      this.collectService.validComment = true;
+    } else {
+      this.collectService.syncCommentValidityFromCollection();
+    }
 
     this.collectService.collection.txComment = applyTextCommentMaxLength(
       this.collectService.cleanString(this.collectService.collection.txComment),
@@ -1249,7 +1252,7 @@ export class CobrosGeneralComponent implements OnInit {
       }
     }
     if (this.collectService.requiredComment) {
-      this.collectService.validComment = clean.trim().length > 0;
+      this.collectService.syncCommentValidityFromCollection();
     }
     this.collectService.refreshSendUxAfterEdit();
   }
@@ -1262,7 +1265,9 @@ export class CobrosGeneralComponent implements OnInit {
         this.textCommentMaxLength,
       );
       this.collectService.collection.txComment = clean;
-      this.collectService.validComment = clean.trim().length > 0;
+      this.collectService.syncCommentValidityFromCollection();
+    } else {
+      this.collectService.validComment = true;
     }
 
     if (this.collectService.requiresTxConversionReason) {
@@ -1900,19 +1905,18 @@ export class CobrosGeneralComponent implements OnInit {
 
   shouldShowRequiredCommentError(): boolean {
     return this.collectService.sendValidationAttempted
-      && this.collectService.requiredComment
-      && !this.collectService.validComment
+      && this.collectService.hasRequiredCommentFieldError()
       && !this.isSentDelivery;
   }
 
   shouldShowTxConversionError(): boolean {
     return this.collectService.sendValidationAttempted
-      && !!this.changeRate
-      && !this.collectService.collection.txConversion?.trim();
+      && this.collectService.hasTxConversionFieldError();
   }
 
   shouldShowManualRateSendError(): boolean {
-    return this.collectService.sendValidationAttempted && !!this.manualRateError;
+    return this.collectService.sendValidationAttempted
+      && this.collectService.hasManualRateFieldError();
   }
 
   private syncRequiresTxConversionReason(): void {

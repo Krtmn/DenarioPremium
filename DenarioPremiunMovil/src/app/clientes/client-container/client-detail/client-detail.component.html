@@ -60,39 +60,39 @@
         @if(!this.clientLogic.esTransportista){
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
-            {{localCurrency}}:</ion-col>
-          <ion-col [ngStyle]="{color: client.countDueDate > 0 ? 'Red' : 'Blue' }">{{formatNumber(this.saldoLocal)}}</ion-col>
+            {{clientLogic.getPrimaryCurrencyLabel()}}:</ion-col>
+          <ion-col [ngStyle]="{color: client.countDueDate > 0 ? 'Red' : 'Blue' }">{{formatNumber(clientLogic.pickPrimaryFromLocalHard(saldoLocal, saldoFuerte))}}</ion-col>
         </ion-row>
         }
-        @if(this.clientLogic.showConversion && !this.clientLogic.esTransportista){
+        @if(this.clientLogic.canShowConversion() && !this.clientLogic.esTransportista){
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_SALDO")}}
-            {{hardCurrency}}:</ion-col>
-          <ion-col [ngStyle]="{color: client.countDueDate > 0 ? 'Red' : 'Blue' }">{{formatNumber(this.saldoFuerte)}}</ion-col>
+            {{clientLogic.getSecondaryCurrencyLabel()}}:</ion-col>
+          <ion-col [ngStyle]="{color: client.countDueDate > 0 ? 'Red' : 'Blue' }">{{formatNumber(clientLogic.pickSecondaryFromLocalHard(saldoLocal, saldoFuerte))}}</ion-col>
         </ion-row>
         }
         @if(!this.clientLogic.esTransportista){
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO")}}
-            {{localCurrency}}:</ion-col>
-          <ion-col>{{formatNumber(this.creditoLocal)}} </ion-col>
+            {{clientLogic.getPrimaryCurrencyLabel()}}:</ion-col>
+          <ion-col>{{formatNumber(clientLogic.pickPrimaryFromLocalHard(creditoLocal, creditoFuerte))}} </ion-col>
         </ion-row>
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO_DISPONIBLE")}}
-            {{localCurrency}}:</ion-col>
-          <ion-col>{{formatNumber(this.availableCreditLocal)}}</ion-col>
+            {{clientLogic.getPrimaryCurrencyLabel()}}:</ion-col>
+          <ion-col>{{formatNumber(clientLogic.pickPrimaryFromLocalHard(availableCreditLocal, availableCreditFuerte))}}</ion-col>
         </ion-row>
         }
-        @if(this.clientLogic.showConversion && !this.clientLogic.esTransportista){
+        @if(this.clientLogic.canShowConversion() && !this.clientLogic.esTransportista){
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO")}}
-            {{hardCurrency}}:</ion-col>
-          <ion-col>{{formatNumber(this.creditoFuerte)}}</ion-col>
+            {{clientLogic.getSecondaryCurrencyLabel()}}:</ion-col>
+          <ion-col>{{formatNumber(clientLogic.pickSecondaryFromLocalHard(creditoLocal, creditoFuerte))}}</ion-col>
         </ion-row>
         <ion-row>
           <ion-col size="4" class="titulosBold">{{clientLogic.clientTags.get("CLI_DETAIL_CREDITO_DISPONIBLE")}}
-            {{hardCurrency}}:</ion-col>
-          <ion-col>{{formatNumber(this.availableCreditFuerte)}}</ion-col>
+            {{clientLogic.getSecondaryCurrencyLabel()}}:</ion-col>
+          <ion-col>{{formatNumber(clientLogic.pickSecondaryFromLocalHard(availableCreditLocal, availableCreditFuerte))}}</ion-col>
         </ion-row>
         }
         @if(!this.clientLogic.esTransportista){

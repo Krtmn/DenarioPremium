@@ -111,6 +111,61 @@ export class ClientLogicService {
       && this.multiCurrency
       && this.currencyService.hasValidExchangeRate();
   }
+
+  private ensureModuleCurrenciesLoaded(): void {
+    if (!this.localCurrency?.coCurrency) {
+      this.localCurrency = this.currencyService.getLocalCurrency();
+    }
+    if (!this.hardCurrency?.coCurrency) {
+      this.hardCurrency = this.currencyService.getHardCurrency();
+    }
+  }
+
+  /** Etiqueta moneda primaria según currency_modules.localCurrencyDefault (módulo CLI). */
+  getPrimaryCurrencyLabel(): string {
+    this.ensureModuleCurrenciesLoaded();
+    return this.localCurrencyDefault
+      ? (this.localCurrency?.coCurrency ?? '')
+      : (this.hardCurrency?.coCurrency ?? '');
+  }
+
+  /** Etiqueta moneda secundaria (conversión) según localCurrencyDefault. */
+  getSecondaryCurrencyLabel(): string {
+    this.ensureModuleCurrenciesLoaded();
+    return this.localCurrencyDefault
+      ? (this.hardCurrency?.coCurrency ?? '')
+      : (this.localCurrency?.coCurrency ?? '');
+  }
+
+  /**
+   * saldo1=local / saldo2=hard tras fixClientListSaldos.
+   * Elige cuál mostrar primero según currency_modules (sin mutar buckets).
+   */
+  getPrimarySaldo(client: Pick<Client, 'saldo1' | 'saldo2'>): number {
+    const saldo1 = this.toFiniteSaldo(client.saldo1);
+    const saldo2 = this.toFiniteSaldo(client.saldo2);
+    return this.localCurrencyDefault ? saldo1 : saldo2;
+  }
+
+  getSecondarySaldo(client: Pick<Client, 'saldo1' | 'saldo2'>): number {
+    const saldo1 = this.toFiniteSaldo(client.saldo1);
+    const saldo2 = this.toFiniteSaldo(client.saldo2);
+    return this.localCurrencyDefault ? saldo2 : saldo1;
+  }
+
+  /** Totales ya resueltos en buckets local/fuerte (detalle). */
+  pickPrimaryFromLocalHard(localAmount: number, hardAmount: number): number {
+    return this.localCurrencyDefault
+      ? this.toFiniteSaldo(localAmount)
+      : this.toFiniteSaldo(hardAmount);
+  }
+
+  pickSecondaryFromLocalHard(localAmount: number, hardAmount: number): number {
+    return this.localCurrencyDefault
+      ? this.toFiniteSaldo(hardAmount)
+      : this.toFiniteSaldo(localAmount);
+  }
+
   public transportRole: boolean = false;
   public localCurrencyDefault: boolean = false;
   public user: any = {};
