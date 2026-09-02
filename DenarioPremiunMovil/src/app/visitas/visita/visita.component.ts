@@ -39,7 +39,6 @@ import {
 } from 'src/app/utils/text-comment-field.constants';
 import { applyTextCommentMaxLength } from 'src/app/utils/text-comment-field.util';
 import { VISIT_FIELD_MAX } from 'src/app/utils/visit-field.constants';
-import { parseSyncBoolean } from 'src/app/utils/sync-boolean.util';
 
 
 @Component({
@@ -245,7 +244,7 @@ export class VisitaComponent implements OnInit {
       { text: this.getTag('DENARIO_BOTON_ACEPTAR') || 'Aceptar', role: 'confirm' },
     ];
 
-    this.enterpriseServ.setup(this.syncServ.getDatabase()).then(async () => {
+    this.enterpriseServ.setup(this.syncServ.getDatabase()).then(() => {
 
       this.listaEmpresa = this.enterpriseServ.empresas;
       this.empresaSeleccionada = this.listaEmpresa[0];
@@ -253,8 +252,9 @@ export class VisitaComponent implements OnInit {
       this.enterpriseEnabled = this.visitServ.enterpriseEnabled;
       this.checkAddressClient = this.visitServ.checkAddressClient;
       this.rolTransportista = this.visitServ.rolTransportista;
-      await this.visitServ.getLists();
-      this.refreshActiveIncidenceLists();
+      this.listaActividades = this.visitServ.listaActividades;
+      this.listaMotivos = this.visitServ.listaMotivos;
+      this.listaActividadesActivas = (this.listaActividades || []).filter((a) => this.isActiveFlag(a.active));
       this.listaEventos = [];
       this.onDateSelect(false);
       this.visitServ.resetVisitExitBaseline();
@@ -733,12 +733,12 @@ export class VisitaComponent implements OnInit {
     this.comentarioRequerido = false;
     this.comentarioValidationAttempted = false;
     if (this.actividadSeleccionada != null) {
-      if (parseSyncBoolean(e.detail.value.requiredEvent, false)) {
+      if (e.detail.value.requiredEvent == "true") {
         this.actividadRequiereEvento = true;
       } else {
         this.actividadRequiereEvento = false;
       }
-      if (parseSyncBoolean(e.detail.value.requiredSignature, false)) {
+      if (e.detail.value.requiredSignature == "true") {
         this.actividadRequiereFirma = true;
       } else {
         this.actividadRequiereFirma = false;
@@ -761,14 +761,8 @@ export class VisitaComponent implements OnInit {
     }
   }
 
-  private refreshActiveIncidenceLists(): void {
-    this.listaActividades = this.visitServ.listaActividades || [];
-    this.listaMotivos = this.visitServ.listaMotivos || [];
-    this.listaActividadesActivas = this.listaActividades.filter((a) => this.isActiveFlag(a.active));
-  }
-
   private isActiveFlag(value: boolean | number | string | null | undefined): boolean {
-    return parseSyncBoolean(value, false);
+    return value === true || value === 1 || value === '1';
   }
 
   onSelectMotive(e: any) {
@@ -778,7 +772,7 @@ export class VisitaComponent implements OnInit {
   }
 
   private isRequiredCommentFlag(value: boolean | number | string | null | undefined): boolean {
-    return parseSyncBoolean(value, false);
+    return value === true || value === 1 || value === '1';
   }
 
   shouldShowRequiredCommentError(): boolean {
