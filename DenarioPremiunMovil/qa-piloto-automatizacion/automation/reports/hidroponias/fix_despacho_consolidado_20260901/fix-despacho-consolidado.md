@@ -415,10 +415,8 @@ oráculos**: el acotado al cliente y el que **no filtra por cliente**.
 
 La diferencia es demasiado grande para confundirse: **la app trajo el valor acotado**.
 
-**Devoluciones:** la discriminación por tipo está demostrada (Distribución resta, Calidad no,
-mismo cliente y ventana). El **aislamiento entre clientes NO tiene control disponible**: en la
-ventana solo existen las dos devoluciones que creó esta prueba, ambas del 209. Sin datos de
-otros clientes no hay contraste posible — consta el filtro en el código, no la evidencia.
+**Devoluciones:** la discriminación por tipo está demostrada en productos distintos (§8.d.1) y
+sobre un **mismo producto** (§8.g), y el tipo se confirma en la web.
 
 ---
 
@@ -454,7 +452,19 @@ creada, enviada y en ventana, y **no entra en el cálculo**.
 | **Inventario 53 · una línea en 0** | ✅ `qu_stock 0` | ✅ `0.0000` | ✅ **`0.00 UNIDAD`** |
 | Inventario 54 · cliente 211 · 5 productos | ✅ | ✅ 5 líneas | ✅ **Enviado** |
 | Pedidos 51 a 55 | ✅ los 5 | ✅ los 5 | ✅ **los 5, Enviado** |
-| Devoluciones 108 y 109 | ✅ enviadas | ✅ en `return_view` | ⚪ no consultada |
+| **Devoluciones 108 a 111** | ✅ las 4 enviadas | ✅ en `return_view` | ✅ **las 4, con su tipo** |
+
+### Devoluciones en la web
+
+Las cuatro figuran en `/pages/devoluciones` como **Enviado**, y el detalle confirma **el tipo**,
+que es el dato que gobierna el cálculo. Sobre el par del caso C11 —mismo producto:
+
+| Ref | Tipo en la web | Producto | N° Factura | Cantidad |
+|---|---|---|---:|---:|
+| **110** | **Distribución** | `CAMPROLEC001BAN` | 20115667 | 2 |
+| **111** | **Calidad** | `CAMPROLEC001BAN` | 20115667 | 3 |
+
+*(Capturas `16-web-devolucion-110-distribucion.png` y `17-web-devolucion-111-calidad.png`.)*
 
 ### 🔑 El riesgo web del REQ de quiebre: descartado
 

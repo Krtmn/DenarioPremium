@@ -471,19 +471,30 @@ el acotado al cliente y el que <b>no filtra</b>. Si la app mezclara carteras, tr
 posibilidad de confundir un resultado con otro. <b>La app trajo en ambos casos el valor acotado
 al cliente y su sucursal.</b></p>
 
-<h3>Devoluciones: qué sí y qué no se pudo controlar</h3>
+<h3>Las devoluciones, también en la web</h3>
+
+<p>Las cuatro aparecen en <code>/pages/devoluciones</code> como <b>Enviado</b>, y el detalle
+confirma el dato que importa —<b>el tipo</b>— sobre el par del caso C11, que son el mismo producto:</p>
+
 <table>
-  <tr><th style="width:52mm">Aspecto</th><th>Estado</th></tr>
-  <tr><td><b>Discriminación por tipo</b></td>
-      <td><span class="pill p-ok">✅ demostrada</span> — mismo cliente y ventana, dos devoluciones:
-          la de Distribución descuenta 2, la de Calidad descuenta 0.</td></tr>
-  <tr><td><b>Aislamiento entre clientes</b></td>
-      <td><span class="pill p-na">⚪ sin control disponible</span> — en la ventana de cálculo
-          <b>solo existen las dos devoluciones creadas por esta prueba</b>, ambas del cliente 209.
-          No hay devoluciones de otros clientes que pudieran haberse colado, así que
-          <b>no se puede afirmar el aislamiento por contraste</b>. Lo que sí consta es que la
-          consulta filtra por cliente en el código.</td></tr>
+  <tr><th style="width:16mm">Ref</th><th style="width:32mm">Tipo en la web</th><th>Producto</th>
+      <th style="width:24mm">N° Factura</th><th style="width:18mm">Cantidad</th></tr>
+  <tr><td><b>110</b></td><td><b>Distribución</b></td><td><code>CAMPROLEC001BAN</code></td><td class="num">20115667</td><td class="num">2</td></tr>
+  <tr><td><b>111</b></td><td><b>Calidad</b></td><td><code>CAMPROLEC001BAN</code></td><td class="num">20115667</td><td class="num">3</td></tr>
 </table>
+
+<div class="par">
+  <div>
+    <div class="et et-bien">Web · Ref 110 — Distribución</div>
+    <img src="16-web-devolucion-110-distribucion.png" alt="Detalle web de la devolución 110">
+  </div>
+  <div>
+    <div class="et">Web · Ref 111 — Calidad</div>
+    <img src="17-web-devolucion-111-calidad.png" alt="Detalle web de la devolución 111">
+  </div>
+</div>
+<p class="cap"><span class="pie">Mismo producto y misma factura, tipos distintos. En el sugerido solo
+descuenta la de Distribución (2), como muestra el caso C11.</span></p>
 
 <div class="bien">
   <div class="t">✅ En resumen: cada término del sugerido trae lo de ESE cliente</div>
@@ -518,9 +529,9 @@ datos del servidor) y <b>web</b> (interfaz administrativa de la playa Caribe).</
   <tr><td><b>Pedidos 51 a 55</b></td>
       <td><span class="pill p-ok">✅ los 5</span></td><td><span class="pill p-ok">✅ los 5</span></td>
       <td><span class="pill p-ok">✅ los 5, Enviado</span></td></tr>
-  <tr><td><b>Devoluciones 108 y 109</b></td>
-      <td><span class="pill p-ok">✅ enviadas</span></td><td><span class="pill p-ok">✅ en <code>return_view</code></span></td>
-      <td><span class="pill p-na">⚪ no consultada</span></td></tr>
+  <tr><td><b>Devoluciones 108 a 111</b></td>
+      <td><span class="pill p-ok">✅ las 4 enviadas</span></td><td><span class="pill p-ok">✅ en <code>return_view</code></span></td>
+      <td><span class="pill p-ok">✅ las 4, con su <b>tipo</b></span></td></tr>
 </table>
 
 <h3>El quiebre se ve en el detalle del inventario</h3>
