@@ -403,6 +403,26 @@ pero conviene saberlo: un cotejo contra `return` daría «la devolución no lleg
 
 ---
 
+## 8.e Control de aislamiento — cada término trae lo de ESE cliente
+
+La consulta del fix filtra por `id_client` **y** `id_address_client`. Para probar que el
+aislamiento es real —y no solo estar en el código— se comparó lo medido contra **dos
+oráculos**: el acotado al cliente y el que **no filtra por cliente**.
+
+| Término | Producto | Acotado | **Sin filtrar** | Medido | |
+|---|---|---:|---:|---:|---|
+| **Despacho** (209 / suc. 780) | `GERPROALF002CAJ` | **19** | 214 | **19** | ✅ |
+| **Cambio x cambio** (105 / suc. 726) | `046013461003BAN` | **4** | 22 | **4** | ✅ |
+
+La diferencia es demasiado grande para confundirse: **la app trajo el valor acotado**.
+
+**Devoluciones:** la discriminación por tipo está demostrada (Distribución resta, Calidad no,
+mismo cliente y ventana). El **aislamiento entre clientes NO tiene control disponible**: en la
+ventana solo existen las dos devoluciones que creó esta prueba, ambas del 209. Sin datos de
+otros clientes no hay contraste posible — consta el filtro en el código, no la evidencia.
+
+---
+
 ## 9. Incidencia de la corrida: la app se reinició al pulsar Enviar
 
 Al pulsar Enviar en el pedido generado desde el sugerido —con la línea de stock 0 ya

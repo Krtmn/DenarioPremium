@@ -362,6 +362,50 @@ están en el DOM, hay que leerlos del modelo». <b>Sí están</b>: se ven al des
 dentro del modal. Lo que ocurre es que el acordeón nace colapsado y las tablas se recortan.
 </div>
 
+<h2>Cada término trae los datos de ESE cliente — control de aislamiento</h2>
+
+<p>No basta con que los números cuadren: hay que probar que <b>no se mezclan con los de otros
+clientes</b>. La consulta del fix filtra por <code>id_client</code> <b>y</b>
+<code>id_address_client</code>, así que se comparó lo medido en la app contra <b>dos oráculos</b>:
+el acotado al cliente y el que <b>no filtra</b>. Si la app mezclara carteras, traería el segundo.</p>
+
+<table>
+  <tr><th>Término</th><th>Producto</th><th style="width:26mm">Acotado al cliente</th>
+      <th style="width:26mm">Si NO filtrara</th><th style="width:24mm">Medido en app</th><th style="width:18mm"></th></tr>
+  <tr><td><b>Despacho</b><br><span style="font-size:8.4pt;color:var(--gris)">cliente 209 · suc. 780</span></td>
+      <td><code>GERPROALF002CAJ</code></td><td class="num">19</td><td class="num bad">214</td>
+      <td class="num ok">19</td><td>✅</td></tr>
+  <tr><td><b>Cambio x cambio</b><br><span style="font-size:8.4pt;color:var(--gris)">cliente 105 · suc. 726</span></td>
+      <td><code>046013461003BAN</code></td><td class="num">4</td><td class="num bad">22</td>
+      <td class="num ok">4</td><td>✅</td></tr>
+</table>
+
+<p>La diferencia es enorme —<b>19 frente a 214</b>, <b>4 frente a 22</b>—, así que no hay
+posibilidad de confundir un resultado con otro. <b>La app trajo en ambos casos el valor acotado
+al cliente y su sucursal.</b></p>
+
+<h3>Devoluciones: qué sí y qué no se pudo controlar</h3>
+<table>
+  <tr><th style="width:52mm">Aspecto</th><th>Estado</th></tr>
+  <tr><td><b>Discriminación por tipo</b></td>
+      <td><span class="pill p-ok">✅ demostrada</span> — mismo cliente y ventana, dos devoluciones:
+          la de Distribución descuenta 2, la de Calidad descuenta 0.</td></tr>
+  <tr><td><b>Aislamiento entre clientes</b></td>
+      <td><span class="pill p-na">⚪ sin control disponible</span> — en la ventana de cálculo
+          <b>solo existen las dos devoluciones creadas por esta prueba</b>, ambas del cliente 209.
+          No hay devoluciones de otros clientes que pudieran haberse colado, así que
+          <b>no se puede afirmar el aislamiento por contraste</b>. Lo que sí consta es que la
+          consulta filtra por cliente en el código.</td></tr>
+</table>
+
+<div class="bien">
+  <div class="t">✅ En resumen: cada término del sugerido trae lo de ESE cliente</div>
+  <b>Despacho</b> — la suma de todas las facturas de la última fecha facturada <b>de ese cliente y
+  esa sucursal</b> (19, no 214). &nbsp;·&nbsp; <b>Cambio x cambio</b> — los de ese cliente y esa
+  sucursal dentro de la ventana (4, no 22). &nbsp;·&nbsp; <b>Devoluciones</b> — las de ese cliente,
+  y <b>solo las de Distribución</b> descuentan; las de Calidad no.
+</div>
+
 <div class="pb"></div>
 <h2>Alcance del fix: qué NO cambió</h2>
 <p><b>Devoluciones no se ve afectado, y está bien así.</b> Se abrió una devolución para el cliente 209:
