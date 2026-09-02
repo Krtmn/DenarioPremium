@@ -483,6 +483,68 @@ concreta</b>, no contra el día. Las dos consultas son independientes.</p>
           uno solo queda para una vuelta futura.</td></tr>
 </table>
 
+<div class="pb"></div>
+<h2>Verificación en las TRES capas</h2>
+
+<p>Cada registro se comprobó en <b>móvil</b> (base local del dispositivo), <b>nube</b> (base de
+datos del servidor) y <b>web</b> (interfaz administrativa de la playa Caribe).</p>
+
+<table>
+  <tr><th>Registro</th><th style="width:30mm">Móvil (BD local)</th><th style="width:32mm">Nube (BD)</th>
+      <th style="width:34mm">Web (interfaz)</th></tr>
+  <tr><td><b>Inventario 51</b> · cliente 209 · 7 productos</td>
+      <td><span class="pill p-ok">✅ enviado</span></td><td><span class="pill p-ok">✅ 7 líneas</span></td>
+      <td><span class="pill p-ok">✅ Enviado</span></td></tr>
+  <tr><td><b>Inventario 52</b> · cliente 105 · 4 productos</td>
+      <td><span class="pill p-ok">✅</span></td><td><span class="pill p-ok">✅ 4 líneas</span></td>
+      <td><span class="pill p-ok">✅ Enviado</span></td></tr>
+  <tr><td><b>Inventario 53</b> · cliente 209 · <b>una línea en 0</b></td>
+      <td><span class="pill p-ok">✅ <code>qu_stock 0</code></span></td>
+      <td><span class="pill p-ok">✅ <code>0.0000</code></span></td>
+      <td><span class="pill p-ok">✅ <b>0.00 UNIDAD</b></span></td></tr>
+  <tr><td><b>Inventario 54</b> · cliente 211 · 5 productos</td>
+      <td><span class="pill p-ok">✅</span></td><td><span class="pill p-ok">✅ 5 líneas</span></td>
+      <td><span class="pill p-ok">✅ Enviado</span></td></tr>
+  <tr><td><b>Pedidos 51 a 55</b></td>
+      <td><span class="pill p-ok">✅ los 5</span></td><td><span class="pill p-ok">✅ los 5</span></td>
+      <td><span class="pill p-ok">✅ los 5, Enviado</span></td></tr>
+  <tr><td><b>Devoluciones 108 y 109</b></td>
+      <td><span class="pill p-ok">✅ enviadas</span></td><td><span class="pill p-ok">✅ en <code>return_view</code></span></td>
+      <td><span class="pill p-na">⚪ no consultada</span></td></tr>
+</table>
+
+<h3>El punto crítico del lado web: las líneas en cero no se filtran</h3>
+
+<p>El REQ de quiebre señalaba un riesgo específico en la web: <i>«que el detalle no mostrara las
+líneas en cero»</i>. <b>No las filtra.</b> El detalle del Inventario 53 muestra las tres líneas,
+con la de cantidad cero incluida:</p>
+
+<div class="calc">
+1 &nbsp; CAMPROSDU002BOL &nbsp; MAIZ SUPER DULCE BANDEJA &nbsp;&nbsp;&nbsp;&nbsp; Exhibición: <b>2.00 UNIDAD</b><br>
+1 &nbsp; CAMPROLEC002BAN &nbsp; ENSALADA LECHUGA MIXTA &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Exhibición: <b>0.00 UNIDAD</b> &nbsp;← el quiebre<br>
+1 &nbsp; TOMPROMAN001BAN &nbsp; TOMATE MANZANO EN BANDEJA &nbsp;&nbsp; Exhibición: <b>2.00 UNIDAD</b>
+</div>
+
+<div class="par">
+  <div>
+    <div class="et et-bien">Web · Inventario 53 con la línea en 0</div>
+    <img src="13-web-inventario-53-linea-cero.png" alt="Detalle web del inventario 53">
+  </div>
+  <div>
+    <div class="et et-bien">Web · Pedido 55 con sus 5 líneas</div>
+    <img src="14-web-pedido-55-lineas.png" alt="Detalle web del pedido 55">
+  </div>
+</div>
+<p class="cap"><span class="pie">Interfaz administrativa de la playa Caribe. El pedido 55 trae
+<b>7 · 6 · 9 · 14 · 10</b> — exactamente las cantidades que calculó el sugerido.</span></p>
+
+<div class="nota">
+<b>Nota de acceso:</b> el inventario de playas registraba a <b>Caribe fuera de servicio</b> desde
+el 13/08 (Tomcat arriba, aplicación no desplegada). <b>Hoy responde con normalidad</b> — conviene
+actualizar esa nota. La consulta se hizo en modo <b>solo lectura</b>: únicamente <code>Consultar</code>
+y navegación, sin tocar ningún control de escritura.
+</div>
+
 <h2>Puntos abiertos para desarrollo</h2>
 
 <h3>1. La comparación de fechas es por texto</h3>
@@ -503,20 +565,21 @@ y el registro llegó íntegro a la nube</b> (estado enviado, 4 detalles, ligado 
 <b>No hay pérdida de dato</b>, pero conviene verificar si esa cola se resuelve en la siguiente
 sincronización o si puede provocar un reenvío duplicado.</p>
 
-<h3>4. ⚠ Las tablas de cabecera de la nube quedaron vacías durante la corrida</h3>
-<p>Al cotejar el último ciclo, <code>client_stock</code>, <code>order</code> e <code>invoice</code>
-devolvían <b>0 filas</b>, cuando horas antes esas mismas tablas respondían con datos (los
-cotejos de los Inventarios 51-53 y los Pedidos 51-54 se hicieron contra ellas).</p>
-<p><b>No es una pérdida de datos ni un fallo de los envíos.</b> Las tablas de <b>detalle</b>
-conservan todo: <code>client_stock_detail</code> con 526 filas y <code>order_detail</code> con
-583, y ahí están íntegros nuestros registros —incluida la línea en cantidad <b>0</b> del
-Inventario 53—. La verificación de los últimos envíos se hizo por esa vía.</p>
+<h3>4. ⚠ Se activó Row-Level Security en tres tablas durante la corrida</h3>
+<p>A media corrida, las consultas a <code>client_stock</code>, <code>order</code> e
+<code>invoice</code> pasaron a devolver <b>0 filas</b>, cuando horas antes respondían con datos.
+<b>No es pérdida de información</b>: al revisar el catálogo del motor, las tres tablas tienen
+ahora <code>relrowsecurity = true</code> y <code>relforcerowsecurity = true</code>, con
+<b>51, 53 y 793 filas</b> respectivamente. <b>Los datos están; el usuario de lectura de QA dejó de
+verlos.</b></p>
 <div class="nota">
-<b>Qué conviene revisar:</b> que un proceso deje las <b>cabeceras vacías con los detalles
-poblados</b> es un estado inconsistente. No sabemos qué lo provocó y no lo causó esta prueba
-—la app solo inserta—. <b>Se reporta como observación del ambiente</b>, para que quien
-corresponda verifique si es una recarga en curso o algo que quedó a medias.
+<b>Por qué importa:</b> una consulta a esas tablas devuelve vacío <b>sin error</b>. Quien coteje
+por ahí concluirá que los envíos no llegan, y estará equivocado. Los cotejos de este informe se
+completaron por las tablas de <b>detalle</b> (sin RLS) y por la <b>web</b>, que sí muestra todo.
+<b>Conviene confirmar si la activación fue deliberada</b> y, en ese caso, ajustar los permisos del
+usuario de QA.
 </div>
+
 <h2>Registros creados</h2>
 <table>
   <tr><th style="width:14mm">Ref</th><th>Tipo</th><th>Detalle</th><th style="width:26mm">Nube</th></tr>

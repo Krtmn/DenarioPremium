@@ -423,6 +423,37 @@ otros clientes no hay contraste posible — consta el filtro en el código, no l
 
 ---
 
+## 8.f Verificación en las TRES capas
+
+| Registro | Móvil (BD local) | Nube (BD) | **Web (interfaz)** |
+|---|---|---|---|
+| Inventario 51 · cliente 209 · 7 productos | ✅ enviado | ✅ 7 líneas | ✅ **Enviado** |
+| Inventario 52 · cliente 105 · 4 productos | ✅ | ✅ 4 líneas | ✅ **Enviado** |
+| **Inventario 53 · una línea en 0** | ✅ `qu_stock 0` | ✅ `0.0000` | ✅ **`0.00 UNIDAD`** |
+| Inventario 54 · cliente 211 · 5 productos | ✅ | ✅ 5 líneas | ✅ **Enviado** |
+| Pedidos 51 a 55 | ✅ los 5 | ✅ los 5 | ✅ **los 5, Enviado** |
+| Devoluciones 108 y 109 | ✅ enviadas | ✅ en `return_view` | ⚪ no consultada |
+
+### 🔑 El riesgo web del REQ de quiebre: descartado
+
+El REQ señalaba que la web podía **filtrar las líneas en cero**. **No las filtra.** El detalle
+del Inventario 53 en `/pages/detalleInventario` muestra las tres:
+
+```
+1  CAMPROSDU002BOL  MAIZ SUPER DULCE BANDEJA    Exhibición: 2.00 UNIDAD
+1  CAMPROLEC002BAN  ENSALADA LECHUGA MIXTA      Exhibición: 0.00 UNIDAD   ← el quiebre
+1  TOMPROMAN001BAN  TOMATE MANZANO EN BANDEJA   Exhibición: 2.00 UNIDAD
+```
+
+Y el **Pedido 55** en `/pages/detallePedido` trae sus 5 líneas con **7 · 6 · 9 · 14 · 10**,
+exactamente lo que calculó el sugerido.
+
+⚠ **Acceso:** el inventario de playas daba a **Caribe fuera de servicio** desde el 13/08.
+**Hoy responde con normalidad** — actualizar esa nota en `automation/web/playas.yaml`.
+Consulta hecha en modo **solo lectura**: únicamente `Consultar` y navegación.
+
+---
+
 ## 9. Incidencia de la corrida: la app se reinició al pulsar Enviar
 
 Al pulsar Enviar en el pedido generado desde el sugerido —con la línea de stock 0 ya
@@ -456,6 +487,15 @@ quedado.
 | **52** | Inventario | Cliente 105 (111) / sucursal 726 · 4 productos · días **29 / 10** | ⚠ `st_delivery=2` | `st_client_stock=1` · det=4 · `id_order=52` ✅ **BD-OK** |
 | **52** | Pedido (desde el sugerido) | Cliente 111 / sucursal 726 · **2 líneas** (2 / 2) | `st_delivery=1` | `st_order=1` · `nu_details=2` ✅ **BD-OK** |
 | **53** | Pedido (quiebre de stock) | Cliente 111 · **1 línea**: `046013ESP003BOL` ×2, stock **0** | `st_delivery=1` | `st_order=1` ✅ **BD-OK** |
+
+### ⚠ RLS activado a media corrida — corrige una observación anterior
+
+Las consultas a `client_stock`, `order` e `invoice` pasaron a devolver **0 filas** a media
+corrida. **No es pérdida de datos:** las tres tienen ahora `relrowsecurity = true` y
+`relforcerowsecurity = true`, con **51, 53 y 793 filas**. El usuario de lectura de QA dejó de
+verlas. Devuelven vacío **sin error**, así que un cotejo por ahí concluiría —erróneamente— que
+los envíos no llegan. Los cotejos se completaron por las tablas de **detalle** (sin RLS) y por
+la **web**. Conviene confirmar si la activación fue deliberada.
 
 ⚠ **A vigilar:** el inventario **52** quedó localmente en `st_delivery = 2` y con una fila
 en `pending_transactions`, **pese a que la app anunció «Inventario nro. 52 enviado
