@@ -63,7 +63,9 @@ export class LoginComponent implements OnInit {
   public isIOS: boolean = false; // <-- NUEVA PROPIEDAD
   public showFooter: boolean = true; // <-- NUEVA PROPIEDAD
   public currentYear: number = new Date().getFullYear();
-  private static readonly FALLBACK_VERSION = '6.6.21.4';
+
+  private static readonly FALLBACK_VERSION = '6.6.21.5';
+
 
 
   async ngOnInit() {
