@@ -25,6 +25,7 @@ interface InventoryRow {
   naProduct: string;
   exhEntries: string[];
   depEntries: string[];
+  suggestedEntries: string[];
   selected: boolean;
 }
 
@@ -61,6 +62,7 @@ public modalCtrl = inject(ModalController);
     this.clientStocksTotal = [];
     this.inventoryRows = [];
     const groupedRows = new Map<string, InventoryRow>();
+    const suggestedEntriesByProduct = this.buildSuggestedEntriesByProduct();
 
     this.inventariosLogicService.newClientStock.clientStockDetails.forEach((clientStockDetail: any) => {
       let clienStockTotal = {} as ClientStockTotal;
@@ -95,6 +97,7 @@ public modalCtrl = inject(ModalController);
             naProduct: clientStockDetail.naProduct,
             exhEntries: [],
             depEntries: [],
+            suggestedEntries: suggestedEntriesByProduct.get(clientStockDetail.idProduct) ?? [],
             selected: false,
           });
         }
@@ -113,6 +116,31 @@ public modalCtrl = inject(ModalController);
     });
 
     this.inventoryRows = Array.from(groupedRows.values());
+  }
+
+  private buildSuggestedEntriesByProduct(): Map<number, string[]> {
+    const entriesByProduct = new Map<number, string[]>();
+    if (!this.inventariosLogicService.suggestedOrder) {
+      return entriesByProduct;
+    }
+
+    const unitNameByProductUnit = new Map<number, string>();
+    this.inventariosLogicService.newClientStock.clientStockDetails.forEach((detail) => {
+      detail.clientStockDetailUnits.forEach((unit) => {
+        unitNameByProductUnit.set(unit.idProductUnit, unit.naUnit);
+      });
+    });
+
+    for (const product of this.inventariosLogicService.productsSuggested) {
+      const entries: string[] = [];
+      for (const unit of product.unitsSuggested) {
+        const naUnit = unitNameByProductUnit.get(unit.idProductUnit) ?? unit.coUnit ?? '';
+        entries.push(`${Number(unit.quUnitSuggested || 0)} ${naUnit}`.trim());
+      }
+      entriesByProduct.set(product.idProduct, entries);
+    }
+
+    return entriesByProduct;
   }
   async preguntarSugerirPedido(){
     const db = this.dbServ.getDatabase();
@@ -295,7 +323,7 @@ public modalCtrl = inject(ModalController);
     this.deleteRowsByIds(rowIds);
   }
 
-  private deleteRowsByIds(rowIds: string[]) {
+  private async deleteRowsByIds(rowIds: string[]) {
     if (!rowIds.length) {
       return;
     }
@@ -316,6 +344,7 @@ public modalCtrl = inject(ModalController);
     this.inventariosLogicService.productTypeStocksMap = new Map<number, number>();
     this.inventariosLogicService.setVariablesMap();
 
+    await this.inventariosLogicService.refreshSuggestedOrdersIfEnabled(this.dbServ.getDatabase());
     this.inventariosLogicService.notifyStockEdited();
     this.rebuildTableData();
   }

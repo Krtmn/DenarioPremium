@@ -273,6 +273,13 @@ export class InventarioHeaderComponent implements OnInit {
   private async proceedAfterSendConfirm(): Promise<void> {
     const db = this.synchronizationServices.getDatabase();
     const coClientStock = this.inventariosLogicService.newClientStock.coClientStock;
+
+    if (!this.inventariosLogicService.suggestedOrder) {
+      this.inventariosLogicService.setAttachSuggestedOrderOnStockSend(coClientStock, false);
+      this.saveSendNewReturn(true, false);
+      return;
+    }
+
     const snapshot = await this.inventariosLogicService.getSuggestedOrderSnapshotByClientStock(
       db,
       coClientStock,

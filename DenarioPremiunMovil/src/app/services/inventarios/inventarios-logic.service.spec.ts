@@ -372,4 +372,93 @@ describe('InventariosLogicService', () => {
       );
     });
   });
+
+  describe('refreshSuggestedOrdersIfEnabled', () => {
+    const dbMock = {} as any;
+
+    it('limpia productsSuggested si suggestedOrder está OFF', async () => {
+      service.suggestedOrder = false;
+      service.productsSuggested = [{ idProduct: 1, unitsSuggested: [] }] as any;
+      service.idProductsSuggested = [1];
+      service.newClientStock = {
+        clientStockDetails: [{ idProduct: 1, clientStockDetailUnits: [] }],
+      } as any;
+
+      await service.refreshSuggestedOrdersIfEnabled(dbMock);
+
+      expect(service.productsSuggested).toEqual([]);
+      expect(service.idProductsSuggested).toEqual([]);
+    });
+
+    it('no calcula si no hay productos en inventario', async () => {
+      service.suggestedOrder = true;
+      spyOn(service, 'calcularTotalesSugerenciaPedido').and.resolveTo();
+      service.newClientStock = { clientStockDetails: [] } as any;
+
+      await service.refreshSuggestedOrdersIfEnabled(dbMock);
+
+      expect(service.calcularTotalesSugerenciaPedido).not.toHaveBeenCalled();
+      expect(service.productsSuggested).toEqual([]);
+    });
+
+    it('calcula si suggestedOrder ON y hay productos', async () => {
+      service.suggestedOrder = true;
+      spyOn(service, 'calcularTotalesSugerenciaPedido').and.resolveTo();
+      service.newClientStock = {
+        clientStockDetails: [{
+          idProduct: 1,
+          clientStockDetailUnits: [{
+            idProductUnit: 10,
+            quStock: 5,
+            idUnit: 1,
+            coUnit: 'U',
+            naUnit: 'Caja',
+          }],
+        }],
+      } as any;
+
+      await service.refreshSuggestedOrdersIfEnabled(dbMock);
+
+      expect(service.calcularTotalesSugerenciaPedido).toHaveBeenCalledWith(dbMock);
+    });
+
+    it('loadSuggestedOrderConfig lee flags sin resetear inventario', () => {
+      (service.globalConfig.get as jasmine.Spy).and.callFake((key: string) => {
+        if (key === 'suggestedOrder') {
+          return 'true';
+        }
+        if (key === 'suggestedOrderByDispatchAndReturn') {
+          return 'false';
+        }
+        return '';
+      });
+
+      service.loadSuggestedOrderConfig();
+
+      expect(service.suggestedOrder).toBeTrue();
+      expect(service.suggestedOrderByDispatchAndReturn).toBeFalse();
+    });
+
+    it('initClientStockDetails carga suggestedOrder y limpia sugerencias', () => {
+      (service.globalConfig.get as jasmine.Spy).and.callFake((key: string) => {
+        if (key === 'suggestedOrder') {
+          return 'true';
+        }
+        if (key === 'suggestedOrderByDispatchAndReturn') {
+          return 'true';
+        }
+        if (key === 'signatureStock') {
+          return 'false';
+        }
+        return '';
+      });
+      service.productsSuggested = [{ idProduct: 1, unitsSuggested: [] }] as any;
+
+      service.initClientStockDetails();
+
+      expect(service.suggestedOrder).toBeTrue();
+      expect(service.suggestedOrderByDispatchAndReturn).toBeTrue();
+      expect(service.productsSuggested).toEqual([]);
+    });
+  });
 });

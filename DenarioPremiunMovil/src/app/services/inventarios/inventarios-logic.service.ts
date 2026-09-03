@@ -80,6 +80,7 @@ export class InventariosLogicService {
   public disabledEnterprise: boolean = false;
   public userMustActivateGPS: boolean = false;
   public expirationBatch: boolean = false;
+  public suggestedOrder: boolean = false;
   public suggestedOrderByDispatchAndReturn: boolean = false;
   public productsSuggested: ProductSuggestedUtil[] = [];
   public idProductsSuggested: number[] = [];
@@ -436,6 +437,11 @@ export class InventariosLogicService {
     })
   }
 
+  loadSuggestedOrderConfig(): void {
+    this.suggestedOrder = this.globalConfig.get('suggestedOrder')?.toLowerCase() === 'true';
+    this.suggestedOrderByDispatchAndReturn = this.globalConfig.get('suggestedOrderByDispatchAndReturn')?.toLowerCase() === 'true';
+  }
+
   initClientStockDetails() {
     this.initInventario = true;
     this.selectedClient = false;
@@ -460,7 +466,11 @@ export class InventariosLogicService {
     this.selectedInventoryType = 'exh';
     this.disabledEnterprise = this.globalConfig.get('enterpriseEnabled') === 'true' ? false : true;
     this.expirationBatch = this.globalConfig.get('expirationBatch') === 'true' ? true : false;
-    this.suggestedOrderByDispatchAndReturn = this.globalConfig.get("suggestedOrderByDispatchAndReturn")?.toLowerCase() === "true";
+    this.loadSuggestedOrderConfig();
+    this.productsSuggested = [];
+    this.idProductsSuggested = [];
+    this.idProductsUnitsSuggested = [];
+    this.idUnitsSuggested = [];
   }
 
   showBackRoute(route: string) {
@@ -668,6 +678,27 @@ export class InventariosLogicService {
     }
 
     this.notifyStockEdited();
+  }
+
+  async refreshSuggestedOrdersIfEnabled(dbServ: SQLiteObject): Promise<void> {
+    if (!this.suggestedOrder) {
+      this.productsSuggested = [];
+      this.idProductsSuggested = [];
+      this.idProductsUnitsSuggested = [];
+      this.idUnitsSuggested = [];
+      return;
+    }
+
+    const hasDetails = (this.newClientStock.clientStockDetails?.length ?? 0) > 0;
+    if (!hasDetails) {
+      this.productsSuggested = [];
+      this.idProductsSuggested = [];
+      this.idProductsUnitsSuggested = [];
+      this.idUnitsSuggested = [];
+      return;
+    }
+
+    await this.calcularTotalesSugerenciaPedido(dbServ);
   }
 
   async calcularTotalesSugerenciaPedido(dbServ: SQLiteObject) {

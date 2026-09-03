@@ -1048,7 +1048,7 @@ export class SynchronizationComponent implements OnInit {
     }
 
     if ([77, 78].includes(tableId)) {
-      return cfgTrue('suggestedOrderByDispatchAndReturn');
+      return cfgTrue('suggestedOrder') && cfgTrue('suggestedOrderByDispatchAndReturn');
     }
 
     if ([81].includes(tableId)) {

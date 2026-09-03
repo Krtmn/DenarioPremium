@@ -316,7 +316,7 @@ export class InventarioProductListComponent implements OnInit {
     this.inventoryRows.splice(index, 1);
   }
 
-  saveInventoryRows() {
+  async saveInventoryRows() {
     const cleanRows = this.inventoryRows.filter(row =>
       row.cantidad !== null || row.lote.trim().length > 0 || !!row.unidad
     );
@@ -340,6 +340,7 @@ export class InventarioProductListComponent implements OnInit {
     }
 
     this.applyRowsToInventory(cleanRows);
+    await this.inventariosLogicService.refreshSuggestedOrdersIfEnabled(this.db.getDatabase());
     this.inventariosLogicService.notifyStockEdited();
     this.inventariosLogicService.isEdit = true;
     this.closeTypeStocksModal();

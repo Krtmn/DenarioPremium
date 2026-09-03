@@ -233,12 +233,13 @@ export class InventarioGeneralComponent implements OnInit {
                       })
                   );
 
-                  Promise.all(detailUnitPromises).then(() => {
+                  Promise.all(detailUnitPromises).then(async () => {
                     this.inventariosLogicService.pauseStockDirtyTracking();
                     this.inventariosLogicService.newClientStock.clientStockDetails = clientStock.clientStockDetails;
                     this.inventariosLogicService.setVariablesMap();
                     this.inventariosLogicService.markStockOpenedFromPersistedCopy();
                     this.inventariosLogicService.resumeStockDirtyTracking();
+                    await this.inventariosLogicService.refreshSuggestedOrdersIfEnabled(this.dbServ.getDatabase());
 
                     if (clientStock.stDelivery == 1 || clientStock.stDelivery == null) {
                       this.inventariosLogicService.getInfoUnit(this.dbServ.getDatabase(), clientStock).then(() => {
@@ -288,6 +289,7 @@ export class InventarioGeneralComponent implements OnInit {
     }else{
       this.inventariosLogicService.newClientStock.daysSinceLast = this.daysSinceLastInventory;
     }
+    void this.inventariosLogicService.refreshSuggestedOrdersIfEnabled(this.dbServ.getDatabase());
     this.inventariosLogicService.notifyStockEdited();
   }
 
@@ -298,6 +300,7 @@ export class InventarioGeneralComponent implements OnInit {
     }else{
       this.inventariosLogicService.newClientStock.daysUntilNext = this.daysUntilNextInventory;
     }
+    void this.inventariosLogicService.refreshSuggestedOrdersIfEnabled(this.dbServ.getDatabase());
     this.inventariosLogicService.notifyStockEdited();
   }
 
