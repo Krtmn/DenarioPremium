@@ -33,6 +33,7 @@ describe('ClienteComponent (client-detail)', () => {
           txDescription2: '',
           nuCreditLimit: 5000,
         },
+        document: [],
       },
       listaDirecciones: [
         {
@@ -58,6 +59,11 @@ describe('ClienteComponent (client-detail)', () => {
       clientDetailComponent: true,
       clientDocumentSaleComponent: false,
       opendDocClick: false,
+      segment: 'default',
+      showConversion: false,
+      closeClientShareModal: {
+        subscribe: () => ({ unsubscribe: () => undefined }),
+      },
     };
 
     currencyServiceMock = {
@@ -141,6 +147,35 @@ describe('ClienteComponent (client-detail)', () => {
 
     clientLogicMock.esTransportista = false;
     expect(component.showDocVentasTab()).toBeTrue();
+  });
+
+  it('htmlClientDescription false por defecto si la clave no viene', () => {
+    component.ngOnInit();
+    expect(component.htmlClientDescription).toBeFalse();
+  });
+
+  it('htmlClientDescription true solo con clave htmlClientDescription (no infoVendedores)', () => {
+    globalConfigMock.get.and.callFake((key: string) => {
+      if (key === 'htmlClientDescription') {
+        return 'true';
+      }
+      if (key === 'infoVendedores') {
+        return 'true';
+      }
+      return key === 'conversionDocument' ? 'true' : '';
+    });
+
+    component.ngOnInit();
+
+    expect(component.htmlClientDescription).toBeTrue();
+    expect(globalConfigMock.get).toHaveBeenCalledWith('htmlClientDescription');
+  });
+
+  it('sanitizeDescription limpia null y deja HTML para innerHTML', () => {
+    expect((component as any).sanitizeDescription(null)).toBe('');
+    expect((component as any).sanitizeDescription('null')).toBe('');
+    expect((component as any).sanitizeDescription('<b>Importante</b><br>Linea 2'))
+      .toBe('<b>Importante</b><br>Linea 2');
   });
 
   it('DM-CLT-014: openDoc navega a pantalla de documento', () => {

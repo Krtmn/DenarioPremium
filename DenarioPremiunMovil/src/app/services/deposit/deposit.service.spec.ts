@@ -142,6 +142,25 @@ describe('DepositService', () => {
       expect(service.resolveSendValidationFocusTab()).toBe('default');
     });
 
+    it('SEND-TAB-001: depósito completo resolve es null y request no emite', () => {
+      service.generalTabValidForSave = true;
+      service.isSelectedBank = true;
+      service.userMustActivateGPS = false;
+      service.deposit.coBank = 'B001';
+      service.deposit.nuAccount = '123';
+      service.deposit.depositCollect = [{ coCollection: 'C1' } as any];
+      service.nuDocument = 'PLT-001';
+      service.deposit.nuDocument = 'PLT-001';
+      service.daDocument = '2026-01-01';
+      service.deposit.daDocument = '2026-01-01';
+      let focused: string | undefined = 'sentinel';
+      service.focusSendValidationTab.subscribe((tab) => focused = tab);
+
+      expect(service.resolveSendValidationFocusTab()).toBeNull();
+      service.requestSendValidationTabFocus();
+      expect(focused).toBe('sentinel');
+    });
+
     it('depósito por enviar queda read-only', () => {
       service.deposit.stDelivery = DEPOSITO_STATUS_TO_SEND;
       service.generalTabValidForSave = true;

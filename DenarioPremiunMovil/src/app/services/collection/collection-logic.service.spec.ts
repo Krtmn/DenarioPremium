@@ -835,23 +835,95 @@ describe('CollectionService', () => {
     });
 
     it('DM-COB-012: cross-currency absolute tolerance uses converted positive range', () => {
-      service.collection = { coCurrency: 'USD' } as any;
+      service.collection = { coCurrency: 'USD', nuValueLocal: 40 } as any;
       service.MonedaTolerancia = 'VES';
       service.MonedaToleranciaIsLocal = true;
+      service.localCurrency = { coCurrency: 'VES', localCurrency: 'true' } as any;
+      service.hardCurrency = { coCurrency: 'USD', hardCurrency: 'true' } as any;
+      service.currencyLocal = false;
       service.TipoTolerancia = 0;
-      service.RangoToleranciaPositiva = 10;
+      service.RangoToleranciaPositiva = 400; // VES → 400/40 = 10 USD
       service.RangoToleranciaNegativa = 100;
       service.alwaysPartialPayment = false;
       service.enablePartialPayment = true;
       service.existPartialPayment = false;
       service.montoTotalPagar = 100;
       service.montoTotalPagado = 105;
-      spyOn(service, 'convertirMonto').and.callFake((amount: number) => Number(amount) || 0);
+      (service as any).currencyService = {
+        formatNumber: (n: number) => String(n ?? 0),
+        isLocalCurrency: (co: string) => co === 'VES',
+      };
+      spyOn(service, 'cleanFormattedNumber').and.callFake((v: string | number) => Number(v) || 0);
       const spy = spyOn(service, 'onCollectionValidToSend');
 
       service.checkTolerancia();
 
       expect(spy).toHaveBeenCalledWith(true);
+    });
+
+    it('COB-TOL-001: underpayment in local currency vs hard MonedaTolerancia converts range × rate', () => {
+      // Caso real: cobro BS, tolerancia $ 100000, faltante ~4382 BS (toggle parcial OFF).
+      service.collection = { coCurrency: 'BS', nuValueLocal: 795 } as any;
+      service.MonedaTolerancia = 'USD';
+      service.MonedaToleranciaIsLocal = false;
+      service.MonedaToleranciaIsHard = true;
+      service.localCurrency = { coCurrency: 'BS', localCurrency: 'true' } as any;
+      service.hardCurrency = { coCurrency: 'USD', hardCurrency: 'true' } as any;
+      service.currencyLocal = true;
+      service.TipoTolerancia = 0;
+      service.RangoToleranciaPositiva = 100000;
+      service.RangoToleranciaNegativa = 100000;
+      service.alwaysPartialPayment = false;
+      service.enablePartialPayment = true;
+      service.existPartialPayment = false;
+      service.allPaymentPartial = false;
+      service.montoTotalPagar = 5382.08;
+      service.montoTotalPagado = 1000; // faltante 4382.08 BS << 100000*795
+      (service as any).currencyService = {
+        formatNumber: (n: number) => String(n ?? 0),
+        isLocalCurrency: (co: string) => co === 'BS',
+      };
+      spyOn(service, 'cleanFormattedNumber').and.callFake((v: string | number) => Number(v) || 0);
+      const spy = spyOn(service, 'onCollectionValidToSend');
+
+      service.checkTolerancia();
+
+      expect(spy).toHaveBeenCalledWith(true);
+    });
+
+    it('COB-TOL-001: issueAmountOrTolerancia no usa mensaje de pago parcial', async () => {
+      service.tolerancia0 = true;
+      service.TipoTolerancia = 0;
+      service.collection = {
+        coType: '0',
+        coCurrency: 'BS',
+        nuValueLocal: 795,
+        collectionDetails: [{ inPaymentPartial: false, isSave: true, idDocument: 1, coDocument: 'F1' }],
+        collectionPayments: [{ coType: 'de', coPaymentMethod: 'de', nuAmountPartial: 1000 }],
+      } as any;
+      service.MonedaTolerancia = 'USD';
+      service.localCurrency = { coCurrency: 'BS', localCurrency: 'true' } as any;
+      service.hardCurrency = { coCurrency: 'USD', hardCurrency: 'true' } as any;
+      service.currencyLocal = true;
+      service.RangoToleranciaNegativa = 100000;
+      service.RangoToleranciaPositiva = 100000;
+      service.alwaysPartialPayment = false;
+      service.enablePartialPayment = true;
+      service.hidePayments = false;
+      service.createAutomatedPrepaid = false;
+      service.montoTotalPagar = 5382.08;
+      service.montoTotalPagado = 1000;
+      service.collectionTags.set('COB_ERROR_PARTIAL_PAY', 'Todos los documentos estan marcados como pago parcial');
+      service.collectionTags.set('COB_ERROR_TOLERANCIA', 'Fuera de tolerancia');
+      (service as any).currencyService = {
+        formatNumber: (n: number) => String(n ?? 0),
+        isLocalCurrency: (co: string) => co === 'BS',
+      };
+      spyOn(service, 'cleanFormattedNumber').and.callFake((v: string | number) => Number(v) || 0);
+      spyOn(service as any, 'hasAddedPaymentMethodForSendUx').and.returnValue(true);
+
+      const issue = (service as any).issueAmountOrTolerancia();
+      expect(issue).toBeNull();
     });
   });
 
@@ -1113,6 +1185,45 @@ describe('CollectionService', () => {
       };
       expect(service.isIndexedPaymentMethodComplete('ot', 0)).toBeTrue();
       expect(service.hasMissingOtrosDifferenceCodes()).toBeFalse();
+    });
+
+    it('COB-SEND-GENERAL-001: comentario obligatorio solo si requiredComment y vacío', () => {
+      service.requiredComment = false;
+      service.collection = { txComment: 'Ttt' } as any;
+      expect(service.hasRequiredCommentFieldError()).toBeFalse();
+
+      service.requiredComment = true;
+      service.collection = { txComment: 'Ttt' } as any;
+      expect(service.hasRequiredCommentFieldError()).toBeFalse();
+
+      service.collection = { txComment: '' } as any;
+      expect(service.hasRequiredCommentFieldError()).toBeTrue();
+
+      service.syncCommentValidityFromCollection();
+      expect(service.validComment).toBeFalse();
+
+      service.requiredComment = false;
+      service.syncCommentValidityFromCollection();
+      expect(service.validComment).toBeTrue();
+    });
+
+    it('COB-SEND-GENERAL-001: tasa manual y motivo de cambio solo si config activa', () => {
+      service.enabledManualRate = false;
+      service.collection = { nuValueLocal: 0 } as any;
+      expect(service.hasManualRateFieldError()).toBeFalse();
+
+      service.enabledManualRate = true;
+      expect(service.hasManualRateFieldError()).toBeTrue();
+
+      service.requiresTxConversionReason = false;
+      service.collection = { txConversion: '' } as any;
+      expect(service.hasTxConversionFieldError()).toBeFalse();
+
+      service.requiresTxConversionReason = true;
+      expect(service.hasTxConversionFieldError()).toBeTrue();
+
+      service.collection = { txConversion: 'Cambio de tasa' } as any;
+      expect(service.hasTxConversionFieldError()).toBeFalse();
     });
 
     it('COB-SEND-ALL-001: colector fail-fast devuelve solo el primer issue', async () => {
@@ -2203,6 +2314,18 @@ describe('CollectionService', () => {
 
       expect(service.getCollectionSendValidationMessage()).toBe('El comentario es obligatorio.');
       expect(service.resolveSendValidationFocusTab()).toBe('default');
+    });
+
+    it('SEND-TAB-001: sin issues resolve es null y request no emite', () => {
+      service.collection = { coType: '0' } as any;
+      service.lastSendIssues = [];
+      spyOn(service as any, 'collectSyncFieldSendIssues').and.returnValue([]);
+      let focused: string | undefined = 'sentinel';
+      service.focusSendValidationTab.subscribe((tab) => focused = tab);
+
+      expect(service.resolveSendValidationFocusTab()).toBeNull();
+      service.requestSendValidationTabFocus();
+      expect(focused).toBe('sentinel');
     });
 
     it('getCollectionSendValidationMessage: pago incompleto enfoca Pagos', () => {

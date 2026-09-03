@@ -2754,10 +2754,7 @@ export class CollectionService {
 
     this.sendValidationSyncInProgress = true;
     try {
-      if (this.requiredComment) {
-        const comment = (this.collection?.txComment ?? '').toString().trim();
-        this.validComment = comment.length > 0;
-      }
+      this.syncCommentValidityFromCollection();
 
       for (const handler of this.sendValidationFlushHandlers) {
         try {
@@ -2991,7 +2988,8 @@ export class CollectionService {
     }
   }
 
-  private hasManualRateFieldError(): boolean {
+  /** Tasa manual inválida solo cuando `enabledManualRate` está activo. */
+  public hasManualRateFieldError(): boolean {
     if (!this.enabledManualRate) {
       return false;
     }
@@ -2999,11 +2997,29 @@ export class CollectionService {
     return !Number.isFinite(rate) || rate < 1;
   }
 
-  private hasTxConversionFieldError(): boolean {
+  /** Motivo de cambio de tasa obligatorio solo si `requiresTxConversionReason`. */
+  public hasTxConversionFieldError(): boolean {
     if (!this.requiresTxConversionReason) {
       return false;
     }
     return !this.hasPaymentText(this.collection?.txConversion);
+  }
+
+  /** Comentario obligatorio solo si `requiredComment` y el texto está vacío. */
+  public hasRequiredCommentFieldError(): boolean {
+    if (!this.requiredComment) {
+      return false;
+    }
+    return !this.hasPaymentText(this.collection?.txComment);
+  }
+
+  /** Alinea `validComment` con el texto persistido (reapertura / antes de Enviar). */
+  public syncCommentValidityFromCollection(): void {
+    if (!this.requiredComment) {
+      this.validComment = true;
+      return;
+    }
+    this.validComment = this.hasPaymentText(this.collection?.txComment);
   }
 
   /**
@@ -3068,8 +3084,8 @@ export class CollectionService {
       ?? 'Complete los campos obligatorios antes de enviar.';
   }
 
-  /** Pestaña del primer error bloqueante de Enviar. */
-  public resolveSendValidationFocusTab(): CollectionSendTab {
+  /** Pestaña del primer error bloqueante de Enviar. Null = sin error (SEND-TAB-001). */
+  public resolveSendValidationFocusTab(): CollectionSendTab | null {
     const sync = this.collectSyncFieldSendIssues();
     if (sync.length > 0) {
       return sync[0].tab;
@@ -3077,7 +3093,7 @@ export class CollectionService {
     if (this.lastSendIssues.length > 0) {
       return this.lastSendIssues[0].tab;
     }
-    return 'default';
+    return null;
   }
 
   /**
@@ -3347,7 +3363,7 @@ export class CollectionService {
   }
 
   private issueRequiredComment(): CollectionSendIssue | null {
-    if (!this.requiredComment || this.validComment) {
+    if (!this.hasRequiredCommentFieldError()) {
       return null;
     }
     return this.makeSendIssue(
@@ -3472,8 +3488,8 @@ export class CollectionService {
 
     return this.makeSendIssue(
       'TOLERANCIA',
-      this.collectionTags.get('COB_ERROR_PARTIAL_PAY')
-        ?? 'El monto pagado no coincide con el monto a pagar según la tolerancia configurada.',
+      this.collectionTags.get('COB_ERROR_TOLERANCIA')
+        ?? 'El monto pagado está fuera del rango de tolerancia permitido.',
       'pagos',
     );
   }
@@ -3608,6 +3624,43 @@ export class CollectionService {
     return false;
   }
 
+  /**
+   * Convierte un rango de tolerancia (en `MonedaTolerancia`) a la moneda del cobro.
+   * COB-TOL-001: no usar `convertirMonto(rango, 0, collection.coCurrency)` — con cobro local
+   * y tolerancia hard eso divide por la tasa y deja el rango ~0 (bloqueo falso).
+   * Restaura la intención de 81604a79 (hard→local = × tasa; local→hard = ÷ tasa).
+   */
+  private convertToleranceRangeToCollectionCurrency(rangeInToleranceCurrency: number): number {
+    const range = Number(rangeInToleranceCurrency) || 0;
+    const collectionCo = this.collection?.coCurrency;
+    if (!collectionCo || collectionCo === this.MonedaTolerancia) {
+      return range;
+    }
+
+    const rate = this.getEffectiveExchangeRate();
+    const localCo = this.localCurrency?.coCurrency;
+    const toleranceIsLocal =
+      this.MonedaToleranciaIsLocal
+      || (!!localCo && this.MonedaTolerancia === localCo)
+      || (!!this.MonedaTolerancia && this.currencyService?.isLocalCurrency?.(this.MonedaTolerancia) === true);
+    const collectionIsLocal =
+      this.currencyLocal
+      || (!!localCo && collectionCo === localCo)
+      || this.currencyService?.isLocalCurrency?.(collectionCo) === true;
+
+    let converted: number;
+    if (rate >= 1 && !toleranceIsLocal && collectionIsLocal) {
+      converted = range * rate;
+    } else if (rate >= 1 && toleranceIsLocal && !collectionIsLocal) {
+      converted = range / rate;
+    } else {
+      // Fallback: pasar MonedaTolerancia (mismo criterio que 81604a79).
+      converted = this.convertirMonto(range, 0, this.MonedaTolerancia);
+    }
+
+    return this.cleanFormattedNumber(this.currencyService.formatNumber(converted));
+  }
+
   /** Lógica pura de `checkTolerancia` (sin mutar botón). */
   private computeIsWithinTolerancia(): boolean {
     const isAlwaysPartialWithFixedMode = this.alwaysPartialPayment && !this.enablePartialPayment;
@@ -3620,53 +3673,14 @@ export class CollectionService {
     }
 
     if (this.TipoTolerancia == 0) {
-      if (this.collection.coCurrency == this.MonedaTolerancia) {
-        const amount = this.montoTotalPagado - this.montoTotalPagar;
-        if (amount > 0) {
-          return amount < this.RangoToleranciaPositiva;
-        }
-        if (amount < 0) {
-          return Math.abs(amount) <= this.RangoToleranciaNegativa;
-        }
-        return true;
-      }
-
-      if (this.MonedaToleranciaIsLocal) {
-        const amount = this.montoTotalPagado - this.montoTotalPagar;
-        if (this.collection.coCurrency == this.MonedaTolerancia) {
-          if (amount > 0) {
-            return amount < this.RangoToleranciaPositiva;
-          }
-          if (amount < 0) {
-            return Math.abs(amount) <= this.RangoToleranciaNegativa;
-          }
-          return true;
-        }
-        if (amount > 0) {
-          return amount < this.convertirMonto(this.RangoToleranciaPositiva, 0, this.collection.coCurrency);
-        }
-        if (amount < 0) {
-          return Math.abs(amount) <= this.convertirMonto(this.RangoToleranciaNegativa, 0, this.collection.coCurrency);
-        }
-        return true;
-      }
-
-      // Moneda tolerancia hard
       const amount = this.montoTotalPagado - this.montoTotalPagar;
-      if (this.collection.coCurrency == this.MonedaTolerancia) {
-        if (amount > 0) {
-          return amount < this.RangoToleranciaPositiva;
-        }
-        if (amount < 0) {
-          return Math.abs(amount) <= this.RangoToleranciaNegativa;
-        }
-        return true;
-      }
+      const positiveLimit = this.convertToleranceRangeToCollectionCurrency(this.RangoToleranciaPositiva);
+      const negativeLimit = this.convertToleranceRangeToCollectionCurrency(this.RangoToleranciaNegativa);
       if (amount > 0) {
-        return amount < this.convertirMonto(this.RangoToleranciaPositiva, 0, this.collection.coCurrency);
+        return amount < positiveLimit;
       }
       if (amount < 0) {
-        return Math.abs(amount) <= this.convertirMonto(this.RangoToleranciaNegativa, 0, this.collection.coCurrency);
+        return Math.abs(amount) <= negativeLimit;
       }
       return true;
     }
@@ -3687,9 +3701,13 @@ export class CollectionService {
 
   /** Emite la pestaña a enfocar tras un fallo de Enviar. */
   public requestSendValidationTabFocus(
-    tab?: 'default' | 'documentos' | 'pagos' | 'adjuntos',
+    tab?: CollectionSendTab | null,
   ): void {
-    this.focusSendValidationTab.next(tab ?? this.resolveSendValidationFocusTab());
+    const focus = tab === undefined ? this.resolveSendValidationFocusTab() : tab;
+    if (focus == null) {
+      return;
+    }
+    this.focusSendValidationTab.next(focus);
   }
 
   public hasAddedPaymentMethodForSendUx(): boolean {

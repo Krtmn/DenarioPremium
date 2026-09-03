@@ -53,6 +53,8 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
   public creditoFuerte: number = 0;
   public availableCreditLocal: number = 0;
   public availableCreditFuerte: number = 0;
+  /** global_configuration.htmlClientDescription — independiente de infoVendedores. */
+  public htmlClientDescription = false;
 
   subjectClientShareModalOpen: any;
   // selección múltiple de documentos
@@ -82,6 +84,7 @@ export class ClienteComponent implements OnInit, AfterViewInit, OnDestroy {
     //console.log(this.clientDetail);
     this.client = this.clientLogic.datos.client;
     this.clientLogic.checkUserStatus();
+    this.htmlClientDescription = this.globalConfig.get('htmlClientDescription') === 'true';
     this.client.txDescription1 = this.sanitizeDescription(this.client.txDescription1);
     this.client.txDescription2 = this.sanitizeDescription(this.client.txDescription2);
 
