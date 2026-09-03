@@ -765,7 +765,7 @@ export class InventariosLogicService {
       }
     }
     let dateLastInventory =  this.dateServ.pastDaysISO(daysSinceLastInventory);
-    //despacho por ultima facturacion (una sola factura cliente+sucursal)
+    //despacho por facturas del mismo dia que la ultima facturacion (cliente+sucursal)
     let dispatchsByLastInvoice = await this.getInvoiceDetailUnitsFromLastClientInvoice(
       dbServ, idProductUnits, idClient, idAddressClient
     );
@@ -2476,29 +2476,35 @@ getInvoiceDetailUnitsFromLastClientInvoice(
     "INNER JOIN invoice_details id ON id.id_invoice_detail = idu.id_invoice_detail " +
     "INNER JOIN invoices inv ON inv.id_invoice = id.id_invoice " +
     "WHERE inv.id_client = ? AND inv.id_address_client = ? " +
-    "AND inv.id_invoice = (" +
-      "SELECT id_invoice FROM invoices " +
+    "AND substr(inv.da_invoice, 1, 10) = (" +
+      "SELECT substr(da_invoice, 1, 10) FROM invoices " +
       "WHERE id_client = ? AND id_address_client = ? " +
       "ORDER BY da_invoice DESC, id_invoice DESC LIMIT 1" +
     ") AND idu.id_product_unit IN (" + idProductUnits.join(",") + ")";
 
   return dbServ.executeSql(select, [idClient, idAddressClient, idClient, idAddressClient]).then(data => {
-    const invoiceDetailUnits: InvoiceDetailUnit[] = [];
+    const byProductUnit = new Map<number, InvoiceDetailUnit>();
     for (let i = 0; i < data.rows.length; i++) {
       const item = data.rows.item(i);
-      invoiceDetailUnits.push({
-        idInvoiceDetailUnit: item.id_invoice_detail_unit,
-        coInvoiceDetailUnit: item.co_invoice_detail_unit,
-        idProductUnit: item.id_product_unit,
-        coProductUnit: item.co_product_unit,
-        idInvoiceDetail: item.id_invoice_detail,
-        coInvoiceDetail: item.co_invoice_detail,
-        quInvoice: item.qu_invoice,
-        coEnterprise: item.co_enterprise,
-        idEnterprise: item.id_enterprise
-      });
+      const idProductUnit = item.id_product_unit;
+      const existing = byProductUnit.get(idProductUnit);
+      if (existing !== undefined) {
+        existing.quInvoice += item.qu_invoice;
+      } else {
+        byProductUnit.set(idProductUnit, {
+          idInvoiceDetailUnit: item.id_invoice_detail_unit,
+          coInvoiceDetailUnit: item.co_invoice_detail_unit,
+          idProductUnit,
+          coProductUnit: item.co_product_unit,
+          idInvoiceDetail: item.id_invoice_detail,
+          coInvoiceDetail: item.co_invoice_detail,
+          quInvoice: item.qu_invoice,
+          coEnterprise: item.co_enterprise,
+          idEnterprise: item.id_enterprise
+        });
+      }
     }
-    return invoiceDetailUnits;
+    return Array.from(byProductUnit.values());
   });
 }
 
