@@ -341,13 +341,29 @@ ion-modal .productDetailImage swiper-container.mySwiper .swiper-pagination-bulle
     background: #59b02d;
 }
 
-ion-modal.product-image-zoom-modal .product-image-zoom-swiper .swiper-pagination-bullet {
-    background: #fff;
-    opacity: 0.45;
+ion-modal.product-image-zoom-modal .product-image-zoom-content {
+    --background: #ffffff;
+    color-scheme: only light;
+}
+
+ion-modal.product-image-zoom-modal--productos .product-image-zoom-swiper .swiper-pagination-bullet {
+    background: #430197;
+    opacity: 0.35;
+}
+
+ion-modal.product-image-zoom-modal--pedidos .product-image-zoom-swiper .swiper-pagination-bullet {
+    background: #59b02d;
+    opacity: 0.35;
 }
 
 ion-modal.product-image-zoom-modal .product-image-zoom-swiper .swiper-pagination-bullet-active {
     opacity: 1;
+}
+
+ion-modal.product-image-zoom-modal .product-image-zoom-img {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background: #ffffff;
 }
 
 .tituloModulos {

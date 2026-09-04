@@ -40,8 +40,8 @@ swiper-slide {
 }
 
 :host ::ng-deep .product-image-zoom-swiper .swiper-pagination-bullet {
-  background: #fff;
-  opacity: 0.45;
+  background: #430197;
+  opacity: 0.35;
 }
 
 :host ::ng-deep .product-image-zoom-swiper .swiper-pagination-bullet-active {
@@ -64,7 +64,8 @@ ion-select::part(text) {
 }
 
 .product-image-zoom-content {
-  --background: #000;
+  --background: #ffffff;
+  color-scheme: only light;
 }
 
 .product-image-zoom-swiper {
@@ -78,4 +79,7 @@ ion-select::part(text) {
   object-fit: contain;
   margin: auto;
   display: block;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #ffffff;
 }
