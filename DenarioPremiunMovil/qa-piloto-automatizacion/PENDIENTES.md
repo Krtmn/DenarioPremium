@@ -80,6 +80,30 @@ en `false` y `client_bank_account` tiene **0 filas**, así que este escenario **
 
 ---
 
+## 5. 🔁 Regresión completa de los 6 REQ de 4K
+
+**Guión:** `guiones-regresion/guion-req-4k-seis.md` — tiene TODOS los escenarios,
+incluidos los que la vuelta parcial no cubrió. Es el documento a seguir.
+
+**Vuelta parcial (03-04/09):** `automation/reports/4k/req_incidencias_20260903/`
+→ REQ **1, 2 y 5 PASS**; **3, 4 y 6 en espera**. Ese informe **no es el de cierre**:
+sirve de contexto para no repetir el reconocimiento.
+
+Lo que hace falta para destrabar los tres que faltan:
+
+| REQ | Bloqueo |
+|---|---|
+| **3** zoom | un producto **con imagen** cargada en 4K |
+| **4** moneda | identificar el cliente/empresa con **moneda fuerte y sin conversión** |
+| **6** estatus depósitos | desarrollo ajustó la BD tras la medición; **volver a medir de cero** |
+
+🔴 Y dentro de los que dieron PASS quedaron huecos que la regresión debe cerrar:
+enviar la visita y cotejarla en la nube/web (REQ 1), **reactivar** la actividad y ver
+si sus motivos vuelven (REQ 2), y el comportamiento con `htmlClientDescription=false`
+más la sanitización de HTML (REQ 5).
+
+---
+
 ## Cerrados recientemente
 
 - ✅ **Fix del despacho consolidado (hidroponias)** — validado el 01-02/09 en las 3 capas.

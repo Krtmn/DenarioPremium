@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Vuelta parcial — 6 REQ de 4K</title>
+<style>
+  :root {
+    --morado: #5501AA; --morado-osc: #3D0179; --morado-claro: #F2EAFB;
+    --verde: #91BA3F;  --verde-osc: #4A6B1B;  --verde-claro: #F0F6E4;
+    --ambar: #F5BA2E;  --ambar-claro: #FEF7E6; --ambar-osc: #8A6100;
+    --rojo: #A5121B;   --rojo-claro: #FDF0F0;
+    --gris: #5D5A63;   --linea: #D8D2E0;
+  }
+  @page { size: A4; margin: 14mm 14mm 15mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 10.2pt; color: #1F1B24;
+         line-height: 1.44; margin: 0; }
+  .marca { display: flex; align-items: center; justify-content: space-between; gap: 8mm;
+           border-bottom: 2.2pt solid var(--morado); padding-bottom: 3mm; margin-bottom: 4mm; }
+  .marca img { width: 52mm; display: block; }
+  .marca .quien { text-align: right; font-size: 8.6pt; color: var(--gris); line-height: 1.35; }
+  .marca .quien b { color: var(--morado); font-size: 9.4pt; display: block; letter-spacing: .2px; }
+  .cinta { height: 2.2mm; display: flex; margin: -4mm 0 4mm; }
+  .cinta i { flex: 1; }
+  .cinta i:nth-child(1) { background: var(--morado); }
+  .cinta i:nth-child(2) { background: var(--verde); }
+  .cinta i:nth-child(3) { background: var(--ambar); }
+  h1 { font-size: 17pt; color: var(--morado); margin: 0 0 1mm; letter-spacing: -.3px; }
+  h2 { font-size: 12.5pt; color: var(--morado); margin: 7mm 0 2.5mm; padding-bottom: 1.2mm;
+       border-bottom: 1.6pt solid var(--morado); page-break-after: avoid; }
+  h3 { font-size: 10.6pt; margin: 4mm 0 1.5mm; color: var(--morado-osc); page-break-after: avoid; }
+  .sub { color: var(--gris); font-size: 10pt; margin: 0 0 4mm; }
+  table { border-collapse: collapse; width: 100%; margin: 2mm 0 3mm; font-size: 9.2pt;
+          page-break-inside: avoid; }
+  th { background: var(--morado); color: #fff; text-align: left; padding: 1.7mm 2.3mm; font-weight: 600; }
+  td { border: .6pt solid var(--linea); padding: 1.5mm 2.3mm; vertical-align: top; }
+  tr:nth-child(even) td { background: #FAF7FD; }
+  .ok { color: var(--verde-osc); font-weight: 700; }
+  .bad { color: var(--rojo); font-weight: 700; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: .93em; color: var(--morado-osc); }
+  .ficha { width: 100%; margin: 0 0 4mm; font-size: 9.4pt; }
+  .ficha td { border: none; border-bottom: .5pt solid var(--linea); padding: 1.2mm 0; background: none !important; }
+  .ficha td:first-child { color: var(--gris); width: 42mm; }
+  .aviso { border-left: 4pt solid var(--ambar); background: var(--ambar-claro); padding: 3mm 4mm; margin: 4mm 0 5mm; }
+  .aviso .t { font-size: 12pt; font-weight: 700; color: var(--ambar-osc); margin-bottom: 1.5mm; }
+  .bien { border-left: 4pt solid var(--verde); background: var(--verde-claro); padding: 3mm 4mm; margin: 4mm 0; }
+  .bien .t { font-size: 11.5pt; font-weight: 700; color: var(--verde-osc); margin-bottom: 1.5mm; }
+  .nota { background: var(--morado-claro); border-left: 3pt solid var(--morado); padding: 2.5mm 3.5mm;
+          margin: 3mm 0; font-size: 9.4pt; page-break-inside: avoid; }
+  .calc { font-family: Consolas, "Courier New", monospace; background: var(--morado-claro);
+          border: .5pt solid var(--linea); padding: 1.7mm 3mm; margin: 2mm 0; font-size: 9.1pt; }
+  .cap { page-break-inside: avoid; margin: 2.5mm 0 3.5mm; }
+  .cap img { max-width: 100%; max-height: 108mm; border: .7pt solid var(--linea); display: block; }
+  .cap .pie { font-size: 8.3pt; color: var(--gris); margin-top: 1mm; font-style: italic; }
+  .par { display: flex; gap: 4mm; align-items: flex-start; page-break-inside: avoid; margin: 3mm 0; }
+  .par > div { flex: 1; }
+  .par .et { font-size: 9pt; font-weight: 700; margin-bottom: 1.2mm; }
+  .par img { max-width: 100%; max-height: 105mm; border: .7pt solid var(--linea); display: block; }
+  .et-bien { color: var(--verde-osc); }
+  .pill { display: inline-block; padding: .4mm 2mm; border-radius: 2mm; font-size: 8.5pt; font-weight: 700; }
+  .p-ok { background: var(--verde-claro); color: var(--verde-osc); border: .5pt solid var(--verde); }
+  .p-esp { background: var(--ambar-claro); color: var(--ambar-osc); border: .5pt solid var(--ambar); }
+  .p-na { background: #EFEDF2; color: var(--gris); border: .5pt solid var(--linea); }
+  .fin { margin-top: 6mm; padding-top: 2.5mm; border-top: 1.2pt solid var(--morado); font-size: 8.5pt;
+         color: var(--gris); display: flex; gap: 5mm; align-items: flex-start; }
+  .fin img { width: 26mm; opacity: .85; }
+  .pb { page-break-before: always; }
+</style></head><body>
+
+<div class="marca">
+  <img src="../../_assets/logo-denario-premium.svg" alt="Denario Premium">
+  <div class="quien"><b>CONTROL DE CALIDAD</b>Vuelta parcial · documento de trabajo<br>03–04/09/2026</div>
+</div>
+<div class="cinta"><i></i><i></i><i></i></div>
+
+<h1>Vuelta parcial sobre los 6 requerimientos de 4K</h1>
+<p class="sub">IMPORTADORA 4K · GRUPO 4K (<code>DIESE</code>) · Isla Coche</p>
+
+<div class="aviso">
+  <div class="t">⚠ Documento de trabajo — no es el informe de cierre</div>
+  Se validaron <b>3 de los 6</b> requerimientos. Los otros tres siguen bloqueados por
+  falta de datos o de desarrollo. <b>Este informe no certifica el conjunto</b>: sirve
+  para dejar constancia de lo medido y para no repetir el reconocimiento cuando se
+  haga la vuelta completa. El guión con <b>todos</b> los escenarios —incluidos los que
+  aquí quedaron fuera— está en
+  <code>guiones-regresion/guion-req-4k-seis.md</code>.
+</div>
+
+<table class="ficha">
+  <tr><td>Qué se validó</td><td>REQ <b>1</b> (comentario obligatorio por motivo), <b>2</b> (desactivar actividades) y <b>5</b> (HTML en descripciones)</td></tr>
+  <tr><td>Usuario móvil</td><td><code>v.0002zonacentral</code> — ANGEL BETANCOURT (<code>id_user 300</code>)</td></tr>
+  <tr><td>Cliente de prueba</td><td><code>C.0010</code> EURO REPUESTOS FIOVAL, C.A. (<code>id_client 11</code>)</td></tr>
+  <tr><td>Capas verificadas</td><td>Web · Base de datos · Móvil</td></tr>
+  <tr><td>Resultado</td><td><b class="ok">3 PASS · 0 FAIL</b> · 3 en espera</td></tr>
+</table>
+
+<h2>Estado de los seis</h2>
+<table>
+  <tr><th style="width:9mm">#</th><th>Requerimiento</th><th style="width:24mm">¿Construido?</th><th style="width:22mm">Resultado</th><th>Qué falta</th></tr>
+  <tr><td><b>1</b></td><td>Comentario obligatorio por motivo</td><td>Sí</td><td><span class="pill p-ok">✅ PASS</span></td><td>—</td></tr>
+  <tr><td><b>2</b></td><td>Desactivar actividades</td><td>Sí</td><td><span class="pill p-ok">✅ PASS</span></td><td>—</td></tr>
+  <tr><td><b>3</b></td><td>Zoom de imágenes</td><td>Sí</td><td><span class="pill p-esp">⏸ EN ESPERA</span></td><td><b>No hay productos con imagen</b> cargada</td></tr>
+  <tr><td><b>4</b></td><td>Moneda por defecto <span style="color:var(--gris)">(es un defecto)</span></td><td>—</td><td><span class="pill p-esp">⏸ EN ESPERA</span></td><td>Falta el cliente/config donde reproduce</td></tr>
+  <tr><td><b>5</b></td><td>HTML en descripciones</td><td>Sí</td><td><span class="pill p-ok">✅ PASS</span></td><td>—</td></tr>
+  <tr><td><b>6</b></td><td>Estatus en Depósitos</td><td>Parcial</td><td><span class="pill p-esp">⏸ EN ESPERA</span></td><td>Desarrollo ajustó la BD; hay que medir de cero</td></tr>
+</table>
+
+<div class="nota">
+<b>Sobre el REQ 2, una corrección de la primera lectura:</b> se dio por no construido
+porque el texto del requerimiento nombraba la columna <code>activate</code>. La columna
+real es <code>active</code>, y sí estaba implementada en las dos capas. El error fue de
+la revisión, no del desarrollo.
+</div>
+
+<div class="pb"></div>
+<h2>REQ 1 · Comentario obligatorio según el motivo</h2>
+
+<p>La web permite marcar, motivo por motivo, si el comentario es obligatorio; y el
+móvil lo exige al seleccionarlo. Se probó con <b>dos motivos</b>, uno de cada tipo.</p>
+
+<table>
+  <tr><th style="width:16mm">Cód.</th><th>Motivo</th><th style="width:36mm">Comentario Requerido (web)</th><th style="width:34mm"><code>required_comment</code> (BD)</th></tr>
+  <tr><td>236</td><td>QA MOTIVO CON COMENTARIO</td><td><b>SI</b></td><td><code>true</code> ✅</td></tr>
+  <tr><td>237</td><td>QA MOTIVO SIN COMENTARIO</td><td>NO</td><td><code>false</code> ✅</td></tr>
+</table>
+
+<div class="cap">
+  <img src="01-web-motivos-comentario-requerido.png" alt="Motivos con la columna Comentario Requerido">
+  <div class="pie">Empresa → Actividades → Eventos. La columna <b>Comentario Requerido</b> es la que pedía el requerimiento.</div>
+</div>
+
+<h3>En el móvil, las dos ramas</h3>
+
+<table>
+  <tr><th style="width:52mm">Motivo</th><th style="width:28mm">Comentario</th><th>Al pulsar AGREGAR</th><th style="width:20mm"></th></tr>
+  <tr><td>QA MOTIVO <b>CON</b> COMENTARIO</td><td>vacío</td><td><b>No agrega</b> · borde rojo y «¡Campo Obligatorio!»</td><td><span class="pill p-ok">✅</span></td></tr>
+  <tr><td>QA MOTIVO <b>SIN</b> COMENTARIO</td><td>vacío</td><td><b>Agrega</b> normalmente</td><td><span class="pill p-ok">✅</span></td></tr>
+</table>
+
+<div class="nota">
+<b>El control es lo que le da valor a la prueba.</b> Que rechace con un motivo no
+demuestra nada por sí solo: podría estar exigiendo comentario siempre. Que el otro
+motivo <b>sí</b> deje agregar con el campo vacío es lo que prueba que la validación
+está mirando el motivo.
+</div>
+
+<div class="cap">
+  <img src="03-movil-comentario-obligatorio.png" alt="Comentario obligatorio en el móvil">
+  <div class="pie">Motivo que exige comentario, campo vacío: la adición se rechaza y se indica qué falta.</div>
+</div>
+
+<div class="nota" style="border-color:var(--ambar);background:var(--ambar-claro)">
+<b>Observación menor, no defecto:</b> el pie del campo sigue diciendo
+<b>«Mín. 0 - Máx. 120 caracteres»</b> aunque el comentario sea obligatorio, y justo
+debajo aparece «¡Campo Obligatorio!». Los dos textos se contradicen.
+</div>
+
+<div class="pb"></div>
+<h2>REQ 2 · Desactivar actividades</h2>
+
+<p>Lo que pedía el cliente: que una actividad deje de ofrecerse en el móvil,
+<b>pero siga viéndose en las visitas que ya la usaban</b>. Se cumplen las dos.</p>
+
+<div class="calc">
+Se creó <b>QA ACTIVIDAD PRUEBA 0309</b> (id_type 93) con sus dos motivos.<br>
+Se montó una <b>visita</b> con ella y se guardó.<br>
+Se <b>desactivó</b> desde la web y se sincronizó el equipo.
+</div>
+
+<table>
+  <tr><th style="width:52mm">Condición</th><th>Medición</th><th style="width:20mm"></th></tr>
+  <tr><td>El alta llega al móvil</td><td>la lista pasó de <b>12 a 13</b> actividades</td><td><span class="pill p-ok">✅</span></td></tr>
+  <tr><td>Al desactivar, caen sus motivos</td><td>la web avisa «<b>También se desactivarán sus motivos</b>» y así ocurre; <code>required_comment</code> se conserva</td><td><span class="pill p-ok">✅</span></td></tr>
+  <tr><td><b>Ya no se ofrece</b> en visitas nuevas</td><td>de <b>13 a 12</b> — exactamente la lista previa a crearla</td><td><span class="pill p-ok">✅</span></td></tr>
+  <tr><td><b>Sigue visible</b> en la visita guardada</td><td>«Actividad: QA ACTIVIDAD PRUEBA 0309 · Evento: QA MOTIVO SIN COMENTARIO»</td><td><span class="pill p-ok">✅</span></td></tr>
+</table>
+
+<div class="cap">
+  <img src="04-movil-visita-guardada-conserva-actividad.png" alt="La visita guardada conserva la actividad desactivada">
+  <div class="pie">La visita guardada, <b>después</b> de desactivar la actividad en la web y sincronizar: la conserva.</div>
+</div>
+
+<div class="pb"></div>
+<h2>REQ 5 · HTML en las descripciones del cliente</h2>
+
+<p>Con <code>htmlClientDescription</code> en <b>true</b>, las descripciones del cliente
+se muestran con formato en vez de como texto plano.</p>
+
+<div class="par">
+  <div>
+    <div class="et et-bien">Así se ve en el móvil</div>
+    <img src="02-movil-html-descripciones.png" alt="Descripciones con HTML renderizado">
+  </div>
+  <div>
+    <div class="et">Lo que hay detrás</div>
+    <div class="calc" style="margin-top:0">
+      <b>Descripción 1</b><br>
+      &lt;b&gt;Importante&lt;/b&gt;&lt;br&gt;<br>
+      Línea 2 de descripción 1<br><br>
+      <b>Descripción 2</b><br>
+      &lt;b&gt;Cliente VIP&lt;/b&gt;&lt;br&gt;<br>
+      Pago contra entrega&lt;br&gt;<br>
+      &lt;strong&gt;No entregar sin factura&lt;/strong&gt;
+    </div>
+    <p style="font-size:9pt;margin-top:2mm">Se verificó en el DOM que existen
+    elementos <code>&lt;b&gt;</code> y <code>&lt;strong&gt;</code> <b>reales</b>, y que
+    <b>ninguna etiqueta se ve como texto</b>. Funcionan las dos formas de negrita
+    y el salto de línea.</p>
+  </div>
+</div>
+
+<h2>Qué NO cubrió esta vuelta</h2>
+
+<p>Además de los tres REQ en espera, dentro de los validados quedaron escenarios sin
+tocar. Están todos desglosados en el guión; los de más riesgo:</p>
+
+<table>
+  <tr><th style="width:14mm">REQ</th><th>Escenario pendiente</th><th>Por qué importa</th></tr>
+  <tr><td><b>1</b></td><td>Enviar la visita y cotejarla en la nube y la web</td><td>Solo se guardó en el equipo; el circuito completo no se probó</td></tr>
+  <tr><td><b>1</b></td><td>Cambiar de motivo sin cerrar el modal</td><td>Es donde se queda pegado un estado anterior</td></tr>
+  <tr><td><b>2</b></td><td><b>Reactivar</b> la actividad</td><td>Al desactivar, los motivos caen en cascada. Si al reactivar no vuelven, la actividad queda activa <b>sin motivos</b></td></tr>
+  <tr><td><b>5</b></td><td>Comportamiento con la flag en <b>false</b></td><td>Es el estado por defecto del resto de clientes: si ahí se vieran las etiquetas crudas sería peor que no tener la mejora</td></tr>
+  <tr><td><b>5</b></td><td>Sanitización (<code>&lt;script&gt;</code>, <code>onerror</code>)</td><td>Existe <code>sanitizeDescription()</code>, pero no se ejercitó</td></tr>
+</table>
+
+<h2>Dos hallazgos de método, útiles para la próxima vuelta</h2>
+
+<div class="bien">
+  <div class="t">Sincronizar toma 15 segundos, sin cerrar sesión</div>
+  El <b>botón «Sincronizar» del home</b> hace el trabajo completo. Salir y volver a
+  entrar es lento, arriesga la sesión y en una ocasión dejó la app colgada varios
+  minutos en la pantalla de sincronización.
+</div>
+
+<div class="nota">
+<b>El selector de cliente no responde al clic</b> — ni en Visitas ni en Cobros. Hay que
+invocar <code>#clienteSelectModal.present()</code> y después pulsar el <code>&lt;p&gt;</code>
+del nombre. Costó tres intentos fallidos descubrirlo.
+</div>
+
+<div class="nota" style="border-color:var(--rojo);background:var(--rojo-claro)">
+<b>Dos falsos resultados detectados antes de reportarlos.</b> Uno decía que la
+actividad ya no se ofrecía, cuando en realidad la app estaba en el menú principal y
+no había ninguna lista que leer —<b>un cero donde deberían ser 12 no es un resultado</b>—.
+El otro daba <b>FAIL</b> en la visita guardada: se había abierto la visita equivocada,
+porque el mismo cliente tenía <b>dos</b> guardadas y la primera era de otra prueba.
+Conviene recordarlo: conviene comprobar el conteo esperado y recorrer todos los
+candidatos antes de concluir.
+</div>
+
+<h2>Registros de prueba creados</h2>
+<table>
+  <tr><th style="width:56mm">Objeto</th><th>Estado al cierre</th></tr>
+  <tr><td><b>QA ACTIVIDAD PRUEBA 0309</b> (id_type 93)</td><td><b>Desactivada</b> — no aparece a los vendedores</td></tr>
+  <tr><td>Motivos 236 y 237</td><td>Desactivados en cascada</td></tr>
+  <tr><td>Visita guardada de <code>C.0010</code></td><td>En el equipo, <b>sin enviar</b></td></tr>
+  <tr><td><code>tx_description_1/2</code> de <code>id_client 11</code></td><td>Con el HTML de prueba</td></tr>
+  <tr><td><code>htmlClientDescription</code></td><td><code>true</code></td></tr>
+</table>
+
+<div class="fin">
+  <img src="../../_assets/isotipo-denario.png" alt="">
+  <div>
+    <b>Denario Premium · Control de Calidad</b><br>
+    Vuelta parcial · 03–04/09/2026 · <code>req_incidencias_20260903</code><br>
+    Guión completo de los 6 REQ: <code>guiones-regresion/guion-req-4k-seis.md</code>
+  </div>
+</div>
+
+</body></html>
