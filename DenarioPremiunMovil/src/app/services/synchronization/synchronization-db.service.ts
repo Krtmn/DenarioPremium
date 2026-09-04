@@ -1686,6 +1686,7 @@ export class SynchronizationDBService {
   insertTransactionStatusesBatch(arr: TransactionStatuses[]) {
     var statements = [];
     this.collectionService.listTransactionStatusCollections = [] as TransactionStatuses[]; // LIMPIO LA LISTA ANTES DE CARGAR NUEVOS DATOS
+    this.depositService.listTransactionStatusDeposits = [] as TransactionStatuses[];
     let insertStatement = "INSERT OR REPLACE INTO transaction_statuses(" +
       "id_transaction_status, da_transaction_statuses,id_transaction_type," +
       "co_transaction_type,co_transaction,id_transaction," +
@@ -1702,6 +1703,10 @@ export class SynchronizationDBService {
         //Y ACTUALIZAR LOS DOCUMENTOS DE ESE COBRO
         this.collectionService.listTransactionStatusCollections.push(arr[i]);
       }
+      if (arr[i].idTransactionType === 6) {
+        // Depósitos: al rechazar, liberar cobros del detalle (paralelo a documentos en cobros)
+        this.depositService.listTransactionStatusDeposits.push(arr[i]);
+      }
     }
 
     return this.database.sqlBatch(statements).then(res => {
@@ -1710,10 +1715,28 @@ export class SynchronizationDBService {
         if (res)
           this.collectionService.checkHistoricCollects(this.database).then(() => {
             console.log("checkHistoricCollects process finished");
-            this.collectionService.unlockDocumentSales(this.database);
+            this.collectionService.unlockDocumentSales(this.database).then((docs) => {
+              const refusedCollections = (this.collectionService.collectionRefused ?? [])
+                .map((ts) => String(
+                  (ts as any)?.coTransaction
+                  ?? (ts as any)?.co_transaction
+                  ?? (ts as any)?.coCollection
+                  ?? (ts as any)?.co_collection
+                  ?? '',
+                ).trim())
+                .filter((c) => c.length > 0);
+              void this.depositService.releaseCollectsFromRefusedCollections(
+                this.database,
+                refusedCollections,
+              );
+              return docs;
+            });
             this.collectionService.lockDocumentSales(this.database);
           });
       })
+      void this.depositService.checkHistoricDeposits(this.database).then(() => {
+        return this.depositService.releaseCollectsFromRefusedDeposits(this.database);
+      });
       return res;
     }).catch(e => {
       console.log(e);
@@ -1797,7 +1820,10 @@ export class SynchronizationDBService {
 
   insertDepositBatch(arr: Deposit[]) {
     return this.depositService.mergeSyncedDepositsWithLocal(this.database, arr).then((merged) => {
-      return this.depositService.saveDepositBatch(this.database, merged);
+      return this.depositService.saveDepositBatch(this.database, merged).then((result) => {
+        // Reaplica rechazo tras sync de deposits (la tabla llega después de transaction_statuses).
+        return this.depositService.releaseCollectsFromRefusedDeposits(this.database).then(() => result);
+      });
     });
   }
 
