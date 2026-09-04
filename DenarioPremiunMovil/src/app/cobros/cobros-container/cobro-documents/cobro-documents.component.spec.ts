@@ -35,6 +35,10 @@ describe('CobrosDocumentComponent', () => {
       selectedCollectDiscounts: [1],
       tempSelectedCollectDiscounts: [{ idCollectDiscount: 1 }],
       prevSelectedCollectDiscounts: [1],
+      collectDiscounts: [],
+      totalCollectDiscountsSelected: 0,
+      maxCollectDiscount: 100,
+      mensaje: '',
       collection: {
         collectionDetails: [],
       },
@@ -265,5 +269,58 @@ describe('CobrosDocumentComponent', () => {
 
     collectServiceMock.sendValidationAttempted = false;
     expect(component.shouldShowDocumentRetentionSendError(0)).toBeFalse();
+  });
+
+  describe('COB-DISC-002 maxCollectDiscount', () => {
+    beforeEach(() => {
+      collectServiceMock.maxCollectDiscount = 10;
+      collectServiceMock.totalCollectDiscountsSelected = 0;
+      collectServiceMock.tempSelectedCollectDiscounts = [];
+      collectServiceMock.collectDiscounts = [
+        { idCollectDiscount: 1, nuCollectDiscount: 8, naCollectDiscount: 'D8', requireInput: false },
+        { idCollectDiscount: 2, nuCollectDiscount: 5, naCollectDiscount: 'D5', requireInput: false },
+        { idCollectDiscount: 3, nuCollectDiscount: null, naCollectDiscount: null, requireInput: true },
+      ];
+      collectServiceMock.collectionTags = new Map();
+      collectServiceMock.mensaje = '';
+      component.alertMessageOpen = false;
+      spyOn(component as any, 'validateCollectDiscountsInputs').and.stub();
+    });
+
+    it('rechaza segundo descuento que supera el tope y no lo agrega', () => {
+      component.toggleTempSelection(1);
+      expect(collectServiceMock.tempSelectedCollectDiscounts.length).toBe(1);
+      expect(collectServiceMock.totalCollectDiscountsSelected).toBe(8);
+
+      component.toggleTempSelection(2);
+      expect(collectServiceMock.tempSelectedCollectDiscounts.length).toBe(1);
+      expect(collectServiceMock.totalCollectDiscountsSelected).toBe(8);
+      expect(component.alertMessageOpen).toBeTrue();
+      expect(collectServiceMock.mensaje).toContain('10');
+      expect(collectServiceMock.mensaje).toContain('2');
+    });
+
+    it('setNu que excede quita el descuento y muestra disponible', () => {
+      collectServiceMock.tempSelectedCollectDiscounts = [
+        { idCollectDiscount: 1, nuCollectDiscount: 8, naCollectDiscount: 'D8', requireInput: false },
+        { idCollectDiscount: 3, nuCollectDiscount: 0, naCollectDiscount: null, requireInput: true },
+      ];
+      collectServiceMock.totalCollectDiscountsSelected = 8;
+
+      component.setNuCollectDiscount(3, 5);
+
+      expect(collectServiceMock.tempSelectedCollectDiscounts.some(
+        (d: any) => d.idCollectDiscount === 3,
+      )).toBeFalse();
+      expect(collectServiceMock.totalCollectDiscountsSelected).toBe(8);
+      expect(component.alertMessageOpen).toBeTrue();
+      expect(collectServiceMock.mensaje).toContain('2');
+    });
+
+    it('getRemainingCollectDiscountPercent respeta maxCollectDiscount', () => {
+      collectServiceMock.totalCollectDiscountsSelected = 7;
+      expect(component.getRemainingCollectDiscountPercent()).toBe(3);
+      expect(component.getMaxCollectDiscountPercent()).toBe(10);
+    });
   });
 });

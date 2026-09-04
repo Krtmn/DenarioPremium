@@ -4115,6 +4115,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   toggleTempSelection(id: number) {
     const d = this.collectService.collectDiscounts.find(cd => cd.idCollectDiscount === id);
     if (!d) return;
+    const maxPercent = this.getMaxCollectDiscountPercent();
     const idx = this.collectService.tempSelectedCollectDiscounts.findIndex(x => x.idCollectDiscount === id);
     if (idx >= 0) {
       // quitar selección
@@ -4122,21 +4123,19 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       // Recalcular y actualizar flag de bloqueo
       const totalAfterRemoval = this.collectService.tempSelectedCollectDiscounts.reduce((acc, t) => acc + Number(t.nuCollectDiscount ?? 0), 0);
       this.collectService.totalCollectDiscountsSelected = totalAfterRemoval;
-      this.disableDiscountCheckboxes = totalAfterRemoval >= 100;
+      this.disableDiscountCheckboxes = totalAfterRemoval >= maxPercent;
       this.cdr.detectChanges();
       return;
     }
 
-    // Añadir: validar que no supere 100
+    // Añadir: validar que no supere maxCollectDiscount
     const currentTotal = this.collectService.tempSelectedCollectDiscounts.reduce((acc, t) => acc + Number(t.nuCollectDiscount || 0), 0);
     const toAdd = Number(d.nuCollectDiscount ?? 0);
     const candidateTotal = currentTotal + toAdd;
+    const remaining = Math.max(0, maxPercent - currentTotal);
 
-    if (candidateTotal > 100) {
-      // No permitir selección que exceda 100
-      this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSJ_DISCOUNT_EXCEEDS_100') || 'La suma de descuentos no puede exceder 100%';
-      // opcional: abrir alerta si la app usa alertMessageOpen
-      this.alertMessageOpen = true;
+    if (candidateTotal > maxPercent) {
+      this.notifyCollectDiscountLimitExceeded(remaining);
       return;
     }
 
@@ -4151,8 +4150,8 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
     this.collectService.tempSelectedCollectDiscounts.push({ ...d, nuCollectDiscount: nu, naCollectDiscount: na } as any);
 
-    // Si llega exactamente a 100, bloquear los checkboxes
-    this.disableDiscountCheckboxes = candidateTotal >= 100;
+    // Si llega exactamente al tope, bloquear los checkboxes
+    this.disableDiscountCheckboxes = candidateTotal >= maxPercent;
     this.collectService.totalCollectDiscountsSelected = candidateTotal;
     this.cdr.detectChanges();
   }
@@ -4541,28 +4540,39 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   setNuCollectDiscount(idCollectDiscount: number, nuCollectDiscount: any) {
-    // Enforce that totalCollectDiscountsSelected + new value <= 100
+    // Enforce that totalCollectDiscountsSelected + new value <= maxCollectDiscount
     const newVal = Number(nuCollectDiscount);
     if (isNaN(newVal)) return;
+
+    const maxPercent = this.getMaxCollectDiscountPercent();
 
     // Sum of other discounts (exclude the one being edited)
     const othersTotal = this.collectService.tempSelectedCollectDiscounts
       .filter(cd => cd.idCollectDiscount !== idCollectDiscount)
       .reduce((acc, t) => acc + Number(t.nuCollectDiscount ?? 0), 0);
 
-    const allowed = Math.max(0, 100 - othersTotal);
+    const allowed = Math.max(0, maxPercent - othersTotal);
 
-    // Find the temp selected discount and update safely
+    if (newVal > allowed) {
+      // Quitar el descuento que provocó el exceso (no clampear)
+      const removeIdx = this.collectService.tempSelectedCollectDiscounts
+        .findIndex(cd => cd.idCollectDiscount === idCollectDiscount);
+      if (removeIdx >= 0) {
+        this.collectService.tempSelectedCollectDiscounts.splice(removeIdx, 1);
+      }
+      this.notifyCollectDiscountLimitExceeded(allowed);
+      const totalAfterRemoval = this.collectService.tempSelectedCollectDiscounts
+        .reduce((acc, t) => acc + Number(t.nuCollectDiscount ?? 0), 0);
+      this.collectService.totalCollectDiscountsSelected = totalAfterRemoval;
+      this.validateCollectDiscountsInputs();
+      this.disableDiscountCheckboxes = totalAfterRemoval >= maxPercent;
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.collectService.tempSelectedCollectDiscounts.forEach(cd => {
       if (cd.idCollectDiscount === idCollectDiscount) {
-        if (newVal > allowed) {
-          // Do not allow values that push total over 100; clamp to allowed and notify
-          cd.nuCollectDiscount = allowed;
-          this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSJ_DISCOUNT_EXCEEDS_100') || 'La suma de descuentos no puede exceder 100%';
-          this.alertMessageOpen = true;
-        } else {
-          cd.nuCollectDiscount = newVal;
-        }
+        cd.nuCollectDiscount = newVal;
       }
     });
 
@@ -4570,8 +4580,49 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     const total = this.collectService.tempSelectedCollectDiscounts.reduce((acc, t) => acc + Number(t.nuCollectDiscount ?? 0), 0);
     this.collectService.totalCollectDiscountsSelected = total;
     this.validateCollectDiscountsInputs();
-    this.disableDiscountCheckboxes = total >= 100;
+    this.disableDiscountCheckboxes = total >= maxPercent;
     this.cdr.detectChanges();
+  }
+
+  /** Tope % de descuentos (config maxCollectDiscount). */
+  getMaxCollectDiscountPercent(): number {
+    const max = Number(this.collectService.maxCollectDiscount);
+    if (!Number.isFinite(max) || max <= 0) {
+      return 100;
+    }
+    return max;
+  }
+
+  /** % aún disponible bajo el tope maxCollectDiscount. */
+  getRemainingCollectDiscountPercent(): number {
+    const used = Number(this.collectService.totalCollectDiscountsSelected) || 0;
+    return Math.max(0, this.getMaxCollectDiscountPercent() - used);
+  }
+
+  /**
+   * Máximo % editable para un descuento concreto (techo − suma de los demás).
+   * Usado en el input de tasa al editar.
+   */
+  getAllowedCollectDiscountPercentForEdit(idCollectDiscount: number): number {
+    const othersTotal = this.collectService.tempSelectedCollectDiscounts
+      .filter(cd => cd.idCollectDiscount !== idCollectDiscount)
+      .reduce((acc, t) => acc + Number(t.nuCollectDiscount ?? 0), 0);
+    return Math.max(0, this.getMaxCollectDiscountPercent() - othersTotal);
+  }
+
+  private notifyCollectDiscountLimitExceeded(availablePercent: number): void {
+    const maxPercent = this.getMaxCollectDiscountPercent();
+    const available = Math.max(0, Number(availablePercent) || 0);
+    const template = this.collectService.collectionTags.get('COB_MSJ_DISCOUNT_EXCEEDS_100');
+    if (template && (template.includes('{max}') || template.includes('{available}'))) {
+      this.collectService.mensaje = template
+        .replace('{max}', String(maxPercent))
+        .replace('{available}', String(available));
+    } else {
+      this.collectService.mensaje =
+        `Se superó el límite de descuento (${maxPercent}%). Máximo disponible: ${available}%.`;
+    }
+    this.alertMessageOpen = true;
   }
 
   setNaCollectDiscount(idCollectDiscount: number, naCollectDiscount: any) {

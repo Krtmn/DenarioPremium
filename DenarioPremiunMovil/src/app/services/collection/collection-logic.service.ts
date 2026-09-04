@@ -274,6 +274,8 @@ export class CollectionService {
   public messageSended: boolean = false;
   public enableDifferenceCodes: boolean = false;
   public userCanSelectCollectDiscount: boolean = false;
+  /** Tope % de descuentos de documento (config maxCollectDiscount; default 100). */
+  public maxCollectDiscount: number = 100;
   public missingRetention: boolean = false;
   public missingRetentionValue: boolean = false;
   public canChangeRate: boolean = false;
@@ -445,6 +447,10 @@ export class CollectionService {
     this.enableDifferenceCodes = this.globalConfig.get('enableDifferenceCodes') === 'true' ? true : false;
     const userCanSelectCollectDiscountValue = (this.globalConfig.get('userCanSelectCollectDiscount') || '').trim();
     this.userCanSelectCollectDiscount = userCanSelectCollectDiscountValue === 'true' ? true : false;
+    this.maxCollectDiscount = this.parseConfigDecimal(this.globalConfig.get('maxCollectDiscount'));
+    if (!Number.isFinite(this.maxCollectDiscount) || this.maxCollectDiscount <= 0) {
+      this.maxCollectDiscount = 100;
+    }
     const canChangeRateValue = (this.globalConfig.get('canChangeRate') || '').trim();
     this.canChangeRate = canChangeRateValue === 'true' ? true : false;
     const missingRetentionValue = (this.globalConfig.get('missingRetention') || '').trim();
