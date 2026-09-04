@@ -1,50 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-
-
-    <base-config cleartextTrafficPermitted="true">
-        <trust-anchors>
-            <certificates src="system" />
-            <certificates src="user" />
-        </trust-anchors>
-    </base-config>
-
-    <domain-config cleartextTrafficPermitted="false">
-        <!-- si cliente usa HTTPS, va aqui -->
-        <domain includeSubdomains="true">denario.net</domain>
-        <domain includeSubdomains="true">denario-mobile-dev.apps.kraftheinz.com</domain>
-        <domain includeSubdomains="true">denario-mobile.apps.kraftheinz.com</domain>
-
-        <trust-anchors>
-            <!-- CA empaquetada para compatibilidad en Android antiguos -->
-            <certificates src="@raw/denario_ca" />
-            <certificates src="system" />
-            <certificates src="user" />
-        </trust-anchors>
-    </domain-config>
-
-    <domain-config cleartextTrafficPermitted="true">
-        <!-- si cliente _NO_ usa HTTPS, va aqui -->
-        <!-- Kiberno - Diego TESTING-->
-        <domain includeSubdomains="true">192.168.0.107</domain>
-        <domain includeSubdomains="true">192.168.0.153</domain>
-        <domain includeSubdomains="true">192.168.0.187</domain>
-        <domain includeSubdomains="true">192.168.0.189</domain>      
-        <domain includeSubdomains="true">192.168.1.43</domain>
-        <!-- Kiberno - Soporte -->
-        <domain includeSubdomains="true">soportepremium.ddns.net</domain>
-        <!-- tambien va aqui cualquier servidor de prueba -->
-        <domain includeSubdomains="true">denariopremium.com</domain>
-        <domain includeSubdomains="true">denariodemo.ddns.net</domain>
-        <domain includeSubdomains="true">denarioelyaque.ddns.net</domain>
-        <domain includeSubdomains="true">denarioislacoche.ddns.net</domain>
-        <domain includeSubdomains="true">denariolatortuga.ddns.net</domain>
-        <domain includeSubdomains="true">denariocaribe.ddns.net</domain>
-        <domain includeSubdomains="true">190.8.171.234</domain>
-
-        <domain includeSubdomains="true">3.219.247.67</domain>
-
-
-    </domain-config>
-
+  <base-config cleartextTrafficPermitted="true">
+    <trust-anchors>
+      <certificates src="system" />
+    </trust-anchors>
+  </base-config>
 </network-security-config>
