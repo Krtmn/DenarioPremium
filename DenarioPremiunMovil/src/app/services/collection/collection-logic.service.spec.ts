@@ -1773,15 +1773,54 @@ describe('CollectionService', () => {
         service.multiCurrency = true;
         service.currencySelected = { localCurrency: 'true' } as any;
         service.currencyConversion = { coCurrency: 'Bs' } as any;
+        service.discountRemnantPrepaidAmount = 0;
         spyOn(service as any, 'syncPrepaidDifferenceAmounts').and.returnValue(150.5);
         spyOn(service as any, 'syncExchangeRateToCollectionHeader').and.stub();
         spyOn(service, 'getEffectiveExchangeRate').and.returnValue(36);
         spyOn(service, 'convertirMonto').and.returnValue(150.5);
+        spyOn(service, 'getAutomatedPrepaidExcessAmount').and.returnValue(150.5);
         spyOn((service as any).currencyService, 'formatNumber').and.returnValue('150.50');
 
         expect(service.buildAutomatedPrepaidMessage()).toBe(
           'Se creará un anticipo automático por el monto excedente de $ 150.50. Se enviará un anticipo junto al cobro.',
         );
+      });
+
+      it('COB-DISC-003: remanente se suma al monto de anticipo en prepaidCurrency', () => {
+        service.prepaidCurrency = 'USD';
+        service.collection = { coCurrency: 'USD', nuDifference: 0, nuDifferenceConversion: 0 } as any;
+        service.discountRemnantPrepaidAmount = 50;
+        spyOn(service as any, 'syncPrepaidDifferenceAmounts').and.returnValue(10);
+        spyOn(service as any, 'syncExchangeRateToCollectionHeader').and.stub();
+
+        const amounts = service.resolveAutomatedPrepaidDocumentAmounts();
+        expect(amounts.coCurrency).toBe('USD');
+        expect(amounts.nuAmount).toBe(60);
+      });
+
+      it('COB-DISC-003: shouldCreateAutomatedPrepaidOnSend true solo con remanente confirmado', () => {
+        service.coTypeModule = '0';
+        service.existPartialPayment = false;
+        service.automatedPrepaid = false;
+        service.createAutomatedPrepaid = false;
+        service.discountRemnantPrepaidAmount = 50;
+        service.anticipoAutomatico = [];
+        spyOn(service, 'ensureAutomatedPrepaidPaymentTemplate').and.callFake(() => {
+          service.anticipoAutomatico = [{ type: 'ef', posCollectionPayment: -1, synthetic: true }];
+        });
+
+        expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeTrue();
+        expect(service.ensureAutomatedPrepaidPaymentTemplate).toHaveBeenCalled();
+      });
+
+      it('COB-DISC-003: convertCollectionAmountToPrepaidCurrency respeta prepaidCurrency', () => {
+        service.prepaidCurrency = 'Bs';
+        service.collection = { coCurrency: 'USD' } as any;
+        service.multiCurrency = true;
+        spyOn(service, 'getEffectiveExchangeRate').and.returnValue(36);
+        spyOn(service, 'convertirMonto').and.returnValue(1800);
+
+        expect(service.convertCollectionAmountToPrepaidCurrency(50)).toBe(1800);
       });
 
       it('COB-PREPAID-003: createAnticipoCollection persiste moneda prepaidCurrency', async () => {

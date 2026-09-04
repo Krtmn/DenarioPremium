@@ -39,12 +39,21 @@ describe('CobrosDocumentComponent', () => {
       totalCollectDiscountsSelected: 0,
       maxCollectDiscount: 100,
       mensaje: '',
+      discountRemnantPrepaidByDocument: new Map(),
+      discountRemnantPrepaidAmount: 0,
+      setDiscountRemnantPrepaidForDocument: jasmine.createSpy('setDiscountRemnantPrepaidForDocument'),
+      clearDiscountRemnantPrepaidForDocument: jasmine.createSpy('clearDiscountRemnantPrepaidForDocument'),
+      convertCollectionAmountToPrepaidCurrency: jasmine.createSpy('convertCollectionAmountToPrepaidCurrency')
+        .and.callFake((n: number) => n),
+      buildDiscountRemnantPrepaidMessage: jasmine.createSpy('buildDiscountRemnantPrepaidMessage')
+        .and.callFake((n: number) => `¿anticipo ${n}?`),
+      ensureAutomatedPrepaidPaymentTemplate: jasmine.createSpy('ensureAutomatedPrepaidPaymentTemplate'),
       collection: {
         collectionDetails: [],
       },
       documentSaleOpen: null,
       collectionTags: new Map(),
-      collectionTagsDenario: new Map([['DENARIO_BOTON_ACEPTAR', 'Aceptar']]),
+      collectionTagsDenario: new Map([['DENARIO_BOTON_ACEPTAR', 'Aceptar'], ['DENARIO_BOTON_CANCELAR', 'Cancelar']]),
     };
 
     TestBed.configureTestingModule({
@@ -321,6 +330,75 @@ describe('CobrosDocumentComponent', () => {
       collectServiceMock.totalCollectDiscountsSelected = 7;
       expect(component.getRemainingCollectDiscountPercent()).toBe(3);
       expect(component.getMaxCollectDiscountPercent()).toBe(10);
+    });
+  });
+
+  describe('COB-DISC-003 discount remnant prepaid', () => {
+    beforeEach(() => {
+      collectServiceMock.convertirMonto = jasmine.createSpy('convertirMonto').and.callFake((n: number) => n);
+      collectServiceMock.documentSaleOpen = {
+        coDocument: 'FAC-1',
+        nuAmountBase: 100,
+        nuAmountDiscount: 0,
+        coCurrency: 'USD',
+        nuAmountRetention: 0,
+        nuAmountRetention2: 0,
+        positionCollecDetails: 0,
+      };
+      collectServiceMock.collection = {
+        coCurrency: 'USD',
+        nuValueLocal: 1,
+        collectionDetails: [{ coDocument: 'FAC-1', nuAmountDiscount: 0 }],
+      };
+      collectServiceMock.documentSalesView = [{ nuBalance: 100, coDocument: 'FAC-1' }];
+      collectServiceMock.selectedCollectDiscounts = [];
+      collectServiceMock.tempSelectedCollectDiscounts = [];
+      collectServiceMock.collectDiscounts = [];
+      (component as any).indexDocumentSaleOpen = 0;
+      (component as any).manualCollectDiscountAmount = 150;
+      spyOn(component as any, 'calculateSaldo').and.resolveTo(undefined);
+      spyOn(component, 'applyCollectDiscounts').and.resolveTo(undefined);
+    });
+
+    it('accept con remanente abre confirmación y no aplica aún', async () => {
+      await component.acceptCollectDiscounts();
+
+      expect(component.alertDiscountRemnantOpen).toBeTrue();
+      expect(collectServiceMock.buildDiscountRemnantPrepaidMessage).toHaveBeenCalledWith(50);
+      expect(component.applyCollectDiscounts).not.toHaveBeenCalled();
+    });
+
+    it('confirm Sí aplica full y registra remanente', async () => {
+      (component as any).pendingDiscountRemnantInCollection = 50;
+      await component.setResultDiscountRemnant({ detail: { role: 'confirm' } });
+
+      expect(component.applyCollectDiscounts).toHaveBeenCalledWith({ clampToBalance: false });
+      expect(collectServiceMock.setDiscountRemnantPrepaidForDocument)
+        .toHaveBeenCalledWith('FAC-1', 50);
+      expect(collectServiceMock.ensureAutomatedPrepaidPaymentTemplate).toHaveBeenCalled();
+      expect(component.assignDiscountsOpen).toBeFalse();
+    });
+
+    it('confirm No vuelve al modal de descuentos sin aplicar', async () => {
+      component.assignDiscountsOpen = false;
+      (component as any).pendingDiscountRemnantInCollection = 50;
+      await component.setResultDiscountRemnant({ detail: { role: 'cancel' } });
+
+      expect(component.applyCollectDiscounts).not.toHaveBeenCalled();
+      expect(collectServiceMock.clearDiscountRemnantPrepaidForDocument)
+        .toHaveBeenCalledWith('FAC-1');
+      expect(component.assignDiscountsOpen).toBeTrue();
+    });
+
+    it('computeCollectDiscountPreview: saldo 100 descuento 150 → remanente 50', () => {
+      const preview = component.computeCollectDiscountPreview(false);
+      expect(preview?.baseBalance).toBe(100);
+      expect(preview?.discountTotal).toBe(150);
+      expect(preview?.remnantInCollectionCurrency).toBe(50);
+
+      const clamped = component.computeCollectDiscountPreview(true);
+      expect(clamped?.discountTotal).toBe(100);
+      expect(clamped?.remnantInCollectionCurrency).toBe(0);
     });
   });
 });

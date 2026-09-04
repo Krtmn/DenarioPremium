@@ -1546,4 +1546,9 @@
 <ion-alert [isOpen]="alertMessageOpen2" header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}"
   message={{this.collectService.mensaje}} [buttons]="alertButtons2" (didDismiss)="setResult2($event)"></ion-alert>
 
+<ion-alert [isOpen]="alertDiscountRemnantOpen"
+  header="{{this.collectService.collectionTags.get('COB_HEADER_MESSAGE')}}"
+  message={{this.collectService.mensaje}} [buttons]="alertButtonsDiscountRemnant"
+  (didDismiss)="setResultDiscountRemnant($event)"></ion-alert>
+
 <!-- <ion-button (click)="print()"></ion-button> -->
