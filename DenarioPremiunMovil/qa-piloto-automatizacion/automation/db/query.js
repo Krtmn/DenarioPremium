@@ -122,6 +122,28 @@ if (!head.startsWith("select") && !head.startsWith("with")) {
   const c = new Client({ connectionString: dsn, statement_timeout: 30000, connectionTimeoutMillis: 10000 });
   try {
     await c.connect();
+
+    // ── Alcance de fila (RLS) ────────────────────────────────────────────────
+    // 🔴 `collection`, `deposit` e `invoice` tienen ROW LEVEL SECURITY activado y
+    //    FORZADO. Su política solo deja ver filas si la sesión declara
+    //    `app.current_scope`:
+    //        scope='admin'  ó  (scope='seller' y id_user = app.current_id_user)  ó supervisor
+    //    Una sesión que no lo declara no entra por ninguna rama y recibe
+    //    **CERO FILAS, sin error**. Eso es lo peligroso: parece que la tabla está
+    //    vacía. Pasó el 2026-09-04 en 4K y se llegó a reportar como "se borraron
+    //    los datos" — no era cierto, los 2.489 cobros estaban ahí.
+    //
+    // 🔴 UN GRANT NO LO ARREGLA: el GRANT da permiso sobre la TABLA, RLS filtra
+    //    las FILAS. Son dos candados distintos.
+    //
+    // Declaramos el mismo alcance que usa la sesión `admin` de la web, que es
+    // exactamente lo que QA necesita para cotejar. Sigue siendo solo lectura.
+    try {
+      await c.query("SELECT set_config('app.current_scope', 'admin', false)");
+    } catch (_) {
+      // Si la base no usa RLS, esto no hace falta y su fallo no debe tumbar la consulta.
+    }
+
     const r = await c.query(sql);
     console.log(JSON.stringify(r.rows, null, 2));
   } catch (e) {

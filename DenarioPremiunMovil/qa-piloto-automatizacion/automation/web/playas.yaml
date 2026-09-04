@@ -16,6 +16,24 @@
 #   Mientras falte la clave de una playa → WEB-N/A para los clientes montados ahí (nunca FAIL).
 #
 # Verificado 2026-07-28: las 3 responden HTTP 200 desde la laptop QA, sin VPN.
+#
+# ═══════════════════════════════════════════════════════════════════════════
+# MAPA VIGENTE · informado por QA el 2026-09-04
+# ═══════════════════════════════════════════════════════════════════════════
+#   El Yaque      → GLOBAL MP        (6.6.21.5)
+#   Isla Coche    → HIDROPONIAS      (rama SaveSuggestedOrder)
+#   La Tortuga    → THERMOGROUP      (main)
+#   Caribe        → IMPORTADORA 4K   (main)      ← 4K se MUDÓ acá el 04/09
+#
+# 🔴 CARIBE CORRE SOBRE **CONTABO**; las otras tres son **AWS**. Es la única
+#    diferencia de infraestructura entre playas y conviene tenerla presente al
+#    comparar rendimiento o al diagnosticar lentitud: puede ser del servidor,
+#    no de la aplicación.
+#
+# 🔴 4K e HIDROPONIAS SE INTERCAMBIARON de playa. Cualquier nota anterior que
+#    diga "4K está en Isla Coche" o "hidroponias está en Caribe" es de antes
+#    del 04/09. Leer SIEMPRE la empresa en runtime antes de dar por buena una
+#    nota previa (ver `reference_guarda_empresa_no_host`).
 
 playas:
   el_yaque:
@@ -37,12 +55,15 @@ playas:
   # 🕐 HISTÓRICO — 2026-08-13 al 2026-09-01: FUERA DE SERVICIO, HTTP 404 en :8080;
   #   Tomcat levantado pero la app no desplegada. Resuelto sin fecha exacta conocida.
   #
-  #   👤 Cliente actual: **HIDROPONIAS VENEZOLANAS C.A** (`HIDRO_A`), vendedor `vendedor4`.
-  #      ⚠ Esto CONVIVE con la nota de abajo sobre COVADONGA (agosto): la playa cambió de
-  #        cliente. Leer la empresa en runtime antes de dar por buena cualquier nota previa.
+  #   👤 Cliente al 02/09: HIDROPONIAS VENEZOLANAS C.A (`HIDRO_A`), vendedor `vendedor4`.
+  #      ⚠ **DESACTUALIZADO desde el 04/09**: hidroponias se mudó a Isla Coche y en Caribe
+  #        quedó IMPORTADORA 4K. Leer la empresa en runtime antes de dar por buena
+  #        cualquier nota previa.
   caribe:
     nombre: "Caribe"
     base:   "http://denariocaribe.ddns.net:8080/DenarioPremium"
+    servidor: "CONTABO"      # ← la única que no es AWS
+    # 👤 Cliente desde el 2026-09-04: **IMPORTADORA 4K** (`DIESE` / GRUPO 4K), rama main.
     # 🆕 Playa NUEVA — servidor QA de pruebas, informada por QA el 03/08/2026. Reconocida ese mismo día:
     #   · Empresa ÚNICA: "PROCESADORA DE ALIMENTOS COVADONGA,C.A" — cliente NUEVO, sin perfil propio todavía.
     #     ⚠ El código de la empresa CAMBIA según la pantalla: vale `00001` en /pages/pedidos y `1` en

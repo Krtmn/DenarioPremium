@@ -9,7 +9,12 @@ cliente_nombre: "GRUPO 4K"          # BD: enterprise.na_enterprise
 db_name: 4k                          # GRANT read-only aplicado y verificado 2026-09-02 (250/250 tablas)
 
 # ⚠ ws_url / playa NO se guardan: la playa es rotativa y se descubre en runtime.
-#   Al 02/09/2026 el APK apunta a ISLA COCHE, informado por QA.
+#   🔴 2026-09-04: 4K se MUDÓ de Isla Coche a **CARIBE** (servidor CONTABO, la única
+#      playa que no es AWS). Hidroponias hizo el camino inverso. Cualquier nota que
+#      diga "4K está en Isla Coche" es de antes de esa fecha.
+#      Verificado: Caribe y la base que consulta `automation/db/query.js 4k` leen el
+#      MISMO dato (10 bancos, códigos coincidentes fila por fila), así que el cotejo
+#      de la capa nube sigue siendo válido tras la mudanza.
 
 empresa:
   co_enterprise: "DIESE"
@@ -55,10 +60,13 @@ vgs:
   #    Eso resuelve los conflictos entre los 2 dumps: mandan estos valores.
   #    🔴 La BD **no** sirve para esto: `global_configuration` es un catálogo
   #       (valor='true' = "la variable existe"), no los valores efectivos.
-  requiredCollectionAttachments: true  # 🔴 exige adjunto para ENVIAR
-                                       #    ⇒ dejar el cobro GUARDADO y que QA lo envíe a mano
+  # ⚠ RELEÍDAS DEL EQUIPO el 2026-09-04, tras mudar 4K a CARIBE. Dos cambiaron:
+  requiredCollectionAttachments: false # ⇐ ERA true hasta el 03/09. Ahora **NO** exige
+                                       #    adjunto: los cobros y anticipos SE PUEDEN ENVIAR.
+                                       #    Confirmado a mano por QA y en el equipo.
   requiredComment: true                # longitudComentario está arriba, en Generales
-  colletionPayment: "true-false-true-true-false-true"   # 6 posiciones (ganó el global)
+  colletionPayment: "true-true-true-true-false-true"   # ⇐ ERA "true-false-…": se habilitó
+                                       #    un método más. Leer en la UI cuáles ofrece.
                                        #    🔴 Igual LEER EN LA UI qué métodos ofrece: deducirlos
                                        #       del orden del catálogo ya falló antes.
   enablePartialPayment: true
@@ -150,61 +158,79 @@ vgs:
 # DATOS DE PRUEBA POR MÓDULO
 # ═══════════════════════════════════════════════════════════════════════════
 modules:
-  # 🆕 El módulo del REQ. Sin datos de prueba todavía: hay que reconocer en la
-  #    UI cómo se llega al CRUD y qué campos tiene. La tabla `bank` de la nube
-  #    trae: co_bank · na_bank · id_enterprise · id_bank_reconciliation.
+  # ═════════════════════════════════════════════════════════════════════════
+  # 🔴 REVISADO 2026-09-04 tras la corrida fallida en CARIBE.
+  #    `C.0507` figuraba como cliente de prueba de casi todos los módulos y
+  #    **NO LLEGA AL EQUIPO**: existe en la base (155 facturas) pero no está
+  #    entre los 78 que carga el listado del vendedor V.0002. Eso tumbó 76
+  #    casos a BLOCKED en cascada — sin cliente no hay transacción.
+  #
+  #    Los de abajo se eligieron cruzando DOS cosas:
+  #      · que el EQUIPO los cargue (el listado empieza en C.0010/C.0027/C.0028)
+  #      · que tengan datos reales en BD para lo que cada módulo necesita
+  #    Si vuelven a fallar, el criterio es el mismo: mirar qué carga la UI
+  #    primero y recién después buscar en la BD, nunca al revés.
+  # ═════════════════════════════════════════════════════════════════════════
+
   bancos:
     aplica: true
-    total_en_bd: 30
-    # Ejemplos reales del catálogo, para reconocer la pantalla:
-    #   01/ZELLE · 134/BANESCO CUENTA VERDE · 108/PROVINCIAL · 22/BINANCE
-    banco_lectura: "PROVINCIAL"       # existente, para el caso de consulta/edición
+    total_en_bd: 10                   # ⚠ eran 30 antes de rehacer la base
+    banco_lectura: "PROVINCIAL"
     caso_multiempresa: false          # 🔴 NO cubrible: el tenant tiene 1 sola empresa
 
   clientes:
-    cliente_test: "VENTA DE REPUESTOS DIESEL MSL EL GRAN AVIVAMIENTO"   # C.0507
+    cliente_test: "EURO REPUESTOS FIOVAL, C.A."   # C.0010 — primero del listado
 
   cobros:
     aplica: true
-    cliente_test: "C.0507"            # 318 documentos con saldo · US$ 39.855,61
+    cliente_test: "C.0018"            # REPUBUS MARACAIBO · 47 documentos con saldo
     clientes_con_documentos:
-      - "C.0507"                      # 318 docs · 39.855,61
-      - "C.0627"                      # 181 docs · 31.407,27  (MS DIESEL 2022)
-      - "C.0525"                      # 164 docs · 34.809,82  (INVERSIONES DOCTOR DIESEL)
-    metodo_pago: TBD                  # leer en la UI: colletionPayment tiene los 2 dumps en conflicto
+      - "C.0018"                      # 47 docs
+      - "C.0010"                      # 11 docs · EURO REPUESTOS, el más probado
+      - "C.0028"                      #  2 docs
+    metodo_pago: TBD                  # leer en la UI: colletionPayment cambió el 04/09
 
   pedidos:
-    cliente_test: "C.0507"
-    producto_test: "4400-01202"       # GOMAS DE MANITO PARA POLEA MACK · stock 6.890
+    cliente_test: "C.0010"            # EURO REPUESTOS — confirmado que carga
+    producto_test: "4400-01202"       # GOMAS DE MANITO PARA POLEA MACK · stock 6.990
+    producto_test_alt: "4490-01001"   # DIAFRAGMA T30 · stock 4.780
                                       # 🔴 con stock0=false hace falta stock holgado
     estructura_producto: TBD          # `listProductsBy: lineas` — leer el rótulo en runtime
-    moneda_pedido: TBD                # multiCurrency=true: verificar que la lista activa
-                                      #   tenga precios en la moneda por defecto
+    moneda_pedido: TBD
 
   devoluciones:
     # TIPO B (validateReturn=true): la FACTURA habilita las tabs, no el cliente.
-    cliente_test: "C.0507"            # 157 facturas
-    cliente_test_alt: "C.0525"        # 91 facturas · relevo
+    cliente_test: "C.0028"            # INVERSIONES MOSTEIRO · 17 facturas
+    cliente_test_alt: "C.0010"        # EURO REPUESTOS · 12 facturas
     producto_test: TBD                # elegir uno de la factura escogida
-    factura_test: TBD                 # 🔴 sin este dato el envío de devolución queda N/A
+    factura_test: TBD                 # 🔴 sin este dato el envío queda N/A
 
   inventarios:
-    cliente_test: "C.0507"
+    cliente_test: "C.0010"
+    producto_test: "4400-01202"
     # ⚠ expirationBatch=true ⇒ el modal de cantidad exige LOTE y FECHA.
 
   visitas:
-    cliente_test: TBD                 # criterio: cliente CON sucursal asignada,
-                                      #   si no, el formulario no habilita las tabs
+    cliente_test: "C.0010"            # 🔑 el único confirmado que HABILITA las tabs;
+                                      #    otros dan "No hay clientes disponibles"
+                                      #    porque su sucursal no carga.
+
   depositos:
-    aplica: TBD                       # depende de si EFECTIVO está entre los métodos de
-                                      #   pago de Cobros — verificar en la UI primero
+    aplica: true                      # ✅ confirmado a mano por QA el 04/09: hay data
+    # 22 depósitos y 2.424 cobros sin depositar al 04/09.
 
 # ═══════════════════════════════════════════════════════════════════════════
-# NOTAS PARA LA PRIMERA CORRIDA
+# NOTAS PARA LA CORRIDA
 # ═══════════════════════════════════════════════════════════════════════════
-# 1. 🔴 Confirmar en la UI las 22 VG en conflicto marcadas [⚔]. Se aplicó
-#    "gana el global", pero quien desempata de verdad es la pantalla.
-# 2. 🔴 `requiredCollectionAttachments=true` ⇒ los cobros se dejan GUARDADOS.
+# 1. 🔴 El cliente de prueba manda. Si el módulo no habilita las pestañas, casi
+#    siempre es que el cliente elegido NO CARGA en el equipo, no que la app falle.
+#    Verificar en la UI qué clientes lista antes de dar nada por roto.
+# 2. `requiredCollectionAttachments` pasó a **false** el 04/09: los cobros y
+#    anticipos YA SE PUEDEN ENVIAR sin adjunto. La regla vieja de "dejar en
+#    Guardado" quedó sin efecto para este cliente.
 # 3. 🔴 `validStock=true` + `stock0=false` ⇒ elegir SIEMPRE productos con stock.
 # 4. `userMustActivateGPS=false` ⇒ no aplica la espera larga por la guarda de GPS.
-# 5. El REQ de Bancos NO cubre el caso multi-empresa con este cliente.
+# 5. `expirationBatch=true` ⇒ al inventariar, LOTE y FECHA son obligatorios.
+# 6. El REQ de Bancos NO cubre el caso multi-empresa con este cliente.
+# 7. Sincronizar con el botón **«Sincronizar» del HOME** (~15 s). No salir de
+#    sesión: es lento y una vez dejó la app colgada varios minutos.

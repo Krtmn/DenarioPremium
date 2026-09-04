@@ -154,8 +154,30 @@ async function fetchCreds(clienteId) {
   //   Por eso NO se puede caer al texto completo: el primer QA_USER= del archivo es el de la web.
   //   Sin clienteId, o con un clienteId inexistente, se falla explícito en vez de devolver el usuario equivocado.
   if (!clienteId) throw new Error('fetchCreds: falta el clienteId (el 1.er bloque del archivo es # USUARIO WEB, no un cliente)');
+
+  // 1) Coincidencia EXACTA con el slug.
   const marker = `# Cliente: ${clienteId}`;
-  const idx    = text.toLowerCase().indexOf(marker.toLowerCase());
+  let idx = text.toLowerCase().indexOf(marker.toLowerCase());
+
+  // 2) Si no está, el bloque puede llamarse con el nombre largo mientras el slug
+  //    del perfil es corto: el YAML `4k.yaml` contra el bloque
+  //    "# Cliente: importadora_4k". Se acepta el bloque cuyo nombre CONTENGA el
+  //    slug, pero solo si hay UNO: con varios se falla, porque elegir el
+  //    equivocado significa entrar con el usuario de otro cliente.
+  if (idx === -1) {
+    const bloques = [...text.matchAll(/^# Cliente:\s*(.+)$/gim)]
+      .map(m => ({ nombre: m[1].trim(), pos: m.index }));
+    const candidatos = bloques.filter(b =>
+      b.nombre.toLowerCase().includes(clienteId.toLowerCase()));
+    if (candidatos.length === 1) {
+      idx = candidatos[0].pos;
+      console.log(`    fetchCreds: sin bloque "${clienteId}"; uso "# Cliente: ${candidatos[0].nombre}"`);
+    } else if (candidatos.length > 1) {
+      throw new Error(`fetchCreds: "${clienteId}" coincide con VARIOS bloques ` +
+        `(${candidatos.map(c => c.nombre).join(', ')}); renombrar el bloque o el slug`);
+    }
+  }
+
   if (idx === -1) throw new Error(`fetchCreds: no existe el bloque "${marker}" en qa-credentials.env`);
   let searchText = text.slice(idx);
   const nextSection = searchText.indexOf('\n# Cliente:', 1);

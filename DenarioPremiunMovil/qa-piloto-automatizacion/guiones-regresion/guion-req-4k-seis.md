@@ -271,11 +271,52 @@ desarrollo es decir en qué capa se tuerce el dato.
 | **R6-11** | **Comparar con Cobros** lado a lado | Mismo comportamiento |
 | **R6-12** | Móvil: ¿el vendedor ve el estatus del depósito? | Definir con desarrollo si aplica |
 
-### 🔴 Punto a aclarar con desarrollo
+### 🔴 DEFECTO MEDIDO EL 04/09 — el estatus asignado en la web NO llega al móvil
 
-`status_action` de «Pendiente» quedó en **3** en Depósitos, pero en Cobros
-«Pendiente» es **1**. Ese campo decide si la transacción se trata como aprobada
-(1), rechazada (2) o neutra (3). ¿Es intencional la diferencia?
+**Cómo se detectó:** QA puso el depósito **ref 23** en «Pendiente» desde la web.
+El móvil siguió mostrando **«Por aprobar»** tras sincronizar.
+
+**Dónde se rompe — son DOS fallos encadenados, y el segundo tapa al primero:**
+
+**① La web guarda el cambio, pero no toca la fila del depósito.**
+
+| | Cobros | Depósitos |
+|---|---|---|
+| Fila en `transaction_statuses` | ✅ se crea | ✅ se crea |
+| La fila de la transacción | ✅ `st_collection` pasa a **1** | ❌ `st_deposit` **sigue en 3** |
+| `da_update` de la transacción | ✅ se refresca | ❌ **intacto** |
+
+El móvil sincroniza por el `da_update` de la tabla `deposit`. Si nadie lo toca,
+**no tiene forma de enterarse de que hubo un cambio**.
+
+**② Y aunque lo tocaran, seguiría sin verse.** `st_deposit` guarda el
+`status_action`, no el `id_status`. En el catálogo de 4K:
+
+| Estatus | `status_action` |
+|---|---|
+| Por aprobar (`pap`) | 3 |
+| **Pendiente (`t03`)** | **3** ← el mismo |
+| Validación (`t01`) | 1 |
+| Recaudado (`t02`) | 1 |
+
+Pasar de «Por aprobar» a «Pendiente» sería ir de **3 a 3**: sin cambio visible.
+En Cobros «Pendiente» es `1`, por eso allá sí se nota.
+
+**Evidencia (04/09):** `transaction_statuses` id 7824 · `id_status 19` (`t03`) ·
+`na_status_user 'admin admin'` · 22:42 UTC — mientras `deposit.st_deposit = 3` con
+`da_update` de las 15:22, o sea **7 horas antes del cambio**.
+
+### Casos que esto agrega
+
+| ID | Escenario | Resultado esperado |
+|---|---|---|
+| **R6-13** | Asignar estatus en la web → mirar `deposit.st_deposit` y `da_update` | Deben **cambiar**, como en `collection` |
+| **R6-14** | Sincronizar el móvil → ver el estatus del depósito | Debe reflejar el nuevo |
+| **R6-15** | Repetir con **Validación** y **Recaudado** (`status_action = 1`) | Distinguir el fallo ① del ②: si estos SÍ se ven y «Pendiente» no, el problema es solo el `status_action` |
+| **R6-16** | Comparar el mismo flujo en **Cobros** | Allá funciona: sirve de contraste |
+
+⇒ Al re-probar, **empezar por R6-15**: separa las dos causas y evita reportar una
+sola cosa cuando son dos.
 
 ---
 
