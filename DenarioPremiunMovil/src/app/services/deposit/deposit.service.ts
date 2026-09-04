@@ -17,6 +17,7 @@ import { ItemListaDepositos } from 'src/app/depositos/item-lista-depositos';
 import { DEPOSIT_APPROVAL_STATUS_REJECTED, DEPOSITO_STATUS_NEW, DEPOSITO_STATUS_SAVED, DEPOSITO_STATUS_SENT, DEPOSITO_STATUS_TO_SEND, DELIVERY_STATUS_SAVED, DELIVERY_STATUS_SENT, DELIVERY_STATUS_TO_SEND } from 'src/app/utils/appConstants';
 import { Return } from 'src/app/modelos/tables/return';
 import { AdjuntoService } from 'src/app/adjuntos/adjunto.service';
+import { TransactionStatuses } from 'src/app/modelos/tables/transactionStatuses';
 
 @Injectable({
   providedIn: 'root'
@@ -31,11 +32,30 @@ export class DepositService {
     '  SELECT dc.co_collection FROM deposit_collects dc' +
     '  INNER JOIN deposits d ON d.co_deposit = dc.co_deposit' +
     '  WHERE NOT (' +
-    '    d.st_deposit = ' + DEPOSIT_APPROVAL_STATUS_REJECTED +
-    '    AND d.st_delivery = ' + DEPOSITO_STATUS_SENT +
-    '    AND IFNULL(d.id_deposit, 0) > 0' +
+    '    (' +
+    '      d.st_deposit = ' + DEPOSIT_APPROVAL_STATUS_REJECTED +
+    '      AND d.st_delivery = ' + DEPOSITO_STATUS_SENT +
+    '      AND IFNULL(d.id_deposit, 0) > 0' +
+    '    )' +
+    '    OR EXISTS (' +
+    '      SELECT 1 FROM transaction_statuses ts' +
+    '      JOIN statuses s ON s.id_status = ts.id_status' +
+    '      WHERE ts.id_transaction_type = 6' +
+    '        AND IFNULL(d.id_deposit, 0) > 0' +
+    '        AND ts.id_transaction = d.id_deposit' +
+    '        AND s.status_action = ' + DEPOSIT_APPROVAL_STATUS_REJECTED +
+    '        AND ts.da_transaction_statuses = (' +
+    '          SELECT MAX(ts2.da_transaction_statuses)' +
+    '          FROM transaction_statuses ts2' +
+    '          WHERE ts2.id_transaction_type = 6' +
+    '            AND ts2.id_transaction = d.id_deposit' +
+    '        )' +
+    '    )' +
     '  )' +
     ')';
+
+  public listTransactionStatusDeposits: TransactionStatuses[] = [];
+  public depositRefused: TransactionStatuses[] = [];
 
   public globalConfig = inject(GlobalConfigService);
   public services = inject(ServicesService);
@@ -969,6 +989,25 @@ export class DepositService {
               deposit.idDeposit = local.idDeposit;
             }
           }
+
+          // Si ya quedó rechazado por transaction_statuses, no dejar que sync de deposits lo pise.
+          const localRejected = this.isDepositRejectedForCollectRelease(
+            local.stDeposit,
+            local.stDelivery,
+            local.idDeposit,
+          );
+          const serverRejected = this.isDepositRejectedForCollectRelease(
+            Number(deposit.stDeposit ?? 0),
+            Number(deposit.stDelivery ?? 0),
+            deposit.idDeposit,
+          );
+          if (localRejected && !serverRejected) {
+            deposit.stDeposit = DEPOSIT_APPROVAL_STATUS_REJECTED;
+            deposit.stDelivery = DEPOSITO_STATUS_SENT;
+            if (local.idDeposit != null && Number(local.idDeposit) > 0) {
+              deposit.idDeposit = local.idDeposit;
+            }
+          }
         }
 
         if (!this.hasSyncCollectPayload(deposit) && localCollects.length > 0) {
@@ -1709,6 +1748,221 @@ export class DepositService {
     }
 
     return value;
+  }
+
+  /**
+   * Clasifica transaction_statuses de depósitos (tipo 6) como Cobros hace con tipo 3.
+   * status_action = 2 → depósito rechazado → liberar cobros del detalle.
+   */
+  async checkHistoricDeposits(db: SQLiteObject): Promise<boolean> {
+    this.depositRefused = [] as TransactionStatuses[];
+    try {
+      const list = Array.isArray(this.listTransactionStatusDeposits)
+        ? this.listTransactionStatusDeposits
+        : [];
+      if (list.length === 0) {
+        return false;
+      }
+
+      const dedupMap = new Map<string, TransactionStatuses>();
+      for (const ts of list) {
+        if (!ts) {
+          continue;
+        }
+        const idTrans = ts.idTransaction ?? (ts as any).id_transaction ?? (ts as any).id;
+        const coTrans = (
+          ts.coTransaction
+          ?? (ts as any).co_transaction
+          ?? (ts as any).coDeposit
+          ?? (ts as any).co_deposit
+          ?? ''
+        ).toString();
+        const key = `${idTrans ?? ''}#${coTrans}`;
+        const curDate = ts.daTransactionStatuses ? new Date(ts.daTransactionStatuses) : null;
+        const existing = dedupMap.get(key);
+        if (!existing) {
+          dedupMap.set(key, ts);
+          continue;
+        }
+        const existingDate = existing.daTransactionStatuses
+          ? new Date(existing.daTransactionStatuses)
+          : null;
+        if (curDate && (!existingDate || curDate > existingDate)) {
+          dedupMap.set(key, ts);
+        }
+      }
+
+      const dedupedList = Array.from(dedupMap.values());
+      if (dedupedList.length === 0) {
+        return false;
+      }
+
+      const ids = Array.from(new Set(
+        dedupedList
+          .map((ts) => ts?.idStatus ?? (ts as any)?.id_status ?? (ts as any)?.id)
+          .filter((id) => id !== undefined && id !== null)
+          .map(String),
+      ));
+      if (ids.length === 0) {
+        return false;
+      }
+
+      const placeholders = ids.map(() => '?').join(',');
+      const res = await db.executeSql(
+        `SELECT * FROM statuses WHERE id_status IN (${placeholders})`,
+        ids,
+      );
+      const statusMap = new Map<string, number>();
+      for (let i = 0; i < res.rows.length; i++) {
+        const row = res.rows.item(i);
+        statusMap.set(String(row.id_status), Number(row.status_action));
+      }
+
+      for (const ts of dedupedList) {
+        const idStatus = ts.idStatus ?? (ts as any).id_status ?? (ts as any).id;
+        if (idStatus == null) {
+          continue;
+        }
+        if (statusMap.get(String(idStatus)) === DEPOSIT_APPROVAL_STATUS_REJECTED) {
+          this.depositRefused.push(ts);
+        }
+      }
+    } catch (err) {
+      console.error('[checkHistoricDeposits] error:', err);
+    }
+    return true;
+  }
+
+  /**
+   * Paralelismo Cobros→documentos: depósito rechazado → liberar cobros del detalle
+   * (marca st_deposit=2 y borra deposit_collects para que vuelvan al selector).
+   */
+  async releaseCollectsFromRefusedDeposits(db: SQLiteObject): Promise<void> {
+    const refused = Array.isArray(this.depositRefused) ? this.depositRefused : [];
+    if (refused.length === 0) {
+      return;
+    }
+
+    const queries: Array<[string, unknown[]]> = [];
+    const seen = new Set<string>();
+
+    for (const ts of refused) {
+      const idDeposit = Number(
+        ts.idTransaction ?? (ts as any).id_transaction ?? 0,
+      );
+      const coDeposit = String(
+        ts.coTransaction
+        ?? (ts as any).co_transaction
+        ?? (ts as any).coDeposit
+        ?? (ts as any).co_deposit
+        ?? '',
+      ).trim();
+
+      if (idDeposit > 0) {
+        const key = `id:${idDeposit}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          queries.push([
+            'UPDATE deposits SET st_deposit = ? WHERE id_deposit = ? AND IFNULL(id_deposit, 0) > 0',
+            [DEPOSIT_APPROVAL_STATUS_REJECTED, idDeposit],
+          ]);
+          queries.push([
+            'DELETE FROM deposit_collects WHERE co_deposit IN (SELECT co_deposit FROM deposits WHERE id_deposit = ?)',
+            [idDeposit],
+          ]);
+        }
+      }
+
+      if (coDeposit.length > 0) {
+        const key = `co:${coDeposit}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          queries.push([
+            'UPDATE deposits SET st_deposit = ? WHERE co_deposit = ? AND IFNULL(id_deposit, 0) > 0',
+            [DEPOSIT_APPROVAL_STATUS_REJECTED, coDeposit],
+          ]);
+          queries.push([
+            'DELETE FROM deposit_collects WHERE co_deposit = ?',
+            [coDeposit],
+          ]);
+        }
+      }
+    }
+
+    if (queries.length === 0) {
+      return;
+    }
+
+    try {
+      await db.sqlBatch(queries);
+      this.applyRefusedStatusToInMemoryLists(refused);
+    } catch (err) {
+      console.error('[releaseCollectsFromRefusedDeposits] error:', err);
+    }
+  }
+
+  /** Refresca stDeposit en listas en memoria para que la UI muestre Rechazado sin reentrar. */
+  private applyRefusedStatusToInMemoryLists(refused: TransactionStatuses[]): void {
+    for (const ts of refused) {
+      const idDeposit = Number(ts.idTransaction ?? (ts as any).id_transaction ?? 0);
+      const coDeposit = String(
+        ts.coTransaction
+        ?? (ts as any).co_transaction
+        ?? (ts as any).coDeposit
+        ?? (ts as any).co_deposit
+        ?? '',
+      ).trim();
+
+      for (const deposit of this.listDeposits ?? []) {
+        const matchById = idDeposit > 0 && Number(deposit.idDeposit ?? 0) === idDeposit;
+        const matchByCo = coDeposit.length > 0 && String(deposit.coDeposit ?? '').trim() === coDeposit;
+        if (matchById || matchByCo) {
+          deposit.stDeposit = DEPOSIT_APPROVAL_STATUS_REJECTED;
+          deposit.stDelivery = DEPOSITO_STATUS_SENT;
+        }
+      }
+
+      for (const item of this.itemListaDepositos ?? []) {
+        const matchById = idDeposit > 0 && Number(item.idDeposit ?? 0) === idDeposit;
+        const matchByCo = coDeposit.length > 0 && String(item.coDeposit ?? '').trim() === coDeposit;
+        if (matchById || matchByCo) {
+          item.stDeposit = DEPOSIT_APPROVAL_STATUS_REJECTED;
+          item.stDelivery = DEPOSITO_STATUS_SENT;
+        }
+      }
+    }
+  }
+
+  /**
+   * Si un cobro vinculado a un depósito es rechazado, libera ese cobro del detalle
+   * para que pueda volver a listarse (igual que documentos al rechazar cobro).
+   */
+  async releaseCollectsFromRefusedCollections(
+    db: SQLiteObject,
+    coCollections: string[],
+  ): Promise<void> {
+    const codes = Array.from(
+      new Set(
+        (coCollections ?? [])
+          .filter((c) => c != null)
+          .map(String)
+          .map((c) => c.trim())
+          .filter((c) => c.length > 0),
+      ),
+    );
+    if (codes.length === 0) {
+      return;
+    }
+
+    const placeholders = codes.map(() => '?').join(',');
+    try {
+      await db.executeSql(
+        `DELETE FROM deposit_collects WHERE co_collection IN (${placeholders})`,
+        codes,
+      );
+    } catch (err) {
+      console.error('[releaseCollectsFromRefusedCollections] error:', err);
+    }
   }
 
   getStatusOrderName(stDeposit: number, stDelivery: number, naStatus: unknown): string {
