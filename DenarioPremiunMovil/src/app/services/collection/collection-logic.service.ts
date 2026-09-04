@@ -2258,8 +2258,9 @@ export class CollectionService {
   }
 
   /**
-   * Excedente para anticipo automático. No usa tolerancia de Enviar:
-   * tolerancia positiva habilita Enviar; prepaidRangeAmount decide el anticipo.
+   * Excedente para anticipo automático (misma moneda que prepaidRangeAmount).
+   * El umbral de activación suma tolerancia positiva + prepaidRangeAmount
+   * (`getAutomatedPrepaidActivationThreshold`).
    */
   private getPrepaidExcessAmount(): number {
     const excess = this.syncPrepaidDifferenceAmounts();
@@ -2279,13 +2280,53 @@ export class CollectionService {
     return conversionExcess > 0 ? conversionExcess : excess;
   }
 
+  /**
+   * Techo de tolerancia positiva en moneda del cobro (0 si tolerancia0 off).
+   * Misma base que Enviar (`computeIsWithinTolerancia` / COB-TOL-001).
+   */
+  private getPositiveToleranceCeilingInCollectionCurrency(): number {
+    if (!this.tolerancia0) {
+      return 0;
+    }
+    if (this.TipoTolerancia == 0) {
+      return this.convertToleranceRangeToCollectionCurrency(this.RangoToleranciaPositiva);
+    }
+    const base = Math.abs(Number(this.montoTotalPagar) || 0);
+    return (base * (Number(this.RangoToleranciaPositiva) || 0)) / 100;
+  }
+
+  /**
+   * Umbral mínimo de exceso para activar anticipo automático:
+   * techo tolerancia positiva + prepaidRangeAmount (ej. 10 + 5 = 15).
+   * Moneda alineada con `getPrepaidExcessAmount` / prepaidRangeCurrency.
+   */
+  private getAutomatedPrepaidActivationThreshold(): number {
+    let positiveCeiling = this.getPositiveToleranceCeilingInCollectionCurrency();
+    const prepaidMin = Number(this.prepaidRangeAmount) || 0;
+
+    if (
+      this.prepaidRangeCurrency
+      && this.collection?.coCurrency
+      && this.prepaidRangeCurrency !== this.collection.coCurrency
+    ) {
+      const converted = this.convertirMonto(
+        positiveCeiling,
+        this.getEffectiveExchangeRate(),
+        this.collection.coCurrency,
+      );
+      positiveCeiling = converted > 0 ? converted : positiveCeiling;
+    }
+
+    return positiveCeiling + prepaidMin;
+  }
+
   shouldCreateAutomatedPrepaidOnSend(): boolean {
     if (!this.automatedPrepaid || this.coTypeModule !== '0' || this.existPartialPayment) {
       return false;
     }
 
     const prepaidExcess = this.getPrepaidExcessAmount();
-    if (prepaidExcess < this.prepaidRangeAmount) {
+    if (prepaidExcess < this.getAutomatedPrepaidActivationThreshold()) {
       return false;
     }
 
@@ -2314,7 +2355,7 @@ export class CollectionService {
 
     if (this.automatedPrepaid && this.coTypeModule === '0' && !this.existPartialPayment) {
       const prepaidExcess = this.getPrepaidExcessAmount();
-      if (prepaidExcess >= this.prepaidRangeAmount) {
+      if (prepaidExcess >= this.getAutomatedPrepaidActivationThreshold()) {
         this.createAutomatedPrepaid = true;
       }
     }
@@ -2499,7 +2540,7 @@ export class CollectionService {
     this.anticipoAutomatico = [];
     this.syncExchangeRateToCollectionHeader();
     const excess = this.getPrepaidExcessAmount();
-    if (excess < this.prepaidRangeAmount) {
+    if (excess < this.getAutomatedPrepaidActivationThreshold()) {
       return;
     }
 

@@ -1580,13 +1580,14 @@ describe('CollectionService', () => {
       expect(service.montoTotalPagar).toBe(103);
     });
 
-    it('P1: shouldCreateAutomatedPrepaidOnSend requires excess >= prepaid range', () => {
+    it('P1: shouldCreateAutomatedPrepaidOnSend requires excess >= activation threshold', () => {
       service.automatedPrepaid = true;
       service.coTypeModule = '0';
       service.existPartialPayment = false;
       service.createAutomatedPrepaid = true;
       service.anticipoAutomatico = [{ type: 'ef' } as any];
       service.prepaidRangeAmount = 10;
+      service.tolerancia0 = false;
       spyOn(service as any, 'getPrepaidExcessAmount').and.returnValue(50);
 
       expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeTrue();
@@ -1598,16 +1599,20 @@ describe('CollectionService', () => {
       expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeFalse();
     });
 
-    describe('COB-PREPAID-001 automated prepaid vs tolerancia', () => {
-      function setupUsdPrepaidScenario(excess: number): void {
+    describe('COB-PREPAID-001 / COB-PREPAID-004 automated prepaid vs tolerancia', () => {
+      function setupUsdPrepaidScenario(excess: number, opts?: {
+        prepaidRangeAmount?: number;
+        rangoPositiva?: number;
+        tolerancia0?: boolean;
+      }): void {
         service.automatedPrepaid = true;
         service.coTypeModule = '0';
         service.existPartialPayment = false;
-        service.prepaidRangeAmount = 1;
+        service.prepaidRangeAmount = opts?.prepaidRangeAmount ?? 1;
         service.prepaidRangeCurrency = 'USD';
-        service.tolerancia0 = true;
+        service.tolerancia0 = opts?.tolerancia0 ?? true;
         service.TipoTolerancia = 0;
-        service.RangoToleranciaPositiva = 100000;
+        service.RangoToleranciaPositiva = opts?.rangoPositiva ?? 100000;
         service.MonedaTolerancia = 'USD';
         service.collection = { coCurrency: 'USD' } as any;
         spyOn(service as any, 'syncPrepaidDifferenceAmounts').and.returnValue(excess);
@@ -1620,25 +1625,46 @@ describe('CollectionService', () => {
         spyOn(service as any, 'syncAddPaymentMethodDisabledState').and.stub();
       }
 
-      it('USD: exceso 1.54 con rango+ tolerancia alto sigue contando para anticipo', () => {
+      it('USD: exceso 1.54 con rango+ tolerancia alto NO crea anticipo (umbral = tol+ + prepaid)', () => {
         setupUsdPrepaidScenario(1.54);
 
         const prepaidExcess = (service as any).getPrepaidExcessAmount();
         expect(prepaidExcess).toBeCloseTo(1.54, 2);
 
         (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeFalse();
+      });
+
+      it('COB-PREPAID-004: tol+ 10 + prepaid 5 → exceso 14 no crea; 15 sí', () => {
+        setupUsdPrepaidScenario(14, { prepaidRangeAmount: 5, rangoPositiva: 10 });
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeFalse();
+
+        (service as any).syncPrepaidDifferenceAmounts.and.returnValue(15);
+        (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeTrue();
       });
 
-      it('umbral exacto: exceso = prepaidRangeAmount crea anticipo', () => {
-        setupUsdPrepaidScenario(1);
+      it('COB-PREPAID-004: tolerancia0 false → umbral = solo prepaidRangeAmount', () => {
+        setupUsdPrepaidScenario(1, {
+          prepaidRangeAmount: 1,
+          rangoPositiva: 100000,
+          tolerancia0: false,
+        });
+
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeTrue();
+      });
+
+      it('umbral exacto: exceso = tol+ + prepaidRangeAmount crea anticipo', () => {
+        setupUsdPrepaidScenario(11, { prepaidRangeAmount: 1, rangoPositiva: 10 });
 
         (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeTrue();
       });
 
       it('bajo umbral: exceso 0.5 con mínimo 1 no crea anticipo', () => {
-        setupUsdPrepaidScenario(0.5);
+        setupUsdPrepaidScenario(0.5, { prepaidRangeAmount: 1, rangoPositiva: 0 });
 
         (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeFalse();
