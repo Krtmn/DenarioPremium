@@ -738,6 +738,82 @@ describe('CollectionService', () => {
     });
   });
 
+  describe('COB-TOL-DEC-001 decimales en tolerancia / anticipo config', () => {
+    it('parseConfigDecimal acepta punto, coma y rechaza inválidos', () => {
+      const parse = (service as any).parseConfigDecimal.bind(service);
+      expect(parse('0.5')).toBe(0.5);
+      expect(parse('1,5')).toBe(1.5);
+      expect(parse(2.25)).toBe(2.25);
+      expect(parse('')).toBe(0);
+      expect(parse('abc')).toBe(0);
+      expect(parse(-1)).toBe(0);
+    });
+
+    it('tolerancia absoluta con rangos 0.5 valida dentro/fuera', () => {
+      service.collection = { coCurrency: 'USD' } as any;
+      service.MonedaTolerancia = 'USD';
+      service.TipoTolerancia = 0;
+      service.RangoToleranciaPositiva = 0.5;
+      service.RangoToleranciaNegativa = 0.5;
+      service.alwaysPartialPayment = false;
+      service.enablePartialPayment = true;
+      service.existPartialPayment = false;
+      service.montoTotalPagar = 100;
+      const spy = spyOn(service, 'onCollectionValidToSend');
+
+      service.montoTotalPagado = 100.4;
+      service.checkTolerancia();
+      expect(spy).toHaveBeenCalledWith(true);
+
+      spy.calls.reset();
+      service.montoTotalPagado = 100.5;
+      service.checkTolerancia();
+      // amount = 0.5 is NOT < 0.5 → OFF
+      expect(spy).toHaveBeenCalledWith(false);
+
+      spy.calls.reset();
+      service.montoTotalPagado = 99.5;
+      service.checkTolerancia();
+      expect(spy).toHaveBeenCalledWith(true);
+
+      spy.calls.reset();
+      service.montoTotalPagado = 99.4;
+      service.checkTolerancia();
+      expect(spy).toHaveBeenCalledWith(false);
+    });
+
+    it('initLogicService carga prepaid/rangos decimales desde globalConfig (coma)', () => {
+      const cfg = (service as any).globalConfig;
+      spyOn(cfg, 'get').and.callFake((key: string) => {
+        if (key === 'prepaidRangeAmount') {
+          return '0,5';
+        }
+        if (key === 'RangoToleranciaPositiva') {
+          return '1.25';
+        }
+        if (key === 'RangoToleranciaNegativa') {
+          return '0,75';
+        }
+        if (key === 'parteDecimal') {
+          return '2';
+        }
+        if (key === 'TipoTolerancia' || key === 'RangoTolerancia' || key === 'sizeRetention') {
+          return '0';
+        }
+        if (key === 'currencyModule') {
+          return 'false';
+        }
+        return 'false';
+      });
+
+      service.initLogicService();
+
+      expect(service.prepaidRangeAmount).toBe(0.5);
+      expect(service.RangoToleranciaPositiva).toBe(1.25);
+      expect(service.RangoToleranciaNegativa).toBe(0.75);
+    });
+  });
+
   describe('COB tolerancia porcentual (TipoTolerancia != 0)', () => {
     function setupPercentToleranceBase(): jasmine.Spy {
       service.collection = { coCurrency: 'USD' } as any;
@@ -1580,13 +1656,14 @@ describe('CollectionService', () => {
       expect(service.montoTotalPagar).toBe(103);
     });
 
-    it('P1: shouldCreateAutomatedPrepaidOnSend requires excess >= prepaid range', () => {
+    it('P1: shouldCreateAutomatedPrepaidOnSend requires excess >= activation threshold', () => {
       service.automatedPrepaid = true;
       service.coTypeModule = '0';
       service.existPartialPayment = false;
       service.createAutomatedPrepaid = true;
       service.anticipoAutomatico = [{ type: 'ef' } as any];
       service.prepaidRangeAmount = 10;
+      service.tolerancia0 = false;
       spyOn(service as any, 'getPrepaidExcessAmount').and.returnValue(50);
 
       expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeTrue();
@@ -1598,16 +1675,20 @@ describe('CollectionService', () => {
       expect(service.shouldCreateAutomatedPrepaidOnSend()).toBeFalse();
     });
 
-    describe('COB-PREPAID-001 automated prepaid vs tolerancia', () => {
-      function setupUsdPrepaidScenario(excess: number): void {
+    describe('COB-PREPAID-001 / COB-PREPAID-004 automated prepaid vs tolerancia', () => {
+      function setupUsdPrepaidScenario(excess: number, opts?: {
+        prepaidRangeAmount?: number;
+        rangoPositiva?: number;
+        tolerancia0?: boolean;
+      }): void {
         service.automatedPrepaid = true;
         service.coTypeModule = '0';
         service.existPartialPayment = false;
-        service.prepaidRangeAmount = 1;
+        service.prepaidRangeAmount = opts?.prepaidRangeAmount ?? 1;
         service.prepaidRangeCurrency = 'USD';
-        service.tolerancia0 = true;
+        service.tolerancia0 = opts?.tolerancia0 ?? true;
         service.TipoTolerancia = 0;
-        service.RangoToleranciaPositiva = 100000;
+        service.RangoToleranciaPositiva = opts?.rangoPositiva ?? 100000;
         service.MonedaTolerancia = 'USD';
         service.collection = { coCurrency: 'USD' } as any;
         spyOn(service as any, 'syncPrepaidDifferenceAmounts').and.returnValue(excess);
@@ -1620,28 +1701,67 @@ describe('CollectionService', () => {
         spyOn(service as any, 'syncAddPaymentMethodDisabledState').and.stub();
       }
 
-      it('USD: exceso 1.54 con rango+ tolerancia alto sigue contando para anticipo', () => {
+      it('USD: exceso 1.54 con rango+ tolerancia alto NO crea anticipo (umbral = tol+ + prepaid)', () => {
         setupUsdPrepaidScenario(1.54);
 
         const prepaidExcess = (service as any).getPrepaidExcessAmount();
         expect(prepaidExcess).toBeCloseTo(1.54, 2);
 
         (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeFalse();
+      });
+
+      it('COB-PREPAID-004: tol+ 10 + prepaid 5 → exceso 14 no crea; 15 sí', () => {
+        setupUsdPrepaidScenario(14, { prepaidRangeAmount: 5, rangoPositiva: 10 });
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeFalse();
+
+        (service as any).syncPrepaidDifferenceAmounts.and.returnValue(15);
+        (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeTrue();
       });
 
-      it('umbral exacto: exceso = prepaidRangeAmount crea anticipo', () => {
-        setupUsdPrepaidScenario(1);
+      it('COB-PREPAID-004: tolerancia0 false → umbral = solo prepaidRangeAmount', () => {
+        setupUsdPrepaidScenario(1, {
+          prepaidRangeAmount: 1,
+          rangoPositiva: 100000,
+          tolerancia0: false,
+        });
+
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeTrue();
+      });
+
+      it('umbral exacto: exceso = tol+ + prepaidRangeAmount crea anticipo', () => {
+        setupUsdPrepaidScenario(11, { prepaidRangeAmount: 1, rangoPositiva: 10 });
 
         (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeTrue();
       });
 
       it('bajo umbral: exceso 0.5 con mínimo 1 no crea anticipo', () => {
-        setupUsdPrepaidScenario(0.5);
+        setupUsdPrepaidScenario(0.5, { prepaidRangeAmount: 1, rangoPositiva: 0 });
 
         (service as any).resolveAutomatedPrepaid('ef', 0);
         expect(service.createAutomatedPrepaid).toBeFalse();
+      });
+
+      it('COB-TOL-DEC-001: prepaidRangeAmount 0.5 + tol+ 0 → exceso 0.5 crea anticipo', () => {
+        setupUsdPrepaidScenario(0.5, { prepaidRangeAmount: 0.5, rangoPositiva: 0 });
+
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeTrue();
+      });
+
+      it('COB-TOL-DEC-001: tol+ 0.5 + prepaid 0.5 → umbral 1; exceso 0.9 no crea', () => {
+        setupUsdPrepaidScenario(0.9, { prepaidRangeAmount: 0.5, rangoPositiva: 0.5 });
+
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeFalse();
+
+        (service as any).syncPrepaidDifferenceAmounts.and.returnValue(1);
+        (service as any).resolveAutomatedPrepaid('ef', 0);
+        expect(service.createAutomatedPrepaid).toBeTrue();
       });
 
       it('COB-PREPAID-003: buildAutomatedPrepaidMessage usa prepaidCurrency y monto formateado', () => {

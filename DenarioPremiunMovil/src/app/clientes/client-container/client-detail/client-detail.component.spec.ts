@@ -16,6 +16,7 @@ describe('ClienteComponent (client-detail)', () => {
   beforeEach(waitForAsync(() => {
     clientLogicMock = {
       initService: jasmine.createSpy('initService'),
+      refreshCliCurrencyModule: jasmine.createSpy('refreshCliCurrencyModule').and.returnValue(Promise.resolve()),
       checkUserStatus: jasmine.createSpy('checkUserStatus'),
       esTransportista: false,
       multiCurrency: true,
@@ -103,7 +104,11 @@ describe('ClienteComponent (client-detail)', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
-    expect(clientLogicMock.initService).toHaveBeenCalled();
+  });
+
+  it('CLI-CURRENCY-SYNC: ngOnInit recarga currency_modules CLI desde SQLite', async () => {
+    await component.ngOnInit();
+    expect(clientLogicMock.refreshCliCurrencyModule).toHaveBeenCalled();
   });
 
   it('DM-CLT-009 / CLI-SALDOS-001: initializeClientBalances usa buckets docs (local/hard)', () => {
