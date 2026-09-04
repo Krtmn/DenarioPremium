@@ -431,11 +431,11 @@ export class CollectionService {
     this.multiCurrency = this.globalConfig.get('multiCurrency') === 'true' ? true : false;
     this.prepaidRangeCurrency = this.globalConfig.get('prepaidRangeCurrency');
     this.prepaidCurrency = this.globalConfig.get('prepaidCurrency');
-    this.prepaidRangeAmount = Number(this.globalConfig.get('prepaidRangeAmount'));
+    this.prepaidRangeAmount = this.parseConfigDecimal(this.globalConfig.get('prepaidRangeAmount'));
     this.igtfDefault = this.globalConfig.get('igtfDefault') === 'true' ? true : false;
     this.automatedPrepaid = this.globalConfig.get('automatedPrepaid') === 'true' ? true : false;
-    this.RangoToleranciaNegativa = Number(this.globalConfig.get('RangoToleranciaNegativa'));
-    this.RangoToleranciaPositiva = Number(this.globalConfig.get('RangoToleranciaPositiva'));
+    this.RangoToleranciaNegativa = this.parseConfigDecimal(this.globalConfig.get('RangoToleranciaNegativa'));
+    this.RangoToleranciaPositiva = this.parseConfigDecimal(this.globalConfig.get('RangoToleranciaPositiva'));
     if (this.globalConfig.get("currencyModule") == "true" ? true : false) {
       this.showConversion = this.currencyService.getCurrencyModule("cob").showConversion.toString() === "true" ? true : false;
       this.currencySelector = this.currencyService.getCurrencyModule("cob").currencySelector.toString() === "true" ? true : false;
@@ -2292,7 +2292,7 @@ export class CollectionService {
       return this.convertToleranceRangeToCollectionCurrency(this.RangoToleranciaPositiva);
     }
     const base = Math.abs(Number(this.montoTotalPagar) || 0);
-    return (base * (Number(this.RangoToleranciaPositiva) || 0)) / 100;
+    return (base * this.parseConfigDecimal(this.RangoToleranciaPositiva)) / 100;
   }
 
   /**
@@ -2302,7 +2302,7 @@ export class CollectionService {
    */
   private getAutomatedPrepaidActivationThreshold(): number {
     let positiveCeiling = this.getPositiveToleranceCeilingInCollectionCurrency();
-    const prepaidMin = Number(this.prepaidRangeAmount) || 0;
+    const prepaidMin = this.parseConfigDecimal(this.prepaidRangeAmount);
 
     if (
       this.prepaidRangeCurrency
@@ -3666,13 +3666,32 @@ export class CollectionService {
   }
 
   /**
+   * Parsea montos de config (tolerancia / anticipo) permitiendo decimales.
+   * Acepta "1.5" y "1,5"; NaN o negativo → 0 (COB-TOL-DEC-001).
+   */
+  private parseConfigDecimal(raw: unknown): number {
+    if (raw === null || raw === undefined || raw === '') {
+      return 0;
+    }
+    if (typeof raw === 'number') {
+      return Number.isFinite(raw) && raw >= 0 ? raw : 0;
+    }
+    const normalized = String(raw).trim().replace(',', '.');
+    const n = Number(normalized);
+    if (!Number.isFinite(n) || n < 0) {
+      return 0;
+    }
+    return n;
+  }
+
+  /**
    * Convierte un rango de tolerancia (en `MonedaTolerancia`) a la moneda del cobro.
    * COB-TOL-001: no usar `convertirMonto(rango, 0, collection.coCurrency)` — con cobro local
    * y tolerancia hard eso divide por la tasa y deja el rango ~0 (bloqueo falso).
    * Restaura la intención de 81604a79 (hard→local = × tasa; local→hard = ÷ tasa).
    */
   private convertToleranceRangeToCollectionCurrency(rangeInToleranceCurrency: number): number {
-    const range = Number(rangeInToleranceCurrency) || 0;
+    const range = this.parseConfigDecimal(rangeInToleranceCurrency);
     const collectionCo = this.collection?.coCurrency;
     if (!collectionCo || collectionCo === this.MonedaTolerancia) {
       return range;
@@ -3732,8 +3751,8 @@ export class CollectionService {
     if (base === 0) {
       return Math.abs(delta) === 0;
     }
-    const allowedPositive = (base * (Number(this.RangoToleranciaPositiva) || 0)) / 100;
-    const allowedNegative = (base * (Number(this.RangoToleranciaNegativa) || 0)) / 100;
+    const allowedPositive = (base * this.parseConfigDecimal(this.RangoToleranciaPositiva)) / 100;
+    const allowedNegative = (base * this.parseConfigDecimal(this.RangoToleranciaNegativa)) / 100;
     if (delta >= 0) {
       return delta <= allowedPositive;
     }
