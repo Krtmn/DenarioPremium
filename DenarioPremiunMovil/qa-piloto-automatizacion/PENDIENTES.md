@@ -104,6 +104,28 @@ más la sanitización de HTML (REQ 5).
 
 ---
 
+## 6. 🚫 BLOQUEADO · REQ CRUD de Bancos — cobros en las 3 capas
+
+**Guión:** `guiones-regresion/guion-req-crud-bancos.md` — tiene TODO: lo certificado, lo pendiente,
+los datos que hay que preparar antes de empezar y las 10 trampas.
+
+**Corrida del 04/09:** `automation/reports/4k/req_crud_bancos_20260904/`
+→ CRUD **6/6 PASS** · trigger de siembra **5/5 conforme** · matriz de selectores completa.
+
+🔴 **El bloqueo:** `POST collectionservice/collection` devuelve **HTTP 500** (5 de 5 intentos).
+`getsync` responde 200, así que hay conectividad: es ese endpoint. El último cobro que llegó a la
+nube fue el **2615 a las 12:11**, y el APK se reinstaló a las **15:06** ⇒ **ningún cobro ha llegado
+con el build actual**.
+
+Dos escenarios que **desde el cliente no se distinguen**: servidor roto, o payload del APK nuevo
+rechazado por el WS. **El log del web service lo resuelve en un minuto.**
+
+**Al retomar, empezar por H4** (ver el guión): confirmar si el APK dejó de escribir
+`nu_collection_payment` en Pago Móvil. Es el único hallazgo marcado como *inferencia* y de él
+depende si hay una regresión que reportar.
+
+---
+
 ## Cerrados recientemente
 
 - ✅ **Fix del despacho consolidado (hidroponias)** — validado el 01-02/09 en las 3 capas.
