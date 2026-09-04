@@ -285,14 +285,26 @@ ion-title {
 
 .fondoVerde {
     background: $fondoVerde;
+    --background: #{$fondoVerde};
+    color: #fff !important;
 }
 
 .fondoLila {
     background: $fondoLila;
+    --background: #{$fondoLila};
 }
 
 .fondoAmarillo {
     background: $fondoAmarillo;
+    --background: #{$fondoAmarillo};
+    color: #fff !important;
+}
+
+ion-modal.product-image-zoom-modal ion-toolbar.fondoAmarillo,
+ion-modal.product-image-zoom-modal ion-title.fondoAmarillo {
+    --background: #{$fondoAmarillo};
+    background: $fondoAmarillo !important;
+    color: #fff !important;
 }
 
 .tituloModulos {

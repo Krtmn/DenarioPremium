@@ -19,6 +19,7 @@ Contexto de dominio Cobros/TR: `AGENTS.md`. No duplicar post-mortems aqui.
 - Completitud TR != tolerancia. Revisar `clientBankAccount`, `nuevaCuenta` vs cuenta existente.
 - Al hidratar TR: receptor=`nuBankAccount`, emisor=`nuClientBankAccount` (no invertir).
 - Enviar con monto bajo puede ser `tolerancia0` + `RangoToleranciaNegativa`, no bug de UI.
+- Tolerancia absoluta cross-currency: rango en `MonedaTolerancia` → cobro local = `× tasa` (no `convertirMonto(..., coCurrency)`); ver `COB-TOL-001`.
 - `createAutomatedPrepaid` puede forzar Enviar ON en exceso; no ignorarlo al diagnosticar.
 - Anticipo automático: umbral = `prepaidRangeAmount` (no anular excedente por `RangoToleranciaPositiva`); ver `COB-PREPAID-001`.
 - Anticipo automático al Enviar: batch cobro→anticipo + dirty-requeue AutoSend (no dos `runPendingQueue` sueltos); ver `COB-PREPAID-002`.
