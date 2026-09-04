@@ -310,25 +310,19 @@
                 <ion-col class="" size="12" size-sm="12" size-xs="12">
                   @if(orderServ.showProductImages){
                   <div class="productDetailImage">
-                    <swiper-container
-                      class="mySwiper"
-                      navigation="false"
-                      [loop]="false"
-                      [watchOverflow]="true"
-                      [rewind]="productImages.length > 1"
-                      [pagination]="productImages.length > 1"
-                      pagination-clickable="true">
+                    <swiper-container [pagination]="true" navigation="false" class="mySwiper" [loop]="false"
+                      [rewind]="productImages.length > 1" [watchOverflow]="true">
                       @if(productImages.length > 0){
-                      @for(imgSrc of productImages; track imgSrc; let i = $index){
+                      @for(imgSrc of productImages; track imgSrc){
                       <swiper-slide class="swiperSlide">
-                        <img class="sizeImgProduct" [src]="imgSrc" (click)="openImageZoom(i, $event)" />
+                        <img class="sizeImgProduct" [src]="imgSrc" (click)="openImageZoom($event)" />
                       </swiper-slide>
                       }
                       } @else {
                       <swiper-slide class="swiperSlide">
                         <img class="sizeImgProduct"
                           [src]="productoModal.coProduct ? (imageServices.getImgForProduct(productoModal.coProduct)) : '../../../assets/images/nodisponible.png'"
-                          (click)="openImageZoom(0, $event)" />
+                          (click)="openImageZoom($event)" />
                       </swiper-slide>
                       }
                     </swiper-container>
@@ -541,7 +535,7 @@
   </ion-modal>
 
   <!-- modal zoom de imagen de producto (header verde = Pedidos; Productos usa fondoAmarillo) -->
-  <ion-modal [isOpen]="imageZoomOpen" (didPresent)="onZoomModalPresented()" (didDismiss)="closeImageZoom()"
+  <ion-modal [isOpen]="imageZoomOpen" (didDismiss)="closeImageZoom()"
     class="product-image-zoom-modal product-image-zoom-modal--pedidos">
     <ng-template>
       <ion-header>
@@ -563,18 +557,9 @@
         </ion-toolbar>
       </ion-header>
       <ion-content class="product-image-zoom-content">
-        <swiper-container
-          #zoomSwiper
-          class="product-image-zoom-swiper"
-          navigation="false"
-          zoom="true"
-          [loop]="false"
-          [watchOverflow]="true"
-          [rewind]="getZoomImages().length > 1"
-          [pagination]="getZoomImages().length > 1"
-          pagination-clickable="true"
-          [attr.initial-slide]="imageZoomStartIndex"
-          [initialSlide]="imageZoomStartIndex">
+        <swiper-container [pagination]="getZoomImages().length > 1" navigation="false" zoom="true"
+          [loop]="false" [rewind]="getZoomImages().length > 1" [watchOverflow]="true"
+          class="product-image-zoom-swiper">
           @for(imgSrc of getZoomImages(); track imgSrc){
           <swiper-slide>
             <div class="swiper-zoom-container">

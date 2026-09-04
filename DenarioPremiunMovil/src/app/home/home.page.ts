@@ -18,7 +18,6 @@ import { SynchronizationComponent } from '../synchronization/synchronization.com
 import { Subscription } from 'rxjs';
 import { EnterpriseService } from '../services/enterprise/enterprise.service';
 import { BackgroundSyncService } from '../services/background-sync/background-sync.service';
-import { isPromoterHideFinanceActive } from '../guards/promoter-hide-finance.guard';
 
 @Component({
   selector: 'app-home',
@@ -64,7 +63,6 @@ export class HomePage implements OnInit {
   public userMustActivateGPS: boolean = false;
 
   public esVendedor: boolean = true;
-  public hideFinancePromotor = false;
   backButtonSubscription: Subscription = this.platform.backButton.subscribeWithPriority(1, () => {
     //console.log('backButton was called!');
     //de aqui no te vas
@@ -98,9 +96,8 @@ export class HomePage implements OnInit {
       }
     }
 
-    this.hideFinancePromotor = isPromoterHideFinanceActive(this.config);
     this.esVendedor = !this.user.transportista && !this.user.cliente
-      && !this.hideFinancePromotor && !this.user.soporte && !this.user.catalogo;
+      && !this.user.promotor && !this.user.soporte && !this.user.catalogo;
 
     void this.autoSend.runPendingQueue();
 
@@ -238,7 +235,8 @@ export class HomePage implements OnInit {
             });
           });
         }
-        if (this.hideFinancePromotor) {
+        if (this.user.promotor) {
+          //Visitas, Inventario Productos, Clientes y Sincronizar
           this.modulosPromotor = this.modulos.filter(m => m.id === 0 || m.id === 1 || m.id === 7 || m.id === 8 || m.id === 10);
         }
       } catch (e) {

@@ -116,15 +116,15 @@
 
 
 
-    @if(hideFinancePromotor){
+    @if(user.promotor){
 
     <ion-row>
 
       @for(modulo of modulosPromotor; track modulo.id){
 
-      @if(modulo.id !== 10){
-
       <ion-col size="6">
+
+        @if(modulo.id !== 10){
 
         <ng-container>
 
@@ -138,9 +138,9 @@
 
         </ng-container>
 
-      </ion-col>
+        }
 
-      }
+      </ion-col>
 
       }
 

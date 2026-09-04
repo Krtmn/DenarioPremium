@@ -9,43 +9,17 @@
   align-items: center;
   margin: auto;
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 30px;
   cursor: pointer;
 }
 
-swiper-container.mySwiper {
+swiper-container {
   width: 100%;
-  height: auto;
-  padding-bottom: 20px;
+  height: 100%;
 }
 
 swiper-slide {
   overflow: hidden;
-}
-
-/* Puntos del carrusel (detalle Productos) */
-:host ::ng-deep .mySwiper .swiper-pagination {
-  position: relative;
-  bottom: 0;
-  margin-top: 4px;
-}
-
-:host ::ng-deep .mySwiper .swiper-pagination-bullet {
-  background: #430197;
-  opacity: 0.35;
-}
-
-:host ::ng-deep .mySwiper .swiper-pagination-bullet-active {
-  opacity: 1;
-}
-
-:host ::ng-deep .product-image-zoom-swiper .swiper-pagination-bullet {
-  background: #430197;
-  opacity: 0.35;
-}
-
-:host ::ng-deep .product-image-zoom-swiper .swiper-pagination-bullet-active {
-  opacity: 1;
 }
 
 .selectDetail ion-select {
@@ -64,8 +38,7 @@ ion-select::part(text) {
 }
 
 .product-image-zoom-content {
-  --background: #ffffff;
-  color-scheme: only light;
+  --background: #000;
 }
 
 .product-image-zoom-swiper {
@@ -79,7 +52,4 @@ ion-select::part(text) {
   object-fit: contain;
   margin: auto;
   display: block;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  background: #ffffff;
 }

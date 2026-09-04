@@ -19,44 +19,17 @@
   align-items: center;
   margin: auto;
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 30px;
   cursor: pointer;
 }
 
 swiper-container.mySwiper {
   width: 100%;
-  height: auto;
-  padding-bottom: 20px;
-}
-
-/* Puntos del carrusel (detalle Pedidos) */
-:host ::ng-deep .mySwiper .swiper-pagination {
-  position: relative;
-  bottom: 0;
-  margin-top: 4px;
-}
-
-:host ::ng-deep .mySwiper .swiper-pagination-bullet {
-  background: #59b02d;
-  opacity: 0.35;
-}
-
-:host ::ng-deep .mySwiper .swiper-pagination-bullet-active {
-  opacity: 1;
-}
-
-:host ::ng-deep .product-image-zoom-swiper .swiper-pagination-bullet {
-  background: #59b02d;
-  opacity: 0.35;
-}
-
-:host ::ng-deep .product-image-zoom-swiper .swiper-pagination-bullet-active {
-  opacity: 1;
+  height: 100%;
 }
 
 .product-image-zoom-content {
-  --background: #ffffff;
-  color-scheme: only light;
+  --background: #000;
 }
 
 .product-image-zoom-swiper {
@@ -70,9 +43,6 @@ swiper-container.mySwiper {
   object-fit: contain;
   margin: auto;
   display: block;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  background: #ffffff;
 }
 
 .textList p{
@@ -325,8 +295,7 @@ ion-accordion.accordion-expanded ion-item[slot='header'] {
 }
 
 .product-image-zoom-content {
-  --background: #ffffff;
-  color-scheme: only light;
+  --background: #000;
 }
 
 .product-image-zoom-swiper {
@@ -340,8 +309,5 @@ ion-accordion.accordion-expanded ion-item[slot='header'] {
   object-fit: contain;
   margin: auto;
   display: block;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  background: #ffffff;
 }
 
