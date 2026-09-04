@@ -168,6 +168,23 @@ Devolución B (NUEVA, abierta desde el listado, SIN salir del módulo):
 📷 `img/09-dev-ARRASTRE-productos-roja-sin-enviar.png` — **PRODUCTOS en rojo** en una devolución nueva
 donde el Enviar nunca se pulsó.
 
+> ### 📌 Criterio de QA (04/09) — NO va al manual del cliente
+>
+> La responsable QA lo evaluó y decidió: **no es grave y no afecta al REQ ni a la
+> operatividad**. Sus razones, que corrigen cómo estaba redactado antes:
+>
+> 1. **No ocurre al entrar al módulo.** Solo después de **salir sin guardar** una
+>    devolución con campos faltantes. Es un camino mucho menos frecuente de lo que
+>    sugería la redacción anterior.
+> 2. En un formulario recién abierto **falta todo**, así que señalarlo **no es una
+>    falsa alarma**: la información es correcta, solo llega antes de tiempo.
+> 3. El aviso aparece **antes** de pulsar Enviar, no en lugar de él. C1 y C2 se
+>    siguen cumpliendo.
+>
+> ⇒ **Queda documentado aquí para nosotros y fuera del manual del cliente.**
+> Si alguna vez molesta en campo, el arreglo es reiniciar `sendValidationAttempted`
+> al abrir un formulario nuevo, como ya hace `resetSendValidationUx()` en Depósitos.
+
 > **Matiz importante, para no exagerarlo.** No es exactamente el F1: aquí **sí falta algo** (el producto).
 > Lo que falla es el **momento**: `sendValidationAttempted` no se reinicia al abrir un formulario nuevo,
 > así que la app regaña al usuario antes de que haga nada mal. No incumple C1 ni C2.

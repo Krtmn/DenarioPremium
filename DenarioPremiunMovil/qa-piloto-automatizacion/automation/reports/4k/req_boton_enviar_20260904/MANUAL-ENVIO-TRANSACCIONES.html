@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Guía del vendedor · Envío de transacciones</title>
+<style>
+  :root {
+    --morado: #5501AA; --morado-osc: #3D0179; --morado-claro: #F2EAFB;
+    --verde: #91BA3F;  --verde-osc: #4A6B1B;  --verde-claro: #F0F6E4;
+    --ambar: #F5BA2E;  --ambar-claro: #FEF7E6; --ambar-osc: #8A6100;
+    --rojo: #E60C0C;   --rojo-claro: #FDF0F0;
+    --gris: #5D5A63;   --linea: #D8D2E0;
+  }
+  @page { size: A4; margin: 14mm 14mm 15mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 10.6pt; color: #1F1B24;
+         line-height: 1.5; margin: 0; }
+  .marca { display: flex; align-items: center; justify-content: space-between; gap: 8mm;
+           border-bottom: 2.2pt solid var(--morado); padding-bottom: 3mm; margin-bottom: 4mm; }
+  .marca img { width: 52mm; display: block; }
+  .marca .quien { text-align: right; font-size: 8.6pt; color: var(--gris); line-height: 1.35; }
+  .marca .quien b { color: var(--morado); font-size: 9.4pt; display: block; letter-spacing: .2px; }
+  .cinta { height: 2.2mm; display: flex; margin: -4mm 0 5mm; }
+  .cinta i { flex: 1; }
+  .cinta i:nth-child(1) { background: var(--morado); }
+  .cinta i:nth-child(2) { background: var(--verde); }
+  .cinta i:nth-child(3) { background: var(--ambar); }
+  h1 { font-size: 19pt; color: var(--morado); margin: 0 0 1.5mm; letter-spacing: -.3px; }
+  h2 { font-size: 13pt; color: var(--morado); margin: 8mm 0 3mm; padding-bottom: 1.2mm;
+       border-bottom: 1.6pt solid var(--morado); page-break-after: avoid; }
+  h3 { font-size: 11.2pt; margin: 5mm 0 1.5mm; color: var(--morado-osc); page-break-after: avoid; }
+  .sub { color: var(--gris); font-size: 10.5pt; margin: 0 0 5mm; }
+  table { border-collapse: collapse; width: 100%; margin: 3mm 0 4mm; font-size: 9.6pt;
+          page-break-inside: avoid; }
+  th { background: var(--morado); color: #fff; text-align: left; padding: 1.8mm 2.5mm; font-weight: 600; }
+  td { border: .6pt solid var(--linea); padding: 1.7mm 2.5mm; vertical-align: top; }
+  tr:nth-child(even) td { background: #FAF7FD; }
+  .destacado { border-left: 4pt solid var(--verde); background: var(--verde-claro);
+               padding: 3.5mm 4.5mm; margin: 4mm 0 5mm; }
+  .destacado .t { font-size: 12.5pt; font-weight: 700; color: var(--verde-osc); margin-bottom: 2mm; }
+  .consejo { background: var(--ambar-claro); border-left: 3.5pt solid var(--ambar);
+             padding: 3mm 4mm; margin: 4mm 0; page-break-inside: avoid; }
+  .consejo .t { font-weight: 700; color: var(--ambar-osc); margin-bottom: 1.5mm; }
+  .voz { background: var(--morado-claro); border-left: 3.5pt solid var(--morado);
+         padding: 3mm 4mm; margin: 4mm 0; font-style: italic; }
+  .cap { page-break-inside: avoid; margin: 3mm 0 4mm; text-align: center; }
+  .cap img { max-width: 62%; max-height: 112mm; border: .8pt solid var(--linea);
+             display: inline-block; border-radius: 1.5mm; }
+  .cap .pie { font-size: 8.6pt; color: var(--gris); margin-top: 1.5mm; font-style: italic; text-align: center; }
+  .par { display: flex; gap: 5mm; align-items: flex-start; page-break-inside: avoid; margin: 4mm 0; }
+  .par > div { flex: 1; text-align: center; }
+  .par .et { font-size: 9.2pt; font-weight: 700; margin-bottom: 1.5mm; }
+  .par img { max-width: 100%; max-height: 104mm; border: .8pt solid var(--linea);
+             display: inline-block; border-radius: 1.5mm; }
+  .rojo { color: var(--rojo); font-weight: 700; }
+  .num { display: inline-block; width: 6.5mm; height: 6.5mm; line-height: 6.5mm; text-align: center;
+         background: var(--morado); color: #fff; border-radius: 50%; font-weight: 700;
+         font-size: 9pt; margin-right: 2mm; }
+  .paso { margin: 3mm 0; }
+  .fin { margin-top: 7mm; padding-top: 3mm; border-top: 1.2pt solid var(--morado); font-size: 8.8pt;
+         color: var(--gris); display: flex; gap: 5mm; align-items: flex-start; }
+  .fin img { width: 26mm; opacity: .85; }
+  .pb { page-break-before: always; }
+</style></head><body>
+
+<div class="marca">
+  <img src="../../_assets/logo-denario-premium.svg" alt="Denario Premium">
+  <div class="quien"><b>GUÍA DEL VENDEDOR</b>Denario Premium Móvil<br>Septiembre 2026</div>
+</div>
+<div class="cinta"><i></i><i></i><i></i></div>
+
+<h1>Cómo te avisa la aplicación cuando falta algo</h1>
+<p class="sub">Envío de transacciones y campos obligatorios · Estado actual de los 7 módulos</p>
+
+<div class="destacado">
+  <div class="t">Lo que cambió, en una frase</div>
+  Cuando intentas enviar una transacción y falta algo, la aplicación <b>te dice qué es</b> y
+  <b>te señala dónde está</b>. Y cuando ya lo completaste, <b>las marcas desaparecen</b>: si no ves
+  ninguna señal, es que la transacción está lista.
+</div>
+
+<p>Esta guía cubre los siete módulos con los que trabajas todos los días: <b>Clientes, Pedidos,
+Cobros, Inventarios, Devoluciones, Depósitos y Visitas</b>.</p>
+
+<h2>Antes costaba saber si faltaba algo</h2>
+
+<p>El problema que reportaron los vendedores era este:</p>
+
+<div class="voz">
+  «Le doy enviar, me dice FALTA X. Lleno X. Le doy enviar, me dice FALTA Y. Lleno Y. Luego la
+  pestaña General sale en rojo pero no hay nada que falte ahí. Le doy enviar y sí me deja enviar.»
+</div>
+
+<p>La pestaña se quedaba marcada <span class="rojo">en rojo</span> aunque ya no faltara nada. Uno
+llenaba todo, la aplicación aceptaba la transacción… y la marca seguía ahí. No impedía trabajar,
+pero dejaba la duda de si algo había quedado mal.</p>
+
+<div class="destacado">
+  <div class="t">Eso ya no pasa</div>
+  Ocurría en <b>Devoluciones, Depósitos, Inventarios y Cobros</b>. En la versión actual, en cuanto
+  completas lo que falta, <b>la marca se quita</b> en los cuatro. Si ves una pestaña en rojo,
+  es porque ahí <b>hay algo pendiente de verdad</b>.
+</div>
+
+<div class="pb"></div>
+<h2>Las tres formas en que la aplicación te avisa</h2>
+
+<p>No todos los módulos avisan igual, y no es un error: cada uno usa la forma que mejor le sirve a
+lo que estás haciendo. Estas son las tres.</p>
+
+<h3><span class="num">1</span>Un mensaje que aparece arriba</h3>
+<p>Te dice en palabras qué falta. Por ejemplo, en Pedidos:
+<b>«Debe agregar al menos un producto al pedido.»</b> Es el aviso más directo y el que verás primero.</p>
+
+<h3><span class="num">2</span>La pestaña se marca en rojo</h3>
+<p>Te indica <b>en cuál de las pestañas</b> está lo que falta, para que no tengas que buscarlo.
+Si estás en la pestaña PEDIDO y se marca GENERAL, ya sabes dónde ir.</p>
+
+<div class="consejo">
+  <div class="t">Un detalle que conviene saber</div>
+  La pestaña <b>en la que estás parado</b> nunca se ve roja, porque está resaltada como pestaña
+  activa. Si sospechas que algo falta, <b>cámbiate a otra pestaña</b> y mira desde ahí: las marcas
+  se ven en las que no estás usando.
+</div>
+
+<h3><span class="num">3</span>El campo mismo se resalta</h3>
+<p>El recuadro se pone rojo y debajo aparece <b>«¡Campo Obligatorio!»</b>. Es la más precisa: te
+lleva al campo exacto. Cobros es el módulo que más la usa.</p>
+
+<div class="cap">
+  <img src="img/13-cobro-E2-campos-marcados.png" alt="Campos marcados en Cobros">
+  <div class="pie">En Cobros, cada campo pendiente queda resaltado con su mensaje debajo.</div>
+</div>
+
+<div class="pb"></div>
+<h2>Qué te pide cada módulo</h2>
+
+<p>Esto es lo que verás si intentas enviar antes de completar la transacción:</p>
+
+<table>
+  <tr><th style="width:30mm">Módulo</th><th>Lo que te dice la aplicación</th><th style="width:36mm">Cómo te lo señala</th></tr>
+  <tr><td><b>Clientes</b><br><span style="font-size:8.6pt;color:var(--gris)">cliente potencial</span></td>
+      <td>«Nombre obligatorio.»<br>Y si insistes: «Complete todos los campos obligatorios del cliente potencial.»</td>
+      <td>Resalta <b>los campos</b> que faltan, uno por uno</td></tr>
+  <tr><td><b>Pedidos</b></td>
+      <td>«Debe agregar al menos un producto al pedido.»</td>
+      <td>Marca la pestaña <b>PEDIDO</b></td></tr>
+  <tr><td><b>Cobros</b></td>
+      <td>«Hay un método de pago incompleto. Complételo o elimínelo antes de enviar.»</td>
+      <td>Resalta <b>cada campo</b> del método de pago + la pestaña PAGOS</td></tr>
+  <tr><td><b>Inventarios</b></td>
+      <td>«Debe seleccionar al menos un producto para el inventario.»</td>
+      <td>Marca la pestaña <b>INVENTARIO</b></td></tr>
+  <tr><td><b>Devoluciones</b></td>
+      <td>«Debe agregar al menos un producto a la devolución.»</td>
+      <td>Marca la pestaña <b>PRODUCTOS</b></td></tr>
+  <tr><td><b>Depósitos</b></td>
+      <td>Te guía paso a paso:<br>«Seleccione un banco para continuar.» → «Seleccione los Cobros a depositar» → «Ingrese el número de plantilla para continuar.»</td>
+      <td>Marca la pestaña donde toca actuar y resalta el campo</td></tr>
+  <tr><td><b>Visitas</b></td>
+      <td>«Debe agregar al menos una actividad para poder enviar la visita»</td>
+      <td>Mensaje en pantalla</td></tr>
+</table>
+
+<div class="consejo">
+  <div class="t">Depósitos te lleva de la mano</div>
+  Es el módulo con más pasos, y la aplicación te los pide <b>en orden</b>: primero el banco, después
+  los cobros que vas a depositar, y al final el número de planilla. No hace falta que los adivines:
+  cada vez que pulses Enviar te dirá cuál sigue.
+</div>
+
+<div class="pb"></div>
+<h2>Un ejemplo completo, paso a paso</h2>
+
+<p>Así se ve un depósito desde que lo abres hasta que queda listo:</p>
+
+<div class="paso"><span class="num">1</span><b>Pulsas Enviar con el formulario vacío</b> →
+«Seleccione un banco para continuar.» La pestaña GENERAL se marca.</div>
+
+<div class="paso"><span class="num">2</span><b>Eliges el banco</b> → ahora se marca COBROS,
+porque ese es el siguiente paso.</div>
+
+<div class="paso"><span class="num">3</span><b>Marcas el cobro a depositar</b> → se marca GENERAL
+otra vez: falta el número de planilla.</div>
+
+<div class="paso"><span class="num">4</span><b>Escribes el número de planilla</b> →
+<b>todas las marcas desaparecen.</b> Ya no falta nada.</div>
+
+<div class="paso"><span class="num">5</span><b>Pulsas Enviar</b> → «El Depósito será enviado».
+Confirmas y listo.</div>
+
+<div class="cap">
+  <img src="img/17-deposito-F1-ARREGLADO-general-negra.png" alt="Depósito completo, sin marcas">
+  <div class="pie">El paso 4: con la planilla escrita y el cobro marcado,
+  <b>ninguna pestaña queda en rojo</b>. Antes, aquí GENERAL seguía marcada.</div>
+</div>
+
+<h2>Cómo saber que tu transacción está lista</h2>
+
+<table>
+  <tr><th style="width:52mm">Lo que ves</th><th>Qué significa</th></tr>
+  <tr><td><b>Ninguna pestaña marcada</b> y ningún campo resaltado</td><td>Está completa. Puedes enviarla con confianza</td></tr>
+  <tr><td>Una pestaña <span class="rojo">en rojo</span></td><td>Ahí falta algo. Entra y busca el campo resaltado</td></tr>
+  <tr><td>Un mensaje al pulsar Enviar</td><td>Te está diciendo exactamente qué completar</td></tr>
+  <tr><td>Aparece «El… será enviado» o «¿Desea enviar…?»</td><td>La aplicación dio la transacción por válida. Al confirmar, se envía</td></tr>
+</table>
+
+<div class="consejo">
+  <div class="t">Si algo no te cuadra</div>
+  Si ves una marca y no encuentras qué falta, <b>cámbiate de pestaña y revisa desde ahí</b> — recuerda
+  que la pestaña activa nunca se muestra marcada. Y si aun así no lo encuentras, avísale a tu
+  supervisor con una captura de pantalla: es la forma más rápida de que lo revisemos.
+</div>
+
+<div class="fin">
+  <img src="../../_assets/isotipo-denario.png" alt="">
+  <div>
+    <b>Denario Premium · Guía del vendedor</b><br>
+    Envío de transacciones y campos obligatorios · Septiembre 2026<br>
+    Aplica a los módulos Clientes, Pedidos, Cobros, Inventarios, Devoluciones, Depósitos y Visitas.
+  </div>
+</div>
+
+</body></html>
