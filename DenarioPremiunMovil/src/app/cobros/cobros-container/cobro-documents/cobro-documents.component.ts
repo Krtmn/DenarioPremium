@@ -79,6 +79,10 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   public disabledSaveButton: boolean = false;
   public alertMessageOpen: boolean = false;
   public alertMessageOpen2: boolean = false;
+  /** Confirmación COB-DISC-003: remanente de descuento → anticipo. */
+  public alertDiscountRemnantOpen: boolean = false;
+  private pendingDiscountRemnantInCollection = 0;
+  private pendingDiscountClampToBalance = true;
   private hasShownPartialPayMessage: boolean = false;
   // Flags para evitar race conditions entre keydown y input (teclados virtuales / emuladores)
   private discountKeyInFlight: boolean = false;
@@ -159,12 +163,27 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     },
   ];
 
+  public alertButtonsDiscountRemnant = [
+    {
+      text: '',
+      role: 'cancel'
+    },
+    {
+      text: '',
+      role: 'confirm'
+    },
+  ];
+
 
   constructor() {
     this.cdr = inject(ChangeDetectorRef);
     this.alertButtons[0].text = this.collectService.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')!;
     this.alertButtons2[0].text = this.collectService.collectionTagsDenario.get('DENARIO_BOTON_CANCELAR')!;
     this.alertButtons2[1].text = this.collectService.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')!;
+    this.alertButtonsDiscountRemnant[0].text =
+      this.collectService.collectionTagsDenario.get('DENARIO_BOTON_CANCELAR')!;
+    this.alertButtonsDiscountRemnant[1].text =
+      this.collectService.collectionTagsDenario.get('DENARIO_BOTON_ACEPTAR')!;
 
   }
   ngOnInit() {
@@ -3293,6 +3312,33 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
   }
 
+  async setResultDiscountRemnant(ev: any): Promise<void> {
+    this.alertDiscountRemnantOpen = false;
+    const confirmed = ev?.detail?.role === 'confirm';
+    const coDocument = String(this.collectService.documentSaleOpen?.coDocument ?? '').trim();
+
+    if (confirmed) {
+      this.pendingDiscountClampToBalance = false;
+      await this.applyCollectDiscounts({ clampToBalance: false });
+      this.collectService.setDiscountRemnantPrepaidForDocument(
+        coDocument,
+        this.pendingDiscountRemnantInCollection,
+      );
+      this.collectService.createAutomatedPrepaid = true;
+      this.collectService.ensureAutomatedPrepaidPaymentTemplate();
+      this.pendingDiscountRemnantInCollection = 0;
+      this.assignDiscountsOpen = false;
+    } else {
+      // Cancelar: volver al modal de descuentos sin aplicar cambios.
+      this.pendingDiscountClampToBalance = true;
+      this.pendingDiscountRemnantInCollection = 0;
+      this.collectService.clearDiscountRemnantPrepaidForDocument(coDocument);
+      this.assignDiscountsOpen = true;
+    }
+
+    this.cdr.detectChanges();
+  }
+
   openPartialPayment(coDocument: string) {
     const requestId = this.collectService.resetPaymentPartialsForDocument(coDocument);
     this.collectService.openPaymentPartial = false;
@@ -4115,6 +4161,7 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   toggleTempSelection(id: number) {
     const d = this.collectService.collectDiscounts.find(cd => cd.idCollectDiscount === id);
     if (!d) return;
+    const maxPercent = this.getMaxCollectDiscountPercent();
     const idx = this.collectService.tempSelectedCollectDiscounts.findIndex(x => x.idCollectDiscount === id);
     if (idx >= 0) {
       // quitar selección
@@ -4122,21 +4169,19 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       // Recalcular y actualizar flag de bloqueo
       const totalAfterRemoval = this.collectService.tempSelectedCollectDiscounts.reduce((acc, t) => acc + Number(t.nuCollectDiscount ?? 0), 0);
       this.collectService.totalCollectDiscountsSelected = totalAfterRemoval;
-      this.disableDiscountCheckboxes = totalAfterRemoval >= 100;
+      this.disableDiscountCheckboxes = totalAfterRemoval >= maxPercent;
       this.cdr.detectChanges();
       return;
     }
 
-    // Añadir: validar que no supere 100
+    // Añadir: validar que no supere maxCollectDiscount
     const currentTotal = this.collectService.tempSelectedCollectDiscounts.reduce((acc, t) => acc + Number(t.nuCollectDiscount || 0), 0);
     const toAdd = Number(d.nuCollectDiscount ?? 0);
     const candidateTotal = currentTotal + toAdd;
+    const remaining = Math.max(0, maxPercent - currentTotal);
 
-    if (candidateTotal > 100) {
-      // No permitir selección que exceda 100
-      this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSJ_DISCOUNT_EXCEEDS_100') || 'La suma de descuentos no puede exceder 100%';
-      // opcional: abrir alerta si la app usa alertMessageOpen
-      this.alertMessageOpen = true;
+    if (candidateTotal > maxPercent) {
+      this.notifyCollectDiscountLimitExceeded(remaining);
       return;
     }
 
@@ -4151,8 +4196,8 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     }
     this.collectService.tempSelectedCollectDiscounts.push({ ...d, nuCollectDiscount: nu, naCollectDiscount: na } as any);
 
-    // Si llega exactamente a 100, bloquear los checkboxes
-    this.disableDiscountCheckboxes = candidateTotal >= 100;
+    // Si llega exactamente al tope, bloquear los checkboxes
+    this.disableDiscountCheckboxes = candidateTotal >= maxPercent;
     this.collectService.totalCollectDiscountsSelected = candidateTotal;
     this.cdr.detectChanges();
   }
@@ -4176,6 +4221,9 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
       this.collectService.collection.collectionDetails[index].discountComment = this.discountComment;
     }
 
+    const coDocument = String(this.collectService.documentSaleOpen?.coDocument ?? '').trim();
+    this.collectService.clearDiscountRemnantPrepaidForDocument(coDocument);
+
     this.validate();
     this.disableDiscountCheckboxes = false;
     this.collectService.totalCollectDiscountsSelected = 0;
@@ -4187,23 +4235,24 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
 
     this.collectService.selectedCollectDiscounts = this.collectService.tempSelectedCollectDiscounts.map(d => d.idCollectDiscount);
 
-    // aplicar cambios y esperar cálculos antes de cerrar el modal
-    await this.applyCollectDiscounts();
+    await this.calculateSaldo(this.indexDocumentSaleOpen);
+    const preview = this.computeCollectDiscountPreview(false);
+    const remnant = Math.max(0, Number(preview?.remnantInCollectionCurrency) || 0);
+    const coDocument = String(this.collectService.documentSaleOpen?.coDocument ?? '').trim();
 
+    if (remnant > 0) {
+      this.pendingDiscountRemnantInCollection = remnant;
+      const remnantPrepaid = this.collectService.convertCollectionAmountToPrepaidCurrency(remnant);
+      this.collectService.mensaje = this.collectService.buildDiscountRemnantPrepaidMessage(remnantPrepaid);
+      this.alertDiscountRemnantOpen = true;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.collectService.clearDiscountRemnantPrepaidForDocument(coDocument);
+    await this.applyCollectDiscounts({ clampToBalance: true });
     this.assignDiscountsOpen = false;
     this.cdr.detectChanges();
-
-    const selectedIds: number[] = Array.isArray(this.collectService.selectedCollectDiscounts)
-      ? this.collectService.selectedCollectDiscounts
-      : [];
-
-    // verificar inputs requeridos
-    const requiringInput = selectedIds
-      .map(id => this.collectService.collectDiscounts.find(cd => cd.idCollectDiscount === id))
-      .filter(d => !!d && d!.requireInput);
-    if (requiringInput.length > 0) {
-      // mantener la validación actual (botón se deshabilita por validateCollectDiscountsInputs)
-    }
   }
 
   cancelCollectDiscounts() {
@@ -4241,14 +4290,133 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     this.cdr.detectChanges();
   }
 
-  public async applyCollectDiscounts() {
+  /**
+   * Preview de descuentos: montos y remanente vs saldo.
+   * `clampToBalance=false` permite monto > saldo (para detectar remanente / anticipo).
+   */
+  computeCollectDiscountPreview(clampToBalance: boolean): {
+    baseBalance: number;
+    discountTotal: number;
+    remnantInCollectionCurrency: number;
+    calculatedDiscounts: CollectDiscounts[];
+    totalDiscountRates: number;
+    detailBaseNew: number;
+    parteDecimal: number;
+    factor: number;
+    manualDiscountApplied: number;
+  } | null {
+    if (!this.collectService.documentSaleOpen) {
+      return null;
+    }
+
+    const selectedIds: number[] = Array.isArray(this.collectService.selectedCollectDiscounts)
+      ? this.collectService.selectedCollectDiscounts
+      : [];
+
+    const parteDecimal = Number.parseInt(String(this.globalConfig.get('parteDecimal') ?? '0'), 10) || 0;
+    const factor = Math.pow(10, parteDecimal);
+
+    const detailBase = Number(this.collectService.documentSaleOpen.nuAmountBase ?? 0);
+    const percentDiscount = Number(this.collectService.documentSaleOpen.nuAmountDiscount ?? 0);
+    const discountBase = detailBase * percentDiscount;
+    let detailBaseNew = detailBase - discountBase;
+    const monedaDoc = this.collectService.documentSaleOpen.coCurrency;
+    let viewBalance = 0;
+    if (this.collectService.collection.coCurrency == monedaDoc) {
+      viewBalance = Number(this.collectService.documentSalesView?.[this.indexDocumentSaleOpen]?.nuBalance);
+    } else {
+      viewBalance = this.collectService.convertirMonto(
+        Number(this.collectService.documentSalesView?.[this.indexDocumentSaleOpen]?.nuBalance),
+        this.collectService.collection.nuValueLocal,
+        monedaDoc,
+      );
+    }
+
+    const candidates = [viewBalance].filter(v => !Number.isNaN(v));
+    const baseBalance = candidates.length ? candidates[0] : 0;
+    let runningBalance = baseBalance;
+
+    const calculatedDiscounts: CollectDiscounts[] = [];
+    let discountTotal = 0;
+    const rawManualDiscount = Number(this.manualCollectDiscountAmount ?? 0);
+    const manualDiscount = Number.isFinite(rawManualDiscount) ? Math.max(0, rawManualDiscount) : 0;
+    const manualDiscountApplied = clampToBalance
+      ? Math.min(manualDiscount, Math.max(0, runningBalance))
+      : manualDiscount;
+
+    if (manualDiscountApplied > 0) {
+      detailBaseNew = Math.max(0, detailBaseNew - manualDiscountApplied);
+      discountTotal += manualDiscountApplied;
+      runningBalance = Number((runningBalance - manualDiscountApplied).toFixed(parteDecimal));
+      calculatedDiscounts.push({
+        idCollectDiscount: this.MANUAL_COLLECT_DISCOUNT_ID,
+        nuCollectDiscount: 0,
+        naCollectDiscount: this.MANUAL_COLLECT_DISCOUNT_LABEL,
+        requireInput: false,
+        nuAmountCollectDiscount: manualDiscountApplied,
+        nuAmountCollectDiscountConversion: this.collectService.convertirMonto(
+          manualDiscountApplied,
+          this.collectService.collection.nuValueLocal,
+          this.collectService.collection.coCurrency
+        ),
+        position: 1
+      } as CollectDiscounts);
+    }
+
+    selectedIds.forEach(id => {
+      const temp = this.collectService.tempSelectedCollectDiscounts.find(cd => cd.idCollectDiscount === id);
+      const catalog = this.collectService.collectDiscounts.find(cd => cd.idCollectDiscount === id);
+      const source = temp ?? catalog;
+      if (!source) return;
+
+      const rate = Number(source.nuCollectDiscount ?? 0);
+      const stepRaw = (detailBaseNew * rate) / 100;
+      let step = Math.round(stepRaw * factor) / factor;
+      if (clampToBalance) {
+        step = Math.min(step, Math.max(0, runningBalance));
+        step = Math.round(step * factor) / factor;
+      }
+      if (temp) temp.nuAmountCollectDiscount = step;
+      discountTotal += step;
+      detailBaseNew -= step;
+
+      calculatedDiscounts.push({
+        ...source,
+        nuAmountCollectDiscount: step,
+        position: calculatedDiscounts.length + 1
+      } as any);
+
+      runningBalance = Number((runningBalance - step).toFixed(parteDecimal));
+    });
+
+    const remnantInCollectionCurrency = clampToBalance
+      ? 0
+      : Math.max(0, discountTotal - baseBalance);
+
+    const totalDiscountRates = calculatedDiscounts.reduce(
+      (acc, d) => acc + Number(d.nuCollectDiscount ?? 0),
+      0,
+    );
+
+    return {
+      baseBalance,
+      discountTotal,
+      remnantInCollectionCurrency,
+      calculatedDiscounts,
+      totalDiscountRates,
+      detailBaseNew,
+      parteDecimal,
+      factor,
+      manualDiscountApplied,
+    };
+  }
+
+  public async applyCollectDiscounts(options?: { clampToBalance?: boolean }) {
     try {
       // saldo base actualizado
       await this.calculateSaldo(this.indexDocumentSaleOpen);
 
-      const selectedIds: number[] = Array.isArray(this.collectService.selectedCollectDiscounts)
-        ? this.collectService.selectedCollectDiscounts
-        : [];
+      const clampToBalance = options?.clampToBalance !== false;
 
       // asegurar posición del detalle
       let idxDetail = this.collectService.documentSaleOpen.positionCollecDetails;
@@ -4258,97 +4426,24 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
         if ((idxDetail as number) >= 0) this.collectService.documentSaleOpen.positionCollecDetails = idxDetail as number;
       }
 
-      const parteDecimal = Number.parseInt(String(this.globalConfig.get('parteDecimal') ?? '0'), 10) || 0;
-      const factor = Math.pow(10, parteDecimal);
-
-      // Siempre recalcular partiendo del saldo original (no del saldo ya descontado)
-      /*  const detailBalance = Number(
-         Number.isInteger(idxDetail) && (idxDetail as number) >= 0
-           ? this.collectService.collection.collectionDetails[idxDetail as number]?.nuBalanceDoc
-           : NaN
-       ); */
-      const documentSale = this.collectService.documentSaleOpen;
-      const detailBase = this.collectService.documentSaleOpen.nuAmountBase;
-      const percentDiscount = this.collectService.documentSaleOpen.nuAmountDiscount;
-      const discountBase = detailBase * percentDiscount;
-      let detailBaseNew = detailBase - discountBase;
-      const monedaDoc = this.collectService.documentSaleOpen.coCurrency;
-      const backupBalance = Number(this.collectService.documentSalesBackup?.[this.indexDocumentSaleOpen]?.nuBalance ?? NaN);
-      const currentBalance = Number(this.collectService.documentSaleOpen?.nuBalance ?? NaN);
-      let viewBalance = 0;
-      if (this.collectService.collection.coCurrency == monedaDoc) {
-        viewBalance = Number(this.collectService.documentSalesView?.[this.indexDocumentSaleOpen]?.nuBalance);
-      } else {
-        viewBalance = this.collectService.convertirMonto(Number(this.collectService.documentSalesView?.[this.indexDocumentSaleOpen]?.nuBalance), this.collectService.collection.nuValueLocal, monedaDoc);
+      const preview = this.computeCollectDiscountPreview(clampToBalance);
+      if (!preview) {
+        return;
       }
 
-      const candidates = [viewBalance].filter(v => !Number.isNaN(v));
-      const baseBalance = candidates.length ? candidates[0] : 0;
-      let runningBalance = baseBalance;
+      const {
+        baseBalance,
+        discountTotal,
+        calculatedDiscounts,
+        totalDiscountRates: totalDiscounts,
+        factor,
+        manualDiscountApplied,
+      } = preview;
 
-      // aplicar descuentos secuencialmente, guardando el monto por iteración
-      const calculatedDiscounts: CollectDiscounts[] = [];
-      let discountTotal = 0;
-      const rawManualDiscount = Number(this.manualCollectDiscountAmount ?? 0);
-      const manualDiscount = Number.isFinite(rawManualDiscount) ? Math.max(0, rawManualDiscount) : 0;
-      const manualDiscountApplied = Math.min(manualDiscount, Math.max(0, runningBalance));
-
-      if (manualDiscountApplied > 0) {
-        detailBaseNew = Math.max(0, detailBaseNew - manualDiscountApplied);
-        discountTotal += manualDiscountApplied;
-        runningBalance = Number((runningBalance - manualDiscountApplied).toFixed(parteDecimal));
-        calculatedDiscounts.push({
-          idCollectDiscount: this.MANUAL_COLLECT_DISCOUNT_ID,
-          nuCollectDiscount: 0,
-          naCollectDiscount: this.MANUAL_COLLECT_DISCOUNT_LABEL,
-          requireInput: false,
-          nuAmountCollectDiscount: manualDiscountApplied,
-          nuAmountCollectDiscountConversion: this.collectService.convertirMonto(
-            manualDiscountApplied,
-            this.collectService.collection.nuValueLocal,
-            this.collectService.collection.coCurrency
-          ),
-          position: 1
-        } as CollectDiscounts);
-      }
       this.manualCollectDiscountAmount = manualDiscountApplied;
       this.centsManualCollectDiscount = Math.round(manualDiscountApplied * factor) || 0;
 
-      selectedIds.forEach(id => {
-        const temp = this.collectService.tempSelectedCollectDiscounts.find(cd => cd.idCollectDiscount === id);
-        const catalog = this.collectService.collectDiscounts.find(cd => cd.idCollectDiscount === id);
-        const source = temp ?? catalog;
-        if (!source) return;
-
-        const rate = Number(source.nuCollectDiscount ?? 0);
-        const stepRaw = (detailBaseNew * rate) / 100;
-        const step = Math.round(stepRaw * factor) / factor;
-        // Propagar a temp si existe
-        if (temp) temp.nuAmountCollectDiscount = step;
-        discountTotal += step;
-        detailBaseNew -= step;
-
-
-        const entry: CollectDiscounts = {
-          ...source,
-          nuAmountCollectDiscount: step,
-          position: calculatedDiscounts.length + 1
-        } as any;
-        calculatedDiscounts.push(entry);
-
-
-
-        runningBalance = Number((runningBalance - step).toFixed(parteDecimal));
-      });
-
-
-      const totalDiscounts = calculatedDiscounts.reduce((acc, d) => acc + Number(d.nuCollectDiscount ?? 0), 0);
-      let discounts = this.collectService.documentSaleOpen.nuAmountRetention
-        + this.collectService.documentSaleOpen.nuAmountRetention2
-        + this.collectService.collection.collectionDetails[idxDetail].nuAmountDiscount;
-      const newBalance = runningBalance - discounts;
       const isPartialPayment = this.collectService.isPaymentPartial;
-      const netToApply = Math.max(0, newBalance);
 
       if (isPartialPayment) {
         const partialAmount = this.resolvePartialPaymentAmount();
@@ -4541,28 +4636,39 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   setNuCollectDiscount(idCollectDiscount: number, nuCollectDiscount: any) {
-    // Enforce that totalCollectDiscountsSelected + new value <= 100
+    // Enforce that totalCollectDiscountsSelected + new value <= maxCollectDiscount
     const newVal = Number(nuCollectDiscount);
     if (isNaN(newVal)) return;
+
+    const maxPercent = this.getMaxCollectDiscountPercent();
 
     // Sum of other discounts (exclude the one being edited)
     const othersTotal = this.collectService.tempSelectedCollectDiscounts
       .filter(cd => cd.idCollectDiscount !== idCollectDiscount)
       .reduce((acc, t) => acc + Number(t.nuCollectDiscount ?? 0), 0);
 
-    const allowed = Math.max(0, 100 - othersTotal);
+    const allowed = Math.max(0, maxPercent - othersTotal);
 
-    // Find the temp selected discount and update safely
+    if (newVal > allowed) {
+      // Quitar el descuento que provocó el exceso (no clampear)
+      const removeIdx = this.collectService.tempSelectedCollectDiscounts
+        .findIndex(cd => cd.idCollectDiscount === idCollectDiscount);
+      if (removeIdx >= 0) {
+        this.collectService.tempSelectedCollectDiscounts.splice(removeIdx, 1);
+      }
+      this.notifyCollectDiscountLimitExceeded(allowed);
+      const totalAfterRemoval = this.collectService.tempSelectedCollectDiscounts
+        .reduce((acc, t) => acc + Number(t.nuCollectDiscount ?? 0), 0);
+      this.collectService.totalCollectDiscountsSelected = totalAfterRemoval;
+      this.validateCollectDiscountsInputs();
+      this.disableDiscountCheckboxes = totalAfterRemoval >= maxPercent;
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.collectService.tempSelectedCollectDiscounts.forEach(cd => {
       if (cd.idCollectDiscount === idCollectDiscount) {
-        if (newVal > allowed) {
-          // Do not allow values that push total over 100; clamp to allowed and notify
-          cd.nuCollectDiscount = allowed;
-          this.collectService.mensaje = this.collectService.collectionTags.get('COB_MSJ_DISCOUNT_EXCEEDS_100') || 'La suma de descuentos no puede exceder 100%';
-          this.alertMessageOpen = true;
-        } else {
-          cd.nuCollectDiscount = newVal;
-        }
+        cd.nuCollectDiscount = newVal;
       }
     });
 
@@ -4570,8 +4676,49 @@ export class CobrosDocumentComponent implements OnInit, AfterViewInit, OnDestroy
     const total = this.collectService.tempSelectedCollectDiscounts.reduce((acc, t) => acc + Number(t.nuCollectDiscount ?? 0), 0);
     this.collectService.totalCollectDiscountsSelected = total;
     this.validateCollectDiscountsInputs();
-    this.disableDiscountCheckboxes = total >= 100;
+    this.disableDiscountCheckboxes = total >= maxPercent;
     this.cdr.detectChanges();
+  }
+
+  /** Tope % de descuentos (config maxCollectDiscount). */
+  getMaxCollectDiscountPercent(): number {
+    const max = Number(this.collectService.maxCollectDiscount);
+    if (!Number.isFinite(max) || max <= 0) {
+      return 100;
+    }
+    return max;
+  }
+
+  /** % aún disponible bajo el tope maxCollectDiscount. */
+  getRemainingCollectDiscountPercent(): number {
+    const used = Number(this.collectService.totalCollectDiscountsSelected) || 0;
+    return Math.max(0, this.getMaxCollectDiscountPercent() - used);
+  }
+
+  /**
+   * Máximo % editable para un descuento concreto (techo − suma de los demás).
+   * Usado en el input de tasa al editar.
+   */
+  getAllowedCollectDiscountPercentForEdit(idCollectDiscount: number): number {
+    const othersTotal = this.collectService.tempSelectedCollectDiscounts
+      .filter(cd => cd.idCollectDiscount !== idCollectDiscount)
+      .reduce((acc, t) => acc + Number(t.nuCollectDiscount ?? 0), 0);
+    return Math.max(0, this.getMaxCollectDiscountPercent() - othersTotal);
+  }
+
+  private notifyCollectDiscountLimitExceeded(availablePercent: number): void {
+    const maxPercent = this.getMaxCollectDiscountPercent();
+    const available = Math.max(0, Number(availablePercent) || 0);
+    const template = this.collectService.collectionTags.get('COB_MSJ_DISCOUNT_EXCEEDS_100');
+    if (template && (template.includes('{max}') || template.includes('{available}'))) {
+      this.collectService.mensaje = template
+        .replace('{max}', String(maxPercent))
+        .replace('{available}', String(available));
+    } else {
+      this.collectService.mensaje =
+        `Se superó el límite de descuento (${maxPercent}%). Máximo disponible: ${available}%.`;
+    }
+    this.alertMessageOpen = true;
   }
 
   setNaCollectDiscount(idCollectDiscount: number, naCollectDiscount: any) {

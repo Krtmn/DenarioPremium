@@ -212,6 +212,13 @@ export class CollectionService {
   public enterpriseEnabled: boolean = false;
   public disabledClient: boolean = false;
   public createAutomatedPrepaid: boolean = false;
+  /**
+   * Remanente de descuento confirmado (moneda prepaidCurrency), por coDocument.
+   * COB-DISC-003: descuento > saldo → anticipo automático.
+   */
+  public discountRemnantPrepaidByDocument = new Map<string, number>();
+  /** Suma de remanentes confirmados en moneda de anticipo (`prepaidCurrency`). */
+  public discountRemnantPrepaidAmount: number = 0;
   public addRetention: boolean = false;
   public documentsSaleComponent: boolean = false;
   public documentsClientReloaded$ = new Subject<number>();
@@ -274,6 +281,8 @@ export class CollectionService {
   public messageSended: boolean = false;
   public enableDifferenceCodes: boolean = false;
   public userCanSelectCollectDiscount: boolean = false;
+  /** Tope % de descuentos de documento (config maxCollectDiscount; default 100). */
+  public maxCollectDiscount: number = 100;
   public missingRetention: boolean = false;
   public missingRetentionValue: boolean = false;
   public canChangeRate: boolean = false;
@@ -445,6 +454,10 @@ export class CollectionService {
     this.enableDifferenceCodes = this.globalConfig.get('enableDifferenceCodes') === 'true' ? true : false;
     const userCanSelectCollectDiscountValue = (this.globalConfig.get('userCanSelectCollectDiscount') || '').trim();
     this.userCanSelectCollectDiscount = userCanSelectCollectDiscountValue === 'true' ? true : false;
+    this.maxCollectDiscount = this.parseConfigDecimal(this.globalConfig.get('maxCollectDiscount'));
+    if (!Number.isFinite(this.maxCollectDiscount) || this.maxCollectDiscount <= 0) {
+      this.maxCollectDiscount = 100;
+    }
     const canChangeRateValue = (this.globalConfig.get('canChangeRate') || '').trim();
     this.canChangeRate = canChangeRateValue === 'true' ? true : false;
     const missingRetentionValue = (this.globalConfig.get('missingRetention') || '').trim();
@@ -2230,30 +2243,118 @@ export class CollectionService {
     const idCurrency = this.resolveCurrencyIdByCoCurrency(coCurrency);
     const excessInCollection = this.syncPrepaidDifferenceAmounts();
     const excessConversionStored = Number(this.collection.nuDifferenceConversion ?? 0);
+    const remnantPrepaid = Math.max(0, Number(this.discountRemnantPrepaidAmount) || 0);
+    const remnantInCollection = this.convertPrepaidAmountToCollectionCurrency(remnantPrepaid);
 
     if (coCurrency === this.collection.coCurrency) {
       return {
         coCurrency,
         idCurrency,
-        nuAmount: excessInCollection,
-        nuAmountConversion: excessConversionStored,
+        nuAmount: Math.max(0, excessInCollection) + remnantPrepaid,
+        nuAmountConversion: Math.max(0, excessConversionStored) + remnantInCollection,
       };
     }
 
     return {
       coCurrency,
       idCurrency,
-      nuAmount: this.getAutomatedPrepaidExcessAmount(),
-      nuAmountConversion: excessInCollection,
+      nuAmount: Math.max(0, this.getAutomatedPrepaidExcessAmount()) + remnantPrepaid,
+      nuAmountConversion: Math.max(0, excessInCollection) + remnantInCollection,
     };
+  }
+
+  /** Convierte monto en moneda del cobro a moneda de anticipo (`prepaidCurrency`). */
+  public convertCollectionAmountToPrepaidCurrency(amountInCollectionCurrency: number): number {
+    const amount = Math.max(0, Number(amountInCollectionCurrency) || 0);
+    if (amount <= 0) {
+      return 0;
+    }
+    const targetCurrency = this.resolveAutomatedPrepaidCurrency();
+    if (!targetCurrency || targetCurrency === this.collection.coCurrency) {
+      return amount;
+    }
+    const converted = this.convertirMonto(
+      amount,
+      this.getEffectiveExchangeRate(),
+      this.collection.coCurrency,
+    );
+    return converted > 0 ? converted : amount;
+  }
+
+  /** Convierte monto en moneda de anticipo a moneda del cobro (espejo para nuAmountConversion). */
+  public convertPrepaidAmountToCollectionCurrency(amountInPrepaidCurrency: number): number {
+    const amount = Math.max(0, Number(amountInPrepaidCurrency) || 0);
+    if (amount <= 0) {
+      return 0;
+    }
+    const prepaidCurrency = this.resolveAutomatedPrepaidCurrency();
+    if (!prepaidCurrency || prepaidCurrency === this.collection.coCurrency) {
+      return amount;
+    }
+    // invertir: si cobro→prepaid usó convertirMonto(amount, rate, coCurrency),
+    // espejo aproximado con la otra moneda como "currency" del helper.
+    const converted = this.convertirMonto(
+      amount,
+      this.getEffectiveExchangeRate(),
+      prepaidCurrency,
+    );
+    return converted > 0 ? converted : amount;
+  }
+
+  public syncDiscountRemnantPrepaidTotal(): void {
+    let total = 0;
+    this.discountRemnantPrepaidByDocument.forEach((value) => {
+      total += Math.max(0, Number(value) || 0);
+    });
+    this.discountRemnantPrepaidAmount = this.cleanFormattedNumber(
+      this.currencyService.formatNumber(total),
+    );
+  }
+
+  public setDiscountRemnantPrepaidForDocument(
+    coDocument: string,
+    remnantInCollectionCurrency: number,
+  ): void {
+    const key = String(coDocument ?? '').trim();
+    if (!key) {
+      return;
+    }
+    const prepaidAmount = this.convertCollectionAmountToPrepaidCurrency(remnantInCollectionCurrency);
+    if (prepaidAmount <= 0) {
+      this.discountRemnantPrepaidByDocument.delete(key);
+    } else {
+      this.discountRemnantPrepaidByDocument.set(key, prepaidAmount);
+    }
+    this.syncDiscountRemnantPrepaidTotal();
+  }
+
+  public clearDiscountRemnantPrepaidForDocument(coDocument: string): void {
+    const key = String(coDocument ?? '').trim();
+    if (!key) {
+      return;
+    }
+    this.discountRemnantPrepaidByDocument.delete(key);
+    this.syncDiscountRemnantPrepaidTotal();
+  }
+
+  public hasConfirmedDiscountRemnantPrepaid(): boolean {
+    return this.discountRemnantPrepaidAmount > 0;
+  }
+
+  public buildDiscountRemnantPrepaidMessage(remnantInPrepaidCurrency: number): string {
+    const template = this.collectionTags.get('COB_MSG_DISCOUNT_REMNANT_PREPAID')
+      ?? 'El descuento supera el saldo del documento. ¿Desea crear un anticipo automático por {amount}?';
+    const currency = this.resolveAutomatedPrepaidCurrency();
+    const amountLabel = `${currency} ${this.currencyService.formatNumber(remnantInPrepaidCurrency)}`.trim();
+    return template.replace('{amount}', amountLabel);
   }
 
   public buildAutomatedPrepaidMessage(): string {
     const template = this.collectionTags.get('COB_MSG_AUTOMATED_PREPAID')
       ?? 'Se creará un anticipo automático por el monto excedente de {amount}. Se enviará un anticipo junto al cobro.';
     const currency = this.resolveAutomatedPrepaidCurrency();
-    const amount = this.getAutomatedPrepaidExcessAmount();
-    const amountLabel = `${currency} ${this.currencyService.formatNumber(amount)}`.trim();
+    const amounts = this.resolveAutomatedPrepaidDocumentAmounts();
+    const amountLabel = `${currency} ${this.currencyService.formatNumber(amounts.nuAmount)}`.trim();
     return template.replace('{amount}', amountLabel);
   }
 
@@ -2321,7 +2422,16 @@ export class CollectionService {
   }
 
   shouldCreateAutomatedPrepaidOnSend(): boolean {
-    if (!this.automatedPrepaid || this.coTypeModule !== '0' || this.existPartialPayment) {
+    if (this.coTypeModule !== '0' || this.existPartialPayment) {
+      return false;
+    }
+
+    if (this.hasConfirmedDiscountRemnantPrepaid()) {
+      this.ensureAutomatedPrepaidPaymentTemplate();
+      return Array.isArray(this.anticipoAutomatico) && this.anticipoAutomatico.length > 0;
+    }
+
+    if (!this.automatedPrepaid) {
       return false;
     }
 
@@ -2339,14 +2449,60 @@ export class CollectionService {
     this.syncExchangeRateToCollectionHeader();
     return this.calcularMontos('', 0).then(() => {
       this.resolveAutomatedPrepaid('', 0);
+      if (this.hasConfirmedDiscountRemnantPrepaid()) {
+        this.createAutomatedPrepaid = true;
+        this.ensureAutomatedPrepaidPaymentTemplate();
+      }
       if (
         this.createAutomatedPrepaid
         && (!Array.isArray(this.anticipoAutomatico) || this.anticipoAutomatico.length === 0)
       ) {
         this.resetAutomatedPrepaid();
+        if (this.hasConfirmedDiscountRemnantPrepaid()) {
+          this.createAutomatedPrepaid = true;
+          this.ensureAutomatedPrepaidPaymentTemplate();
+        }
       }
       return this.shouldCreateAutomatedPrepaidOnSend();
     });
+  }
+
+  /**
+   * Garantiza plantilla de pago para anticipo (último método o EF sintético).
+   * COB-DISC-003: remanente de descuento puede no tener pagos en el cobro.
+   */
+  ensureAutomatedPrepaidPaymentTemplate(): void {
+    if (Array.isArray(this.anticipoAutomatico) && this.anticipoAutomatico.length > 0) {
+      return;
+    }
+
+    const payments = this.getNonEmptyCollectionPayments(this.collection?.collectionPayments);
+    if (payments.length > 0) {
+      const last = payments[payments.length - 1];
+      const allPayments = Array.isArray(this.collection?.collectionPayments)
+        ? this.collection.collectionPayments
+        : [];
+      let pos = allPayments.indexOf(last);
+      if (pos < 0) {
+        pos = allPayments.findIndex(p => p === last);
+      }
+      if (pos < 0) {
+        pos = Math.max(0, allPayments.length - 1);
+      }
+      const payType = String(last.coType ?? last.coPaymentMethod ?? 'ef').toLowerCase();
+      this.anticipoAutomatico = [{
+        type: payType || 'ef',
+        posCollectionPayment: pos,
+      }];
+      return;
+    }
+
+    // EF sintético: createAnticipoCollectionPayment no exige fila fuente.
+    this.anticipoAutomatico = [{
+      type: 'ef',
+      posCollectionPayment: -1,
+      synthetic: true,
+    }];
   }
 
   private resolveAutomatedPrepaid(type: string, index: number, skipValidateToSend: boolean = false): void {
@@ -8641,36 +8797,44 @@ JOIN collection_details cd ON ds.co_document = cd.co_document AND cd.in_payment_
       return Promise.resolve(null);
     }
 
-    const sourcePayment = collection.collectionPayments[this.anticipoAutomatico[0].posCollectionPayment];
-    if (!sourcePayment) {
+    const anticipoMeta = this.anticipoAutomatico[0];
+    const isSynthetic = anticipoMeta?.synthetic === true
+      || Number(anticipoMeta?.posCollectionPayment) < 0;
+    const sourcePayment = !isSynthetic
+      ? collection.collectionPayments?.[anticipoMeta.posCollectionPayment]
+      : null;
+
+    if (!isSynthetic && !sourcePayment) {
       console.log('ERROR: no se encontro payment fuente para anticipo automatico');
       return Promise.resolve(null);
     }
+
+    const payType = String(anticipoMeta.type ?? sourcePayment?.coType ?? 'ef').toLowerCase() || 'ef';
 
     return dbServ.executeSql(insertStatement,
       [
         0,
         newCoCollection,
-        sourcePayment.idCollectionDetail,
-        sourcePayment.coPaymentMethod,
-        sourcePayment.idBank,
-        sourcePayment.nuPaymentDoc,
-        sourcePayment.naBank,
-        sourcePayment.coClientBankAccount,
-        sourcePayment.nuClientBankAccount,
-        sourcePayment.daValue,
-        sourcePayment.daCollectionPayment,
-        sourcePayment.nuCollectionPayment,
+        sourcePayment?.idCollectionDetail ?? 0,
+        sourcePayment?.coPaymentMethod ?? payType,
+        sourcePayment?.idBank ?? 0,
+        sourcePayment?.nuPaymentDoc ?? '',
+        sourcePayment?.naBank ?? '',
+        sourcePayment?.coClientBankAccount ?? '',
+        sourcePayment?.nuClientBankAccount ?? '',
+        sourcePayment?.daValue ?? this.dateServ.hoyISO(),
+        sourcePayment?.daCollectionPayment ?? this.dateServ.hoyISO(),
+        sourcePayment?.nuCollectionPayment ?? 1,
         excessAmount,
         excessConversion,
-        this.anticipoAutomatico[0].type,
-        sourcePayment.idDifferenceCode,
-        sourcePayment.coDifferenceCode,
-        sourcePayment.nuBankAccount,
-        sourcePayment.idTypeDocument,
-        sourcePayment.nuDocument,
-        sourcePayment.idCodePhoneNumber,
-        sourcePayment.nuPhoneNumber,
+        payType,
+        sourcePayment?.idDifferenceCode ?? 0,
+        sourcePayment?.coDifferenceCode ?? '',
+        sourcePayment?.nuBankAccount ?? '',
+        sourcePayment?.idTypeDocument ?? 0,
+        sourcePayment?.nuDocument ?? '',
+        sourcePayment?.idCodePhoneNumber ?? 0,
+        sourcePayment?.nuPhoneNumber ?? '',
       ]).then(data => {
         console.log("SE CREO COLLECTION PAYMENTS AUTOMATICO POR EL ANTICIPO");
         if (enqueuePending) {
