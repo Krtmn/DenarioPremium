@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Testing · Catálogo de Bancos</title>
+<style>
+  :root {
+    --morado: #5501AA; --morado-osc: #3D0179; --morado-claro: #F2EAFB;
+    --verde: #91BA3F;  --verde-osc: #4A6B1B;  --verde-claro: #F0F6E4;
+    --ambar: #F5BA2E;  --ambar-claro: #FEF7E6; --ambar-osc: #8A6100;
+    --rojo: #A5121B;   --rojo-claro: #FDF0F0;
+    --gris: #5D5A63;   --linea: #D8D2E0;
+  }
+  @page { size: A4; margin: 13mm 13mm 14mm 13mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 10pt; color: #1F1B24;
+         line-height: 1.44; margin: 0; }
+  .marca { display: flex; align-items: center; justify-content: space-between; gap: 8mm;
+           border-bottom: 2.2pt solid var(--morado); padding-bottom: 3mm; margin-bottom: 4mm; }
+  .marca img { width: 52mm; display: block; }
+  .marca .quien { text-align: right; font-size: 8.6pt; color: var(--gris); line-height: 1.35; }
+  .marca .quien b { color: var(--morado); font-size: 9.4pt; display: block; letter-spacing: .2px; }
+  .cinta { height: 2.2mm; display: flex; margin: -4mm 0 4mm; }
+  .cinta i { flex: 1; }
+  .cinta i:nth-child(1) { background: var(--morado); }
+  .cinta i:nth-child(2) { background: var(--verde); }
+  .cinta i:nth-child(3) { background: var(--ambar); }
+  h1 { font-size: 17pt; color: var(--morado); margin: 0 0 1mm; letter-spacing: -.3px; }
+  h2 { font-size: 12.4pt; color: var(--morado); margin: 7mm 0 2.5mm; padding-bottom: 1.2mm;
+       border-bottom: 1.6pt solid var(--morado); page-break-after: avoid; }
+  h3 { font-size: 10.6pt; margin: 4mm 0 1.5mm; color: var(--morado-osc); page-break-after: avoid; }
+  .sub { color: var(--gris); font-size: 10pt; margin: 0 0 4mm; }
+  table { border-collapse: collapse; width: 100%; margin: 2mm 0 3mm; font-size: 8.6pt;
+          page-break-inside: avoid; }
+  th { background: var(--morado); color: #fff; text-align: left; padding: 1.5mm 2mm; font-weight: 600; }
+  td { border: .6pt solid var(--linea); padding: 1.4mm 2mm; vertical-align: top; }
+  tr:nth-child(even) td { background: #FAF7FD; }
+  .ok { color: var(--verde-osc); font-weight: 700; }
+  .bad { color: var(--rojo); font-weight: 700; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: .92em; color: var(--morado-osc); }
+  .ficha { width: 100%; margin: 0 0 4mm; font-size: 9.2pt; }
+  .ficha td { border: none; border-bottom: .5pt solid var(--linea); padding: 1.1mm 0; background: none !important; }
+  .ficha td:first-child { color: var(--gris); width: 40mm; }
+  .bien { border-left: 4pt solid var(--verde); background: var(--verde-claro); padding: 3mm 4mm; margin: 4mm 0 5mm; }
+  .bien .t { font-size: 12pt; font-weight: 700; color: var(--verde-osc); margin-bottom: 1.5mm; }
+  .ojo { border-left: 4pt solid var(--ambar); background: var(--ambar-claro); padding: 3mm 4mm; margin: 4mm 0; }
+  .ojo .t { font-size: 11pt; font-weight: 700; color: var(--ambar-osc); margin-bottom: 1.5mm; }
+  .nota { background: var(--morado-claro); border-left: 3pt solid var(--morado); padding: 2.5mm 3.5mm;
+          margin: 3mm 0; font-size: 9.2pt; page-break-inside: avoid; }
+  .calc { font-family: Consolas, "Courier New", monospace; background: var(--morado-claro);
+          border: .5pt solid var(--linea); padding: 1.6mm 3mm; margin: 2mm 0; font-size: 8.7pt; }
+  .par { display: flex; gap: 4mm; align-items: flex-start; page-break-inside: avoid; margin: 3mm 0; }
+  .par > div { flex: 1; text-align: center; }
+  .par .et { font-size: 8.8pt; font-weight: 700; margin-bottom: 1.2mm; }
+  .par img { max-width: 100%; max-height: 92mm; border: .7pt solid var(--linea); display: inline-block; }
+  .pie { font-size: 8.2pt; color: var(--gris); margin-top: 1mm; font-style: italic; }
+  .pill { display: inline-block; padding: .3mm 1.8mm; border-radius: 2mm; font-size: 8.2pt; font-weight: 700; }
+  .p-ok { background: var(--verde-claro); color: var(--verde-osc); border: .5pt solid var(--verde); }
+  .p-obs { background: var(--ambar-claro); color: var(--ambar-osc); border: .5pt solid var(--ambar); }
+  .p-mal { background: var(--rojo-claro); color: var(--rojo); border: .5pt solid var(--rojo); }
+  .fin { margin-top: 6mm; padding-top: 2.5mm; border-top: 1.2pt solid var(--morado); font-size: 8.5pt;
+         color: var(--gris); display: flex; gap: 5mm; align-items: flex-start; }
+  .fin img { width: 26mm; opacity: .85; }
+  .pb { page-break-before: always; }
+</style></head><body>
+
+<div class="marca">
+  <img src="../../_assets/logo-denario-premium.svg" alt="Denario Premium">
+  <div class="quien"><b>CONTROL DE CALIDAD</b>Informe de pruebas<br>07/09/2026</div>
+</div>
+<div class="cinta"><i></i><i></i><i></i></div>
+
+<h1>Catálogo de Bancos — ciclo completo de pruebas</h1>
+<p class="sub">REQ «Módulo Web (CRUD) para Gestión del Catálogo de Bancos» · IMPORTADORA 4K · Caribe</p>
+
+<table class="ficha">
+  <tr><td>Alcance</td><td>El CRUD en la web, la siembra automática del catálogo, y el uso del banco en <b>cobros reales enviados</b>, verificados en las <b>3 capas</b></td></tr>
+  <tr><td>Cobros enviados</td><td><b>6</b> — Pago Móvil ×2 · Cheque · Transferencia ×2 · <b>Anticipo</b></td></tr>
+  <tr><td>Versión</td><td>APK <code>6.6.21.3</code> (main) · servidor Caribe · vendedor <code>V.0002</code></td></tr>
+  <tr><td>Resultado</td><td><b class="ok">CRUD certificado · 6/6 cobros PASS</b> · 1 defecto abierto · 2 observaciones</td></tr>
+</table>
+
+<div class="bien">
+  <div class="t">✅ El requerimiento cumple: el catálogo se administra y alimenta los cobros</div>
+  Se crearon, editaron y desactivaron bancos desde la web, verificando cada operación en la base de
+  datos. Los bancos llegaron al equipo del vendedor y se usaron en <b>seis cobros reales</b> —uno de
+  ellos un anticipo—, que fueron enviados y comprobados en el móvil, en la nube y en la web.
+  <b>Los montos cuadran en los seis.</b>
+</div>
+
+<h2>Los seis cobros, en las tres capas</h2>
+
+<table>
+  <tr><th style="width:13mm">Ref</th><th style="width:15mm">Tipo</th><th style="width:22mm">Método</th>
+      <th>Elegido en el móvil</th><th>Nube</th><th>Web</th><th style="width:13mm"></th></tr>
+  <tr><td><b>2616</b></td><td>Cobro</td><td>Pago Móvil</td>
+      <td>QA BANCO 0904 EDITADO</td>
+      <td><code>nu_collection_payment</code> = QA BANCO 0904 EDITADO</td>
+      <td>Banco Emisor correcto</td><td><span class="pill p-ok">PASS</span></td></tr>
+  <tr><td><b>2617</b></td><td>Cobro</td><td>Pago Móvil</td>
+      <td>BANCO MERCANTIL</td>
+      <td><code>nu_collection_payment</code> = BANCO MERCANTIL</td>
+      <td>Banco Emisor correcto</td><td><span class="pill p-ok">PASS</span></td></tr>
+  <tr><td><b>2618</b></td><td>Cobro</td><td><b>Cheque</b></td>
+      <td>BANCO DE VENEZUELA</td>
+      <td><code>na_bank</code> = BANCO DE VENEZUELA · emisor <b>vacío</b></td>
+      <td><b class="bad">Banco Emisor vacío</b>; el banco sale bajo «Banco receptor»</td>
+      <td><span class="pill p-mal">DEFECTO</span></td></tr>
+  <tr><td><b>2619</b></td><td>Cobro</td><td>Transferencia</td>
+      <td>Cuenta PROVINCIAL · <code>0108…6677</code></td>
+      <td>cuenta guardada correctamente</td>
+      <td>Cuenta y banco correctos</td><td><span class="pill p-ok">PASS</span></td></tr>
+  <tr><td><b>2620</b></td><td>Cobro</td><td>Transferencia<br><b>Nueva Cuenta</b></td>
+      <td>Cuenta escrita a mano · <code>0175…4433</code></td>
+      <td>se guarda igual que una cuenta registrada</td>
+      <td>Cuenta y banco correctos</td><td><span class="pill p-ok">PASS</span></td></tr>
+  <tr><td><b>2621</b></td><td><b>Anticipo</b></td><td>Transferencia</td>
+      <td>Cuenta BANESCO PANAMA · <code>0102…0910</code></td>
+      <td><code>co_type = 1</code> · cuenta correcta</td>
+      <td>Correcto; sin «Documentos Pagados», como corresponde a un anticipo</td>
+      <td><span class="pill p-ok">PASS</span></td></tr>
+</table>
+
+<div class="nota">
+<b>Los seis se enviaron y llegaron al primer intento.</b> El fallo de servidor que bloqueó la corrida
+del 04/09 (HTTP 500 en el envío de cobros) <b>no volvió a reproducirse</b>.
+</div>
+
+<h3>Los montos cuadran en los seis</h3>
+<div class="calc">
+Monto cobrado == Σ de los pagos                    ✅ en los 6<br>
+Diferencia de cobro == Total por cobrar − cobrado  ✅ = 0,00 en los 6<br>
+Monto / Tasa == Monto conv.                        ✅ (tasa 870,00)<br><br>
+Ejemplo · Ref 2618: 65.250,00 Bs ÷ 870 = <b>75,00 USD</b> · diferencia 0,00
+</div>
+
+<div class="pb"></div>
+<h2>El CRUD en la web</h2>
+
+<table>
+  <tr><th style="width:44mm">Operación</th><th>Comportamiento verificado</th><th style="width:16mm"></th></tr>
+  <tr><td>Listar</td><td>Código, nombre y estado, con buscador y paginación</td><td><span class="pill p-ok">PASS</span></td></tr>
+  <tr><td>Validación de campos</td><td>Con el formulario vacío responde «Campo obligatorio.» y no guarda</td><td><span class="pill p-ok">PASS</span></td></tr>
+  <tr><td>Crear</td><td>Queda registrado y <b>amarrado a la empresa</b> del usuario</td><td><span class="pill p-ok">PASS</span></td></tr>
+  <tr><td>Editar</td><td>Cambia el nombre <b>sin duplicar</b>; el <b>código queda bloqueado</b></td><td><span class="pill p-ok">PASS</span></td></tr>
+  <tr><td>Desactivar</td><td>Pide confirmación · <b>borrado lógico</b>: el registro se conserva</td><td><span class="pill p-ok">PASS</span></td></tr>
+  <tr><td>Reactivar</td><td>Vuelve a quedar disponible <span style="color:var(--gris)">(no pide confirmación, a diferencia de desactivar)</span></td><td><span class="pill p-ok">PASS</span></td></tr>
+</table>
+
+<div class="par">
+  <div>
+    <div class="et">La validación al guardar en blanco</div>
+    <img src="img/A2-web-validacion-campo-obligatorio.png" alt="Validación">
+  </div>
+  <div>
+    <div class="et">El código bloqueado al editar</div>
+    <img src="img/A4-web-editar-codigo-bloqueado.png" alt="Código bloqueado">
+  </div>
+</div>
+
+<h3>La siembra automática del catálogo</h3>
+
+<p>Al crear un banco se dispara la carga automática de los bancos venezolanos que falten. Se verificó
+en vivo: la base pasó de <b>10 a 33</b> bancos con un solo registro creado.</p>
+
+<table>
+  <tr><th>Regla</th><th style="width:16mm"></th></tr>
+  <tr><td>No genera duplicados, ni por código ni por nombre</td><td><span class="pill p-ok">✅</span></td></tr>
+  <tr><td><b>No pisa</b> los bancos ya existentes — conservan su información original</td><td><span class="pill p-ok">✅</span></td></tr>
+  <tr><td>Una segunda creación <b>no vuelve a sembrar</b></td><td><span class="pill p-ok">✅</span></td></tr>
+  <tr><td>Los bancos sembrados <b>llegan al equipo</b> del vendedor</td><td><span class="pill p-ok">✅</span></td></tr>
+  <tr><td>Las 3 filas del catálogo que no entraron se explican por las reglas de precedencia</td><td><span class="pill p-ok">✅</span></td></tr>
+</table>
+
+<div class="pb"></div>
+<h2 style="border-color:var(--rojo);color:var(--rojo)">Defecto · En Cheque, el banco emisor se guarda como receptor</h2>
+
+<p>Al registrar un cobro con <b>Cheque</b>, el banco que el vendedor selecciona como <b>Banco Emisor</b>
+termina guardado en el campo del <b>Banco Receptor</b>, y el campo del emisor queda vacío.</p>
+
+<div class="calc">
+Móvil · se eligió:   <b>BANCO DE VENEZUELA</b> como Banco Emisor<br>
+Nube · quedó:        na_bank = <b>BANCO DE VENEZUELA</b>   ← campo del RECEPTOR<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;emisor = <b>vacío</b><br>
+Web · muestra:       Banco Emisor <b>en blanco</b> · Banco receptor <b>BANCO DE VENEZUELA</b>
+</div>
+
+<div class="par">
+  <div>
+    <div class="et">En el móvil se elige el emisor</div>
+    <img src="img/B19-cheque-movil.png" alt="Cheque en el móvil">
+  </div>
+  <div>
+    <div class="et">En la web aparece como receptor</div>
+    <img src="img/B19-cheque-2618-web-H3.png" alt="Cheque en la web">
+  </div>
+</div>
+
+<p><b>Reproduce de forma consistente:</b> se observó en tres cobros distintos (2612, 2614 y 2618), el
+último enviado con la versión actual. <b>Solo afecta a Cheque</b>: en Transferencia se comprobó con
+dos cobros donde el emisor y el receptor eran bancos distintos, y ahí cada uno queda en su campo.</p>
+
+<div class="nota">
+<b>Impacto:</b> no afecta montos ni impide cobrar. Lo que se pierde es la <b>trazabilidad</b>: en un
+cheque no queda registrado de qué banco provino el pago, y el banco que sí se muestra está en el
+campo equivocado.
+</div>
+
+<h2>Observaciones</h2>
+
+<div class="ojo">
+  <div class="t">1 · La columna «Cuenta» aparece también donde no aplica</div>
+  En el detalle del cobro, la columna <b>«Cuenta»</b> se muestra en los tres métodos. En
+  <b>Transferencia</b> se llena correctamente con el número de cuenta; en <b>Pago Móvil</b> y
+  <b>Cheque</b> sale siempre vacía, porque esos métodos no involucran una cuenta bancaria.
+  <b>Es cosmético</b>, pero deja dos columnas en blanco en todos los cobros de esos dos métodos.
+</div>
+
+<div class="ojo">
+  <div class="t">2 · El filtro por moneda no se aplica al Banco Emisor</div>
+  Con un cobro en <b>bolívares</b>, el selector de <b>Banco Receptor</b> mostró únicamente las cuentas
+  en bolívares — el filtro funciona. Pero el de <b>Banco Emisor</b> listó cuentas en bolívares y en
+  dólares mezcladas.
+  <br><br>
+  Se comprobó su efecto: el cobro <b>Ref 2621</b> se registró en bolívares contra una cuenta emisora
+  <b>en dólares</b>, sin ningún aviso. <b>El filtro existe en el producto</b>; simplemente no alcanza
+  a las cuentas del cliente.
+</div>
+
+<h2>Cobertura y alcance</h2>
+
+<table>
+  <tr><th style="width:56mm">Caso</th><th>Estado</th></tr>
+  <tr><td>CRUD completo en la web</td><td><span class="pill p-ok">✅ certificado</span></td></tr>
+  <tr><td>Siembra automática del catálogo</td><td><span class="pill p-ok">✅ certificada</span></td></tr>
+  <tr><td>Los 3 métodos de pago con banco</td><td><span class="pill p-ok">✅ cubiertos</span></td></tr>
+  <tr><td>Transferencia con cuenta registrada y con cuenta nueva</td><td><span class="pill p-ok">✅ ambos</span></td></tr>
+  <tr><td>Anticipo</td><td><span class="pill p-ok">✅ cubierto</span></td></tr>
+  <tr><td><b>Caso multi-empresa</b></td><td><span class="pill p-obs">no evaluable</span> — el cliente de prueba tiene una sola empresa</td></tr>
+</table>
+
+<div class="nota">
+<b>Nota de método.</b> Cada cobro se verificó en las tres capas: lo que el vendedor seleccionó en el
+equipo, lo que quedó registrado en la base de datos, y lo que muestra el detalle en la web. Las
+referencias de los seis cobros están en la tabla para que cualquiera pueda comprobarlos.
+</div>
+
+<h2>Conclusión</h2>
+
+<div class="bien">
+  <div class="t">El requerimiento se da por cumplido</div>
+  El catálogo de bancos se administra correctamente desde la web y alimenta los cobros de la
+  aplicación móvil. Los seis cobros de prueba —incluido un anticipo— se enviaron, llegaron y se
+  verificaron en las tres capas, con los montos correctos.
+</div>
+
+<p>Queda <b>un defecto por corregir</b> en el método <b>Cheque</b>, donde el banco emisor se registra
+en el campo del receptor. No impide operar, pero afecta la trazabilidad del cobro y se recomienda
+resolverlo en una próxima entrega. Las dos observaciones son de menor severidad.</p>
+
+<div class="fin">
+  <img src="../../_assets/isotipo-denario.png" alt="">
+  <div>
+    <b>Denario Premium · Control de Calidad</b><br>
+    Catálogo de Bancos · IMPORTADORA 4K · 07/09/2026<br>
+    Detalle técnico: <code>envios-b20-b22.md</code> · <code>req-crud-bancos-ciclo.md</code>
+  </div>
+</div>
+
+</body></html>

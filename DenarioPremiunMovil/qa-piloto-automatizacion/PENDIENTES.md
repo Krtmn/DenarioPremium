@@ -104,34 +104,20 @@ más la sanitización de HTML (REQ 5).
 
 ---
 
-## 6. 🚫 BLOQUEADO · REQ CRUD de Bancos — cobros en las 3 capas
-
-**Guión:** `guiones-regresion/guion-req-crud-bancos.md` — tiene TODO: lo certificado, lo pendiente,
-los datos que hay que preparar antes de empezar y las 10 trampas.
-
-**Corrida del 04/09:** `automation/reports/4k/req_crud_bancos_20260904/`
-→ CRUD **6/6 PASS** · trigger de siembra **5/5 conforme** · matriz de selectores completa.
-
-🔴 **El bloqueo:** `POST collectionservice/collection` devuelve **HTTP 500** (5 de 5 intentos).
-`getsync` responde 200, así que hay conectividad: es ese endpoint. El último cobro que llegó a la
-nube fue el **2615 a las 12:11**, y el APK se reinstaló a las **15:06** ⇒ **ningún cobro ha llegado
-con el build actual**.
-
-Dos escenarios que **desde el cliente no se distinguen**: servidor roto, o payload del APK nuevo
-rechazado por el WS. **El log del web service lo resuelve en un minuto.**
-
-**Al retomar, empezar por H4** (ver el guión): confirmar si el APK dejó de escribir
-`nu_collection_payment` en Pago Móvil. Es el único hallazgo marcado como *inferencia* y de él
-depende si hay una regresión que reportar.
-
----
-
 ## Cerrados recientemente
 
 - ✅ **Fix del despacho consolidado (hidroponias)** — validado el 01-02/09 en las 3 capas.
   25 PASS / 0 FAIL. `automation/reports/hidroponias/fix_despacho_consolidado_20260901/`
 - ✅ **REQ del botón Enviar** — convertido en regresión permanente (`req-enviar.js`) en los
   7 módulos transaccionales.
+- ✅ **REQ · Catálogo de Bancos — CICLO COMPLETO** (07/09, 4K/Caribe). CRUD certificado, siembra
+  automática verificada, y **6 cobros enviados y cotejados en las 3 capas** (Pago Móvil ×2, Cheque,
+  Transferencia con cuenta registrada y con cuenta nueva, y un **anticipo**). Montos correctos en los 6.
+  `automation/reports/4k/req_crud_bancos_20260907/` — informe de testing + **manual de uso**.
+  🔴 **Queda 1 defecto abierto:** en **Cheque** el banco emisor se guarda en el campo del receptor
+  (confirmado en 3 cobros, el último con el APK actual). 2 observaciones menores: la columna «Cuenta»
+  se dibuja donde no aplica, y el filtro por moneda no alcanza al Banco Emisor.
+  **No cubierto:** el caso multi-empresa (4K tiene una sola empresa).
 - ✅ **REQ · CRUD de Bancos** — probado el 02/09 en `4k` (Isla Coche), 3 capas. Los 4 criterios
   del CRUD se cumplen; la tarjeta se **devolvió** con 2 defectos → ver punto 4.
   Perfil creado: `automation/clientes/4k.yaml`.

@@ -183,9 +183,9 @@ cuando hay varios métodos — es un **desglose**, no un total (`WEB-RUNTIME.md 
 | # | Hallazgo | Estado al 04/09 |
 |---|---|---|
 | **H1** | «Banco Emisor» duplicado + «Cuenta» con el nombre del banco | ✅ **corregido** — la tabla bajó de 14 a 13 columnas |
-| **H2** | La columna **«Cuenta» se sigue dibujando** en Pago Móvil y Cheque, donde no aplica | 🔴 abierto. Agravante: `na_client_bank_account` está **NULL en las 2.518 filas** de la base, así que **sale vacía siempre** |
-| **H3** | En **Cheque**, el banco elegido como emisor se guarda en `na_bank` (el campo del **receptor**) y el del emisor queda vacío | 🔴 abierto — verificado en BD en los cobros 2612 y 2614 |
-| **H4** | El APK del 04/09 **dejó de escribir `nu_collection_payment`** en Pago Móvil — el campo que alimenta la única «Banco Emisor» que queda | ⚠ **inferencia**: medido en la capa local, sin render web porque el cobro no llegó. **Confirmarlo es lo primero al retomar** |
+| **H2** | La columna «Cuenta» se dibuja también en Pago Móvil y Cheque, donde no aplica | ⚠ **ENUNCIADO CORREGIDO 07/09** — decía que sale vacía SIEMPRE porque `na_client_bank_account` está NULL. **Es falso:** en Transferencia se llena con el nº de cuenta (verificado en 2619, 2620 y 2621, con ese campo en NULL). ⇒ la web lee **`nu_client_bank_account`**, no `na_client_bank_account`. Queda solo la mitad cosmética: en pm y ch sale vacía. **Severidad baja** |
+| **H3** | En **Cheque**, el banco elegido como emisor se guarda en `na_bank` (el campo del **receptor**) y el del emisor queda vacío | 🔴 **abierto y confirmado en las 3 capas** (2612, 2614 y **2618**, este último con el APK actual). **Acotado a Cheque**: en Transferencia NO ocurre — probado con 2620 y 2621, donde emisor y receptor son bancos distintos y cada uno queda en su campo |
+| **H4** | «El APK dejó de escribir `nu_collection_payment` en Pago Móvil» | ✅ **DESCARTADO 07/09.** Los cobros 2616 y 2617 traen el campo escrito y la web lo pinta bien. Lo del 04/09 fue efecto del HTTP 500, no una regresión. Bien hecho haberlo marcado como inferencia: se habría reportado un defecto inexistente |
 
 ---
 
@@ -226,3 +226,20 @@ cuando hay varios métodos — es un **desglose**, no un total (`WEB-RUNTIME.md 
 ---
 
 *Basado en las corridas del 02/09 y 04/09 sobre IMPORTADORA 4K.*
+
+---
+
+## 🔑 El cliente de prueba se AGOTA — descubierto el 07/09
+
+Tras unos cuantos cobros, el Tab **Documentos** de un cliente aparece **vacío** aunque la BD muestre
+facturas con saldo. **No es un defecto:** es el bloqueo anti-doble-cobro. Las facturas quedan
+comprometidas (`document_st.st_document = 2`) por cobros anteriores que siguen **«Por aprobar»**, y
+el tab solo lista las que tienen `st_document < 2`.
+
+**Sincronizar no lo revierte.** Las salidas son:
+- **Aprobar o rechazar** en la web los cobros que retienen esas facturas, o
+- **cambiar de cliente** — el 07/09 se usó `C.0028` INVERSIONES MOSTEIRO como relevo.
+
+⇒ Al planificar una corrida con muchos envíos, **tener listo un cliente de relevo**. Y si un cliente
+"deja de servir", mirar esto antes de sospechar de la app.
+
