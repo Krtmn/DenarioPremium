@@ -239,7 +239,7 @@ export class HomePage implements OnInit {
           });
         }
         if (this.hideFinancePromotor) {
-          this.modulosPromotor = this.modulos.filter(m => m.id === 0 || m.id === 1 || m.id === 7 || m.id === 8 || m.id === 10);
+          this.modulosPromotor = this.modulos.filter(m => m.id === 0 || m.id === 1 || m.id === 2 || m.id === 7 || m.id === 8 || m.id === 10);
         }
       } catch (e) {
         this.user = {};
