@@ -111,8 +111,9 @@ cada banco, y desde ahí se hace todo.</p>
   <div class="cuerpo">
     <div class="txt">
       <p>El botón <b>Editar</b> permite corregir el nombre de un banco ya registrado.</p>
-      <p><b>El código no se puede modificar</b>: aparece bloqueado. Es a propósito, porque el código
-      es lo que enlaza el banco con los cobros que ya se hicieron con él.</p>
+      <p><b>El código no se puede modificar desde la web</b>: aparece bloqueado. Es a propósito, porque
+      el código es lo que enlaza el banco con los cobros que ya se hicieron con él. Si necesita
+      corregirlo, comuníquese con <b>soporte Denario</b>.</p>
       <p>Al guardar, el nombre nuevo se refleja en la lista <b>sin crear un registro duplicado</b>.</p>
     </div>
     <div class="foto">
@@ -161,8 +162,22 @@ aplicación ofrece ahí <b>depende del método de pago</b>, porque cada uno mane
   <tr><th style="width:34mm">Método de pago</th><th>Qué ofrece el campo Banco Emisor</th></tr>
   <tr><td><b>Pago Móvil</b></td><td>La lista de <b>bancos del catálogo</b>. En un pago móvil no interviene un número de cuenta, sino un teléfono</td></tr>
   <tr><td><b>Cheque</b></td><td>La lista de <b>bancos del catálogo</b>, igual que en pago móvil</td></tr>
-  <tr><td><b>Transferencia</b></td><td>Las <b>cuentas bancarias del cliente</b>, mostrando el banco junto al número de cuenta. Una transferencia sale de una cuenta concreta, y así queda registrado de cuál</td></tr>
+  <tr><td><b>Transferencia</b><br><span style="font-size:8.6pt;color:var(--gris)">solo si está habilitado</span></td><td>Las <b>cuentas bancarias del cliente</b>, mostrando el banco junto al número de cuenta. <b>Es una configuración opcional</b> — ver el recuadro siguiente</td></tr>
 </table>
+
+<div class="consejo">
+  <div class="t">El Banco Emisor en Transferencia es opcional</div>
+  <b>De forma predeterminada, el método Transferencia no incluye el campo Banco Emisor</b>, y así
+  opera la mayoría de las empresas: se registra la transferencia sin indicar de qué cuenta provino.
+  <br><br>
+  Es una <b>configuración que se habilita a pedido</b>, pensada para quienes necesitan saber desde
+  qué cuenta del cliente se hizo cada transferencia. Al activarla, el campo aparece y ofrece las
+  cuentas bancarias registradas para ese cliente.
+  <br><br>
+  <b>Si en su empresa el método Transferencia no muestra el campo Banco Emisor, es el comportamiento
+  normal</b>, no una falla. Los pasos 6 y 7 de esta guía aplican únicamente a las empresas que tienen
+  la opción activada; si desea habilitarla, consulte con su equipo de soporte.
+</div>
 
 <div class="paso">
   <div class="cab"><span class="n">5</span><span class="tt">Seleccionar el banco al cobrar</span></div>
@@ -172,8 +187,8 @@ aplicación ofrece ahí <b>depende del método de pago</b>, porque cada uno mane
       Escribiendo parte del nombre se filtra la lista, lo que resulta cómodo cuando el catálogo es
       extenso.</p>
       <p>En <b>Pago Móvil</b> y <b>Cheque</b> verá los bancos por su nombre.</p>
-      <p>En <b>Transferencia</b> verá las cuentas del cliente, cada una con su banco y su número, para
-      que pueda distinguirlas cuando el cliente tiene varias.</p>
+      <p>En <b>Transferencia</b>, si su empresa tiene habilitada esa opción, verá las cuentas del cliente
+      con su banco y su número. Si no la tiene, el método funciona sin ese campo.</p>
     </div>
     <div class="foto">
       <img src="img/B2-movil-picker-pagomovil-catalogo.png" alt="Selector de banco en el móvil">
@@ -183,11 +198,11 @@ aplicación ofrece ahí <b>depende del método de pago</b>, porque cada uno mane
 </div>
 
 <div class="paso">
-  <div class="cab"><span class="n">6</span><span class="tt">Cuando el cliente tiene varias cuentas</span></div>
+  <div class="cab"><span class="n">6</span><span class="tt">Cuando el cliente tiene varias cuentas <span style="font-size:9pt;font-weight:400;color:var(--gris)">· solo si está habilitado</span></span></div>
   <div class="cuerpo">
     <div class="txt">
-      <p>En <b>Transferencia</b>, si el cliente tiene más de una cuenta registrada, todas aparecen
-      identificadas por <b>banco y número</b>.</p>
+      <p>En las empresas que tienen <b>habilitado</b> el Banco Emisor en Transferencia: si el cliente
+      tiene más de una cuenta registrada, todas aparecen identificadas por <b>banco y número</b>.</p>
       <p>Si la cuenta desde la que se hizo la transferencia no está en la lista, puede usar la opción
       <b>Nueva Cuenta</b> y escribirla en el momento, sin necesidad de registrarla previamente.</p>
     </div>
@@ -199,7 +214,7 @@ aplicación ofrece ahí <b>depende del método de pago</b>, porque cada uno mane
 </div>
 
 <div class="paso">
-  <div class="cab"><span class="n">7</span><span class="tt">Usar «Nueva Cuenta»</span></div>
+  <div class="cab"><span class="n">7</span><span class="tt">Usar «Nueva Cuenta» <span style="font-size:9pt;font-weight:400;color:var(--gris)">· solo si está habilitado</span></span></div>
   <div class="cuerpo">
     <div class="txt">
       <p>Al elegir <b>Nueva Cuenta</b> se habilita un campo para escribir el número directamente.</p>
@@ -221,8 +236,8 @@ aplicación ofrece ahí <b>depende del método de pago</b>, porque cada uno mane
     <div class="txt">
       <p>Una vez enviado el cobro, en la web puede consultarlo desde <b>Transacciones → Cobros</b>,
       buscándolo por su número de referencia.</p>
-      <p>En el detalle, la sección <b>Tipos de Pago</b> muestra el banco y —cuando el método lo
-      involucra— la cuenta desde la que se hizo el pago.</p>
+      <p>En el detalle, la sección <b>Tipos de Pago</b> muestra el banco de cada pago registrado, y el
+      número de cuenta en los casos en que el método lo involucra.</p>
     </div>
     <div class="foto">
       <img src="img/B20-web-2619-tipos-de-pago.png" alt="Detalle del cobro en la web">
@@ -236,10 +251,11 @@ aplicación ofrece ahí <b>depende del método de pago</b>, porque cada uno mane
 <table>
   <tr><th style="width:62mm">Situación</th><th>Qué hacer</th></tr>
   <tr><td>Registré un banco y el vendedor no lo ve</td><td>Debe <b>sincronizar</b> desde la pantalla principal de la aplicación. Toma unos segundos</td></tr>
-  <tr><td>Necesito corregir el código de un banco</td><td>El código no es editable. Deshabilite ese banco y cree uno nuevo con el código correcto</td></tr>
+  <tr><td>Necesito corregir el código de un banco</td><td>El código <b>no es editable desde la web</b>. Comuníquese con <b>soporte Denario</b> para que lo asistan con el caso</td></tr>
   <tr><td>Deshabilité un banco por error</td><td>Búsquelo en la lista y use <b>Habilitar</b>. Vuelve a estar disponible tras sincronizar</td></tr>
   <tr><td>¿Se pierden los cobros de un banco deshabilitado?</td><td>No. Conservan el banco con el que se registraron</td></tr>
-  <tr><td>El vendedor no encuentra la cuenta del cliente en Transferencia</td><td>Puede usar <b>Nueva Cuenta</b> y escribirla en el momento</td></tr>
+  <tr><td>En Transferencia no aparece el campo <b>Banco Emisor</b></td><td>Es el comportamiento predeterminado. Ese campo es una <b>opción que se habilita a pedido</b>; consulte con soporte si desea activarla</td></tr>
+  <tr><td>Con la opción activa, el vendedor no encuentra la cuenta del cliente</td><td>Puede usar <b>Nueva Cuenta</b> y escribirla en el momento</td></tr>
 </table>
 
 <div class="fin">

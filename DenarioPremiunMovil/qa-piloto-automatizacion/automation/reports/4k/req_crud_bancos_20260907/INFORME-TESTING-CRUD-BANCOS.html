@@ -75,7 +75,7 @@
   <tr><td>Alcance</td><td>El CRUD en la web, la siembra automática del catálogo, y el uso del banco en <b>cobros reales enviados</b>, verificados en las <b>3 capas</b></td></tr>
   <tr><td>Cobros enviados</td><td><b>6</b> — Pago Móvil ×2 · Cheque · Transferencia ×2 · <b>Anticipo</b></td></tr>
   <tr><td>Versión</td><td>APK <code>6.6.21.3</code> (main) · servidor Caribe · vendedor <code>V.0002</code></td></tr>
-  <tr><td>Resultado</td><td><b class="ok">CRUD certificado · 6/6 cobros PASS</b> · 1 defecto abierto · 2 observaciones</td></tr>
+  <tr><td>Resultado</td><td><b class="ok">REQUERIMIENTO CUMPLIDO</b> — CRUD certificado y 6/6 cobros verificados<br><span style="color:var(--gris)">1 hallazgo ajeno al requerimiento, derivado a una tarjeta aparte</span></td></tr>
 </table>
 
 <div class="bien">
@@ -102,8 +102,8 @@
   <tr><td><b>2618</b></td><td>Cobro</td><td><b>Cheque</b></td>
       <td>BANCO DE VENEZUELA</td>
       <td><code>na_bank</code> = BANCO DE VENEZUELA · emisor <b>vacío</b></td>
-      <td><b class="bad">Banco Emisor vacío</b>; el banco sale bajo «Banco receptor»</td>
-      <td><span class="pill p-mal">DEFECTO</span></td></tr>
+      <td>Banco Emisor vacío; el banco sale bajo «Banco receptor»</td>
+      <td><span class="pill p-obs">ver nota</span></td></tr>
   <tr><td><b>2619</b></td><td>Cobro</td><td>Transferencia</td>
       <td>Cuenta PROVINCIAL · <code>0108…6677</code></td>
       <td>cuenta guardada correctamente</td>
@@ -171,7 +171,14 @@ en vivo: la base pasó de <b>10 a 33</b> bancos con un solo registro creado.</p>
 </table>
 
 <div class="pb"></div>
-<h2 style="border-color:var(--rojo);color:var(--rojo)">Defecto · En Cheque, el banco emisor se guarda como receptor</h2>
+<h2 style="border-color:var(--ambar);color:var(--ambar-osc)">Hallazgo derivado · En Cheque, el banco emisor se guarda como receptor</h2>
+
+<div class="nota" style="border-color:var(--ambar);background:var(--ambar-claro)">
+<b>No corresponde a este requerimiento.</b> El catálogo cumple su función: el banco se crea, se edita,
+se desactiva, llega al equipo del vendedor y el selector lo ofrece correctamente. Lo que falla es
+<b>dónde se guarda ese banco al armar el pago con Cheque</b>, que corresponde al módulo de cobros.
+<b>Se registró en una tarjeta independiente</b> para su corrección y seguimiento.
+</div>
 
 <p>Al registrar un cobro con <b>Cheque</b>, el banco que el vendedor selecciona como <b>Banco Emisor</b>
 termina guardado en el campo del <b>Banco Receptor</b>, y el campo del emisor queda vacío.</p>
@@ -246,15 +253,17 @@ referencias de los seis cobros están en la tabla para que cualquiera pueda comp
 <h2>Conclusión</h2>
 
 <div class="bien">
-  <div class="t">El requerimiento se da por cumplido</div>
-  El catálogo de bancos se administra correctamente desde la web y alimenta los cobros de la
-  aplicación móvil. Los seis cobros de prueba —incluido un anticipo— se enviaron, llegaron y se
-  verificaron en las tres capas, con los montos correctos.
+  <div class="t">El requerimiento se da por CUMPLIDO</div>
+  El catálogo de bancos se administra correctamente desde la web —crear, editar, desactivar y
+  reactivar— y alimenta los cobros de la aplicación móvil. Los seis cobros de prueba, incluido un
+  anticipo, se enviaron, llegaron y se verificaron en las tres capas, con los montos correctos.
 </div>
 
-<p>Queda <b>un defecto por corregir</b> en el método <b>Cheque</b>, donde el banco emisor se registra
-en el campo del receptor. No impide operar, pero afecta la trazabilidad del cobro y se recomienda
-resolverlo en una próxima entrega. Las dos observaciones son de menor severidad.</p>
+<p>El comportamiento observado en <b>Cheque</b> <b>no pertenece a este requerimiento</b>: el catálogo
+entrega el banco correctamente y el selector lo ofrece bien; lo que falla es dónde se guarda ese dato
+al momento de armar el pago. <b>Se registró en una tarjeta independiente</b>.</p>
+
+<p>Las dos observaciones restantes son de severidad menor y no afectan la operación.</p>
 
 <div class="fin">
   <img src="../../_assets/isotipo-denario.png" alt="">

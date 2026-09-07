@@ -41,42 +41,22 @@ uno olvidado.
 
 ---
 
-## 4. ⏳ Esperando fix · Los 2 defectos devueltos en la tarjeta del REQ de Bancos
-
-Devueltos el **02/09** en la **misma tarjeta** del REQ, con el informe
-`automation/reports/4k/req_crud_bancos_20260902/INFORME-CRUD-BANCOS.pdf` adjunto.
-Cuando lleguen los fixes hay que **re-verificar los dos** en las 3 capas.
-
-### 4.a «Banco Emisor» duplicado y columna «Cuenta» que no aplica  · WEB
-
-`automation/reports/INCIDENCIA-banco-emisor-columna-duplicada.md`
-
-- La web repite la columna **Banco Emisor** (la primera **vacía**) y agrega una **«Cuenta»**
-  con el nombre del banco. Un banco emisor **no tiene cuenta**: `bank` solo guarda
-  `co_bank` + `na_bank`.
-- Probado **solo con Pago Móvil** (`pm`), único método con emisor que se alcanzó en 4K.
-
-🔴 **Ampliar la cobertura en el ciclo del fix — dato de la QA (02/09):**
-
-| Método | Cómo llegar al Banco Emisor |
-|---|---|
-| **Pago Móvil** (`pm`) | ya cubierto — es donde se detectó |
-| **Cheque** | **también tiene Banco Emisor.** Cubrirlo tal cual |
-| **Transferencia** (`tr`) | el emisor **no se ve por defecto**: hay que poner `clientBankAccount = true` en la empresa, **sincronizar config** y **reabrir el cobro** |
-
-⇒ Con `clientBankAccount = true` los campos `co_/nu_/na_client_bank_account` pasan a tener un
-uso legítimo. **Ahí está la prueba de fondo:** ver si la columna duplicada desaparece, si sigue
-igual, o si empeora ahora que esos campos sí traen una cuenta de verdad. En 4K la variable está
-en `false` y `client_bank_account` tiene **0 filas**, así que este escenario **no se probó**.
-
-### 4.b «Monto doc. conversión» sin convertir  · ajeno al REQ
+## 4. ⏳ Pendiente · «Monto doc. conversión» sin convertir
 
 `automation/reports/INCIDENCIA-monto-doc-conversion-sin-convertir.md`
 
-- `nu_amount_doc_conversion` llega repitiendo el monto en divisa. **10 de 10** cobros del
-  01–02/09 (refs 2671-2680); el último renglón correcto es del **24/08**.
-- Al re-verificar, correr la consulta del `.md` y confirmar que el **primer cobro nuevo** ya
-  sale convertido — no basta con mirar uno viejo.
+`nu_amount_doc_conversion` llega repitiendo el monto en divisa en vez de convertirlo, mientras
+`nu_balance_doc_conversion` del mismo renglón **sí** está convertido. Afectaba a **10 de 10** cobros
+del 01–02/09; el último renglón correcto era del 24/08. No toca los importes cobrados, pero confunde
+la lectura y cualquier reporte que sume esa columna.
+
+**Sigue sin verificar si se corrigió.** Al retomar, correr la consulta del `.md` sobre un cobro
+**nuevo** — no basta mirar uno viejo.
+
+> El otro defecto que se devolvió el 02/09 —«Banco Emisor» duplicado y la columna «Cuenta» con el
+> nombre del banco— **se resolvió**: verificado el 07/09, la tabla bajó de 14 a 13 columnas y
+> «Cuenta» ya no muestra el nombre. De aquello solo queda que la columna se dibuja en Pago Móvil y
+> Cheque donde no aplica (cosmético, severidad baja).
 
 ---
 
@@ -104,20 +84,67 @@ más la sanitización de HTML (REQ 5).
 
 ---
 
+## 6. 🧪 Incorporar el REQ de Bancos a la regresión — MÓVIL y WEB
+
+El REQ quedó **cerrado como completado** (07/09), pero su validación **no está en los scripts**:
+hoy se prueba a mano cada vez. Hay que agregarla para que cada corrida haga regresión sola, igual
+que se hizo con el REQ del botón Enviar (`automation/playwright/req-enviar.js`).
+
+**Insumo listo:** `guiones-regresion/guion-req-crud-bancos.md` — tiene los casos, los datos a
+preparar y las trampas. Y `automation/reports/4k/req_crud_bancos_20260907/` los valores esperados.
+
+### 6.a · Capa WEB — el CRUD  (`automation/web/modules/`)
+
+| Caso | Qué verifica |
+|---|---|
+| Listado con columnas Código · Nombre · Estado | la pantalla existe y responde |
+| Guardar en blanco → «Campo obligatorio.» | la validación sigue viva |
+| Crear → aparece en la lista y en BD con la empresa correcta | el alta |
+| Editar → el **código queda bloqueado**, el nombre cambia sin duplicar | la edición |
+| Desactivar → confirmación + **borrado lógico** (el registro se conserva) | el borrado lógico |
+| Reactivar → vuelve a estar disponible | el toggle completo |
+| **Siembra automática:** tras crear, no hay duplicados ni se pisan los preexistentes | el trigger |
+
+### 6.b · Capa MÓVIL — que el catálogo alimente los cobros  (`automation/playwright/modules/cobros.js`)
+
+| Caso | Qué verifica |
+|---|---|
+| El selector de **Banco Emisor** trae el catálogo en Pago Móvil y Cheque | la fuente correcta |
+| En **Transferencia** trae las cuentas del cliente *(solo si `clientBankAccount=true`)* | el caso condicional |
+| Un banco creado en la web **aparece tras sincronizar** | la cadena web → móvil |
+| Un banco **desactivado desaparece** del selector | el borrado lógico llega al equipo |
+| 🔴 **El banco elegido llega a su campo correcto** — ver 6.c | la regresión del defecto |
+
+### 6.c · 🔴 El caso que NO puede faltar
+
+Tras enviar un cobro con **Cheque**, verificar que el banco elegido quede en el campo del **emisor**
+y **no** en el del receptor. Es el defecto reportado en
+`automation/reports/INCIDENCIA-cheque-banco-emisor-como-receptor.md`, y hoy solo se detecta a mano.
+
+```sql
+SELECT co_payment_method, na_bank AS receptor, nu_collection_payment AS emisor
+  FROM collection_payment WHERE id_collection = <ref>;
+-- Cheque correcto: emisor con el banco, receptor vacío. Hoy ocurre al revés.
+```
+
+⚠ **Ojo al construir el caso:** elegir **bancos distintos** para emisor y receptor. Si son el mismo,
+un cruce de campos pasa inadvertido — ya ocurrió con el cobro 2619.
+
+---
+
 ## Cerrados recientemente
 
 - ✅ **Fix del despacho consolidado (hidroponias)** — validado el 01-02/09 en las 3 capas.
   25 PASS / 0 FAIL. `automation/reports/hidroponias/fix_despacho_consolidado_20260901/`
 - ✅ **REQ del botón Enviar** — convertido en regresión permanente (`req-enviar.js`) en los
   7 módulos transaccionales.
-- ✅ **REQ · Catálogo de Bancos — CICLO COMPLETO** (07/09, 4K/Caribe). CRUD certificado, siembra
-  automática verificada, y **6 cobros enviados y cotejados en las 3 capas** (Pago Móvil ×2, Cheque,
-  Transferencia con cuenta registrada y con cuenta nueva, y un **anticipo**). Montos correctos en los 6.
-  `automation/reports/4k/req_crud_bancos_20260907/` — informe de testing + **manual de uso**.
-  🔴 **Queda 1 defecto abierto:** en **Cheque** el banco emisor se guarda en el campo del receptor
-  (confirmado en 3 cobros, el último con el APK actual). 2 observaciones menores: la columna «Cuenta»
-  se dibuja donde no aplica, y el filtro por moneda no alcanza al Banco Emisor.
-  **No cubierto:** el caso multi-empresa (4K tiene una sola empresa).
+- ✅ **REQ · Catálogo de Bancos — COMPLETADO** (07/09, 4K/Caribe, 2.ª vuelta). CRUD certificado,
+  siembra automática verificada, y **6 cobros enviados y cotejados en las 3 capas** (Pago Móvil ×2,
+  Cheque, Transferencia con cuenta registrada y con cuenta nueva, y un **anticipo**), con montos
+  correctos. `automation/reports/4k/req_crud_bancos_20260907/` — informe + **manual de uso**.
+  El hallazgo de Cheque **se derivó a tarjeta aparte** (no es de este REQ): la validación en los
+  scripts queda como punto 6.
+  **No cubierto:** el caso multi-empresa — 4K tiene una sola empresa.
 - ✅ **REQ · CRUD de Bancos** — probado el 02/09 en `4k` (Isla Coche), 3 capas. Los 4 criterios
   del CRUD se cumplen; la tarjeta se **devolvió** con 2 defectos → ver punto 4.
   Perfil creado: `automation/clientes/4k.yaml`.
