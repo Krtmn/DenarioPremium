@@ -114,6 +114,13 @@ function dataParaModulo(modulo) {
         userCanSelectIGTF:             vgs.userCanSelectIGTF === true,
         userCanCollectIva:             vgs.userCanCollectIva === true,
         sizeRetention:                 Number(vgs.sizeRetention) || 14,
+        // Descuento de cobro: la VG habilita el botón, el tope se aplica sobre la
+        // SUMA de los porcentajes seleccionados (no sobre cada descuento).
+        userCanSelectCollectDiscount:  vgs.userCanSelectCollectDiscount === true,
+        maxCollectDiscount:            Number(vgs.maxCollectDiscount) || 100,
+        // Sin esta VG no existe la lupa que abre el DETALLE del documento, y sin
+        // el detalle no hay descuento, ni Nro Comp Ret, ni Dif. Devolución.
+        retentionDocTypeCR:            vgs.retentionDocTypeCR === true,
         metodoPago:                    mod.metodo_pago || 'efectivo',
         mockCamaraFunciona:            mod.mock_camara_funciona,   // undefined = probar el mock
       };

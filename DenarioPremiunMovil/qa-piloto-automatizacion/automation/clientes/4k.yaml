@@ -92,25 +92,46 @@ vgs:
   userCanCollectIva: false
 
   # Tolerancias y anticipo  ── los números que hay que probar ──
+  # ✅ RELEÍDAS DEL DISPOSITIVO el 07/09. Los tres primeros valores estaban MAL
+  #    (venían de los dumps: 9 / 15 / 10). Manda el equipo.
   tolerancia0: true                   # permite enviar cobros que no cierran en 0
   TipoTolerancia: 0                   # 0 = Importe · 1 = Porcentaje
-  RangoToleranciaPositiva: 9          # USD
-  RangoToleranciaNegativa: 15         # USD
+  RangoToleranciaPositiva: 10         # USD  (el dump decía 9)
+  RangoToleranciaNegativa: 10         # USD  (el dump decía 15)
   MonedaTolerancia: "USD"
   cobroPrepago: true                  # submódulo «Anticipo» disponible en el menú
   automatedPrepaid: true              # anticipo automático por excedente
-  prepaidRangeAmount: 10              # 🔑 excedente MÍNIMO que dispara el anticipo
+  prepaidRangeAmount: 50              # excedente mínimo del anticipo (el dump decía 10)
   prepaidRangeCurrency: "USD"
   prepaidCurrency: "USD"
   prepaidPaymentMethod: "pa"
-  # 🔴 OJO: tolerancia positiva (9) ≠ umbral de anticipo (10). Son dos reglas
-  #    distintas y dejan una BANDA MUERTA entre 9,01 y 9,99: excede la tolerancia
-  #    y no alcanza para generar el anticipo ⇒ Enviar debe quedar bloqueado ahí.
-  #    (`collection-logic.service.ts`: "tolerancia positiva habilita Enviar;
-  #     prepaidRangeAmount decide el anticipo")
+  # 🔑 EL UMBRAL DEL ANTICIPO ES LA SUMA, NO prepaidRangeAmount SOLO:
+  #       getAutomatedPrepaidActivationThreshold() = positiveCeiling + prepaidMin
+  #                                                = 10 + 50 = 60 USD
+  #    ⇒ el anticipo se valida DESPUÉS de la tolerancia (confirmado con desarrollo).
+  #    NO hay banda muerta entre tolerancia y anticipo — la versión anterior de
+  #    este comentario la describía por leer prepaidRangeAmount como si fuera el
+  #    umbral absoluto. Los tres tramos reales:
+  #        ≤ 10          → dentro de tolerancia, Enviar directo
+  #        10,01 … 59,99 → excede tolerancia y no alcanza el anticipo ⇒ BLOQUEA
+  #        ≥ 60          → genera ANTICIPO AUTOMÁTICO
+
+  # Descuento de cobro
+  userCanSelectCollectDiscount: true  # ⇒ botón «Asignar descuento» en el DETALLE del documento
+  maxCollectDiscount: 85              # tope % sobre la SUMA de los descuentos seleccionados
+  # ⚠ El catálogo (`collect_discounts`) de 4K trae UNA sola fila: "Probando" 80 %
+  #   con require_input=false. Con eso el tope de 85 es inalcanzable por UI
+  #   (80 fijo, y 80 ≤ 85). Se resuelve por WEB, sin tocar BD — dos opciones:
+  #     · bajar maxCollectDiscount (Variables Globales → Cobros) a 80 y luego a 79
+  #     · crear más descuentos en **Empresa → Configuración → Descuentos para Cobros**
+  #   En ambos casos hay que SINCRONIZAR el equipo después.
 
   # Otros
-  enableDifferenceCodes: false        # ⇒ Dif. Devolución/Faltante NO aplica en 4K
+  # ⚠ enableDifferenceCodes NO apaga «Dif. Devolución/Faltante». Ese campo vive
+  #   en el detalle del documento (cobro-documents.component.html:735) y aparece
+  #   SIEMPRE. Esta variable apaga otra cosa: el selector de «origen de
+  #   diferencia» del método de pago OTROS (cobro-pagos.component.html:689).
+  enableDifferenceCodes: false        # ⇒ solo apaga el selector del método OTROS
   clientBankAccount: false
   currencyBank: false
   historicoTasa: true
@@ -183,12 +204,21 @@ modules:
 
   cobros:
     aplica: true
-    cliente_test: "C.0018"            # REPUBUS MARACAIBO · 47 documentos con saldo
+    # 🔴 DOS criterios, y hay que cumplir LOS DOS:
+    #    1) que el EQUIPO cargue al cliente (C.0018 y C.0507 existen en BD pero
+    #       NO llegan al dispositivo: el modal devuelve 0 ítems)
+    #    2) que tenga documentos LIBRES — los comprometidos por cobros que sigan
+    #       «Por aprobar» no se listan en el Tab Documentos (bloqueo anti-doble-cobro)
+    #    Indicados por QA el 07/09 y verificados en BD.
+    cliente_test: "C.0060"            # MOTOR S DIESEL · 5 docs, los 5 LIBRES
     clientes_con_documentos:
-      - "C.0018"                      # 47 docs
-      - "C.0010"                      # 11 docs · EURO REPUESTOS, el más probado
-      - "C.0028"                      #  2 docs
-    metodo_pago: TBD                  # leer en la UI: colletionPayment cambió el 04/09
+      - "C.0060"                      # 5 docs libres · US$ 3.566,80
+      - "C.0029"                      # 4 docs libres · INVERSIONES SUPER RAPIDO
+    # ⚠ C.0010 EURO REPUESTOS quedó AGOTADO el 07/09: sus 11 documentos están
+    #   comprometidos en los cobros 2609-2621. Sirve otra vez cuando esos cobros
+    #   se aprueben o rechacen en la web.
+    # 🔑 requiredComment = true ⇒ el COMENTARIO ES OBLIGATORIO. Sin llenarlo, las
+    #    5 pestañas del cobro siguen bloqueadas y el módulo no avanza.
 
   pedidos:
     cliente_test: "C.0010"            # EURO REPUESTOS — confirmado que carga

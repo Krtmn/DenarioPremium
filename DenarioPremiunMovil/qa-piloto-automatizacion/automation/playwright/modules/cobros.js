@@ -8,6 +8,7 @@ const { installPayloadCapture, getCapturedPayloads } = require('../../cdp/denari
 const { reqInicio, reqRechazo, reqPestanaRoja, reqIds, conReq } = require('../req-enviar');
 
 const LOCAL_QUERY_PATH    = path.resolve(__dirname, '../../db/local-query.js');
+const NUBE_QUERY_PATH     = path.resolve(__dirname, '../../db/query.js');
 const COTEJO_PAYLOAD_PATH = path.resolve(__dirname, '../../db/cotejo-payload.js');
 
 // JPEG 1x1 válido (mismo del helper CDP) para inyectar como adjunto sin cámara.
@@ -24,6 +25,22 @@ function localQuery(sql) {
       execFileSync('node', [LOCAL_QUERY_PATH, sql], { encoding: 'utf8', timeout: 15000 })
     );
   } catch (_) { return []; }
+}
+
+/**
+ * Consulta la BD en la NUBE del cliente. Devuelve las filas o null si no se pudo.
+ *
+ * 🔑 Es el oráculo bueno para el ENVÍO. Guardar es local (SQLite del equipo);
+ *    enviar es lo único que POSTea. Contar ítems «Enviado» en la lista de la UI
+ *    resultó frágil: el 07/09 dio FAIL tres veces seguidas por leer la lista
+ *    antes de que pintara, mientras los cobros SÍ estaban en la nube.
+ */
+function consultaNube(slug, sql) {
+  try {
+    return JSON.parse(
+      execFileSync('node', [NUBE_QUERY_PATH, slug, sql], { encoding: 'utf8', timeout: 30000 })
+    );
+  } catch (_) { return null; }
 }
 
 /** Corre cotejo-payload.js con un payload capturado ({url,data}). Devuelve marca o 'BD-N/A'. */
@@ -44,6 +61,8 @@ function cotejoPayload(slug, payload) {
  * modules/cobros.js — FASE 1 · núcleo co_type 0 (cobro normal)
  *
  * Cobertura Fase 1: DM-COB-001/002/004/007/008/009/016/018/022/024/026/020/021 (+ 019 con adjunto).
+ * Descuento de cobro: 048 (botón en el detalle) · 049 (bajo el tope) · 050 (suma que excede)
+ *   · 051 (borde exacto con tasa escrita). Se ejercitan y se CANCELAN: no alteran el cobro.
  * N/A por VG: 006 (requiredComment), 036/044/045 (IGTF), 037 (25% IVA).
  * FASE 2 (marcados BLOCKED-fase2): 033/034 moneda, 012/040/043 diferencia, 014/015 Total,
  *   028 anticipo (co_type 1), 029/041/042 retención (co_type 2), 046 parcial, 047/039 fecha-tasa, 038.
@@ -76,7 +95,11 @@ async function runCobros(pg, DATA) {
   const TODOS = ['DM-COB-001','DM-COB-002','DM-COB-004','DM-COB-006','DM-COB-007',
     'DM-COB-008','DM-COB-009','DM-COB-016','DM-COB-018','DM-COB-019','DM-COB-022',
     'DM-COB-024','DM-COB-026','DM-COB-020','DM-COB-021','DM-COB-036','DM-COB-037',
-    'DM-COB-044','DM-COB-045', ...FASE2, ...reqIds('COB')];
+    'DM-COB-044','DM-COB-045',
+    // Descuento de cobro (tope maxCollectDiscount) — construidos el 07/09
+    'DM-COB-048','DM-COB-049','DM-COB-050','DM-COB-051','DM-COB-052',
+    'DM-COB-053','DM-COB-054','DM-COB-055',
+    ...FASE2, ...reqIds('COB')];
 
   if (!DATA.aplica) {
     TODOS.forEach(id => v(id, id, 'N/A', 'aplica=false en perfil cobros'));
@@ -109,9 +132,17 @@ async function runCobros(pg, DATA) {
       if (!back) return null;
       const target = back.closest('a') || back;
       const r = target.getBoundingClientRect();
-      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      // 🔴 Segunda defensa: comprobar qué elemento recibiría el clic en ese punto.
+      //    Si es el SALIR del home de la app, no se pulsa. Un script de prueba
+      //    nunca debe cerrar la sesión del usuario.
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const enElPunto = document.elementFromPoint(cx, cy);
+      const txt = ((enElPunto && enElPunto.innerText) || '').trim();
+      if (/^\s*salir\s*$/i.test(txt)) return { peligro: txt };
+      return { x: cx, y: cy };
     });
     if (!coords) throw new Error('img.fechaAtras no encontrado');
+    if (coords.peligro) throw new Error(`el «atrás» caería sobre «${coords.peligro}» — no se pulsa`);
     await pg.mouse.click(coords.x, coords.y, { delay: 60 });
   }
 
@@ -203,9 +234,36 @@ async function runCobros(pg, DATA) {
         .some(b => b.textContent.trim() === 'COBRO'));
   }
 
+  /**
+   * Vuelve al home del módulo Cobros retrocediendo.
+   *
+   * 🔴 FRENO DE SEGURIDAD (07/09). Antes pulsaba «atrás» hasta 6 veces seguidas
+   *    sin mirar dónde estaba. Cuando el flujo descarrilaba —p. ej. porque el
+   *    cliente de prueba no cargó— seguía retrocediendo: salía de Cobros,
+   *    llegaba al HOME DE LA APP y el siguiente «atrás» caía sobre **SALIR**,
+   *    **cerrando la sesión del usuario**. Eso obliga a volver a entrar y
+   *    resincronizar, y le arruina la sesión a quien esté usando el equipo.
+   *
+   *    Un script de prueba NUNCA debe poder cerrar la sesión. Ahora, si detecta
+   *    que ya salió del módulo, se detiene y lo dice, en vez de seguir pulsando.
+   */
   async function irAHomeCobros(maxAttempts = 6) {
     for (let i = 0; i < maxAttempts; i++) {
       if (await isHomeCobrosVisible()) return;
+
+      // ¿Seguimos dentro del módulo? Si ya estamos en el home de la app, otro
+      // «atrás» pega en SALIR.
+      const fuera = await pg.evaluate(() => {
+        const viva = [...document.querySelectorAll('.ion-page')]
+          .filter(p => !p.classList.contains('ion-page-hidden'))
+          .map(p => p.tagName.toLowerCase()).pop() || '';
+        const ruta = location.hash || location.pathname;
+        return { viva, ruta, enHomeApp: viva === 'app-home' || /^\/?home$/.test(ruta.replace('#', '')) };
+      });
+      if (fuera.enHomeApp) {
+        throw new Error(`salí del módulo Cobros (${fuera.viva}) — me detengo para no pulsar SALIR`);
+      }
+
       try { await clickBack(); } catch (_) {}
       await pg.waitForTimeout(900);
       await dismissDirtyGuard();
@@ -222,14 +280,34 @@ async function runCobros(pg, DATA) {
   }
 
   // Cambiar de tab: asignar ion-segment.value + ionChange (más fiable que click en segment-button)
+  // 🔴 LA PESTAÑA «GENERAL» SE LLAMA "default".
+  //    `cobro.component.html:4` → <ion-segment-button value="default">. Las otras
+  //    cuatro sí usan su nombre. Durante toda la corrida del 07/09 se pedía
+  //    'general': `seg.value` quedaba en un valor que ningún botón tiene, NO se
+  //    seleccionaba ninguna pestaña y la vista quedaba EN BLANCO. Por eso la foto
+  //    de DM-COB-024 leyó 0 inputs y el cotejo nunca pudo hacerse.
+  //
+  //    Fallaba en silencio porque la función no devolvía nada y todas las
+  //    llamadas van con `.catch(() => {})`. Ahora valida contra los valores que
+  //    existen de verdad y devuelve el resultado.
+  const ALIAS_TAB = { general: 'default', datos: 'default' };
+
   async function clickTab(value) {
-    await pg.evaluate((val) => {
+    const destino = ALIAS_TAB[value] || value;
+    const r = await pg.evaluate((val) => {
       const seg = document.querySelector('app-cobros-container ion-segment, app-cobro ion-segment, ion-segment');
-      if (!seg) return;
+      if (!seg) return { ok: false, motivo: 'no hay ion-segment en pantalla' };
+      const botones = [...seg.querySelectorAll('ion-segment-button')];
+      const valores = botones.map(b => String(b.value ?? b.getAttribute('value') ?? ''));
+      if (!valores.includes(val)) {
+        return { ok: false, motivo: `la pestaña "${val}" no existe`, valores };
+      }
       seg.value = val;
       seg.dispatchEvent(new CustomEvent('ionChange', { bubbles: true, detail: { value: val } }));
-    }, value);
+      return { ok: true, valores };
+    }, destino);
     await pg.waitForTimeout(1000);
+    return r;
   }
 
   // Abrir nuevo cobro: click REAL en el tile (nuevoCobro programático NO re-renderiza tras Guardado)
@@ -339,12 +417,32 @@ async function runCobros(pg, DATA) {
   }
 
   // Llenar Comentario: 2º ion-input.inp-write (1º=Responsable id=currency; 2º=Comentario, nace ion-invalid)
+  /**
+   * Escribe el campo Comentario del cobro.
+   *
+   * 🔴 El selector `.inp-write` DEJÓ DE EXISTIR (medido el 07/09: 0 elementos lo
+   *    tienen). Con él, la función no encontraba nada y devolvía false — y como
+   *    nadie miraba ese false, el módulo seguía adelante con las 5 pestañas
+   *    bloqueadas y el fallo aparecía después disfrazado de «tabs no habilitadas».
+   *
+   *    Ahora se ancla al **label «Comentario:»**, que es estable y describe el
+   *    campo, en vez de a una clase de estilo. Se conserva `.inp-write` como
+   *    último recurso por si algún build viejo lo usa.
+   */
   async function fillComentario(texto) {
     const ok = await pg.evaluate((val) => {
-      const inps = [...document.querySelectorAll('app-cobro-general ion-input.inp-write, ion-input.inp-write')]
-        .filter(i => i.getBoundingClientRect().width > 0);
-      // preferir el que nace ion-invalid vacío (Comentario); si no, el 2º
-      let target = inps.find(i => i.classList.contains('ion-invalid') && !(i.value || '').trim()) || inps[1] || inps[0];
+      const vis = (el) => el.getBoundingClientRect().width > 0;
+      const etiqueta = (el) => String(el.getAttribute('label') || el.label || '');
+
+      const todos = [...document.querySelectorAll('ion-input, ion-textarea')].filter(vis);
+      let target =
+        // 1) por su label — el ancla buena
+        todos.find(i => /coment/i.test(etiqueta(i)))
+        // 2) compatibilidad: builds que aún usen la clase de estilo
+        || [...document.querySelectorAll('ion-input.inp-write')].filter(vis)
+             .find(i => i.classList.contains('ion-invalid') && !(i.value || '').trim())
+        // 3) el que nace inválido y vacío (el obligatorio sin llenar)
+        || todos.find(i => i.classList.contains('ng-invalid') && !(i.value || '').trim());
       if (!target) return false;
       const native = target.querySelector('input') || (target.shadowRoot && target.shadowRoot.querySelector('input'));
       if (!native) return false;
@@ -368,6 +466,58 @@ async function runCobros(pg, DATA) {
   }
 
   // Selecciona la moneda documento (1er ion-select del Tab Documentos) = USD por defecto para docs $
+  /**
+   * 📸 Foto de los campos visibles del cobro — se toma antes de guardar y otra
+   *    vez al reabrir, y el cotejo de DM-COB-024 compara las dos.
+   *
+   * 🔴 Estaba DUPLICADA con dos indentaciones distintas, y al corregir una sola
+   *    las fotos dejaron de ser comparables. Ahora hay UNA definición.
+   *
+   * 🔴 Y leía SOLO el atributo `label`: en la corrida del 07/09 16:02 devolvió
+   *    CERO campos, así que 024 no pudo medir nada. No todos los campos del
+   *    cobro rotulan así — algunos usan un <ion-label> hermano o el placeholder.
+   *    Se prueban las tres vías y se guarda un diagnóstico para no quedar a
+   *    ciegas si vuelve a salir vacía.
+   */
+  async function fotoDelCobro() {
+    return pg.evaluate(() => {
+      const vis = el => el.getBoundingClientRect().width > 0;
+      const valor = (el) => {
+        const n = el.querySelector('input, textarea') ||
+                  (el.shadowRoot && el.shadowRoot.querySelector('input, textarea'));
+        return n ? String(n.value).trim() : '';
+      };
+      const rotulo = (el) => {
+        const attr = String(el.getAttribute('label') || el.label || '').trim();
+        if (attr) return attr;
+        const item = el.closest('ion-item, ion-col, .item');
+        const lab = item && item.querySelector('ion-label');
+        const t = lab ? (lab.textContent || '').replace(/\s+/g, ' ').trim() : '';
+        if (t) return t;
+        return String(el.getAttribute('placeholder') || el.placeholder || '').trim();
+      };
+      const todos = [...document.querySelectorAll('ion-input, ion-textarea')].filter(vis);
+      const campos = {};
+      for (const el of todos) {
+        const et = rotulo(el);
+        if (et) campos[et] = valor(el);
+      }
+      const txt = (document.body.innerText || '').replace(/\s+/g, ' ');
+      const tot = txt.match(/Monto total a pagar[^:]*:\s*([\d.,]+)/i);
+      const seg = document.querySelector('ion-segment-button.segment-button-checked')
+               || document.querySelector('ion-segment-button[aria-selected="true"]');
+      return {
+        campos,
+        total: tot ? tot[1] : null,
+        diag: {
+          inputsVisibles: todos.length,
+          tabActiva: seg ? (seg.textContent || '').replace(/\s+/g, ' ').trim() : '?',
+          muestra: todos.slice(0, 6).map(rotulo).filter(Boolean),
+        },
+      };
+    });
+  }
+
   async function seleccionarMonedaDocumento(pref = 'US') {
     const res = await pg.evaluate((p) => {
       const sel = document.querySelector('app-cobro-documents ion-select');
@@ -546,6 +696,66 @@ async function runCobros(pg, DATA) {
   }
 
   // Convierte "66.852,91" → "6685291" (dígitos para el input de monto centavos-acumulativo)
+  /**
+   * "Bs: 1.017.900,00" → 1017900. Formato es-VE: el punto agrupa, la coma decide.
+   * Devuelve null si no hay número, para no confundir «no se pudo leer» con 0.
+   */
+  function montoANumero(txt) {
+    if (txt === null || txt === undefined) return null;
+    const m = String(txt).match(/-?[\d.,]+/);
+    if (!m) return null;
+    const n = Number(m[0].replace(/\./g, '').replace(',', '.'));
+    return Number.isFinite(n) ? n : null;
+  }
+
+  /**
+   * Deja la LISTA de cobros a la vista y devuelve el conteo por estado.
+   *
+   * 🔴 Antes cada caso repetía «irAHome + BUSCAR + dormir un rato» y leía. Con un
+   *    sleep fijo la lista salía VACÍA (0 ítems justo después de contar 20) y eso
+   *    tumbó DM-COB-019 tres corridas seguidas. Aquí se espera a que CARGUE y, si
+   *    no aparece, se reintenta la navegación entera antes de rendirse.
+   */
+  async function abrirListaCobros(intentos = 3) {
+    for (let n = 0; n < intentos; n++) {
+      await dismissIonLoadings().catch(() => {});
+      await irAHomeCobros().catch(() => {});
+      await clickBotonHome('BUSCAR').catch(() => {});
+      for (let i = 0; i < 8; i++) {
+        await pg.waitForTimeout(1000);
+        const r = await pg.evaluate(() => {
+          const lista = document.querySelector('app-cobros-list');
+          if (!lista || lista.offsetParent === null) return { lista: false, total: 0, guardados: 0, enviados: 0 };
+          const its = [...lista.querySelectorAll('ion-item')].filter(el => el.getBoundingClientRect().width > 0);
+          return {
+            lista: true,
+            total: its.length,
+            guardados: its.filter(el => /Guardado/i.test(el.textContent)).length,
+            enviados: its.filter(el => /Enviado|Por aprobar/i.test(el.textContent)).length,
+          };
+        });
+        if (r.lista && r.total > 0) return r;
+      }
+    }
+    return { lista: false, total: 0, guardados: 0, enviados: 0 };
+  }
+
+  /** Abre el primer cobro en estado Guardado de la lista. */
+  async function reabrirGuardado() {
+    const coords = await pg.evaluate(() => {
+      const items = [...document.querySelectorAll('app-cobros-list ion-item')]
+        .filter(el => el.getBoundingClientRect().width > 0 && /Guardado/i.test(el.textContent));
+      if (!items.length) return null;
+      items[0].scrollIntoView({ block: 'center' });
+      const r = items[0].getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    });
+    if (!coords) return false;
+    await pg.mouse.click(coords.x, coords.y, { delay: 120 });
+    await pg.waitForTimeout(2500);
+    return (await tabsHabilitadas()) >= 3;
+  }
+
   function montoADigitos(txt) {
     if (!txt) return '';
     return String(txt).replace(/[^\d]/g, '').replace(/^0+(?=\d)/, '');
@@ -734,7 +944,8 @@ async function runCobros(pg, DATA) {
   } catch (e) {
     v('DM-COB-001', 'Módulo Cobros → home', 'FAIL', e.message);
     ['DM-COB-002','DM-COB-004','DM-COB-007','DM-COB-008','DM-COB-009','DM-COB-016',
-     'DM-COB-018','DM-COB-019','DM-COB-022','DM-COB-024','DM-COB-026','DM-COB-020','DM-COB-021']
+     'DM-COB-018','DM-COB-019','DM-COB-022','DM-COB-024','DM-COB-026','DM-COB-020','DM-COB-021',
+     'DM-COB-048','DM-COB-049','DM-COB-050','DM-COB-051','DM-COB-052']
       .forEach(id => v(id, id, 'BLOCKED', 'DM-COB-001 falló'));
     blockFase2('DM-COB-001 falló');
     return { verdicts, msTotal: Date.now() - t0 };
@@ -760,13 +971,51 @@ async function runCobros(pg, DATA) {
   let clienteOk = false;
   try {
     await seleccionarCliente(DATA.clienteTest);
-    if (DATA.requiredComment) await fillComentario(comentTest);
+
+    // 🔴 El comentario es la LLAVE del módulo cuando requiredComment=true: sin él
+    //    las 5 pestañas siguen bloqueadas y nada más avanza. Antes se llamaba a
+    //    fillComentario() ignorando lo que devolvía, así que si el campo no
+    //    estaba donde se esperaba el fallo salía 3 pasos después disfrazado de
+    //    «tabs no habilitadas». Ahora se comprueba que el texto QUEDÓ ESCRITO.
+    let comentarioOk = null;
+    if (DATA.requiredComment) {
+      await fillComentario(comentTest);
+      // Verificar sobre TODOS los inputs visibles, no sobre un selector concreto:
+      // basta con que el texto esté escrito en alguno.
+      comentarioOk = await pg.evaluate((val) => {
+        return [...document.querySelectorAll('ion-input, ion-textarea')]
+          .filter(i => i.getBoundingClientRect().width > 0)
+          .some(i => {
+            const n = i.querySelector('input, textarea') ||
+                      (i.shadowRoot && i.shadowRoot.querySelector('input, textarea'));
+            return n && String(n.value).trim() === val;
+          });
+      }, comentTest);
+      // Un reintento: si el primer intento no escribió, vale la pena insistir
+      // antes de dar por perdido el módulo entero.
+      if (!comentarioOk) {
+        await pg.waitForTimeout(800);
+        await fillComentario(comentTest);
+        comentarioOk = await pg.evaluate((val) =>
+          [...document.querySelectorAll('ion-input, ion-textarea')]
+            .filter(i => i.getBoundingClientRect().width > 0)
+            .some(i => {
+              const n = i.querySelector('input, textarea') ||
+                        (i.shadowRoot && i.shadowRoot.querySelector('input, textarea'));
+              return n && String(n.value).trim() === val;
+            }), comentTest);
+      }
+    }
+
     let habil = 0;
     for (let i = 0; i < 8; i++) { habil = await tabsHabilitadas(); if (habil >= 4) break; await pg.waitForTimeout(700); }
     clienteOk = habil >= 4;
     // Se anota el cliente REALMENTE clickeado, no el que pedía el perfil.
+    const notaCom = comentarioOk === null ? '' :
+      comentarioOk ? ' · comentario escrito ✓'
+                   : ' · 🔴 EL COMENTARIO NO SE ESCRIBIÓ (es lo que bloquea las pestañas)';
     v('DM-COB-004', 'Seleccionar cliente → tabs habilitadas', clienteOk ? 'PASS' : 'FAIL',
-      `pedido: "${DATA.clienteTest}" · clickeado: "${ultimoClienteClickeado || '—'}" · tabs habilitadas: ${habil}`);
+      `pedido: "${DATA.clienteTest}" · clickeado: "${ultimoClienteClickeado || '—'}" · tabs habilitadas: ${habil}${notaCom}`);
   } catch (e) {
     v('DM-COB-004', 'Seleccionar cliente → tabs habilitadas', 'FAIL', e.message);
   }
@@ -817,6 +1066,477 @@ async function runCobros(pg, DATA) {
     }
   } catch (e) {
     v('DM-COB-008', 'Marcar documento → total', 'FAIL', e.message);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DM-COB-048/049/050/051 — DESCUENTO DE COBRO (tope maxCollectDiscount)
+  //
+  // Dónde vive: DETALLE del documento (lupa 🔍) → botón «Asignar descuento».
+  //   · la lupa solo existe si `retentionDocTypeCR = true`
+  //   · el botón solo existe si `userCanSelectCollectDiscount = true`
+  //   · la lupa está DESHABILITADA mientras el documento no esté tildado
+  //     ⇒ por eso este bloque va DESPUÉS de DM-COB-008.
+  //
+  // 🔑 EL TOPE SE APLICA A LA SUMA, y al excederlo NO SE CLAMPEA: el descuento
+  //    que provocó el exceso **se quita de la selección** y sale una alerta
+  //    (`setNuCollectDiscount` / `toggleTempSelection` → `notifyCollectDiscountLimitExceeded`).
+  //    Quien espere «se queda en el máximo» reporta un falso defecto.
+  //
+  // 🔴 Todo este bloque cierra con CANCELAR. `cancelCollectDiscounts()` restaura
+  //    desde lo persistido, así que el cobro del happy path queda INTACTO: aplicar
+  //    un 80 % cambiaría el total y rompería DM-COB-040/012/043 aguas abajo.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** Abre el detalle (lupa) del primer documento tildado. */
+  async function abrirDetalleDocumento() {
+    await clickTab('documentos');
+    await pg.waitForTimeout(800);
+    const coords = await pg.evaluate(() => {
+      const docs = document.querySelector('app-cobro-documents');
+      if (!docs) return null;
+      const btn = [...docs.querySelectorAll('ion-button')]
+        .filter(b => b.getBoundingClientRect().width > 0)
+        .filter(b => b.querySelector('ion-icon[name="search-sharp"]'))
+        .find(b => !b.hasAttribute('disabled') && b.getAttribute('disabled') !== 'true');
+      if (!btn) return null;
+      btn.scrollIntoView({ block: 'center' });
+      const r = btn.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    });
+    if (!coords) return false;
+    await pg.mouse.click(coords.x, coords.y, { delay: 100 });
+    await pg.waitForTimeout(1800);
+    // El detalle es un ion-modal (#eventModal, isOpen). Confirmar que abrió.
+    return pg.evaluate(() =>
+      [...document.querySelectorAll('ion-modal')].some(m =>
+        m.getBoundingClientRect().width > 0 && /Asignar descuento|Descuento|Nro Comp Ret/i.test(m.textContent || '')));
+  }
+
+  /** Pulsa «Asignar descuento» dentro del detalle. */
+  async function abrirModalDescuentos() {
+    const coords = await pg.evaluate(() => {
+      const btn = [...document.querySelectorAll('ion-button')]
+        .filter(b => b.getBoundingClientRect().width > 0)
+        .find(b => /asignar\s+descuento|^descuentos$/i.test((b.textContent || '').trim()));
+      if (!btn) return null;
+      btn.scrollIntoView({ block: 'center' });
+      const r = btn.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    });
+    if (!coords) return false;
+    await pg.mouse.click(coords.x, coords.y, { delay: 100 });
+    await pg.waitForTimeout(1500);
+    return pg.evaluate(() =>
+      [...document.querySelectorAll('ion-modal.collectDiscounts')].some(m => m.getBoundingClientRect().width > 0));
+  }
+
+  /**
+   * Lee el estado del modal de descuentos.
+   * Las filas se rotulan «{nu}% - {na}», así que el % sale del propio rótulo.
+   */
+  async function leerModalDescuentos() {
+    return pg.evaluate(() => {
+      const modal = [...document.querySelectorAll('ion-modal.collectDiscounts')]
+        .find(m => m.getBoundingClientRect().width > 0);
+      if (!modal) return { abierto: false };
+      const filas = [...modal.querySelectorAll('ion-item')]
+        .filter(it => it.getBoundingClientRect().width > 0 && it.querySelector('ion-checkbox'))
+        .map(it => {
+          const cb = it.querySelector('ion-checkbox');
+          const txt = (it.querySelector('ion-label')?.textContent || '').replace(/\s+/g, ' ').trim();
+          const m = txt.match(/^([\d.,]+)\s*%\s*-\s*(.+)$/);
+          return {
+            texto: txt,
+            pct: m ? Number(String(m[1]).replace(',', '.')) : null,
+            nombre: m ? m[2].trim() : txt,
+            marcado: cb.checked === true || cb.getAttribute('checked') === 'true',
+            deshabilitado: cb.disabled === true || cb.hasAttribute('disabled'),
+          };
+        });
+      const dispTxt = (modal.textContent || '').replace(/\s+/g, ' ');
+      const disp = dispTxt.match(/Disponible\s*:?\s*([\d.,]+)\s*%/i);
+      const aceptar = [...modal.querySelectorAll('ion-button')]
+        .find(b => /aceptar/i.test(b.textContent || ''));
+      return {
+        abierto: true,
+        filas,
+        disponible: disp ? Number(String(disp[1]).replace(',', '.')) : null,
+        aceptarDeshabilitado: aceptar ? (aceptar.disabled === true || aceptar.hasAttribute('disabled')) : null,
+        // Input de tasa: solo se renderiza para los descuentos con require_input=true
+        hayInputTasa: !!modal.querySelector('ion-input[type="number"]'),
+      };
+    });
+  }
+
+  /** Tilda/destilda la fila cuyo nombre coincide. Devuelve false si no la halla. */
+  async function toggleDescuento(nombre) {
+    const coords = await pg.evaluate((nom) => {
+      const modal = [...document.querySelectorAll('ion-modal.collectDiscounts')]
+        .find(m => m.getBoundingClientRect().width > 0);
+      if (!modal) return null;
+      const it = [...modal.querySelectorAll('ion-item')]
+        .filter(x => x.getBoundingClientRect().width > 0 && x.querySelector('ion-checkbox'))
+        .find(x => (x.textContent || '').toLowerCase().includes(String(nom).toLowerCase()));
+      if (!it) return null;
+      const cb = it.querySelector('ion-checkbox');
+      cb.scrollIntoView({ block: 'center' });
+      const r = cb.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }, nombre);
+    if (!coords) return false;
+    await pg.mouse.click(coords.x, coords.y, { delay: 80 });
+    await pg.waitForTimeout(1200);
+    return true;
+  }
+
+  /**
+   * Vuelve el modal de descuentos a cero: Cancelar y reabrir.
+   *
+   * 🔴 NO destildar casilla por casilla. Ese era el método anterior y se comía
+   *    su propia cola: cuando una casilla queda tildada SIN estar aplicada
+   *    (el desfase de DM-COB-052), clicarla no la quita — la AGREGA, porque el
+   *    modelo no la tenía. Así, al llegar a DM-COB-051 el modelo cargaba un 80 %
+   *    fantasma y el aviso decía «Máximo disponible: 5%»: el caso fallaba por
+   *    culpa del guion, no de la app.
+   *    `cancelCollectDiscounts()` descarta la selección temporal y al reabrir
+   *    modelo y pantalla vuelven a coincidir.
+   */
+  async function reiniciarDescuentos() {
+    const c = await pg.evaluate(() => {
+      const modal = [...document.querySelectorAll('ion-modal.collectDiscounts')]
+        .find(m => m.getBoundingClientRect().width > 0);
+      if (!modal) return null;
+      const btn = [...modal.querySelectorAll('ion-button')]
+        .filter(b => b.getBoundingClientRect().width > 0)
+        .find(b => /cancelar/i.test((b.textContent || '').trim()));
+      if (!btn) return null;
+      const r = btn.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    });
+    if (c) { await pg.mouse.click(c.x, c.y, { delay: 80 }); await pg.waitForTimeout(1200); }
+    return abrirModalDescuentos();
+  }
+
+  /**
+   * Acepta el modal de descuentos (los APLICA al documento abierto).
+   *
+   * ⚠ Puede aparecer el aviso de «remanente»: si el descuento sobra respecto al
+   *   saldo, la app ofrece llevarlo a un anticipo (`alertDiscountRemnantOpen`).
+   *   Con un descuento por debajo del saldo no debería salir; se atiende igual.
+   */
+  async function aceptarDescuentos() {
+    const c = await pg.evaluate(() => {
+      const modal = [...document.querySelectorAll('ion-modal.collectDiscounts')]
+        .find(m => m.getBoundingClientRect().width > 0);
+      if (!modal) return null;
+      const btn = [...modal.querySelectorAll('ion-button')]
+        .filter(b => b.getBoundingClientRect().width > 0 && !b.hasAttribute('disabled'))
+        .find(b => /aceptar/i.test((b.textContent || '').trim()));
+      if (!btn) return null;
+      const r = btn.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    });
+    if (!c) return { ok: false, motivo: 'botón Aceptar ausente o deshabilitado' };
+    await pg.mouse.click(c.x, c.y, { delay: 90 });
+    await pg.waitForTimeout(1600);
+    const aviso = await readAlert();
+    if (aviso) { await clickAlertBtn(['Aceptar', 'OK', 'Sí']).catch(() => {}); await pg.waitForTimeout(1200); }
+    const cerrado = await pg.evaluate(() =>
+      ![...document.querySelectorAll('ion-modal.collectDiscounts')]
+        .some(m => m.getBoundingClientRect().width > 0));
+    return { ok: cerrado, aviso };
+  }
+
+  /**
+   * Cierra el DETALLE del documento por GUARDAR.
+   *
+   * 🔴 No da igual el botón. El pie del detalle es
+   *      Cancelar → saveDocumentSale(false)   ·   Guardar → saveDocumentSale(true)
+   *    (cobro-documents.component.html, pie del #eventModal). Salir por Cancelar
+   *    DESCARTA lo que se hizo dentro — que es justo lo que quieren los casos
+   *    048-052, y justo lo que NO quiere el flujo que aplica el descuento.
+   */
+  async function cerrarDetalleGuardando() {
+    const c = await pg.evaluate(() => {
+      const modal = [...document.querySelectorAll('ion-modal')]
+        .filter(m => m.getBoundingClientRect().width > 0).pop();
+      if (!modal) return null;
+      const btn = [...modal.querySelectorAll('ion-button.botonAddVerde')]
+        .filter(b => b.getBoundingClientRect().width > 0 && !b.hasAttribute('disabled'))
+        .pop();
+      if (!btn) return null;
+      const r = btn.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    });
+    if (!c) return false;
+    await pg.mouse.click(c.x, c.y, { delay: 90 });
+    await pg.waitForTimeout(1800);
+    const al = await readAlert();
+    if (al) await clickAlertBtn(['Aceptar', 'OK']).catch(() => {});
+    return true;
+  }
+
+  /** Cierra el modal de descuentos con Cancelar y luego el detalle del documento. */
+  async function cerrarDescuentosSinAplicar() {
+    for (const rotulo of [/cancelar/i, /cerrar|cancelar/i]) {
+      const c = await pg.evaluate((re) => {
+        const rx = new RegExp(re.source, re.flags);
+        const modal = [...document.querySelectorAll('ion-modal')]
+          .filter(m => m.getBoundingClientRect().width > 0).pop();
+        if (!modal) return null;
+        const btn = [...modal.querySelectorAll('ion-button')]
+          .filter(b => b.getBoundingClientRect().width > 0)
+          .find(b => rx.test((b.textContent || '').trim()));
+        if (!btn) return null;
+        const r = btn.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      }, { source: rotulo.source, flags: rotulo.flags });
+      if (c) { await pg.mouse.click(c.x, c.y, { delay: 80 }); await pg.waitForTimeout(1200); }
+    }
+    await pg.waitForTimeout(600);
+  }
+
+  /**
+   * ¿El texto leído es EL aviso del tope de descuento?
+   *
+   * 🔴 No basta con «salió una alerta». `readAlert()` devuelve cualquier ion-alert
+   *    activa, y en Cobros hay varias (guarda de salida, usuario diferente…). Si
+   *    se toma cualquiera como prueba del rechazo, un aviso ajeno da un PASS
+   *    falso. El mensaje real lo arma `notifyCollectDiscountLimitExceeded`:
+   *      «Se superó el límite de descuento (85%). Máximo disponible: 5%.»
+   *    — y puede venir del tag COB_MSJ_DISCOUNT_EXCEEDS_100 con otra redacción,
+   *    por eso se acepta cualquiera que hable de límite/tope + descuento.
+   */
+  function esAlertaTope(txt) {
+    if (!txt) return false;
+    return /descuento/i.test(txt) &&
+           /l[íi]mite|tope|super[óo]|excede|m[áa]ximo\s+disponible/i.test(txt);
+  }
+
+  const DESC_IDS = ['DM-COB-048', 'DM-COB-049', 'DM-COB-050', 'DM-COB-051', 'DM-COB-052'];
+  // El bloque del tope descubre cuál descuento del catálogo entra por debajo del
+  // límite; el segundo cobro lo reutiliza para aplicarlo de verdad. Se descubre
+  // en la UI, no se codifica: los nombres los pone quien los crea en la web.
+  let nombreDtoAplicable = null;
+  let pctDtoAplicable = null;
+  try {
+    const TOPE = Number(DATA.maxCollectDiscount) || 100;
+
+    if (!DATA.userCanSelectCollectDiscount) {
+      DESC_IDS.forEach(id => v(id, id, 'N/A', 'userCanSelectCollectDiscount=false'));
+    } else if (!DATA.retentionDocTypeCR) {
+      DESC_IDS.forEach(id => v(id, id, 'N/A',
+        'retentionDocTypeCR=false ⇒ no existe la lupa que abre el detalle del documento'));
+    } else if (!hayDocs) {
+      DESC_IDS.forEach(id => v(id, id, 'N/A', 'sin documentos seleccionados'));
+    } else {
+      const detalle = await abrirDetalleDocumento();
+
+      // ── DM-COB-048: el botón «Asignar descuento» está en el detalle ──────────
+      if (!detalle) {
+        v('DM-COB-048', 'Detalle del documento → botón «Asignar descuento»', 'FAIL',
+          'no se pudo abrir el detalle (lupa ausente o deshabilitada pese a documento tildado)');
+        ['DM-COB-049', 'DM-COB-050', 'DM-COB-051', 'DM-COB-052'].forEach(id =>
+          v(id, id, 'BLOCKED', 'DM-COB-048 no abrió el detalle'));
+      } else {
+        const abierto = await abrirModalDescuentos();
+        v('DM-COB-048', 'Detalle del documento → botón «Asignar descuento» abre el modal',
+          abierto ? 'PASS' : 'FAIL',
+          `userCanSelectCollectDiscount=true · tope configurado: ${TOPE}%`);
+
+        if (!abierto) {
+          ['DM-COB-049', 'DM-COB-050', 'DM-COB-051', 'DM-COB-052'].forEach(id =>
+            v(id, id, 'BLOCKED', 'el modal de descuentos no abrió'));
+        } else {
+          const inicial = await leerModalDescuentos();
+          const cat = inicial.filas || [];
+          const fijos = cat.filter(f => f.pct !== null && f.pct > 0);
+
+
+          // ── DM-COB-049: un descuento por debajo del tope se acepta ────────────
+          const bajoTope = fijos.find(f => f.pct <= TOPE);
+          if (!bajoTope) {
+            v('DM-COB-049', 'Descuento bajo el tope se acepta', 'BLOCKED',
+              `el catálogo no trae ningún descuento ≤ ${TOPE}% · filas: ${cat.map(f => f.texto).join(' | ') || '(vacío)'}`);
+          } else {
+            nombreDtoAplicable = bajoTope.nombre;
+            pctDtoAplicable = bajoTope.pct;
+            await toggleDescuento(bajoTope.nombre);
+            const tras = await leerModalDescuentos();
+            const fila = (tras.filas || []).find(f => f.nombre === bajoTope.nombre);
+            const alerta = await readAlert();
+            const ok = !!(fila && fila.marcado) && !esAlertaTope(alerta);
+            v('DM-COB-049', `Descuento ${bajoTope.pct}% (≤ ${TOPE}%) se acepta`,
+              ok ? 'PASS' : 'FAIL',
+              `«${bajoTope.nombre}» marcado: ${fila ? fila.marcado : 'fila ausente'} · ` +
+              `disponible: ${tras.disponible === null ? '—' : tras.disponible + '%'} · ` +
+              `alerta: ${alerta || 'ninguna'}`);
+            if (alerta) await clickAlertBtn(['Aceptar', 'OK']).catch(() => {});
+          }
+
+          // ── DM-COB-050: excederse del tope se rechaza (y NO se clampea) ───────
+          //
+          // 🔑 DOS MANERAS de excederse, y hay que admitir las dos. La segunda
+          //    es la que permite probar el tope SIN tocar la BD: basta bajar
+          //    `maxCollectDiscount` en la web por debajo del descuento que ya
+          //    existe (p. ej. tope 79 contra el «Probando» de 80 %) y sincronizar.
+          //      a) por SUMA      — dos descuentos que juntos pasan del tope
+          //      b) por SÍ SOLO   — un único descuento cuyo % ya supera el tope
+          const usado  = bajoTope ? bajoTope.pct : 0;
+          const porSuma = bajoTope
+            ? fijos.find(f => f.nombre !== bajoTope.nombre && (usado + f.pct) > TOPE)
+            : null;
+          const porSiSolo = fijos.find(f => f.pct > TOPE);
+          const culpable  = porSuma || porSiSolo;
+
+          if (!culpable) {
+            v('DM-COB-050', `Excederse de ${TOPE}% se rechaza`, 'BLOCKED',
+              `con este catálogo no hay forma de pasarse del ${TOPE}%: ` +
+              `${fijos.map(f => `${f.nombre} ${f.pct}%`).join(' · ') || '(ninguno)'}. ` +
+              `Dos salidas, ambas por WEB + sincronizar: (1) bajar maxCollectDiscount ` +
+              `(Variables Globales → Cobros) por debajo de ` +
+              `${fijos.length ? Math.max(...fijos.map(f => f.pct)) : 0}%, o ` +
+              '(2) crear otro descuento en Empresa → Configuración → Descuentos para Cobros');
+            v('DM-COB-052', 'Tras el rechazo, la casilla NO queda tildada', 'BLOCKED',
+              'sin rechazo que provocar, no hay nada que observar');
+          } else {
+            const via = porSuma
+              ? `${usado}% + ${culpable.pct}% = ${usado + culpable.pct}% > ${TOPE}%`
+              : `${culpable.pct}% > ${TOPE}% (un solo descuento ya se pasa)`;
+            // Si se excede por sí solo, partir de cero: destildar lo que hubiera.
+            if (!porSuma) {
+              for (const f of (await leerModalDescuentos()).filas || []) {
+                if (f.marcado) await toggleDescuento(f.nombre);
+              }
+            }
+            await toggleDescuento(culpable.nombre);
+            const alerta = await readAlert();
+            const tras   = await leerModalDescuentos();
+            const fila   = (tras.filas || []).find(f => f.nombre === culpable.nombre);
+            const previo = porSuma
+              ? (tras.filas || []).find(f => f.nombre === bajoTope.nombre)
+              : null;
+            // Rechazo correcto = aviso del tope + el culpable NO queda marcado
+            //                    (+ si venía por suma, el anterior sobrevive)
+            // 🔑 SON DOS COSAS DISTINTAS, y mezclarlas dio un FAIL confuso:
+            //
+            //   050 · ¿la app RECHAZA? — lo dicen el aviso del tope y que el
+            //         descuento previo siga en pie. Esto funcionó bien.
+            //   052 · ¿la casilla refleja el rechazo? — quedó TILDADA aunque el
+            //         descuento no se aplicó. Es un hallazgo aparte.
+            //
+            // El aviso trae su propia prueba de que el modelo NO lo aceptó:
+            // «Máximo disponible: X%» se calcula sobre lo YA seleccionado, así
+            // que si dice 75 % con tope 85, el modelo tenía 10 %, no 90 %.
+            const rechazo = esAlertaTope(alerta) && (!porSuma || !!(previo && previo.marcado));
+            v('DM-COB-050', `${via} ⇒ se rechaza`, rechazo ? 'PASS' : 'FAIL',
+              `alerta: "${alerta || 'NINGUNA'}"` +
+              (porSuma ? ` · «${bajoTope.nombre}» sigue marcado: ${previo ? previo.marcado : 'n/a'}` : ''));
+
+            const casilla = fila ? fila.marcado : null;
+            v('DM-COB-052', 'Tras el rechazo, la casilla NO queda tildada',
+              casilla === false ? 'PASS' : (casilla === null ? 'BLOCKED' : 'FAIL'),
+              casilla === null
+                ? `no se pudo releer la fila «${culpable.nombre}»`
+                : `«${culpable.nombre}» quedó marcado: ${casilla}. ` +
+                  (casilla
+                    ? '🔴 El descuento NO se aplicó (lo confirma el propio aviso) pero la casilla ' +
+                      'sigue tildada: el vendedor ve puesto un descuento que no está. ' +
+                      'La rama que rechaza en toggleTempSelection hace return sin detectChanges(), ' +
+                      'al revés que sus dos hermanas, y el binding [checked] no reescribe el DOM. ' +
+                      'CONFIRMAR A MANO antes de reportar.'
+                    : 'la casilla vuelve sola a su sitio'));
+            if (alerta) await clickAlertBtn(['Aceptar', 'OK']).catch(() => {});
+          }
+
+          // ── DM-COB-051: tasa escrita — borde exacto del tope ──────────────────
+          // Se arranca de cero: 050 dejó descuentos puestos y casillas desfasadas.
+          // 🔴 EL EDITABLE NO SE BUSCA POR NOMBRE. Antes se buscaba /tasa libre/i
+          //    —el nombre que yo inventé en un SQL que ni llegó a usarse— y este
+          //    caso salió BLOCKED diciendo que no había ninguno, habiendo DOS
+          //    («DESC MANUAL»). El nombre lo escribe quien crea el descuento en
+          //    la web: no identifica nada. Lo que distingue al editable es su
+          //    COMPORTAMIENTO: al marcarlo aparece el input de tasa
+          //    (@if requireInput === true). Se prueban primero los de 0 %, que
+          //    es como quedan guardados los manuales.
+          await reiniciarDescuentos();
+          let libre = null;
+          const candidatos = [...cat].sort((a, b) => (a.pct === 0 ? 0 : 1) - (b.pct === 0 ? 0 : 1));
+          for (const c of candidatos) {
+            if (c.pct !== null && c.pct > TOPE) continue;   // dispararía el aviso del tope
+            if (!(await toggleDescuento(c.nombre))) continue;
+            const st = await leerModalDescuentos();
+            const al = await readAlert();
+            if (al) await clickAlertBtn(['Aceptar', 'OK']).catch(() => {});
+            if (st.hayInputTasa) { libre = c; break; }
+            await reiniciarDescuentos();
+          }
+
+          if (!libre) {
+            v('DM-COB-051', `Tasa escrita: ${TOPE}% acepta · ${TOPE + 1}% rechaza`, 'BLOCKED',
+              `ninguno de los ${cat.length} descuento(s) del catálogo abre el input de tasa ` +
+              'al marcarlo (require_input=true). Crear uno con «Porcentaje Manual = SÍ» en ' +
+              'Empresa → Configuración → Descuentos para Cobros y sincronizar');
+          } else {
+            // El bucle de detección dejó SOLO el editable marcado. No se destilda
+            // nada a mano: con las casillas desfasadas, un clic agrega en vez de quitar.
+            await pg.waitForTimeout(600);
+
+            const escribirTasa = async (valor) => {
+              await pg.evaluate((val) => {
+                const modal = [...document.querySelectorAll('ion-modal.collectDiscounts')]
+                  .find(m => m.getBoundingClientRect().width > 0);
+                const inp = modal && modal.querySelector('ion-input[type="number"]');
+                if (!inp) return false;
+                const native = inp.querySelector('input') ||
+                  (inp.shadowRoot && inp.shadowRoot.querySelector('input'));
+                if (!native) return false;
+                const setter = Object.getOwnPropertyDescriptor(
+                  window.HTMLInputElement.prototype, 'value').set;
+                setter.call(native, String(val));
+                native.dispatchEvent(new Event('input', { bubbles: true }));
+                native.dispatchEvent(new Event('change', { bubbles: true }));
+                inp.dispatchEvent(new CustomEvent('ionInput', { bubbles: true, detail: { value: String(val) } }));
+                inp.dispatchEvent(new CustomEvent('ionChange', { bubbles: true, detail: { value: String(val) } }));
+                return true;
+              }, valor);
+              await pg.waitForTimeout(1300);
+            };
+
+            await escribirTasa(TOPE);
+            const enTope = await leerModalDescuentos();
+            const filaTope = (enTope.filas || []).find(f => f.nombre === libre.nombre);
+            const alertaTope = await readAlert();
+            if (alertaTope) await clickAlertBtn(['Aceptar', 'OK']).catch(() => {});
+
+            await escribirTasa(TOPE + 1);
+            const alertaExceso = await readAlert();
+            const trasExceso = await leerModalDescuentos();
+            const filaExceso = (trasExceso.filas || []).find(f => f.nombre === libre.nombre);
+            if (alertaExceso) await clickAlertBtn(['Aceptar', 'OK']).catch(() => {});
+
+            // Borde: TOPE se acepta (sin alerta, sigue marcado) · TOPE+1 se rechaza
+            // (alerta) y el descuento SE QUITA de la selección.
+            const aceptaTope  = !esAlertaTope(alertaTope) && !!(filaTope && filaTope.marcado);
+            const rechazaMas  = esAlertaTope(alertaExceso) && !!(filaExceso && !filaExceso.marcado);
+            v('DM-COB-051', `Tasa escrita: ${TOPE}% se acepta · ${TOPE + 1}% se rechaza`,
+              (aceptaTope && rechazaMas) ? 'PASS' : 'FAIL',
+              `${TOPE}% → alerta: "${alertaTope || 'ninguna'}", marcado: ${filaTope ? filaTope.marcado : 'n/a'} · ` +
+              `${TOPE + 1}% → alerta: "${alertaExceso || 'NINGUNA'}", marcado: ` +
+              `${filaExceso ? filaExceso.marcado : 'n/a'} (debe quedar false: al exceder se QUITA)`);
+          }
+
+          await cerrarDescuentosSinAplicar();
+        }
+      }
+      // Volver al formulario: el detalle se cierra con Cancelar/Cerrar.
+      await cerrarDescuentosSinAplicar();
+    }
+  } catch (e) {
+    DESC_IDS.forEach(id => {
+      if (!verdicts.some(x => x.id === id)) v(id, id, 'FAIL', e.message);
+    });
+    await cerrarDescuentosSinAplicar().catch(() => {});
   }
 
   // ─── DM-COB-009: Tab Pagos → click "Agregar método de pago" → modal ───────────
@@ -912,9 +1632,34 @@ async function runCobros(pg, DATA) {
 
   // ─── DM-COB-018: Guardar → alert "El Cobro se ha guardado" ─────────────────────
   let guardadoOk = false;
+  let antesDeGuardar = null;   // foto del cobro antes de guardar, para cotejar al reabrirlo
+  let enviadoOk = false;
   try {
-    if (!clienteOk || !hayDocs) {
-      v('DM-COB-018', 'Guardar cobro → alert', 'N/A', 'sin cliente/documento válido para guardar');
+    // 🔴 NO decidir con la foto vieja. `clienteOk` se calculó en DM-COB-004, al
+    //    principio del módulo; si en ese instante las pestañas todavía no se
+    //    habían habilitado, quedaba en false PARA SIEMPRE — y Guardar y Enviar
+    //    se saltaban con «sin cliente válido» aunque el cobro estuviera completo
+    //    y listo. Eso fue lo que se vio el 07/09: los casos intermedios pasaban
+    //    (5 documentos marcados, diferencia en azul) y aun así no guardaba.
+    //
+    //    Se vuelve a mirar el estado REAL justo antes de guardar.
+    const listoAhora = await pg.evaluate(() => {
+      const vis = el => el.getBoundingClientRect().width > 0;
+      const tabs = [...document.querySelectorAll('ion-segment-button')].filter(vis);
+      const habilitadas = tabs.filter(t => !(t.disabled || t.getAttribute('disabled') !== null)).length;
+      const btn = document.querySelector('ion-button.imagenGuardar');
+      return {
+        habilitadas,
+        guardarDisponible: !!btn && vis(btn) && !btn.disabled,
+      };
+    });
+    const puedeGuardar = listoAhora.guardarDisponible && listoAhora.habilitadas >= 4;
+
+    if (!puedeGuardar) {
+      v('DM-COB-018', 'Guardar cobro → alert', 'N/A',
+        `no está listo para guardar · tabs habilitadas: ${listoAhora.habilitadas} · ` +
+        `botón Guardar: ${listoAhora.guardarDisponible ? 'disponible' : 'no disponible'} · ` +
+        `(al inicio del módulo: cliente ${clienteOk ? 'ok' : 'no ok'}, documentos ${hayDocs ? 'sí' : 'no'})`);
     } else {
       // ── REQ Enviar · E5 ─────────────────────────────────────────────────────
       // El cobro está completo: documento marcado y pago cuadrado con el total
@@ -924,6 +1669,22 @@ async function runCobros(pg, DATA) {
       // Fase 1 del guion: el Enviar de Cobros vive en DM-COB-019 y depende del
       // adjunto obligatorio.
       reqV(await reqPestanaRoja(pg, 'COB', { rotar: true }));
+
+      // 📸 Foto del cobro ANTES de guardar. Es lo que se comparará al reabrirlo
+      //    en DM-COB-024: sin esto no se puede afirmar que «no se perdió nada»,
+      //    solo que la pantalla abre.
+      //
+      // 🔴 Los campos (Cliente, Responsable, Comentario) están en la pestaña
+      //    GENERAL. Al llegar aquí estamos parados en Pagos o Adjuntos, así que
+      //    NO son visibles y la foto salía VACÍA — y una foto vacía hace que el
+      //    cotejo compare 0 campos y pase por defecto. Hay que volver a General.
+      const tabGen = await clickTab('general').catch(e => ({ ok: false, motivo: e.message }));
+      await pg.waitForTimeout(900);
+      antesDeGuardar = await fotoDelCobro();
+      if (tabGen && !tabGen.ok) {
+        antesDeGuardar.diag.tabGeneral = tabGen.motivo +
+          (tabGen.valores ? ` · las que hay: ${tabGen.valores.join(', ')}` : '');
+      }
 
       const clic = await clickGuardarEnviar('imagenGuardar');
       await pg.waitForTimeout(1500);
@@ -941,19 +1702,20 @@ async function runCobros(pg, DATA) {
     v('DM-COB-018', 'Guardar cobro', 'FAIL', e.message);
   }
 
-  // ─── DM-COB-019: Enviar (adjunto obligatorio) — intentar con mock cámara ──────
-  try {
-    if (!guardadoOk) {
-      v('DM-COB-019', 'Enviar cobro', 'N/A', 'no hubo cobro guardado');
-    } else if (DATA.requiredCollectionAttachments && DATA.mockCamaraFunciona === false) {
-      v('DM-COB-019', 'Enviar cobro', 'SKIP', 'requiredCollectionAttachments=true + mock_camara_funciona=false → Guardado, envío manual QA');
-    } else {
-      // Fase 1: sin helper ensureAdjunto standalone confiable → marcar pendiente de Fase 2
-      v('DM-COB-019', 'Enviar cobro (con adjunto)', 'BLOCKED', 'Fase 2 — ensureAdjunto/mock cámara standalone pendiente');
-    }
-  } catch (e) {
-    v('DM-COB-019', 'Enviar cobro', 'FAIL', e.message);
-  }
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FLUJO DE PERSISTENCIA — el orden importa (definido con QA el 07/09)
+  //
+  //   guardar → salir → BUSCAR → reabrir → COTEJAR que nada se perdió → ENVIAR
+  //
+  // 🔴 Antes el orden era: guardar → enviar(BLOCKED) → buscar → reabrir → BORRAR.
+  //    Dos errores: el envío se saltaba por un motivo que ya no aplica
+  //    (`requiredCollectionAttachments` pasó a false), y el caso de eliminar
+  //    borraba el cobro ANTES de que nadie lo enviara. Resultado: el script
+  //    guardaba, borraba, y no enviaba nunca.
+  //
+  //    Eliminar un guardado es un SEGUNDO FLUJO, con su propio cobro. No puede
+  //    destruir el que está por enviarse.
+  // ═══════════════════════════════════════════════════════════════════════════
 
   // ─── DM-COB-022: BUSCAR → lista + searchbar ───────────────────────────────────
   try {
@@ -977,53 +1739,347 @@ async function runCobros(pg, DATA) {
     v('DM-COB-022', 'BUSCAR → lista', 'FAIL', e.message);
   }
 
-  // ─── DM-COB-024: Abrir Guardado → editable ────────────────────────────────────
+  // ─── DM-COB-024: reabrir el Guardado y COTEJAR que no se perdió nada ──────────
+  let reabiertoOk = false;   // el COTEJO de campos salió bien
+  // 🔴 Distinto de reabiertoOk: dice solo si el cobro ABRIÓ. Enviar depende de
+  //    esto, NO del cotejo. El 07/09 16:02 el cobro abrió perfecto (5 tabs) pero
+  //    la foto vino vacía ⇒ 024 BLOCKED ⇒ 019 quedó N/A y NO SE ENVIÓ NADA. El
+  //    envío no puede caerse porque la comparación no tuviera insumo.
+  let reabrioOk = false;
   try {
-    const coords = await pg.evaluate(() => {
-      const items = [...document.querySelectorAll('app-cobros-list ion-item')]
-        .filter(el => el.getBoundingClientRect().width > 0 && /Guardado/i.test(el.textContent));
-      if (!items.length) return null;
-      items[0].scrollIntoView({ block: 'center' });
-      const r = items[0].getBoundingClientRect();
-      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-    });
-    if (!coords) { v('DM-COB-024', 'Abrir Guardado → editable', 'N/A', 'sin cobros Guardado en lista'); }
-    else {
-      await pg.mouse.click(coords.x, coords.y, { delay: 120 });
-      await pg.waitForTimeout(2000);
-      const habil = await tabsHabilitadas();
-      v('DM-COB-024', 'Abrir Guardado → form editable', habil >= 3 ? 'PASS' : 'FAIL', `tabs accesibles: ${habil}`);
-      await clickBack().catch(() => {});
-      await pg.waitForTimeout(1200);
+    if (!guardadoOk) {
+      v('DM-COB-024', 'Reabrir Guardado → los datos persisten', 'N/A', 'no hubo cobro guardado');
+    } else {
+      const coords = await pg.evaluate(() => {
+        const items = [...document.querySelectorAll('app-cobros-list ion-item')]
+          .filter(el => el.getBoundingClientRect().width > 0 && /Guardado/i.test(el.textContent));
+        if (!items.length) return null;
+        items[0].scrollIntoView({ block: 'center' });
+        const r = items[0].getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      });
+      if (!coords) {
+        v('DM-COB-024', 'Reabrir Guardado → los datos persisten', 'FAIL',
+          'se guardó pero NO aparece en la lista de Guardados');
+      } else {
+        await pg.mouse.click(coords.x, coords.y, { delay: 120 });
+        await pg.waitForTimeout(2500);
+        // Mismo motivo que arriba: los campos viven en General.
+        await clickTab('general').catch(() => {});
+        await pg.waitForTimeout(900);
+
+        // 📸 Segunda foto, en el mismo formato que la de antes de guardar
+        const despues = await fotoDelCobro();
+
+        const habil = await tabsHabilitadas();
+        // Comparar los campos que TENÍAN valor antes: si alguno se vació o cambió,
+        // se perdió un dato al guardar.
+        const perdidos = [];
+        if (antesDeGuardar) {
+          for (const [et, val] of Object.entries(antesDeGuardar.campos)) {
+            if (!val) continue;
+            const ahora = despues.campos[et];
+            if (ahora !== val) perdidos.push(`${et}: "${val}" → "${ahora === undefined ? '(ausente)' : ahora}"`);
+          }
+          if (antesDeGuardar.total && antesDeGuardar.total !== despues.total) {
+            perdidos.push(`Monto total: "${antesDeGuardar.total}" → "${despues.total}"`);
+          }
+        }
+
+        // 🔴 Un cotejo que no comparó NADA no es un PASS: es un caso sin medir.
+        //    Con la foto vacía el resultado era trivialmente cierto y pasaba
+        //    por defecto, que es peor que fallar.
+        const conValor = antesDeGuardar
+          ? Object.values(antesDeGuardar.campos).filter(x => x).length : 0;
+        const nCampos = antesDeGuardar ? Object.keys(antesDeGuardar.campos).length : 0;
+
+        reabrioOk = habil >= 3;
+        if (conValor === 0) {
+          const dg = (antesDeGuardar && antesDeGuardar.diag) || {};
+          v('DM-COB-024', 'Reabrir Guardado → los datos persisten', 'BLOCKED',
+            `no hay nada que cotejar: la foto previa quedó vacía (${nCampos} campos leídos, ` +
+            `0 con valor). El cobro se reabrió (tabs: ${habil}), pero eso NO prueba persistencia · ` +
+            `diagnóstico: ${dg.inputsVisibles ?? '?'} input(s) visibles, pestaña "${dg.tabActiva || '?'}"` +
+            `${dg.tabGeneral ? ' · 🔴 ' + dg.tabGeneral : ''}` +
+            `${dg.muestra && dg.muestra.length ? ' · rótulos: ' + dg.muestra.join(' | ') : ' · ninguno con rótulo'}`);
+        } else {
+          reabiertoOk = habil >= 3 && perdidos.length === 0;
+          v('DM-COB-024', 'Reabrir Guardado → los datos persisten',
+            reabiertoOk ? 'PASS' : 'FAIL',
+            perdidos.length
+              ? `🔴 ${perdidos.length} de ${conValor} dato(s) cambiaron al guardar: ${perdidos.join(' · ')}`
+              : `tabs accesibles: ${habil} · ${conValor} campo(s) con valor conservados · total: ${despues.total || '—'}`);
+        }
+      }
     }
   } catch (e) {
-    v('DM-COB-024', 'Abrir Guardado', 'FAIL', e.message);
+    v('DM-COB-024', 'Reabrir Guardado → los datos persisten', 'FAIL', e.message);
   }
 
-  // ─── DM-COB-026: Eliminar Guardado → desaparece ───────────────────────────────
+  // ─── DM-COB-019: ENVIAR el cobro reabierto ───────────────────────────────────
   try {
-    await irAHomeCobros().catch(() => {});
-    await clickBotonHome('BUSCAR').catch(() => {});
-    await pg.waitForTimeout(2000);
-    const before = await pg.evaluate(() =>
-      [...document.querySelectorAll('app-cobros-list ion-item')]
-        .filter(el => el.getBoundingClientRect().width > 0 && /Guardado/i.test(el.textContent)).length);
-    const trash = await pg.evaluate(() => {
-      const btns = [...document.querySelectorAll('app-cobros-list ion-button[color="danger"], app-cobros-list ion-button')]
-        .filter(b => b.getBoundingClientRect().width > 0 && (b.querySelector('ion-icon[name="trash"]') || /danger/.test(b.getAttribute('color') || '')));
-      if (!btns.length) return null;
-      const r = btns[0].getBoundingClientRect();
-      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-    });
-    if (before === 0 || !trash) { v('DM-COB-026', 'Eliminar Guardado', 'N/A', `Guardados: ${before} · botón trash: ${!!trash}`); }
-    else {
-      await pg.mouse.click(trash.x, trash.y, { delay: 80 });
-      await clickAlertBtn(['Eliminar', 'Aceptar', 'Sí', 'OK']).catch(() => {});
+    if (!guardadoOk) {
+      v('DM-COB-019', 'Enviar cobro', 'N/A', 'no hubo cobro guardado');
+    } else if (DATA.requiredCollectionAttachments && DATA.mockCamaraFunciona === false) {
+      // Regla de QA: adjunto obligatorio sin mock ⇒ se deja GUARDADO y lo envía QA.
+      v('DM-COB-019', 'Enviar cobro', 'SKIP',
+        'requiredCollectionAttachments=true + mock_camara_funciona=false → queda Guardado, lo envía QA');
+    } else if (!reabrioOk) {
+      v('DM-COB-019', 'Enviar cobro', 'N/A', 'el cobro guardado no llegó a abrirse');
+    } else {
+      const clic = await clickGuardarEnviar('imagenEnviar');
+      await pg.waitForTimeout(1800);
+
+      // Confirmación «El Cobro será enviado» → ACEPTAR (aquí sí se envía)
+      const dialogo = await readAlert();
+      if (dialogo && /ser[áa] enviad|desea enviar/i.test(dialogo)) {
+        await clickAlertBtn(['Aceptar', 'OK', 'Sí']).catch(() => {});
+        await pg.waitForTimeout(3000);
+      }
+      const cierre = await readAlert();
+      if (cierre) await clickAlertBtn(['Aceptar', 'OK']).catch(() => {});
       await pg.waitForTimeout(1500);
-      const after = await pg.evaluate(() =>
-        [...document.querySelectorAll('app-cobros-list ion-item')]
-          .filter(el => el.getBoundingClientRect().width > 0 && /Guardado/i.test(el.textContent)).length);
-      v('DM-COB-026', 'Eliminar Guardado → desaparece', after < before ? 'PASS' : 'FAIL', `antes: ${before} · después: ${after}`);
+
+      // El oráculo es el ESTATUS en la lista, no la alerta.
+      const estados = await abrirListaCobros();
+      // 🔴 El oráculo NO puede ser solo «ya no hay guardados»: si la lista se
+      //    vaciara o no cargara, eso también daría 0 y pasaría. Hace falta ver
+      //    el cobro del OTRO lado: al menos un Enviado / Por aprobar.
+      // 🔑 EL ORÁCULO ES LA NUBE, NO LA LISTA.
+      //    Contar ítems «Enviado» en la UI dio FAIL tres corridas seguidas
+      //    (07/09) porque la lista se leía antes de pintar — mientras los cobros
+      //    estaban perfectamente en la nube (Test-COB-204126 y Test-COB-786509,
+      //    st_collection=3). El comentario de la corrida es único, así que sirve
+      //    de huella para encontrar EL cobro de ESTA corrida.
+      let enNube = null;
+      if (DATA.clienteSlug) {
+        for (let i = 0; i < 5; i++) {
+          const filas = consultaNube(DATA.clienteSlug,
+            `select co_collection, nu_amount_total, co_currency, st_collection ` +
+            `from collection where tx_comment = '${comentTest}' limit 1`);
+          if (filas && filas.length) { enNube = filas[0]; break; }
+          await pg.waitForTimeout(3000);
+        }
+      }
+
+      const porUI = estados.guardados === 0 && estados.enviados > 0;
+      enviadoOk = !!enNube || porUI;
+
+      const detalle =
+        `${clic.ok ? 'clic:' + clic.via : 'clic FALLÓ (' + clic.motivo + ')'} · ` +
+        `diálogo: "${dialogo || 'ninguno'}"`;
+      const enUI = `UI → guardados: ${estados.guardados} · enviados: ${estados.enviados} · ` +
+        `total en lista: ${estados.total}`;
+
+      v('DM-COB-019', 'Enviar cobro → llega a la nube',
+        enviadoOk ? 'PASS' : 'FAIL',
+        enNube
+          ? `${detalle} · ☁ EN LA NUBE: ${enNube.co_collection} · ` +
+            `${enNube.nu_amount_total} ${enNube.co_currency || ''} · st=${enNube.st_collection} ` +
+            `(comentario ${comentTest})` +
+            (porUI ? '' : ` · ⚠ la UI no lo reflejaba (${enUI}) — revisar solo si se repite`)
+          : (DATA.clienteSlug
+              ? `${detalle} · ✗ no aparece en la nube ningún cobro con comentario ` +
+                `${comentTest} · ${enUI}`
+              : `${detalle} · sin clienteSlug: no se pudo consultar la nube · ${enUI}`));
+    }
+  } catch (e) {
+    v('DM-COB-019', 'Enviar cobro', 'FAIL', e.message);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SEGUNDO COBRO — cierra DESCUENTOS de punta a punta y destraba DM-COB-026
+  //
+  // Por qué hace falta uno propio:
+  //   · aplicar un descuento cambia el total, y el cobro del happy path ya tiene
+  //     su pago cuadrado — tocarlo rompería los casos que vienen detrás;
+  //   · eliminar un guardado no puede hacerse sobre el cobro que hay que enviar.
+  //
+  // Los casos 048-052 certifican el TOPE, pero cancelan el modal: ninguno
+  // comprueba que el descuento SE APLIQUE. Eso es lo que se cierra aquí, en las
+  // tres capas — pantalla, cobro reabierto y nube.
+  //
+  // ⚠ Se usa el cliente de RELEVO para no competir por los documentos del
+  //   principal: cada cobro ENVIADO compromete el suyo y no vuelve a listarse.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const CLI_2 = (DATA.clientesConDocumentos || [])[1] || DATA.clienteTest;
+  const DESC_IDS2 = ['DM-COB-053', 'DM-COB-054', 'DM-COB-055'];
+
+  /**
+   * Monta un cobro completo y lo deja GUARDADO.
+   * @param {{cliente:string, comentario:string, descuento?:string}} o
+   *        descuento = nombre del descuento a aplicar (opcional)
+   */
+  async function montarCobro(o) {
+    const r = { ok: false, motivo: '', totalAntes: null, totalDespues: null, guardado: false };
+    await irAHomeCobros();
+    if (!(await abrirNuevoCobro())) { r.motivo = 'no abrió el formulario de cobro'; return r; }
+
+    await seleccionarCliente(o.cliente);
+    if (DATA.requiredComment) await fillComentario(o.comentario);
+    let habil = 0;
+    for (let i = 0; i < 8; i++) { habil = await tabsHabilitadas(); if (habil >= 4) break; await pg.waitForTimeout(700); }
+    if (habil < 4) { r.motivo = `las pestañas no se habilitaron (${habil}/5) con ${o.cliente}`; return r; }
+
+    const carga = await cargarDocumentos();
+    if (!carga.cbs) { r.motivo = `${o.cliente} no tiene documentos disponibles`; return r; }
+    if (!(await marcarPrimerDocumento()).ok) { r.motivo = 'no se pudo marcar el documento'; return r; }
+
+    await clickTab('pagos');
+    await pg.waitForTimeout(1000);
+    r.totalAntes = (await leerPagosSticky()).total;
+
+    if (o.descuento) {
+      if (!(await abrirDetalleDocumento())) { r.motivo = 'no abrió el detalle del documento'; return r; }
+      if (!(await abrirModalDescuentos())) { r.motivo = 'no abrió el modal de descuentos'; return r; }
+      if (!(await toggleDescuento(o.descuento))) { r.motivo = `no está «${o.descuento}» en el catálogo`; return r; }
+      const al = await readAlert();
+      if (al) { await clickAlertBtn(['Aceptar', 'OK']).catch(() => {}); r.motivo = `aviso al marcar: ${al}`; return r; }
+      const ac = await aceptarDescuentos();
+      if (!ac.ok) { r.motivo = `no se pudo aceptar el descuento: ${ac.motivo || 'el modal no cerró'}`; return r; }
+      await cerrarDetalleGuardando();
+      await clickTab('pagos');
+      await pg.waitForTimeout(1200);
+      r.totalDespues = (await leerPagosSticky()).total;
+    }
+
+    const pago = await agregarPagoEfectivo();
+    if (!pago.ok) { r.motivo = `no se pudo pagar: ${pago.error}`; return r; }
+
+    const clic = await clickGuardarEnviar('imagenGuardar');
+    await pg.waitForTimeout(1600);
+    const alertMsg = await readAlert();
+    r.guardado = !!(alertMsg && /guardad/i.test(alertMsg));
+    if (alertMsg) await clickAlertBtn(['Aceptar', 'OK']).catch(() => {});
+    if (!r.guardado) { r.motivo = `no guardó · clic: ${clic.via || clic.motivo} · alert: "${alertMsg || 'ninguno'}"`; return r; }
+    r.ok = true;
+    return r;
+  }
+
+  // ─── DM-COB-053/054/055: descuento aplicado en las TRES capas ────────────────
+  const comentDto = `Test-DTO-${String(Date.now()).slice(-6)}`;
+  let cobroDto = null;
+  try {
+    if (!DATA.userCanSelectCollectDiscount || !DATA.retentionDocTypeCR) {
+      DESC_IDS2.forEach(id => v(id, id, 'N/A', 'descuento de cobro no aplica en este cliente'));
+    } else if (!nombreDtoAplicable) {
+      DESC_IDS2.forEach(id => v(id, id, 'BLOCKED',
+        'no se identificó un descuento del catálogo que se pueda aplicar bajo el tope'));
+    } else {
+      cobroDto = await montarCobro({ cliente: CLI_2, comentario: comentDto, descuento: nombreDtoAplicable });
+
+      // ── Capa 1 · la pantalla: el total baja ───────────────────────────────
+      if (!cobroDto.ok && cobroDto.totalDespues === null) {
+        DESC_IDS2.forEach(id => v(id, id, 'BLOCKED', `no se pudo montar el 2.º cobro: ${cobroDto.motivo}`));
+      } else {
+        const nAntes = montoANumero(cobroDto.totalAntes);
+        const nDesp  = montoANumero(cobroDto.totalDespues);
+        const bajo   = (nAntes !== null && nDesp !== null) ? nAntes - nDesp : null;
+        const esperado = (nAntes !== null && pctDtoAplicable !== null)
+          ? nAntes * (pctDtoAplicable / 100) : null;
+        // Tolerancia de redondeo: 1 unidad de la moneda del cobro.
+        const cuadra = (bajo !== null && esperado !== null) && Math.abs(bajo - esperado) <= 1;
+        v('DM-COB-053', `Aplicar ${pctDtoAplicable}% baja el «Monto total a pagar»`,
+          cuadra ? 'PASS' : (bajo === null ? 'BLOCKED' : 'FAIL'),
+          `antes: ${cobroDto.totalAntes || '—'} · después: ${cobroDto.totalDespues || '—'} · ` +
+          `bajó: ${bajo === null ? '—' : bajo.toFixed(2)} · esperado (${pctDtoAplicable}%): ` +
+          `${esperado === null ? '—' : esperado.toFixed(2)}`);
+
+        // ── Capa 2 · el cobro reabierto conserva el descuento ────────────────
+        if (!cobroDto.guardado) {
+          v('DM-COB-054', 'El descuento persiste al reabrir', 'BLOCKED',
+            `el 2.º cobro no llegó a guardarse: ${cobroDto.motivo}`);
+        } else {
+          const lista = await abrirListaCobros();
+          const abierto = lista.lista ? await reabrirGuardado() : false;
+          if (!abierto) {
+            v('DM-COB-054', 'El descuento persiste al reabrir', 'BLOCKED',
+              `no se pudo reabrir el cobro guardado (lista: ${lista.lista}, ítems: ${lista.total})`);
+          } else {
+            await clickTab('pagos');
+            await pg.waitForTimeout(1200);
+            const totalReabierto = (await leerPagosSticky()).total;
+            const nRe = montoANumero(totalReabierto);
+            const igual = (nRe !== null && nDesp !== null) && Math.abs(nRe - nDesp) <= 1;
+            v('DM-COB-054', 'El descuento persiste al reabrir el Guardado',
+              igual ? 'PASS' : (nRe === null ? 'BLOCKED' : 'FAIL'),
+              `al guardar: ${cobroDto.totalDespues || '—'} · al reabrir: ${totalReabierto || '—'}` +
+              (igual ? '' : ' · 🔴 el monto cambió: el descuento no sobrevivió al guardado'));
+
+            // ── Capa 3 · la nube ──────────────────────────────────────────────
+            const clic = await clickGuardarEnviar('imagenEnviar');
+            await pg.waitForTimeout(1800);
+            const dlg = await readAlert();
+            if (dlg && /ser[áa] enviad|desea enviar/i.test(dlg)) {
+              await clickAlertBtn(['Aceptar', 'OK', 'Sí']).catch(() => {});
+              await pg.waitForTimeout(3000);
+            }
+            const cierre = await readAlert();
+            if (cierre) await clickAlertBtn(['Aceptar', 'OK']).catch(() => {});
+
+            let nube = null;
+            if (DATA.clienteSlug) {
+              for (let i = 0; i < 5; i++) {
+                const f = consultaNube(DATA.clienteSlug,
+                  `select c.co_collection, c.nu_amount_total, c.nu_amount_discount_total, ` +
+                  `cd.has_discount, cd.nu_collect_discount, cd.nu_amount_collect_discount, ` +
+                  `(select count(*) from collection_detail_discounts d ` +
+                  ` where d.id_collection_detail = cd.id_collection_detail) as filas ` +
+                  `from collection c join collection_detail cd on cd.id_collection = c.id_collection ` +
+                  `where c.tx_comment = '${comentDto}' limit 1`);
+                if (f && f.length) { nube = f[0]; break; }
+                await pg.waitForTimeout(3000);
+              }
+            }
+            const dtoEnNube = nube && Number(nube.nu_amount_discount_total) > 0;
+            const conFilas  = nube && Number(nube.filas) > 0;
+            v('DM-COB-055', 'El descuento llega a la nube (monto + detalle)',
+              (dtoEnNube && conFilas) ? 'PASS' : (nube ? 'FAIL' : 'BLOCKED'),
+              nube
+                ? `☁ ${nube.co_collection} · total ${nube.nu_amount_total} · ` +
+                  `descuento ${nube.nu_amount_discount_total} · has_discount=${nube.has_discount} · ` +
+                  `${nube.nu_collect_discount}% = ${nube.nu_amount_collect_discount} · ` +
+                  `filas en collection_detail_discounts: ${nube.filas}` +
+                  ((dtoEnNube && conFilas) ? '' : ' · 🔴 el cobro llegó pero el descuento NO')
+                : `no aparece en la nube ningún cobro con comentario ${comentDto} · ` +
+                  `clic: ${clic.ok ? clic.via : clic.motivo} · diálogo: "${dlg || 'ninguno'}"`);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    DESC_IDS2.forEach(id => { if (!verdicts.some(x => x.id === id)) v(id, id, 'FAIL', e.message); });
+  }
+
+  // ─── DM-COB-026: TERCER cobro — guardar y eliminar ───────────────────────────
+  // 🔴 Necesita el suyo. Si reutilizara el del flujo anterior lo borraría antes
+  //    de enviarlo, que es justo lo que pasaba hasta el 07/09.
+  try {
+    const c3 = await montarCobro({ cliente: CLI_2, comentario: `Test-DEL-${String(Date.now()).slice(-6)}` });
+    if (!c3.guardado) {
+      v('DM-COB-026', 'Eliminar Guardado', 'BLOCKED', `no se pudo montar el cobro a eliminar: ${c3.motivo}`);
+    } else {
+      const lista = await abrirListaCobros();
+      const before = lista.guardados;
+      const trash = await pg.evaluate(() => {
+        const btns = [...document.querySelectorAll('app-cobros-list ion-button')]
+          .filter(b => b.getBoundingClientRect().width > 0 &&
+            (b.querySelector('ion-icon[name="trash"]') || /danger/.test(b.getAttribute('color') || '')));
+        if (!btns.length) return null;
+        const r = btns[0].getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      });
+      if (!trash) {
+        v('DM-COB-026', 'Eliminar Guardado', 'BLOCKED', `Guardados: ${before} · sin botón de eliminar en la lista`);
+      } else {
+        await pg.mouse.click(trash.x, trash.y, { delay: 80 });
+        await clickAlertBtn(['Eliminar', 'Aceptar', 'Sí', 'OK']).catch(() => {});
+        await pg.waitForTimeout(2000);
+        const after = (await abrirListaCobros()).guardados;
+        v('DM-COB-026', 'Eliminar Guardado → desaparece de la lista',
+          after < before ? 'PASS' : 'FAIL', `Guardados antes: ${before} · después: ${after}`);
+      }
     }
   } catch (e) {
     v('DM-COB-026', 'Eliminar Guardado', 'FAIL', e.message);
@@ -1057,9 +2113,13 @@ async function runCobros(pg, DATA) {
     const pCob = payloads.filter(p => /collectionservice\/collection|collectservice\/collect/i.test(String(p.url)));
     if (pCob.length && DATA.clienteSlug) {
       const marca = cotejoPayload(DATA.clienteSlug, pCob[pCob.length - 1]);
-      // Anexar a DM-COB-018 como nota informativa
-      const d = verdicts.find(x => x.id === 'DM-COB-018');
-      if (d) d.nota += ` · ${marca}`;
+      // 🔴 Iba colgado de DM-COB-018 (Guardar) y eso confundía: GUARDAR ES LOCAL,
+      //    no hace ningún POST. El único payload que se captura es el del ENVÍO,
+      //    así que la marca del cotejo pertenece a DM-COB-019. Leerla junto a
+      //    «Guardar» hacía parecer que el guardado había llegado a la nube.
+      const d = verdicts.find(x => x.id === 'DM-COB-019') ||
+                verdicts.find(x => x.id === 'DM-COB-018');
+      if (d) d.nota += ` · cotejo del payload enviado: ${marca}`;
     }
   } catch (_) {}
 

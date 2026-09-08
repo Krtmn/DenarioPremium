@@ -1,0 +1,36 @@
+{"modulo":"cobros","id":"DM-COB-036","descripcion":"DM-COB-036","resultado":"N/A","nota":"userCanSelectIGTF=false (IGTF inactivo)","ms":14,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-044","descripcion":"DM-COB-044","resultado":"N/A","nota":"userCanSelectIGTF=false (IGTF inactivo)","ms":14,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-045","descripcion":"DM-COB-045","resultado":"N/A","nota":"userCanSelectIGTF=false (IGTF inactivo)","ms":14,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-037","descripcion":"Cobro 25% IVA","resultado":"N/A","nota":"userCanCollectIva=false","ms":14,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-001","descripcion":"Módulo Cobros → home (COBRO + BUSCAR)","resultado":"PASS","nota":"botones: COBRO, ANTICIPO/PREPAGO, BUSCAR","ms":2547,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-002","descripcion":"COBRO → form 5 tabs; resto disabled sin cliente","resultado":"PASS","nota":"tabs: 5 (General/Documentos/Pagos/Total/Adjuntos) · habilitadas: 1","ms":4461,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-004","descripcion":"Seleccionar cliente → tabs habilitadas","resultado":"FAIL","nota":"pedido: \"C.0060\" · clickeado: \"motor s diesel, c.a. código: c.0060 saldo bs: 3.103.116,00 saldo usd: 3.566,80 m\" · tabs habilitadas: 1 · 🔴 EL COMENTARIO NO SE ESCRIBIÓ (es lo que bloquea las pestañas)","ms":18299,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-REQ-001","descripcion":"REQ · Enviar habilitado al iniciar la transacción","resultado":"PASS","nota":"nace deshabilitado — esperado en este módulo: primero hay que agregar un método de pago","ms":18326,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-REQ-002","descripcion":"REQ · Rechaza el envío con obligatorios vacíos y dice qué falta","resultado":"PASS","nota":"C1 ok (deshabilitado) · C2 ok — 1 marca(s): borde rojo","ms":18342,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-007","descripcion":"Tab Documentos → lista + leyenda","resultado":"PASS","nota":"documentos: 5 · leyenda: true","ms":22876,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-008","descripcion":"Marcar documento → total en Pagos","resultado":"PASS","nota":"marcados: 5 · total: \"Monto total a pagar Bs: 206.016,00 Diferencia Bs: -206.016,0\"","ms":25422,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-009","descripcion":"Tab Pagos → modal métodos de pago","resultado":"PASS","nota":"métodos: Efectivo, Cheque, Depósito, Transferencia, Pago Móvil","ms":28595,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-040","descripcion":"Completar pago Efectivo = total → diferencia azul","resultado":"PASS","nota":"monto: 20601600 · antes: -206.016,00(red) · después: 0,00(blue)","ms":38933,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-012","descripcion":"Diferencia rojo (insuf.) → azul (cubre)","resultado":"PASS","nota":"antes: red · después: blue","ms":38933,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-043","descripcion":"Diferencia se actualiza con el monto","resultado":"PASS","nota":"antes: -206.016,00 · después: 0,00","ms":38933,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-016","descripcion":"Tab Adjuntos → acordeones visibles","resultado":"PASS","nota":"imágenes: true · archivo: true · firma: false","ms":40036,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-018","descripcion":"Guardar cobro → alert","resultado":"N/A","nota":"sin cliente/documento válido para guardar","ms":40036,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-019","descripcion":"Enviar cobro","resultado":"N/A","nota":"no hubo cobro guardado","ms":40036,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-022","descripcion":"BUSCAR → lista con searchbar","resultado":"PASS","nota":"lista: true · ítems: 20 · searchbar: true","ms":43635,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-024","descripcion":"Abrir Guardado → editable","resultado":"N/A","nota":"sin cobros Guardado en lista","ms":43649,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-026","descripcion":"Eliminar Guardado","resultado":"N/A","nota":"Guardados: 0 · botón trash: false","ms":47321,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-020","descripcion":"Atrás con cambios → modal Salir/Guardar","resultado":"PASS","nota":"modal: \"Denario Cobros\"","ms":60036,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-021","descripcion":"Salir sin guardar → no persiste","resultado":"PASS","nota":"salió por modal: true · home: true","ms":60929,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-033","descripcion":"DM-COB-033","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":60940,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-034","descripcion":"DM-COB-034","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":60940,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-014","descripcion":"DM-COB-014","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":60940,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-015","descripcion":"DM-COB-015","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":60940,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-028","descripcion":"DM-COB-028","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":60940,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-029","descripcion":"DM-COB-029","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":60940,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-041","descripcion":"DM-COB-041","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":60940,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-042","descripcion":"DM-COB-042","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":60940,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-046","descripcion":"DM-COB-046","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":60940,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-047","descripcion":"DM-COB-047","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":60940,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-039","descripcion":"DM-COB-039","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":60940,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-038","descripcion":"DM-COB-038","resultado":"BLOCKED","nota":"Fase 2 — pendiente de construir/depurar en device","ms":60940,"runner":"playwright-standalone"}
+{"modulo":"cobros","id":"DM-COB-REQ-003","descripcion":"REQ · Botón Enviar y campos obligatorios","resultado":"BLOCKED","nota":"el flujo del módulo salió antes de llegar a este punto de medición","ms":62309,"runner":"playwright-standalone"}
